@@ -21,6 +21,8 @@ Needs to allow players to reload the plugin.
 **1.** Download the .jar file of the plugin.<br>
 **2.** Put the .jar file into the plugins folder.<br>
 **3.** Restart the server. After the plugin has loaded, restart the server again to correctly load the data pack.<br>
+# Updating
+**1.** Delete automatically created datapack and it will be updates and re-created by plugin.
 # Requirements
 **1.** Java 21+<br>
 **2.** Paper/Purpur core and its forks. Do not use Spigot/Bukkit core!<br>
