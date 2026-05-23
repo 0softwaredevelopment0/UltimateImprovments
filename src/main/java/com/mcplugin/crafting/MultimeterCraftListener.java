@@ -29,7 +29,7 @@ public class MultimeterCraftListener implements Listener {
     // =========================
     public static void init() {
 
-        KEY = new NamespacedKey(Main.getInstance(), "isMultimeter");
+        KEY = new NamespacedKey(Main.getInstance(), "is_multimeter");
         RECIPE_KEY = new NamespacedKey(Main.getInstance(), "multimeter");
 
         registerRecipe();
@@ -49,13 +49,13 @@ public class MultimeterCraftListener implements Listener {
 
         meta.setDisplayName("§fMultimeter");
 
-        // =========================
-        // ITEM MODEL (NEW SYSTEM)
-        // =========================
         meta.setItemModel(
                 org.bukkit.NamespacedKey.fromString("terf:tool/multimeter")
         );
 
+        // =========================
+        // PDC TAG (isMultimeter:1b)
+        // =========================
         meta.getPersistentDataContainer().set(
                 KEY,
                 PersistentDataType.BYTE,
@@ -80,7 +80,7 @@ public class MultimeterCraftListener implements Listener {
 
         plugin.getServer().addRecipe(recipe);
 
-        plugin.getLogger().info("[Multimeter] Recipe registered with ITEM MODEL");
+        plugin.getLogger().info("[MULTIMETER] Recipe registered with ITEM MODEL");
     }
 
     // =========================
@@ -103,13 +103,13 @@ public class MultimeterCraftListener implements Listener {
 
         meta.setDisplayName("§fMultimeter");
 
-        // =========================
-        // ITEM MODEL AGAIN
-        // =========================
         meta.setItemModel(
                 org.bukkit.NamespacedKey.fromString("terf:tool/multimeter")
         );
 
+        // =========================
+        // PDC AGAIN (isMultimeter:1b)
+        // =========================
         meta.getPersistentDataContainer().set(
                 KEY,
                 PersistentDataType.BYTE,

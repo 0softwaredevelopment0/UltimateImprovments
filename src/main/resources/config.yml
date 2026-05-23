@@ -128,7 +128,7 @@ crafts:
 
     show_in_recipe_book: true
 
-    custom_tag: "isMultimeter"
+    custom_tag: "is_multimeter"
 
     recipe:
 
@@ -140,3 +140,17 @@ crafts:
       ingredients:
         C: COPPER_INGOT
         R: REDSTONE
+
+# =========================
+# 🔴 REDSTONE OVERLOAD GUARD
+# =========================
+redstone_guard:
+  enabled: true
+  # MSPT выше порога + глобальные итерации редстоуна за прошлый тик > лимита
+  mspt_threshold: 50.0
+  global_iterations_limit: 1024
+  # Блокировать чанк только если его итерации за тик > этого лимита
+  chunk_iterations_limit: 128
+  block_duration_seconds: 32
+  # Сколько чанков (с превышением лимита) блокировать за один тик перегрузки
+  chunks_per_tick: 1

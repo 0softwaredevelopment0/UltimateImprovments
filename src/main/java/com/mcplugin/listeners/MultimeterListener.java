@@ -4,6 +4,7 @@ import com.mcplugin.Main;
 import com.mcplugin.cable.*;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -13,12 +14,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.NamespacedKey;
 
 public class MultimeterListener implements Listener {
+
+    private static final NamespacedKey KEY =
+            new NamespacedKey(Main.getInstance(), "is_multimeter");
 
     @EventHandler
     public void onUse(PlayerInteractEvent e) {
@@ -31,20 +33,9 @@ public class MultimeterListener implements Listener {
         ItemStack item = player.getInventory().getItemInMainHand();
 
         // =========================
-        // CHECK MULTIMETER
+        // PDC CHECK (MULTIMETER ONLY)
         // =========================
-        if (item.getType() != Material.CLOCK) return;
-
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-
-        NamespacedKey key = new NamespacedKey(Main.getInstance(), "isMultimeter");
-        PersistentDataContainer data = meta.getPersistentDataContainer();
-
-        if (!data.has(key, PersistentDataType.BYTE)) return;
-
-        byte flag = data.get(key, PersistentDataType.BYTE);
-        if (flag != 1) return;
+        if (!is_multimeter(item)) return;
 
         CableNode node = CableNetwork.getNode(block.getLocation());
 
@@ -58,7 +49,7 @@ public class MultimeterListener implements Listener {
         Material type = block.getType();
 
         // =========================
-        // 🔋 BATTERY FIX (ВАЖНО)
+        // BATTERY
         // =========================
         if (type == Material.WAXED_COPPER_GRATE) {
 
@@ -69,7 +60,7 @@ public class MultimeterListener implements Listener {
         }
 
         // =========================
-        // ⚡ CABLE
+        // CABLE
         // =========================
         if (type == Material.WAXED_LIGHTNING_ROD) {
 
@@ -100,7 +91,7 @@ public class MultimeterListener implements Listener {
         }
 
         // =========================
-        // 🔀 JUNCTION
+        // JUNCTION
         // =========================
         if (type == Material.WAXED_CHISELED_COPPER) {
 
@@ -112,5 +103,20 @@ public class MultimeterListener implements Listener {
         }
 
         player.sendMessage(ChatColor.GRAY + "This block is not part of energy network.");
+    }
+
+    // =========================
+    // PDC CHECK
+    // =========================
+    private boolean is_multimeter(ItemStack item) {
+
+        if (item == null || !item.hasItemMeta()) return false;
+
+        PersistentDataContainer data =
+                item.getItemMeta().getPersistentDataContainer();
+
+        Byte val = data.get(KEY, PersistentDataType.BYTE);
+
+        return val != null && val == (byte) 1;
     }
 }

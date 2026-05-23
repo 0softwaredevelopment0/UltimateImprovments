@@ -1,16 +1,12 @@
-package com.mcplugin;
+package com.mcplugin.server;
 
 import com.mcplugin.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class ServerOverloadWarning extends BukkitRunnable {
 
-    // =========================
-    // ANTI SPAM
-    // =========================
     private boolean warnedHigh = false;
     private boolean warnedCritical = false;
 
@@ -19,13 +15,8 @@ public class ServerOverloadWarning extends BukkitRunnable {
 
         double mspt = Bukkit.getServer().getAverageTickTime();
 
-        // =========================
-        // ☠ CRITICAL LOAD
-        // 50+ MSPT
-        // =========================
         if (mspt >= 50.0) {
 
-            // сбрасываем high
             warnedHigh = false;
 
             if (!warnedCritical) {
@@ -42,29 +33,18 @@ public class ServerOverloadWarning extends BukkitRunnable {
                                 ChatColor.GRAY +
                                 ")";
 
-                // console
                 Main.getInstance()
                         .getLogger()
-                        .severe(
-                                "[PERFORMANCE] CRITICAL MSPT: " + mspt
-                        );
+                        .severe("[PERFORMANCE] CRITICAL MSPT: " + mspt);
 
-                // players
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    player.sendMessage(msg);
-                }
+                ServerOverloadNotify.broadcast(msg);
             }
 
             return;
         }
 
-        // =========================
-        // ⚠ HIGH LOAD
-        // 40+ MSPT
-        // =========================
         if (mspt >= 40.0) {
 
-            // сбрасываем critical
             warnedCritical = false;
 
             if (!warnedHigh) {
@@ -81,25 +61,16 @@ public class ServerOverloadWarning extends BukkitRunnable {
                                 ChatColor.GRAY +
                                 ")";
 
-                // console
                 Main.getInstance()
                         .getLogger()
-                        .warning(
-                                "[PERFORMANCE] HIGH MSPT: " + mspt
-                        );
+                        .warning("[PERFORMANCE] HIGH MSPT: " + mspt);
 
-                // players
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    player.sendMessage(msg);
-                }
+                ServerOverloadNotify.broadcast(msg);
             }
 
             return;
         }
 
-        // =========================
-        // NORMAL
-        // =========================
         warnedHigh = false;
         warnedCritical = false;
     }

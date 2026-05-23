@@ -2,6 +2,7 @@ package com.mcplugin.commands;
 
 import com.mcplugin.Main;
 import com.mcplugin.cable.CableNetwork;
+import com.mcplugin.server.RedstoneGuard;
 import com.mcplugin.energy.crafting.EnergyWorkbenchManager;
 import com.mcplugin.crafting.MultimeterCraftListener;
 import com.mcplugin.database.DatabaseManager;
@@ -80,6 +81,7 @@ public class PluginReloadCommand implements CommandExecutor {
                     // RELOAD CONFIG
                     // =========================
                     plugin.reloadConfig();
+                    RedstoneGuard.reload();
 
                     // =========================
                     // RECONNECT DB

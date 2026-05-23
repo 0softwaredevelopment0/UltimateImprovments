@@ -1,6 +1,7 @@
 package com.mcplugin.server;
 
 import com.mcplugin.Main;
+import com.mcplugin.guns.projectile.ProjectileManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -14,22 +15,17 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
 
     private int overloadTicks = 0;
 
-    private static final int MAX_OVERLOAD_TIME = 20 * 10; // 10 sec
+    private static final int MAX_OVERLOAD_TIME = 20 * 10;
     private static final double INSTANT_KILL_MSPT = 600.0;
-
-    // =========================
-    // NEW THRESHOLD
-    // =========================
     private static final int ENTITY_LIMIT = 1000;
+
+    private static final double BULLET_KILL_MSPT = 50.0;
 
     @Override
     public void run() {
 
         double mspt = Bukkit.getServer().getAverageTickTime();
 
-        // =========================
-        // TOTAL ENTITY COUNT
-        // =========================
         int totalEntities = 0;
 
         for (World world : Bukkit.getWorlds()) {
@@ -39,37 +35,48 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         boolean overloadByEntities = totalEntities >= ENTITY_LIMIT;
 
         // =========================
-        // 🚨 INSTANT EMERGENCY
+        // 🔫 PLASMA OVERLOAD FIXED
+        // =========================
+        if (mspt >= BULLET_KILL_MSPT) {
+
+            if (ProjectileManager.hasPlasmaProjectiles()) {
+
+                int removed = ProjectileManager.removePlasmaProjectiles();
+
+                String msg =
+                        "[OVERLOAD] MSPT=" + mspt +
+                                " → PLASMA REMOVED: " + removed;
+
+                Main.getInstance().getLogger().warning(msg);
+
+                ServerOverloadNotify.broadcast(
+                        "§7[§4OVERLOAD§7] §fMSPT §c" + mspt +
+                                " §7→ §cRemoved §e" + removed +
+                                " §fplasma projectiles"
+                );
+            }
+        }
+
+        // =========================
+        // INSTANT EMERGENCY
         // =========================
         if (mspt >= INSTANT_KILL_MSPT && overloadByEntities) {
 
-            String msg =
-                    "[OVERLOAD] MSPT="
-                            + mspt
-                            + " ENTITIES="
-                            + totalEntities
-                            + " will be deleted.";
+            Main.getInstance().getLogger().severe(
+                    "[OVERLOAD] MSPT=" + mspt + " ENTITIES=" + totalEntities
+            );
 
-            Main.getInstance().getLogger().severe(msg);
-
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                player.sendMessage(
-                        "§7[§4OVERLOAD§7] §fMSPT §c"
-                                + mspt
-                                + " §fEntities §c"
-                                + totalEntities
-                                + "§f will be deleted."
-                );
-            }
+            ServerOverloadNotify.broadcast(
+                    "§7[§4OVERLOAD§7] §fMSPT §c" + mspt +
+                            " §fEntities §c" + totalEntities +
+                            "§f will be deleted."
+            );
 
             overloadTicks = 0;
             removeMostCommonEntities();
             return;
         }
 
-        // =========================
-        // NORMAL LOAD
-        // =========================
         if (mspt < 60 || !overloadByEntities) {
             overloadTicks = 0;
             return;
@@ -77,29 +84,6 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
 
         overloadTicks += 20;
 
-        String warningConsole =
-                "[OVERLOAD] MSPT="
-                        + mspt
-                        + " ENTITIES="
-                        + totalEntities
-                        + " (" + (overloadTicks / 20) + "/10s)";
-
-        Main.getInstance().getLogger().warning(warningConsole);
-
-        String warningPlayers =
-                "§7[§4OVERLOAD§7] §fMSPT: "
-                        + mspt
-                        + " §7| §fEntities: "
-                        + totalEntities
-                        + " §7(" + (overloadTicks / 20) + "§8/§e10s§7)";
-
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage(warningPlayers);
-        }
-
-        // =========================
-        // WAIT FULL TIME
-        // =========================
         if (overloadTicks < MAX_OVERLOAD_TIME) {
             return;
         }
@@ -108,11 +92,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         removeMostCommonEntities();
     }
 
-    // =========================
-    // REMOVE MOST COMMON ENTITY
-    // =========================
     private void removeMostCommonEntities() {
-
         Map<String, Integer> counts = new HashMap<>();
 
         for (World world : Bukkit.getWorlds()) {
@@ -125,10 +105,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
             }
         }
 
-        if (counts.isEmpty()) {
-            Main.getInstance().getLogger().severe("[OVERLOAD] No removable entities found.");
-            return;
-        }
+        if (counts.isEmpty()) return;
 
         String topType = null;
         int max = 0;
@@ -160,13 +137,8 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
                 "[OVERLOAD] Removed " + removed + " " + topType
         );
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage(
-                    "§7[§4OVERLOAD§7] §fRemoved §e"
-                            + removed
-                            + " §fentities of type §c"
-                            + topType
-            );
-        }
+        ServerOverloadNotify.broadcast(
+                "§7[§4OVERLOAD§7] §fRemoved §e" + removed + " §f" + topType
+        );
     }
 }

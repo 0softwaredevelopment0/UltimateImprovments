@@ -1,4 +1,0 @@
-# Стрельба
-execute as @a[scores={Shoker=1..}] if items entity @s[tag=!Coldown] weapon.mainhand minecraft:warped_fungus_on_a_stick[minecraft:custom_data={isShoker:true}] if items entity @s weapon.offhand breeze_rod at @s run function shoker/shoker_shot
-execute as @a[scores={Shoker=1..}] if items entity @s[tag=Coldown] weapon.mainhand minecraft:warped_fungus_on_a_stick[minecraft:custom_data={isShoker:true}] if items entity @s weapon.offhand breeze_rod at @s run title @s actionbar [{"text":"Инструмент в перезарядке!","color":"red"}]
-execute as @a[scores={Shoker=1..}] at @s run scoreboard players set @s Shoker 0

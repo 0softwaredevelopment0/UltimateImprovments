@@ -30,3 +30,7 @@ permissions:
   mcplugin.reload:
     description: Allows plugin reload
     default: op
+
+  mcplugin.overload.logs:
+    description: Receive overload protection messages in chat
+    default: op
