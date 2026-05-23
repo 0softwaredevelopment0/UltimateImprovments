@@ -11,7 +11,8 @@ This plugin adds some featurs like:
 - Custom Recipes
 - Custom Structures
 - Block tags and worldgen
-- Custom weapons **(New)**
+- Custom weapons
+- Server protection system **(New)**
 # Commands
 **/mcplugin reload**<br>
 This command reloads the plugin. After the reload, you may see bugs, so it's better to restart the server.
