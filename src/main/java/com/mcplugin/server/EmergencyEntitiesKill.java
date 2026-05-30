@@ -44,13 +44,13 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
                 int removed = ProjectileManager.removePlasmaProjectiles();
 
                 String msg =
-                        "[OVERLOAD] MSPT=" + mspt +
+                        "[SERVER | CAUTION] MSPT=" + mspt +
                                 " → PLASMA REMOVED: " + removed;
 
                 Main.getInstance().getLogger().warning(msg);
 
                 ServerOverloadNotify.broadcast(
-                        "§7[§4OVERLOAD§7] §fMSPT §c" + mspt +
+                        "§7[§fSERVER §8| §eCAUTION§7] §fMSPT §c" + mspt +
                                 " §7→ §cRemoved §e" + removed +
                                 " §fplasma projectiles"
                 );
@@ -63,11 +63,11 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         if (mspt >= INSTANT_KILL_MSPT && overloadByEntities) {
 
             Main.getInstance().getLogger().severe(
-                    "[OVERLOAD] MSPT=" + mspt + " ENTITIES=" + totalEntities
+                    "[SERVER | CRITICAL] MSPT=" + mspt + " ENTITIES=" + totalEntities
             );
 
             ServerOverloadNotify.broadcast(
-                    "§7[§4OVERLOAD§7] §fMSPT §c" + mspt +
+                    "§7[§fSERVER §8| §cCRITICAL§7] §fMSPT §c" + mspt +
                             " §fEntities §c" + totalEntities +
                             "§f will be deleted."
             );
@@ -133,12 +133,12 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
             }
         }
 
-        Main.getInstance().getLogger().severe(
-                "[OVERLOAD] Removed " + removed + " " + topType
+        Main.getInstance().getLogger().warning(
+                "[SERVER | WARNING] Removed " + removed + " " + topType
         );
 
         ServerOverloadNotify.broadcast(
-                "§7[§4OVERLOAD§7] §fRemoved §e" + removed + " §f" + topType
+                "§7[§fSERVER §8| §eWARNING§7] §fRemoved §e" + removed + " §f" + topType
         );
     }
 }

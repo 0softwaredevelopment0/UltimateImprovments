@@ -41,7 +41,7 @@ public class PluginReloadCommand implements CommandExecutor {
         // =========================
         // PERMISSION CHECK
         // =========================
-        if (!player.hasPermission("mcplugin.reload")) {
+        if (!player.hasPermission("mcplugin.command.reload")) {
             player.sendMessage("§4❌ §cError: §7You don't have permission!");
             return true;
         }

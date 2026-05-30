@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.0
+version: 1.3
 
 main: com.mcplugin.Main
 
@@ -27,7 +27,7 @@ commands:
 
 permissions:
 
-  mcplugin.reload:
+  mcplugin.command.reload:
     description: Allows plugin reload
     default: op
 

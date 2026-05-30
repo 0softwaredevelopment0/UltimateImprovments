@@ -26,7 +26,7 @@ public class ServerBrandListener implements Listener {
         // =========================
         // PERMISSION CHECK
         // =========================
-        if (player.hasPermission("mcplugin.brand")) {
+        if (player.hasPermission("mcplugin.show.brand")) {
             return;
         }
 
@@ -37,7 +37,7 @@ public class ServerBrandListener implements Listener {
 
             ClientboundCustomPayloadPacket packet =
                     new ClientboundCustomPayloadPacket(
-                            new BrandPayload("Paper")
+                            new BrandPayload("")
                     );
 
             craftPlayer.getHandle()

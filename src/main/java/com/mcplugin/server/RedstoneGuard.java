@@ -150,7 +150,7 @@ public final class RedstoneGuard {
 
     private void notifyOverloadStarted(double mspt, int globalCount) {
         String consoleMsg =
-                "[OVERLOAD] MSPT=" + mspt
+                "[SERVER | WARNING] MSPT=" + mspt
                         + " REDSTONE=" + globalCount
                         + " (global limit " + globalIterationsLimit
                         + ", per-chunk limit " + chunkIterationsLimit + ")"
@@ -159,7 +159,7 @@ public final class RedstoneGuard {
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "§7[§4OVERLOAD§7] §fMSPT §c" + mspt
+                "§7[§fSERVER §8| §eWARNING§7] §fMSPT §c" + mspt
                         + " §7→ §cRedstone overload §7(global §e" + globalCount
                         + "§7/§e" + globalIterationsLimit
                         + "§7, per-chunk limit §e" + chunkIterationsLimit + "§7)";
@@ -169,14 +169,14 @@ public final class RedstoneGuard {
 
     private void notifyOverloadEnded(double mspt, int globalCount) {
         String consoleMsg =
-                "[OVERLOAD] MSPT=" + mspt
+                "[SERVER | INFO] MSPT=" + mspt
                         + " REDSTONE=" + globalCount
                         + " → redstone overload ended";
 
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "§7[§4OVERLOAD§7] §fMSPT §c" + mspt
+                "§7[§fSERVER §8| §aSUCCESS§7] §fMSPT §c" + mspt
                         + " §7→ §aRedstone overload ended §7(iterations §e" + globalCount + "§7)";
 
         ServerOverloadNotify.broadcast(playerMsg);
@@ -184,7 +184,7 @@ public final class RedstoneGuard {
 
     private void notifyChunkBlocked(double mspt, ChunkKey key, int iterations) {
         String consoleMsg =
-                "[OVERLOAD] MSPT=" + mspt
+                "[SERVER | WARNING] MSPT=" + mspt
                         + " → BLOCKED CHUNK " + key
                         + " for " + blockDurationSeconds + "s"
                         + " (iterations=" + iterations
@@ -193,7 +193,7 @@ public final class RedstoneGuard {
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "§7[§4OVERLOAD§7] §fMSPT §c" + mspt
+                "§7[§fSERVER §8| §eWARNING§7] §fMSPT §c" + mspt
                         + " §7→ §cBlocked chunk §e" + key
                         + " §7for §e" + blockDurationSeconds + "s"
                         + " §7(iterations §e" + iterations + "§7)";
