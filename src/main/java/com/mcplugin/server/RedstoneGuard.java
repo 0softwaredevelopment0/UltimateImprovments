@@ -169,7 +169,7 @@ public final class RedstoneGuard {
 
     private void notifyOverloadEnded(double mspt, int globalCount) {
         String consoleMsg =
-                "[SERVER | INFO] MSPT=" + mspt
+                "[SERVER | SUCCESS] MSPT=" + mspt
                         + " REDSTONE=" + globalCount
                         + " → redstone overload ended";
 
