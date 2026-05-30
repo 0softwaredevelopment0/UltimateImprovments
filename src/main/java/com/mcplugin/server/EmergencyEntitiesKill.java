@@ -50,7 +50,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
                 Main.getInstance().getLogger().warning(msg);
 
                 ServerOverloadNotify.broadcast(
-                        "§7[§fSERVER §8| §eCAUTION§7] §fMSPT §c" + mspt +
+                        "§7[§fSERVER §8| §6CAUTION§7] §fMSPT §c" + mspt +
                                 " §7→ §cRemoved §e" + removed +
                                 " §fplasma projectiles"
                 );
