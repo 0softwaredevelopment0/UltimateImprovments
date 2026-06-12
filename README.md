@@ -18,7 +18,7 @@ This plugin adds some featurs like:
 **Use /mp help to see all commands**<br>
 This command reloads the plugin. After the reload, you may see bugs, so it's better to restart the server.<br>
 # Permissions
-**Check all permissions in LuckPerms with mcplugin.* **<br>
+**Check all permissions in LuckPerms with mcplugin. ..**<br>
 # Installation
 **1.** Download the .jar file of the plugin.<br>
 **2.** Put the .jar file into the plugins folder.<br>
