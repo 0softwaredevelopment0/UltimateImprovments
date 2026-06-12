@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "show_notification": true,
+  "group": "melon_uncraft",
+  "ingredients": [
+    [
+      "minecraft:melon"
+    ]
+  ],
+  "result": {
+    "id": "minecraft:melon_slice",
+    "count": 9
+  }
+}

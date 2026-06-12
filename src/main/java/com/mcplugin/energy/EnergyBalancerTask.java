@@ -183,7 +183,7 @@ public class EnergyBalancerTask extends BukkitRunnable {
             }
 
             // =========================
-            // TOTAL ENERGY
+            // TOTAL ENERGY & BALANCE
             // =========================
             int totalEnergy = 0;
 
@@ -202,15 +202,18 @@ public class EnergyBalancerTask extends BukkitRunnable {
                     totalEnergy / network.size();
 
             // =========================
-            // BALANCE
+            // COLLECT EXCESS ENERGY FROM RICH NODES
             // =========================
+            int collectedExcess = 0;
+            List<CableNode> poorNodes = new ArrayList<>();
+
             for (CableNode node : network) {
 
                 int current =
                         node.getEnergy();
 
                 // =========================
-                // TOO HIGH
+                // TOO HIGH — remove excess and collect it
                 // =========================
                 if (current > average) {
 
@@ -223,6 +226,7 @@ public class EnergyBalancerTask extends BukkitRunnable {
                     if (remove > 0) {
 
                         node.removeEnergy(remove);
+                        collectedExcess += remove;
 
                         CableNetwork.saveNode(node);
 
@@ -231,7 +235,7 @@ public class EnergyBalancerTask extends BukkitRunnable {
                             Main.getInstance()
                                     .getLogger()
                                     .info(
-                                            "[Balancer] Removed "
+                                            "[Balancer] Collected "
                                                     + remove
                                                     + " energy from "
                                                     + node.getLocation()
@@ -241,19 +245,35 @@ public class EnergyBalancerTask extends BukkitRunnable {
                 }
 
                 // =========================
-                // TOO LOW
+                // TOO LOW — mark for distribution
                 // =========================
                 else if (current < average) {
+                    poorNodes.add(node);
+                }
+            }
 
-                    int add =
-                            Math.min(
-                                    average - current,
-                                    maxTransfer
-                            );
+            // =========================
+            // DISTRIBUTE COLLECTED ENERGY TO POOR NODES
+            // =========================
+            if (collectedExcess > 0) {
+                for (CableNode node : poorNodes) {
+
+                    if (collectedExcess <= 0) break;
+
+                    int current = node.getEnergy();
+                    int deficit = average - current;
+
+                    if (deficit <= 0) continue;
+
+                    int add = Math.min(
+                            Math.min(deficit, maxTransfer),
+                            collectedExcess
+                    );
 
                     if (add > 0) {
 
                         node.addEnergy(add);
+                        collectedExcess -= add;
 
                         CableNetwork.saveNode(node);
 
@@ -262,7 +282,7 @@ public class EnergyBalancerTask extends BukkitRunnable {
                             Main.getInstance()
                                     .getLogger()
                                     .info(
-                                            "[Balancer] Added "
+                                            "[Balancer] Distributed "
                                                     + add
                                                     + " energy to "
                                                     + node.getLocation()
@@ -270,6 +290,15 @@ public class EnergyBalancerTask extends BukkitRunnable {
                         }
                     }
                 }
+            }
+
+            // =========================
+            // LOG REMAINDER
+            // =========================
+            if (collectedExcess > 0 && log) {
+                Main.getInstance().getLogger().info(
+                        "[Balancer] " + collectedExcess + " energy left undistributed (all nodes at cap)"
+                );
             }
         }
     }

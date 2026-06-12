@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "melon_cradt",
+  "pattern": [
+    "SSS",
+    "SSS",
+    "SSS"
+  ],
+  "key": {
+    "S": [
+      "minecraft:melon_slice"
+    ]
+  },
+  "result": {
+    "id": "minecraft:melon",
+    "count": 1
+  }
+}

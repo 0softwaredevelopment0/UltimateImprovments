@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "heavy_crore",
+  "pattern": [
+    "CIC",
+    "IBI",
+    "CIC"
+  ],
+  "key": {
+    "I": [
+      "minecraft:netherite_ingot"
+    ],
+    "C": [
+      "minecraft:netherite_scrap"
+    ],
+    "B": [
+      "minecraft:netherite_block"
+    ]
+  },
+  "result": {
+    "id": "minecraft:heavy_core",
+    "count": 1
+  }
+}

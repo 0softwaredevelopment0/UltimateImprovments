@@ -89,6 +89,7 @@ public class ShokerCraftListener implements Listener {
         recipe.setIngredient('9', Material.NETHERITE_SCRAP);
 
         plugin.getServer().addRecipe(recipe);
+        RecipeRegistry.registerRecipe(RECIPE_KEY);
 
         plugin.getLogger().info("[SHOCKER] Recipe registered with Keys system");
     }

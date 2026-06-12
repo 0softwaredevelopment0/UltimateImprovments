@@ -1,0 +1,43 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "heavy_crore",
+  "pattern": [
+    "123",
+    "456",
+    "789"
+  ],
+  "key": {
+    "1": [
+      "minecraft:polished_tuff"
+    ],
+    "2": [
+      "minecraft:chiseled_copper"
+    ],
+    "3": [
+      "minecraft:polished_tuff"
+    ],
+    "4": [
+      "minecraft:chiseled_copper"
+    ],
+    "5": [
+      "minecraft:diamond"
+    ],
+    "6": [
+      "minecraft:chiseled_copper"
+    ],
+    "7": [
+      "minecraft:polished_tuff"
+    ],
+    "8": [
+      "minecraft:chiseled_copper"
+    ],
+    "9": [
+      "minecraft:polished_tuff"
+    ]
+  },
+  "result": {
+    "id": "minecraft:trial_key",
+    "count": 1
+  }
+}

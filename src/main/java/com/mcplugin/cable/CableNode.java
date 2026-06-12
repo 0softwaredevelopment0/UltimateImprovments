@@ -15,6 +15,7 @@ public class CableNode {
 
     private int energy;
     private NodeType type = NodeType.CABLE;
+    private int maxEnergy = 5000; // default cap for cables; batteries override via config
 
     public CableNode(Location location) {
         this.location = LocationUtil.normalize(location);
@@ -32,12 +33,25 @@ public class CableNode {
     }
 
     public void setEnergy(int energy) {
-        this.energy = Math.max(0, energy);
+        this.energy = Math.max(0, Math.min(energy, maxEnergy));
     }
 
     public void addEnergy(int amount) {
         if (amount <= 0) return;
-        this.energy = Math.max(0, this.energy + amount);
+        this.energy = Math.max(0, Math.min(this.energy + amount, maxEnergy));
+    }
+
+    public void setMaxEnergy(int maxEnergy) {
+        if (maxEnergy > 0) {
+            this.maxEnergy = maxEnergy;
+            if (this.energy > maxEnergy) {
+                this.energy = maxEnergy;
+            }
+        }
+    }
+
+    public int getMaxEnergy() {
+        return maxEnergy;
     }
 
     public void removeEnergy(int amount) {
@@ -117,7 +131,7 @@ public class CableNode {
     public String toString() {
         return "CableNode{" +
                 "location=" + location +
-                ", energy=" + energy +
+                ", energy=" + energy + "/" + maxEnergy +
                 ", type=" + type +
                 ", connections=" + connections.size() +
                 '}';

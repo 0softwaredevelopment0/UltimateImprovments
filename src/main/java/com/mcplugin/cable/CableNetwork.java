@@ -104,8 +104,8 @@ public class CableNetwork {
 
             PreparedStatement ps = con.prepareStatement("""
                 INSERT OR REPLACE INTO cables
-                (world, x, y, z, energy)
-                VALUES (?, ?, ?, ?, ?)
+                (world, x, y, z, energy, type)
+                VALUES (?, ?, ?, ?, ?, ?)
             """);
 
             ps.setString(1, loc.getWorld().getName());
@@ -113,6 +113,7 @@ public class CableNetwork {
             ps.setInt(3, loc.getBlockY());
             ps.setInt(4, loc.getBlockZ());
             ps.setInt(5, node.getEnergy());
+            ps.setString(6, node.getType().name());
 
             ps.executeUpdate();
             ps.close();
@@ -218,6 +219,13 @@ public class CableNetwork {
 
                 CableNode node = new CableNode(loc);
                 node.setEnergy(rs.getInt("energy"));
+
+                String typeStr = rs.getString("type");
+                if (typeStr != null) {
+                    try {
+                        node.setType(NodeType.valueOf(typeStr));
+                    } catch (IllegalArgumentException ignored) {}
+                }
 
                 nodes.put(loc, node);
             }

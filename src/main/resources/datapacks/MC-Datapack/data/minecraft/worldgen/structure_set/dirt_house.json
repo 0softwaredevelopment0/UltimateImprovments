@@ -1,0 +1,17 @@
+{
+  "structures": [
+    {
+      "structure": "minecraft:dirt_house",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 100,
+    "separation": 0,
+    "spread_type": "triangular",
+    "salt": 930653,
+    "frequency_reduction_method": "default",
+    "frequency": 1
+  }
+}

@@ -88,6 +88,7 @@ public class PlasmaCannonCraftListener implements Listener {
         recipe.setIngredient('H', Material.ECHO_SHARD);
 
         plugin.getServer().addRecipe(recipe);
+        RecipeRegistry.registerRecipe(RECIPE_KEY);
 
         plugin.getLogger().info("[PHOTONCANNON] Recipe registered (Keys system)");
     }

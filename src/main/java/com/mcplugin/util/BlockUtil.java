@@ -1,44 +1,36 @@
 package com.mcplugin.util;
 
-import org.bukkit.Material;
+import com.mcplugin.cable.CableBlock;
 import org.bukkit.block.Block;
 
 public class BlockUtil {
 
     // =========================
     // ⚡ IS ENERGY CABLE
+    // Делегирует проверку в CableBlock
     // =========================
     public static boolean isCable(Block block) {
-
-        Material type = block.getType();
-
-        return type == Material.WAXED_LIGHTNING_ROD
-                || type == Material.WAXED_CHISELED_COPPER;
+        return CableBlock.isCable(block);
     }
 
     // =========================
     // 🔌 CAN CONNECT IN NETWORK
     // =========================
     public static boolean isConnectable(Block block) {
-
-        Material type = block.getType();
-
-        // в будущем сюда можно добавить коннекторы, батареи и т.д.
-        return type == Material.WAXED_LIGHTNING_ROD
-                || type == Material.WAXED_CHISELED_COPPER;
+        return CableBlock.isCable(block);
     }
 
     // =========================
     // ⚡ IS STRAIGHT CABLE (ROD ONLY)
     // =========================
     public static boolean isStraightCable(Block block) {
-        return block.getType() == Material.WAXED_LIGHTNING_ROD;
+        return CableBlock.isStraightCable(block);
     }
 
     // =========================
     // 🔁 IS JUNCTION / TURN
     // =========================
     public static boolean isJunction(Block block) {
-        return block.getType() == Material.WAXED_CHISELED_COPPER;
+        return CableBlock.isCorner(block);
     }
 }

@@ -95,6 +95,108 @@ public class DatabaseInit {
                 ON generators(world);
             """);
 
+            // =========================
+            // ☢ PLAYER RADIATION
+            // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS player_radiation (
+                    uuid TEXT PRIMARY KEY,
+                    radiation INTEGER DEFAULT 0
+                );
+            """);
+
+            // =========================
+            // ⚛ REACTORS
+            // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS reactors (
+                    reactor_id TEXT PRIMARY KEY,
+                    world TEXT NOT NULL,
+                    x INTEGER NOT NULL,
+                    y INTEGER NOT NULL,
+                    z INTEGER NOT NULL,
+                    core_temp INTEGER DEFAULT 0,
+                    core_press INTEGER DEFAULT 0,
+                    core_sh_int INTEGER DEFAULT 100,
+                    core_case_temp INTEGER DEFAULT 0,
+                    core_case_press INTEGER DEFAULT 0,
+                    core_case_int INTEGER DEFAULT 100,
+                    recipe_time INTEGER DEFAULT 0,
+                    self_destruct INTEGER DEFAULT 0,
+                    reactor_wear INTEGER DEFAULT 0
+                );
+            """);
+
+            st.execute("""
+                CREATE INDEX IF NOT EXISTS idx_reactors_world
+                ON reactors(world);
+            """);
+
+            // =========================
+            // 🧲 MAGNETS
+            // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS magnets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    world TEXT NOT NULL,
+                    center_x INTEGER NOT NULL,
+                    center_y INTEGER NOT NULL,
+                    center_z INTEGER NOT NULL,
+                    block_count INTEGER DEFAULT 1,
+                    active INTEGER DEFAULT 1
+                );
+            """);
+
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS magnet_blocks (
+                    magnet_id INTEGER NOT NULL,
+                    x INTEGER NOT NULL,
+                    y INTEGER NOT NULL,
+                    z INTEGER NOT NULL,
+                    PRIMARY KEY(magnet_id, x, y, z),
+                    FOREIGN KEY(magnet_id) REFERENCES magnets(id) ON DELETE CASCADE
+                );
+            """);
+
+            st.execute("""
+                CREATE INDEX IF NOT EXISTS idx_magnet_blocks_id
+                ON magnet_blocks(magnet_id);
+            """);
+
+            // =========================
+            // ⚛ REACTOR WEAR COLUMN MIGRATION (для старых БД)
+            // =========================
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN reactor_wear INTEGER DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — это нормально
+            }
+
+            // =========================
+            // ⚛ ENERGY GENERATED COLUMN MIGRATION (для старых БД)
+            // =========================
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN energy_generated INTEGER DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — это нормально
+            }
+
+            // =========================
+            // 🌍 DIMENSION RETURNS
+            // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS dimension_returns (
+                    uuid TEXT PRIMARY KEY,
+                    world TEXT NOT NULL,
+                    x DOUBLE NOT NULL,
+                    y DOUBLE NOT NULL,
+                    z DOUBLE NOT NULL,
+                    yaw FLOAT DEFAULT 0,
+                    pitch FLOAT DEFAULT 0,
+                    has_return INTEGER DEFAULT 0
+                );
+            """);
+
         } catch (Exception e) {
             e.printStackTrace();
         }

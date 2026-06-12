@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.3
+version: 1.4
 
 main: com.mcplugin.Main
 
@@ -12,18 +12,18 @@ load: POSTWORLD
 
 commands:
 
-  cp:
-    description: Open code panel
-    usage: /cp
-
   cp_click:
     description: Internal code panel click command
     usage: /cp_click
 
-  mcplugin:
+  mp:
     description: Control the MC-Plugin
-    usage: /mcplugin
+    usage: /mp
     permission: mcplugin.reload
+
+  reactor:
+    description: Assemble reactor structures
+    usage: /reactor assemble <type>
 
 permissions:
 
@@ -31,6 +31,22 @@ permissions:
     description: Allows plugin reload
     default: op
 
+  mcplugin.command.chgdim:
+    description: Allows teleportation between dimensions (/mp chgdim)
+    default: op
+
   mcplugin.overload.logs:
     description: Receive overload protection messages in chat
+    default: op
+
+  mcplugin.gmprotect.bypass:
+    description: Позволяет сменить режим игры в защищённых мирах
+    default: op
+
+  mcplugin.creative.bypass:
+    description: Allows bypassing the creative item validator (oversized items)
+    default: op
+
+  mcplugin.chat.filter.bypass:
+    description: Allows bypassing the chat filter (profanity filter)
     default: op

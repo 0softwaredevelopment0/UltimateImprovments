@@ -2,7 +2,6 @@ package com.mcplugin.server;
 
 import com.mcplugin.Main;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class ServerOverloadWarning extends BukkitRunnable {
@@ -23,21 +22,14 @@ public class ServerOverloadWarning extends BukkitRunnable {
 
                 warnedCritical = true;
 
-                String msg =
-                        ChatColor.DARK_RED +
-                                "☠ CRITICAL SERVER LOAD! " +
-                                ChatColor.GRAY +
-                                "(MSPT: " +
-                                ChatColor.WHITE +
-                                String.format("%.2f", mspt) +
-                                ChatColor.GRAY +
-                                ")";
-
                 Main.getInstance()
                         .getLogger()
-                        .severe("[PERFORMANCE] CRITICAL MSPT: " + mspt);
+                        .severe("[SERVER | CRITICAL] MSPT=" + mspt);
 
-                ServerOverloadNotify.broadcast(msg);
+                ServerOverloadNotify.broadcast(
+                        "§7[§fSERVER §8| §cCRITICAL§7] §fMSPT §c" + String.format("%.2f", mspt) +
+                                " §7→ §cCritical server load!"
+                );
             }
 
             return;
@@ -51,21 +43,14 @@ public class ServerOverloadWarning extends BukkitRunnable {
 
                 warnedHigh = true;
 
-                String msg =
-                        ChatColor.RED +
-                                "⚠ HIGH SERVER LOAD! " +
-                                ChatColor.GRAY +
-                                "(MSPT: " +
-                                ChatColor.WHITE +
-                                String.format("%.2f", mspt) +
-                                ChatColor.GRAY +
-                                ")";
-
                 Main.getInstance()
                         .getLogger()
-                        .warning("[PERFORMANCE] HIGH MSPT: " + mspt);
+                        .warning("[SERVER | WARNING] MSPT=" + mspt);
 
-                ServerOverloadNotify.broadcast(msg);
+                ServerOverloadNotify.broadcast(
+                        "§7[§fSERVER §8| §eWARNING§7] §fMSPT §c" + String.format("%.2f", mspt) +
+                                " §7→ §eHigh server load!"
+                );
             }
 
             return;

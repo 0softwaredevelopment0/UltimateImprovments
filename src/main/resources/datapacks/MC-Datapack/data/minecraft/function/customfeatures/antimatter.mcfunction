@@ -1,1 +1,0 @@
-execute as @e[type=splash_potion] at @s if data entity @s[type=splash_potion] Item.components.minecraft:custom_data.isAntimatter run function minecraft:customfeatures/antimatterboom

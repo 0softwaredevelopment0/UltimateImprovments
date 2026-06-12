@@ -12,8 +12,14 @@ public class CodePanelCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-
         if (!(sender instanceof Player player)) return true;
+        return handleCommand(player);
+    }
+
+    /**
+     * Static entry point for /mp cp subcommand.
+     */
+    public static boolean handleCommand(Player player) {
 
         // 💥 RELOAD SAFETY
         if (!isSafe()) {
@@ -35,7 +41,7 @@ public class CodePanelCommand implements CommandExecutor {
     // =========================
     // SAFE CHECK
     // =========================
-    private static boolean isSafe() {
+    public static boolean isSafe() {
 
         Main plugin = Main.getInstance();
         if (plugin == null) return false;

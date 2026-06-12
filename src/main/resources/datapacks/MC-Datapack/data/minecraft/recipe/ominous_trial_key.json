@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "heavy_crore",
+  "pattern": [
+    "KKK",
+    "KKK",
+    "KKK"
+  ],
+  "key": {
+    "K": [
+      "minecraft:trial_key"
+    ]
+  },
+  "result": {
+    "id": "minecraft:ominous_trial_key",
+    "count": 1
+  }
+}

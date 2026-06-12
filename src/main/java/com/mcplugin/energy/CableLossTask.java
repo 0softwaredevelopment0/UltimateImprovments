@@ -6,7 +6,9 @@ import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.cable.CableNode;
 import com.mcplugin.cable.NodeType;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -45,6 +47,39 @@ public class CableLossTask extends BukkitRunnable {
                         false
                 );
 
+        int maxCableEnergy =
+                config.getInt(
+                        "energy.cable.max_energy",
+                        5000
+                );
+
+        // =========================
+        // OVERLOAD SETTINGS
+        // =========================
+        boolean overloadEnabled =
+                config.getBoolean(
+                        "energy.cable.overload.enabled",
+                        true
+                );
+
+        boolean overloadBreakBlocks =
+                config.getBoolean(
+                        "energy.cable.overload.break_blocks",
+                        false
+                );
+
+        boolean overloadFire =
+                config.getBoolean(
+                        "energy.cable.overload.set_fire",
+                        false
+                );
+
+        float overloadPower =
+                (float) config.getDouble(
+                        "energy.cable.overload.explosion_power",
+                        2.0
+                );
+
         // =========================
         // SAFE COPY
         // =========================
@@ -54,7 +89,7 @@ public class CableLossTask extends BukkitRunnable {
                 );
 
         // =========================
-        // ENERGY LOSS
+        // ENERGY LOSS + OVERLOAD CHECK
         // =========================
         for (CableNode node : nodes) {
 
@@ -63,19 +98,55 @@ public class CableLossTask extends BukkitRunnable {
             }
 
             // =========================
-            // SKIP BATTERIES
+            // SKIP BATTERIES & GENERATORS
             // =========================
-            if (node.getType() == NodeType.BATTERY) {
+            if (node.getType() == NodeType.BATTERY || node.getType() == NodeType.GENERATOR) {
                 continue;
             }
 
+            // =========================
+            // APPLY MAX ENERGY CAP FROM CONFIG
+            // =========================
+            node.setMaxEnergy(maxCableEnergy);
+
+            Location nodeLoc = node.getLocation();
             Material type =
-                    node.getLocation()
-                            .getBlock()
+                    nodeLoc.getBlock()
                             .getType();
 
             int energy =
                     node.getEnergy();
+
+            // =========================
+            // OVERLOAD CHECK: energy >= maxEnergy → BOOM!
+            // =========================
+            int maxEnergy = node.getMaxEnergy();
+            if (overloadEnabled && maxEnergy > 0 && energy >= maxEnergy) {
+
+                World world = nodeLoc.getWorld();
+                if (world != null) {
+                    world.createExplosion(
+                            nodeLoc.getX() + 0.5,
+                            nodeLoc.getY() + 0.5,
+                            nodeLoc.getZ() + 0.5,
+                            overloadPower,
+                            overloadFire,
+                            overloadBreakBlocks
+                    );
+                }
+
+                Main.getInstance().getLogger().warning(
+                        "[CableOverload] Cable exploded at " + nodeLoc
+                );
+
+                // Remove the node entirely — it's gone
+                CableNetwork.removeNode(nodeLoc);
+
+                // Break the block as well
+                nodeLoc.getBlock().setType(Material.AIR);
+
+                continue;
+            }
 
             if (energy <= 0) {
                 continue;
@@ -84,30 +155,28 @@ public class CableLossTask extends BukkitRunnable {
             int finalLoss;
 
             // =========================
-            // LIGHTNING ROD
+            // CONFIG-BASED LOSS PER CABLE TYPE
             // =========================
             if (type == Material.WAXED_LIGHTNING_ROD) {
-
-                finalLoss = loss;
-            }
-
-            // =========================
-            // CHISELED COPPER
-            // =========================
-            else if (type == Material.WAXED_CHISELED_COPPER) {
-
-                finalLoss =
-                        Math.max(
-                                1,
-                                loss / 2
-                        );
-            }
-
-            // =========================
-            // UNKNOWN BLOCK
-            // =========================
-            else {
-
+                // Straight cable — standard loss
+                finalLoss = config.getInt(
+                        "energy.cable.loss.lightning_rod",
+                        loss
+                );
+            } else if (type == Material.WAXED_CHISELED_COPPER) {
+                // Corner cable — reduced loss
+                finalLoss = config.getInt(
+                        "energy.cable.loss.chiseled_copper",
+                        Math.max(1, loss / 2)
+                );
+            } else if (type == Material.WAXED_COPPER_GRATE) {
+                // Battery block — uses battery config, skip loss here
+                finalLoss = config.getInt(
+                        "energy.cable.loss.copper_grate",
+                        loss
+                );
+            } else {
+                // Unknown block type
                 finalLoss = loss;
             }
 

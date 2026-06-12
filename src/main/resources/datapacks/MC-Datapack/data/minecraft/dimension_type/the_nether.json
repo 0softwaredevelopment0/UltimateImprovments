@@ -14,11 +14,11 @@
     "minecraft:gameplay/snow_golem_melts": true,
     "minecraft:gameplay/water_evaporates": true,
     "minecraft:visual/default_dripstone_particle": {
-      "type": "minecraft:dripping_dripstone_lava"
+      "type": "minecraft:ash"
     },
     "minecraft:visual/fog_end_distance": 80,
     "minecraft:visual/fog_start_distance": 1,
-    "minecraft:visual/sky_light_color": "#7a7aff",
+    "minecraft:visual/sky_light_color": "#000000",
     "minecraft:visual/sky_light_factor": 0.0
   },
   "cardinal_light": "nether",
@@ -33,5 +33,5 @@
   "monster_spawn_block_light_limit": 15,
   "monster_spawn_light_level": 7,
   "skybox": "none",
-  "timelines": "#minecraft:in_nether"
+  "timelines": "#minecraft:in_overworld"
 }

@@ -1,2 +1,0 @@
-execute as @e[type=item_frame] at @s if block ~ ~-1 ~ lodestone run tp @e[type=item,distance=..5] ~ ~-2 ~
-execute as @e[type=item_frame] at @s if block ~ ~-1 ~ lodestone run particle end_rod ~ ~ ~ 0.5 0.5 0.5 0 1 normal

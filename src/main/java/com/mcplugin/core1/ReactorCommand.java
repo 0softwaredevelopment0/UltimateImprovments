@@ -1,0 +1,255 @@
+package com.mcplugin.core1;
+
+import com.mcplugin.Main;
+import com.mcplugin.features.magnet.MagnetManager;
+
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Barrel;
+import org.bukkit.block.Block;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.ItemFrame;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+public class ReactorCommand implements CommandExecutor {
+
+    @Override
+    public boolean onCommand(
+            CommandSender sender,
+            Command cmd,
+            String label,
+            String[] args
+    ) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cOnly players can use this command.");
+            return true;
+        }
+
+        if (args.length < 2 || !args[0].equalsIgnoreCase("assemble")) {
+            player.sendMessage("§cUsage: /reactor assemble <type>");
+            return true;
+        }
+
+        String type = args[1].toLowerCase();
+
+        switch (type) {
+            case "dark_synthesis" -> assembleDarkSynthesis(player);
+            case "magnet" -> assembleMagnet(player);
+            default -> player.sendMessage("§cНеизвестный тип механизма: " + type);
+        }
+
+        return true;
+    }
+
+    // =========================
+    // DARK SYNTHESIS REACTOR (без незеритового скрапа)
+    // =========================
+    private void assembleDarkSynthesis(Player player) {
+
+        ReactorManager reactor = ReactorManager.getInstance();
+        if (reactor == null) return;
+
+        // =========================
+        // CHECK PENDING ASSEMBLY
+        // =========================
+        ReactorManager.PendingAssembly pending = ReactorManager.getPendingAssembly(player, "dark_synthesis");
+
+        if (pending == null) {
+            player.sendMessage("§cСначала нажмите SHIFT+ПКМ по рамке реактора!");
+            return;
+        }
+
+        // =========================
+        // VALIDATE STRUCTURE — с детальными ошибками
+        // =========================
+        java.util.List<String> errors = ReactorStructure.getValidationErrors(pending.center());
+        if (!errors.isEmpty()) {
+            player.sendMessage("");
+            player.sendMessage("§4❌ §cСтруктура реактора повреждена! §7Найдены ошибки:");
+            for (String err : errors) {
+                player.sendMessage("§8 • §f" + err);
+            }
+            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            ReactorManager.clearPendingAssembly(player);
+            return;
+        }
+
+        // =========================
+        // CHECK IF ALREADY ACTIVE
+        // =========================
+        Location existing = reactor.getReactorLocation();
+        if (existing != null) {
+            if (existing.equals(pending.center())) {
+                player.sendMessage("§eРеактор уже активен на этом месте!");
+                ReactorManager.clearPendingAssembly(player);
+                return;
+            }
+            player.sendMessage("§cДругой реактор уже активен! Сломайте его сначала.");
+            ReactorManager.clearPendingAssembly(player);
+            return;
+        }
+
+        // =========================
+        // REMOVE ITEM FRAME & DROP IT
+        // =========================
+        ItemFrame frame = pending.frame();
+        if (frame != null && frame.isValid() && !frame.isDead()) {
+            Location frameLoc = frame.getLocation();
+            frame.getWorld().dropItemNaturally(
+                    frameLoc,
+                    new ItemStack(Material.ITEM_FRAME)
+            );
+            frame.remove();
+        }
+
+        // =========================
+        // ACTIVATE REACTOR
+        // =========================
+        reactor.setReactorLocation(pending.center());
+
+        // =========================
+        // NAME THE FUEL BARRELS
+        // =========================
+        nameBarrel(pending.center(), 0, -4, -2, "§6Топливо: §bАлмазные блоки");
+        nameBarrel(pending.center(), 0, -4, 2, "§6Топливо: §eЗолотые блоки");
+
+        player.sendMessage("§a✅ §fРеактор тёмного синтеза собран! §8(ID: " + reactor.getReactorId() + ")");
+        player.sendMessage("§8┃ §7Температура ядра: §f" + reactor.getCoreTemp() + " C*");
+        player.sendMessage("§8┃ §7Давление: §f" + reactor.getCorePress() + " kPa");
+        player.sendMessage("§8┃ §7Целостность оболочки: §f" + reactor.getCoreShInt() + "%");
+        player.sendMessage("§8┃ §7Топливо: §bалмазные блоки §7→ левая бочка, §eзолотые блоки §7→ правая бочка");
+
+        ReactorManager.clearPendingAssembly(player);
+
+        Main.getInstance().getLogger().info(
+                "[Reactor] Assembled by " + player.getName()
+                        + " at " + pending.center()
+        );
+    }
+
+    // =========================
+    // MAGNET
+    // =========================
+    private void assembleMagnet(Player player) {
+
+        // =========================
+        // CHECK PENDING ASSEMBLY
+        // =========================
+        ReactorManager.PendingAssembly pending = ReactorManager.getPendingAssembly(player, "magnet");
+
+        if (pending == null) {
+            player.sendMessage("§cСначала нажмите SHIFT+ПКМ по рамке на магните!");
+            return;
+        }
+
+        Location loc = pending.center();
+
+        // =========================
+        // VALIDATE — блок должен быть LODESTONE
+        // =========================
+        if (loc.getBlock().getType() != Material.LODESTONE) {
+            player.sendMessage("§cМагнитный камень (LODESTONE) не найден!");
+            ReactorManager.clearPendingAssembly(player);
+            return;
+        }
+
+        // =========================
+        // CHECK IF ALREADY ACTIVE
+        // =========================
+        if (MagnetManager.isActive(loc)) {
+            player.sendMessage("§eМагнит уже активен на этом месте!");
+            ReactorManager.clearPendingAssembly(player);
+            return;
+        }
+
+        // =========================
+        // REMOVE ITEM FRAME & DROP IT
+        // =========================
+        ItemFrame frame = pending.frame();
+        if (frame != null && frame.isValid() && !frame.isDead()) {
+            Location frameLoc = frame.getLocation();
+            frame.getWorld().dropItemNaturally(
+                    frameLoc,
+                    new ItemStack(Material.ITEM_FRAME)
+            );
+            frame.remove();
+        }
+
+        // =========================
+        // ACTIVATE MAGNET — сканирование структуры
+        // =========================
+        MagnetManager.activate(loc);
+
+        int power = MagnetManager.getMagnetPower(loc);
+        Location center = MagnetManager.getMagnetCenter(loc);
+
+        String powerDesc;
+        if (power >= 500) {
+            powerDesc = "§5✧✧ АБСОЛЮТНАЯ ✧✧ §8(" + power + ")";
+        } else if (power >= 300) {
+            powerDesc = "§5☯ КОСМИЧЕСКАЯ ☯ §8(" + power + ")";
+        } else if (power >= 200) {
+            powerDesc = "§d✦ ТИТАНИЧЕСКАЯ ✦ §8(" + power + ")";
+        } else if (power >= 150) {
+            powerDesc = "§d◈ ЛЕГЕНДАРНАЯ ◈ §8(" + power + ")";
+        } else if (power >= 100) {
+            powerDesc = "§c☆ НЕВЕРОЯТНАЯ ☆ §8(" + power + ")";
+        } else if (power >= 75) {
+            powerDesc = "§c♦ ЧРЕЗВЫЧАЙНАЯ ♦ §8(" + power + ")";
+        } else if (power >= 50) {
+            powerDesc = "§6★ ИСКЛЮЧИТЕЛЬНАЯ ★ §8(" + power + ")";
+        } else if (power >= 30) {
+            powerDesc = "§6⬆ ОЧЕНЬ СИЛЬНАЯ ⬆ §8(" + power + ")";
+        } else if (power >= 20) {
+            powerDesc = "§e⬆ СИЛЬНАЯ ⬆ §8(" + power + ")";
+        } else if (power >= 12) {
+            powerDesc = "§e⬆ ВЫШЕ СРЕДНЕГО ⬆ §8(" + power + ")";
+        } else if (power >= 7) {
+            powerDesc = "§a➤ СРЕДНЯЯ ➤ §8(" + power + ")";
+        } else if (power >= 4) {
+            powerDesc = "§7➤ НИЖЕ СРЕДНЕГО ➤ §8(" + power + ")";
+        } else if (power >= 2) {
+            powerDesc = "§7▸ СЛАБАЯ ▸ §8(" + power + ")";
+        } else {
+            powerDesc = "§7▸ ОЧЕНЬ СЛАБАЯ ▸ §8(" + power + ")";
+        }
+
+        int magnetRadius = MagnetManager.getMagnetRadius(loc);
+        int minR = MagnetManager.getMinRadius();
+
+        player.sendMessage("§a✅ §fМагнит собран!");
+        player.sendMessage("§8┃ §7Блоков в структуре: §f" + power + " §7шт");
+        player.sendMessage("§8┃ §7Сила притяжения: " + powerDesc);
+        if (center != null) {
+            player.sendMessage("§8┃ §7Центр притяжения: §f" +
+                    center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ());
+        }
+        player.sendMessage("§8┃ §7Радиус действия: §f" + magnetRadius + " §7блоков (мин. " + minR + ")");
+        player.sendMessage("§8┃ §7Радиус растёт с числом блоков — §fбез ограничения");
+        player.sendMessage("§8┃ §7Усильте магнит: §fставьте LODESTONE §7вплотную — ");
+        player.sendMessage("§8┃ §7структура, центр, радиус и сила пересчитаются автоматически");
+        player.sendMessage("§8┃ §7Притягивает: §fметаллические предметы, игроков и мобов");
+
+        ReactorManager.clearPendingAssembly(player);
+
+        Main.getInstance().getLogger().info(
+                "[Magnet] Assembled by " + player.getName()
+                        + " at " + loc
+        );
+    }
+
+    // =========================
+    // NAME BARREL HELPER
+    // =========================
+    private void nameBarrel(Location base, int dx, int dy, int dz, String displayName) {
+        Block block = base.clone().add(dx, dy, dz).getBlock();
+        if (block.getType() == Material.BARREL) {
+            Barrel barrel = (Barrel) block.getState();
+            barrel.setCustomName(displayName);
+            barrel.update();
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "spawner",
+  "pattern": [
+    "III",
+    "IGI",
+    "III"
+  ],
+  "key": {
+    "I": [
+      "minecraft:netherite_ingot"
+    ],
+    "G": [
+      "minecraft:iron_bars"
+    ]
+  },
+  "result": {
+    "id": "minecraft:spawner",
+    "count": 1
+  }
+}

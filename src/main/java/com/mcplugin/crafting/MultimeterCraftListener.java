@@ -79,6 +79,7 @@ public class MultimeterCraftListener implements Listener {
         recipe.setIngredient('C', Material.CLOCK);
 
         plugin.getServer().addRecipe(recipe);
+        RecipeRegistry.registerRecipe(RECIPE_KEY);
 
         plugin.getLogger().info("[MULTIMETER] Recipe registered with ITEM MODEL");
     }

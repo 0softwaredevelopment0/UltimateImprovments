@@ -1,65 +1,192 @@
 # =========================
-# ⚡ ENERGY SYSTEM
+# ⚡ Система энергии
 # =========================
 energy:
-
+  # Генератор
   generator:
+    # Включен или нет
     enabled: true
+    # Энергии за 1 тик горения (добавляется плавно каждый тик)
     energy_per_fuel: 100
-    fuel_material: COAL
+    # Длительность горения 1 топлива в тиках (1600 = 80 сек, как уголь)
+    # Используется как запасной вариант, если API не может определить время горения
+    fuel_burn_ticks: 1600
+    # Логировать или нет
     log: false
 
+  # ⚡ Система кабелей
   cable:
-    loss_per_tick: 1
-
-  battery:
-    drain_per_transfer: 5
-
-  balancer:
+    # Включен ли расчёт потерь
     enabled: true
+    # Потери энергии в тик (базовые, для WAXED_LIGHTNING_ROD)
+    loss_per_tick: 1
+    # Максимальная энергия кабеля (при достижении — перегрузка и взрыв)
+    max_energy: 5000
+    # Логировать или нет
+    log: false
+
+    # 🧮 Настройки потерь для каждого типа кабеля
+    # lightning_rod — прямые кабели (стандартные потери)
+    # chiseled_copper — угловые кабели (меньше потерь)
+    # copper_grate — резервный тип (если не подходит под другие)
+    loss:
+      lightning_rod: 1     # потери = loss_per_tick
+      chiseled_copper: 0   # потери = max(1, loss_per_tick / 2) → 0 = отключено
+      copper_grate: 1      # потери = loss_per_tick (запасной вариант)
+
+    # 💥 Перегрузка кабеля — взрыв при достижении max_energy (5000)
+    overload:
+      # Включена ли перегрузка
+      enabled: true
+      # Разрушать ли блоки при взрыве
+      break_blocks: true
+      # Зажигать ли огонь
+      set_fire: true
+      # Сила взрыва (1.0 = TNT, 2.0 = заряд, 4.0 = крипер)
+      explosion_power: 4.0
+
+    # 💫 Визуальные эффекты кабеля
+    visual:
+      # Порог энергии для частиц дыма (кабель начинает дымиться)
+      smoke_threshold: 4000
+      # Порог энергии для частиц лавы (кабель начинает гореть)
+      lava_threshold: 4700
+
+    # 🔊 Нарастающий звук перегрузки
+    # По мере роста энергии кабель издаёт звуки:
+    #   smoke (4000+):  тихий треск, низкий тон
+    #   lava (4700+):   громче, тон выше
+    #   overload (5000): максимальная громкость, паника
+    sound:
+      # Включены ли звуки перегрузки
+      enabled: true
+      # Интервал между звуками в стадии smoke (тиков, чем меньше — тем чаще)
+      smoke_interval: 15
+      # Интервал между звуками в стадии lava
+      lava_interval: 8
+      # Интервал между звуками при overload
+      overload_interval: 3
+
+      # 🎵 Стадия smoke — кабель дымится
+      smoke:
+        # Название звука (Minecraft namespaced key, напр. block.fire.ambient)
+        sound: block.fire.ambient
+        # Громкость (0.0 — 2.0)
+        volume: 0.15
+        # Минимальная высота тона (1.0 = норма)
+        pitch_min: 0.6
+        # Максимальная высота тона (растёт с энергией)
+        pitch_max: 0.9
+
+      # 🎵 Стадия lava — кабель горит
+      lava:
+        sound: block.fire.ambient
+        volume: 0.4
+        pitch_min: 0.9
+        pitch_max: 1.3
+
+      # 🎵 Стадия overload — кабель на грани взрыва
+      overload:
+        sound: entity.creeper.primed
+        volume: 1.0
+        pitch: 1.2
+
+  # Батарея (накопление энергии)
+  battery:
+    # Максимальная энергия в батарее (100000)
+    max_energy: 100000
+    # Энергии за 1 discharge (отдача в сеть при редстоун-сигнале)
+    discharge_per_tick: 10
+
+    # Плавная динамическая зарядка/разрядка
+    # Скорость меняется в зависимости от заполненности батареи:
+    #   Пустая → заряжается быстро, разряжается медленно
+    #   Полная → заряжается медленно, разряжается быстро
+    smooth_charge:
+      # Включена ли плавная зарядка
+      enabled: true
+      # Множитель скорости зарядки (2.0 = в 3 раза быстрее когда пусто, ×1 когда полно)
+      charge_multiplier: 2.0
+      # Множитель скорости разрядки (0.5 = в 2 раза медленнее когда пусто, ×1 когда полно)
+      discharge_multiplier: 0.5
+
+    # ⚡ Визуальные эффекты батареи
+    visual:
+      # Включены ли частицы электричества на батарее
+      particles_enabled: true
+
+  battery_drain:
+    # Включен или нет
+    enabled: true
+    # Энергии за 1 передачу
+    transfer_per_tick: 5
+    # Логировать или нет
+    log: false
+
+  # Балансёр
+  balancer:
+    # Включен или нет
+    enabled: true
+    # Включать батареи в балансировку
+    include_batteries: false
+    # Максимальный перенос за тик
+    max_transfer: 25
+    # Логировать или нет
+    log: false
 
 # =========================
-# 🔌 CABLE NETWORK
-# =========================
-cables:
-  save_interval_ticks: 100
-
-# =========================
-# 💻 CODE PANEL SYSTEM
+# 💻 Система кодовой панели
 # =========================
 codepanel:
-
+  # Максимальная длинна пароля
   max_length: 10
+  # Символ пустого места
   empty_char: "-"
-
+  # Сдвиг клавиатуры (для симметрии)
   keyboard_offset: 2
-
+  # Загрузка кода
   loading:
+    # Шаг раз в N тиков
     step_ticks: 5
+    # Кол-во шагов
     step: 10
+    # Задержка перед финальным сравнением
     delay_after: 20
-
+    # Попытки
   attempts:
+    # Кол-во попыток
     max: 3
+    # Время на которое блокируется панель
     lock_time_seconds: 10
-
+    # Цвета панели
   colors:
+    # Углы панели
     brackets: DARK_RED
+    # Цвет вводимого кода
     code: WHITE
-
+    # Цвета кнопок
   buttons:
+    # Обычная кнопка
     normal: WHITE
+    # Кнопка ресета
     reset: DARK_RED
+    # Кнопка подтверждения
     enter: DARK_GREEN
-
+    # Звуки панели
   sounds:
+    # Клик
     click: UI_BUTTON_CLICK
+    # Ресет
     reset: BLOCK_LEVER_CLICK
+    # Проверка
     step: BLOCK_NOTE_BLOCK_HAT
+    # Завершение проверки
     finish: BLOCK_NOTE_BLOCK_PLING
+    # Верный код
     success: ENTITY_PLAYER_LEVELUP
+    # Неверный код
     fail: BLOCK_ANVIL_LAND
-
+    # Сообщения панели
   messages:
     progress: "§fChecking code: §7{progress}%"
     success: "§2✔ §aSuccess: §7Valid code."
@@ -69,80 +196,399 @@ codepanel:
     no_config: "§4❌ §cError: §7Server doesn't have any codes in config!"
 
 # =========================
-# 🔐 VALID CODES (CODE PANEL)
+# 🔐 Пароли для кодовой панели
+# Рекомендуется использовать функции датапака и писать их в поле команды
+# Селектор $entity указывает на сущность, которая выполнила код (полезно)
 # =========================
 validcodes:
-
   1:
     code: "1234"
     command: "say $entity opened door #1"
-
   2:
     code: "9990"
     command: "function codepanel/code1 with entity $entity"
-
   3:
     code: "0000"
     command: "give $entity diamond 1"
 
 # =========================
-# 🧪 ENERGY CRAFTING SYSTEM
+# 🧪 Система крафта от энергии
+# Сложная механика, включать на свой страх и риск.
 # =========================
-energycrafting:
-
-  enabled: true
-  require_network: true
-
+energy_crafting:
+  # Включен или нет
+  enabled: false
+  # Энергия, которая тратится при использовании
   energy_per_craft: 1000
-  allow_craft_without_energy: false
-
-  cable_search_radius: 2
-
-  block_preview_without_energy: true
-  block_craft_without_energy: true
-
-  consume_energy: true
-
-  debug: false
-
+  # Радиус поиска верстака вокруг игрока (в блоках)
+  workbench_search_radius: 3
+  # Сообщения верстака
   messages:
-
-    no_network: "§4❌ §cCrafting Table is not connected to energy network!"
-
     no_energy: "§4❌ §cNot enough energy! §7Need §e{amount} §7energy."
 
-    disabled: "§cEnergy crafting is disabled in config!"
+
 
 # =========================
-# 🔧 CUSTOM CRAFTS
+# ⚛ Реактор тёмного синтеза (РТС)
 # =========================
-crafts:
+reactor:
+  enabled: true
 
-  multimeter:
+  # ===== ТЕМПЕРАТУРА ЯДРА =====
+  temp_decay_rate: 1
+  core_temp_max: 6000
+  core_temp_min: -272
+  core_temp_cool_min: -270
+  heat_rate: 3
+  cool_rate: 3
 
+  # ===== ДАВЛЕНИЕ ЯДРА =====
+  core_press_reduce_rate: 1
+
+  # ===== КОРПУС: ТЕМПЕРАТУРА =====
+  case_temp_heat_rate: 2
+  case_temp_max: 8000
+  case_temp_cool_rate: 2
+  case_temp_cool_min: -271
+  case_temp_decay_rate: 1
+
+  # ===== КОРПУС: ДАВЛЕНИЕ =====
+  case_press_heat_rate: 4
+  case_press_max: 10000
+  case_press_decay_rate: 1
+
+  # ===== ЦЕЛОСТНОСТЬ ОБОЛОЧКИ ЯДРА =====
+  shell_integrity_decay_temp: 5000
+  shell_int_decay_rate: 1
+  shell_int_recovery_temp_max: 4999
+  shell_int_recovery_rate: 1
+
+  # ===== ЦЕЛОСТНОСТЬ КОРПУСА =====
+  case_integrity_decay_press: 7000
+  case_integrity_decay_temp: 7000
+  case_int_decay_press_rate: 1
+  case_int_decay_temp_rate: 1
+  case_int_recovery_press_max: 7000
+  case_int_recovery_temp_max: 4999
+  case_int_recovery_rate: 1
+
+  # ===== ИЗНОС РЕАКТОРА =====
+  wear:
+    # Включен или нет
+    enabled: true
+    # Интервал увеличения износа в норме (1200 тиков = 1 минута)
+    interval_normal: 1200
+    # Интервал уменьшения износа при нарушении целостности (20 тиков = 1 секунда)
+    interval_degradation: 20
+    # Длительность таймера в чате при 100% износа (секунд)
+    chat_countdown: 30
+    # При скольких секундах в чате начинать финальный отсчёт до взрыва
+    final_meltdown_start_at: 11
+    # Длительность финального взрыва (секунд)
+    final_meltdown_duration: 10
+
+  # ===== ВЗРЫВ =====
+  meltdown_explosion_radius: 10
+
+  # ===== РЕЦЕПТ =====
+  recipe_time_max: 100
+
+# =========================
+# ⚙ Кастомные фичи (портировано из датапака)
+# =========================
+features:
+  # 🔥 Антиматерия — взрыв при выбрасывании зелья с isAntimatter
+  antimatter:
+    enabled: true
+    # Радиус взрыва
+    explosion_radius: 5
+    # Разрушать ли блоки
+    break_blocks: true
+    # Зажигать ли огонь
+    set_fire: true
+
+  # 📊 Атрибуты — базовая атака, скорость и т.д.
+  attributes:
+    enabled: true
+    attack_damage: 0.1
+    sneak_speed: 8192
+    attack_speed: 3.5
+    interval_ticks: 200
+
+  # 💡 Маяк-ловушка — эффекты при стоянии на маяке
+  beacon:
+    enabled: true
+    glowing: true
+    blindness: true
+    regeneration_amplifier: 4
+    resistance_amplifier: 4
+    interval_ticks: 5
+
+  # 🪨 Урон от блоков — сталактит и эндер-стержень
+  blockdmg:
+    enabled: true
+    dripstone_damage: 1
+    endrod_damage: 1
+    interval_ticks: 5
+
+  # 🕸 Усиленная паутина — эффекты в cobweb
+  boostedcobweb:
+    enabled: true
+    fatigue_amplifier: 255
+    weakness_amplifier: 255
+    slowness_amplifier: 255
+    slowfall_amplifier: 255
+    interval_ticks: 5
+
+  # 🔔 Колокол смерти — молния при звоне
+  deathbell:
+    enabled: true
+    lightning: true
+
+  # 🥚 Яйцо дракона — периодическое появление
+  dragonegg:
+    enabled: false
+    world: "world_the_end"
+    x: 0
+    y: 142
+    z: 0
+    # Интервал спавна в тиках (1728000 = 24ч)
+    interval_ticks: 1728000
+    # Шанс спавна (0.0 — никогда, 1.0 — всегда)
+    spawn_chance: 1.0
+
+  # 💥 Взрыв эндер-сундука
+  enderchest:
+    enabled: true
+    damage: 8192
+    explosion_radius: 5
+
+  # 🧭 Локатор существ — компас поиска
+  entitylocator:
+    enabled: true
+    scan_radius: 12
+    interval_ticks: 20
+
+  # 🪟 Защита стекла — урон за ломание рукой
+  glassbreak:
+    enabled: true
+    damage: 5
+
+  # ❤ ХП-метр — компас с HP моба (радиус 2 блока)
+  healthmeter:
+    enabled: true
+    scan_radius: 2
+    interval_ticks: 10
+
+  # 🗑 Антилаг — удаление >6400 предметов
+  itemskill:
+    enabled: true
+    item_limit: 6400
+    interval_ticks: 20
+    warn_operators: true
+
+  # 🧲 Магнит — рамка на lodestone плавно притягивает металлические предметы, игроков и мобов
+  magnet:
+    # Включен/выключен
     enabled: true
 
-    material: CLOCK
+    # Радиус притяжения (динамический, растёт с размером структуры по sqrt)
+    # Без жёсткого максимума — чем больше блоков, тем дальше радиус
+    radius:
+      # Минимальный радиус (при 1 блоке)
+      min: 3
+      # Радиус при 20 блоках (sqrt-масштабирование, растёт бесконечно)
+      max: 15
 
-    name: "§fMultimeter"
+    # Интервал тиков (1 = каждый тик, для плавности)
+    interval_ticks: 1
 
-    show_in_recipe_book: true
+    # Параметры силы притяжения
+    force:
+      # Базовая сила (добавляется всегда, множится на масштаб)
+      base: 0.15
+      # Множитель силы от расстояния (умножается на 1-distance/radius)
+      distance_multiplier: 0.35
+      # Максимальная сила (ограничение сверху)
+      max: 0.45
+      # Минимальный коэффициент на границе радиуса (0.0 = нет силы на краю)
+      distance_floor: 0.05
+      # Максимальная скорость полёта сущности за один тик
+      max_speed: 0.6
 
-    custom_tag: "is_multimeter"
+    # Подъём предметов по Y (чтобы не цеплялись за пол), множится на масштаб
+    item_y_boost: 0.05
 
-    recipe:
+  # 🛡 Защита режима — принудительный выживание
+  # Работает через перехват события смены режима игры (PlayerGameModeChangeEvent)
+  # Поддерживает любые миры, включая миры Multiverse
+  modeprotect:
+    # Включена ли защита
+    enabled: false
 
-      shape:
-        - "CRC"
-        - "RCR"
-        - "CRC"
+    # Список миров, в которых действует защита
+    # Если оставить пустым — защита работает во всех мирах
+    # Поддерживает любые имена миров, включая миры Multiverse (например, "myworld", "survival")
+    worlds:
+      - "world"
+      - "world_nether"
+      - "world_the_end"
 
-      ingredients:
-        C: COPPER_INGOT
-        R: REDSTONE
+    # Право, которое позволяет байпасснуть защиту
+    bypass_permission: "mcplugin.gmprotect.bypass"
+
+    # Сообщение игроку при попытке сменить режим игры
+    message: "§cВы не можете сменить режим игры в этом мире!"
+
+  # 🪖 Замедление щита — slowness при блоке
+  shieldslowness:
+    enabled: true
+    slowness_amplifier: 255
+    slowness_duration: 20
+
+  # 🏃 Скорость на терракоте
+  terracotaspeed:
+    enabled: true
+    speed_amplifier: 4
+    interval_ticks: 5
+
+  # 🛡 Защита от краш-предметов — блокировка предметов с чрезмерной NBT/компонентами
+  # в креативном режиме. Не даёт пронести на сервер "краш-сундуки" с гигантской метадатой.
+  creative_item_validator:
+    enabled: true
+    # Право для байпасса проверки
+    bypass_permission: "mcplugin.creative.bypass"
+    # Максимальный размер сериализованного предмета в байтах (10 KB)
+    max_item_bytes: 10240
+    # Максимальное количество PDC ключей
+    max_pdc_keys: 30
+    # Максимальное количество строк описания (lore)
+    max_lore_lines: 50
+    # Максимальное общее количество символов в описании
+    max_lore_chars: 1000
+    # Максимальная длина названия предмета
+    max_name_chars: 200
+    # Максимальное количество зачарований
+    max_enchantments: 40
+    # Сообщение при блокировке
+    message: "§cЭтот предмет содержит слишком много данных!"
+
+  # 🎯 Защита от левитации шалкера — убирает эффект левитации при попадании пули шалкера в игрока
+  shulker_protection:
+    # Включена ли защита
+    enabled: true
+
+  # 📍 Вейпоинты (цвет dark_red) — клиентская фича
+  waypoint:
+    enabled: true
+    interval_ticks: 200
 
 # =========================
-# 🔴 REDSTONE OVERLOAD GUARD
+# ☢ Система радиации
+# =========================
+radiation:
+  # Включена или нет
+  enabled: true
+  # Естественный спад радиации за тик у игрока
+  natural_decay: 1
+  # Включены ли эффекты от радиации (тошнота, слабость и т.д.)
+  effects_enabled: true
+  # Включён ли дозиметр (показывает дозу в actionbar)
+  dosimeter_enabled: true
+
+  # Источники радиации
+  # Древние обломки в инвентаре (за тик)
+  ancient_debris_radiation: 2
+  # Биом Базальтовые дельты (за тик)
+  basalt_deltas_radiation: 2
+  # В Энде под открытым небом (за тик)
+  end_radiation: 2
+
+  # Уменьшение радиации
+  # Свинцовый щит в руке (- за тик)
+  lead_shield_reduction: 2
+  # Антирад (съесть кусок торта) - при радиации >= 200
+  antirad_reduction: 100
+  # Убийство игрока/моба - при радиации >= 200
+  kill_reduction: 100
+  # Сброс радиации при смерти
+  death_reset: true
+
+  # Использование предметов (за одно использование)
+  mace_use_radiation: 50
+  trident_use_radiation: 50
+  elytra_use_radiation: 50
+
+  # Радиация от реактора
+  # Возле ядра реактора (coreTemp >= 1000)
+  reactor_core_radiation: 10
+  # От давления реактора (раз в 5 сек)
+  reactor_pressure_radiation: 600
+  # При взрыве реактора: вплотную
+  reactor_meltdown_close: 6400
+  # При взрыве реактора: в радиусе 20 блоков
+  reactor_meltdown_far: 3200
+
+# =========================
+# 🔌 Управление питанием сервера
+# =========================
+power:
+  # Перехватывать ли /stop и /restart от игроков
+  intercept_commands: true
+
+  # Сообщение при попытке использовать /stop
+  stop_message: "§8[§4⚠§8] §cКоманда /stop отключена. Используйте: §f/mcplugin power off"
+
+  # Сообщение при попытке использовать /restart
+  restart_message: "§8[§4⚠§8] §cКоманда /restart отключена. Используйте: §f/mcplugin power reboot"
+
+  # Время ожидания подтверждения запроса (секунд)
+  request_timeout: 30
+
+  # Время до выполнения после подтверждения (секунд)
+  countdown_duration: 10
+
+  # Экранная строка (ActionBar) — показывается всем игрокам
+  actionbar:
+    enabled: true
+    # {action} — действие (выключается/перезагружается)
+    # {seconds} — оставшиеся секунды
+    format: "§c⚡ §fСервер {action} через §e{seconds}§f сек"
+
+  # Босс-бар — показывается всем игрокам
+  bossbar:
+    enabled: true
+    # Цвет: BLUE, RED, GREEN, PURPLE, PINK, WHITE, YELLOW
+    color: RED
+    # Стиль: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+    style: SOLID
+    # {action} — действие (выключается/перезагружается)
+    # {action} — действие (выключается/перезагружается)
+    # {seconds} — оставшиеся секунды
+    text: "§c⚡ Сервер {action} через §e{seconds}§c сек"
+
+  # Звук «пиканья» во время обратного отсчёта
+  countdown_sound:
+    # Включен ли звук
+    enabled: true
+    # Название звука (см. https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html)
+    name: "BLOCK_NOTE_BLOCK_PLING"
+    # Громкость (0.0 — 2.0)
+    volume: 1.0
+    # Высота тона при старте отсчёта (низкий — медленное «пиканье»)
+    pitch_base: 1.2
+    # Высота тона при последней секунде (высокий — ускоренное «пиканье»)
+    pitch_max: 2.0
+    # Ускорение частоты пиканья — чем меньше секунд, тем чаще пики
+    beep_speedup:
+      enabled: true
+      # Сколько пиков в секунду в начале отсчёта
+      min_per_second: 1
+      # Сколько пиков в секунду в конце (на последней секунде)
+      max_per_second: 6
+
+# =========================
+# 🔴 Защита от перегрузки сервера редстуоном (ЗОПСР)
 # =========================
 redstone_guard:
   enabled: true
@@ -150,7 +596,89 @@ redstone_guard:
   mspt_threshold: 50.0
   global_iterations_limit: 1024
   # Блокировать чанк только если его итерации за тик > этого лимита
-  chunk_iterations_limit: 128
+  chunk_iterations_limit: 10
+  # На сколько блокировать чанк (секнуд)
   block_duration_seconds: 32
   # Сколько чанков (с превышением лимита) блокировать за один тик перегрузки
   chunks_per_tick: 1
+
+# =========================
+# 🔇 Фильтр чата (защита от матов)
+# =========================
+chat_filter:
+  # Включен ли фильтр
+  enabled: false
+
+  # Сообщение игроку при обнаружении запрещённых слов
+  message: "§4❌ §cВаше сообщение не прошло проверку на запрещённый контент!"
+
+  # Список запрещённых слов/шаблонов
+  # * — wildcard: 
+  #   "блять"     → точное совпадение (целое слово)
+  #   "блять*"    → слово начинается с "блять"
+  #   "*блять"    → слово заканчивается на "блять"
+  #   "*блять*"   → слово содержит "блять"
+  # Регистр не имеет значения
+  words:
+    - "*блять*"
+    - "*блят*"
+    - "*хуй*"
+    - "*пизда*"
+    - "*еба*"
+    - "*пидр*"
+    - "*таврь*"
+    - "*нахуй*"
+    - "*нахер*"
+    - "*нах"
+
+  # Сложные Java regex-выражения (регистронезависимость добавляется автоматически)
+  # Паттерн применяется ко всему сообщению (Matcher.matches()), поэтому для поиска
+  # подстроки используйте .* в начале и в конце:
+  #
+  #   ".*\\b(?:блять|хуй)\\b.*"    — слово "блять" или "хуй" с границами слова
+  #   ".*\\d{10,}.*"                — любое число из 10+ цифр (спам)
+  #   ".*[A-Za-z]{20,}.*"            — бессмысленная строка из 20+ латинских букв
+  #   ".*(?:(?<!\\p{L})п(?:[оo0]п[уy]|[рp][оo0]с[тt])(?!\\p{L})).*"  — сложные вариации
+  #
+  # Полная документация: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/regex/Pattern.html
+  # Настоятельно рекомендуется использовать Regex Patterns вместе с категорией слов выше,
+  # Чтобы ловить все, даже скрытые маты.
+  regex_patterns:
+    - ".*(?<!\\p{L})(?:бля(?:дь|ть|т)|бляд(?:ь|и|ина)|еб(?:ать|ан|лан|уч)|хуй|хуйня|пизд(?:а|ец|еть)|муд(?:ак|ила)|гандон)(?!\\p{L}).*"
+    - ".*(?<!\\p{L})(?:долбо(?:еб|ёб)|идиот|дебил|кретин|имбецил|придурок)(?!\\p{L}).*"
+    - ".*п[^а-яёa-z0-9]{0,3}и[^а-яёa-z0-9]{0,3}д[^а-яёa-z0-9]{0,3}(?:а|о)?[^а-яёa-z0-9]{0,3}р.*"
+    - ".*х[^а-яёa-z0-9]{0,3}у[^а-яёa-z0-9]{0,3}й.*"
+    - ".*[А-ЯЁA-Z]{15,}.*"
+    - ".*(.)\\1{8,}.*"
+    - ".*ж[^а-яёa-z0-9]{0,3}[иi1і][^а-яёa-z0-9]{0,3}р(?:н(?:ы(?:й|е|х|м)?|ая|ое)?|уха|ок|дяй)? .*"
+
+# =========================
+# 🌍 Смена измерения (Changedimmension)
+# =========================
+changedimmension:
+  # Мир в который телепортирует по умолчанию (должен быть в разделе worlds)
+  default_world: "pocketworld"
+
+  # Задержка между использованиями команды в секундах
+  cooldown_seconds: 10
+
+  # Сообщения
+  messages:
+    success: "§a✅ §fТелепортация в мир §e{world}§f завершена!"
+    return_info: "§eℹ §7Чтобы вернуться, просто напишите §f/mcplugin changedimmension§7 ещё раз."
+    return_success: "§a✅ §fВы вернулись в исходную точку!"
+    return_error: "§4❌ §cОшибка: точка возврата повреждена!"
+    no_permission: "§4❌ §cУ вас нет прав на эту команду!"
+    world_not_found: "§4❌ §cМир §e{world}§c не найден!"
+    player_only: "§4❌ §cТолько игрок может использовать эту команду!"
+    no_default_world: "§4❌ §cМир по умолчанию не настроен в конфиге!"
+    cooldown: "§4❌ §cПодождите §e{seconds}§c сек перед повторным использованием!"
+
+  # Миры и координаты (world — имя мира в Multiverse или Bukkit)
+  worlds:
+    pocketworld:
+      x: 0
+      y: 1
+      z: 0
+      yaw: 0.0
+      pitch: 0.0

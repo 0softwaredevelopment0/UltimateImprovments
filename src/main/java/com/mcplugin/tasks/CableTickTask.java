@@ -15,39 +15,8 @@ public class CableTickTask extends BukkitRunnable {
     public void run() {
 
         // =========================
-        // BATTERY INPUT
-        // =========================
-        for (CableNode battery : CableNetwork.getAllNodes()) {
-
-            if (battery.getType() != NodeType.BATTERY) continue;
-
-            Location batteryLoc = battery.getLocation();
-
-            for (Location conn : battery.getConnections()) {
-
-                CableNode from = CableNetwork.getNode(conn);
-                if (from == null) continue;
-
-                if (!isValidCable(conn)) continue;
-
-                // ❗ FIX: strict two-way check
-                if (!LocationUtil.isFullyConnected(conn, batteryLoc)
-                        || !LocationUtil.isFullyConnected(batteryLoc, conn)) {
-                    continue;
-                }
-
-                int energy = from.getEnergy();
-                if (energy <= 0) continue;
-
-                int transfer = Math.min(energy, 10);
-
-                from.removeEnergy(transfer);
-                battery.addEnergy(transfer);
-            }
-        }
-
-        // =========================
-        // CABLE FLOW
+        // CABLE FLOW — distributes energy evenly between connected cables
+        // Battery charging is handled by BatteryDrainTask
         // =========================
         Set<CableNode> snapshot = new HashSet<>(CableNetwork.getAllNodes());
 
