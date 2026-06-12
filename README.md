@@ -24,8 +24,8 @@ This command reloads the plugin. After the reload, you may see bugs, so it's bet
 **2.** Put the .jar file into the plugins folder.<br>
 **3.** Restart the server. After the plugin has loaded, restart the server again to correctly load the data pack.<br>
 # Updating
-**1.** Delete automatically created datapack and it will be updates and re-created by plugin.
-**2.** Delete automatically created plugin config because without it plugin can not work correctly.
+**1.** Delete automatically created datapack and it will be updates and re-created by plugin.<br>
+**2.** Delete automatically created plugin config because without it plugin can not work correctly.<br>
 # Requirements
 **1.** Java 21+<br>
 **2.** Paper/Purpur core and its forks. Do not use Spigot/Bukkit core!<br>
