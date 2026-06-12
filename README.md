@@ -35,6 +35,6 @@ This command reloads the plugin. After the reload, you may see bugs, so it's bet
 **This project is distributed under a license:**<br>
 **GNU AGPL v3**<br>
 # Author
-**Nick: MrCotik337**<br>
+**Nick: rizer001**<br>
 **Github: https://github.com/Minecraft337**<br>
 **Discord: @error404_user.not.found**<br>
