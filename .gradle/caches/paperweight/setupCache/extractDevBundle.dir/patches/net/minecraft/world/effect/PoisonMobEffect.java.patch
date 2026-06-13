@@ -1,0 +1,30 @@
+--- a/net/minecraft/world/effect/PoisonMobEffect.java
++++ b/net/minecraft/world/effect/PoisonMobEffect.java
+@@ -3,6 +3,7 @@
+ import net.minecraft.world.entity.LivingEntity;
+ 
+ class PoisonMobEffect extends MobEffect {
++
+     protected PoisonMobEffect(MobEffectCategory category, int color) {
+         super(category, color);
+     }
+@@ -10,7 +11,7 @@
+     @Override
+     public boolean applyEffectTick(LivingEntity entity, int amplifier) {
+         if (entity.getHealth() > 1.0F) {
+-            entity.hurt(entity.damageSources().magic(), 1.0F);
++            entity.hurt(entity.damageSources().poison(), 1.0F);  // CraftBukkit - DamageSource.MAGIC -> CraftEventFactory.POISON
+         }
+ 
+         return true;
+@@ -18,7 +19,8 @@
+ 
+     @Override
+     public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
+-        int i = 25 >> amplifier;
+-        return i <= 0 || duration % i == 0;
++        int k = 25 >> amplifier;
++
++        return k > 0 ? duration % k == 0 : true;
+     }
+ }

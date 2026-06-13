@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/item/ThrowablePotionItem.java
++++ b/net/minecraft/world/item/ThrowablePotionItem.java
+@@ -22,11 +22,29 @@
+             ThrownPotion thrownPotion = new ThrownPotion(world, user);
+             thrownPotion.setItem(itemStack);
+             thrownPotion.shootFromRotation(user, user.getXRot(), user.getYRot(), -20.0F, 0.5F, 1.0F);
+-            world.addFreshEntity(thrownPotion);
++            // Paper start - PlayerLaunchProjectileEvent
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) user.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack), (org.bukkit.entity.Projectile) thrownPotion.getBukkitEntity());
++            if (event.callEvent() && world.addFreshEntity(thrownPotion)) {
++                if (event.shouldConsume()) {
++                    itemStack.consume(1, user);
++                } else if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++
++                user.awardStat(Stats.ITEM_USED.get(this));
++            } else {
++                if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++                return InteractionResultHolder.fail(itemStack);
++            }
++            // Paper end - PlayerLaunchProjectileEvent
+         }
+ 
++        /* // Paper start - PlayerLaunchProjectileEvent; moved up
+         user.awardStat(Stats.ITEM_USED.get(this));
+         itemStack.consume(1, user);
++        */ // Paper end
+         return InteractionResultHolder.sidedSuccess(itemStack, world.isClientSide());
+     }
+ 

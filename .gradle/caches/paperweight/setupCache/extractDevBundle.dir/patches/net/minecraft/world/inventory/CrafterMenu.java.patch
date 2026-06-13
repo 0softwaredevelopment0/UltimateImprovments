@@ -1,0 +1,172 @@
+--- a/net/minecraft/world/inventory/CrafterMenu.java
++++ b/net/minecraft/world/inventory/CrafterMenu.java
+@@ -6,10 +6,31 @@
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.crafting.CraftingInput;
++import net.minecraft.world.item.crafting.CraftingRecipe;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.CrafterBlock;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.inventory.CraftInventoryCrafter;
++import org.bukkit.craftbukkit.inventory.view.CraftCrafterView;
++// CraftBukkit end
++
+ public class CrafterMenu extends AbstractContainerMenu implements ContainerListener {
++
++    // CraftBukkit start
++    private CraftCrafterView bukkitEntity = null;
++
++    @Override
++    public CraftCrafterView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        CraftInventoryCrafter inventory = new CraftInventoryCrafter(this.container, this.resultContainer);
++        this.bukkitEntity = new CraftCrafterView(this.player.getBukkitEntity(), inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+     protected static final int SLOT_COUNT = 9;
+     private static final int INV_SLOT_START = 9;
+     private static final int INV_SLOT_END = 36;
+@@ -40,21 +61,25 @@
+     }
+ 
+     private void addSlots(Inventory playerInventory) {
+-        for (int i = 0; i < 3; i++) {
+-            for (int j = 0; j < 3; j++) {
+-                int k = j + i * 3;
+-                this.addSlot(new CrafterSlot(this.container, k, 26 + j * 18, 17 + i * 18, this));
++        int i;
++        int j;
++
++        for (j = 0; j < 3; ++j) {
++            for (i = 0; i < 3; ++i) {
++                int k = i + j * 3;
++
++                this.addSlot(new CrafterSlot(this.container, k, 26 + i * 18, 17 + j * 18, this));
+             }
+         }
+ 
+-        for (int l = 0; l < 3; l++) {
+-            for (int m = 0; m < 9; m++) {
+-                this.addSlot(new Slot(playerInventory, m + l * 9 + 9, 8 + m * 18, 84 + l * 18));
++        for (j = 0; j < 3; ++j) {
++            for (i = 0; i < 9; ++i) {
++                this.addSlot(new Slot(playerInventory, i + j * 9 + 9, 8 + i * 18, 84 + j * 18));
+             }
+         }
+ 
+-        for (int n = 0; n < 9; n++) {
+-            this.addSlot(new Slot(playerInventory, n, 8 + n * 18, 142));
++        for (j = 0; j < 9; ++j) {
++            this.addSlot(new Slot(playerInventory, j, 8 + j * 18, 142));
+         }
+ 
+         this.addSlot(new NonInteractiveResultSlot(this.resultContainer, 0, 134, 35));
+@@ -63,13 +88,14 @@
+     }
+ 
+     public void setSlotState(int slot, boolean enabled) {
+-        CrafterSlot crafterSlot = (CrafterSlot)this.getSlot(slot);
+-        this.containerData.set(crafterSlot.index, enabled ? 0 : 1);
++        CrafterSlot crafterslot = (CrafterSlot) this.getSlot(slot);
++
++        this.containerData.set(crafterslot.index, enabled ? 0 : 1);
+         this.broadcastChanges();
+     }
+ 
+     public boolean isSlotDisabled(int slot) {
+-        return slot > -1 && slot < 9 && this.containerData.get(slot) == 1;
++        return slot > -1 && slot < 9 ? this.containerData.get(slot) == 1 : false;
+     }
+ 
+     public boolean isPowered() {
+@@ -78,49 +104,56 @@
+ 
+     @Override
+     public ItemStack quickMoveStack(Player player, int slot) {
+-        ItemStack itemStack = ItemStack.EMPTY;
+-        Slot slot2 = this.slots.get(slot);
+-        if (slot2 != null && slot2.hasItem()) {
+-            ItemStack itemStack2 = slot2.getItem();
+-            itemStack = itemStack2.copy();
++        ItemStack itemstack = ItemStack.EMPTY;
++        Slot slot1 = (Slot) this.slots.get(slot);
++
++        if (slot1 != null && slot1.hasItem()) {
++            ItemStack itemstack1 = slot1.getItem();
++
++            itemstack = itemstack1.copy();
+             if (slot < 9) {
+-                if (!this.moveItemStackTo(itemStack2, 9, 45, true)) {
++                if (!this.moveItemStackTo(itemstack1, 9, 45, true)) {
+                     return ItemStack.EMPTY;
+                 }
+-            } else if (!this.moveItemStackTo(itemStack2, 0, 9, false)) {
++            } else if (!this.moveItemStackTo(itemstack1, 0, 9, false)) {
+                 return ItemStack.EMPTY;
+             }
+ 
+-            if (itemStack2.isEmpty()) {
+-                slot2.set(ItemStack.EMPTY);
++            if (itemstack1.isEmpty()) {
++                slot1.set(ItemStack.EMPTY);
+             } else {
+-                slot2.setChanged();
++                slot1.setChanged();
+             }
+ 
+-            if (itemStack2.getCount() == itemStack.getCount()) {
++            if (itemstack1.getCount() == itemstack.getCount()) {
+                 return ItemStack.EMPTY;
+             }
+ 
+-            slot2.onTake(player, itemStack2);
++            slot1.onTake(player, itemstack1);
+         }
+ 
+-        return itemStack;
++        return itemstack;
+     }
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.container.stillValid(player);
+     }
+ 
+     private void refreshRecipeResult() {
+-        if (this.player instanceof ServerPlayer serverPlayer) {
+-            Level level = serverPlayer.level();
+-            CraftingInput craftingInput = this.container.asCraftInput();
+-            ItemStack itemStack = CrafterBlock.getPotentialResults(level, craftingInput)
+-                .map(recipeHolder -> recipeHolder.value().assemble(craftingInput, level.registryAccess()))
+-                .orElse(ItemStack.EMPTY);
+-            this.resultContainer.setItem(0, itemStack);
++        Player entityhuman = this.player;
++
++        if (entityhuman instanceof ServerPlayer entityplayer) {
++            Level world = entityplayer.level();
++            CraftingInput craftinginput = this.container.asCraftInput();
++            ItemStack itemstack = (ItemStack) CrafterBlock.getPotentialResults(world, craftinginput).map((recipeholder) -> {
++                return ((CraftingRecipe) recipeholder.value()).assemble(craftinginput, world.registryAccess());
++            }).orElse(ItemStack.EMPTY);
++
++            this.resultContainer.setItem(0, itemstack);
+         }
++
+     }
+ 
+     public Container getContainer() {
+@@ -133,6 +166,5 @@
+     }
+ 
+     @Override
+-    public void dataChanged(AbstractContainerMenu handler, int property, int value) {
+-    }
++    public void dataChanged(AbstractContainerMenu handler, int property, int value) {}
+ }

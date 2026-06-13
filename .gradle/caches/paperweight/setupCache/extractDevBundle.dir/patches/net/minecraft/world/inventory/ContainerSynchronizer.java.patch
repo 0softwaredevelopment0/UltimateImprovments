@@ -1,0 +1,19 @@
+--- a/net/minecraft/world/inventory/ContainerSynchronizer.java
++++ b/net/minecraft/world/inventory/ContainerSynchronizer.java
+@@ -6,9 +6,16 @@
+ public interface ContainerSynchronizer {
+     void sendInitialData(AbstractContainerMenu handler, NonNullList<ItemStack> stacks, ItemStack cursorStack, int[] properties);
+ 
++    default void sendOffHandSlotChange() {} // Paper - Sync offhand slot in menus
+     void sendSlotChange(AbstractContainerMenu handler, int slot, ItemStack stack);
+ 
+     void sendCarriedChange(AbstractContainerMenu handler, ItemStack stack);
+ 
+     void sendDataChange(AbstractContainerMenu handler, int property, int value);
++
++    // Paper start - add flag to simplify remote matching logic
++    default net.minecraft.server.level.@org.jspecify.annotations.Nullable ServerPlayer player() {
++        return null;
++    }
++    // Paper end - add flag to simplify remote matching logic
+ }

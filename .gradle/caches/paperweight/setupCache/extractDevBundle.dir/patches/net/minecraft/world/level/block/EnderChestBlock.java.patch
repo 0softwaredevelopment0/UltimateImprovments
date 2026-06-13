@@ -1,0 +1,29 @@
+--- a/net/minecraft/world/level/block/EnderChestBlock.java
++++ b/net/minecraft/world/level/block/EnderChestBlock.java
+@@ -83,18 +83,21 @@
+         BlockEntity blockEntity = world.getBlockEntity(pos);
+         if (playerEnderChestContainer != null && blockEntity instanceof EnderChestBlockEntity) {
+             BlockPos blockPos = pos.above();
+-            if (world.getBlockState(blockPos).isRedstoneConductor(world, blockPos)) {
++            if (world.getBlockState(blockPos).isRedstoneConductor(world, blockPos)) { // Paper - diff on change; make sure that EnderChest#isBlocked uses the same logic
+                 return InteractionResult.sidedSuccess(world.isClientSide);
+             } else if (world.isClientSide) {
+                 return InteractionResult.SUCCESS;
+             } else {
+                 EnderChestBlockEntity enderChestBlockEntity = (EnderChestBlockEntity)blockEntity;
+                 playerEnderChestContainer.setActiveChest(enderChestBlockEntity);
+-                player.openMenu(
++                // Paper start - Fix InventoryOpenEvent cancellation
++                if (player.openMenu(
+                     new SimpleMenuProvider((i, inventory, playerx) -> ChestMenu.threeRows(i, inventory, playerEnderChestContainer), CONTAINER_TITLE)
+-                );
+-                player.awardStat(Stats.OPEN_ENDERCHEST);
+-                PiglinAi.angerNearbyPiglins(player, true);
++                ).isPresent()) {
++                    player.awardStat(Stats.OPEN_ENDERCHEST);
++                    PiglinAi.angerNearbyPiglins(player, true);
++                }
++                // Paper end - Fix InventoryOpenEvent cancellation
+                 return InteractionResult.CONSUME;
+             }
+         } else {

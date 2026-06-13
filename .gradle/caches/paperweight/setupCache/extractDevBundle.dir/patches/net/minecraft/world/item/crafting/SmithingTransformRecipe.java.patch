@@ -1,0 +1,125 @@
+--- a/net/minecraft/world/item/crafting/SmithingTransformRecipe.java
++++ b/net/minecraft/world/item/crafting/SmithingTransformRecipe.java
+@@ -8,30 +8,46 @@
+ import net.minecraft.network.codec.StreamCodec;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
++// CraftBukkit start
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.inventory.CraftRecipe;
++import org.bukkit.craftbukkit.inventory.CraftSmithingTransformRecipe;
++import org.bukkit.inventory.Recipe;
++// CraftBukkit end
+ 
+ public class SmithingTransformRecipe implements SmithingRecipe {
++
+     final Ingredient template;
+     final Ingredient base;
+     final Ingredient addition;
+     final ItemStack result;
++    final boolean copyDataComponents; // Paper - Option to prevent data components copy
+ 
+     public SmithingTransformRecipe(Ingredient template, Ingredient base, Ingredient addition, ItemStack result) {
++        // Paper start - Option to prevent data components copy
++        this(template, base, addition, result, true);
++    }
++    public SmithingTransformRecipe(Ingredient template, Ingredient base, Ingredient addition, ItemStack result, boolean copyDataComponents) {
++        this.copyDataComponents = copyDataComponents;
++        // Paper end - Option to prevent data components copy
+         this.template = template;
+         this.base = base;
+         this.addition = addition;
+         this.result = result;
+     }
+ 
+-    @Override
+     public boolean matches(SmithingRecipeInput input, Level world) {
+         return this.template.test(input.template()) && this.base.test(input.base()) && this.addition.test(input.addition());
+     }
+ 
+-    @Override
+     public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider lookup) {
+-        ItemStack itemStack = input.base().transmuteCopy(this.result.getItem(), this.result.getCount());
+-        itemStack.applyComponents(this.result.getComponentsPatch());
+-        return itemStack;
++        ItemStack itemstack = input.base().transmuteCopy(this.result.getItem(), this.result.getCount());
++
++        if (this.copyDataComponents) { // Paper - Option to prevent data components copy
++        itemstack.applyComponents(this.result.getComponentsPatch());
++        } // Paper - Option to prevent data components copy
++        return itemstack;
+     }
+ 
+     @Override
+@@ -64,36 +80,51 @@
+         return Stream.of(this.template, this.base, this.addition).anyMatch(Ingredient::isEmpty);
+     }
+ 
++    // CraftBukkit start
++    @Override
++    public Recipe toBukkitRecipe(NamespacedKey id) {
++        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
++
++        CraftSmithingTransformRecipe recipe = new CraftSmithingTransformRecipe(id, result, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyDataComponents); // Paper - Option to prevent data components copy
++
++        return recipe;
++    }
++    // CraftBukkit end
++
+     public static class Serializer implements RecipeSerializer<SmithingTransformRecipe> {
+-        private static final MapCodec<SmithingTransformRecipe> CODEC = RecordCodecBuilder.mapCodec(
+-            instance -> instance.group(
+-                        Ingredient.CODEC.fieldOf("template").forGetter(recipe -> recipe.template),
+-                        Ingredient.CODEC.fieldOf("base").forGetter(recipe -> recipe.base),
+-                        Ingredient.CODEC.fieldOf("addition").forGetter(recipe -> recipe.addition),
+-                        ItemStack.STRICT_CODEC.fieldOf("result").forGetter(recipe -> recipe.result)
+-                    )
+-                    .apply(instance, SmithingTransformRecipe::new)
+-        );
+-        public static final StreamCodec<RegistryFriendlyByteBuf, SmithingTransformRecipe> STREAM_CODEC = StreamCodec.of(
+-            SmithingTransformRecipe.Serializer::toNetwork, SmithingTransformRecipe.Serializer::fromNetwork
+-        );
++
++        private static final MapCodec<SmithingTransformRecipe> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++            return instance.group(Ingredient.CODEC.fieldOf("template").forGetter((smithingtransformrecipe) -> {
++                return smithingtransformrecipe.template;
++            }), Ingredient.CODEC.fieldOf("base").forGetter((smithingtransformrecipe) -> {
++                return smithingtransformrecipe.base;
++            }), Ingredient.CODEC.fieldOf("addition").forGetter((smithingtransformrecipe) -> {
++                return smithingtransformrecipe.addition;
++            }), ItemStack.STRICT_CODEC.fieldOf("result").forGetter((smithingtransformrecipe) -> {
++                return smithingtransformrecipe.result;
++            })).apply(instance, SmithingTransformRecipe::new);
++        });
++        public static final StreamCodec<RegistryFriendlyByteBuf, SmithingTransformRecipe> STREAM_CODEC = StreamCodec.of(SmithingTransformRecipe.Serializer::toNetwork, SmithingTransformRecipe.Serializer::fromNetwork);
++
++        public Serializer() {}
+ 
+         @Override
+         public MapCodec<SmithingTransformRecipe> codec() {
+-            return CODEC;
++            return SmithingTransformRecipe.Serializer.CODEC;
+         }
+ 
+         @Override
+         public StreamCodec<RegistryFriendlyByteBuf, SmithingTransformRecipe> streamCodec() {
+-            return STREAM_CODEC;
++            return SmithingTransformRecipe.Serializer.STREAM_CODEC;
+         }
+ 
+         private static SmithingTransformRecipe fromNetwork(RegistryFriendlyByteBuf buf) {
+-            Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
+-            Ingredient ingredient2 = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
+-            Ingredient ingredient3 = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
+-            ItemStack itemStack = ItemStack.STREAM_CODEC.decode(buf);
+-            return new SmithingTransformRecipe(ingredient, ingredient2, ingredient3, itemStack);
++            Ingredient recipeitemstack = (Ingredient) Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
++            Ingredient recipeitemstack1 = (Ingredient) Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
++            Ingredient recipeitemstack2 = (Ingredient) Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
++            ItemStack itemstack = (ItemStack) ItemStack.STREAM_CODEC.decode(buf);
++
++            return new SmithingTransformRecipe(recipeitemstack, recipeitemstack1, recipeitemstack2, itemstack);
+         }
+ 
+         private static void toNetwork(RegistryFriendlyByteBuf buf, SmithingTransformRecipe recipe) {

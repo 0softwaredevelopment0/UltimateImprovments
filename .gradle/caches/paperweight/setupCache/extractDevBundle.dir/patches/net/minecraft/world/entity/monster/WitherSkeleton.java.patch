@@ -1,0 +1,85 @@
+--- a/net/minecraft/world/entity/monster/WitherSkeleton.java
++++ b/net/minecraft/world/entity/monster/WitherSkeleton.java
+@@ -21,11 +21,13 @@
+ import net.minecraft.world.entity.projectile.AbstractArrow;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
++import net.minecraft.world.level.ItemLike;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.ServerLevelAccessor;
+ import net.minecraft.world.level.pathfinder.PathType;
+ 
+ public class WitherSkeleton extends AbstractSkeleton {
++
+     public WitherSkeleton(EntityType<? extends WitherSkeleton> type, Level world) {
+         super(type, world);
+         this.setPathfindingMalus(PathType.LAVA, 8.0F);
+@@ -60,10 +62,15 @@
+     @Override
+     protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {
+         super.dropCustomDeathLoot(world, source, causedByPlayer);
+-        if (source.getEntity() instanceof Creeper creeper && creeper.canDropMobsSkull()) {
+-            creeper.increaseDroppedSkulls();
+-            this.spawnAtLocation(Items.WITHER_SKELETON_SKULL);
++        Entity entity = source.getEntity();
++
++        if (entity instanceof Creeper entitycreeper) {
++            if (entitycreeper.canDropMobsSkull()) {
++                entitycreeper.increaseDroppedSkulls();
++                this.spawnAtLocation((ItemLike) Items.WITHER_SKELETON_SKULL);
++            }
+         }
++
+     }
+ 
+     @Override
+@@ -72,16 +79,16 @@
+     }
+ 
+     @Override
+-    protected void populateDefaultEquipmentEnchantments(ServerLevelAccessor world, RandomSource random, DifficultyInstance localDifficulty) {
+-    }
++    protected void populateDefaultEquipmentEnchantments(ServerLevelAccessor world, RandomSource random, DifficultyInstance localDifficulty) {}
+ 
+     @Nullable
+     @Override
+     public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData) {
+-        SpawnGroupData spawnGroupData = super.finalizeSpawn(world, difficulty, spawnReason, entityData);
+-        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(4.0);
++        SpawnGroupData groupdataentity1 = super.finalizeSpawn(world, difficulty, spawnReason, entityData);
++
++        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(4.0D);
+         this.reassessWeaponGoal();
+-        return spawnGroupData;
++        return groupdataentity1;
+     }
+ 
+     @Override
+@@ -90,7 +97,7 @@
+             return false;
+         } else {
+             if (target instanceof LivingEntity) {
+-                ((LivingEntity)target).addEffect(new MobEffectInstance(MobEffects.WITHER, 200), this);
++                ((LivingEntity) target).addEffect(new MobEffectInstance(MobEffects.WITHER, 200), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+             }
+ 
+             return true;
+@@ -99,13 +106,14 @@
+ 
+     @Override
+     protected AbstractArrow getArrow(ItemStack arrow, float damageModifier, @Nullable ItemStack shotFrom) {
+-        AbstractArrow abstractArrow = super.getArrow(arrow, damageModifier, shotFrom);
+-        abstractArrow.igniteForSeconds(100.0F);
+-        return abstractArrow;
++        AbstractArrow entityarrow = super.getArrow(arrow, damageModifier, shotFrom);
++
++        entityarrow.igniteForSeconds(100.0F);
++        return entityarrow;
+     }
+ 
+     @Override
+     public boolean canBeAffected(MobEffectInstance effect) {
+-        return !effect.is(MobEffects.WITHER) && super.canBeAffected(effect);
++        return effect.is(MobEffects.WITHER) && this.level().paperConfig().entities.mobEffects.immuneToWitherEffect.witherSkeleton ? false : super.canBeAffected(effect); // Paper - Add config for mobs immune to default effects
+     }
+ }

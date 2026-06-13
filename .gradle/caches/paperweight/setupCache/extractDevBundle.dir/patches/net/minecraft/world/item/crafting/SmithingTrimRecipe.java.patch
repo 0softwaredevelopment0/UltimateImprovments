@@ -1,0 +1,151 @@
+--- a/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
++++ b/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
+@@ -18,38 +18,54 @@
+ import net.minecraft.world.item.armortrim.TrimPattern;
+ import net.minecraft.world.item.armortrim.TrimPatterns;
+ import net.minecraft.world.level.Level;
++// CraftBukkit start
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.inventory.CraftRecipe;
++import org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe;
++import org.bukkit.inventory.Recipe;
++// CraftBukkit end
+ 
+ public class SmithingTrimRecipe implements SmithingRecipe {
++
+     final Ingredient template;
+     final Ingredient base;
+     final Ingredient addition;
++    final boolean copyDataComponents; // Paper - Option to prevent data components copy
+ 
+     public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition) {
++        // Paper start - Option to prevent data components copy
++        this(template, base, addition, true);
++    }
++    public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition, boolean copyDataComponents) {
++        this.copyDataComponents = copyDataComponents;
++        // Paper end - Option to prevent data components copy
+         this.template = template;
+         this.base = base;
+         this.addition = addition;
+     }
+ 
+-    @Override
+     public boolean matches(SmithingRecipeInput input, Level world) {
+         return this.template.test(input.template()) && this.base.test(input.base()) && this.addition.test(input.addition());
+     }
+ 
+-    @Override
+     public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider lookup) {
+-        ItemStack itemStack = input.base();
+-        if (this.base.test(itemStack)) {
++        ItemStack itemstack = input.base();
++
++        if (this.base.test(itemstack)) {
+             Optional<Holder.Reference<TrimMaterial>> optional = TrimMaterials.getFromIngredient(lookup, input.addition());
+-            Optional<Holder.Reference<TrimPattern>> optional2 = TrimPatterns.getFromTemplate(lookup, input.template());
+-            if (optional.isPresent() && optional2.isPresent()) {
+-                ArmorTrim armorTrim = itemStack.get(DataComponents.TRIM);
+-                if (armorTrim != null && armorTrim.hasPatternAndMaterial(optional2.get(), optional.get())) {
++            Optional<Holder.Reference<TrimPattern>> optional1 = TrimPatterns.getFromTemplate(lookup, input.template());
++
++            if (optional.isPresent() && optional1.isPresent()) {
++                ArmorTrim armortrim = (ArmorTrim) itemstack.get(DataComponents.TRIM);
++
++                if (armortrim != null && armortrim.hasPatternAndMaterial((Holder) optional1.get(), (Holder) optional.get())) {
+                     return ItemStack.EMPTY;
+                 }
+ 
+-                ItemStack itemStack2 = itemStack.copyWithCount(1);
+-                itemStack2.set(DataComponents.TRIM, new ArmorTrim(optional.get(), optional2.get()));
+-                return itemStack2;
++                ItemStack itemstack1 = this.copyDataComponents ? itemstack.copyWithCount(1) : new ItemStack(itemstack.getItem(), 1); // Paper - Option to prevent data components copy
++
++                itemstack1.set(DataComponents.TRIM, new ArmorTrim((Holder) optional.get(), (Holder) optional1.get()));
++                return itemstack1;
+             }
+         }
+ 
+@@ -58,14 +74,15 @@
+ 
+     @Override
+     public ItemStack getResultItem(HolderLookup.Provider registriesLookup) {
+-        ItemStack itemStack = new ItemStack(Items.IRON_CHESTPLATE);
++        ItemStack itemstack = new ItemStack(Items.IRON_CHESTPLATE);
+         Optional<Holder.Reference<TrimPattern>> optional = registriesLookup.lookupOrThrow(Registries.TRIM_PATTERN).listElements().findFirst();
+-        Optional<Holder.Reference<TrimMaterial>> optional2 = registriesLookup.lookupOrThrow(Registries.TRIM_MATERIAL).get(TrimMaterials.REDSTONE);
+-        if (optional.isPresent() && optional2.isPresent()) {
+-            itemStack.set(DataComponents.TRIM, new ArmorTrim(optional2.get(), optional.get()));
++        Optional<Holder.Reference<TrimMaterial>> optional1 = registriesLookup.lookupOrThrow(Registries.TRIM_MATERIAL).get(TrimMaterials.REDSTONE);
++
++        if (optional.isPresent() && optional1.isPresent()) {
++            itemstack.set(DataComponents.TRIM, new ArmorTrim((Holder) optional1.get(), (Holder) optional.get()));
+         }
+ 
+-        return itemStack;
++        return itemstack;
+     }
+ 
+     @Override
+@@ -93,34 +110,44 @@
+         return Stream.of(this.template, this.base, this.addition).anyMatch(Ingredient::isEmpty);
+     }
+ 
++    // CraftBukkit start
++    @Override
++    public Recipe toBukkitRecipe(NamespacedKey id) {
++        return new CraftSmithingTrimRecipe(id, CraftRecipe.toBukkit(this.template), CraftRecipe.toBukkit(this.base), CraftRecipe.toBukkit(this.addition), this.copyDataComponents); // Paper - Option to prevent data components copy
++    }
++    // CraftBukkit end
++
+     public static class Serializer implements RecipeSerializer<SmithingTrimRecipe> {
+-        private static final MapCodec<SmithingTrimRecipe> CODEC = RecordCodecBuilder.mapCodec(
+-            instance -> instance.group(
+-                        Ingredient.CODEC.fieldOf("template").forGetter(recipe -> recipe.template),
+-                        Ingredient.CODEC.fieldOf("base").forGetter(recipe -> recipe.base),
+-                        Ingredient.CODEC.fieldOf("addition").forGetter(recipe -> recipe.addition)
+-                    )
+-                    .apply(instance, SmithingTrimRecipe::new)
+-        );
+-        public static final StreamCodec<RegistryFriendlyByteBuf, SmithingTrimRecipe> STREAM_CODEC = StreamCodec.of(
+-            SmithingTrimRecipe.Serializer::toNetwork, SmithingTrimRecipe.Serializer::fromNetwork
+-        );
++
++        private static final MapCodec<SmithingTrimRecipe> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++            return instance.group(Ingredient.CODEC.fieldOf("template").forGetter((smithingtrimrecipe) -> {
++                return smithingtrimrecipe.template;
++            }), Ingredient.CODEC.fieldOf("base").forGetter((smithingtrimrecipe) -> {
++                return smithingtrimrecipe.base;
++            }), Ingredient.CODEC.fieldOf("addition").forGetter((smithingtrimrecipe) -> {
++                return smithingtrimrecipe.addition;
++            })).apply(instance, SmithingTrimRecipe::new);
++        });
++        public static final StreamCodec<RegistryFriendlyByteBuf, SmithingTrimRecipe> STREAM_CODEC = StreamCodec.of(SmithingTrimRecipe.Serializer::toNetwork, SmithingTrimRecipe.Serializer::fromNetwork);
++
++        public Serializer() {}
+ 
+         @Override
+         public MapCodec<SmithingTrimRecipe> codec() {
+-            return CODEC;
++            return SmithingTrimRecipe.Serializer.CODEC;
+         }
+ 
+         @Override
+         public StreamCodec<RegistryFriendlyByteBuf, SmithingTrimRecipe> streamCodec() {
+-            return STREAM_CODEC;
++            return SmithingTrimRecipe.Serializer.STREAM_CODEC;
+         }
+ 
+         private static SmithingTrimRecipe fromNetwork(RegistryFriendlyByteBuf buf) {
+-            Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
+-            Ingredient ingredient2 = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
+-            Ingredient ingredient3 = Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
+-            return new SmithingTrimRecipe(ingredient, ingredient2, ingredient3);
++            Ingredient recipeitemstack = (Ingredient) Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
++            Ingredient recipeitemstack1 = (Ingredient) Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
++            Ingredient recipeitemstack2 = (Ingredient) Ingredient.CONTENTS_STREAM_CODEC.decode(buf);
++
++            return new SmithingTrimRecipe(recipeitemstack, recipeitemstack1, recipeitemstack2);
+         }
+ 
+         private static void toNetwork(RegistryFriendlyByteBuf buf, SmithingTrimRecipe recipe) {

@@ -1,0 +1,77 @@
+--- a/net/minecraft/world/item/SuspiciousStewItem.java
++++ b/net/minecraft/world/item/SuspiciousStewItem.java
+@@ -1,7 +1,9 @@
+ package net.minecraft.world.item;
+ 
+ import java.util.ArrayList;
++import java.util.Iterator;
+ import java.util.List;
++import java.util.Objects;
+ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.world.effect.MobEffectInstance;
+@@ -11,6 +13,7 @@
+ import net.minecraft.world.level.Level;
+ 
+ public class SuspiciousStewItem extends Item {
++
+     public static final int DEFAULT_DURATION = 160;
+ 
+     public SuspiciousStewItem(Item.Properties settings) {
+@@ -21,25 +24,48 @@
+     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag type) {
+         super.appendHoverText(stack, context, tooltip, type);
+         if (type.isCreative()) {
+-            List<MobEffectInstance> list = new ArrayList<>();
+-            SuspiciousStewEffects suspiciousStewEffects = stack.getOrDefault(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
++            List<MobEffectInstance> list1 = new ArrayList();
++            SuspiciousStewEffects suspicioussteweffects = (SuspiciousStewEffects) stack.getOrDefault(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
++            Iterator iterator = suspicioussteweffects.effects().iterator();
+ 
+-            for (SuspiciousStewEffects.Entry entry : suspiciousStewEffects.effects()) {
+-                list.add(entry.createEffectInstance());
++            while (iterator.hasNext()) {
++                SuspiciousStewEffects.Entry suspicioussteweffects_a = (SuspiciousStewEffects.Entry) iterator.next();
++
++                list1.add(suspicioussteweffects_a.createEffectInstance());
+             }
+ 
+-            PotionContents.addPotionTooltip(list, tooltip::add, 1.0F, context.tickRate());
++            Objects.requireNonNull(tooltip);
++            PotionContents.addPotionTooltip(list1, tooltip::add, 1.0F, context.tickRate());
+         }
++
+     }
+ 
+     @Override
+     public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
+-        SuspiciousStewEffects suspiciousStewEffects = stack.getOrDefault(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
++        SuspiciousStewEffects suspicioussteweffects = (SuspiciousStewEffects) stack.getOrDefault(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
++        Iterator iterator = suspicioussteweffects.effects().iterator();
+ 
+-        for (SuspiciousStewEffects.Entry entry : suspiciousStewEffects.effects()) {
+-            user.addEffect(entry.createEffectInstance());
++        while (iterator.hasNext()) {
++            SuspiciousStewEffects.Entry suspicioussteweffects_a = (SuspiciousStewEffects.Entry) iterator.next();
++
++            user.addEffect(suspicioussteweffects_a.createEffectInstance(), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // Paper - Add missing effect cause
+         }
+ 
+         return super.finishUsingItem(stack, world, user);
+     }
++
++    // CraftBukkit start
++    public void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack) {
++        SuspiciousStewEffects suspicioussteweffects = (SuspiciousStewEffects) itemstack.getOrDefault(DataComponents.SUSPICIOUS_STEW_EFFECTS, SuspiciousStewEffects.EMPTY);
++
++        final List<net.minecraft.network.protocol.Packet<? super net.minecraft.network.protocol.game.ClientGamePacketListener>> packets = new java.util.ArrayList<>(); // Paper - bundlize packets
++        for (SuspiciousStewEffects.Entry suspicioussteweffects_a : suspicioussteweffects.effects()) {
++            packets.add(new net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket(entityplayer.getId(), suspicioussteweffects_a.effect())); // Paper - bundlize packets
++        }
++        // Paper start - bundlize packets
++        entityplayer.server.getPlayerList().sendActiveEffects(entityplayer, packets::add);
++        entityplayer.connection.send(new net.minecraft.network.protocol.game.ClientboundBundlePacket(packets));
++        // Paper end - bundlize packets
++    }
++    // CraftBukkit end
+ }

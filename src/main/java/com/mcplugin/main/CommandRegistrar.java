@@ -4,7 +4,6 @@ import com.mcplugin.Main;
 import com.mcplugin.commands.PluginReloadCommand;
 import com.mcplugin.commands.PowerCommand;
 import com.mcplugin.core1.ReactorCommand;
-import com.mcplugin.cp.CodePanelClick;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -30,7 +29,6 @@ public class CommandRegistrar {
     // REGISTER COMMANDS
     // =========================
     public void registerAll(Main plugin) {
-        register(plugin, "cp_click", new CodePanelClick());
         PluginReloadCommand mpCmd = new PluginReloadCommand();
         register(plugin, "mp", mpCmd);
         registerTab(plugin, "mp", mpCmd);

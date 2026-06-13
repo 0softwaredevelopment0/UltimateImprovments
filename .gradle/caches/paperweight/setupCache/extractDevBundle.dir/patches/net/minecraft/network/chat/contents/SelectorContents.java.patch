@@ -1,0 +1,20 @@
+--- a/net/minecraft/network/chat/contents/SelectorContents.java
++++ b/net/minecraft/network/chat/contents/SelectorContents.java
+@@ -50,7 +50,7 @@
+             EntitySelectorParser entitySelectorParser = new EntitySelectorParser(new StringReader(pattern), true);
+             entitySelector = entitySelectorParser.parse();
+         } catch (CommandSyntaxException var3) {
+-            LOGGER.warn("Invalid selector component: {}: {}", pattern, var3.getMessage());
++            return null; // Paper
+         }
+ 
+         return entitySelector;
+@@ -77,7 +77,7 @@
+     @Override
+     public MutableComponent resolve(@Nullable CommandSourceStack source, @Nullable Entity sender, int depth) throws CommandSyntaxException {
+         if (source != null && this.selector != null) {
+-            Optional<? extends Component> optional = ComponentUtils.updateForEntity(source, this.separator, sender, depth);
++            Optional<? extends Component> optional = ComponentUtils.updateSeparatorForEntity(source, this.separator, sender, depth); // Paper - validate separator
+             return ComponentUtils.formatList(this.selector.findEntities(source), optional, Entity::getDisplayName);
+         } else {
+             return Component.empty();

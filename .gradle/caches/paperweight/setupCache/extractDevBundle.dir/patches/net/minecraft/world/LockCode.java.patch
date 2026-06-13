@@ -1,0 +1,52 @@
+--- a/net/minecraft/world/LockCode.java
++++ b/net/minecraft/world/LockCode.java
+@@ -6,7 +6,13 @@
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.world.item.ItemStack;
+ 
++// CraftBukkit start
++import org.bukkit.ChatColor;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++// CraftBukkit end
++
+ public record LockCode(String key) {
++
+     public static final LockCode NO_LOCK = new LockCode("");
+     public static final Codec<LockCode> CODEC = Codec.STRING.xmap(LockCode::new, LockCode::key);
+     public static final String TAG_LOCK = "Lock";
+@@ -15,8 +21,21 @@
+         if (this.key.isEmpty()) {
+             return true;
+         } else {
+-            Component component = stack.get(DataComponents.CUSTOM_NAME);
+-            return component != null && this.key.equals(component.getString());
++            Component ichatbasecomponent = (Component) stack.get(DataComponents.CUSTOM_NAME);
++
++            // CraftBukkit start - SPIGOT-6307: Check for color codes if the lock contains color codes
++            if (this.key.isEmpty()) return true;
++            if (ichatbasecomponent != null) {
++                if (this.key.indexOf(ChatColor.COLOR_CHAR) == -1) {
++                    // The lock key contains no color codes, so let's ignore colors in the item display name (vanilla Minecraft behavior):
++                    return this.key.equals(ichatbasecomponent.getString());
++                } else {
++                    // The lock key contains color codes, so let's take them into account:
++                    return this.key.equals(CraftChatMessage.fromComponent(ichatbasecomponent));
++                }
++            }
++            return false;
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -24,9 +43,10 @@
+         if (!this.key.isEmpty()) {
+             nbt.putString("Lock", this.key);
+         }
++
+     }
+ 
+     public static LockCode fromTag(CompoundTag nbt) {
+-        return nbt.contains("Lock", 8) ? new LockCode(nbt.getString("Lock")) : NO_LOCK;
++        return nbt.contains("Lock", 8) ? new LockCode(nbt.getString("Lock")) : LockCode.NO_LOCK;
+     }
+ }

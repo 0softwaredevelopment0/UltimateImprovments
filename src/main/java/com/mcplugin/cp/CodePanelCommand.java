@@ -163,7 +163,7 @@ public class CodePanelCommand implements CommandExecutor {
 
         tc.setClickEvent(new ClickEvent(
                 ClickEvent.Action.RUN_COMMAND,
-                "/cp_click " + value
+                "/mp pane_click " + value
         ));
 
         return tc;

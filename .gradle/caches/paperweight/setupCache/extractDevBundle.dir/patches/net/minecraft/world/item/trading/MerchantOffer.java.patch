@@ -1,0 +1,244 @@
+--- a/net/minecraft/world/item/trading/MerchantOffer.java
++++ b/net/minecraft/world/item/trading/MerchantOffer.java
+@@ -8,25 +8,38 @@
+ import net.minecraft.util.Mth;
+ import net.minecraft.world.item.ItemStack;
+ 
++import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe; // CraftBukkit
++
+ public class MerchantOffer {
+-    public static final Codec<MerchantOffer> CODEC = RecordCodecBuilder.create(
+-        instance -> instance.group(
+-                    ItemCost.CODEC.fieldOf("buy").forGetter(tradeOffer -> tradeOffer.baseCostA),
+-                    ItemCost.CODEC.lenientOptionalFieldOf("buyB").forGetter(tradeOffer -> tradeOffer.costB),
+-                    ItemStack.CODEC.fieldOf("sell").forGetter(tradeOffer -> tradeOffer.result),
+-                    Codec.INT.lenientOptionalFieldOf("uses", Integer.valueOf(0)).forGetter(tradeOffer -> tradeOffer.uses),
+-                    Codec.INT.lenientOptionalFieldOf("maxUses", Integer.valueOf(4)).forGetter(tradeOffer -> tradeOffer.maxUses),
+-                    Codec.BOOL.lenientOptionalFieldOf("rewardExp", Boolean.valueOf(true)).forGetter(tradeOffer -> tradeOffer.rewardExp),
+-                    Codec.INT.lenientOptionalFieldOf("specialPrice", Integer.valueOf(0)).forGetter(tradeOffer -> tradeOffer.specialPriceDiff),
+-                    Codec.INT.lenientOptionalFieldOf("demand", Integer.valueOf(0)).forGetter(tradeOffer -> tradeOffer.demand),
+-                    Codec.FLOAT.lenientOptionalFieldOf("priceMultiplier", Float.valueOf(0.0F)).forGetter(tradeOffer -> tradeOffer.priceMultiplier),
+-                    Codec.INT.lenientOptionalFieldOf("xp", Integer.valueOf(1)).forGetter(tradeOffer -> tradeOffer.xp)
+-                )
+-                .apply(instance, MerchantOffer::new)
+-    );
+-    public static final StreamCodec<RegistryFriendlyByteBuf, MerchantOffer> STREAM_CODEC = StreamCodec.of(
+-        MerchantOffer::writeToStream, MerchantOffer::createFromStream
+-    );
++
++    public static final Codec<MerchantOffer> CODEC = RecordCodecBuilder.create((instance) -> {
++        return instance.group(ItemCost.CODEC.fieldOf("buy").forGetter((merchantrecipe) -> {
++            return merchantrecipe.baseCostA;
++        }), ItemCost.CODEC.lenientOptionalFieldOf("buyB").forGetter((merchantrecipe) -> {
++            return merchantrecipe.costB;
++        }), ItemStack.CODEC.fieldOf("sell").forGetter((merchantrecipe) -> {
++            return merchantrecipe.result;
++        }), Codec.INT.lenientOptionalFieldOf("uses", 0).forGetter((merchantrecipe) -> {
++            return merchantrecipe.uses;
++        }), Codec.INT.lenientOptionalFieldOf("maxUses", 4).forGetter((merchantrecipe) -> {
++            return merchantrecipe.maxUses;
++        }), Codec.BOOL.lenientOptionalFieldOf("rewardExp", true).forGetter((merchantrecipe) -> {
++            return merchantrecipe.rewardExp;
++        }), Codec.INT.lenientOptionalFieldOf("specialPrice", 0).forGetter((merchantrecipe) -> {
++            return merchantrecipe.specialPriceDiff;
++        }), Codec.INT.lenientOptionalFieldOf("demand", 0).forGetter((merchantrecipe) -> {
++            return merchantrecipe.demand;
++        }), Codec.FLOAT.lenientOptionalFieldOf("priceMultiplier", 0.0F).forGetter((merchantrecipe) -> {
++            return merchantrecipe.priceMultiplier;
++        }), Codec.INT.lenientOptionalFieldOf("xp", 1).forGetter((merchantrecipe) -> {
++            return merchantrecipe.xp;
++        // Paper start
++        }), Codec.BOOL.lenientOptionalFieldOf("Paper.IgnoreDiscounts", false).forGetter((merchantrecipe) -> {
++            return merchantrecipe.ignoreDiscounts;
++        // Paper end
++        })).apply(instance, MerchantOffer::new);
++    });
++    public static final StreamCodec<RegistryFriendlyByteBuf, MerchantOffer> STREAM_CODEC = StreamCodec.of(MerchantOffer::writeToStream, MerchantOffer::createFromStream);
+     public ItemCost baseCostA;
+     public Optional<ItemCost> costB;
+     public final ItemStack result;
+@@ -37,19 +50,22 @@
+     public int demand;
+     public float priceMultiplier;
+     public int xp;
++    public boolean ignoreDiscounts; // Paper - Add ignore discounts API
++    // CraftBukkit start
++    private CraftMerchantRecipe bukkitHandle;
+ 
+-    private MerchantOffer(
+-        ItemCost firstBuyItem,
+-        Optional<ItemCost> secondBuyItem,
+-        ItemStack sellItem,
+-        int uses,
+-        int maxUses,
+-        boolean rewardingPlayerExperience,
+-        int specialPrice,
+-        int demandBonus,
+-        float priceMultiplier,
+-        int merchantExperience
+-    ) {
++    public CraftMerchantRecipe asBukkit() {
++        return (this.bukkitHandle == null) ? this.bukkitHandle = new CraftMerchantRecipe(this) : this.bukkitHandle;
++    }
++
++    public MerchantOffer(ItemCost baseCostA, Optional<ItemCost> costB, ItemStack result, int uses, int maxUses, int experience, float priceMultiplier, int demand, final boolean ignoreDiscounts, CraftMerchantRecipe bukkit) { // Paper
++        this(baseCostA, costB, result, uses, maxUses, experience, priceMultiplier, demand);
++        this.ignoreDiscounts = ignoreDiscounts; // Paper
++        this.bukkitHandle = bukkit;
++    }
++    // CraftBukkit end
++
++    private MerchantOffer(ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int uses, int maxUses, boolean rewardingPlayerExperience, int specialPrice, int demandBonus, float priceMultiplier, int merchantExperience, final boolean ignoreDiscounts) { // Paper
+         this.baseCostA = firstBuyItem;
+         this.costB = secondBuyItem;
+         this.result = sellItem;
+@@ -60,50 +76,27 @@
+         this.demand = demandBonus;
+         this.priceMultiplier = priceMultiplier;
+         this.xp = merchantExperience;
++        this.ignoreDiscounts = ignoreDiscounts; // Paper
+     }
+ 
+     public MerchantOffer(ItemCost buyItem, ItemStack sellItem, int maxUses, int merchantExperience, float priceMultiplier) {
+         this(buyItem, Optional.empty(), sellItem, maxUses, merchantExperience, priceMultiplier);
+     }
+ 
+-    public MerchantOffer(
+-        ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int maxUses, int merchantExperience, float priceMultiplier
+-    ) {
++    public MerchantOffer(ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int maxUses, int merchantExperience, float priceMultiplier) {
+         this(firstBuyItem, secondBuyItem, sellItem, 0, maxUses, merchantExperience, priceMultiplier);
+     }
+ 
+-    public MerchantOffer(
+-        ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int uses, int maxUses, int merchantExperience, float priceMultiplier
+-    ) {
++    public MerchantOffer(ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int uses, int maxUses, int merchantExperience, float priceMultiplier) {
+         this(firstBuyItem, secondBuyItem, sellItem, uses, maxUses, merchantExperience, priceMultiplier, 0);
+     }
+ 
+-    public MerchantOffer(
+-        ItemCost firstBuyItem,
+-        Optional<ItemCost> secondBuyItem,
+-        ItemStack sellItem,
+-        int uses,
+-        int maxUses,
+-        int merchantExperience,
+-        float priceMultiplier,
+-        int demandBonus
+-    ) {
+-        this(firstBuyItem, secondBuyItem, sellItem, uses, maxUses, true, 0, demandBonus, priceMultiplier, merchantExperience);
++    public MerchantOffer(ItemCost firstBuyItem, Optional<ItemCost> secondBuyItem, ItemStack sellItem, int uses, int maxUses, int merchantExperience, float priceMultiplier, int demandBonus) {
++        this(firstBuyItem, secondBuyItem, sellItem, uses, maxUses, true, 0, demandBonus, priceMultiplier, merchantExperience, false); // Paper
+     }
+ 
+     private MerchantOffer(MerchantOffer offer) {
+-        this(
+-            offer.baseCostA,
+-            offer.costB,
+-            offer.result.copy(),
+-            offer.uses,
+-            offer.maxUses,
+-            offer.rewardExp,
+-            offer.specialPriceDiff,
+-            offer.demand,
+-            offer.priceMultiplier,
+-            offer.xp
+-        );
++        this(offer.baseCostA, offer.costB, offer.result.copy(), offer.uses, offer.maxUses, offer.rewardExp, offer.specialPriceDiff, offer.demand, offer.priceMultiplier, offer.xp, offer.ignoreDiscounts); // Paper
+     }
+ 
+     public ItemStack getBaseCostA() {
+@@ -116,12 +109,13 @@
+ 
+     private int getModifiedCostCount(ItemCost firstBuyItem) {
+         int i = firstBuyItem.count();
+-        int j = Math.max(0, Mth.floor((float)(i * this.demand) * this.priceMultiplier));
++        int j = Math.max(0, Mth.floor((float) (i * this.demand) * this.priceMultiplier));
++
+         return Mth.clamp(i + j + this.specialPriceDiff, 1, firstBuyItem.itemStack().getMaxStackSize());
+     }
+ 
+     public ItemStack getCostB() {
+-        return this.costB.map(ItemCost::itemStack).orElse(ItemStack.EMPTY);
++        return (ItemStack) this.costB.map(ItemCost::itemStack).orElse(ItemStack.EMPTY);
+     }
+ 
+     public ItemCost getItemCostA() {
+@@ -137,7 +131,7 @@
+     }
+ 
+     public void updateDemand() {
+-        this.demand = this.demand + this.uses - (this.maxUses - this.uses);
++        this.demand = Math.max(0, this.demand + this.uses - (this.maxUses - this.uses)); // Paper - Fix MC-163962
+     }
+ 
+     public ItemStack assemble() {
+@@ -157,7 +151,7 @@
+     }
+ 
+     public void increaseUses() {
+-        this.uses++;
++        ++this.uses;
+     }
+ 
+     public int getDemand() {
+@@ -205,18 +199,18 @@
+     }
+ 
+     public boolean satisfiedBy(ItemStack stack, ItemStack buyItem) {
+-        if (!this.baseCostA.test(stack) || stack.getCount() < this.getModifiedCostCount(this.baseCostA)) {
+-            return false;
+-        } else {
+-            return !this.costB.isPresent() ? buyItem.isEmpty() : this.costB.get().test(buyItem) && buyItem.getCount() >= this.costB.get().count();
+-        }
++        return this.baseCostA.test(stack) && stack.getCount() >= this.getModifiedCostCount(this.baseCostA) ? (!this.costB.isPresent() ? buyItem.isEmpty() : ((ItemCost) this.costB.get()).test(buyItem) && buyItem.getCount() >= ((ItemCost) this.costB.get()).count()) : false;
+     }
+ 
+     public boolean take(ItemStack firstBuyStack, ItemStack secondBuyStack) {
+         if (!this.satisfiedBy(firstBuyStack, secondBuyStack)) {
+             return false;
+         } else {
+-            firstBuyStack.shrink(this.getCostA().getCount());
++            // CraftBukkit start
++            if (!this.getCostA().isEmpty()) {
++                firstBuyStack.shrink(this.getCostA().getCount());
++            }
++            // CraftBukkit end
+             if (!this.getCostB().isEmpty()) {
+                 secondBuyStack.shrink(this.getCostB().getCount());
+             }
+@@ -243,22 +237,23 @@
+     }
+ 
+     public static MerchantOffer createFromStream(RegistryFriendlyByteBuf buf) {
+-        ItemCost itemCost = ItemCost.STREAM_CODEC.decode(buf);
+-        ItemStack itemStack = ItemStack.STREAM_CODEC.decode(buf);
+-        Optional<ItemCost> optional = ItemCost.OPTIONAL_STREAM_CODEC.decode(buf);
+-        boolean bl = buf.readBoolean();
++        ItemCost itemcost = (ItemCost) ItemCost.STREAM_CODEC.decode(buf);
++        ItemStack itemstack = (ItemStack) ItemStack.STREAM_CODEC.decode(buf);
++        Optional<ItemCost> optional = (Optional) ItemCost.OPTIONAL_STREAM_CODEC.decode(buf);
++        boolean flag = buf.readBoolean();
+         int i = buf.readInt();
+         int j = buf.readInt();
+         int k = buf.readInt();
+         int l = buf.readInt();
+         float f = buf.readFloat();
+-        int m = buf.readInt();
+-        MerchantOffer merchantOffer = new MerchantOffer(itemCost, optional, itemStack, i, j, k, f, m);
+-        if (bl) {
+-            merchantOffer.setToOutOfStock();
++        int i1 = buf.readInt();
++        MerchantOffer merchantrecipe = new MerchantOffer(itemcost, optional, itemstack, i, j, k, f, i1);
++
++        if (flag) {
++            merchantrecipe.setToOutOfStock();
+         }
+ 
+-        merchantOffer.setSpecialPriceDiff(l);
+-        return merchantOffer;
++        merchantrecipe.setSpecialPriceDiff(l);
++        return merchantrecipe;
+     }
+ }

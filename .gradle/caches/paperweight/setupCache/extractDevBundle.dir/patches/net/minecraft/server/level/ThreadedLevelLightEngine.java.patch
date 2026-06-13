@@ -1,0 +1,334 @@
+--- a/net/minecraft/server/level/ThreadedLevelLightEngine.java
++++ b/net/minecraft/server/level/ThreadedLevelLightEngine.java
+@@ -23,15 +23,128 @@
+ import net.minecraft.world.level.lighting.LevelLightEngine;
+ import org.slf4j.Logger;
+ 
+-public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable {
++public class ThreadedLevelLightEngine extends LevelLightEngine implements AutoCloseable, ca.spottedleaf.moonrise.patches.starlight.light.StarLightLightingProvider { // Paper - rewrite chunk system
+     public static final int DEFAULT_BATCH_SIZE = 1000;
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    private final ProcessorMailbox<Runnable> taskMailbox;
+-    private final ObjectList<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> lightTasks = new ObjectArrayList<>();
++    // Paper - rewrite chunk sytem
+     private final ChunkMap chunkMap;
+-    private final ProcessorHandle<ChunkTaskPriorityQueueSorter.Message<Runnable>> sorterMailbox;
++    // Paper - rewrite chunk sytem
+     private final int taskPerBatch = 1000;
+-    private final AtomicBoolean scheduled = new AtomicBoolean();
++    // Paper - rewrite chunk sytem
++
++    // Paper start - rewrite chunk system
++    private final java.util.concurrent.atomic.AtomicLong chunkWorkCounter = new java.util.concurrent.atomic.AtomicLong();
++    private void queueTaskForSection(final int chunkX, final int chunkY, final int chunkZ,
++                                     final java.util.function.Supplier<ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.LightQueue.ChunkTasks> supplier) {
++        final ServerLevel world = (ServerLevel)this.starlight$getLightEngine().getWorld();
++
++        final ChunkAccess center = this.starlight$getLightEngine().getAnyChunkNow(chunkX, chunkZ);
++        if (center == null || !center.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.LIGHT)) {
++            // do not accept updates in unlit chunks, unless we might be generating a chunk. thanks to the amazing
++            // chunk scheduling, we could be lighting and generating a chunk at the same time
++            return;
++        }
++
++        final ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.ServerLightQueue.ServerChunkTasks scheduledTask = (ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.ServerLightQueue.ServerChunkTasks)supplier.get();
++
++        if (scheduledTask == null) {
++            // not scheduled
++            return;
++        }
++
++        if (!scheduledTask.markTicketAdded()) {
++            // ticket already added
++            return;
++        }
++
++        final Long ticketId = Long.valueOf(this.chunkWorkCounter.getAndIncrement());
++        final ChunkPos pos = new ChunkPos(chunkX, chunkZ);
++        world.getChunkSource().addRegionTicket(ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.CHUNK_WORK_TICKET, pos, ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, ticketId);
++
++        scheduledTask.queueOrRunTask(() -> {
++            world.getChunkSource().removeRegionTicket(ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.CHUNK_WORK_TICKET, pos, ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, ticketId);
++        });
++    }
++
++    @Override
++    public final int starlight$serverRelightChunks(final java.util.Collection<net.minecraft.world.level.ChunkPos> chunks0,
++                                                   final java.util.function.Consumer<net.minecraft.world.level.ChunkPos> chunkLightCallback,
++                                                   final java.util.function.IntConsumer onComplete) {
++        final java.util.Set<net.minecraft.world.level.ChunkPos> chunks = new java.util.LinkedHashSet<>(chunks0);
++        final java.util.Map<net.minecraft.world.level.ChunkPos, Long> ticketIds = new java.util.HashMap<>();
++        final ServerLevel world = (ServerLevel)this.starlight$getLightEngine().getWorld();
++
++        for (final java.util.Iterator<net.minecraft.world.level.ChunkPos> iterator = chunks.iterator(); iterator.hasNext();) {
++            final ChunkPos pos = iterator.next();
++
++            final Long id = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.getNextChunkRelightId();
++            world.getChunkSource().addRegionTicket(ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.CHUNK_RELIGHT, pos, ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, id);
++            ticketIds.put(pos, id);
++
++            final ChunkAccess chunk = (ChunkAccess)world.getChunkSource().getChunkForLighting(pos.x, pos.z);
++            if (chunk == null || !chunk.isLightCorrect() || !chunk.getPersistedStatus().isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.LIGHT)) {
++                // cannot relight this chunk
++                iterator.remove();
++                ticketIds.remove(pos);
++                world.getChunkSource().removeRegionTicket(ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.CHUNK_RELIGHT, pos, ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, id);
++                continue;
++            }
++        }
++
++        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().radiusAwareScheduler.queueInfiniteRadiusTask(() -> {
++            ThreadedLevelLightEngine.this.starlight$getLightEngine().relightChunks(
++                chunks,
++                (final ChunkPos pos) -> {
++                    if (chunkLightCallback != null) {
++                        chunkLightCallback.accept(pos);
++                    }
++
++                    ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().scheduleChunkTask(pos.x, pos.z, () -> {
++                        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(
++                            pos.x, pos.z
++                        );
++
++                        if (chunkHolder == null) {
++                            return;
++                        }
++
++                        final java.util.List<ServerPlayer> players = ((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemChunkHolder)chunkHolder.vanillaChunkHolder).moonrise$getPlayers(false);
++
++                        if (players.isEmpty()) {
++                            return;
++                        }
++
++                        final net.minecraft.network.protocol.Packet<?> relightPacket = new net.minecraft.network.protocol.game.ClientboundLightUpdatePacket(
++                            pos, (ThreadedLevelLightEngine)(Object)ThreadedLevelLightEngine.this,
++                            null, null
++                        );
++
++                        for (final ServerPlayer player : players) {
++                            final net.minecraft.server.network.ServerGamePacketListenerImpl conn = player.connection;
++                            if (conn != null) {
++                                conn.send(relightPacket);
++                            }
++                        }
++                    });
++                },
++                (final int relight) -> {
++                    if (onComplete != null) {
++                        onComplete.accept(relight);
++                    }
++
++                    for (final java.util.Map.Entry<ChunkPos, Long> entry : ticketIds.entrySet()) {
++                        world.getChunkSource().removeRegionTicket(
++                            ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.CHUNK_RELIGHT, entry.getKey(),
++                            ca.spottedleaf.moonrise.patches.starlight.light.StarLightInterface.REGION_LIGHT_TICKET_LEVEL, entry.getValue()
++                        );
++                    }
++                }
++            );
++        });
++
++        return chunks.size();
++    }
++    // Paper end - rewrite chunk system
+ 
+     public ThreadedLevelLightEngine(
+         LightChunkGetter chunkProvider,
+@@ -42,8 +155,7 @@
+     ) {
+         super(chunkProvider, true, hasBlockLight);
+         this.chunkMap = chunkLoadingManager;
+-        this.sorterMailbox = executor;
+-        this.taskMailbox = processor;
++        // Paper - rewrite chunk sytem
+     }
+ 
+     @Override
+@@ -57,164 +169,73 @@
+ 
+     @Override
+     public void checkBlock(BlockPos pos) {
+-        BlockPos blockPos = pos.immutable();
+-        this.addTask(
+-            SectionPos.blockToSectionCoord(pos.getX()),
+-            SectionPos.blockToSectionCoord(pos.getZ()),
+-            ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
+-            Util.name(() -> super.checkBlock(blockPos), () -> "checkBlock " + blockPos)
+-        );
++        // Paper start - rewrite chunk system
++        final BlockPos posCopy = pos.immutable();
++        this.queueTaskForSection(posCopy.getX() >> 4, posCopy.getY() >> 4, posCopy.getZ() >> 4, () -> {
++            return ThreadedLevelLightEngine.this.starlight$getLightEngine().blockChange(posCopy);
++        });
++        // Paper end - rewrite chunk system
+     }
+ 
+     protected void updateChunkStatus(ChunkPos pos) {
+-        this.addTask(pos.x, pos.z, () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+-            super.retainData(pos, false);
+-            super.setLightEnabled(pos, false);
+-
+-            for (int i = this.getMinLightSection(); i < this.getMaxLightSection(); i++) {
+-                super.queueSectionData(LightLayer.BLOCK, SectionPos.of(pos, i), null);
+-                super.queueSectionData(LightLayer.SKY, SectionPos.of(pos, i), null);
+-            }
+-
+-            for (int j = this.levelHeightAccessor.getMinSection(); j < this.levelHeightAccessor.getMaxSection(); j++) {
+-                super.updateSectionStatus(SectionPos.of(pos, j), true);
+-            }
+-        }, () -> "updateChunkStatus " + pos + " true"));
++        // Paper - rewrite chunk system
+     }
+ 
+     @Override
+     public void updateSectionStatus(SectionPos pos, boolean notReady) {
+-        this.addTask(
+-            pos.x(),
+-            pos.z(),
+-            () -> 0,
+-            ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
+-            Util.name(() -> super.updateSectionStatus(pos, notReady), () -> "updateSectionStatus " + pos + " " + notReady)
+-        );
++        // Paper start - rewrite chunk system
++        this.queueTaskForSection(pos.getX(), pos.getY(), pos.getZ(), () -> {
++            return ThreadedLevelLightEngine.this.starlight$getLightEngine().sectionChange(pos, notReady);
++        });
++        // Paper end - rewrite chunk system
+     }
+ 
+     @Override
+     public void propagateLightSources(ChunkPos chunkPos) {
+-        this.addTask(
+-            chunkPos.x,
+-            chunkPos.z,
+-            ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
+-            Util.name(() -> super.propagateLightSources(chunkPos), () -> "propagateLight " + chunkPos)
+-        );
++        // Paper - rewrite chunk system
+     }
+ 
+     @Override
+     public void setLightEnabled(ChunkPos pos, boolean retainData) {
+-        this.addTask(
+-            pos.x,
+-            pos.z,
+-            ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
+-            Util.name(() -> super.setLightEnabled(pos, retainData), () -> "enableLight " + pos + " " + retainData)
+-        );
++        // Paper start - rewrite chunk system
+     }
+ 
+     @Override
+     public void queueSectionData(LightLayer lightType, SectionPos pos, @Nullable DataLayer nibbles) {
+-        this.addTask(
+-            pos.x(),
+-            pos.z(),
+-            () -> 0,
+-            ThreadedLevelLightEngine.TaskType.PRE_UPDATE,
+-            Util.name(() -> super.queueSectionData(lightType, pos, nibbles), () -> "queueData " + pos)
+-        );
++        // Paper start - rewrite chunk system
+     }
+ 
+     private void addTask(int x, int z, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
+-        this.addTask(x, z, this.chunkMap.getChunkQueueLevel(ChunkPos.asLong(x, z)), stage, task);
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     private void addTask(int x, int z, IntSupplier completedLevelSupplier, ThreadedLevelLightEngine.TaskType stage, Runnable task) {
+-        this.sorterMailbox.tell(ChunkTaskPriorityQueueSorter.message(() -> {
+-            this.lightTasks.add(Pair.of(stage, task));
+-            if (this.lightTasks.size() >= 1000) {
+-                this.runUpdate();
+-            }
+-        }, ChunkPos.asLong(x, z), completedLevelSupplier));
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     @Override
+     public void retainData(ChunkPos pos, boolean retainData) {
+-        this.addTask(
+-            pos.x, pos.z, () -> 0, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> super.retainData(pos, retainData), () -> "retainData " + pos)
+-        );
++        // Paper start - rewrite chunk system
+     }
+ 
+     public CompletableFuture<ChunkAccess> initializeLight(ChunkAccess chunk, boolean bl) {
+-        ChunkPos chunkPos = chunk.getPos();
+-        this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+-            LevelChunkSection[] levelChunkSections = chunk.getSections();
+-
+-            for (int i = 0; i < chunk.getSectionsCount(); i++) {
+-                LevelChunkSection levelChunkSection = levelChunkSections[i];
+-                if (!levelChunkSection.hasOnlyAir()) {
+-                    int j = this.levelHeightAccessor.getSectionYFromSectionIndex(i);
+-                    super.updateSectionStatus(SectionPos.of(chunkPos, j), false);
+-                }
+-            }
+-        }, () -> "initializeLight: " + chunkPos));
+-        return CompletableFuture.supplyAsync(() -> {
+-            super.setLightEnabled(chunkPos, bl);
+-            super.retainData(chunkPos, false);
+-            return chunk;
+-        }, task -> this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, task));
++        return CompletableFuture.completedFuture(chunk); // Paper start - rewrite chunk system
+     }
+ 
+     public CompletableFuture<ChunkAccess> lightChunk(ChunkAccess chunk, boolean excludeBlocks) {
+-        ChunkPos chunkPos = chunk.getPos();
+-        chunk.setLightCorrect(false);
+-        this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.PRE_UPDATE, Util.name(() -> {
+-            if (!excludeBlocks) {
+-                super.propagateLightSources(chunkPos);
+-            }
+-        }, () -> "lightChunk " + chunkPos + " " + excludeBlocks));
+-        return CompletableFuture.supplyAsync(() -> {
+-            chunk.setLightCorrect(true);
+-            return chunk;
+-        }, task -> this.addTask(chunkPos.x, chunkPos.z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, task));
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public void tryScheduleUpdate() {
+-        if ((!this.lightTasks.isEmpty() || super.hasLightWork()) && this.scheduled.compareAndSet(false, true)) {
+-            this.taskMailbox.tell(() -> {
+-                this.runUpdate();
+-                this.scheduled.set(false);
+-            });
+-        }
++        // Paper - rewrite chunk system
+     }
+ 
+     private void runUpdate() {
+-        int i = Math.min(this.lightTasks.size(), 1000);
+-        ObjectListIterator<Pair<ThreadedLevelLightEngine.TaskType, Runnable>> objectListIterator = this.lightTasks.iterator();
+-
+-        int j;
+-        for (j = 0; objectListIterator.hasNext() && j < i; j++) {
+-            Pair<ThreadedLevelLightEngine.TaskType, Runnable> pair = objectListIterator.next();
+-            if (pair.getFirst() == ThreadedLevelLightEngine.TaskType.PRE_UPDATE) {
+-                pair.getSecond().run();
+-            }
+-        }
+-
+-        objectListIterator.back(j);
+-        super.runLightUpdates();
+-
+-        for (int var5 = 0; objectListIterator.hasNext() && var5 < i; var5++) {
+-            Pair<ThreadedLevelLightEngine.TaskType, Runnable> pair2 = objectListIterator.next();
+-            if (pair2.getFirst() == ThreadedLevelLightEngine.TaskType.POST_UPDATE) {
+-                pair2.getSecond().run();
+-            }
+-
+-            objectListIterator.remove();
+-        }
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public CompletableFuture<?> waitForPendingTasks(int x, int z) {
+-        return CompletableFuture.runAsync(() -> {
+-        }, callback -> this.addTask(x, z, ThreadedLevelLightEngine.TaskType.POST_UPDATE, callback));
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     static enum TaskType {

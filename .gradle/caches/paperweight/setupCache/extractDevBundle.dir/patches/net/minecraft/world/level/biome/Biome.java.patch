@@ -1,0 +1,24 @@
+--- a/net/minecraft/world/level/biome/Biome.java
++++ b/net/minecraft/world/level/biome/Biome.java
+@@ -111,20 +111,7 @@
+ 
+     @Deprecated
+     public float getTemperature(BlockPos blockPos) {
+-        long l = blockPos.asLong();
+-        Long2FloatLinkedOpenHashMap long2FloatLinkedOpenHashMap = this.temperatureCache.get();
+-        float f = long2FloatLinkedOpenHashMap.get(l);
+-        if (!Float.isNaN(f)) {
+-            return f;
+-        } else {
+-            float g = this.getHeightAdjustedTemperature(blockPos);
+-            if (long2FloatLinkedOpenHashMap.size() == 1024) {
+-                long2FloatLinkedOpenHashMap.removeFirstFloat();
+-            }
+-
+-            long2FloatLinkedOpenHashMap.put(l, g);
+-            return g;
+-        }
++        return this.getHeightAdjustedTemperature(blockPos); // Paper - optimise random ticking
+     }
+ 
+     public boolean shouldFreeze(LevelReader world, BlockPos blockPos) {

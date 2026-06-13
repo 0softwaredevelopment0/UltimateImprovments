@@ -1,0 +1,155 @@
+--- a/net/minecraft/world/item/LeadItem.java
++++ b/net/minecraft/world/item/LeadItem.java
+@@ -1,8 +1,12 @@
+ package net.minecraft.world.item;
+ 
++import java.util.Iterator;
+ import java.util.List;
++import java.util.Objects;
+ import java.util.function.Predicate;
++import java.util.stream.Stream;
+ import net.minecraft.core.BlockPos;
++import net.minecraft.core.Holder;
+ import net.minecraft.tags.BlockTags;
+ import net.minecraft.world.InteractionResult;
+ import net.minecraft.world.entity.Entity;
+@@ -14,62 +18,115 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.AABB;
++// CraftBukkit start
++import org.bukkit.craftbukkit.CraftEquipmentSlot;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.hanging.HangingPlaceEvent;
++// CraftBukkit end
+ 
+ public class LeadItem extends Item {
++
+     public LeadItem(Item.Properties settings) {
+         super(settings);
+     }
+ 
+     @Override
+     public InteractionResult useOn(UseOnContext context) {
+-        Level level = context.getLevel();
+-        BlockPos blockPos = context.getClickedPos();
+-        BlockState blockState = level.getBlockState(blockPos);
+-        if (blockState.is(BlockTags.FENCES)) {
+-            Player player = context.getPlayer();
+-            if (!level.isClientSide && player != null) {
+-                bindPlayerMobs(player, level, blockPos);
++        Level world = context.getLevel();
++        BlockPos blockposition = context.getClickedPos();
++        BlockState iblockdata = world.getBlockState(blockposition);
++
++        if (iblockdata.is(BlockTags.FENCES)) {
++            Player entityhuman = context.getPlayer();
++
++            if (!world.isClientSide && entityhuman != null) {
++                LeadItem.bindPlayerMobs(entityhuman, world, blockposition, context.getHand()); // CraftBukkit - Pass hand
+             }
+ 
+-            return InteractionResult.sidedSuccess(level.isClientSide);
++            return InteractionResult.sidedSuccess(world.isClientSide);
+         } else {
+             return InteractionResult.PASS;
+         }
+     }
+ 
+-    public static InteractionResult bindPlayerMobs(Player player, Level world, BlockPos pos) {
+-        LeashFenceKnotEntity leashFenceKnotEntity = null;
+-        List<Leashable> list = leashableInArea(world, pos, entity -> entity.getLeashHolder() == player);
++    public static InteractionResult bindPlayerMobs(Player entityhuman, Level world, BlockPos blockposition, net.minecraft.world.InteractionHand enumhand) { // CraftBukkit - Add EnumHand
++        LeashFenceKnotEntity entityleash = null;
++        List<Leashable> list = LeadItem.leashableInArea(world, blockposition, (leashable) -> {
++            return leashable.getLeashHolder() == entityhuman;
++        });
+ 
+-        for (Leashable leashable : list) {
+-            if (leashFenceKnotEntity == null) {
+-                leashFenceKnotEntity = LeashFenceKnotEntity.getOrCreateKnot(world, pos);
+-                leashFenceKnotEntity.playPlacementSound();
++        Leashable leashable;
++
++        for (Iterator iterator = list.iterator(); iterator.hasNext();) { // CraftBukkit - handle setLeashedTo at end of loop
++            leashable = (Leashable) iterator.next();
++            if (entityleash == null) {
++                entityleash = LeashFenceKnotEntity.getOrCreateKnot(world, blockposition);
++
++                // CraftBukkit start - fire HangingPlaceEvent
++                org.bukkit.inventory.EquipmentSlot hand = CraftEquipmentSlot.getHand(enumhand);
++                HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityleash.getBukkitEntity(), entityhuman != null ? (org.bukkit.entity.Player) entityhuman.getBukkitEntity() : null, CraftBlock.at(world, blockposition), org.bukkit.block.BlockFace.SELF, hand);
++                world.getCraftServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    entityleash.discard(null); // CraftBukkit - add Bukkit remove cause
++                    return InteractionResult.PASS;
++                }
++                // CraftBukkit end
++                entityleash.playPlacementSound();
+             }
+ 
+-            leashable.setLeashedTo(leashFenceKnotEntity, true);
++            // CraftBukkit start
++            if (leashable instanceof Entity leashed) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(leashed, entityleash, entityhuman, enumhand).isCancelled()) {
++                    iterator.remove();
++                    continue;
++                }
++            }
++
++            leashable.setLeashedTo(entityleash, true);
++            // CraftBukkit end
+         }
+ 
+         if (!list.isEmpty()) {
+-            world.gameEvent(GameEvent.BLOCK_ATTACH, pos, GameEvent.Context.of(player));
++            world.gameEvent((Holder) GameEvent.BLOCK_ATTACH, blockposition, GameEvent.Context.of((Entity) entityhuman));
+             return InteractionResult.SUCCESS;
+         } else {
++            // CraftBukkit start- remove leash if we do not leash any entity because of the cancelled event
++            if (entityleash != null) {
++                entityleash.discard(null);
++            }
++            // CraftBukkit end
+             return InteractionResult.PASS;
+         }
+     }
+ 
++    // CraftBukkit start
++    public static InteractionResult bindPlayerMobs(Player player, Level world, BlockPos pos) {
++        return LeadItem.bindPlayerMobs(player, world, pos, net.minecraft.world.InteractionHand.MAIN_HAND);
++    }
++    // CraftBukkit end
++
+     public static List<Leashable> leashableInArea(Level world, BlockPos pos, Predicate<Leashable> predicate) {
+-        double d = 7.0;
++        double d0 = 7.0D;
+         int i = pos.getX();
+         int j = pos.getY();
+         int k = pos.getZ();
+-        AABB aABB = new AABB((double)i - 7.0, (double)j - 7.0, (double)k - 7.0, (double)i + 7.0, (double)j + 7.0, (double)k + 7.0);
+-        return world.getEntitiesOfClass(Entity.class, aABB, entity -> {
+-            if (entity instanceof Leashable leashable && predicate.test(leashable)) {
+-                return true;
++        AABB axisalignedbb = new AABB((double) i - 7.0D, (double) j - 7.0D, (double) k - 7.0D, (double) i + 7.0D, (double) j + 7.0D, (double) k + 7.0D);
++        Stream stream = world.getEntitiesOfClass(Entity.class, axisalignedbb, (entity) -> {
++            boolean flag;
++
++            if (entity instanceof Leashable leashable) {
++                if (predicate.test(leashable)) {
++                    flag = true;
++                    return flag;
++                }
+             }
+ 
+-            return false;
+-        }).stream().map(Leashable.class::cast).toList();
++            flag = false;
++            return flag;
++        }).stream();
++
++        Objects.requireNonNull(Leashable.class);
++        return stream.map(Leashable.class::cast).toList();
+     }
+ }

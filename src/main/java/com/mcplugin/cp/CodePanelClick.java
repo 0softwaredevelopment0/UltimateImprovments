@@ -11,9 +11,20 @@ public class CodePanelClick implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-
         if (!(sender instanceof Player player)) return true;
         if (args.length == 0) return true;
+        return handleClick(player, args[0]);
+    }
+
+    /**
+     * Static entry point for /mp pane_click subcommand.
+     */
+    public static boolean handleClick(Player player, String value) {
+        CodePanelClick instance = new CodePanelClick();
+        return instance.handleClickInternal(player, value);
+    }
+
+    private boolean handleClickInternal(Player player, String value) {
 
         if (!isSafe()) {
             player.sendMessage("§cSystem is reloading...");
@@ -29,8 +40,6 @@ public class CodePanelClick implements CommandExecutor {
             );
             return true;
         }
-
-        String value = args[0];
 
         switch (value) {
 

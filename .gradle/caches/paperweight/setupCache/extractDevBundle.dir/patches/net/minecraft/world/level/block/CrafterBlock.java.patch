@@ -1,0 +1,381 @@
+--- a/net/minecraft/world/level/block/CrafterBlock.java
++++ b/net/minecraft/world/level/block/CrafterBlock.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.world.level.block;
+ 
+ import com.mojang.serialization.MapCodec;
++import java.util.Iterator;
+ import java.util.Optional;
+ import javax.annotation.Nullable;
+ import net.minecraft.advancements.CriteriaTriggers;
+@@ -11,6 +12,7 @@
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.util.RandomSource;
++import net.minecraft.world.CompoundContainer;
+ import net.minecraft.world.Container;
+ import net.minecraft.world.Containers;
+ import net.minecraft.world.InteractionResult;
+@@ -37,8 +39,15 @@
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.Vec3;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.CrafterCraftEvent;
++import org.bukkit.event.inventory.InventoryMoveItemEvent;
++import org.bukkit.inventory.Inventory;
++// CraftBukkit end
+ 
+ public class CrafterBlock extends BaseEntityBlock {
++
+     public static final MapCodec<CrafterBlock> CODEC = simpleCodec(CrafterBlock::new);
+     public static final BooleanProperty CRAFTING = BlockStateProperties.CRAFTING;
+     public static final BooleanProperty TRIGGERED = BlockStateProperties.TRIGGERED;
+@@ -50,18 +59,12 @@
+ 
+     public CrafterBlock(BlockBehaviour.Properties settings) {
+         super(settings);
+-        this.registerDefaultState(
+-            this.stateDefinition
+-                .any()
+-                .setValue(ORIENTATION, FrontAndTop.NORTH_UP)
+-                .setValue(TRIGGERED, Boolean.valueOf(false))
+-                .setValue(CRAFTING, Boolean.valueOf(false))
+-        );
++        this.registerDefaultState((BlockState) ((BlockState) ((BlockState) ((BlockState) this.stateDefinition.any()).setValue(CrafterBlock.ORIENTATION, FrontAndTop.NORTH_UP)).setValue(CrafterBlock.TRIGGERED, false)).setValue(CrafterBlock.CRAFTING, false));
+     }
+ 
+     @Override
+     protected MapCodec<CrafterBlock> codec() {
+-        return CODEC;
++        return CrafterBlock.CODEC;
+     }
+ 
+     @Override
+@@ -71,22 +74,30 @@
+ 
+     @Override
+     protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) {
+-        return world.getBlockEntity(pos) instanceof CrafterBlockEntity crafterBlockEntity ? crafterBlockEntity.getRedstoneSignal() : 0;
++        BlockEntity tileentity = world.getBlockEntity(pos);
++
++        if (tileentity instanceof CrafterBlockEntity crafterblockentity) {
++            return crafterblockentity.getRedstoneSignal();
++        } else {
++            return 0;
++        }
+     }
+ 
+     @Override
+     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
+-        boolean bl = world.hasNeighborSignal(pos);
+-        boolean bl2 = state.getValue(TRIGGERED);
+-        BlockEntity blockEntity = world.getBlockEntity(pos);
+-        if (bl && !bl2) {
+-            world.scheduleTick(pos, this, 4);
+-            world.setBlock(pos, state.setValue(TRIGGERED, Boolean.valueOf(true)), 2);
+-            this.setBlockEntityTriggered(blockEntity, true);
+-        } else if (!bl && bl2) {
+-            world.setBlock(pos, state.setValue(TRIGGERED, Boolean.valueOf(false)).setValue(CRAFTING, Boolean.valueOf(false)), 2);
+-            this.setBlockEntityTriggered(blockEntity, false);
++        boolean flag1 = world.hasNeighborSignal(pos);
++        boolean flag2 = (Boolean) state.getValue(CrafterBlock.TRIGGERED);
++        BlockEntity tileentity = world.getBlockEntity(pos);
++
++        if (flag1 && !flag2) {
++            world.scheduleTick(pos, (Block) this, 4);
++            world.setBlock(pos, (BlockState) state.setValue(CrafterBlock.TRIGGERED, true), 2);
++            this.setBlockEntityTriggered(tileentity, true);
++        } else if (!flag1 && flag2) {
++            world.setBlock(pos, (BlockState) ((BlockState) state.setValue(CrafterBlock.TRIGGERED, false)).setValue(CrafterBlock.CRAFTING, false), 2);
++            this.setBlockEntityTriggered(tileentity, false);
+         }
++
+     }
+ 
+     @Override
+@@ -101,37 +112,53 @@
+     }
+ 
+     private void setBlockEntityTriggered(@Nullable BlockEntity blockEntity, boolean triggered) {
+-        if (blockEntity instanceof CrafterBlockEntity crafterBlockEntity) {
+-            crafterBlockEntity.setTriggered(triggered);
++        if (blockEntity instanceof CrafterBlockEntity crafterblockentity) {
++            crafterblockentity.setTriggered(triggered);
+         }
++
+     }
+ 
+     @Override
+     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+-        CrafterBlockEntity crafterBlockEntity = new CrafterBlockEntity(pos, state);
+-        crafterBlockEntity.setTriggered(state.hasProperty(TRIGGERED) && state.getValue(TRIGGERED));
+-        return crafterBlockEntity;
++        CrafterBlockEntity crafterblockentity = new CrafterBlockEntity(pos, state);
++
++        crafterblockentity.setTriggered(state.hasProperty(CrafterBlock.TRIGGERED) && (Boolean) state.getValue(CrafterBlock.TRIGGERED));
++        return crafterblockentity;
+     }
+ 
+     @Override
+     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+-        Direction direction = ctx.getNearestLookingDirection().getOpposite();
++        Direction enumdirection = ctx.getNearestLookingDirection().getOpposite();
++        Direction enumdirection1;
+ 
+-        Direction direction2 = switch (direction) {
+-            case DOWN -> ctx.getHorizontalDirection().getOpposite();
+-            case UP -> ctx.getHorizontalDirection();
+-            case NORTH, SOUTH, WEST, EAST -> Direction.UP;
+-        };
+-        return this.defaultBlockState()
+-            .setValue(ORIENTATION, FrontAndTop.fromFrontAndTop(direction, direction2))
+-            .setValue(TRIGGERED, Boolean.valueOf(ctx.getLevel().hasNeighborSignal(ctx.getClickedPos())));
++        switch (enumdirection) {
++            case DOWN:
++                enumdirection1 = ctx.getHorizontalDirection().getOpposite();
++                break;
++            case UP:
++                enumdirection1 = ctx.getHorizontalDirection();
++                break;
++            case NORTH:
++            case SOUTH:
++            case WEST:
++            case EAST:
++                enumdirection1 = Direction.UP;
++                break;
++            default:
++                throw new MatchException((String) null, (Throwable) null);
++        }
++
++        Direction enumdirection2 = enumdirection1;
++
++        return (BlockState) ((BlockState) this.defaultBlockState().setValue(CrafterBlock.ORIENTATION, FrontAndTop.fromFrontAndTop(enumdirection, enumdirection2))).setValue(CrafterBlock.TRIGGERED, ctx.getLevel().hasNeighborSignal(ctx.getClickedPos()));
+     }
+ 
+     @Override
+     public void setPlacedBy(Level world, BlockPos pos, BlockState state, LivingEntity placer, ItemStack itemStack) {
+-        if (state.getValue(TRIGGERED)) {
+-            world.scheduleTick(pos, this, 4);
++        if ((Boolean) state.getValue(CrafterBlock.TRIGGERED)) {
++            world.scheduleTick(pos, (Block) this, 4);
+         }
++
+     }
+ 
+     @Override
+@@ -145,9 +172,10 @@
+         if (world.isClientSide) {
+             return InteractionResult.SUCCESS;
+         } else {
+-            BlockEntity blockEntity = world.getBlockEntity(pos);
+-            if (blockEntity instanceof CrafterBlockEntity) {
+-                player.openMenu((CrafterBlockEntity)blockEntity);
++            BlockEntity tileentity = world.getBlockEntity(pos);
++
++            if (tileentity instanceof CrafterBlockEntity) {
++                player.openMenu((CrafterBlockEntity) tileentity);
+             }
+ 
+             return InteractionResult.CONSUME;
+@@ -155,81 +183,137 @@
+     }
+ 
+     protected void dispenseFrom(BlockState state, ServerLevel world, BlockPos pos) {
+-        if (world.getBlockEntity(pos) instanceof CrafterBlockEntity crafterBlockEntity) {
+-            CraftingInput var11 = crafterBlockEntity.asCraftInput();
+-            Optional<RecipeHolder<CraftingRecipe>> optional = getPotentialResults(world, var11);
++        BlockEntity tileentity = world.getBlockEntity(pos);
++
++        if (tileentity instanceof CrafterBlockEntity crafterblockentity) {
++            CraftingInput craftinginput = crafterblockentity.asCraftInput();
++            Optional optional = CrafterBlock.getPotentialResults(world, craftinginput);
++
+             if (optional.isEmpty()) {
+                 world.levelEvent(1050, pos, 0);
+             } else {
+-                RecipeHolder<CraftingRecipe> recipeHolder = optional.get();
+-                ItemStack itemStack = recipeHolder.value().assemble(var11, world.registryAccess());
+-                if (itemStack.isEmpty()) {
++                RecipeHolder<CraftingRecipe> recipeholder = (RecipeHolder) optional.get();
++                ItemStack itemstack = ((CraftingRecipe) recipeholder.value()).assemble(craftinginput, world.registryAccess());
++
++                // CraftBukkit start
++                CrafterCraftEvent event = CraftEventFactory.callCrafterCraftEvent(pos, world, crafterblockentity, itemstack, recipeholder);
++                if (event.isCancelled()) {
++                    return;
++                }
++                itemstack = CraftItemStack.asNMSCopy(event.getResult());
++                // CraftBukkit end
++                if (itemstack.isEmpty()) {
+                     world.levelEvent(1050, pos, 0);
+                 } else {
+-                    crafterBlockEntity.setCraftingTicksRemaining(6);
+-                    world.setBlock(pos, state.setValue(CRAFTING, Boolean.valueOf(true)), 2);
+-                    itemStack.onCraftedBySystem(world);
+-                    this.dispenseItem(world, pos, crafterBlockEntity, itemStack, state, recipeHolder);
++                    crafterblockentity.setCraftingTicksRemaining(6);
++                    world.setBlock(pos, (BlockState) state.setValue(CrafterBlock.CRAFTING, true), 2);
++                    itemstack.onCraftedBySystem(world);
++                    this.dispenseItem(world, pos, crafterblockentity, itemstack, state, recipeholder);
++                    Iterator iterator = ((CraftingRecipe) recipeholder.value()).getRemainingItems(craftinginput).iterator();
+ 
+-                    for (ItemStack itemStack2 : recipeHolder.value().getRemainingItems(var11)) {
+-                        if (!itemStack2.isEmpty()) {
+-                            this.dispenseItem(world, pos, crafterBlockEntity, itemStack2, state, recipeHolder);
++                    while (iterator.hasNext()) {
++                        ItemStack itemstack1 = (ItemStack) iterator.next();
++
++                        if (!itemstack1.isEmpty()) {
++                            this.dispenseItem(world, pos, crafterblockentity, itemstack1, state, recipeholder);
+                         }
+                     }
+ 
+-                    crafterBlockEntity.getItems().forEach(stack -> {
+-                        if (!stack.isEmpty()) {
+-                            stack.shrink(1);
++                    crafterblockentity.getItems().forEach((itemstack2) -> {
++                        if (!itemstack2.isEmpty()) {
++                            itemstack2.shrink(1);
+                         }
+                     });
+-                    crafterBlockEntity.setChanged();
++                    crafterblockentity.setChanged();
+                 }
+             }
+         }
+     }
+ 
+     public static Optional<RecipeHolder<CraftingRecipe>> getPotentialResults(Level world, CraftingInput input) {
+-        return RECIPE_CACHE.get(world, input);
++        return CrafterBlock.RECIPE_CACHE.get(world, input);
+     }
+ 
+-    private void dispenseItem(
+-        ServerLevel world, BlockPos pos, CrafterBlockEntity blockEntity, ItemStack stack, BlockState state, RecipeHolder<CraftingRecipe> recipe
+-    ) {
+-        Direction direction = state.getValue(ORIENTATION).front();
+-        Container container = HopperBlockEntity.getContainerAt(world, pos.relative(direction));
+-        ItemStack itemStack = stack.copy();
+-        if (container != null && (container instanceof CrafterBlockEntity || stack.getCount() > container.getMaxStackSize(stack))) {
+-            while (!itemStack.isEmpty()) {
+-                ItemStack itemStack2 = itemStack.copyWithCount(1);
+-                ItemStack itemStack3 = HopperBlockEntity.addItem(blockEntity, container, itemStack2, direction.getOpposite());
+-                if (!itemStack3.isEmpty()) {
++    private void dispenseItem(ServerLevel world, BlockPos pos, CrafterBlockEntity blockEntity, ItemStack stack, BlockState state, RecipeHolder<CraftingRecipe> recipe) {
++        Direction enumdirection = ((FrontAndTop) state.getValue(CrafterBlock.ORIENTATION)).front();
++        Container iinventory = HopperBlockEntity.getContainerAt(world, pos.relative(enumdirection));
++        ItemStack itemstack1 = stack.copy();
++
++        if (iinventory != null && (iinventory instanceof CrafterBlockEntity || stack.getCount() > iinventory.getMaxStackSize(stack))) {
++            // CraftBukkit start - InventoryMoveItemEvent
++            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack1);
++
++            Inventory destinationInventory;
++            // Have to special case large chests as they work oddly
++            if (iinventory instanceof CompoundContainer) {
++                destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
++            } else {
++                destinationInventory = iinventory.getOwner().getInventory();
++            }
++
++            InventoryMoveItemEvent event = new InventoryMoveItemEvent(blockEntity.getOwner().getInventory(), oitemstack, destinationInventory, true);
++            world.getCraftServer().getPluginManager().callEvent(event);
++            itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
++            while (!itemstack1.isEmpty()) {
++                if (event.isCancelled()) {
+                     break;
+                 }
++                // CraftBukkit end
++                ItemStack itemstack2 = itemstack1.copyWithCount(1);
++                ItemStack itemstack3 = HopperBlockEntity.addItem(blockEntity, iinventory, itemstack2, enumdirection.getOpposite());
+ 
+-                itemStack.shrink(1);
++                if (!itemstack3.isEmpty()) {
++                    break;
++                }
++
++                itemstack1.shrink(1);
+             }
+-        } else if (container != null) {
+-            while (!itemStack.isEmpty()) {
+-                int i = itemStack.getCount();
+-                itemStack = HopperBlockEntity.addItem(blockEntity, container, itemStack, direction.getOpposite());
+-                if (i == itemStack.getCount()) {
++        } else if (iinventory != null) {
++            // CraftBukkit start - InventoryMoveItemEvent
++            CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack1);
++
++            Inventory destinationInventory;
++            // Have to special case large chests as they work oddly
++            if (iinventory instanceof CompoundContainer) {
++                destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
++            } else {
++                destinationInventory = iinventory.getOwner().getInventory();
++            }
++
++            InventoryMoveItemEvent event = new InventoryMoveItemEvent(blockEntity.getOwner().getInventory(), oitemstack, destinationInventory, true);
++            world.getCraftServer().getPluginManager().callEvent(event);
++            itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
++            while (!itemstack1.isEmpty()) {
++                if (event.isCancelled()) {
++                    break;
++                }
++                // CraftBukkit end
++                int i = itemstack1.getCount();
++
++                itemstack1 = HopperBlockEntity.addItem(blockEntity, iinventory, itemstack1, enumdirection.getOpposite());
++                if (i == itemstack1.getCount()) {
+                     break;
+                 }
+             }
+         }
+ 
+-        if (!itemStack.isEmpty()) {
+-            Vec3 vec3 = Vec3.atCenterOf(pos);
+-            Vec3 vec32 = vec3.relative(direction, 0.7);
+-            DefaultDispenseItemBehavior.spawnItem(world, itemStack, 6, direction, vec32);
++        if (!itemstack1.isEmpty()) {
++            Vec3 vec3d = Vec3.atCenterOf(pos);
++            Vec3 vec3d1 = vec3d.relative(enumdirection, 0.7D);
+ 
+-            for (ServerPlayer serverPlayer : world.getEntitiesOfClass(ServerPlayer.class, AABB.ofSize(vec3, 17.0, 17.0, 17.0))) {
+-                CriteriaTriggers.CRAFTER_RECIPE_CRAFTED.trigger(serverPlayer, recipe.id(), blockEntity.getItems());
++            DefaultDispenseItemBehavior.spawnItem(world, itemstack1, 6, enumdirection, vec3d1);
++            Iterator iterator = world.getEntitiesOfClass(ServerPlayer.class, AABB.ofSize(vec3d, 17.0D, 17.0D, 17.0D)).iterator();
++
++            while (iterator.hasNext()) {
++                ServerPlayer entityplayer = (ServerPlayer) iterator.next();
++
++                CriteriaTriggers.CRAFTER_RECIPE_CRAFTED.trigger(entityplayer, recipe.id(), blockEntity.getItems());
+             }
+ 
+             world.levelEvent(1049, pos, 0);
+-            world.levelEvent(2010, pos, direction.get3DDataValue());
++            world.levelEvent(2010, pos, enumdirection.get3DDataValue());
+         }
++
+     }
+ 
+     @Override
+@@ -239,16 +323,16 @@
+ 
+     @Override
+     protected BlockState rotate(BlockState state, Rotation rotation) {
+-        return state.setValue(ORIENTATION, rotation.rotation().rotate(state.getValue(ORIENTATION)));
++        return (BlockState) state.setValue(CrafterBlock.ORIENTATION, rotation.rotation().rotate((FrontAndTop) state.getValue(CrafterBlock.ORIENTATION)));
+     }
+ 
+     @Override
+     protected BlockState mirror(BlockState state, Mirror mirror) {
+-        return state.setValue(ORIENTATION, mirror.rotation().rotate(state.getValue(ORIENTATION)));
++        return (BlockState) state.setValue(CrafterBlock.ORIENTATION, mirror.rotation().rotate((FrontAndTop) state.getValue(CrafterBlock.ORIENTATION)));
+     }
+ 
+     @Override
+     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+-        builder.add(ORIENTATION, TRIGGERED, CRAFTING);
++        builder.add(CrafterBlock.ORIENTATION, CrafterBlock.TRIGGERED, CrafterBlock.CRAFTING);
+     }
+ }

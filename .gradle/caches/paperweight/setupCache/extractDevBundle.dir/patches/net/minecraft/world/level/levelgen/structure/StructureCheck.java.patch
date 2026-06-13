@@ -1,0 +1,115 @@
+--- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
++++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+@@ -40,21 +40,26 @@
+     private final ChunkScanAccess storageAccess;
+     private final RegistryAccess registryAccess;
+     private final StructureTemplateManager structureTemplateManager;
+-    private final ResourceKey<Level> dimension;
++    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
+     private final ChunkGenerator chunkGenerator;
+     private final RandomState randomState;
+     private final LevelHeightAccessor heightAccessor;
+     private final BiomeSource biomeSource;
+     private final long seed;
+     private final DataFixer fixerUpper;
+-    private final Long2ObjectMap<Object2IntMap<Structure>> loadedChunks = new Long2ObjectOpenHashMap<>();
+-    private final Map<Structure, Long2BooleanMap> featureChecks = new HashMap<>();
++    // Paper start - rewrite chunk system
++    // make sure to purge entries from the maps to prevent memory leaks
++    private static final int CHUNK_TOTAL_LIMIT = 50 * (2 * 100 + 1) * (2 * 100 + 1); // cache 50 structure lookups
++    private static final int PER_FEATURE_CHECK_LIMIT = 50 * (2 * 100 + 1) * (2 * 100 + 1); // cache 50 structure lookups
++    private final ca.spottedleaf.moonrise.common.map.SynchronisedLong2ObjectMap<it.unimi.dsi.fastutil.objects.Object2IntMap<Structure>> loadedChunksSafe = new ca.spottedleaf.moonrise.common.map.SynchronisedLong2ObjectMap<>(CHUNK_TOTAL_LIMIT);
++    private final java.util.concurrent.ConcurrentHashMap<Structure, ca.spottedleaf.moonrise.common.map.SynchronisedLong2BooleanMap> featureChecksSafe = new java.util.concurrent.ConcurrentHashMap<>();
++    // Paper end - rewrite chunk system
+ 
+     public StructureCheck(
+         ChunkScanAccess chunkIoWorker,
+         RegistryAccess registryManager,
+         StructureTemplateManager structureTemplateManager,
+-        ResourceKey<Level> worldKey,
++        ResourceKey<net.minecraft.world.level.dimension.LevelStem> worldKey, // Paper - fix missing CB diff
+         ChunkGenerator chunkGenerator,
+         RandomState noiseConfig,
+         LevelHeightAccessor world,
+@@ -74,21 +79,37 @@
+         this.fixerUpper = dataFixer;
+     }
+ 
++    // Paper start - add missing structure salt configs
++    @Nullable
++    private Integer getSaltOverride(Structure type) {
++        if (this.heightAccessor instanceof net.minecraft.server.level.ServerLevel serverLevel) {
++            if (type instanceof net.minecraft.world.level.levelgen.structure.structures.MineshaftStructure) {
++                return serverLevel.spigotConfig.mineshaftSeed;
++            } else if (type instanceof net.minecraft.world.level.levelgen.structure.structures.BuriedTreasureStructure) {
++                return serverLevel.spigotConfig.buriedTreasureSeed;
++            }
++        }
++        return null;
++    }
++    // Paper end - add missing structure seed configs
++
+     public StructureCheckResult checkStart(ChunkPos pos, Structure type, StructurePlacement placement, boolean skipReferencedStructures) {
+         long l = pos.toLong();
+-        Object2IntMap<Structure> object2IntMap = this.loadedChunks.get(l);
++        Object2IntMap<Structure> object2IntMap = this.loadedChunksSafe.get(l); // Paper - rewrite chunk system
+         if (object2IntMap != null) {
+             return this.checkStructureInfo(object2IntMap, type, skipReferencedStructures);
+         } else {
+             StructureCheckResult structureCheckResult = this.tryLoadFromStorage(pos, type, skipReferencedStructures, l);
+             if (structureCheckResult != null) {
+                 return structureCheckResult;
+-            } else if (!placement.applyAdditionalChunkRestrictions(pos.x, pos.z, this.seed)) {
++            } else if (!placement.applyAdditionalChunkRestrictions(pos.x, pos.z, this.seed, this.getSaltOverride(type))) { // Paper - add missing structure seed configs
+                 return StructureCheckResult.START_NOT_PRESENT;
+             } else {
+-                boolean bl = this.featureChecks
+-                    .computeIfAbsent(type, structure2 -> new Long2BooleanOpenHashMap())
+-                    .computeIfAbsent(l, chunkPos -> this.canCreateStructure(pos, type));
++                // Paper start - rewrite chunk system
++                boolean bl = this.featureChecksSafe
++                    .computeIfAbsent(type, structure2 -> new ca.spottedleaf.moonrise.common.map.SynchronisedLong2BooleanMap(PER_FEATURE_CHECK_LIMIT))
++                    .getOrCompute(l, chunkPos -> this.canCreateStructure(pos, type));
++                // Paper end - rewrite chunk system
+                 return !bl ? StructureCheckResult.START_NOT_PRESENT : StructureCheckResult.CHUNK_LOAD_NEEDED;
+             }
+         }
+@@ -137,7 +158,7 @@
+ 
+                 CompoundTag compoundTag2;
+                 try {
+-                    compoundTag2 = DataFixTypes.CHUNK.updateToCurrentVersion(this.fixerUpper, compoundTag, i);
++                    compoundTag2 = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.CHUNK, compoundTag, i, net.minecraft.SharedConstants.getCurrentVersion().getDataVersion().getVersion()); // Paper - replace chunk converter
+                 } catch (Exception var12) {
+                     LOGGER.warn("Failed to partially datafix chunk {}", pos, var12);
+                     return StructureCheckResult.CHUNK_LOAD_NEEDED;
+@@ -214,15 +235,25 @@
+     }
+ 
+     private void storeFullResults(long pos, Object2IntMap<Structure> referencesByStructure) {
+-        this.loadedChunks.put(pos, deduplicateEmptyMap(referencesByStructure));
+-        this.featureChecks.values().forEach(generationPossibilityByChunkPos -> generationPossibilityByChunkPos.remove(pos));
++        // Paper start - rewrite chunk system
++        this.loadedChunksSafe.put(pos, deduplicateEmptyMap(referencesByStructure));
++        // once we insert into loadedChunks, we don't really need to be very careful about removing everything
++        // from this map, as everything that checks this map uses loadedChunks first
++        // so, one way or another it's a race condition that doesn't matter
++        for (ca.spottedleaf.moonrise.common.map.SynchronisedLong2BooleanMap value : this.featureChecksSafe.values()) {
++            value.remove(pos);
++        }
++        // Paper end - rewrite chunk system
+     }
+ 
+     public void incrementReference(ChunkPos pos, Structure structure) {
+-        this.loadedChunks.compute(pos.toLong(), (posx, referencesByStructure) -> {
+-            if (referencesByStructure == null || referencesByStructure.isEmpty()) {
++        this.loadedChunksSafe.compute(pos.toLong(), (posx, referencesByStructure) -> { // Paper start - rewrite chunk system
++            if (referencesByStructure == null) {
+                 referencesByStructure = new Object2IntOpenHashMap<>();
++            } else {
++                referencesByStructure = referencesByStructure instanceof Object2IntOpenHashMap<Structure> fastClone ? fastClone.clone() : new Object2IntOpenHashMap<>(referencesByStructure);
+             }
++            // Paper end - rewrite chunk system
+ 
+             referencesByStructure.computeInt(structure, (feature, references) -> references == null ? 1 : references + 1);
+             return referencesByStructure;

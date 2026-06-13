@@ -128,6 +128,7 @@ public class Main extends JavaPlugin {
         pm.registerEvents(new GunListener(), this);
         pm.registerEvents(new ReactorListener(), this);
         pm.registerEvents(new ShulkerBulletListener(), this);
+        pm.registerEvents(FishingListener.getInstance(), this);
 
         RedstoneGuard.init(this);
         pm.registerEvents(new RedstoneGuardListener(), this);

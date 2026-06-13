@@ -12,14 +12,10 @@ load: POSTWORLD
 
 commands:
 
-  cp_click:
-    description: Internal code panel click command
-    usage: /cp_click
-
   mp:
     description: Control the MC-Plugin
     usage: /mp
-    permission: mcplugin.reload
+    permission: mcplugin
 
   reactor:
     description: Assemble reactor structures
@@ -27,12 +23,88 @@ commands:
 
 permissions:
 
+  mcplugin.admin:
+    description: Grants all MC-Plugin permissions at once
+    default: op
+    children:
+      mcplugin: true
+      mcplugin.command.reload: true
+      mcplugin.command.chgdim: true
+      mcplugin.command.plugins: true
+      mcplugin.command.version: true
+      mcplugin.command.codepane: true
+      mcplugin.command.structures: true
+      mcplugin.command.structures.dfc: true
+      mcplugin.command.structures.magnet: true
+      mcplugin.command.power: true
+      mcplugin.command.power.off: true
+      mcplugin.command.power.reboot: true
+      mcplugin.command.power.undo: true
+      mcplugin.command.reactor: true
+      mcplugin.show.brand: true
+      mcplugin.overload.logs: true
+      mcplugin.gmprotect.bypass: true
+      mcplugin.creative.bypass: true
+      mcplugin.chat.filter.bypass: true
+
+  mcplugin:
+    description: Base permission for MC-Plugin commands (/mp)
+    default: op
+
   mcplugin.command.reload:
-    description: Allows plugin reload
+    description: Allows plugin reload (/mp reload)
     default: op
 
   mcplugin.command.chgdim:
     description: Allows teleportation between dimensions (/mp chgdim)
+    default: op
+
+  mcplugin.command.plugins:
+    description: Allows using /pl and /plugins commands
+    default: op
+
+  mcplugin.command.version:
+    description: Allows using /ver, /version and /icanhasbukkit commands
+    default: op
+
+  mcplugin.command.codepane:
+    description: Allows using the code panel (/mp codepane)
+    default: op
+
+  mcplugin.command.structures:
+    description: Allows viewing reactor statistics (/mp structures)
+    default: op
+
+  mcplugin.command.structures.dfc:
+    description: Allows assembling the dark synthesis reactor (/mp structures dfc assemble)
+    default: op
+
+  mcplugin.command.structures.magnet:
+    description: Allows assembling the magnet (/mp structures magnet assemble)
+    default: op
+
+  mcplugin.command.power:
+    description: Base permission for power management commands
+    default: op
+
+  mcplugin.command.power.off:
+    description: Allows requesting server shutdown (/mp power off)
+    default: op
+
+  mcplugin.command.power.reboot:
+    description: Allows requesting server restart (/mp power reboot)
+    default: op
+
+  mcplugin.command.power.undo:
+    description: Allows cancelling a power request (/mp power undo)
+    default: op
+
+  mcplugin.command.reactor:
+    description: Allows using the /reactor command
+    default: op
+
+  mcplugin.show.brand:
+    description: Allows seeing the real server brand on join
     default: op
 
   mcplugin.overload.logs:

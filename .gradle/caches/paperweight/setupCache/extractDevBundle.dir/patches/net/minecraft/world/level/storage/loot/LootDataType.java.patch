@@ -1,0 +1,68 @@
+--- a/net/minecraft/world/level/storage/loot/LootDataType.java
++++ b/net/minecraft/world/level/storage/loot/LootDataType.java
+@@ -15,14 +15,16 @@
+ import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.CraftLootTable;
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++// CraftBukkit end
++
+ public record LootDataType<T>(ResourceKey<Registry<T>> registryKey, Codec<T> codec, LootDataType.Validator<T> validator) {
++
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    public static final LootDataType<LootItemCondition> PREDICATE = new LootDataType<>(
+-        Registries.PREDICATE, LootItemCondition.DIRECT_CODEC, createSimpleValidator()
+-    );
+-    public static final LootDataType<LootItemFunction> MODIFIER = new LootDataType<>(
+-        Registries.ITEM_MODIFIER, LootItemFunctions.ROOT_CODEC, createSimpleValidator()
+-    );
++    public static final LootDataType<LootItemCondition> PREDICATE = new LootDataType<>(Registries.PREDICATE, LootItemCondition.DIRECT_CODEC, createSimpleValidator());
++    public static final LootDataType<LootItemFunction> MODIFIER = new LootDataType<>(Registries.ITEM_MODIFIER, LootItemFunctions.ROOT_CODEC, createSimpleValidator());
+     public static final LootDataType<LootTable> TABLE = new LootDataType<>(Registries.LOOT_TABLE, LootTable.DIRECT_CODEC, createLootTableValidator());
+ 
+     public void runValidation(ValidationContext reporter, ResourceKey<T> key, T value) {
+@@ -30,27 +32,34 @@
+     }
+ 
+     public <V> Optional<T> deserialize(ResourceLocation id, DynamicOps<V> ops, V json) {
+-        DataResult<T> dataResult = this.codec.parse(ops, json);
+-        dataResult.error().ifPresent(error -> LOGGER.error("Couldn't parse element {}/{} - {}", this.registryKey.location(), id, error.message()));
+-        return dataResult.result();
++        DataResult<T> dataresult = this.codec.parse(ops, json);
++
++        dataresult.error().ifPresent((error) -> {
++            LootDataType.LOGGER.error("Couldn't parse element {}/{} - {}", new Object[]{this.registryKey.location(), id, error.message()});
++        });
++        return dataresult.result();
+     }
+ 
+     public static Stream<LootDataType<?>> values() {
+-        return Stream.of(PREDICATE, MODIFIER, TABLE);
++        return Stream.of(LootDataType.PREDICATE, LootDataType.MODIFIER, LootDataType.TABLE);
+     }
+ 
+     private static <T extends LootContextUser> LootDataType.Validator<T> createSimpleValidator() {
+-        return (reporter, key, value) -> value.validate(reporter.enterElement("{" + key.registry() + "/" + key.location() + "}", key));
++        return (lootcollector, resourcekey, lootitemuser) -> {
++            lootitemuser.validate(lootcollector.enterElement("{" + String.valueOf(resourcekey.registry()) + "/" + String.valueOf(resourcekey.location()) + "}", resourcekey));
++        };
+     }
+ 
+     private static LootDataType.Validator<LootTable> createLootTableValidator() {
+-        return (reporter, key, value) -> value.validate(
+-                reporter.setParams(value.getParamSet()).enterElement("{" + key.registry() + "/" + key.location() + "}", key)
+-            );
++        return (lootcollector, resourcekey, loottable) -> {
++            loottable.validate(lootcollector.setParams(loottable.getParamSet()).enterElement("{" + String.valueOf(resourcekey.registry()) + "/" + String.valueOf(resourcekey.location()) + "}", resourcekey));
++            loottable.craftLootTable = new CraftLootTable(CraftNamespacedKey.fromMinecraft(resourcekey.location()), loottable); // CraftBukkit
++        };
+     }
+ 
+     @FunctionalInterface
+     public interface Validator<T> {
++
+         void run(ValidationContext reporter, ResourceKey<T> key, T value);
+     }
+ }

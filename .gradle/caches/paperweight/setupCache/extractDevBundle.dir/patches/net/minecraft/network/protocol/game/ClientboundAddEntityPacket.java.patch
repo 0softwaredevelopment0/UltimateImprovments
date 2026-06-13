@@ -1,0 +1,17 @@
+--- a/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+@@ -42,9 +42,11 @@
+         this(
+             entity.getId(),
+             entity.getUUID(),
+-            entityTrackerEntry.getPositionBase().x(),
+-            entityTrackerEntry.getPositionBase().y(),
+-            entityTrackerEntry.getPositionBase().z(),
++            // Paper start - fix entity tracker desync
++            entity.trackingPosition().x(),
++            entity.trackingPosition().y(),
++            entity.trackingPosition().z(),
++            // Paper end - fix entity tracker desync
+             entityTrackerEntry.getLastSentXRot(),
+             entityTrackerEntry.getLastSentYRot(),
+             entity.getType(),

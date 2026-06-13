@@ -1,0 +1,116 @@
+--- a/net/minecraft/world/entity/projectile/WitherSkull.java
++++ b/net/minecraft/world/entity/projectile/WitherSkull.java
+@@ -23,8 +23,13 @@
+ import net.minecraft.world.phys.EntityHitResult;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.entity.ExplosionPrimeEvent;
++// CraftBukkit end
+ 
+ public class WitherSkull extends AbstractHurtingProjectile {
++
+     private static final EntityDataAccessor<Boolean> DATA_DANGEROUS = SynchedEntityData.defineId(WitherSkull.class, EntityDataSerializers.BOOLEAN);
+ 
+     public WitherSkull(EntityType<? extends WitherSkull> type, Level world) {
+@@ -53,35 +58,42 @@
+     @Override
+     protected void onHitEntity(EntityHitResult entityHitResult) {
+         super.onHitEntity(entityHitResult);
+-        if (this.level() instanceof ServerLevel serverLevel) {
+-            Entity var8 = entityHitResult.getEntity();
+-            boolean bl;
+-            if (this.getOwner() instanceof LivingEntity livingEntity) {
+-                DamageSource damageSource = this.damageSources().witherSkull(this, livingEntity);
+-                bl = var8.hurt(damageSource, 8.0F);
+-                if (bl) {
+-                    if (var8.isAlive()) {
+-                        EnchantmentHelper.doPostAttackEffects(serverLevel, var8, damageSource);
++        Level world = this.level();
++
++        if (world instanceof ServerLevel worldserver) {
++            Entity entity = entityHitResult.getEntity();
++            Entity entity1 = this.getOwner();
++            boolean flag;
++
++            if (entity1 instanceof LivingEntity entityliving) {
++                DamageSource damagesource = this.damageSources().witherSkull(this, entityliving);
++
++                flag = entity.hurt(damagesource, 8.0F);
++                if (flag) {
++                    if (entity.isAlive()) {
++                        EnchantmentHelper.doPostAttackEffects(worldserver, entity, damagesource);
+                     } else {
+-                        livingEntity.heal(5.0F);
++                        entityliving.heal(5.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.WITHER); // CraftBukkit
+                     }
+                 }
+             } else {
+-                bl = var8.hurt(this.damageSources().magic(), 5.0F);
++                flag = entity.hurt(this.damageSources().magic().customEventDamager(this), 5.0F); // Paper - Fire EntityDamageByEntityEvent for unowned wither skulls // Paper - fix DamageSource API
+             }
+ 
+-            if (bl && var8 instanceof LivingEntity livingEntity2) {
+-                int i = 0;
++            if (flag && entity instanceof LivingEntity entityliving) {
++                byte b0 = 0;
++
+                 if (this.level().getDifficulty() == Difficulty.NORMAL) {
+-                    i = 10;
++                    b0 = 10;
+                 } else if (this.level().getDifficulty() == Difficulty.HARD) {
+-                    i = 40;
++                    b0 = 40;
+                 }
+ 
+-                if (i > 0) {
+-                    livingEntity2.addEffect(new MobEffectInstance(MobEffects.WITHER, 20 * i, 1), this.getEffectSource());
++                if (b0 > 0) {
++                    entityliving.addEffect(new MobEffectInstance(MobEffects.WITHER, 20 * b0, 1), this.getEffectSource(), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+                 }
+             }
++
+         }
+     }
+ 
+@@ -89,9 +101,18 @@
+     protected void onHit(HitResult hitResult) {
+         super.onHit(hitResult);
+         if (!this.level().isClientSide) {
+-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, false, Level.ExplosionInteraction.MOB);
+-            this.discard();
++            // CraftBukkit start
++            // this.level().explode(this, this.getX(), this.getY(), this.getZ(), 1.0F, false, World.a.MOB);
++            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), 1.0F, false);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled()) {
++                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB);
++            }
++            // CraftBukkit end
++            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+         }
++
+     }
+ 
+     @Override
+@@ -101,15 +122,15 @@
+ 
+     @Override
+     protected void defineSynchedData(SynchedEntityData.Builder builder) {
+-        builder.define(DATA_DANGEROUS, false);
++        builder.define(WitherSkull.DATA_DANGEROUS, false);
+     }
+ 
+     public boolean isDangerous() {
+-        return this.entityData.get(DATA_DANGEROUS);
++        return (Boolean) this.entityData.get(WitherSkull.DATA_DANGEROUS);
+     }
+ 
+     public void setDangerous(boolean charged) {
+-        this.entityData.set(DATA_DANGEROUS, charged);
++        this.entityData.set(WitherSkull.DATA_DANGEROUS, charged);
+     }
+ 
+     @Override

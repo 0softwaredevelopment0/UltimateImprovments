@@ -1,0 +1,116 @@
+--- a/net/minecraft/world/Container.java
++++ b/net/minecraft/world/Container.java
+@@ -6,10 +6,15 @@
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
++// CraftBukkit start
++import net.minecraft.world.item.crafting.RecipeHolder;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.entity.BlockEntity;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++// CraftBukkit end
+ 
+ public interface Container extends Clearable {
++
+     float DEFAULT_DISTANCE_BUFFER = 4.0F;
+ 
+     int getContainerSize();
+@@ -24,9 +29,7 @@
+ 
+     void setItem(int slot, ItemStack stack);
+ 
+-    default int getMaxStackSize() {
+-        return 99;
+-    }
++    int getMaxStackSize(); // CraftBukkit
+ 
+     default int getMaxStackSize(ItemStack stack) {
+         return Math.min(this.getMaxStackSize(), stack.getMaxStackSize());
+@@ -36,11 +39,9 @@
+ 
+     boolean stillValid(Player player);
+ 
+-    default void startOpen(Player player) {
+-    }
++    default void startOpen(Player player) {}
+ 
+-    default void stopOpen(Player player) {
+-    }
++    default void stopOpen(Player player) {}
+ 
+     default boolean canPlaceItem(int slot, ItemStack stack) {
+         return true;
+@@ -53,10 +54,11 @@
+     default int countItem(Item item) {
+         int i = 0;
+ 
+-        for (int j = 0; j < this.getContainerSize(); j++) {
+-            ItemStack itemStack = this.getItem(j);
+-            if (itemStack.getItem().equals(item)) {
+-                i += itemStack.getCount();
++        for (int j = 0; j < this.getContainerSize(); ++j) {
++            ItemStack itemstack = this.getItem(j);
++
++            if (itemstack.getItem().equals(item)) {
++                i += itemstack.getCount();
+             }
+         }
+ 
+@@ -64,13 +66,16 @@
+     }
+ 
+     default boolean hasAnyOf(Set<Item> items) {
+-        return this.hasAnyMatching(stack -> !stack.isEmpty() && items.contains(stack.getItem()));
++        return this.hasAnyMatching((itemstack) -> {
++            return !itemstack.isEmpty() && items.contains(itemstack.getItem());
++        });
+     }
+ 
+     default boolean hasAnyMatching(Predicate<ItemStack> predicate) {
+-        for (int i = 0; i < this.getContainerSize(); i++) {
+-            ItemStack itemStack = this.getItem(i);
+-            if (predicate.test(itemStack)) {
++        for (int i = 0; i < this.getContainerSize(); ++i) {
++            ItemStack itemstack = this.getItem(i);
++
++            if (predicate.test(itemstack)) {
+                 return true;
+             }
+         }
+@@ -79,12 +84,31 @@
+     }
+ 
+     static boolean stillValidBlockEntity(BlockEntity blockEntity, Player player) {
+-        return stillValidBlockEntity(blockEntity, player, 4.0F);
++        return Container.stillValidBlockEntity(blockEntity, player, 4.0F);
+     }
+ 
+     static boolean stillValidBlockEntity(BlockEntity blockEntity, Player player, float range) {
+-        Level level = blockEntity.getLevel();
+-        BlockPos blockPos = blockEntity.getBlockPos();
+-        return level != null && level.getBlockEntity(blockPos) == blockEntity && player.canInteractWithBlock(blockPos, (double)range);
++        Level world = blockEntity.getLevel();
++        BlockPos blockposition = blockEntity.getBlockPos();
++
++        return world == null ? false : (world.getBlockEntity(blockposition) != blockEntity ? false : player.canInteractWithBlock(blockposition, (double) range));
+     }
++
++    // CraftBukkit start
++    java.util.List<ItemStack> getContents();
++
++    void onOpen(CraftHumanEntity who);
++
++    void onClose(CraftHumanEntity who);
++
++    java.util.List<org.bukkit.entity.HumanEntity> getViewers();
++
++    org.bukkit.inventory.@org.jetbrains.annotations.Nullable InventoryHolder getOwner(); // Paper - annotation
++
++    void setMaxStackSize(int size);
++
++    org.bukkit.Location getLocation();
++
++    int MAX_STACK = 99;
++    // CraftBukkit end
+ }

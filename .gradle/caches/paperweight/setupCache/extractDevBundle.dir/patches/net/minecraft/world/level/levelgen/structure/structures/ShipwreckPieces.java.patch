@@ -1,0 +1,183 @@
+--- a/net/minecraft/world/level/levelgen/structure/structures/ShipwreckPieces.java
++++ b/net/minecraft/world/level/levelgen/structure/structures/ShipwreckPieces.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.world.level.levelgen.structure.structures;
+ 
++import java.util.Iterator;
+ import java.util.Map;
+ import net.minecraft.Util;
+ import net.minecraft.core.BlockPos;
+@@ -29,71 +30,36 @@
+ import net.minecraft.world.level.storage.loot.LootTable;
+ 
+ public class ShipwreckPieces {
++
+     private static final int NUMBER_OF_BLOCKS_ALLOWED_IN_WORLD_GEN_REGION = 32;
+     static final BlockPos PIVOT = new BlockPos(4, 0, 15);
+-    private static final ResourceLocation[] STRUCTURE_LOCATION_BEACHED = new ResourceLocation[]{
+-        ResourceLocation.withDefaultNamespace("shipwreck/with_mast"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_full"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_fronthalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_backhalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_full"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_fronthalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_backhalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/with_mast_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_full_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_fronthalf_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_backhalf_degraded")
+-    };
+-    private static final ResourceLocation[] STRUCTURE_LOCATION_OCEAN = new ResourceLocation[]{
+-        ResourceLocation.withDefaultNamespace("shipwreck/with_mast"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_full"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_fronthalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_backhalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_full"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_fronthalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_backhalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_full"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_fronthalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_backhalf"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/with_mast_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_full_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_fronthalf_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_backhalf_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_full_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_fronthalf_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/sideways_backhalf_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_full_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_fronthalf_degraded"),
+-        ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_backhalf_degraded")
+-    };
+-    static final Map<String, ResourceKey<LootTable>> MARKERS_TO_LOOT = Map.of(
+-        "map_chest",
+-        BuiltInLootTables.SHIPWRECK_MAP,
+-        "treasure_chest",
+-        BuiltInLootTables.SHIPWRECK_TREASURE,
+-        "supply_chest",
+-        BuiltInLootTables.SHIPWRECK_SUPPLY
+-    );
++    private static final ResourceLocation[] STRUCTURE_LOCATION_BEACHED = new ResourceLocation[]{ResourceLocation.withDefaultNamespace("shipwreck/with_mast"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_full"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_fronthalf"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_backhalf"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_full"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_fronthalf"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_backhalf"), ResourceLocation.withDefaultNamespace("shipwreck/with_mast_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_full_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_fronthalf_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_backhalf_degraded")};
++    private static final ResourceLocation[] STRUCTURE_LOCATION_OCEAN = new ResourceLocation[]{ResourceLocation.withDefaultNamespace("shipwreck/with_mast"), ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_full"), ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_fronthalf"), ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_backhalf"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_full"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_fronthalf"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_backhalf"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_full"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_fronthalf"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_backhalf"), ResourceLocation.withDefaultNamespace("shipwreck/with_mast_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_full_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_fronthalf_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/upsidedown_backhalf_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_full_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_fronthalf_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/sideways_backhalf_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_full_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_fronthalf_degraded"), ResourceLocation.withDefaultNamespace("shipwreck/rightsideup_backhalf_degraded")};
++    static final Map<String, ResourceKey<LootTable>> MARKERS_TO_LOOT = Map.of("map_chest", BuiltInLootTables.SHIPWRECK_MAP, "treasure_chest", BuiltInLootTables.SHIPWRECK_TREASURE, "supply_chest", BuiltInLootTables.SHIPWRECK_SUPPLY);
+ 
+-    public static ShipwreckPieces.ShipwreckPiece addRandomPiece(
+-        StructureTemplateManager structureTemplateManager, BlockPos pos, Rotation rotation, StructurePieceAccessor holder, RandomSource random, boolean beached
+-    ) {
+-        ResourceLocation resourceLocation = Util.getRandom(beached ? STRUCTURE_LOCATION_BEACHED : STRUCTURE_LOCATION_OCEAN, random);
+-        ShipwreckPieces.ShipwreckPiece shipwreckPiece = new ShipwreckPieces.ShipwreckPiece(structureTemplateManager, resourceLocation, pos, rotation, beached);
+-        holder.addPiece(shipwreckPiece);
+-        return shipwreckPiece;
++    public ShipwreckPieces() {}
++
++    public static ShipwreckPieces.ShipwreckPiece addRandomPiece(StructureTemplateManager structureTemplateManager, BlockPos pos, Rotation rotation, StructurePieceAccessor holder, RandomSource random, boolean beached) {
++        ResourceLocation minecraftkey = (ResourceLocation) Util.getRandom((Object[]) (beached ? ShipwreckPieces.STRUCTURE_LOCATION_BEACHED : ShipwreckPieces.STRUCTURE_LOCATION_OCEAN), random);
++        ShipwreckPieces.ShipwreckPiece shipwreckpieces_a = new ShipwreckPieces.ShipwreckPiece(structureTemplateManager, minecraftkey, pos, rotation, beached);
++
++        holder.addPiece(shipwreckpieces_a);
++        return shipwreckpieces_a;
+     }
+ 
+     public static class ShipwreckPiece extends TemplateStructurePiece {
++
+         private final boolean isBeached;
+ 
+         public ShipwreckPiece(StructureTemplateManager manager, ResourceLocation identifier, BlockPos pos, Rotation rotation, boolean grounded) {
+-            super(StructurePieceType.SHIPWRECK_PIECE, 0, manager, identifier, identifier.toString(), makeSettings(rotation), pos);
++            super(StructurePieceType.SHIPWRECK_PIECE, 0, manager, identifier, identifier.toString(), ShipwreckPiece.makeSettings(rotation), pos);
+             this.isBeached = grounded;
+         }
+ 
+         public ShipwreckPiece(StructureTemplateManager manager, CompoundTag nbt) {
+-            super(StructurePieceType.SHIPWRECK_PIECE, nbt, manager, id -> makeSettings(Rotation.valueOf(nbt.getString("Rot"))));
++            super(StructurePieceType.SHIPWRECK_PIECE, nbt, manager, (minecraftkey) -> {
++                return ShipwreckPiece.makeSettings(Rotation.valueOf(nbt.getString("Rot")));
++            });
+             this.isBeached = nbt.getBoolean("isBeached");
+         }
+ 
+@@ -105,48 +71,47 @@
+         }
+ 
+         private static StructurePlaceSettings makeSettings(Rotation rotation) {
+-            return new StructurePlaceSettings()
+-                .setRotation(rotation)
+-                .setMirror(Mirror.NONE)
+-                .setRotationPivot(ShipwreckPieces.PIVOT)
+-                .addProcessor(BlockIgnoreProcessor.STRUCTURE_AND_AIR);
++            return (new StructurePlaceSettings()).setRotation(rotation).setMirror(Mirror.NONE).setRotationPivot(ShipwreckPieces.PIVOT).addProcessor(BlockIgnoreProcessor.STRUCTURE_AND_AIR);
+         }
+ 
+         @Override
+         protected void handleDataMarker(String metadata, BlockPos pos, ServerLevelAccessor world, RandomSource random, BoundingBox boundingBox) {
+-            ResourceKey<LootTable> resourceKey = ShipwreckPieces.MARKERS_TO_LOOT.get(metadata);
+-            if (resourceKey != null) {
+-                RandomizableContainer.setBlockEntityLootTable(world, random, pos.below(), resourceKey);
++            ResourceKey<LootTable> resourcekey = (ResourceKey) ShipwreckPieces.MARKERS_TO_LOOT.get(metadata);
++
++            if (resourcekey != null) {
++                // CraftBukkit start - ensure block transformation
++                /*
++                RandomizableContainer.setBlockEntityLootTable(worldaccess, randomsource, blockposition.below(), resourcekey);
++                */
++                this.setCraftLootTable(world, pos.below(), random, resourcekey);
++                // CraftBukkit end
+             }
++
+         }
+ 
+         @Override
+-        public void postProcess(
+-            WorldGenLevel world,
+-            StructureManager structureAccessor,
+-            ChunkGenerator chunkGenerator,
+-            RandomSource random,
+-            BoundingBox chunkBox,
+-            ChunkPos chunkPos,
+-            BlockPos pivot
+-        ) {
++        public void postProcess(WorldGenLevel world, StructureManager structureAccessor, ChunkGenerator chunkGenerator, RandomSource random, BoundingBox chunkBox, ChunkPos chunkPos, BlockPos pivot) {
+             if (this.isTooBigToFitInWorldGenRegion()) {
+                 super.postProcess(world, structureAccessor, chunkGenerator, random, chunkBox, chunkPos, pivot);
+             } else {
+                 int i = world.getMaxBuildHeight();
+                 int j = 0;
+-                Vec3i vec3i = this.template.getSize();
+-                Heightmap.Types types = this.isBeached ? Heightmap.Types.WORLD_SURFACE_WG : Heightmap.Types.OCEAN_FLOOR_WG;
+-                int k = vec3i.getX() * vec3i.getZ();
++                Vec3i baseblockposition = this.template.getSize();
++                Heightmap.Types heightmap_type = this.isBeached ? Heightmap.Types.WORLD_SURFACE_WG : Heightmap.Types.OCEAN_FLOOR_WG;
++                int k = baseblockposition.getX() * baseblockposition.getZ();
++
+                 if (k == 0) {
+-                    j = world.getHeight(types, this.templatePosition.getX(), this.templatePosition.getZ());
++                    j = world.getHeight(heightmap_type, this.templatePosition.getX(), this.templatePosition.getZ());
+                 } else {
+-                    BlockPos blockPos = this.templatePosition.offset(vec3i.getX() - 1, 0, vec3i.getZ() - 1);
++                    BlockPos blockposition1 = this.templatePosition.offset(baseblockposition.getX() - 1, 0, baseblockposition.getZ() - 1);
+ 
+-                    for (BlockPos blockPos2 : BlockPos.betweenClosed(this.templatePosition, blockPos)) {
+-                        int l = world.getHeight(types, blockPos2.getX(), blockPos2.getZ());
++                    int l;
++
++                    for (Iterator iterator = BlockPos.betweenClosed(this.templatePosition, blockposition1).iterator(); iterator.hasNext(); i = Math.min(i, l)) {
++                        BlockPos blockposition2 = (BlockPos) iterator.next();
++
++                        l = world.getHeight(heightmap_type, blockposition2.getX(), blockposition2.getZ());
+                         j += l;
+-                        i = Math.min(i, l);
+                     }
+ 
+                     j /= k;
+@@ -158,8 +123,9 @@
+         }
+ 
+         public boolean isTooBigToFitInWorldGenRegion() {
+-            Vec3i vec3i = this.template.getSize();
+-            return vec3i.getX() > 32 || vec3i.getY() > 32;
++            Vec3i baseblockposition = this.template.getSize();
++
++            return baseblockposition.getX() > 32 || baseblockposition.getY() > 32;
+         }
+ 
+         public int calculateBeachedPosition(int y, RandomSource random) {

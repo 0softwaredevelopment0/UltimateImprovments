@@ -1,0 +1,56 @@
+--- a/net/minecraft/world/effect/InfestedMobEffect.java
++++ b/net/minecraft/world/effect/InfestedMobEffect.java
+@@ -14,6 +14,7 @@
+ import org.joml.Vector3f;
+ 
+ class InfestedMobEffect extends MobEffect {
++
+     private final float chanceToSpawn;
+     private final ToIntFunction<RandomSource> spawnedCount;
+ 
+@@ -26,25 +27,32 @@
+     @Override
+     public void onMobHurt(LivingEntity entity, int amplifier, DamageSource source, float amount) {
+         if (entity.getRandom().nextFloat() <= this.chanceToSpawn) {
+-            int i = this.spawnedCount.applyAsInt(entity.getRandom());
++            int j = this.spawnedCount.applyAsInt(entity.getRandom());
+ 
+-            for (int j = 0; j < i; j++) {
+-                this.spawnSilverfish(entity.level(), entity, entity.getX(), entity.getY() + (double)entity.getBbHeight() / 2.0, entity.getZ());
++            for (int k = 0; k < j; ++k) {
++                this.spawnSilverfish(entity.level(), entity, entity.getX(), entity.getY() + (double) entity.getBbHeight() / 2.0D, entity.getZ());
+             }
+         }
++
+     }
+ 
+     private void spawnSilverfish(Level world, LivingEntity entity, double x, double y, double z) {
+-        Silverfish silverfish = EntityType.SILVERFISH.create(world);
+-        if (silverfish != null) {
+-            RandomSource randomSource = entity.getRandom();
+-            float f = (float) (Math.PI / 2);
+-            float g = Mth.randomBetween(randomSource, (float) (-Math.PI / 2), (float) (Math.PI / 2));
+-            Vector3f vector3f = entity.getLookAngle().toVector3f().mul(0.3F).mul(1.0F, 1.5F, 1.0F).rotateY(g);
+-            silverfish.moveTo(x, y, z, world.getRandom().nextFloat() * 360.0F, 0.0F);
+-            silverfish.setDeltaMovement(new Vec3(vector3f));
+-            world.addFreshEntity(silverfish);
+-            silverfish.playSound(SoundEvents.SILVERFISH_HURT);
++        Silverfish entitysilverfish = (Silverfish) EntityType.SILVERFISH.create(world);
++
++        if (entitysilverfish != null) {
++            RandomSource randomsource = entity.getRandom();
++            float f = 1.5707964F;
++            float f1 = Mth.randomBetween(randomsource, -1.5707964F, 1.5707964F);
++            Vector3f vector3f = entity.getLookAngle().toVector3f().mul(0.3F).mul(1.0F, 1.5F, 1.0F).rotateY(f1);
++
++            entitysilverfish.moveTo(x, y, z, world.getRandom().nextFloat() * 360.0F, 0.0F);
++            entitysilverfish.setDeltaMovement(new Vec3(vector3f));
++            // CraftBukkit start
++            if (!world.addFreshEntity(entitysilverfish, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.POTION_EFFECT)) {
++                return;
++            }
++            // CraftBukkit end
++            entitysilverfish.playSound(SoundEvents.SILVERFISH_HURT);
+         }
+     }
+ }

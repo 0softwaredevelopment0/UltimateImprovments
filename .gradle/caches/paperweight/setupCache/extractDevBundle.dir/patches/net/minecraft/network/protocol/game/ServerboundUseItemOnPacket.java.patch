@@ -1,0 +1,41 @@
+--- a/net/minecraft/network/protocol/game/ServerboundUseItemOnPacket.java
++++ b/net/minecraft/network/protocol/game/ServerboundUseItemOnPacket.java
+@@ -1,3 +1,4 @@
++// mc-dev import
+ package net.minecraft.network.protocol.game;
+ 
+ import net.minecraft.network.FriendlyByteBuf;
+@@ -8,12 +9,12 @@
+ import net.minecraft.world.phys.BlockHitResult;
+ 
+ public class ServerboundUseItemOnPacket implements Packet<ServerGamePacketListener> {
+-    public static final StreamCodec<FriendlyByteBuf, ServerboundUseItemOnPacket> STREAM_CODEC = Packet.codec(
+-        ServerboundUseItemOnPacket::write, ServerboundUseItemOnPacket::new
+-    );
++
++    public static final StreamCodec<FriendlyByteBuf, ServerboundUseItemOnPacket> STREAM_CODEC = Packet.codec(ServerboundUseItemOnPacket::write, ServerboundUseItemOnPacket::new);
+     private final BlockHitResult blockHit;
+     private final InteractionHand hand;
+     private final int sequence;
++    public long timestamp; // Spigot
+ 
+     public ServerboundUseItemOnPacket(InteractionHand hand, BlockHitResult blockHitResult, int sequence) {
+         this.hand = hand;
+@@ -22,7 +23,8 @@
+     }
+ 
+     private ServerboundUseItemOnPacket(FriendlyByteBuf buf) {
+-        this.hand = buf.readEnum(InteractionHand.class);
++        this.timestamp = System.currentTimeMillis(); // Spigot
++        this.hand = (InteractionHand) buf.readEnum(InteractionHand.class);
+         this.blockHit = buf.readBlockHitResult();
+         this.sequence = buf.readVarInt();
+     }
+@@ -38,7 +40,6 @@
+         return GamePacketTypes.SERVERBOUND_USE_ITEM_ON;
+     }
+ 
+-    @Override
+     public void handle(ServerGamePacketListener listener) {
+         listener.handleUseItemOn(this);
+     }

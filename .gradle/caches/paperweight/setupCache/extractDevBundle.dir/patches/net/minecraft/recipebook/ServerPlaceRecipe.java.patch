@@ -1,0 +1,61 @@
+--- a/net/minecraft/recipebook/ServerPlaceRecipe.java
++++ b/net/minecraft/recipebook/ServerPlaceRecipe.java
+@@ -31,6 +31,7 @@
+             this.inventory = entity.getInventory();
+             if (this.testClearGrid() || entity.isCreative()) {
+                 this.stackedContents.clear();
++                this.stackedContents.initializeExtras(recipe.value(), null); // Paper - Improve exact choice recipe ingredients
+                 entity.getInventory().fillStackedContents(this.stackedContents);
+                 this.menu.fillCraftSlotsStackedContents(this.stackedContents);
+                 if (this.stackedContents.canCraft(recipe.value(), null)) {
+@@ -77,7 +78,7 @@
+             int l = k;
+ 
+             for (int m : intList) {
+-                ItemStack itemStack2 = StackedContents.fromStackingIndex(m);
++                ItemStack itemStack2 = StackedContents.fromStackingIndexWithExtras(m, this.stackedContents); // Paper - Improve exact choice recipe ingredients
+                 if (!itemStack2.isEmpty()) {
+                     int n = itemStack2.getMaxStackSize();
+                     if (n < l) {
+@@ -96,12 +97,22 @@
+     @Override
+     public void addItemToSlot(Integer input, int slot, int amount, int gridX, int gridY) {
+         Slot slot2 = this.menu.getSlot(slot);
+-        ItemStack itemStack = StackedContents.fromStackingIndex(input);
++        // Paper start - Improve exact choice recipe ingredients
++        ItemStack itemStack = null;
++        boolean isExact = false;
++        if (this.stackedContents.extrasMap != null && input >= net.minecraft.core.registries.BuiltInRegistries.ITEM.size()) {
++            itemStack = StackedContents.fromStackingIndexExtras(input, this.stackedContents.extrasMap).copy();
++            isExact = true;
++        }
++        if (itemStack == null) {
++            itemStack = StackedContents.fromStackingIndex(input);
++        }
++        // Paper end - Improve exact choice recipe ingredients
+         if (!itemStack.isEmpty()) {
+             int i = amount;
+ 
+             while (i > 0) {
+-                i = this.moveItemToGrid(slot2, itemStack, i);
++                i = this.moveItemToGrid(slot2, itemStack, i, isExact); // Paper - Improve exact choice recipe ingredients
+                 if (i == -1) {
+                     return;
+                 }
+@@ -133,8 +144,15 @@
+         return i;
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Improve exact choice recipe ingredients
++
+     protected int moveItemToGrid(Slot slot, ItemStack stack, int i) {
+-        int j = this.inventory.findSlotMatchingUnusedItem(stack);
++        // Paper start - Improve exact choice recipe ingredients
++        return this.moveItemToGrid(slot, stack, i, false);
++    }
++    protected int moveItemToGrid(Slot slot, ItemStack stack, int i, final boolean isExact) {
++        int j = isExact ? this.inventory.findSlotMatchingItem(stack) : this.inventory.findSlotMatchingUnusedItem(stack);
++        // Paper end - Improve exact choice recipe ingredients
+         if (j == -1) {
+             return -1;
+         } else {

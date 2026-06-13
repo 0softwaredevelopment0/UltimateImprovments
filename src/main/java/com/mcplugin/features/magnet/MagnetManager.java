@@ -590,6 +590,10 @@ public class MagnetManager extends BukkitRunnable {
     // power = количество блоков в кластере (1..∞)
     // clusterRadius = динамический радиус (3..15)
     // Масштабирование: power / 20.0, макс 1.0
+    //
+    // Для игроков и мобов: сила добавляется к текущей скорости (add),
+    // чтобы игрок мог противодействовать движением WASD.
+    // Для предметов: скорость задаётся напрямую (set).
     // =========================
     private void applyMagneticForce(Entity entity, Location magnetCenter, int power, int clusterRadius) {
         Location entityLoc = entity.getLocation();
@@ -611,18 +615,30 @@ public class MagnetManager extends BukkitRunnable {
 
         force = Math.min(force, forceMax * powerMultiplier);
 
-        Vector velocity = direction.multiply(force);
+        Vector forceVector = direction.multiply(force);
 
-        if (entity instanceof Item) {
-            velocity.setY(velocity.getY() + itemYBoost * powerMultiplier);
+        if (entity instanceof Item item) {
+            // Предметы: прямой setVelocity с подъёмом по Y
+            forceVector.setY(forceVector.getY() + itemYBoost * powerMultiplier);
+
+            double maxSpeed = forceMaxSpeed * powerMultiplier;
+            if (forceVector.length() > maxSpeed) {
+                forceVector.normalize().multiply(maxSpeed);
+            }
+
+            entity.setVelocity(forceVector);
+        } else {
+            // Игроки и мобы: добавляем силу к текущей скорости,
+            // чтобы они могли противодействовать движением
+            Vector newVel = entity.getVelocity().add(forceVector);
+
+            double maxSpeed = forceMaxSpeed * powerMultiplier;
+            if (newVel.length() > maxSpeed) {
+                newVel.normalize().multiply(maxSpeed);
+            }
+
+            entity.setVelocity(newVel);
         }
-
-        double maxSpeed = forceMaxSpeed * powerMultiplier;
-        if (velocity.length() > maxSpeed) {
-            velocity.normalize().multiply(maxSpeed);
-        }
-
-        entity.setVelocity(velocity);
     }
 
     // =========================

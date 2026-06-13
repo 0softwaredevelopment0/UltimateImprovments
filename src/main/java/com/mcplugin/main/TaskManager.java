@@ -9,6 +9,7 @@ import com.mcplugin.energy.GeneratorTask;
 import com.mcplugin.energy.visual.CableVisualTask;
 import com.mcplugin.guns.plasmacannon.PlasmaProjectileTask;
 import com.mcplugin.radiation.RadiationTask;
+import com.mcplugin.listeners.FishingListener;
 import com.mcplugin.server.EmergencyEntitiesKill;
 import com.mcplugin.server.RedstoneGuardTask;
 
@@ -29,6 +30,7 @@ public class TaskManager {
     private BukkitTask gunTask;
     private BukkitTask reactorTask;
     private BukkitTask radiationTask;
+    private BukkitTask fishingTask;
 
     private boolean tasksStarted = false;
 
@@ -58,6 +60,7 @@ public class TaskManager {
         gunTask = new PlasmaProjectileTask().runTaskTimer(plugin, 1L, 1L);
         reactorTask = new ReactorTask().runTaskTimer(plugin, 1L, 1L);
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
+        fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
 
         plugin.getLogger().info("[TASKS] Started.");
     }
@@ -73,6 +76,7 @@ public class TaskManager {
         if (gunTask != null) gunTask.cancel();
         if (reactorTask != null) reactorTask.cancel();
         if (radiationTask != null) radiationTask.cancel();
+        if (fishingTask != null) fishingTask.cancel();
 
         tasksStarted = false;
     }

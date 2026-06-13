@@ -38,4 +38,5 @@ build/
 ### Mac OS ###
 .DS_Store
 # Project exclude paths
-/.gradle/
+/.gradle/__pycache__/
+nul

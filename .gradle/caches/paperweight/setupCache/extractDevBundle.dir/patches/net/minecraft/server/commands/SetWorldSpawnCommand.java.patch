@@ -1,0 +1,67 @@
+--- a/net/minecraft/server/commands/SetWorldSpawnCommand.java
++++ b/net/minecraft/server/commands/SetWorldSpawnCommand.java
+@@ -1,8 +1,9 @@
+ package net.minecraft.server.commands;
+ 
+ import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.builder.LiteralArgumentBuilder;
++import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+ import net.minecraft.commands.CommandSourceStack;
+-import net.minecraft.commands.Commands;
+ import net.minecraft.commands.arguments.AngleArgument;
+ import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+ import net.minecraft.core.BlockPos;
+@@ -11,34 +12,32 @@
+ import net.minecraft.world.level.Level;
+ 
+ public class SetWorldSpawnCommand {
++
++    public SetWorldSpawnCommand() {}
++
+     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+-        dispatcher.register(
+-            Commands.literal("setworldspawn")
+-                .requires(source -> source.hasPermission(2))
+-                .executes(context -> setSpawn(context.getSource(), BlockPos.containing(context.getSource().getPosition()), 0.0F))
+-                .then(
+-                    Commands.argument("pos", BlockPosArgument.blockPos())
+-                        .executes(context -> setSpawn(context.getSource(), BlockPosArgument.getSpawnablePos(context, "pos"), 0.0F))
+-                        .then(
+-                            Commands.argument("angle", AngleArgument.angle())
+-                                .executes(
+-                                    context -> setSpawn(
+-                                            context.getSource(), BlockPosArgument.getSpawnablePos(context, "pos"), AngleArgument.getAngle(context, "angle")
+-                                        )
+-                                )
+-                        )
+-                )
+-        );
++        dispatcher.register((LiteralArgumentBuilder) ((LiteralArgumentBuilder) ((LiteralArgumentBuilder) net.minecraft.commands.Commands.literal("setworldspawn").requires((commandlistenerwrapper) -> {
++            return commandlistenerwrapper.hasPermission(2);
++        })).executes((commandcontext) -> {
++            return SetWorldSpawnCommand.setSpawn((CommandSourceStack) commandcontext.getSource(), BlockPos.containing(((CommandSourceStack) commandcontext.getSource()).getPosition()), 0.0F);
++        })).then(((RequiredArgumentBuilder) net.minecraft.commands.Commands.argument("pos", BlockPosArgument.blockPos()).executes((commandcontext) -> {
++            return SetWorldSpawnCommand.setSpawn((CommandSourceStack) commandcontext.getSource(), BlockPosArgument.getSpawnablePos(commandcontext, "pos"), 0.0F);
++        })).then(net.minecraft.commands.Commands.argument("angle", AngleArgument.angle()).executes((commandcontext) -> {
++            return SetWorldSpawnCommand.setSpawn((CommandSourceStack) commandcontext.getSource(), BlockPosArgument.getSpawnablePos(commandcontext, "pos"), AngleArgument.getAngle(commandcontext, "angle"));
++        }))));
+     }
+ 
+     private static int setSpawn(CommandSourceStack source, BlockPos pos, float angle) {
+-        ServerLevel serverLevel = source.getLevel();
+-        if (serverLevel.dimension() != Level.OVERWORLD) {
++        ServerLevel worldserver = source.getLevel();
++
++        if (false && worldserver.dimension() != Level.OVERWORLD) { // CraftBukkit - SPIGOT-7649: allow in all worlds
+             source.sendFailure(Component.translatable("commands.setworldspawn.failure.not_overworld"));
+             return 0;
+         } else {
+-            serverLevel.setDefaultSpawnPos(pos, angle);
+-            source.sendSuccess(() -> Component.translatable("commands.setworldspawn.success", pos.getX(), pos.getY(), pos.getZ(), angle), true);
++            worldserver.setDefaultSpawnPos(pos, angle);
++            source.sendSuccess(() -> {
++                return Component.translatable("commands.setworldspawn.success", pos.getX(), pos.getY(), pos.getZ(), angle);
++            }, true);
+             return 1;
+         }
+     }

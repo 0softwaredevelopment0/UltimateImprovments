@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/item/enchantment/effects/ReplaceBlock.java
++++ b/net/minecraft/world/item/enchantment/effects/ReplaceBlock.java
+@@ -14,29 +14,28 @@
+ import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
+ import net.minecraft.world.phys.Vec3;
+ 
+-public record ReplaceBlock(Vec3i offset, Optional<BlockPredicate> predicate, BlockStateProvider blockState, Optional<Holder<GameEvent>> triggerGameEvent)
+-    implements EnchantmentEntityEffect {
+-    public static final MapCodec<ReplaceBlock> CODEC = RecordCodecBuilder.mapCodec(
+-        instance -> instance.group(
+-                    Vec3i.CODEC.optionalFieldOf("offset", Vec3i.ZERO).forGetter(ReplaceBlock::offset),
+-                    BlockPredicate.CODEC.optionalFieldOf("predicate").forGetter(ReplaceBlock::predicate),
+-                    BlockStateProvider.CODEC.fieldOf("block_state").forGetter(ReplaceBlock::blockState),
+-                    GameEvent.CODEC.optionalFieldOf("trigger_game_event").forGetter(ReplaceBlock::triggerGameEvent)
+-                )
+-                .apply(instance, ReplaceBlock::new)
+-    );
++public record ReplaceBlock(Vec3i offset, Optional<BlockPredicate> predicate, BlockStateProvider blockState, Optional<Holder<GameEvent>> triggerGameEvent) implements EnchantmentEntityEffect {
++
++    public static final MapCodec<ReplaceBlock> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++        return instance.group(Vec3i.CODEC.optionalFieldOf("offset", Vec3i.ZERO).forGetter(ReplaceBlock::offset), BlockPredicate.CODEC.optionalFieldOf("predicate").forGetter(ReplaceBlock::predicate), BlockStateProvider.CODEC.fieldOf("block_state").forGetter(ReplaceBlock::blockState), GameEvent.CODEC.optionalFieldOf("trigger_game_event").forGetter(ReplaceBlock::triggerGameEvent)).apply(instance, ReplaceBlock::new);
++    });
+ 
+     @Override
+     public void apply(ServerLevel world, int level, EnchantedItemInUse context, Entity user, Vec3 pos) {
+-        BlockPos blockPos = BlockPos.containing(pos).offset(this.offset);
+-        if (this.predicate.map(predicate -> predicate.test(world, blockPos)).orElse(true)
+-            && world.setBlockAndUpdate(blockPos, this.blockState.getState(user.getRandom(), blockPos))) {
+-            this.triggerGameEvent.ifPresent(gameEvent -> world.gameEvent(user, (Holder<GameEvent>)gameEvent, blockPos));
++        BlockPos blockposition = BlockPos.containing(pos).offset(this.offset);
++
++        if ((Boolean) this.predicate.map((blockpredicate) -> {
++            return blockpredicate.test(world, blockposition);
++        }).orElse(true) && org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition, this.blockState.getState(user.getRandom(), blockposition), user)) { // CraftBukkit - Call EntityBlockFormEvent
++            this.triggerGameEvent.ifPresent((holder) -> {
++                world.gameEvent(user, holder, blockposition);
++            });
+         }
++
+     }
+ 
+     @Override
+     public MapCodec<ReplaceBlock> codec() {
+-        return CODEC;
++        return ReplaceBlock.CODEC;
+     }
+ }

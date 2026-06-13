@@ -1,0 +1,526 @@
+--- a/net/minecraft/server/level/ChunkHolder.java
++++ b/net/minecraft/server/level/ChunkHolder.java
+@@ -5,7 +5,6 @@
+ import java.util.BitSet;
+ import java.util.List;
+ import java.util.concurrent.CompletableFuture;
+-import java.util.concurrent.CompletionStage;
+ import java.util.concurrent.Executor;
+ import java.util.function.IntConsumer;
+ import java.util.function.IntSupplier;
+@@ -29,102 +28,209 @@
+ import net.minecraft.world.level.chunk.status.ChunkStatus;
+ import net.minecraft.world.level.lighting.LevelLightEngine;
+ 
+-public class ChunkHolder extends GenerationChunkHolder {
++// CraftBukkit start
++import net.minecraft.server.MinecraftServer;
++// CraftBukkit end
++
++public class ChunkHolder extends GenerationChunkHolder implements ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemChunkHolder { // Paper - rewrite chunk system
++
+     public static final ChunkResult<LevelChunk> UNLOADED_LEVEL_CHUNK = ChunkResult.error("Unloaded level chunk");
+-    private static final CompletableFuture<ChunkResult<LevelChunk>> UNLOADED_LEVEL_CHUNK_FUTURE = CompletableFuture.completedFuture(UNLOADED_LEVEL_CHUNK);
++    private static final CompletableFuture<ChunkResult<LevelChunk>> UNLOADED_LEVEL_CHUNK_FUTURE = CompletableFuture.completedFuture(ChunkHolder.UNLOADED_LEVEL_CHUNK);
+     private final LevelHeightAccessor levelHeightAccessor;
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> fullChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> tickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> entityTickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+-    public int oldTicketLevel;
+-    private int ticketLevel;
+-    private int queueLevel;
++    // Paper - rewrite chunk system
+     private boolean hasChangedSections;
+     private final ShortSet[] changedBlocksPerSection;
+-    private final BitSet blockChangedLightSectionFilter = new BitSet();
+-    private final BitSet skyChangedLightSectionFilter = new BitSet();
++    private final BitSet blockChangedLightSectionFilter;
++    private final BitSet skyChangedLightSectionFilter;
+     private final LevelLightEngine lightEngine;
+-    private final ChunkHolder.LevelChangeListener onLevelChange;
++    // Paper - rewrite chunk system
+     public final ChunkHolder.PlayerProvider playerProvider;
+-    private boolean wasAccessibleSinceLastSave;
+-    private CompletableFuture<?> pendingFullStateConfirmation = CompletableFuture.completedFuture(null);
+-    private CompletableFuture<?> sendSync = CompletableFuture.completedFuture(null);
+-    private CompletableFuture<?> saveSync = CompletableFuture.completedFuture(null);
++    // Paper - rewrite chunk system
+ 
+-    public ChunkHolder(
+-        ChunkPos pos,
+-        int level,
+-        LevelHeightAccessor world,
+-        LevelLightEngine lightingProvider,
+-        ChunkHolder.LevelChangeListener levelUpdateListener,
+-        ChunkHolder.PlayerProvider playersWatchingChunkProvider
+-    ) {
++    // Paper start - rewrite chunk system
++    private ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder newChunkHolder;
++
++    private static final ServerPlayer[] EMPTY_PLAYER_ARRAY = new ServerPlayer[0];
++    private final ca.spottedleaf.moonrise.common.list.ReferenceList<ServerPlayer> playersSentChunkTo = new ca.spottedleaf.moonrise.common.list.ReferenceList<>(EMPTY_PLAYER_ARRAY);
++
++    private ChunkMap getChunkMap() {
++        return (ChunkMap)this.playerProvider;
++    }
++
++    @Override
++    public final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder moonrise$getRealChunkHolder() {
++        return this.newChunkHolder;
++    }
++
++    @Override
++    public final void moonrise$setRealChunkHolder(final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder newChunkHolder) {
++        this.newChunkHolder = newChunkHolder;
++    }
++
++    @Override
++    public final void moonrise$addReceivedChunk(final ServerPlayer player) {
++        if (!this.playersSentChunkTo.add(player)) {
++            throw new IllegalStateException("Already sent chunk " + this.pos + " in world '" + ca.spottedleaf.moonrise.common.util.WorldUtil.getWorldName(this.getChunkMap().level) + "' to player " + player);
++        }
++    }
++
++    @Override
++    public final void moonrise$removeReceivedChunk(final ServerPlayer player) {
++        if (!this.playersSentChunkTo.remove(player)) {
++            throw new IllegalStateException("Already sent chunk " + this.pos + " in world '" + ca.spottedleaf.moonrise.common.util.WorldUtil.getWorldName(this.getChunkMap().level) + "' to player " + player);
++        }
++    }
++
++    @Override
++    public final boolean moonrise$hasChunkBeenSent() {
++        return this.playersSentChunkTo.size() != 0;
++    }
++
++    @Override
++    public final boolean moonrise$hasChunkBeenSent(final ServerPlayer to) {
++        return this.playersSentChunkTo.contains(to);
++    }
++
++    @Override
++    public final List<ServerPlayer> moonrise$getPlayers(final boolean onlyOnWatchDistanceEdge) {
++        final List<ServerPlayer> ret = new java.util.ArrayList<>();
++        final ServerPlayer[] raw = this.playersSentChunkTo.getRawDataUnchecked();
++        for (int i = 0, len = this.playersSentChunkTo.size(); i < len; ++i) {
++            final ServerPlayer player = raw[i];
++            if (onlyOnWatchDistanceEdge && !((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.getChunkMap().level).moonrise$getPlayerChunkLoader().isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)) {
++                continue;
++            }
++            ret.add(player);
++        }
++
++        return ret;
++    }
++
++    @Override
++    public final LevelChunk moonrise$getFullChunk() {
++        if (this.newChunkHolder.isFullChunkReady()) {
++            if (this.newChunkHolder.getCurrentChunk() instanceof LevelChunk levelChunk) {
++                return levelChunk;
++            } // else: race condition: chunk unload
++        }
++        return null;
++    }
++
++    private boolean isRadiusLoaded(final int radius) {
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager manager = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.getChunkMap().level).moonrise$getChunkTaskScheduler()
++            .chunkHolderManager;
++        final ChunkPos pos = this.pos;
++        final int chunkX = pos.x;
++        final int chunkZ = pos.z;
++        for (int dz = -radius; dz <= radius; ++dz) {
++            for (int dx = -radius; dx <= radius; ++dx) {
++                if ((dx | dz) == 0) {
++                    continue;
++                }
++
++                final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = manager.getChunkHolder(dx + chunkX, dz + chunkZ);
++
++                if (holder == null || !holder.isFullChunkReady()) {
++                    return false;
++                }
++            }
++        }
++
++        return true;
++    }
++    // Paper end - rewrite chunk system
++
++    public ChunkHolder(ChunkPos pos, int level, LevelHeightAccessor world, LevelLightEngine lightingProvider, ChunkHolder.LevelChangeListener levelUpdateListener, ChunkHolder.PlayerProvider playersWatchingChunkProvider) {
+         super(pos);
++        // Paper - rewrite chunk system
++        this.blockChangedLightSectionFilter = new BitSet();
++        this.skyChangedLightSectionFilter = new BitSet();
++        // Paper - rewrite chunk system
+         this.levelHeightAccessor = world;
+         this.lightEngine = lightingProvider;
+-        this.onLevelChange = levelUpdateListener;
++        // Paper - rewrite chunk system
+         this.playerProvider = playersWatchingChunkProvider;
+-        this.oldTicketLevel = ChunkLevel.MAX_LEVEL + 1;
+-        this.ticketLevel = this.oldTicketLevel;
+-        this.queueLevel = this.oldTicketLevel;
++        // Paper - rewrite chunk system
+         this.setTicketLevel(level);
+         this.changedBlocksPerSection = new ShortSet[world.getSectionsCount()];
+     }
+ 
++    // CraftBukkit start
++    public LevelChunk getFullChunkNow() {
++        // Note: We use the oldTicketLevel for isLoaded checks.
++        if (!this.newChunkHolder.isFullChunkReady()) return null; // Paper - rewrite chunk system
++        return this.getFullChunkNowUnchecked();
++    }
++
++    public LevelChunk getFullChunkNowUnchecked() {
++        return (LevelChunk) this.getChunkIfPresentUnchecked(ChunkStatus.FULL);
++    }
++    // CraftBukkit end
++
+     public CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() {
+-        return this.tickingChunkFuture;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public CompletableFuture<ChunkResult<LevelChunk>> getEntityTickingChunkFuture() {
+-        return this.entityTickingChunkFuture;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public CompletableFuture<ChunkResult<LevelChunk>> getFullChunkFuture() {
+-        return this.fullChunkFuture;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     @Nullable
+-    public LevelChunk getTickingChunk() {
+-        return this.getTickingChunkFuture().getNow(UNLOADED_LEVEL_CHUNK).orElse(null);
++    public final LevelChunk getTickingChunk() { // Paper - final for inline
++        // Paper start - rewrite chunk system
++        if (this.newChunkHolder.isTickingReady()) {
++            if (this.newChunkHolder.getCurrentChunk() instanceof LevelChunk levelChunk) {
++                return levelChunk;
++            } // else: race condition: chunk unload
++        }
++        return null;
++        // Paper end - rewrite chunk system
+     }
+ 
+     @Nullable
+     public LevelChunk getChunkToSend() {
+-        return !this.sendSync.isDone() ? null : this.getTickingChunk();
++        // Paper start - rewrite chunk system
++        final LevelChunk ret = this.moonrise$getFullChunk();
++        if (ret != null && this.isRadiusLoaded(1)) {
++            return ret;
++        }
++        return null;
++        // Paper end - rewrite chunk system
+     }
+ 
+     public CompletableFuture<?> getSendSyncFuture() {
+-        return this.sendSync;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public void addSendDependency(CompletableFuture<?> postProcessingFuture) {
+-        if (this.sendSync.isDone()) {
+-            this.sendSync = postProcessingFuture;
+-        } else {
+-            this.sendSync = this.sendSync.thenCombine((CompletionStage<? extends Object>)postProcessingFuture, (object, object2) -> null);
+-        }
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
++
+     }
+ 
+     public CompletableFuture<?> getSaveSyncFuture() {
+-        return this.saveSync;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public boolean isReadyForSaving() {
+-        return this.getGenerationRefCount() == 0 && this.saveSync.isDone();
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     private void addSaveDependency(CompletableFuture<?> savingFuture) {
+-        if (this.saveSync.isDone()) {
+-            this.saveSync = savingFuture;
+-        } else {
+-            this.saveSync = this.saveSync.thenCombine((CompletionStage<? extends Object>)savingFuture, (object, thenResult) -> null);
+-        }
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
++
+     }
+ 
+     public void blockChanged(BlockPos pos) {
+-        LevelChunk levelChunk = this.getTickingChunk();
+-        if (levelChunk != null) {
++        LevelChunk chunk = this.playersSentChunkTo.size() == 0 ? null : this.getChunkToSend(); // Paper - rewrite chunk system
++
++        if (chunk != null) {
+             int i = this.levelHeightAccessor.getSectionIndex(pos.getY());
++
++            if (i < 0 || i >= this.changedBlocksPerSection.length) return; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
+             if (this.changedBlocksPerSection[i] == null) {
+                 this.hasChangedSections = true;
+                 this.changedBlocksPerSection[i] = new ShortOpenHashSet();
+@@ -135,20 +241,25 @@
+     }
+ 
+     public void sectionLightChanged(LightLayer lightType, int y) {
+-        ChunkAccess chunkAccess = this.getChunkIfPresent(ChunkStatus.INITIALIZE_LIGHT);
+-        if (chunkAccess != null) {
+-            chunkAccess.setUnsaved(true);
+-            LevelChunk levelChunk = this.getTickingChunk();
+-            if (levelChunk != null) {
+-                int i = this.lightEngine.getMinLightSection();
+-                int j = this.lightEngine.getMaxLightSection();
+-                if (y >= i && y <= j) {
+-                    int k = y - i;
++        ChunkAccess ichunkaccess = this.getChunkIfPresent(ChunkStatus.INITIALIZE_LIGHT);
++
++        if (ichunkaccess != null) {
++            ichunkaccess.setUnsaved(true);
++            LevelChunk chunk = this.getChunkToSend(); // Paper - rewrite chunk system
++
++            if (chunk != null) {
++                int j = this.lightEngine.getMinLightSection();
++                int k = this.lightEngine.getMaxLightSection();
++
++                if (y >= j && y <= k) {
++                    int l = y - j;
++
+                     if (lightType == LightLayer.SKY) {
+-                        this.skyChangedLightSectionFilter.set(k);
++                        this.skyChangedLightSectionFilter.set(l);
+                     } else {
+-                        this.blockChangedLightSectionFilter.set(k);
++                        this.blockChangedLightSectionFilter.set(l);
+                     }
++
+                 }
+             }
+         }
+@@ -156,14 +267,15 @@
+ 
+     public void broadcastChanges(LevelChunk chunk) {
+         if (this.hasChangedSections || !this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
+-            Level level = chunk.getLevel();
++            Level world = chunk.getLevel();
++            List list;
++
+             if (!this.skyChangedLightSectionFilter.isEmpty() || !this.blockChangedLightSectionFilter.isEmpty()) {
+-                List<ServerPlayer> list = this.playerProvider.getPlayers(this.pos, true);
++                list = this.moonrise$getPlayers(true); // Paper - rewrite chunk system
+                 if (!list.isEmpty()) {
+-                    ClientboundLightUpdatePacket clientboundLightUpdatePacket = new ClientboundLightUpdatePacket(
+-                        chunk.getPos(), this.lightEngine, this.skyChangedLightSectionFilter, this.blockChangedLightSectionFilter
+-                    );
+-                    this.broadcast(list, clientboundLightUpdatePacket);
++                    ClientboundLightUpdatePacket packetplayoutlightupdate = new ClientboundLightUpdatePacket(chunk.getPos(), this.lightEngine, this.skyChangedLightSectionFilter, this.blockChangedLightSectionFilter);
++
++                    this.broadcast(list, packetplayoutlightupdate);
+                 }
+ 
+                 this.skyChangedLightSectionFilter.clear();
+@@ -171,27 +283,34 @@
+             }
+ 
+             if (this.hasChangedSections) {
+-                List<ServerPlayer> list2 = this.playerProvider.getPlayers(this.pos, false);
++                list = this.moonrise$getPlayers(false); // Paper - rewrite chunk system
+ 
+-                for (int i = 0; i < this.changedBlocksPerSection.length; i++) {
+-                    ShortSet shortSet = this.changedBlocksPerSection[i];
+-                    if (shortSet != null) {
++                for (int i = 0; i < this.changedBlocksPerSection.length; ++i) {
++                    ShortSet shortset = this.changedBlocksPerSection[i];
++
++                    if (shortset != null) {
+                         this.changedBlocksPerSection[i] = null;
+-                        if (!list2.isEmpty()) {
++                        if (!list.isEmpty()) {
+                             int j = this.levelHeightAccessor.getSectionYFromSectionIndex(i);
+-                            SectionPos sectionPos = SectionPos.of(chunk.getPos(), j);
+-                            if (shortSet.size() == 1) {
+-                                BlockPos blockPos = sectionPos.relativeToBlockPos(shortSet.iterator().nextShort());
+-                                BlockState blockState = level.getBlockState(blockPos);
+-                                this.broadcast(list2, new ClientboundBlockUpdatePacket(blockPos, blockState));
+-                                this.broadcastBlockEntityIfNeeded(list2, level, blockPos, blockState);
++                            SectionPos sectionposition = SectionPos.of(chunk.getPos(), j);
++
++                            if (shortset.size() == 1) {
++                                BlockPos blockposition = sectionposition.relativeToBlockPos(shortset.iterator().nextShort());
++                                BlockState iblockdata = world.getBlockState(blockposition);
++
++                                this.broadcast(list, new ClientboundBlockUpdatePacket(blockposition, iblockdata));
++                                this.broadcastBlockEntityIfNeeded(list, world, blockposition, iblockdata);
+                             } else {
+-                                LevelChunkSection levelChunkSection = chunk.getSection(i);
+-                                ClientboundSectionBlocksUpdatePacket clientboundSectionBlocksUpdatePacket = new ClientboundSectionBlocksUpdatePacket(
+-                                    sectionPos, shortSet, levelChunkSection
+-                                );
+-                                this.broadcast(list2, clientboundSectionBlocksUpdatePacket);
+-                                clientboundSectionBlocksUpdatePacket.runUpdates((pos, state) -> this.broadcastBlockEntityIfNeeded(list2, level, pos, state));
++                                LevelChunkSection chunksection = chunk.getSection(i);
++                                ClientboundSectionBlocksUpdatePacket packetplayoutmultiblockchange = new ClientboundSectionBlocksUpdatePacket(sectionposition, shortset, chunksection);
++
++                                this.broadcast(list, packetplayoutmultiblockchange);
++                                // CraftBukkit start
++                                List finalList = list;
++                                packetplayoutmultiblockchange.runUpdates((blockposition1, iblockdata1) -> {
++                                    this.broadcastBlockEntityIfNeeded(finalList, world, blockposition1, iblockdata1);
++                                    // CraftBukkit end
++                                });
+                             }
+                         }
+                     }
+@@ -206,124 +325,74 @@
+         if (state.hasBlockEntity()) {
+             this.broadcastBlockEntity(players, world, pos);
+         }
++
+     }
+ 
+     private void broadcastBlockEntity(List<ServerPlayer> players, Level world, BlockPos pos) {
+-        BlockEntity blockEntity = world.getBlockEntity(pos);
+-        if (blockEntity != null) {
+-            Packet<?> packet = blockEntity.getUpdatePacket();
++        BlockEntity tileentity = world.getBlockEntity(pos);
++
++        if (tileentity != null) {
++            Packet<?> packet = tileentity.getUpdatePacket();
++
+             if (packet != null) {
+                 this.broadcast(players, packet);
+             }
+         }
++
+     }
+ 
+     private void broadcast(List<ServerPlayer> players, Packet<?> packet) {
+-        players.forEach(player -> player.connection.send(packet));
++        players.forEach((entityplayer) -> {
++            entityplayer.connection.send(packet);
++        });
+     }
+ 
+     @Override
+     public int getTicketLevel() {
+-        return this.ticketLevel;
++        return this.newChunkHolder.getTicketLevel(); // Paper - rewrite chunk system
+     }
+ 
+     @Override
+     public int getQueueLevel() {
+-        return this.queueLevel;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     private void setQueueLevel(int level) {
+-        this.queueLevel = level;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public void setTicketLevel(int level) {
+-        this.ticketLevel = level;
++        // Paper - rewrite chunk system
+     }
+ 
+-    private void scheduleFullChunkPromotion(
+-        ChunkMap chunkLoadingManager, CompletableFuture<ChunkResult<LevelChunk>> chunkFuture, Executor executor, FullChunkStatus target
+-    ) {
+-        this.pendingFullStateConfirmation.cancel(false);
+-        CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+-        completableFuture.thenRunAsync(() -> chunkLoadingManager.onFullChunkStatusChange(this.pos, target), executor);
+-        this.pendingFullStateConfirmation = completableFuture;
+-        chunkFuture.thenAccept(optionalChunk -> optionalChunk.ifSuccess(chunk -> completableFuture.complete(null)));
++    private void scheduleFullChunkPromotion(ChunkMap chunkLoadingManager, CompletableFuture<ChunkResult<LevelChunk>> chunkFuture, Executor executor, FullChunkStatus target) {
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     private void demoteFullChunk(ChunkMap chunkLoadingManager, FullChunkStatus target) {
+-        this.pendingFullStateConfirmation.cancel(false);
+-        chunkLoadingManager.onFullChunkStatusChange(this.pos, target);
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     protected void updateFutures(ChunkMap chunkLoadingManager, Executor executor) {
+-        FullChunkStatus fullChunkStatus = ChunkLevel.fullStatus(this.oldTicketLevel);
+-        FullChunkStatus fullChunkStatus2 = ChunkLevel.fullStatus(this.ticketLevel);
+-        boolean bl = fullChunkStatus.isOrAfter(FullChunkStatus.FULL);
+-        boolean bl2 = fullChunkStatus2.isOrAfter(FullChunkStatus.FULL);
+-        this.wasAccessibleSinceLastSave |= bl2;
+-        if (!bl && bl2) {
+-            this.fullChunkFuture = chunkLoadingManager.prepareAccessibleChunk(this);
+-            this.scheduleFullChunkPromotion(chunkLoadingManager, this.fullChunkFuture, executor, FullChunkStatus.FULL);
+-            this.addSaveDependency(this.fullChunkFuture);
+-        }
+-
+-        if (bl && !bl2) {
+-            this.fullChunkFuture.complete(UNLOADED_LEVEL_CHUNK);
+-            this.fullChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+-        }
+-
+-        boolean bl3 = fullChunkStatus.isOrAfter(FullChunkStatus.BLOCK_TICKING);
+-        boolean bl4 = fullChunkStatus2.isOrAfter(FullChunkStatus.BLOCK_TICKING);
+-        if (!bl3 && bl4) {
+-            this.tickingChunkFuture = chunkLoadingManager.prepareTickingChunk(this);
+-            this.scheduleFullChunkPromotion(chunkLoadingManager, this.tickingChunkFuture, executor, FullChunkStatus.BLOCK_TICKING);
+-            this.addSaveDependency(this.tickingChunkFuture);
+-        }
+-
+-        if (bl3 && !bl4) {
+-            this.tickingChunkFuture.complete(UNLOADED_LEVEL_CHUNK);
+-            this.tickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+-        }
+-
+-        boolean bl5 = fullChunkStatus.isOrAfter(FullChunkStatus.ENTITY_TICKING);
+-        boolean bl6 = fullChunkStatus2.isOrAfter(FullChunkStatus.ENTITY_TICKING);
+-        if (!bl5 && bl6) {
+-            if (this.entityTickingChunkFuture != UNLOADED_LEVEL_CHUNK_FUTURE) {
+-                throw (IllegalStateException)Util.pauseInIde(new IllegalStateException());
+-            }
+-
+-            this.entityTickingChunkFuture = chunkLoadingManager.prepareEntityTickingChunk(this);
+-            this.scheduleFullChunkPromotion(chunkLoadingManager, this.entityTickingChunkFuture, executor, FullChunkStatus.ENTITY_TICKING);
+-            this.addSaveDependency(this.entityTickingChunkFuture);
+-        }
+-
+-        if (bl5 && !bl6) {
+-            this.entityTickingChunkFuture.complete(UNLOADED_LEVEL_CHUNK);
+-            this.entityTickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+-        }
+-
+-        if (!fullChunkStatus2.isOrAfter(fullChunkStatus)) {
+-            this.demoteFullChunk(chunkLoadingManager, fullChunkStatus2);
+-        }
+-
+-        this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
+-        this.oldTicketLevel = this.ticketLevel;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public boolean wasAccessibleSinceLastSave() {
+-        return this.wasAccessibleSinceLastSave;
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     public void refreshAccessibility() {
+-        this.wasAccessibleSinceLastSave = ChunkLevel.fullStatus(this.ticketLevel).isOrAfter(FullChunkStatus.FULL);
++        throw new UnsupportedOperationException(); // Paper - rewrite chunk system
+     }
+ 
+     @FunctionalInterface
+     public interface LevelChangeListener {
++
+         void onLevelChange(ChunkPos pos, IntSupplier levelGetter, int targetLevel, IntConsumer levelSetter);
+     }
+ 
+     public interface PlayerProvider {
++
+         List<ServerPlayer> getPlayers(ChunkPos chunkPos, boolean onlyOnWatchDistanceEdge);
+     }
+ }

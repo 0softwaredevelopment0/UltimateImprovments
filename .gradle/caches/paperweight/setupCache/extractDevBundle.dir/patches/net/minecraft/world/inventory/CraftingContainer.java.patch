@@ -1,0 +1,30 @@
+--- a/net/minecraft/world/inventory/CraftingContainer.java
++++ b/net/minecraft/world/inventory/CraftingContainer.java
+@@ -5,13 +5,27 @@
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.crafting.CraftingInput;
+ 
++// CraftBukkit start
++import net.minecraft.world.item.crafting.RecipeHolder;
++// CraftBukkit end
++
+ public interface CraftingContainer extends Container, StackedContentsCompatible {
++
+     int getWidth();
+ 
+     int getHeight();
+ 
+     List<ItemStack> getItems();
+ 
++    // CraftBukkit start
++    default RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> getCurrentRecipe() { // Paper - use correct generic
++        return null;
++    }
++
++    default void setCurrentRecipe(RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> recipe) { // Paper - use correct generic
++    }
++    // CraftBukkit end
++
+     default CraftingInput asCraftInput() {
+         return this.asPositionedCraftInput().input();
+     }

@@ -1,0 +1,28 @@
+--- a/net/minecraft/tags/TagManager.java
++++ b/net/minecraft/tags/TagManager.java
+@@ -39,7 +39,7 @@
+     ) {
+         List<? extends CompletableFuture<? extends TagManager.LoadResult<?>>> list = this.registryAccess
+             .registries()
+-            .map(registry -> this.createLoader(manager, prepareExecutor, (RegistryAccess.RegistryEntry<?>)registry))
++            .map(registry -> this.createLoader(manager, prepareExecutor, (RegistryAccess.RegistryEntry<?>)registry, applyExecutor instanceof net.minecraft.server.MinecraftServer ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD)) // Paper - add registrar event cause
+             .toList();
+         return CompletableFuture.allOf(list.toArray(CompletableFuture[]::new))
+             .thenCompose(synchronizer::wait)
+@@ -48,11 +48,15 @@
+ 
+     private <T> CompletableFuture<TagManager.LoadResult<T>> createLoader(
+         ResourceManager resourceManager, Executor prepareExecutor, RegistryAccess.RegistryEntry<T> requirement
++        , io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause cause // Paper - add registrar event cause
+     ) {
+         ResourceKey<? extends Registry<T>> resourceKey = requirement.key();
+         Registry<T> registry = requirement.value();
+         TagLoader<Holder<T>> tagLoader = new TagLoader<>(registry::getHolder, Registries.tagsDirPath(resourceKey));
+-        return CompletableFuture.supplyAsync(() -> new TagManager.LoadResult<>(resourceKey, tagLoader.loadAndBuild(resourceManager)), prepareExecutor);
++        // Paper start - fire tag registrar events
++        final io.papermc.paper.tag.TagEventConfig<Holder<T>, ?> config = io.papermc.paper.tag.PaperTagListenerManager.INSTANCE.createEventConfig(registry, cause);
++        return CompletableFuture.supplyAsync(() -> new TagManager.LoadResult<>(resourceKey, tagLoader.loadAndBuild(resourceManager, config)), prepareExecutor);
++        // Paper end - fire tag registrar events
+     }
+ 
+     public static record LoadResult<T>(ResourceKey<? extends Registry<T>> key, Map<ResourceLocation, Collection<Holder<T>>> tags) {

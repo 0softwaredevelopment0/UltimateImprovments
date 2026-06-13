@@ -2,16 +2,21 @@ package com.mcplugin.commands;
 
 import com.mcplugin.Main;
 import com.mcplugin.cable.CableNetwork;
+import com.mcplugin.core1.ReactorCommand;
 import com.mcplugin.core1.ReactorManager;
 import com.mcplugin.features.FeaturesManager;
 import com.mcplugin.main.TaskManager;
 import com.mcplugin.server.RedstoneGuard;
 import com.mcplugin.energy.crafting.EnergyWorkbenchManager;
 import com.mcplugin.crafting.MultimeterCraftListener;
+import com.mcplugin.cp.CodePanelClick;
 import com.mcplugin.cp.CodePanelCommand;
 import com.mcplugin.database.DatabaseManager;
 
 import org.bukkit.Bukkit;
+import net.md_5.bungee.api.chat.*;
+import net.md_5.bungee.api.ChatColor;
+
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -52,6 +57,18 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
 
         // =========================
+        // BASE PERMISSION CHECK
+        // Только для игроков — консоль пропускаем
+        // =========================
+        if (sender instanceof Player) {
+            Player p = (Player) sender;
+            if (!p.hasPermission("mcplugin")) {
+                p.sendMessage("§4❌ §cУ вас нет прав на использование MC-Plugin команд!");
+                return true;
+            }
+        }
+
+        // =========================
         // HELP SUBCOMMAND
         // =========================
         if (args[0].equalsIgnoreCase("help")) {
@@ -68,6 +85,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("");
             sender.sendMessage("§e/mp structures dfc stats");
             sender.sendMessage(" §7└ Статистика реактора");
+            sender.sendMessage("§e/mp structures dfc assemble");
+            sender.sendMessage(" §7└ Собрать реактор тёмного синтеза");
+            sender.sendMessage("§e/mp structures magnet assemble");
+            sender.sendMessage(" §7└ Собрать магнит");
             sender.sendMessage("");
             sender.sendMessage("§e/mp power off");
             sender.sendMessage(" §7└ Запросить выключение сервера");
@@ -79,9 +100,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(" §7└ Отменить запрос");
             sender.sendMessage("");
             sender.sendMessage("§e/mp chgdim");
-            sender.sendMessage(" §7└ Телепорт в указанный мир");
+            sender.sendMessage(" §7└ Открыть меню телепортации между мирами");
             sender.sendMessage("");
-            sender.sendMessage("§e/mp cp");
+            sender.sendMessage("§e/mp codepane");
             sender.sendMessage(" §7└ Открыть кодовую панель");
             sender.sendMessage("");
             sender.sendMessage("§6═══════════════════════════════════");
@@ -90,7 +111,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
 
         // =========================
-        // CHG DIMENSION SUBCOMMAND
+        // CHGDIM — MENU
         // =========================
         if (args[0].equalsIgnoreCase("chgdim")) {
 
@@ -107,6 +128,29 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                                 "§4❌ §cУ вас нет прав на эту команду!"));
                 return true;
             }
+
+            showChgdimMenu(player);
+            return true;
+        }
+
+        // =========================
+        // CHGDIM_TELEPORT
+        // =========================
+        if (args[0].equalsIgnoreCase("chgdim_teleport")) {
+
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!");
+                return true;
+            }
+
+            if (!player.hasPermission("mcplugin.command.chgdim")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на эту команду!");
+                return true;
+            }
+
+            if (args.length < 2) return true;
+
+            String worldName = args[1];
 
             // =========================
             // COOLDOWN CHECK
@@ -130,38 +174,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
 
             // =========================
-            // ЕСТЬ ТОЧКА ВОЗВРАТА → телепорт обратно
-            // =========================
-            if (DimensionManager.hasReturnLocation(player)) {
-                Location returnLoc = DimensionManager.getReturnLocation(player);
-                if (returnLoc == null) {
-                    player.sendMessage(Main.getInstance().getConfig()
-                            .getString("changedimmension.messages.return_error",
-                                    "§4❌ §cОшибка: точка возврата повреждена!"));
-                    DimensionManager.removeReturnLocation(player);
-                    return true;
-                }
-
-                player.teleportAsync(returnLoc);
-                DimensionManager.removeReturnLocation(player);
-                cooldowns.put(playerUuid, now);
-
-                player.sendMessage(Main.getInstance().getConfig()
-                        .getString("changedimmension.messages.return_success",
-                                "§a✅ §fВы вернулись в исходную точку!"));
-                return true;
-            }
-
-            // =========================
-            // НЕТ ТОЧКИ ВОЗВРАТА → сохранить позицию и телепортировать
+            // GET WORLD CONFIG
             // =========================
             FileConfiguration config = Main.getInstance().getConfig();
-            String worldName = config.getString("changedimmension.default_world", "");
+            ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
 
-            if (worldName.isEmpty()) {
-                player.sendMessage(Main.getInstance().getConfig()
-                        .getString("changedimmension.messages.no_default_world",
-                                "§4❌ §cМир по умолчанию не настроен в конфиге!"));
+            if (worldsSection == null || !worldsSection.contains(worldName)) {
+                player.sendMessage("§4❌ §cМир §e" + worldName + "§c не настроен в конфиге!");
                 return true;
             }
 
@@ -174,35 +193,20 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
-            ConfigurationSection worldConfig = worldsSection != null
-                    ? worldsSection.getConfigurationSection(worldName)
-                    : null;
+            ConfigurationSection worldConfig = worldsSection.getConfigurationSection(worldName);
 
-            double teleportX, teleportY, teleportZ;
-            float teleportYaw = 0.0f;
-            float teleportPitch = 0.0f;
-
-            if (worldConfig != null) {
-                // Координаты из конфига
-                teleportX = worldConfig.getDouble("x", 0);
-                teleportY = worldConfig.getDouble("y", 64);
-                teleportZ = worldConfig.getDouble("z", 0);
-                teleportYaw = (float) worldConfig.getDouble("yaw", 0.0);
-                teleportPitch = (float) worldConfig.getDouble("pitch", 0.0);
-            } else {
-                // Спавн мира, если нет конфига
-                teleportX = world.getSpawnLocation().getX();
-                teleportY = world.getSpawnLocation().getY();
-                teleportZ = world.getSpawnLocation().getZ();
-                teleportYaw = world.getSpawnLocation().getYaw();
-                teleportPitch = world.getSpawnLocation().getPitch();
-            }
+            double teleportX = worldConfig != null ? worldConfig.getDouble("x", 0) : 0;
+            double teleportY = worldConfig != null ? worldConfig.getDouble("y", 64) : 64;
+            double teleportZ = worldConfig != null ? worldConfig.getDouble("z", 0) : 0;
+            float teleportYaw = worldConfig != null ? (float) worldConfig.getDouble("yaw", 0.0) : 0.0f;
+            float teleportPitch = worldConfig != null ? (float) worldConfig.getDouble("pitch", 0.0) : 0.0f;
 
             // =========================
             // СОХРАНЯЕМ ТЕКУЩУЮ ПОЗИЦИЮ В БД
             // =========================
-            DimensionManager.saveReturnLocation(player);
+            if (!DimensionManager.hasReturnLocation(player)) {
+                DimensionManager.saveReturnLocation(player);
+            }
 
             Location targetLocation = new Location(world, teleportX, teleportY, teleportZ, teleportYaw, teleportPitch);
             player.teleportAsync(targetLocation);
@@ -213,24 +217,84 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                             "§a✅ §fТелепортация в мир §e{world}§f завершена!")
                     .replace("{world}", worldName));
 
+            return true;
+        }
+
+        // =========================
+        // CHGDIM_RETURN — телепорт назад
+        // =========================
+        if (args[0].equalsIgnoreCase("chgdim_return")) {
+
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!");
+                return true;
+            }
+
+            if (!player.hasPermission("mcplugin.command.chgdim")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на эту команду!");
+                return true;
+            }
+
+            if (!DimensionManager.hasReturnLocation(player)) {
+                player.sendMessage("§4❌ §cНет сохранённой точки для возврата!");
+                return true;
+            }
+
+            Location returnLoc = DimensionManager.getReturnLocation(player);
+            if (returnLoc == null) {
+                player.sendMessage(Main.getInstance().getConfig()
+                        .getString("changedimmension.messages.return_error",
+                                "§4❌ §cОшибка: точка возврата повреждена!"));
+                DimensionManager.removeReturnLocation(player);
+                return true;
+            }
+
+            player.teleportAsync(returnLoc);
+            DimensionManager.removeReturnLocation(player);
+
             player.sendMessage(Main.getInstance().getConfig()
-                    .getString("changedimmension.messages.return_info",
-                            "§eℹ §7Чтобы вернуться, просто напишите §f/mp chgdim§7 ещё раз."));
+                    .getString("changedimmension.messages.return_success",
+                            "§a✅ §fВы вернулись в исходную точку!"));
 
             return true;
         }
 
         // =========================
-        // CP SUBCOMMAND (Code Panel)
+        // CODEPANE SUBCOMMAND (Code Panel)
         // =========================
-        if (args[0].equalsIgnoreCase("cp")) {
+        if (args[0].equalsIgnoreCase("codepane")) {
 
             if (!(sender instanceof Player player)) {
                 sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду.");
                 return true;
             }
 
+            if (!player.hasPermission("mcplugin.command.codepane")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!");
+                return true;
+            }
+
             return CodePanelCommand.handleCommand(player);
+        }
+
+        // =========================
+        // PANE_CLICK SUBCOMMAND (Code Panel button clicks)
+        // =========================
+        if (args[0].equalsIgnoreCase("pane_click")) {
+
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду.");
+                return true;
+            }
+
+            if (!player.hasPermission("mcplugin.command.codepane")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!");
+                return true;
+            }
+
+            if (args.length < 2) return true;
+
+            return CodePanelClick.handleClick(player, args[1]);
         }
 
         // =========================
@@ -243,115 +307,182 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            if (args.length < 3 || !args[1].equalsIgnoreCase("dfc") || !args[2].equalsIgnoreCase("stats")) {
-                player.sendMessage("§4❌ §cError: §7Usage: /mp structures dfc stats");
+            // =========================
+            // BASE PERMISSION
+            // =========================
+            if (!player.hasPermission("mcplugin.command.structures")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на управление структурами!");
                 return true;
             }
 
-            ReactorManager reactor = ReactorManager.getInstance();
-
-            if (reactor == null || !reactor.isValid()) {
-                player.sendMessage("§4❌ §cError: §7Активных реакторов не найдено.");
+            if (args.length < 2) {
+                player.sendMessage("§4❌ §cUsage: /mp structures <dfc|magnet> <stats|assemble>");
                 return true;
             }
 
-            Location playerLoc = player.getLocation();
-            Location reactorLoc = reactor.getReactorLocation();
+            // =========================
+            // DFC (Dark Fusion Core — Reactor)
+            // =========================
+            if (args[1].equalsIgnoreCase("dfc")) {
 
-            if (reactorLoc == null || !playerLoc.getWorld().equals(reactorLoc.getWorld())) {
-                player.sendMessage("§4❌ §cError: §7Рядом нет активного реактора.");
+                if (args.length < 3) {
+                    player.sendMessage("§4❌ §cUsage: /mp structures dfc <stats|assemble>");
+                    return true;
+                }
+
+                // =========================
+                // DFC STATS
+                // =========================
+                if (args[2].equalsIgnoreCase("stats")) {
+
+                    ReactorManager reactor = ReactorManager.getInstance();
+
+                    if (reactor == null || !reactor.isValid()) {
+                        player.sendMessage("§4❌ §cError: §7Активных реакторов не найдено.");
+                        return true;
+                    }
+
+                    Location playerLoc = player.getLocation();
+                    Location reactorLoc = reactor.getReactorLocation();
+
+                    if (reactorLoc == null || !playerLoc.getWorld().equals(reactorLoc.getWorld())) {
+                        player.sendMessage("§4❌ §cError: §7Рядом нет активного реактора.");
+                        return true;
+                    }
+
+                    double distance = playerLoc.distance(reactorLoc);
+                    if (distance > 50) {
+                        player.sendMessage("§4❌ §cError: §7Рядом нет активного реактора (ближайший в §f"
+                                + String.format("%.1f", distance) + "§7 м).");
+                        return true;
+                    }
+
+                    String status;
+
+                    if (reactor.isMeltdownCountdown()) {
+                        status = "§4!!! §cВзрыв неизбежен §4!!!";
+                    } else if (reactor.getCoreShInt() < 100 || reactor.getCoreCaseInt() < 100) {
+                        status = "§eДеградация";
+                    } else {
+                        status = "§aНормальный";
+                    }
+
+                    int meltdownSecs = reactor.isMeltdownCountdown()
+                            ? (reactor.getMeltdownTimer() / 20)
+                            : 0;
+
+                    player.sendMessage("§8┌────────────────────────────────┐");
+                    player.sendMessage("§8│ §4Р.Т.С §8» §fСтатистика реактора");
+                    player.sendMessage("§8├────────────────────────────────┤");
+
+                    player.sendMessage("§8│ §7ID: §f" + reactor.getReactorId());
+                    player.sendMessage("§8│ §7Статус: " + status);
+                    if (reactor.isMeltdownCountdown()) {
+                        player.sendMessage("§8│ §7Детонация: §c" + meltdownSecs + " сек");
+                    }
+                    player.sendMessage("§8│ §7Дист: §f" + String.format("%.1f", distance) + " м");
+
+                    player.sendMessage("§8│ §6═[ §eДанные ядра §6]═");
+                    player.sendMessage("§8│ §7Температура:  §f"
+                            + reactor.getDisplayCoreTemp() + " C*");
+                    player.sendMessage("§8│ §7Давление:    §f"
+                            + reactor.getDisplayCorePress() + " kPa");
+                    player.sendMessage("§8│ §7Целостность: §f"
+                            + reactor.getDisplayCoreShInt() + " %");
+                    player.sendMessage("§8│ §6═[═══════════]═");
+
+                    player.sendMessage("§8│ §3═[ §bДанные корпуса §3]═");
+                    player.sendMessage("§8│ §7Температура:  §f"
+                            + reactor.getDisplayCoreCaseTemp() + " C*");
+                    player.sendMessage("§8│ §7Давление:    §f"
+                            + reactor.getDisplayCoreCasePress() + " kPa");
+                    player.sendMessage("§8│ §7Целостность: §f"
+                            + reactor.getDisplayCoreCaseInt() + " %");
+                    player.sendMessage("§8│ §3═[═══════════]═");
+
+                    player.sendMessage("§8│ §5═[ §dДанные рецепта §5]═");
+                    int recipePct = reactor.getDisplayRecipeTime();
+                    player.sendMessage("§8│ §7Прогресс:   §f"
+                            + recipePct + " %");
+                    String recipeStatus;
+                    if (recipePct <= 0) {
+                        recipeStatus = "§7Бездействует";
+                    } else if (recipePct < 100) {
+                        recipeStatus = "§eГотовится";
+                    } else {
+                        recipeStatus = "§aЗавершён";
+                    }
+                    player.sendMessage("§8│ §7Статус:     " + recipeStatus);
+
+                    // Износ
+                    player.sendMessage("§8│ §7Износ:      §f"
+                            + reactor.getDisplayReactorWear() + " %");
+
+                    // Энерговыработка (текущая, E/сек)
+                    player.sendMessage("§8│ §7Выработка:  §f"
+                            + reactor.getDisplayEnergyRate() + " E/сек");
+
+                    if (reactor.isSelfDestruct() && !reactor.isMeltdownCountdown()) {
+                        player.sendMessage("§8│ §7Самоликвид: §cАктивен");
+                    }
+                    player.sendMessage("§8│ §5═[═══════════]═");
+
+                    player.sendMessage("§8│ §7Позиция: §f"
+                            + reactorLoc.getBlockX() + " "
+                            + reactorLoc.getBlockY() + " "
+                            + reactorLoc.getBlockZ()
+                            + " §7(мир: §f" + reactorLoc.getWorld().getName() + "§7)");
+
+                    player.sendMessage("§8└────────────────────────────────┘");
+                    player.sendMessage("");
+
+                    return true;
+                }
+
+                // =========================
+                // DFC ASSEMBLE (Reactor assembly)
+                // =========================
+                if (args[2].equalsIgnoreCase("assemble")) {
+
+                    if (!player.hasPermission("mcplugin.command.structures.dfc")) {
+                        player.sendMessage("§4❌ §cУ вас нет прав на сборку реактора!");
+                        return true;
+                    }
+
+                    ReactorCommand.assembleDarkSynthesis(player);
+                    return true;
+                }
+
+                player.sendMessage("§4❌ §cUsage: /mp structures dfc <stats|assemble>");
                 return true;
             }
 
-            double distance = playerLoc.distance(reactorLoc);
-            if (distance > 50) {
-                player.sendMessage("§4❌ §cError: §7Рядом нет активного реактора (ближайший в §f"
-                        + String.format("%.1f", distance) + "§7 м).");
+            // =========================
+            // MAGNET
+            // =========================
+            if (args[1].equalsIgnoreCase("magnet")) {
+
+                if (args.length < 3 || !args[2].equalsIgnoreCase("assemble")) {
+                    player.sendMessage("§4❌ §cUsage: /mp structures magnet assemble");
+                    return true;
+                }
+
+                if (!player.hasPermission("mcplugin.command.structures.magnet")) {
+                    player.sendMessage("§4❌ §cУ вас нет прав на сборку магнита!");
+                    return true;
+                }
+
+                ReactorCommand.assembleMagnet(player);
                 return true;
             }
 
-            String status;
-
-            if (reactor.isMeltdownCountdown()) {
-                status = "§4!!! §cВзрыв неизбежен §4!!!";
-            } else if (reactor.getCoreShInt() < 100 || reactor.getCoreCaseInt() < 100) {
-                status = "§eДеградация";
-            } else {
-                status = "§aНормальный";
-            }
-
-            int meltdownSecs = reactor.isMeltdownCountdown()
-                    ? (reactor.getMeltdownTimer() / 20)
-                    : 0;
-
-            player.sendMessage("§8┌────────────────────────────────┐");
-            player.sendMessage("§8│ §4Р.Т.С §8» §fСтатистика реактора");
-            player.sendMessage("§8├────────────────────────────────┤");
-
-            player.sendMessage("§8│ §7ID: §f" + reactor.getReactorId());
-            player.sendMessage("§8│ §7Статус: " + status);
-            if (reactor.isMeltdownCountdown()) {
-                player.sendMessage("§8│ §7Детонация: §c" + meltdownSecs + " сек");
-            }
-            player.sendMessage("§8│ §7Дист: §f" + String.format("%.1f", distance) + " м");
-
-            player.sendMessage("§8│ §6═[ §eДанные ядра §6]═");
-            player.sendMessage("§8│ §7Температура:  §f"
-                    + reactor.getDisplayCoreTemp() + " C*");
-            player.sendMessage("§8│ §7Давление:    §f"
-                    + reactor.getDisplayCorePress() + " kPa");
-            player.sendMessage("§8│ §7Целостность: §f"
-                    + reactor.getDisplayCoreShInt() + " %");
-            player.sendMessage("§8│ §6═[═══════════]═");
-
-            player.sendMessage("§8│ §3═[ §bДанные корпуса §3]═");
-            player.sendMessage("§8│ §7Температура:  §f"
-                    + reactor.getDisplayCoreCaseTemp() + " C*");
-            player.sendMessage("§8│ §7Давление:    §f"
-                    + reactor.getDisplayCoreCasePress() + " kPa");
-            player.sendMessage("§8│ §7Целостность: §f"
-                    + reactor.getDisplayCoreCaseInt() + " %");
-            player.sendMessage("§8│ §3═[═══════════]═");
-
-            player.sendMessage("§8│ §5═[ §dДанные рецепта §5]═");
-            int recipePct = reactor.getDisplayRecipeTime();
-            player.sendMessage("§8│ §7Прогресс:   §f"
-                    + recipePct + " %");
-            String recipeStatus;
-            if (recipePct <= 0) {
-                recipeStatus = "§7Бездействует";
-            } else if (recipePct < 100) {
-                recipeStatus = "§eГотовится";
-            } else {
-                recipeStatus = "§aЗавершён";
-            }
-            player.sendMessage("§8│ §7Статус:     " + recipeStatus);
-
-            // Износ
-            player.sendMessage("§8│ §7Износ:      §f"
-                    + reactor.getDisplayReactorWear() + " %");
-
-            // Энерговыработка (текущая, E/сек)
-            player.sendMessage("§8│ §7Выработка:  §f"
-                    + reactor.getDisplayEnergyRate() + " E/сек");
-
-            if (reactor.isSelfDestruct() && !reactor.isMeltdownCountdown()) {
-                player.sendMessage("§8│ §7Самоликвид: §cАктивен");
-            }
-            player.sendMessage("§8│ §5═[═══════════]═");
-
-            player.sendMessage("§8│ §7Позиция: §f"
-                    + reactorLoc.getBlockX() + " "
-                    + reactorLoc.getBlockY() + " "
-                    + reactorLoc.getBlockZ()
-                    + " §7(мир: §f" + reactorLoc.getWorld().getName() + "§7)");
-
-            player.sendMessage("§8└────────────────────────────────┘");
-            player.sendMessage("");
-
+            player.sendMessage("§4❌ §cНеизвестный тип структуры: §f" + args[1] + "§c. Используйте §fdfc§c или §fmagnet");
             return true;
         }
 
+        // =========================
+        // POWER SUBCOMMAND
+        // =========================
         // =========================
         // POWER SUBCOMMAND
         // =========================
@@ -369,8 +500,16 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             // =========================
             if (args[1].equalsIgnoreCase("off")) {
 
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage("§4❌ §cError: §7Только игрок может запросить выключение сервера.");
+                // Console → execute directly
+                if (!(sender instanceof Player)) {
+                    pm.executeDirect(false);
+                    return true;
+                }
+
+                Player player = (Player) sender;
+
+                if (!player.hasPermission("mcplugin.command.power.off")) {
+                    player.sendMessage("§4❌ §cУ вас нет прав на выключение сервера!");
                     return true;
                 }
 
@@ -396,8 +535,16 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             // =========================
             if (args[1].equalsIgnoreCase("reboot")) {
 
-                if (!(sender instanceof Player player)) {
-                    sender.sendMessage("§4❌ §cError: §7Только игрок может запросить перезапуск сервера.");
+                // Console → execute directly
+                if (!(sender instanceof Player)) {
+                    pm.executeDirect(true);
+                    return true;
+                }
+
+                Player player = (Player) sender;
+
+                if (!player.hasPermission("mcplugin.command.power.reboot")) {
+                    player.sendMessage("§4❌ §cУ вас нет прав на перезагрузку сервера!");
                     return true;
                 }
 
@@ -457,6 +604,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
 
+                // Permission check for players (console can always undo)
+                if (sender instanceof Player player) {
+                    if (!player.hasPermission("mcplugin.command.power.undo")) {
+                        player.sendMessage("§4❌ §cУ вас нет прав на отмену запроса!");
+                        return true;
+                    }
+                }
+
                 String undoerName = sender instanceof Player
                         ? ((Player) sender).getName()
                         : "Консоль";
@@ -472,7 +627,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            sender.sendMessage("§4❌ §cError: §7Usage: /mcplugin power off|reboot|confirm|undo");
+            sender.sendMessage("§4❌ §cError: §7Usage: /mp power off|reboot|confirm|undo");
             return true;
         }
 
@@ -597,9 +752,19 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("structures");
             completions.add("power");
             completions.add("chgdim");
-            completions.add("cp");
+            completions.add("chgdim_teleport");
+            completions.add("chgdim_return");
+            completions.add("codepane");
+            completions.add("pane_click");
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("chgdim_teleport"))) {
+            ConfigurationSection worldsSection = Main.getInstance().getConfig()
+                    .getConfigurationSection("changedimmension.worlds");
+            if (worldsSection != null) {
+                completions.addAll(worldsSection.getKeys(false));
+            }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("structures")) {
             completions.add("dfc");
+            completions.add("magnet");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("power")) {
             completions.add("off");
             completions.add("reboot");
@@ -607,6 +772,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("undo");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("structures") && args[1].equalsIgnoreCase("dfc")) {
             completions.add("stats");
+            completions.add("assemble");
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("structures") && args[1].equalsIgnoreCase("magnet")) {
+            completions.add("assemble");
         }
 
         List<String> result = new ArrayList<>();
@@ -617,5 +785,77 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
         }
         return result;
+    }
+
+    // =========================
+    // CHGDIM MENU
+    // =========================
+    private void showChgdimMenu(Player player) {
+
+        FileConfiguration config = Main.getInstance().getConfig();
+        ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
+
+        if (worldsSection == null || worldsSection.getKeys(false).isEmpty()) {
+            player.sendMessage("§4❌ §cВ конфиге не настроено ни одного мира для телепортации!");
+            return;
+        }
+
+        player.sendMessage("");
+        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage("§6  ✦ §fТелепортация в миры");
+        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage("");
+
+        for (String worldKey : worldsSection.getKeys(false)) {
+            ConfigurationSection wc = worldsSection.getConfigurationSection(worldKey);
+            if (wc == null) continue;
+
+            double x = wc.getDouble("x", 0);
+            double y = wc.getDouble("y", 64);
+            double z = wc.getDouble("z", 0);
+
+            TextComponent btn = new TextComponent("§e[§f" + worldKey + "§e]");
+            btn.setClickEvent(new ClickEvent(
+                    ClickEvent.Action.RUN_COMMAND,
+                    "/mp chgdim_teleport " + worldKey
+            ));
+            btn.setHoverEvent(new HoverEvent(
+                    HoverEvent.Action.SHOW_TEXT,
+                    new ComponentBuilder("§eНажмите чтобы телепортироваться\n")
+                            .append("§7Мир: §f" + worldKey + "\n")
+                            .append("§7Координаты: §f" + (int)x + ", " + (int)y + ", " + (int)z)
+                            .create()
+            ));
+
+            // Build the line: [world] → x, y, z
+            ComponentBuilder line = new ComponentBuilder("")
+                    .append(btn)
+                    .append(" §7→ §f" + (int)x + ", " + (int)y + ", " + (int)z);
+
+            player.spigot().sendMessage(line.create());
+        }
+
+        // Return button (only if has return location)
+        if (DimensionManager.hasReturnLocation(player)) {
+            player.sendMessage("");
+
+            TextComponent returnBtn = new TextComponent("§a[↩ Вернуться назад §a]");
+            returnBtn.setClickEvent(new ClickEvent(
+                    ClickEvent.Action.RUN_COMMAND,
+                    "/mp chgdim_return"
+            ));
+            returnBtn.setHoverEvent(new HoverEvent(
+                    HoverEvent.Action.SHOW_TEXT,
+                    new ComponentBuilder("§aНажмите чтобы вернуться\n")
+                            .append("§7Телепорт на сохранённую точку")
+                            .create()
+            ));
+
+            player.spigot().sendMessage(returnBtn);
+        }
+
+        player.sendMessage("");
+        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage("");
     }
 }

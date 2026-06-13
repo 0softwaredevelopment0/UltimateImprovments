@@ -1,0 +1,57 @@
+--- a/net/minecraft/world/entity/projectile/ThrowableItemProjectile.java
++++ b/net/minecraft/world/entity/projectile/ThrowableItemProjectile.java
+@@ -11,9 +11,8 @@
+ import net.minecraft.world.level.Level;
+ 
+ public abstract class ThrowableItemProjectile extends ThrowableProjectile implements ItemSupplier {
+-    private static final EntityDataAccessor<ItemStack> DATA_ITEM_STACK = SynchedEntityData.defineId(
+-        ThrowableItemProjectile.class, EntityDataSerializers.ITEM_STACK
+-    );
++
++    private static final EntityDataAccessor<ItemStack> DATA_ITEM_STACK = SynchedEntityData.defineId(ThrowableItemProjectile.class, EntityDataSerializers.ITEM_STACK);
+ 
+     public ThrowableItemProjectile(EntityType<? extends ThrowableItemProjectile> type, Level world) {
+         super(type, world);
+@@ -28,19 +27,25 @@
+     }
+ 
+     public void setItem(ItemStack stack) {
+-        this.getEntityData().set(DATA_ITEM_STACK, stack.copyWithCount(1));
++        this.getEntityData().set(ThrowableItemProjectile.DATA_ITEM_STACK, stack.copyWithCount(1));
+     }
+ 
+     protected abstract Item getDefaultItem();
+ 
++    // CraftBukkit start
++    public Item getDefaultItemPublic() {
++        return this.getDefaultItem();
++    }
++    // CraftBukkit end
++
+     @Override
+     public ItemStack getItem() {
+-        return this.getEntityData().get(DATA_ITEM_STACK);
++        return (ItemStack) this.getEntityData().get(ThrowableItemProjectile.DATA_ITEM_STACK);
+     }
+ 
+     @Override
+     protected void defineSynchedData(SynchedEntityData.Builder builder) {
+-        builder.define(DATA_ITEM_STACK, new ItemStack(this.getDefaultItem()));
++        builder.define(ThrowableItemProjectile.DATA_ITEM_STACK, new ItemStack(this.getDefaultItem()));
+     }
+ 
+     @Override
+@@ -53,9 +58,12 @@
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
+         if (nbt.contains("Item", 10)) {
+-            this.setItem(ItemStack.parse(this.registryAccess(), nbt.getCompound("Item")).orElseGet(() -> new ItemStack(this.getDefaultItem())));
++            this.setItem((ItemStack) ItemStack.parse(this.registryAccess(), nbt.getCompound("Item")).orElseGet(() -> {
++                return new ItemStack(this.getDefaultItem());
++            }));
+         } else {
+             this.setItem(new ItemStack(this.getDefaultItem()));
+         }
++
+     }
+ }

@@ -1,0 +1,25 @@
+--- a/net/minecraft/server/ReloadableServerResources.java
++++ b/net/minecraft/server/ReloadableServerResources.java
+@@ -48,6 +48,7 @@
+         this.recipes = new RecipeManager(this.registryLookup);
+         this.tagManager = new TagManager(dynamicRegistryManager);
+         this.commands = new Commands(environment, CommandBuildContext.simple(this.registryLookup, enabledFeatures));
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setDispatcher(this.commands, CommandBuildContext.simple(this.registryLookup, enabledFeatures)); // Paper - Brigadier Command API
+         this.advancements = new ServerAdvancementManager(this.registryLookup);
+         this.functionLibrary = new ServerFunctionLibrary(functionPermissionLevel, this.commands.getDispatcher());
+     }
+@@ -91,6 +92,14 @@
+                     ReloadableServerResources reloadableServerResources = new ReloadableServerResources(
+                         reloadedDynamicRegistries.compositeAccess(), enabledFeatures, environment, functionPermissionLevel
+                     );
++                    // Paper start - call commands event for bootstraps
++                    //noinspection ConstantValue
++                    io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(
++                        io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS,
++                        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE,
++                        io.papermc.paper.plugin.bootstrap.BootstrapContext.class,
++                        MinecraftServer.getServer() == null ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD);
++                    // Paper end - call commands event
+                     return SimpleReloadInstance.create(
+                             manager, reloadableServerResources.listeners(), prepareExecutor, applyExecutor, DATA_RELOAD_INITIAL_TASK, LOGGER.isDebugEnabled()
+                         )

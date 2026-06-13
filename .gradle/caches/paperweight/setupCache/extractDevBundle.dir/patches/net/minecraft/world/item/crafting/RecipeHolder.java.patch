@@ -1,0 +1,58 @@
+--- a/net/minecraft/world/item/crafting/RecipeHolder.java
++++ b/net/minecraft/world/item/crafting/RecipeHolder.java
+@@ -3,31 +3,45 @@
+ import net.minecraft.network.RegistryFriendlyByteBuf;
+ import net.minecraft.network.codec.StreamCodec;
+ import net.minecraft.resources.ResourceLocation;
++// CraftBukkit start
++import org.bukkit.craftbukkit.util.CraftNamespacedKey;
++import org.bukkit.inventory.Recipe;
++// CraftBukkit end
+ 
+-public record RecipeHolder<T extends Recipe<?>>(ResourceLocation id, T value) {
+-    public static final StreamCodec<RegistryFriendlyByteBuf, RecipeHolder<?>> STREAM_CODEC = StreamCodec.composite(
+-        ResourceLocation.STREAM_CODEC, RecipeHolder::id, Recipe.STREAM_CODEC, RecipeHolder::value, RecipeHolder::new
+-    );
++public record RecipeHolder<T extends net.minecraft.world.item.crafting.Recipe<?>>(ResourceLocation id, T value) {
++
++    // CraftBukkit start
++    public final Recipe toBukkitRecipe() {
++        return this.value.toBukkitRecipe(CraftNamespacedKey.fromMinecraft(this.id));
++    }
++    // CraftBukkit end
++
++    public static final StreamCodec<RegistryFriendlyByteBuf, RecipeHolder<?>> STREAM_CODEC = StreamCodec.composite(ResourceLocation.STREAM_CODEC, RecipeHolder::id, net.minecraft.world.item.crafting.Recipe.STREAM_CODEC, RecipeHolder::value, RecipeHolder::new);
+ 
+-    @Override
+     public boolean equals(Object object) {
+         if (this == object) {
+             return true;
+         } else {
+-            if (object instanceof RecipeHolder<?> recipeHolder && this.id.equals(recipeHolder.id)) {
+-                return true;
++            boolean flag;
++
++            if (object instanceof RecipeHolder) {
++                RecipeHolder<?> recipeholder = (RecipeHolder) object;
++
++                if (this.id.equals(recipeholder.id)) {
++                    flag = true;
++                    return flag;
++                }
+             }
+ 
+-            return false;
++            flag = false;
++            return flag;
+         }
+     }
+ 
+-    @Override
+     public int hashCode() {
+         return this.id.hashCode();
+     }
+ 
+-    @Override
+     public String toString() {
+         return this.id.toString();
+     }

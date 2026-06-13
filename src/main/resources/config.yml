@@ -537,10 +537,10 @@ power:
   intercept_commands: true
 
   # Сообщение при попытке использовать /stop
-  stop_message: "§8[§4⚠§8] §cКоманда /stop отключена. Используйте: §f/mcplugin power off"
+  stop_message: "§8[§4⚠§8] §cКоманда /stop отключена. Используйте: §f/mp power off"
 
   # Сообщение при попытке использовать /restart
-  restart_message: "§8[§4⚠§8] §cКоманда /restart отключена. Используйте: §f/mcplugin power reboot"
+  restart_message: "§8[§4⚠§8] §cКоманда /restart отключена. Используйте: §f/mp power reboot"
 
   # Время ожидания подтверждения запроса (секунд)
   request_timeout: 30

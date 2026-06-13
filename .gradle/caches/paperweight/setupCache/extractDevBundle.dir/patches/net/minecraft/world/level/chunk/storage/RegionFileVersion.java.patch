@@ -1,0 +1,27 @@
+--- a/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFileVersion.java
+@@ -21,7 +21,7 @@
+ 
+ public class RegionFileVersion {
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    private static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>();
++    public static final Int2ObjectMap<RegionFileVersion> VERSIONS = new Int2ObjectOpenHashMap<>(); // Paper - private -> public
+     private static final Object2ObjectMap<String, RegionFileVersion> VERSIONS_BY_NAME = new Object2ObjectOpenHashMap<>();
+     public static final RegionFileVersion VERSION_GZIP = register(
+         new RegionFileVersion(
+@@ -58,6 +58,15 @@
+     private final RegionFileVersion.StreamWrapper<InputStream> inputWrapper;
+     private final RegionFileVersion.StreamWrapper<OutputStream> outputWrapper;
+ 
++    // Paper start - Configurable region compression format
++    public static RegionFileVersion getCompressionFormat() {
++        return switch (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.compressionFormat) {
++            case GZIP -> VERSION_GZIP;
++            case ZLIB -> VERSION_DEFLATE;
++            case NONE -> VERSION_NONE;
++        };
++    }
++    // Paper end - Configurable region compression format
+     private RegionFileVersion(
+         int id,
+         @Nullable String name,

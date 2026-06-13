@@ -1,0 +1,96 @@
+--- a/net/minecraft/world/inventory/PlayerEnderChestContainer.java
++++ b/net/minecraft/world/inventory/PlayerEnderChestContainer.java
+@@ -8,13 +8,32 @@
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.util.CraftLocation;
++import org.bukkit.inventory.InventoryHolder;
++// CraftBukkit end
+ 
+ public class PlayerEnderChestContainer extends SimpleContainer {
++
+     @Nullable
+     private EnderChestBlockEntity activeChest;
++    // CraftBukkit start
++    private final Player owner;
+ 
+-    public PlayerEnderChestContainer() {
++    public InventoryHolder getBukkitOwner() {
++        return this.owner.getBukkitEntity();
++    }
++
++    @Override
++    public Location getLocation() {
++        return this.activeChest != null ? CraftLocation.toBukkit(this.activeChest.getBlockPos(), this.activeChest.getLevel().getWorld()) : null;
++    }
++
++    public PlayerEnderChestContainer(Player owner) {
+         super(27);
++        this.owner = owner;
++        // CraftBukkit end
+     }
+ 
+     public void setActiveChest(EnderChestBlockEntity blockEntity) {
+@@ -27,38 +46,44 @@
+ 
+     @Override
+     public void fromTag(ListTag list, HolderLookup.Provider registries) {
+-        for (int i = 0; i < this.getContainerSize(); i++) {
++        int i;
++
++        for (i = 0; i < this.getContainerSize(); ++i) {
+             this.setItem(i, ItemStack.EMPTY);
+         }
+ 
+-        for (int j = 0; j < list.size(); j++) {
+-            CompoundTag compoundTag = list.getCompound(j);
+-            int k = compoundTag.getByte("Slot") & 255;
+-            if (k >= 0 && k < this.getContainerSize()) {
+-                this.setItem(k, ItemStack.parse(registries, compoundTag).orElse(ItemStack.EMPTY));
++        for (i = 0; i < list.size(); ++i) {
++            CompoundTag nbttagcompound = list.getCompound(i);
++            int j = nbttagcompound.getByte("Slot") & 255;
++
++            if (j >= 0 && j < this.getContainerSize()) {
++                this.setItem(j, (ItemStack) ItemStack.parse(registries, nbttagcompound).orElse(ItemStack.EMPTY));
+             }
+         }
++
+     }
+ 
+     @Override
+     public ListTag createTag(HolderLookup.Provider registries) {
+-        ListTag listTag = new ListTag();
++        ListTag nbttaglist = new ListTag();
+ 
+-        for (int i = 0; i < this.getContainerSize(); i++) {
+-            ItemStack itemStack = this.getItem(i);
+-            if (!itemStack.isEmpty()) {
+-                CompoundTag compoundTag = new CompoundTag();
+-                compoundTag.putByte("Slot", (byte)i);
+-                listTag.add(itemStack.save(registries, compoundTag));
++        for (int i = 0; i < this.getContainerSize(); ++i) {
++            ItemStack itemstack = this.getItem(i);
++
++            if (!itemstack.isEmpty()) {
++                CompoundTag nbttagcompound = new CompoundTag();
++
++                nbttagcompound.putByte("Slot", (byte) i);
++                nbttaglist.add(itemstack.save(registries, nbttagcompound));
+             }
+         }
+ 
+-        return listTag;
++        return nbttaglist;
+     }
+ 
+     @Override
+     public boolean stillValid(Player player) {
+-        return (this.activeChest == null || this.activeChest.stillValid(player)) && super.stillValid(player);
++        return this.activeChest != null && !this.activeChest.stillValid(player) ? false : super.stillValid(player);
+     }
+ 
+     @Override

@@ -1,0 +1,230 @@
+--- a/net/minecraft/world/item/ProjectileWeaponItem.java
++++ b/net/minecraft/world/item/ProjectileWeaponItem.java
+@@ -17,8 +17,13 @@
+ import net.minecraft.world.level.Level;
+ 
+ public abstract class ProjectileWeaponItem extends Item {
+-    public static final Predicate<ItemStack> ARROW_ONLY = stack -> stack.is(ItemTags.ARROWS);
+-    public static final Predicate<ItemStack> ARROW_OR_FIREWORK = ARROW_ONLY.or(stack -> stack.is(Items.FIREWORK_ROCKET));
++
++    public static final Predicate<ItemStack> ARROW_ONLY = (itemstack) -> {
++        return itemstack.is(ItemTags.ARROWS);
++    };
++    public static final Predicate<ItemStack> ARROW_OR_FIREWORK = ProjectileWeaponItem.ARROW_ONLY.or((itemstack) -> {
++        return itemstack.is(Items.FIREWORK_ROCKET);
++    });
+ 
+     public ProjectileWeaponItem(Item.Properties settings) {
+         super(settings);
+@@ -31,11 +36,7 @@
+     public abstract Predicate<ItemStack> getAllSupportedProjectiles();
+ 
+     public static ItemStack getHeldProjectile(LivingEntity entity, Predicate<ItemStack> predicate) {
+-        if (predicate.test(entity.getItemInHand(InteractionHand.OFF_HAND))) {
+-            return entity.getItemInHand(InteractionHand.OFF_HAND);
+-        } else {
+-            return predicate.test(entity.getItemInHand(InteractionHand.MAIN_HAND)) ? entity.getItemInHand(InteractionHand.MAIN_HAND) : ItemStack.EMPTY;
+-        }
++        return predicate.test(entity.getItemInHand(InteractionHand.OFF_HAND)) ? entity.getItemInHand(InteractionHand.OFF_HAND) : (predicate.test(entity.getItemInHand(InteractionHand.MAIN_HAND)) ? entity.getItemInHand(InteractionHand.MAIN_HAND) : ItemStack.EMPTY);
+     }
+ 
+     @Override
+@@ -45,68 +46,102 @@
+ 
+     public abstract int getDefaultProjectileRange();
+ 
+-    protected void shoot(
+-        ServerLevel world,
+-        LivingEntity shooter,
+-        InteractionHand hand,
+-        ItemStack stack,
+-        List<ItemStack> projectiles,
+-        float speed,
+-        float divergence,
+-        boolean critical,
+-        @Nullable LivingEntity target
+-    ) {
+-        float f = EnchantmentHelper.processProjectileSpread(world, stack, shooter, 0.0F);
+-        float g = projectiles.size() == 1 ? 0.0F : 2.0F * f / (float)(projectiles.size() - 1);
+-        float h = (float)((projectiles.size() - 1) % 2) * g / 2.0F;
+-        float i = 1.0F;
++    protected void shoot(ServerLevel world, LivingEntity shooter, InteractionHand hand, ItemStack stack, List<ItemStack> projectiles, float speed, float divergence, boolean critical, @Nullable LivingEntity target) {
++        float f2 = EnchantmentHelper.processProjectileSpread(world, stack, shooter, 0.0F);
++        float f3 = projectiles.size() == 1 ? 0.0F : 2.0F * f2 / (float) (projectiles.size() - 1);
++        float f4 = (float) ((projectiles.size() - 1) % 2) * f3 / 2.0F;
++        float f5 = 1.0F;
+ 
+-        for (int j = 0; j < projectiles.size(); j++) {
+-            ItemStack itemStack = projectiles.get(j);
+-            if (!itemStack.isEmpty()) {
+-                float k = h + i * (float)((j + 1) / 2) * g;
+-                i = -i;
+-                Projectile projectile = this.createProjectile(world, shooter, stack, itemStack, critical);
+-                this.shootProjectile(shooter, projectile, j, speed, divergence, k, target);
+-                world.addFreshEntity(projectile);
+-                stack.hurtAndBreak(this.getDurabilityUse(itemStack), shooter, LivingEntity.getSlotForHand(hand));
++        for (int i = 0; i < projectiles.size(); ++i) {
++            ItemStack itemstack1 = (ItemStack) projectiles.get(i);
++
++            if (!itemstack1.isEmpty()) {
++                float f6 = f4 + f5 * (float) ((i + 1) / 2) * f3;
++
++                f5 = -f5;
++                Projectile iprojectile = this.createProjectile(world, shooter, stack, itemstack1, critical);
++
++                this.shootProjectile(shooter, iprojectile, i, speed, divergence, f6, target);
++                // CraftBukkit start
++                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, stack, itemstack1, iprojectile, hand, speed, true);
++                if (event.isCancelled()) {
++                    event.getProjectile().remove();
++                    return;
++                }
++
++                if (event.getProjectile() == iprojectile.getBukkitEntity()) {
++                    if (!world.addFreshEntity(iprojectile)) {
++                        if (shooter instanceof net.minecraft.server.level.ServerPlayer) {
++                            ((net.minecraft.server.level.ServerPlayer) shooter).getBukkitEntity().updateInventory();
++                        }
++                        return;
++                    }
++                }
++                // CraftBukkit end
++                stack.hurtAndBreak(this.getDurabilityUse(itemstack1), shooter, LivingEntity.getSlotForHand(hand));
+                 if (stack.isEmpty()) {
+                     break;
+                 }
+             }
+         }
++
+     }
+ 
+     protected int getDurabilityUse(ItemStack projectile) {
+         return 1;
+     }
+ 
+-    protected abstract void shootProjectile(
+-        LivingEntity shooter, Projectile projectile, int index, float speed, float divergence, float yaw, @Nullable LivingEntity target
+-    );
++    protected abstract void shootProjectile(LivingEntity shooter, Projectile projectile, int index, float speed, float divergence, float yaw, @Nullable LivingEntity target);
+ 
+     protected Projectile createProjectile(Level world, LivingEntity shooter, ItemStack weaponStack, ItemStack projectileStack, boolean critical) {
+-        ArrowItem arrowItem2 = projectileStack.getItem() instanceof ArrowItem arrowItem ? arrowItem : (ArrowItem)Items.ARROW;
+-        AbstractArrow abstractArrow = arrowItem2.createArrow(world, projectileStack, shooter, weaponStack);
++        Item item = projectileStack.getItem();
++        ArrowItem itemarrow;
++
++        if (item instanceof ArrowItem itemarrow1) {
++            itemarrow = itemarrow1;
++        } else {
++            itemarrow = (ArrowItem) Items.ARROW;
++        }
++
++        ArrowItem itemarrow2 = itemarrow;
++        AbstractArrow entityarrow = itemarrow2.createArrow(world, projectileStack, shooter, weaponStack);
++
+         if (critical) {
+-            abstractArrow.setCritArrow(true);
++            entityarrow.setCritArrow(true);
+         }
+ 
+-        return abstractArrow;
++        return entityarrow;
+     }
+ 
+     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter) {
++        // Paper start
++        return draw(stack, projectileStack, shooter, true);
++    }
++    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean consume) {
++        // Paper end
+         if (projectileStack.isEmpty()) {
+             return List.of();
+         } else {
+-            int i = shooter.level() instanceof ServerLevel serverLevel ? EnchantmentHelper.processProjectileCount(serverLevel, stack, shooter, 1) : 1;
+-            List<ItemStack> list = new ArrayList<>(i);
+-            ItemStack itemStack = projectileStack.copy();
++            Level world = shooter.level();
++            int i;
+ 
+-            for (int j = 0; j < i; j++) {
+-                ItemStack itemStack2 = useAmmo(stack, j == 0 ? projectileStack : itemStack, shooter, j > 0);
+-                if (!itemStack2.isEmpty()) {
+-                    list.add(itemStack2);
++            if (world instanceof ServerLevel) {
++                ServerLevel worldserver = (ServerLevel) world;
++
++                i = EnchantmentHelper.processProjectileCount(worldserver, stack, shooter, 1);
++            } else {
++                i = 1;
++            }
++
++            int j = i;
++            List<ItemStack> list = new ArrayList(j);
++            ItemStack itemstack2 = projectileStack.copy();
++
++            for (int k = 0; k < j; ++k) {
++                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0 || !consume); // Paper
++
++                if (!itemstack3.isEmpty()) {
++                    list.add(itemstack3);
+                 }
+             }
+ 
+@@ -115,22 +150,44 @@
+     }
+ 
+     protected static ItemStack useAmmo(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean multishot) {
+-        int i = !multishot && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel serverLevel
+-            ? EnchantmentHelper.processAmmoUse(serverLevel, stack, projectileStack, 1)
+-            : 0;
+-        if (i > projectileStack.getCount()) {
++        int i;
++        label28:
++        {
++            if (!multishot && !shooter.hasInfiniteMaterials()) {
++                Level world = shooter.level();
++
++                if (world instanceof ServerLevel) {
++                    ServerLevel worldserver = (ServerLevel) world;
++
++                    i = EnchantmentHelper.processAmmoUse(worldserver, stack, projectileStack, 1);
++                    break label28;
++                }
++            }
++
++            i = 0;
++        }
++
++        int j = i;
++
++        if (j > projectileStack.getCount()) {
+             return ItemStack.EMPTY;
+-        } else if (i == 0) {
+-            ItemStack itemStack = projectileStack.copyWithCount(1);
+-            itemStack.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
+-            return itemStack;
+         } else {
+-            ItemStack itemStack2 = projectileStack.split(i);
+-            if (projectileStack.isEmpty() && shooter instanceof Player player) {
+-                player.getInventory().removeItem(projectileStack);
+-            }
++            ItemStack itemstack2;
+ 
+-            return itemStack2;
++            if (j == 0) {
++                itemstack2 = projectileStack.copyWithCount(1);
++                itemstack2.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
++                return itemstack2;
++            } else {
++                itemstack2 = projectileStack.split(j);
++                if (projectileStack.isEmpty() && shooter instanceof Player) {
++                    Player entityhuman = (Player) shooter;
++
++                    entityhuman.getInventory().removeItem(projectileStack);
++                }
++
++                return itemstack2;
++            }
+         }
+     }
+ }

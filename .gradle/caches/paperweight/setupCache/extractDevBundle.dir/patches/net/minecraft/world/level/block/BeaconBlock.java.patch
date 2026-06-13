@@ -1,0 +1,12 @@
+--- a/net/minecraft/world/level/block/BeaconBlock.java
++++ b/net/minecraft/world/level/block/BeaconBlock.java
+@@ -49,8 +49,7 @@
+         if (world.isClientSide) {
+             return InteractionResult.SUCCESS;
+         } else {
+-            if (world.getBlockEntity(pos) instanceof BeaconBlockEntity beaconBlockEntity) {
+-                player.openMenu(beaconBlockEntity);
++            if (world.getBlockEntity(pos) instanceof BeaconBlockEntity beaconBlockEntity && player.openMenu(beaconBlockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+                 player.awardStat(Stats.INTERACT_WITH_BEACON);
+             }
+ 

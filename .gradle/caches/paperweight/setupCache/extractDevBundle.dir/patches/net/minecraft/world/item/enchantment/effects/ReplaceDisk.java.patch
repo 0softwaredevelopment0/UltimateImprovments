@@ -1,0 +1,76 @@
+--- a/net/minecraft/world/item/enchantment/effects/ReplaceDisk.java
++++ b/net/minecraft/world/item/enchantment/effects/ReplaceDisk.java
+@@ -2,6 +2,7 @@
+ 
+ import com.mojang.serialization.MapCodec;
+ import com.mojang.serialization.codecs.RecordCodecBuilder;
++import java.util.Iterator;
+ import java.util.Optional;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Holder;
+@@ -17,44 +18,36 @@
+ import net.minecraft.world.level.levelgen.feature.stateproviders.BlockStateProvider;
+ import net.minecraft.world.phys.Vec3;
+ 
+-public record ReplaceDisk(
+-    LevelBasedValue radius,
+-    LevelBasedValue height,
+-    Vec3i offset,
+-    Optional<BlockPredicate> predicate,
+-    BlockStateProvider blockState,
+-    Optional<Holder<GameEvent>> triggerGameEvent
+-) implements EnchantmentEntityEffect {
+-    public static final MapCodec<ReplaceDisk> CODEC = RecordCodecBuilder.mapCodec(
+-        instance -> instance.group(
+-                    LevelBasedValue.CODEC.fieldOf("radius").forGetter(ReplaceDisk::radius),
+-                    LevelBasedValue.CODEC.fieldOf("height").forGetter(ReplaceDisk::height),
+-                    Vec3i.CODEC.optionalFieldOf("offset", Vec3i.ZERO).forGetter(ReplaceDisk::offset),
+-                    BlockPredicate.CODEC.optionalFieldOf("predicate").forGetter(ReplaceDisk::predicate),
+-                    BlockStateProvider.CODEC.fieldOf("block_state").forGetter(ReplaceDisk::blockState),
+-                    GameEvent.CODEC.optionalFieldOf("trigger_game_event").forGetter(ReplaceDisk::triggerGameEvent)
+-                )
+-                .apply(instance, ReplaceDisk::new)
+-    );
++public record ReplaceDisk(LevelBasedValue radius, LevelBasedValue height, Vec3i offset, Optional<BlockPredicate> predicate, BlockStateProvider blockState, Optional<Holder<GameEvent>> triggerGameEvent) implements EnchantmentEntityEffect {
++
++    public static final MapCodec<ReplaceDisk> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
++        return instance.group(LevelBasedValue.CODEC.fieldOf("radius").forGetter(ReplaceDisk::radius), LevelBasedValue.CODEC.fieldOf("height").forGetter(ReplaceDisk::height), Vec3i.CODEC.optionalFieldOf("offset", Vec3i.ZERO).forGetter(ReplaceDisk::offset), BlockPredicate.CODEC.optionalFieldOf("predicate").forGetter(ReplaceDisk::predicate), BlockStateProvider.CODEC.fieldOf("block_state").forGetter(ReplaceDisk::blockState), GameEvent.CODEC.optionalFieldOf("trigger_game_event").forGetter(ReplaceDisk::triggerGameEvent)).apply(instance, ReplaceDisk::new);
++    });
+ 
+     @Override
+     public void apply(ServerLevel world, int level, EnchantedItemInUse context, Entity user, Vec3 pos) {
+-        BlockPos blockPos = BlockPos.containing(pos).offset(this.offset);
+-        RandomSource randomSource = user.getRandom();
+-        int i = (int)this.radius.calculate(level);
+-        int j = (int)this.height.calculate(level);
++        BlockPos blockposition = BlockPos.containing(pos).offset(this.offset);
++        RandomSource randomsource = user.getRandom();
++        int j = (int) this.radius.calculate(level);
++        int k = (int) this.height.calculate(level);
++        Iterator iterator = BlockPos.betweenClosed(blockposition.offset(-j, 0, -j), blockposition.offset(j, Math.min(k - 1, 0), j)).iterator();
+ 
+-        for (BlockPos blockPos2 : BlockPos.betweenClosed(blockPos.offset(-i, 0, -i), blockPos.offset(i, Math.min(j - 1, 0), i))) {
+-            if (blockPos2.distToCenterSqr(pos.x(), (double)blockPos2.getY() + 0.5, pos.z()) < (double)Mth.square(i)
+-                && this.predicate.map(predicate -> predicate.test(world, blockPos2)).orElse(true)
+-                && world.setBlockAndUpdate(blockPos2, this.blockState.getState(randomSource, blockPos2))) {
+-                this.triggerGameEvent.ifPresent(gameEvent -> world.gameEvent(user, (Holder<GameEvent>)gameEvent, blockPos2));
++        while (iterator.hasNext()) {
++            BlockPos blockposition1 = (BlockPos) iterator.next();
++
++            if (blockposition1.distToCenterSqr(pos.x(), (double) blockposition1.getY() + 0.5D, pos.z()) < (double) Mth.square(j) && (Boolean) this.predicate.map((blockpredicate) -> {
++                return blockpredicate.test(world, blockposition1);
++            }).orElse(true) && org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, blockposition1,  this.blockState.getState(randomsource, blockposition1), user)) { // CraftBukkit - Call EntityBlockFormEvent for Frost Walker
++                this.triggerGameEvent.ifPresent((holder) -> {
++                    world.gameEvent(user, holder, blockposition1);
++                });
+             }
+         }
++
+     }
+ 
+     @Override
+     public MapCodec<ReplaceDisk> codec() {
+-        return CODEC;
++        return ReplaceDisk.CODEC;
+     }
+ }

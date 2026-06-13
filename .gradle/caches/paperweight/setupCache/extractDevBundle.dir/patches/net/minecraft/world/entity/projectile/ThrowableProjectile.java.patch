@@ -1,0 +1,94 @@
+--- a/net/minecraft/world/entity/projectile/ThrowableProjectile.java
++++ b/net/minecraft/world/entity/projectile/ThrowableProjectile.java
+@@ -8,6 +8,7 @@
+ import net.minecraft.world.phys.Vec3;
+ 
+ public abstract class ThrowableProjectile extends Projectile {
++
+     protected ThrowableProjectile(EntityType<? extends ThrowableProjectile> type, Level world) {
+         super(type, world);
+     }
+@@ -18,19 +19,20 @@
+     }
+ 
+     protected ThrowableProjectile(EntityType<? extends ThrowableProjectile> type, LivingEntity owner, Level world) {
+-        this(type, owner.getX(), owner.getEyeY() - 0.1F, owner.getZ(), world);
++        this(type, owner.getX(), owner.getEyeY() - 0.10000000149011612D, owner.getZ(), world);
+         this.setOwner(owner);
+     }
+ 
+     @Override
+     public boolean shouldRenderAtSqrDistance(double distance) {
+-        double d = this.getBoundingBox().getSize() * 4.0;
+-        if (Double.isNaN(d)) {
+-            d = 4.0;
++        double d1 = this.getBoundingBox().getSize() * 4.0D;
++
++        if (Double.isNaN(d1)) {
++            d1 = 4.0D;
+         }
+ 
+-        d *= 64.0;
+-        return distance < d * d;
++        d1 *= 64.0D;
++        return distance < d1 * d1;
+     }
+ 
+     @Override
+@@ -41,36 +43,40 @@
+     @Override
+     public void tick() {
+         super.tick();
+-        HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
+-        if (hitResult.getType() != HitResult.Type.MISS) {
+-            this.hitTargetOrDeflectSelf(hitResult);
++        HitResult movingobjectposition = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
++
++        if (movingobjectposition.getType() != HitResult.Type.MISS) {
++            this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
+         }
+ 
+         this.checkInsideBlocks();
+-        Vec3 vec3 = this.getDeltaMovement();
+-        double d = this.getX() + vec3.x;
+-        double e = this.getY() + vec3.y;
+-        double f = this.getZ() + vec3.z;
++        Vec3 vec3d = this.getDeltaMovement();
++        double d0 = this.getX() + vec3d.x;
++        double d1 = this.getY() + vec3d.y;
++        double d2 = this.getZ() + vec3d.z;
++
+         this.updateRotation();
+-        float h;
++        float f;
++
+         if (this.isInWater()) {
+-            for (int i = 0; i < 4; i++) {
+-                float g = 0.25F;
+-                this.level().addParticle(ParticleTypes.BUBBLE, d - vec3.x * 0.25, e - vec3.y * 0.25, f - vec3.z * 0.25, vec3.x, vec3.y, vec3.z);
++            for (int i = 0; i < 4; ++i) {
++                float f1 = 0.25F;
++
++                this.level().addParticle(ParticleTypes.BUBBLE, d0 - vec3d.x * 0.25D, d1 - vec3d.y * 0.25D, d2 - vec3d.z * 0.25D, vec3d.x, vec3d.y, vec3d.z);
+             }
+ 
+-            h = 0.8F;
++            f = 0.8F;
+         } else {
+-            h = 0.99F;
++            f = 0.99F;
+         }
+ 
+-        this.setDeltaMovement(vec3.scale((double)h));
++        this.setDeltaMovement(vec3d.scale((double) f));
+         this.applyGravity();
+-        this.setPos(d, e, f);
++        this.setPos(d0, d1, d2);
+     }
+ 
+     @Override
+     protected double getDefaultGravity() {
+-        return 0.03;
++        return 0.03D;
+     }
+ }

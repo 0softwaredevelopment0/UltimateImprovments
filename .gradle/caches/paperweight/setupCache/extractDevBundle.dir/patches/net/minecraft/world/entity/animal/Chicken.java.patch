@@ -1,0 +1,129 @@
+--- a/net/minecraft/world/entity/animal/Chicken.java
++++ b/net/minecraft/world/entity/animal/Chicken.java
+@@ -29,6 +29,7 @@
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
++import net.minecraft.world.level.ItemLike;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+@@ -36,6 +37,7 @@
+ import net.minecraft.world.phys.Vec3;
+ 
+ public class Chicken extends Animal {
++
+     private static final EntityDimensions BABY_DIMENSIONS = EntityType.CHICKEN.getDimensions().scale(0.5F).withEyeHeight(0.2975F);
+     public float flap;
+     public float flapSpeed;
+@@ -43,33 +45,36 @@
+     public float oFlap;
+     public float flapping = 1.0F;
+     private float nextFlap = 1.0F;
+-    public int eggTime = this.random.nextInt(6000) + 6000;
++    public int eggTime;
+     public boolean isChickenJockey;
+ 
+     public Chicken(EntityType<? extends Chicken> type, Level world) {
+         super(type, world);
++        this.eggTime = this.random.nextInt(6000) + 6000;
+         this.setPathfindingMalus(PathType.WATER, 0.0F);
+     }
+ 
+     @Override
+     protected void registerGoals() {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+-        this.goalSelector.addGoal(1, new PanicGoal(this, 1.4));
+-        this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.0, stack -> stack.is(ItemTags.CHICKEN_FOOD), false));
+-        this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1));
+-        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0));
++        this.goalSelector.addGoal(1, new PanicGoal(this, 1.4D));
++        this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.0D, (itemstack) -> {
++            return itemstack.is(ItemTags.CHICKEN_FOOD);
++        }, false));
++        this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1D));
++        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
+         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+     }
+ 
+     @Override
+     public EntityDimensions getDefaultDimensions(Pose pose) {
+-        return this.isBaby() ? BABY_DIMENSIONS : super.getDefaultDimensions(pose);
++        return this.isBaby() ? Chicken.BABY_DIMENSIONS : super.getDefaultDimensions(pose);
+     }
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+-        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 4.0).add(Attributes.MOVEMENT_SPEED, 0.25);
++        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 4.0D).add(Attributes.MOVEMENT_SPEED, 0.25D);
+     }
+ 
+     @Override
+@@ -77,25 +82,29 @@
+         super.aiStep();
+         this.oFlap = this.flap;
+         this.oFlapSpeed = this.flapSpeed;
+-        this.flapSpeed = this.flapSpeed + (this.onGround() ? -1.0F : 4.0F) * 0.3F;
++        this.flapSpeed += (this.onGround() ? -1.0F : 4.0F) * 0.3F;
+         this.flapSpeed = Mth.clamp(this.flapSpeed, 0.0F, 1.0F);
+         if (!this.onGround() && this.flapping < 1.0F) {
+             this.flapping = 1.0F;
+         }
+ 
+         this.flapping *= 0.9F;
+-        Vec3 vec3 = this.getDeltaMovement();
+-        if (!this.onGround() && vec3.y < 0.0) {
+-            this.setDeltaMovement(vec3.multiply(1.0, 0.6, 1.0));
++        Vec3 vec3d = this.getDeltaMovement();
++
++        if (!this.onGround() && vec3d.y < 0.0D) {
++            this.setDeltaMovement(vec3d.multiply(1.0D, 0.6D, 1.0D));
+         }
+ 
+-        this.flap = this.flap + this.flapping * 2.0F;
++        this.flap += this.flapping * 2.0F;
+         if (!this.level().isClientSide && this.isAlive() && !this.isBaby() && !this.isChickenJockey() && --this.eggTime <= 0) {
+             this.playSound(SoundEvents.CHICKEN_EGG, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+-            this.spawnAtLocation(Items.EGG);
++            this.forceDrops = true; // CraftBukkit
++            this.spawnAtLocation((ItemLike) Items.EGG);
++            this.forceDrops = false; // CraftBukkit
+             this.gameEvent(GameEvent.ENTITY_PLACE);
+             this.eggTime = this.random.nextInt(6000) + 6000;
+         }
++
+     }
+ 
+     @Override
+@@ -130,8 +139,8 @@
+ 
+     @Nullable
+     @Override
+-    public Chicken getBreedOffspring(ServerLevel serverLevel, AgeableMob ageableMob) {
+-        return EntityType.CHICKEN.create(serverLevel);
++    public Chicken getBreedOffspring(ServerLevel world, AgeableMob entity) {
++        return (Chicken) EntityType.CHICKEN.create(world);
+     }
+ 
+     @Override
+@@ -151,6 +160,7 @@
+         if (nbt.contains("EggLayTime")) {
+             this.eggTime = nbt.getInt("EggLayTime");
+         }
++
+     }
+ 
+     @Override
+@@ -169,8 +179,9 @@
+     protected void positionRider(Entity passenger, Entity.MoveFunction positionUpdater) {
+         super.positionRider(passenger, positionUpdater);
+         if (passenger instanceof LivingEntity) {
+-            ((LivingEntity)passenger).yBodyRot = this.yBodyRot;
++            ((LivingEntity) passenger).yBodyRot = this.yBodyRot;
+         }
++
+     }
+ 
+     public boolean isChickenJockey() {

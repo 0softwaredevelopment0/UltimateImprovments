@@ -1,0 +1,20 @@
+--- a/net/minecraft/world/level/block/HopperBlock.java
++++ b/net/minecraft/world/level/block/HopperBlock.java
+@@ -128,8 +128,7 @@
+             return InteractionResult.SUCCESS;
+         } else {
+             BlockEntity blockEntity = world.getBlockEntity(pos);
+-            if (blockEntity instanceof HopperBlockEntity) {
+-                player.openMenu((HopperBlockEntity)blockEntity);
++            if (blockEntity instanceof HopperBlockEntity && player.openMenu((HopperBlockEntity)blockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+                 player.awardStat(Stats.INSPECT_HOPPER);
+             }
+ 
+@@ -187,6 +186,7 @@
+ 
+     @Override
+     protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         BlockEntity blockEntity = world.getBlockEntity(pos);
+         if (blockEntity instanceof HopperBlockEntity) {
+             HopperBlockEntity.entityInside(world, pos, state, entity, (HopperBlockEntity)blockEntity);

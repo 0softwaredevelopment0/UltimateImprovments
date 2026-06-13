@@ -1,0 +1,34 @@
+--- a/net/minecraft/world/item/MilkBucketItem.java
++++ b/net/minecraft/world/item/MilkBucketItem.java
+@@ -10,6 +10,7 @@
+ import net.minecraft.world.level.Level;
+ 
+ public class MilkBucketItem extends Item {
++
+     private static final int DRINK_DURATION = 32;
+ 
+     public MilkBucketItem(Item.Properties settings) {
+@@ -18,17 +19,17 @@
+ 
+     @Override
+     public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
+-        if (user instanceof ServerPlayer serverPlayer) {
+-            CriteriaTriggers.CONSUME_ITEM.trigger(serverPlayer, stack);
+-            serverPlayer.awardStat(Stats.ITEM_USED.get(this));
++        if (user instanceof ServerPlayer entityplayer) {
++            CriteriaTriggers.CONSUME_ITEM.trigger(entityplayer, stack);
++            entityplayer.awardStat(Stats.ITEM_USED.get(this));
+         }
+ 
+         if (!world.isClientSide) {
+-            user.removeAllEffects();
++            user.removeAllEffects(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.MILK); // CraftBukkit
+         }
+ 
+-        if (user instanceof Player player) {
+-            return ItemUtils.createFilledResult(stack, player, new ItemStack(Items.BUCKET), false);
++        if (user instanceof Player entityhuman) {
++            return ItemUtils.createFilledResult(stack, entityhuman, new ItemStack(Items.BUCKET), false);
+         } else {
+             stack.consume(1, user);
+             return stack;

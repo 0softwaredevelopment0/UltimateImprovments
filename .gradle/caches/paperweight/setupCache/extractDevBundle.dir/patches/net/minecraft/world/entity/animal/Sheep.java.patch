@@ -1,0 +1,470 @@
+--- a/net/minecraft/world/entity/animal/Sheep.java
++++ b/net/minecraft/world/entity/animal/Sheep.java
+@@ -4,6 +4,8 @@
+ import java.util.Arrays;
+ import java.util.List;
+ import java.util.Map;
++import java.util.Objects;
++import java.util.Optional;
+ import java.util.stream.Collectors;
+ import javax.annotation.Nullable;
+ import net.minecraft.Util;
+@@ -26,6 +28,7 @@
+ import net.minecraft.world.InteractionResult;
+ import net.minecraft.world.damagesource.DamageSource;
+ import net.minecraft.world.entity.AgeableMob;
++import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.Mob;
+ import net.minecraft.world.entity.MobSpawnType;
+@@ -44,11 +47,10 @@
+ import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+ import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.entity.player.Player;
+-import net.minecraft.world.item.DyeColor;
+-import net.minecraft.world.item.DyeItem;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.crafting.CraftingInput;
++import net.minecraft.world.item.crafting.CraftingRecipe;
+ import net.minecraft.world.item.crafting.RecipeType;
+ import net.minecraft.world.level.ItemLike;
+ import net.minecraft.world.level.Level;
+@@ -58,31 +60,39 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+ import net.minecraft.world.level.storage.loot.LootTable;
++import net.minecraft.world.item.DyeColor;
++import net.minecraft.world.item.DyeItem;
++// CraftBukkit start
++import net.minecraft.world.item.Item;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.SheepRegrowWoolEvent;
++// CraftBukkit end
+ 
+ public class Sheep extends Animal implements Shearable {
++
+     private static final int EAT_ANIMATION_TICKS = 40;
+     private static final EntityDataAccessor<Byte> DATA_WOOL_ID = SynchedEntityData.defineId(Sheep.class, EntityDataSerializers.BYTE);
+-    private static final Map<DyeColor, ItemLike> ITEM_BY_DYE = Util.make(Maps.newEnumMap(DyeColor.class), map -> {
+-        map.put(DyeColor.WHITE, Blocks.WHITE_WOOL);
+-        map.put(DyeColor.ORANGE, Blocks.ORANGE_WOOL);
+-        map.put(DyeColor.MAGENTA, Blocks.MAGENTA_WOOL);
+-        map.put(DyeColor.LIGHT_BLUE, Blocks.LIGHT_BLUE_WOOL);
+-        map.put(DyeColor.YELLOW, Blocks.YELLOW_WOOL);
+-        map.put(DyeColor.LIME, Blocks.LIME_WOOL);
+-        map.put(DyeColor.PINK, Blocks.PINK_WOOL);
+-        map.put(DyeColor.GRAY, Blocks.GRAY_WOOL);
+-        map.put(DyeColor.LIGHT_GRAY, Blocks.LIGHT_GRAY_WOOL);
+-        map.put(DyeColor.CYAN, Blocks.CYAN_WOOL);
+-        map.put(DyeColor.PURPLE, Blocks.PURPLE_WOOL);
+-        map.put(DyeColor.BLUE, Blocks.BLUE_WOOL);
+-        map.put(DyeColor.BROWN, Blocks.BROWN_WOOL);
+-        map.put(DyeColor.GREEN, Blocks.GREEN_WOOL);
+-        map.put(DyeColor.RED, Blocks.RED_WOOL);
+-        map.put(DyeColor.BLACK, Blocks.BLACK_WOOL);
++    private static final Map<DyeColor, ItemLike> ITEM_BY_DYE = (Map) Util.make(Maps.newEnumMap(DyeColor.class), (enummap) -> {
++        enummap.put(DyeColor.WHITE, Blocks.WHITE_WOOL);
++        enummap.put(DyeColor.ORANGE, Blocks.ORANGE_WOOL);
++        enummap.put(DyeColor.MAGENTA, Blocks.MAGENTA_WOOL);
++        enummap.put(DyeColor.LIGHT_BLUE, Blocks.LIGHT_BLUE_WOOL);
++        enummap.put(DyeColor.YELLOW, Blocks.YELLOW_WOOL);
++        enummap.put(DyeColor.LIME, Blocks.LIME_WOOL);
++        enummap.put(DyeColor.PINK, Blocks.PINK_WOOL);
++        enummap.put(DyeColor.GRAY, Blocks.GRAY_WOOL);
++        enummap.put(DyeColor.LIGHT_GRAY, Blocks.LIGHT_GRAY_WOOL);
++        enummap.put(DyeColor.CYAN, Blocks.CYAN_WOOL);
++        enummap.put(DyeColor.PURPLE, Blocks.PURPLE_WOOL);
++        enummap.put(DyeColor.BLUE, Blocks.BLUE_WOOL);
++        enummap.put(DyeColor.BROWN, Blocks.BROWN_WOOL);
++        enummap.put(DyeColor.GREEN, Blocks.GREEN_WOOL);
++        enummap.put(DyeColor.RED, Blocks.RED_WOOL);
++        enummap.put(DyeColor.BLACK, Blocks.BLACK_WOOL);
+     });
+-    private static final Map<DyeColor, Integer> COLOR_BY_DYE = Maps.newEnumMap(
+-        Arrays.stream(DyeColor.values()).collect(Collectors.toMap(color -> (DyeColor)color, Sheep::createSheepColor))
+-    );
++    private static final Map<DyeColor, Integer> COLOR_BY_DYE = Maps.newEnumMap((Map) Arrays.stream(DyeColor.values()).collect(Collectors.toMap((enumcolor) -> {
++        return enumcolor;
++    }, Sheep::createSheepColor)));
+     private int eatAnimationTick;
+     private EatBlockGoal eatBlockGoal;
+ 
+@@ -92,17 +102,13 @@
+         } else {
+             int i = color.getTextureDiffuseColor();
+             float f = 0.75F;
+-            return FastColor.ARGB32.color(
+-                255,
+-                Mth.floor((float)FastColor.ARGB32.red(i) * 0.75F),
+-                Mth.floor((float)FastColor.ARGB32.green(i) * 0.75F),
+-                Mth.floor((float)FastColor.ARGB32.blue(i) * 0.75F)
+-            );
++
++            return FastColor.ARGB32.color(255, Mth.floor((float) FastColor.ARGB32.red(i) * 0.75F), Mth.floor((float) FastColor.ARGB32.green(i) * 0.75F), Mth.floor((float) FastColor.ARGB32.blue(i) * 0.75F));
+         }
+     }
+ 
+     public static int getColor(DyeColor dyeColor) {
+-        return COLOR_BY_DYE.get(dyeColor);
++        return (Integer) Sheep.COLOR_BY_DYE.get(dyeColor);
+     }
+ 
+     public Sheep(EntityType<? extends Sheep> type, Level world) {
+@@ -113,12 +119,14 @@
+     protected void registerGoals() {
+         this.eatBlockGoal = new EatBlockGoal(this);
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+-        this.goalSelector.addGoal(1, new PanicGoal(this, 1.25));
+-        this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.1, stack -> stack.is(ItemTags.SHEEP_FOOD), false));
+-        this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1));
++        this.goalSelector.addGoal(1, new PanicGoal(this, 1.25D));
++        this.goalSelector.addGoal(2, new BreedGoal(this, 1.0D));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.1D, (itemstack) -> {
++            return itemstack.is(ItemTags.SHEEP_FOOD);
++        }, false));
++        this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1D));
+         this.goalSelector.addGoal(5, this.eatBlockGoal);
+-        this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0));
++        this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+         this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 6.0F));
+         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+     }
+@@ -144,13 +152,13 @@
+     }
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+-        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 8.0).add(Attributes.MOVEMENT_SPEED, 0.23F);
++        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, 8.0D).add(Attributes.MOVEMENT_SPEED, 0.23000000417232513D);
+     }
+ 
+     @Override
+     protected void defineSynchedData(SynchedEntityData.Builder builder) {
+         super.defineSynchedData(builder);
+-        builder.define(DATA_WOOL_ID, (byte)0);
++        builder.define(Sheep.DATA_WOOL_ID, (byte) 0);
+     }
+ 
+     @Override
+@@ -158,24 +166,62 @@
+         if (this.isSheared()) {
+             return this.getType().getDefaultLootTable();
+         } else {
+-            return switch (this.getColor()) {
+-                case WHITE -> BuiltInLootTables.SHEEP_WHITE;
+-                case ORANGE -> BuiltInLootTables.SHEEP_ORANGE;
+-                case MAGENTA -> BuiltInLootTables.SHEEP_MAGENTA;
+-                case LIGHT_BLUE -> BuiltInLootTables.SHEEP_LIGHT_BLUE;
+-                case YELLOW -> BuiltInLootTables.SHEEP_YELLOW;
+-                case LIME -> BuiltInLootTables.SHEEP_LIME;
+-                case PINK -> BuiltInLootTables.SHEEP_PINK;
+-                case GRAY -> BuiltInLootTables.SHEEP_GRAY;
+-                case LIGHT_GRAY -> BuiltInLootTables.SHEEP_LIGHT_GRAY;
+-                case CYAN -> BuiltInLootTables.SHEEP_CYAN;
+-                case PURPLE -> BuiltInLootTables.SHEEP_PURPLE;
+-                case BLUE -> BuiltInLootTables.SHEEP_BLUE;
+-                case BROWN -> BuiltInLootTables.SHEEP_BROWN;
+-                case GREEN -> BuiltInLootTables.SHEEP_GREEN;
+-                case RED -> BuiltInLootTables.SHEEP_RED;
+-                case BLACK -> BuiltInLootTables.SHEEP_BLACK;
+-            };
++            ResourceKey resourcekey;
++
++            switch (this.getColor()) {
++                case WHITE:
++                    resourcekey = BuiltInLootTables.SHEEP_WHITE;
++                    break;
++                case ORANGE:
++                    resourcekey = BuiltInLootTables.SHEEP_ORANGE;
++                    break;
++                case MAGENTA:
++                    resourcekey = BuiltInLootTables.SHEEP_MAGENTA;
++                    break;
++                case LIGHT_BLUE:
++                    resourcekey = BuiltInLootTables.SHEEP_LIGHT_BLUE;
++                    break;
++                case YELLOW:
++                    resourcekey = BuiltInLootTables.SHEEP_YELLOW;
++                    break;
++                case LIME:
++                    resourcekey = BuiltInLootTables.SHEEP_LIME;
++                    break;
++                case PINK:
++                    resourcekey = BuiltInLootTables.SHEEP_PINK;
++                    break;
++                case GRAY:
++                    resourcekey = BuiltInLootTables.SHEEP_GRAY;
++                    break;
++                case LIGHT_GRAY:
++                    resourcekey = BuiltInLootTables.SHEEP_LIGHT_GRAY;
++                    break;
++                case CYAN:
++                    resourcekey = BuiltInLootTables.SHEEP_CYAN;
++                    break;
++                case PURPLE:
++                    resourcekey = BuiltInLootTables.SHEEP_PURPLE;
++                    break;
++                case BLUE:
++                    resourcekey = BuiltInLootTables.SHEEP_BLUE;
++                    break;
++                case BROWN:
++                    resourcekey = BuiltInLootTables.SHEEP_BROWN;
++                    break;
++                case GREEN:
++                    resourcekey = BuiltInLootTables.SHEEP_GREEN;
++                    break;
++                case RED:
++                    resourcekey = BuiltInLootTables.SHEEP_RED;
++                    break;
++                case BLACK:
++                    resourcekey = BuiltInLootTables.SHEEP_BLACK;
++                    break;
++                default:
++                    throw new MatchException((String) null, (Throwable) null);
++            }
++
++            return resourcekey;
+         }
+     }
+ 
+@@ -186,35 +232,44 @@
+         } else {
+             super.handleEntityEvent(status);
+         }
++
+     }
+ 
+     public float getHeadEatPositionScale(float delta) {
+-        if (this.eatAnimationTick <= 0) {
+-            return 0.0F;
+-        } else if (this.eatAnimationTick >= 4 && this.eatAnimationTick <= 36) {
+-            return 1.0F;
+-        } else {
+-            return this.eatAnimationTick < 4 ? ((float)this.eatAnimationTick - delta) / 4.0F : -((float)(this.eatAnimationTick - 40) - delta) / 4.0F;
+-        }
++        return this.eatAnimationTick <= 0 ? 0.0F : (this.eatAnimationTick >= 4 && this.eatAnimationTick <= 36 ? 1.0F : (this.eatAnimationTick < 4 ? ((float) this.eatAnimationTick - delta) / 4.0F : -((float) (this.eatAnimationTick - 40) - delta) / 4.0F));
+     }
+ 
+     public float getHeadEatAngleScale(float delta) {
+         if (this.eatAnimationTick > 4 && this.eatAnimationTick <= 36) {
+-            float f = ((float)(this.eatAnimationTick - 4) - delta) / 32.0F;
+-            return (float) (Math.PI / 5) + 0.21991149F * Mth.sin(f * 28.7F);
++            float f1 = ((float) (this.eatAnimationTick - 4) - delta) / 32.0F;
++
++            return 0.62831855F + 0.21991149F * Mth.sin(f1 * 28.7F);
+         } else {
+-            return this.eatAnimationTick > 0 ? (float) (Math.PI / 5) : this.getXRot() * (float) (Math.PI / 180.0);
++            return this.eatAnimationTick > 0 ? 0.62831855F : this.getXRot() * 0.017453292F;
+         }
+     }
+ 
+     @Override
+     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+-        ItemStack itemStack = player.getItemInHand(hand);
+-        if (itemStack.is(Items.SHEARS)) {
++        ItemStack itemstack = player.getItemInHand(hand);
++
++        if (itemstack.is(Items.SHEARS)) {
+             if (!this.level().isClientSide && this.readyForShearing()) {
+-                this.shear(SoundSource.PLAYERS);
++                // CraftBukkit start
++                // Paper start - custom shear drops
++                java.util.List<ItemStack> drops = this.generateDefaultDrops();
++                org.bukkit.event.player.PlayerShearEntityEvent event = CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
++                if (event != null) {
++                    if (event.isCancelled()) {
++                        return InteractionResult.PASS;
++                    }
++                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
++                }
++                // Paper end - custom shear drops
++                // CraftBukkit end
++                this.shear(SoundSource.PLAYERS, drops); // Paper
+                 this.gameEvent(GameEvent.SHEAR, player);
+-                itemStack.hurtAndBreak(1, player, getSlotForHand(hand));
++                itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
+                 return InteractionResult.SUCCESS;
+             } else {
+                 return InteractionResult.CONSUME;
+@@ -226,23 +281,37 @@
+ 
+     @Override
+     public void shear(SoundSource shearedSoundCategory) {
+-        this.level().playSound(null, this, SoundEvents.SHEEP_SHEAR, shearedSoundCategory, 1.0F, 1.0F);
++        // Paper start - custom shear drops
++        this.shear(shearedSoundCategory, this.generateDefaultDrops());
++    }
++
++    @Override
++    public java.util.List<ItemStack> generateDefaultDrops() {
++        int count = 1 + this.random.nextInt(3);
++        java.util.List<ItemStack> dropEntities = new java.util.ArrayList<>(count);
++        for (int j = 0; j < count; ++j) {
++            dropEntities.add(new ItemStack(Sheep.ITEM_BY_DYE.get(this.getColor())));
++        }
++        return dropEntities;
++    }
++
++    @Override
++    public void shear(SoundSource shearedSoundCategory, java.util.List<ItemStack> drops) {
++        // Paper end - custom shear drops
++        this.level().playSound((Player) null, (Entity) this, SoundEvents.SHEEP_SHEAR, shearedSoundCategory, 1.0F, 1.0F);
+         this.setSheared(true);
+         int i = 1 + this.random.nextInt(3);
+ 
+-        for (int j = 0; j < i; j++) {
+-            ItemEntity itemEntity = this.spawnAtLocation(ITEM_BY_DYE.get(this.getColor()), 1);
+-            if (itemEntity != null) {
+-                itemEntity.setDeltaMovement(
+-                    itemEntity.getDeltaMovement()
+-                        .add(
+-                            (double)((this.random.nextFloat() - this.random.nextFloat()) * 0.1F),
+-                            (double)(this.random.nextFloat() * 0.05F),
+-                            (double)((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)
+-                        )
+-                );
++        for (final ItemStack drop : drops) { // Paper - custom shear drops (moved drop generation to separate method)
++            this.forceDrops = true; // CraftBukkit
++            ItemEntity entityitem = this.spawnAtLocation(drop, 1); // Paper - custom shear drops
++            this.forceDrops = false; // CraftBukkit
++
++            if (entityitem != null) {
++                entityitem.setDeltaMovement(entityitem.getDeltaMovement().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
+             }
+         }
++
+     }
+ 
+     @Override
+@@ -254,7 +323,7 @@
+     public void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
+         nbt.putBoolean("Sheared", this.isSheared());
+-        nbt.putByte("Color", (byte)this.getColor().getId());
++        nbt.putByte("Color", (byte) this.getColor().getId());
+     }
+ 
+     @Override
+@@ -285,82 +354,85 @@
+     }
+ 
+     public DyeColor getColor() {
+-        return DyeColor.byId(this.entityData.get(DATA_WOOL_ID) & 15);
++        return DyeColor.byId((Byte) this.entityData.get(Sheep.DATA_WOOL_ID) & 15);
+     }
+ 
+     public void setColor(DyeColor color) {
+-        byte b = this.entityData.get(DATA_WOOL_ID);
+-        this.entityData.set(DATA_WOOL_ID, (byte)(b & 240 | color.getId() & 15));
++        byte b0 = (Byte) this.entityData.get(Sheep.DATA_WOOL_ID);
++
++        this.entityData.set(Sheep.DATA_WOOL_ID, (byte) (b0 & 240 | color.getId() & 15));
+     }
+ 
+     public boolean isSheared() {
+-        return (this.entityData.get(DATA_WOOL_ID) & 16) != 0;
++        return ((Byte) this.entityData.get(Sheep.DATA_WOOL_ID) & 16) != 0;
+     }
+ 
+     public void setSheared(boolean sheared) {
+-        byte b = this.entityData.get(DATA_WOOL_ID);
++        byte b0 = (Byte) this.entityData.get(Sheep.DATA_WOOL_ID);
++
+         if (sheared) {
+-            this.entityData.set(DATA_WOOL_ID, (byte)(b | 16));
++            this.entityData.set(Sheep.DATA_WOOL_ID, (byte) (b0 | 16));
+         } else {
+-            this.entityData.set(DATA_WOOL_ID, (byte)(b & -17));
++            this.entityData.set(Sheep.DATA_WOOL_ID, (byte) (b0 & -17));
+         }
++
+     }
+ 
+     public static DyeColor getRandomSheepColor(RandomSource random) {
+         int i = random.nextInt(100);
+-        if (i < 5) {
+-            return DyeColor.BLACK;
+-        } else if (i < 10) {
+-            return DyeColor.GRAY;
+-        } else if (i < 15) {
+-            return DyeColor.LIGHT_GRAY;
+-        } else if (i < 18) {
+-            return DyeColor.BROWN;
+-        } else {
+-            return random.nextInt(500) == 0 ? DyeColor.PINK : DyeColor.WHITE;
+-        }
++
++        return i < 5 ? DyeColor.BLACK : (i < 10 ? DyeColor.GRAY : (i < 15 ? DyeColor.LIGHT_GRAY : (i < 18 ? DyeColor.BROWN : (random.nextInt(500) == 0 ? DyeColor.PINK : DyeColor.WHITE))));
+     }
+ 
+     @Nullable
+     @Override
+-    public Sheep getBreedOffspring(ServerLevel serverLevel, AgeableMob ageableMob) {
+-        Sheep sheep = EntityType.SHEEP.create(serverLevel);
+-        if (sheep != null) {
+-            sheep.setColor(this.getOffspringColor(this, (Sheep)ageableMob));
++    public Sheep getBreedOffspring(ServerLevel world, AgeableMob entity) {
++        Sheep entitysheep = (Sheep) EntityType.SHEEP.create(world);
++
++        if (entitysheep != null) {
++            entitysheep.setColor(this.getOffspringColor(this, (Sheep) entity));
+         }
+ 
+-        return sheep;
++        return entitysheep;
+     }
+ 
+     @Override
+     public void ate() {
++        // CraftBukkit start
++        SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
++        this.level().getCraftServer().getPluginManager().callEvent(event);
++
++        if (event.isCancelled()) return;
++        // CraftBukkit end
+         super.ate();
+         this.setSheared(false);
+         if (this.isBaby()) {
+             this.ageUp(60);
+         }
++
+     }
+ 
+     @Nullable
+     @Override
+     public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, MobSpawnType spawnReason, @Nullable SpawnGroupData entityData) {
+-        this.setColor(getRandomSheepColor(world.getRandom()));
++        this.setColor(Sheep.getRandomSheepColor(world.getRandom()));
+         return super.finalizeSpawn(world, difficulty, spawnReason, entityData);
+     }
+ 
+     private DyeColor getOffspringColor(Animal firstParent, Animal secondParent) {
+-        DyeColor dyeColor = ((Sheep)firstParent).getColor();
+-        DyeColor dyeColor2 = ((Sheep)secondParent).getColor();
+-        CraftingInput craftingInput = makeCraftInput(dyeColor, dyeColor2);
+-        return this.level()
+-            .getRecipeManager()
+-            .getRecipeFor(RecipeType.CRAFTING, craftingInput, this.level())
+-            .map(recipe -> recipe.value().assemble(craftingInput, this.level().registryAccess()))
+-            .map(ItemStack::getItem)
+-            .filter(DyeItem.class::isInstance)
+-            .map(DyeItem.class::cast)
+-            .map(DyeItem::getDyeColor)
+-            .orElseGet(() -> this.level().random.nextBoolean() ? dyeColor : dyeColor2);
++        DyeColor enumcolor = ((Sheep) firstParent).getColor();
++        DyeColor enumcolor1 = ((Sheep) secondParent).getColor();
++        CraftingInput craftinginput = Sheep.makeCraftInput(enumcolor, enumcolor1);
++        Optional<Item> optional = this.level().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftinginput, this.level()).map((recipeholder) -> { // CraftBukkit - decompile error
++            return ((CraftingRecipe) recipeholder.value()).assemble(craftinginput, this.level().registryAccess());
++        }).map(ItemStack::getItem);
++
++        Objects.requireNonNull(DyeItem.class);
++        optional = optional.filter(DyeItem.class::isInstance);
++        Objects.requireNonNull(DyeItem.class);
++        return (DyeColor) optional.map(DyeItem.class::cast).map(DyeItem::getDyeColor).orElseGet(() -> {
++            return this.level().random.nextBoolean() ? enumcolor : enumcolor1;
++        });
+     }
+ 
+     private static CraftingInput makeCraftInput(DyeColor firstColor, DyeColor secondColor) {

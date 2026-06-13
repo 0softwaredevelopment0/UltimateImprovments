@@ -1,0 +1,215 @@
+--- a/net/minecraft/world/item/SpawnEggItem.java
++++ b/net/minecraft/world/item/SpawnEggItem.java
+@@ -9,8 +9,10 @@
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.core.Holder;
+ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.network.chat.Component;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.stats.Stats;
+ import net.minecraft.world.InteractionHand;
+@@ -29,6 +31,7 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.Spawner;
+ import net.minecraft.world.level.block.LiquidBlock;
++import net.minecraft.world.level.block.entity.BlockEntity;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.BlockHitResult;
+@@ -36,6 +39,7 @@
+ import net.minecraft.world.phys.Vec3;
+ 
+ public class SpawnEggItem extends Item {
++
+     private static final Map<EntityType<? extends Mob>, SpawnEggItem> BY_ID = Maps.newIdentityHashMap();
+     private static final MapCodec<EntityType<?>> ENTITY_TYPE_FIELD_CODEC = BuiltInRegistries.ENTITY_TYPE.byNameCodec().fieldOf("id");
+     private final int backgroundColor;
+@@ -47,47 +51,47 @@
+         this.defaultType = type;
+         this.backgroundColor = primaryColor;
+         this.highlightColor = secondaryColor;
+-        BY_ID.put(type, this);
++        SpawnEggItem.BY_ID.put(type, this);
+     }
+ 
+     @Override
+     public InteractionResult useOn(UseOnContext context) {
+-        Level level = context.getLevel();
+-        if (!(level instanceof ServerLevel)) {
++        Level world = context.getLevel();
++
++        if (!(world instanceof ServerLevel)) {
+             return InteractionResult.SUCCESS;
+         } else {
+-            ItemStack itemStack = context.getItemInHand();
+-            BlockPos blockPos = context.getClickedPos();
+-            Direction direction = context.getClickedFace();
+-            BlockState blockState = level.getBlockState(blockPos);
+-            if (level.getBlockEntity(blockPos) instanceof Spawner spawner) {
+-                EntityType<?> entityType = this.getType(itemStack);
+-                spawner.setEntityId(entityType, level.getRandom());
+-                level.sendBlockUpdated(blockPos, blockState, blockState, 3);
+-                level.gameEvent(context.getPlayer(), GameEvent.BLOCK_CHANGE, blockPos);
+-                itemStack.shrink(1);
++            ItemStack itemstack = context.getItemInHand();
++            BlockPos blockposition = context.getClickedPos();
++            Direction enumdirection = context.getClickedFace();
++            BlockState iblockdata = world.getBlockState(blockposition);
++            BlockEntity tileentity = world.getBlockEntity(blockposition);
++            EntityType entitytypes;
++
++            if (tileentity instanceof Spawner) {
++                if (world.paperConfig().entities.spawning.disableMobSpawnerSpawnEggTransformation) return InteractionResult.FAIL; // Paper - Allow disabling mob spawner spawn egg transformation
++
++                Spawner spawner = (Spawner) tileentity;
++
++                entitytypes = this.getType(itemstack);
++                spawner.setEntityId(entitytypes, world.getRandom());
++                world.sendBlockUpdated(blockposition, iblockdata, iblockdata, 3);
++                world.gameEvent((Entity) context.getPlayer(), (Holder) GameEvent.BLOCK_CHANGE, blockposition);
++                itemstack.shrink(1);
+                 return InteractionResult.CONSUME;
+             } else {
+-                BlockPos blockPos2;
+-                if (blockState.getCollisionShape(level, blockPos).isEmpty()) {
+-                    blockPos2 = blockPos;
++                BlockPos blockposition1;
++
++                if (iblockdata.getCollisionShape(world, blockposition).isEmpty()) {
++                    blockposition1 = blockposition;
+                 } else {
+-                    blockPos2 = blockPos.relative(direction);
++                    blockposition1 = blockposition.relative(enumdirection);
+                 }
+ 
+-                EntityType<?> entityType2 = this.getType(itemStack);
+-                if (entityType2.spawn(
+-                        (ServerLevel)level,
+-                        itemStack,
+-                        context.getPlayer(),
+-                        blockPos2,
+-                        MobSpawnType.SPAWN_EGG,
+-                        true,
+-                        !Objects.equals(blockPos, blockPos2) && direction == Direction.UP
+-                    )
+-                    != null) {
+-                    itemStack.shrink(1);
+-                    level.gameEvent(context.getPlayer(), GameEvent.ENTITY_PLACE, blockPos);
++                entitytypes = this.getType(itemstack);
++                if (entitytypes.spawn((ServerLevel) world, itemstack, context.getPlayer(), blockposition1, MobSpawnType.SPAWN_EGG, true, !Objects.equals(blockposition, blockposition1) && enumdirection == Direction.UP) != null) {
++                    itemstack.shrink(1);
++                    world.gameEvent((Entity) context.getPlayer(), (Holder) GameEvent.ENTITY_PLACE, blockposition);
+                 }
+ 
+                 return InteractionResult.CONSUME;
+@@ -97,29 +101,32 @@
+ 
+     @Override
+     public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
+-        ItemStack itemStack = user.getItemInHand(hand);
+-        BlockHitResult blockHitResult = getPlayerPOVHitResult(world, user, ClipContext.Fluid.SOURCE_ONLY);
+-        if (blockHitResult.getType() != HitResult.Type.BLOCK) {
+-            return InteractionResultHolder.pass(itemStack);
++        ItemStack itemstack = user.getItemInHand(hand);
++        BlockHitResult movingobjectpositionblock = getPlayerPOVHitResult(world, user, ClipContext.Fluid.SOURCE_ONLY);
++
++        if (movingobjectpositionblock.getType() != HitResult.Type.BLOCK) {
++            return InteractionResultHolder.pass(itemstack);
+         } else if (!(world instanceof ServerLevel)) {
+-            return InteractionResultHolder.success(itemStack);
++            return InteractionResultHolder.success(itemstack);
+         } else {
+-            BlockPos blockPos = blockHitResult.getBlockPos();
+-            if (!(world.getBlockState(blockPos).getBlock() instanceof LiquidBlock)) {
+-                return InteractionResultHolder.pass(itemStack);
+-            } else if (world.mayInteract(user, blockPos) && user.mayUseItemAt(blockPos, blockHitResult.getDirection(), itemStack)) {
+-                EntityType<?> entityType = this.getType(itemStack);
+-                Entity entity = entityType.spawn((ServerLevel)world, itemStack, user, blockPos, MobSpawnType.SPAWN_EGG, false, false);
++            BlockPos blockposition = movingobjectpositionblock.getBlockPos();
++
++            if (!(world.getBlockState(blockposition).getBlock() instanceof LiquidBlock)) {
++                return InteractionResultHolder.pass(itemstack);
++            } else if (world.mayInteract(user, blockposition) && user.mayUseItemAt(blockposition, movingobjectpositionblock.getDirection(), itemstack)) {
++                EntityType<?> entitytypes = this.getType(itemstack);
++                Entity entity = entitytypes.spawn((ServerLevel) world, itemstack, user, blockposition, MobSpawnType.SPAWN_EGG, false, false);
++
+                 if (entity == null) {
+-                    return InteractionResultHolder.pass(itemStack);
++                    return InteractionResultHolder.pass(itemstack);
+                 } else {
+-                    itemStack.consume(1, user);
++                    itemstack.consume(1, user);
+                     user.awardStat(Stats.ITEM_USED.get(this));
+-                    world.gameEvent(user, GameEvent.ENTITY_PLACE, entity.position());
+-                    return InteractionResultHolder.consume(itemStack);
++                    world.gameEvent((Entity) user, (Holder) GameEvent.ENTITY_PLACE, entity.position());
++                    return InteractionResultHolder.consume(itemstack);
+                 }
+             } else {
+-                return InteractionResultHolder.fail(itemStack);
++                return InteractionResultHolder.fail(itemstack);
+             }
+         }
+     }
+@@ -134,16 +141,17 @@
+ 
+     @Nullable
+     public static SpawnEggItem byId(@Nullable EntityType<?> type) {
+-        return BY_ID.get(type);
++        return (SpawnEggItem) SpawnEggItem.BY_ID.get(type);
+     }
+ 
+     public static Iterable<SpawnEggItem> eggs() {
+-        return Iterables.unmodifiableIterable(BY_ID.values());
++        return Iterables.unmodifiableIterable(SpawnEggItem.BY_ID.values());
+     }
+ 
+     public EntityType<?> getType(ItemStack stack) {
+-        CustomData customData = stack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
+-        return !customData.isEmpty() ? customData.read(ENTITY_TYPE_FIELD_CODEC).result().orElse(this.defaultType) : this.defaultType;
++        CustomData customdata = (CustomData) stack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
++
++        return !customdata.isEmpty() ? (EntityType) customdata.read(SpawnEggItem.ENTITY_TYPE_FIELD_CODEC).result().orElse(this.defaultType) : this.defaultType;
+     }
+ 
+     @Override
+@@ -155,25 +163,26 @@
+         if (!this.spawnsEntity(stack, entityType)) {
+             return Optional.empty();
+         } else {
+-            Mob mob;
++            Object object;
++
+             if (entity instanceof AgeableMob) {
+-                mob = ((AgeableMob)entity).getBreedOffspring(world, (AgeableMob)entity);
++                object = ((AgeableMob) entity).getBreedOffspring(world, (AgeableMob) entity);
+             } else {
+-                mob = entityType.create(world);
++                object = (Mob) entityType.create(world);
+             }
+ 
+-            if (mob == null) {
++            if (object == null) {
+                 return Optional.empty();
+             } else {
+-                mob.setBaby(true);
+-                if (!mob.isBaby()) {
++                ((Mob) object).setBaby(true);
++                if (!((Mob) object).isBaby()) {
+                     return Optional.empty();
+                 } else {
+-                    mob.moveTo(pos.x(), pos.y(), pos.z(), 0.0F, 0.0F);
+-                    world.addFreshEntityWithPassengers(mob);
+-                    mob.setCustomName(stack.get(DataComponents.CUSTOM_NAME));
++                    ((Mob) object).moveTo(pos.x(), pos.y(), pos.z(), 0.0F, 0.0F);
++                    world.addFreshEntityWithPassengers((Entity) object, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG); // CraftBukkit
++                    ((Mob) object).setCustomName((Component) stack.get(DataComponents.CUSTOM_NAME));
+                     stack.consume(1, user);
+-                    return Optional.of(mob);
++                    return Optional.of((Mob) object); // CraftBukkit - decompile error
+                 }
+             }
+         }

@@ -1,0 +1,141 @@
+--- a/net/minecraft/world/level/block/entity/BannerBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+@@ -8,6 +8,7 @@
+ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+ import net.minecraft.world.Nameable;
+@@ -18,18 +19,24 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import java.util.List;
++// CraftBukkit end
++
+ public class BannerBlockEntity extends BlockEntity implements Nameable {
++
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final int MAX_PATTERNS = 6;
+     private static final String TAG_PATTERNS = "patterns";
+     @Nullable
+-    private Component name;
++    public Component name; // Paper - public
+     public DyeColor baseColor;
+-    private BannerPatternLayers patterns = BannerPatternLayers.EMPTY;
++    private BannerPatternLayers patterns;
+ 
+     public BannerBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.BANNER, pos, state);
+-        this.baseColor = ((AbstractBannerBlock)state.getBlock()).getColor();
++        this.patterns = BannerPatternLayers.EMPTY;
++        this.baseColor = ((AbstractBannerBlock) state.getBlock()).getColor();
+     }
+ 
+     public BannerBlockEntity(BlockPos pos, BlockState state, DyeColor baseColor) {
+@@ -44,7 +51,7 @@
+ 
+     @Override
+     public Component getName() {
+-        return (Component)(this.name != null ? this.name : Component.translatable("block.minecraft.banner"));
++        return (Component) (this.name != null ? this.name : Component.translatable("block.minecraft.banner"));
+     }
+ 
+     @Nullable
+@@ -56,13 +63,14 @@
+     @Override
+     protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+         super.saveAdditional(nbt, registryLookup);
+-        if (!this.patterns.equals(BannerPatternLayers.EMPTY)) {
+-            nbt.put("patterns", BannerPatternLayers.CODEC.encodeStart(registryLookup.createSerializationContext(NbtOps.INSTANCE), this.patterns).getOrThrow());
++        if (!this.patterns.equals(BannerPatternLayers.EMPTY) || serialisingForNetwork.get()) { // Paper - always send patterns to client
++            nbt.put("patterns", (Tag) BannerPatternLayers.CODEC.encodeStart(registryLookup.createSerializationContext(NbtOps.INSTANCE), this.patterns).getOrThrow());
+         }
+ 
+         if (this.name != null) {
+             nbt.putString("CustomName", Component.Serializer.toJson(this.name, registryLookup));
+         }
++
+     }
+ 
+     @Override
+@@ -73,11 +81,13 @@
+         }
+ 
+         if (nbt.contains("patterns")) {
+-            BannerPatternLayers.CODEC
+-                .parse(registryLookup.createSerializationContext(NbtOps.INSTANCE), nbt.get("patterns"))
+-                .resultOrPartial(patterns -> LOGGER.error("Failed to parse banner patterns: '{}'", patterns))
+-                .ifPresent(patterns -> this.patterns = patterns);
++            BannerPatternLayers.CODEC.parse(registryLookup.createSerializationContext(NbtOps.INSTANCE), nbt.get("patterns")).resultOrPartial((s) -> {
++                BannerBlockEntity.LOGGER.error("Failed to parse banner patterns: '{}'", s);
++            }).ifPresent((bannerpatternlayers) -> {
++                this.setPatterns(bannerpatternlayers); // CraftBukkit - apply limits
++            });
+         }
++
+     }
+ 
+     @Override
+@@ -85,9 +95,18 @@
+         return ClientboundBlockEntityDataPacket.create(this);
+     }
+ 
++    // Paper start - always send patterns to client
++    ThreadLocal<Boolean> serialisingForNetwork = ThreadLocal.withInitial(() -> Boolean.FALSE);
+     @Override
+     public CompoundTag getUpdateTag(HolderLookup.Provider registryLookup) {
+-        return this.saveWithoutMetadata(registryLookup);
++        final Boolean wasSerialisingForNetwork = serialisingForNetwork.get();
++        try {
++            serialisingForNetwork.set(Boolean.TRUE);
++            return this.saveWithoutMetadata(registryLookup);
++        } finally {
++            serialisingForNetwork.set(wasSerialisingForNetwork);
++        }
++        // Paper end - always send patterns to client
+     }
+ 
+     public BannerPatternLayers getPatterns() {
+@@ -95,9 +114,10 @@
+     }
+ 
+     public ItemStack getItem() {
+-        ItemStack itemStack = new ItemStack(BannerBlock.byColor(this.baseColor));
+-        itemStack.applyComponents(this.collectComponents());
+-        return itemStack;
++        ItemStack itemstack = new ItemStack(BannerBlock.byColor(this.baseColor));
++
++        itemstack.applyComponents(this.collectComponents());
++        return itemstack;
+     }
+ 
+     public DyeColor getBaseColor() {
+@@ -107,8 +127,8 @@
+     @Override
+     protected void applyImplicitComponents(BlockEntity.DataComponentInput components) {
+         super.applyImplicitComponents(components);
+-        this.patterns = components.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY);
+-        this.name = components.get(DataComponents.CUSTOM_NAME);
++        this.setPatterns((BannerPatternLayers) components.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY)); // CraftBukkit - apply limits
++        this.name = (Component) components.get(DataComponents.CUSTOM_NAME);
+     }
+ 
+     @Override
+@@ -123,4 +143,13 @@
+         nbt.remove("patterns");
+         nbt.remove("CustomName");
+     }
++
++    // CraftBukkit start
++    public void setPatterns(BannerPatternLayers bannerpatternlayers) {
++        if (bannerpatternlayers.layers().size() > 20) {
++            bannerpatternlayers = new BannerPatternLayers(List.copyOf(bannerpatternlayers.layers().subList(0, 20)));
++        }
++        this.patterns = bannerpatternlayers;
++    }
++    // CraftBukkit end
+ }

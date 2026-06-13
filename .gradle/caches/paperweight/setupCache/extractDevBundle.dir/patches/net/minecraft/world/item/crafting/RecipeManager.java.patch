@@ -1,0 +1,303 @@
+--- a/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -3,8 +3,8 @@
+ import com.google.common.annotations.VisibleForTesting;
+ import com.google.common.collect.ImmutableMap;
+ import com.google.common.collect.ImmutableMultimap;
+-import com.google.common.collect.Multimap;
+ import com.google.common.collect.ImmutableMultimap.Builder;
++import com.google.common.collect.Multimap;
+ import com.google.gson.Gson;
+ import com.google.gson.GsonBuilder;
+ import com.google.gson.JsonElement;
+@@ -14,10 +14,11 @@
+ import com.mojang.serialization.JsonOps;
+ import java.util.Collection;
+ import java.util.Comparator;
++import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+-import java.util.Optional;
+ import java.util.Map.Entry;
++import java.util.Optional;
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ import javax.annotation.Nullable;
+@@ -33,8 +34,14 @@
+ import net.minecraft.world.level.Level;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import com.google.common.collect.LinkedHashMultimap;
++import com.google.common.collect.Maps;
++// CraftBukkit end
++
+ public class RecipeManager extends SimpleJsonResourceReloadListener {
+-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
++
++    private static final Gson GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final HolderLookup.Provider registries;
+     public Multimap<RecipeType<?>, RecipeHolder<?>> byType = ImmutableMultimap.of();
+@@ -42,60 +49,82 @@
+     private boolean hasErrors;
+ 
+     public RecipeManager(HolderLookup.Provider registryLookup) {
+-        super(GSON, Registries.elementsDirPath(Registries.RECIPE));
++        super(RecipeManager.GSON, Registries.elementsDirPath(Registries.RECIPE));
+         this.registries = registryLookup;
+     }
+ 
+-    @Override
+     protected void apply(Map<ResourceLocation, JsonElement> prepared, ResourceManager manager, ProfilerFiller profiler) {
+         this.hasErrors = false;
+         Builder<RecipeType<?>, RecipeHolder<?>> builder = ImmutableMultimap.builder();
+-        com.google.common.collect.ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> builder2 = ImmutableMap.builder();
+-        RegistryOps<JsonElement> registryOps = this.registries.createSerializationContext(JsonOps.INSTANCE);
++        com.google.common.collect.ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> com_google_common_collect_immutablemap_builder = ImmutableMap.builder();
++        RegistryOps<JsonElement> registryops = this.registries.createSerializationContext(JsonOps.INSTANCE);
++        Iterator iterator = prepared.entrySet().iterator();
+ 
+-        for (Entry<ResourceLocation, JsonElement> entry : prepared.entrySet()) {
+-            ResourceLocation resourceLocation = entry.getKey();
++        while (iterator.hasNext()) {
++            Entry<ResourceLocation, JsonElement> entry = (Entry) iterator.next();
++            ResourceLocation minecraftkey = (ResourceLocation) entry.getKey();
+ 
+             try {
+-                Recipe<?> recipe = Recipe.CODEC.parse(registryOps, entry.getValue()).getOrThrow(JsonParseException::new);
+-                RecipeHolder<?> recipeHolder = new RecipeHolder<>(resourceLocation, recipe);
+-                builder.put(recipe.getType(), recipeHolder);
+-                builder2.put(resourceLocation, recipeHolder);
+-            } catch (IllegalArgumentException | JsonParseException var12) {
+-                LOGGER.error("Parsing error loading recipe {}", resourceLocation, var12);
++                Recipe<?> irecipe = (Recipe) Recipe.CODEC.parse(registryops, (JsonElement) entry.getValue()).getOrThrow(JsonParseException::new);
++                RecipeHolder<?> recipeholder = new RecipeHolder<>(minecraftkey, irecipe);
++
++                builder.put(irecipe.getType(), recipeholder);
++                com_google_common_collect_immutablemap_builder.put(minecraftkey, recipeholder);
++            } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
++                RecipeManager.LOGGER.error("Parsing error loading recipe {}", minecraftkey, jsonparseexception);
+             }
+         }
+ 
+-        this.byType = builder.build();
+-        this.byName = builder2.build();
+-        LOGGER.info("Loaded {} recipes", this.byType.size());
++        // CraftBukkit start - mutable
++        this.byType = LinkedHashMultimap.create(builder.build());
++        this.byName = Maps.newHashMap(com_google_common_collect_immutablemap_builder.build());
++        // CraftBukkit end
++        RecipeManager.LOGGER.info("Loaded {} recipes", this.byName.size()); // Paper - Improve logging and errors; log correct number of recipes
+     }
+ 
++    // CraftBukkit start
++    public void addRecipe(RecipeHolder<?> irecipe) {
++        org.spigotmc.AsyncCatcher.catchOp("Recipe Add"); // Spigot
++        Collection<RecipeHolder<?>> map = this.byType.get(irecipe.value().getType()); // CraftBukkit
++
++        if (this.byName.containsKey(irecipe.id())) {
++            throw new IllegalStateException("Duplicate recipe ignored with ID " + irecipe.id());
++        } else {
++            map.add(irecipe);
++            this.byName.put(irecipe.id(), irecipe);
++        }
++    }
++    // CraftBukkit end
++
+     public boolean hadErrorsLoading() {
+         return this.hasErrors;
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(RecipeType<T> type, I input, Level world) {
+-        return this.getRecipeFor(type, input, world, (RecipeHolder<T>)null);
++        return this.getRecipeFor(type, input, world, (RecipeHolder) null);
+     }
+ 
+-    public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(
+-        RecipeType<T> type, I input, Level world, @Nullable ResourceLocation id
+-    ) {
+-        RecipeHolder<T> recipeHolder = id != null ? this.byKeyTyped(type, id) : null;
+-        return this.getRecipeFor(type, input, world, recipeHolder);
++    public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(RecipeType<T> type, I input, Level world, @Nullable ResourceLocation id) {
++        RecipeHolder<T> recipeholder = id != null ? this.byKeyTyped(type, id) : null;
++
++        return this.getRecipeFor(type, input, world, recipeholder);
+     }
+ 
+-    public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(
+-        RecipeType<T> type, I input, Level world, @Nullable RecipeHolder<T> recipe
+-    ) {
++    public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(RecipeType<T> type, I input, Level world, @Nullable RecipeHolder<T> recipe) {
++        // Paper start - fix upstream's complete screw up of checking last used recipe
+         if (input.isEmpty()) {
+             return Optional.empty();
++        } else if (recipe != null && recipe.value().matches(input, world)) {
++            return Optional.of(recipe);
+         } else {
+-            return recipe != null && recipe.value().matches(input, world)
+-                ? Optional.of(recipe)
+-                : this.byType(type).stream().filter(recipex -> recipex.value().matches(input, world)).findFirst();
++            // CraftBukkit start
++            List<RecipeHolder<T>> list = this.byType(type).stream().filter((recipeholder1) -> {
++                return recipeholder1.value().matches(input, world);
++            }).toList();
++            return list.isEmpty() ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
++            // CraftBukkit end
+         }
++        // Paper end
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> List<RecipeHolder<T>> getAllRecipesFor(RecipeType<T> type) {
+@@ -103,40 +132,47 @@
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> List<RecipeHolder<T>> getRecipesFor(RecipeType<T> type, I input, Level world) {
+-        return this.byType(type)
+-            .stream()
+-            .filter(recipe -> recipe.value().matches(input, world))
+-            .sorted(Comparator.comparing(entry -> entry.value().getResultItem(world.registryAccess()).getDescriptionId()))
+-            .collect(Collectors.toList());
++        return (List) this.byType(type).stream().filter((recipeholder) -> {
++            return recipeholder.value().matches(input, world);
++        }).sorted(Comparator.comparing((recipeholder) -> {
++            return recipeholder.value().getResultItem(world.registryAccess()).getDescriptionId();
++        })).collect(Collectors.toList());
+     }
+ 
+     private <I extends RecipeInput, T extends Recipe<I>> Collection<RecipeHolder<T>> byType(RecipeType<T> type) {
+-        return (Collection<RecipeHolder<T>>)this.byType.get(type);
++        return (Collection) this.byType.get(type); // CraftBukkit - decompile error
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, I input, Level world) {
+-        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, input, world);
++        // Paper start - Perf: improve performance of mass crafts
++        return this.getRemainingItemsFor(type, input, world, null);
++    }
++    public <I extends RecipeInput, T extends Recipe<I>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, I input, Level world, @Nullable RecipeHolder<T> previousRecipe) {
++        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, input, world, previousRecipe);
++        // Paper end - Perf: improve performance of mass crafts
++
+         if (optional.isPresent()) {
+-            return optional.get().value().getRemainingItems(input);
++            return ((RecipeHolder) optional.get()).value().getRemainingItems(input);
+         } else {
+-            NonNullList<ItemStack> nonNullList = NonNullList.withSize(input.size(), ItemStack.EMPTY);
++            NonNullList<ItemStack> nonnulllist = NonNullList.withSize(input.size(), ItemStack.EMPTY);
+ 
+-            for (int i = 0; i < nonNullList.size(); i++) {
+-                nonNullList.set(i, input.getItem(i));
++            for (int i = 0; i < nonnulllist.size(); ++i) {
++                nonnulllist.set(i, input.getItem(i));
+             }
+ 
+-            return nonNullList;
++            return nonnulllist;
+         }
+     }
+ 
+     public Optional<RecipeHolder<?>> byKey(ResourceLocation id) {
+-        return Optional.ofNullable(this.byName.get(id));
++        return Optional.ofNullable((RecipeHolder) this.byName.get(id));
+     }
+ 
+     @Nullable
+     private <T extends Recipe<?>> RecipeHolder<T> byKeyTyped(RecipeType<T> type, ResourceLocation id) {
+-        RecipeHolder<?> recipeHolder = this.byName.get(id);
+-        return (RecipeHolder<T>)(recipeHolder != null && recipeHolder.value().getType().equals(type) ? recipeHolder : null);
++        RecipeHolder<?> recipeholder = (RecipeHolder) this.byName.get(id);
++
++        return recipeholder != null && recipeholder.value().getType().equals(type) ? (RecipeHolder) recipeholder : null; // CraftBukkit - decompile error
+     }
+ 
+     public Collection<RecipeHolder<?>> getOrderedRecipes() {
+@@ -153,38 +189,65 @@
+ 
+     @VisibleForTesting
+     protected static RecipeHolder<?> fromJson(ResourceLocation id, JsonObject json, HolderLookup.Provider registryLookup) {
+-        Recipe<?> recipe = Recipe.CODEC.parse(registryLookup.createSerializationContext(JsonOps.INSTANCE), json).getOrThrow(JsonParseException::new);
+-        return new RecipeHolder<>(id, recipe);
++        Recipe<?> irecipe = (Recipe) Recipe.CODEC.parse(registryLookup.createSerializationContext(JsonOps.INSTANCE), json).getOrThrow(JsonParseException::new);
++
++        return new RecipeHolder<>(id, irecipe);
+     }
+ 
+     public void replaceRecipes(Iterable<RecipeHolder<?>> recipes) {
+         this.hasErrors = false;
+         Builder<RecipeType<?>, RecipeHolder<?>> builder = ImmutableMultimap.builder();
+-        com.google.common.collect.ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> builder2 = ImmutableMap.builder();
++        com.google.common.collect.ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> com_google_common_collect_immutablemap_builder = ImmutableMap.builder();
++        Iterator iterator = recipes.iterator();
+ 
+-        for (RecipeHolder<?> recipeHolder : recipes) {
+-            RecipeType<?> recipeType = recipeHolder.value().getType();
+-            builder.put(recipeType, recipeHolder);
+-            builder2.put(recipeHolder.id(), recipeHolder);
++        while (iterator.hasNext()) {
++            RecipeHolder<?> recipeholder = (RecipeHolder) iterator.next();
++            RecipeType<?> recipes1 = recipeholder.value().getType();
++
++            builder.put(recipes1, recipeholder);
++            com_google_common_collect_immutablemap_builder.put(recipeholder.id(), recipeholder);
+         }
+ 
+-        this.byType = builder.build();
+-        this.byName = builder2.build();
++        // CraftBukkit start - mutable
++        this.byType = LinkedHashMultimap.create(builder.build());
++        this.byName = Maps.newHashMap(com_google_common_collect_immutablemap_builder.build());
++        // CraftBukkit end
+     }
+ 
+-    public static <I extends RecipeInput, T extends Recipe<I>> RecipeManager.CachedCheck<I, T> createCheck(RecipeType<T> type) {
++    // CraftBukkit start
++    public boolean removeRecipe(ResourceLocation mcKey) {
++        Iterator<RecipeHolder<?>> iter = this.byType.values().iterator();
++        while (iter.hasNext()) {
++            RecipeHolder<?> recipe = iter.next();
++            if (recipe.id().equals(mcKey)) {
++                iter.remove();
++            }
++        }
++
++        return this.byName.remove(mcKey) != null;
++    }
++
++    public void clearRecipes() {
++        this.byType = LinkedHashMultimap.create();
++        this.byName = Maps.newHashMap();
++    }
++    // CraftBukkit end
++
++    public static <I extends RecipeInput, T extends Recipe<I>> RecipeManager.CachedCheck<I, T> createCheck(final RecipeType<T> type) {
+         return new RecipeManager.CachedCheck<I, T>() {
+             @Nullable
+             private ResourceLocation lastRecipe;
+ 
+             @Override
+             public Optional<RecipeHolder<T>> getRecipeFor(I input, Level world) {
+-                RecipeManager recipeManager = world.getRecipeManager();
+-                Optional<RecipeHolder<T>> optional = recipeManager.getRecipeFor(type, input, world, this.lastRecipe);
++                RecipeManager craftingmanager = world.getRecipeManager();
++                Optional<RecipeHolder<T>> optional = craftingmanager.getRecipeFor(type, input, world, this.lastRecipe);
++
+                 if (optional.isPresent()) {
+-                    RecipeHolder<T> recipeHolder = optional.get();
+-                    this.lastRecipe = recipeHolder.id();
+-                    return Optional.of(recipeHolder);
++                    RecipeHolder<T> recipeholder = (RecipeHolder) optional.get();
++
++                    this.lastRecipe = recipeholder.id();
++                    return Optional.of(recipeholder);
+                 } else {
+                     return Optional.empty();
+                 }
+@@ -193,6 +256,7 @@
+     }
+ 
+     public interface CachedCheck<I extends RecipeInput, T extends Recipe<I>> {
++
+         Optional<RecipeHolder<T>> getRecipeFor(I input, Level world);
+     }
+ }

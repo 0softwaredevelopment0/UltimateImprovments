@@ -1,0 +1,162 @@
+--- a/net/minecraft/world/level/BaseCommandBlock.java
++++ b/net/minecraft/world/level/BaseCommandBlock.java
+@@ -21,6 +21,7 @@
+ import net.minecraft.world.phys.Vec3;
+ 
+ public abstract class BaseCommandBlock implements CommandSource {
++
+     private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
+     private static final Component DEFAULT_NAME = Component.literal("@");
+     private long lastExecution = -1L;
+@@ -32,6 +33,12 @@
+     private String command = "";
+     @Nullable
+     private Component customName;
++    // CraftBukkit start
++    @Override
++    public abstract org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper);
++    // CraftBukkit end
++
++    public BaseCommandBlock() {}
+ 
+     public int getSuccessCount() {
+         return this.successCount;
+@@ -71,7 +78,7 @@
+         if (nbt.contains("CustomName", 8)) {
+             this.setCustomName(BlockEntity.parseCustomNameSafe(nbt.getString("CustomName"), registries));
+         } else {
+-            this.setCustomName(null);
++            this.setCustomName((Component) null);
+         }
+ 
+         if (nbt.contains("TrackOutput", 1)) {
+@@ -81,8 +88,8 @@
+         if (nbt.contains("LastOutput", 8) && this.trackOutput) {
+             try {
+                 this.lastOutput = Component.Serializer.fromJson(nbt.getString("LastOutput"), registries);
+-            } catch (Throwable var4) {
+-                this.lastOutput = Component.literal(var4.getMessage());
++            } catch (Throwable throwable) {
++                this.lastOutput = Component.literal(throwable.getMessage());
+             }
+         } else {
+             this.lastOutput = null;
+@@ -97,6 +104,7 @@
+         } else {
+             this.lastExecution = -1L;
+         }
++
+     }
+ 
+     public void setCommand(String command) {
+@@ -109,45 +117,53 @@
+     }
+ 
+     public boolean performCommand(Level world) {
+-        if (world.isClientSide || world.getGameTime() == this.lastExecution) {
+-            return false;
+-        } else if ("Searge".equalsIgnoreCase(this.command)) {
+-            this.lastOutput = Component.literal("#itzlipofutzli");
+-            this.successCount = 1;
+-            return true;
+-        } else {
+-            this.successCount = 0;
+-            MinecraftServer minecraftServer = this.getLevel().getServer();
+-            if (minecraftServer.isCommandBlockEnabled() && !StringUtil.isNullOrEmpty(this.command)) {
+-                try {
+-                    this.lastOutput = null;
+-                    CommandSourceStack commandSourceStack = this.createCommandSourceStack().withCallback((successful, returnValue) -> {
+-                        if (successful) {
+-                            this.successCount++;
+-                        }
+-                    });
+-                    minecraftServer.getCommands().performPrefixedCommand(commandSourceStack, this.command);
+-                } catch (Throwable var6) {
+-                    CrashReport crashReport = CrashReport.forThrowable(var6, "Executing command block");
+-                    CrashReportCategory crashReportCategory = crashReport.addCategory("Command to be executed");
+-                    crashReportCategory.setDetail("Command", this::getCommand);
+-                    crashReportCategory.setDetail("Name", () -> this.getName().getString());
+-                    throw new ReportedException(crashReport);
++        if (!world.isClientSide && world.getGameTime() != this.lastExecution) {
++            if ("Searge".equalsIgnoreCase(this.command)) {
++                this.lastOutput = Component.literal("#itzlipofutzli");
++                this.successCount = 1;
++                return true;
++            } else {
++                this.successCount = 0;
++                MinecraftServer minecraftserver = this.getLevel().getServer();
++
++                if (minecraftserver.isCommandBlockEnabled() && !StringUtil.isNullOrEmpty(this.command)) {
++                    try {
++                        this.lastOutput = null;
++                        CommandSourceStack commandlistenerwrapper = this.createCommandSourceStack().withCallback((flag, i) -> {
++                            if (flag) {
++                                ++this.successCount;
++                            }
++
++                        });
++
++                        minecraftserver.getCommands().dispatchServerCommand(commandlistenerwrapper, this.command); // CraftBukkit
++                    } catch (Throwable throwable) {
++                        CrashReport crashreport = CrashReport.forThrowable(throwable, "Executing command block");
++                        CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Command to be executed");
++
++                        crashreportsystemdetails.setDetail("Command", this::getCommand);
++                        crashreportsystemdetails.setDetail("Name", () -> {
++                            return this.getName().getString();
++                        });
++                        throw new ReportedException(crashreport);
++                    }
+                 }
+-            }
+ 
+-            if (this.updateLastExecution) {
+-                this.lastExecution = world.getGameTime();
+-            } else {
+-                this.lastExecution = -1L;
+-            }
++                if (this.updateLastExecution) {
++                    this.lastExecution = world.getGameTime();
++                } else {
++                    this.lastExecution = -1L;
++                }
+ 
+-            return true;
++                return true;
++            }
++        } else {
++            return false;
+         }
+     }
+ 
+     public Component getName() {
+-        return this.customName != null ? this.customName : DEFAULT_NAME;
++        return this.customName != null ? this.customName : BaseCommandBlock.DEFAULT_NAME;
+     }
+ 
+     @Nullable
+@@ -162,9 +178,14 @@
+     @Override
+     public void sendSystemMessage(Component message) {
+         if (this.trackOutput) {
+-            this.lastOutput = Component.literal("[" + TIME_FORMAT.format(new Date()) + "] ").append(message);
++            org.spigotmc.AsyncCatcher.catchOp("sendSystemMessage to a command block"); // Paper - Don't broadcast messages to command blocks
++            SimpleDateFormat simpledateformat = BaseCommandBlock.TIME_FORMAT;
++            Date date = new Date();
++
++            this.lastOutput = Component.literal("[" + simpledateformat.format(date) + "] ").append(message);
+             this.onUpdated();
+         }
++
+     }
+ 
+     public abstract ServerLevel getLevel();
+@@ -184,7 +205,7 @@
+     }
+ 
+     public InteractionResult usedBy(Player player) {
+-        if (!player.canUseGameMasterBlocks()) {
++        if (!player.canUseGameMasterBlocks() && (!player.isCreative() || !player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
+             return InteractionResult.PASS;
+         } else {
+             if (player.getCommandSenderWorld().isClientSide) {

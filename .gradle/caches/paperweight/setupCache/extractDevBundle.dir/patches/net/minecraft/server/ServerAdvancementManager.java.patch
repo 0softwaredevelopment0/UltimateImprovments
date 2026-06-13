@@ -1,0 +1,107 @@
+--- a/net/minecraft/server/ServerAdvancementManager.java
++++ b/net/minecraft/server/ServerAdvancementManager.java
+@@ -9,6 +9,7 @@
+ import com.mojang.logging.LogUtils;
+ import com.mojang.serialization.JsonOps;
+ import java.util.Collection;
++import java.util.Iterator;
+ import java.util.Map;
+ import javax.annotation.Nullable;
+ import net.minecraft.advancements.Advancement;
+@@ -26,53 +27,74 @@
+ import net.minecraft.util.profiling.ProfilerFiller;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import java.util.HashMap;
++// CraftBukkit end
++
+ public class ServerAdvancementManager extends SimpleJsonResourceReloadListener {
++
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    public static final Gson GSON = new GsonBuilder().create();
+-    public Map<ResourceLocation, AdvancementHolder> advancements = Map.of();
++    public static final Gson GSON = (new GsonBuilder()).create();
++    public Map<ResourceLocation, AdvancementHolder> advancements = new HashMap<>(); // CraftBukkit - SPIGOT-7734: mutable
+     private AdvancementTree tree = new AdvancementTree();
+     private final HolderLookup.Provider registries;
+ 
+     public ServerAdvancementManager(HolderLookup.Provider registryLookup) {
+-        super(GSON, Registries.elementsDirPath(Registries.ADVANCEMENT));
++        super(ServerAdvancementManager.GSON, Registries.elementsDirPath(Registries.ADVANCEMENT));
+         this.registries = registryLookup;
+     }
+ 
+-    @Override
+     protected void apply(Map<ResourceLocation, JsonElement> prepared, ResourceManager manager, ProfilerFiller profiler) {
+-        RegistryOps<JsonElement> registryOps = this.registries.createSerializationContext(JsonOps.INSTANCE);
++        RegistryOps<JsonElement> registryops = this.registries.createSerializationContext(JsonOps.INSTANCE);
+         Builder<ResourceLocation, AdvancementHolder> builder = ImmutableMap.builder();
+-        prepared.forEach((id, json) -> {
++
++        prepared.forEach((minecraftkey, jsonelement) -> {
++            // Spigot start
++            if (org.spigotmc.SpigotConfig.disabledAdvancements != null && (org.spigotmc.SpigotConfig.disabledAdvancements.contains("*") || org.spigotmc.SpigotConfig.disabledAdvancements.contains(minecraftkey.toString()) || org.spigotmc.SpigotConfig.disabledAdvancements.contains(minecraftkey.getNamespace()))) {
++                return;
++            }
++            // Spigot end
++
+             try {
+-                Advancement advancement = Advancement.CODEC.parse(registryOps, json).getOrThrow(JsonParseException::new);
+-                this.validate(id, advancement);
+-                builder.put(id, new AdvancementHolder(id, advancement));
+-            } catch (Exception var6x) {
+-                LOGGER.error("Parsing error loading custom advancement {}: {}", id, var6x.getMessage());
++                Advancement advancement = (Advancement) Advancement.CODEC.parse(registryops, jsonelement).getOrThrow(JsonParseException::new);
++
++                this.validate(minecraftkey, advancement);
++                builder.put(minecraftkey, new AdvancementHolder(minecraftkey, advancement));
++            } catch (Exception exception) {
++                ServerAdvancementManager.LOGGER.error("Parsing error loading custom advancement {}: {}", minecraftkey, exception.getMessage());
+             }
++
+         });
+-        this.advancements = builder.buildOrThrow();
+-        AdvancementTree advancementTree = new AdvancementTree();
+-        advancementTree.addAll(this.advancements.values());
++        this.advancements = new HashMap<>(builder.buildOrThrow()); // CraftBukkit - SPIGOT-7734: mutable
++        AdvancementTree advancementtree = new AdvancementTree();
+ 
+-        for (AdvancementNode advancementNode : advancementTree.roots()) {
+-            if (advancementNode.holder().value().display().isPresent()) {
+-                TreeNodePosition.run(advancementNode);
++        advancementtree.addAll(this.advancements.values());
++        LOGGER.info("Loaded {} advancements", advancementtree.nodes().size()); // Paper - Improve logging and errors; moved from AdvancementTree#addAll
++        Iterator iterator = advancementtree.roots().iterator();
++
++        while (iterator.hasNext()) {
++            AdvancementNode advancementnode = (AdvancementNode) iterator.next();
++
++            if (advancementnode.holder().value().display().isPresent()) {
++                TreeNodePosition.run(advancementnode);
+             }
+         }
+ 
+-        this.tree = advancementTree;
++        this.tree = advancementtree;
+     }
+ 
+     private void validate(ResourceLocation id, Advancement advancement) {
+-        ProblemReporter.Collector collector = new ProblemReporter.Collector();
+-        advancement.validate(collector, this.registries.asGetterLookup());
+-        collector.getReport().ifPresent(string -> LOGGER.warn("Found validation problems in advancement {}: \n{}", id, string));
++        ProblemReporter.Collector problemreporter_a = new ProblemReporter.Collector();
++
++        advancement.validate(problemreporter_a, this.registries.asGetterLookup());
++        problemreporter_a.getReport().ifPresent((s) -> {
++            ServerAdvancementManager.LOGGER.warn("Found validation problems in advancement {}: \n{}", id, s);
++        });
+     }
+ 
+     @Nullable
+     public AdvancementHolder get(ResourceLocation id) {
+-        return this.advancements.get(id);
++        return (AdvancementHolder) this.advancements.get(id);
+     }
+ 
+     public AdvancementTree tree() {

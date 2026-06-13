@@ -28,6 +28,14 @@ public class ReactorCommand implements CommandExecutor {
             return true;
         }
 
+        // =========================
+        // PERMISSION CHECK
+        // =========================
+        if (!player.hasPermission("mcplugin.command.reactor")) {
+            player.sendMessage("§4❌ §cУ вас нет прав на использование этой команды!");
+            return true;
+        }
+
         if (args.length < 2 || !args[0].equalsIgnoreCase("assemble")) {
             player.sendMessage("§cUsage: /reactor assemble <type>");
             return true;
@@ -47,7 +55,7 @@ public class ReactorCommand implements CommandExecutor {
     // =========================
     // DARK SYNTHESIS REACTOR (без незеритового скрапа)
     // =========================
-    private void assembleDarkSynthesis(Player player) {
+    public static void assembleDarkSynthesis(Player player) {
 
         ReactorManager reactor = ReactorManager.getInstance();
         if (reactor == null) return;
@@ -133,7 +141,7 @@ public class ReactorCommand implements CommandExecutor {
     // =========================
     // MAGNET
     // =========================
-    private void assembleMagnet(Player player) {
+    public static void assembleMagnet(Player player) {
 
         // =========================
         // CHECK PENDING ASSEMBLY
@@ -244,7 +252,7 @@ public class ReactorCommand implements CommandExecutor {
     // =========================
     // NAME BARREL HELPER
     // =========================
-    private void nameBarrel(Location base, int dx, int dy, int dz, String displayName) {
+    private static void nameBarrel(Location base, int dx, int dy, int dz, String displayName) {
         Block block = base.clone().add(dx, dy, dz).getBlock();
         if (block.getType() == Material.BARREL) {
             Barrel barrel = (Barrel) block.getState();

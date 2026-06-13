@@ -1,0 +1,457 @@
+--- a/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
+@@ -3,8 +3,12 @@
+ import com.google.common.annotations.VisibleForTesting;
+ import com.mojang.logging.LogUtils;
+ import com.mojang.serialization.Codec;
++import com.mojang.serialization.DataResult;
+ import com.mojang.serialization.DynamicOps;
++import java.util.Iterator;
+ import java.util.List;
++import java.util.Objects;
++import java.util.Optional;
+ import java.util.Set;
+ import java.util.UUID;
+ import javax.annotation.Nullable;
+@@ -43,15 +47,24 @@
+ import net.minecraft.world.phys.Vec3;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseLootEvent;
++import org.bukkit.event.block.VaultDisplayItemEvent;
++// CraftBukkit end
++
+ public class VaultBlockEntity extends BlockEntity {
++
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final VaultServerData serverData = new VaultServerData();
+     private final VaultSharedData sharedData = new VaultSharedData();
+     private final VaultClientData clientData = new VaultClientData();
+-    private VaultConfig config = VaultConfig.DEFAULT;
++    private VaultConfig config;
+ 
+     public VaultBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.VAULT, pos, state);
++        this.config = VaultConfig.DEFAULT;
+     }
+ 
+     @Nullable
+@@ -62,36 +75,62 @@
+ 
+     @Override
+     public CompoundTag getUpdateTag(HolderLookup.Provider registryLookup) {
+-        return Util.make(new CompoundTag(), nbt -> nbt.put("shared_data", encode(VaultSharedData.CODEC, this.sharedData, registryLookup)));
++        return (CompoundTag) Util.make(new CompoundTag(), (nbttagcompound) -> {
++            nbttagcompound.put("shared_data", VaultBlockEntity.encode(VaultSharedData.CODEC, this.sharedData, registryLookup));
++        });
+     }
+ 
+     @Override
+     protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+         super.saveAdditional(nbt, registryLookup);
+-        nbt.put("config", encode(VaultConfig.CODEC, this.config, registryLookup));
+-        nbt.put("shared_data", encode(VaultSharedData.CODEC, this.sharedData, registryLookup));
+-        nbt.put("server_data", encode(VaultServerData.CODEC, this.serverData, registryLookup));
++        nbt.put("config", VaultBlockEntity.encode(VaultConfig.CODEC, this.config, registryLookup));
++        nbt.put("shared_data", VaultBlockEntity.encode(VaultSharedData.CODEC, this.sharedData, registryLookup));
++        nbt.put("server_data", VaultBlockEntity.encode(VaultServerData.CODEC, this.serverData, registryLookup));
+     }
+ 
+     private static <T> Tag encode(Codec<T> codec, T value, HolderLookup.Provider registries) {
+-        return codec.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), value).getOrThrow();
++        return (Tag) codec.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), value).getOrThrow();
+     }
+ 
+     @Override
+     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+         super.loadAdditional(nbt, registryLookup);
+-        DynamicOps<Tag> dynamicOps = registryLookup.createSerializationContext(NbtOps.INSTANCE);
++        DynamicOps<Tag> dynamicops = registryLookup.createSerializationContext(NbtOps.INSTANCE);
++        DataResult dataresult;
++        Logger logger;
++        Optional optional;
++
+         if (nbt.contains("server_data")) {
+-            VaultServerData.CODEC.parse(dynamicOps, nbt.get("server_data")).resultOrPartial(LOGGER::error).ifPresent(this.serverData::set);
++            dataresult = VaultServerData.CODEC.parse(dynamicops, nbt.get("server_data"));
++            logger = VaultBlockEntity.LOGGER;
++            Objects.requireNonNull(logger);
++            optional = ((DataResult<VaultServerData>) dataresult).resultOrPartial(logger::error); // CraftBukkit - decompile error
++            VaultServerData vaultserverdata = this.serverData;
++
++            Objects.requireNonNull(this.serverData);
++            ((Optional<VaultServerData>) optional).ifPresent(vaultserverdata::set); // CraftBukkit - decompile error
+         }
+ 
+         if (nbt.contains("config")) {
+-            VaultConfig.CODEC.parse(dynamicOps, nbt.get("config")).resultOrPartial(LOGGER::error).ifPresent(config -> this.config = config);
++            dataresult = VaultConfig.CODEC.parse(dynamicops, nbt.get("config"));
++            logger = VaultBlockEntity.LOGGER;
++            Objects.requireNonNull(logger);
++            ((DataResult<VaultConfig>) dataresult).resultOrPartial(logger::error).ifPresent((vaultconfig) -> { // CraftBukkit - decompile error
++                this.config = vaultconfig;
++            });
+         }
+ 
+         if (nbt.contains("shared_data")) {
+-            VaultSharedData.CODEC.parse(dynamicOps, nbt.get("shared_data")).resultOrPartial(LOGGER::error).ifPresent(this.sharedData::set);
++            dataresult = VaultSharedData.CODEC.parse(dynamicops, nbt.get("shared_data"));
++            logger = VaultBlockEntity.LOGGER;
++            Objects.requireNonNull(logger);
++            optional = ((DataResult<VaultSharedData>) dataresult).resultOrPartial(logger::error); // CraftBukkit - decompile error
++            VaultSharedData vaultshareddata = this.sharedData;
++
++            Objects.requireNonNull(this.sharedData);
++            ((Optional<VaultSharedData>) optional).ifPresent(vaultshareddata::set); // CraftBukkit - decompile error
+         }
++
+     }
+ 
+     @Nullable
+@@ -117,76 +156,93 @@
+     }
+ 
+     public static final class Client {
++
+         private static final int PARTICLE_TICK_RATE = 20;
+         private static final float IDLE_PARTICLE_CHANCE = 0.5F;
+         private static final float AMBIENT_SOUND_CHANCE = 0.02F;
+         private static final int ACTIVATION_PARTICLE_COUNT = 20;
+         private static final int DEACTIVATION_PARTICLE_COUNT = 20;
+ 
++        public Client() {}
++
+         public static void tick(Level world, BlockPos pos, BlockState state, VaultClientData clientData, VaultSharedData sharedData) {
+             clientData.updateDisplayItemSpin();
+             if (world.getGameTime() % 20L == 0L) {
+-                emitConnectionParticlesForNearbyPlayers(world, pos, state, sharedData);
++                Client.emitConnectionParticlesForNearbyPlayers(world, pos, state, sharedData);
+             }
+ 
+-            emitIdleParticles(world, pos, sharedData, state.getValue(VaultBlock.OMINOUS) ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.SMALL_FLAME);
+-            playIdleSounds(world, pos, sharedData);
++            Client.emitIdleParticles(world, pos, sharedData, (Boolean) state.getValue(VaultBlock.OMINOUS) ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.SMALL_FLAME);
++            Client.playIdleSounds(world, pos, sharedData);
+         }
+ 
+         public static void emitActivationParticles(Level world, BlockPos pos, BlockState state, VaultSharedData sharedData, ParticleOptions particle) {
+-            emitConnectionParticlesForNearbyPlayers(world, pos, state, sharedData);
+-            RandomSource randomSource = world.random;
++            Client.emitConnectionParticlesForNearbyPlayers(world, pos, state, sharedData);
++            RandomSource randomsource = world.random;
+ 
+-            for (int i = 0; i < 20; i++) {
+-                Vec3 vec3 = randomPosInsideCage(pos, randomSource);
+-                world.addParticle(ParticleTypes.SMOKE, vec3.x(), vec3.y(), vec3.z(), 0.0, 0.0, 0.0);
+-                world.addParticle(particle, vec3.x(), vec3.y(), vec3.z(), 0.0, 0.0, 0.0);
++            for (int i = 0; i < 20; ++i) {
++                Vec3 vec3d = Client.randomPosInsideCage(pos, randomsource);
++
++                world.addParticle(ParticleTypes.SMOKE, vec3d.x(), vec3d.y(), vec3d.z(), 0.0D, 0.0D, 0.0D);
++                world.addParticle(particle, vec3d.x(), vec3d.y(), vec3d.z(), 0.0D, 0.0D, 0.0D);
+             }
++
+         }
+ 
+         public static void emitDeactivationParticles(Level world, BlockPos pos, ParticleOptions particle) {
+-            RandomSource randomSource = world.random;
++            RandomSource randomsource = world.random;
+ 
+-            for (int i = 0; i < 20; i++) {
+-                Vec3 vec3 = randomPosCenterOfCage(pos, randomSource);
+-                Vec3 vec32 = new Vec3(randomSource.nextGaussian() * 0.02, randomSource.nextGaussian() * 0.02, randomSource.nextGaussian() * 0.02);
+-                world.addParticle(particle, vec3.x(), vec3.y(), vec3.z(), vec32.x(), vec32.y(), vec32.z());
++            for (int i = 0; i < 20; ++i) {
++                Vec3 vec3d = Client.randomPosCenterOfCage(pos, randomsource);
++                Vec3 vec3d1 = new Vec3(randomsource.nextGaussian() * 0.02D, randomsource.nextGaussian() * 0.02D, randomsource.nextGaussian() * 0.02D);
++
++                world.addParticle(particle, vec3d.x(), vec3d.y(), vec3d.z(), vec3d1.x(), vec3d1.y(), vec3d1.z());
+             }
++
+         }
+ 
+         private static void emitIdleParticles(Level world, BlockPos pos, VaultSharedData sharedData, ParticleOptions particle) {
+-            RandomSource randomSource = world.getRandom();
+-            if (randomSource.nextFloat() <= 0.5F) {
+-                Vec3 vec3 = randomPosInsideCage(pos, randomSource);
+-                world.addParticle(ParticleTypes.SMOKE, vec3.x(), vec3.y(), vec3.z(), 0.0, 0.0, 0.0);
+-                if (shouldDisplayActiveEffects(sharedData)) {
+-                    world.addParticle(particle, vec3.x(), vec3.y(), vec3.z(), 0.0, 0.0, 0.0);
++            RandomSource randomsource = world.getRandom();
++
++            if (randomsource.nextFloat() <= 0.5F) {
++                Vec3 vec3d = Client.randomPosInsideCage(pos, randomsource);
++
++                world.addParticle(ParticleTypes.SMOKE, vec3d.x(), vec3d.y(), vec3d.z(), 0.0D, 0.0D, 0.0D);
++                if (Client.shouldDisplayActiveEffects(sharedData)) {
++                    world.addParticle(particle, vec3d.x(), vec3d.y(), vec3d.z(), 0.0D, 0.0D, 0.0D);
+                 }
+             }
++
+         }
+ 
+         private static void emitConnectionParticlesForPlayer(Level world, Vec3 pos, Player player) {
+-            RandomSource randomSource = world.random;
+-            Vec3 vec3 = pos.vectorTo(player.position().add(0.0, (double)(player.getBbHeight() / 2.0F), 0.0));
+-            int i = Mth.nextInt(randomSource, 2, 5);
++            RandomSource randomsource = world.random;
++            Vec3 vec3d1 = pos.vectorTo(player.position().add(0.0D, (double) (player.getBbHeight() / 2.0F), 0.0D));
++            int i = Mth.nextInt(randomsource, 2, 5);
+ 
+-            for (int j = 0; j < i; j++) {
+-                Vec3 vec32 = vec3.offsetRandom(randomSource, 1.0F);
+-                world.addParticle(ParticleTypes.VAULT_CONNECTION, pos.x(), pos.y(), pos.z(), vec32.x(), vec32.y(), vec32.z());
++            for (int j = 0; j < i; ++j) {
++                Vec3 vec3d2 = vec3d1.offsetRandom(randomsource, 1.0F);
++
++                world.addParticle(ParticleTypes.VAULT_CONNECTION, pos.x(), pos.y(), pos.z(), vec3d2.x(), vec3d2.y(), vec3d2.z());
+             }
++
+         }
+ 
+         private static void emitConnectionParticlesForNearbyPlayers(Level world, BlockPos pos, BlockState state, VaultSharedData sharedData) {
+             Set<UUID> set = sharedData.getConnectedPlayers();
++
+             if (!set.isEmpty()) {
+-                Vec3 vec3 = keyholePos(pos, state.getValue(VaultBlock.FACING));
++                Vec3 vec3d = Client.keyholePos(pos, (Direction) state.getValue(VaultBlock.FACING));
++                Iterator iterator = set.iterator();
+ 
+-                for (UUID uUID : set) {
+-                    Player player = world.getPlayerByUUID(uUID);
+-                    if (player != null && isWithinConnectionRange(pos, sharedData, player)) {
+-                        emitConnectionParticlesForPlayer(world, vec3, player);
++                while (iterator.hasNext()) {
++                    UUID uuid = (UUID) iterator.next();
++                    Player entityhuman = world.getPlayerByUUID(uuid);
++
++                    if (entityhuman != null && Client.isWithinConnectionRange(pos, sharedData, entityhuman)) {
++                        Client.emitConnectionParticlesForPlayer(world, vec3d, entityhuman);
+                     }
+                 }
++
+             }
+         }
+ 
+@@ -195,13 +251,13 @@
+         }
+ 
+         private static void playIdleSounds(Level world, BlockPos pos, VaultSharedData sharedData) {
+-            if (shouldDisplayActiveEffects(sharedData)) {
+-                RandomSource randomSource = world.getRandom();
+-                if (randomSource.nextFloat() <= 0.02F) {
+-                    world.playLocalSound(
+-                        pos, SoundEvents.VAULT_AMBIENT, SoundSource.BLOCKS, randomSource.nextFloat() * 0.25F + 0.75F, randomSource.nextFloat() + 0.5F, false
+-                    );
++            if (Client.shouldDisplayActiveEffects(sharedData)) {
++                RandomSource randomsource = world.getRandom();
++
++                if (randomsource.nextFloat() <= 0.02F) {
++                    world.playLocalSound(pos, SoundEvents.VAULT_AMBIENT, SoundSource.BLOCKS, randomsource.nextFloat() * 0.25F + 0.75F, randomsource.nextFloat() + 0.5F, false);
+                 }
++
+             }
+         }
+ 
+@@ -210,70 +266,77 @@
+         }
+ 
+         private static Vec3 randomPosCenterOfCage(BlockPos pos, RandomSource random) {
+-            return Vec3.atLowerCornerOf(pos).add(Mth.nextDouble(random, 0.4, 0.6), Mth.nextDouble(random, 0.4, 0.6), Mth.nextDouble(random, 0.4, 0.6));
++            return Vec3.atLowerCornerOf(pos).add(Mth.nextDouble(random, 0.4D, 0.6D), Mth.nextDouble(random, 0.4D, 0.6D), Mth.nextDouble(random, 0.4D, 0.6D));
+         }
+ 
+         private static Vec3 randomPosInsideCage(BlockPos pos, RandomSource random) {
+-            return Vec3.atLowerCornerOf(pos).add(Mth.nextDouble(random, 0.1, 0.9), Mth.nextDouble(random, 0.25, 0.75), Mth.nextDouble(random, 0.1, 0.9));
++            return Vec3.atLowerCornerOf(pos).add(Mth.nextDouble(random, 0.1D, 0.9D), Mth.nextDouble(random, 0.25D, 0.75D), Mth.nextDouble(random, 0.1D, 0.9D));
+         }
+ 
+         private static Vec3 keyholePos(BlockPos pos, Direction direction) {
+-            return Vec3.atBottomCenterOf(pos).add((double)direction.getStepX() * 0.5, 1.75, (double)direction.getStepZ() * 0.5);
++            return Vec3.atBottomCenterOf(pos).add((double) direction.getStepX() * 0.5D, 1.75D, (double) direction.getStepZ() * 0.5D);
+         }
+     }
+ 
+     public static final class Server {
++
+         private static final int UNLOCKING_DELAY_TICKS = 14;
+         private static final int DISPLAY_CYCLE_TICK_RATE = 20;
+         private static final int INSERT_FAIL_SOUND_BUFFER_TICKS = 15;
+ 
++        public Server() {}
++
+         public static void tick(ServerLevel world, BlockPos pos, BlockState state, VaultConfig config, VaultServerData serverData, VaultSharedData sharedData) {
+-            VaultState vaultState = state.getValue(VaultBlock.STATE);
+-            if (shouldCycleDisplayItem(world.getGameTime(), vaultState)) {
+-                cycleDisplayItemFromLootTable(world, vaultState, config, sharedData, pos);
++            VaultState vaultstate = (VaultState) state.getValue(VaultBlock.STATE);
++
++            if (Server.shouldCycleDisplayItem(world.getGameTime(), vaultstate)) {
++                Server.cycleDisplayItemFromLootTable(world, vaultstate, config, sharedData, pos);
+             }
+ 
+-            BlockState blockState = state;
++            BlockState iblockdata1 = state;
++
+             if (world.getGameTime() >= serverData.stateUpdatingResumesAt()) {
+-                blockState = state.setValue(VaultBlock.STATE, vaultState.tickAndGetNext(world, pos, config, serverData, sharedData));
+-                if (!state.equals(blockState)) {
+-                    setVaultState(world, pos, state, blockState, config, sharedData);
++                iblockdata1 = (BlockState) state.setValue(VaultBlock.STATE, vaultstate.tickAndGetNext(world, pos, config, serverData, sharedData));
++                if (!state.equals(iblockdata1)) {
++                    Server.setVaultState(world, pos, state, iblockdata1, config, sharedData);
+                 }
+             }
+ 
+             if (serverData.isDirty || sharedData.isDirty) {
+                 VaultBlockEntity.setChanged(world, pos, state);
+                 if (sharedData.isDirty) {
+-                    world.sendBlockUpdated(pos, state, blockState, 2);
++                    world.sendBlockUpdated(pos, state, iblockdata1, 2);
+                 }
+ 
+                 serverData.isDirty = false;
+                 sharedData.isDirty = false;
+             }
++
+         }
+ 
+-        public static void tryInsertKey(
+-            ServerLevel world,
+-            BlockPos pos,
+-            BlockState state,
+-            VaultConfig config,
+-            VaultServerData serverData,
+-            VaultSharedData sharedData,
+-            Player player,
+-            ItemStack stack
+-        ) {
+-            VaultState vaultState = state.getValue(VaultBlock.STATE);
+-            if (canEjectReward(config, vaultState)) {
+-                if (!isValidToInsert(config, stack)) {
+-                    playInsertFailSound(world, serverData, pos, SoundEvents.VAULT_INSERT_ITEM_FAIL);
++        public static void tryInsertKey(ServerLevel world, BlockPos pos, BlockState state, VaultConfig config, VaultServerData serverData, VaultSharedData sharedData, Player player, ItemStack stack) {
++            VaultState vaultstate = (VaultState) state.getValue(VaultBlock.STATE);
++
++            if (Server.canEjectReward(config, vaultstate)) {
++                if (!Server.isValidToInsert(config, stack)) {
++                    Server.playInsertFailSound(world, serverData, pos, SoundEvents.VAULT_INSERT_ITEM_FAIL);
+                 } else if (serverData.hasRewardedPlayer(player)) {
+-                    playInsertFailSound(world, serverData, pos, SoundEvents.VAULT_REJECT_REWARDED_PLAYER);
++                    Server.playInsertFailSound(world, serverData, pos, SoundEvents.VAULT_REJECT_REWARDED_PLAYER);
+                 } else {
+-                    List<ItemStack> list = resolveItemsToEject(world, config, pos, player);
++                    List<ItemStack> list = Server.resolveItemsToEject(world, config, pos, player);
++
+                     if (!list.isEmpty()) {
+                         player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
+                         stack.consume(config.keyItem().getCount(), player);
+-                        unlock(world, state, pos, config, serverData, sharedData, list);
++                        // CraftBukkit start
++                        BlockDispenseLootEvent vaultDispenseLootEvent = CraftEventFactory.callBlockDispenseLootEvent(world, pos, player, list);
++                        if (vaultDispenseLootEvent.isCancelled()) {
++                            return;
++                        }
++
++                        list = vaultDispenseLootEvent.getDispensedLoot().stream().map(CraftItemStack::asNMSCopy).toList();
++                        // CraftBukkit end
++                        Server.unlock(world, state, pos, config, serverData, sharedData, list);
+                         serverData.addToRewardedPlayers(player);
+                         sharedData.updateConnectedPlayersWithinRange(world, pos, serverData, config, config.deactivationRange());
+                     }
+@@ -282,53 +345,51 @@
+         }
+ 
+         static void setVaultState(ServerLevel world, BlockPos pos, BlockState oldState, BlockState newState, VaultConfig config, VaultSharedData sharedData) {
+-            VaultState vaultState = oldState.getValue(VaultBlock.STATE);
+-            VaultState vaultState2 = newState.getValue(VaultBlock.STATE);
++            VaultState vaultstate = (VaultState) oldState.getValue(VaultBlock.STATE);
++            VaultState vaultstate1 = (VaultState) newState.getValue(VaultBlock.STATE);
++
+             world.setBlock(pos, newState, 3);
+-            vaultState.onTransition(world, pos, vaultState2, config, sharedData, newState.getValue(VaultBlock.OMINOUS));
++            vaultstate.onTransition(world, pos, vaultstate1, config, sharedData, (Boolean) newState.getValue(VaultBlock.OMINOUS));
+         }
+ 
+         static void cycleDisplayItemFromLootTable(ServerLevel world, VaultState state, VaultConfig config, VaultSharedData sharedData, BlockPos pos) {
+-            if (!canEjectReward(config, state)) {
++            if (!Server.canEjectReward(config, state)) {
+                 sharedData.setDisplayItem(ItemStack.EMPTY);
+             } else {
+-                ItemStack itemStack = getRandomDisplayItemFromLootTable(world, pos, config.overrideLootTableToDisplay().orElse(config.lootTable()));
+-                sharedData.setDisplayItem(itemStack);
++                ItemStack itemstack = Server.getRandomDisplayItemFromLootTable(world, pos, (ResourceKey) config.overrideLootTableToDisplay().orElse(config.lootTable()));
++                // CraftBukkit start
++                VaultDisplayItemEvent event = CraftEventFactory.callVaultDisplayItemEvent(world, pos, itemstack);
++                if (event.isCancelled()) {
++                    return;
++                }
++
++                itemstack = CraftItemStack.asNMSCopy(event.getDisplayItem());
++                // CraftBukkit end
++
++                sharedData.setDisplayItem(itemstack);
+             }
+         }
+ 
+         private static ItemStack getRandomDisplayItemFromLootTable(ServerLevel world, BlockPos pos, ResourceKey<LootTable> lootTable) {
+-            LootTable lootTable2 = world.getServer().reloadableRegistries().getLootTable(lootTable);
+-            LootParams lootParams = new LootParams.Builder(world)
+-                .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
+-                .create(LootContextParamSets.VAULT);
+-            List<ItemStack> list = lootTable2.getRandomItems(lootParams, world.getRandom());
+-            return list.isEmpty() ? ItemStack.EMPTY : Util.getRandom(list, world.getRandom());
++            LootTable loottable = world.getServer().reloadableRegistries().getLootTable(lootTable);
++            LootParams lootparams = (new LootParams.Builder(world)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos)).create(LootContextParamSets.VAULT);
++            List<ItemStack> list = loottable.getRandomItems(lootparams, world.getRandom());
++
++            return list.isEmpty() ? ItemStack.EMPTY : (ItemStack) Util.getRandom((List) list, world.getRandom());
+         }
+ 
+-        private static void unlock(
+-            ServerLevel world,
+-            BlockState state,
+-            BlockPos pos,
+-            VaultConfig config,
+-            VaultServerData serverData,
+-            VaultSharedData sharedData,
+-            List<ItemStack> itemsToEject
+-        ) {
++        private static void unlock(ServerLevel world, BlockState state, BlockPos pos, VaultConfig config, VaultServerData serverData, VaultSharedData sharedData, List<ItemStack> itemsToEject) {
+             serverData.setItemsToEject(itemsToEject);
+             sharedData.setDisplayItem(serverData.getNextItemToEject());
+             serverData.pauseStateUpdatingUntil(world.getGameTime() + 14L);
+-            setVaultState(world, pos, state, state.setValue(VaultBlock.STATE, VaultState.UNLOCKING), config, sharedData);
++            Server.setVaultState(world, pos, state, (BlockState) state.setValue(VaultBlock.STATE, VaultState.UNLOCKING), config, sharedData);
+         }
+ 
+         private static List<ItemStack> resolveItemsToEject(ServerLevel world, VaultConfig config, BlockPos pos, Player player) {
+-            LootTable lootTable = world.getServer().reloadableRegistries().getLootTable(config.lootTable());
+-            LootParams lootParams = new LootParams.Builder(world)
+-                .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
+-                .withLuck(player.getLuck())
+-                .withParameter(LootContextParams.THIS_ENTITY, player)
+-                .create(LootContextParamSets.VAULT);
+-            return lootTable.getRandomItems(lootParams);
++            LootTable loottable = world.getServer().reloadableRegistries().getLootTable(config.lootTable());
++            LootParams lootparams = (new LootParams.Builder(world)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos)).withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player).create(LootContextParamSets.VAULT);
++
++            return loottable.getRandomItems(lootparams);
+         }
+ 
+         private static boolean canEjectReward(VaultConfig config, VaultState state) {
+@@ -345,9 +406,10 @@
+ 
+         private static void playInsertFailSound(ServerLevel world, VaultServerData serverData, BlockPos pos, SoundEvent sound) {
+             if (world.getGameTime() >= serverData.getLastInsertFailTimestamp() + 15L) {
+-                world.playSound(null, pos, sound, SoundSource.BLOCKS);
++                world.playSound((Player) null, pos, sound, SoundSource.BLOCKS);
+                 serverData.setLastInsertFailTimestamp(world.getGameTime());
+             }
++
+         }
+     }
+ }
