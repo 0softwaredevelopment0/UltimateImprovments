@@ -12,21 +12,20 @@ This plugin adds some featurs like:
 - Custom Structures
 - Block tags and worldgen
 - Custom weapons
-- Server protection system **(New)**
+- Server protection system
+- Complete multiblock structurs
 # Commands
-**/mcplugin reload**<br>
-This command reloads the plugin. After the reload, you may see bugs, so it's better to restart the server.
+**Use /mp help to see all commands**<br>
+This command reloads the plugin. After the reload, you may see bugs, so it's better to restart the server.<br>
 # Permissions
-**mcplugin.reload**<br>
-Needs to allow players to reload the plugin.<br>
-**mcplugin.overload**<br>
-Needs to allow players to see overload warnings in game chat.<br>
+**Check all permissions in LuckPerms with mcplugin. ..**<br>
 # Installation
 **1.** Download the .jar file of the plugin.<br>
 **2.** Put the .jar file into the plugins folder.<br>
 **3.** Restart the server. After the plugin has loaded, restart the server again to correctly load the data pack.<br>
 # Updating
-**1.** Delete automatically created datapack and it will be updates and re-created by plugin.
+**1.** Delete automatically created datapack and it will be updates and re-created by plugin.<br>
+**2.** Delete automatically created plugin config because without it plugin can not work correctly.<br>
 # Requirements
 **1.** Java 21+<br>
 **2.** Paper/Purpur core and its forks. Do not use Spigot/Bukkit core!<br>
@@ -36,6 +35,6 @@ Needs to allow players to see overload warnings in game chat.<br>
 **This project is distributed under a license:**<br>
 **GNU AGPL v3**<br>
 # Author
-**Nick: MrCotik337**<br>
+**Nick: rizer001**<br>
 **Github: https://github.com/Minecraft337**<br>
 **Discord: @error404_user.not.found**<br>
