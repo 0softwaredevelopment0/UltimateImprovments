@@ -126,6 +126,17 @@ public class MagnetManager extends BukkitRunnable {
     private static final Map<Integer, MagnetCluster> clustersById = new HashMap<>();
     private static int nextId = 1;
 
+    // Игроки, чей металлический статус нужно перепроверить (выбросили предмет)
+    private static final Set<UUID> dirtyPlayers = new HashSet<>();
+
+    /**
+     * Пометить игрока для перепроверки металлического статуса.
+     * Вызывается из MagnetEventListener при выбрасывании предмета.
+     */
+    public static void markPlayerDirty(UUID uuid) {
+        dirtyPlayers.add(uuid);
+    }
+
     // =========================
     // INIT
     // =========================
@@ -202,6 +213,13 @@ public class MagnetManager extends BukkitRunnable {
 
     private static Set<Long> floodFillFast(World world, int sx, int sy, int sz) {
         if (world == null) return new HashSet<>(0);
+        
+        // ════════════════════════════════════════
+        // 🛡 Проверка: чанк начальной точки загружен?
+        // Если нет — не можем сканировать структуру.
+        // ════════════════════════════════════════
+        if (!world.isChunkLoaded(sx >> 4, sz >> 4)) return new HashSet<>(0);
+        
         Set<Long> visited = new HashSet<>();
         Deque<int[]> queue = new ArrayDeque<>();
         long startKey = toKey(sx, sy, sz);
@@ -214,6 +232,12 @@ public class MagnetManager extends BukkitRunnable {
                 int nx = x + d[0], ny = y + d[1], nz = z + d[2];
                 long nk = toKey(nx, ny, nz);
                 if (visited.contains(nk)) continue;
+                // ════════════════════════════════════════
+                // 🛡 Проверка: чанк соседнего блока загружен?
+                // Если нет — пропускаем (структура может быть
+                // неполной, но это лучше, чем вылет)
+                // ════════════════════════════════════════
+                if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
                 if (world.getType(nx, ny, nz) == Material.LODESTONE) {
                     visited.add(nk);
                     queue.addLast(new int[]{nx, ny, nz});
@@ -457,6 +481,10 @@ public class MagnetManager extends BukkitRunnable {
     public static int getParticleCritMax() { return particleCritMax; }
     public static int getParticlePortalMax() { return particlePortalMax; }
 
+    public static Set<UUID> getDirtyPlayers() {
+        return dirtyPlayers;
+    }
+
     // =========================
     // ПАРТИКЛЫ ПРИ АКТИВАЦИИ
     // =========================
@@ -505,68 +533,102 @@ public class MagnetManager extends BukkitRunnable {
         List<Integer> toRemove = new ArrayList<>();
 
         for (MagnetCluster cluster : clustersById.values()) {
-            World world = cluster.world;
-            if (world == null) {
-                toRemove.add(cluster.id);
-                continue;
-            }
-
-            if (cluster.blockKeys.isEmpty()) {
-                toRemove.add(cluster.id);
-                continue;
-            }
-            long firstKey = cluster.blockKeys.iterator().next();
-            if (world.getType(getX(firstKey), getY(firstKey), getZ(firstKey)) != Material.LODESTONE) {
-                toRemove.add(cluster.id);
-                continue;
-            }
-
-            Location center = cluster.center.clone().add(0.5, 0.5, 0.5);
-            int power = cluster.blockKeys.size();
-
-            // ════════════════════════════════════════
-            // ПАРТИКЛЫ — лимиты из конфига
-            // ════════════════════════════════════════
-            int particleCount = Math.min(8 + (int)(Math.sqrt(power) * 1.5), particleCenterMax);
-            world.spawnParticle(Particle.END_ROD, center, particleCount, 0.5, 0.5, 0.5, 0);
-            world.spawnParticle(Particle.ELECTRIC_SPARK, center,
-                    Math.max(1, particleCount / 2), 0.5, 0.5, 0.5, 0);
-
-            if (power >= 5) {
-                List<Long> keyList = new ArrayList<>(cluster.blockKeys);
-                int maxBlock = Math.min(keyList.size(), particleBlocksMax);
-                int step = keyList.size() / maxBlock;
-                if (step == 0) step = 1;
-                for (int i = 0; i < maxBlock; i++) {
-                    long k = keyList.get(i * step);
-                    Location bp = new Location(world, getX(k) + 0.5, getY(k) + 0.5, getZ(k) + 0.5);
-                    world.spawnParticle(Particle.ELECTRIC_SPARK, bp, 1, 0.2, 0.2, 0.2, 0);
+            try {
+                World world = cluster.world;
+                if (world == null) {
+                    toRemove.add(cluster.id);
+                    continue;
                 }
-            }
 
-            if (power >= 100) {
-                world.spawnParticle(Particle.CRIT, center,
-                        Math.min(power / 10, particleCritMax), 0.3, 0.3, 0.3, 0);
-            }
-            if (power >= 1000) {
-                world.spawnParticle(Particle.PORTAL, center,
-                        Math.min(power / 20, particlePortalMax), 0.4, 0.4, 0.4, 0.02);
-            }
-            if (power >= 10000) {
-                world.spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0, Color.WHITE);
-                world.spawnParticle(Particle.SONIC_BOOM, center, 1, 0.3, 0.3, 0.3, 0);
-            }
-            if (power >= 100000) {
-                world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 1, 0, 0, 0, 0);
-            }
+                if (cluster.blockKeys.isEmpty()) {
+                    toRemove.add(cluster.id);
+                    continue;
+                }
 
-            int clusterRadius = getClusterRadius(power);
-            Collection<Entity> nearby = world.getNearbyEntities(center, clusterRadius, clusterRadius, clusterRadius);
+                long firstKey = cluster.blockKeys.iterator().next();
+                int fx = getX(firstKey), fy = getY(firstKey), fz = getZ(firstKey);
 
-            for (Entity entity : nearby) {
-                if (entity.equals(instance)) continue;
-                if (!shouldAttract(entity)) continue;
-                applyMagneticForce(entity, center, power, clusterRadius);
+                // ════════════════════════════════════════
+                // 🛡 Проверка: чанк загружен?
+                // Если чанк не загружен — пропускаем кластер,
+                // НО НЕ удаляем его (он может загрузиться позже).
+                // ════════════════════════════════════════
+                if (!world.isChunkLoaded(fx >> 4, fz >> 4)) {
+                    continue;
+                }
+
+                if (world.getType(fx, fy, fz) != Material.LODESTONE) {
+                    toRemove.add(cluster.id);
+                    continue;
+                }
+
+                Location center = cluster.center.clone().add(0.5, 0.5, 0.5);
+                int power = cluster.blockKeys.size();
+
+                // ════════════════════════════════════════
+                // ПАРТИКЛЫ — лимиты из конфига
+                // ════════════════════════════════════════
+                int particleCount = Math.min(8 + (int)(Math.sqrt(power) * 1.5), particleCenterMax);
+                world.spawnParticle(Particle.END_ROD, center, particleCount, 0.5, 0.5, 0.5, 0);
+                world.spawnParticle(Particle.ELECTRIC_SPARK, center,
+                        Math.max(1, particleCount / 2), 0.5, 0.5, 0.5, 0);
+
+                if (power >= 5) {
+                    List<Long> keyList = new ArrayList<>(cluster.blockKeys);
+                    int maxBlock = Math.min(keyList.size(), particleBlocksMax);
+                    int step = keyList.size() / maxBlock;
+                    if (step == 0) step = 1;
+                    for (int i = 0; i < maxBlock; i++) {
+                        long k = keyList.get(i * step);
+                        Location bp = new Location(world, getX(k) + 0.5, getY(k) + 0.5, getZ(k) + 0.5);
+                        world.spawnParticle(Particle.ELECTRIC_SPARK, bp, 1, 0.2, 0.2, 0.2, 0);
+                    }
+                }
+
+                if (power >= 100) {
+                    world.spawnParticle(Particle.CRIT, center,
+                            Math.min(power / 10, particleCritMax), 0.3, 0.3, 0.3, 0);
+                }
+                if (power >= 1000) {
+                    world.spawnParticle(Particle.PORTAL, center,
+                            Math.min(power / 20, particlePortalMax), 0.4, 0.4, 0.4, 0.02);
+                }
+                if (power >= 10000) {
+                    world.spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0, Color.WHITE);
+                    world.spawnParticle(Particle.SONIC_BOOM, center, 1, 0.3, 0.3, 0.3, 0);
+                }
+                if (power >= 100000) {
+                    world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 1, 0, 0, 0, 0);
+                }
+
+                // ════════════════════════════════════════
+                // 🛡 Проверка: чанк центра всё ещё загружен?
+                // (между партиклами и getNearbyEntities могло пройти время,
+                // но на главном серверном потоке этого не произойдёт)
+                // ════════════════════════════════════════
+                int cx = center.getBlockX() >> 4, cz = center.getBlockZ() >> 4;
+                if (!world.isChunkLoaded(cx, cz)) continue;
+
+                int clusterRadius = getClusterRadius(power);
+                Collection<Entity> nearby = world.getNearbyEntities(center, clusterRadius, clusterRadius, clusterRadius);
+
+                for (Entity entity : nearby) {
+                    if (!shouldAttract(entity)) {
+                        // Если игрок больше не металлический — сбрасываем скорость
+                        if (entity instanceof Player player && dirtyPlayers.remove(player.getUniqueId())) {
+                            // Игрок только что выбросил последний металлический предмет
+                            // Сбрасываем скорость, чтобы он не продолжал лететь по инерции
+                            player.setVelocity(new Vector(0, 0, 0));
+                        }
+                        continue;
+                    }
+                    applyMagneticForce(entity, center, power, clusterRadius);
+                }
+            } catch (Exception e) {
+                Main.getInstance().getLogger().severe(
+                        "[Magnet] Error processing cluster #" + cluster.id + ": " + e.getMessage()
+                );
+                e.printStackTrace();
             }
         }
 
@@ -581,20 +643,37 @@ public class MagnetManager extends BukkitRunnable {
     // =========================
     private boolean shouldAttract(Entity entity) {
         if (entity == null || entity.isDead()) return false;
-        if (entity instanceof Item item) return isMetallic(item.getItemStack());
-        if (entity instanceof Player player) return hasMetallicItem(player);
-        if (entity instanceof Mob mob) return hasMetallicEquipment(mob);
+        if (entity instanceof Item item) {
+            return isMetallic(item.getItemStack());
+        }
+        if (entity instanceof Player player) {
+            // Не притягиваем офлайн-игроков (могут быть в процессе выгрузки)
+            if (!player.isOnline()) return false;
+            return hasMetallicItem(player);
+        }
+        if (entity instanceof Mob mob) {
+            // Мобы могут быть уже мёртвыми при проверке экипировки
+            try {
+                return hasMetallicEquipment(mob);
+            } catch (Exception e) {
+                return false;
+            }
+        }
         return false;
     }
 
     private boolean hasMetallicItem(Player player) {
-        if (isMetallic(player.getInventory().getItemInMainHand())) return true;
-        if (isMetallic(player.getInventory().getItemInOffHand())) return true;
-        for (ItemStack armor : player.getInventory().getArmorContents()) {
-            if (isMetallic(armor)) return true;
-        }
-        for (ItemStack item : player.getInventory().getStorageContents()) {
-            if (isMetallic(item)) return true;
+        try {
+            if (isMetallic(player.getInventory().getItemInMainHand())) return true;
+            if (isMetallic(player.getInventory().getItemInOffHand())) return true;
+            for (ItemStack armor : player.getInventory().getArmorContents()) {
+                if (isMetallic(armor)) return true;
+            }
+            for (ItemStack item : player.getInventory().getStorageContents()) {
+                if (isMetallic(item)) return true;
+            }
+        } catch (Exception ignored) {
+            // Игрок мог отвалиться во время перебора инвентаря
         }
         return false;
     }
@@ -653,7 +732,14 @@ public class MagnetManager extends BukkitRunnable {
     // ПРИМЕНЕНИЕ СИЛЫ — ВСЕ ПАРАМЕТРЫ ИЗ КОНФИГА
     // =========================
     private void applyMagneticForce(Entity entity, Location magnetCenter, int power, int clusterRadius) {
+        // ════════════════════════════════════════
+        // 🛡 Защита: энтити мог умереть между shouldAttract и вызовом
+        // ════════════════════════════════════════
+        if (entity == null || entity.isDead()) return;
+
         Location entityLoc = entity.getLocation();
+        if (entityLoc == null || entityLoc.getWorld() == null) return;
+
         Vector direction = magnetCenter.toVector().subtract(entityLoc.toVector());
         double distance = direction.length();
         if (distance < 0.5) return;

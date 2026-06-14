@@ -10,6 +10,9 @@ public class Keys {
     // Feature keys (из датапака)
     public static NamespacedKey ANTIMATTER;
     public static NamespacedKey LOCATOR;
+
+    // Auth GUI items
+    public static NamespacedKey AUTH_GUI;
     public static NamespacedKey HP_METER;
     public static NamespacedKey LEAD_SHIELD;
     public static NamespacedKey DOSIMETER;
@@ -22,5 +25,6 @@ public class Keys {
         HP_METER = new NamespacedKey(plugin, "isHpMeter");
         LEAD_SHIELD = new NamespacedKey(plugin, "isLeadShield");
         DOSIMETER = new NamespacedKey(plugin, "isDosimeter");
+        AUTH_GUI = new NamespacedKey(plugin, "auth_gui");
     }
 }

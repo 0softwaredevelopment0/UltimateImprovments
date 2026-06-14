@@ -1,11 +1,13 @@
 package com.mcplugin.cp;
 
 import com.mcplugin.Main;
+import com.mcplugin.cp.CodePanelDatabase;
 import org.bukkit.Sound;
 import org.bukkit.command.*;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.List;
 
 public class CodePanelClick implements CommandExecutor {
 
@@ -27,7 +29,7 @@ public class CodePanelClick implements CommandExecutor {
     private boolean handleClickInternal(Player player, String value) {
 
         if (!isSafe()) {
-            player.sendMessage("§cSystem is reloading...");
+            player.sendMessage("§cСистема перезагружается...");
             return true;
         }
 
@@ -139,7 +141,7 @@ public class CodePanelClick implements CommandExecutor {
     }
 
     // =========================
-    // CHECK LOGIC
+    // CHECK LOGIC (БД вместо config.yml)
     // =========================
     private void check(Player player) {
 
@@ -147,44 +149,71 @@ public class CodePanelClick implements CommandExecutor {
 
         String input = CodePanelSession.getCode(player.getUniqueId());
 
-        ConfigurationSection section = Main.getInstance()
-                .getConfig()
-                .getConfigurationSection("validcodes");
+        // Чистим просроченные ключи в БД
+        CodePanelDatabase.cleanupExpiredKeys();
 
-        if (section == null) {
+        // Ищем код в БД
+        List<CodePanelDatabase.CodePanelKey> keys = CodePanelDatabase.getAllKeys();
+
+        if (keys.isEmpty()) {
             player.sendMessage(msg("codepanel.messages.no_config"));
             return;
         }
 
-        for (String key : section.getKeys(false)) {
+        for (CodePanelDatabase.CodePanelKey key : keys) {
 
-            String code = section.getString(key + ".code");
-            String command = section.getString(key + ".command");
+            if (!key.code.equals(input)) continue;
 
-            if (code != null && code.equals(input)) {
+            // Проверка whitelist / blacklist
+            if (!key.isPlayerAllowed(player.getName())) {
+                player.sendMessage("§4❌ §cУ вас нет доступа к этому коду!");
+                play(player, "fail");
+                return;
+            }
 
-                player.sendMessage(msg("codepanel.messages.success"));
-                play(player, "success");
+            // max_attempts — увеличиваем счётчик
+            if (key.maxAttempts > 0) {
+                CodePanelDatabase.incrementAttemptsUsed(key.keyName);
+                int newUsed = key.attemptsUsed + 1;
 
-                CodePanelSession.resetAttempts(player.getUniqueId());
-                CodePanelSession.setLockEnd(player.getUniqueId(), 0);
+                if (newUsed >= key.maxAttempts) {
+                    CodePanelDatabase.removeKey(key.keyName);
+                    Main.getInstance().getLogger().info(
+                            "[CodePanel] Key '" + key.keyName + "' removed after "
+                                    + newUsed + "/" + key.maxAttempts + " uses."
+                    );
+                }
+            }
 
-                if (command != null) {
-                    command = command.replace("$entity", player.getName());
+            player.sendMessage(msg("codepanel.messages.success"));
+            play(player, "success");
+
+            CodePanelSession.resetAttempts(player.getUniqueId());
+            CodePanelSession.setLockEnd(player.getUniqueId(), 0);
+
+            if (key.command != null && !key.command.isEmpty()) {
+                // Поддержка нескольких команд через запятую
+                String[] commands = key.command.split(",");
+                for (String rawCmd : commands) {
+                    String trimmedCmd = rawCmd.trim();
+                    if (trimmedCmd.isEmpty()) continue;
+
+                    // Поддержка обоих плейсхолдеров: $entity и %entity%
+                    String cmd = trimmedCmd
+                            .replace("$entity", player.getName())
+                            .replace("%entity%", player.getName());
 
                     Main.getInstance().getServer().dispatchCommand(
                             Main.getInstance().getServer().getConsoleSender(),
-                            command
+                            cmd
                     );
                 }
-
-                return;
             }
+
+            return;
         }
 
-        // =========================
-        // WRONG CODE (CONFIG CONTROLLED)
-        // =========================
+        // НЕВЕРНЫЙ КОД
         int maxAttempts = cfgInt("codepanel.attempts.max", 3);
         long lockTimeMs = cfgInt("codepanel.attempts.lock_time_seconds", 10) * 1000L;
 

@@ -33,6 +33,11 @@ permissions:
       mcplugin.command.plugins: true
       mcplugin.command.version: true
       mcplugin.command.codepane: true
+      mcplugin.command.codepane.key: true
+      mcplugin.command.codepane.key.add: true
+      mcplugin.command.codepane.key.list: true
+      mcplugin.command.codepane.key.remove: true
+      mcplugin.command.codepane.key.modify: true
       mcplugin.command.structures: true
       mcplugin.command.structures.dfc: true
       mcplugin.command.structures.magnet: true
@@ -48,7 +53,6 @@ permissions:
       mcplugin.chat.filter.bypass: true
       mcplugin.command.auth.forcelogin: true
       mcplugin.command.auth.resetauth: true
-      mcplugin.command.auth.showpass: true
       mcplugin.command.auth.chgpass: true
       mcplugin.command.auth.delsession: true
 
@@ -74,6 +78,26 @@ permissions:
 
   mcplugin.command.codepane:
     description: Allows using the code panel (/mp codepane)
+    default: op
+
+  mcplugin.command.codepane.key:
+    description: Allows managing code panel keys (/mp codepane key)
+    default: op
+
+  mcplugin.command.codepane.key.add:
+    description: Allows adding code panel keys (/mp codepane key add)
+    default: op
+
+  mcplugin.command.codepane.key.remove:
+    description: Allows removing code panel keys (/mp codepane key remove)
+    default: op
+
+  mcplugin.command.codepane.key.modify:
+    description: Allows modifying code panel keys (/mp codepane key modify)
+    default: op
+
+  mcplugin.command.codepane.key.list:
+    description: Allows listing code panel keys (/mp codepane key list)
     default: op
 
   mcplugin.command.structures:
@@ -134,10 +158,6 @@ permissions:
 
   mcplugin.command.auth.resetauth:
     description: Allows force logout of a player (/mp auth resetauth <ник>)
-    default: op
-
-  mcplugin.command.auth.showpass:
-    description: Allows viewing a player's password (/mp auth showpass <ник>)
     default: op
 
   mcplugin.command.auth.chgpass:

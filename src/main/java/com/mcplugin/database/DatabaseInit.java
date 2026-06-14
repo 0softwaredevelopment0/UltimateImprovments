@@ -205,8 +205,23 @@ public class DatabaseInit {
                     uuid TEXT PRIMARY KEY,
                     password_hash TEXT NOT NULL,
                     salt TEXT NOT NULL,
-                    password_plain TEXT DEFAULT '',
                     ip_address TEXT DEFAULT ''
+                );
+            """);
+
+            // =========================
+            // 🔑 CODE PANEL KEYS
+            // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS code_panel_keys (
+                    key_name TEXT PRIMARY KEY,
+                    code TEXT NOT NULL,
+                    command TEXT NOT NULL DEFAULT '',
+                    max_attempts INTEGER DEFAULT -1,
+                    attempts_used INTEGER DEFAULT 0,
+                    expires_at INTEGER DEFAULT 0,
+                    whitelist TEXT DEFAULT '',
+                    blacklist TEXT DEFAULT ''
                 );
             """);
 

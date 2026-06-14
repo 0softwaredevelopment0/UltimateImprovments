@@ -23,14 +23,14 @@ public class CodePanelCommand implements CommandExecutor {
 
         // 💥 RELOAD SAFETY
         if (!isSafe()) {
-            player.sendMessage("§cCodePanel is reloading, try again...");
+            player.sendMessage("§cКодовая панель перезагружается, попробуйте позже...");
             return true;
         }
 
         // 💥 LOCK CHECK
         if (CodePanelSession.isLocked(player.getUniqueId())) {
             long sec = CodePanelSession.getRemainingLock(player.getUniqueId()) / 1000;
-            player.sendMessage("§cPanel is locked for " + sec + "s");
+            player.sendMessage("§cПанель заблокирована на " + sec + "с");
             return true;
         }
 

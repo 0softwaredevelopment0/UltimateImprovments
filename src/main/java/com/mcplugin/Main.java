@@ -4,6 +4,7 @@ import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.core1.ReactorListener;
 import com.mcplugin.core1.ReactorManager;
 import com.mcplugin.features.FeaturesManager;
+import com.mcplugin.features.magnet.MagnetEventListener;
 import com.mcplugin.features.magnet.MagnetManager;
 import com.mcplugin.main.CommandRegistrar;
 import com.mcplugin.main.DatapackInstaller;
@@ -136,6 +137,8 @@ public class Main extends JavaPlugin {
         pm.registerEvents(new RedstoneGuardListener(), this);
 
         pm.registerEvents(new AuthListener(), this);
+
+        pm.registerEvents(new MagnetEventListener(), this);
 
         // =========================
         // TASKS & COMMANDS

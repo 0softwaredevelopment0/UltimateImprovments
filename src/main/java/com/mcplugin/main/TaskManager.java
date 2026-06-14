@@ -7,6 +7,7 @@ import com.mcplugin.energy.CableLossTask;
 import com.mcplugin.energy.EnergyBalancerTask;
 import com.mcplugin.energy.GeneratorTask;
 import com.mcplugin.energy.visual.CableVisualTask;
+import com.mcplugin.cp.CodePanelCleanupTask;
 import com.mcplugin.guns.plasmacannon.PlasmaProjectileTask;
 import com.mcplugin.radiation.RadiationTask;
 import com.mcplugin.listeners.FishingListener;
@@ -31,6 +32,7 @@ public class TaskManager {
     private BukkitTask reactorTask;
     private BukkitTask radiationTask;
     private BukkitTask fishingTask;
+    private BukkitTask codePanelCleanupTask;
 
     private boolean tasksStarted = false;
 
@@ -61,6 +63,7 @@ public class TaskManager {
         reactorTask = new ReactorTask().runTaskTimer(plugin, 1L, 1L);
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
         fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
+        codePanelCleanupTask = new CodePanelCleanupTask().runTaskTimer(plugin, 200L, 400L);
 
         plugin.getLogger().info("[TASKS] Started.");
     }
@@ -77,6 +80,7 @@ public class TaskManager {
         if (reactorTask != null) reactorTask.cancel();
         if (radiationTask != null) radiationTask.cancel();
         if (fishingTask != null) fishingTask.cancel();
+        if (codePanelCleanupTask != null) codePanelCleanupTask.cancel();
 
         tasksStarted = false;
     }

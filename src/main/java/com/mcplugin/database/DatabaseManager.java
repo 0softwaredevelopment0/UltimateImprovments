@@ -44,7 +44,7 @@ public class DatabaseManager {
 
             applyPragmas();
 
-            Main.getInstance().getLogger().info("[Database] SQLite connected.");
+            Main.getInstance().getLogger().fine("[Database] SQLite connected.");
 
         } catch (Exception e) {
 
@@ -118,7 +118,7 @@ public class DatabaseManager {
 
             connection = null;
 
-            Main.getInstance().getLogger().info("[Database] SQLite closed.");
+            Main.getInstance().getLogger().fine("[Database] SQLite closed.");
 
         } catch (SQLException e) {
             e.printStackTrace();

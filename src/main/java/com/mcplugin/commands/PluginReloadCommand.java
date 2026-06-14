@@ -15,6 +15,7 @@ import com.mcplugin.auth.AuthGUI;
 import com.mcplugin.auth.AuthManager;
 import com.mcplugin.cp.CodePanelClick;
 import com.mcplugin.cp.CodePanelCommand;
+import com.mcplugin.cp.CodePanelDatabase;
 import com.mcplugin.database.DatabaseManager;
 
 import org.bukkit.Bukkit;
@@ -24,6 +25,7 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -112,13 +114,19 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("");
             sender.sendMessage("§e/mp codepane");
             sender.sendMessage(" §7└ Открыть кодовую панель");
+            sender.sendMessage("§e/mp codepane key add §7<название> <код> [флаги]");
+            sender.sendMessage(" §7└ Добавить ключ кодовой панели");
+            sender.sendMessage("§e/mp codepane key list");
+            sender.sendMessage(" §7└ Список ключей");
+            sender.sendMessage("§e/mp codepane key remove §7<название>");
+            sender.sendMessage(" §7└ Удалить ключ");
+            sender.sendMessage("§e/mp codepane key modify §7<название> <новый_код> [флаги]");
+            sender.sendMessage(" §7└ Изменить ключ");
             sender.sendMessage("");
             sender.sendMessage("§e/mp auth forcelogin <ник>");
             sender.sendMessage(" §7└ Принудительно авторизовать игрока");
             sender.sendMessage("§e/mp auth resetauth <ник>");
             sender.sendMessage(" §7└ Полностью удалить регистрацию игрока");
-            sender.sendMessage("§e/mp auth showpass <ник>");
-            sender.sendMessage(" §7└ Посмотреть пароль игрока");
             sender.sendMessage("§e/mp auth chgpass <ник> <пароль>");
             sender.sendMessage(" §7└ Принудительно сменить пароль");
             sender.sendMessage("§e/mp auth delsession <ник>");
@@ -286,8 +294,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // =========================
         if (args[0].equalsIgnoreCase("codepane")) {
 
+            // Key management subcommands (console or player)
+            if (args.length >= 2 && args[1].equalsIgnoreCase("key")) {
+                return handleCodePaneKey(sender, args);
+            }
+
             if (!(sender instanceof Player player)) {
-                sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду.");
+                sender.sendMessage("§4❌ §cТолько игрок может открыть кодовую панель.");
                 return true;
             }
 
@@ -582,7 +595,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
 
             if (args.length < 2) {
-                sender.sendMessage("§4❌ §cИспользование: §f/mp auth forcelogin|resetauth|showpass|chgpass|delsession|logout §7<ник>");
+                sender.sendMessage("§4❌ §cИспользование: §f/mp auth forcelogin|resetauth|chgpass|delsession|logout §7<ник>");
                 return true;
             }
 
@@ -658,41 +671,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 } else {
                     sender.sendMessage("§4❌ §cНе удалось удалить регистрацию игрока §e" + targetName);
                 }
-
-                return true;
-            }
-
-            // =========================
-            // AUTH SHOWPASS
-            // =========================
-            if (args[1].equalsIgnoreCase("showpass")) {
-
-                if (!sender.hasPermission("mcplugin.command.auth.showpass")) {
-                    sender.sendMessage("§4❌ §cУ вас нет прав на просмотр паролей!");
-                    return true;
-                }
-
-                if (args.length < 3) {
-                    sender.sendMessage("§4❌ §cИспользование: §f/mp auth showpass §7<ник>");
-                    return true;
-                }
-
-                String targetName = args[2];
-                UUID targetUuid = getOfflineUuid(targetName);
-
-                if (!AuthDatabase.isRegistered(targetUuid)) {
-                    sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не зарегистрирован в системе авторизации!");
-                    return true;
-                }
-
-                String password = AuthDatabase.getPasswordPlain(targetUuid);
-                if (password == null || password.isEmpty()) {
-                    sender.sendMessage("§4❌ §cПароль игрока §e" + targetName + "§c не найден в базе!");
-                    return true;
-                }
-
-                sender.sendMessage("§6✦ §fПароль игрока §e" + targetName + "§f: §a" + password);
-                sender.sendMessage("§8┃ §7Будьте осторожны — не сообщайте пароль посторонним!");
 
                 return true;
             }
@@ -802,7 +780,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
 
             sender.sendMessage("§4❌ §cНеизвестная подкоманда: §f" + args[1]);
-            sender.sendMessage("§cИспользование: §f/mp auth forcelogin|resetauth|showpass|chgpass §7<ник>");
+            sender.sendMessage("§cИспользование: §f/mp auth forcelogin|resetauth|chgpass §7<ник>");
             return true;
         }
 
@@ -1093,14 +1071,12 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && args[0].equalsIgnoreCase("auth")) {
             completions.add("forcelogin");
             completions.add("resetauth");
-            completions.add("showpass");
             completions.add("chgpass");
             completions.add("delsession");
             completions.add("logout");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("auth")
                 && (args[1].equalsIgnoreCase("forcelogin")
                 || args[1].equalsIgnoreCase("resetauth")
-                || args[1].equalsIgnoreCase("showpass")
                 || args[1].equalsIgnoreCase("chgpass")
                 || args[1].equalsIgnoreCase("delsession"))) {
             // Suggest online + registered offline players
@@ -1114,6 +1090,47 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str"))) {
             completions.add("dfc");
             completions.add("magnet");
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("codepane")) {
+            completions.add("key");
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("codepane") && args[1].equalsIgnoreCase("key")) {
+            completions.add("add");
+            completions.add("list");
+            completions.add("remove");
+            completions.add("modify");
+        } else if (args.length == 4 && args[0].equalsIgnoreCase("codepane") && args[1].equalsIgnoreCase("key")
+                && (args[2].equalsIgnoreCase("remove") || args[2].equalsIgnoreCase("modify"))) {
+            // Suggest existing key names from database
+            List<String> keyNames = CodePanelDatabase.getAllKeyNames();
+            completions.addAll(keyNames);
+        } else if (args.length >= 5 && args[0].equalsIgnoreCase("codepane") && args[1].equalsIgnoreCase("key")
+                && (args[2].equalsIgnoreCase("add") || args[2].equalsIgnoreCase("modify"))) {
+            // Suggest flags for add/modify after code arg
+            // Определяем, какие флаги уже использованы (чтобы не дублировать)
+            java.util.Set<String> usedFlags = new java.util.HashSet<>();
+            for (int i = 5; i < args.length - 1; i++) {
+                String a = args[i].toLowerCase();
+                if (a.startsWith("attempts:")) usedFlags.add("attempts:");
+                else if (a.startsWith("time:")) usedFlags.add("time:");
+                else if (a.startsWith("whitelist:")) usedFlags.add("whitelist:");
+                else if (a.startsWith("blacklist:")) usedFlags.add("blacklist:");
+                else if (a.startsWith("command:")) usedFlags.add("command:");
+            }
+
+            // Если последний аргумент уже похож на флаг — не предлагаем ничего,
+            // чтобы пользователь закончил ввод текущего флага
+            String last = args[args.length - 1].toLowerCase();
+            boolean lastIsFlag = last.startsWith("attempts:") || last.startsWith("time:")
+                    || last.startsWith("whitelist:") || last.startsWith("blacklist:")
+                    || last.startsWith("command:");
+
+            if (!lastIsFlag) {
+                // Предлагаем только те флаги, которые ещё не использованы
+                if (!usedFlags.contains("attempts:")) completions.add("attempts:");
+                if (!usedFlags.contains("time:")) completions.add("time:");
+                if (!usedFlags.contains("whitelist:")) completions.add("whitelist:");
+                if (!usedFlags.contains("blacklist:")) completions.add("blacklist:");
+                if (!usedFlags.contains("command:")) completions.add("command:");
+            }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("power")) {
             completions.add("off");
             completions.add("reboot");
@@ -1135,6 +1152,647 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
         }
         return result;
+    }
+
+    // =========================
+    // CODEPANE KEY MANAGEMENT (БД вместо config.yml)
+    // =========================
+    private boolean handleCodePaneKey(CommandSender sender, String[] args) {
+
+        // =========================
+        // 🔑 PERMISSION CHECK — базовое право на управление ключами
+        // =========================
+        if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key")) {
+            sender.sendMessage("§4❌ §cУ вас нет прав на управление ключами кодовой панели!");
+            return true;
+        }
+
+        if (args.length < 3) {
+            sender.sendMessage("§6=== §fУправление ключами кодовой панели §6===");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp codepane key add §7<название> <код> [флаги]");
+            sender.sendMessage(" §7└ Добавить новый ключ");
+            sender.sendMessage("§e/mp codepane key list");
+            sender.sendMessage(" §7└ Список всех ключей");
+            sender.sendMessage("§e/mp codepane key remove §7<название>");
+            sender.sendMessage(" §7└ Удалить ключ");
+            sender.sendMessage("§e/mp codepane key modify §7<название> <новый_код> [флаги]");
+            sender.sendMessage(" §7└ Изменить ключ");
+            sender.sendMessage("");
+            sender.sendMessage("§7Необходимые права:");
+            sender.sendMessage("§7mcplugin.command.codepane.key — базовое");
+            sender.sendMessage(" §7mcplugin.command.codepane.key.add — добавление");
+            sender.sendMessage(" §7mcplugin.command.codepane.key.list — список");
+            sender.sendMessage(" §7mcplugin.command.codepane.key.remove — удаление");
+            sender.sendMessage(" §7mcplugin.command.codepane.key.modify — изменение");
+            sender.sendMessage("");
+            sender.sendMessage("§7Флаги:");
+            sender.sendMessage(" §7attempts:<N>     — удалить ключ после N успешных использований");
+            sender.sendMessage(" §7time:<N>s|m|h|d  — удалить ключ через N секунд/минут/часов/дней");            sender.sendMessage("§7whitelist:<ник1,ник2...>  — разрешить только этим игрокам");
+            sender.sendMessage("§7whitelist:(<ник1,ник2...>)  — то же, но в скобках");
+            sender.sendMessage("§7blacklist:<ник1,ник2...>  — запретить этим игрокам");
+            sender.sendMessage("§7blacklist:(<ник1,ник2...>)  — то же, но в скобках");
+            sender.sendMessage("§7command:(<команда с пробелами>),(<команда 2>)  — команды через запятую, пробелы в скобках");
+            sender.sendMessage(" §7  %entity% — заменится на ник игрока");
+            sender.sendMessage("");
+            sender.sendMessage("§7Примеры:");
+            sender.sendMessage(" §f/mp codepane key add mydoor 1234 attempts:3 time:1h");
+            sender.sendMessage(" §f/mp codepane key add admin 7777 whitelist:Steve,Alex");
+            sender.sendMessage(" §f/mp codepane key add warp 4321 command:(say %entity% got access)");
+            sender.sendMessage(" §f/mp codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)");
+            return true;
+        }
+
+        String subCmd = args[2].toLowerCase();
+
+        switch (subCmd) {
+
+            // =========================
+            // KEY ADD
+            // =========================
+            case "add" -> {
+                if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.add")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на добавление ключей!");
+                    return true;
+                }
+                if (args.length < 5) {
+                    sender.sendMessage("§4❌ §cИспользование: §f/mp codepane key add §7<название> <код> [флаги]");
+                    return true;
+                }
+
+                String keyName = args[3];
+                String code = args[4];
+
+                // Parse flags
+                int maxAttempts = -1;
+                long expiresAt = 0;
+                String whitelistStr = "";
+                String blacklistStr = "";
+                String commandStr = "say $entity used code: " + keyName;
+                java.util.Set<String> seenFlags = new java.util.HashSet<>();
+
+                for (int i = 5; i < args.length; i++) {
+                    String flag = args[i];
+                    String flagType = null;
+
+                    if (flag.startsWith("attempts:")) {
+                        flagType = "attempts";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        try {
+                            maxAttempts = Integer.parseInt(flag.substring(9));
+                            if (maxAttempts < 1) {
+                                sender.sendMessage("§4❌ §cattempts должен быть >= 1");
+                                return true;
+                            }
+                        } catch (NumberFormatException e) {
+                            sender.sendMessage("§4❌ §cНеверный формат attempts: " + flag);
+                            return true;
+                        }
+                    } else if (flag.startsWith("time:")) {
+                        flagType = "time";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        expiresAt = parseTimeFlag(flag.substring(5));
+                        if (expiresAt == 0) {
+                            sender.sendMessage("§4❌ §cНеверный формат time: §7" + flag.substring(5) + " §c(используйте Ns, Nm, Nh, Nd)");
+                            return true;
+                        }
+                    } else if (flag.startsWith("whitelist:")) {
+                        flagType = "whitelist";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        whitelistStr = parseListFlag(args, i, "whitelist:");
+                        if (whitelistStr == null) whitelistStr = "";
+                        // If multi-arg, skip consumed args
+                        int consumed = countListFlagArgs(args, i, "whitelist:");
+                        if (consumed > 0) i += consumed;
+                    } else if (flag.startsWith("blacklist:")) {
+                        flagType = "blacklist";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        blacklistStr = parseListFlag(args, i, "blacklist:");
+                        if (blacklistStr == null) blacklistStr = "";
+                        int consumed = countListFlagArgs(args, i, "blacklist:");
+                        if (consumed > 0) i += consumed;
+                    } else if (flag.startsWith("command:")) {
+                        flagType = "command";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        if (flag.startsWith("command:(")) {
+                            // Parenthesized syntax: command:(cmd1 with spaces),(cmd2)
+                            StringBuilder joined = new StringBuilder(flag);
+                            int depth = 0;
+                            for (int k = 0; k < flag.length(); k++) {
+                                char ch = flag.charAt(k);
+                                if (ch == '(') depth++;
+                                else if (ch == ')') depth--;
+                            }
+                            int j = i;
+                            while (depth > 0 && j + 1 < args.length) {
+                                j++;
+                                String nextArg = args[j];
+                                joined.append(" ").append(nextArg);
+                                for (int k = 0; k < nextArg.length(); k++) {
+                                    char ch = nextArg.charAt(k);
+                                    if (ch == '(') depth++;
+                                    else if (ch == ')') depth--;
+                                }
+                            }
+                            commandStr = extractCommandsFromParentheses(joined.toString());
+                            if (commandStr == null) commandStr = "";
+                            i = j; // skip consumed args
+                        } else {
+                            commandStr = flag.substring(8);
+                        }
+                    } else {
+                        sender.sendMessage("§e⚠ §7Неизвестный флаг: §f" + flag);
+                    }
+                }
+
+                // Check if key already exists in DB
+                if (CodePanelDatabase.keyExists(keyName)) {
+                    sender.sendMessage("§4❌ §cКлюч §e" + keyName + "§c уже существует!");
+                    return true;
+                }
+
+                // Create key in DB
+                boolean success = CodePanelDatabase.addKey(
+                        keyName, code,
+                        commandStr,
+                        maxAttempts, expiresAt,
+                        whitelistStr, blacklistStr
+                );
+
+                if (!success) {
+                    sender.sendMessage("§4❌ §cОшибка при добавлении ключа в БД!");
+                    return true;
+                }
+
+                sender.sendMessage("§a✅ §fКлюч §e" + keyName + "§f добавлен в БД!");
+                sender.sendMessage("§8┃ §7Код: §f" + code);
+                if (maxAttempts > 0) {
+                    sender.sendMessage("§8┃ §7Макс. использований: §f" + maxAttempts);
+                }
+                if (expiresAt > 0) {
+                    String dateStr = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+                            .format(new java.util.Date(expiresAt));
+                    sender.sendMessage("§8┃ §7Истекает: §f" + dateStr);
+                }
+                if (!whitelistStr.isEmpty()) {
+                    sender.sendMessage("§8┃ §7Whitelist: §f" + whitelistStr);
+                }
+                if (!blacklistStr.isEmpty()) {
+                    sender.sendMessage("§8┃ §7Blacklist: §f" + blacklistStr);
+                }
+                if (!commandStr.isEmpty()) {
+                    sender.sendMessage("§8┃ §7Command: §f" + commandStr);
+                }
+                return true;
+            }
+
+            // =========================
+            // KEY LIST — показать все ключи с флагами
+            // =========================
+            case "list" -> {
+                if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.list")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на просмотр списка ключей!");
+                    return true;
+                }
+
+                List<CodePanelDatabase.CodePanelKey> keys = CodePanelDatabase.getAllKeys();
+
+                if (keys.isEmpty()) {
+                    sender.sendMessage("§eℹ §fВ базе нет ни одного ключа.");
+                    return true;
+                }
+
+                sender.sendMessage("");
+                sender.sendMessage("§6══════════════════════════════════");
+                sender.sendMessage("§6  ✦ §fСписок ключей кодовой панели §7(" + keys.size() + ")");
+                sender.sendMessage("§6══════════════════════════════════");
+
+                for (CodePanelDatabase.CodePanelKey key : keys) {
+                    sender.sendMessage("");
+                    sender.sendMessage("§8┌─ §e" + key.keyName);
+                    sender.sendMessage("§8│ §7Код: §f" + key.code);
+
+                    if (key.command != null && !key.command.isEmpty()) {
+                        sender.sendMessage("§8│ §7Команды: §f" + key.command);
+                    }
+
+                    if (!key.whitelist.isEmpty()) {
+                        sender.sendMessage("§8│ §7Whitelist: §a" + String.join("§7, §a", key.whitelist));
+                    }
+                    if (!key.blacklist.isEmpty()) {
+                        sender.sendMessage("§8│ §7Blacklist: §c" + String.join("§7, §c", key.blacklist));
+                    }
+
+                    if (key.maxAttempts > 0) {
+                        int left = key.maxAttempts - key.attemptsUsed;
+                        String color = left <= 1 ? "§c" : left <= 3 ? "§e" : "§a";
+                        sender.sendMessage("§8│ §7Попытки: " + color + left + "§7/" + key.maxAttempts);
+                    }
+
+                    if (key.expiresAt > 0) {
+                        long remain = key.expiresAt - System.currentTimeMillis();
+                        if (remain <= 0) {
+                            sender.sendMessage("§8│ §7Истекает: §cпросрочен");
+                        } else {
+                            String remainStr = formatDuration(remain);
+                            sender.sendMessage("§8│ §7Истекает: §f" + remainStr);
+                        }
+                    }
+                }
+
+                sender.sendMessage("");
+                sender.sendMessage("§6══════════════════════════════════");
+                sender.sendMessage("");
+                return true;
+            }
+
+            // =========================
+            // KEY REMOVE
+            // =========================
+            case "remove" -> {
+                if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.remove")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на удаление ключей!");
+                    return true;
+                }
+                if (args.length < 4) {
+                    sender.sendMessage("§4❌ §cИспользование: §f/mp codepane key remove §7<название>");
+                    return true;
+                }
+
+                String keyName = args[3];
+
+                if (!CodePanelDatabase.keyExists(keyName)) {
+                    sender.sendMessage("§4❌ §cКлюч §e" + keyName + "§c не найден!");
+                    return true;
+                }
+
+                CodePanelDatabase.removeKey(keyName);
+                sender.sendMessage("§a✅ §fКлюч §e" + keyName + "§f удалён из БД.");
+                return true;
+            }
+
+            // =========================
+            // KEY MODIFY
+            // =========================
+            case "modify" -> {
+                if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.modify")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на изменение ключей!");
+                    return true;
+                }
+                if (args.length < 5) {
+                    sender.sendMessage("§4❌ §cИспользование: §f/mp codepane key modify §7<название> <новый_код> [флаги]");
+                    return true;
+                }
+
+                String keyName = args[3];
+                String newCode = args[4];
+                String commandStrOverride = null;
+
+                if (!CodePanelDatabase.keyExists(keyName)) {
+                    sender.sendMessage("§4❌ §cКлюч §e" + keyName + "§c не найден в БД!");
+                    return true;
+                }
+
+                // Get existing key to preserve flags if not overridden
+                CodePanelDatabase.CodePanelKey existing = CodePanelDatabase.getKey(keyName);
+
+                int maxAttempts = existing != null ? existing.maxAttempts : -1;
+                long expiresAt = existing != null ? existing.expiresAt : 0;
+                String whitelistStr = existing != null ? String.join(",", existing.whitelist) : "";
+                String blacklistStr = existing != null ? String.join(",", existing.blacklist) : "";
+
+                boolean hasCommandFlag = false;
+                java.util.Set<String> seenFlags = new java.util.HashSet<>();
+
+                for (int i = 5; i < args.length; i++) {
+                    String flag = args[i];
+                    String flagType = null;
+
+                    if (flag.startsWith("attempts:")) {
+                        flagType = "attempts";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        try {
+                            maxAttempts = Integer.parseInt(flag.substring(9));
+                            if (maxAttempts < 1) {
+                                sender.sendMessage("§4❌ §cattempts должен быть >= 1");
+                                return true;
+                            }
+                        } catch (NumberFormatException e) {
+                            sender.sendMessage("§4❌ §cНеверный формат attempts: " + flag);
+                            return true;
+                        }
+                    } else if (flag.startsWith("time:")) {
+                        flagType = "time";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        expiresAt = parseTimeFlag(flag.substring(5));
+                        if (expiresAt == 0) {
+                            sender.sendMessage("§4❌ §cНеверный формат time: §7" + flag.substring(5) + " §c(используйте Ns, Nm, Nh, Nd)");
+                            return true;
+                        }
+                    } else if (flag.startsWith("whitelist:")) {
+                        flagType = "whitelist";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        whitelistStr = parseListFlag(args, i, "whitelist:");
+                        if (whitelistStr == null) whitelistStr = "";
+                        int consumed = countListFlagArgs(args, i, "whitelist:");
+                        if (consumed > 0) i += consumed;
+                    } else if (flag.startsWith("blacklist:")) {
+                        flagType = "blacklist";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        blacklistStr = parseListFlag(args, i, "blacklist:");
+                        if (blacklistStr == null) blacklistStr = "";
+                        int consumed = countListFlagArgs(args, i, "blacklist:");
+                        if (consumed > 0) i += consumed;
+                    } else if (flag.startsWith("command:")) {
+                        flagType = "command";
+                        if (seenFlags.contains(flagType)) {
+                            sender.sendMessage("§4❌ §cДублирование флага: §f" + flagType + "§c! Используйте каждый флаг только один раз.");
+                            return true;
+                        }
+                        seenFlags.add(flagType);
+                        hasCommandFlag = true;
+                        if (flag.startsWith("command:(")) {
+                            // Parenthesized syntax
+                            StringBuilder joined = new StringBuilder(flag);
+                            int depth = 0;
+                            for (int k = 0; k < flag.length(); k++) {
+                                char ch = flag.charAt(k);
+                                if (ch == '(') depth++;
+                                else if (ch == ')') depth--;
+                            }
+                            int j = i;
+                            while (depth > 0 && j + 1 < args.length) {
+                                j++;
+                                String nextArg = args[j];
+                                joined.append(" ").append(nextArg);
+                                for (int k = 0; k < nextArg.length(); k++) {
+                                    char ch = nextArg.charAt(k);
+                                    if (ch == '(') depth++;
+                                    else if (ch == ')') depth--;
+                                }
+                            }
+                            String parsed = extractCommandsFromParentheses(joined.toString());
+                            if (parsed != null) commandStrOverride = parsed;
+                            i = j; // skip consumed args
+                        }
+                    } else {
+                        sender.sendMessage("§e⚠ §7Неизвестный флаг: §f" + flag);
+                    }
+                }
+
+                // Determine the command: if command: flag provided, use it; otherwise keep existing
+                String commandStr;
+                if (commandStrOverride != null) {
+                    commandStr = commandStrOverride;
+                } else if (hasCommandFlag) {
+                    // Old syntax without parens — find the flag
+                    commandStr = "";
+                    for (int i = 5; i < args.length; i++) {
+                        if (args[i].startsWith("command:")) {
+                            commandStr = args[i].substring(8);
+                            break;
+                        }
+                    }
+                } else {
+                    commandStr = existing != null ? existing.command : "say $entity used code: " + keyName;
+                }
+
+                // Update in DB
+                CodePanelDatabase.updateKey(
+                        keyName, newCode,
+                        commandStr,
+                        maxAttempts, expiresAt,
+                        whitelistStr, blacklistStr
+                );
+
+                sender.sendMessage("§a✅ §fКлюч §e" + keyName + "§f изменён в БД.");
+                sender.sendMessage("§8┃ §7Новый код: §f" + newCode);
+                if (maxAttempts > 0) {
+                    sender.sendMessage("§8┃ §7Макс. использований: §f" + maxAttempts);
+                }
+                if (expiresAt > 0) {
+                    String dateStr = new java.text.SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+                            .format(new java.util.Date(expiresAt));
+                    sender.sendMessage("§8┃ §7Истекает: §f" + dateStr);
+                }
+                if (!whitelistStr.isEmpty()) {
+                    sender.sendMessage("§8┃ §7Whitelist: §f" + whitelistStr);
+                }
+                if (!blacklistStr.isEmpty()) {
+                    sender.sendMessage("§8┃ §7Blacklist: §f" + blacklistStr);
+                }
+                if (!commandStr.isEmpty()) {
+                    sender.sendMessage("§8┃ §7Command: §f" + commandStr);
+                }
+                return true;
+            }
+
+            default -> {
+                sender.sendMessage("§4❌ §cНеизвестная подкоманда: §f" + subCmd);
+                sender.sendMessage("§cИспользование: §f/mp codepane key add|list|remove|modify");
+                return true;
+            }
+        }
+    }
+
+    // =========================
+    // PARSE A LIST FLAG (whitelist:/blacklist:) WITH PARENS SUPPORT
+    // Handles both:
+    //   whitelist:player1,player2    — old syntax
+    //   whitelist:(player1,player2)  — new syntax with parens
+    // Returns the value without prefix and without wrapping parens
+    // =========================
+    private String parseListFlag(String[] args, int startIndex, String prefix) {
+        String flag = args[startIndex];
+
+        if (flag.startsWith(prefix + "(")) {
+            // Parenthesized syntax: join all args until )
+            StringBuilder joined = new StringBuilder(flag);
+            int depth = 0;
+            for (int k = 0; k < flag.length(); k++) {
+                char ch = flag.charAt(k);
+                if (ch == '(') depth++;
+                else if (ch == ')') depth--;
+            }
+            int j = startIndex;
+            while (depth > 0 && j + 1 < args.length) {
+                j++;
+                joined.append(" ").append(args[j]);
+                for (int k = 0; k < args[j].length(); k++) {
+                    char ch = args[j].charAt(k);
+                    if (ch == '(') depth++;
+                    else if (ch == ')') depth--;
+                }
+            }
+            // Extract content between prefix( and the last )
+            String total = joined.toString();
+            int openIdx = total.indexOf('(');
+            int closeIdx = total.lastIndexOf(')');
+            if (openIdx != -1 && closeIdx != -1 && closeIdx > openIdx) {
+                return total.substring(openIdx + 1, closeIdx);
+            }
+            return total.substring(prefix.length()); // fallback
+        } else {
+            // Old syntax without parens
+            return flag.substring(prefix.length());
+        }
+    }
+
+    // =========================
+    // COUNT HOW MANY ARGS A PARENTHESIZED LIST FLAG CONSUMES
+    // Returns number of extra args consumed (0 if no parens)
+    // =========================
+    private int countListFlagArgs(String[] args, int startIndex, String prefix) {
+        String flag = args[startIndex];
+        if (!flag.startsWith(prefix + "(")) return 0;
+
+        int depth = 0;
+        for (int k = 0; k < flag.length(); k++) {
+            char ch = flag.charAt(k);
+            if (ch == '(') depth++;
+            else if (ch == ')') depth--;
+        }
+        if (depth == 0) return 0; // closed in same arg
+
+        int count = 0;
+        for (int j = startIndex + 1; j < args.length && depth > 0; j++) {
+            count++;
+            for (int k = 0; k < args[j].length(); k++) {
+                char ch = args[j].charAt(k);
+                if (ch == '(') depth++;
+                else if (ch == ')') depth--;
+            }
+        }
+        return count;
+    }
+
+    // =========================
+    // EXTRACT COMMANDS FROM PARENTHESIZED SYNTAX
+    // format: command:(cmd1 with spaces),(cmd with (nested) parens)
+    // returns commands joined by comma, or null if no commands found
+    // =========================
+    private String extractCommandsFromParentheses(String input) {
+        // Find the first ( after command:
+        int start = input.indexOf('(');
+        if (start == -1) return null;
+        start++; // position past the opening (
+
+        StringBuilder result = new StringBuilder();
+        StringBuilder current = new StringBuilder();
+        int depth = 1; // we're inside the opening (
+
+        for (int i = start; i < input.length(); i++) {
+            char c = input.charAt(i);
+
+            if (c == '(') {
+                if (depth > 0) current.append(c);
+                depth++;
+            } else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    // End of current command
+                    String trimmed = current.toString().trim();
+                    if (!trimmed.isEmpty()) {
+                        if (result.length() > 0) result.append(",");
+                        result.append(trimmed);
+                    }
+                    current.setLength(0);
+
+                    // Check for comma after ) → next command
+                    if (i + 1 < input.length() && input.charAt(i + 1) == ',') {
+                        i++; // skip comma
+                    }
+                } else {
+                    if (depth > 0) current.append(c);
+                }
+            } else {
+                if (depth > 0) current.append(c);
+            }
+        }
+
+        return result.length() > 0 ? result.toString() : null;
+    }
+
+    // =========================
+    // FORMAT DURATION (ms -> human readable)
+    // =========================
+    private String formatDuration(long ms) {
+        long seconds = ms / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+
+        if (days > 0) return days + "д " + (hours % 24) + "ч";
+        if (hours > 0) return hours + "ч " + (minutes % 60) + "м";
+        if (minutes > 0) return minutes + "м " + (seconds % 60) + "с";
+        return seconds + "с";
+    }
+
+    // =========================
+    // PARSE TIME FLAG
+    // =========================
+    private long parseTimeFlag(String value) {
+        if (value == null || value.isEmpty()) return 0;
+
+        char suffix = value.charAt(value.length() - 1);
+        String numStr = value.substring(0, value.length() - 1);
+
+        try {
+            long amount = Long.parseLong(numStr);
+            long multiplier;
+
+            switch (suffix) {
+                case 's' -> multiplier = 1000L;
+                case 'm' -> multiplier = 60L * 1000L;
+                case 'h' -> multiplier = 60L * 60L * 1000L;
+                case 'd' -> multiplier = 24L * 60L * 60L * 1000L;
+                default -> {
+                    // No suffix — treat as seconds
+                    amount = Long.parseLong(value);
+                    multiplier = 1000L;
+                }
+            }
+
+            return System.currentTimeMillis() + (amount * multiplier);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     // =========================
