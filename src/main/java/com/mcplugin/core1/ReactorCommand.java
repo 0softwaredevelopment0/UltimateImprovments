@@ -139,6 +139,39 @@ public class ReactorCommand implements CommandExecutor {
     }
 
     // =========================
+    // 🏆 НАЗВАНИЕ ТИРА ПО МОЩНОСТИ (shared static)
+    // =========================
+    public static String getMagnetPowerTierStatic(int power) {
+        if (power >= 10000000) return "§k✧ §4✧✧ АБСОЛЮТНАЯ БЕСКОНЕЧНОСТЬ ✧✧ §k✧ §8(" + power + ")";
+        if (power >= 5000000) return "§4✧✧ БЕСКОНЕЧНАЯ БЕЗДНА ✧✧ §8(" + power + ")";
+        if (power >= 2500000) return "§c✦ ВСЕЛЕНСКАЯ КАТАСТРОФА ✦ §8(" + power + ")";
+        if (power >= 1000000) return "§d✧ ПЕРВОЗДАННАЯ СИНГУЛЯРНОСТЬ ✧ §8(" + power + ")";
+        if (power >= 500000) return "§6☠ НЕПОСТИЖИМАЯ ☠ §8(" + power + ")";
+        if (power >= 250000) return "§3✦ БОГОПОДОБНАЯ ✦ §8(" + power + ")";
+        if (power >= 100000) return "§4✧✧✧ ВСЕСОКРУШАЮЩАЯ СИНГУЛЯРНОСТЬ ✧✧✧ §8(" + power + ")";
+        if (power >= 50000) return "§c☠ АБСОЛЮТНАЯ СИНГУЛЯРНОСТЬ ☠ §8(" + power + ")";
+        if (power >= 25000) return "§6⚡ БОЖЕСТВЕННАЯ СИНГУЛЯРНОСТЬ ⚡ §8(" + power + ")";
+        if (power >= 10000) return "§d✧✧ НЕПРЕВЗОЙДЁННАЯ ✧✧ §8(" + power + ")";
+        if (power >= 5000) return "§5✦ ТРАНСЦЕНДЕНТНАЯ ✦ §8(" + power + ")";
+        if (power >= 2500) return "§9⚜ СИНГУЛЯРНАЯ ⚜ §8(" + power + ")";
+        if (power >= 1000) return "§3✦ БЕСКОНЕЧНАЯ ✦ §8(" + power + ")";
+        if (power >= 500) return "§5✧✧ АБСОЛЮТНАЯ ✧✧ §8(" + power + ")";
+        if (power >= 300) return "§5☯ КОСМИЧЕСКАЯ ☯ §8(" + power + ")";
+        if (power >= 200) return "§d✦ ТИТАНИЧЕСКАЯ ✦ §8(" + power + ")";
+        if (power >= 150) return "§d◈ ЛЕГЕНДАРНАЯ ◈ §8(" + power + ")";
+        if (power >= 100) return "§c☆ НЕВЕРОЯТНАЯ ☆ §8(" + power + ")";
+        if (power >= 75) return "§c♦ ЧРЕЗВЫЧАЙНАЯ ♦ §8(" + power + ")";
+        if (power >= 50) return "§6★ ИСКЛЮЧИТЕЛЬНАЯ ★ §8(" + power + ")";
+        if (power >= 30) return "§6⬆ ОЧЕНЬ СИЛЬНАЯ ⬆ §8(" + power + ")";
+        if (power >= 20) return "§e⬆ СИЛЬНАЯ ⬆ §8(" + power + ")";
+        if (power >= 12) return "§e⬆ ВЫШЕ СРЕДНЕГО ⬆ §8(" + power + ")";
+        if (power >= 7) return "§a➤ СРЕДНЯЯ ➤ §8(" + power + ")";
+        if (power >= 4) return "§7➤ НИЖЕ СРЕДНЕГО ➤ §8(" + power + ")";
+        if (power >= 2) return "§7▸ СЛАБАЯ ▸ §8(" + power + ")";
+        return "§7▸ ОЧЕНЬ СЛАБАЯ ▸ §8(" + power + ")";
+    }
+
+    // =========================
     // MAGNET
     // =========================
     public static void assembleMagnet(Player player) {
@@ -194,36 +227,7 @@ public class ReactorCommand implements CommandExecutor {
         int power = MagnetManager.getMagnetPower(loc);
         Location center = MagnetManager.getMagnetCenter(loc);
 
-        String powerDesc;
-        if (power >= 500) {
-            powerDesc = "§5✧✧ АБСОЛЮТНАЯ ✧✧ §8(" + power + ")";
-        } else if (power >= 300) {
-            powerDesc = "§5☯ КОСМИЧЕСКАЯ ☯ §8(" + power + ")";
-        } else if (power >= 200) {
-            powerDesc = "§d✦ ТИТАНИЧЕСКАЯ ✦ §8(" + power + ")";
-        } else if (power >= 150) {
-            powerDesc = "§d◈ ЛЕГЕНДАРНАЯ ◈ §8(" + power + ")";
-        } else if (power >= 100) {
-            powerDesc = "§c☆ НЕВЕРОЯТНАЯ ☆ §8(" + power + ")";
-        } else if (power >= 75) {
-            powerDesc = "§c♦ ЧРЕЗВЫЧАЙНАЯ ♦ §8(" + power + ")";
-        } else if (power >= 50) {
-            powerDesc = "§6★ ИСКЛЮЧИТЕЛЬНАЯ ★ §8(" + power + ")";
-        } else if (power >= 30) {
-            powerDesc = "§6⬆ ОЧЕНЬ СИЛЬНАЯ ⬆ §8(" + power + ")";
-        } else if (power >= 20) {
-            powerDesc = "§e⬆ СИЛЬНАЯ ⬆ §8(" + power + ")";
-        } else if (power >= 12) {
-            powerDesc = "§e⬆ ВЫШЕ СРЕДНЕГО ⬆ §8(" + power + ")";
-        } else if (power >= 7) {
-            powerDesc = "§a➤ СРЕДНЯЯ ➤ §8(" + power + ")";
-        } else if (power >= 4) {
-            powerDesc = "§7➤ НИЖЕ СРЕДНЕГО ➤ §8(" + power + ")";
-        } else if (power >= 2) {
-            powerDesc = "§7▸ СЛАБАЯ ▸ §8(" + power + ")";
-        } else {
-            powerDesc = "§7▸ ОЧЕНЬ СЛАБАЯ ▸ §8(" + power + ")";
-        }
+        String powerDesc = getMagnetPowerTierStatic(power);
 
         int magnetRadius = MagnetManager.getMagnetRadius(loc);
         int minR = MagnetManager.getMinRadius();

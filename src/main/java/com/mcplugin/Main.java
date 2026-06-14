@@ -17,6 +17,7 @@ import com.mcplugin.guns.plasmacannon.GunListener;
 import com.mcplugin.guns.shoker.ShokerListener;
 import com.mcplugin.listeners.*;
 import com.mcplugin.server.*;
+import com.mcplugin.auth.*;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -91,6 +92,7 @@ public class Main extends JavaPlugin {
 
             PowerManager.init();
             FeaturesManager.init(this);
+            AuthManager.init();
             getLogger().info("[CORE] Systems initialized.");
 
         } catch (Exception e) {
@@ -132,6 +134,8 @@ public class Main extends JavaPlugin {
 
         RedstoneGuard.init(this);
         pm.registerEvents(new RedstoneGuardListener(), this);
+
+        pm.registerEvents(new AuthListener(), this);
 
         // =========================
         // TASKS & COMMANDS

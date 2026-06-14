@@ -5,10 +5,14 @@ import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.core1.ReactorCommand;
 import com.mcplugin.core1.ReactorManager;
 import com.mcplugin.features.FeaturesManager;
+import com.mcplugin.features.magnet.MagnetManager;
 import com.mcplugin.main.TaskManager;
 import com.mcplugin.server.RedstoneGuard;
 import com.mcplugin.energy.crafting.EnergyWorkbenchManager;
 import com.mcplugin.crafting.MultimeterCraftListener;
+import com.mcplugin.auth.AuthDatabase;
+import com.mcplugin.auth.AuthGUI;
+import com.mcplugin.auth.AuthManager;
 import com.mcplugin.cp.CodePanelClick;
 import com.mcplugin.cp.CodePanelCommand;
 import com.mcplugin.database.DatabaseManager;
@@ -18,6 +22,7 @@ import net.md_5.bungee.api.chat.*;
 import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -41,6 +46,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
     private final HashMap<UUID, Long> cooldowns = new HashMap<>();
 
     @Override
+    @SuppressWarnings("deprecation")
     public boolean onCommand(
             CommandSender sender,
             Command cmd,
@@ -83,12 +89,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§e/mp reload");
             sender.sendMessage(" §7└ Перезагрузить плагин");
             sender.sendMessage("");
-            sender.sendMessage("§e/mp structures dfc stats");
+            sender.sendMessage("§e/mp str dfc stats");
             sender.sendMessage(" §7└ Статистика реактора");
-            sender.sendMessage("§e/mp structures dfc assemble");
+            sender.sendMessage("§e/mp str dfc assemble");
             sender.sendMessage(" §7└ Собрать реактор тёмного синтеза");
-            sender.sendMessage("§e/mp structures magnet assemble");
+            sender.sendMessage("§e/mp str magnet assemble");
             sender.sendMessage(" §7└ Собрать магнит");
+            sender.sendMessage("§e/mp str magnet stats");
+            sender.sendMessage(" §7└ Статистика магнита");
             sender.sendMessage("");
             sender.sendMessage("§e/mp power off");
             sender.sendMessage(" §7└ Запросить выключение сервера");
@@ -104,6 +112,20 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("");
             sender.sendMessage("§e/mp codepane");
             sender.sendMessage(" §7└ Открыть кодовую панель");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp auth forcelogin <ник>");
+            sender.sendMessage(" §7└ Принудительно авторизовать игрока");
+            sender.sendMessage("§e/mp auth resetauth <ник>");
+            sender.sendMessage(" §7└ Полностью удалить регистрацию игрока");
+            sender.sendMessage("§e/mp auth showpass <ник>");
+            sender.sendMessage(" §7└ Посмотреть пароль игрока");
+            sender.sendMessage("§e/mp auth chgpass <ник> <пароль>");
+            sender.sendMessage(" §7└ Принудительно сменить пароль");
+            sender.sendMessage("§e/mp auth delsession <ник>");
+            sender.sendMessage(" §7└ Сбросить сессию (регистрация остаётся)");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp auth logout");
+            sender.sendMessage(" §7└ Выйти из аккаунта (logout)");
             sender.sendMessage("");
             sender.sendMessage("§6═══════════════════════════════════");
             sender.sendMessage("");
@@ -298,9 +320,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
 
         // =========================
-        // STRUCTURES SUBCOMMAND
+        // STRUCTURES / STR SUBCOMMAND
         // =========================
-        if (args[0].equalsIgnoreCase("structures")) {
+        if (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str")) {
 
             if (!(sender instanceof Player player)) {
                 sender.sendMessage("§4❌ §cError: §7Only players can use this command.");
@@ -462,17 +484,85 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             // =========================
             if (args[1].equalsIgnoreCase("magnet")) {
 
-                if (args.length < 3 || !args[2].equalsIgnoreCase("assemble")) {
-                    player.sendMessage("§4❌ §cUsage: /mp structures magnet assemble");
+                if (args.length < 3) {
+                    player.sendMessage("§4❌ §cUsage: /mp str magnet <stats|assemble>");
                     return true;
                 }
 
-                if (!player.hasPermission("mcplugin.command.structures.magnet")) {
-                    player.sendMessage("§4❌ §cУ вас нет прав на сборку магнита!");
+                // =========================
+                // MAGNET STATS
+                // =========================
+                if (args[2].equalsIgnoreCase("stats")) {
+
+                    if (!player.hasPermission("mcplugin.command.structures.magnet")) {
+                        player.sendMessage("§4❌ §cУ вас нет прав на просмотр статистики магнита!");
+                        return true;
+                    }
+
+                    // Find nearest magnet cluster within 50 blocks
+                    Location playerLoc = player.getLocation();
+                    MagnetManager.MagnetCluster nearest = null;
+                    double nearestDist = Double.MAX_VALUE;
+
+                    for (MagnetManager.MagnetCluster cluster : MagnetManager.getClusters()) {
+                        if (cluster.center == null || !cluster.center.getWorld().equals(playerLoc.getWorld())) continue;
+                        double dist = playerLoc.distance(cluster.center);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearest = cluster;
+                        }
+                    }
+
+                    if (nearest == null) {
+                        player.sendMessage("§4❌ §cАктивных магнитов не найдено!");
+                        return true;
+                    }
+
+                    if (nearestDist > 50) {
+                        player.sendMessage("§4❌ §cРядом нет активного магнита (ближайший в §f"
+                                + String.format("%.1f", nearestDist) + "§c м).");
+                        return true;
+                    }
+
+                    int power = nearest.blockKeys.size();
+                    int radius = MagnetManager.getClusterRadiusForPower(power);
+                    String tierName = ReactorCommand.getMagnetPowerTierStatic(power);
+
+                    player.sendMessage("§8┌────────────────────────────────┐");
+                    player.sendMessage("§8│ §bМагнит §8» §fСтатистика");
+                    player.sendMessage("§8├────────────────────────────────┤");
+                    player.sendMessage("§8│ §7Блоков: §f" + power + " §7шт");
+                    player.sendMessage("§8│ §7Сила: " + tierName);
+                    player.sendMessage("§8│ §7Радиус: §f" + radius + " §7блоков");
+                    player.sendMessage("§8│ §7Центр: §f"
+                            + nearest.center.getBlockX() + " "
+                            + nearest.center.getBlockY() + " "
+                            + nearest.center.getBlockZ()
+                            + " §7(мир: §f" + nearest.center.getWorld().getName() + "§7)");
+                    player.sendMessage("§8│ §7Дистанция: §f" + String.format("%.1f", nearestDist) + " м");
+                    player.sendMessage("§8│ §7Партиклы: §fEND_ROD=" + MagnetManager.getParticleCenterMax()
+                            + " §7| §fCRIT=" + MagnetManager.getParticleCritMax()
+                            + " §7| §fPORTAL=" + MagnetManager.getParticlePortalMax());
+                    player.sendMessage("§8│ §7Кривая: " + ("smoothstep".equalsIgnoreCase(MagnetManager.getDistanceCurveType())
+                            ? "§bsmoothstep" : "§elinear")
+                            + " §7| эксп. §f" + MagnetManager.getPowerExponent());
+                    player.sendMessage("§8└────────────────────────────────┘");
                     return true;
                 }
 
-                ReactorCommand.assembleMagnet(player);
+                // =========================
+                // MAGNET ASSEMBLE
+                // =========================
+                if (args[2].equalsIgnoreCase("assemble")) {
+                    if (!player.hasPermission("mcplugin.command.structures.magnet")) {
+                        player.sendMessage("§4❌ §cУ вас нет прав на сборку магнита!");
+                        return true;
+                    }
+                    ReactorCommand.assembleMagnet(player);
+                    return true;
+                }
+
+                player.sendMessage("§4❌ §cUsage: /mp str magnet <stats|assemble>");
                 return true;
             }
 
@@ -481,10 +571,244 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
 
         // =========================
+        // AUTH SUBCOMMAND
+        // =========================
+        if (args[0].equalsIgnoreCase("auth")) {
+
+            // Check if auth system is enabled
+            if (!Main.getInstance().getConfig().getBoolean("auth.enabled", true)) {
+                sender.sendMessage("§4❌ §cСистема авторизации отключена в конфиге!");
+                return true;
+            }
+
+            if (args.length < 2) {
+                sender.sendMessage("§4❌ §cИспользование: §f/mp auth forcelogin|resetauth|showpass|chgpass|delsession|logout §7<ник>");
+                return true;
+            }
+
+            // =========================
+            // AUTH FORCELOGIN
+            // =========================
+            if (args[1].equalsIgnoreCase("forcelogin")) {
+
+                if (!sender.hasPermission("mcplugin.command.auth.forcelogin")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на принудительную авторизацию!");
+                    return true;
+                }
+
+                if (args.length < 3) {
+                    sender.sendMessage("§4❌ §cИспользование: §f/mp auth forcelogin §7<ник>");
+                    return true;
+                }
+
+                String targetName = args[2];
+                UUID targetUuid = getOfflineUuid(targetName);
+
+                if (!AuthDatabase.isRegistered(targetUuid)) {
+                    sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не зарегистрирован в системе авторизации!");
+                    return true;
+                }
+
+                AuthManager manager = AuthManager.getInstance();
+                if (manager == null) {
+                    sender.sendMessage("§4❌ §cСистема авторизации не инициализирована!");
+                    return true;
+                }
+
+                if (manager.forceLogin(targetUuid)) {
+                    sender.sendMessage("§a✅ §fИгрок §e" + targetName + "§f принудительно авторизован.");
+                } else {
+                    sender.sendMessage("§4❌ §cНе удалось авторизовать игрока §e" + targetName);
+                }
+
+                return true;
+            }
+
+            // =========================
+            // AUTH RESETAUTH
+            // =========================
+            if (args[1].equalsIgnoreCase("resetauth")) {
+
+                if (!sender.hasPermission("mcplugin.command.auth.resetauth")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на сброс авторизации!");
+                    return true;
+                }
+
+                if (args.length < 3) {
+                    sender.sendMessage("§4❌ §cИспользование: §f/mp auth resetauth §7<ник>");
+                    return true;
+                }
+
+                String targetName = args[2];
+                UUID targetUuid = getOfflineUuid(targetName);
+
+                if (!AuthDatabase.isRegistered(targetUuid)) {
+                    sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не зарегистрирован в системе авторизации!");
+                    return true;
+                }
+
+                AuthManager manager = AuthManager.getInstance();
+                if (manager == null) {
+                    sender.sendMessage("§4❌ §cСистема авторизации не инициализирована!");
+                    return true;
+                }
+
+                if (manager.resetAuth(targetUuid)) {
+                    sender.sendMessage("§a✅ §fРегистрация игрока §e" + targetName + "§f полностью удалена.");
+                } else {
+                    sender.sendMessage("§4❌ §cНе удалось удалить регистрацию игрока §e" + targetName);
+                }
+
+                return true;
+            }
+
+            // =========================
+            // AUTH SHOWPASS
+            // =========================
+            if (args[1].equalsIgnoreCase("showpass")) {
+
+                if (!sender.hasPermission("mcplugin.command.auth.showpass")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на просмотр паролей!");
+                    return true;
+                }
+
+                if (args.length < 3) {
+                    sender.sendMessage("§4❌ §cИспользование: §f/mp auth showpass §7<ник>");
+                    return true;
+                }
+
+                String targetName = args[2];
+                UUID targetUuid = getOfflineUuid(targetName);
+
+                if (!AuthDatabase.isRegistered(targetUuid)) {
+                    sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не зарегистрирован в системе авторизации!");
+                    return true;
+                }
+
+                String password = AuthDatabase.getPasswordPlain(targetUuid);
+                if (password == null || password.isEmpty()) {
+                    sender.sendMessage("§4❌ §cПароль игрока §e" + targetName + "§c не найден в базе!");
+                    return true;
+                }
+
+                sender.sendMessage("§6✦ §fПароль игрока §e" + targetName + "§f: §a" + password);
+                sender.sendMessage("§8┃ §7Будьте осторожны — не сообщайте пароль посторонним!");
+
+                return true;
+            }
+
+            // =========================
+            // AUTH DELSESSION — сбрасывает сессию, НЕ удаляет регистрацию
+            // =========================
+            if (args[1].equalsIgnoreCase("delsession")) {
+
+                if (!sender.hasPermission("mcplugin.command.auth.delsession")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на сброс сессии!");
+                    return true;
+                }
+
+                if (args.length < 3) {
+                    sender.sendMessage("§4❌ §cИспользование: §f/mp auth delsession §7<ник>");
+                    return true;
+                }
+
+                String targetName = args[2];
+                UUID targetUuid = getOfflineUuid(targetName);
+
+                if (!AuthDatabase.isRegistered(targetUuid)) {
+                    sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не зарегистрирован в системе авторизации!");
+                    return true;
+                }
+
+                AuthManager manager = AuthManager.getInstance();
+                if (manager == null) {
+                    sender.sendMessage("§4❌ §cСистема авторизации не инициализирована!");
+                    return true;
+                }
+
+                if (manager.deleteSession(targetUuid)) {
+                    sender.sendMessage("§a✅ §fСессия игрока §e" + targetName + "§f сброшена (logout).");
+                    sender.sendMessage("§8┃ §7При следующем входе нужно будет снова ввести пароль.");
+                } else {
+                    sender.sendMessage("§4❌ §cНе удалось сбросить сессию игрока §e" + targetName);
+                }
+
+                return true;
+            }
+
+            // =========================
+            // AUTH LOGOUT (self-service)
+            // =========================
+            if (args[1].equalsIgnoreCase("logout")) {
+
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!");
+                    return true;
+                }
+
+                if (!AuthManager.getInstance().isAuthenticated(player.getUniqueId())) {
+                    player.sendMessage("§c❌ Вы не авторизованы!");
+                    return true;
+                }
+
+                AuthGUI.openLogout(player);
+                return true;
+            }
+
+            // =========================
+            // AUTH CHGPASS
+            // =========================
+            if (args[1].equalsIgnoreCase("chgpass")) {
+
+                if (!sender.hasPermission("mcplugin.command.auth.chgpass")) {
+                    sender.sendMessage("§4❌ §cУ вас нет прав на смену пароля!");
+                    return true;
+                }
+
+                if (args.length < 4) {
+                    sender.sendMessage("§4❌ §cИспользование: §f/mp auth chgpass §7<ник> <новый пароль>");
+                    return true;
+                }
+
+                String targetName = args[2];
+                String newPassword = args[3];
+
+                if (newPassword.length() < 4) {
+                    sender.sendMessage("§4❌ §cПароль должен быть не менее 4 символов!");
+                    return true;
+                }
+
+                UUID targetUuid = getOfflineUuid(targetName);
+
+                if (!AuthDatabase.isRegistered(targetUuid)) {
+                    sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не зарегистрирован в системе авторизации!");
+                    return true;
+                }
+
+                AuthManager manager = AuthManager.getInstance();
+                if (manager == null) {
+                    sender.sendMessage("§4❌ §cСистема авторизации не инициализирована!");
+                    return true;
+                }
+
+                if (manager.changePassword(targetUuid, newPassword)) {
+                    sender.sendMessage("§a✅ §fПароль игрока §e" + targetName + "§f успешно изменён на §a" + newPassword + "§f.");
+                    sender.sendMessage("§8┃ §7Сессия сброшена — игроку нужно заново войти.");
+                } else {
+                    sender.sendMessage("§4❌ §cНе удалось сменить пароль игрока §e" + targetName);
+                }
+
+                return true;
+            }
+
+            sender.sendMessage("§4❌ §cНеизвестная подкоманда: §f" + args[1]);
+            sender.sendMessage("§cИспользование: §f/mp auth forcelogin|resetauth|showpass|chgpass §7<ник>");
+            return true;
+        }
+
+        // =========================
         // POWER SUBCOMMAND
         // =========================
-        // =========================
-        // POWER SUBCOMMAND
         // =========================
         if (args[0].equalsIgnoreCase("power")) {
 
@@ -735,6 +1059,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
     }
 
     // =========================
+    // UUID resolver (offline players by name)
+    // =========================
+    @SuppressWarnings("deprecation")
+    private UUID getOfflineUuid(String playerName) {
+        return Bukkit.getOfflinePlayer(playerName).getUniqueId();
+    }
+
+    // =========================
     // TAB COMPLETER
     // =========================
     @Override
@@ -750,19 +1082,36 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("help");
             completions.add("reload");
             completions.add("structures");
+            completions.add("str");
             completions.add("power");
+            completions.add("auth");
             completions.add("chgdim");
             completions.add("chgdim_teleport");
             completions.add("chgdim_return");
             completions.add("codepane");
             completions.add("pane_click");
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("auth")) {
+            completions.add("forcelogin");
+            completions.add("resetauth");
+            completions.add("showpass");
+            completions.add("chgpass");
+            completions.add("delsession");
+            completions.add("logout");
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("auth")
+                && (args[1].equalsIgnoreCase("forcelogin")
+                || args[1].equalsIgnoreCase("resetauth")
+                || args[1].equalsIgnoreCase("showpass")
+                || args[1].equalsIgnoreCase("chgpass")
+                || args[1].equalsIgnoreCase("delsession"))) {
+            // Suggest online + registered offline players
+            tabCompletePlayerNames(completions);
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("chgdim_teleport"))) {
             ConfigurationSection worldsSection = Main.getInstance().getConfig()
                     .getConfigurationSection("changedimmension.worlds");
             if (worldsSection != null) {
                 completions.addAll(worldsSection.getKeys(false));
             }
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("structures")) {
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str"))) {
             completions.add("dfc");
             completions.add("magnet");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("power")) {
@@ -770,11 +1119,12 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("reboot");
             completions.add("confirm");
             completions.add("undo");
-        } else if (args.length == 3 && args[0].equalsIgnoreCase("structures") && args[1].equalsIgnoreCase("dfc")) {
+        } else if (args.length == 3 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str")) && args[1].equalsIgnoreCase("dfc")) {
             completions.add("stats");
             completions.add("assemble");
-        } else if (args.length == 3 && args[0].equalsIgnoreCase("structures") && args[1].equalsIgnoreCase("magnet")) {
+        } else if (args.length == 3 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str")) && args[1].equalsIgnoreCase("magnet")) {
             completions.add("assemble");
+            completions.add("stats");
         }
 
         List<String> result = new ArrayList<>();
@@ -857,5 +1207,24 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         player.sendMessage("");
         player.sendMessage("§6═══════════════════════════════════");
         player.sendMessage("");
+    }
+
+    // =========================
+    // TAB COMPLETE — подсказки ников (онлайн + зарегистрированные)
+    // =========================
+    @SuppressWarnings("deprecation")
+    private void tabCompletePlayerNames(List<String> completions) {
+        // Online players — всегда актуальные ники
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            String name = p.getName();
+            if (!completions.contains(name)) completions.add(name);
+        }
+        // Зарегистрированные (offline) — из БД auth
+        for (UUID uuid : AuthDatabase.getAllRegisteredUuids()) {
+            String name = Bukkit.getOfflinePlayer(uuid).getName();
+            if (name != null && !name.isEmpty() && !completions.contains(name)) {
+                completions.add(name);
+            }
+        }
     }
 }

@@ -301,7 +301,7 @@ public class ReactorListener implements Listener {
         e.setCancelled(true);
 
         // Open reactor stats
-        player.performCommand("mcplugin structures dfc stats");
+        player.performCommand("mcplugin str dfc stats");
     }
 
     // =========================

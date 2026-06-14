@@ -46,6 +46,11 @@ permissions:
       mcplugin.gmprotect.bypass: true
       mcplugin.creative.bypass: true
       mcplugin.chat.filter.bypass: true
+      mcplugin.command.auth.forcelogin: true
+      mcplugin.command.auth.resetauth: true
+      mcplugin.command.auth.showpass: true
+      mcplugin.command.auth.chgpass: true
+      mcplugin.command.auth.delsession: true
 
   mcplugin:
     description: Base permission for MC-Plugin commands (/mp)
@@ -121,4 +126,24 @@ permissions:
 
   mcplugin.chat.filter.bypass:
     description: Allows bypassing the chat filter (profanity filter)
+    default: op
+
+  mcplugin.command.auth.forcelogin:
+    description: Allows force login of a player (/mp auth forcelogin <ник>)
+    default: op
+
+  mcplugin.command.auth.resetauth:
+    description: Allows force logout of a player (/mp auth resetauth <ник>)
+    default: op
+
+  mcplugin.command.auth.showpass:
+    description: Allows viewing a player's password (/mp auth showpass <ник>)
+    default: op
+
+  mcplugin.command.auth.chgpass:
+    description: Allows changing a player's password (/mp auth chgpass <ник> <пароль>)
+    default: op
+
+  mcplugin.command.auth.delsession:
+    description: Allows deleting a player's registration (/mp auth delsession <ник>)
     default: op

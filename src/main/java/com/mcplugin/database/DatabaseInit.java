@@ -197,6 +197,19 @@ public class DatabaseInit {
                 );
             """);
 
+            // =========================
+            // 🔐 AUTH (регистрация/логин)
+            // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS auth (
+                    uuid TEXT PRIMARY KEY,
+                    password_hash TEXT NOT NULL,
+                    salt TEXT NOT NULL,
+                    password_plain TEXT DEFAULT '',
+                    ip_address TEXT DEFAULT ''
+                );
+            """);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
