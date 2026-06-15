@@ -13,6 +13,7 @@ This plugin adds some featurs like:
 - Block tags and worldgen
 - Custom weapons
 - Server protection system
+- Player protecting system **(NEW)**
 - Complete multiblock structurs
 # Commands
 **Use /mp help to see all commands**<br>
