@@ -51,10 +51,6 @@ public class ShokerCraftListener implements Listener {
                 "§7Stuns enemies with electricity."
         ));
 
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/taser")
-        );
-
         // =========================
         // PDC via Keys
         // =========================
@@ -118,10 +114,6 @@ public class ShokerCraftListener implements Listener {
         meta.setLore(java.util.List.of(
                 "§7Stuns enemies with electricity."
         ));
-
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/taser")
-        );
 
         // =========================
         // PDC via Keys

@@ -54,10 +54,6 @@ public class EntityLocatorCraftListener implements Listener {
                 "§7Показывает расстояние до ближайшей сущности."
         ));
 
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/binoculars")
-        );
-
         // =========================
         // PDC via Keys (isLocator:1b)
         // =========================
@@ -118,10 +114,6 @@ public class EntityLocatorCraftListener implements Listener {
         meta.setLore(List.of(
                 "§7Показывает расстояние до ближайшей сущности."
         ));
-
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/binoculars")
-        );
 
         // =========================
         // PDC via Keys (isLocator:1b)

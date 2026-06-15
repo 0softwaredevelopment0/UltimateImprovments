@@ -51,8 +51,7 @@
       },
       "minecraft:custom_data": {
         "isLocator": true
-      },
-      "minecraft:item_model": "terf:tool/binoculars"
+      }
     },
     "count": 1
   }

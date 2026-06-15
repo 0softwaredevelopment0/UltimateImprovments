@@ -49,10 +49,6 @@ public class MultimeterCraftListener implements Listener {
 
         meta.setDisplayName("§fMultimeter");
 
-        meta.setItemModel(
-                org.bukkit.NamespacedKey.fromString("terf:tool/multimeter")
-        );
-
         // =========================
         // PDC TAG (isMultimeter:1b)
         // =========================
@@ -103,10 +99,6 @@ public class MultimeterCraftListener implements Listener {
         if (meta == null) return;
 
         meta.setDisplayName("§fMultimeter");
-
-        meta.setItemModel(
-                org.bukkit.NamespacedKey.fromString("terf:tool/multimeter")
-        );
 
         // =========================
         // PDC AGAIN (isMultimeter:1b)

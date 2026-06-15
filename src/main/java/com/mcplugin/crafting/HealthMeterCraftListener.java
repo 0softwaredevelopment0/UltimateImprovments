@@ -54,10 +54,6 @@ public class HealthMeterCraftListener implements Listener {
                 "§7Показывает количество здоровья ближайшего моба."
         ));
 
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/shrink_ray")
-        );
-
         // =========================
         // PDC via Keys (isHpMeter:1b)
         // =========================
@@ -118,10 +114,6 @@ public class HealthMeterCraftListener implements Listener {
         meta.setLore(List.of(
                 "§7Показывает количество здоровья ближайшего моба."
         ));
-
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/shrink_ray")
-        );
 
         // =========================
         // PDC via Keys (isHpMeter:1b)

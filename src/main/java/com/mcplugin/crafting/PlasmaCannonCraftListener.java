@@ -51,10 +51,6 @@ public class PlasmaCannonCraftListener implements Listener {
                 "§7Shoots with echo_shard."
         ));
 
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/photon_cannon")
-        );
-
         // =========================
         // PDC via Keys (FIXED)
         // =========================
@@ -116,10 +112,6 @@ public class PlasmaCannonCraftListener implements Listener {
         meta.setLore(List.of(
                 "§7Shoots with echo_shard."
         ));
-
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/photon_cannon")
-        );
 
         // =========================
         // PDC via Keys (FIXED)

@@ -61,10 +61,6 @@ public class DosimeterCraftListener implements Listener {
                 "§7при держании в руке."
         ));
 
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/dosimeter")
-        );
-
         // =========================
         // PDC via Keys (isDosimeter:1b)
         // =========================
@@ -126,10 +122,6 @@ public class DosimeterCraftListener implements Listener {
                 "§7Показывает уровень радиации в Р/Ч",
                 "§7при держании в руке."
         ));
-
-        meta.setItemModel(
-                NamespacedKey.fromString("terf:tool/dosimeter")
-        );
 
         // =========================
         // PDC via Keys (isDosimeter:1b)

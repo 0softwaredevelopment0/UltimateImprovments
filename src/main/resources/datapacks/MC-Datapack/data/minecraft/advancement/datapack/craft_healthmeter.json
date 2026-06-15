@@ -2,9 +2,7 @@
   "display": {
     "icon": {
       "id": "minecraft:recovery_compass",
-      "components": {
-        "minecraft:item_model": "terf:tool/shrink_ray"
-      },
+      "components": {},
       "count": 1
     },
     "title": {
