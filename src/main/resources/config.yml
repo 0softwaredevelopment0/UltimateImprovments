@@ -154,12 +154,8 @@ codepanel:
     step: 10
     # Задержка перед финальным сравнением
     delay_after: 20
-    # Попытки
-  attempts:
-    # Кол-во попыток
-    max: 3
-    # Время на которое блокируется панель
-    lock_time_seconds: 10
+    # Задержка Enter (сек) — защита от спама
+  enter_cooldown: 3
     # Цвета панели
   colors:
     # Углы панели
@@ -176,10 +172,16 @@ codepanel:
     enter: DARK_GREEN
     # Звуки панели
   sounds:
-    # Клик
-    click: UI_BUTTON_CLICK
+    # Цифры (0-9)
+    digit: UI_BUTTON_CLICK
+    # Назад (⌫)
+    backspace: BLOCK_DISPENSER_FAIL
     # Ресет
     reset: BLOCK_LEVER_CLICK
+    # Ввод (✔)
+    enter: ENTITY_EXPERIENCE_ORB_PICKUP
+    # Клик (загрузка)
+    click: UI_BUTTON_CLICK
     # Проверка
     step: BLOCK_NOTE_BLOCK_HAT
     # Завершение проверки
@@ -192,9 +194,7 @@ codepanel:
   messages:
     progress: "§fПроверка кода: §7{progress}%"
     success: "§2✔ §aУспех: §7Код верный!"
-    error: "§4❌ §cОшибка: §7Неверный код, осталось §e{attempts}§7/§e{max}§7 попыток."
-    locked: "§4❌ §cОшибка: §7Панель заблокирована. Повторите через §e{time}§7с."
-    locked_now: "§4❌ §cОшибка: §7Панель заблокирована на §e{time}§7 секунд!"
+    error: "§4❌ §cОшибка: §7Неверный код!"
     no_config: "§4❌ §cОшибка: §7В базе данных нет ни одного ключа!"
 
 # =========================
@@ -642,6 +642,29 @@ auth:
     max_accounts_per_ip: "§c❌ С вашего IP-адреса уже зарегистрировано §e{count}§c аккаунтов!\n§fМаксимум: §e{limit}§f аккаунтов на один IP."
 
 # =========================
+# 🕳 Защита от падения в пустоту
+# =========================
+void_protection:
+  # Включена ли защита
+  enabled: true
+
+  # Список миров, в которых действует защита
+  worlds:
+    - "pocketworld"
+
+  # Целевая точка телепортации
+  target:
+    world: "pocketworld"
+    x: 0
+    y: 1
+    z: 0
+    yaw: 0.0
+    pitch: 0.0
+
+  # Сообщение игроку при телепортации
+  message: "§a✅ §fВы были спасены из пустоты!"
+
+# =========================
 # 🔌 Управление питанием сервера
 # =========================
 power:
@@ -698,6 +721,51 @@ power:
       min_per_second: 1
       # Сколько пиков в секунду в конце (на последней секунде)
       max_per_second: 6
+
+# =========================
+# ☠ Суицид (/mp suicide)
+# =========================
+suicide:
+  # Длительность таймера перед смертью (секунд)
+  countdown_duration: 10
+  # Кулдаун после суицида (секунд)
+  cooldown_seconds: 10
+  # Время ожидания подтверждения (секунд). Если не подтвердить — сброс.
+  confirm_timeout: 30
+
+  # 🔊 Звуки
+  sounds:
+    # Звук при предупреждении (первый вызов /mp suicide)
+    warning: BLOCK_NOTE_BLOCK_PLING
+    # Звук пиканья во время таймера
+    tick: BLOCK_NOTE_BLOCK_PLING
+    # Звук в момент смерти
+    finish: ENTITY_LIGHTNING_BOLT_THUNDER
+
+  # 💬 Сообщения
+  messages:
+    warning_title: "§4☠ §cПРЕДУПРЕЖДЕНИЕ!"
+    warning_text: "§fВы собираетесь совершить суицид!"
+    warning_no_cancel: "§c⚠ После подтверждения отмена невозможна!"
+    warning_confirm_hint: "§eВведите §f/mp suicide§e ещё раз чтобы подтвердить и запустить отсчёт."
+    warning_cancel_hint: "§7Если передумаете — просто подождите §e{timeout}§7 сек, и запрос сбросится."
+    confirmed_title: "§4☠ §cЗапущен обратный отсчёт!"
+    confirmed_no_cancel: "§cОтмена невозможна!"
+    timer_actionbar: "§c§l☠ §fСуицид через §e§l{seconds} §fсек"
+    timer_chat: "§8[§4☠§8] §cСуицид через §e{seconds} §cсек..."
+    death_message: "§8[§4☠§8] §cВы совершили суицид..."
+    timeout_message: "§eℹ §fЗапрос на суицид сброшен (время вышло)."
+    cooldown_message: "§4❌ §cПодождите §e{seconds}§c сек перед повторным использованием!"
+    already_running: "§4❌ §cУ вас уже запущен обратный отсчёт!"
+
+  # 📊 BossBar
+  bossbar:
+    # Цвет: BLUE, RED, GREEN, PURPLE, PINK, WHITE, YELLOW
+    color: RED
+    # Стиль: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+    style: SOLID
+    # {seconds} — оставшиеся секунды
+    title: "§4☠ §cСуицид через §e{seconds}§c сек"
 
 # =========================
 # 🔴 Защита от перегрузки сервера редстуоном (ЗОПСР)

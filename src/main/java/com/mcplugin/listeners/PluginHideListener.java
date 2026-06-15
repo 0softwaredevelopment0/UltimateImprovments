@@ -1,5 +1,6 @@
 package com.mcplugin.listeners;
 
+import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
@@ -9,7 +10,22 @@ public class PluginHideListener implements Listener {
     @EventHandler
     public void onCommand(PlayerCommandPreprocessEvent event) {
 
-        String message = event.getMessage().toLowerCase().trim();
+        String rawMessage = event.getMessage();
+        String message = rawMessage.toLowerCase().trim();
+
+        // =========================
+        // SILENT /mp pane_click — cancel to prevent console spam,
+        // then manually dispatch so the command still works.
+        // Also check !isCancelled to avoid bypassing AuthListener
+        // (which fires at LOWEST priority for unauthenticated players).
+        // =========================
+        if (message.startsWith("/mp pane_click") && !event.isCancelled()) {
+            event.setCancelled(true);
+            // Strip leading '/' and dispatch silently
+            String command = rawMessage.substring(1);
+            Bukkit.dispatchCommand(event.getPlayer(), command);
+            return;
+        }
 
         // =========================
         // BLOCK PLUGIN LIST COMMANDS

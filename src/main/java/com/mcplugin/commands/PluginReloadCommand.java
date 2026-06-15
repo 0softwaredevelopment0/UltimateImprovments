@@ -24,7 +24,11 @@ import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -46,6 +50,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
     // COOLDOWN TRACKING
     // =========================
     private final HashMap<UUID, Long> cooldowns = new HashMap<>();
+
+    // =========================
+    // SUICIDE: подтверждение + таймеры + кулдаун
+    // =========================
+    // Игроки, которые подтвердили суицид (ждут таймера)
+    private final HashMap<UUID, Boolean> suicideConfirmed = new HashMap<>();
+    private final HashMap<UUID, BukkitRunnable> suicideTasks = new HashMap<>();
+    private final HashMap<UUID, Long> suicideCooldowns = new HashMap<>();
 
     @Override
     @SuppressWarnings("deprecation")
@@ -108,6 +120,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(" §7└ Подтвердить запрос (консоль)");
             sender.sendMessage("§e/mp power undo");
             sender.sendMessage(" §7└ Отменить запрос");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp suicide");
+            sender.sendMessage(" §7└ Совершить суицид (с подтверждением, без отмены)");
             sender.sendMessage("");
             sender.sendMessage("§e/mp chgdim");
             sender.sendMessage(" §7└ Открыть меню телепортации между мирами");
@@ -934,6 +949,257 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
 
         // =========================
+        // SUICIDE — двухэтапное подтверждение, затем таймер без отмены
+        // =========================
+        if (args[0].equalsIgnoreCase("suicide")) {
+
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!");
+                return true;
+            }
+
+            if (!player.hasPermission("mcplugin")) {
+                player.sendMessage("§4❌ §cУ вас нет прав!");
+                return true;
+            }
+
+            UUID uuid = player.getUniqueId();
+            FileConfiguration cfg = Main.getInstance().getConfig();
+
+            // =========================
+            // НАСТРОЙКИ ИЗ КОНФИГА
+            // =========================
+            int countdownDuration = cfg.getInt("suicide.countdown_duration", 10);
+            int cooldownSeconds = cfg.getInt("suicide.cooldown_seconds", 10);
+            int confirmTimeout = cfg.getInt("suicide.confirm_timeout", 30);
+
+            // =========================
+            // КУЛДАУН
+            // =========================
+            if (suicideCooldowns.containsKey(uuid)) {
+                long remaining = (suicideCooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
+                if (remaining > 0) {
+                    String msg = cfg.getString("suicide.messages.cooldown_message",
+                            "§4❌ §cПодождите §e{seconds}§c сек перед повторным использованием!");
+                    player.sendMessage(msg.replace("{seconds}", String.valueOf(remaining)));
+                    return true;
+                } else {
+                    suicideCooldowns.remove(uuid);
+                }
+            }
+
+            // =========================
+            // ПРОВЕРКА: уже есть активный таймер
+            // =========================
+            if (suicideTasks.containsKey(uuid)) {
+                String msg = cfg.getString("suicide.messages.already_running",
+                        "§4❌ §cУ вас уже запущен обратный отсчёт!");
+                player.sendMessage(msg);
+                return true;
+            }
+
+            // =========================
+            // ЭТАП 1: ПОДТВЕРЖДЕНИЕ
+            // =========================
+            if (!suicideConfirmed.getOrDefault(uuid, false)) {
+                suicideConfirmed.put(uuid, true);
+
+                String warningTitle = cfg.getString("suicide.messages.warning_title", "§4☠ §cПРЕДУПРЕЖДЕНИЕ!");
+                String warningText = cfg.getString("suicide.messages.warning_text", "§fВы собираетесь совершить суицид!");
+                String warningNoCancel = cfg.getString("suicide.messages.warning_no_cancel", "§c⚠ После подтверждения отмена невозможна!");
+                String warningConfirmHint = cfg.getString("suicide.messages.warning_confirm_hint", "§eВведите §f/mp suicide§e ещё раз чтобы подтвердить и запустить отсчёт.");
+                String warningCancelHint = cfg.getString("suicide.messages.warning_cancel_hint", "§7Если передумаете — просто подождите §e{timeout}§7 сек, и запрос сбросится.")
+                        .replace("{timeout}", String.valueOf(confirmTimeout));
+
+                player.sendMessage("");
+                player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
+                player.sendMessage("§8┃ " + warningTitle);
+                player.sendMessage("§8┃");
+                player.sendMessage("§8┃ " + warningText);
+                player.sendMessage("§8┃");
+                player.sendMessage("§8┃ " + warningNoCancel);
+                player.sendMessage("§8┃");
+
+                // =========================
+                // КЛИКАБЕЛЬНАЯ КНОПКА ПОДТВЕРЖДЕНИЯ
+                // =========================
+                TextComponent confirmButton = new TextComponent("§8┃     §2[§a✔ Подтвердить суицид§2]");
+                confirmButton.setClickEvent(new ClickEvent(
+                        ClickEvent.Action.RUN_COMMAND,
+                        "/mp suicide"
+                ));
+                confirmButton.setHoverEvent(new HoverEvent(
+                        HoverEvent.Action.SHOW_TEXT,
+                        new ComponentBuilder("§aНажмите чтобы подтвердить и запустить отсчёт\n")
+                                .append("§c⚠ Отмена после нажатия невозможна!")
+                                .create()
+                ));
+                player.spigot().sendMessage(confirmButton);
+
+                player.sendMessage("§8┃   §7или введите §f/mp suicide§7 снова");
+                player.sendMessage("§8┃");
+                player.sendMessage("§8┃ " + warningCancelHint);
+                player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+                player.sendMessage("");
+
+                String warningSound = cfg.getString("suicide.sounds.warning", "BLOCK_NOTE_BLOCK_PLING");
+                try {
+                    player.playSound(player.getLocation(), Sound.valueOf(warningSound), 1.0f, 0.5f);
+                } catch (IllegalArgumentException ignored) { }
+
+                // Автосброс подтверждения
+                long confirmTimeoutTicks = confirmTimeout * 20L;
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (suicideConfirmed.remove(uuid) != null) {
+                            String timeoutMsg = cfg.getString("suicide.messages.timeout_message",
+                                    "§eℹ §fЗапрос на суицид сброшен (время вышло).");
+                            player.sendMessage(timeoutMsg);
+                        }
+                    }
+                }.runTaskLater(Main.getInstance(), confirmTimeoutTicks);
+
+                return true;
+            }
+
+            // =========================
+            // ЭТАП 2: ЗАПУСК ТАЙМЕРА (подтверждено, без отмены)
+            // =========================
+
+            // Сбрасываем флаг подтверждения
+            suicideConfirmed.remove(uuid);
+
+            // =========================
+            // BOSSBAR
+            // =========================
+            String bossColorStr = cfg.getString("suicide.bossbar.color", "RED");
+            String bossStyleStr = cfg.getString("suicide.bossbar.style", "SOLID");
+            String bossTitle = cfg.getString("suicide.bossbar.title", "§4☠ §cСуицид через §e{seconds}§c сек");
+
+            BarColor bossColor;
+            try {
+                bossColor = BarColor.valueOf(bossColorStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                bossColor = BarColor.RED;
+            }
+            BarStyle bossStyle;
+            try {
+                bossStyle = BarStyle.valueOf(bossStyleStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                bossStyle = BarStyle.SOLID;
+            }
+
+            BossBar bossBar = Bukkit.createBossBar(
+                    bossTitle.replace("{seconds}", String.valueOf(countdownDuration)),
+                    bossColor,
+                    bossStyle
+            );
+            bossBar.addPlayer(player);
+            bossBar.setProgress(1.0);
+
+            // =========================
+            // ЧАТ: начальное сообщение
+            // =========================
+            String confirmedTitle = cfg.getString("suicide.messages.confirmed_title", "§4☠ §cЗапущен обратный отсчёт!");
+            String confirmedNoCancel = cfg.getString("suicide.messages.confirmed_no_cancel", "§cОтмена невозможна!");
+
+            player.sendMessage("");
+            player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
+            player.sendMessage("§8┃ " + confirmedTitle);
+            player.sendMessage("§8┃");
+            player.sendMessage("§8┃ " + confirmedNoCancel);
+            player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+            player.sendMessage("");
+
+            playSuicideBeep(player, 1.2f);
+
+            // =========================
+            // ТАЙМЕР ОБРАТНОГО ОТСЧЁТА (каждый тик)
+            // =========================
+            int duration = countdownDuration;
+            int totalTicks = duration * 20;
+            String tickSoundName = cfg.getString("suicide.sounds.tick", "BLOCK_NOTE_BLOCK_PLING");
+            String finishSoundName = cfg.getString("suicide.sounds.finish", "ENTITY_LIGHTNING_BOLT_THUNDER");
+            String timerActionbar = cfg.getString("suicide.messages.timer_actionbar", "§c§l☠ §fСуицид через §e§l{seconds} §fсек");
+            String timerChat = cfg.getString("suicide.messages.timer_chat", "§8[§4☠§8] §cСуицид через §e{seconds} §cсек...");
+            String deathMsg = cfg.getString("suicide.messages.death_message", "§8[§4☠§8] §cВы совершили суицид...");
+
+            // Эффективно финальные (effectively final) для использования внутри BukkitRunnable
+            final Sound tickSound = parseSound(tickSoundName, Sound.BLOCK_NOTE_BLOCK_PLING);
+            final Sound finishSound = parseSound(finishSoundName, Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
+
+            BukkitRunnable task = new BukkitRunnable() {
+                int tick = 0;
+                int beepCounter = 0;
+                int lastDisplaySecond = -1;
+
+                @Override
+                public void run() {
+                    int currentSecond = duration - (tick / 20);
+
+                    // =========================
+                    // ПОСЛЕДНИЙ ТИК — выполнить
+                    // =========================
+                    if (currentSecond < 0) {
+                        bossBar.removeAll();
+                        suicideTasks.remove(uuid);
+                        suicideCooldowns.put(uuid, System.currentTimeMillis() + cooldownSeconds * 1000L);
+
+                        player.sendMessage(deathMsg);
+                        player.playSound(player.getLocation(), finishSound, 1.0f, 1.0f);
+                        player.setHealth(0);
+                        cancel();
+                        return;
+                    }
+
+                    // =========================
+                    // ОБНОВЛЕНИЕ РАЗ В СЕКУНДУ
+                    // =========================
+                    if (currentSecond != lastDisplaySecond) {
+                        lastDisplaySecond = currentSecond;
+
+                        // Чат (последние 5 секунд)
+                        if (currentSecond <= 5 && currentSecond > 0) {
+                            player.sendMessage(timerChat.replace("{seconds}", String.valueOf(currentSecond)));
+                        }
+
+                        // ActionBar
+                        player.sendActionBar(timerActionbar.replace("{seconds}", String.valueOf(currentSecond)));
+
+                        // BossBar title
+                        bossBar.setTitle(bossTitle.replace("{seconds}", String.valueOf(currentSecond)));
+                    }
+
+                    // =========================
+                    // BOSSBAR ПРОГРЕСС (каждый тик)
+                    // =========================
+                    double progress = (double) (totalTicks - tick) / totalTicks;
+                    bossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
+
+                    // =========================
+                    // ЗВУК: ускорение пиканья
+                    // =========================
+                    int interval = Math.max(4, 20 - (tick * 16 / totalTicks));
+                    if (beepCounter >= interval) {
+                        double p = (double) tick / totalTicks;
+                        float pitch = (float) (1.2 + 1.3 * Math.min(1.0, p));
+                        player.playSound(player.getLocation(), tickSound, 1.0f, pitch);
+                        beepCounter = 0;
+                    }
+                    beepCounter++;
+
+                    tick++;
+                }
+            };
+
+            task.runTaskTimer(Main.getInstance(), 0L, 1L);
+            suicideTasks.put(uuid, task);
+
+            return true;
+        }
+
+        // =========================
         // RELOAD SUBCOMMAND
         // =========================
         if (!args[0].equalsIgnoreCase("reload")) {
@@ -1062,6 +1328,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("structures");
             completions.add("str");
             completions.add("power");
+            completions.add("suicide");
             completions.add("auth");
             completions.add("chgdim");
             completions.add("chgdim_teleport");
@@ -1883,6 +2150,21 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             if (name != null && !name.isEmpty() && !completions.contains(name)) {
                 completions.add(name);
             }
+        }
+    }
+
+    // =========================
+    // SUICIDE HELPERS
+    // =========================
+    private void playSuicideBeep(Player player, float pitch) {
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, pitch);
+    }
+
+    private Sound parseSound(String name, Sound defaultSound) {
+        try {
+            return Sound.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return defaultSound;
         }
     }
 }

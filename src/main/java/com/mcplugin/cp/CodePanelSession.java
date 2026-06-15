@@ -10,9 +10,8 @@ public class CodePanelSession {
 
     private static final Map<UUID, StringBuilder> input = new HashMap<>();
 
-    // attempts + lock storage
-    private static final Map<UUID, Integer> attempts = new HashMap<>();
-    private static final Map<UUID, Long> lockedUntil = new HashMap<>();
+    // Enter cooldown (ms timestamp when player can press Enter again)
+    private static final Map<UUID, Long> enterCooldown = new HashMap<>();
 
     // =========================
     // INPUT
@@ -39,45 +38,19 @@ public class CodePanelSession {
     }
 
     // =========================
-    // ATTEMPTS
+    // ENTER COOLDOWN
     // =========================
-    public static int getAttempts(UUID uuid) {
-        return attempts.getOrDefault(uuid, 0);
+    public static boolean isEnterOnCooldown(UUID uuid) {
+        return enterCooldown.getOrDefault(uuid, 0L) > System.currentTimeMillis();
     }
 
-    public static int addAttempt(UUID uuid) {
-        int value = getAttempts(uuid) + 1;
-        attempts.put(uuid, value);
-        return value;
-    }
-
-    public static void resetAttempts(UUID uuid) {
-        attempts.remove(uuid);
-    }
-
-    // =========================
-    // LOCK
-    // =========================
-    public static boolean isLocked(UUID uuid) {
-        return lockedUntil.getOrDefault(uuid, 0L) > System.currentTimeMillis();
-    }
-
-    public static long getLockEnd(UUID uuid) {
-        return lockedUntil.getOrDefault(uuid, 0L);
-    }
-
-    public static void setLockEnd(UUID uuid, long time) {
-        if (time <= 0) {
-            lockedUntil.remove(uuid);
-        } else {
-            lockedUntil.put(uuid, time);
-        }
-    }
-
-    // ✅ ДОБАВЛЕННЫЙ МЕТОД (нужен твоему Command)
-    public static long getRemainingLock(UUID uuid) {
-        long end = lockedUntil.getOrDefault(uuid, 0L);
+    public static long getRemainingCooldown(UUID uuid) {
+        long end = enterCooldown.getOrDefault(uuid, 0L);
         return Math.max(0, end - System.currentTimeMillis());
+    }
+
+    public static void setEnterCooldown(UUID uuid, long durationMs) {
+        enterCooldown.put(uuid, System.currentTimeMillis() + durationMs);
     }
 
     // =========================
@@ -85,8 +58,7 @@ public class CodePanelSession {
     // =========================
     public static void clearAll() {
         input.clear();
-        attempts.clear();
-        lockedUntil.clear();
+        enterCooldown.clear();
     }
 
     // =========================

@@ -19,6 +19,8 @@ import com.mcplugin.guns.shoker.ShokerListener;
 import com.mcplugin.listeners.*;
 import com.mcplugin.server.*;
 import com.mcplugin.auth.*;
+import com.mcplugin.cp.CodePanelGUIListener;
+import com.mcplugin.listeners.VoidProtectionListener;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -139,6 +141,8 @@ public class Main extends JavaPlugin {
         pm.registerEvents(new AuthListener(), this);
 
         pm.registerEvents(new MagnetEventListener(), this);
+        pm.registerEvents(new CodePanelGUIListener(), this);
+        pm.registerEvents(new VoidProtectionListener(), this);
 
         // =========================
         // TASKS & COMMANDS

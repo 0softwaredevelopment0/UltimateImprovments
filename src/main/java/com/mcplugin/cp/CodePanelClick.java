@@ -33,13 +33,10 @@ public class CodePanelClick implements CommandExecutor {
             return true;
         }
 
-        if (isLocked(player)) {
-            long left = (CodePanelSession.getLockEnd(player.getUniqueId()) - System.currentTimeMillis()) / 1000;
-
-            player.sendMessage(
-                    msg("codepanel.messages.locked")
-                            .replace("{time}", String.valueOf(Math.max(0, left)))
-            );
+        // Enter cooldown check
+        if ("E".equals(value) && CodePanelSession.isEnterOnCooldown(player.getUniqueId())) {
+            long left = CodePanelSession.getRemainingCooldown(player.getUniqueId()) / 1000;
+            player.sendMessage("§cПодождите §e" + Math.max(0, left) + "§c сек перед повторным вводом");
             return true;
         }
 
@@ -47,7 +44,6 @@ public class CodePanelClick implements CommandExecutor {
 
             case "R" -> {
                 CodePanelSession.reset(player.getUniqueId());
-                CodePanelSession.resetAttempts(player.getUniqueId());
                 play(player, "reset");
             }
 
@@ -64,29 +60,13 @@ public class CodePanelClick implements CommandExecutor {
     }
 
     // =========================
-    // LOCK CHECK
-    // =========================
-    private boolean isLocked(Player player) {
-
-        long lockEnd = CodePanelSession.getLockEnd(player.getUniqueId());
-
-        if (lockEnd <= 0) return false;
-
-        if (System.currentTimeMillis() > lockEnd) {
-            CodePanelSession.resetAttempts(player.getUniqueId());
-            CodePanelSession.setLockEnd(player.getUniqueId(), 0);
-            return false;
-        }
-
-        return true;
-    }
-
-    // =========================
     // LOADING (CONFIG)
     // =========================
     private void startLoading(Player player) {
 
-        if (isLocked(player)) return;
+        // Set Enter cooldown before loading
+        int cooldown = cfgInt("codepanel.enter_cooldown", 3);
+        CodePanelSession.setEnterCooldown(player.getUniqueId(), cooldown * 1000L);
 
         play(player, "click");
 
@@ -188,9 +168,6 @@ public class CodePanelClick implements CommandExecutor {
             player.sendMessage(msg("codepanel.messages.success"));
             play(player, "success");
 
-            CodePanelSession.resetAttempts(player.getUniqueId());
-            CodePanelSession.setLockEnd(player.getUniqueId(), 0);
-
             if (key.command != null && !key.command.isEmpty()) {
                 // Поддержка нескольких команд через запятую
                 String[] commands = key.command.split(",");
@@ -213,36 +190,9 @@ public class CodePanelClick implements CommandExecutor {
             return;
         }
 
-        // НЕВЕРНЫЙ КОД
-        int maxAttempts = cfgInt("codepanel.attempts.max", 3);
-        long lockTimeMs = cfgInt("codepanel.attempts.lock_time_seconds", 10) * 1000L;
-
-        int attempts = CodePanelSession.addAttempt(player.getUniqueId());
-
-        if (attempts >= maxAttempts) {
-
-            CodePanelSession.setLockEnd(
-                    player.getUniqueId(),
-                    System.currentTimeMillis() + lockTimeMs
-            );
-
-            player.sendMessage(
-                    msg("codepanel.messages.locked_now")
-                            .replace("{time}", String.valueOf(lockTimeMs / 1000))
-            );
-
-            play(player, "fail");
-
-        } else {
-
-            player.sendMessage(
-                    msg("codepanel.messages.error")
-                            .replace("{attempts}", String.valueOf(attempts))
-                            .replace("{max}", String.valueOf(maxAttempts))
-            );
-
-            play(player, "fail");
-        }
+        // НЕВЕРНЫЙ КОД — просто сообщение, без блокировки
+        player.sendMessage("§c❌ Неверный код!");
+        play(player, "fail");
     }
 
     // =========================

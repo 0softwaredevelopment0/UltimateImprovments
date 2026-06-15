@@ -17,7 +17,8 @@ public class CodePanelCommand implements CommandExecutor {
     }
 
     /**
-     * Static entry point for /mp cp subcommand.
+     * Static entry point for /mp codepane subcommand.
+     * Opens the GUI instead of sending chat messages.
      */
     public static boolean handleCommand(Player player) {
 
@@ -27,14 +28,7 @@ public class CodePanelCommand implements CommandExecutor {
             return true;
         }
 
-        // 💥 LOCK CHECK
-        if (CodePanelSession.isLocked(player.getUniqueId())) {
-            long sec = CodePanelSession.getRemainingLock(player.getUniqueId()) / 1000;
-            player.sendMessage("§cПанель заблокирована на " + sec + "с");
-            return true;
-        }
-
-        sendPanel(player);
+        CodePanelGUI.open(player);
         return true;
     }
 
@@ -57,9 +51,6 @@ public class CodePanelCommand implements CommandExecutor {
     public static void sendPanel(Player player) {
 
         if (!isSafe()) return;
-
-        // 💥 LOCK CHECK (extra safety)
-        if (CodePanelSession.isLocked(player.getUniqueId())) return;
 
         FileConfiguration cfg = Main.getInstance().getConfig();
 
