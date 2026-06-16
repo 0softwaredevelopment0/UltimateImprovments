@@ -17,7 +17,6 @@ This plugin adds some featurs like:
 - Complete multiblock structurs
 # Commands
 **Use /mp help to see all commands**<br>
-This command reloads the plugin. After the reload, you may see bugs, so it's better to restart the server.<br>
 # Permissions
 **Check all permissions in LuckPerms with mcplugin. ..**<br>
 # Installation
