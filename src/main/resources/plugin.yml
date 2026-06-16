@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.4
+version: 1.5
 
 main: com.mcplugin.Main
 
@@ -55,6 +55,7 @@ permissions:
       mcplugin.command.auth.resetauth: true
       mcplugin.command.auth.chgpass: true
       mcplugin.command.auth.delsession: true
+      mcplugin.command.item: true
 
   mcplugin:
     description: Base permission for MC-Plugin commands (/mp)
@@ -166,4 +167,8 @@ permissions:
 
   mcplugin.command.auth.delsession:
     description: Allows deleting a player's registration (/mp auth delsession <ник>)
+    default: op
+
+  mcplugin.command.item:
+    description: Allows using item management commands (/mp item int set|add|list)
     default: op
