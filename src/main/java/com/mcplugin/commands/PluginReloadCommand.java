@@ -7,7 +7,9 @@ import com.mcplugin.core1.ReactorManager;
 import com.mcplugin.features.FeaturesManager;
 import com.mcplugin.features.magnet.MagnetManager;
 import com.mcplugin.main.TaskManager;
+import com.mcplugin.server.EmergencyEntitiesKill;
 import com.mcplugin.server.RedstoneGuard;
+import com.mcplugin.server.ServerOverloadWarning;
 import com.mcplugin.energy.crafting.EnergyWorkbenchManager;
 import com.mcplugin.crafting.MultimeterCraftListener;
 import com.mcplugin.auth.AuthDatabase;
@@ -1259,6 +1261,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     // =========================
                     plugin.reloadConfig();
                     RedstoneGuard.reload();
+                    EmergencyEntitiesKill.reload();
+                    ServerOverloadWarning.reload();
                     FeaturesManager.reloadConfig();
                     PowerManager.reloadConfig();
                     com.mcplugin.listeners.PowerInterceptListener.reloadConfigStatic();

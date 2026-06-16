@@ -1,5 +1,6 @@
 package com.mcplugin.server;
 
+import org.bukkit.Chunk;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -14,10 +15,13 @@ public class RedstoneGuardListener implements Listener {
             return;
         }
 
-        guard.recordIteration(event.getBlock().getChunk());
+        Chunk chunk = event.getBlock().getChunk();
 
-        if (guard.isChunkBlocked(event.getBlock().getChunk())) {
+        if (guard.isChunkBlocked(chunk)) {
             event.setNewCurrent(0);
+            return; // Don't count iterations for blocked chunks
         }
+
+        guard.recordIteration(chunk);
     }
 }

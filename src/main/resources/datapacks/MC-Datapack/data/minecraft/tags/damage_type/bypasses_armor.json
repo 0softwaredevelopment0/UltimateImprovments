@@ -1,9 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "minecraft:hadron_collider",
-    "minecraft:no_oxygen",
-    "minecraft:ender_chest_failure",
-    "minecraft:depressurization"
-  ]
-}

@@ -4,6 +4,8 @@ import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.core1.ReactorListener;
 import com.mcplugin.core1.ReactorManager;
 import com.mcplugin.features.FeaturesManager;
+import com.mcplugin.features.integrity.IntegrityCombineListener;
+import com.mcplugin.features.integrity.IntegrityListener;
 import com.mcplugin.features.magnet.MagnetEventListener;
 import com.mcplugin.features.magnet.MagnetManager;
 import com.mcplugin.main.CommandRegistrar;
@@ -141,6 +143,8 @@ public class Main extends JavaPlugin {
         pm.registerEvents(new AuthListener(), this);
 
         pm.registerEvents(new MagnetEventListener(), this);
+        pm.registerEvents(new IntegrityListener(), this);
+        pm.registerEvents(new IntegrityCombineListener(), this);
         pm.registerEvents(new CodePanelGUIListener(), this);
         pm.registerEvents(new VoidProtectionListener(), this);
 

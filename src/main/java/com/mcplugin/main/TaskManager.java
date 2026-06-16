@@ -13,7 +13,7 @@ import com.mcplugin.radiation.RadiationTask;
 import com.mcplugin.listeners.FishingListener;
 import com.mcplugin.server.EmergencyEntitiesKill;
 import com.mcplugin.server.RedstoneGuardTask;
-
+import com.mcplugin.server.ServerOverloadWarning;
 import org.bukkit.scheduler.BukkitTask;
 
 public class TaskManager {
@@ -27,6 +27,7 @@ public class TaskManager {
     private BukkitTask cableVisualTask;
     private BukkitTask overloadTask;
     private BukkitTask redstoneGuardTask;
+    private BukkitTask overloadWarningTask;
 
     private BukkitTask gunTask;
     private BukkitTask reactorTask;
@@ -58,6 +59,7 @@ public class TaskManager {
         cableVisualTask = new CableVisualTask().runTaskTimer(plugin, 0L, 2L);
         overloadTask = new EmergencyEntitiesKill().runTaskTimer(plugin, 20L, 20L);
         redstoneGuardTask = new RedstoneGuardTask().runTaskTimer(plugin, 1L, 1L);
+        overloadWarningTask = new ServerOverloadWarning().runTaskTimer(plugin, 20L, 20L);
 
         gunTask = new PlasmaProjectileTask().runTaskTimer(plugin, 1L, 1L);
         reactorTask = new ReactorTask().runTaskTimer(plugin, 1L, 1L);
@@ -76,6 +78,7 @@ public class TaskManager {
         if (cableVisualTask != null) cableVisualTask.cancel();
         if (overloadTask != null) overloadTask.cancel();
         if (redstoneGuardTask != null) redstoneGuardTask.cancel();
+        if (overloadWarningTask != null) overloadWarningTask.cancel();
         if (gunTask != null) gunTask.cancel();
         if (reactorTask != null) reactorTask.cancel();
         if (radiationTask != null) radiationTask.cancel();

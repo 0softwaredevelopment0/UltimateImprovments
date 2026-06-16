@@ -43,6 +43,7 @@ public final class RedstoneGuard {
     public static void reload() {
         if (instance != null) {
             instance.loadConfig();
+            Main.getInstance().getLogger().info("[REDSTONE_GUARD] Config reloaded (enabled=" + instance.enabled + ")");
         }
     }
 
@@ -74,7 +75,7 @@ public final class RedstoneGuard {
         if (!enabled) {
             return false;
         }
-        pruneExpired();
+        // pruneExpired() already called once per tick in tick() — no need to call here
         return isKeyBlocked(ChunkKey.from(chunk));
     }
 
@@ -115,6 +116,10 @@ public final class RedstoneGuard {
             if (overloadActive) {
                 notifyOverloadEnded(mspt, globalCount);
             }
+            overloadActive = false;
+        } else {
+            // Partial recovery: one condition is still above threshold.
+            // Reset overloadActive to avoid getting stuck in an ambiguous state.
             overloadActive = false;
         }
     }

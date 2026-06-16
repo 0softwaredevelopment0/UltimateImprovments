@@ -206,7 +206,7 @@ public class CodePanelGUI {
             }
             case "ENTER" -> {
                 item = new ItemStack(Material.EMERALD_BLOCK);
-                name = "§4✔ §aВвод";
+                name = "§2✔ §aВвод";
             }
             default -> {
                 item = new ItemStack(Material.MAGENTA_WOOL);

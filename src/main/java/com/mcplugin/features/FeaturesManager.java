@@ -4,6 +4,8 @@ import com.mcplugin.Main;
 import com.mcplugin.features.antimatter.AntimatterManager;
 import com.mcplugin.features.attributes.AttributesManager;
 import com.mcplugin.features.beacon.BeaconManager;
+import com.mcplugin.features.unbreakablebreaker.UnbreakableBreakerManager;
+import com.mcplugin.features.integrity.IntegrityManager;
 import com.mcplugin.features.blockdmg.BlockDmgManager;
 import com.mcplugin.features.boostedcobweb.BoostedCobwebManager;
 import com.mcplugin.features.deathbell.DeathBellManager;
@@ -42,7 +44,9 @@ public class FeaturesManager {
         WaypointManager.init(plugin);
 
         // Init managers with listeners
+        IntegrityManager.init(plugin);
         AntimatterManager.init(plugin);
+        UnbreakableBreakerManager.init(plugin);
         DeathBellManager.init(plugin);
         EnderChestManager.init(plugin);
         GlassBreakManager.init(plugin);
@@ -51,9 +55,11 @@ public class FeaturesManager {
     }
 
     public static void reloadConfig() {
+        IntegrityManager.reloadConfig();
         AntimatterManager.reloadConfig();
         AttributesManager.reloadConfig();
         BeaconManager.reloadConfig();
+        UnbreakableBreakerManager.reloadConfig();
         BlockDmgManager.reloadConfig();
         BoostedCobwebManager.reloadConfig();
         DeathBellManager.reloadConfig();
