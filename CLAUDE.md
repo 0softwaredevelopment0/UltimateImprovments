@@ -9,11 +9,11 @@ MC-Plugin is a Minecraft Paper plugin that adds advanced features including an e
 ## Build and Development Commands
 
 ```bash
-# Build the plugin
+# Build the plugin (shadowJar - produces the final plugin jar)
 ./gradlew build
 
-# Build and copy to server (reobfuscated jar)
-./gradlew reobfJar
+# Build with shadow (explicit)
+./gradlew shadowJar
 
 # Clean build
 ./gradlew clean build
@@ -22,7 +22,9 @@ MC-Plugin is a Minecraft Paper plugin that adds advanced features including an e
 ./gradlew build -Dorg.gradle.java.home=/path/to/java21
 ```
 
-The main artifact is `build/libs/MC-Plugin-1.0.jar` after running `reobfJar`.
+The main artifact is `build/libs/MC-Plugin-%VERSION%-all.jar` (e.g. `MC-Plugin-26.1.2-all.jar`) after running `build` or `shadowJar`.
+
+**Note:** Paper 26.x (1.21.4+) uses Mojang mappings natively, so reobfuscation (`reobfJar`) is no longer needed or supported.
 
 ## Architecture Overview
 

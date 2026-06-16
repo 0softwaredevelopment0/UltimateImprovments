@@ -1,6 +1,7 @@
 package com.mcplugin.commands;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.SoundUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.boss.BarColor;
@@ -333,10 +334,8 @@ public class PowerManager {
     private void playBeepToAll(float pitch) {
         if (!countdownSoundEnabled) return;
 
-        Sound sound;
-        try {
-            sound = Sound.valueOf(countdownSoundName);
-        } catch (IllegalArgumentException e) {
+        Sound sound = SoundUtil.getSound(countdownSoundName);
+        if (sound == null) {
             Main.getInstance().getLogger().warning("[POWER] Unknown sound: " + countdownSoundName);
             return;
         }

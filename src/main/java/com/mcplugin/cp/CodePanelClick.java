@@ -1,6 +1,7 @@
 package com.mcplugin.cp;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.SoundUtil;
 import com.mcplugin.cp.CodePanelDatabase;
 import org.bukkit.Sound;
 import org.bukkit.command.*;
@@ -209,9 +210,10 @@ public class CodePanelClick implements CommandExecutor {
 
             if (name == null) return;
 
-            Sound sound = Sound.valueOf(name);
-
-            player.playSound(player.getLocation(), sound, 1f, 1f);
+            Sound sound = SoundUtil.getSound(name);
+            if (sound != null) {
+                player.playSound(player.getLocation(), sound, 1f, 1f);
+            }
 
         } catch (Exception ignored) {}
     }

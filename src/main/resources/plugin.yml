@@ -1,10 +1,10 @@
 name: MC-Plugin
 
-version: 1.5
+version: 26.1.2
 
 main: com.mcplugin.Main
 
-api-version: "1.21.11"
+api-version: "26.1.2"
 
 author: rizer001
 
@@ -171,4 +171,8 @@ permissions:
 
   mcplugin.command.item:
     description: Allows using item management commands (/mp item int set|add|list)
+    default: op
+
+  mcplugin.packetguard.bypass:
+    description: Allows bypassing the packet size guard (oversized packets)
     default: op

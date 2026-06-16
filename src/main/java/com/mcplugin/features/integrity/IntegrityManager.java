@@ -2,6 +2,7 @@ package com.mcplugin.features.integrity;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.SoundUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -603,11 +604,8 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     private static Sound getSound(String name, Sound fallback) {
-        try {
-            return Sound.valueOf(name);
-        } catch (Exception e) {
-            return fallback;
-        }
+        Sound sound = SoundUtil.getSound(name);
+        return sound != null ? sound : fallback;
     }
 
     private static String getItemName(ItemStack item) {

@@ -25,8 +25,22 @@ public class DatapackInstaller {
     // =========================
     public void install(Main plugin) {
         try {
-            File worldFolder = Bukkit.getWorlds().get(0).getWorldFolder();
-            File datapacksFolder = new File(worldFolder, "datapacks");
+            // В Paper 1.21.4+ (Minecraft 1.21.4+) миры хранятся в новой структуре:
+            //   <worlddir>/<worldname>/dimensions/<namespace>/<dimension>/
+            // Bukkit.getWorlds().get(0).getWorldFolder() возвращает путь к измерению
+            // (например, world/dimensions/minecraft/overworld/), НО датапаки должны
+            // лежать в корне мира: <world>/datapacks/, а НЕ в подпапке измерения.
+            //
+            // Используем Bukkit.getWorldContainer() + имя мира — это гарантированно
+            // даёт корневую папку мира независимо от структуры измерений,
+            // уважает настройку world-container в bukkit.yml и не требует
+            // навигации по подпапкам dimensions/.
+            File worldRoot = new File(
+                    Bukkit.getWorldContainer(),
+                    Bukkit.getWorlds().get(0).getName()
+            );
+
+            File datapacksFolder = new File(worldRoot, "datapacks");
 
             if (!datapacksFolder.exists()) {
                 datapacksFolder.mkdirs();

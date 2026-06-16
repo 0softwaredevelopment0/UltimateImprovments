@@ -93,11 +93,11 @@ public class AuthListener implements Listener {
         for (Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
             if (online.getName().equalsIgnoreCase(newPlayerName)) {
                 String dupMessage = getConfigMessage("duplicate_name_kick",
-                        "§c❌ Игрок с таким ником уже на сервере!\\n§7Пожалуйста, зайдите под другим ником.");
+                        "§c❌ Игрок с таким ником уже на сервере!\n§7Пожалуйста, зайдите под другим ником.");
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-                        "§6✦ MC-Plugin\\n" +
-                        "§7━━━━━━━━━━━━━━━━━━━━━\\n\\n" +
-                        dupMessage + "\\n\\n" +
+                        "§6✦ MC-Plugin\n" +
+                        "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                        dupMessage + "\n\n" +
                         "§7━━━━━━━━━━━━━━━━━━━━━"
                 );
                 return;

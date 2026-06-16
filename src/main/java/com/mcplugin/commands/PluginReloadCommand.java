@@ -20,6 +20,7 @@ import com.mcplugin.cp.CodePanelClick;
 import com.mcplugin.cp.CodePanelCommand;
 import com.mcplugin.cp.CodePanelDatabase;
 import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.SoundUtil;
 
 import org.bukkit.Bukkit;
 import net.md_5.bungee.api.chat.*;
@@ -1156,9 +1157,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 player.sendMessage("");
 
                 String warningSound = cfg.getString("suicide.sounds.warning", "BLOCK_NOTE_BLOCK_PLING");
-                try {
-                    player.playSound(player.getLocation(), Sound.valueOf(warningSound), 1.0f, 0.5f);
-                } catch (IllegalArgumentException ignored) { }
+                Sound warningSnd = SoundUtil.getSound(warningSound);
+                if (warningSnd != null) {
+                    player.playSound(player.getLocation(), warningSnd, 1.0f, 0.5f);
+                }
 
                 // Автосброс подтверждения
                 long confirmTimeoutTicks = confirmTimeout * 20L;
@@ -2274,13 +2276,11 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
     // =========================
     private void playSuicideBeep(Player player, float pitch) {
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, pitch);
+
     }
 
     private Sound parseSound(String name, Sound defaultSound) {
-        try {
-            return Sound.valueOf(name);
-        } catch (IllegalArgumentException e) {
-            return defaultSound;
-        }
+        Sound sound = SoundUtil.getSound(name);
+        return sound != null ? sound : defaultSound;
     }
 }

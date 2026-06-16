@@ -20,6 +20,8 @@ import com.mcplugin.guns.plasmacannon.GunListener;
 import com.mcplugin.guns.shoker.ShokerListener;
 import com.mcplugin.listeners.*;
 import com.mcplugin.server.*;
+import com.mcplugin.server.PacketGuard;
+import com.mcplugin.server.Log4jInstaller;
 import com.mcplugin.auth.*;
 import com.mcplugin.cp.CodePanelGUIListener;
 import com.mcplugin.listeners.VoidProtectionListener;
@@ -72,6 +74,11 @@ public class Main extends JavaPlugin {
         // =========================
         DatapackInstaller.init(this);
         DatapackInstaller.getInstance().install(this);
+
+        // =========================
+        // 📦 LOG4J INSTALL
+        // =========================
+        Log4jInstaller.init(this);
 
         // =========================
         // CORE SYSTEMS INIT
@@ -141,6 +148,8 @@ public class Main extends JavaPlugin {
         pm.registerEvents(new RedstoneGuardListener(), this);
 
         pm.registerEvents(new AuthListener(), this);
+
+        PacketGuard.init(this);
 
         pm.registerEvents(new MagnetEventListener(), this);
         pm.registerEvents(new IntegrityListener(), this);

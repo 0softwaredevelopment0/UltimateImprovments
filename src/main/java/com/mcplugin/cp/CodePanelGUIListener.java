@@ -1,6 +1,7 @@
 package com.mcplugin.cp;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.SoundUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -200,8 +201,10 @@ public class CodePanelGUIListener implements Listener {
                     .getConfig()
                     .getString("codepanel.sounds." + path);
             if (name == null) return;
-            Sound sound = Sound.valueOf(name);
-            player.playSound(player.getLocation(), sound, 1f, 1f);
+            Sound sound = SoundUtil.getSound(name);
+            if (sound != null) {
+                player.playSound(player.getLocation(), sound, 1f, 1f);
+            }
         } catch (Exception ignored) {}
     }
 

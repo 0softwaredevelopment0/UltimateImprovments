@@ -24,6 +24,7 @@
   "cardinal_light": "nether",
   "coordinate_scale": 1,
   "has_ceiling": false,
+  "has_ender_dragon_fight": false,
   "has_fixed_time": true,
   "has_skylight": false,
   "height": 4064,

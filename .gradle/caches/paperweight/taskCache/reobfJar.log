@@ -1,2 +1,0 @@
-Command: C:\Program Files\Eclipse Adoptium\jdk-21.0.3.9-hotspot\bin\java.exe -Xmx1G -classpath C:\Users\danal\.gradle\caches\modules-2\files-2.1\net.fabricmc\tiny-remapper\0.12.0\bfb93e1bfb66d47272ccd37ce894dcfc20ba0b6\tiny-remapper-0.12.0-fat.jar net.fabricmc.tinyremapper.Main C:\MC-Plugin\build\libs\MC-Plugin-1.5.jar C:\MC-Plugin\build\libs\MC-Plugin-1.5-reobf.jar C:\MC-Plugin\.gradle\caches\paperweight\taskCache\reobfMappings.tiny mojang spigot C:\MC-Plugin\.gradle\caches\paperweight\taskCache\mappedServerJar.jar --threads=1
-[INFO] Finished after 4080.88 ms.
