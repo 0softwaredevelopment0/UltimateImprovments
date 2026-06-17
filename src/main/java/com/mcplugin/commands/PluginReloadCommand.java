@@ -2047,9 +2047,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             var modules = mm.getModules();
 
             sender.sendMessage("");
-            sender.sendMessage("§8┌─────────────────────────────────────────────┐");
+            sender.sendMessage("§8┌────────────────────────────────┐");
             sender.sendMessage("§8│ §6✦ §fМодули MC-Plugin §7(" + modules.size() + ")");
-            sender.sendMessage("§8├─────────────────────────────────────────────┤");
+            sender.sendMessage("§8├────────────────────────────────┤");
 
             for (var m : modules) {
                 String status;
@@ -2065,9 +2065,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§8│ §f" + padRight(m.getName(), 24) + " " + status + essential);
             }
 
-            sender.sendMessage("§8├─────────────────────────────────────────────┤");
+            sender.sendMessage("§8├────────────────────────────────┤");
             sender.sendMessage("§8│ §7Итого: §a" + countEnabled(modules) + " §7вкл, §c" + countDisabled(modules) + " §7выкл");
-            sender.sendMessage("§8└─────────────────────────────────────────────┘");
+            sender.sendMessage("§8└────────────────────────────────┘");
             sender.sendMessage("");
             return true;
         }
