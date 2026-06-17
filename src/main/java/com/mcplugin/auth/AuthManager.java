@@ -1,6 +1,7 @@
 package com.mcplugin.auth;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
@@ -153,7 +154,7 @@ public class AuthManager {
                 if (!lastIp.isEmpty() && !lastIp.equals(currentIp)) {
                     Main.getInstance().getLogger().info(
                             "[Auth] Player " + player.getName() + " IP changed: " + lastIp + " → " + currentIp + " — session reset.");
-                    String ipMsg = getConfigMessage("ip_changed", "§e✦ §7Ваш IP-адрес изменился. Пожалуйста, войдите заново.");
+                    String ipMsg = getConfigMessage("ip_changed", "<yellow>✦</yellow> <gray>Ваш IP-адрес изменился. Пожалуйста, войдите заново.</gray>");
                     player.sendMessage(ipMsg);
                     AuthDatabase.resetAuth(uuid);
                     registered = true; // регистрация остаётся
@@ -186,7 +187,7 @@ public class AuthManager {
         player.setInvulnerable(true);
 
         // Open GUI on next tick to ensure player is fully loaded
-        player.sendMessage("§e✦ §7Открываем окно авторизации...");
+        player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <gray>Открываем окно авторизации...</gray>"));
         if (registered) {
             AuthGUI.openLogin(player);
         } else {
@@ -212,7 +213,7 @@ public class AuthManager {
 
         if (lastRequest != null && (now - lastRequest) < cooldownMs) {
             long remaining = ((cooldownMs - (now - lastRequest)) / 1000) + 1;
-            player.sendMessage("§c❌ Подождите §e" + remaining + " §cсек. перед следующим запросом!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Подождите </red><yellow>" + remaining + "</yellow> <red>сек. перед следующим запросом!</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return false;
         }
@@ -250,10 +251,10 @@ public class AuthManager {
                 }
 
                 AuthDatabase.updateLastLogin(uuid);
-                authenticatePlayer(player, "§a✅ §fВы успешно вошли на сервер!");
+                authenticatePlayer(player, "<green>✅</green> <white>Вы успешно вошли на сервер!</white>");
             } else {
                 player.sendMessage("");
-                player.sendMessage("§c❌ Неверный пароль! Попробуйте ещё раз.");
+                player.sendMessage(MessageUtil.parse("<red>❌ Неверный пароль! Попробуйте ещё раз.</red>"));
                 player.sendMessage("");
             }
 
@@ -261,7 +262,7 @@ public class AuthManager {
             // REGISTER
             int minLen = getConfigInt("auth.min_password_length", 4);
             if (password.length() < minLen) {
-                player.sendMessage("§c❌ Пароль должен быть не менее " + minLen + " символов!");
+                player.sendMessage(MessageUtil.parse("<red>❌ Пароль должен быть не менее </red><yellow>" + minLen + "</yellow><red> символов!</red>"));
                 reopenAfterDelay(player);
                 return;
             }
@@ -288,7 +289,7 @@ public class AuthManager {
 
             // Сохраняем пароль + IP одной операцией
             AuthDatabase.register(uuid, password, playerIp); // already sets last_login + ip_address
-            authenticatePlayer(player, "§a✅ §fРегистрация прошла успешно!");
+            authenticatePlayer(player, "<green>✅</green> <white>Регистрация прошла успешно!</white>");
         }
     }
 
@@ -312,8 +313,8 @@ public class AuthManager {
         player.setInvulnerable(false);
 
         player.sendMessage("");
-        player.sendMessage(message);
-        player.sendMessage("§7Приятной игры! Сессия активна 1 час.");
+        player.sendMessage(MessageUtil.parse(message));
+        player.sendMessage(MessageUtil.parse("<gray>Приятной игры! Сессия активна 1 час.</gray>"));
         player.sendMessage("");
 
         Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " authenticated.");
@@ -346,7 +347,7 @@ public class AuthManager {
             player.setWalkSpeed(0.2f);
             player.setFlySpeed(0.1f);
             player.setInvulnerable(false);
-            player.sendMessage("§a✅ §fВы были принудительно авторизованы администратором!");
+            player.sendMessage(MessageUtil.parse("<green>✅</green> <white>Вы были принудительно авторизованы администратором!</white>"));
         }
 
         return true;
@@ -448,7 +449,7 @@ public class AuthManager {
         player.setInvulnerable(false);
 
         player.sendMessage("");
-        player.sendMessage("§a✅ §fПароль успешно изменён!");
+        player.sendMessage(MessageUtil.parse("<green>✅</green> <white>Пароль успешно изменён!</white>"));
         player.sendMessage("§7Приятной игры! Сессия активна 1 час.");
         player.sendMessage("");
 

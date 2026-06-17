@@ -20,6 +20,7 @@ import com.mcplugin.cp.CodePanelClick;
 import com.mcplugin.cp.CodePanelCommand;
 import com.mcplugin.cp.CodePanelDatabase;
 import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 
 import org.bukkit.Bukkit;
@@ -167,16 +168,16 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("chgdim")) {
 
             if (!(sender instanceof Player player)) {
-                sender.sendMessage(Main.getInstance().getConfig()
+                sender.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
                         .getString("changedimmension.messages.player_only",
-                                "§4❌ §cТолько игрок может использовать эту команду!"));
+                                "<dark_red>❌</dark_red> <red>Только игрок может использовать эту команду!</red>")));
                 return true;
             }
 
             if (!player.hasPermission("mcplugin.command.chgdim")) {
-                player.sendMessage(Main.getInstance().getConfig()
+                player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
                         .getString("changedimmension.messages.no_permission",
-                                "§4❌ §cУ вас нет прав на эту команду!"));
+                                "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>")));
                 return true;
             }
 
@@ -216,10 +217,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 long elapsed = now - lastUse;
                 if (elapsed < cooldownSecs) {
                     long remaining = cooldownSecs - elapsed;
-                    player.sendMessage(Main.getInstance().getConfig()
+                    player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
                             .getString("changedimmension.messages.cooldown",
-                                    "§4❌ §cПодождите §e{seconds}§c сек перед повторным использованием!")
-                            .replace("{seconds}", String.valueOf(remaining)));
+                                    "<dark_red>❌</dark_red> <red>Подождите</red> <yellow>{seconds}</yellow><red> сек перед повторным использованием!</red>")
+                            .replace("{seconds}", String.valueOf(remaining))));
                     return true;
                 }
             }
@@ -237,10 +238,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
             World world = Bukkit.getWorld(worldName);
             if (world == null) {
-                player.sendMessage(Main.getInstance().getConfig()
+                player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
                         .getString("changedimmension.messages.world_not_found",
-                                "§4❌ §cМир §e{world}§c не найден!")
-                        .replace("{world}", worldName));
+                                "<dark_red>❌</dark_red> <red>Мир</red> <yellow>{world}</yellow> <red>не найден!</red>")
+                        .replace("{world}", worldName)));
                 return true;
             }
 
@@ -263,10 +264,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             player.teleportAsync(targetLocation);
             cooldowns.put(playerUuid, now);
 
-            player.sendMessage(Main.getInstance().getConfig()
+            player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
                     .getString("changedimmension.messages.success",
-                            "§a✅ §fТелепортация в мир §e{world}§f завершена!")
-                    .replace("{world}", worldName));
+                            "<green>✅</green> <white>Телепортация в мир</white> <yellow>{world}</yellow> <white>завершена!</white>")
+                    .replace("{world}", worldName)));
 
             return true;
         }
@@ -293,9 +294,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
             Location returnLoc = DimensionManager.getReturnLocation(player);
             if (returnLoc == null) {
-                player.sendMessage(Main.getInstance().getConfig()
+                player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
                         .getString("changedimmension.messages.return_error",
-                                "§4❌ §cОшибка: точка возврата повреждена!"));
+                                "<dark_red>❌</dark_red> <red>Ошибка: точка возврата повреждена!</red>")));
                 DimensionManager.removeReturnLocation(player);
                 return true;
             }
@@ -303,9 +304,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             player.teleportAsync(returnLoc);
             DimensionManager.removeReturnLocation(player);
 
-            player.sendMessage(Main.getInstance().getConfig()
+            player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
                     .getString("changedimmension.messages.return_success",
-                            "§a✅ §fВы вернулись в исходную точку!"));
+                            "<green>✅</green> <white>Вы вернулись в исходную точку!</white>")));
 
             return true;
         }
@@ -1094,8 +1095,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 long remaining = (suicideCooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
                 if (remaining > 0) {
                     String msg = cfg.getString("suicide.messages.cooldown_message",
-                            "§4❌ §cПодождите §e{seconds}§c сек перед повторным использованием!");
-                    player.sendMessage(msg.replace("{seconds}", String.valueOf(remaining)));
+                            "<dark_red>❌</dark_red> <red>Подождите</red> <yellow>{seconds}</yellow><red> сек перед повторным использованием!</red>");
+                    player.sendMessage(MessageUtil.parse(msg.replace("{seconds}", String.valueOf(remaining))));
                     return true;
                 } else {
                     suicideCooldowns.remove(uuid);
@@ -1107,8 +1108,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             // =========================
             if (suicideTasks.containsKey(uuid)) {
                 String msg = cfg.getString("suicide.messages.already_running",
-                        "§4❌ §cУ вас уже запущен обратный отсчёт!");
-                player.sendMessage(msg);
+                        "<dark_red>❌</dark_red> <red>У вас уже запущен обратный отсчёт!</red>");
+                player.sendMessage(MessageUtil.parse(msg));
                 return true;
             }
 
@@ -1118,20 +1119,20 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             if (!suicideConfirmed.getOrDefault(uuid, false)) {
                 suicideConfirmed.put(uuid, true);
 
-                String warningTitle = cfg.getString("suicide.messages.warning_title", "§4☠ §cПРЕДУПРЕЖДЕНИЕ!");
-                String warningText = cfg.getString("suicide.messages.warning_text", "§fВы собираетесь совершить суицид!");
-                String warningNoCancel = cfg.getString("suicide.messages.warning_no_cancel", "§c⚠ После подтверждения отмена невозможна!");
-                String warningConfirmHint = cfg.getString("suicide.messages.warning_confirm_hint", "§eВведите §f/mp suicide§e ещё раз чтобы подтвердить и запустить отсчёт.");
-                String warningCancelHint = cfg.getString("suicide.messages.warning_cancel_hint", "§7Если передумаете — просто подождите §e{timeout}§7 сек, и запрос сбросится.")
+                String warningTitle = cfg.getString("suicide.messages.warning_title", "<dark_red>☠</dark_red> <red>ПРЕДУПРЕЖДЕНИЕ!</red>");
+                String warningText = cfg.getString("suicide.messages.warning_text", "<white>Вы собираетесь совершить суицид!</white>");
+                String warningNoCancel = cfg.getString("suicide.messages.warning_no_cancel", "<red>⚠ После подтверждения отмена невозможна!</red>");
+                String warningConfirmHint = cfg.getString("suicide.messages.warning_confirm_hint", "<yellow>Введите</yellow> <white>/mp suicide</white> <yellow>ещё раз чтобы подтвердить и запустить отсчёт.</yellow>");
+                String warningCancelHint = cfg.getString("suicide.messages.warning_cancel_hint", "<gray>Если передумаете — просто подождите</gray> <yellow>{timeout}</yellow><gray> сек, и запрос сбросится.</gray>")
                         .replace("{timeout}", String.valueOf(confirmTimeout));
 
                 player.sendMessage("");
                 player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-                player.sendMessage("§8┃ " + warningTitle);
+                player.sendMessage("§8┃ " + MessageUtil.legacy(warningTitle));
                 player.sendMessage("§8┃");
-                player.sendMessage("§8┃ " + warningText);
+                player.sendMessage("§8┃ " + MessageUtil.legacy(warningText));
                 player.sendMessage("§8┃");
-                player.sendMessage("§8┃ " + warningNoCancel);
+                player.sendMessage("§8┃ " + MessageUtil.legacy(warningNoCancel));
                 player.sendMessage("§8┃");
 
                 // =========================
@@ -1152,7 +1153,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
                 player.sendMessage("§8┃   §7или введите §f/mp suicide§7 снова");
                 player.sendMessage("§8┃");
-                player.sendMessage("§8┃ " + warningCancelHint);
+                player.sendMessage("§8┃ " + MessageUtil.legacy(warningCancelHint));
                 player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
                 player.sendMessage("");
 
@@ -1169,8 +1170,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     public void run() {
                         if (suicideConfirmed.remove(uuid) != null) {
                             String timeoutMsg = cfg.getString("suicide.messages.timeout_message",
-                                    "§eℹ §fЗапрос на суицид сброшен (время вышло).");
-                            player.sendMessage(timeoutMsg);
+                                    "<yellow>ℹ</yellow> <white>Запрос на суицид сброшен (время вышло).</white>");
+                            player.sendMessage(MessageUtil.parse(timeoutMsg));
                         }
                     }
                 }.runTaskLater(Main.getInstance(), confirmTimeoutTicks);
@@ -1190,7 +1191,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             // =========================
             String bossColorStr = cfg.getString("suicide.bossbar.color", "RED");
             String bossStyleStr = cfg.getString("suicide.bossbar.style", "SOLID");
-            String bossTitle = cfg.getString("suicide.bossbar.title", "§4☠ §cСуицид через §e{seconds}§c сек");
+            String bossTitle = cfg.getString("suicide.bossbar.title", "<dark_red>☠</dark_red> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек</red>");
 
             BarColor bossColor;
             try {
@@ -1203,10 +1204,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 bossStyle = BarStyle.valueOf(bossStyleStr.toUpperCase());
             } catch (IllegalArgumentException e) {
                 bossStyle = BarStyle.SOLID;
-            }
-
-            BossBar bossBar = Bukkit.createBossBar(
-                    bossTitle.replace("{seconds}", String.valueOf(countdownDuration)),
+            }                    BossBar bossBar = Bukkit.createBossBar(
+                    MessageUtil.legacy(bossTitle.replace("{seconds}", String.valueOf(countdownDuration))),
                     bossColor,
                     bossStyle
             );
@@ -1216,14 +1215,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             // =========================
             // ЧАТ: начальное сообщение
             // =========================
-            String confirmedTitle = cfg.getString("suicide.messages.confirmed_title", "§4☠ §cЗапущен обратный отсчёт!");
-            String confirmedNoCancel = cfg.getString("suicide.messages.confirmed_no_cancel", "§cОтмена невозможна!");
+            String confirmedTitle = cfg.getString("suicide.messages.confirmed_title", "<dark_red>☠</dark_red> <red>Запущен обратный отсчёт!</red>");
+            String confirmedNoCancel = cfg.getString("suicide.messages.confirmed_no_cancel", "<red>Отмена невозможна!</red>");
 
             player.sendMessage("");
             player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-            player.sendMessage("§8┃ " + confirmedTitle);
+            player.sendMessage("§8┃ " + MessageUtil.legacy(confirmedTitle));
             player.sendMessage("§8┃");
-            player.sendMessage("§8┃ " + confirmedNoCancel);
+            player.sendMessage("§8┃ " + MessageUtil.legacy(confirmedNoCancel));
             player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
             player.sendMessage("");
 
@@ -1236,9 +1235,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             int totalTicks = duration * 20;
             String tickSoundName = cfg.getString("suicide.sounds.tick", "BLOCK_NOTE_BLOCK_PLING");
             String finishSoundName = cfg.getString("suicide.sounds.finish", "ENTITY_LIGHTNING_BOLT_THUNDER");
-            String timerActionbar = cfg.getString("suicide.messages.timer_actionbar", "§c§l☠ §fСуицид через §e§l{seconds} §fсек");
-            String timerChat = cfg.getString("suicide.messages.timer_chat", "§8[§4☠§8] §cСуицид через §e{seconds} §cсек...");
-            String deathMsg = cfg.getString("suicide.messages.death_message", "§8[§4☠§8] §cВы совершили суицид...");
+            String timerActionbar = cfg.getString("suicide.messages.timer_actionbar", "<red><bold>☠</bold></red> <white>Суицид через</white> <yellow><bold>{seconds}</bold></yellow> <white>сек</white>");
+            String timerChat = cfg.getString("suicide.messages.timer_chat", "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек...</red>");
+            String deathMsg = cfg.getString("suicide.messages.death_message", "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Вы совершили суицид...</red>");
 
             // Эффективно финальные (effectively final) для использования внутри BukkitRunnable
             final Sound tickSound = parseSound(tickSoundName, Sound.BLOCK_NOTE_BLOCK_PLING);
@@ -1261,7 +1260,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                         suicideTasks.remove(uuid);
                         suicideCooldowns.put(uuid, System.currentTimeMillis() + cooldownSeconds * 1000L);
 
-                        player.sendMessage(deathMsg);
+                        player.sendMessage(MessageUtil.parse(deathMsg));
                         player.playSound(player.getLocation(), finishSound, 1.0f, 1.0f);
                         player.setHealth(0);
                         cancel();
@@ -1276,14 +1275,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
                         // Чат (последние 5 секунд)
                         if (currentSecond <= 5 && currentSecond > 0) {
-                            player.sendMessage(timerChat.replace("{seconds}", String.valueOf(currentSecond)));
+                            player.sendMessage(MessageUtil.parse(timerChat.replace("{seconds}", String.valueOf(currentSecond))));
                         }
 
                         // ActionBar
-                        player.sendActionBar(timerActionbar.replace("{seconds}", String.valueOf(currentSecond)));
+                        player.sendActionBar(MessageUtil.parse(timerActionbar.replace("{seconds}", String.valueOf(currentSecond))));
 
                         // BossBar title
-                        bossBar.setTitle(bossTitle.replace("{seconds}", String.valueOf(currentSecond)));
+                        bossBar.setTitle(MessageUtil.legacy(bossTitle.replace("{seconds}", String.valueOf(currentSecond))));
                     }
 
                     // =========================

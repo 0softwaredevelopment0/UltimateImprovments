@@ -192,10 +192,10 @@ codepanel:
     fail: BLOCK_ANVIL_LAND
     # Сообщения панели (русский язык)
   messages:
-    progress: "§fПроверка кода: §7{progress}%"
-    success: "§2✔ §aУспех: §7Код верный!"
-    error: "§4❌ §cОшибка: §7Неверный код!"
-    no_config: "§4❌ §cОшибка: §7В базе данных нет ни одного ключа!"
+    progress: "<white>Проверка кода: <gray>{progress}%</gray></white>"
+    success: "<dark_green>✔</dark_green> <green>Успех:</green> <gray>Код верный!</gray>"
+    error: "<dark_red>❌</dark_red> <red>Ошибка:</red> <gray>Неверный код!</gray>"
+    no_config: "<dark_red>❌</dark_red> <red>Ошибка:</red> <gray>В базе данных нет ни одного ключа!</gray>"
 
 # =========================
 # 🔐 Система ключей кодовой панели
@@ -263,7 +263,7 @@ energy_crafting:
   workbench_search_radius: 3
   # Сообщения верстака
   messages:
-    no_energy: "§4❌ §cNot enough energy! §7Need §e{amount} §7energy."
+    no_energy: "<dark_red>❌</dark_red> <red>Not enough energy!</red> <gray>Need</gray> <yellow>{amount}</yellow> <gray>energy.</gray>"
 
 
 
@@ -500,7 +500,7 @@ features:
     bypass_permission: "mcplugin.gmprotect.bypass"
 
     # Сообщение игроку при попытке сменить режим игры
-    message: "§cВы не можете сменить режим игры в этом мире!"
+    message: "<red>Вы не можете сменить режим игры в этом мире!</red>"
 
   # 🪖 Замедление щита — slowness при блоке
   shieldslowness:
@@ -634,7 +634,7 @@ features:
   # используется кастомная система целостности в ПРОЦЕНТАХ (0.0 — 100.0%).
   #
   # В описание (lore) каждого предмета добавляется строка:
-  #   §7Целостность: §x§0§0§6§6§0§075.500%
+  #   <gray>Целостность:</gray> <gradient:#006600:#990000>75.500%</gradient>
   #
   # ⚠ НИКАКИХ числовых значений прочности! Только процент с дробной частью.
   #
@@ -673,8 +673,8 @@ features:
 
     # ===== ТЕКСТ В ОПИСАНИИ =====
     # Текст перед процентом. Можно изменить на любой:
-    #   "§7Целостность:" — по умолчанию
-    #   "§7Integrity:"   — английский
+    #   "<gray>Целостность:</gray>" — по умолчанию
+    #   "<gray>Integrity:</gray>"   — английский
     lore_text: "§7Целостность:"
 
     # ===== ПОВЕДЕНИЕ ПРИ ПОЛОМКЕ =====
@@ -687,7 +687,7 @@ features:
 
       # Текст сообщения о поломке
       # {item} — название предмета
-      message: "§4✖ §cВаш предмет §f{item} §cсломался!"
+      message: "<dark_red>✖</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>"
 
       # Звук поломки (см. https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html)
       sound: ENTITY_ITEM_BREAK
@@ -723,10 +723,10 @@ features:
       combine_bonus: 0.1
       # Сообщение при ремонте материалом
       # {current} — текущая целостность в % (например 75.5)
-      repair_message: "§a🔧 §fЦелостность восстановлена до §e{current}%§f!"
+      repair_message: "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>"
       # Сообщение при объединении предметов
       # {current} — текущая целостность в % (например 88.3)
-      combine_message: "§a🔗 §fПредметы объединены! Целостность: §e{current}%§f"
+      combine_message: "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>"
 
     # ===== XP + ШЁЛКОВОЕ КАСАНИЕ =====
     # При получении опыта, если в руке предмет с Шёлковым касанием,
@@ -739,7 +739,7 @@ features:
       integrity_multiplier: 0.5
       # Сообщение игроку
       # {amount} — сколько % восстановлено (например 2.5)
-      message: "§b✨ §fШёлковое касание восстановило §e{amount}%§f целостности!"
+      message: "<aqua>✨</aqua> <white>Шёлковое касание восстановило</white> <yellow>{amount}%</yellow> <white>целостности!</white>"
 
     # ===== ОБЪЕДИНЕНИЕ ПРЕДМЕТОВ =====
     # При объединении двух одинаковых предметов в точиле, верстаке или
@@ -788,7 +788,7 @@ features:
     # Максимальное количество зачарований
     max_enchantments: 40
     # Сообщение при блокировке
-    message: "§cЭтот предмет содержит слишком много данных!"
+    message: "<red>Этот предмет содержит слишком много данных!</red>"
 
   # 🎯 Защита от левитации шалкера — убирает эффект левитации при попадании пули шалкера в игрока
   shulker_protection:
@@ -885,18 +885,18 @@ auth:
 
   # Сообщения
   messages:
-    register_title: "§8Зарегистрируйтесь"
-    login_title: "§8Введите пароль"
-    success_register: "§a✅ Регистрация прошла успешно!"
-    success_login: "§a✅ Вы успешно вошли на сервер!"
-    wrong_password: "§c❌ Неверный пароль! Попробуйте ещё раз."
-    short_password: "§c❌ Пароль должен быть не менее 4 символов!"
-    need_auth: "§c❌ Сначала авторизуйтесь! Введите пароль в открывшемся окне."
-    ip_changed: "§c❌ §fВаш IP-адрес изменился. Пожалуйста, войдите заново."
-    duplicate_name_kick: "§e❌ Игрок с таким ником уже на сервере!
-§fПожалуйста, зайдите под другим ником."
-    max_accounts_per_ip: "§c❌ С вашего IP-адреса уже зарегистрировано §e{count}§c аккаунтов!
-§fМаксимум: §e{limit}§f аккаунтов на один IP."
+    register_title: "<dark_gray>Зарегистрируйтесь</dark_gray>"
+    login_title: "<dark_gray>Введите пароль</dark_gray>"
+    success_register: "<green>✅ Регистрация прошла успешно!</green>"
+    success_login: "<green>✅ Вы успешно вошли на сервер!</green>"
+    wrong_password: "<red>❌ Неверный пароль! Попробуйте ещё раз.</red>"
+    short_password: "<red>❌ Пароль должен быть не менее 4 символов!</red>"
+    need_auth: "<red>❌ Сначала авторизуйтесь! Введите пароль в открывшемся окне.</red>"
+    ip_changed: "<red>❌</red> <white>Ваш IP-адрес изменился. Пожалуйста, войдите заново.</white>"
+    duplicate_name_kick: "<yellow>❌ Игрок с таким ником уже на сервере!</yellow>
+<white>Пожалуйста, зайдите под другим ником.</white>"
+    max_accounts_per_ip: "<red>❌ С вашего IP-адреса уже зарегистрировано</red> <yellow>{count}</yellow><red> аккаунтов!</red>
+<white>Максимум:</white> <yellow>{limit}</yellow><white> аккаунтов на один IP.</white>"
 
 # =========================
 # 🕳 Защита от падения в пустоту
@@ -919,7 +919,7 @@ void_protection:
     pitch: 0.0
 
   # Сообщение игроку при телепортации
-  message: "§a✅ §fВы были спасены из пустоты!"
+  message: "<green>✅</green> <white>Вы были спасены из пустоты!</white>"
 
 # =========================
 # 🔌 Управление питанием сервера
@@ -929,10 +929,10 @@ power:
   intercept_commands: true
 
   # Сообщение при попытке использовать /stop
-  stop_message: "§8[§4⚠§8] §cКоманда /stop отключена. Используйте: §f/mp power off"
+  stop_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Команда /stop отключена. Используйте:</red> <white>/mp power off</white>"
 
   # Сообщение при попытке использовать /restart
-  restart_message: "§8[§4⚠§8] §cКоманда /restart отключена. Используйте: §f/mp power reboot"
+  restart_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Команда /restart отключена. Используйте:</red> <white>/mp power reboot</white>"
 
   # Время ожидания подтверждения запроса (секунд)
   request_timeout: 30
@@ -945,7 +945,7 @@ power:
     enabled: true
     # {action} — действие (выключается/перезагружается)
     # {seconds} — оставшиеся секунды
-    format: "§c⚡ §fСервер {action} через §e{seconds}§f сек"
+    format: "<red>⚡</red> <white>Сервер {action} через</white> <yellow>{seconds}</yellow> <white>сек</white>"
 
   # Босс-бар — показывается всем игрокам
   bossbar:
@@ -955,9 +955,8 @@ power:
     # Стиль: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
     style: SOLID
     # {action} — действие (выключается/перезагружается)
-    # {action} — действие (выключается/перезагружается)
     # {seconds} — оставшиеся секунды
-    text: "§c⚡ Сервер {action} через §e{seconds}§c сек"
+    text: "<red>⚡ Сервер {action} через</red> <yellow>{seconds}</yellow> <red>сек</red>"
 
   # Звук «пиканья» во время обратного отсчёта
   countdown_sound:
@@ -1001,19 +1000,19 @@ suicide:
 
   # 💬 Сообщения
   messages:
-    warning_title: "§4☠ §cПРЕДУПРЕЖДЕНИЕ!"
-    warning_text: "§fВы собираетесь совершить суицид!"
-    warning_no_cancel: "§c⚠ После подтверждения отмена невозможна!"
-    warning_confirm_hint: "§eВведите §f/mp suicide§e ещё раз чтобы подтвердить и запустить отсчёт."
-    warning_cancel_hint: "§7Если передумаете — просто подождите §e{timeout}§7 сек, и запрос сбросится."
-    confirmed_title: "§4☠ §cЗапущен обратный отсчёт!"
-    confirmed_no_cancel: "§cОтмена невозможна!"
-    timer_actionbar: "§c§l☠ §fСуицид через §e§l{seconds} §fсек"
-    timer_chat: "§8[§4☠§8] §cСуицид через §e{seconds} §cсек..."
-    death_message: "§8[§4☠§8] §cВы совершили суицид..."
-    timeout_message: "§eℹ §fЗапрос на суицид сброшен (время вышло)."
-    cooldown_message: "§4❌ §cПодождите §e{seconds}§c сек перед повторным использованием!"
-    already_running: "§4❌ §cУ вас уже запущен обратный отсчёт!"
+    warning_title: "<dark_red>☠</dark_red> <red>ПРЕДУПРЕЖДЕНИЕ!</red>"
+    warning_text: "<white>Вы собираетесь совершить суицид!</white>"
+    warning_no_cancel: "<red>⚠ После подтверждения отмена невозможна!</red>"
+    warning_confirm_hint: "<yellow>Введите</yellow> <white>/mp suicide</white> <yellow>ещё раз чтобы подтвердить и запустить отсчёт.</yellow>"
+    warning_cancel_hint: "<gray>Если передумаете — просто подождите</gray> <yellow>{timeout}</yellow><gray> сек, и запрос сбросится.</gray>"
+    confirmed_title: "<dark_red>☠</dark_red> <red>Запущен обратный отсчёт!</red>"
+    confirmed_no_cancel: "<red>Отмена невозможна!</red>"
+    timer_actionbar: "<red><bold>☠</bold></red> <white>Суицид через</white> <yellow><bold>{seconds}</bold></yellow> <white>сек</white>"
+    timer_chat: "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек...</red>"
+    death_message: "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Вы совершили суицид...</red>"
+    timeout_message: "<yellow>ℹ</yellow> <white>Запрос на суицид сброшен (время вышло).</white>"
+    cooldown_message: "<dark_red>❌</dark_red> <red>Подождите</red> <yellow>{seconds}</yellow><red> сек перед повторным использованием!</red>"
+    already_running: "<dark_red>❌</dark_red> <red>У вас уже запущен обратный отсчёт!</red>"
 
   # 📊 BossBar
   bossbar:
@@ -1022,7 +1021,7 @@ suicide:
     # Стиль: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
     style: SOLID
     # {seconds} — оставшиеся секунды
-    title: "§4☠ §cСуицид через §e{seconds}§c сек"
+    title: "<dark_red>☠</dark_red> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек</red>"
 
 # =========================
 # 📦 Защита от пакетов, превышающих лимит размера (PacketGuard)
@@ -1049,7 +1048,7 @@ packet_guard:
   # {size} — размер пакета в байтах
   # {max} — максимальный размер
   # {packet} — тип пакета
-  kick_message: "§4❌ §cСлишком большой пакет данных!\n§7Пожалуйста, перезайдите на сервер."
+  kick_message: "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>"
 
 # =========================
 # 🔴 Защита от перегрузки сервера редстуоном (ЗОПСР)
@@ -1128,7 +1127,7 @@ chat_filter:
   enabled: false
 
   # Сообщение игроку при обнаружении запрещённых слов
-  message: "§4❌ §cВаше сообщение не прошло проверку на запрещённый контент!"
+  message: "<dark_red>❌</dark_red> <red>Ваше сообщение не прошло проверку на запрещённый контент!</red>"
 
   # Список запрещённых слов/шаблонов
   # * — wildcard: 
@@ -1182,15 +1181,15 @@ changedimmension:
 
   # Сообщения
   messages:
-    success: "§a✅ §fТелепортация в мир §e{world}§f завершена!"
-    return_info: "§eℹ §7Чтобы вернуться, просто напишите §f/mcplugin changedimmension§7 ещё раз."
-    return_success: "§a✅ §fВы вернулись в исходную точку!"
-    return_error: "§4❌ §cОшибка: точка возврата повреждена!"
-    no_permission: "§4❌ §cУ вас нет прав на эту команду!"
-    world_not_found: "§4❌ §cМир §e{world}§c не найден!"
-    player_only: "§4❌ §cТолько игрок может использовать эту команду!"
-    no_default_world: "§4❌ §cМир по умолчанию не настроен в конфиге!"
-    cooldown: "§4❌ §cПодождите §e{seconds}§c сек перед повторным использованием!"
+    success: "<green>✅</green> <white>Телепортация в мир</white> <yellow>{world}</yellow> <white>завершена!</white>"
+    return_info: "<yellow>ℹ</yellow> <gray>Чтобы вернуться, просто напишите</gray> <white>/mcplugin changedimmension</white> <gray>ещё раз.</gray>"
+    return_success: "<green>✅</green> <white>Вы вернулись в исходную точку!</white>"
+    return_error: "<dark_red>❌</dark_red> <red>Ошибка: точка возврата повреждена!</red>"
+    no_permission: "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>"
+    world_not_found: "<dark_red>❌</dark_red> <red>Мир</red> <yellow>{world}</yellow> <red>не найден!</red>"
+    player_only: "<dark_red>❌</dark_red> <red>Только игрок может использовать эту команду!</red>"
+    no_default_world: "<dark_red>❌</dark_red> <red>Мир по умолчанию не настроен в конфиге!</red>"
+    cooldown: "<dark_red>❌</dark_red> <red>Подождите</red> <yellow>{seconds}</yellow><red> сек перед повторным использованием!</red>"
 
   # Миры и координаты (world — имя мира в Multiverse или Bukkit)
   worlds:

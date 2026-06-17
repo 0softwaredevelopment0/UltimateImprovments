@@ -1,6 +1,7 @@
 package com.mcplugin.cp;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 import com.mcplugin.cp.CodePanelDatabase;
 import org.bukkit.Sound;
@@ -89,10 +90,10 @@ public class CodePanelClick implements CommandExecutor {
 
                 if (progress < 100) {
 
-                    player.sendMessage(
+                    player.sendMessage(MessageUtil.parse(
                             msg("codepanel.messages.progress")
                                     .replace("{progress}", String.valueOf(progress))
-                    );
+                    ));
 
                     play(player, "step");
 
@@ -100,10 +101,10 @@ public class CodePanelClick implements CommandExecutor {
                     return;
                 }
 
-                player.sendMessage(
+                player.sendMessage(MessageUtil.parse(
                         msg("codepanel.messages.progress")
                                 .replace("{progress}", "100")
-                );
+                ));
 
                 play(player, "finish");
 
@@ -137,7 +138,7 @@ public class CodePanelClick implements CommandExecutor {
         List<CodePanelDatabase.CodePanelKey> keys = CodePanelDatabase.getAllKeys();
 
         if (keys.isEmpty()) {
-            player.sendMessage(msg("codepanel.messages.no_config"));
+            player.sendMessage(MessageUtil.parse(msg("codepanel.messages.no_config")));
             return;
         }
 
@@ -166,7 +167,7 @@ public class CodePanelClick implements CommandExecutor {
                 }
             }
 
-            player.sendMessage(msg("codepanel.messages.success"));
+            player.sendMessage(MessageUtil.parse(msg("codepanel.messages.success")));
             play(player, "success");
 
             if (key.command != null && !key.command.isEmpty()) {

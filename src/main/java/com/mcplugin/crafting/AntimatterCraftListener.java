@@ -2,6 +2,7 @@ package com.mcplugin.crafting;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -49,10 +50,10 @@ public class AntimatterCraftListener implements Listener {
         PotionMeta meta = (PotionMeta) result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fКолба с антиматерией");
+        meta.displayName(MessageUtil.parse("<white>Колба с антиматерией</white>"));
 
-        meta.setLore(List.of(
-                "§7При броске создаёт мощный взрыв."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>При броске создаёт мощный взрыв.</gray>")
         ));
 
         meta.setColor(Color.fromRGB(197379));
@@ -113,10 +114,10 @@ public class AntimatterCraftListener implements Listener {
         PotionMeta meta = (PotionMeta) result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fКолба с антиматерией");
+        meta.displayName(MessageUtil.parse("<white>Колба с антиматерией</white>"));
 
-        meta.setLore(List.of(
-                "§7При броске создаёт мощный взрыв."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>При броске создаёт мощный взрыв.</gray>")
         ));
 
         meta.setColor(Color.fromRGB(197379));

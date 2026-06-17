@@ -1,6 +1,7 @@
 package com.mcplugin.cp;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -139,7 +140,7 @@ public class CodePanelGUIListener implements Listener {
         var keys = CodePanelDatabase.getAllKeys();
 
         if (keys.isEmpty()) {
-            player.sendMessage(msg("codepanel.messages.no_config"));
+            player.sendMessage(MessageUtil.parse(msg("codepanel.messages.no_config")));
             return;
         }
 
@@ -164,7 +165,7 @@ public class CodePanelGUIListener implements Listener {
                 }
             }
 
-            player.sendMessage(msg("codepanel.messages.success"));
+            player.sendMessage(MessageUtil.parse(msg("codepanel.messages.success")));
             playSound(player, "success");
 
             if (key.command != null && !key.command.isEmpty()) {
@@ -187,7 +188,7 @@ public class CodePanelGUIListener implements Listener {
         }
 
         // WRONG CODE — просто сообщение, без блокировки
-        player.sendMessage(msg("codepanel.messages.error"));
+        player.sendMessage(MessageUtil.parse(msg("codepanel.messages.error")));
         playSound(player, "fail");
     }
 

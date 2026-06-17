@@ -14,6 +14,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.mcplugin.util.MessageUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -148,7 +149,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
                 // Недостаточно воды — "полное отсутствие рыбы"
                 hook.remove();
                 it.remove();
-                player.sendMessage("§8[§c⛔§8] §cПолное отсутствие рыбы!");
+                player.sendMessage(MessageUtil.parse("<dark_gray>[<red>⛔</red>] <red>Полное отсутствие рыбы!</red></dark_gray>"));
                 continue;
             }
 

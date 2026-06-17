@@ -1,6 +1,7 @@
 package com.mcplugin.guns.shoker;
 
 import com.mcplugin.Keys;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -56,7 +57,7 @@ public class ShokerListener implements Listener {
                 || ammo.getType() != Material.BREEZE_ROD
                 || ammo.getAmount() <= 0) {
 
-            p.sendActionBar("§7[§4SHOCKER§7] §cНет патронов");
+            p.sendActionBar(MessageUtil.parse("<gray>[<dark_red>SHOCKER</dark_red>] <red>Нет патронов</red></gray>"));
             return;
         }
 
@@ -77,12 +78,13 @@ public class ShokerListener implements Listener {
 
                 double left = (COOLDOWN_TICKS - passedTicks) / 20.0;
 
-                p.sendActionBar(
-                        "§7[§6RELOAD§7] §c"
+                p.sendActionBar(MessageUtil.parse(
+                        "<gray>[<gold>RELOAD</gold>] <red>"
                                 + String.format("%.1f", left)
-                                + "s §8| §7Ammo: §e"
+                                + "s</red> <dark_gray>|</dark_gray> <gray>Ammo: </gray><yellow>"
                                 + ammoCount
-                );
+                                + "</yellow></gray>"
+                ));
                 return;
             }
         }
@@ -110,10 +112,11 @@ public class ShokerListener implements Listener {
                 1f
         );
 
-        p.sendActionBar(
-                "§7[§bSHOCKER§7] §fShot §8| §7Ammo: §e"
+        p.sendActionBar(MessageUtil.parse(
+                "<gray>[<aqua>SHOCKER</aqua>] <white>Shot</white> <dark_gray>|</dark_gray> <gray>Ammo: </gray><yellow>"
                         + (ammoCount - 1)
-        );
+                        + "</yellow></gray>"
+        ));
     }
 
     // =========================

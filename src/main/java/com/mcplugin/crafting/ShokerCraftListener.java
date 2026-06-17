@@ -2,6 +2,7 @@ package com.mcplugin.crafting;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -45,10 +46,10 @@ public class ShokerCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§bElectro Shoker");
+        meta.displayName(MessageUtil.parse("<aqua>Electro Shoker</aqua>"));
 
-        meta.setLore(java.util.List.of(
-                "§7Stuns enemies with electricity."
+        meta.lore(java.util.List.of(
+                MessageUtil.parse("<gray>Stuns enemies with electricity.</gray>")
         ));
 
         // =========================
@@ -109,10 +110,10 @@ public class ShokerCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§bElectro Shoker");
+        meta.displayName(MessageUtil.parse("<aqua>Electro Shoker</aqua>"));
 
-        meta.setLore(java.util.List.of(
-                "§7Stuns enemies with electricity."
+        meta.lore(java.util.List.of(
+                MessageUtil.parse("<gray>Stuns enemies with electricity.</gray>")
         ));
 
         // =========================

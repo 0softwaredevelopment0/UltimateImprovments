@@ -2,6 +2,7 @@ package com.mcplugin.crafting;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -54,11 +55,11 @@ public class DosimeterCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fДозиметр");
+        meta.displayName(MessageUtil.parse("<white>Дозиметр</white>"));
 
-        meta.setLore(List.of(
-                "§7Показывает уровень радиации в Р/Ч",
-                "§7при держании в руке."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Показывает уровень радиации в Р/Ч</gray>"),
+                MessageUtil.parse("<gray>при держании в руке.</gray>")
         ));
 
         // =========================
@@ -116,11 +117,11 @@ public class DosimeterCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fДозиметр");
+        meta.displayName(MessageUtil.parse("<white>Дозиметр</white>"));
 
-        meta.setLore(List.of(
-                "§7Показывает уровень радиации в Р/Ч",
-                "§7при держании в руке."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Показывает уровень радиации в Р/Ч</gray>"),
+                MessageUtil.parse("<gray>при держании в руке.</gray>")
         ));
 
         // =========================

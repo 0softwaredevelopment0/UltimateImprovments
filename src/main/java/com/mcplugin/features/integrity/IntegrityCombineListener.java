@@ -1,5 +1,6 @@
 package com.mcplugin.features.integrity;
 
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -116,7 +117,7 @@ public class IntegrityCombineListener implements Listener {
                 String msg = IntegrityManager.getAnvilCombineMessage()
                         .replace("{current}", IntegrityManager.formatPercent(newCurrent));
                 if (canSendAnvilMessage(player)) {
-                    player.sendMessage(msg);
+                    player.sendMessage(MessageUtil.parse(msg));
                 }
             }
 
@@ -272,7 +273,7 @@ public class IntegrityCombineListener implements Listener {
         // Отправляем сообщение
         String msg = IntegrityManager.getSilkTouchMessage()
                 .replace("{amount}", IntegrityManager.formatPercent(restore));
-        player.sendMessage(msg);
+        player.sendMessage(MessageUtil.parse(msg));
     }
 
     // =========================

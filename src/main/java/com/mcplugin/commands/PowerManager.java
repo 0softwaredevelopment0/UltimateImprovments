@@ -1,6 +1,7 @@
 package com.mcplugin.commands;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -45,13 +46,13 @@ public class PowerManager {
 
     // Config: actionbar
     private boolean actionbarEnabled = true;
-    private String actionbarFormat = "§c⚡ §fСервер {action} через §e{seconds}§f сек";
+    private String actionbarFormat = "<red>⚡</red> <white>Сервер {action} через</white> <yellow>{seconds}</yellow> <white>сек</white>";
 
     // Config: bossbar
     private boolean bossbarEnabled = true;
     private String bossbarColor = "RED";
     private String bossbarStyle = "SOLID";
-    private String bossbarText = "§c⚡ Сервер {action} через §e{seconds}§c сек";
+    private String bossbarText = "<red>⚡ Сервер {action} через</red> <yellow>{seconds}</yellow> <red>сек</red>";
 
     public static void init() {
         instance = new PowerManager();
@@ -88,13 +89,13 @@ public class PowerManager {
         // ActionBar
         actionbarEnabled = cfg.getBoolean("power.actionbar.enabled", true);
         actionbarFormat = cfg.getString("power.actionbar.format",
-                "§c⚡ §fСервер {action} через §e{seconds}§f сек");
+                "<red>⚡</red> <white>Сервер {action} через</white> <yellow>{seconds}</yellow> <white>сек</white>");
 
         // BossBar
         bossbarEnabled = cfg.getBoolean("power.bossbar.enabled", true);
         bossbarColor = cfg.getString("power.bossbar.color", "RED");
         bossbarStyle = cfg.getString("power.bossbar.style", "SOLID");
-        bossbarText = cfg.getString("power.bossbar.text", "§c⚡ Сервер {action}...");
+        bossbarText = cfg.getString("power.bossbar.text", "<red>⚡ Сервер {action} через</red> <yellow>{seconds}</yellow> <red>сек</red>");
     }
 
     public int getRequestTimeout() {
@@ -236,7 +237,7 @@ public class PowerManager {
                                 .replace("{action}", actionMsg)
                                 .replace("{seconds}", String.valueOf(currentSecond));
                         for (Player p : Bukkit.getOnlinePlayers()) {
-                            p.sendActionBar(barText);
+                            p.sendActionBar(MessageUtil.parse(barText));
                         }
                     }
 
@@ -245,7 +246,7 @@ public class PowerManager {
                         String barTitle = bossbarText
                                 .replace("{action}", actionMsg)
                                 .replace("{seconds}", String.valueOf(Math.max(0, currentSecond)));
-                        bossBar.setTitle(barTitle);
+                        bossBar.setTitle(MessageUtil.legacy(barTitle));
                     }
                 }
 
@@ -321,11 +322,9 @@ public class PowerManager {
             style = BarStyle.valueOf(bossbarStyle);
         } catch (IllegalArgumentException e) {
             style = BarStyle.SOLID;
-        }
+        }                String text = bossbarText.replace("{action}", actionMsg);
 
-        String text = bossbarText.replace("{action}", actionMsg);
-
-        return Bukkit.createBossBar(text, color, style);
+        return Bukkit.createBossBar(MessageUtil.legacy(text), color, style);
     }
 
     /**

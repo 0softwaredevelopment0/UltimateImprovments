@@ -3,6 +3,7 @@ package com.mcplugin.features.magnet;
 import com.mcplugin.Main;
 import com.mcplugin.database.DatabaseManager;
 import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -327,7 +328,7 @@ public class MagnetManager extends BukkitRunnable {
         if (cluster.blockKeys.isEmpty()) {
             deactivateCluster(cluster);
             if (breaker != null) {
-                breaker.sendMessage("§4\u26a0 §cМагнит полностью разрушен и деактивирован!");
+                breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Магнит полностью разрушен и деактивирован!</red>"));
             }
             return true;
         }
@@ -350,8 +351,7 @@ public class MagnetManager extends BukkitRunnable {
         saveCluster(cluster);
 
         if (breaker != null) {
-            breaker.sendMessage("§e\u26a1 §7Магнит перестроен! Блоков: §f" + cluster.blockKeys.size()
-                    + " §7| Центр смещён");
+            breaker.sendMessage(MessageUtil.parse("<yellow>\u26a1</yellow> <gray>Магнит перестроен! Блоков: </gray><white>" + cluster.blockKeys.size() + "</white> <gray>| Центр смещён</gray>"));
         }
 
         Main.getInstance().getLogger().info(

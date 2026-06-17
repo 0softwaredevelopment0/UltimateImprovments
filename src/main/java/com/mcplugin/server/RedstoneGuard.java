@@ -1,6 +1,7 @@
 package com.mcplugin.server;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Chunk;
 import org.bukkit.configuration.file.FileConfiguration;
 import java.util.*;
@@ -164,10 +165,10 @@ public final class RedstoneGuard {
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "§7[§fSERVER §8| §eWARNING§7] §fMSPT §c" + mspt
-                        + " §7→ §cRedstone overload §7(global §e" + globalCount
-                        + "§7/§e" + globalIterationsLimit
-                        + "§7, per-chunk limit §e" + chunkIterationsLimit + "§7)";
+                "<gray>[<white>SERVER</white> <dark_gray>|</dark_gray> <yellow>WARNING</yellow>] <white>MSPT </white><red>" + mspt
+                        + " </red><gray>→ </gray><red>Redstone overload </red><gray>(global </gray><yellow>" + globalCount
+                        + "</yellow><gray>/</gray><yellow>" + globalIterationsLimit
+                        + "</yellow><gray>, per-chunk limit </gray><yellow>" + chunkIterationsLimit + "</yellow><gray>)</gray>";
 
         ServerOverloadNotify.broadcast(playerMsg);
     }
@@ -181,8 +182,8 @@ public final class RedstoneGuard {
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "§7[§fSERVER §8| §aSUCCESS§7] §fMSPT §c" + mspt
-                        + " §7→ §aRedstone overload ended §7(iterations §e" + globalCount + "§7)";
+                "<gray>[<white>SERVER</white> <dark_gray>|</dark_gray> <green>SUCCESS</green>] <white>MSPT </white><red>" + mspt
+                        + " </red><gray>→ </gray><green>Redstone overload ended </green><gray>(iterations </gray><yellow>" + globalCount + "</yellow><gray>)</gray>";
 
         ServerOverloadNotify.broadcast(playerMsg);
     }
@@ -198,10 +199,10 @@ public final class RedstoneGuard {
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "§7[§fSERVER §8| §eWARNING§7] §fMSPT §c" + mspt
-                        + " §7→ §cBlocked chunk §e" + key
-                        + " §7for §e" + blockDurationSeconds + "s"
-                        + " §7(iterations §e" + iterations + "§7)";
+                "<gray>[<white>SERVER</white> <dark_gray>|</dark_gray> <yellow>WARNING</yellow>] <white>MSPT </white><red>" + mspt
+                        + " </red><gray>→ </gray><red>Blocked chunk </red><yellow>" + key
+                        + " </yellow><gray>for </gray><yellow>" + blockDurationSeconds + "s"
+                        + " </yellow><gray>(iterations </gray><yellow>" + iterations + "</yellow><gray>)</gray>";
 
         ServerOverloadNotify.broadcast(playerMsg);
     }

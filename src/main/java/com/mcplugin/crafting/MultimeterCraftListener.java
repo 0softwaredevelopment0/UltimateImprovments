@@ -1,6 +1,7 @@
 package com.mcplugin.crafting;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -47,7 +48,7 @@ public class MultimeterCraftListener implements Listener {
 
         if (meta == null) return;
 
-        meta.setDisplayName("§fMultimeter");
+        meta.displayName(MessageUtil.parse("<white>Multimeter</white>"));
 
         // =========================
         // PDC TAG (isMultimeter:1b)
@@ -98,7 +99,7 @@ public class MultimeterCraftListener implements Listener {
 
         if (meta == null) return;
 
-        meta.setDisplayName("§fMultimeter");
+        meta.displayName(MessageUtil.parse("<white>Multimeter</white>"));
 
         // =========================
         // PDC AGAIN (isMultimeter:1b)

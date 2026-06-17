@@ -2,6 +2,7 @@ package com.mcplugin.crafting;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -48,10 +49,10 @@ public class HealthMeterCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fИзмеритель здоровья");
+        meta.displayName(MessageUtil.parse("<white>Измеритель здоровья</white>"));
 
-        meta.setLore(List.of(
-                "§7Показывает количество здоровья ближайшего моба."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Показывает количество здоровья ближайшего моба.</gray>")
         ));
 
         // =========================
@@ -109,10 +110,10 @@ public class HealthMeterCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fИзмеритель здоровья");
+        meta.displayName(MessageUtil.parse("<white>Измеритель здоровья</white>"));
 
-        meta.setLore(List.of(
-                "§7Показывает количество здоровья ближайшего моба."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Показывает количество здоровья ближайшего моба.</gray>")
         ));
 
         // =========================

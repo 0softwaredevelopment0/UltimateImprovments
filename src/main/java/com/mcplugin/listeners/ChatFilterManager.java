@@ -1,6 +1,7 @@
 package com.mcplugin.listeners;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -79,7 +80,7 @@ public class ChatFilterManager implements Listener {
             Pattern p = compileWordPattern(raw);
             if (p != null) {
                 compiledPatterns.add(p);
-                patternSources.add("§aслово§f: §c" + raw.trim() + "§f");
+                patternSources.add("<green>слово</green><white>: </white><red>" + raw.trim() + "</red><white></white>");
                 // Сохраняем чистое слово для подсветки
                 String clean = raw.trim().replace("*", "");
                 if (!clean.isEmpty()) {
@@ -95,7 +96,7 @@ public class ChatFilterManager implements Listener {
                 Pattern p = compileRegexPattern(raw);
                 if (p != null) {
                     compiledPatterns.add(p);
-                    patternSources.add("§aregex§f: §7" + raw.trim() + "§f");
+                    patternSources.add("<green>regex</green><white>: </white><gray>" + raw.trim() + "</gray><white></white>");
                     // Создаём «находилку» без .* по краям для точного определения позиций
                     Pattern finder = compileHighlightFinder(raw);
                     if (finder != null) {
@@ -299,7 +300,7 @@ public class ChatFilterManager implements Listener {
                 event.setCancelled(true);
 
                 String source = patternSources.get(i);
-                String plainSource = source.replaceAll("§[0-9a-fklmnor]", ""); // убираем цвет для консоли
+                String plainSource = source.replaceAll("<[^>]+>", ""); // убираем MiniMessage-теги для консоли
 
                 // Сообщение с подсветкой
                 String highlighted = highlightBadWords(message);
@@ -309,9 +310,10 @@ public class ChatFilterManager implements Listener {
                         + " нарушил правило «" + plainSource + "»: " + highlighted);
 
                 // Сообщение игроку
-                player.sendMessage(warningMessage);
+                player.sendMessage(MessageUtil.parse(warningMessage));
+                // Highlighted message uses § codes from highlightBadWords(), so send as legacy string
                 player.sendMessage("§7→ §f" + highlighted);
-                player.sendMessage("§7└ §fСовпадение: " + source);
+                player.sendMessage(MessageUtil.parse("<gray>└</gray> <white>Совпадение:</white> " + source));
                 return;
             }
         }

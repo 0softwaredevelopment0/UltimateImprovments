@@ -1,6 +1,7 @@
 package com.mcplugin.features.itemskill;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.EntityType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -42,7 +43,7 @@ public class ItemKillManager extends BukkitRunnable {
             if (warnOperators) {
                 Bukkit.getOnlinePlayers().stream()
                         .filter(p -> p.hasPermission("mcplugin.admin") || p.isOp())
-                        .forEach(p -> p.sendMessage("§4СЕРВЕР §8» §fКол-во предметов: §c" + itemCount + "§f слишком большое, они будут удалены, для предотвращения лагов!"));
+                        .forEach(p -> p.sendMessage(MessageUtil.parse("<dark_red>СЕРВЕР</dark_red> <dark_gray>»</dark_gray> <white>Кол-во предметов: <red>" + itemCount + "</red><white> слишком большое, они будут удалены, для предотвращения лагов!</white></white>")));
             }
 
             Bukkit.getWorlds().forEach(w -> w.getEntitiesByClass(org.bukkit.entity.Item.class).forEach(e -> e.remove()));

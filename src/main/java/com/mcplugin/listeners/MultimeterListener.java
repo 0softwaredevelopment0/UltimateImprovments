@@ -2,7 +2,7 @@ package com.mcplugin.listeners;
 
 import com.mcplugin.Main;
 import com.mcplugin.cable.*;
-import org.bukkit.ChatColor;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
@@ -39,10 +39,10 @@ public class MultimeterListener implements Listener {
 
         CableNode node = CableNetwork.getNode(block.getLocation());
 
-        player.sendMessage(ChatColor.GOLD + "=== MULTIMETER ===");
+        player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
 
         if (node == null) {
-            player.sendMessage(ChatColor.GRAY + "No energy node at this block.");
+            player.sendMessage(MessageUtil.parse("<gray>No energy node at this block.</gray>"));
             return;
         }
 
@@ -53,9 +53,9 @@ public class MultimeterListener implements Listener {
         // =========================
         if (type == Material.WAXED_COPPER_GRATE) {
 
-            player.sendMessage(ChatColor.AQUA + "Type: Battery");
-            player.sendMessage(ChatColor.AQUA + "Energy: " + ChatColor.WHITE + node.getEnergy());
-            player.sendMessage(ChatColor.AQUA + "Connections: " + ChatColor.WHITE + node.getConnections().size());
+            player.sendMessage(MessageUtil.parse("<aqua>Type: Battery</aqua>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Energy: </aqua><white>" + node.getEnergy() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Connections: </aqua><white>" + node.getConnections().size() + "</white>"));
             return;
         }
 
@@ -64,9 +64,9 @@ public class MultimeterListener implements Listener {
         // =========================
         if (type == Material.WAXED_LIGHTNING_ROD) {
 
-            player.sendMessage(ChatColor.YELLOW + "Type: Cable");
-            player.sendMessage(ChatColor.YELLOW + "Energy: " + ChatColor.WHITE + node.getEnergy());
-            player.sendMessage(ChatColor.YELLOW + "Connections: " + ChatColor.WHITE + node.getConnections().size());
+            player.sendMessage(MessageUtil.parse("<yellow>Type: Cable</yellow>"));
+            player.sendMessage(MessageUtil.parse("<yellow>Energy: </yellow><white>" + node.getEnergy() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<yellow>Connections: </yellow><white>" + node.getConnections().size() + "</white>"));
 
             BlockData bd = block.getBlockData();
 
@@ -84,7 +84,7 @@ public class MultimeterListener implements Listener {
                     axis = "UP/DOWN";
                 }
 
-                player.sendMessage(ChatColor.YELLOW + "Axis: " + ChatColor.WHITE + axis);
+                player.sendMessage(MessageUtil.parse("<yellow>Axis: </yellow><white>" + axis + "</white>"));
             }
 
             return;
@@ -95,14 +95,14 @@ public class MultimeterListener implements Listener {
         // =========================
         if (type == Material.WAXED_CHISELED_COPPER) {
 
-            player.sendMessage(ChatColor.GOLD + "Type: Junction");
-            player.sendMessage(ChatColor.GOLD + "Energy: " + ChatColor.WHITE + node.getEnergy());
-            player.sendMessage(ChatColor.GOLD + "Connections: " + ChatColor.WHITE + node.getConnections().size());
-            player.sendMessage(ChatColor.GOLD + "Mode: " + ChatColor.WHITE + "Omni-directional");
+            player.sendMessage(MessageUtil.parse("<gold>Type: Junction</gold>"));
+            player.sendMessage(MessageUtil.parse("<gold>Energy: </gold><white>" + node.getEnergy() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<gold>Connections: </gold><white>" + node.getConnections().size() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<gold>Mode: </gold><white>Omni-directional</white>"));
             return;
         }
 
-        player.sendMessage(ChatColor.GRAY + "This block is not part of energy network.");
+        player.sendMessage(MessageUtil.parse("<gray>This block is not part of energy network.</gray>"));
     }
 
     // =========================

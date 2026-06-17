@@ -5,7 +5,7 @@ import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.cable.CableNode;
 import com.mcplugin.util.LocationUtil;
 
-import org.bukkit.ChatColor;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 
@@ -87,7 +87,7 @@ public class EnergyCraftingListener implements Listener {
 
             e.setCancelled(true);
 
-            player.sendMessage(getMsg());
+            player.sendMessage(MessageUtil.parse(getMsg()));
 
             return;
         }
@@ -98,7 +98,7 @@ public class EnergyCraftingListener implements Listener {
 
             e.setCancelled(true);
 
-            player.sendMessage(getMsg());
+            player.sendMessage(MessageUtil.parse(getMsg()));
 
             return;
         }
@@ -322,15 +322,11 @@ public class EnergyCraftingListener implements Listener {
     }
 
     private String getMsg() {
-
-        return ChatColor.translateAlternateColorCodes(
-                '&',
-                Main.getInstance()
-                        .getConfig()
-                        .getString(
-                                "energy_crafting.messages.no_energy",
-                                "§4❌ §cError: §7Not enough energy for craft!"
-                        )
-        );
+        return Main.getInstance()
+                .getConfig()
+                .getString(
+                        "energy_crafting.messages.no_energy",
+                        "<dark_red>❌</dark_red> <red>Error: <gray>Not enough energy for craft!</gray></red>"
+                );
     }
 }

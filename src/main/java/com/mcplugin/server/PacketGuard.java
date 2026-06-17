@@ -1,6 +1,7 @@
 package com.mcplugin.server;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,7 +41,7 @@ public class PacketGuard implements Listener {
     private static boolean enabled = true;
     private static boolean log = true;
     private static boolean logInject = false;
-    private static String kickMessage = "§4❌ §cСлишком большой пакет данных!\n§7Пожалуйста, перезайдите на сервер.";
+    private static String kickMessage = "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>";
     private static String bypassPermission = "mcplugin.packetguard.bypass";
 
     // =========================
@@ -73,7 +74,7 @@ public class PacketGuard implements Listener {
         log = cfg.getBoolean("log", true);
         logInject = cfg.getBoolean("log_inject", false);
         kickMessage = cfg.getString("kick_message",
-                "§4❌ §cСлишком большой пакет данных!\n§7Пожалуйста, перезайдите на сервер.");
+                "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>");
         bypassPermission = cfg.getString("bypass_permission", "mcplugin.packetguard.bypass");
     }
 
@@ -219,7 +220,7 @@ public class PacketGuard implements Listener {
         // player.kickPlayer() сам закроет канал с нашим кастомным сообщением.
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
             if (player.isOnline()) {
-                player.kickPlayer(kickMessage);
+                player.kickPlayer(MessageUtil.legacy(kickMessage));
             }
         });
     }

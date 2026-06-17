@@ -2,6 +2,7 @@ package com.mcplugin.crafting;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -48,10 +49,10 @@ public class EntityLocatorCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fЛокатор существ");
+        meta.displayName(MessageUtil.parse("<white>Локатор существ</white>"));
 
-        meta.setLore(List.of(
-                "§7Показывает расстояние до ближайшей сущности."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Показывает расстояние до ближайшей сущности.</gray>")
         ));
 
         // =========================
@@ -109,10 +110,10 @@ public class EntityLocatorCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fЛокатор существ");
+        meta.displayName(MessageUtil.parse("<white>Локатор существ</white>"));
 
-        meta.setLore(List.of(
-                "§7Показывает расстояние до ближайшей сущности."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Показывает расстояние до ближайшей сущности.</gray>")
         ));
 
         // =========================

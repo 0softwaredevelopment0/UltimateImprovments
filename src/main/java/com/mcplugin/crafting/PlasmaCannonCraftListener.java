@@ -2,6 +2,7 @@ package com.mcplugin.crafting;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -14,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
+import com.mcplugin.util.MessageUtil;
 
 import java.util.List;
 
@@ -45,10 +47,10 @@ public class PlasmaCannonCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fPhoton cannon");
+        meta.displayName(MessageUtil.parse("<white>Photon cannon</white>"));
 
-        meta.setLore(List.of(
-                "§7Shoots with echo_shard."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Shoots with echo_shard.</gray>")
         ));
 
         // =========================
@@ -107,10 +109,10 @@ public class PlasmaCannonCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fPhoton cannon");
+        meta.displayName(MessageUtil.parse("<white>Photon cannon</white>"));
 
-        meta.setLore(List.of(
-                "§7Shoots with echo_shard."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Shoots with echo_shard.</gray>")
         ));
 
         // =========================

@@ -1,6 +1,7 @@
 package com.mcplugin.features.savedhotbar;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -39,7 +40,7 @@ public class CreativeItemValidator implements Listener {
     private static int maxNameChars = 200;           // макс символов в названии
     private static int maxEnchantments = 40;         // макс зачарований
     private static String bypassPermission = "mcplugin.creative.bypass";
-    private static String denyMessage = "§cЭтот предмет содержит слишком много данных!";
+    private static String denyMessage = "<red>Этот предмет содержит слишком много данных!</red>";
 
     // Cooldown сообщения
     private static final long MESSAGE_COOLDOWN_MS = 2000;
@@ -69,7 +70,7 @@ public class CreativeItemValidator implements Listener {
         maxEnchantments = cfg.getInt("max_enchantments", 40);
         bypassPermission = cfg.getString("bypass_permission", "mcplugin.creative.bypass");
         denyMessage = cfg.getString("message",
-                "§cЭтот предмет содержит слишком много данных!");
+                "<red>Этот предмет содержит слишком много данных!</red>");
 
         Main.getInstance().getLogger().info("[CreativeValidator] Config reloaded: enabled="
                 + enabled + " maxBytes=" + maxItemBytes);
@@ -175,7 +176,7 @@ public class CreativeItemValidator implements Listener {
         long now = System.currentTimeMillis();
         Long lastSent = lastMessageTime.get(player.getUniqueId());
         if (lastSent == null || (now - lastSent) > MESSAGE_COOLDOWN_MS) {
-            player.sendMessage(denyMessage);
+            player.sendMessage(MessageUtil.parse(denyMessage));
             lastMessageTime.put(player.getUniqueId(), now);
         }
     }

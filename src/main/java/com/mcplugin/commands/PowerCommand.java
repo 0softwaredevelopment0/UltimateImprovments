@@ -1,5 +1,7 @@
 package com.mcplugin.commands;
 
+import com.mcplugin.util.MessageUtil;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 
@@ -25,9 +27,9 @@ public class PowerCommand extends Command {
     @Override
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         if (isRestart) {
-            sender.sendMessage("§8[§4⚠§8] §cКоманда /restart отключена. Используйте: §f/mp power reboot");
+            sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /restart отключена. Используйте: <white>/mp power reboot</white></dark_gray>"));
         } else {
-            sender.sendMessage("§8[§4⚠§8] §cКоманда /stop отключена. Используйте: §f/mp power off");
+            sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /stop отключена. Используйте: <white>/mp power off</white></dark_gray>"));
         }
         return true;
     }

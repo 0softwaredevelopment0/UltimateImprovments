@@ -2,6 +2,7 @@ package com.mcplugin.features.integrity;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -62,7 +63,7 @@ public class IntegrityManager extends BukkitRunnable {
     // Поведение при поломке
     private static boolean breakPlaySound = true;
     private static boolean breakSendMessage = true;
-    private static String breakMessage = "§4✖ §cВаш предмет §f{item} §cсломался!";
+    private static String breakMessage = "<dark_red>✖</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>";
     private static String breakSoundName = "ENTITY_ITEM_BREAK";
     private static float breakSoundVolume = 1.0f;
     private static float breakSoundPitch = 1.0f;
@@ -92,9 +93,9 @@ public class IntegrityManager extends BukkitRunnable {
     private static double combineLossRate = 0.0;
 
     // Сообщения
-    private static String anvilRepairMessage = "§a🔧 §fЦелостность восстановлена до §e{current}%§f!";
-    private static String anvilCombineMessage = "§a🔗 §fПредметы объединены! Целостность: §e{current}%§f";
-    private static String silkTouchMessage = "§b✨ §fШёлковое касание восстановило §e{amount}%§f целостности!";
+    private static String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>";
+    private static String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>";
+    private static String silkTouchMessage = "<aqua>✨</aqua> <white>Шёлковое касание восстановило</white> <yellow>{amount}%</yellow> <white>целостности!</white>";
 
     private static final DecimalFormat PCT_FMT = new DecimalFormat("0.000");
 
@@ -153,7 +154,7 @@ public class IntegrityManager extends BukkitRunnable {
         if (onBreak != null) {
             breakPlaySound = onBreak.getBoolean("play_sound", true);
             breakSendMessage = onBreak.getBoolean("send_message", true);
-            breakMessage = onBreak.getString("message", "§4✖ §cВаш предмет §f{item} §cсломался!");
+            breakMessage = onBreak.getString("message", "<dark_red>✖</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>");
             breakSoundName = onBreak.getString("sound", "ENTITY_ITEM_BREAK");
             breakSoundVolume = (float) onBreak.getDouble("sound_volume", 1.0);
             breakSoundPitch = (float) onBreak.getDouble("sound_pitch", 1.0);
@@ -178,8 +179,8 @@ public class IntegrityManager extends BukkitRunnable {
             anvilRepairMultiplier = anvil.getDouble("integrity_multiplier", 0.25);
             anvilCombineEnabled = anvil.getBoolean("combine_enabled", true);
             anvilCombineBonus = anvil.getDouble("combine_bonus", 0.1);
-            anvilRepairMessage = anvil.getString("repair_message", "§a🔧 §fЦелостность восстановлена до §e{current}%§f!");
-            anvilCombineMessage = anvil.getString("combine_message", "§a🔗 §fПредметы объединены! Целостность: §e{current}%§f");
+            anvilRepairMessage = anvil.getString("repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>");
+            anvilCombineMessage = anvil.getString("combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>");
         }
 
         // ===== XP + ШЁЛКОВОЕ КАСАНИЕ =====
@@ -187,7 +188,7 @@ public class IntegrityManager extends BukkitRunnable {
         if (stxp != null) {
             silkTouchXpEnabled = stxp.getBoolean("enabled", true);
             silkTouchXpMultiplier = stxp.getDouble("integrity_multiplier", 0.5);
-            silkTouchMessage = stxp.getString("message", "§b✨ §fШёлковое касание восстановило §e{amount}%§f целостности!");
+            silkTouchMessage = stxp.getString("message", "<aqua>✨</aqua> <white>Шёлковое касание восстановило</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
         }
 
         // ===== ОБЪЕДИНЕНИЕ ПРЕДМЕТОВ =====
@@ -595,7 +596,7 @@ public class IntegrityManager extends BukkitRunnable {
         // Отправляем сообщение
         if (breakSendMessage) {
             String msg = breakMessage.replace("{item}", itemName);
-            owner.sendMessage(msg);
+            owner.sendMessage(MessageUtil.parse(msg));
         }
 
         if (logBreak) {

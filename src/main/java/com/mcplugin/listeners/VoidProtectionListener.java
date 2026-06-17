@@ -1,6 +1,7 @@
 package com.mcplugin.listeners;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -79,7 +80,7 @@ public class VoidProtectionListener implements Listener {
         World targetWorld = Main.getInstance().getServer().getWorld(targetWorldName);
 
         if (targetWorld == null) {
-            Main.getInstance().getLogger().warning("[VOID] Мир §e" + targetWorldName + "§c не найден!");
+            Main.getInstance().getLogger().warning("[VOID] Мир " + targetWorldName + " не найден!");
             return;
         }
 
@@ -128,8 +129,8 @@ public class VoidProtectionListener implements Listener {
 
             // Сообщение игроку
             String message = Main.getInstance().getConfig()
-                    .getString("void_protection.message", "§a✅ §fВы были спасены из пустоты!");
-            player.sendMessage(message);
+                    .getString("void_protection.message", "<green>✅</green> <white>Вы были спасены из пустоты!</white>");
+            player.sendMessage(MessageUtil.parse(message));
         });
     }
 }

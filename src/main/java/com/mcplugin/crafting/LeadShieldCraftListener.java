@@ -2,6 +2,7 @@ package com.mcplugin.crafting;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -54,10 +55,10 @@ public class LeadShieldCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fСвинцовый щит");
+        meta.displayName(MessageUtil.parse("<white>Свинцовый щит</white>"));
 
-        meta.setLore(List.of(
-                "§7Защищает от радиации при держании в руке."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Защищает от радиации при держании в руке.</gray>")
         ));
 
         // =========================
@@ -115,10 +116,10 @@ public class LeadShieldCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName("§fСвинцовый щит");
+        meta.displayName(MessageUtil.parse("<white>Свинцовый щит</white>"));
 
-        meta.setLore(List.of(
-                "§7Защищает от радиации при держании в руке."
+        meta.lore(List.of(
+                MessageUtil.parse("<gray>Защищает от радиации при держании в руке.</gray>")
         ));
 
         // =========================

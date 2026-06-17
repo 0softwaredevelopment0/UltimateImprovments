@@ -3,6 +3,7 @@ package com.mcplugin.radiation;
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
 import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -268,7 +269,7 @@ public class RadiationManager implements Listener {
             // =========================
             if (dosimeterEnabled && hasCustomItem(player.getInventory().getItemInMainHand(), Keys.DOSIMETER)) {
                 double roentgen = rad / 100.0;
-                player.sendActionBar("§fРадиация: §7" + String.format(Locale.US, "%.1f", roentgen) + " §fР/Ч");
+                player.sendActionBar(MessageUtil.parse("<white>Радиация: </white><gray>" + String.format(Locale.US, "%.1f", roentgen) + "</gray> <white>Р/Ч</white>"));
             }
 
             radiationMap.put(uuid, Math.max(0, rad));

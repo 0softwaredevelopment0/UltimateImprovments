@@ -1,5 +1,6 @@
 package com.mcplugin.server;
 
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -30,7 +31,7 @@ public final class ServerOverloadNotify {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.hasPermission(PERMISSION)) {
-                player.sendMessage(message);
+                player.sendMessage(MessageUtil.parse(message));
             }
         }
     }
@@ -38,7 +39,7 @@ public final class ServerOverloadNotify {
     public static void broadcastForce(String message) {
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.hasPermission(PERMISSION)) {
-                player.sendMessage(message);
+                player.sendMessage(MessageUtil.parse(message));
             }
         }
     }

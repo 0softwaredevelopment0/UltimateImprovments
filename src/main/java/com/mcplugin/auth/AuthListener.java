@@ -1,6 +1,7 @@
 package com.mcplugin.auth;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,6 +12,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.event.player.*;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.inventory.MenuType;
@@ -21,6 +23,7 @@ import org.bukkit.persistence.PersistentDataType;
 import com.mcplugin.Keys;
 
 import java.util.UUID;
+
 
 public class AuthListener implements Listener {
 
@@ -195,7 +198,7 @@ public class AuthListener implements Listener {
         Player player = event.getPlayer();
         if (!needsAuth(player)) return;
         event.setCancelled(true);
-        player.sendMessage("§c❌ Сначала авторизуйтесь! Введите пароль в открывшемся окне.");
+        player.sendMessage(MessageUtil.parse("<red>❌ Сначала авторизуйтесь! Введите пароль в открывшемся окне.</red>"));
     }
 
     // =========================
@@ -294,7 +297,7 @@ public class AuthListener implements Listener {
         String password = AuthGUI.getAnvilRenameText(player);
 
         if (password == null || password.isEmpty()) {
-            player.sendMessage("§c❌ Введите ваш пароль в поле названия предмета!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Введите ваш пароль в поле названия предмета!</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
@@ -305,7 +308,7 @@ public class AuthListener implements Listener {
         if (manager.handleLogout(player, password)) {
             // handleLogout already kicks the player on success
         } else {
-            player.sendMessage("§c❌ Неверный пароль! Попробуйте ещё раз.");
+            player.sendMessage(MessageUtil.parse("<red>❌ Неверный пароль! Попробуйте ещё раз.</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
         }
     }
@@ -321,7 +324,7 @@ public class AuthListener implements Listener {
 
         // Only registered players can change password
         if (!com.mcplugin.auth.AuthDatabase.isRegistered(uuid)) {
-            player.sendMessage("§c❌ Вы ещё не зарегистрированы! Сначала придумайте пароль.");
+            player.sendMessage(MessageUtil.parse("<red>❌ Вы ещё не зарегистрированы! Сначала придумайте пароль.</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
@@ -329,14 +332,14 @@ public class AuthListener implements Listener {
         String currentPassword = AuthGUI.getAnvilRenameText(player);
 
         if (currentPassword == null || currentPassword.isEmpty()) {
-            player.sendMessage("§c❌ Введите ваш текущий пароль в поле названия предмета!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Введите ваш текущий пароль в поле названия предмета!</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
 
         // Verify current password
         if (!com.mcplugin.auth.AuthDatabase.checkPassword(uuid, currentPassword)) {
-            player.sendMessage("§c❌ Неверный пароль!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Неверный пароль!</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
@@ -356,7 +359,7 @@ public class AuthListener implements Listener {
         AuthGUI.removeChangePasswordPlayer(uuid);
 
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 1.0f);
-        player.sendMessage("§e✦ §7Смена пароля отменена.");
+        player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <gray>Смена пароля отменена.</gray>"));
 
         // Mark as transitioning so InventoryCloseEvent doesn't fire re-open logic
         AuthGUI.addTransitioningPlayer(uuid);
@@ -385,7 +388,7 @@ public class AuthListener implements Listener {
         if (!AuthManager.getInstance().checkRequestCooldown(player)) return;
 
         if (newPassword == null || newPassword.isEmpty()) {
-            player.sendMessage("§c❌ Введите новый пароль в поле названия предмета!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Введите новый пароль в поле названия предмета!</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
@@ -417,7 +420,7 @@ public class AuthListener implements Listener {
 
         // If player hasn't typed anything, the rename field is empty
         if (password == null || password.isEmpty()) {
-            player.sendMessage("§c❌ Введите пароль в поле названия предмета!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Введите пароль в поле названия предмета!</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
@@ -459,7 +462,7 @@ public class AuthListener implements Listener {
         // Change password GUI — prevent closing by Escape, re-open instead
         if (AuthGUI.isChangePasswordPlayer(uuid)) {
             AuthGUI.cancelResetTask(uuid);
-            player.sendMessage("§c❌ Вы не можете закрыть окно смены пароля!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Вы не можете закрыть окно смены пароля!</red>"));
             // Re-open the change password GUI after a short delay (like login/register)
             new org.bukkit.scheduler.BukkitRunnable() {
                 @Override
@@ -476,7 +479,7 @@ public class AuthListener implements Listener {
         if (AuthGUI.isLogoutPlayer(uuid)) {
             AuthGUI.cancelResetTask(uuid);
             AuthGUI.removeLogoutPlayer(uuid);
-            player.sendMessage("§e✦ §7Выход из аккаунта отменён.");
+            player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <gray>Выход из аккаунта отменён.</gray>"));
             return;
         }
 
@@ -484,7 +487,7 @@ public class AuthListener implements Listener {
         if (!needsAuth(player)) return;
 
         AuthGUI.cancelResetTask(uuid);
-        player.sendMessage("§c❌ Вы не можете закрыть окно авторизации! Пожалуйста, введите пароль.");
+        player.sendMessage(MessageUtil.parse("<red>❌ Вы не можете закрыть окно авторизации! Пожалуйста, введите пароль.</red>"));
         AuthManager manager = AuthManager.getInstance();
         if (manager != null) {
             manager.reopenAfterDelay(player);

@@ -1,6 +1,7 @@
 package com.mcplugin.server;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -54,8 +55,8 @@ public class ServerOverloadWarning extends BukkitRunnable {
                         .getLogger()
                         .severe("[SERVER | CRITICAL] MSPT=" + mspt);
                 ServerOverloadNotify.broadcast(
-                        "§7[§fSERVER §8| §cCRITICAL§7] §fMSPT §c" + String.format("%.2f", mspt) +
-                                " §7→ §cКритическая нагрузка на сервер!"
+                        "<gray>[<white>SERVER</white> <dark_gray>|</dark_gray> <red>CRITICAL</red>] <white>MSPT </white><red>" + String.format("%.2f", mspt) +
+                                " </red><gray>→ </gray><red>Критическая нагрузка на сервер!</red>"
                 );
             }
             return;
@@ -69,8 +70,8 @@ public class ServerOverloadWarning extends BukkitRunnable {
                         .getLogger()
                         .warning("[SERVER | WARNING] MSPT=" + mspt);
                 ServerOverloadNotify.broadcast(
-                        "§7[§fSERVER §8| §eWARNING§7] §fMSPT §c" + String.format("%.2f", mspt) +
-                                " §7→ §eВысокая нагрузка на сервер!"
+                        "<gray>[<white>SERVER</white> <dark_gray>|</dark_gray> <yellow>WARNING</yellow>] <white>MSPT </white><red>" + String.format("%.2f", mspt) +
+                                " </red><gray>→ </gray><yellow>Высокая нагрузка на сервер!</yellow>"
                 );
             }
             return;

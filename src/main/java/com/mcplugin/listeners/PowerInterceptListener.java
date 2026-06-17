@@ -1,6 +1,7 @@
 package com.mcplugin.listeners;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -51,9 +52,9 @@ public class PowerInterceptListener implements Listener {
         FileConfiguration cfg = Main.getInstance().getConfig();
         interceptEnabled = cfg.getBoolean("power.intercept_commands", true);
         stopMessage = cfg.getString("power.stop_message",
-                "§8[§4⚠§8] §cКоманда /stop отключена. Используйте: §f/mp power off");
+                "<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /stop отключена. Используйте: <white>/mp power off</white></dark_gray>");
         restartMessage = cfg.getString("power.restart_message",
-                "§8[§4⚠§8] §cКоманда /restart отключена. Используйте: §f/mp power reboot");
+                "<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /restart отключена. Используйте: <white>/mp power reboot</white></dark_gray>");
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -69,7 +70,7 @@ public class PowerInterceptListener implements Listener {
         // А также варианты с неймспейсами minecraft: и bukkit:
         if (isRestartCommand(msg)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(restartMessage);
+            event.getPlayer().sendMessage(MessageUtil.parse(restartMessage));
             return;
         }
 
@@ -79,7 +80,7 @@ public class PowerInterceptListener implements Listener {
         // =========================
         if (isStopCommand(msg)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(stopMessage);
+            event.getPlayer().sendMessage(MessageUtil.parse(stopMessage));
         }
     }
 
@@ -94,7 +95,7 @@ public class PowerInterceptListener implements Listener {
         // =========================
         if (isRestartCommand("/" + command)) {
             event.setCancelled(true);
-            event.getSender().sendMessage(restartMessage);
+            event.getSender().sendMessage(MessageUtil.parse(restartMessage));
             return;
         }
 
@@ -103,7 +104,7 @@ public class PowerInterceptListener implements Listener {
         // =========================
         if (isStopCommand("/" + command)) {
             event.setCancelled(true);
-            event.getSender().sendMessage(stopMessage);
+            event.getSender().sendMessage(MessageUtil.parse(stopMessage));
             return;
         }
     }
