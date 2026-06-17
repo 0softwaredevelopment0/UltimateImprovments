@@ -187,7 +187,7 @@ public class RadiationManager implements Listener {
         Player player = e.getEntity();
         if (!enabled || !deathReset) return;
         resetRadiation(player);
-        saveToDB(player);
+        // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
     }
 
     @EventHandler
@@ -208,7 +208,7 @@ public class RadiationManager implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player player = e.getPlayer();
-        saveToDB(player);
+        // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
         radiationMap.remove(player.getUniqueId());
     }
 

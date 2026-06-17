@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -77,6 +78,16 @@ public class IntegrityManager extends BukkitRunnable {
     private static Set<String> blacklist = new HashSet<>();
     private static Set<String> whitelist = new HashSet<>();
 
+    // ===== XP → ЦЕЛОСТНОСТЬ (сбор опыта восстанавливает целостность всех предметов) =====
+    private static boolean xpIntegrityEnabled = true;
+    private static double xpIntegrityPerXp = 0.1;
+    private static String xpIntegrityMessage = "<green>✨</green> <white>Сбор опыта восстановил</white> <yellow>{amount}%</yellow> <white>целостности всех предметов!</white>";
+
+    // ===== LOW INTEGRITY WARNING — предупреждение при низкой целостности =====
+    private static boolean lowIntegrityWarningEnabled = true;
+    private static List<Integer> lowIntegrityThresholds = List.of(5, 10, 25, 50, 75);
+    private static String lowIntegrityWarningMessage = "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>{item}</yellow> <white>имеет</white> <red>{pct}%</red> <white>целостности!</white>";
+
     // ===== ДОП. НАСТРОЙКИ (износа, ремонта и т.д.) =====
     // Ремонт в наковальне
     private static boolean anvilRepairEnabled = true;
@@ -84,9 +95,17 @@ public class IntegrityManager extends BukkitRunnable {
     private static boolean anvilCombineEnabled = true;
     private static double anvilCombineBonus = 0.1;
 
+    // Крафт материалом в наковальне (+N% целостности за каждую единицу материала)
+    private static boolean anvilMaterialCraftEnabled = true;
+    private static double anvilMaterialCraftBonus = 10.0;
+    private static String anvilMaterialCraftMessage = "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>{current}%</yellow> <white>(+{bonus}% за материалы)</white>";
+
     // XP + Silk Touch
     private static boolean silkTouchXpEnabled = true;
     private static double silkTouchXpMultiplier = 0.5;
+
+    // Unbreaking (Неразрушимость)
+    private static boolean unbreakingEnabled = true;
 
     // Крафт / точило — объединение
     private static boolean combineEnabled = true;
@@ -172,6 +191,28 @@ public class IntegrityManager extends BukkitRunnable {
         blacklist = new HashSet<>(cfg.getStringList("blacklist"));
         whitelist = new HashSet<>(cfg.getStringList("whitelist"));
 
+        // ===== UNBREAKING =====
+        unbreakingEnabled = cfg.getBoolean("unbreaking.enabled", true);
+
+        // ===== LOW INTEGRITY WARNING =====
+        var warn = cfg.getConfigurationSection("low_integrity_warning");
+        if (warn != null) {
+            lowIntegrityWarningEnabled = warn.getBoolean("enabled", true);
+            lowIntegrityThresholds = warn.getIntegerList("thresholds");
+            if (lowIntegrityThresholds.isEmpty()) {
+                lowIntegrityThresholds = List.of(5, 10, 25, 50, 75);
+            }
+            lowIntegrityWarningMessage = warn.getString("message", "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>{item}</yellow> <white>имеет</white> <red>{pct}%</red> <white>целостности!</white>");
+        }
+
+        // ===== XP → ЦЕЛОСТНОСТЬ =====
+        var xpInt = cfg.getConfigurationSection("xp_integrity");
+        if (xpInt != null) {
+            xpIntegrityEnabled = xpInt.getBoolean("enabled", true);
+            xpIntegrityPerXp = xpInt.getDouble("integrity_per_xp", 0.1);
+            xpIntegrityMessage = xpInt.getString("message", "<green>✨</green> <white>Сбор опыта восстановил</white> <yellow>{amount}%</yellow> <white>целостности всех предметов!</white>");
+        }
+
         // ===== РЕМОНТ В НАКОВАЛЬНЕ =====
         var anvil = cfg.getConfigurationSection("anvil_repair");
         if (anvil != null) {
@@ -181,6 +222,14 @@ public class IntegrityManager extends BukkitRunnable {
             anvilCombineBonus = anvil.getDouble("combine_bonus", 0.1);
             anvilRepairMessage = anvil.getString("repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>");
             anvilCombineMessage = anvil.getString("combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>");
+
+            // ===== КРАФТ МАТЕРИАЛОМ =====
+            var matCraft = anvil.getConfigurationSection("material_craft");
+            if (matCraft != null) {
+                anvilMaterialCraftEnabled = matCraft.getBoolean("enabled", true);
+                anvilMaterialCraftBonus = matCraft.getDouble("integrity_per_material", 10.0);
+                anvilMaterialCraftMessage = matCraft.getString("message", "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>{current}%</yellow> <white>(+{bonus}% за материалы)</white>");
+            }
         }
 
         // ===== XP + ШЁЛКОВОЕ КАСАНИЕ =====
@@ -273,7 +322,18 @@ public class IntegrityManager extends BukkitRunnable {
     // =========================
     // GETTERS ДЛЯ КОНФИГА
     // =========================
+    // ===== XP → ЦЕЛОСТНОСТЬ =====
+    public static boolean isXpIntegrityEnabled() { return xpIntegrityEnabled; }
+    public static double getXpIntegrityPerXp() { return xpIntegrityPerXp; }
+    public static String getXpIntegrityMessage() { return xpIntegrityMessage; }
+
+    // ===== LOW INTEGRITY WARNING =====
+    public static String getLowIntegrityWarningMessage() { return lowIntegrityWarningMessage; }
+
     public static boolean isAnvilRepairEnabled() { return anvilRepairEnabled; }
+    public static boolean isAnvilMaterialCraftEnabled() { return anvilMaterialCraftEnabled; }
+    public static double getAnvilMaterialCraftBonus() { return anvilMaterialCraftBonus; }
+    public static String getAnvilMaterialCraftMessage() { return anvilMaterialCraftMessage; }
     public static boolean isAnvilCombineEnabled() { return anvilCombineEnabled; }
     public static boolean isSilkTouchXpEnabled() { return silkTouchXpEnabled; }
     public static boolean isCombineEnabled() { return combineEnabled; }
@@ -301,6 +361,7 @@ public class IntegrityManager extends BukkitRunnable {
 
                 try {
                     processItem(item);
+                    checkLowIntegrityWarning(item, player);
                 } catch (Exception e) {
                     if (logErrors) {
                         Main.getInstance().getLogger().warning("[INTEGRITY] Error processing item " + item.getType() + ": " + e.getMessage());
@@ -373,7 +434,7 @@ public class IntegrityManager extends BukkitRunnable {
     // UPDATE LORE — обновление описания (возвращает true, если лор был изменён)
     // Показывает ТОЛЬКО процент целостности, никаких числовых значений прочности.
     // =========================
-    private boolean updateLore(ItemMeta meta) {
+    private static boolean updateLore(ItemMeta meta) {
         var pdc = meta.getPersistentDataContainer();
 
         double maxIntegrity = pdc.getOrDefault(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 0.0);
@@ -417,6 +478,20 @@ public class IntegrityManager extends BukkitRunnable {
         pdc.set(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, currentIntegrity);
 
         return true;
+    }
+
+    /**
+     * Принудительно обновляет лор целостности на предмете.
+     * Используется когда предмет меняет целостность вне тика (например, в наковальне).
+     */
+    public static void updateItemLore(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return;
+        if (item.getType().getMaxDurability() <= 0) return;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        if (updateLore(meta)) {
+            item.setItemMeta(meta);
+        }
     }
 
     /**
@@ -546,6 +621,20 @@ public class IntegrityManager extends BukkitRunnable {
 
         // 1 единица ванильного урона = (1 / maxDurability) * 100% от целостности
         double pctCost = (amount / (double) maxDura) * MAX_INTEGRITY * costMultiplier;
+
+        // 🔮 Unbreaking: шанс потратить прочность уменьшается в (уровень + 1) раз
+        // Например: Unbreaking I = x2 меньше шанс, Unbreaking II = x3, Unbreaking III = x4 и т.д.
+        if (unbreakingEnabled) {
+            int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
+            if (unbreakingLevel > 0) {
+                double divisor = unbreakingLevel + 1.0;
+                if (Math.random() > 1.0 / divisor) {
+                    // Удача — прочность не тратится
+                    return;
+                }
+            }
+        }
+
         double newVal = Math.max(0, current - pctCost);
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, newVal);
@@ -560,6 +649,72 @@ public class IntegrityManager extends BukkitRunnable {
         // Если целостность закончилась — ломаем предмет
         if (newVal <= 0) {
             breakItem(item, owner);
+        } else {
+            // Иначе проверяем пороги для предупреждения
+            checkLowIntegrityWarning(item, owner);
+        }
+    }
+
+    // =========================
+    // LOW INTEGRITY WARNING — предупреждение при низкой целостности
+    // Каждый порог (75,50,25,10,5%) срабатывает 1 раз до следующего ремонта
+    // =========================
+    private static void checkLowIntegrityWarning(ItemStack item, Player player) {
+        if (!lowIntegrityWarningEnabled) return;
+        if (item == null || item.getType() == Material.AIR) return;
+        if (item.getType().getMaxDurability() <= 0) return;
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+
+        var pdc = meta.getPersistentDataContainer();
+        if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) return;
+
+        double currentIntegrity = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
+        double maxIntegrity = pdc.getOrDefault(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
+        if (maxIntegrity <= 0) return;
+        double pct = (currentIntegrity / maxIntegrity) * 100.0;
+
+        int warnFlags = pdc.getOrDefault(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, 0);
+        boolean warned = false;
+
+        for (int i = 0; i < lowIntegrityThresholds.size(); i++) {
+            int threshold = lowIntegrityThresholds.get(i);
+            int bit = 1 << i;
+
+            // Если целостность ≤ порога И флаг ещё не стоит — предупреждаем
+            if (pct <= threshold && (warnFlags & bit) == 0) {
+                warnFlags |= bit;
+                warned = true;
+            }
+
+            // Если целостность > порога И флаг стоит — снимаем (предмет починили)
+            if (pct > threshold && (warnFlags & bit) != 0) {
+                warnFlags &= ~bit;
+            }
+        }
+
+        // При первом сканировании (warnFlags == 0) pre-set флаги для порогов
+        // выше текущей целостности — чтобы не спамить за "пропущенные" пороги.
+        // Например: предмет на 30% → 75% и 50% сразу помечаются как "уже предупреждено"
+        int prevFlags = pdc.getOrDefault(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, 0);
+        if (prevFlags == 0 && warnFlags > 0) {
+            warned = false; // не шлём сообщение при первой инициализации
+        }
+
+        // Сохраняем флаги в PDC
+        int oldFlags = pdc.getOrDefault(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, 0);
+        if (warned || warnFlags != oldFlags) {
+            pdc.set(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, warnFlags);
+            item.setItemMeta(meta);
+
+            if (warned) {
+                String itemName = getItemName(item);
+                String msg = lowIntegrityWarningMessage
+                        .replace("{item}", itemName)
+                        .replace("{pct}", PCT_FMT.format(pct));
+                player.sendMessage(MessageUtil.parse(msg));
+            }
         }
     }
 
@@ -567,8 +722,8 @@ public class IntegrityManager extends BukkitRunnable {
     // BREAK ITEM — ломание предмета
     // =========================
     private static void breakItem(ItemStack item, Player owner) {
-        // Устанавливаем количество 0 (предмет исчезает)
-        item.setAmount(0);
+        // Получаем имя ДО setAmount(0), иначе item станет AIR
+        String itemName = getItemName(item);
 
         if (owner == null) {
             // Fallback: ищем владельца по инвентарям
@@ -583,9 +738,10 @@ public class IntegrityManager extends BukkitRunnable {
             }
         }
 
-        if (owner == null) return;
+        // Устанавливаем количество 0 (предмет исчезает) — только после получения имени
+        item.setAmount(0);
 
-        String itemName = getItemName(item);
+        if (owner == null) return;
 
         // Воспроизводим звук поломки
         if (breakPlaySound) {

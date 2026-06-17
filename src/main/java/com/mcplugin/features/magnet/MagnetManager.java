@@ -5,6 +5,7 @@ import com.mcplugin.database.DatabaseManager;
 import com.mcplugin.util.LocationUtil;
 import com.mcplugin.util.MessageUtil;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -35,7 +36,7 @@ public class MagnetManager extends BukkitRunnable {
     private static final int COORD_OFFSET = 33554432;
     private static final int Y_OFFSET = 64;
 
-    private static long toKey(int x, int y, int z) {
+    public static long toKey(int x, int y, int z) {
         return ((long)(x + COORD_OFFSET) << 38)
              | ((long)(z + COORD_OFFSET) << 12)
              | ((y + Y_OFFSET) & 0xFFFL);
@@ -45,15 +46,15 @@ public class MagnetManager extends BukkitRunnable {
         return toKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
-    private static int getX(long key) {
+    public static int getX(long key) {
         return (int)((key >>> 38) & 0x3FFFFFFL) - COORD_OFFSET;
     }
 
-    private static int getZ(long key) {
+    public static int getZ(long key) {
         return (int)((key >>> 12) & 0x3FFFFFFL) - COORD_OFFSET;
     }
 
-    private static int getY(long key) {
+    public static int getY(long key) {
         return (int)(key & 0xFFFL) - Y_OFFSET;
     }
 
@@ -99,15 +100,60 @@ public class MagnetManager extends BukkitRunnable {
         public Location center;
         public int power;
 
+        // Running sums для O(1) пересчёта центра
+        private long sumX, sumY, sumZ;
+
+        /**
+         * Добавить блок в кластер с обновлением центра за O(1).
+         */
+        void addBlock(long key) {
+            if (blockKeys.add(key)) {
+                sumX += getX(key);
+                sumY += getY(key);
+                sumZ += getZ(key);
+                power = blockKeys.size();
+                updateCenterFromSums();
+            }
+        }
+
+        /**
+         * Удалить блок из кластера с обновлением центра за O(1).
+         */
+        void removeBlock(long key) {
+            if (blockKeys.remove(key)) {
+                sumX -= getX(key);
+                sumY -= getY(key);
+                sumZ -= getZ(key);
+                power = blockKeys.size();
+                if (!blockKeys.isEmpty()) {
+                    updateCenterFromSums();
+                } else {
+                    center = null;
+                }
+            }
+        }
+
+        /**
+         * Полный пересчёт центра (используется при загрузке из БД).
+         */
         void recalculateCenter() {
             if (blockKeys.isEmpty()) return;
-            long sumX = 0, sumY = 0, sumZ = 0;
+            sumX = 0; sumY = 0; sumZ = 0;
             for (long key : blockKeys) {
                 sumX += getX(key);
                 sumY += getY(key);
                 sumZ += getZ(key);
             }
+            updateCenterFromSums();
+        }
+
+        private void updateCenterFromSums() {
             int size = blockKeys.size();
+            if (size == 0) {
+                center = null;
+                power = 0;
+                return;
+            }
             center = new Location(world,
                     (int) Math.round((double) sumX / size),
                     (int) Math.round((double) sumY / size),
@@ -254,7 +300,14 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // ACTIVATE
+    // ⚡ ПОРОГ АСИНХРОННОСТИ
+    // Если кластер больше этого порога — flood-fill выполняется асинхронно,
+    // чтобы не фризить сервер. При активации игрок получает уведомление.
+    // =========================
+    private static final int ASYNC_THRESHOLD = 500;
+
+    // =========================
+    // ACTIVATE (синхронно — для внутреннего использования)
     // =========================
     public static void activate(Location loc) {
         loc = LocationUtil.normalize(loc);
@@ -276,7 +329,7 @@ public class MagnetManager extends BukkitRunnable {
         }
         clustersById.put(cluster.id, cluster);
 
-        saveCluster(cluster);
+        // БД: не пишем сразу — данные сохранятся через AsyncAutoSaveManager каждые 5 мин
         addParticleEffect(cluster.center, cluster.blockKeys.size());
 
         Main.getInstance().getLogger().info(
@@ -284,6 +337,139 @@ public class MagnetManager extends BukkitRunnable {
                         + " with " + connected.size() + " blocks"
                         + " at center " + cluster.center
         );
+    }
+
+    // =========================
+    // ACTIVATE ASYNC (для сборки через команду)
+    // Запускает flood-fill асинхронно, чтобы не фризить сервер.
+    // Игрок получает уведомление о начале и завершении сборки.
+    // =========================
+    public static void activateAsync(Location loc, Player player) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) {
+            player.sendMessage("§4❌ §cНекорректная позиция!");
+            return;
+        }
+        long key = toKey(loc);
+        if (locationToCluster.containsKey(key)) {
+            player.sendMessage("§eМагнит уже активен на этом месте!");
+            return;
+        }
+
+        player.sendMessage("§8[§bМагнит§8] §7Начинаю сканирование структуры...");
+        player.sendMessage("§8[§bМагнит§8] §7Пожалуйста, подождите. Это может занять время");
+        player.sendMessage("§8[§bМагнит§8] §7при большом количестве блоков.");
+
+        World world = loc.getWorld();
+        int sx = loc.getBlockX(), sy = loc.getBlockY(), sz = loc.getBlockZ();
+
+        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+            try {
+                Set<Long> connected = floodFillFast(world, sx, sy, sz);
+
+                Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                        finishActivation(connected, world, key, player)
+                );
+            } catch (Exception e) {
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    player.sendMessage("§4❌ §cОшибка при асинхронном сканировании!");
+                    player.sendMessage("§7Пробую синхронный режим...");
+
+                    // Fallback: синхронное выполнение
+                    Set<Long> connected = floodFillFast(world, sx, sy, sz);
+                    finishActivation(connected, world, key, player);
+                });
+                Main.getInstance().getLogger().severe(
+                        "[Magnet] Async activation error: " + e.getMessage()
+                );
+            }
+        });
+    }
+
+    /**
+     * Завершает активацию: создаёт кластер, регистрирует блоки,
+     * сохраняет в БД, показывает частицы и шлёт результат игроку.
+     */
+    private static void finishActivation(Set<Long> connected, World world, long key, Player player) {
+        if (connected.isEmpty()) {
+            player.sendMessage("§4❌ §cМагнит не собран: структура из LODESTONE не найдена!");
+            return;
+        }
+
+        // Повторная проверка — могла произойти параллельная активация
+        if (locationToCluster.containsKey(key)) {
+            player.sendMessage("§eМагнит уже активен на этом месте!");
+            return;
+        }
+
+        MagnetCluster cluster = new MagnetCluster();
+        cluster.id = nextId++;
+        cluster.world = world;
+        cluster.blockKeys = new HashSet<>(connected);
+        cluster.recalculateCenter();
+
+        for (long blockKey : connected) {
+            locationToCluster.put(blockKey, cluster);
+        }
+        clustersById.put(cluster.id, cluster);
+
+        // БД: не пишем сразу — данные сохранятся через AsyncAutoSaveManager каждые 5 мин
+        addParticleEffect(cluster.center, cluster.blockKeys.size());
+
+        // Отображаем результат игроку
+        int power = cluster.blockKeys.size();
+        String powerDesc = getMagnetPowerTierStatic(power);
+        int magnetRadius = getClusterRadius(power);
+
+        player.sendMessage("§a✅ §fМагнит собран!");
+        player.sendMessage("§8┃ §7Блоков в структуре: §f" + power + " §7шт");
+        player.sendMessage("§8┃ §7Сила притяжения: " + powerDesc);
+        if (cluster.center != null) {
+            player.sendMessage("§8┃ §7Центр притяжения: §f"
+                    + cluster.center.getBlockX() + " "
+                    + cluster.center.getBlockY() + " "
+                    + cluster.center.getBlockZ());
+        }
+        player.sendMessage("§8┃ §7Радиус действия: §f" + magnetRadius + " §7блоков (мин. " + minRadius + ")");
+
+        Main.getInstance().getLogger().info(
+                "[Magnet] Activated cluster #" + cluster.id
+                        + " with " + connected.size() + " blocks"
+                        + " at center " + cluster.center
+        );
+    }
+
+    /**
+     * Возвращает тир магнита по мощности (статический, для использования из ReactorCommand).
+     */
+    public static String getMagnetPowerTierStatic(int power) {
+        if (power >= 10000000) return "§k✧ §4✧✧ АБСОЛЮТНАЯ БЕСКОНЕЧНОСТЬ ✧✧ §k✧ §8(" + power + ")";
+        if (power >= 5000000) return "§4✧✧ БЕСКОНЕЧНАЯ БЕЗДНА ✧✧ §8(" + power + ")";
+        if (power >= 2500000) return "§c✦ ВСЕЛЕНСКАЯ КАТАСТРОФА ✦ §8(" + power + ")";
+        if (power >= 1000000) return "§d✧ ПЕРВОЗДАННАЯ СИНГУЛЯРНОСТЬ ✧ §8(" + power + ")";
+        if (power >= 500000) return "§6☠ НЕПОСТИЖИМАЯ ☠ §8(" + power + ")";
+        if (power >= 250000) return "§3✦ БОГОПОДОБНАЯ ✦ §8(" + power + ")";
+        if (power >= 100000) return "§4✧✧✧ ВСЕСОКРУШАЮЩАЯ СИНГУЛЯРНОСТЬ ✧✧✧ §8(" + power + ")";
+        if (power >= 50000) return "§c☠ АБСОЛЮТНАЯ СИНГУЛЯРНОСТЬ ☠ §8(" + power + ")";
+        if (power >= 25000) return "§6⚡ БОЖЕСТВЕННАЯ СИНГУЛЯРНОСТЬ ⚡ §8(" + power + ")";
+        if (power >= 10000) return "§d✧✧ НЕПРЕВЗОЙДЁННАЯ ✧✧ §8(" + power + ")";
+        if (power >= 5000) return "§5✦ ТРАНСЦЕНДЕНТНАЯ ✦ §8(" + power + ")";
+        if (power >= 2500) return "§9⚜ СИНГУЛЯРНАЯ ⚜ §8(" + power + ")";
+        if (power >= 1000) return "§3✦ БЕСКОНЕЧНАЯ ✦ §8(" + power + ")";
+        if (power >= 500) return "§5✧✧ АБСОЛЮТНАЯ ✧✧ §8(" + power + ")";
+        if (power >= 300) return "§5☯ КОСМИЧЕСКАЯ ☯ §8(" + power + ")";
+        if (power >= 200) return "§d✦ ТИТАНИЧЕСКАЯ ✦ §8(" + power + ")";
+        if (power >= 150) return "§d◈ ЛЕГЕНДАРНАЯ ◈ §8(" + power + ")";
+        if (power >= 100) return "§c☆ НЕВЕРОЯТНАЯ ☆ §8(" + power + ")";
+        if (power >= 75) return "§c♦ ЧРЕЗВЫЧАЙНАЯ ♦ §8(" + power + ")";
+        if (power >= 50) return "§6★ ИСКЛЮЧИТЕЛЬНАЯ ★ §8(" + power + ")";
+        if (power >= 30) return "§6⬆ ОЧЕНЬ СИЛЬНАЯ ⬆ §8(" + power + ")";
+        if (power >= 20) return "§e⬆ СИЛЬНАЯ ⬆ §8(" + power + ")";
+        if (power >= 12) return "§e⬆ ВЫШЕ СРЕДНЕГО ⬆ §8(" + power + ")";
+        if (power >= 7) return "§a➤ СРЕДНЯЯ ➤ §8(" + power + ")";
+        if (power >= 4) return "§7➤ НИЖЕ СРЕДНЕГО ➤ §8(" + power + ")";
+        if (power >= 2) return "§7▸ СЛАБАЯ ▸ §8(" + power + ")";
+        return "§7▸ ОЧЕНЬ СЛАБАЯ ▸ §8(" + power + ")";
     }
 
     // =========================
@@ -302,7 +488,7 @@ public class MagnetManager extends BukkitRunnable {
             locationToCluster.remove(blockKey);
         }
         clustersById.remove(cluster.id);
-        deleteCluster(cluster.id);
+        // БД: не пишем сразу — данные сохранятся через AsyncAutoSaveManager каждые 5 мин
         if (cluster.center != null && cluster.center.getWorld() != null) {
             addParticleEffect(cluster.center, cluster.blockKeys.size());
         }
@@ -314,6 +500,8 @@ public class MagnetManager extends BukkitRunnable {
 
     // =========================
     // БЛОК РАЗРУШЕН
+    // Если кластер маленький — пересчёт синхронно (быстро).
+    // Если большой — асинхронно, чтобы не фризить сервер.
     // =========================
     public static boolean onBlockBroken(Location loc, Player breaker) {
         loc = LocationUtil.normalize(loc);
@@ -323,7 +511,7 @@ public class MagnetManager extends BukkitRunnable {
         if (cluster == null) return false;
 
         locationToCluster.remove(key);
-        cluster.blockKeys.remove(key);
+        cluster.removeBlock(key);
 
         if (cluster.blockKeys.isEmpty()) {
             deactivateCluster(cluster);
@@ -333,11 +521,28 @@ public class MagnetManager extends BukkitRunnable {
             return true;
         }
 
+        // ════════════════════════════════════════
+        // Если кластер маленький — синхронный пересчёт
+        // Если большой — асинхронный, чтобы не фризить
+        // ════════════════════════════════════════
+        if (cluster.blockKeys.size() < ASYNC_THRESHOLD) {
+            recalculateClusterSync(cluster, breaker);
+        } else {
+            recalculateClusterAsync(cluster, breaker);
+        }
+
+        return false;
+    }
+
+    /**
+     * Синхронный пересчёт кластера после разрушения блока.
+     */
+    private static void recalculateClusterSync(MagnetCluster cluster, Player breaker) {
         long anyKey = cluster.blockKeys.iterator().next();
         Set<Long> newKeys = floodFillFast(cluster.world, getX(anyKey), getY(anyKey), getZ(anyKey));
 
-        Set<Long> oldKeys = new HashSet<>(cluster.blockKeys);
-        for (long oldKey : oldKeys) {
+        // Удаляем блоки, которые больше не в структуре
+        for (long oldKey : new HashSet<>(cluster.blockKeys)) {
             if (!newKeys.contains(oldKey)) {
                 locationToCluster.remove(oldKey);
             }
@@ -348,7 +553,7 @@ public class MagnetManager extends BukkitRunnable {
             locationToCluster.put(newKey, cluster);
         }
         cluster.recalculateCenter();
-        saveCluster(cluster);
+        // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
 
         if (breaker != null) {
             breaker.sendMessage(MessageUtil.parse("<yellow>\u26a1</yellow> <gray>Магнит перестроен! Блоков: </gray><white>" + cluster.blockKeys.size() + "</white> <gray>| Центр смещён</gray>"));
@@ -358,11 +563,89 @@ public class MagnetManager extends BukkitRunnable {
                 "[Magnet] Cluster #" + cluster.id + " recalculated: "
                         + cluster.blockKeys.size() + " blocks, center at " + cluster.center
         );
-        return false;
+    }
+
+    /**
+     * Асинхронный пересчёт кластера после разрушения блока.
+     * Запускает flood-fill в асинхронном потоке, затем применяет результаты
+     * на главном потоке.
+     */
+    private static void recalculateClusterAsync(MagnetCluster cluster, Player breaker) {
+        if (breaker != null) {
+            breaker.sendMessage("§8[§bМагнит§8] §7Перестраиваю структуру...");
+            breaker.sendMessage("§8[§bМагнит§8] §7Пожалуйста, подождите.");
+        }
+
+        World world = cluster.world;
+        long anyKey = cluster.blockKeys.iterator().next();
+        int sx = getX(anyKey), sy = getY(anyKey), sz = getZ(anyKey);
+
+        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+            try {
+                Set<Long> newKeys = floodFillFast(world, sx, sy, sz);
+
+                Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                        applyRecalculation(cluster, newKeys, breaker)
+                );
+            } catch (Exception e) {
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    if (breaker != null) {
+                        breaker.sendMessage("§4❌ §cОшибка при перестроении магнита!");
+                    }
+                    // Fallback: синхронно
+                    Set<Long> newKeys = floodFillFast(world, sx, sy, sz);
+                    applyRecalculation(cluster, newKeys, breaker);
+                });
+                Main.getInstance().getLogger().severe(
+                        "[Magnet] Async recalculation error: " + e.getMessage()
+                );
+            }
+        });
+    }
+
+    /**
+     * Применяет результат пересчёта к кластеру (на главном потоке).
+     */
+    private static void applyRecalculation(MagnetCluster cluster, Set<Long> newKeys, Player breaker) {
+        if (newKeys.isEmpty()) {
+            // Структура полностью разрушена
+            deactivateCluster(cluster);
+            if (breaker != null) {
+                breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Магнит полностью разрушен и деактивирован!</red>"));
+            }
+            return;
+        }
+
+        // Удаляем блоки, которые больше не в структуре
+        for (long oldKey : new HashSet<>(cluster.blockKeys)) {
+            if (!newKeys.contains(oldKey)) {
+                locationToCluster.remove(oldKey);
+            }
+        }
+
+        cluster.blockKeys = newKeys;
+        for (long newKey : newKeys) {
+            locationToCluster.put(newKey, cluster);
+        }
+        cluster.recalculateCenter();
+        // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
+
+        if (breaker != null) {
+            breaker.sendMessage(MessageUtil.parse("<yellow>\u26a1</yellow> <gray>Магнит перестроен! Блоков: </gray><white>" + cluster.blockKeys.size() + "</white> <gray>| Центр смещён</gray>"));
+        }
+
+        Main.getInstance().getLogger().info(
+                "[Magnet] Cluster #" + cluster.id + " recalculated: "
+                        + cluster.blockKeys.size() + " blocks, center at " + cluster.center
+        );
     }
 
     // =========================
     // БЛОК ПОСТАВЛЕН
+    // Оптимизация: вместо полного flood-fill'а — просто добавляем блок
+    // в соседний кластер (или объединяем кластеры).
+    // Полный пересчёт (flood-fill) делаем только если кластер >= ASYNC_THRESHOLD
+    // и блок может соединить два кластера — но даже тогда просто объединяем их.
     // =========================
     public static void onBlockPlaced(Location loc) {
         loc = LocationUtil.normalize(loc);
@@ -370,40 +653,65 @@ public class MagnetManager extends BukkitRunnable {
         long key = toKey(loc);
         if (locationToCluster.containsKey(key)) return;
 
-        MagnetCluster found = null;
         int bx = loc.getBlockX(), by = loc.getBlockY(), bz = loc.getBlockZ();
         long[] neighborKeys = {
             toKey(bx + 1, by, bz), toKey(bx - 1, by, bz),
             toKey(bx, by + 1, bz), toKey(bx, by - 1, bz),
             toKey(bx, by, bz + 1), toKey(bx, by, bz - 1)
         };
+
+        // Собираем все уникальные кластеры рядом
+        Set<MagnetCluster> adjacentClusters = new LinkedHashSet<>();
         for (long nk : neighborKeys) {
             MagnetCluster c = locationToCluster.get(nk);
-            if (c != null) {
-                found = c;
-                break;
+            if (c != null) adjacentClusters.add(c);
+        }
+
+        if (adjacentClusters.isEmpty()) return;
+
+        if (adjacentClusters.size() == 1) {
+            // ════════════════════════════════════════
+            // 🟢 Простой случай: один соседний кластер
+            // Просто добавляем блок в кластер — O(1)!
+            // ════════════════════════════════════════
+            MagnetCluster cluster = adjacentClusters.iterator().next();
+            cluster.addBlock(key);
+            locationToCluster.put(key, cluster);
+            // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
+
+            Main.getInstance().getLogger().info(
+                    "[Magnet] Cluster #" + cluster.id + " expanded: "
+                            + cluster.blockKeys.size() + " blocks"
+            );
+        } else {
+            // ════════════════════════════════════════
+            // 🟡 Сложный случай: блок соединяет 2+ кластера
+            // Объединяем все в первый кластер
+            // ════════════════════════════════════════
+            Iterator<MagnetCluster> it = adjacentClusters.iterator();
+            MagnetCluster primary = it.next();
+
+            while (it.hasNext()) {
+                MagnetCluster other = it.next();
+                // Переносим все блоки в primary
+                for (long bk : other.blockKeys) {
+                    locationToCluster.put(bk, primary);
+                    primary.addBlock(bk);
+                }
+                clustersById.remove(other.id);
+                // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
             }
+
+            // Добавляем новый блок
+            primary.addBlock(key);
+            locationToCluster.put(key, primary);
+            // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
+
+            Main.getInstance().getLogger().info(
+                    "[Magnet] Clusters merged into #" + primary.id
+                            + ": " + primary.blockKeys.size() + " blocks"
+            );
         }
-
-        if (found == null) return;
-
-        long anyKey = found.blockKeys.iterator().next();
-        Set<Long> newKeys = floodFillFast(found.world, getX(anyKey), getY(anyKey), getZ(anyKey));
-
-        for (long oldKey : found.blockKeys) {
-            locationToCluster.remove(oldKey);
-        }
-        found.blockKeys = newKeys;
-        for (long newKey : newKeys) {
-            locationToCluster.put(newKey, found);
-        }
-        found.recalculateCenter();
-        saveCluster(found);
-
-        Main.getInstance().getLogger().info(
-                "[Magnet] Cluster #" + found.id + " expanded: "
-                        + found.blockKeys.size() + " blocks, center at " + found.center
-        );
     }
 
     // =========================
@@ -908,7 +1216,9 @@ public class MagnetManager extends BukkitRunnable {
                 }
                 rsb.close();
                 psb.close();
-                cluster.power = cluster.blockKeys.size();
+                // recalculateCenter() инициализирует running sums (sumX/sumY/sumZ),
+                // а также устанавливает power и center
+                cluster.recalculateCenter();
                 clustersById.put(id, cluster);
                 if (id > maxId) maxId = id;
             }

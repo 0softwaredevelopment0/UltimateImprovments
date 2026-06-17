@@ -1,25 +1,19 @@
 package com.mcplugin.commands;
 
 import com.mcplugin.Main;
-import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.core1.ReactorCommand;
 import com.mcplugin.core1.ReactorManager;
-import com.mcplugin.features.FeaturesManager;
 import com.mcplugin.features.integrity.IntegrityManager;
 import com.mcplugin.features.magnet.MagnetManager;
 import com.mcplugin.main.TaskManager;
-import com.mcplugin.server.EmergencyEntitiesKill;
-import com.mcplugin.server.RedstoneGuard;
-import com.mcplugin.server.ServerOverloadWarning;
-import com.mcplugin.energy.crafting.EnergyWorkbenchManager;
-import com.mcplugin.crafting.MultimeterCraftListener;
+import com.mcplugin.module.ModuleManager;
+import com.mcplugin.module.PluginModule;
 import com.mcplugin.auth.AuthDatabase;
 import com.mcplugin.auth.AuthGUI;
 import com.mcplugin.auth.AuthManager;
 import com.mcplugin.cp.CodePanelClick;
 import com.mcplugin.cp.CodePanelCommand;
 import com.mcplugin.cp.CodePanelDatabase;
-import com.mcplugin.database.DatabaseManager;
 import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 
@@ -109,6 +103,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("");
             sender.sendMessage("§e/mp reload");
             sender.sendMessage(" §7└ Перезагрузить плагин");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp modules list");
+            sender.sendMessage(" §7└ Список модулей плагина");
+            sender.sendMessage("§e/mp modules enable §7<модуль>");
+            sender.sendMessage(" §7└ Включить модуль");
+            sender.sendMessage("§e/mp modules disable §7<модуль>");
+            sender.sendMessage(" §7└ Отключить модуль");
             sender.sendMessage("");
             sender.sendMessage("§e/mp str dfc stats");
             sender.sendMessage(" §7└ Статистика реактора");
@@ -1314,6 +1315,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
 
         // =========================
+        // MODULES SUBCOMMAND — список/включение/отключение модулей
+        // =========================
+        if (args[0].equalsIgnoreCase("modules")) {
+            return handleModulesCommand(sender, args);
+        }
+
+        // =========================
         // RELOAD SUBCOMMAND
         // =========================
         if (!args[0].equalsIgnoreCase("reload")) {
@@ -1359,38 +1367,32 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     TaskManager.getInstance().stopAll();
 
                     // =========================
-                    // SAVE DATA
+                    // SHUTDOWN NON-ESSENTIAL MODULES
                     // =========================
-                    CableNetwork.save();
-
-                    // =========================
-                    // CLOSE DB
-                    // =========================
-                    DatabaseManager.close();
+                    var mm = ModuleManager.getInstance();
+                    // Отключаем и перезапускаем модули через ModuleManager
+                    for (var m : mm.getModules()) {
+                        if (!m.isEssential()) {
+                            m.disable(plugin);
+                        }
+                    }
 
                     // =========================
                     // RELOAD CONFIG
                     // =========================
                     plugin.reloadConfig();
-                    RedstoneGuard.reload();
-                    EmergencyEntitiesKill.reload();
-                    ServerOverloadWarning.reload();
-                    FeaturesManager.reloadConfig();
-                    PowerManager.reloadConfig();
+                    mm.reloadAllConfigs();
                     com.mcplugin.listeners.PowerInterceptListener.reloadConfigStatic();
                     com.mcplugin.listeners.ChatFilterManager.reloadConfigStatic();
 
                     // =========================
-                    // RECONNECT DB
+                    // REINIT MODULES
                     // =========================
-                    DatabaseManager.connect();
-
-                    // =========================
-                    // REINIT SYSTEMS
-                    // =========================
-                    CableNetwork.init();
-                    EnergyWorkbenchManager.init();
-                    MultimeterCraftListener.init();
+                    for (var m : mm.getModules()) {
+                        if (!m.isEssential()) {
+                            m.initialize(plugin);
+                        }
+                    }
 
                     // =========================
                     // RESTART TASKS
@@ -1452,6 +1454,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("codepane");
             completions.add("pane_click");
             completions.add("item");
+            completions.add("modules");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("auth")) {
             completions.add("forcelogin");
             completions.add("resetauth");
@@ -1514,6 +1517,15 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 if (!usedFlags.contains("whitelist:")) completions.add("whitelist:");
                 if (!usedFlags.contains("blacklist:")) completions.add("blacklist:");
                 if (!usedFlags.contains("command:")) completions.add("command:");
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("modules")) {
+            completions.add("list");
+            completions.add("enable");
+            completions.add("disable");
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("modules") && (args[1].equalsIgnoreCase("enable") || args[1].equalsIgnoreCase("disable"))) {
+            // Suggest module names
+            for (var m : ModuleManager.getInstance().getModules()) {
+                completions.add(m.getName());
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("power")) {
             completions.add("off");
@@ -2013,6 +2025,145 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
         }
+    }
+
+    // =========================
+    // MODULES SUBCOMMAND — список/включение/отключение модулей
+    // =========================
+    private boolean handleModulesCommand(CommandSender sender, String[] args) {
+
+        if (args.length < 2) {
+            sender.sendMessage("§4❌ §cИспользование: §f/mp modules list|enable|disable §7<модуль>");
+            return true;
+        }
+
+        String sub = args[1].toLowerCase();
+
+        // =========================
+        // MODULES LIST — показать все модули с их статусом
+        // =========================
+        if (sub.equals("list")) {
+            var mm = ModuleManager.getInstance();
+            var modules = mm.getModules();
+
+            sender.sendMessage("");
+            sender.sendMessage("§8┌─────────────────────────────────────────────┐");
+            sender.sendMessage("§8│ §6✦ §fМодули MC-Plugin §7(" + modules.size() + ")");
+            sender.sendMessage("§8├─────────────────────────────────────────────┤");
+
+            for (var m : modules) {
+                String status;
+                if (m.isEnabled()) {
+                    status = "§a✔ §7Вкл";
+                } else {
+                    status = "§c✘ §7Выкл";
+                    if (m.getDisableReason() != null) {
+                        status += " §8(§7" + m.getDisableReason() + "§8)";
+                    }
+                }
+                String essential = m.isEssential() ? " §4[essential]" : "";
+                sender.sendMessage("§8│ §f" + padRight(m.getName(), 24) + " " + status + essential);
+            }
+
+            sender.sendMessage("§8├─────────────────────────────────────────────┤");
+            sender.sendMessage("§8│ §7Итого: §a" + countEnabled(modules) + " §7вкл, §c" + countDisabled(modules) + " §7выкл");
+            sender.sendMessage("§8└─────────────────────────────────────────────┘");
+            sender.sendMessage("");
+            return true;
+        }
+
+        // =========================
+        // MODULES ENABLE
+        // =========================
+        if (sub.equals("enable")) {
+            if (args.length < 3) {
+                sender.sendMessage("§4❌ §cИспользование: §f/mp modules enable §7<имя модуля>");
+                return true;
+            }
+
+            String name = args[2];
+            var mm = ModuleManager.getInstance();
+
+            if (mm.getModule(name) == null) {
+                sender.sendMessage("§4❌ §cМодуль §e" + name + "§c не найден! Используйте §f/mp modules list§c.");
+                return true;
+            }
+
+            if (mm.isModuleEnabled(name)) {
+                sender.sendMessage("§eℹ §fМодуль §e" + name + "§f уже включён.");
+                return true;
+            }
+
+            boolean ok = mm.enableModule(name);
+            if (ok) {
+                sender.sendMessage("§a✅ §fМодуль §e" + name + "§f успешно включён.");
+                Main.getInstance().getLogger().info("[CMD] " + sender.getName() + " enabled module: " + name);
+            } else {
+                sender.sendMessage("§4❌ §cНе удалось включить модуль §e" + name + "§c. Проверьте консоль.");
+            }
+            return true;
+        }
+
+        // =========================
+        // MODULES DISABLE
+        // =========================
+        if (sub.equals("disable")) {
+            if (args.length < 3) {
+                sender.sendMessage("§4❌ §cИспользование: §f/mp modules disable §7<имя модуля>");
+                return true;
+            }
+
+            String name = args[2];
+            var mm = ModuleManager.getInstance();
+
+            var module = mm.getModule(name);
+            if (module == null) {
+                sender.sendMessage("§4❌ §cМодуль §e" + name + "§c не найден! Используйте §f/mp modules list§c.");
+                return true;
+            }
+
+            if (!mm.isModuleEnabled(name)) {
+                sender.sendMessage("§eℹ §fМодуль §e" + name + "§f уже выключен.");
+                return true;
+            }
+
+            if (module.isEssential()) {
+                sender.sendMessage("§4❌ §cНельзя отключить essential-модуль §e" + name + "§c!");
+                return true;
+            }
+
+            boolean ok = mm.disableModule(name);
+            if (ok) {
+                sender.sendMessage("§a✅ §fМодуль §e" + name + "§f успешно отключён.");
+                Main.getInstance().getLogger().info("[CMD] " + sender.getName() + " disabled module: " + name);
+            } else {
+                sender.sendMessage("§4❌ §cНе удалось отключить модуль §e" + name + "§c.");
+            }
+            return true;
+        }
+
+        sender.sendMessage("§4❌ §cНеизвестная подкоманда: §f" + sub);
+        sender.sendMessage("§cИспользование: §f/mp modules list|enable|disable §7<модуль>");
+        return true;
+    }
+
+    // =========================
+    // HELPERS
+    // =========================
+
+    private String padRight(String s, int len) {
+        if (s.length() >= len) return s;
+        StringBuilder sb = new StringBuilder(s);
+        while (sb.length() < len) sb.append(' ');
+        return sb.toString();
+    }
+
+    private long countEnabled(List<com.mcplugin.module.PluginModule> modules) {
+        return modules.stream().filter(com.mcplugin.module.PluginModule::isEnabled).count();
+    }
+
+    private long countDisabled(List<com.mcplugin.module.PluginModule> modules) {
+        return modules.stream().filter(m -> !m.isEnabled()).count();
     }
 
     // =========================

@@ -29,7 +29,7 @@ public class CableNetwork {
     }
 
     // =========================
-    // ADD NODE
+    // ADD NODE (только RAM — БД обновляется каждые 5 мин автосохранением)
     // =========================
     public static void addNode(Location loc) {
 
@@ -39,12 +39,10 @@ public class CableNetwork {
 
         CableNode node = new CableNode(loc);
         nodes.put(loc, node);
-
-        saveNode(node);
     }
 
     // =========================
-    // REMOVE NODE
+    // REMOVE NODE (только RAM)
     // =========================
     public static void removeNode(Location loc) {
 
@@ -63,8 +61,6 @@ public class CableNetwork {
                 }
             }
         }
-
-        deleteNode(loc);
     }
 
     // =========================

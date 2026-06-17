@@ -36,13 +36,55 @@ public class ReactorManager {
 
     public static void init() {
         instance = new ReactorManager();
-        instance.loadConfig();
+        ReactorConfig.init();
+        instance.cfg = ReactorConfig.getInstance();
+        instance.copyConfig();
         loadAll();
+    }
+    
+    private void copyConfig() {
+        if (cfg == null) return;
+        enabled = cfg.isEnabled();
+        tempDecayRate = cfg.getTempDecayRate();
+        heatRate = cfg.getHeatRate();
+        coolRate = cfg.getCoolRate();
+        coreTempMax = cfg.getCoreTempMax();
+        coreTempMin = cfg.getCoreTempMin();
+        coreTempCoolMin = cfg.getCoreTempCoolMin();
+        corePressReduceRate = cfg.getCorePressReduceRate();
+        caseTempHeatRate = cfg.getCaseTempHeatRate();
+        caseTempMax = cfg.getCaseTempMax();
+        caseTempCoolRate = cfg.getCaseTempCoolRate();
+        caseTempCoolMin = cfg.getCaseTempCoolMin();
+        caseTempDecayRate = cfg.getCaseTempDecayRate();
+        casePressHeatRate = cfg.getCasePressHeatRate();
+        casePressMax = cfg.getCasePressMax();
+        casePressDecayRate = cfg.getCasePressDecayRate();
+        shIntDecayTempThreshold = cfg.getShIntDecayTempThreshold();
+        shellIntDecayRate = cfg.getShellIntDecayRate();
+        shellIntRecoveryTempMax = cfg.getShellIntRecoveryTempMax();
+        shellIntRecoveryRate = cfg.getShellIntRecoveryRate();
+        caseIntDecayPressThreshold = cfg.getCaseIntDecayPressThreshold();
+        caseIntDecayTempThreshold = cfg.getCaseIntDecayTempThreshold();
+        caseIntDecayPressRate = cfg.getCaseIntDecayPressRate();
+        caseIntDecayTempRate = cfg.getCaseIntDecayTempRate();
+        caseIntRecoveryPressMax = cfg.getCaseIntRecoveryPressMax();
+        caseIntRecoveryTempMax = cfg.getCaseIntRecoveryTempMax();
+        caseIntRecoveryRate = cfg.getCaseIntRecoveryRate();
+        wearEnabled = cfg.isWearEnabled();
+        wearIntervalNormal = cfg.getWearIntervalNormal();
+        wearIntervalDegradation = cfg.getWearIntervalDegradation();
+        wearChatCountdown = cfg.getWearChatCountdown();
+        wearFinalMeltdownAt = cfg.getWearFinalMeltdownAt();
+        wearFinalMeltdownDuration = cfg.getWearFinalMeltdownDuration();
+        meltdownExplosionRadius = cfg.getMeltdownExplosionRadius();
+        recipeTimeMax = cfg.getRecipeTimeMax();
     }
 
     // =========================
-    // CONFIG
+    // CONFIG (delegated to ReactorConfig)
     // =========================
+    private ReactorConfig cfg;
     private boolean enabled;
     private int tempDecayRate;
     private int heatRate;
@@ -70,60 +112,14 @@ public class ReactorManager {
     private int caseIntRecoveryPressMax;
     private int caseIntRecoveryTempMax;
     private int caseIntRecoveryRate;
-    // Wear system
     private boolean wearEnabled;
     private int wearIntervalNormal;
     private int wearIntervalDegradation;
     private int wearChatCountdown;
     private int wearFinalMeltdownAt;
     private int wearFinalMeltdownDuration;
-
-    private int selfDestructChance;
-    private int selfDestructIntDecayRate;
     private int meltdownExplosionRadius;
     private int recipeTimeMax;
-
-    private void loadConfig() {
-        FileConfiguration cfg = Main.getInstance().getConfig();
-
-        enabled = cfg.getBoolean("reactor.enabled", true);
-        tempDecayRate = cfg.getInt("reactor.temp_decay_rate", 1);
-        heatRate = cfg.getInt("reactor.heat_rate", 3);
-        coolRate = cfg.getInt("reactor.cool_rate", 3);
-        coreTempMax = cfg.getInt("reactor.core_temp_max", 6000);
-        coreTempMin = cfg.getInt("reactor.core_temp_min", -272);
-        coreTempCoolMin = cfg.getInt("reactor.core_temp_cool_min", -270);
-        corePressReduceRate = cfg.getInt("reactor.core_press_reduce_rate", 1);
-        caseTempHeatRate = cfg.getInt("reactor.case_temp_heat_rate", 2);
-        caseTempMax = cfg.getInt("reactor.case_temp_max", 8000);
-        caseTempCoolRate = cfg.getInt("reactor.case_temp_cool_rate", 2);
-        caseTempCoolMin = cfg.getInt("reactor.case_temp_cool_min", -271);
-        caseTempDecayRate = cfg.getInt("reactor.case_temp_decay_rate", 1);
-        casePressHeatRate = cfg.getInt("reactor.case_press_heat_rate", 4);
-        casePressMax = cfg.getInt("reactor.case_press_max", 10000);
-        casePressDecayRate = cfg.getInt("reactor.case_press_decay_rate", 1);
-        shIntDecayTempThreshold = cfg.getInt("reactor.shell_integrity_decay_temp", 5000);
-        shellIntDecayRate = cfg.getInt("reactor.shell_int_decay_rate", 1);
-        shellIntRecoveryTempMax = cfg.getInt("reactor.shell_int_recovery_temp_max", 4999);
-        shellIntRecoveryRate = cfg.getInt("reactor.shell_int_recovery_rate", 1);
-        caseIntDecayPressThreshold = cfg.getInt("reactor.case_integrity_decay_press", 7000);
-        caseIntDecayTempThreshold = cfg.getInt("reactor.case_integrity_decay_temp", 7000);
-        caseIntDecayPressRate = cfg.getInt("reactor.case_int_decay_press_rate", 1);
-        caseIntDecayTempRate = cfg.getInt("reactor.case_int_decay_temp_rate", 1);
-        caseIntRecoveryPressMax = cfg.getInt("reactor.case_int_recovery_press_max", 7000);
-        caseIntRecoveryTempMax = cfg.getInt("reactor.case_int_recovery_temp_max", 4999);
-        caseIntRecoveryRate = cfg.getInt("reactor.case_int_recovery_rate", 1);
-        wearEnabled = cfg.getBoolean("reactor.wear.enabled", true);
-        wearIntervalNormal = cfg.getInt("reactor.wear.interval_normal", 1200);
-        wearIntervalDegradation = cfg.getInt("reactor.wear.interval_degradation", 20);
-        wearChatCountdown = cfg.getInt("reactor.wear.chat_countdown", 30);
-        wearFinalMeltdownAt = cfg.getInt("reactor.wear.final_meltdown_start_at", 11);
-        wearFinalMeltdownDuration = cfg.getInt("reactor.wear.final_meltdown_duration", 10);
-        selfDestructChance = cfg.getInt("reactor.self_destruct_chance", 1000000);
-        selfDestructIntDecayRate = cfg.getInt("reactor.self_destruct_int_decay_rate", 2);
-        meltdownExplosionRadius = cfg.getInt("reactor.meltdown_explosion_radius", 128);
-        recipeTimeMax = cfg.getInt("reactor.recipe_time_max", 100);
-    }
 
     // =========================
     // STATE
@@ -225,159 +221,60 @@ public class ReactorManager {
     private int noFuelWarnTick; // prevents spam when no fuel
 
     // =========================
-    // DATABASE PERSISTENCE
+    // DATABASE PERSISTENCE (delegated to ReactorPersistence)
     // =========================
 
     public static void saveAll() {
         ReactorManager r = instance;
-        if (r == null || !r.valid || r.reactorLocation == null) return;
-        r.saveToDb();
+        if (r == null) return;
+        ReactorState state = ReactorManager.buildState(r);
+        ReactorPersistence.saveAll(state);
     }
 
     public void saveToDb() {
-        if (reactorLocation == null || reactorId == null) return;
+        ReactorState state = ReactorManager.buildState(this);
+        ReactorPersistence.saveToDb(state);
+    }
 
-        Connection con = DatabaseManager.getConnection();
-
-        try {
-            PreparedStatement ps = con.prepareStatement("""
-                INSERT OR REPLACE INTO reactors
-                (reactor_id, world, x, y, z,
-                 core_temp, core_press, core_sh_int,
-                 core_case_temp, core_case_press, core_case_int,
-                 recipe_time, self_destruct,
-                 reactor_wear, energy_generated)
-                VALUES (?, ?, ?, ?, ?,
-                        ?, ?, ?,
-                        ?, ?, ?,
-                        ?, ?,
-                        ?, ?)
-            """);
-
-            ps.setString(1, reactorId);
-            ps.setString(2, reactorLocation.getWorld().getName());
-            ps.setInt(3, reactorLocation.getBlockX());
-            ps.setInt(4, reactorLocation.getBlockY());
-            ps.setInt(5, reactorLocation.getBlockZ());
-            ps.setInt(6, coreTemp);
-            ps.setInt(7, corePress);
-            ps.setInt(8, coreShInt);
-            ps.setInt(9, coreCaseTemp);
-            ps.setInt(10, coreCasePress);
-            ps.setInt(11, coreCaseInt);
-            ps.setInt(12, recipeTime);
-            ps.setInt(13, selfDestruct ? 1 : 0);
-            ps.setInt(14, reactorWear);
-            ps.setLong(15, energyGenerated);
-
-            ps.executeUpdate();
-            ps.close();
-
-            Main.getInstance().getLogger().info(
-                    "[Reactor] Saved reactor " + reactorId
-            );
-
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe(
-                    "[Reactor] Save error: " + e.getMessage()
-            );
-        }
+    private static ReactorState buildState(ReactorManager r) {
+        ReactorState s = new ReactorState();
+        s.setReactorLocation(r.reactorLocation);
+        s.setCoreTemp(r.coreTemp);
+        s.setCorePress(r.corePress);
+        s.setCoreShInt(r.coreShInt);
+        s.setCoreCaseTemp(r.coreCaseTemp);
+        s.setCoreCasePress(r.coreCasePress);
+        s.setCoreCaseInt(r.coreCaseInt);
+        s.setRecipeTime(r.recipeTime);
+        s.setSelfDestruct(r.selfDestruct);
+        s.setReactorWear(r.reactorWear);
+        s.setEnergyGenerated(r.energyGenerated);
+        return s;
     }
 
     public static void loadAll() {
         if (instance == null) return;
-
-        Connection con = DatabaseManager.getConnection();
-
-        try {
-            PreparedStatement ps = con.prepareStatement("""
-                SELECT * FROM reactors
-            """);
-
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                World world = Main.getInstance().getServer().getWorld(
-                        rs.getString("world")
-                );
-
-                if (world == null) continue;
-
-                Location loc = LocationUtil.normalize(new Location(
-                        world,
-                        rs.getInt("x"),
-                        rs.getInt("y"),
-                        rs.getInt("z")
-                ));
-
-                // Verify the structure still exists (no frame needed — already active)
-                if (!ReactorStructure.isValid(loc, false)) {
-                    Main.getInstance().getLogger().warning(
-                            "[Reactor] Stored reactor at " + loc
-                                    + " — structure invalid, skipping"
-                    );
-                    continue;
-                }
-
-                instance.reactorLocation = loc;
-                instance.valid = true;
-                instance.reactorId = rs.getString("reactor_id");
-                instance.coreTemp = rs.getInt("core_temp");
-                instance.corePress = rs.getInt("core_press");
-                instance.coreShInt = rs.getInt("core_sh_int");
-                instance.coreCaseTemp = rs.getInt("core_case_temp");
-                instance.coreCasePress = rs.getInt("core_case_press");
-                instance.coreCaseInt = rs.getInt("core_case_int");
-                instance.recipeTime = rs.getInt("recipe_time");
-                instance.selfDestruct = rs.getInt("self_destruct") == 1;
-                // reactor_wear column может отсутствовать в старых БД
-                try {
-                    instance.reactorWear = rs.getInt("reactor_wear");
-                } catch (Exception ignored) {
-                    instance.reactorWear = 0;
-                }
-
-                // energy_generated column может отсутствовать в старых БД
-                try {
-                    instance.energyGenerated = rs.getLong("energy_generated");
-                } catch (Exception ignored) {
-                    instance.energyGenerated = 0;
-                }
-
-                Main.getInstance().getLogger().info(
-                        "[Reactor] Loaded reactor " + instance.reactorId
-                );
-            }
-
-            rs.close();
-            ps.close();
-
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe(
-                    "[Reactor] Load error: " + e.getMessage()
-            );
+        ReactorState state = new ReactorState();
+        if (ReactorPersistence.loadFromDb(state)) {
+            // Apply loaded state to instance fields
+            instance.reactorLocation = state.getReactorLocation();
+            instance.valid = state.isValid();
+            instance.reactorId = state.getReactorId();
+            instance.coreTemp = state.getCoreTemp();
+            instance.corePress = state.getCorePress();
+            instance.coreShInt = state.getCoreShInt();
+            instance.coreCaseTemp = state.getCoreCaseTemp();
+            instance.coreCasePress = state.getCoreCasePress();
+            instance.coreCaseInt = state.getCoreCaseInt();
+            instance.recipeTime = state.getRecipeTime();
+            instance.selfDestruct = state.isSelfDestruct();
+            instance.reactorWear = state.getReactorWear();
+            instance.energyGenerated = state.getEnergyGenerated();
         }
     }
 
     public static void deleteFromDb(String reactorId) {
-        if (reactorId == null) return;
-
-        Connection con = DatabaseManager.getConnection();
-
-        try {
-            PreparedStatement ps = con.prepareStatement("""
-                DELETE FROM reactors WHERE reactor_id = ?
-            """);
-
-            ps.setString(1, reactorId);
-            ps.executeUpdate();
-            ps.close();
-
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe(
-                    "[Reactor] Delete error: " + e.getMessage()
-            );
-        }
+        ReactorPersistence.deleteFromDb(reactorId);
     }
 
     // =========================

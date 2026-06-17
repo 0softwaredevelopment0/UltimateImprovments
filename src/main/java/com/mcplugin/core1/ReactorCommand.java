@@ -53,6 +53,94 @@ public class ReactorCommand implements CommandExecutor {
     }
 
     // =========================
+    // DFC STATS — show reactor stats (called from PluginReloadCommand)
+    // =========================
+    public static boolean showReactorStats(Player player) {
+
+        ReactorManager reactor = ReactorManager.getInstance();
+
+        if (reactor == null || !reactor.isValid()) {
+            player.sendMessage("§4❌ §cError: §7Активных реакторов не найдено.");
+            return true;
+        }
+
+        Location playerLoc = player.getLocation();
+        Location reactorLoc = reactor.getReactorLocation();
+
+        if (reactorLoc == null || !playerLoc.getWorld().equals(reactorLoc.getWorld())) {
+            player.sendMessage("§4❌ §cError: §7Рядом нет активного реактора.");
+            return true;
+        }
+
+        double distance = playerLoc.distance(reactorLoc);
+        if (distance > 50) {
+            player.sendMessage("§4❌ §cError: §7Рядом нет активного реактора (ближайший в §f"
+                    + String.format("%.1f", distance) + "§7 м).");
+            return true;
+        }
+
+        String status;
+        if (reactor.isMeltdownCountdown()) {
+            status = "§4!!! §cВзрыв неизбежен §4!!!";
+        } else if (reactor.getCoreShInt() < 100 || reactor.getCoreCaseInt() < 100) {
+            status = "§eДеградация";
+        } else {
+            status = "§aНормальный";
+        }
+
+        int meltdownSecs = reactor.isMeltdownCountdown()
+                ? (reactor.getMeltdownTimer() / 20)
+                : 0;
+
+        player.sendMessage("§8┌────────────────────────────────┐");
+        player.sendMessage("§8│ §4Р.Т.С §8» §fСтатистика реактора");
+        player.sendMessage("§8├────────────────────────────────┤");
+        player.sendMessage("§8│ §7ID: §f" + reactor.getReactorId());
+        player.sendMessage("§8│ §7Статус: " + status);
+        if (reactor.isMeltdownCountdown()) {
+            player.sendMessage("§8│ §7Детонация: §c" + meltdownSecs + " сек");
+        }
+        player.sendMessage("§8│ §7Дист: §f" + String.format("%.1f", distance) + " м");
+        player.sendMessage("§8│ §6═[ §eДанные ядра §6]═");
+        player.sendMessage("§8│ §7Температура:  §f" + reactor.getDisplayCoreTemp() + " C*");
+        player.sendMessage("§8│ §7Давление:    §f" + reactor.getDisplayCorePress() + " kPa");
+        player.sendMessage("§8│ §7Целостность: §f" + reactor.getDisplayCoreShInt() + " %");
+        player.sendMessage("§8│ §6═[═══════════]═");
+        player.sendMessage("§8│ §3═[ §bДанные корпуса §3]═");
+        player.sendMessage("§8│ §7Температура:  §f" + reactor.getDisplayCoreCaseTemp() + " C*");
+        player.sendMessage("§8│ §7Давление:    §f" + reactor.getDisplayCoreCasePress() + " kPa");
+        player.sendMessage("§8│ §7Целостность: §f" + reactor.getDisplayCoreCaseInt() + " %");
+        player.sendMessage("§8│ §3═[═══════════]═");
+        player.sendMessage("§8│ §5═[ §dДанные рецепта §5]═");
+        int recipePct = reactor.getDisplayRecipeTime();
+        player.sendMessage("§8│ §7Прогресс:   §f" + recipePct + " %");
+        String recipeStatus;
+        if (recipePct <= 0) {
+            recipeStatus = "§7Бездействует";
+        } else if (recipePct < 100) {
+            recipeStatus = "§eГотовится";
+        } else {
+            recipeStatus = "§aЗавершён";
+        }
+        player.sendMessage("§8│ §7Статус:     " + recipeStatus);
+        player.sendMessage("§8│ §7Износ:      §f" + reactor.getDisplayReactorWear() + " %");
+        player.sendMessage("§8│ §7Выработка:  §f" + reactor.getDisplayEnergyRate() + " E/сек");
+        if (reactor.isSelfDestruct() && !reactor.isMeltdownCountdown()) {
+            player.sendMessage("§8│ §7Самоликвид: §cАктивен");
+        }
+        player.sendMessage("§8│ §5═[═══════════]═");
+        player.sendMessage("§8│ §7Позиция: §f"
+                + reactorLoc.getBlockX() + " "
+                + reactorLoc.getBlockY() + " "
+                + reactorLoc.getBlockZ()
+                + " §7(мир: §f" + reactorLoc.getWorld().getName() + "§7)");
+        player.sendMessage("§8└────────────────────────────────┘");
+        player.sendMessage("");
+
+        return true;
+    }
+
+    // =========================
     // DARK SYNTHESIS REACTOR (без незеритового скрапа)
     // =========================
     public static void assembleDarkSynthesis(Player player) {
@@ -220,30 +308,9 @@ public class ReactorCommand implements CommandExecutor {
         }
 
         // =========================
-        // ACTIVATE MAGNET — сканирование структуры
+        // ACTIVATE MAGNET — асинхронное сканирование структуры
         // =========================
-        MagnetManager.activate(loc);
-
-        int power = MagnetManager.getMagnetPower(loc);
-        Location center = MagnetManager.getMagnetCenter(loc);
-
-        String powerDesc = getMagnetPowerTierStatic(power);
-
-        int magnetRadius = MagnetManager.getMagnetRadius(loc);
-        int minR = MagnetManager.getMinRadius();
-
-        player.sendMessage("§a✅ §fМагнит собран!");
-        player.sendMessage("§8┃ §7Блоков в структуре: §f" + power + " §7шт");
-        player.sendMessage("§8┃ §7Сила притяжения: " + powerDesc);
-        if (center != null) {
-            player.sendMessage("§8┃ §7Центр притяжения: §f" +
-                    center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ());
-        }
-        player.sendMessage("§8┃ §7Радиус действия: §f" + magnetRadius + " §7блоков (мин. " + minR + ")");
-        player.sendMessage("§8┃ §7Радиус растёт с числом блоков — §fбез ограничения");
-        player.sendMessage("§8┃ §7Усильте магнит: §fставьте LODESTONE §7вплотную — ");
-        player.sendMessage("§8┃ §7структура, центр, радиус и сила пересчитаются автоматически");
-        player.sendMessage("§8┃ §7Притягивает: §fметаллические предметы, игроков и мобов");
+        MagnetManager.activateAsync(loc, player);
 
         ReactorManager.clearPendingAssembly(player);
 

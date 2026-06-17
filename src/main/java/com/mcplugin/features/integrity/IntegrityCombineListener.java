@@ -14,6 +14,7 @@ import org.bukkit.event.player.PlayerExpChangeEvent;
 import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.GrindstoneInventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.HashMap;
@@ -53,7 +54,8 @@ public class IntegrityCombineListener implements Listener {
         if (slot0.getType().getMaxDurability() <= 0) return;
 
         // =========================
-        // СЦЕНАРИЙ 1: Ремонт материалом (предмет + материал, например алмазная кирка + алмаз)
+        // СЦЕНАРИЙ 1: Крафт материалом (предмет + материал, например алмазная кирка + алмаз)
+        // Каждая единица материала даёт +N% целостности новому предмету
         // =========================
         if (isRepairMaterial(slot0.getType(), slot1.getType())) {
             if (!IntegrityManager.isAnvilRepairEnabled()) return;
@@ -62,14 +64,43 @@ public class IntegrityCombineListener implements Listener {
             IntegrityManager.ensureInitialized(slot0);
 
             double currentIntegrity = IntegrityManager.getCurrentIntegrity(slot0);
+            if (currentIntegrity <= 0) return;
 
-            if (currentIntegrity <= 0 || currentIntegrity >= 100.0) return;
+            // ===== НОВАЯ МЕХАНИКА: крафт материалом =====
+            if (IntegrityManager.isAnvilMaterialCraftEnabled()) {
+                // Ванильная наковальня потребляет 1 единицу материала за операцию,
+                // поэтому используем 1, а не slot1.getAmount() (чтобы избежать эксплойта)
+                int materialCount = 1;
+                double bonusPerMaterial = IntegrityManager.getAnvilMaterialCraftBonus();
+                double totalBonus = materialCount * bonusPerMaterial;
+                double newIntegrity = Math.min(100.0, currentIntegrity + totalBonus);
 
-            // Вычисляем, сколько целостности восстановить (в процентах)
+                ItemStack result = slot0.clone();
+                IntegrityManager.setCurrentIntegrity(result, newIntegrity);
+                IntegrityManager.updateItemLore(result);
+
+                Player player = getPlayerFromAnvil(event);
+                if (player != null) {
+                    String msg = IntegrityManager.getAnvilMaterialCraftMessage()
+                            .replace("{current}", IntegrityManager.formatPercent(newIntegrity))
+                            .replace("{bonus}", IntegrityManager.formatPercent(totalBonus));
+                    if (canSendAnvilMessage(player)) {
+                        player.sendMessage(MessageUtil.parse(msg));
+                    }
+                }
+
+                event.setResult(result);
+                return;
+            }
+
+            // ===== СТАРАЯ МЕХАНИКА (fallback): ремонт фиксированным процентом =====
+            if (currentIntegrity >= 100.0) return;
+
             double restoreAmount = 100.0 * IntegrityManager.getAnvilRepairMultiplier();
 
             ItemStack result = slot0.clone();
             IntegrityManager.increaseIntegrity(result, restoreAmount);
+            IntegrityManager.updateItemLore(result);
 
             double newCurrent = IntegrityManager.getCurrentIntegrity(result);
 
@@ -79,7 +110,7 @@ public class IntegrityCombineListener implements Listener {
                 String msg = IntegrityManager.getAnvilRepairMessage()
                         .replace("{current}", IntegrityManager.formatPercent(newCurrent));
                 if (canSendAnvilMessage(player)) {
-                    player.sendMessage(msg);
+                    player.sendMessage(MessageUtil.parse(msg));
                 }
             }
 
@@ -111,6 +142,7 @@ public class IntegrityCombineListener implements Listener {
 
             ItemStack result = slot0.clone();
             IntegrityManager.setCurrentIntegrity(result, newCurrent);
+            IntegrityManager.updateItemLore(result);
 
             Player player = getPlayerFromAnvil(event);
             if (player != null) {
@@ -173,6 +205,7 @@ public class IntegrityCombineListener implements Listener {
         }
 
         IntegrityManager.setCurrentIntegrity(result, newCurrent);
+        IntegrityManager.updateItemLore(result);
 
         event.setResult(result);
     }
@@ -233,8 +266,50 @@ public class IntegrityCombineListener implements Listener {
         // Создаём результат как клон первого предмета
         ItemStack result = item1.clone();
         IntegrityManager.setCurrentIntegrity(result, newCurrent);
+        IntegrityManager.updateItemLore(result);
 
         event.getInventory().setResult(result);
+    }
+
+    // =========================
+    // XP → ЦЕЛОСТНОСТЬ ВСЕХ ПРЕДМЕТОВ
+    // При сборе опыта каждый предмет в инвентаре получает +integrityPerXp% за 1 XP
+    // =========================
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onXpToAllIntegrity(PlayerExpChangeEvent event) {
+        if (!IntegrityManager.isEnabled()) return;
+        if (!IntegrityManager.isXpIntegrityEnabled()) return;
+
+        Player player = event.getPlayer();
+        int xpAmount = event.getAmount();
+        if (xpAmount <= 0) return;
+
+        double integrityPerXp = IntegrityManager.getXpIntegrityPerXp();
+        double gain = xpAmount * integrityPerXp;
+        if (gain <= 0) return;
+
+        PlayerInventory inv = player.getInventory();
+        boolean applied = false;
+
+        // Обходим все слоты: 0–35 = инвентарь + хотбар, 36–39 = броня, 40 = оффхенд
+        for (int i = 0; i <= 40; i++) {
+            ItemStack item = inv.getItem(i);
+            if (item == null || item.getType() == Material.AIR) continue;
+            if (item.getType().getMaxDurability() <= 0) continue;
+
+            double before = IntegrityManager.getCurrentIntegrity(item);
+            IntegrityManager.increaseIntegrity(item, gain);
+            double after = IntegrityManager.getCurrentIntegrity(item);
+            if (after > before) {
+                applied = true;
+            }
+        }
+
+        if (applied) {
+            String msg = IntegrityManager.getXpIntegrityMessage()
+                    .replace("{amount}", IntegrityManager.formatPercent(gain));
+            player.sendMessage(MessageUtil.parse(msg));
+        }
     }
 
     // =========================

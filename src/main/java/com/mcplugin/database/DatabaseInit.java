@@ -225,6 +225,22 @@ public class DatabaseInit {
                 );
             """);
 
+        // =========================
+        // 🔄 UPDATER STATE (последний скачанный тег релиза)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS updater_state (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            );
+        """);
+
+        // Инициализация строки latest_tag, если её нет
+        st.execute("""
+            INSERT OR IGNORE INTO updater_state (key, value)
+            VALUES ('latest_tag', '');
+        """);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
