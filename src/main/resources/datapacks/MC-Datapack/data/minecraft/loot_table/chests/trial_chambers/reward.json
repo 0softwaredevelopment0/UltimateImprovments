@@ -403,7 +403,7 @@
           "conditions": [
             {
               "condition": "minecraft:random_chance",
-              "chance": 0.05
+              "chance": 0.01
             }
           ],
           "functions": [
@@ -454,7 +454,7 @@
           "conditions": [
             {
               "condition": "minecraft:random_chance",
-              "chance": 0.1
+              "chance": 0.01
             }
           ]
         }

@@ -289,7 +289,6 @@ public class IntegrityCombineListener implements Listener {
         if (gain <= 0) return;
 
         PlayerInventory inv = player.getInventory();
-        boolean applied = false;
 
         // Обходим все слоты: 0–35 = инвентарь + хотбар, 36–39 = броня, 40 = оффхенд
         for (int i = 0; i <= 40; i++) {
@@ -297,18 +296,10 @@ public class IntegrityCombineListener implements Listener {
             if (item == null || item.getType() == Material.AIR) continue;
             if (item.getType().getMaxDurability() <= 0) continue;
 
-            double before = IntegrityManager.getCurrentIntegrity(item);
-            IntegrityManager.increaseIntegrity(item, gain);
-            double after = IntegrityManager.getCurrentIntegrity(item);
-            if (after > before) {
-                applied = true;
-            }
-        }
+            // Только предметы с зачарованием Mending (Починка)
+            if (!item.containsEnchantment(Enchantment.MENDING)) continue;
 
-        if (applied) {
-            String msg = IntegrityManager.getXpIntegrityMessage()
-                    .replace("{amount}", IntegrityManager.formatPercent(gain));
-            player.sendMessage(MessageUtil.parse(msg));
+            IntegrityManager.increaseIntegrity(item, gain);
         }
     }
 

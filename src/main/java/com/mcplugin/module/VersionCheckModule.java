@@ -52,6 +52,16 @@ public class VersionCheckModule extends PluginModule {
         // ПРОВЕРКА ВЕРСИИ MINECRAFT
         // =========================
         checkMinecraftVersion(plugin, pluginVersion, bukkitVersion);
+
+        // =========================
+        // ПРОВЕРКА НАЛИЧИЯ LUCKPERMS
+        // =========================
+        checkLuckPerms(plugin);
+
+        // =========================
+        // ПРОВЕРКА СОВМЕСТИМОСТИ ВЕРСИИ ПЛАГИНА
+        // =========================
+        checkPluginVersionCompatibility(plugin, pluginVersion, serverVersion);
     }
 
     @Override
@@ -107,8 +117,15 @@ public class VersionCheckModule extends PluginModule {
     // =========================
 
     private void checkMinecraftVersion(JavaPlugin plugin, String pluginVersion, String bukkitVersion) {
-        // Bukkit.getBukkitVersion() возвращает "1.21.4-R0.1-SNAPSHOT"
-        String mcVersion = bukkitVersion.split("-")[0]; // "1.21.4"
+        // Пытаемся извлечь MC версию из Bukkit.getVersion()
+        // "git-Paper-26.1.2 (MC: 1.21.4)" → "1.21.4"
+        String serverFullVersion = Bukkit.getVersion();
+        String mcVersion = extractMcVersion(serverFullVersion);
+
+        if (mcVersion == null) {
+            // Fallback: Bukkit.getBukkitVersion() возвращает "1.21.4-R0.1-SNAPSHOT"
+            mcVersion = bukkitVersion.split("-")[0];
+        }
 
         // Убираем патч-версию для сравнения (1.21.4 → 1.21)
         String mcMajorMinor = getMajorMinor(mcVersion);
@@ -129,17 +146,21 @@ public class VersionCheckModule extends PluginModule {
                 String expectedPrefix = "1." + expectedMcMinor;
 
                 if (!mcMajorMinor.equals(expectedPrefix)) {
+                    String serverPaperVer = extractServerVersionNumber(serverFullVersion);
+
                     plugin.getLogger().warning("");
-                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    plugin.getLogger().warning("!  VERSION MISMATCH DETECTED!                    !");
-                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    plugin.getLogger().warning("!  Plugin built for:   Minecraft " + expectedPrefix + ".x");
-                    plugin.getLogger().warning("!  Server running:     Minecraft " + mcVersion);
-                    plugin.getLogger().warning("!                                                !");
-                    plugin.getLogger().warning("!  The plugin may not work correctly!             !");
-                    plugin.getLogger().warning("!  Update your server or plugin to matching       !");
-                    plugin.getLogger().warning("!  versions.                                      !");
-                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    plugin.getLogger().warning("!  VERSION MISMATCH DETECTED!                                    !");
+                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    plugin.getLogger().warning("!                                                                 !");
+                    plugin.getLogger().warning("!  Plugin built for:   " + padRight(pluginVersion, 35) + "!");
+                    plugin.getLogger().warning("!  Server running:     " + padRight(serverPaperVer, 35) + "!");
+                    plugin.getLogger().warning("!  MC version:         " + padRight(mcVersion, 35) + "!");
+                    plugin.getLogger().warning("!                                                                 !");
+                    plugin.getLogger().warning("!  The plugin may not work correctly!                             !");
+                    plugin.getLogger().warning("!  Update your server or plugin to matching versions.             !");
+                    plugin.getLogger().warning("!                                                                 !");
+                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                     plugin.getLogger().warning("");
                 }
             } else {
@@ -154,6 +175,75 @@ public class VersionCheckModule extends PluginModule {
             // Версия не начинается с числа — не можем сравнить
             plugin.getLogger().fine("[VersionCheck] Cannot parse plugin version: " + pluginVersion);
         }
+    }
+
+    // =========================
+    // ПРОВЕРКА LUCKPERMS
+    // =========================
+
+    private void checkLuckPerms(JavaPlugin plugin) {
+        if (Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
+            plugin.getLogger().info("[VersionCheck] \u2713 LuckPerms detected — permission system ready.");
+            return;
+        }
+
+        plugin.getLogger().warning("");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("!  LUCKPERMS NOT FOUND!                                       !");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!  This plugin uses LuckPerms for full permission management.    !");
+        plugin.getLogger().warning("!  Without LuckPerms, many permission-based features will       !");
+        plugin.getLogger().warning("!  NOT work correctly:                                          !");
+        plugin.getLogger().warning("!    - /mp sethome, /mp home, /mp delhome                       !");
+        plugin.getLogger().warning("!    - /mp auth (forcelogin, resetauth, chgpass, delsession)    !");
+        plugin.getLogger().warning("!    - /mp power (off, reboot)                                  !");
+        plugin.getLogger().warning("!    - /mp structures (dfc, magnet)                             !");
+        plugin.getLogger().warning("!    - And many other commands                                  !");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!  Download LuckPerms: https://luckperms.net/download           !");
+        plugin.getLogger().warning("!  Or place LuckPerms.jar in your plugins/ folder               !");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("");
+    }
+
+    // =========================
+    // ПРОВЕРКА СОВМЕСТИМОСТИ ВЕРСИИ ПЛАГИНА (contains)
+    // =========================
+
+    private void checkPluginVersionCompatibility(JavaPlugin plugin, String pluginVersion, String serverVersion) {
+        // Проверяем, содержится ли версия плагина в строке версии сервера
+        // Например: плагин 26.1.2, сервер "git-Paper-26.1.2beta2 (MC: 1.21.4)" — совпадает
+        if (serverVersion.contains(pluginVersion)) {
+            plugin.getLogger().info("[VersionCheck] \u2713 Plugin version matches server version.");
+            return;
+        }
+
+        // Дополнительно проверяем BukkitVersion на всякий случай
+        String bukkitVersion = Bukkit.getBukkitVersion();
+        if (bukkitVersion.contains(pluginVersion)) {
+            plugin.getLogger().info("[VersionCheck] \u2713 Plugin version matches Bukkit version.");
+            return;
+        }
+
+        plugin.getLogger().warning("");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("!  PLUGIN VERSION MISMATCH!                                    !");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!  Plugin version:    " + padRight(pluginVersion, 35) + "!");
+        plugin.getLogger().warning("!  Server version:    " + padRight(serverVersion, 35) + "!");
+        plugin.getLogger().warning("!  Bukkit version:    " + padRight(bukkitVersion, 35) + "!");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!  The plugin version '" + pluginVersion + "' was not found        !");
+        plugin.getLogger().warning("!  in the server or Bukkit version string.                        !");
+        plugin.getLogger().warning("!  This may indicate an incompatible server version.              !");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!  Update your server or plugin to matching versions.             !");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("");
     }
 
     // =========================
@@ -176,6 +266,30 @@ public class VersionCheckModule extends PluginModule {
             return parts[0] + "." + parts[1];
         }
         return parts[0];
+    }
+
+    /** Извлекает MC-версию из строки Bukkit.getVersion() вида "git-Paper-26.1.2 (MC: 1.21.4)". */
+    private String extractMcVersion(String version) {
+        if (version == null) return null;
+        int start = version.indexOf("(MC:");
+        if (start == -1) return null;
+        int end = version.indexOf(")", start);
+        if (end == -1) return null;
+        String mcPart = version.substring(start + 4, end).trim();
+        return mcPart.isEmpty() ? null : mcPart;
+    }
+
+    /** Извлекает Paper/Leaf-версию из полной строки Bukkit.getVersion() ("git-Paper-26.1.2.build.2..." → "26.1.2.build.2"). */
+    private String extractServerVersionNumber(String version) {
+        if (version == null) return "?";
+        // "git-Paper-26.1.2.build.2 (MC: 1.21.4)" → берём часть до пробела
+        String firstPart = version.split(" ")[0]; // "git-Paper-26.1.2.build.2"
+        // Последний сегмент после последнего '-' — это версия
+        int lastDash = firstPart.lastIndexOf("-");
+        if (lastDash >= 0 && lastDash < firstPart.length() - 1) {
+            return firstPart.substring(lastDash + 1);
+        }
+        return firstPart;
     }
 
     /** Извлекает короткую версию из полной строки Bukkit.getVersion(). */

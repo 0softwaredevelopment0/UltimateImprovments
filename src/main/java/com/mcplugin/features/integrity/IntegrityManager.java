@@ -107,6 +107,18 @@ public class IntegrityManager extends BukkitRunnable {
     // Unbreaking (Неразрушимость)
     private static boolean unbreakingEnabled = true;
 
+    // ===== PIERCING (Пробитие) =====
+    // Когда атакующий использует оружие с зачарованием PIERCING,
+    // броня цели получает +piercingExtraCost% целостности при ударе.
+    // Броня НЕ игнорируется — защита работает как обычно.
+    // Unbreaking проверяется на итоговую стоимость (не игнорируется).
+    private static boolean piercingEnabled = true;
+    private static double piercingExtraCost = 0.5;
+
+    // Флаг: текущий удар по броне вызван PIERCING-оружием
+    // Сбрасывается при старте следующего тика (run())
+    private static boolean piercingActive = false;
+
     // Крафт / точило — объединение
     private static boolean combineEnabled = true;
     private static double combineLossRate = 0.0;
@@ -128,6 +140,10 @@ public class IntegrityManager extends BukkitRunnable {
         instance = new IntegrityManager();
         reloadConfig();
         instance.runTaskTimer(plugin, 40L, intervalTicks);
+
+        // Регистрируем PiercingListener (обработчик PIERCING-ударов)
+        PiercingListener.init(plugin);
+
         Main.getInstance().getLogger().info("[INTEGRITY] System initialized (interval=" + intervalTicks + " ticks)");
     }
 
@@ -193,6 +209,16 @@ public class IntegrityManager extends BukkitRunnable {
 
         // ===== UNBREAKING =====
         unbreakingEnabled = cfg.getBoolean("unbreaking.enabled", true);
+
+        // ===== PIERCING =====
+        var piercingSection = cfg.getConfigurationSection("piercing");
+        if (piercingSection != null) {
+            piercingEnabled = piercingSection.getBoolean("enabled", true);
+            piercingExtraCost = piercingSection.getDouble("extra_integrity_cost", 0.5);
+        } else {
+            piercingEnabled = true;
+            piercingExtraCost = 0.5;
+        }
 
         // ===== LOW INTEGRITY WARNING =====
         var warn = cfg.getConfigurationSection("low_integrity_warning");
@@ -345,12 +371,28 @@ public class IntegrityManager extends BukkitRunnable {
     public static String getAnvilCombineMessage() { return anvilCombineMessage; }
     public static String getSilkTouchMessage() { return silkTouchMessage; }
 
+    // ===== PIERCING =====
+    public static boolean isPiercingEnabled() { return piercingEnabled; }
+    public static double getPiercingExtraCost() { return piercingExtraCost; }
+
+    /**
+     * Устанавливает флаг, что текущий удар по броне вызван PIERCING-оружием.
+     * Флаг сбрасывается в начале каждого тика (run()).
+     */
+    public static void setPiercingActive(boolean active) { piercingActive = active; }
+
+    /** Проверяет, активен ли PIERCING для текущего удара. */
+    private static boolean isPiercingActive() { return piercingActive; }
+
     // =========================
     // TICK — сканирование инвентарей
     // =========================
     @Override
     public void run() {
         if (!enabled) return;
+
+        // Сбрасываем флаг PIERCING в начале каждого тика
+        piercingActive = false;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             PlayerInventory inv = player.getInventory();
@@ -621,6 +663,13 @@ public class IntegrityManager extends BukkitRunnable {
 
         // 1 единица ванильного урона = (1 / maxDurability) * 100% от целостности
         double pctCost = (amount / (double) maxDura) * MAX_INTEGRITY * costMultiplier;
+
+        // ⚔ PIERCING (Пробитие): добавляет +extraCost% к трате целостности брони
+        // НЕ игнорирует броню — защита работает как обычно.
+        // Unbreaking проверяется на итоговую стоимость (не игнорируется).
+        if (piercingEnabled && isPiercingActive()) {
+            pctCost += piercingExtraCost;
+        }
 
         // 🔮 Unbreaking: шанс потратить прочность уменьшается в (уровень + 1) раз
         // Например: Unbreaking I = x2 меньше шанс, Unbreaking II = x3, Unbreaking III = x4 и т.д.

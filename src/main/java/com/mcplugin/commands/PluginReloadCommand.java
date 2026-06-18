@@ -16,6 +16,8 @@ import com.mcplugin.cp.CodePanelCommand;
 import com.mcplugin.cp.CodePanelDatabase;
 import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
+import com.mcplugin.commands.home.HomeCommand;
+import com.mcplugin.commands.home.HomeDatabase;
 
 import org.bukkit.Bukkit;
 import net.md_5.bungee.api.chat.*;
@@ -158,6 +160,20 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§e/mp auth logout");
             sender.sendMessage(" §7└ Выйти из аккаунта (logout)");
             sender.sendMessage("");
+            sender.sendMessage("§e/mp sethome §7<название>");
+            sender.sendMessage(" §7└ Сохранить домашнюю точку (1-16 символов, макс. 10)");
+            sender.sendMessage("§e/mp home §7<название>");
+            sender.sendMessage(" §7└ Показать координаты домашней точки");
+            sender.sendMessage("§e/mp delhome §7<название>");
+            sender.sendMessage(" §7└ Удалить домашнюю точку");
+            sender.sendMessage("§e/mp listhomes");
+            sender.sendMessage(" §7└ Список всех домов с координатами");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp ophomels §7<игрок>");
+            sender.sendMessage(" §7└ Список домов игрока (оператор)");
+            sender.sendMessage("§e/mp opdelhome §7<игрок> <название>");
+            sender.sendMessage(" §7└ Удалить дом игрока (оператор)");
+            sender.sendMessage("");
             sender.sendMessage("§6═══════════════════════════════════");
             sender.sendMessage("");
             return true;
@@ -182,7 +198,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            showChgdimMenu(player);
+            ChgDimGUI.open(player);
             return true;
         }
 
@@ -1322,6 +1338,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
 
         // =========================
+        // HOME SUBCOMMANDS — домашние точки
+        // =========================
+        if (HomeCommand.dispatch(sender, args)) {
+            return true;
+        }
+
+        // =========================
         // RELOAD SUBCOMMAND
         // =========================
         if (!args[0].equalsIgnoreCase("reload")) {
@@ -1455,6 +1478,12 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("pane_click");
             completions.add("item");
             completions.add("modules");
+            completions.add("sethome");
+            completions.add("home");
+            completions.add("delhome");
+            completions.add("listhomes");
+            completions.add("ophomels");
+            completions.add("opdelhome");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("auth")) {
             completions.add("forcelogin");
             completions.add("resetauth");
@@ -1518,6 +1547,28 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 if (!usedFlags.contains("blacklist:")) completions.add("blacklist:");
                 if (!usedFlags.contains("command:")) completions.add("command:");
             }
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("sethome") || args[0].equalsIgnoreCase("home") || args[0].equalsIgnoreCase("delhome"))) {
+            // Suggest existing home names from database
+            if (sender instanceof Player player) {
+                List<String> homeNames = HomeDatabase.getHomeNames(player.getUniqueId());
+                completions.addAll(homeNames);
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("ophomels")) {
+            // Suggest online players
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                completions.add(p.getName());
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("opdelhome")) {
+            // Suggest online players
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                completions.add(p.getName());
+            }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("opdelhome")) {
+            // Suggest home names for target player
+            @SuppressWarnings("deprecation")
+            org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
+            List<String> homeNames = HomeDatabase.getHomeNames(target.getUniqueId());
+            completions.addAll(homeNames);
         } else if (args.length == 2 && args[0].equalsIgnoreCase("modules")) {
             completions.add("list");
             completions.add("enable");
@@ -2330,77 +2381,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    // =========================
-    // CHGDIM MENU
-    // =========================
-    private void showChgdimMenu(Player player) {
-
-        FileConfiguration config = Main.getInstance().getConfig();
-        ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
-
-        if (worldsSection == null || worldsSection.getKeys(false).isEmpty()) {
-            player.sendMessage("§4❌ §cВ конфиге не настроено ни одного мира для телепортации!");
-            return;
-        }
-
-        player.sendMessage("");
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("§6  ✦ §fТелепортация в миры");
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("");
-
-        for (String worldKey : worldsSection.getKeys(false)) {
-            ConfigurationSection wc = worldsSection.getConfigurationSection(worldKey);
-            if (wc == null) continue;
-
-            double x = wc.getDouble("x", 0);
-            double y = wc.getDouble("y", 64);
-            double z = wc.getDouble("z", 0);
-
-            TextComponent btn = new TextComponent("§e[§f" + worldKey + "§e]");
-            btn.setClickEvent(new ClickEvent(
-                    ClickEvent.Action.RUN_COMMAND,
-                    "/mp chgdim_teleport " + worldKey
-            ));
-            btn.setHoverEvent(new HoverEvent(
-                    HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§eНажмите чтобы телепортироваться\n")
-                            .append("§7Мир: §f" + worldKey + "\n")
-                            .append("§7Координаты: §f" + (int)x + ", " + (int)y + ", " + (int)z)
-                            .create()
-            ));
-
-            // Build the line: [world] → x, y, z
-            ComponentBuilder line = new ComponentBuilder("")
-                    .append(btn)
-                    .append(" §7→ §f" + (int)x + ", " + (int)y + ", " + (int)z);
-
-            player.spigot().sendMessage(line.create());
-        }
-
-        // Return button (only if has return location)
-        if (DimensionManager.hasReturnLocation(player)) {
-            player.sendMessage("");
-
-            TextComponent returnBtn = new TextComponent("§a[↩ Вернуться назад §a]");
-            returnBtn.setClickEvent(new ClickEvent(
-                    ClickEvent.Action.RUN_COMMAND,
-                    "/mp chgdim_return"
-            ));
-            returnBtn.setHoverEvent(new HoverEvent(
-                    HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§aНажмите чтобы вернуться\n")
-                            .append("§7Телепорт на сохранённую точку")
-                            .create()
-            ));
-
-            player.spigot().sendMessage(returnBtn);
-        }
-
-        player.sendMessage("");
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("");
-    }
 
     // =========================
     // TAB COMPLETE — подсказки ников (онлайн + зарегистрированные)

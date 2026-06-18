@@ -207,11 +207,9 @@ public class DatabaseInit {
                     salt TEXT NOT NULL,
                     ip_address TEXT DEFAULT ''
                 );
-            """);
-
-            // =========================
-            // 🔑 CODE PANEL KEYS
-            // =========================
+            """);        // =========================
+        // 🔑 CODE PANEL KEYS
+        // =========================
             st.execute("""
                 CREATE TABLE IF NOT EXISTS code_panel_keys (
                     key_name TEXT PRIMARY KEY,
@@ -223,6 +221,28 @@ public class DatabaseInit {
                     whitelist TEXT DEFAULT '',
                     blacklist TEXT DEFAULT ''
                 );
+            """);
+
+            // =========================
+            // 🏠 PLAYER HOMES
+            // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS player_homes (
+                    uuid TEXT NOT NULL,
+                    home_name TEXT NOT NULL,
+                    world TEXT NOT NULL,
+                    x DOUBLE NOT NULL,
+                    y DOUBLE NOT NULL,
+                    z DOUBLE NOT NULL,
+                    yaw FLOAT DEFAULT 0,
+                    pitch FLOAT DEFAULT 0,
+                    PRIMARY KEY(uuid, home_name)
+                );
+            """);
+
+            st.execute("""
+                CREATE INDEX IF NOT EXISTS idx_player_homes_uuid
+                ON player_homes(uuid);
             """);
 
         // =========================

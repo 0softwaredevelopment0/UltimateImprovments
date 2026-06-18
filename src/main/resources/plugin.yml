@@ -173,6 +173,30 @@ permissions:
     description: Allows using item management commands (/mp item int set|add|list)
     default: op
 
+  mcplugin.command.sethome:
+    description: Allows setting home points (/mp sethome)
+    default: op
+
+  mcplugin.command.home:
+    description: Allows viewing home points (/mp home)
+    default: op
+
+  mcplugin.command.delhome:
+    description: Allows deleting home points (/mp delhome)
+    default: op
+
+  mcplugin.command.listhomes:
+    description: Allows listing home points (/mp listhomes)
+    default: op
+
+  mcplugin.command.ophomels:
+    description: Allows listing a player's homes (/mp ophomels)
+    default: op
+
+  mcplugin.command.opdelhome:
+    description: Allows deleting a player's home (/mp opdelhome)
+    default: op
+
   mcplugin.packetguard.bypass:
     description: Allows bypassing the packet size guard (oversized packets)
     default: op

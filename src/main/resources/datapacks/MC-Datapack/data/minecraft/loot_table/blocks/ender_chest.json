@@ -5,9 +5,16 @@
       "rolls": 1,
       "entries": [
         {
-          "type": "minecraft:empty",
+          "type": "minecraft:item",
+          "name": "minecraft:ender_chest",
           "weight": 1,
-          "quality": 1
+          "quality": 1,
+          "conditions": [
+            {
+              "condition": "minecraft:random_chance",
+              "chance": 0.99
+            }
+          ]
         }
       ]
     }

@@ -1,5 +1,6 @@
 package com.mcplugin;
 
+import com.mcplugin.config.ConfigIntegrityValidator;
 import com.mcplugin.main.CommandRegistrar;
 import com.mcplugin.module.*;
 
@@ -11,6 +12,9 @@ import org.bukkit.plugin.java.JavaPlugin;
  * Инициализация разбита на независимые модули ({@link PluginModule}).
  * Каждый модуль обрабатывается в try-catch: если один модуль падает,
  * остальные продолжают работу, а в консоль пишется стектрейс.
+ * <p>
+ * При старте проверяется целостность config.yml — если ключей не хватает,
+ * конфиг переименовывается в compromised-config.yml и создаётся свежий.
  */
 public class Main extends JavaPlugin {
 
@@ -37,6 +41,12 @@ public class Main extends JavaPlugin {
         reloadConfig();
 
         // =========================
+        // ПРОВЕРКА ЦЕЛОСТНОСТИ КОНФИГА
+        // Если чего-то не хватает → compromised-config.yml + свежий config.yml
+        // =========================
+        ConfigIntegrityValidator.validate(this);
+
+        // =========================
         // MODULE MANAGER
         // =========================
         ModuleManager.init(this);
@@ -45,7 +55,12 @@ public class Main extends JavaPlugin {
         // РЕГИСТРИРУЕМ МОДУЛИ
         mm.register(new VersionCheckModule());
         mm.register(new DatabaseModule());
-        mm.register(new CoreSystemsModule());
+        mm.register(new DatapackModule());
+        mm.register(new CoreModule());
+        mm.register(new MechanicsModule());
+        mm.register(new CraftingModule());
+        mm.register(new AuthModule());
+        mm.register(new ProtectionModule());
         mm.register(new ListenersModule());
         mm.register(new TasksModule());
         mm.register(new AutoSaveModule());

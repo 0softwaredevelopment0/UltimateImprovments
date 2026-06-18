@@ -1,18 +1,33 @@
 package com.mcplugin.features.enderchest;
 
 import com.mcplugin.Main;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Creeper;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 
+import java.util.Random;
+
+/**
+ * Менеджер эндер-сундуков.
+ * <p>
+ * При ломании — блок ведёт себя как обычный эндер-сундук (дропает обсидиан).
+ * При открытии (ПКМ) — есть шанс {@code explosion_chance} (0.001 = 0.1%),
+ * что сундук взорвётся как заряженный крипер, нанеся урон игроку.
+ */
 public class EnderChestManager implements Listener {
 
     private static EnderChestManager instance;
     private static boolean enabled = true;
-    private static int damage = 8192;
+    private static double explosionChance = 0.001; // 0.1%
     private static int explosionRadius = 5;
+    private static double damage = 8192;
+    private static final Random RANDOM = new Random();
 
     public static void init(Main plugin) {
         instance = new EnderChestManager();
@@ -24,24 +39,53 @@ public class EnderChestManager implements Listener {
         var cfg = Main.getInstance().getConfig().getConfigurationSection("features.enderchest");
         if (cfg == null) return;
         enabled = cfg.getBoolean("enabled", true);
-        damage = cfg.getInt("damage", 8192);
+        explosionChance = cfg.getDouble("explosion_chance", 0.001);
         explosionRadius = cfg.getInt("explosion_radius", 5);
+        damage = cfg.getDouble("damage", 8192);
     }
 
+    /**
+     * При открытии эндер-сундука — шанс взрыва 0.1% (по умолчанию).
+     * При ломании — поведение как у ванильного (не взрывается, просто дропается обсидиан).
+     */
     @EventHandler
-    public void onEnderChestBreak(BlockBreakEvent e) {
+    public void onEnderChestInteract(PlayerInteractEvent e) {
+        if (e.isCancelled()) return;
         if (!enabled) return;
-        if (e.getBlock().getType() != Material.ENDER_CHEST) return;
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getClickedBlock() == null || e.getClickedBlock().getType() != Material.ENDER_CHEST) return;
 
-        org.bukkit.Location loc = e.getBlock().getLocation();
+        Player player = e.getPlayer();
 
-        e.getPlayer().damage(damage);
+        // Шанс взрыва (фиксируем значение ДО проверки, чтобы лог был корректен)
+        double roll = RANDOM.nextDouble();
+        if (roll >= explosionChance) return;
 
+        Location loc = e.getClickedBlock().getLocation();
+
+        // Взрыв
         loc.getWorld().spawn(loc, Creeper.class, c -> {
             c.setPowered(true);
             c.setExplosionRadius(explosionRadius);
             c.setMaxFuseTicks(0);
             c.setIgnited(true);
         });
+
+        // Урон игроку
+        if (damage > 0) {
+            player.damage(damage);
+        }
+
+        // Отменяем событие — сундук взорвался, не открываем GUI
+        e.setCancelled(true);
+
+        // Звук
+        loc.getWorld().playSound(loc, Sound.ENTITY_CREEPER_PRIMED, 1.0f, 0.5f);
+
+        // Логирование
+        Main.getInstance().getLogger().info("[EnderChest] " + player.getName()
+                + " opened an ender chest at "
+                + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ()
+                + " and it EXPLODED! (roll=" + String.format("%.4f", roll) + " < chance=" + explosionChance + ")");
     }
 }
