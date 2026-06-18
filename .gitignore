@@ -5,10 +5,7 @@ target/
 .kotlin
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -28,15 +25,22 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
+
+### Gradle ###
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+.gradle/
 
 ### VS Code ###
 .vscode/
 
 ### Mac OS ###
 .DS_Store
+
 # Project exclude paths
 /.gradle/__pycache__/
 nul
+
+### Extra ignores ###
+.claude/
