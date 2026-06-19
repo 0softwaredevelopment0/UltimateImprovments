@@ -154,7 +154,7 @@ public class AuthManager {
                     Main.getInstance().getLogger().info(
                             "[Auth] Player " + player.getName() + " IP changed: " + lastIp + " → " + currentIp + " — session reset.");
                     String ipMsg = getConfigMessage("ip_changed", "<yellow>✦</yellow> <gray>Ваш IP-адрес изменился. Пожалуйста, войдите заново.</gray>");
-                    player.sendMessage(ipMsg);
+                    player.sendMessage(MessageUtil.parse(ipMsg));
                     AuthDatabase.resetAuth(uuid);
                     registered = true;
                 } else if (AuthDatabase.hasValidSession(uuid, getSessionDurationMs())) {
@@ -293,11 +293,11 @@ public class AuthManager {
                     int currentCount = AuthDatabase.countAccountsByIp(playerIp);
                     if (currentCount >= maxAccounts) {
                         String msg = getConfigMessage("max_accounts_per_ip",
-                                "§c❌ С вашего IP-адреса уже зарегистрировано §e{count}§c аккаунтов!\n§fМаксимум: §e{limit}§f аккаунтов на один IP.")
+                                "<red>❌ С вашего IP-адреса уже зарегистрировано <yellow>{count}</yellow> аккаунтов!</red>\n<white>Максимум: <yellow>{limit}</yellow> аккаунтов на один IP.</white>")
                                 .replace("{count}", String.valueOf(currentCount))
                                 .replace("{limit}", String.valueOf(maxAccounts));
                         player.sendMessage("");
-                        player.sendMessage(msg);
+                        player.sendMessage(MessageUtil.parse(msg));
                         player.sendMessage("");
                         player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
                         reopenAfterDelay(player);

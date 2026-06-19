@@ -101,6 +101,8 @@ public class ConfigIntegrityValidator {
             "features.integrity.unbreaking",
             "features.creative_item_validator",
             "features.shulker_protection",
+            "features.leash",
+            "features.container_trigger",
             "features.waypoint",
             "radiation",
             "auth",
@@ -125,6 +127,7 @@ public class ConfigIntegrityValidator {
             "chat_filter",
             "chat_filter.words",
             "chat_filter.regex_patterns",
+            "vanish",
             "home",
             "changedimmension",
             "changedimmension.messages",
@@ -505,6 +508,18 @@ public class ConfigIntegrityValidator {
 
             // ===== SHULKER PROTECTION =====
             bool("features.shulker_protection.enabled"),
+
+            // ===== LEASH =====
+            bool("features.leash.enabled"),
+            integer("features.leash.max_distance", 1, 1000, "Макс. дистанция поводка"),
+            integer("features.leash.pull_back_interval", 1, 200, "Интервал подтягивания (тики)"),
+            bool("features.leash.prevent_break"),
+            bool("features.leash.hard_stop"),
+
+            // ===== CONTAINER TRIGGER =====
+            bool("features.container_trigger.enabled"),
+            integer("features.container_trigger.interval_ticks", 1, 200,
+                    "Интервал проверки контейнера (тики)"),
 
             // ===== WAYPOINT =====
             bool("features.waypoint.enabled"),

@@ -8,7 +8,10 @@ import com.mcplugin.features.unbreakablebreaker.UnbreakableBreakerManager;
 import com.mcplugin.features.integrity.IntegrityManager;
 import com.mcplugin.features.blockdmg.BlockDmgManager;
 import com.mcplugin.features.boostedcobweb.BoostedCobwebManager;
+import com.mcplugin.features.containertrigger.ContainerTriggerManager;
 import com.mcplugin.features.deathbell.DeathBellManager;
+import com.mcplugin.features.notes.NotesManager;
+import com.mcplugin.features.vanish.VanishManager;
 import com.mcplugin.features.dragonegg.DragonEggManager;
 import com.mcplugin.features.enderchest.EnderChestManager;
 import com.mcplugin.features.entitylocator.EntityLocatorManager;
@@ -52,6 +55,9 @@ public class FeaturesManager {
         GlassBreakManager.init(plugin);
         ShieldSlownessManager.init(plugin);
         CreativeItemValidator.init(plugin);
+        ContainerTriggerManager.init(plugin);
+        VanishManager.init();
+        NotesManager.init();
     }
 
     public static void reloadConfig() {
@@ -75,6 +81,8 @@ public class FeaturesManager {
         CreativeItemValidator.reloadConfig();
         TerracotaSpeedManager.reloadConfig();
         WaypointManager.reloadConfig();
+        ContainerTriggerManager.reloadConfig();
+        VanishManager.reloadConfig();
     }
 
     public static FeaturesManager getInstance() {

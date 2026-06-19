@@ -65,6 +65,7 @@ public class Main extends JavaPlugin {
         mm.register(new TasksModule());
         mm.register(new AutoSaveModule());
         mm.register(new UpdateModule());
+        mm.register(new LeashModule());
 
         // =========================
         // INIT ALL MODULES

@@ -4,7 +4,13 @@ import com.mcplugin.Main;
 import com.mcplugin.core1.ReactorCommand;
 import com.mcplugin.core1.ReactorManager;
 import com.mcplugin.features.integrity.IntegrityManager;
+import com.mcplugin.features.lightning.LightningManager;
 import com.mcplugin.features.magnet.MagnetManager;
+import com.mcplugin.features.notes.NotesGUI;
+import com.mcplugin.features.notes.NotesManager;
+import com.mcplugin.features.vanish.VanishManager;
+import com.mcplugin.radiation.RadiationManager;
+import com.mcplugin.structure.StructureTemplate;
 import com.mcplugin.main.TaskManager;
 import com.mcplugin.module.ModuleManager;
 import com.mcplugin.module.PluginModule;
@@ -103,6 +109,16 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§e/mp help");
             sender.sendMessage(" §7└ Список команд");
             sender.sendMessage("");
+            sender.sendMessage("§e/mp checkver");
+            sender.sendMessage(" §7└ Проверить наличие обновлений плагина");
+            sender.sendMessage("§e/mp checkver update");
+            sender.sendMessage(" §7└ Скачать и установить обновление");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp checkrad <ник>");
+            sender.sendMessage(" §7└ Проверить радиацию игрока");
+            sender.sendMessage("§e/mp setrad <ник> <значение>");
+            sender.sendMessage(" §7└ Установить радиацию игрока");
+            sender.sendMessage("");
             sender.sendMessage("§e/mp reload");
             sender.sendMessage(" §7└ Перезагрузить плагин");
             sender.sendMessage("");
@@ -121,6 +137,18 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(" §7└ Собрать магнит");
             sender.sendMessage("§e/mp str magnet stats");
             sender.sendMessage(" §7└ Статистика магнита");
+            sender.sendMessage("§e/mp str lightning enable");
+            sender.sendMessage(" §7└ Включить структуру молний");
+            sender.sendMessage("§e/mp str lightning disable");
+            sender.sendMessage(" §7└ Выключить структуру молний");
+            sender.sendMessage("§e/mp str lightning stats");
+            sender.sendMessage(" §7└ Статистика структуры молний");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp vanish §7<ник>");
+            sender.sendMessage(" §7└ Скрыть/показать игрока (ваниш)");
+            sender.sendMessage("");
+            sender.sendMessage("§e/mp notes");
+            sender.sendMessage(" §7└ Открыть заметки");
             sender.sendMessage("");
             sender.sendMessage("§e/mp power off");
             sender.sendMessage(" §7└ Запросить выключение сервера");
@@ -390,7 +418,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
 
             if (args.length < 2) {
-                player.sendMessage("§4❌ §cUsage: /mp structures <dfc|magnet> <stats|assemble>");
+                player.sendMessage("§4❌ §cUsage: /mp structures <dfc|magnet|lightning> <stats|assemble|enable|disable>");
                 return true;
             }
 
@@ -618,7 +646,125 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            player.sendMessage("§4❌ §cНеизвестный тип структуры: §f" + args[1] + "§c. Используйте §fdfc§c или §fmagnet");
+            // =========================
+            // LIGHTNING
+            // =========================
+            if (args[1].equalsIgnoreCase("lightning")) {
+
+                if (args.length < 3) {
+                    player.sendMessage("§4❌ §cUsage: /mp str lightning <enable|disable|stats>");
+                    return true;
+                }
+
+                // =========================
+                // LIGHTNING STATS
+                // =========================
+                if (args[2].equalsIgnoreCase("stats")) {
+                    Location playerLoc = player.getLocation();
+                    Location nearest = null;
+                    double nearestDist = Double.MAX_VALUE;
+
+                    for (Location loc : LightningManager.getActiveLocations()) {
+                        if (!loc.getWorld().equals(playerLoc.getWorld())) continue;
+                        double dist = playerLoc.distance(loc);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearest = loc;
+                        }
+                    }
+
+                    if (nearest == null) {
+                        player.sendMessage("§4❌ §cАктивных структур молний не найдено!");
+                        return true;
+                    }
+
+                    if (nearestDist > 50) {
+                        player.sendMessage("§4❌ §cРядом нет активной структуры молний (ближайшая в §f"
+                                + String.format("%.1f", nearestDist) + "§c м).");
+                        return true;
+                    }
+
+                    String stats = LightningManager.getStats(nearest);
+                    if (stats != null) {
+                        player.sendMessage("§8┌────────────────────────────────┐");
+                        player.sendMessage("§8│ §e⚡ Молнии §8» §fСтатистика");
+                        player.sendMessage("§8├────────────────────────────────┤");
+                        player.sendMessage(stats);
+                        player.sendMessage("§8│ §7Дистанция: §f" + String.format("%.1f", nearestDist) + " м");
+                        player.sendMessage("§8└────────────────────────────────┘");
+                    }
+                    return true;
+                }
+
+                // =========================
+                // LIGHTNING ENABLE
+                // =========================
+                if (args[2].equalsIgnoreCase("enable")) {
+                    Location playerLoc = player.getLocation();
+                    Location nearest = null;
+                    double nearestDist = Double.MAX_VALUE;
+
+                    for (Location loc : LightningManager.getActiveLocations()) {
+                        if (!loc.getWorld().equals(playerLoc.getWorld())) continue;
+                        double dist = playerLoc.distance(loc);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearest = loc;
+                        }
+                    }
+
+                    if (nearest == null) {
+                        player.sendMessage("§4❌ §cСтруктур молний не найдено! Соберите через SHIFT+ПКМ по рамке на громоотводе.");
+                        return true;
+                    }
+
+                    if (nearestDist > 50) {
+                        player.sendMessage("§4❌ §cРядом нет структуры молний!");
+                        return true;
+                    }
+
+                    LightningManager.setEnabled(nearest, true);
+                    player.sendMessage("§a✅ §fСтруктура молний включена!");
+                    return true;
+                }
+
+                // =========================
+                // LIGHTNING DISABLE
+                // =========================
+                if (args[2].equalsIgnoreCase("disable")) {
+                    Location playerLoc = player.getLocation();
+                    Location nearest = null;
+                    double nearestDist = Double.MAX_VALUE;
+
+                    for (Location loc : LightningManager.getActiveLocations()) {
+                        if (!loc.getWorld().equals(playerLoc.getWorld())) continue;
+                        double dist = playerLoc.distance(loc);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearest = loc;
+                        }
+                    }
+
+                    if (nearest == null) {
+                        player.sendMessage("§4❌ §cСтруктур молний не найдено!");
+                        return true;
+                    }
+
+                    if (nearestDist > 50) {
+                        player.sendMessage("§4❌ §cРядом нет структуры молний!");
+                        return true;
+                    }
+
+                    LightningManager.setEnabled(nearest, false);
+                    player.sendMessage("§c✗ §fСтруктура молний выключена!");
+                    return true;
+                }
+
+                player.sendMessage("§4❌ §cUsage: /mp str lightning <enable|disable|stats>");
+                return true;
+            }
+
+            player.sendMessage("§4❌ §cНеизвестный тип структуры: §f" + args[1] + "§c. Используйте §fdfc§c, §fmagnet §cили §flightning");
             return true;
         }
 
@@ -1353,6 +1499,195 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }
 
         // =========================
+        // CHECKVER SUBCOMMAND — проверка обновлений
+        // =========================
+        if (args[0].equalsIgnoreCase("checkver")) {
+
+            if (sender instanceof Player player && !player.hasPermission("mcplugin.command.checkver")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на проверку обновлений!");
+                return true;
+            }
+
+            // =========================
+            // CHECKVER UPDATE — загрузка обновления
+            // =========================
+            if (args.length >= 2 && args[1].equalsIgnoreCase("update")) {
+
+                if (sender instanceof Player player && !player.hasPermission("mcplugin.command.checkver")) {
+                    player.sendMessage("§4❌ §cУ вас нет прав на установку обновлений!");
+                    return true;
+                }
+
+                sender.sendMessage("§e⟳ §7Запрос обновления с GitHub...");
+                com.mcplugin.features.updater.UpdateChecker.manualDownload(sender);
+                return true;
+            }
+
+            // =========================
+            // CHECKVER (без аргументов) — только проверка
+            // =========================
+            sender.sendMessage("§e⟳ §7Проверка обновлений на GitHub...");
+            com.mcplugin.features.updater.UpdateChecker.checkOnly(sender);
+            return true;
+        }
+
+        // =========================
+        // VANISH SUBCOMMAND
+        // =========================
+        if (args[0].equalsIgnoreCase("vanish")) {
+
+            // Permission check
+            if (sender instanceof Player player && !player.hasPermission("mcplugin.command.vanish")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на использование ваниша!");
+                return true;
+            }
+
+            if (args.length < 2) {
+                sender.sendMessage("§4❌ §cИспользование: §f/mp vanish §7<ник>");
+                return true;
+            }
+
+            String targetName = args[1];
+
+            // Ищем игрока: сначала онлайн, потом оффлайн
+            @SuppressWarnings("deprecation")
+            OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+
+            // Проверяем, существует ли игрок вообще (играл ли на сервере)
+            if (!target.hasPlayedBefore() && !target.isOnline()) {
+                sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не найден!");
+                return true;
+            }
+
+            UUID targetUuid = target.getUniqueId();
+            boolean wasVanished = VanishManager.isVanished(targetUuid);
+            VanishManager.toggleVanish(target);
+            boolean isNowVanished = VanishManager.isVanished(targetUuid);
+
+            if (isNowVanished) {
+                sender.sendMessage("§a✅ §fИгрок §e" + targetName + "§f теперь скрыт (ваниш).");
+                if (!target.isOnline()) {
+                    sender.sendMessage("§8┃ §7Игрок оффлайн — ваниш применится при входе.");
+                }
+            } else {
+                sender.sendMessage("§c✗ §fИгрок §e" + targetName + "§f больше не скрыт.");
+            }
+
+            return true;
+        }
+
+        // =========================
+        // NOTES SUBCOMMAND
+        // =========================
+        if (args[0].equalsIgnoreCase("notes")) {
+
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage("§4❌ §cТолько игрок может использовать заметки!");
+                return true;
+            }
+
+            if (!player.hasPermission("mcplugin.command.notes")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на использование заметок!");
+                return true;
+            }
+
+            NotesGUI.openMainGUI(player);
+            return true;
+        }
+
+        // =========================
+        // CHECKRAD — проверить радиацию игрока
+        // =========================
+        if (args[0].equalsIgnoreCase("checkrad")) {
+
+            if (sender instanceof Player player && !player.hasPermission("mcplugin.command.checkrad")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на проверку радиации!");
+                return true;
+            }
+
+            if (args.length < 2) {
+                sender.sendMessage("§4❌ §cИспользование: §f/mp checkrad §7<ник>");
+                return true;
+            }
+
+            String targetName = args[1];
+            @SuppressWarnings("deprecation")
+            Player target = Bukkit.getPlayer(targetName);
+
+            if (target == null) {
+                sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не в сети!");
+                return true;
+            }
+
+            int rad = RadiationManager.getRadiation(target);
+            double roentgen = rad / 100.0;
+
+            String levelColor;
+            String levelName;
+            if (rad < 200) { levelColor = "§a"; levelName = "Безопасный"; }
+            else if (rad < 400) { levelColor = "§e"; levelName = "Лёгкий"; }
+            else if (rad < 800) { levelColor = "§6"; levelName = "Средний"; }
+            else if (rad < 1600) { levelColor = "§c"; levelName = "Высокий"; }
+            else if (rad < 3200) { levelColor = "§4"; levelName = "Критический"; }
+            else { levelColor = "§5"; levelName = "Смертельный"; }
+
+            sender.sendMessage("");
+            sender.sendMessage("§8┌──────────────────────────┐");
+            sender.sendMessage("§8│ §d☢ Радиация §8» §f" + targetName);
+            sender.sendMessage("§8├──────────────────────────┤");
+            sender.sendMessage("§8│ §7Уровень: §f" + rad + " §7(§f" + String.format(java.util.Locale.US, "%.1f", roentgen) + " Р/Ч§7)");
+            sender.sendMessage("§8│ §7Статус:  " + levelColor + levelName);
+            sender.sendMessage("§8└──────────────────────────┘");
+            sender.sendMessage("");
+
+            return true;
+        }
+
+        // =========================
+        // SETRAD — установить радиацию игрока
+        // =========================
+        if (args[0].equalsIgnoreCase("setrad")) {
+
+            if (sender instanceof Player player && !player.hasPermission("mcplugin.command.setrad")) {
+                player.sendMessage("§4❌ §cУ вас нет прав на изменение радиации!");
+                return true;
+            }
+
+            if (args.length < 3) {
+                sender.sendMessage("§4❌ §cИспользование: §f/mp setrad §7<ник> <значение>");
+                return true;
+            }
+
+            String targetName = args[1];
+            @SuppressWarnings("deprecation")
+            Player target = Bukkit.getPlayer(targetName);
+
+            if (target == null) {
+                sender.sendMessage("§4❌ §cИгрок §e" + targetName + "§c не в сети!");
+                return true;
+            }
+
+            int value;
+            try {
+                value = Integer.parseInt(args[2]);
+                if (value < 0) {
+                    sender.sendMessage("§4❌ §cЗначение радиации не может быть отрицательным!");
+                    return true;
+                }
+            } catch (NumberFormatException e) {
+                sender.sendMessage("§4❌ §cНеверное число: §f" + args[2]);
+                return true;
+            }
+
+            RadiationManager.setRadiation(target, value);
+            double roentgen = value / 100.0;
+
+            sender.sendMessage("§a✅ §fРадиация игрока §e" + targetName + "§f установлена на §e" + value + " §7(§f" + String.format(java.util.Locale.US, "%.1f", roentgen) + " Р/Ч§7)");
+
+            return true;
+        }
+
+        // =========================
         // RELOAD SUBCOMMAND
         // =========================
         if (!args[0].equalsIgnoreCase("reload")) {
@@ -1426,6 +1761,11 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     }
 
                     // =========================
+                    // RELOAD STRUCTURE TEMPLATES (NBT)
+                    // =========================
+                    StructureTemplate.initAll();
+
+                    // =========================
                     // RESTART TASKS
                     // =========================
                     TaskManager.getInstance().startAll(plugin);
@@ -1473,6 +1813,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             completions.add("help");
+            completions.add("checkver");
+            completions.add("checkrad");
+            completions.add("setrad");
             completions.add("reload");
             completions.add("structures");
             completions.add("str");
@@ -1482,6 +1825,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("chgdim");
             completions.add("chgdim_teleport");
             completions.add("chgdim_return");
+            completions.add("vanish");
+            completions.add("notes");
             completions.add("codepane");
             completions.add("pane_click");
             completions.add("item");
@@ -1514,6 +1859,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str"))) {
             completions.add("dfc");
             completions.add("magnet");
+            completions.add("lightning");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("codepane")) {
             completions.add("key");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("codepane") && args[1].equalsIgnoreCase("key")) {
@@ -1597,6 +1943,27 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 3 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str")) && args[1].equalsIgnoreCase("magnet")) {
             completions.add("assemble");
             completions.add("stats");
+        } else if (args.length == 3 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str")) && args[1].equalsIgnoreCase("lightning")) {
+            completions.add("enable");
+            completions.add("disable");
+            completions.add("stats");
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("checkver")) {
+            completions.add("update");
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("vanish")) {
+            // Suggest online players
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                completions.add(p.getName());
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("checkrad")) {
+            // Suggest online players
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                completions.add(p.getName());
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("setrad")) {
+            // Suggest online players
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                completions.add(p.getName());
+            }
         }
 
         List<String> result = new ArrayList<>();

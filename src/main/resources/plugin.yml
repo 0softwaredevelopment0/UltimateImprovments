@@ -56,6 +56,11 @@ permissions:
       mcplugin.command.auth.chgpass: true
       mcplugin.command.auth.delsession: true
       mcplugin.command.item: true
+      mcplugin.command.checkver: true
+      mcplugin.command.checkrad: true
+      mcplugin.command.setrad: true
+      mcplugin.command.vanish: true
+      mcplugin.command.notes: true
 
   mcplugin:
     description: Base permission for MC-Plugin commands (/mp)
@@ -171,6 +176,26 @@ permissions:
 
   mcplugin.command.item:
     description: Allows using item management commands (/mp item int set|add|list)
+    default: op
+
+  mcplugin.command.checkver:
+    description: Allows checking for plugin updates (/mp checkver)
+    default: op
+
+  mcplugin.command.checkrad:
+    description: Allows checking player radiation (/mp checkrad)
+    default: op
+
+  mcplugin.command.setrad:
+    description: Allows setting player radiation (/mp setrad)
+    default: op
+
+  mcplugin.command.vanish:
+    description: Allows toggling vanish for players (/mp vanish)
+    default: op
+
+  mcplugin.command.notes:
+    description: Allows opening notes GUI (/mp notes)
     default: op
 
   mcplugin.command.sethome:

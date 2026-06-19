@@ -306,6 +306,20 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
+    // SYNC VANILLA DAMAGE — зеркалит integrity в ванильный damage.
+    // Если PDC-теги потеряются, ванильный damage служит резервной копией.
+    // =========================
+    private static void syncVanillaDamage(ItemStack item, ItemMeta meta, double currentIntegrity) {
+        if (meta instanceof Damageable damageable) {
+            int maxDura = item.getType().getMaxDurability();
+            if (maxDura > 0) {
+                int dmg = (int) Math.round((1.0 - currentIntegrity / 100.0) * maxDura);
+                damageable.setDamage(Math.max(0, Math.min(maxDura, dmg)));
+            }
+        }
+    }
+
+    // =========================
     // HEX GRADIENT — плавный градиент от тёмно-зелёного (100%) до тёмно-красного (0%)
     // =========================
 
@@ -481,24 +495,28 @@ public class IntegrityManager extends BukkitRunnable {
         }
 
         if (!isTagged) {
-            // Инициализация нового предмета — целостность = 100.0%
+            // Инициализация: считаем целостность из ванильного износа.
+            // Если предмет уже был повреждён (потерял PDC-теги), не чиним его до 100%.
+            double initialCurrent = 100.0;
+            if (meta instanceof Damageable damageable) {
+                int dmg = damageable.getDamage();
+                if (dmg > 0) {
+                    initialCurrent = 100.0 * (1.0 - (double)dmg / (double)maxDurability);
+                    initialCurrent = Math.max(0, Math.min(100.0, initialCurrent));
+                }
+            }
+
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
             pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
             pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
-            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
-
-            if (meta instanceof Damageable damageable) {
-                damageable.setDamage(0);
-            }
+            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, initialCurrent);
+            // Зеркалим в ванильный damage — резервная копия
+            syncVanillaDamage(item, meta, initialCurrent);
 
             if (logInit) {
                 Main.getInstance().getLogger().info("[INTEGRITY] Initialized " + item.getType()
-                        + " with max=" + (int)itemMaxDura + " integrity");
-            }
-        } else {
-            // Сбрасываем ванильный damage
-            if (meta instanceof Damageable damageable) {
-                damageable.setDamage(0);
+                        + " with max=" + (int)itemMaxDura + " integrity (current="
+                        + String.format("%.1f%%", initialCurrent) + ")");
             }
         }
 
@@ -599,9 +617,7 @@ public class IntegrityManager extends BukkitRunnable {
         pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
 
-        if (meta instanceof Damageable damageable) {
-            damageable.setDamage(0);
-        }
+        syncVanillaDamage(item, meta, 100.0);
 
         item.setItemMeta(meta);
     }
@@ -618,22 +634,12 @@ public class IntegrityManager extends BukkitRunnable {
 
         var pdc = meta.getPersistentDataContainer();
 
-        // Получаем макс. целостность для этого предмета (всегда 100.0%)
-        double maxIntegrity = 100.0;
-
-        // Если не инициализирован — инициализируем
+        // Если не инициализирован — НЕ чиним (предмет проинициализируется в processItem)
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
-            pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
-            pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
-            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
-            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
-
-            if (meta instanceof Damageable damageable) {
-                damageable.setDamage(0);
-            }
-            item.setItemMeta(meta);
             return;
         }
+
+        double maxIntegrity = 100.0;
 
         double current = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
 
@@ -643,9 +649,8 @@ public class IntegrityManager extends BukkitRunnable {
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, newVal);
 
-        if (meta instanceof Damageable damageable) {
-            damageable.setDamage(0);
-        }
+        // Зеркалим в ванильный damage
+        syncVanillaDamage(item, meta, newVal);
 
         item.setItemMeta(meta);
     }
@@ -667,10 +672,7 @@ public class IntegrityManager extends BukkitRunnable {
         double clamped = Math.max(0, Math.min(maxIntegrity, value));
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, clamped);
-
-        if (meta instanceof Damageable damageable) {
-            damageable.setDamage(0);
-        }
+        syncVanillaDamage(item, meta, clamped);
         item.setItemMeta(meta);
     }
 
@@ -689,12 +691,22 @@ public class IntegrityManager extends BukkitRunnable {
 
         var pdc = meta.getPersistentDataContainer();
 
-        // Если предмет ещё не инициализирован — инициализируем
+        // Если предмет ещё не инициализирован — инициализируем с учётом ванильного износа
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
+            int maxDura = item.getType().getMaxDurability();
+            double initialCurrent = 100.0;
+            if (meta instanceof Damageable damageable) {
+                int dmg = damageable.getDamage();
+                if (dmg > 0 && maxDura > 0) {
+                    initialCurrent = 100.0 * (1.0 - (double)dmg / (double)maxDura);
+                    initialCurrent = Math.max(0, Math.min(100.0, initialCurrent));
+                }
+            }
+
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
             pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
             pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
-            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
+            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, initialCurrent);
         }
 
         double current = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
@@ -729,12 +741,7 @@ public class IntegrityManager extends BukkitRunnable {
         double newVal = Math.max(0, current - cost);
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, newVal);
-
-        // Сбрасываем ванильный damage
-        if (meta instanceof Damageable damageable) {
-            damageable.setDamage(0);
-        }
-
+        syncVanillaDamage(item, meta, newVal);
         item.setItemMeta(meta);
 
         // Если целостность закончилась — ломаем предмет

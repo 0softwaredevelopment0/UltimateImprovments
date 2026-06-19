@@ -15,9 +15,10 @@ import java.util.List;
 /**
  * Reactor structure validation.
  *
- * The reactor is a 7×7×7 structure.
- * The item frame (marker) is at the top center.
- * This class checks for the KEY functional blocks (not all 343 blocks)
+ * The reactor is a 5×6×6 structure (NBT-based).
+ * The item frame goes ON THE TOP FACE of the upper core (polished_blackstone).
+ * Center = frame position. All offsets are relative to the frame.
+ * This class checks for the KEY functional blocks (not all blocks)
  * so the structure can be validated even with minor decoration differences.
  */
 public class ReactorStructure {
@@ -28,31 +29,31 @@ public class ReactorStructure {
     // =========================
 
     // Cooling bulb (right side of reactor top)
-    private static final int[] BULB_COOL  = { 1, -1, -2 };
+    private static final int[] BULB_COOL  = { 1, 0, -2 };
     // Heating bulb (left side of reactor top)
-    private static final int[] BULB_HEAT  = { -1, -1, -2 };
+    private static final int[] BULB_HEAT  = { -1, 0, -2 };
     // Shell integrity indicator (opposite heating bulb at Z=+2)
-    private static final int[] BULB_SH_INT  = { -1, -1, 2 };
+    private static final int[] BULB_SH_INT  = { -1, 0, 2 };
     // Case integrity indicator (opposite cooling bulb at Z=+2)
-    private static final int[] BULB_CASE_INT = { 1, -1, 2 };
-    // Diamond block barrel (fuel input) at Y=-4
-    private static final int[] DIAMOND_BARREL = { 0, -4, -2 };
-    // Gold block barrel (fuel input) at Y=-4
-    private static final int[] GOLD_BARREL = { 0, -4, 2 };
-    // Lever at Y=-1 (heating control)
-    private static final int[] LEVER = { -1, -1, -3 };
-    // Cooling lever at Y=-1
-    private static final int[] LEVER_COOL = { 1, -1, -3 };
-    // 3 wall signs on south face at Y=-5
+    private static final int[] BULB_CASE_INT = { 1, 0, 2 };
+    // Diamond barrel (fuel input) at Y=-3
+    private static final int[] DIAMOND_BARREL = { 0, -3, -2 };
+    // Gold barrel (fuel input) at Y=-3
+    private static final int[] GOLD_BARREL = { 0, -3, 2 };
+    // Lever at Y=0 (heating control)
+    private static final int[] LEVER = { -1, 0, -3 };
+    // Cooling lever at Y=0
+    private static final int[] LEVER_COOL = { 1, 0, -3 };
+    // 3 wall signs on south face at Y=-4
     private static final int[][] WALL_SIGNS = {
-        { -1, -5, -3 },
-        {  0, -5, -3 },
-        {  1, -5, -3 }
+        { -1, -4, -3 },
+        {  0, -4, -3 },
+        {  1, -4, -3 }
     };
-    // Upper core block at Y=-2 (polished blackstone)
-    private static final int[] UPPER_CORE = { 0, -2, 0 };
-    // Lower core block at Y=-6 (polished blackstone)
-    private static final int[] LOWER_CORE = { 0, -6, 0 };
+    // Upper core block at Y=-1 (polished blackstone)
+    private static final int[] UPPER_CORE = { 0, -1, 0 };
+    // Lower core block at Y=-5 (polished blackstone)
+    private static final int[] LOWER_CORE = { 0, -5, 0 };
 
     // =========================
     // CHECK KEY BLOCKS ONLY (requires item frame)
@@ -109,13 +110,13 @@ public class ReactorStructure {
 
         // =========================
         // 5. STRUCTURE CHECK: verify the chamber walls exist
-        //    (check that there's a solid wall perimeter at Y=-3)
+        //    (check that there's a solid wall perimeter at Y=-2)
         // =========================
-        if (!hasSolidWalls(base, -3)) return false;
+        if (!hasSolidWalls(base, -2)) return false;
         if (!hasSolidFloor(base))     return false;
 
         // =========================
-        // 6. ITEM FRAME at center top (only required during assembly)
+        // 6. ITEM FRAME on top of upper core (attached to block at 0,-1,0)
         // =========================
         if (requireFrame && !hasItemFrame(base)) return false;
 
@@ -125,7 +126,7 @@ public class ReactorStructure {
     // =========================
     // FIND STRUCTURE CENTER (with validation)
     // Uses BARREL as anchor.
-    // Barrel is at rel (0, -4, -2) from center, so center = (dx, dy+4, dz+2).
+    // Barrel is at rel (0, -3, -2) from center, so center = (dx, dy+3, dz+2).
     // =========================
     public static Location findCenter(Location entityLoc) {
         Location center = locateCenter(entityLoc);
@@ -149,15 +150,15 @@ public class ReactorStructure {
         World world = base.getWorld();
         int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
 
-        // Scan ±5 in X/Z, -8 to +2 in Y for barrel (diamond fuel barrel)
+        // Scan ±5 in X/Z, -7 to +3 in Y for barrel (diamond fuel barrel)
         for (int x = bx - 5; x <= bx + 5; x++) {
-            for (int y = by - 8; y <= by + 2; y++) {
+            for (int y = by - 7; y <= by + 3; y++) {
                 for (int z = bz - 5; z <= bz + 5; z++) {
                     if (world.getBlockAt(x, y, z).getType() == Material.BARREL) {
-                        // Barrel at rel (0, -4, -2) → center = (x, y+4, z+2)
+                        // Barrel at rel (0, -3, -2) → center = (x, y+3, z+2)
                         // Verify that there's another barrel at (x, y, z+4) for gold
                         if (world.getBlockAt(x, y, z + 4).getType() == Material.BARREL) {
-                            return new Location(world, x, y + 4, z + 2);
+                            return new Location(world, x, y + 3, z + 2);
                         }
                     }
                 }
@@ -196,12 +197,12 @@ public class ReactorStructure {
                         + locStr(base, BULB_HEAT));
 
         checkBlockDetailed(errors, base, BULB_SH_INT, Material.WAXED_COPPER_BULB,
-                "§6[3] Лампочка целостности оболочки §e(-1, -1, 2)"
+                "§6[3] Лампочка целостности оболочки §e(-1, 0, 2)"
                         + "§7 — должна быть WAXED_COPPER_BULB на §f"
                         + locStr(base, BULB_SH_INT));
 
         checkBlockDetailed(errors, base, BULB_CASE_INT, Material.WAXED_COPPER_BULB,
-                "§6[4] Лампочка целостности корпуса §e(1, -1, 2)"
+                "§6[4] Лампочка целостности корпуса §e(1, 0, 2)"
                         + "§7 — должна быть WAXED_COPPER_BULB на §f"
                         + locStr(base, BULB_CASE_INT));
 
@@ -209,12 +210,12 @@ public class ReactorStructure {
         // 2. BARRELS (fuel input)
         // =========================
         checkBlockDetailed(errors, base, DIAMOND_BARREL, Material.BARREL,
-                "§6[5] Бочка с алмазами (вход топлива) §e(0, -4, -2)"
+                "§6[5] Бочка с алмазами (вход топлива) §e(0, -3, -2)"
                         + "§7 — должна быть BARREL на §f"
                         + locStr(base, DIAMOND_BARREL));
 
         checkBlockDetailed(errors, base, GOLD_BARREL, Material.BARREL,
-                "§6[6] Бочка с золотом (вход топлива) §e(0, -4, 2)"
+                "§6[6] Бочка с золотом (вход топлива) §e(0, -3, 2)"
                         + "§7 — должна быть BARREL на §f"
                         + locStr(base, GOLD_BARREL));
 
@@ -222,12 +223,12 @@ public class ReactorStructure {
         // 2.5. CORE BLOCKS (upper and lower — polished blackstone)
         // =========================
         checkBlockDetailed(errors, base, UPPER_CORE, Material.POLISHED_BLACKSTONE,
-                "§6[5.5] Верхний сердечник §e(0, -2, 0)"
+                "§6[5.5] Верхний сердечник §e(0, -1, 0)"
                         + "§7 — должен быть POLISHED_BLACKSTONE на §f"
                         + locStr(base, UPPER_CORE));
 
         checkBlockDetailed(errors, base, LOWER_CORE, Material.POLISHED_BLACKSTONE,
-                "§6[5.6] Нижний сердечник §e(0, -6, 0)"
+                "§6[5.6] Нижний сердечник §e(0, -5, 0)"
                         + "§7 — должен быть POLISHED_BLACKSTONE на §f"
                         + locStr(base, LOWER_CORE));
 
@@ -235,12 +236,12 @@ public class ReactorStructure {
         // 3. LEVERS (optional)
         // =========================
         checkBlockDetailedOptional(errors, base, LEVER, Material.LEVER,
-                "§6[7] Рычаг нагрева §e(-1, -1, -3)"
+                "§6[7] Рычаг нагрева §e(-1, 0, -3)"
                         + "§7 — опционально, но если есть — LEVER на §f"
                         + locStr(base, LEVER));
 
         checkBlockDetailedOptional(errors, base, LEVER_COOL, Material.LEVER,
-                "§6[7.2] Рычаг охлаждения §e(1, -1, -3)"
+                "§6[7.2] Рычаг охлаждения §e(1, 0, -3)"
                         + "§7 — опционально, но если есть — LEVER на §f"
                         + locStr(base, LEVER_COOL));
 
@@ -267,7 +268,7 @@ public class ReactorStructure {
         }
 
         // =========================
-        // 5. STRUCTURE CHECK: walls at Y=-3
+        // 5. STRUCTURE CHECK: walls at Y=-2
         // =========================
         checkSolidWallsDetailed(errors, base);
 
@@ -281,9 +282,9 @@ public class ReactorStructure {
         // =========================
         if (!hasItemFrame(base)) {
             errors.add("§6[11] Рамка (ItemFrame) §e(0, 0, 0)"
-                    + "§7 — не найдена в радиусе 2 блоков от центра §f"
+                    + "§7 — не найдена на верхней грани сердечника §f"
                     + locStr(base, new int[]{0, 0, 0})
-                    + "§7. Повесьте рамку на центральный блок реактора");
+                    + "§7. Повесьте рамку НА ВЕРХНЮЮ ГРАНЬ центрального блока (пол. чернит)");
         }
 
         return errors;
@@ -320,7 +321,7 @@ public class ReactorStructure {
     }
 
     private static void checkSolidWallsDetailed(List<String> errors, Location base) {
-        int relY = -3;
+        int relY = -2;
         int[][] checkPositions = {
                 { -2, relY, -2 }, {  0, relY, -2 }, {  2, relY, -2 },
                 { -2, relY,  2 }, {  0, relY,  2 }, {  2, relY,  2 },
@@ -362,9 +363,9 @@ public class ReactorStructure {
 
     private static void checkSolidFloorDetailed(List<String> errors, Location base) {
         int[][] floorPositions = {
-                { -2, -6, -2 }, { -1, -6, -2 }, { 0, -6, -2 }, { 1, -6, -2 }, { 2, -6, -2 },
-                { -2, -6,  0 }, {  0, -6,  0 }, {  2, -6,  0 },
-                { -2, -6,  2 }, {  0, -6,  2 }, {  2, -6,  2 },
+                { -2, -5, -2 }, { -1, -5, -2 }, { 0, -5, -2 }, { 1, -5, -2 }, { 2, -5, -2 },
+                { -2, -5,  0 }, {  0, -5,  0 }, {  2, -5,  0 },
+                { -2, -5,  2 }, {  0, -5,  2 }, {  2, -5,  2 },
         };
 
         for (int i = 0; i < floorPositions.length; i++) {
@@ -431,11 +432,11 @@ public class ReactorStructure {
     // =========================
     private static boolean hasSolidFloor(Location base) {
 
-        // 5x5 interior floor at Y=-6: rel X=-2..2, Z=-2..2
+        // 5x5 interior floor at Y=-5: rel X=-2..2, Z=-2..2
         int[][] floorPositions = {
-            { -2, -6, -2 }, { -1, -6, -2 }, { 0, -6, -2 }, { 1, -6, -2 }, { 2, -6, -2 },
-            { -2, -6,  0 }, {  0, -6,  0 }, {  2, -6,  0 },
-            { -2, -6,  2 }, {  0, -6,  2 }, {  2, -6,  2 },
+            { -2, -5, -2 }, { -1, -5, -2 }, { 0, -5, -2 }, { 1, -5, -2 }, { 2, -5, -2 },
+            { -2, -5,  0 }, {  0, -5,  0 }, {  2, -5,  0 },
+            { -2, -5,  2 }, {  0, -5,  2 }, {  2, -5,  2 },
         };
 
         for (int[] pos : floorPositions) {

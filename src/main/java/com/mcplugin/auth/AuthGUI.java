@@ -54,6 +54,11 @@ public class AuthGUI {
     // Prevents InventoryCloseEvent from interfering with the transition
     private static final Set<UUID> transitioningPlayers = ConcurrentHashMap.newKeySet();
 
+    // Players whose auth GUI is currently being opened (during view.open() call).
+    // Used to allow our own inventory in onInventoryOpen even when getMenuType()
+    // doesn't return MenuType.ANVIL (Leaf/Paper fork compatibility).
+    private static final Set<UUID> openingAuthPlayers = ConcurrentHashMap.newKeySet();
+
     // =========================
     // LOGOUT GUI TRACKING
     // =========================
@@ -92,6 +97,13 @@ public class AuthGUI {
     }
 
     // =========================
+    // OPENING AUTH GUI TRACKING
+    // =========================
+    public static boolean isOpeningAuthPlayer(UUID uuid) {
+        return openingAuthPlayers.contains(uuid);
+    }
+
+    // =========================
     // OPEN ANVIL GUI
     // =========================
     public static void openRegister(Player player) {
@@ -124,7 +136,15 @@ public class AuthGUI {
         // Slot 2: Confirm button — Nether Star with "Подтвердить"
         topInv.setItem(2, CONFIRM_STAR);
 
-        view.open();
+        // Mark as opening so onInventoryOpen allows this GUI even on forks
+        // where getMenuType() doesn't return MenuType.ANVIL
+        UUID uuid = player.getUniqueId();
+        openingAuthPlayers.add(uuid);
+        try {
+            view.open();
+        } finally {
+            openingAuthPlayers.remove(uuid);
+        }
 
         // Start a repeating task to keep slot 2 as our Nether Star
         // (the anvil recalculates the result slot whenever the rename text changes)
@@ -310,10 +330,12 @@ public class AuthGUI {
                 .title(Component.text("§8✎ Смена пароля"))
                 .build(player);
 
+        openingAuthPlayers.add(uuid);
         try {
             view.open();
         } finally {
             transitioningPlayers.remove(uuid); // Transition complete
+            openingAuthPlayers.remove(uuid);
         }
 
         // Устанавливаем предметы ПОСЛЕ view.open(), чтобы контейнер наковальни
@@ -348,10 +370,12 @@ public class AuthGUI {
         topInv.setItem(0, createLogoutInstructionItem());
         topInv.setItem(2, LOGOUT_CONFIRM_STAR);
 
+        openingAuthPlayers.add(uuid);
         try {
             view.open();
         } finally {
             transitioningPlayers.remove(uuid); // Transition complete
+            openingAuthPlayers.remove(uuid);
         }
 
         startLogoutResetTask(player);

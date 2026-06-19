@@ -35,7 +35,7 @@ public class ReactorEnergyManager {
             int dx = Math.abs(nLoc.getBlockX() - baseLocation.getBlockX());
             int dy = Math.abs(nLoc.getBlockY() - baseLocation.getBlockY());
             int dz = Math.abs(nLoc.getBlockZ() - baseLocation.getBlockZ());
-            if (dx <= 3 && dy <= 6 && dz <= 3) {
+            if (dx <= 3 && dy <= 5 && dz <= 3) {
                 nearbyCables.add(node);
             }
         }
@@ -55,7 +55,7 @@ public class ReactorEnergyManager {
 
         // Остаток в GENERATOR-буфер
         if (remaining > 0) {
-            Location coreLoc = baseLocation.clone().add(0, -2, 0);
+            Location coreLoc = baseLocation.clone().add(0, -1, 0);
             CableNode genNode = CableNetwork.getNode(coreLoc);
             if (genNode == null) {
                 CableNetwork.addNode(coreLoc);

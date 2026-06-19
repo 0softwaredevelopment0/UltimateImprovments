@@ -8,7 +8,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
+
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -283,6 +290,315 @@ public class UpdateChecker {
     // =========================
     // 📦 ЗАМЕНА JAR-ФАЙЛА
     // =========================
+    // =========================
+    // 🔍 /mp checkver — РУЧНАЯ ПРОВЕРКА ОБНОВЛЕНИЙ
+    // =========================
+
+    /**
+     * Выполняет асинхронную проверку GitHub на наличие новых релизов
+     * и отправляет результат отправителю команды (игроку или консоли).
+     * Если обновление доступно — показывает кликабельную кнопку [Обновить].
+     */
+    public static void checkOnly(CommandSender sender) {
+        Main plugin = Main.getInstance();
+        String senderName = sender instanceof Player ? ((Player) sender).getName() : "Console";
+        plugin.getLogger().info("[Updater] Manual version check requested by " + senderName);
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                String dbTag = getStoredTag();
+                String pluginVersion = plugin.getDescription().getVersion();
+
+                // HTTP-запрос к GitHub API
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(API_URL))
+                        .header("Accept", "application/vnd.github.v3+json")
+                        .header("User-Agent", USER_AGENT)
+                        .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
+                        .GET()
+                        .build();
+
+                HttpResponse<String> response = client.send(request,
+                        HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage("§4❌ §cGitHub API вернул HTTP " + response.statusCode());
+                        sender.sendMessage("§8┃ §7Возможно, превышен лимит запросов или репозиторий недоступен.");
+                    });
+                    plugin.getLogger().warning("[Updater] Manual check: GitHub API returned HTTP "
+                            + response.statusCode());
+                    return;
+                }
+
+                JsonObject release = JsonParser.parseString(response.body()).getAsJsonObject();
+                String githubTag = release.get("tag_name").getAsString();
+                String releaseName = release.has("name") && !release.get("name").isJsonNull()
+                        ? release.get("name").getAsString()
+                        : githubTag;
+                String releaseUrl = release.get("html_url").getAsString();
+                String releaseBody = release.has("body") && !release.get("body").isJsonNull()
+                        ? release.get("body").getAsString()
+                        : "";
+
+                boolean isUpdateAvailable = !githubTag.equals(dbTag);
+                boolean isFirstRun = dbTag.isEmpty();
+
+                // Отправляем результат на главном потоке
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage("");
+                    sender.sendMessage("§6═══════════════════════════════════");
+                    sender.sendMessage("§6  ✦ §fMC-Plugin §7— Проверка обновлений");
+                    sender.sendMessage("§6═══════════════════════════════════");
+                    sender.sendMessage("");
+                    sender.sendMessage("§7Текущая версия:  §f" + pluginVersion);
+                    sender.sendMessage("§7Последний релиз: §f" + githubTag);
+
+                    if (isFirstRun) {
+                        sender.sendMessage("");
+                        sender.sendMessage("§eℹ §7Это первый запуск проверки обновлений.");
+                        sender.sendMessage("§7Релиз §f" + githubTag + "§7 будет загружен автоматически при старте.");
+                    } else if (isUpdateAvailable) {
+                        sender.sendMessage("");
+                        sender.sendMessage("§a✨ Доступно обновление! §f" + releaseName);
+                        sender.sendMessage("§7Было: §f" + dbTag + " §7→ Стало: §a" + githubTag);
+
+                        if (!releaseBody.isEmpty()) {
+                            // Показываем первые 3 строки changelog'а
+                            String[] lines = releaseBody.split("\n");
+                            int shown = 0;
+                            for (String line : lines) {
+                                if (shown >= 5) break;
+                                String trimmed = line.trim();
+                                if (!trimmed.isEmpty()) {
+                                    sender.sendMessage("§8  ┃ §7" + (trimmed.length() > 60
+                                            ? trimmed.substring(0, 57) + "..." : trimmed));
+                                    shown++;
+                                }
+                            }
+                        }
+
+                        sender.sendMessage("");
+
+                        // Кликабельная кнопка обновления (только для игроков)
+                        if (sender instanceof Player) {
+                            TextComponent updateButton = new TextComponent("§8  §2[§a✔ Обновить плагин§2]");
+                            updateButton.setClickEvent(new ClickEvent(
+                                    ClickEvent.Action.RUN_COMMAND,
+                                    "/mp checkver update"
+                            ));
+                            updateButton.setHoverEvent(new HoverEvent(
+                                    HoverEvent.Action.SHOW_TEXT,
+                                    new ComponentBuilder("§aНажмите чтобы скачать и установить обновление\n")
+                                            .append("§7Релиз: §f" + releaseName + "\n")
+                                            .append("§7После установки потребуется перезапуск сервера")
+                                            .create()
+                            ));
+                            ((Player) sender).spigot().sendMessage(updateButton);
+
+                            sender.sendMessage("§8  §7или введите §f/mp checkver update");
+                        } else {
+                            sender.sendMessage("§7Для обновления введите: §f/mp checkver update");
+                        }
+                    } else {
+                        sender.sendMessage("");
+                        sender.sendMessage("§2✔ §aУ вас последняя версия плагина!");
+                    }
+
+                    sender.sendMessage("");
+                    sender.sendMessage("§6═══════════════════════════════════");
+                    sender.sendMessage("");
+                });
+
+            } catch (java.net.UnknownHostException e) {
+                plugin.getLogger().warning("[Updater] Manual check failed: DNS resolution error");
+                e.printStackTrace();
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage("§4❌ §cОшибка соединения с GitHub!");
+                    sender.sendMessage("§8┃ §7Не удалось разрешить DNS-имя api.github.com");
+                    sender.sendMessage("§8┃ §7Проверьте интернет-соединение сервера.");
+                });
+            } catch (java.net.http.HttpTimeoutException e) {
+                plugin.getLogger().warning("[Updater] Manual check failed: Connection timeout");
+                e.printStackTrace();
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage("§4❌ §cТаймаут соединения с GitHub!");
+                    sender.sendMessage("§8┃ §7Сервер GitHub не ответил за " + TIMEOUT_SECONDS + " сек.");
+                    sender.sendMessage("§8┃ §7Проверьте интернет-соединение или попробуйте позже.");
+                });
+            } catch (Exception e) {
+                plugin.getLogger().warning("[Updater] Manual check failed: " + e.getMessage());
+                e.printStackTrace();
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage("§4❌ §cОшибка при проверке обновлений!");
+                    sender.sendMessage("§8┃ §7" + e.getClass().getSimpleName() + ": " + e.getMessage());
+                    sender.sendMessage("§8┃ §7Детали в консоли сервера.");
+                });
+            }
+        });
+    }
+
+    // =========================
+    // 📥 /mp checkver update — РУЧНАЯ ЗАГРУЗКА ОБНОВЛЕНИЯ
+    // =========================
+
+    /**
+     * Выполняет асинхронную загрузку и замену JAR из последнего GitHub-релиза.
+     * Результат отправляется отправителю команды.
+     */
+    public static void manualDownload(CommandSender sender) {
+        Main plugin = Main.getInstance();
+        String senderName = sender instanceof Player ? ((Player) sender).getName() : "Console";
+        plugin.getLogger().info("[Updater] Manual update requested by " + senderName);
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                File pluginDir = plugin.getDataFolder().getParentFile();
+                File currentJar = plugin.getPluginFile();
+
+                if (currentJar == null || !currentJar.exists()) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage("§4❌ §cНе удалось найти текущий JAR-файл плагина!");
+                    });
+                    return;
+                }
+
+                // Очистка orphaned файлов
+                cleanupOrphanedFiles(pluginDir, currentJar);
+
+                // HTTP-запрос к GitHub API
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(API_URL))
+                        .header("Accept", "application/vnd.github.v3+json")
+                        .header("User-Agent", USER_AGENT)
+                        .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
+                        .GET()
+                        .build();
+
+                HttpResponse<String> response = client.send(request,
+                        HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage("§4❌ §cGitHub API вернул HTTP " + response.statusCode());
+                    });
+                    return;
+                }
+
+                JsonObject release = JsonParser.parseString(response.body()).getAsJsonObject();
+                String githubTag = release.get("tag_name").getAsString();
+
+                // Проверяем — не та же ли версия уже установлена
+                String dbTag = getStoredTag();
+                if (githubTag.equals(dbTag)) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage("§2✔ §aЭта версия уже установлена! (§f" + githubTag + "§a)");
+                    });
+                    return;
+                }
+
+                // Поиск JAR-ассета
+                String downloadUrl = findJarAsset(release);
+                if (downloadUrl == null) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage("§4❌ §cВ релизе " + githubTag + " не найден JAR-файл!");
+                    });
+                    return;
+                }
+
+                // Статус: загрузка
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage("§e⟳ §7Загрузка обновления §f" + githubTag + "§7...");
+                });
+
+                // Скачивание JAR
+                File tempFile = new File(pluginDir,
+                        plugin.getDescription().getName() + ".jar.update");
+
+                HttpRequest downloadRequest = HttpRequest.newBuilder()
+                        .uri(URI.create(downloadUrl))
+                        .header("Accept", "application/octet-stream")
+                        .timeout(Duration.ofSeconds(120))
+                        .GET()
+                        .build();
+
+                HttpResponse<InputStream> downloadResponse = client.send(downloadRequest,
+                        HttpResponse.BodyHandlers.ofInputStream());
+
+                if (downloadResponse.statusCode() != 200
+                        && downloadResponse.statusCode() != 302) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage("§4❌ §cОшибка загрузки: HTTP "
+                                + downloadResponse.statusCode());
+                    });
+                    return;
+                }
+
+                long totalBytes = 0;
+                try (InputStream in = downloadResponse.body();
+                     FileOutputStream out = new FileOutputStream(tempFile)) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, read);
+                        totalBytes += read;
+                    }
+                }
+
+                final long downloadedKB = totalBytes / 1024;
+
+                // Замена JAR
+                boolean replaced = replaceJar(plugin, currentJar, tempFile, githubTag);
+
+                if (replaced) {
+                    saveStoredTag(githubTag);
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage("");
+                        sender.sendMessage("§6═══════════════════════════════════");
+                        sender.sendMessage("§6  ✦ §aОбновление установлено!");
+                        sender.sendMessage("§6═══════════════════════════════════");
+                        sender.sendMessage("");
+                        sender.sendMessage("§7Релиз:    §f" + githubTag);
+                        sender.sendMessage("§7Загружено: §f" + downloadedKB + " KB");
+                        sender.sendMessage("");
+                        sender.sendMessage("§c⚠ Перезапустите сервер для применения обновления!");
+                        sender.sendMessage("");
+                    });
+                } else {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage("§4❌ §cНе удалось установить обновление!");
+                        sender.sendMessage("§8┃ §7Детали в консоли сервера.");
+                    });
+                }
+
+            } catch (java.net.UnknownHostException e) {
+                plugin.getLogger().warning("[Updater] Manual download failed: DNS resolution error");
+                e.printStackTrace();
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage("§4❌ §cОшибка соединения с GitHub!");
+                    sender.sendMessage("§8┃ §7Не удалось разрешить DNS-имя. Проверьте интернет.");
+                });
+            } catch (java.net.http.HttpTimeoutException e) {
+                plugin.getLogger().warning("[Updater] Manual download failed: Connection timeout");
+                e.printStackTrace();
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage("§4❌ §cТаймаут соединения с GitHub!");
+                    sender.sendMessage("§8┃ §7Проверьте интернет-соединение или попробуйте позже.");
+                });
+            } catch (Exception e) {
+                plugin.getLogger().warning("[Updater] Manual download failed: " + e.getMessage());
+                e.printStackTrace();
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage("§4❌ §cОшибка при загрузке обновления!");
+                    sender.sendMessage("§8┃ §7" + e.getClass().getSimpleName() + ": " + e.getMessage());
+                    sender.sendMessage("§8┃ §7Детали в консоли сервера.");
+                });
+            }
+        });
+    }
+
     /** @return true если замена прошла успешно */
     private static boolean replaceJar(Main plugin, File currentJar, File updateFile, String tagName) {
         if (currentJar == null || !currentJar.exists()) {

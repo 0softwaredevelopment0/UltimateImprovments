@@ -223,11 +223,23 @@ public class DatabaseInit {
                 );
             """);
 
-            // =========================
-            // 🏠 PLAYER HOMES
-            // =========================
-            st.execute("""
-                CREATE TABLE IF NOT EXISTS player_homes (
+        // =========================
+        // 📝 NOTES
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS notes (
+                player_uuid TEXT NOT NULL,
+                slot_number INTEGER NOT NULL,
+                content TEXT NOT NULL DEFAULT '',
+                PRIMARY KEY (player_uuid, slot_number)
+            );
+        """);
+
+        // =========================
+        // 🏠 PLAYER HOMES
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS player_homes (
                     uuid TEXT NOT NULL,
                     home_name TEXT NOT NULL,
                     world TEXT NOT NULL,

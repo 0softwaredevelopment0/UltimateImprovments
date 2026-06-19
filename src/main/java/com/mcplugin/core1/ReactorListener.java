@@ -1,12 +1,11 @@
 package com.mcplugin.core1;
 
+import com.mcplugin.features.lightning.LightningManager;
+import com.mcplugin.features.lightning.LightningStructure;
 import com.mcplugin.features.magnet.MagnetManager;
 import com.mcplugin.features.magnet.MagnetStructure;
+import com.mcplugin.structure.StructureTemplate;
 import com.mcplugin.util.LocationUtil;
-
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,8 +21,14 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 public class ReactorListener implements Listener {
+
+    // =========================
+    // TEMPLATE LOADING FLAG (предотвращает повторные попытки при ошибке загрузки)
+    // =========================
+    private static boolean templatesLoaded = false;
 
     // =========================
     // REACTOR BLOCKS (for monitoring)
@@ -46,7 +51,7 @@ public class ReactorListener implements Listener {
     };
 
     // =========================
-    // ITEM FRAME INTERACT → CHAT MENU
+    // ITEM FRAME INTERACT → AUTO-DETECT + ASSEMBLE
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onItemFrameInteract(PlayerInteractEntityEvent e) {
@@ -60,11 +65,11 @@ public class ReactorListener implements Listener {
         Player player = e.getPlayer();
 
         // =========================
-        // SHIFT+ПКМ — открыть меню сборки
+        // SHIFT+ПКМ — авто-определение и сборка (без меню)
         // =========================
         if (player.isSneaking()) {
             e.setCancelled(true);
-            openAssemblyMenu(player, frame);
+            autoDetectAndAssemble(player, frame);
             return;
         }
 
@@ -92,8 +97,16 @@ public class ReactorListener implements Listener {
             return;
         }
 
+        // Проверка: активная структура молний?
+        Location lightningCenter = LightningStructure.findCenter(clicked.getLocation());
+        if (lightningCenter != null && LightningManager.isActive(lightningCenter)) {
+            player.sendMessage("§8[§e⚡ Молнии§8] §7Активна §8| §f"
+                    + lightningCenter.getBlockX() + " " + lightningCenter.getBlockY() + " " + lightningCenter.getBlockZ());
+            return;
+        }
+
         // Подсказка
-        player.sendMessage("§7Нажмите §fSHIFT+ПКМ§7 по рамке, чтобы открыть меню сборки");
+        player.sendMessage("§7Нажмите §fSHIFT+ПКМ§7 по рамке, чтобы собрать структуру");
     }
 
     // =========================
@@ -176,70 +189,106 @@ public class ReactorListener implements Listener {
 
 
     // =========================
-    // OPEN ASSEMBLY MENU
+    // AUTO-DETECT STRUCTURE TYPE & ASSEMBLE
+    // Сканирует радиус 5 блоков от рамки и сравнивает с NBT-шаблонами.
     // =========================
-    private void openAssemblyMenu(Player player, ItemFrame frame) {
+    private void autoDetectAndAssemble(Player player, ItemFrame frame) {
 
-        // =========================
-        // Блок, к которому прикреплена рамка (противоположно её лицу)
-        // =========================
-        Block attachedBlock = frame.getLocation().getBlock().getRelative(
-                frame.getFacing().getOppositeFace()
-        );
-        Location attachedLoc = LocationUtil.normalize(attachedBlock.getLocation());
-
-        // =========================
-        // ПОИСК ЦЕНТРА РЕАКТОРА ПО АЛМАЗНОМУ БЛОКУ (без валидации)
-        // =========================
-        Location reactorCenter = ReactorStructure.locateCenter(frame.getLocation());
-
-        // =========================
-        // МЕНЮ СБОРКИ (валидация только при клике на кнопку)
-        // =========================
-        player.sendMessage(Component.text(""));
-        player.sendMessage(Component.text("§6═══════════════════════════════"));
-        player.sendMessage(Component.text(""));
-        player.sendMessage(Component.text("    §6⛏ Выберите механизм для сборки:"));
-        player.sendMessage(Component.text(""));
-
-        // =========================
-        // РЕАКТОР (только если найден алмазный блок)
-        // =========================
-        if (reactorCenter != null) {
-            ReactorManager.setPendingAssembly(player, reactorCenter, frame, "dark_synthesis");
-
-            Component reactorOpt = Component.text("  ")
-                    .append(Component.text("§8[§6Реактор тёмного синтеза§8]")
-                            .clickEvent(ClickEvent.runCommand("/reactor assemble dark_synthesis"))
-                            .hoverEvent(HoverEvent.showText(
-                                    Component.text("§eРеактор тёмного синтеза\n§7Превращает алмаз и золото\n§7в древние обломки под давлением")
-                            ))
-                    )
-                    .append(Component.text(" §7- Реактор"));
-
-            player.sendMessage(reactorOpt);
-            player.sendMessage(Component.text(""));
+        Location frameLoc = LocationUtil.normalize(frame.getLocation());
+        if (frameLoc == null) {
+            player.sendMessage("§4❌ §cОшибка определения позиции рамки!");
+            return;
         }
 
         // =========================
-        // МАГНИТ
+        // 1. СКАНИРОВАНИЕ ПО NBT-ШАБЛОНАМ
+        // Загружаем шаблоны при первом вызове (однократно)
         // =========================
-        ReactorManager.setPendingAssembly(player, attachedLoc, frame, "magnet");
+        if (!templatesLoaded) {
+            StructureTemplate.initAll();
+            templatesLoaded = true;
+        }
 
-        Component magnetOpt = Component.text("  ")
-                .append(Component.text("§8[§bМагнит§8]")
-                        .clickEvent(ClickEvent.runCommand("/reactor assemble magnet"))
-                        .hoverEvent(HoverEvent.showText(
-                                Component.text("§bМагнит\n§7Плавно притягивает металлические предметы,\n§7игроков с металлом и мобов в металле\n§7Радиус: 9 блоков")
-                        ))
-                )
-                .append(Component.text(" §7- Магнит"));
+        // Проверка: были ли ошибки загрузки шаблонов
+        StructureTemplate lightningTmpl = StructureTemplate.get("lightning");
+        StructureTemplate reactorTmpl = StructureTemplate.get("reactor");
 
-        player.sendMessage(magnetOpt);
-        player.sendMessage(Component.text(""));
+        String lightningErr = StructureTemplate.getTemplateError("lightning");
+        String reactorErr = StructureTemplate.getTemplateError("reactor");
 
-        player.sendMessage(Component.text("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        player.sendMessage(Component.text(""));
+        if (lightningErr != null || reactorErr != null) {
+            player.sendMessage("§4⚠ §cОшибка загрузки NBT-шаблонов структур:");
+            if (lightningErr != null)
+                player.sendMessage("  §8• §eМолнии§8: §c" + lightningErr);
+            if (reactorErr != null)
+                player.sendMessage("  §8• §cРеактор§8: §c" + reactorErr);
+            player.sendMessage("§7Проверьте консоль сервера для деталей.");
+        }
+
+        // =========================
+        // 1a. Шаблон молний (lightning)
+        // =========================
+        if (lightningTmpl != null) {
+            Location center = lightningTmpl.findMatch(frameLoc, 5);
+            if (center != null) {
+                if (LightningManager.isActive(center)) {
+                    player.sendMessage("§e⚡ Структура молний уже собрана!");
+                    player.sendMessage("§7Команды: §f/mp str lightning enable§7/§cdisable");
+                    return;
+                }
+                player.sendMessage("§8[§e⚡ Молнии§8] §7Обнаружена структура молний — сборка...");
+                LightningManager.assemble(center, frame, player);
+                return;
+            }
+        }
+
+        // =========================
+        // 1b. Шаблон реактора (reactor)
+        // =========================
+        if (reactorTmpl != null) {
+            Location center = reactorTmpl.findMatch(frameLoc, 5);
+            if (center != null) {
+                ReactorManager reactor = ReactorManager.getInstance();
+                if (reactor != null) {
+                    Location existing = reactor.getReactorLocation();
+                    if (existing != null && existing.equals(center)) {
+                        player.sendMessage("§eРеактор уже активен на этом месте!");
+                        return;
+                    }
+                }
+                ReactorManager.setPendingAssembly(player, center, frame, "dark_synthesis");
+                player.sendMessage("§8[§cРеактор§8] §7Обнаружен реактор — сборка...");
+                player.performCommand("reactor assemble dark_synthesis");
+                return;
+            }
+        }
+
+        // =========================
+        // 2. ПРОВЕРКА: МАГНИТ (LODESTONE — не NBT, а мульти-блочный)
+        // =========================
+        Location attachedLoc = LocationUtil.normalize(
+                frame.getLocation().getBlock().getRelative(
+                        frame.getFacing().getOppositeFace()
+                ).getLocation()
+        );
+        if (attachedLoc != null && attachedLoc.getBlock().getType() == Material.LODESTONE) {
+            if (MagnetManager.isActive(attachedLoc)) {
+                player.sendMessage("§eМагнит уже активен на этом месте!");
+                return;
+            }
+            ReactorManager.setPendingAssembly(player, attachedLoc, frame, "magnet");
+            player.sendMessage("§8[§bМагнит§8] §7Обнаружен магнит — сборка...");
+            player.performCommand("reactor assemble magnet");
+            return;
+        }
+
+        // =========================
+        // 3. НИЧЕГО НЕ НАЙДЕНО
+        // =========================
+        player.sendMessage("§c❌ Структура не распознана!");
+        player.sendMessage("§7Убедитесь, что все блоки структуры соответствуют NBT-шаблону.");
+        player.sendMessage("§7Поддерживаются: громоотвод (молнии), LODESTONE (магнит),");
+        player.sendMessage("§7реактор (алмазная/золотая бочка с рамкой)");
     }
 
     // =========================
@@ -267,8 +316,8 @@ public class ReactorListener implements Listener {
         int dy = Math.abs(reactorLoc.getBlockY() - checkLoc.getBlockY());
         int dz = Math.abs(reactorLoc.getBlockZ() - checkLoc.getBlockZ());
 
-        // Structure is 7×7×7 from Y=-6 to Y=0 relative to frame
-        return dx <= 3 && dy <= 6 && dz <= 3;
+        // Structure is 5x6x6 from Y=-5 to Y=0 relative to frame
+        return dx <= 3 && dy <= 5 && dz <= 3;
     }
 
     // =========================

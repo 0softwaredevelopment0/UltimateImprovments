@@ -208,7 +208,8 @@ public class RadiationManager implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player player = e.getPlayer();
-        // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
+        // Сохраняем в БД перед удалением из памяти, чтобы радиация не терялась
+        saveToDB(player);
         radiationMap.remove(player.getUniqueId());
     }
 
@@ -260,14 +261,16 @@ public class RadiationManager implements Listener {
             // =========================
             // СВИНЦОВЫЙ ЩИТ УМЕНЬШАЕТ РАДИАЦИЮ
             // =========================
-            if (hasCustomItem(player.getInventory().getItemInMainHand(), Keys.LEAD_SHIELD)) {
+            if (hasCustomItem(player.getInventory().getItemInMainHand(), Keys.LEAD_SHIELD)
+                    || hasCustomItem(player.getInventory().getItemInOffHand(), Keys.LEAD_SHIELD)) {
                 rad = Math.max(0, rad - leadShieldReduction);
             }
 
             // =========================
             // ДОЗИМЕТР — ОТОБРАЖЕНИЕ В ACTIONBAR (Р/Ч)
             // =========================
-            if (dosimeterEnabled && hasCustomItem(player.getInventory().getItemInMainHand(), Keys.DOSIMETER)) {
+            if (dosimeterEnabled && (hasCustomItem(player.getInventory().getItemInMainHand(), Keys.DOSIMETER)
+                    || hasCustomItem(player.getInventory().getItemInOffHand(), Keys.DOSIMETER))) {
                 double roentgen = rad / 100.0;
                 player.sendActionBar(MessageUtil.parse("<white>Радиация: </white><gray>" + String.format(Locale.US, "%.1f", roentgen) + "</gray> <white>Р/Ч</white>"));
             }

@@ -209,8 +209,8 @@ public class ReactorCommand implements CommandExecutor {
         // =========================
         // NAME THE FUEL BARRELS
         // =========================
-        nameBarrel(pending.center(), 0, -4, -2, "§6Топливо: §bАлмазные блоки");
-        nameBarrel(pending.center(), 0, -4, 2, "§6Топливо: §eЗолотые блоки");
+        nameBarrel(pending.center(), 0, -3, -2, "§6Топливо: §bАлмазные блоки");
+        nameBarrel(pending.center(), 0, -3, 2, "§6Топливо: §eЗолотые блоки");
 
         player.sendMessage("§a✅ §fРеактор тёмного синтеза собран! §8(ID: " + reactor.getReactorId() + ")");
         player.sendMessage("§8┃ §7Температура ядра: §f" + reactor.getCoreTemp() + " C*");

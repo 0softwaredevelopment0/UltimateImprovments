@@ -182,7 +182,8 @@ public class ChgDimGUI implements Listener {
                 }
                 try {
                     var openInv = player.getOpenInventory();
-                    if (openInv.getMenuType() != MenuType.ANVIL) {
+                    // Use openMenus instead of getMenuType() == ANVIL for Leaf fork compatibility
+                    if (!openMenus.containsKey(uuid)) {
                         cancel();
                         resetTasks.remove(uuid);
                         return;
@@ -271,7 +272,7 @@ public class ChgDimGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
-        if (e.getView().getMenuType() != MenuType.ANVIL) return;
+        // Use openMenus instead of getMenuType() == ANVIL for Leaf fork compatibility
         if (!openMenus.containsKey(player.getUniqueId())) return;
 
         // Блокируем клики по любым слотам, кроме результата (слот 2)

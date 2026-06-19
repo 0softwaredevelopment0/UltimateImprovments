@@ -4,6 +4,7 @@ import com.mcplugin.Main;
 import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.core1.ReactorManager;
 import com.mcplugin.energy.crafting.EnergyWorkbenchManager;
+import com.mcplugin.features.lightning.LightningManager;
 import com.mcplugin.radiation.RadiationManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -38,6 +39,11 @@ public class MechanicsModule extends PluginModule {
         // RADIATION
         // =========================
         RadiationManager.init();
+
+        // =========================
+        // LIGHTNING STRUCTURE
+        // =========================
+        LightningManager.init();
     }
 
     @Override

@@ -26,6 +26,7 @@ public class CodePanelGUIListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!isOurGUI(event.getInventory())) return;
+        if (!isOurTitle(event.getView().getTitle())) return;
 
         int slot = event.getRawSlot();
         // Allow clicks in player's own inventory (slots >= GUI_SIZE)
@@ -63,7 +64,9 @@ public class CodePanelGUIListener implements Listener {
     // =========================
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getWhoClicked() instanceof Player && isOurGUI(event.getInventory())) {
+        if (event.getWhoClicked() instanceof Player
+                && isOurGUI(event.getInventory())
+                && isOurTitle(event.getView().getTitle())) {
             event.setCancelled(true);
         }
     }
@@ -76,6 +79,7 @@ public class CodePanelGUIListener implements Listener {
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player)) return;
         if (!isOurGUI(event.getInventory())) return;
+        if (!isOurTitle(event.getView().getTitle())) return;
         // Session не чистим — код сохраняется между открытиями
     }
 
@@ -234,5 +238,13 @@ public class CodePanelGUIListener implements Listener {
         if (inv.getSize() != CodePanelGUI.GUI_SIZE) return false;
         if (inv.getHolder() != null) return false; // our GUI has null holder
         return true;
+    }
+
+    /**
+     * Дополнительная проверка заголовка — чтобы не перехватывать
+     * чужие 54-слотовые GUI (например, NotesManager).
+     */
+    private static boolean isOurTitle(String title) {
+        return title != null && title.equals(CodePanelGUI.GUI_TITLE);
     }
 }

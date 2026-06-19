@@ -348,8 +348,8 @@ public class ReactorManager {
         // =========================
         Location base = reactorLocation;
 
-        boolean heating = isBulbPowered(base, -1, -1, -2);
-        boolean cooling = isBulbPowered(base, 1, -1, -2);
+        boolean heating = isBulbPowered(base, -1, 0, -2);
+        boolean cooling = isBulbPowered(base, 1, 0, -2);
 
         // =========================
         // BROADCAST STATE CHANGES (single messages)
@@ -405,8 +405,8 @@ public class ReactorManager {
         // INTEGRITY INDICATOR BULBS
         // (opposite heat/cool bulbs at Z=+2)
         // =========================
-        setBulbLit(base, -1, -1, 2, coreShInt < 100);
-        setBulbLit(base, 1, -1, 2, coreCaseInt < 100);
+        setBulbLit(base, -1, 0, 2, coreShInt < 100);
+        setBulbLit(base, 1, 0, 2, coreCaseInt < 100);
 
         // =========================
         // INTEGRITY WARNING (every 10 seconds)
@@ -433,8 +433,8 @@ public class ReactorManager {
 
         // =========================
         // RADIATION INSIDE CORE CHAMBER
-        // Игроки внутри камеры (5×5×6) получают радиацию от активного ядра.
-        // Камера: X -2..2, Y -6..-1, Z -2..2 относительно центра реактора.
+        // Игроки внутри камеры (5×6×6) получают радиацию от активного ядра.
+        // Камера: X -2..2, Y -5..0, Z -2..2 относительно центра реактора.
         // =========================
         if (coreTemp >= 1000) {
             int radiationAmount = Math.min(coreTemp / 500, 10);
@@ -444,7 +444,7 @@ public class ReactorManager {
                 Location ploc = player.getLocation();
                 int px = ploc.getBlockX(), py = ploc.getBlockY(), pz = ploc.getBlockZ();
                 if (px >= bx - 2 && px <= bx + 2
-                        && py >= by - 6 && py <= by - 1
+                        && py >= by - 5 && py <= by
                         && pz >= bz - 2 && pz <= bz + 2) {
                     RadiationManager.addRadiation(player, radiationAmount);
                 }
@@ -492,7 +492,7 @@ public class ReactorManager {
         // ENERGY GENERATION
         // Генерация только при coreTemp > 1000.
         // Выработка = 90% от текущей температуры ядра за тик.
-        // Энергия распределяется по кабелям в радиусе структуры (±3 X/Z, ±6 Y).
+        // Энергия распределяется по кабелям в радиусе структуры (±3 X/Z, ±5 Y).
         // =========================
         if (coreTemp > 1000) {
             double energyPerTick = (double) coreTemp * 0.9;
@@ -510,7 +510,7 @@ public class ReactorManager {
                     int dx = Math.abs(nLoc.getBlockX() - base.getBlockX());
                     int dy = Math.abs(nLoc.getBlockY() - base.getBlockY());
                     int dz = Math.abs(nLoc.getBlockZ() - base.getBlockZ());
-                    if (dx <= 3 && dy <= 6 && dz <= 3) {
+                    if (dx <= 3 && dy <= 5 && dz <= 3) {
                         nearbyCables.add(node);
                     }
                 }
@@ -528,7 +528,7 @@ public class ReactorManager {
                     }
                     // Остаток энергии → GENERATOR-буфер
                     if (remaining > 0) {
-                        Location coreLoc = base.clone().add(0, -2, 0);
+                        Location coreLoc = base.clone().add(0, -1, 0);
                         CableNode genNode = CableNetwork.getNode(coreLoc);
                         if (genNode == null) {
                             CableNetwork.addNode(coreLoc);
@@ -543,7 +543,7 @@ public class ReactorManager {
                     }
                 } else {
                     // Нет кабелей рядом → вся энергия в GENERATOR-буфер
-                    Location coreLoc = base.clone().add(0, -2, 0);
+                    Location coreLoc = base.clone().add(0, -1, 0);
                     CableNode genNode = CableNetwork.getNode(coreLoc);
                     if (genNode == null) {
                         CableNetwork.addNode(coreLoc);
@@ -580,7 +580,7 @@ public class ReactorManager {
         }
 
         Location base = reactorLocation;
-        Location coreCenter = base.clone().add(0.5, -3.5, 0.5);
+        Location coreCenter = base.clone().add(0.5, -2.5, 0.5);
 
         // =========================
         // PRESSURE PARTICLES & RADIATION
@@ -859,8 +859,8 @@ public class ReactorManager {
         if (!enabled || !valid || reactorLocation == null) return;
 
         Location base = reactorLocation;
-        // Core center: (0.5, -3.5, 0.5) — user-specified position
-        Location coreCenter = base.clone().add(0.5, -3.5, 0.5);
+        // Core center: (0.5, -2.5, 0.5) — midpoint between upper core (Y=-1) and lower core (Y=-5)
+        Location coreCenter = base.clone().add(0.5, -2.5, 0.5);
 
         // =========================
         // CORE TEMPERATURE PARTICLES
@@ -889,7 +889,7 @@ public class ReactorManager {
         // HIGH TEMP EFFECTS
         // =========================
         if (coreTemp >= 1000 && coreTemp <= 4999) {
-            Location diamondLoc = base.clone().add(0, -3, -2);
+            Location diamondLoc = base.clone().add(0, -2, -2);
             if (diamondLoc.getBlock().getType() == Material.DIAMOND_BLOCK) {
                 base.getWorld().spawnParticle(
                         Particle.END_ROD,
@@ -991,20 +991,20 @@ public class ReactorManager {
                     ? "§cВзрыв неизбежен!"
                     : noSignal;
 
-            setSignText(base, 0, -5, -3, 0, blank);
-            setSignText(base, 0, -5, -3, 1, meltdownLine);
-            setSignText(base, 0, -5, -3, 2, blank);
-            setSignText(base, 0, -5, -3, 3, blank);
+            setSignText(base, 0, -4, -3, 0, blank);
+            setSignText(base, 0, -4, -3, 1, meltdownLine);
+            setSignText(base, 0, -4, -3, 2, blank);
+            setSignText(base, 0, -4, -3, 3, blank);
 
-            setSignText(base, -1, -5, -3, 0, blank);
-            setSignText(base, -1, -5, -3, 1, meltdownLine);
-            setSignText(base, -1, -5, -3, 2, blank);
-            setSignText(base, -1, -5, -3, 3, blank);
+            setSignText(base, -1, -4, -3, 0, blank);
+            setSignText(base, -1, -4, -3, 1, meltdownLine);
+            setSignText(base, -1, -4, -3, 2, blank);
+            setSignText(base, -1, -4, -3, 3, blank);
 
-            setSignText(base, 1, -5, -3, 0, blank);
-            setSignText(base, 1, -5, -3, 1, meltdownLine);
-            setSignText(base, 1, -5, -3, 2, blank);
-            setSignText(base, 1, -5, -3, 3, blank);
+            setSignText(base, 1, -4, -3, 0, blank);
+            setSignText(base, 1, -4, -3, 1, meltdownLine);
+            setSignText(base, 1, -4, -3, 2, blank);
+            setSignText(base, 1, -4, -3, 3, blank);
             return;
         }
 
@@ -1024,36 +1024,36 @@ public class ReactorManager {
         // CENTER SIGN — CORE DATA
         // Wall signs are on the SOUTH face at Y=-5 (rel Z=-3, Y=-5)
         // =========================
-        setSignText(base, 0, -5, -3, 0, color + "Данные ядра");
-        setSignText(base, 0, -5, -3, 1, color + "T: " + displayCoreTempInt + " C*");
-        setSignText(base, 0, -5, -3, 2, color + "P: " + displayCorePressInt + " kPa");
-        setSignText(base, 0, -5, -3, 3, color + "I: " + displayCoreShIntInt + " %");
+        setSignText(base, 0, -4, -3, 0, color + "Данные ядра");
+        setSignText(base, 0, -4, -3, 1, color + "T: " + displayCoreTempInt + " C*");
+        setSignText(base, 0, -4, -3, 2, color + "P: " + displayCorePressInt + " kPa");
+        setSignText(base, 0, -4, -3, 3, color + "I: " + displayCoreShIntInt + " %");
 
         // =========================
         // LEFT SIGN — CASE DATA
         // =========================
-        setSignText(base, -1, -5, -3, 0, color + "Данные корпуса");
-        setSignText(base, -1, -5, -3, 1, color + "T: " + displayCoreCaseTempInt + " C*");
-        setSignText(base, -1, -5, -3, 2, color + "P: " + displayCoreCasePressInt + " kPa");
-        setSignText(base, -1, -5, -3, 3, color + "I: " + displayCoreCaseIntInt + " %");
+        setSignText(base, -1, -4, -3, 0, color + "Данные корпуса");
+        setSignText(base, -1, -4, -3, 1, color + "T: " + displayCoreCaseTempInt + " C*");
+        setSignText(base, -1, -4, -3, 2, color + "P: " + displayCoreCasePressInt + " kPa");
+        setSignText(base, -1, -4, -3, 3, color + "I: " + displayCoreCaseIntInt + " %");
 
         // =========================
         // RIGHT SIGN — RECIPE DATA
         // =========================
-        setSignText(base, 1, -5, -3, 0, color + "Данные рецепта");
-        setSignText(base, 1, -5, -3, 1, color + "P: " + displayRecipeTimeInt + " %");
+        setSignText(base, 1, -4, -3, 0, color + "Данные рецепта");
+        setSignText(base, 1, -4, -3, 1, color + "P: " + displayRecipeTimeInt + " %");
 
         if (displayRecipeTimeInt <= 0) {
-            setSignText(base, 1, -5, -3, 2, color + "S: Бездействует");
+            setSignText(base, 1, -4, -3, 2, color + "S: Бездействует");
         } else if (displayRecipeTimeInt < recipeTimeMax) {
-            setSignText(base, 1, -5, -3, 2, color + "S: Готовится");
+            setSignText(base, 1, -4, -3, 2, color + "S: Готовится");
         } else {
-            setSignText(base, 1, -5, -3, 2, color + "S: Завершён");
+            setSignText(base, 1, -4, -3, 2, color + "S: Завершён");
         }
 
         // Износ реактора
         int displayWear = (int) Math.round(displayReactorWear);
-        setSignText(base, 1, -5, -3, 3, color + "W: " + displayWear + " %");
+        setSignText(base, 1, -4, -3, 3, color + "W: " + displayWear + " %");
     }
 
     // =========================
@@ -1069,14 +1069,14 @@ public class ReactorManager {
         // ПОТРЕБЛЕНИЕ ТОПЛИВА ИЗ БОЧЕК
         // (tickRecipe() уже проверил, что топливо есть)
         // =========================
-        consumeBarrelFuel(base, 0, -4, -2, Material.DIAMOND_BLOCK);
-        consumeBarrelFuel(base, 0, -4, 2, Material.GOLD_BLOCK);
+        consumeBarrelFuel(base, 0, -3, -2, Material.DIAMOND_BLOCK);
+        consumeBarrelFuel(base, 0, -3, 2, Material.GOLD_BLOCK);
 
         // =========================
         // ВЫБРОС РЕЗУЛЬТАТА В ЦЕНТРЕ ЯДРА
         // Древний обломок выпадает как предмет в центре ядра (0.5, -3.5, 0.5)
         // =========================
-        Location dropLoc = base.clone().add(0.5, -3.5, 0.5);
+        Location dropLoc = base.clone().add(0.5, -2.5, 0.5);
         dropLoc.getWorld().dropItemNaturally(dropLoc, new ItemStack(Material.ANCIENT_DEBRIS, 1));
 
         // =========================
@@ -1148,15 +1148,15 @@ public class ReactorManager {
         if (reactorLocation == null) return;
 
         Location base = reactorLocation;
-        Location coreCenter = base.clone().add(0, -3, 0);
+        Location coreCenter = base.clone().add(0, -2, 0);
 
         // Радиация от взрыва через RadiationManager
         RadiationManager.addRadiationNear(coreCenter, 1.0, 6400);
         RadiationManager.addRadiationNear(coreCenter, 20.0, 3200);
 
         // Destroy core blocks
-        base.clone().add(0, -2, 0).getBlock().setType(Material.AIR);
-        base.clone().add(0, -6, 0).getBlock().setType(Material.AIR);
+        base.clone().add(0, -1, 0).getBlock().setType(Material.AIR);
+        base.clone().add(0, -5, 0).getBlock().setType(Material.AIR);
 
         // Explosion (charged creeper)
         coreCenter.getWorld().spawn(coreCenter, org.bukkit.entity.Creeper.class, creeper -> {
@@ -1270,8 +1270,8 @@ public class ReactorManager {
         if (reactorLocation == null) return false;
         Location base = reactorLocation;
         // Проверяем алмазы в левой бочке (0, -4, -2) и золото в правой бочке (0, -4, 2)
-        return checkBarrelForFuel(base, 0, -4, -2, Material.DIAMOND_BLOCK, 1)
-            && checkBarrelForFuel(base, 0, -4, 2, Material.GOLD_BLOCK, 1);
+        return checkBarrelForFuel(base, 0, -3, -2, Material.DIAMOND_BLOCK, 1)
+            && checkBarrelForFuel(base, 0, -3, 2, Material.GOLD_BLOCK, 1);
     }
 
     /**

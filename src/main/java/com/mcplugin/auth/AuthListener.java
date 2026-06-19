@@ -96,11 +96,12 @@ public class AuthListener implements Listener {
         for (Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
             if (online.getName().equalsIgnoreCase(newPlayerName)) {
                 String dupMessage = getConfigMessage("duplicate_name_kick",
-                        "§c❌ Игрок с таким ником уже на сервере!\n§7Пожалуйста, зайдите под другим ником.");
+                        "<red>❌ Игрок с таким ником уже на сервере!</red>\n<gray>Пожалуйста, зайдите под другим ником.</gray>");
+                String dupParsed = MessageUtil.legacy(dupMessage);
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
                         "§6✦ MC-Plugin\n" +
                         "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
-                        dupMessage + "\n\n" +
+                        dupParsed + "\n\n" +
                         "§7━━━━━━━━━━━━━━━━━━━━━"
                 );
                 return;
@@ -513,15 +514,22 @@ public class AuthListener implements Listener {
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
 
+        UUID uuid = player.getUniqueId();
+
+        // 🛡 If we are currently opening an auth GUI, allow it regardless of
+        //    getMenuType() result — fixes Leaf/Paper fork compatibility where
+        //    ANVIL inventories may report a different MenuType.
+        if (AuthGUI.isOpeningAuthPlayer(uuid)) return;
+
         // Allow change password GUI
-        if (AuthGUI.isChangePasswordPlayer(player.getUniqueId())) {
+        if (AuthGUI.isChangePasswordPlayer(uuid)) {
             if (isAuthGUI(event)) return;
             event.setCancelled(true);
             return;
         }
 
         // Allow logout GUI for authenticated players
-        if (AuthGUI.isLogoutPlayer(player.getUniqueId())) {
+        if (AuthGUI.isLogoutPlayer(uuid)) {
             if (isAuthGUI(event)) return;
             event.setCancelled(true);
             return;
