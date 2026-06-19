@@ -60,6 +60,7 @@ public class ItemCommand {
     private static void handleList(Player player, ItemStack heldItem) {
         double current = IntegrityManager.getCurrentIntegrity(heldItem);
         double max = IntegrityManager.getMaxIntegrity(heldItem);
+        double pctCurrent = (current / max) * 100.0;
         String itemName = heldItem.hasItemMeta() && heldItem.getItemMeta().hasDisplayName()
                 ? heldItem.getItemMeta().getDisplayName()
                 : heldItem.getType().name().toLowerCase().replace("_", " ");
@@ -70,8 +71,8 @@ public class ItemCommand {
         player.sendMessage("§6  ✦ §fИнформация о целостности предмета");
         player.sendMessage("§6═══════════════════════════════════");
         player.sendMessage("§7Предмет: §f" + itemName);
-        player.sendMessage("§7Текущая: §a" + IntegrityManager.formatPercent(current) + "%");
-        player.sendMessage("§7Макс:    §a" + IntegrityManager.formatPercent(max) + "%");
+        player.sendMessage("§7Текущая: §a" + IntegrityManager.formatPercent(pctCurrent) + "%");
+        player.sendMessage("§7Макс:    §a100.000%");
         player.sendMessage("§6═══════════════════════════════════");
     }
 

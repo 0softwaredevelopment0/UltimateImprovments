@@ -40,6 +40,7 @@ build/
 
 # Project exclude paths
 /.gradle/__pycache__/
+__pycache__/
 nul
 
 ### Extra ignores ###

@@ -393,9 +393,15 @@ public class AuthListener implements Listener {
             return;
         }
 
-        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 4);
+        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
+        int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
         if (newPassword.length() < minLen) {
             player.sendMessage("§c❌ Пароль должен быть не менее " + minLen + " символов!");
+            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
+            return;
+        }
+        if (newPassword.length() > maxLen) {
+            player.sendMessage("§c❌ Пароль не должен превышать " + maxLen + " символов!");
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
@@ -425,9 +431,15 @@ public class AuthListener implements Listener {
             return;
         }
 
-        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 4);
+        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
+        int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
         if (password.length() < minLen) {
             player.sendMessage("§c❌ Пароль должен быть не менее " + minLen + " символов!");
+            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
+            return;
+        }
+        if (password.length() > maxLen) {
+            player.sendMessage("§c❌ Пароль не должен превышать " + maxLen + " символов!");
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }

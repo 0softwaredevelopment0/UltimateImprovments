@@ -17,6 +17,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -28,7 +29,7 @@ import java.util.UUID;
  * - Наковальня: ремонт материалом повышает целостность, объединение двух предметов суммирует
  * - Точило: объединение двух предметов суммирует целостность
  * - Верстак / инвентарь: объединение двух одинаковых предметов суммирует целостность
- * - Получение опыта: предмет с Шёлковым касанием восстанавливает целостность
+ * - Получение опыта: предмет с Починкой (Mending) восстанавливает целостность
  */
 public class IntegrityCombineListener implements Listener {
 
@@ -55,7 +56,6 @@ public class IntegrityCombineListener implements Listener {
 
         // =========================
         // СЦЕНАРИЙ 1: Крафт материалом (предмет + материал, например алмазная кирка + алмаз)
-        // Каждая единица материала даёт +N% целостности новому предмету
         // =========================
         if (isRepairMaterial(slot0.getType(), slot1.getType())) {
             if (!IntegrityManager.isAnvilRepairEnabled()) return;
@@ -68,8 +68,6 @@ public class IntegrityCombineListener implements Listener {
 
             // ===== НОВАЯ МЕХАНИКА: крафт материалом =====
             if (IntegrityManager.isAnvilMaterialCraftEnabled()) {
-                // Ванильная наковальня потребляет 1 единицу материала за операцию,
-                // поэтому используем 1, а не slot1.getAmount() (чтобы избежать эксплойта)
                 int materialCount = 1;
                 double bonusPerMaterial = IntegrityManager.getAnvilMaterialCraftBonus();
                 double totalBonus = materialCount * bonusPerMaterial;
@@ -79,17 +77,21 @@ public class IntegrityCombineListener implements Listener {
                 IntegrityManager.setCurrentIntegrity(result, newIntegrity);
                 IntegrityManager.updateItemLore(result);
 
+                double pct = newIntegrity;
+                double bonusPct = totalBonus;
+
                 Player player = getPlayerFromAnvil(event);
                 if (player != null) {
                     String msg = IntegrityManager.getAnvilMaterialCraftMessage()
-                            .replace("{current}", IntegrityManager.formatPercent(newIntegrity))
-                            .replace("{bonus}", IntegrityManager.formatPercent(totalBonus));
+                            .replace("{current}", IntegrityManager.formatPercent(pct))
+                            .replace("{bonus}", IntegrityManager.formatPercent(bonusPct));
                     if (canSendAnvilMessage(player)) {
                         player.sendMessage(MessageUtil.parse(msg));
                     }
                 }
 
                 event.setResult(result);
+                setAnvilCost(inv, 0, 1);
                 return;
             }
 
@@ -104,7 +106,6 @@ public class IntegrityCombineListener implements Listener {
 
             double newCurrent = IntegrityManager.getCurrentIntegrity(result);
 
-            // Отправляем сообщение игроку (с кулдауном)
             Player player = getPlayerFromAnvil(event);
             if (player != null) {
                 String msg = IntegrityManager.getAnvilRepairMessage()
@@ -115,6 +116,7 @@ public class IntegrityCombineListener implements Listener {
             }
 
             event.setResult(result);
+            setAnvilCost(inv, 0, 1);
             return;
         }
 
@@ -154,6 +156,7 @@ public class IntegrityCombineListener implements Listener {
             }
 
             event.setResult(result);
+            setAnvilCost(inv, 0, 2);
         }
     }
 
@@ -172,7 +175,6 @@ public class IntegrityCombineListener implements Listener {
         if (slot0 == null || slot0.getType() == Material.AIR) return;
         if (slot1 == null || slot1.getType() == Material.AIR) return;
 
-        // Проверяем, что это два одинаковых предмета с прочностью
         if (slot0.getType() != slot1.getType()) return;
         if (slot0.getType().getMaxDurability() <= 0) return;
 
@@ -192,11 +194,9 @@ public class IntegrityCombineListener implements Listener {
 
         double newCurrent = Math.min(100.0, combined);
 
-        // Создаём результат и снимаем зачарования (как в ванильном точиле)
         ItemStack result = slot0.clone();
         ItemMeta resultMeta = result.getItemMeta();
         if (resultMeta != null && resultMeta.hasEnchants()) {
-            // Снимаем все зачарования через копию ключей (избегаем CME)
             java.util.Map<Enchantment, Integer> enchants = new java.util.HashMap<>(resultMeta.getEnchants());
             for (Enchantment ench : enchants.keySet()) {
                 resultMeta.removeEnchant(ench);
@@ -220,7 +220,6 @@ public class IntegrityCombineListener implements Listener {
 
         ItemStack[] matrix = event.getInventory().getMatrix();
 
-        // Ищем ровно 2 одинаковых предмета с прочностью и больше ничего
         ItemStack item1 = null;
         ItemStack item2 = null;
         int itemCount = 0;
@@ -235,16 +234,13 @@ public class IntegrityCombineListener implements Listener {
                     item2 = stack;
                     itemCount = 2;
                 } else {
-                    // Третий предмет с прочностью — не комбинируем
                     return;
                 }
             } else {
-                // Есть предмет без прочности — не комбинируем
                 return;
             }
         }
 
-        // Нужно ровно 2 одинаковых предмета с прочностью в матрице
         if (itemCount != 2 || item1 == null || item2 == null) return;
 
         IntegrityManager.ensureInitialized(item1);
@@ -263,7 +259,6 @@ public class IntegrityCombineListener implements Listener {
 
         double newCurrent = Math.min(100.0, combined);
 
-        // Создаём результат как клон первого предмета
         ItemStack result = item1.clone();
         IntegrityManager.setCurrentIntegrity(result, newCurrent);
         IntegrityManager.updateItemLore(result);
@@ -272,25 +267,22 @@ public class IntegrityCombineListener implements Listener {
     }
 
     // =========================
-    // XP → ЦЕЛОСТНОСТЬ ВСЕХ ПРЕДМЕТОВ
-    // При сборе опыта каждый предмет в инвентаре получает +integrityPerXp% за 1 XP
+    // MENDING (ПОЧИНКА) — восстановление целостности при сборе опыта
     // =========================
     @EventHandler(priority = EventPriority.NORMAL)
-    public void onXpToAllIntegrity(PlayerExpChangeEvent event) {
+    public void onMendingRestore(PlayerExpChangeEvent event) {
         if (!IntegrityManager.isEnabled()) return;
-        if (!IntegrityManager.isXpIntegrityEnabled()) return;
+        if (!IntegrityManager.isMendingXpEnabled()) return;
 
         Player player = event.getPlayer();
         int xpAmount = event.getAmount();
         if (xpAmount <= 0) return;
 
-        double integrityPerXp = IntegrityManager.getXpIntegrityPerXp();
-        double gain = xpAmount * integrityPerXp;
-        if (gain <= 0) return;
+        double restore = xpAmount * IntegrityManager.getMendingXpMultiplier();
+        if (restore <= 0) return;
 
         PlayerInventory inv = player.getInventory();
 
-        // Обходим все слоты: 0–35 = инвентарь + хотбар, 36–39 = броня, 40 = оффхенд
         for (int i = 0; i <= 40; i++) {
             ItemStack item = inv.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
@@ -299,52 +291,36 @@ public class IntegrityCombineListener implements Listener {
             // Только предметы с зачарованием Mending (Починка)
             if (!item.containsEnchantment(Enchantment.MENDING)) continue;
 
-            IntegrityManager.increaseIntegrity(item, gain);
+            IntegrityManager.increaseIntegrity(item, restore);
         }
-    }
 
-    // =========================
-    // XP + ШЁЛКОВОЕ КАСАНИЕ
-    // =========================
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onExpChange(PlayerExpChangeEvent event) {
-        if (!IntegrityManager.isEnabled()) return;
-        if (!IntegrityManager.isSilkTouchXpEnabled()) return;
-
-        Player player = event.getPlayer();
-        ItemStack mainHand = player.getInventory().getItemInMainHand();
-
-        if (mainHand == null || mainHand.getType() == Material.AIR) return;
-        if (mainHand.getType().getMaxDurability() <= 0) return;
-
-        // Проверяем, есть ли Шёлковое касание
-        ItemMeta meta = mainHand.getItemMeta();
-        if (meta == null) return;
-        if (!meta.hasEnchant(Enchantment.SILK_TOUCH)) return;
-
-        int xpAmount = event.getAmount();
-        if (xpAmount <= 0) return;
-
-        IntegrityManager.ensureInitialized(mainHand);
-
-        double maxIntegrity = IntegrityManager.getMaxIntegrity(mainHand);
-        double currentIntegrity = IntegrityManager.getCurrentIntegrity(mainHand);
-
-        if (currentIntegrity >= maxIntegrity) return;
-
-        // Восстанавливаем целостность пропорционально XP
-        double restore = xpAmount * IntegrityManager.getSilkTouchXpMultiplier();
-        IntegrityManager.increaseIntegrity(mainHand, restore);
-
-        // Отправляем сообщение
-        String msg = IntegrityManager.getSilkTouchMessage()
-                .replace("{amount}", IntegrityManager.formatPercent(restore));
-        player.sendMessage(MessageUtil.parse(msg));
+        // Сообщение игроку (только если mending_xp.message не пустой)
+        String msg = IntegrityManager.getMendingMessage();
+        if (msg != null && !msg.isEmpty()) {
+            player.sendMessage(MessageUtil.parse(msg.replace("{amount}", String.format("%.3f", restore))));
+        }
     }
 
     // =========================
     // HELPERS
     // =========================
+
+    /**
+     * Устанавливает repair cost на AnvilInventory через API или reflection.
+     * Без этого игрок не может забрать результат из наковальни.
+     */
+    private void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
+        try {
+            inv.setRepairCost(repairCost);
+            inv.setRepairCostAmount(repairCostAmount);
+        } catch (NoSuchMethodError | NoClassDefFoundError e) {
+            try {
+                Field costField = inv.getClass().getDeclaredField("repairCost");
+                costField.setAccessible(true);
+                costField.set(inv, repairCost);
+            } catch (Exception ignored) {}
+        }
+    }
 
     /**
      * Кулдаун сообщений в наковальне (чтобы не спамить при перемещении предметов).
@@ -362,13 +338,11 @@ public class IntegrityCombineListener implements Listener {
 
     /**
      * Проверяет, является ли предмет ремонтным материалом для данного инструмента.
-     * Пример: DIAMOND_PICKAXE + DIAMOND, IRON_SWORD + IRON_INGOT и т.д.
      */
     private boolean isRepairMaterial(Material tool, Material material) {
         String toolName = tool.name();
         String matName = material.name();
 
-        // Материалы для ремонта в майнкрафте
         return switch (matName) {
             case "DIAMOND" -> toolName.startsWith("DIAMOND_");
             case "IRON_INGOT" -> toolName.startsWith("IRON_") || toolName.startsWith("CHAINMAIL_");
@@ -378,18 +352,14 @@ public class IntegrityCombineListener implements Listener {
             case "COPPER_INGOT" -> toolName.startsWith("COPPER_");
             case "PHANTOM_MEMBRANE" -> toolName.equals("ELYTRA");
             default -> {
-                // Проверка на дерево (доски, палки)
                 boolean isWoodMaterial = matName.endsWith("_PLANKS") || matName.equals("STICK");
-                // Деревянные инструменты + доски/палки
                 if (isWoodMaterial && toolName.startsWith("WOODEN_")) {
                     yield true;
                 }
-                // Камень для каменных инструментов
                 if ((matName.equals("COBBLESTONE") || matName.equals("BLACKSTONE") || matName.equals("COBBLED_DEEPSLATE"))
                         && toolName.startsWith("STONE_")) {
                     yield true;
                 }
-                // Черепаший панцирь + скальные чешуйки
                 if (matName.equals("SCUTE") && toolName.equals("TURTLE_HELMET")) {
                     yield true;
                 }
@@ -408,6 +378,4 @@ public class IntegrityCombineListener implements Listener {
         }
         return null;
     }
-
-
 }

@@ -14,9 +14,9 @@ import java.util.Set;
 public class IntegrityConfig {
 
     // =========================
-    // КОНСТАНТЫ
+    // Версия системы целостности (для детекта миграции PDC)
     // =========================
-    public static final double MAX_INTEGRITY = 100.0;
+    public static final int INTEGRITY_VERSION = 3;
 
     // =========================
     // НАСТРОЙКИ
@@ -59,9 +59,9 @@ public class IntegrityConfig {
     private boolean anvilCombineEnabled = true;
     private double anvilCombineBonus = 0.1;
 
-    // XP + Silk Touch
-    private boolean silkTouchXpEnabled = true;
-    private double silkTouchXpMultiplier = 0.5;
+    // XP + Mending (Починка)
+    private boolean mendingXpEnabled = true;
+    private double mendingXpMultiplier = 0.5;
 
     // Крафт / объединение
     private boolean combineEnabled = true;
@@ -70,7 +70,7 @@ public class IntegrityConfig {
     // Сообщения
     private String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>";
     private String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>";
-    private String silkTouchMessage = "<aqua>✨</aqua> <white>Шёлковое касание восстановило</white> <yellow>{amount}%</yellow> <white>целостности!</white>";
+    private String mendingMessage = "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}</yellow> <white>целостности!</white>";
 
     public void load() {
         var cfg = Main.getInstance().getConfig().getConfigurationSection("features.integrity");
@@ -124,11 +124,20 @@ public class IntegrityConfig {
             anvilCombineMessage = anvil.getString("combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>");
         }
 
-        var stxp = cfg.getConfigurationSection("silk_touch_xp");
-        if (stxp != null) {
-            silkTouchXpEnabled = stxp.getBoolean("enabled", true);
-            silkTouchXpMultiplier = stxp.getDouble("integrity_multiplier", 0.5);
-            silkTouchMessage = stxp.getString("message", "<aqua>✨</aqua> <white>Шёлковое касание восстановило</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+        // ===== XP + MENDING (ПОЧИНКА) =====
+        var mending = cfg.getConfigurationSection("mending_xp");
+        if (mending != null) {
+            mendingXpEnabled = mending.getBoolean("enabled", true);
+            mendingXpMultiplier = mending.getDouble("integrity_multiplier", 0.5);
+            mendingMessage = mending.getString("message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+        } else {
+            // Fallback: старый ключ silk_touch_xp (для обратной совместимости)
+            var stxp = cfg.getConfigurationSection("silk_touch_xp");
+            if (stxp != null) {
+                mendingXpEnabled = stxp.getBoolean("enabled", true);
+                mendingXpMultiplier = stxp.getDouble("integrity_multiplier", 0.5);
+                mendingMessage = stxp.getString("message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+            }
         }
 
         var combine = cfg.getConfigurationSection("combine");
@@ -159,15 +168,15 @@ public class IntegrityConfig {
     public Set<String> getWhitelist() { return whitelist; }
     public boolean isAnvilRepairEnabled() { return anvilRepairEnabled; }
     public boolean isAnvilCombineEnabled() { return anvilCombineEnabled; }
-    public boolean isSilkTouchXpEnabled() { return silkTouchXpEnabled; }
+    public boolean isSilkTouchXpEnabled() { return mendingXpEnabled; }
     public boolean isCombineEnabled() { return combineEnabled; }
     public double getAnvilRepairMultiplier() { return anvilRepairMultiplier; }
     public double getAnvilCombineBonus() { return anvilCombineBonus; }
-    public double getSilkTouchXpMultiplier() { return silkTouchXpMultiplier; }
+    public double getSilkTouchXpMultiplier() { return mendingXpMultiplier; }
     public double getCombineLossRate() { return combineLossRate; }
     public String getAnvilRepairMessage() { return anvilRepairMessage; }
     public String getAnvilCombineMessage() { return anvilCombineMessage; }
-    public String getSilkTouchMessage() { return silkTouchMessage; }
+    public String getSilkTouchMessage() { return mendingMessage; }
 
     public int getGradientRedHigh() { return gradientRedHigh; }
     public int getGradientGreenHigh() { return gradientGreenHigh; }
@@ -193,5 +202,5 @@ public class IntegrityConfig {
         return null;
     }
 
-    public static double getMaxIntegrity() { return MAX_INTEGRITY; }
+    public static int getIntegrityVersion() { return INTEGRITY_VERSION; }
 }

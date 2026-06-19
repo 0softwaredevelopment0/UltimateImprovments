@@ -3,10 +3,12 @@ package com.mcplugin.auth;
 import com.mcplugin.Main;
 import com.mcplugin.database.DatabaseManager;
 
+import de.mkammerer.argon2.Argon2;
+import de.mkammerer.argon2.Argon2Factory;
+
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,10 +19,23 @@ import java.util.UUID;
 
 public class AuthDatabase {
 
-    private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
-    private static final int ITERATIONS = 65536;
-    private static final int KEY_LENGTH = 256;
-    private static final int SALT_LENGTH = 16;
+    // =========================
+    // ARGON2ID (primary)
+    // =========================
+    // Parameters: 2 iterations, 32 MB memory, 1 thread
+    // These are tuned for reasonable speed in a Minecraft server environment.
+    private static final int ARGON2_ITERATIONS = 2;
+    private static final int ARGON2_MEMORY_KIB = 32768;  // 32 MB
+    private static final int ARGON2_PARALLELISM = 1;
+
+    private static final Argon2 argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id);
+
+    // =========================
+    // PBKDF2 (legacy, for migration)
+    // =========================
+    private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final int PBKDF2_ITERATIONS = 65536;
+    private static final int PBKDF2_KEY_LENGTH = 256;
 
     private static volatile boolean tableReady = false;
 
@@ -172,15 +187,16 @@ public class AuthDatabase {
     // REGISTER
     // =========================
     public static void register(UUID uuid, String password, String ip) {
-        String salt = generateSalt();
-        String hash = hashPassword(password, salt);            try (Connection con = DatabaseManager.getConnection();
+        String hash = hashArgon2(password);
+
+        try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "INSERT OR REPLACE INTO auth (uuid, password_hash, salt, last_login, ip_address) VALUES (?, ?, ?, ?, ?)")) {
 
             ps.setString(1, uuid.toString());
             ps.setString(2, hash);
-            ps.setString(3, salt);
-            ps.setLong(4, System.currentTimeMillis()); // set last_login on register too
+            ps.setString(3, "");  // Argon2id hash is self-contained (salt embedded)
+            ps.setLong(4, System.currentTimeMillis());
             ps.setString(5, ip);
             ps.executeUpdate();
 
@@ -192,6 +208,7 @@ public class AuthDatabase {
 
     // =========================
     // CHECK PASSWORD
+    // Supports both Argon2id (new) and PBKDF2 (legacy, auto-upgrades)
     // =========================
     public static boolean checkPassword(UUID uuid, String password) {
         try (Connection con = DatabaseManager.getConnection();
@@ -205,9 +222,21 @@ public class AuthDatabase {
 
                 String storedHash = rs.getString("password_hash");
                 String salt = rs.getString("salt");
-                String computedHash = hashPassword(password, salt);
 
-                return storedHash.equals(computedHash);
+                // Argon2id hash — self-contained format: $argon2id$v=19$...
+                if (storedHash != null && storedHash.startsWith("$argon2id$")) {
+                    boolean valid = verifyArgon2(storedHash, password);
+                    return valid;
+                }
+
+                // Legacy PBKDF2 hash — verify and auto-upgrade to Argon2id
+                if (salt != null && !salt.isEmpty() && verifyPbkdf2(password, salt, storedHash)) {
+                    // Auto-upgrade: re-hash with Argon2id on successful login
+                    upgradeToArgon2(uuid, password);
+                    return true;
+                }
+
+                return false;
             }
 
         } catch (Exception e) {
@@ -220,13 +249,14 @@ public class AuthDatabase {
     // CHANGE PASSWORD (admin command)
     // =========================
     public static boolean changePassword(UUID uuid, String newPassword) {
-        String salt = generateSalt();
-        String hash = hashPassword(newPassword, salt);            try (Connection con = DatabaseManager.getConnection();
+        String hash = hashArgon2(newPassword);
+
+        try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "UPDATE auth SET password_hash = ?, salt = ?, last_login = 0, ip_address = '' WHERE uuid = ?")) {
 
             ps.setString(1, hash);
-            ps.setString(2, salt);
+            ps.setString(2, "");
             ps.setString(3, uuid.toString());
             int updated = ps.executeUpdate();
             return updated > 0;
@@ -256,16 +286,17 @@ public class AuthDatabase {
     }
 
     // =========================
-    // CHANGE PASSWORD SELF (player self-service) — сохраняет last_login и IP
+    // CHANGE PASSWORD SELF (player self-service)
     // =========================
     public static boolean changePasswordSelf(UUID uuid, String newPassword) {
-        String salt = generateSalt();
-        String hash = hashPassword(newPassword, salt);            try (Connection con = DatabaseManager.getConnection();
+        String hash = hashArgon2(newPassword);
+
+        try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "UPDATE auth SET password_hash = ?, salt = ?, last_login = ? WHERE uuid = ?")) {
 
             ps.setString(1, hash);
-            ps.setString(2, salt);
+            ps.setString(2, "");
             ps.setLong(3, System.currentTimeMillis());
             ps.setString(4, uuid.toString());
             int updated = ps.executeUpdate();
@@ -278,7 +309,7 @@ public class AuthDatabase {
     }
 
     // =========================
-    // GET ALL REGISTERED UUIDs (для tab complete)
+    // GET ALL REGISTERED UUIDs
     // =========================
     public static List<UUID> getAllRegisteredUuids() {
         List<UUID> uuids = new ArrayList<>();
@@ -300,7 +331,7 @@ public class AuthDatabase {
     }
 
     // =========================
-    // COUNT ACCOUNTS BY IP — сколько аккаунтов зарегистрировано с данного IP
+    // COUNT ACCOUNTS BY IP
     // =========================
     public static int countAccountsByIp(String ip) {
         if (ip == null || ip.isEmpty()) return 0;
@@ -324,7 +355,7 @@ public class AuthDatabase {
     }
 
     // =========================
-    // DELETE REGISTRATION — полностью удаляет запись из БД
+    // DELETE REGISTRATION
     // =========================
     public static boolean deleteRegistration(UUID uuid) {
         try (Connection con = DatabaseManager.getConnection();
@@ -342,32 +373,77 @@ public class AuthDatabase {
     }
 
     // =========================
-    // HASH PASSWORD (PBKDF2 + SHA256)
+    // ARGON2ID HASHING
     // =========================
-    private static String hashPassword(String password, String salt) {
+    private static String hashArgon2(String password) {
         try {
-            PBEKeySpec spec = new PBEKeySpec(
-                    password.toCharArray(),
-                    salt.getBytes(StandardCharsets.UTF_8),
-                    ITERATIONS,
-                    KEY_LENGTH
-            );
-            SecretKeyFactory factory = SecretKeyFactory.getInstance(ALGORITHM);
-            byte[] hash = factory.generateSecret(spec).getEncoded();
-            return HexFormat.of().formatHex(hash);
+            char[] chars = password.toCharArray();
+            String hash = argon2.hash(ARGON2_ITERATIONS, ARGON2_MEMORY_KIB, ARGON2_PARALLELISM, chars);
+            argon2.wipeArray(chars);
+            return hash;
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Hash failed: " + e.getMessage());
+            Main.getInstance().getLogger().severe("[Auth] Argon2 hash failed: " + e.getMessage());
             return "";
         }
     }
 
+    private static boolean verifyArgon2(String hash, String password) {
+        try {
+            char[] chars = password.toCharArray();
+            boolean valid = argon2.verify(hash, chars);
+            argon2.wipeArray(chars);
+            return valid;
+        } catch (Exception e) {
+            Main.getInstance().getLogger().severe("[Auth] Argon2 verify failed: " + e.getMessage());
+            return false;
+        }
+    }
+
     // =========================
-    // GENERATE SALT
+    // PBKDF2 (LEGACY — for migration only)
     // =========================
-    private static String generateSalt() {
-        SecureRandom random = new SecureRandom();
-        byte[] salt = new byte[SALT_LENGTH];
-        random.nextBytes(salt);
-        return HexFormat.of().formatHex(salt);
+    private static String hashPbkdf2(String password, String salt) {
+        try {
+            PBEKeySpec spec = new PBEKeySpec(
+                    password.toCharArray(),
+                    salt.getBytes(StandardCharsets.UTF_8),
+                    PBKDF2_ITERATIONS,
+                    PBKDF2_KEY_LENGTH
+            );
+            SecretKeyFactory factory = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM);
+            byte[] hash = factory.generateSecret(spec).getEncoded();
+            return HexFormat.of().formatHex(hash);
+        } catch (Exception e) {
+            Main.getInstance().getLogger().severe("[Auth] PBKDF2 hash failed: " + e.getMessage());
+            return "";
+        }
+    }
+
+    private static boolean verifyPbkdf2(String password, String salt, String storedHash) {
+        if (salt == null || storedHash == null) return false;
+        String computedHash = hashPbkdf2(password, salt);
+        return storedHash.equals(computedHash);
+    }
+
+    // =========================
+    // AUTO-UPGRADE: PBKDF2 → Argon2id
+    // =========================
+    private static void upgradeToArgon2(UUID uuid, String password) {
+        try {
+            String newHash = hashArgon2(password);
+            try (Connection con = DatabaseManager.getConnection();
+                 PreparedStatement ps = con.prepareStatement(
+                         "UPDATE auth SET password_hash = ?, salt = ? WHERE uuid = ?")) {
+
+                ps.setString(1, newHash);
+                ps.setString(2, "");
+                ps.setString(3, uuid.toString());
+                ps.executeUpdate();
+
+                Main.getInstance().getLogger().info("[Auth] Upgraded password to Argon2id for UUID: " + uuid);
+            }
+        } catch (Exception e) {
+            Main.getInstance().getLogger().warning("[Auth] Auto-upgrade to Argon2id failed for UUID " + uuid + ": " + e.getMessage());
+        }
     }
 }

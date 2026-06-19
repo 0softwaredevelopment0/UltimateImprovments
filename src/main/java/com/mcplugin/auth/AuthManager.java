@@ -25,13 +25,18 @@ public class AuthManager {
     // ⏱ Rate limit: 1 DB запрос в N секунд на игрока (берётся из config.yml)
     private final Map<UUID, Long> requestCooldowns = new ConcurrentHashMap<>();
 
+    // ⏱ Таймаут на авторизацию: кикнуть если не залогинился за N секунд
+    private final Map<UUID, BukkitRunnable> loginTimeoutTasks = new ConcurrentHashMap<>();
+
+    // 🔢 Счётчик неверных попыток пароля (сбрасывается при успешном входе/выходе)
+    private final Map<UUID, Integer> wrongAttempts = new ConcurrentHashMap<>();
+
     // =========================
     // INIT
     // =========================
     public static void init() {
         instance = new AuthManager();
 
-        // Проверяем, включена ли система авторизации в конфиге
         boolean enabled = true;
         try {
             enabled = Main.getInstance().getConfig().getBoolean("auth.enabled", true);
@@ -47,9 +52,12 @@ public class AuthManager {
         boolean ipCheck = getConfigBool("auth.check_ip.enabled", true);
         boolean dupNameCheck = getConfigBool("auth.check_duplicate_name.enabled", true);
         int cooldownSec = getConfigInt("auth.request_cooldown_seconds", 5);
+        int timeoutSec = getConfigInt("auth.login_timeout_seconds", 60);
+        int maxWrong = getConfigInt("auth.max_wrong_attempts", 5);
         Main.getInstance().getLogger().info(
                 "[Auth] Initialized. Session: " + sessionMin + "min, IP check: " + ipCheck
-                + ", Dup name check: " + dupNameCheck + ", Cooldown: " + cooldownSec + "s.");
+                + ", Dup name check: " + dupNameCheck + ", Cooldown: " + cooldownSec + "s"
+                + ", Login timeout: " + timeoutSec + "s, Max wrong attempts: " + maxWrong);
     }
 
     // =========================
@@ -128,25 +136,16 @@ public class AuthManager {
 
         UUID uuid = player.getUniqueId();
 
-        // 🔒 DUPLICATE NAME CHECK теперь выполняется в AsyncPlayerPreLoginEvent (AuthListener),
-        // чтобы Minecraft НЕ успел кикнуть оригинального игрока до проверки.
-
-        // Already authed in current session (rejoin)
         if (authenticated.contains(uuid)) return;
 
-        // Проверяем, инициализирована ли БД (если нет — не блокируем игрока)
         if (!AuthDatabase.isTableReady()) {
             Main.getInstance().getLogger().warning("[Auth] DB not ready — skipping auth for " + player.getName());
             return;
         }
 
-        // Check if registered
         boolean registered = AuthDatabase.isRegistered(uuid);
 
         if (registered) {
-            // =========================
-            // 🔒 IP CHECK: если IP изменился — сбрасываем сессию
-            // =========================
             if (isIpCheckEnabled()) {
                 String lastIp = AuthDatabase.getLastIp(uuid);
                 String currentIp = getPlayerIp(player);
@@ -157,9 +156,8 @@ public class AuthManager {
                     String ipMsg = getConfigMessage("ip_changed", "<yellow>✦</yellow> <gray>Ваш IP-адрес изменился. Пожалуйста, войдите заново.</gray>");
                     player.sendMessage(ipMsg);
                     AuthDatabase.resetAuth(uuid);
-                    registered = true; // регистрация остаётся
+                    registered = true;
                 } else if (AuthDatabase.hasValidSession(uuid, getSessionDurationMs())) {
-                    // Session is valid AND IP matches — auto-authenticate
                     savePlayerIp(player);
                     authenticated.add(uuid);
                     Main.getInstance().getLogger().info(
@@ -167,7 +165,6 @@ public class AuthManager {
                     return;
                 }
             } else if (AuthDatabase.hasValidSession(uuid, getSessionDurationMs())) {
-                // IP check disabled, only check session duration
                 savePlayerIp(player);
                 authenticated.add(uuid);
                 Main.getInstance().getLogger().info(
@@ -186,17 +183,19 @@ public class AuthManager {
         player.setFlying(false);
         player.setInvulnerable(true);
 
-        // Open GUI on next tick to ensure player is fully loaded
         player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <gray>Открываем окно авторизации...</gray>"));
         if (registered) {
             AuthGUI.openLogin(player);
         } else {
             AuthGUI.openRegister(player);
         }
+
+        // ⏱ Start login timeout kick timer
+        startLoginTimeout(player);
     }
 
     // =========================
-    // ⏱ COOLDOWN DURATION (из config.yml)
+    // ⏱ COOLDOWN DURATION
     // =========================
     private long getRequestCooldownMs() {
         return getConfigInt("auth.request_cooldown_seconds", 5) * 1000L;
@@ -230,7 +229,6 @@ public class AuthManager {
 
         if (authenticated.contains(uuid)) return;
 
-        // ⏱ Rate limit check
         if (!checkRequestCooldown(player)) return;
 
         String playerIp = getPlayerIp(player);
@@ -238,36 +236,57 @@ public class AuthManager {
         if (AuthDatabase.isRegistered(uuid)) {
             // LOGIN
             if (AuthDatabase.checkPassword(uuid, password)) {
-
-                // 🔒 IP CHECK: если включён, сверяем IP из БД с текущим
                 if (isIpCheckEnabled()) {
                     String storedIp = AuthDatabase.getLastIp(uuid);
                     if (!storedIp.isEmpty() && !storedIp.equals(playerIp)) {
                         Main.getInstance().getLogger().info(
                                 "[Auth] Player " + player.getName() + " login IP changed: " + storedIp + " → " + playerIp + " — updating IP.");
-                        // IP изменился — обновляем, но пускаем
                         AuthDatabase.updateLastIp(uuid, playerIp);
                     }
                 }
 
                 AuthDatabase.updateLastLogin(uuid);
+                wrongAttempts.remove(uuid);
                 authenticatePlayer(player, "<green>✅</green> <white>Вы успешно вошли на сервер!</white>");
             } else {
+                // 🔢 Неверный пароль — увеличиваем счётчик
+                int attempts = wrongAttempts.getOrDefault(uuid, 0) + 1;
+                wrongAttempts.put(uuid, attempts);
+                int maxWrong = getConfigInt("auth.max_wrong_attempts", 5);
+                int remaining = maxWrong - attempts;
+
+                if (attempts >= maxWrong) {
+                    cancelLoginTimeout(uuid);
+                    player.kickPlayer(
+                            "§6✦ MC-Plugin\n" +
+                            "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                            "§c❌ Слишком много неверных попыток!\n" +
+                            "§7Вы ввели неверный пароль §c" + attempts + "§7 раз.\n\n" +
+                            "§7━━━━━━━━━━━━━━━━━━━━━"
+                    );
+                    return;
+                }
+
                 player.sendMessage("");
-                player.sendMessage(MessageUtil.parse("<red>❌ Неверный пароль! Попробуйте ещё раз.</red>"));
+                player.sendMessage(MessageUtil.parse("<red>❌ Неверный пароль! Осталось попыток: </red><yellow>" + remaining + "</yellow>"));
                 player.sendMessage("");
             }
 
         } else {
             // REGISTER
-            int minLen = getConfigInt("auth.min_password_length", 4);
+            int minLen = getConfigInt("auth.min_password_length", 8);
+            int maxLen = getConfigInt("auth.max_password_length", 32);
             if (password.length() < minLen) {
                 player.sendMessage(MessageUtil.parse("<red>❌ Пароль должен быть не менее </red><yellow>" + minLen + "</yellow><red> символов!</red>"));
                 reopenAfterDelay(player);
                 return;
             }
+            if (password.length() > maxLen) {
+                player.sendMessage(MessageUtil.parse("<red>❌ Пароль не должен превышать </red><yellow>" + maxLen + "</yellow><red> символов!</red>"));
+                reopenAfterDelay(player);
+                return;
+            }
 
-            // 🔒 Проверка лимита аккаунтов на IP
             if (!playerIp.isEmpty()) {
                 int maxAccounts = getMaxAccountsPerIp();
                 if (maxAccounts > 0) {
@@ -287,8 +306,8 @@ public class AuthManager {
                 }
             }
 
-            // Сохраняем пароль + IP одной операцией
-            AuthDatabase.register(uuid, password, playerIp); // already sets last_login + ip_address
+            AuthDatabase.register(uuid, password, playerIp);
+            wrongAttempts.remove(uuid);
             authenticatePlayer(player, "<green>✅</green> <white>Регистрация прошла успешно!</white>");
         }
     }
@@ -301,10 +320,12 @@ public class AuthManager {
         authenticated.add(uuid);
         pendingAuth.remove(uuid);
 
-        // Save current IP address
         savePlayerIp(player);
 
-        // 🛡 Anti-dup: clean any auth GUI items before closing inventory
+        // ⏱ Cancel login timeout + reset wrong attempts
+        cancelLoginTimeout(uuid);
+        wrongAttempts.remove(uuid);
+
         AuthGUI.removeAuthItemsFromPlayer(player);
         player.closeInventory();
         player.setGameMode(GameMode.SURVIVAL);
@@ -327,6 +348,8 @@ public class AuthManager {
         authenticated.remove(uuid);
         pendingAuth.remove(uuid);
         requestCooldowns.remove(uuid);
+        cancelLoginTimeout(uuid);
+        wrongAttempts.remove(uuid);
     }
 
     // =========================
@@ -339,7 +362,6 @@ public class AuthManager {
         pendingAuth.remove(uuid);
         AuthDatabase.updateLastLogin(uuid);
 
-        // If player is online, unfreeze them
         Player player = Bukkit.getPlayer(uuid);
         if (player != null && player.isOnline()) {
             player.closeInventory();
@@ -354,7 +376,7 @@ public class AuthManager {
     }
 
     // =========================
-    // RESET AUTH (admin command) — полностью удаляет регистрацию из БД
+    // RESET AUTH (admin command)
     // =========================
     public boolean resetAuth(UUID uuid) {
         if (!AuthDatabase.isRegistered(uuid)) return false;
@@ -363,7 +385,6 @@ public class AuthManager {
         pendingAuth.remove(uuid);
         AuthDatabase.deleteRegistration(uuid);
 
-        // If player is online, kick them
         Player player = Bukkit.getPlayer(uuid);
         if (player != null && player.isOnline()) {
             player.kickPlayer(
@@ -384,7 +405,9 @@ public class AuthManager {
     // =========================
     public boolean changePassword(UUID uuid, String newPassword) {
         if (!AuthDatabase.isRegistered(uuid)) return false;
-        if (newPassword.length() < 4) return false;
+        int minLen = getConfigInt("auth.min_password_length", 8);
+        int maxLen = getConfigInt("auth.max_password_length", 32);
+        if (newPassword.length() < minLen || newPassword.length() > maxLen) return false;
 
         boolean updated = AuthDatabase.changePassword(uuid, newPassword);
         if (updated) {
@@ -395,7 +418,7 @@ public class AuthManager {
     }
 
     // =========================
-    // DELETE SESSION (admin command) — только сессия, регистрация остаётся
+    // DELETE SESSION (admin command)
     // =========================
     public boolean deleteSession(UUID uuid) {
         if (!AuthDatabase.isRegistered(uuid)) return false;
@@ -404,7 +427,6 @@ public class AuthManager {
         pendingAuth.remove(uuid);
         AuthDatabase.resetAuth(uuid);
 
-        // If player is online, kick them
         Player player = Bukkit.getPlayer(uuid);
         if (player != null && player.isOnline()) {
             player.kickPlayer(
@@ -421,26 +443,28 @@ public class AuthManager {
     }
 
     // =========================
-    // SELF CHANGE PASSWORD — игрок меняет пароль, проходит аутентификацию
+    // SELF CHANGE PASSWORD
     // =========================
     public void handleSelfChangePassword(Player player, String newPassword) {
         UUID uuid = player.getUniqueId();
 
-        // Defence in depth: min length check
-        int minLen = getConfigInt("auth.min_password_length", 4);
+        int minLen = getConfigInt("auth.min_password_length", 8);
+        int maxLen = getConfigInt("auth.max_password_length", 32);
         if (newPassword.length() < minLen) {
             player.sendMessage("§c❌ Пароль должен быть не менее " + minLen + " символов!");
+            return;
+        }
+        if (newPassword.length() > maxLen) {
+            player.sendMessage("§c❌ Пароль не должен превышать " + maxLen + " символов!");
             return;
         }
 
         AuthDatabase.changePasswordSelf(uuid, newPassword);
 
-        // Authenticate player — они уже доказали знание текущего пароля
         authenticated.add(uuid);
         pendingAuth.remove(uuid);
         savePlayerIp(player);
 
-        // 🛡 Anti-dup: clean any auth GUI items before closing inventory
         AuthGUI.removeAuthItemsFromPlayer(player);
         player.closeInventory();
         player.setGameMode(GameMode.SURVIVAL);
@@ -457,27 +481,22 @@ public class AuthManager {
     }
 
     // =========================
-    // SELF-LOGOUT (player command) — проверяет пароль и кикает
+    // SELF-LOGOUT
     // =========================
     public boolean handleLogout(Player player, String password) {
         UUID uuid = player.getUniqueId();
 
-        // Must be authenticated and registered
         if (!authenticated.contains(uuid)) return false;
         if (!AuthDatabase.isRegistered(uuid)) return false;
 
-        // ⏱ Rate limit check
         if (!checkRequestCooldown(player)) return false;
 
-        // Verify password
         if (!AuthDatabase.checkPassword(uuid, password)) return false;
 
-        // Clear state + reset DB session
         authenticated.remove(uuid);
         pendingAuth.remove(uuid);
         AuthDatabase.resetAuth(uuid);
 
-        // Kick player with logout message
         player.closeInventory();
         player.kickPlayer(
                 "§6✦ MC-Plugin\n" +
@@ -511,6 +530,43 @@ public class AuthManager {
         String ip = getPlayerIp(player);
         if (!ip.isEmpty()) {
             AuthDatabase.updateLastIp(player.getUniqueId(), ip);
+        }
+    }
+
+    // =========================
+    // ⏱ LOGIN TIMEOUT KICK
+    // =========================
+    private void startLoginTimeout(Player player) {
+        UUID uuid = player.getUniqueId();
+        cancelLoginTimeout(uuid);
+
+        int timeoutSec = getConfigInt("auth.login_timeout_seconds", 60);
+        long timeoutTicks = timeoutSec * 20L;
+
+        BukkitRunnable task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!player.isOnline()) return;
+                if (authenticated.contains(uuid)) return;
+
+                player.kickPlayer(
+                        "§6✦ MC-Plugin\n" +
+                        "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                        "§c⏱ Время на авторизацию истекло!\n" +
+                        "§7Вы не вошли в аккаунт за §c" + timeoutSec + "§7 сек.\n\n" +
+                        "§7━━━━━━━━━━━━━━━━━━━━━"
+                );
+            }
+        };
+
+        task.runTaskLater(Main.getInstance(), timeoutTicks);
+        loginTimeoutTasks.put(uuid, task);
+    }
+
+    private void cancelLoginTimeout(UUID uuid) {
+        BukkitRunnable task = loginTimeoutTasks.remove(uuid);
+        if (task != null) {
+            task.cancel();
         }
     }
 

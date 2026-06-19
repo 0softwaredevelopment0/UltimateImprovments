@@ -163,8 +163,14 @@ public class AuthCommand {
         String targetName = args[2];
         String newPassword = args[3];
 
-        if (newPassword.length() < 4) {
-            sender.sendMessage("§4❌ §cПароль должен быть не менее 4 символов!");
+        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
+        int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
+        if (newPassword.length() < minLen) {
+            sender.sendMessage("§4❌ §cПароль должен быть не менее " + minLen + " символов!");
+            return;
+        }
+        if (newPassword.length() > maxLen) {
+            sender.sendMessage("§4❌ §cПароль не должен превышать " + maxLen + " символов!");
             return;
         }
 

@@ -667,6 +667,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     case "list" -> {
                         double current = IntegrityManager.getCurrentIntegrity(heldItem);
                         double max = IntegrityManager.getMaxIntegrity(heldItem);
+                        double pctCurrent = (current / max) * 100.0;
                         String itemName = heldItem.hasItemMeta() && heldItem.getItemMeta().hasDisplayName()
                                 ? heldItem.getItemMeta().getDisplayName()
                                 : heldItem.getType().name().toLowerCase().replace("_", " ");
@@ -677,8 +678,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                         player.sendMessage("§6  ✦ §fИнформация о целостности предмета");
                         player.sendMessage("§6═══════════════════════════════════");
                         player.sendMessage("§7Предмет: §f" + itemName);
-                        player.sendMessage("§7Текущая: §a" + IntegrityManager.formatPercent(current) + "%");
-                        player.sendMessage("§7Макс:    §a" + IntegrityManager.formatPercent(max) + "%");
+                        player.sendMessage("§7Текущая: §a" + IntegrityManager.formatPercent(pctCurrent) + "%");
+                        player.sendMessage("§7Макс:    §a100.000%");
                         player.sendMessage("§6═══════════════════════════════════");
                     }
                     case "set" -> {
@@ -688,7 +689,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                         }
                         try {
                             double value = Double.parseDouble(args[3]);
-                            if (value < 0 || value > 100) {
+                            double maxSet2 = 100.0;
+                            if (value < 0 || value > maxSet2) {
                                 player.sendMessage("§4❌ §cЗначение должно быть от 0 до 100!");
                                 return true;
                             }
@@ -898,8 +900,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 String targetName = args[2];
                 String newPassword = args[3];
 
-                if (newPassword.length() < 4) {
-                    sender.sendMessage("§4❌ §cПароль должен быть не менее 4 символов!");
+                int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
+                int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
+                if (newPassword.length() < minLen) {
+                    sender.sendMessage("§4❌ §cПароль должен быть не менее " + minLen + " символов!");
+                    return true;
+                }
+                if (newPassword.length() > maxLen) {
+                    sender.sendMessage("§4❌ §cПароль не должен превышать " + maxLen + " символов!");
                     return true;
                 }
 

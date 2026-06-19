@@ -124,6 +124,7 @@ public class VersionCheckModule extends PluginModule {
 
         if (mcVersion == null) {
             // Fallback: Bukkit.getBukkitVersion() возвращает "1.21.4-R0.1-SNAPSHOT"
+            // (на Leaf может вернуть "26.1.2-R0.1-SNAPSHOT")
             mcVersion = bukkitVersion.split("-")[0];
         }
 
@@ -145,7 +146,28 @@ public class VersionCheckModule extends PluginModule {
                 int expectedMcMinor = pluginMajor - 5; // 26 - 5 = 21 → 1.21
                 String expectedPrefix = "1." + expectedMcMinor;
 
-                if (!mcMajorMinor.equals(expectedPrefix)) {
+                // Определяем, не является ли mcVersion тоже Paper internal версией
+                // (например, на Leaf Bukkit.getBukkitVersion() может вернуть "26.1.2-R0.1-SNAPSHOT")
+                String mcMajorStr = mcVersion.contains(".")
+                        ? mcVersion.split("\\.")[0]
+                        : mcVersion;
+                boolean mcIsPaperInternal = false;
+                try {
+                    int mcMajor = Integer.parseInt(mcMajorStr);
+                    mcIsPaperInternal = mcMajor >= 20;
+                } catch (NumberFormatException ignored) {}
+
+                boolean mismatch;
+                if (mcIsPaperInternal) {
+                    // Обе версии — Paper internal: сравниваем напрямую
+                    String pluginMajorMinor = getMajorMinor(pluginVersion);
+                    mismatch = !mcMajorMinor.equals(pluginMajorMinor);
+                } else {
+                    // mcVersion — MC версия (1.21.x): сравниваем через конвертацию
+                    mismatch = !mcMajorMinor.equals(expectedPrefix);
+                }
+
+                if (mismatch) {
                     String serverPaperVer = extractServerVersionNumber(serverFullVersion);
 
                     plugin.getLogger().warning("");

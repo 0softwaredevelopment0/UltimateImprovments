@@ -41,8 +41,8 @@ public class IntegrityManager extends BukkitRunnable {
     private static IntegrityManager instance;
 
     // ===== КОНСТАНТЫ =====
-    /** Максимальная целостность — всегда 100.0% */
-    private static final double MAX_INTEGRITY = 100.0;
+    /** Версия системы целостности для детекта миграции старых PDC данных (V3 = процентная система) */
+    private static final int INTEGRITY_VERSION = 3;
 
     // ===== НАСТРОЙКИ (загружаются из config.yml) =====
     private static boolean enabled = true;
@@ -100,9 +100,9 @@ public class IntegrityManager extends BukkitRunnable {
     private static double anvilMaterialCraftBonus = 10.0;
     private static String anvilMaterialCraftMessage = "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>{current}%</yellow> <white>(+{bonus}% за материалы)</white>";
 
-    // XP + Silk Touch
-    private static boolean silkTouchXpEnabled = true;
-    private static double silkTouchXpMultiplier = 0.5;
+    // XP + Mending (Починка)
+    private static boolean mendingXpEnabled = true;
+    private static double mendingXpMultiplier = 0.5;
 
     // Unbreaking (Неразрушимость)
     private static boolean unbreakingEnabled = true;
@@ -126,7 +126,7 @@ public class IntegrityManager extends BukkitRunnable {
     // Сообщения
     private static String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>";
     private static String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>";
-    private static String silkTouchMessage = "<aqua>✨</aqua> <white>Шёлковое касание восстановило</white> <yellow>{amount}%</yellow> <white>целостности!</white>";
+    private static String mendingMessage = "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>";
 
     private static final DecimalFormat PCT_FMT = new DecimalFormat("0.000");
 
@@ -258,12 +258,20 @@ public class IntegrityManager extends BukkitRunnable {
             }
         }
 
-        // ===== XP + ШЁЛКОВОЕ КАСАНИЕ =====
-        var stxp = cfg.getConfigurationSection("silk_touch_xp");
-        if (stxp != null) {
-            silkTouchXpEnabled = stxp.getBoolean("enabled", true);
-            silkTouchXpMultiplier = stxp.getDouble("integrity_multiplier", 0.5);
-            silkTouchMessage = stxp.getString("message", "<aqua>✨</aqua> <white>Шёлковое касание восстановило</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+        // ===== XP + MENDING (ПОЧИНКА) =====
+        var mending = cfg.getConfigurationSection("mending_xp");
+        if (mending != null) {
+            mendingXpEnabled = mending.getBoolean("enabled", true);
+            mendingXpMultiplier = mending.getDouble("integrity_multiplier", 0.5);
+            mendingMessage = mending.getString("message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+        } else {
+            // Fallback: старый ключ silk_touch_xp (для обратной совместимости)
+            var stxp = cfg.getConfigurationSection("silk_touch_xp");
+            if (stxp != null) {
+                mendingXpEnabled = stxp.getBoolean("enabled", true);
+                mendingXpMultiplier = stxp.getDouble("integrity_multiplier", 0.5);
+                mendingMessage = stxp.getString("message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+            }
         }
 
         // ===== ОБЪЕДИНЕНИЕ ПРЕДМЕТОВ =====
@@ -361,15 +369,20 @@ public class IntegrityManager extends BukkitRunnable {
     public static double getAnvilMaterialCraftBonus() { return anvilMaterialCraftBonus; }
     public static String getAnvilMaterialCraftMessage() { return anvilMaterialCraftMessage; }
     public static boolean isAnvilCombineEnabled() { return anvilCombineEnabled; }
-    public static boolean isSilkTouchXpEnabled() { return silkTouchXpEnabled; }
+    @Deprecated public static boolean isSilkTouchXpEnabled() { return mendingXpEnabled; }
     public static boolean isCombineEnabled() { return combineEnabled; }
     public static double getAnvilRepairMultiplier() { return anvilRepairMultiplier; }
     public static double getAnvilCombineBonus() { return anvilCombineBonus; }
-    public static double getSilkTouchXpMultiplier() { return silkTouchXpMultiplier; }
+    @Deprecated public static double getSilkTouchXpMultiplier() { return mendingXpMultiplier; }
     public static double getCombineLossRate() { return combineLossRate; }
     public static String getAnvilRepairMessage() { return anvilRepairMessage; }
     public static String getAnvilCombineMessage() { return anvilCombineMessage; }
-    public static String getSilkTouchMessage() { return silkTouchMessage; }
+    @Deprecated public static String getSilkTouchMessage() { return mendingMessage; }
+
+    // ===== MENDING XP (Починка) =====
+    public static boolean isMendingXpEnabled() { return mendingXpEnabled; }
+    public static double getMendingXpMultiplier() { return mendingXpMultiplier; }
+    public static String getMendingMessage() { return mendingMessage; }
 
     // ===== PIERCING =====
     public static boolean isPiercingEnabled() { return piercingEnabled; }
@@ -431,35 +444,58 @@ public class IntegrityManager extends BukkitRunnable {
         var pdc = meta.getPersistentDataContainer();
         boolean isTagged = pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE);
 
+        double itemMaxDura = (double) maxDurability;
+
         // Миграция: если есть старый INTEGRITY_TAG, но нет INTEGRITY_MAX — переинициализируем
         if (isTagged && !pdc.has(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE)) {
             isTagged = false;
         }
 
+        // Детект миграции: проверяем версию системы в PDC
+        int storedVersion = pdc.getOrDefault(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, 0);
+        boolean migrated = false;
+        if (isTagged && storedVersion < INTEGRITY_VERSION) {
+            double oldMax = pdc.getOrDefault(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 0.0);
+            double oldCurrent = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
+            double newCurrent;
+
+            if (oldMax == 100.0) {
+                // V1 данные: уже в процентах (max=100.0), просто обновляем версию
+                newCurrent = Math.max(0, Math.min(100.0, oldCurrent));
+            } else if (oldMax > 0) {
+                // V2 данные: абсолютные значения (max=durability) → конвертируем в проценты
+                newCurrent = (oldCurrent / oldMax) * 100.0;
+            } else {
+                newCurrent = 100.0;
+            }
+
+            pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
+            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
+            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, Math.max(0, Math.min(100.0, newCurrent)));
+            migrated = true;
+
+            if (logInit) {
+                Main.getInstance().getLogger().info("[INTEGRITY] Migrated to V3 " + item.getType()
+                        + " (current=" + String.format("%.1f%%", newCurrent) + ")");
+            }
+        }
+
         if (!isTagged) {
-            // Инициализация нового предмета — целостность всегда 100.0%
+            // Инициализация нового предмета — целостность = 100.0%
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
-            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, MAX_INTEGRITY);
-            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, MAX_INTEGRITY);
+            pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
+            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
+            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
 
             if (meta instanceof Damageable damageable) {
                 damageable.setDamage(0);
             }
 
             if (logInit) {
-                Main.getInstance().getLogger().info("[INTEGRITY] Initialized " + item.getType() + " with 100.0% integrity");
+                Main.getInstance().getLogger().info("[INTEGRITY] Initialized " + item.getType()
+                        + " with max=" + (int)itemMaxDura + " integrity");
             }
         } else {
-            // Миграция старых данных: если max не 100.0 — переустанавливаем
-            double oldMax = pdc.getOrDefault(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 0.0);
-            if (oldMax != MAX_INTEGRITY) {
-                double oldCurrent = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
-                // Конвертируем старые значения в проценты
-                double newCurrent = (oldMax > 0) ? (oldCurrent / oldMax) * MAX_INTEGRITY : MAX_INTEGRITY;
-                pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, MAX_INTEGRITY);
-                pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, Math.max(0, Math.min(MAX_INTEGRITY, newCurrent)));
-            }
-
             // Сбрасываем ванильный damage
             if (meta instanceof Damageable damageable) {
                 damageable.setDamage(0);
@@ -467,7 +503,8 @@ public class IntegrityManager extends BukkitRunnable {
         }
 
         // Обновляем лор; применяем meta только если лор изменился
-        if (updateLore(meta)) {
+        // Если была миграция — всегда сохраняем meta (чтобы не потерять PDC данные)
+        if (updateLore(meta) || migrated) {
             item.setItemMeta(meta);
         }
     }
@@ -556,10 +593,11 @@ public class IntegrityManager extends BukkitRunnable {
         var pdc = meta.getPersistentDataContainer();
         if (pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) return;
 
-        // Инициализация — всегда 100.0%
+        // Инициализация — целостность = 100.0%
         pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
-        pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, MAX_INTEGRITY);
-        pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, MAX_INTEGRITY);
+        pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
+        pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
+        pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
 
         if (meta instanceof Damageable damageable) {
             damageable.setDamage(0);
@@ -580,11 +618,15 @@ public class IntegrityManager extends BukkitRunnable {
 
         var pdc = meta.getPersistentDataContainer();
 
+        // Получаем макс. целостность для этого предмета (всегда 100.0%)
+        double maxIntegrity = 100.0;
+
         // Если не инициализирован — инициализируем
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
-            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, MAX_INTEGRITY);
-            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, MAX_INTEGRITY);
+            pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
+            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
+            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
 
             if (meta instanceof Damageable damageable) {
                 damageable.setDamage(0);
@@ -595,9 +637,9 @@ public class IntegrityManager extends BukkitRunnable {
 
         double current = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
 
-        if (current >= MAX_INTEGRITY) return; // Уже на максимуме
+        if (current >= maxIntegrity) return; // Уже на максимуме
 
-        double newVal = Math.min(MAX_INTEGRITY, current + amount);
+        double newVal = Math.min(maxIntegrity, current + amount);
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, newVal);
 
@@ -621,7 +663,8 @@ public class IntegrityManager extends BukkitRunnable {
         var pdc = meta.getPersistentDataContainer();
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) return;
 
-        double clamped = Math.max(0, Math.min(MAX_INTEGRITY, value));
+        double maxIntegrity = 100.0;
+        double clamped = Math.max(0, Math.min(maxIntegrity, value));
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, clamped);
 
@@ -649,26 +692,25 @@ public class IntegrityManager extends BukkitRunnable {
         // Если предмет ещё не инициализирован — инициализируем
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
-            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, MAX_INTEGRITY);
-            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, MAX_INTEGRITY);
+            pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
+            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
+            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
         }
 
         double current = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
 
         if (current <= 0) return;
 
-        // Конвертируем ванильный урон в проценты целостности
+        // Новая механика: цена = (1 / maxDurability) * 100.0% × costMultiplier
+        // Пример: maxDura=1000 → 0.1% за исп., 1000 исп. → 100% → слом.
+        // Пример: maxDura=2 → 50% за исп., 2 исп. → слом.
         int maxDura = item.getType().getMaxDurability();
         if (maxDura <= 0) return;
+        double cost = (amount / (double) maxDura) * 100.0 * costMultiplier;
 
-        // 1 единица ванильного урона = (1 / maxDurability) * 100% от целостности
-        double pctCost = (amount / (double) maxDura) * MAX_INTEGRITY * costMultiplier;
-
-        // ⚔ PIERCING (Пробитие): добавляет +extraCost% к трате целостности брони
-        // НЕ игнорирует броню — защита работает как обычно.
-        // Unbreaking проверяется на итоговую стоимость (не игнорируется).
+        // ⚔ PIERCING (Пробитие): добавляет +piercingExtraCost% к трате целостности брони
         if (piercingEnabled && isPiercingActive()) {
-            pctCost += piercingExtraCost;
+            cost += piercingExtraCost;
         }
 
         // 🔮 Unbreaking: шанс потратить прочность уменьшается в (уровень + 1) раз
@@ -684,7 +726,7 @@ public class IntegrityManager extends BukkitRunnable {
             }
         }
 
-        double newVal = Math.max(0, current - pctCost);
+        double newVal = Math.max(0, current - cost);
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, newVal);
 
@@ -857,7 +899,7 @@ public class IntegrityManager extends BukkitRunnable {
     public static double getMaxIntegrity(ItemStack item) {
         if (!hasIntegrity(item)) return -1;
         return item.getItemMeta().getPersistentDataContainer()
-                .getOrDefault(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, MAX_INTEGRITY);
+                .getOrDefault(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 0.0);
     }
 
     public static boolean isEnabled() {
@@ -865,9 +907,12 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     /**
-     * @return константа MAX_INTEGRITY (100.0)
+     * Возвращает макс. целостность для предмета по умолчанию.
+     * Равна ванильной maxDurability. Если предмет не указан — возвращает 0.
+     * @deprecated Используйте {@link #getMaxIntegrity(ItemStack)} вместо константы.
      */
+    @Deprecated
     public static double getMaxIntegrityConstant() {
-        return MAX_INTEGRITY;
+        return 100.0;
     }
 }

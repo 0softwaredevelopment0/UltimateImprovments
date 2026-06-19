@@ -10,14 +10,14 @@
   ],
   "key": {
     "1": [
-      "minecraft:iron_ingot"
+      "minecraft:oak_log"
     ]
   },
   "result": {
     "id": "minecraft:ladder",
     "components": {
       "minecraft:item_name": {
-        "text": "Металлическая лестница",
+        "text": "Крепкая лестница",
         "type": "text",
         "color": "white",
         "bold": false,
