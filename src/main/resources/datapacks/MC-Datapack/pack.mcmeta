@@ -2,14 +2,9 @@
   "pack": {
     "description": {
       "text": "Набор данных сервера",
-      "color": "white",
-      "bold": false,
-      "italic": false,
-      "underlined": false,
-      "strikethrough": false,
-      "obfuscated": false
+      "color": "white"
     },
-    "min_format": 88,
-    "max_format": 94.1
+    "pack_format": 57,
+    "supported_formats": [48, 57]
   }
 }

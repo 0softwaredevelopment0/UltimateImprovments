@@ -30,7 +30,8 @@ public class HealthMeterManager extends BukkitRunnable {
 
     private boolean isHealthMeterItem(ItemStack item) {
         if (item == null || item.getType() == org.bukkit.Material.AIR) return false;
-        if (!item.hasItemMeta()) return false;
+        // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
+        // getItemMeta() always returns non-null for non-AIR items.
         var meta = item.getItemMeta();
         if (meta == null) return false;
         return meta.getPersistentDataContainer().has(Keys.HP_METER, PersistentDataType.BYTE);

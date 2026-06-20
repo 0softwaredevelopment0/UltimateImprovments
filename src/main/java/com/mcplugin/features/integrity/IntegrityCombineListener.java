@@ -52,7 +52,7 @@ public class IntegrityCombineListener implements Listener {
         if (slot1 == null || slot1.getType() == Material.AIR) return;
 
         // Проверяем, есть ли у предмета в слоте 0 прочность
-        if (slot0.getType().getMaxDurability() <= 0) return;
+        if (IntegrityManager.getMaxDurability(slot0) <= 0) return;
 
         // =========================
         // СЦЕНАРИЙ 1: Крафт материалом (предмет + материал, например алмазная кирка + алмаз)
@@ -123,7 +123,7 @@ public class IntegrityCombineListener implements Listener {
         // =========================
         // СЦЕНАРИЙ 2: Объединение двух одинаковых предметов (кирка + кирка)
         // =========================
-        if (slot0.getType() == slot1.getType() && slot1.getType().getMaxDurability() > 0) {
+        if (slot0.getType() == slot1.getType() && IntegrityManager.getMaxDurability(slot1) > 0) {
             if (!IntegrityManager.isAnvilCombineEnabled()) return;
             if (!IntegrityManager.isCombineEnabled()) return;
 
@@ -176,7 +176,7 @@ public class IntegrityCombineListener implements Listener {
         if (slot1 == null || slot1.getType() == Material.AIR) return;
 
         if (slot0.getType() != slot1.getType()) return;
-        if (slot0.getType().getMaxDurability() <= 0) return;
+        if (IntegrityManager.getMaxDurability(slot0) <= 0) return;
 
         IntegrityManager.ensureInitialized(slot0);
         IntegrityManager.ensureInitialized(slot1);
@@ -226,7 +226,7 @@ public class IntegrityCombineListener implements Listener {
         for (ItemStack stack : matrix) {
             if (stack == null || stack.getType() == Material.AIR) continue;
 
-            if (stack.getType().getMaxDurability() > 0) {
+            if (IntegrityManager.getMaxDurability(stack) > 0) {
                 if (item1 == null) {
                     item1 = stack;
                     itemCount = 1;
@@ -286,7 +286,7 @@ public class IntegrityCombineListener implements Listener {
         for (int i = 0; i <= 40; i++) {
             ItemStack item = inv.getItem(i);
             if (item == null || item.getType() == Material.AIR) continue;
-            if (item.getType().getMaxDurability() <= 0) continue;
+            if (IntegrityManager.getMaxDurability(item) <= 0) continue;
 
             // Только предметы с зачарованием Mending (Починка)
             if (!item.containsEnchantment(Enchantment.MENDING)) continue;

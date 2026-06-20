@@ -124,7 +124,9 @@ public class ShokerListener implements Listener {
     // =========================
     private boolean isShoker(ItemStack item) {
 
-        if (!item.hasItemMeta()) return false;
+        // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
+        // getItemMeta() always returns non-null for non-AIR items.
+        if (item == null || item.getType() == Material.AIR) return false;
 
         var meta = item.getItemMeta();
         if (meta == null) return false;

@@ -130,6 +130,15 @@ public class IntegrityManager extends BukkitRunnable {
 
     private static final DecimalFormat PCT_FMT = new DecimalFormat("0.000");
 
+    // ===== NMS REFLECTION CACHE (for getMaxDurability fallback) =====
+    /** Cached CraftItemStack.asNMSCopy(ItemStack) method */
+    private static java.lang.reflect.Method nmsAsCopyMethod;
+    /** Cached NMS ItemStack.getMaxDamage() method */
+    private static java.lang.reflect.Method nmsGetMaxDamageMethod;
+    /** false if NMS reflection failed to init — skip NMS path entirely */
+    private static boolean nmsAvailable = true;
+    private static boolean nmsInitTried = false;
+
     // =========================
     // INIT
     // =========================
@@ -310,12 +319,79 @@ public class IntegrityManager extends BukkitRunnable {
     // Если PDC-теги потеряются, ванильный damage служит резервной копией.
     // =========================
     private static void syncVanillaDamage(ItemStack item, ItemMeta meta, double currentIntegrity) {
-        if (meta instanceof Damageable damageable) {
-            int maxDura = item.getType().getMaxDurability();
+        if (meta instanceof Damageable damageable && damageable.hasMaxDamage()) {
+            int maxDura = damageable.getMaxDamage();
             if (maxDura > 0) {
                 int dmg = (int) Math.round((1.0 - currentIntegrity / 100.0) * maxDura);
                 damageable.setDamage(Math.max(0, Math.min(maxDura, dmg)));
             }
+        }
+    }
+
+    /**
+     * Returns the max durability for an item.
+     * <p>
+     * In Paper 1.21.4+, durability is a data component ({@code minecraft:max_damage}),
+     * NOT a material property. Fresh items may have {@code getItemMeta()} return a
+     * non-{@code Damageable} instance, and {@code Material.getMaxDurability()}
+     * may return 0 (deprecated in favour of the component API).
+     * <p>
+     * Strategy (three-tier fallback):
+     * <ol>
+     *   <li>{@code Damageable.hasMaxDamage()} — for items that already have damage data</li>
+     *   <li>{@code Material.getMaxDurability()} — legacy API, may return 0 in 1.21.4+</li>
+     *   <li><b>NMS Fallback via cached reflection</b> — calls {@code CraftItemStack.asNMSCopy()}
+     *       then {@code ItemStack.getMaxDamage()} from the NMS handle.
+     *       Methods are cached in static fields for zero-allocation hot path.</li>
+     * </ol>
+     */
+    public static int getMaxDurability(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return 0;
+
+        // 1) Check Damageable component (items that already have damage data)
+        ItemMeta meta = item.getItemMeta();
+        if (meta instanceof Damageable dmg && dmg.hasMaxDamage()) {
+            int componentMax = dmg.getMaxDamage();
+            if (componentMax > 0) return componentMax;
+        }
+
+        // 2) Legacy Material.getMaxDurability() — may return 0 in 1.21.4+
+        int matMax = item.getType().getMaxDurability();
+        if (matMax > 0) return matMax;
+
+        // 3) NMS fallback via cached CraftItemStack.asNMSCopy → getMaxDamage()
+        //    This is the most reliable way in 1.21.4+ because it reads the
+        //    minecraft:max_damage data component directly from the NMS item.
+        if (!nmsAvailable) return 0;
+        return getMaxDurabilityNms(item);
+    }
+
+    /**
+     * NMS fallback: uses cached reflection methods to call
+     * {@code CraftItemStack.asNMSCopy(item).getMaxDamage()}.
+     * Methods are looked up once on first call and cached statically.
+     */
+    private static int getMaxDurabilityNms(ItemStack item) {
+        try {
+            if (!nmsInitTried) {
+                nmsInitTried = true;
+                Class<?> craftClass = Class.forName(
+                        "org.bukkit.craftbukkit.inventory.CraftItemStack");
+                nmsAsCopyMethod = craftClass.getMethod("asNMSCopy", ItemStack.class);
+                // NMS stack type is the return type of asNMSCopy
+                Class<?> nmsStackClass = nmsAsCopyMethod.getReturnType();
+                nmsGetMaxDamageMethod = nmsStackClass.getMethod("getMaxDamage");
+            }
+            if (nmsAsCopyMethod == null || nmsGetMaxDamageMethod == null) {
+                nmsAvailable = false;
+                return 0;
+            }
+            Object nmsStack = nmsAsCopyMethod.invoke(null, item);
+            int nmsMax = (int) nmsGetMaxDamageMethod.invoke(nmsStack);
+            return Math.max(0, nmsMax);
+        } catch (Exception e) {
+            nmsAvailable = false;
+            return 0;
         }
     }
 
@@ -444,7 +520,7 @@ public class IntegrityManager extends BukkitRunnable {
     // PROCESS ITEM — инициализация + обновление лора
     // =========================
     private void processItem(ItemStack item) {
-        int maxDurability = item.getType().getMaxDurability();
+        int maxDurability = getMaxDurability(item);
         if (maxDurability <= 0) return;
 
         // Проверка фильтров
@@ -583,7 +659,7 @@ public class IntegrityManager extends BukkitRunnable {
      */
     public static void updateItemLore(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return;
-        if (item.getType().getMaxDurability() <= 0) return;
+        if (getMaxDurability(item) <= 0) return;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
         if (updateLore(meta)) {
@@ -693,7 +769,7 @@ public class IntegrityManager extends BukkitRunnable {
 
         // Если предмет ещё не инициализирован — инициализируем с учётом ванильного износа
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
-            int maxDura = item.getType().getMaxDurability();
+            int maxDura = getMaxDurability(item);
             double initialCurrent = 100.0;
             if (meta instanceof Damageable damageable) {
                 int dmg = damageable.getDamage();
@@ -716,7 +792,7 @@ public class IntegrityManager extends BukkitRunnable {
         // Новая механика: цена = (1 / maxDurability) * 100.0% × costMultiplier
         // Пример: maxDura=1000 → 0.1% за исп., 1000 исп. → 100% → слом.
         // Пример: maxDura=2 → 50% за исп., 2 исп. → слом.
-        int maxDura = item.getType().getMaxDurability();
+        int maxDura = getMaxDurability(item);
         if (maxDura <= 0) return;
         double cost = (amount / (double) maxDura) * 100.0 * costMultiplier;
 
@@ -760,7 +836,7 @@ public class IntegrityManager extends BukkitRunnable {
     private static void checkLowIntegrityWarning(ItemStack item, Player player) {
         if (!lowIntegrityWarningEnabled) return;
         if (item == null || item.getType() == Material.AIR) return;
-        if (item.getType().getMaxDurability() <= 0) return;
+        if (getMaxDurability(item) <= 0) return;
 
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
@@ -879,7 +955,7 @@ public class IntegrityManager extends BukkitRunnable {
     // =========================
     private static boolean isItemApplicable(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
-        if (item.getType().getMaxDurability() <= 0) return false;
+        if (getMaxDurability(item) <= 0) return false;
 
         String matName = item.getType().name();
         if (!whitelist.isEmpty() && !whitelist.contains(matName)) return false;
@@ -891,7 +967,8 @@ public class IntegrityManager extends BukkitRunnable {
     // =========================
     public static boolean hasIntegrity(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
-        if (!item.hasItemMeta()) return false;
+        // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
+        // getItemMeta() always returns non-null for non-AIR items.
         var pdc = item.getItemMeta().getPersistentDataContainer();
         return pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)
                 && pdc.has(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE);

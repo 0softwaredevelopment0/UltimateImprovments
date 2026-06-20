@@ -26,7 +26,7 @@ public class IntegrityListener implements Listener {
         if (item == null || item.getType() == Material.AIR) return;
 
         // Проверяем, есть ли у предмета прочность
-        if (item.getType().getMaxDurability() <= 0) return;
+        if (IntegrityManager.getMaxDurability(item) <= 0) return;
 
         // Отменяем ванильный урон
         event.setCancelled(true);

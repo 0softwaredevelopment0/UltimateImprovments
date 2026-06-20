@@ -3,6 +3,7 @@ package com.mcplugin.main;
 import com.mcplugin.Main;
 import com.mcplugin.commands.PluginReloadCommand;
 import com.mcplugin.commands.PowerCommand;
+import com.mcplugin.commands.VanishListCommand;
 import com.mcplugin.core1.ReactorCommand;
 
 import org.bukkit.command.Command;
@@ -33,6 +34,7 @@ public class CommandRegistrar {
         register(plugin, "mp", mpCmd);
         registerTab(plugin, "mp", mpCmd);
         register(plugin, "reactor", new ReactorCommand());
+        registerOverride(plugin, "list", new VanishListCommand());
         registerOverride(plugin, "stop", new PowerCommand("stop", false));
         registerOverride(plugin, "restart", new PowerCommand("restart", true));
     }

@@ -2,11 +2,8 @@
   "condition": "minecraft:entity_properties",
   "entity": "this",
   "predicate": {
-    "type_specific": {
-      "type": "minecraft:player",
-      "input": {
-        "sneak": true
-      }
+    "input": {
+      "sneak": true
     }
   }
 }

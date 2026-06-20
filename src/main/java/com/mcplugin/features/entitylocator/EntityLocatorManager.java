@@ -31,7 +31,8 @@ public class EntityLocatorManager extends BukkitRunnable {
 
     private boolean isLocatorItem(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
-        if (!item.hasItemMeta()) return false;
+        // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
+        // getItemMeta() always returns non-null for non-AIR items.
         var meta = item.getItemMeta();
         if (meta == null) return false;
         return meta.getPersistentDataContainer().has(Keys.LOCATOR, PersistentDataType.BYTE);

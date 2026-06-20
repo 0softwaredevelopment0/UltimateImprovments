@@ -110,7 +110,7 @@ public class MultimeterListener implements Listener {
     // =========================
     private boolean is_multimeter(ItemStack item) {
 
-        if (item == null || !item.hasItemMeta()) return false;
+        if (item == null || item.getType() == Material.AIR) return false;
 
         PersistentDataContainer data =
                 item.getItemMeta().getPersistentDataContainer();

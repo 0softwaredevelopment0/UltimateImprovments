@@ -47,6 +47,13 @@ public class Main extends JavaPlugin {
         ConfigIntegrityValidator.validate(this);
 
         // =========================
+        // PDC KEYS — MUST init BEFORE any module that uses Keys.*
+        // Keys.init() was previously in DatabaseModule, but if the DB module
+        // failed, all Keys.* would be null, breaking AuthGUI and other systems.
+        // =========================
+        Keys.init(this);
+
+        // =========================
         // MODULE MANAGER
         // =========================
         ModuleManager.init(this);

@@ -1,10 +1,10 @@
 name: MC-Plugin
 
-version: 26.1.2
+version: 26.2
 
 main: com.mcplugin.Main
 
-api-version: "26.1.2"
+api-version: "26.2"
 
 author: rizer001
 

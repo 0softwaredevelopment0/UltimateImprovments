@@ -1,5 +1,6 @@
 package com.mcplugin.auth;
 
+import com.mcplugin.Keys;
 import com.mcplugin.Main;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Sound;
@@ -12,7 +13,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
-import com.mcplugin.util.MessageUtil;
 import org.bukkit.event.player.*;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.inventory.MenuType;
@@ -20,38 +20,15 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import com.mcplugin.Keys;
-
 import java.util.UUID;
 
-
+/**
+ * Слушатель событий для системы авторизации.
+ * <p>
+ * Блокирует действия неавторизованных игроков, обрабатывает клики по GUI,
+ * управляет открытием/закрытием окон авторизации.
+ */
 public class AuthListener implements Listener {
-
-    // =========================
-    // CHECK IF AUTH IS ENABLED
-    // =========================
-    private boolean isAuthEnabled() {
-        try {
-            return Main.getInstance() != null
-                    && Main.getInstance().getConfig() != null
-                    && Main.getInstance().getConfig().getBoolean("auth.enabled", true);
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
-    // =========================
-    // CHECK IF DUP NAME CHECK IS ENABLED
-    // =========================
-    private boolean isDupNameCheckEnabled() {
-        try {
-            return Main.getInstance() != null
-                    && Main.getInstance().getConfig() != null
-                    && Main.getInstance().getConfig().getBoolean("auth.check_duplicate_name.enabled", true);
-        } catch (Exception e) {
-            return true;
-        }
-    }
 
     // =========================
     // IS THIS OUR AUTH GUI? (anvil)
@@ -69,33 +46,21 @@ public class AuthListener implements Listener {
     }
 
     // =========================
-    // GET CONFIG MESSAGE
-    // =========================
-    private String getConfigMessage(String path, String def) {
-        try {
-            return Main.getInstance().getConfig().getString("auth.messages." + path, def);
-        } catch (Exception e) {
-            return def;
-        }
-    }
-
-    // =========================
-    // 🔒 PRE-LOGIN — проверка дубликатов ников ДО того, как Minecraft кинет оригинального игрока
-    // AsyncPlayerPreLoginEvent срабатывает РАНЬШЕ, чем сервер решит кикать игроков
-    // Это критически важно для пиратских серверов, где одинаковый ник = одинаковый UUID
+    // 🔒 PRE-LOGIN — duplicate name check BEFORE Minecraft kicks the original player
+    // AsyncPlayerPreLoginEvent fires EARLIER than the server decides to kick players
+    // Critical for offline-mode servers where same name = same UUID
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerPreLogin(AsyncPlayerPreLoginEvent event) {
-        if (!isAuthEnabled()) return;
-        if (!isDupNameCheckEnabled()) return;
+        if (!AuthConfig.isEnabled()) return;
+        if (!AuthConfig.isDupNameCheckEnabled()) return;
 
         String newPlayerName = event.getName();
         UUID newPlayerUuid = event.getUniqueId();
 
-        // Проверяем: есть ли уже онлайн игрок с таким же ником, но другим UUID
         for (Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
             if (online.getName().equalsIgnoreCase(newPlayerName)) {
-                String dupMessage = getConfigMessage("duplicate_name_kick",
+                String dupMessage = AuthConfig.getMessage("duplicate_name_kick",
                         "<red>❌ Игрок с таким ником уже на сервере!</red>\n<gray>Пожалуйста, зайдите под другим ником.</gray>");
                 String dupParsed = MessageUtil.legacy(dupMessage);
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
@@ -114,7 +79,7 @@ public class AuthListener implements Listener {
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if (!isAuthEnabled()) return;
+        if (!AuthConfig.isEnabled()) return;
         Player player = event.getPlayer();
         AuthManager manager = AuthManager.getInstance();
         if (manager != null) {
@@ -132,19 +97,14 @@ public class AuthListener implements Listener {
         if (manager != null) {
             manager.removePlayer(uuid);
         }
-        AuthGUI.cancelResetTask(uuid);
-        AuthGUI.removeLogoutPlayer(uuid);
-        AuthGUI.removeChangePasswordPlayer(uuid);
-        AuthGUI.removeTransitioningPlayer(uuid);
+        AuthGUITracker.cleanupPlayer(uuid);
     }
 
     // =========================
     // CHECK IF PLAYER NEEDS AUTH
     // =========================
     private boolean needsAuth(Player player) {
-        if (!isAuthEnabled()) return false;
-        AuthManager manager = AuthManager.getInstance();
-        return manager != null && !manager.isAuthenticated(player.getUniqueId());
+        return AuthPlayerState.getInstance() != null && AuthPlayerState.getInstance().needsAuth(player);
     }
 
     // =========================
@@ -214,11 +174,10 @@ public class AuthListener implements Listener {
 
     // =========================
     // 🛡 ANTI-DUP: cancel item spawn if it has AUTH_GUI PDC tag
-    // This catches items that fall to ground when anvil GUI closes
-    // and the player's inventory is full
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onItemSpawn(ItemSpawnEvent event) {
+        if (Keys.AUTH_GUI == null) return;
         ItemStack item = event.getEntity().getItemStack();
         if (item == null) return;
         ItemMeta meta = item.getItemMeta();
@@ -226,16 +185,6 @@ public class AuthListener implements Listener {
         if (meta.getPersistentDataContainer().has(Keys.AUTH_GUI, PersistentDataType.BOOLEAN)) {
             event.setCancelled(true);
         }
-    }
-
-    // =========================
-    // 🛡 ANTI-DUP: clear cursor + purge auth items from inventory
-    // Paper often fails to fully cancel anvil result slot clicks —
-    // items can end up in the player's cursor or inventory.
-    // =========================
-    private void antiDupCleanup(Player player) {
-        player.setItemOnCursor(null);
-        AuthGUI.removeAuthItemsFromPlayer(player);
     }
 
     // =========================
@@ -249,29 +198,29 @@ public class AuthListener implements Listener {
         UUID uuid = player.getUniqueId();
 
         // =========================
-        // CHANGE PASSWORD GUI (player is changing password)
+        // CHANGE PASSWORD GUI
         // Slot 0: info, Slot 1: cancel, Slot 2: confirm
         // =========================
-        if (AuthGUI.isChangePasswordPlayer(uuid)) {
+        if (AuthGUITracker.isChangePasswordPlayer(uuid)) {
             event.setCancelled(true);
             if (event.getRawSlot() == 2) {
                 handleChangePasswordConfirm(player);
             } else if (event.getRawSlot() == 1) {
                 handleChangePasswordCancel(player);
             }
-            antiDupCleanup(player);
+            AuthGUITracker.antiDupCleanup(player);
             return;
         }
 
         // =========================
         // LOGOUT GUI (authenticated player)
         // =========================
-        if (AuthGUI.isLogoutPlayer(uuid)) {
+        if (AuthGUITracker.isLogoutPlayer(uuid)) {
             event.setCancelled(true);
             if (event.getRawSlot() == 2) {
                 handleLogout(player);
             }
-            antiDupCleanup(player);
+            AuthGUITracker.antiDupCleanup(player);
             return;
         }
 
@@ -288,14 +237,14 @@ public class AuthListener implements Listener {
             // Slot 1 = change password button (only for registered players)
             handleChangePasswordRequest(player);
         }
-        antiDupCleanup(player);
+        AuthGUITracker.antiDupCleanup(player);
     }
 
     // =========================
-    // HANDLE LOGOUT CONFIRM — verify password, kick on success
+    // HANDLE LOGOUT CONFIRM
     // =========================
     private void handleLogout(Player player) {
-        String password = AuthGUI.getAnvilRenameText(player);
+        String password = AuthGUIAnvilReader.getAnvilRenameText(player);
 
         if (password == null || password.isEmpty()) {
             player.sendMessage(MessageUtil.parse("<red>❌ Введите ваш пароль в поле названия предмета!</red>"));
@@ -315,22 +264,22 @@ public class AuthListener implements Listener {
     }
 
     // =========================
-    // HANDLE CHANGE PASSWORD REQUEST — verify current password, open change GUI
+    // HANDLE CHANGE PASSWORD REQUEST
     // =========================
     private void handleChangePasswordRequest(Player player) {
         UUID uuid = player.getUniqueId();
 
-        // ⏱ Rate limit check
+        // Rate limit check
         if (!AuthManager.getInstance().checkRequestCooldown(player)) return;
 
         // Only registered players can change password
-        if (!com.mcplugin.auth.AuthDatabase.isRegistered(uuid)) {
+        if (!AuthDatabase.isRegistered(uuid)) {
             player.sendMessage(MessageUtil.parse("<red>❌ Вы ещё не зарегистрированы! Сначала придумайте пароль.</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
 
-        String currentPassword = AuthGUI.getAnvilRenameText(player);
+        String currentPassword = AuthGUIAnvilReader.getAnvilRenameText(player);
 
         if (currentPassword == null || currentPassword.isEmpty()) {
             player.sendMessage(MessageUtil.parse("<red>❌ Введите ваш текущий пароль в поле названия предмета!</red>"));
@@ -339,53 +288,53 @@ public class AuthListener implements Listener {
         }
 
         // Verify current password
-        if (!com.mcplugin.auth.AuthDatabase.checkPassword(uuid, currentPassword)) {
+        if (!AuthDatabase.checkPassword(uuid, currentPassword)) {
             player.sendMessage(MessageUtil.parse("<red>❌ Неверный пароль!</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
 
-        // Open change password GUI (new anvil GUI with info, cancel, confirm)
+        // Open change password GUI
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.5f);
         AuthGUI.openChangePassword(player);
     }
 
     // =========================
-    // HANDLE CHANGE PASSWORD CANCEL — go back to login GUI
+    // HANDLE CHANGE PASSWORD CANCEL
     // =========================
     private void handleChangePasswordCancel(Player player) {
         UUID uuid = player.getUniqueId();
 
-        AuthGUI.cancelResetTask(uuid);
-        AuthGUI.removeChangePasswordPlayer(uuid);
+        AuthGUITracker.cancelResetTask(uuid);
+        AuthGUITracker.removeChangePasswordPlayer(uuid);
 
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 1.0f);
         player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <gray>Смена пароля отменена.</gray>"));
 
         // Mark as transitioning so InventoryCloseEvent doesn't fire re-open logic
-        AuthGUI.addTransitioningPlayer(uuid);
+        AuthGUITracker.addTransitioningPlayer(uuid);
 
         // Open login GUI directly (not via reopenAfterDelay) to avoid self-loop
         AuthManager manager = AuthManager.getInstance();
         if (manager != null && !manager.isAuthenticated(uuid)) {
-            if (com.mcplugin.auth.AuthDatabase.isRegistered(uuid)) {
+            if (AuthDatabase.isRegistered(uuid)) {
                 AuthGUI.openLogin(player);
             } else {
                 AuthGUI.openRegister(player);
             }
         }
 
-        AuthGUI.removeTransitioningPlayer(uuid);
+        AuthGUITracker.removeTransitioningPlayer(uuid);
     }
 
     // =========================
-    // HANDLE CHANGE PASSWORD CONFIRM — save new password, authenticate
+    // HANDLE CHANGE PASSWORD CONFIRM
     // =========================
     private void handleChangePasswordConfirm(Player player) {
-        String newPassword = AuthGUI.getAnvilRenameText(player);
+        String newPassword = AuthGUIAnvilReader.getAnvilRenameText(player);
         UUID uuid = player.getUniqueId();
 
-        // ⏱ Rate limit check
+        // Rate limit check
         if (!AuthManager.getInstance().checkRequestCooldown(player)) return;
 
         if (newPassword == null || newPassword.isEmpty()) {
@@ -394,8 +343,8 @@ public class AuthListener implements Listener {
             return;
         }
 
-        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
-        int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
+        int minLen = AuthConfig.getMinPasswordLength();
+        int maxLen = AuthConfig.getMaxPasswordLength();
         if (newPassword.length() < minLen) {
             player.sendMessage("§c❌ Пароль должен быть не менее " + minLen + " символов!");
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
@@ -411,10 +360,8 @@ public class AuthListener implements Listener {
 
         AuthManager manager = AuthManager.getInstance();
         if (manager != null) {
-            // Clean up change password tracking FIRST to prevent state loop
-            AuthGUI.cancelResetTask(uuid);
-            AuthGUI.removeChangePasswordPlayer(uuid);
-            // Handle the password change + authenticate
+            AuthGUITracker.cancelResetTask(uuid);
+            AuthGUITracker.removeChangePasswordPlayer(uuid);
             manager.handleSelfChangePassword(player, newPassword);
         }
     }
@@ -423,17 +370,16 @@ public class AuthListener implements Listener {
     // HANDLE ENTER — read password from anvil via reflection
     // =========================
     private void handleEnter(Player player) {
-        String password = AuthGUI.getAnvilRenameText(player);
+        String password = AuthGUIAnvilReader.getAnvilRenameText(player);
 
-        // If player hasn't typed anything, the rename field is empty
         if (password == null || password.isEmpty()) {
             player.sendMessage(MessageUtil.parse("<red>❌ Введите пароль в поле названия предмета!</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
 
-        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
-        int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
+        int minLen = AuthConfig.getMinPasswordLength();
+        int maxLen = AuthConfig.getMaxPasswordLength();
         if (password.length() < minLen) {
             player.sendMessage("§c❌ Пароль должен быть не менее " + minLen + " символов!");
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
@@ -463,43 +409,41 @@ public class AuthListener implements Listener {
 
         UUID uuid = player.getUniqueId();
 
-        // 🚫 TRANSITION CHECK: if the GUI is being switched (e.g. login → change-password),
-        // skip the close handling to prevent re-open loop
-        if (AuthGUI.isTransitioning(uuid)) {
+        // Skip if transitioning between GUIs
+        if (AuthGUITracker.isTransitioning(uuid)) {
             return;
         }
 
-        // 🛡 ANTI-DUP: Remove any auth GUI items from player's inventory
-        AuthGUI.removeAuthItemsFromPlayer(player);
+        // Anti-dup
+        AuthGUITracker.removeAuthItemsFromPlayer(player);
 
-        // Change password GUI — prevent closing by Escape, re-open instead
-        if (AuthGUI.isChangePasswordPlayer(uuid)) {
-            AuthGUI.cancelResetTask(uuid);
+        // Change password GUI — prevent closing by Escape
+        if (AuthGUITracker.isChangePasswordPlayer(uuid)) {
+            AuthGUITracker.cancelResetTask(uuid);
             player.sendMessage(MessageUtil.parse("<red>❌ Вы не можете закрыть окно смены пароля!</red>"));
-            // Re-open the change password GUI after a short delay (like login/register)
             new org.bukkit.scheduler.BukkitRunnable() {
                 @Override
                 public void run() {
                     if (!player.isOnline()) return;
-                    if (!AuthGUI.isChangePasswordPlayer(uuid)) return;
+                    if (!AuthGUITracker.isChangePasswordPlayer(uuid)) return;
                     AuthGUI.openChangePassword(player);
                 }
             }.runTaskLater(Main.getInstance(), 5L);
             return;
         }
 
-        // Logout GUI — just clean up tracking
-        if (AuthGUI.isLogoutPlayer(uuid)) {
-            AuthGUI.cancelResetTask(uuid);
-            AuthGUI.removeLogoutPlayer(uuid);
+        // Logout GUI — just clean up
+        if (AuthGUITracker.isLogoutPlayer(uuid)) {
+            AuthGUITracker.cancelResetTask(uuid);
+            AuthGUITracker.removeLogoutPlayer(uuid);
             player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <gray>Выход из аккаунта отменён.</gray>"));
             return;
         }
 
-        // Login/Register GUI — re-open instead of kicking
+        // Login/Register GUI — re-open
         if (!needsAuth(player)) return;
 
-        AuthGUI.cancelResetTask(uuid);
+        AuthGUITracker.cancelResetTask(uuid);
         player.sendMessage(MessageUtil.parse("<red>❌ Вы не можете закрыть окно авторизации! Пожалуйста, введите пароль.</red>"));
         AuthManager manager = AuthManager.getInstance();
         if (manager != null) {
@@ -516,27 +460,25 @@ public class AuthListener implements Listener {
 
         UUID uuid = player.getUniqueId();
 
-        // 🛡 If we are currently opening an auth GUI, allow it regardless of
-        //    getMenuType() result — fixes Leaf/Paper fork compatibility where
-        //    ANVIL inventories may report a different MenuType.
-        if (AuthGUI.isOpeningAuthPlayer(uuid)) return;
+        // Allow if we are currently opening an auth GUI
+        if (AuthGUITracker.isOpeningAuthPlayer(uuid)) return;
 
         // Allow change password GUI
-        if (AuthGUI.isChangePasswordPlayer(uuid)) {
+        if (AuthGUITracker.isChangePasswordPlayer(uuid)) {
             if (isAuthGUI(event)) return;
             event.setCancelled(true);
             return;
         }
 
         // Allow logout GUI for authenticated players
-        if (AuthGUI.isLogoutPlayer(uuid)) {
+        if (AuthGUITracker.isLogoutPlayer(uuid)) {
             if (isAuthGUI(event)) return;
             event.setCancelled(true);
             return;
         }
 
         if (!needsAuth(player)) return;
-        // Allow our own GUI, block everything else
+
         if (isAuthGUI(event)) return;
         event.setCancelled(true);
     }

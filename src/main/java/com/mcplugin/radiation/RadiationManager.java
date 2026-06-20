@@ -174,8 +174,7 @@ public class RadiationManager implements Listener {
         if (instance == null) return;
         for (Map.Entry<UUID, Integer> entry : instance.radiationMap.entrySet()) {
             instance.saveToDB(entry.getKey(), entry.getValue());
-        }
-        Main.getInstance().getLogger().info("[RADIATION] Saved all player radiation to DB.");
+        }        
     }
 
     // =========================
@@ -404,7 +403,8 @@ public class RadiationManager implements Listener {
 
     private boolean hasCustomItem(ItemStack item, NamespacedKey key) {
         if (item == null || item.getType() == Material.AIR) return false;
-        if (!item.hasItemMeta()) return false;
+        // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
+        // getItemMeta() always returns non-null for non-AIR.
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
         return meta.getPersistentDataContainer().has(key, PersistentDataType.BYTE);

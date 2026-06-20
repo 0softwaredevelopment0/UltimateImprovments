@@ -451,7 +451,9 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
     }
 
     private double getEfficiencyBoost(ItemStack tool, BlockConfig config) {
-        if (tool == null || !tool.hasItemMeta()) return 1.0;
+        if (tool == null || tool.getType() == Material.AIR) return 1.0;
+        // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
+        // getItemMeta() always returns non-null for non-AIR items.
         var meta = tool.getItemMeta();
         if (meta == null) return 1.0;
         int level = meta.getEnchantLevel(Enchantment.EFFICIENCY);

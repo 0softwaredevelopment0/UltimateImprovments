@@ -118,13 +118,13 @@ public class VersionCheckModule extends PluginModule {
 
     private void checkMinecraftVersion(JavaPlugin plugin, String pluginVersion, String bukkitVersion) {
         // Пытаемся извлечь MC версию из Bukkit.getVersion()
-        // "git-Paper-26.1.2 (MC: 1.21.4)" → "1.21.4"
+        // "git-Paper-26.2 (MC: 1.21.5)" → "1.21.5"
         String serverFullVersion = Bukkit.getVersion();
         String mcVersion = extractMcVersion(serverFullVersion);
 
         if (mcVersion == null) {
             // Fallback: Bukkit.getBukkitVersion() возвращает "1.21.4-R0.1-SNAPSHOT"
-            // (на Leaf может вернуть "26.1.2-R0.1-SNAPSHOT")
+            // (на Leaf может вернуть "26.2-R0.1-SNAPSHOT")
             mcVersion = bukkitVersion.split("-")[0];
         }
 
@@ -132,7 +132,7 @@ public class VersionCheckModule extends PluginModule {
         String mcMajorMinor = getMajorMinor(mcVersion);
 
         // Парсим версию плагина
-        // plugin.yml version = "26.1.2" — это Paper internal version
+        // plugin.yml version = "26.2" — это Paper internal version
         // Paper 26.x → Minecraft 1.21.x
         String pluginMajorStr = pluginVersion.contains(".")
                 ? pluginVersion.split("\\.")[0]
@@ -147,7 +147,7 @@ public class VersionCheckModule extends PluginModule {
                 String expectedPrefix = "1." + expectedMcMinor;
 
                 // Определяем, не является ли mcVersion тоже Paper internal версией
-                // (например, на Leaf Bukkit.getBukkitVersion() может вернуть "26.1.2-R0.1-SNAPSHOT")
+                // (например, на Leaf Bukkit.getBukkitVersion() может вернуть "26.2-R0.1-SNAPSHOT")
                 String mcMajorStr = mcVersion.contains(".")
                         ? mcVersion.split("\\.")[0]
                         : mcVersion;
@@ -236,7 +236,7 @@ public class VersionCheckModule extends PluginModule {
 
     private void checkPluginVersionCompatibility(JavaPlugin plugin, String pluginVersion, String serverVersion) {
         // Проверяем, содержится ли версия плагина в строке версии сервера
-        // Например: плагин 26.1.2, сервер "git-Paper-26.1.2beta2 (MC: 1.21.4)" — совпадает
+        // Например: плагин 26.2, сервер "git-Paper-26.2 (MC: 1.21.5)" — совпадает
         if (serverVersion.contains(pluginVersion)) {
             plugin.getLogger().info("[VersionCheck] \u2713 Plugin version matches server version.");
             return;
@@ -290,7 +290,7 @@ public class VersionCheckModule extends PluginModule {
         return parts[0];
     }
 
-    /** Извлекает MC-версию из строки Bukkit.getVersion() вида "git-Paper-26.1.2 (MC: 1.21.4)". */
+    /** Извлекает MC-версию из строки Bukkit.getVersion() вида "git-Paper-26.2 (MC: 1.21.5)". */
     private String extractMcVersion(String version) {
         if (version == null) return null;
         int start = version.indexOf("(MC:");
@@ -301,11 +301,11 @@ public class VersionCheckModule extends PluginModule {
         return mcPart.isEmpty() ? null : mcPart;
     }
 
-    /** Извлекает Paper/Leaf-версию из полной строки Bukkit.getVersion() ("git-Paper-26.1.2.build.2..." → "26.1.2.build.2"). */
+    /** Извлекает Paper/Leaf-версию из полной строки Bukkit.getVersion() ("git-Paper-26.2.build.+..." → "26.2.build.+"). */
     private String extractServerVersionNumber(String version) {
         if (version == null) return "?";
-        // "git-Paper-26.1.2.build.2 (MC: 1.21.4)" → берём часть до пробела
-        String firstPart = version.split(" ")[0]; // "git-Paper-26.1.2.build.2"
+        // "git-Paper-26.2.build.+ (MC: 1.21.5)" → берём часть до пробела
+        String firstPart = version.split(" ")[0]; // "git-Paper-26.2.build.+"
         // Последний сегмент после последнего '-' — это версия
         int lastDash = firstPart.lastIndexOf("-");
         if (lastDash >= 0 && lastDash < firstPart.length() - 1) {

@@ -2,6 +2,7 @@ package com.mcplugin.guns;
 
 import com.mcplugin.Keys;
 import com.mcplugin.guns.projectile.ProjectileType;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -10,7 +11,7 @@ public class WeaponResolver {
 
     public static ProjectileType resolve(ItemStack item) {
 
-        if (item == null || !item.hasItemMeta()) return null;
+        if (item == null || item.getType() == Material.AIR) return null;
 
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return null;

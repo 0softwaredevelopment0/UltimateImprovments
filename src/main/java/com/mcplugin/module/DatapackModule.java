@@ -18,7 +18,7 @@ public class DatapackModule extends PluginModule {
     protected void onInit(JavaPlugin plugin) throws Exception {
         DatapackInstaller.init((Main) plugin);
         DatapackInstaller.getInstance().install((Main) plugin);
-        plugin.getLogger().info("[DatapackModule] ✓ Datapack installed.");
+        // Success is logged inside DatapackInstaller.install()
     }
 
     @Override

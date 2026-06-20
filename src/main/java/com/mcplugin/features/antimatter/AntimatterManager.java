@@ -39,7 +39,8 @@ public class AntimatterManager implements Listener {
         if (!enabled) return;
 
         ItemStack item = e.getItemDrop().getItemStack();
-        if (!item.hasItemMeta()) return;
+        // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
+        // getItemMeta() always returns non-null for non-AIR.
         var meta = item.getItemMeta();
         if (meta == null) return;
         if (!meta.getPersistentDataContainer().has(Keys.ANTIMATTER, PersistentDataType.BYTE)) return;

@@ -23,8 +23,7 @@ public class MagnetPersistence {
     public static void saveAll(Map<Integer, MagnetCluster> clustersById) {
         for (MagnetCluster cluster : clustersById.values()) {
             saveCluster(cluster);
-        }
-        Main.getInstance().getLogger().info("[Magnet] Saved " + clustersById.size() + " clusters to DB");
+        }        
     }
 
     public static void saveCluster(MagnetCluster cluster) {

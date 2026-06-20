@@ -1,7 +1,6 @@
 package com.mcplugin.features.magnet;
 
 import com.mcplugin.Main;
-import com.mcplugin.database.DatabaseManager;
 import com.mcplugin.util.LocationUtil;
 import com.mcplugin.util.MessageUtil;
 
@@ -21,9 +20,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.*;
 
 public class MagnetManager extends BukkitRunnable {
@@ -33,8 +29,8 @@ public class MagnetManager extends BukkitRunnable {
     // =========================
     // ⚙ УПАКОВКА КООРДИНАТ В long-клюЧ
     // =========================
-    private static final int COORD_OFFSET = 33554432;
-    private static final int Y_OFFSET = 64;
+    public static final int COORD_OFFSET = 33554432;
+    public static final int Y_OFFSET = 64;
 
     public static long toKey(int x, int y, int z) {
         return ((long)(x + COORD_OFFSET) << 38)
@@ -42,7 +38,7 @@ public class MagnetManager extends BukkitRunnable {
              | ((y + Y_OFFSET) & 0xFFFL);
     }
 
-    private static long toKey(Location loc) {
+    public static long toKey(Location loc) {
         return toKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
@@ -56,39 +52,7 @@ public class MagnetManager extends BukkitRunnable {
 
     public static int getY(long key) {
         return (int)(key & 0xFFFL) - Y_OFFSET;
-    }
-
-    // =========================
-    // ⚙ КОНФИГУРАЦИЯ — ВСЁ из config.yml (features.magnet)
-    // =========================
-    private static boolean enabled = true;
-
-    // --- Радиус ---
-    private static int minRadius = 3;
-    private static int maxRadius = 15;
-    private static int intervalTicks = 1;
-
-    // --- Сила (force) ---
-    private static double forceBase = 0.15;
-    private static double forceDistanceMultiplier = 0.35;
-    private static double forceMax = 0.45;
-    private static double forceMaxSpeed = 0.6;
-    private static double itemYBoost = 0.05;
-
-    // --- Плавная кривая мощности (force_curve) ---
-    private static double powerExponent = 0.55;      // t^exponent (0.5 = sqrt, мягче = выше)
-    private static double powerNormalize = 20.0;      // при скольких блоках множитель = 1.0
-
-    // --- Плавная кривая дистанции (distance_curve) ---
-    // type: "smoothstep" (плавно, 0 производная на обоих концах) или "linear" (старая линейная)
-    private static String distanceCurveType = "smoothstep";
-    private static double distanceMinFactor = 0.0;   // минимум distanceFactor на границе (0 = нет силы)
-
-    // --- Партиклы: безопасные лимиты (particles) ---
-    private static int particleCenterMax = 50;    // END_ROD + ELECTRIC_SPARK в центре
-    private static int particleBlocksMax = 30;    // ELECTRIC_SPARK на блоках
-    private static int particleCritMax = 25;      // CRIT (100+ блоков)
-    private static int particlePortalMax = 15;    // PORTAL (1000+ блоков)
+	}
 
     // =========================
     // 🧲 MAGNET CLUSTER
@@ -189,64 +153,9 @@ public class MagnetManager extends BukkitRunnable {
     // =========================
     public static void init(Main plugin) {
         instance = new MagnetManager();
-        reloadConfig();
-        loadAll();
-        instance.runTaskTimer(plugin, 20L, intervalTicks);
-    }
-
-    // =========================
-    // 🔄 ПЕРЕЗАГРУЗКА КОНФИГА — читаем всё из config.yml
-    // =========================
-    public static void reloadConfig() {
-        var cfg = Main.getInstance().getConfig().getConfigurationSection("features.magnet");
-        if (cfg == null) return;
-
-        enabled = cfg.getBoolean("enabled", true);
-
-        // Радиус
-        var r = cfg.getConfigurationSection("radius");
-        if (r != null) {
-            minRadius = r.getInt("min", 3);
-            maxRadius = r.getInt("max", 15);
-        }
-
-        intervalTicks = cfg.getInt("interval_ticks", 1);
-
-        // Сила (force)
-        var f = cfg.getConfigurationSection("force");
-        if (f != null) {
-            forceBase = f.getDouble("base", 0.15);
-            forceDistanceMultiplier = f.getDouble("distance_multiplier", 0.35);
-            forceMax = f.getDouble("max", 0.45);
-            forceMaxSpeed = f.getDouble("max_speed", 0.6);
-        }
-
-        itemYBoost = cfg.getDouble("item_y_boost", 0.05);
-
-        // Плавная кривая мощности (force_curve)
-        var fc = cfg.getConfigurationSection("force_curve");
-        if (fc != null) {
-            powerExponent = fc.getDouble("power_exponent", 0.55);
-            powerNormalize = fc.getDouble("power_normalize", 20.0);
-        }
-
-        // Плавная кривая дистанции (distance_curve)
-        var dc = cfg.getConfigurationSection("distance_curve");
-        if (dc != null) {
-            distanceCurveType = dc.getString("type", "smoothstep");
-            distanceMinFactor = dc.getDouble("min_factor", 0.0);
-        }
-
-        // Партиклы (particles)
-        var pc = cfg.getConfigurationSection("particles");
-        if (pc != null) {
-            particleCenterMax = pc.getInt("center_max", 50);
-            particleBlocksMax = pc.getInt("blocks_max", 30);
-            particleCritMax = pc.getInt("crit_max", 25);
-            particlePortalMax = pc.getInt("portal_max", 15);
-        }
-
-        Main.getInstance().getLogger().info("[Magnet] Config reloaded.");
+        MagnetConfig.reloadConfig();
+        MagnetDatabase.loadAll();
+        instance.runTaskTimer(plugin, 20L, MagnetConfig.getIntervalTicks());
     }
 
     // =========================
@@ -430,7 +339,7 @@ public class MagnetManager extends BukkitRunnable {
                     + cluster.center.getBlockY() + " "
                     + cluster.center.getBlockZ());
         }
-        player.sendMessage("§8┃ §7Радиус действия: §f" + magnetRadius + " §7блоков (мин. " + minRadius + ")");
+        player.sendMessage("§8┃ §7Радиус действия: §f" + magnetRadius + " §7блоков (мин. " + MagnetConfig.getMinRadius() + ")");
 
         Main.getInstance().getLogger().info(
                 "[Magnet] Activated cluster #" + cluster.id
@@ -440,7 +349,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     /**
-     * Возвращает тир магнита по мощности (статический, для использования из ReactorCommand).
+     * Возвращает название тира магнита по мощности.
      */
     public static String getMagnetPowerTierStatic(int power) {
         if (power >= 10000000) return "§k✧ §4✧✧ АБСОЛЮТНАЯ БЕСКОНЕЧНОСТЬ ✧✧ §k✧ §8(" + power + ")";
@@ -754,14 +663,14 @@ public class MagnetManager extends BukkitRunnable {
     // =========================
     public static int getMagnetRadius(Location loc) {
         loc = LocationUtil.normalize(loc);
-        if (loc == null) return minRadius;
+        if (loc == null) return MagnetConfig.getMinRadius();
         MagnetCluster cluster = locationToCluster.get(toKey(loc));
-        return cluster != null ? getClusterRadius(cluster.blockKeys.size()) : minRadius;
+        return cluster != null ? getClusterRadius(cluster.blockKeys.size()) : MagnetConfig.getMinRadius();
     }
 
     public static int getClusterRadiusForPower(int power) {
-        double t = Math.sqrt((double) power / powerNormalize);
-        return (int) Math.round(minRadius + (maxRadius - minRadius) * t);
+        double t = Math.sqrt((double) power / MagnetConfig.getPowerNormalize());
+        return (int) Math.round(MagnetConfig.getMinRadius() + (MagnetConfig.getMaxRadius() - MagnetConfig.getMinRadius()) * t);
     }
 
     private static int getClusterRadius(int power) {
@@ -769,29 +678,15 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // GETTERS КОНФИГА
+    // INTERNAL ACCESS (for MagnetDatabase)
     // =========================
-    public static int getMaxRadius() { return maxRadius; }
-    public static int getMinRadius() { return minRadius; }
-    public static double getForceBase() { return forceBase; }
-    public static double getForceDistanceMultiplier() { return forceDistanceMultiplier; }
-    public static double getForceMax() { return forceMax; }
-    public static double getForceMaxSpeed() { return forceMaxSpeed; }
-    public static double getItemYBoost() { return itemYBoost; }
     public static int getClusterCount() { return clustersById.size(); }
     public static Collection<MagnetCluster> getClusters() { return clustersById.values(); }
-    public static double getPowerExponent() { return powerExponent; }
-    public static double getPowerNormalize() { return powerNormalize; }
-    public static String getDistanceCurveType() { return distanceCurveType; }
-    public static double getDistanceMinFactor() { return distanceMinFactor; }
-    public static int getParticleCenterMax() { return particleCenterMax; }
-    public static int getParticleBlocksMax() { return particleBlocksMax; }
-    public static int getParticleCritMax() { return particleCritMax; }
-    public static int getParticlePortalMax() { return particlePortalMax; }
+    static Map<Long, MagnetCluster> getLocationMapInternal() { return locationToCluster; }
+    static Map<Integer, MagnetCluster> getClustersByIdInternal() { return clustersById; }
+    static void setNextId(int id) { nextId = id; }
 
-    public static Set<UUID> getDirtyPlayers() {
-        return dirtyPlayers;
-    }
+    public static Set<UUID> getDirtyPlayers() { return dirtyPlayers; }
 
     // =========================
     // ПАРТИКЛЫ ПРИ АКТИВАЦИИ
@@ -812,11 +707,11 @@ public class MagnetManager extends BukkitRunnable {
 
         if (power >= 100) {
             world.spawnParticle(Particle.CRIT, center,
-                    Math.min(power / 10, particleCritMax), 0.3, 0.3, 0.3, 0);
+                    Math.min(power / 10, MagnetConfig.getParticleCritMax()), 0.3, 0.3, 0.3, 0);
         }
         if (power >= 1000) {
             world.spawnParticle(Particle.PORTAL, center,
-                    Math.min(power / 20, particlePortalMax), 0.5, 0.5, 0.5, 0.02);
+                    Math.min(power / 20, MagnetConfig.getParticlePortalMax()), 0.5, 0.5, 0.5, 0.02);
         }
         if (power >= 10000) {
             world.spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0, Color.WHITE);
@@ -836,7 +731,7 @@ public class MagnetManager extends BukkitRunnable {
     // =========================
     @Override
     public void run() {
-        if (!enabled || clustersById.isEmpty()) return;
+        if (!MagnetConfig.isEnabled() || clustersById.isEmpty()) return;
 
         List<Integer> toRemove = new ArrayList<>();
 
@@ -876,14 +771,14 @@ public class MagnetManager extends BukkitRunnable {
                 // ════════════════════════════════════════
                 // ПАРТИКЛЫ — лимиты из конфига
                 // ════════════════════════════════════════
-                int particleCount = Math.min(8 + (int)(Math.sqrt(power) * 1.5), particleCenterMax);
+                int particleCount = Math.min(8 + (int)(Math.sqrt(power) * 1.5), MagnetConfig.getParticleCenterMax());
                 world.spawnParticle(Particle.END_ROD, center, particleCount, 0.5, 0.5, 0.5, 0);
                 world.spawnParticle(Particle.ELECTRIC_SPARK, center,
                         Math.max(1, particleCount / 2), 0.5, 0.5, 0.5, 0);
 
                 if (power >= 5) {
                     List<Long> keyList = new ArrayList<>(cluster.blockKeys);
-                    int maxBlock = Math.min(keyList.size(), particleBlocksMax);
+                    int maxBlock = Math.min(keyList.size(), MagnetConfig.getParticleBlocksMax());
                     int step = keyList.size() / maxBlock;
                     if (step == 0) step = 1;
                     for (int i = 0; i < maxBlock; i++) {
@@ -895,11 +790,11 @@ public class MagnetManager extends BukkitRunnable {
 
                 if (power >= 100) {
                     world.spawnParticle(Particle.CRIT, center,
-                            Math.min(power / 10, particleCritMax), 0.3, 0.3, 0.3, 0);
+                            Math.min(power / 10, MagnetConfig.getParticleCritMax()), 0.3, 0.3, 0.3, 0);
                 }
                 if (power >= 1000) {
                     world.spawnParticle(Particle.PORTAL, center,
-                            Math.min(power / 20, particlePortalMax), 0.4, 0.4, 0.4, 0.02);
+                            Math.min(power / 20, MagnetConfig.getParticlePortalMax()), 0.4, 0.4, 0.4, 0.02);
                 }
                 if (power >= 10000) {
                     world.spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0, Color.WHITE);
@@ -1057,8 +952,8 @@ public class MagnetManager extends BukkitRunnable {
         // 🌀 КРИВАЯ МОЩНОСТИ: (power / powerNormalize) ^ powerExponent
         //    0.55 = мягкий старт | 0.5 = sqrt | 1.0 = линейная
         // ════════════════════════════════════════
-        double t = power / powerNormalize;
-        double powerMultiplier = Math.pow(t, powerExponent);
+        double t = power / MagnetConfig.getPowerNormalize();
+        double powerMultiplier = Math.pow(t, MagnetConfig.getPowerExponent());
 
         // ════════════════════════════════════════
         // 📏 КРИВАЯ ДИСТАНЦИИ: smoothstep (плавно) или linear (старая)
@@ -1067,37 +962,37 @@ public class MagnetManager extends BukkitRunnable {
         if (nd > 1.0) nd = 1.0;
 
         double distanceFactor;
-        if ("linear".equalsIgnoreCase(distanceCurveType)) {
+        if ("linear".equalsIgnoreCase(MagnetConfig.getDistanceCurveType())) {
             // Линейная: была по умолчанию, с жёстким min_factor
-            distanceFactor = Math.max(distanceMinFactor, 1.0 - nd);
+            distanceFactor = Math.max(MagnetConfig.getDistanceMinFactor(), 1.0 - nd);
         } else {
             // Smoothstep (по умолчанию): 3t² - 2t³, производная = 0 на обоих концах
             double smoothT = nd * nd * (3.0 - 2.0 * nd);
             distanceFactor = 1.0 - smoothT;
             // Если min_factor > 0 — не даём упасть ниже
-            if (distanceFactor < distanceMinFactor) distanceFactor = distanceMinFactor;
+            if (distanceFactor < MagnetConfig.getDistanceMinFactor()) distanceFactor = MagnetConfig.getDistanceMinFactor();
         }
 
-        double baseForce = forceBase * powerMultiplier;
-        double proximityForce = distanceFactor * forceDistanceMultiplier * powerMultiplier;
+        double baseForce = MagnetConfig.getForceBase() * powerMultiplier;
+        double proximityForce = distanceFactor * MagnetConfig.getForceDistanceMultiplier() * powerMultiplier;
         double force = baseForce + proximityForce;
 
-        if (force > forceMax * powerMultiplier) {
-            force = forceMax * powerMultiplier;
+        if (force > MagnetConfig.getForceMax() * powerMultiplier) {
+            force = MagnetConfig.getForceMax() * powerMultiplier;
         }
 
         Vector forceVector = direction.multiply(force);
 
         if (entity instanceof Item) {
-            forceVector.setY(forceVector.getY() + itemYBoost * powerMultiplier);
-            double maxSpeed = forceMaxSpeed * powerMultiplier;
+            forceVector.setY(forceVector.getY() + MagnetConfig.getItemYBoost() * powerMultiplier);
+            double maxSpeed = MagnetConfig.getForceMaxSpeed() * powerMultiplier;
             if (forceVector.length() > maxSpeed) {
                 forceVector.normalize().multiply(maxSpeed);
             }
             entity.setVelocity(forceVector);
         } else {
             Vector newVel = entity.getVelocity().add(forceVector);
-            double maxSpeed = forceMaxSpeed * powerMultiplier;
+            double maxSpeed = MagnetConfig.getForceMaxSpeed() * powerMultiplier;
             if (newVel.length() > maxSpeed) {
                 newVel.normalize().multiply(maxSpeed);
             }
@@ -1106,131 +1001,9 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // 💾 БАЗА ДАННЫХ
+    // 💾 БАЗА ДАННЫХ (delegated to MagnetDatabase)
     // =========================
     public static void saveAll() {
-        for (MagnetCluster cluster : clustersById.values()) {
-            saveCluster(cluster);
-        }
-        Main.getInstance().getLogger().info("[Magnet] Saved " + clustersById.size() + " clusters to DB");
-    }
-
-    private static void saveCluster(MagnetCluster cluster) {
-        Connection con = DatabaseManager.getConnection();
-        try {
-            PreparedStatement ps = con.prepareStatement("""
-                INSERT OR REPLACE INTO magnets
-                (id, world, center_x, center_y, center_z, block_count, active)
-                VALUES (?, ?, ?, ?, ?, ?, 1)
-            """);
-            ps.setInt(1, cluster.id);
-            ps.setString(2, cluster.world.getName());
-            ps.setInt(3, cluster.center.getBlockX());
-            ps.setInt(4, cluster.center.getBlockY());
-            ps.setInt(5, cluster.center.getBlockZ());
-            ps.setInt(6, cluster.blockKeys.size());
-            ps.executeUpdate();
-            ps.close();
-
-            PreparedStatement del = con.prepareStatement(
-                "DELETE FROM magnet_blocks WHERE magnet_id = ?"
-            );
-            del.setInt(1, cluster.id);
-            del.executeUpdate();
-            del.close();
-
-            PreparedStatement ins = con.prepareStatement("""
-                INSERT INTO magnet_blocks (magnet_id, x, y, z)
-                VALUES (?, ?, ?, ?)
-            """);
-            for (long key : cluster.blockKeys) {
-                ins.setInt(1, cluster.id);
-                ins.setInt(2, getX(key));
-                ins.setInt(3, getY(key));
-                ins.setInt(4, getZ(key));
-                ins.addBatch();
-            }
-            ins.executeBatch();
-            ins.close();
-
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Magnet] DB save error: " + e.getMessage());
-        }
-    }
-
-    private static void deleteCluster(int id) {
-        Connection con = DatabaseManager.getConnection();
-        try {
-            PreparedStatement delBlocks = con.prepareStatement(
-                "DELETE FROM magnet_blocks WHERE magnet_id = ?"
-            );
-            delBlocks.setInt(1, id);
-            delBlocks.executeUpdate();
-            delBlocks.close();
-
-            PreparedStatement delMagnet = con.prepareStatement(
-                "DELETE FROM magnets WHERE id = ?"
-            );
-            delMagnet.setInt(1, id);
-            delMagnet.executeUpdate();
-            delMagnet.close();
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Magnet] DB delete error: " + e.getMessage());
-        }
-    }
-
-    private static void loadAll() {
-        locationToCluster.clear();
-        clustersById.clear();
-        Connection con = DatabaseManager.getConnection();
-        try {
-            PreparedStatement ps = con.prepareStatement(
-                "SELECT * FROM magnets WHERE active = 1"
-            );
-            ResultSet rs = ps.executeQuery();
-            int maxId = 0;
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                String worldName = rs.getString("world");
-                World world = Main.getInstance().getServer().getWorld(worldName);
-                if (world == null) continue;
-                MagnetCluster cluster = new MagnetCluster();
-                cluster.id = id;
-                cluster.world = world;
-                cluster.center = new Location(
-                        world,
-                        rs.getInt("center_x"),
-                        rs.getInt("center_y"),
-                        rs.getInt("center_z")
-                );
-                PreparedStatement psb = con.prepareStatement(
-                    "SELECT x, y, z FROM magnet_blocks WHERE magnet_id = ?"
-                );
-                psb.setInt(1, id);
-                ResultSet rsb = psb.executeQuery();
-                while (rsb.next()) {
-                    int bx = rsb.getInt("x"), by = rsb.getInt("y"), bz = rsb.getInt("z");
-                    long key = toKey(bx, by, bz);
-                    cluster.blockKeys.add(key);
-                    locationToCluster.put(key, cluster);
-                }
-                rsb.close();
-                psb.close();
-                // recalculateCenter() инициализирует running sums (sumX/sumY/sumZ),
-                // а также устанавливает power и center
-                cluster.recalculateCenter();
-                clustersById.put(id, cluster);
-                if (id > maxId) maxId = id;
-            }
-            rs.close();
-            ps.close();
-            nextId = maxId + 1;
-            Main.getInstance().getLogger().info(
-                    "[Magnet] Loaded " + clustersById.size()
-                            + " magnet clusters (" + locationToCluster.size() + " blocks) from DB"
-            );
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Magnet] DB load error: " + e.getMessage());
-        }
+        MagnetDatabase.saveAll();
     }
 }

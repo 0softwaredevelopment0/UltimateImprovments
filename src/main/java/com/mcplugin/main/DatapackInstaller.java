@@ -23,38 +23,62 @@ public class DatapackInstaller {
     // =========================
     // DATAPACK INSTALL
     // =========================
-    public void install(Main plugin) {
-        try {
-            // В Paper 1.21.4+ (Minecraft 1.21.4+) миры хранятся в новой структуре:
-            //   <worlddir>/<worldname>/dimensions/<namespace>/<dimension>/
-            // Bukkit.getWorlds().get(0).getWorldFolder() возвращает путь к измерению
-            // (например, world/dimensions/minecraft/overworld/), НО датапаки должны
-            // лежать в корне мира: <world>/datapacks/, а НЕ в подпапке измерения.
-            //
-            // Используем Bukkit.getWorldContainer() + имя мира — это гарантированно
-            // даёт корневую папку мира независимо от структуры измерений,
-            // уважает настройку world-container в bukkit.yml и не требует
-            // навигации по подпапкам dimensions/.
-            File worldRoot = new File(
-                    Bukkit.getWorldContainer(),
-                    Bukkit.getWorlds().get(0).getName()
-            );
+    public void install(Main plugin) throws Exception {
+        // В Paper 1.21.4+ (Minecraft 1.21.4+) миры хранятся в новой структуре:
+        //   <worlddir>/<worldname>/dimensions/<namespace>/<dimension>/
+        // Bukkit.getWorlds().get(0).getWorldFolder() возвращает путь к измерению
+        // (например, world/dimensions/minecraft/overworld/), НО датапаки должны
+        // лежать в корне мира: <world>/datapacks/, а НЕ в подпапке измерения.
+        //
+        // Используем Bukkit.getWorldContainer() + имя мира — это гарантированно
+        // даёт корневую папку мира независимо от структуры измерений,
+        // уважает настройку world-container в bukkit.yml и не требует
+        // навигации по подпапкам dimensions/.
 
-            File datapacksFolder = new File(worldRoot, "datapacks");
+        if (Bukkit.getWorlds().isEmpty()) {
+            throw new IllegalStateException("No worlds loaded yet — cannot install datapack");
+        }
 
-            if (!datapacksFolder.exists()) {
-                datapacksFolder.mkdirs();
+        File worldRoot = new File(
+                Bukkit.getWorldContainer(),
+                Bukkit.getWorlds().get(0).getName()
+        );
+
+        File datapacksFolder = new File(worldRoot, "datapacks");
+
+        if (!datapacksFolder.exists()) {
+            datapacksFolder.mkdirs();
+        }
+
+        File targetFolder = new File(datapacksFolder, "MC-Datapack");
+
+        // Always re-extract to ensure datapack is up-to-date with plugin version.
+        // Delete old folder first, then copy fresh from JAR.
+        if (targetFolder.exists()) {
+            deleteRecursively(targetFolder);
+        }
+
+        targetFolder.mkdirs();
+        copyFromJar(plugin, "datapacks/MC-Datapack/", targetFolder);
+
+        plugin.getLogger().info("[Datapack] ✓ Installed to " + targetFolder.getAbsolutePath());
+    }
+
+    private void deleteRecursively(File dir) throws Exception {
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    deleteRecursively(file);
+                } else {
+                    if (!file.delete() && file.exists()) {
+                        throw new java.io.IOException("Cannot delete file: " + file.getAbsolutePath());
+                    }
+                }
             }
-
-            File targetFolder = new File(datapacksFolder, "MC-Datapack");
-
-            if (targetFolder.exists()) return;
-
-            targetFolder.mkdirs();
-            copyFromJar(plugin, "datapacks/MC-Datapack/", targetFolder);
-
-        } catch (Exception e) {
-            plugin.getLogger().severe("[DATAPACK] Failed: " + e.getMessage());
+        }
+        if (!dir.delete() && dir.exists()) {
+            throw new java.io.IOException("Cannot delete directory: " + dir.getAbsolutePath());
         }
     }
 

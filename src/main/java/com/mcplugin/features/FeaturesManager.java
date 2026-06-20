@@ -18,11 +18,13 @@ import com.mcplugin.features.entitylocator.EntityLocatorManager;
 import com.mcplugin.features.glassbreak.GlassBreakManager;
 import com.mcplugin.features.healthmeter.HealthMeterManager;
 import com.mcplugin.features.itemskill.ItemKillManager;
+import com.mcplugin.features.magnet.MagnetConfig;
 import com.mcplugin.features.magnet.MagnetManager;
 import com.mcplugin.features.modeprotect.ModeProtectManager;
 import com.mcplugin.features.shieldslowness.ShieldSlownessManager;
 import com.mcplugin.features.terracotaspeed.TerracotaSpeedManager;
 import com.mcplugin.features.savedhotbar.CreativeItemValidator;
+import com.mcplugin.features.minecartspeed.MinecartSpeedManager;
 import com.mcplugin.features.waypoint.WaypointManager;
 
 public class FeaturesManager {
@@ -58,6 +60,7 @@ public class FeaturesManager {
         ContainerTriggerManager.init(plugin);
         VanishManager.init();
         NotesManager.init();
+        MinecartSpeedManager.init(plugin);
     }
 
     public static void reloadConfig() {
@@ -75,7 +78,7 @@ public class FeaturesManager {
         GlassBreakManager.reloadConfig();
         HealthMeterManager.reloadConfig();
         ItemKillManager.reloadConfig();
-        MagnetManager.reloadConfig();
+        MagnetConfig.reloadConfig();
         ModeProtectManager.reloadConfig();
         ShieldSlownessManager.reloadConfig();
         CreativeItemValidator.reloadConfig();
@@ -83,6 +86,7 @@ public class FeaturesManager {
         WaypointManager.reloadConfig();
         ContainerTriggerManager.reloadConfig();
         VanishManager.reloadConfig();
+        MinecartSpeedManager.reloadConfig();
     }
 
     public static FeaturesManager getInstance() {

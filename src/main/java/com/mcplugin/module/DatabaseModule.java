@@ -24,10 +24,6 @@ public class DatabaseModule extends PluginModule {
         DatabaseInit.init();
         plugin.getLogger().info("[SQLITE] Database initialized successfully.");
 
-        // =========================
-        // PDC KEYS
-        // =========================
-        com.mcplugin.Keys.init((Main) plugin);
     }
 
     @Override

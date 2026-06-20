@@ -3,6 +3,7 @@ package com.mcplugin.module;
 import com.mcplugin.Main;
 import com.mcplugin.commands.PowerManager;
 import com.mcplugin.features.FeaturesManager;
+import com.mcplugin.features.minecartspeed.MinecartSpeedManager;
 import com.mcplugin.main.CommandRegistrar;
 import com.mcplugin.main.TaskManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -40,7 +41,7 @@ public class CoreModule extends PluginModule {
 
     @Override
     protected void onDisable(JavaPlugin plugin) {
-        // Core systems save is handled by AutoSaveModule
+        MinecartSpeedManager.shutdown();
     }
 
     @Override
