@@ -222,6 +222,10 @@ permissions:
     description: Allows changing any vote
     default: op
 
+  mcplugin.command.vote.stats:
+    description: Allows viewing vote statistics (/mp vote stats <name>)
+    default: op
+
   mcplugin.command.vote.bypass:
     description: Excludes from vote total count (admin/staff)
     default: op

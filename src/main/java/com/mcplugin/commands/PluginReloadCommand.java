@@ -125,6 +125,17 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                         }
                         VoteManager.change(player, args[2], args, 3);
                     }
+                    case "stats" -> {
+                        if (!player.hasPermission("mcplugin.command.vote.stats")) {
+                            player.sendMessage(MessageUtil.parse("<red>❌ У вас нет прав на просмотр статистики голосований!</red>"));
+                            yield true;
+                        }
+                        if (args.length < 3) {
+                            player.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/mp vote stats <name></white>"));
+                            yield true;
+                        }
+                        VoteManager.view(player, args[2]);
+                    }
                     default -> {
                         // /mp vote <name> [answer]
                         String voteName = args[1];
@@ -177,8 +188,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.add("create");
             completions.add("delete");
             completions.add("change");
+            completions.add("stats");
             completions.addAll(VoteManager.getVoteNames());
-        } else if (args.length == 3 && args[0].equalsIgnoreCase("vote") && (args[1].equalsIgnoreCase("delete") || args[1].equalsIgnoreCase("change"))) {
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("vote") && (args[1].equalsIgnoreCase("delete") || args[1].equalsIgnoreCase("change") || args[1].equalsIgnoreCase("stats"))) {
             completions.addAll(VoteManager.getVoteNames());
         } else if (args.length == 3 && args[0].equalsIgnoreCase("vote") && VoteManager.getVote(args[1]) != null) {
             var vote = VoteManager.getVote(args[1]);

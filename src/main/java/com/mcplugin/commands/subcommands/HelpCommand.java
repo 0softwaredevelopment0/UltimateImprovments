@@ -64,6 +64,8 @@ public final class HelpCommand {
         sender.sendMessage(" §7└ Проголосовать / посмотреть результаты");
         sender.sendMessage("§e/mp vote delete §7<название>");
         sender.sendMessage(" §7└ Удалить голосование (с подтверждением)");
+        sender.sendMessage("§e/mp vote stats §7<название>");
+        sender.sendMessage(" §7└ Статистика голосования (результаты, график)");
         sender.sendMessage("");
         sender.sendMessage("§e/mp power off");
         sender.sendMessage(" §7└ Запросить выключение сервера");
