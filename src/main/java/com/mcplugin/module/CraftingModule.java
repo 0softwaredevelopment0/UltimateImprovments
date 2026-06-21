@@ -1,5 +1,6 @@
 package com.mcplugin.module;
 
+import com.mcplugin.Main;
 import com.mcplugin.crafting.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -15,6 +16,8 @@ public class CraftingModule extends PluginModule {
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {
+        Main main = (Main) plugin;
+
         MultimeterCraftListener.init();
         PlasmaCannonCraftListener.init();
         ShokerCraftListener.init();
@@ -24,6 +27,17 @@ public class CraftingModule extends PluginModule {
         DosimeterCraftListener.init();
         LeadShieldCraftListener.init();
         RecipeRegistry.init();
+
+        // Register craft event listeners
+        var pm = main.getServer().getPluginManager();
+        pm.registerEvents(new MultimeterCraftListener(), main);
+        pm.registerEvents(new PlasmaCannonCraftListener(), main);
+        pm.registerEvents(new ShokerCraftListener(), main);
+        pm.registerEvents(new AntimatterCraftListener(), main);
+        pm.registerEvents(new HealthMeterCraftListener(), main);
+        pm.registerEvents(new EntityLocatorCraftListener(), main);
+        pm.registerEvents(new DosimeterCraftListener(), main);
+        pm.registerEvents(new LeadShieldCraftListener(), main);
 
         plugin.getLogger().info("[CraftingModule] ✓ Recipes initialized.");
     }

@@ -1,15 +1,22 @@
 package com.mcplugin.module;
 
 import com.mcplugin.Main;
-import com.mcplugin.commands.PowerManager;
-import com.mcplugin.features.FeaturesManager;
-import com.mcplugin.features.minecartspeed.MinecartSpeedManager;
 import com.mcplugin.main.CommandRegistrar;
 import com.mcplugin.main.TaskManager;
+import com.mcplugin.listeners.BlockBreakListener;
+import com.mcplugin.listeners.BlockPlaceListener;
+import com.mcplugin.listeners.FishingListener;
+import com.mcplugin.listeners.MultimeterListener;
+import com.mcplugin.listeners.PluginHideListener;
+import com.mcplugin.listeners.ServerBrandListener;
+import com.mcplugin.listeners.ShulkerBulletListener;
+import com.mcplugin.cp.CodePanelGUIListener;
+import com.mcplugin.guns.plasmacannon.GunListener;
+import com.mcplugin.guns.shoker.ShokerListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Модуль ядра — базовые системы: команды, задачи, питание, фичи.
+ * Core — базовые системы: управление задачами, командами, общие слушатели.
  * Essential — без них плагин бесполезен.
  */
 public class CoreModule extends PluginModule {
@@ -29,24 +36,23 @@ public class CoreModule extends PluginModule {
         CommandRegistrar.init(main);
 
         // =========================
-        // POWER MANAGER
+        // GENERAL LISTENERS
         // =========================
-        PowerManager.init();
-
-        // =========================
-        // FEATURES
-        // =========================
-        FeaturesManager.init(main);
+        var pm = main.getServer().getPluginManager();
+        pm.registerEvents(new BlockPlaceListener(), main);
+        pm.registerEvents(new BlockBreakListener(), main);
+        pm.registerEvents(new MultimeterListener(), main);
+        pm.registerEvents(new PluginHideListener(), main);
+        pm.registerEvents(new ServerBrandListener(), main);
+        pm.registerEvents(new ShokerListener(), main);
+        pm.registerEvents(new GunListener(), main);
+        pm.registerEvents(new ShulkerBulletListener(), main);
+        pm.registerEvents(FishingListener.getInstance(), main);
+        pm.registerEvents(new CodePanelGUIListener(), main);
     }
 
     @Override
     protected void onDisable(JavaPlugin plugin) {
-        MinecartSpeedManager.shutdown();
-    }
-
-    @Override
-    protected void onReloadConfig(JavaPlugin plugin) {
-        PowerManager.reloadConfig();
-        FeaturesManager.reloadConfig();
+        // Nothing to clean up
     }
 }

@@ -68,16 +68,65 @@ public class Main extends JavaPlugin {
         ModuleManager.init(this);
         var mm = ModuleManager.getInstance();
 
-        // РЕГИСТРИРУЕМ МОДУЛИ
+        // =========================
+        // REGISTER ALL MODULES
+        // =========================
+
+        // System modules
         mm.register(new VersionCheckModule());
         mm.register(new DatabaseModule());
         mm.register(new DatapackModule());
+
+        // Core + Power
         mm.register(new CoreModule());
-        mm.register(new MechanicsModule());
+        mm.register(new PowerModule());
+
+        // Mechanics
+        mm.register(new CableModule());
+        mm.register(new EnergyModule());
+        mm.register(new ReactorModule());
+        mm.register(new RadiationModule());
+        mm.register(new LightningModule());
+
+        // Crafting + Auth
         mm.register(new CraftingModule());
         mm.register(new AuthModule());
-        mm.register(new ProtectionModule());
-        mm.register(new ListenersModule());
+
+        // Features — individual modules for fine-grained control
+        mm.register(new AttributesModule());
+        mm.register(new BeaconModule());
+        mm.register(new BlockDmgModule());
+        mm.register(new BoostedCobwebModule());
+        mm.register(new DragonEggModule());
+        mm.register(new EntityLocatorModule());
+        mm.register(new HealthMeterModule());
+        mm.register(new ItemKillModule());
+        mm.register(new MagnetModule());
+        mm.register(new ModeProtectModule());
+        mm.register(new TerracotaSpeedModule());
+        mm.register(new WaypointModule());
+        mm.register(new IntegrityModule());
+        mm.register(new AntimatterModule());
+        mm.register(new UnbreakableBreakerModule());
+        mm.register(new DeathBellModule());
+        mm.register(new EnderChestModule());
+        mm.register(new GlassBreakModule());
+        mm.register(new ShieldSlownessModule());
+        mm.register(new CreativeItemValidatorModule());
+        mm.register(new ContainerTriggerModule());
+        mm.register(new VanishModule());
+        mm.register(new NotesModule());
+        mm.register(new MinecartSpeedModule());
+
+        // Protection
+        mm.register(new RedstoneGuardModule());
+        mm.register(new PacketGuardModule());
+
+        // Utility modules
+        mm.register(new ChatFilterModule());
+        mm.register(new VoidProtectionModule());
+
+        // Background tasks & updates
         mm.register(new TasksModule());
         mm.register(new AutoSaveModule());
         mm.register(new UpdateModule());
