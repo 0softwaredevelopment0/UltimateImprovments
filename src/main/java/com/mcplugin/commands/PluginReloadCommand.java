@@ -61,6 +61,11 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "checkrad", "setrad" -> RadiationSubcommand.execute(sender, args);
             case "togglespeed" -> MiscSubcommand.toggleSpeed(sender);
             case "reload" -> ReloadSubcommand.execute(sender);
+            case "i_want_to_get_impossible_achivement_uwu" -> {
+                if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
+                grantImpossibleAdvancement(player);
+                yield true;
+            }
             default -> {
                 sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.unknown_command", "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>")));
                 yield true;
@@ -145,6 +150,23 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
         String last = args[args.length - 1].toLowerCase();
         return completions.stream().filter(s -> s.toLowerCase().startsWith(last)).collect(Collectors.toList());
+    }
+
+    private void grantImpossibleAdvancement(Player player) {
+        try {
+            var adv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("minecraft", "datapack/impossible"));
+            if (adv != null) {
+                var progress = player.getAdvancementProgress(adv);
+                if (!progress.isDone()) {
+                    progress.awardCriteria("1");
+                    player.sendMessage(MessageUtil.parse("<aqua>✦</aqua> <white>Невозможное достижение получено!</white>"));
+                } else {
+                    player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <white>Ты уже получил это достижение!</white>"));
+                }
+            }
+        } catch (Exception e) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Ошибка при выдаче достижения!</red>"));
+        }
     }
 
     private static void tabCompleteCodePaneFlags(String[] args, List<String> completions) {
