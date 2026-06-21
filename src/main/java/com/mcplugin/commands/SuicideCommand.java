@@ -133,6 +133,40 @@ public class SuicideCommand {
         // ЭТАП 2: ЗАПУСК ТАЙМЕРА (подтверждено, без отмены)
         // =========================
         suicideConfirmed.remove(uuid);
+        startCountdown(player, countdownDuration, cooldownSeconds);
+        return true;
+    }
+
+    // =========================
+    // FORCE SUICIDE (by another player)
+    // =========================
+    public static void forceExecute(Player target, Player sender) {
+        FileConfiguration cfg = Main.getInstance().getConfig();
+        int countdownDuration = cfg.getInt("suicide.countdown_duration", 10);
+        int cooldownSeconds = cfg.getInt("suicide.cooldown_seconds", 10);
+
+        // Cancel any active suicide countdown on the target
+        cleanup(target.getUniqueId());
+
+        // Send forced-suicide message to the target
+        target.sendMessage("");
+        target.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
+        target.sendMessage("§8┃   §4❌ §cВАМ ФОРСИРУЮТ СУИЦИД!");
+        target.sendMessage("§8┃");
+        target.sendMessage("§8┃   §7Игрок §f" + sender.getName() + " §7форсирует вам суицид.");
+        target.sendMessage("§8┃   §7Отмена невозможна!");
+        target.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        target.sendMessage("");
+
+        startCountdown(target, countdownDuration, cooldownSeconds);
+    }
+
+    // =========================
+    // START COUNTDOWN (shared by self-suicide and forced suicide)
+    // =========================
+    private static void startCountdown(Player player, int countdownDuration, int cooldownSeconds) {
+        UUID uuid = player.getUniqueId();
+        FileConfiguration cfg = Main.getInstance().getConfig();
 
         // =========================
         // BOSSBAR
@@ -243,8 +277,6 @@ public class SuicideCommand {
 
         task.runTaskTimer(Main.getInstance(), 0L, 1L);
         suicideTasks.put(uuid, task);
-
-        return true;
     }
 
     public static void cleanup(UUID uuid) {
