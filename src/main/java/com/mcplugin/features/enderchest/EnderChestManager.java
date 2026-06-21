@@ -1,6 +1,7 @@
 package com.mcplugin.features.enderchest;
 
 import com.mcplugin.Main;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -87,5 +88,16 @@ public class EnderChestManager implements Listener {
                 + " opened an ender chest at "
                 + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ()
                 + " and it EXPLODED! (roll=" + String.format("%.4f", roll) + " < chance=" + explosionChance + ")");
+
+        // 🏆 Достижение: blowed_by_echest
+        try {
+            var adv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("minecraft", "datapack/blowed_by_echest"));
+            if (adv != null) {
+                var progress = player.getAdvancementProgress(adv);
+                if (!progress.isDone()) {
+                    progress.awardCriteria("1");
+                }
+            }
+        } catch (Exception ignored) {}
     }
 }

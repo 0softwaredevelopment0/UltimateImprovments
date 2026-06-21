@@ -236,10 +236,12 @@ public class RadiationManager implements Listener {
             }
 
             // =========================
-            // ДРЕВНИЕ ОБЛОМКИ В ИНВЕНТАРЕ
+            // ДРЕВНИЕ ОБЛОМКИ В ИНВЕНТАРЕ — радиация × количество
+            // Чем больше обломков, тем выше радиация
             // =========================
-            if (hasInInventory(player, Material.ANCIENT_DEBRIS)) {
-                rad += ancientDebrisRad;
+            int debrisCount = countInInventory(player, Material.ANCIENT_DEBRIS);
+            if (debrisCount > 0) {
+                rad += ancientDebrisRad * debrisCount;
             }
 
             // =========================
@@ -391,14 +393,19 @@ public class RadiationManager implements Listener {
     // HELPER METHODS
     // =========================
 
-    private boolean hasInInventory(Player player, Material material) {
+    private int countInInventory(Player player, Material material) {
+        int count = 0;
         for (ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material) return true;
+            if (item != null && item.getType() == material) {
+                count += item.getAmount();
+            }
         }
         for (ItemStack item : player.getInventory().getExtraContents()) {
-            if (item != null && item.getType() == material) return true;
+            if (item != null && item.getType() == material) {
+                count += item.getAmount();
+            }
         }
-        return false;
+        return count;
     }
 
     private boolean hasCustomItem(ItemStack item, NamespacedKey key) {

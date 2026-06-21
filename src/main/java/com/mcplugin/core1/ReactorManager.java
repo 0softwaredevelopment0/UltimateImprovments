@@ -14,9 +14,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Оркестратор реактора тёмного синтеза (Dark Fusion Core / Р.Т.С).
@@ -186,6 +185,16 @@ public class ReactorManager {
     // =========================
     // PENDING ASSEMBLY
     // =========================
+    // Advancement tracking (one-time grants)
+    private boolean advStartDfcGranted = false;
+    private boolean advDfcUnstableGranted = false;
+    private boolean advDfcSelfDestructGranted = false;
+    private boolean advExplodeDfcGranted = false;
+    private boolean advCompletedRecipeGranted = false;
+    private final Set<UUID> advInsideDfcGranted = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> advBurnInsideDfcGranted = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> advOneTimeHeaterGranted = ConcurrentHashMap.newKeySet();
+
     private static final Map<UUID, Map<String, PendingAssembly>> pendingAssemblies = new HashMap<>();
 
     public record PendingAssembly(Location center, org.bukkit.entity.ItemFrame frame, String type) {}
@@ -202,6 +211,31 @@ public class ReactorManager {
 
     public static void clearPendingAssembly(Player player) {
         pendingAssemblies.remove(player.getUniqueId());
+    }
+
+    // =========================
+    // GRANT ADVANCEMENT HELPER
+    // =========================
+    private void grantAdvancement(Player player, String key) {
+        try {
+            var adv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("minecraft", key));
+            if (adv != null) {
+                var progress = player.getAdvancementProgress(adv);
+                if (!progress.isDone()) {
+                    progress.awardCriteria("1");
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void grantAdvancementAll(String key) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (reactorLocation != null
+                    && player.getWorld().equals(reactorLocation.getWorld())
+                    && player.getLocation().distanceSquared(reactorLocation) <= 225) {
+                grantAdvancement(player, key);
+            }
+        }
     }
 
     // =========================
@@ -325,6 +359,13 @@ public class ReactorManager {
         if (heating != display.wasHeating()) {
             broadcast(heating ? "§6🔥 §eНагрев включён" : "§7🔥 §fНагрев выключен");
             display.setHeating(heating);
+
+            // 🏆 Достижение: start_dfc — реактор запущен
+            if (heating && !advStartDfcGranted) {
+                advStartDfcGranted = true;
+                Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                    grantAdvancementAll("datapack/start_dfc"));
+            }
         }
         if (cooling != display.wasCooling()) {
             broadcast(cooling ? "§b❄ §3Охлаждение включено" : "§7❄ §fОхлаждение выключено");
@@ -338,6 +379,13 @@ public class ReactorManager {
             if (hasBarrelFuel()) {
                 coreTemp += heatRate;
                 noFuelWarnTick = 0;
+
+                // 🏆 Достижение: start_dfc — реактор запущен (если ещё не выдано)
+                if (!advStartDfcGranted) {
+                    advStartDfcGranted = true;
+                    Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                        grantAdvancementAll("datapack/start_dfc"));
+                }
             } else if (noFuelWarnTick == 0) {
                 broadcast("§e⚠ §7Нет топлива! В левую бочку поместите алмазные блоки, в правую — золотые блоки.");
                 noFuelWarnTick++;
@@ -399,6 +447,20 @@ public class ReactorManager {
                         && py >= by - 5 && py <= by
                         && pz >= bz - 2 && pz <= bz + 2) {
                     RadiationManager.addRadiation(player, radiationAmount);
+
+                    // 🏆 Достижение: inside_dfc — игрок внутри реактора
+                    if (advInsideDfcGranted.add(player.getUniqueId())) {
+                        Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                            grantAdvancement(player, "datapack/inside_dfc"));
+                    }
+
+                    // 🏆 Достижение: burn_inside_dfc — смертельная доза внутри реактора
+                    if (RadiationManager.getRadiation(player) >= 6400) {
+                        if (advBurnInsideDfcGranted.add(player.getUniqueId())) {
+                            Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                                grantAdvancement(player, "datapack/burn_inside_dfc"));
+                        }
+                    }
                 }
             }
         }
@@ -567,6 +629,9 @@ public class ReactorManager {
         if (coreCaseTemp >= caseIntDecayTempThreshold && coreCaseInt > 0) {
             coreCaseInt = Math.max(0, coreCaseInt - caseIntDecayTempRate);
         }
+
+        // 🏆 Достижение: dfc_unstable — первая деградация целостности
+        Bukkit.getScheduler().runTask(Main.getInstance(), this::checkDfcUnstable);
     }
 
     // =========================
@@ -701,6 +766,12 @@ public class ReactorManager {
         finalMeltdownActive = false;
         broadcast("§4☠ §cКритический износ реактора! §f" + wearChatCountdown + "§c сек до детонации...");
         broadcast("§4☠ §cПротокол самоуничтожения инициирован.");
+
+        // 🏆 Достижение: dfc_self_destruct — самоуничтожение
+        if (!advDfcSelfDestructGranted) {
+            advDfcSelfDestructGranted = true;
+            grantAdvancementAll("datapack/dfc_self_destruct");
+        }
     }
 
     // =========================
@@ -711,6 +782,17 @@ public class ReactorManager {
             if (currVal == 75 || currVal == 50 || currVal == 25) {
                 broadcast("§4⚠ §cЦелостность " + name + ": §f" + currVal + "%");
             }
+        }
+    }
+
+    // =========================
+    // INTEGRITY DECAY — dfc_unstable achievement
+    // =========================
+    private void checkDfcUnstable() {
+        if (!advDfcUnstableGranted && (coreShInt < 100 || coreCaseInt < 100)) {
+            advDfcUnstableGranted = true;
+            Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                grantAdvancementAll("datapack/dfc_unstable"));
         }
     }
 
@@ -766,6 +848,12 @@ public class ReactorManager {
 
         saveToDb();
         broadcast("§4☢ §cРецепт слияния готов! Древний обломок выброшен в центре реактора.");
+
+        // 🏆 Достижение: complete_dfc_recipe — рецепт завершён
+        if (!advCompletedRecipeGranted) {
+            advCompletedRecipeGranted = true;
+            grantAdvancementAll("datapack/complete_dfc_recipe");
+        }
     }
 
     // =========================
@@ -798,6 +886,30 @@ public class ReactorManager {
         base.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, coreCenter, 64, 0, 0, 0, 0.1);
 
         broadcast("§4☠ §cРасплавление! Ядро реактора разрушено!");
+
+        // 🏆 Достижение: explode_dfc — взрыв реактора
+        if (!advExplodeDfcGranted) {
+            advExplodeDfcGranted = true;
+            grantAdvancementAll("datapack/explode_dfc");
+        }
+
+        // 🏆 Достижение: one_time_heater — игрок внутри реактора во время взрыва
+        if (reactorLocation != null) {
+            int bx = reactorLocation.getBlockX(), by = reactorLocation.getBlockY(), bz = reactorLocation.getBlockZ();
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!player.getWorld().equals(base.getWorld())) continue;
+                if (advOneTimeHeaterGranted.contains(player.getUniqueId())) continue;
+                Location ploc = player.getLocation();
+                int px = ploc.getBlockX(), py = ploc.getBlockY(), pz = ploc.getBlockZ();
+                if (px >= bx - 2 && px <= bx + 2
+                        && py >= by - 5 && py <= by
+                        && pz >= bz - 2 && pz <= bz + 2) {
+                    advOneTimeHeaterGranted.add(player.getUniqueId());
+                    grantAdvancement(player, "datapack/one_time_heater");
+                }
+            }
+        }
+
         setReactorLocation(null);
     }
 
