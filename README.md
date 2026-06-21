@@ -38,6 +38,8 @@
 2. Put the .jar file into the plugins folder.
 3. Restart the server. After the plugin has loaded, restart the server again to correctly load the data pack.
 
+**Also you can download plugin on curseforge: https://www.curseforge.com/minecraft/bukkit-plugins/mc-plugin**
+
 # Updating
 
 1. Delete automatically created datapack and it will be updates and re-created by plugin.
