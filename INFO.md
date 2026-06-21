@@ -36,31 +36,68 @@
 
 ## 🔌 Module System
 
-The plugin is built on a modular architecture. Each module initializes independently — if one module fails, the rest continue working.
+The plugin is built on a modular architecture. **Each module = one feature**. If one module fails, the rest continue working. Modules can be toggled on/off at runtime via `/mp modules`.
 
-**Essential modules (critical for operation):**
-- `Database` — SQLite database
-- `Core` — plugin core (commands, tasks, features)
-- `Mechanics` — cables, energy, reactor, radiation, lightning
-- `Crafting` — custom recipes
-- `Auth` — authentication system
-- `Listeners` — all event listeners
-- `Tasks` — background tasks
+**Essential modules (always on):**
+| Module | Function |
+|--------|----------|
+| `Core` | Plugin core (commands, tasks, general listeners) |
+| `Database` | SQLite database management |
+| `Auth` | Authentication system |
+| `Crafting` | Custom item recipes |
+| `Cable` | Cable network (energy transfer) |
+| `Energy` | Energy management (balancer, generator, battery drain) |
+| `Reactor` | Dark Fusion Reactor |
+| `Power` | Server shutdown/restart system |
+| `Radiation` | Player radiation system |
+| `Tasks` | Background tasks |
 
-**Optional modules:**
-- `Datapack` — datapack installation
-- `Protection` — RedstoneGuard, PacketGuard
-- `UpdateChecker` — update checking
-- `VersionCheck` — server core & plugin version check
-- `AutoSave` — auto-save to database (every 5 min)
-- `Leash` — enhanced leashing
+**Optional modules (can be toggled):**
+| Module | Function |
+|--------|----------|
+| `Datapack` | Datapack installation |
+| `RedstoneGuard` | Redstone anti-lag |
+| `PacketGuard` | Packet size protection |
+| `VoidProtection` | Void fall prevention |
+| `ChatFilter` | Profanity filter |
+| `UpdateChecker` | Automatic update checking |
+| `VersionCheck` | Version compatibility check |
+| `AutoSave` | Auto-save to DB (every 5 min) |
+| `Vanish` | Player hiding system |
+| `Notes` | Player notes system |
+| `Magnet` | Magnet structure |
+| `MinecartSpeed` | Minecart acceleration |
+| `Lightning` | Lightning structure |
+| `Integrity` | Item integrity (durability) system |
+| `Antimatter` | Antimatter item |
+| `Attributes` | Custom item attributes |
+| `Beacon` | Enhanced beacon effects |
+| `BlockDmg` | Custom block hardness |
+| `BoostedCobweb` | Enhanced cobweb |
+| `ContainerTrigger` | Container open triggers |
+| `DeathBell` | Custom death bell |
+| `DragonEgg` | Custom dragon egg behavior |
+| `EnderChest` | Extended ender chest |
+| `EntityLocator` | Entity finding item |
+| `GlassBreak` | Realistic glass breaking |
+| `HealthMeter` | Mob health display |
+| `ItemKill` | Conditional item removal |
+| `Leash` | Enhanced entity leashing |
+| `ModeProtect` | GameMode protection per world |
+| `ShieldSlowness` | Shield movement penalty |
+| `TerracotaSpeed` | Speed boost on terracotta |
+| `UnbreakableBreaker` | Break unbreakable blocks |
+| `Waypoint` | Teleport point system |
+| `CreativeItemValidator` | Creative item validation |
 
 **Module management commands:**
 ```
-/mp modules list            — list modules and their status
-/mp modules enable <name>  — enable a module
-/mp modules disable <name> — disable a module
+/mp modules list              — list all modules and their status
+/mp modules enable <name>     — enable a module
+/mp modules disable <name>    — disable a module
 ```
+
+**Note:** The old monolithic modules (`Mechanics`, `Protection`, `Listeners`) have been split into individual feature modules for better debugging and flexibility.
 
 ---
 
