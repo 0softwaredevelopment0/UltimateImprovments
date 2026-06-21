@@ -18,7 +18,7 @@
 2. **Drop** into `plugins/` folder
 3. **Restart** server twice (first load installs datapack, second activates it)
 
-> ⚠ Requires **Paper 1.21.4+** or fork. Not compatible with Spigot/Bukkit.
+> ⚠ Requires **Paper 26.2+** or fork. Not compatible with Spigot/Bukkit.
 
 ---
 
