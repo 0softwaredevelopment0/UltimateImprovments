@@ -192,6 +192,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.addAll(VoteManager.getVoteNames());
         } else if (args.length == 3 && args[0].equalsIgnoreCase("vote") && (args[1].equalsIgnoreCase("delete") || args[1].equalsIgnoreCase("change") || args[1].equalsIgnoreCase("stats"))) {
             completions.addAll(VoteManager.getVoteNames());
+        } else if (args.length >= 5 && args[0].equalsIgnoreCase("vote") && args[1].equalsIgnoreCase("create")) {
+            // Tab-complete flags for vote create
+            tabCompleteVoteFlags(args, 5, completions);
+        } else if (args.length >= 3 && args[0].equalsIgnoreCase("vote") && args[1].equalsIgnoreCase("change")) {
+            // Tab-complete flags for vote change
+            completions.add("-title");
+            completions.add("-desc");
+            tabCompleteVoteFlags(args, 3, completions);
         } else if (args.length == 3 && args[0].equalsIgnoreCase("vote") && VoteManager.getVote(args[1]) != null) {
             var vote = VoteManager.getVote(args[1]);
             for (int i = 0; i < vote.answers.size(); i++) {
@@ -270,6 +278,37 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
         } catch (Exception e) {
             player.sendMessage(MessageUtil.parse("<red>❌ Ошибка при выдаче достижения!</red>"));
+        }
+    }
+
+    private static void tabCompleteVoteFlags(String[] args, int startIndex, List<String> completions) {
+        java.util.Set<Integer> usedAnswers = new java.util.HashSet<>();
+        boolean hasTime = false;
+        for (int i = startIndex; i < args.length - 1; i++) {
+            String a = args[i].toLowerCase();
+            if (a.startsWith("-answer_")) {
+                try {
+                    int idx = a.indexOf(':');
+                    if (idx > 0) {
+                        int num = Integer.parseInt(a.substring(8, idx));
+                        usedAnswers.add(num);
+                    }
+                } catch (NumberFormatException ignored) {}
+            } else if (a.startsWith("-time:")) {
+                hasTime = true;
+            }
+        }
+        String last = args[args.length - 1].toLowerCase();
+        if (!last.startsWith("-time:") && !hasTime) {
+            completions.add("-time:");
+        }
+        // Suggest next unused answer numbers (1-10)
+        for (int i = 1; i <= 10; i++) {
+            if (!usedAnswers.contains(i)) {
+                if (!last.startsWith("-answer_")) {
+                    completions.add("-answer_" + i + ":");
+                }
+            }
         }
     }
 
