@@ -258,7 +258,16 @@ public class DatabaseInit {
             """);
 
         // =========================
-        // 🔄 UPDATER STATE (последний скачанный тег релиза)
+        // 👻 VANISHED PLAYERS (таблица, а не config.yml)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS vanished_players (
+                uuid TEXT PRIMARY KEY
+            );
+        """);
+
+        // =========================
+        // 🔄 UPDATER STATE (последний SHA коммита / тег релиза)
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS updater_state (
@@ -267,10 +276,21 @@ public class DatabaseInit {
             );
         """);
 
-        // Инициализация строки latest_tag, если её нет
+        // Инициализация строк latest_commit_sha и installed_tag, если их нет
         st.execute("""
             INSERT OR IGNORE INTO updater_state (key, value)
-            VALUES ('latest_tag', '');
+            VALUES ('latest_commit_sha', '');
+        """);
+        st.execute("""
+            INSERT OR IGNORE INTO updater_state (key, value)
+            VALUES ('installed_tag', '');
+        """);
+        // Миграция: если был старый latest_tag (c предыдущих версий) — переносим в installed_tag
+        st.execute("""
+            UPDATE updater_state SET value = (
+                SELECT value FROM updater_state WHERE key = 'latest_tag' AND value != ''
+            ) WHERE key = 'installed_tag' AND value = ''
+            AND EXISTS (SELECT 1 FROM updater_state WHERE key = 'latest_tag' AND value != '');
         """);
 
         } catch (Exception e) {

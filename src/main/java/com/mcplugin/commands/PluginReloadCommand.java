@@ -2,6 +2,8 @@ package com.mcplugin.commands;
 
 import com.mcplugin.Main;
 import com.mcplugin.commands.home.HomeCommand;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.commands.home.HomeDatabase;
 import com.mcplugin.commands.subcommands.*;
 import com.mcplugin.cp.CodePanelDatabase;
@@ -25,12 +27,12 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§4❌ §cНеверная команда! §7Используйте §f/mp help§7 для списка команд.");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.unknown_command", "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>")));
             return true;
         }
 
         if (sender instanceof Player p && !p.hasPermission("mcplugin")) {
-            p.sendMessage("§4❌ §cУ вас нет прав на использование MC-Plugin команд!");
+            p.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission to use MC-Plugin commands!</red>")));
             return true;
         }
 
@@ -46,7 +48,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "auth" -> AuthSubcommand.execute(sender, args);
             case "power" -> PowerSubcommand.execute(sender, args);
             case "suicide" -> {
-                if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!"); yield true; }
+                if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 SuicideCommand.execute(player);
                 yield true;
             }
@@ -60,7 +62,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "togglespeed" -> MiscSubcommand.toggleSpeed(sender);
             case "reload" -> ReloadSubcommand.execute(sender);
             default -> {
-                sender.sendMessage("§4❌ §cНеверная команда! §7Используйте §f/mp help§7 для списка команд.");
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.unknown_command", "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>")));
                 yield true;
             }
         };
@@ -68,11 +70,11 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
     private boolean handleStructures(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§4❌ §cError: §7Only players can use this command.");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.structure_player_only", "<red>❌ Error: </red><gray>Only players can use this command.</gray>")));
             return true;
         }
         if (!player.hasPermission("mcplugin.command.structures")) {
-            player.sendMessage("§4❌ §cУ вас нет прав на управление структурами!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.structure_no_permission", "<red>❌ You don't have permission to manage structures!</red>")));
             return true;
         }
         StructureSubcommand.execute(player, args);

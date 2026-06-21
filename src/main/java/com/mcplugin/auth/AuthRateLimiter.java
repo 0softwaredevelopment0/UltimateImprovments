@@ -1,5 +1,6 @@
 package com.mcplugin.auth;
 
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -41,7 +42,8 @@ public class AuthRateLimiter {
         if (lastRequest != null && (now - lastRequest) < cooldownMs) {
             long remaining = ((cooldownMs - (now - lastRequest)) / 1000) + 1;
             player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Подождите </red><yellow>" + remaining + "</yellow> <red>сек. перед следующим запросом!</red>"));
+                    MessagesManager.getString("auth.messages.rate_limit", "<red>❌ Please wait </red><yellow>{seconds}</yellow> <red>seconds before the next request!</red>")
+                            .replace("{seconds}", String.valueOf(remaining))));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return false;
         }

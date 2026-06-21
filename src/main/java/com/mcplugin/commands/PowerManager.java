@@ -1,6 +1,7 @@
 package com.mcplugin.commands;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 import org.bukkit.Bukkit;
@@ -143,7 +144,7 @@ public class PowerManager {
         timeoutTask = new BukkitRunnable() {
             @Override
             public void run() {
-                cancelRequest("Превышено время ожидания");
+                cancelRequest("Request timeout");
             }
         };
         timeoutTask.runTaskLater(Main.getInstance(), 20L * requestTimeout);
@@ -169,8 +170,12 @@ public class PowerManager {
         requesterName = null;
         requesterUuid = null;
 
-        String actionMsg = type == RequestType.STOP ? "выключается" : "перезагружается";
-        String action = type == RequestType.STOP ? "Выключение" : "Перезапуск";
+        String actionMsg = type == RequestType.STOP
+                ? MessagesManager.getString("power.action_stop", "shutting down")
+                : MessagesManager.getString("power.action_restart", "restarting");
+        String action = type == RequestType.STOP
+                ? MessagesManager.getString("power.action_stop_title", "Shutdown")
+                : MessagesManager.getString("power.action_restart_title", "Restart");
         int duration = countdownDuration;
         int totalTicks = duration * 20;
 
@@ -183,7 +188,10 @@ public class PowerManager {
         }
 
         // --- Initial broadcast ---
-        Bukkit.broadcastMessage("§8[§4⚠§8] §c" + action + " сервера через §f" + duration + " §cсекунд!");
+        Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.countdown_broadcast",
+                "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>{action} in</red> <white>{seconds}</white> <red>seconds!</red>")
+                .replace("{action}", action)
+                .replace("{seconds}", String.valueOf(duration))));
         playBeepToAll(calcPitch(0.0));
 
         // --- Repeating countdown task (каждый тик — плавное ускорение) ---
@@ -200,7 +208,9 @@ public class PowerManager {
                 // --- Последний тик — выполнить ---
                 if (currentSecond < 0) {
                     try {
-                        Bukkit.broadcastMessage("§8[§4⚠§8] §cСервер " + actionMsg + "...");
+                        Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.executing",
+                                "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action}...</red>")
+                                .replace("{action}", actionMsg)));
                         playBeepToAll(countdownSoundPitchMax);
 
                         if (type == RequestType.STOP) {
@@ -224,11 +234,13 @@ public class PowerManager {
                     // Chat (последние 5 секунд)
                     if (currentSecond <= 5 && currentSecond > 0) {
                         String secWord;
-                        if (currentSecond == 1) secWord = "секунду";
-                        else if (currentSecond >= 2 && currentSecond <= 4) secWord = "секунды";
-                        else secWord = "секунд";
-                        Bukkit.broadcastMessage("§8[§4⚠§8] §cСервер " + actionMsg
-                                + " через §f" + currentSecond + " §c" + secWord + "...");
+                        if (currentSecond == 1) secWord = "second";
+                        else secWord = "seconds";
+                        Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.countdown_seconds",
+                                "<red>Server {action} in</red> <white>{seconds}</white> <red>{unit}...</red>")
+                                .replace("{action}", actionMsg)
+                                .replace("{seconds}", String.valueOf(currentSecond))
+                                .replace("{unit}", secWord)));
                     }
 
                     // ActionBar
@@ -322,7 +334,8 @@ public class PowerManager {
             style = BarStyle.valueOf(bossbarStyle);
         } catch (IllegalArgumentException e) {
             style = BarStyle.SOLID;
-        }                String text = bossbarText.replace("{action}", actionMsg);
+        }
+        String text = bossbarText.replace("{action}", actionMsg);
 
         return Bukkit.createBossBar(MessageUtil.legacy(text), color, style);
     }
@@ -363,24 +376,29 @@ public class PowerManager {
         requesterName = null;
         requesterUuid = null;
 
-        String action = type == RequestType.STOP ? "Выключение" : "Перезапуск";
+        String action = type == RequestType.STOP
+                ? MessagesManager.getString("power.action_stop_title", "Shutdown")
+                : MessagesManager.getString("power.action_restart_title", "Restart");
 
         // Notify the requesting player
         if (requesterId != null) {
             Player player = Bukkit.getPlayer(requesterId);
             if (player != null && player.isOnline()) {
-                player.sendMessage("§8[§4⚠§8] §c" + action + " сервера был отменён"
-                        + (cancelerName != null && !cancelerName.equalsIgnoreCase(requester)
-                            ? " игроком §f" + cancelerName
-                            : "")
-                        + ".");
+                String msg = MessagesManager.getString("power.cancelled_by_player",
+                        "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} was cancelled</red> <white>{by_player}</white><red>.</red>")
+                        .replace("{action}", action)
+                        .replace("{by_player}", cancelerName != null && !cancelerName.equalsIgnoreCase(requester) ? cancelerName : "");
+                player.sendMessage(MessageUtil.legacy(msg));
             }
         }
 
         // Notify console
-        Bukkit.getConsoleSender().sendMessage("§8[§4⚠§8] §c" + action + " сервера отменён"
-                + (cancelerName != null ? " (" + cancelerName + ")" : "")
-                + (requester != null ? ". Запрос был от " + requester : "") + ".");
+        String consoleMsg = MessagesManager.getString("power.cancelled_console",
+                "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} cancelled{by}{from}.</red>")
+                .replace("{action}", action)
+                .replace("{by}", cancelerName != null ? " (" + cancelerName + ")" : "")
+                .replace("{from}", requester != null ? ". Request from " + requester : "");
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.legacy(consoleMsg));
 
         return action;
     }
@@ -404,18 +422,28 @@ public class PowerManager {
         requesterName = null;
         requesterUuid = null;
 
-        String action = type == RequestType.STOP ? "Выключение" : "Перезапуск";
+        String action = type == RequestType.STOP
+                ? MessagesManager.getString("power.action_stop_title", "Shutdown")
+                : MessagesManager.getString("power.action_restart_title", "Restart");
 
         // Try to message the requesting player
         if (requesterId != null) {
             Player player = Bukkit.getPlayer(requesterId);
             if (player != null && player.isOnline()) {
-                player.sendMessage("§8[§4⚠§8] §c" + action + " сервера был автоматически отменёно: " + reason);
+                String msg = MessagesManager.getString("power.cancelled_auto",
+                        "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} was automatically cancelled: {reason}</red>")
+                        .replace("{action}", action)
+                        .replace("{reason}", reason);
+                player.sendMessage(MessageUtil.legacy(msg));
             }
         }
 
-        Bukkit.getConsoleSender().sendMessage("§8[§4⚠§8] §c" + action + " сервера отменёно: " + reason
-                + (requester != null ? " (запрос от " + requester + ")" : ""));
+        String consoleMsg = MessagesManager.getString("power.cancelled_console",
+                "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} cancelled{by}{from}.</red>")
+                .replace("{action}", action)
+                .replace("{by}", "")
+                .replace("{from}", requester != null ? " (request from " + requester + ")" : "");
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.legacy(consoleMsg));
     }
 
     /**
@@ -423,12 +451,14 @@ public class PowerManager {
      */
     public void executeDirect(boolean isRestart) {
         if (isRestart) {
-            Bukkit.broadcastMessage("§8[§4⚠§8] §cСервер перезагружается (команда из консоли)...");
+            Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.direct_restart",
+                    "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>")));
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 Bukkit.getServer().restart();
             }, 20);
         } else {
-            Bukkit.broadcastMessage("§8[§4⚠§8] §cСервер выключается (команда из консоли)...");
+            Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.direct_stop",
+                    "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>")));
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 Bukkit.getServer().shutdown();
             }, 20);

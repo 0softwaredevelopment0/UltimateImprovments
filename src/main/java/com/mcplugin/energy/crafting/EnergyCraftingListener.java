@@ -3,8 +3,8 @@ package com.mcplugin.energy.crafting;
 import com.mcplugin.Main;
 import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.cable.CableNode;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.LocationUtil;
-
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -322,11 +322,9 @@ public class EnergyCraftingListener implements Listener {
     }
 
     private String getMsg() {
-        return Main.getInstance()
-                .getConfig()
-                .getString(
-                        "energy_crafting.messages.no_energy",
-                        "<dark_red>❌</dark_red> <red>Error: <gray>Not enough energy for craft!</gray></red>"
-                );
+        return MessagesManager.getString(
+                "energy_crafting.messages.no_energy",
+                "<dark_red>❌</dark_red> <red>Error: <gray>Not enough energy for craft!</gray></red>"
+        );
     }
 }

@@ -1,6 +1,8 @@
 package com.mcplugin.commands.subcommands;
 
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.features.updater.UpdateChecker;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -10,18 +12,18 @@ public final class UpdateSubcommand {
 
     public static boolean checkOnly(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("mcplugin.command.checkver")) {
-            p.sendMessage("§4❌ §cУ вас нет прав на проверку обновлений!"); return true;
+            p.sendMessage(MessageUtil.parse(MessagesManager.getString("update.no_permission_check", "<red>❌ You don't have permission to check for updates!</red>"))); return true;
         }
-        sender.sendMessage("§e⟳ §7Проверка обновлений на GitHub...");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.checking", "<yellow>⟳</yellow> <gray>Checking for updates on GitHub...</gray>")));
         UpdateChecker.checkOnly(sender);
         return true;
     }
 
     public static boolean downloadAndReplace(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("mcplugin.command.checkver")) {
-            p.sendMessage("§4❌ §cУ вас нет прав на установку обновлений!"); return true;
+            p.sendMessage(MessageUtil.parse(MessagesManager.getString("update.no_permission_install", "<red>❌ You don't have permission to install updates!</red>"))); return true;
         }
-        sender.sendMessage("§e⟳ §7Загрузка обновления с GitHub...");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.downloading", "<yellow>⟳</yellow> <gray>Downloading update from GitHub...</gray>")));
         UpdateChecker.downloadAndReplace(sender);
         return true;
     }

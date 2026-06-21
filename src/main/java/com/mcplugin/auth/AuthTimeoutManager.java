@@ -1,6 +1,8 @@
 package com.mcplugin.auth;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -46,13 +48,10 @@ public class AuthTimeoutManager {
                 if (!player.isOnline()) return;
                 if (AuthPlayerState.getInstance().isAuthenticated(uuid)) return;
 
-                player.kickPlayer(
-                        "§6✦ MC-Plugin\n" +
-                        "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
-                        "§c⏱ Время на авторизацию истекло!\n" +
-                        "§7Вы не вошли в аккаунт за §c" + timeoutSec + "§7 сек.\n\n" +
-                        "§7━━━━━━━━━━━━━━━━━━━━━"
-                );
+                String kickMsg = MessagesManager.getString("auth.admin.kick_timeout",
+                        "<red>⏱ Login timeout!</red>\n<gray>You did not log in within {seconds} seconds.</gray>")
+                        .replace("{seconds}", String.valueOf(timeoutSec));
+                player.kickPlayer(MessageUtil.legacy(kickMsg));
             }
         };
 

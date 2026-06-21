@@ -19,9 +19,14 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
+import com.mcplugin.database.DatabaseManager;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Vanish-система: полностью скрывает игрока от других.
@@ -63,28 +68,105 @@ public class VanishManager implements Listener {
     }
 
     // =========================
-    // PERSISTENCE (config.yml → vanish.vanished_players)
+    // PERSISTENCE (БД → vanished_players)
     // =========================
     private static void loadVanishedPlayers() {
         vanishedPlayers.clear();
-        List<String> uuidStrings = Main.getInstance().getConfig().getStringList("vanish.vanished_players");
-        if (uuidStrings != null) {
-            for (String s : uuidStrings) {
+
+        // 1. Миграция старых данных из config.yml, если есть
+        migrateFromConfig();
+
+        // 2. Загрузка из БД
+        Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
+
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT uuid FROM vanished_players")) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
                 try {
-                    vanishedPlayers.add(UUID.fromString(s));
+                    vanishedPlayers.add(UUID.fromString(rs.getString("uuid")));
                 } catch (IllegalArgumentException ignored) {
-                    Main.getInstance().getLogger().warning("[Vanish] Invalid UUID in config: " + s);
+                    Main.getInstance().getLogger().warning("[Vanish] Invalid UUID in database: " + rs.getString("uuid"));
                 }
             }
+        } catch (Exception e) {
+            Main.getInstance().getLogger().warning("[Vanish] Failed to load vanished players from DB: " + e.getMessage());
         }
     }
 
-    public static void saveVanishedPlayers() {
-        List<String> uuidStrings = vanishedPlayers.stream()
-                .map(UUID::toString)
-                .collect(Collectors.toList());
-        Main.getInstance().getConfig().set("vanish.vanished_players", uuidStrings);
+    /** Миграция vanished_players из config.yml в БД (однократно, при первом запуске после обновления). */
+    private static void migrateFromConfig() {
+        List<String> uuidStrings = Main.getInstance().getConfig().getStringList("vanish.vanished_players");
+        if (uuidStrings == null || uuidStrings.isEmpty()) return;
+
+        // Проверяем — есть ли уже UUID в БД? Если да, миграция уже была.
+        Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
+
+        try (PreparedStatement check = con.prepareStatement(
+                "SELECT COUNT(*) FROM vanished_players")) {
+            ResultSet rs = check.executeQuery();
+            if (rs.next() && rs.getInt(1) > 0) {
+                // В БД уже есть данные — чистим config и выходим
+                clearConfigSection();
+                return;
+            }
+        } catch (Exception ignored) {}
+
+        // Копируем из config в БД
+        try (PreparedStatement ps = con.prepareStatement(
+                "INSERT OR IGNORE INTO vanished_players (uuid) VALUES (?)")) {
+            for (String s : uuidStrings) {
+                try {
+                    UUID.fromString(s); // валидация
+                    ps.setString(1, s);
+                    ps.executeUpdate();
+                } catch (IllegalArgumentException ignored) {
+                    Main.getInstance().getLogger().warning("[Vanish] Skipping invalid UUID in config: " + s);
+                }
+            }
+            Main.getInstance().getLogger().info("[Vanish] Migrated " + uuidStrings.size() + " vanished player(s) from config.yml to database.");
+        } catch (Exception e) {
+            Main.getInstance().getLogger().warning("[Vanish] Migration failed: " + e.getMessage());
+        }
+
+        // Очищаем config от старых данных
+        clearConfigSection();
+    }
+
+    /** Удаляет устаревшую секцию vanish.vanished_players из config.yml. */
+    private static void clearConfigSection() {
+        Main.getInstance().getConfig().set("vanish.vanished_players", null);
         Main.getInstance().saveConfig();
+    }
+
+    public static void saveVanishedPlayers() {
+        Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
+
+        try {
+            con.setAutoCommit(false);
+
+            try (PreparedStatement del = con.prepareStatement("DELETE FROM vanished_players")) {
+                del.executeUpdate();
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO vanished_players (uuid) VALUES (?)")) {
+                for (UUID uuid : vanishedPlayers) {
+                    ps.setString(1, uuid.toString());
+                    ps.executeUpdate();
+                }
+            }
+
+            con.commit();
+            con.setAutoCommit(true);
+        } catch (Exception e) {
+            try { con.rollback(); } catch (Exception ignored) {}
+            try { con.setAutoCommit(true); } catch (Exception ignored) {}
+            Main.getInstance().getLogger().warning("[Vanish] Failed to save vanished players to DB: " + e.getMessage());
+        }
     }
 
     // =========================

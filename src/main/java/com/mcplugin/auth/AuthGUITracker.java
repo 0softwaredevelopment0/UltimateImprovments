@@ -113,6 +113,7 @@ public class AuthGUITracker {
 
     // =========================
     // START RESET TASK — keep result slot as star (login/register)
+    // Runs every 1 tick (50ms) for maximum protection against item theft.
     // =========================
     public static void startResetTask(Player player) {
         UUID uuid = player.getUniqueId();
@@ -133,6 +134,8 @@ public class AuthGUITracker {
                         resetTasks.remove(uuid);
                         return;
                     }
+                    // Очищаем курсор — если предмет из anvil попал на курсор, убираем его
+                    player.setItemOnCursor(null);
                     openInv.getTopInventory().setItem(2, AuthGUIItems.CONFIRM_STAR);
                     removeAuthItemsFromPlayer(player);
                 } catch (Exception e) {
@@ -140,13 +143,14 @@ public class AuthGUITracker {
                     resetTasks.remove(uuid);
                 }
             }
-        }.runTaskTimer(Main.getInstance(), 3L, 3L);
+        }.runTaskTimer(Main.getInstance(), 1L, 1L);
 
         resetTasks.put(uuid, task);
     }
 
     // =========================
     // START CHANGE PASSWORD RESET TASK
+    // Runs every 1 tick (50ms) for maximum protection against item theft.
     // =========================
     public static void startChangePasswordResetTask(Player player) {
         UUID uuid = player.getUniqueId();
@@ -167,6 +171,8 @@ public class AuthGUITracker {
                         resetTasks.remove(uuid);
                         return;
                     }
+                    // Очищаем курсор — если предмет из anvil попал на курсор, убираем его
+                    player.setItemOnCursor(null);
                     // Slot 1 (Barrier) must be set BEFORE slot 2 (Nether Star)
                     // because setItem in slot 1 triggers anvil result recalculation
                     // which overwrites the star in slot 2.
@@ -178,13 +184,14 @@ public class AuthGUITracker {
                     resetTasks.remove(uuid);
                 }
             }
-        }.runTaskTimer(Main.getInstance(), 3L, 3L);
+        }.runTaskTimer(Main.getInstance(), 1L, 1L);
 
         resetTasks.put(uuid, task);
     }
 
     // =========================
     // START LOGOUT RESET TASK
+    // Runs every 1 tick (50ms) for maximum protection against item theft.
     // =========================
     public static void startLogoutResetTask(Player player) {
         UUID uuid = player.getUniqueId();
@@ -205,6 +212,8 @@ public class AuthGUITracker {
                         resetTasks.remove(uuid);
                         return;
                     }
+                    // Очищаем курсор — если предмет из anvil попал на курсор, убираем его
+                    player.setItemOnCursor(null);
                     openInv.getTopInventory().setItem(2, AuthGUIItems.LOGOUT_CONFIRM_STAR);
                     removeAuthItemsFromPlayer(player);
                 } catch (Exception e) {
@@ -212,7 +221,7 @@ public class AuthGUITracker {
                     resetTasks.remove(uuid);
                 }
             }
-        }.runTaskTimer(Main.getInstance(), 3L, 3L);
+        }.runTaskTimer(Main.getInstance(), 1L, 1L);
 
         resetTasks.put(uuid, task);
     }

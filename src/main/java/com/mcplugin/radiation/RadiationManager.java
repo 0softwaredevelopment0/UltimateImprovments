@@ -23,10 +23,10 @@ import org.bukkit.potion.PotionEffectType;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RadiationManager implements Listener {
 
@@ -35,7 +35,7 @@ public class RadiationManager implements Listener {
     // =========================
     // IN-MEMORY STORAGE (UUID -> radiation)
     // =========================
-    private final Map<UUID, Integer> radiationMap = new HashMap<>();
+    private final Map<UUID, Integer> radiationMap = new ConcurrentHashMap<>();
 
     public static RadiationManager getInstance() {
         return instance;

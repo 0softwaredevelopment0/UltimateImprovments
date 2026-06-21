@@ -1,0 +1,439 @@
+# =========================
+# 📝 MC-Plugin Messages File
+# All player-facing messages have been extracted here from Java files
+# for easy customization and translation.
+#
+# Format: MiniMessage (<tag>text</tag>)
+#   <red>red</red>  <green>green</green>  <yellow>yellow</yellow>
+#   <white>white</white>  <gray>gray</gray>  <dark_gray>dark gray</dark_gray>
+#   <bold>bold</bold>  <italic>italic</italic>  <underlined>underlined</underlined>
+#
+# Placeholders: {var} — substituted dynamically
+# For legacy §-codes use: {legacy_text}
+# =========================
+
+# =========================
+# 🔐 Authentication System
+# =========================
+auth:
+  # GUI titles
+  gui:
+    register: "Register"
+    login: "Enter password"
+    change_password: "Change password"
+    logout: "Account logout"
+
+  messages:
+    register_title: "<dark_gray>Register</dark_gray>"
+    login_title: "<dark_gray>Enter password</dark_gray>"
+    success_register: "<green>✅ Registration successful!</green>"
+    success_login: "<green>✅ You have successfully logged in!</green>"
+    wrong_password: "<red>❌ Incorrect password! Try again.</red>"
+    wrong_password_short: "<red>❌ Incorrect password!</red>"
+    wrong_password_remaining: "<red>❌ Incorrect password! Remaining attempts: </red><yellow>{remaining}</yellow>"
+    short_password: "<red>❌ Password must be at least 4 characters!</red>"
+    long_password: "<red>❌ Password must not exceed 32 characters!</red>"
+    password_too_short: "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>"
+    password_too_long: "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>"
+    need_auth: "<red>❌ Please authenticate first! Enter your password in the opened window.</red>"
+    ip_changed: "<red>❌</red> <white>Your IP address has changed. Please log in again.</white>"
+    duplicate_name_kick: "<yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different name.</white>"
+    max_accounts_per_ip: "<red>❌</red> <yellow>{count}</yellow> <red>accounts are already registered from your IP address!</red>\n<white>Maximum:</white> <yellow>{limit}</yellow> <white>accounts per IP.</white>"
+    enter_password_hint: "<yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>"
+    enter_new_password_hint: "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>"
+    enter_logout_password_hint: "<yellow>✦</yellow> <gray>Enter your password to log out.</gray>"
+    enter_password_field: "<red>❌ Enter your password in the item name field!</red>"
+    enter_current_password: "<red>❌ Enter your current password in the item name field!</red>"
+    enter_new_password_field: "<red>❌ Enter a new password in the item name field!</red>"
+    enter_password_field_generic: "<red>❌ Enter your password in the item name field!</red>"
+    not_registered: "<red>❌ You are not registered yet! First, create a password.</red>"
+    password_change_cancelled: "<yellow>✦</yellow> <gray>Password change cancelled.</gray>"
+    cannot_close_change_password: "<red>❌ You cannot close the password change window!</red>"
+    cannot_close_auth: "<red>❌ You cannot close the authorization window! Please enter your password.</red>"
+    logout_cancelled: "<yellow>✦</yellow> <gray>Account logout cancelled.</gray>"
+    opening_auth_window: "<yellow>✦</yellow> <gray>Opening authorization window...</gray>"
+    auth_window_error: "<red>❌ Error opening authorization window! Report to an administrator.</red>"
+    auth_check_error: "<red>❌ Error checking password! Please try again.</red>"
+    change_password_error: "<red>❌ Password change error! Please try again.</red>"
+    password_changed: "<green>✅</green> <white>Password successfully changed!</white>"
+    session_active: "<gray>Enjoy your game! Session active for 1 hour.</gray>"
+    force_login_message: "<green>✅</green> <white>You have been force authorized by an administrator!</white>"
+    rate_limit: "<red>❌ Please wait </red><yellow>{seconds}</yellow> <red>seconds before the next request!</red>"
+
+  # Admin command messages
+  admin:
+    system_disabled: "<red>❌ Authorization system is disabled in config!</red>"
+    usage: "<red>❌ Usage: </red><white>/mp auth forcelogin|resetauth|chgpass|delsession|logout <nick></white>"
+    unknown_subcommand: "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>"
+    player_only: "<red>❌ Only players can use this command!</red>"
+    not_authenticated: "<red>❌ You are not logged in!</red>"
+    # forcelogin
+    forcelogin_no_permission: "<red>❌ You don't have permission to force log in!</red>"
+    forcelogin_usage: "<red>❌ Usage: </red><white>/mp auth forcelogin <nick></white>"
+    forcelogin_not_registered: "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>"
+    forcelogin_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
+    forcelogin_success: "<green>✅</green> <white>Player</white> <yellow>{player}</yellow> <white>force authorized.</white>"
+    forcelogin_fail: "<red>❌ Failed to authorize player</red> <yellow>{player}</yellow>"
+    # resetauth
+    resetauth_no_permission: "<red>❌ You don't have permission to reset authorization!</red>"
+    resetauth_usage: "<red>❌ Usage: </red><white>/mp auth resetauth <nick></white>"
+    resetauth_not_registered: "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>"
+    resetauth_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
+    resetauth_success: "<green>✅</green> <white>Registration of player</white> <yellow>{player}</yellow> <white>completely removed.</white>"
+    resetauth_fail: "<red>❌ Failed to delete registration of player</red> <yellow>{player}</yellow>"
+    # delsession
+    delsession_no_permission: "<red>❌ You don't have permission to reset sessions!</red>"
+    delsession_usage: "<red>❌ Usage: </red><white>/mp auth delsession <nick></white>"
+    delsession_not_registered: "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>"
+    delsession_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
+    delsession_success: "<green>✅</green> <white>Session of player</white> <yellow>{player}</yellow> <white>reset (logout).</white>"
+    delsession_info: "<gray>They will need to enter their password again on next login.</gray>"
+    delsession_fail: "<red>❌ Failed to reset session of player</red> <yellow>{player}</yellow>"
+    # chgpass
+    chgpass_no_permission: "<red>❌ You don't have permission to change passwords!</red>"
+    chgpass_usage: "<red>❌ Usage: </red><white>/mp auth chgpass <nick> <new_password></white>"
+    chgpass_success: "<green>✅</green> <white>Password of player</white> <yellow>{player}</yellow> <white>changed to</white> <green>{password}</green><white>.</white>"
+    chgpass_session_reset: "<gray>Session reset — player must log in again.</gray>"
+    chgpass_fail: "<red>❌ Failed to change password of player</red> <yellow>{player}</yellow>"
+    # kick messages
+    kick_resetauth: "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>"
+    kick_delsession: "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
+    kick_timeout: "<red>⏱ Login timeout!</red>\n<gray>You did not log in within {seconds} seconds.</gray>"
+    kick_too_many_attempts: "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password {attempts} times.</gray>"
+    kick_logout: "<green>✅</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>"
+    kick_duplicate_name: "<yellow>✦</yellow> MC-Plugin\n\n{details}\n\n"
+
+# =========================
+# 💻 Code Panel
+# =========================
+codepanel:
+  messages:
+    progress: "<white>Verifying code: <gray>{progress}%</gray></white>"
+    success: "<dark_green>✔</dark_green> <green>Success:</green> <gray>Correct code!</gray>"
+    error: "<dark_red>❌</dark_red> <red>Error:</red> <gray>Incorrect code!</gray>"
+    no_config: "<dark_red>❌</dark_red> <red>Error:</red> <gray>No keys found in the database!</gray>"
+    reloading: "<red>Code panel is reloading, try again later...</red>"
+    cooldown: "<red>Please wait</red> <yellow>{seconds}</yellow> <red>seconds before entering again!</red>"
+    no_access: "<red>❌ You don't have access to this code!</red>"
+    wrong_code: "<red>❌ Incorrect code!</red>"
+
+  # Code pane key management
+  key:
+    no_permission: "<red>❌ You don't have permission to manage code panel keys!</red>"
+    unknown_subcommand: "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>"
+    no_permission_add: "<red>❌ You don't have permission to add keys!</red>"
+    no_permission_list: "<red>❌ You don't have permission to list keys!</red>"
+    no_permission_remove: "<red>❌ You don't have permission to remove keys!</red>"
+    no_permission_modify: "<red>❌ You don't have permission to modify keys!</red>"
+    usage_add: "<red>❌ Usage: </red><white>/mp codepane key add <name> <code> [flags]</white>"
+    usage_remove: "<red>❌ Usage: </red><white>/mp codepane key remove <name></white>"
+    usage_modify: "<red>❌ Usage: </red><white>/mp codepane key modify <name> <new_code> [flags]</white>"
+    duplicate_flag: "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>"
+    invalid_attempts: "<red>❌ attempts must be >= 1</red>"
+    invalid_attempts_format: "<red>❌ Invalid attempts format: {value}</red>"
+    invalid_time_format: "<red>❌ Invalid time format: </red><gray>{value}</gray><red> (use Ns, Nm, Nh, Nd)</red>"
+    unknown_flag: "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>{flag}</white>"
+    already_exists: "<red>❌ Key</red> <yellow>{name}</yellow> <red>already exists!</red>"
+    db_add_error: "<red>❌ Error adding key to database!</red>"
+    add_success: "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>added to database!</white>"
+    key_not_found: "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found!</red>"
+    db_not_found: "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found in database!</red>"
+    remove_success: "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>removed from database.</white>"
+    modify_success: "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>modified in database.</white>"
+    no_keys: "<yellow>ℹ</yellow> <white>No keys in the database.</white>"
+    info_code: "<gray>Code:</gray> <white>{code}</white>"
+    info_commands: "<gray>Commands:</gray> <white>{commands}</white>"
+    info_whitelist: "<gray>Whitelist:</gray> <green>{players}</green>"
+    info_blacklist: "<gray>Blacklist:</gray> <red>{players}</red>"
+    info_attempts: "<gray>Attempts:</gray> {color}{remaining}<gray>/{max}</gray>"
+    info_expired: "<gray>Expires:</gray> <red>expired</red>"
+    info_expires_in: "<gray>Expires:</gray> <white>{duration}</white>"
+    info_max_attempts: "<gray>Max attempts:</gray> <white>{max}</white>"
+    info_expires_at: "<gray>Expires at:</gray> <white>{date}</white>"
+
+  # Key management help
+  help:
+    header: "<gold>=== <white>Code Panel Key Management</white> ==="
+    add: "<yellow>/mp codepane key add <gray><name> <code> [flags]</gray></yellow>"
+    add_desc: "<gray> Add a new key</gray>"
+    list: "<yellow>/mp codepane key list</yellow>"
+    list_desc: "<gray> List all keys</gray>"
+    remove: "<yellow>/mp codepane key remove <gray><name></gray></yellow>"
+    remove_desc: "<gray> Remove a key</gray>"
+    modify: "<yellow>/mp codepane key modify <gray><name> <new_code> [flags]</gray></yellow>"
+    modify_desc: "<gray> Modify a key</gray>"
+    permissions_header: "<gray>Required permissions:</gray>"
+    perm_base: "<gray>mcplugin.command.codepane.key — base</gray>"
+    perm_add: "<gray> mcplugin.command.codepane.key.add — add</gray>"
+    perm_list: "<gray> mcplugin.command.codepane.key.list — list</gray>"
+    perm_remove: "<gray> mcplugin.command.codepane.key.remove — remove</gray>"
+    perm_modify: "<gray> mcplugin.command.codepane.key.modify — modify</gray>"
+    flags_header: "<gray>Flags:</gray>"
+    flag_attempts: "<gray> attempts:<N>     — delete key after N successful uses</gray>"
+    flag_time: "<gray> time:<N>s|m|h|d  — delete key after N seconds/minutes/hours/days</gray>"
+    flag_whitelist: "<gray>whitelist:<name1,name2...>  — allow only these players</gray>"
+    flag_whitelist_parens: "<gray>whitelist:(<name1,name2...>)  — same, but in parentheses</gray>"
+    flag_blacklist: "<gray>blacklist:<name1,name2...>  — block these players</gray>"
+    flag_blacklist_parens: "<gray>blacklist:(<name1,name2...>)  — same, but in parentheses</gray>"
+    flag_command: "<gray>command:(<cmd with spaces>),(<cmd 2>)  — commands separated by commas</gray>"
+    flag_command_entity: "<gray>  %entity% — replaced with player's nickname</gray>"
+    examples_header: "<gray>Examples:</gray>"
+    example1: "<gray> /mp codepane key add mydoor 1234 attempts:3 time:1h</gray>"
+    example2: "<gray> /mp codepane key add admin 7777 whitelist:Steve,Alex</gray>"
+    example3: "<gray> /mp codepane key add warp 4321 command:(say %entity% got access)</gray>"
+    example4: "<gray> /mp codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
+
+# =========================
+# ☠ Suicide (/mp suicide)
+# =========================
+suicide:
+  messages:
+    cooldown_message: "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>{seconds}</yellow> <red>seconds before using this again!</red>"
+    already_running: "<dark_red>❌</dark_red> <red>You already have a countdown running!</red>"
+    warning_title: "<dark_red>☠</dark_red> <red>WARNING!</red>"
+    warning_text: "<white>You are about to commit suicide!</white>"
+    warning_no_cancel: "<red>⚠ This cannot be undone after confirmation!</red>"
+    warning_confirm_hint: "<yellow>Type</yellow> <white>/mp suicide</white> <yellow>again to confirm and start the countdown.</yellow>"
+    warning_cancel_hint: "<gray>If you change your mind — just wait</gray> <yellow>{timeout}</yellow> <gray>seconds and the request will expire.</gray>"
+    timeout_message: "<yellow>ℹ</yellow> <white>Suicide request cancelled (timed out).</white>"
+    confirmed_title: "<dark_red>☠</dark_red> <red>Countdown started!</red>"
+    confirmed_no_cancel: "<red>Cannot be cancelled!</red>"
+    timer_actionbar: "<red><bold>☠</bold></red> <white>Suicide in</white> <yellow><bold>{seconds}</bold></yellow> <white>seconds</white>"
+    timer_chat: "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Suicide in</red> <yellow>{seconds}</yellow> <red>seconds...</red>"
+    death_message: "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>You have committed suicide...</red>"
+  bossbar:
+    title: "<dark_red>☠</dark_red> <red>Suicide in</red> <yellow>{seconds}</yellow> <red>seconds</red>"
+
+# =========================
+# 🌍 Dimension Change
+# =========================
+changedimmension:
+  messages:
+    success: "<green>✅</green> <white>Teleportation to</white> <yellow>{world}</yellow> <white>completed!</white>"
+    return_info: "<yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/mcplugin changedimmension</white> <gray>again.</gray>"
+    return_success: "<green>✅</green> <white>You have returned to your starting point!</white>"
+    return_error: "<dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>"
+    no_permission: "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>"
+    world_not_found: "<dark_red>❌</dark_red> <red>World</red> <yellow>{world}</yellow> <red>not found!</red>"
+    player_only: "<dark_red>❌</dark_red> <red>Only players can use this command!</red>"
+    no_default_world: "<dark_red>❌</dark_red> <red>Default world not configured in config!</red>"
+    cooldown: "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>{seconds}</yellow> <red>seconds before using this again!</red>"
+    worlds_not_configured: "<red>❌ Worlds not configured in config!</red>"
+    enter_world_name_hint: "<yellow>✦</yellow> <gray>Enter world name in the field, then click</gray> <green>✔</green>"
+    enter_world_name_field: "<red>❌ Enter world name in the rename field!</red>"
+    invalid_world_name: "<red>❌ World name contains only invalid characters!</red>"
+    world_not_configured: "<red>❌ World</red> <yellow>{world}</yellow> <red>not configured!</red>"
+    no_return_point: "<red>❌ No saved return point!</red>"
+
+# =========================
+# 🏠 Home System
+# =========================
+home:
+  player_only: "<red>❌ Only players can use this command!</red>"
+  no_permission_sethome: "<red>❌ You don't have permission to save home points!</red>"
+  no_permission_home: "<red>❌ You don't have permission to view home points!</red>"
+  no_permission_delhome: "<red>❌ You don't have permission to delete home points!</red>"
+  no_permission_listhomes: "<red>❌ You don't have permission to view the home list!</red>"
+  no_permission_ophomels: "<red>❌ You don't have permission to view other players' homes!</red>"
+  no_permission_opdelhome: "<red>❌ You don't have permission to delete other players' homes!</red>"
+  usage_sethome: "<red>❌ Usage: </red><white>/mp sethome <name></white>"
+  usage_home: "<red>❌ Usage: </red><white>/mp home <name></white>"
+  usage_delhome: "<red>❌ Usage: </red><white>/mp delhome <name></white>"
+  usage_ophomels: "<red>❌ Usage: </red><white>/mp ophomels <player></white>"
+  usage_opdelhome: "<red>❌ Usage: </red><white>/mp opdelhome <player> <home_name></white>"
+  name_length_error: "<red>❌ Home name must be between {min} and {max} characters!</red>"
+  name_current_length: "<gray> Current length: </gray><white>{length}</white><gray> characters.</gray>"
+  limit_reached: "<red>❌ You have reached the limit of</red> <yellow>{max}</yellow> <red>home points!</red>"
+  limit_hint: "<gray> Use </gray><white>/mp delhome <name></white><gray> to remove unwanted ones.</gray>"
+  save_success: "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>saved!</white>"
+  save_info_world: "<gray>World:</gray> <white>{world}</white>"
+  save_info_coords: "<gray>Coordinates:</gray> <white>{x} / {y} / {z}</white>"
+  save_info_used: "<gray>Used:</gray> <white>{used}<gray>/{max}</gray></white>"
+  save_error: "<red>❌ Error saving home!</red>"
+  not_found: "<yellow>ℹ</yellow> <white>Home</white> <yellow>{name}</yellow> <white>not found.</white>"
+  not_found_hint: "<gray> Use </gray><white>/mp sethome {name}</white><gray> to save it.</gray>"
+  delete_success: "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>deleted.</white>"
+  delete_error: "<red>❌ Error deleting home!</red>"
+  not_found_del: "<red>❌ Home</red> <yellow>{name}</yellow> <red>not found!</red>"
+  no_homes: "<yellow>ℹ</yellow> <white>You have no saved home points.</white>"
+  no_homes_hint: "<gray> Use </gray><white>/mp sethome <name></white><gray> to save one.</gray>"
+  no_homes_player: "<yellow>ℹ</yellow> <white>Player</white> <yellow>{player}</yellow> <white>has no saved homes.</white>"
+  not_found_player: "<red>❌ Player</red> <yellow>{player}</yellow><red> has no home</red> <yellow>{name}</yellow><red>!</red>"
+  delete_op_success: "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>of player</white> <yellow>{player}</yellow> <white>deleted.</white>"
+
+# =========================
+# 🧪 Energy Crafting
+# =========================
+energy_crafting:
+  messages:
+    no_energy: "<dark_red>❌</dark_red> <red>Not enough energy!</red> <gray>Need</gray> <yellow>{amount}</yellow> <gray>energy.</gray>"
+
+# =========================
+# 🔌 Power Management
+# =========================
+power:
+  stop_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/mp power off</white>"
+  restart_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/mp power reboot</white>"
+  actionbar:
+    format: "<red>⚡</red> <white>Server {action} in</white> <yellow>{seconds}</yellow> <white>seconds</white>"
+  bossbar:
+    text: "<red>⚡ Server {action} in</red> <yellow>{seconds}</yellow> <red>seconds</red>"
+  # Power manager messages
+  countdown_broadcast: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>{action} in</red> <white>{seconds}</white> <red>seconds!</red>"
+  countdown_seconds: "<red>Server {action} in</red> <white>{seconds}</white> <red>{unit}...</red>"
+  action_stop: "shutting down"
+  action_restart: "restarting"
+  action_stop_title: "Shutdown"
+  action_restart_title: "Restart"
+  cancelled_by_player: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} was cancelled</red> <white>{by_player}</white><red>.</red>"
+  cancelled_auto: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} was automatically cancelled: {reason}</red>"
+  cancelled_console: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} cancelled{by}{from}.</red>"
+  executing: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action}...</red>"
+  direct_stop: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>"
+  direct_restart: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>"
+
+# =========================
+# 🔇 Chat Filter
+# =========================
+chat_filter:
+  message: "<dark_red>❌</dark_red> <red>Your message was flagged for prohibited content!</red>"
+
+# =========================
+# 🕳 Void Protection
+# =========================
+void_protection:
+  message: "<green>✅</green> <white>You were saved from the void!</white>"
+
+# =========================
+# 📦 PacketGuard — kick on packet size limit exceeded
+# =========================
+packet_guard:
+  kick_message: "<dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>"
+
+# =========================
+# 🛡 Integrity System
+# =========================
+features:
+  integrity:
+    on_break:
+      message: "<dark_red>✖</dark_red> <red>Your item</red> <white>{item}</white> <red>broke!</red>"
+    anvil_repair:
+      repair_message: "<green>🔧</green> <white>Integrity restored to</white> <yellow>{current}%</yellow><white>!</white>"
+      combine_message: "<green>🔗</green> <white>Items combined! Integrity:</white> <yellow>{current}%</yellow><white></white>"
+      material_craft:
+        message: "<green>🔨</green> <white>New item created! Integrity:</white> <yellow>{current}%</yellow> <white>(+{bonus}% from materials)</white>"
+    mending_xp:
+      message: "<aqua>✨</aqua> <white>Repair restored</white> <yellow>{amount}%</yellow> <white>integrity!</white>"
+    low_integrity_warning:
+      message: "<yellow>⚠</yellow> <white>Your item</white> <yellow>{item}</yellow> <white>has</white> <red>{pct}%</red> <white>integrity remaining!</white>"
+    xp_integrity:
+      message: "<green>✨</green> <white>Collecting XP restored</white> <yellow>{amount}%</yellow> <white>integrity to all items!</white>"
+    silk_touch_message: "<aqua>✨</aqua> <white>Repair restored</white> <yellow>{amount}%</yellow> <white>integrity!</white>"
+
+  creative_item_validator:
+    message: "<red>This item contains too much data!</red>"
+
+  modeprotect:
+    message: "<red>You cannot change your game mode in this world!</red>"
+
+# =========================
+# 👻 Vanish / Notes / Speed
+# =========================
+misc:
+  # Vanish
+  vanish_no_permission: "<red>❌ You don't have permission to use vanish!</red>"
+  vanish_usage: "<red>❌ Usage: </red><white>/mp vanish <nick></white>"
+  vanish_player_not_found: "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>"
+  vanish_enabled: "<green>✅</green> <white>Player</white> <yellow>{player}</yellow> <white>is now hidden (vanished).</white>"
+  vanish_offline_hint: "<gray>Player is offline — vanish will apply on next login.</gray>"
+  vanish_disabled: "<red>✗</red> <white>Player</white> <yellow>{player}</yellow> <white>is no longer hidden.</white>"
+  # Notes
+  notes_player_only: "<red>❌ Only players can use notes!</red>"
+  notes_no_permission: "<red>❌ You don't have permission to use notes!</red>"
+  # Speed toggle
+  speed_player_only: "<red>❌ Only players can use this command!</red>"
+  speed_no_permission: "<red>❌ You don't have permission!</red>"
+  speed_enabled: "<green>⚡</green> <white>Speed display: </white><green>ON</green>"
+  speed_disabled: "<red>⚡</red> <white>Speed display: </white><red>OFF</red>"
+
+# =========================
+# 📋 Vanish List (/list)
+# =========================
+vanish_list:
+  online_players: "<gray>Online: </gray><white>{visible}<gray>/</gray>{max}</white><gray> players:</gray>"
+  vanished_count: "<gray>({count} vanished)</gray>"
+
+# =========================
+# 🔌 Plugin Hide
+# =========================
+plugin_hide:
+  no_permission: "<dark_red>❌</dark_red> <red>Error: <gray>You don't have permission!</gray></red>"
+
+# =========================
+# 🎣 Fishing
+# =========================
+fishing:
+  no_fish: "<dark_gray>[<red>⛔</red>] <red>No fish at all!</red></dark_gray>"
+
+# =========================
+# 🔄 Update Checker
+# =========================
+update:
+  no_permission_check: "<red>❌ You don't have permission to check for updates!</red>"
+  no_permission_install: "<red>❌ You don't have permission to install updates!</red>"
+  checking: "<yellow>⟳</yellow> <gray>Checking for updates on GitHub...</gray>"
+  downloading: "<yellow>⟳</yellow> <gray>Downloading update from GitHub...</gray>"
+  # check only results
+  header: "<gold>=== <white>MC-Plugin — Update Check</white> ==="
+  plugin_version: "<gray>Plugin version:</gray> <white>{version}</white>"
+  latest_commit: "<gray>Latest commit:</gray> <white>{sha}</white>"
+  latest_release: "<gray>Latest release:</gray> <white>{tag}</white>"
+  no_releases: "<red>⚠ No releases in the repository!</red>"
+  first_run: "<yellow>ℹ</yellow> <gray>First run check.</gray>"
+  update_available: "<green>✨</green> <white>Update available!</white> <white>{release}</white>"
+  update_from_to: "<gray>Was:</gray> <white>{from}</white> <gray>→ Now:</gray> <green>{to}</green>"
+  new_commits_no_release: "<yellow>ℹ</yellow> <gray>New commits found, but no new release yet.</gray>"
+  wait_for_release: "<gray>Wait for the next release.</gray>"
+  up_to_date: "<green>✔</green> <green>All up to date! Latest commit already installed.</green>"
+  install_button: "<dark_green>[<green>✔ Install Update</green><dark_green>]</dark_green>"
+  install_hint: "<gray> or type </gray><white>/mp updatejar</white>"
+  install_console: "<gray>To install, type: </gray><white>/mp updatejar</white>"
+  ignore_hint: "<gray>To ignore, do nothing.</gray>"
+  # Download errors
+  cant_find_jar: "<red>❌ Cannot find current plugin JAR file!</red>"
+  no_release_info: "<red>❌ Could not get latest release info!</red>"
+  no_jar_in_release: "<red>❌ No JAR file found in release </red><yellow>{tag}</yellow><red>!</red>"
+  already_installed: "<green>✔</green> <green>This version is already installed! (</green><white>{tag}</white><green>)</green>"
+  downloading_release: "<yellow>⟳</yellow> <gray>Downloading update</gray> <white>{tag}</white><gray>...</gray>"
+  download_error: "<red>❌ Download error: HTTP {status}</red>"
+  install_success_header: "<gold>=== <green>Update Installed!</green> ==="
+  install_release: "<gray>Release:</gray> <white>{tag}</white>"
+  install_commit: "<gray>Commit:</gray> <white>{sha}</white>"
+  install_size: "<gray>Downloaded:</gray> <white>{size} KB</white>"
+  install_restart: "<red>⚠ Restart the server to apply the update!</red>"
+  install_failed_replace: "<red>❌ Failed to replace JAR (file in use by process).</red>"
+  install_failed_manual: "<gray>Check server console for manual replacement instructions.</gray>"
+  install_error: "<red>❌ Error downloading update!</red>"
+  install_error_detail: "<gray>{type}: {message}</gray>"
+  install_error_console: "<gray>Stack trace in server console.</gray>"
+  # Connection errors
+  connection_error: "<red>❌ Connection error with GitHub!</red>"
+  dns_error_hint: "<gray>Could not resolve DNS for api.github.com</gray>"
+  connection_check_hint: "<gray>Check server internet connection.</gray>"
+  timeout_error: "<red>❌ Connection timeout with GitHub!</red>"
+  timeout_hint: "<gray>GitHub did not respond within {seconds} seconds.</gray>"
+  timeout_retry_hint: "<gray>Check internet connection or try again later.</gray>"
+  check_error: "<red>❌ Error checking for updates!</red>"
+
+# =========================
+# 🌐 General / Common Messages
+# =========================
+general:
+  player_only: "<red>❌ Only players can use this command!</red>"
+  no_permission: "<red>❌ You don't have permission to use MC-Plugin commands!</red>"
+  unknown_command: "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>"
+  # Structure messages
+  structure_player_only: "<red>❌ Error: </red><gray>Only players can use this command.</gray>"
+  structure_no_permission: "<red>❌ You don't have permission to manage structures!</red>"
+  # Admin message
+  unknown_subcommand: "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>"

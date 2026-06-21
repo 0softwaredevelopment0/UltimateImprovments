@@ -2,6 +2,7 @@ package com.mcplugin.commands;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -60,13 +61,13 @@ public class ChgDimGUI implements Listener {
         ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
 
         if (worldsSection == null || worldsSection.getKeys(false).isEmpty()) {
-            player.sendMessage("§4❌ §cМиры не настроены в конфиге!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.worlds_not_configured", "<red>❌ Worlds not configured in config!</red>")));
             return;
         }
 
         // Use MenuType.ANVIL.builder() — same as AuthGUI
         InventoryView view = MenuType.ANVIL.builder()
-                .title(net.kyori.adventure.text.Component.text("§8✦ Смена измерения"))
+                .title(net.kyori.adventure.text.Component.text(MessagesManager.getString("changedimmension.gui.title", "§8✦ Change dimension")))
                 .build(player);
 
         Inventory topInv = view.getTopInventory();
@@ -87,7 +88,7 @@ public class ChgDimGUI implements Listener {
         openMenus.put(player.getUniqueId(), "chgdim");
 
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.4f, 1.0f);
-        player.sendMessage("§e✦ §7Введите название мира в поле названия, затем нажмите §a✔");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.enter_world_name_hint", "<yellow>✦</yellow> <gray>Enter world name in the field, then click</gray> <green>✔</green>")));
     }
 
     // =========================
@@ -286,7 +287,7 @@ public class ChgDimGUI implements Listener {
         String rawText = getAnvilRenameText(player);
 
         if (rawText == null || rawText.trim().isEmpty()) {
-            player.sendMessage("§4❌ §cВведите название мира в поле переименования!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.enter_world_name_field", "<red>❌ Enter world name in the rename field!</red>")));
             player.closeInventory();
             return;
         }
@@ -295,16 +296,15 @@ public class ChgDimGUI implements Listener {
         String worldName = VALID_WORLD_NAME.matcher(rawText.trim()).replaceAll("");
 
         if (worldName.isEmpty()) {
-            player.sendMessage("§4❌ §cНазвание мира содержит только недопустимые символы!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.invalid_world_name", "<red>❌ World name contains only invalid characters!</red>")));
             player.closeInventory();
             return;
         }
 
         // ===== CHECK PER-WORLD PERMISSION =====
         if (!player.hasPermission("mcplugin.command.chgdim." + worldName)) {
-            player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
-                    .getString("changedimmension.messages.no_permission",
-                            "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.no_permission",
+                            "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>")));
             player.closeInventory();
             return;
         }

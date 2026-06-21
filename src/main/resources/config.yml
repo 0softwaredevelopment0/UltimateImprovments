@@ -190,12 +190,6 @@ codepanel:
     success: ENTITY_PLAYER_LEVELUP
     # Неверный код
     fail: BLOCK_ANVIL_LAND
-    # Сообщения панели (русский язык)
-  messages:
-    progress: "<white>Проверка кода: <gray>{progress}%</gray></white>"
-    success: "<dark_green>✔</dark_green> <green>Успех:</green> <gray>Код верный!</gray>"
-    error: "<dark_red>❌</dark_red> <red>Ошибка:</red> <gray>Неверный код!</gray>"
-    no_config: "<dark_red>❌</dark_red> <red>Ошибка:</red> <gray>В базе данных нет ни одного ключа!</gray>"
 
 # =========================
 # 🔐 Система ключей кодовой панели
@@ -261,12 +255,6 @@ energy_crafting:
   energy_per_craft: 1000
   # Радиус поиска верстака вокруг игрока (в блоках)
   workbench_search_radius: 3
-  # Сообщения верстака
-  messages:
-    no_energy: "<dark_red>❌</dark_red> <red>Not enough energy!</red> <gray>Need</gray> <yellow>{amount}</yellow> <gray>energy.</gray>"
-
-
-
 # =========================
 # ⚛ Реактор тёмного синтеза (РТС)
 # =========================
@@ -405,7 +393,7 @@ features:
     # Шанс взрыва при открытии (0.001 = 0.1%, 1.0 = всегда)
     explosion_chance: 0.001
     # Радиус взрыва
-    explosion_radius: 5
+    explosion_radius: 10
     # Урон игроку при взрыве (0 = без урона)
     damage: 8192
 
@@ -418,13 +406,13 @@ features:
   # 🪟 Защита стекла — урон за ломание рукой
   glassbreak:
     enabled: true
-    damage: 5
+    damage: 4
 
   # ❤ ХП-метр — компас с HP моба (радиус 2 блока)
   healthmeter:
     enabled: true
     scan_radius: 2
-    interval_ticks: 10
+    interval_ticks: 20
 
   # 🗑 Антилаг — удаление >6400 предметов
   itemskill:
@@ -452,13 +440,13 @@ features:
     # Параметры силы притяжения
     force:
       # Базовая сила (добавляется всегда, множится на масштаб)
-      base: 0.15
+      base: 0.01
       # Множитель силы от расстояния (умножается на 1-distance/radius)
-      distance_multiplier: 0.35
+      distance_multiplier: 0.3
       # Максимальная сила (ограничение сверху)
-      max: 0.45
+      max: 1
       # Максимальная скорость полёта сущности за один тик
-      max_speed: 0.6
+      max_speed: 0.5
 
     # Подъём предметов по Y (чтобы не цеплялись за пол), множится на масштаб
     item_y_boost: 0.05
@@ -467,7 +455,7 @@ features:
     #   power_exponent: 0.5 = sqrt | 0.55 = мягче (по умолчанию) | 1.0 = линейная
     #   power_normalize: при скольких блоках множитель = 1.0 (20 = 1.0 при 20 блоках)
     force_curve:
-      power_exponent: 0.55
+      power_exponent: 0.50
       power_normalize: 20.0
 
     # 📏 Плавная кривая дистанции
@@ -505,9 +493,6 @@ features:
 
     # Право, которое позволяет байпасснуть защиту
     bypass_permission: "mcplugin.gmprotect.bypass"
-
-    # Сообщение игроку при попытке сменить режим игры
-    message: "<red>Вы не можете сменить режим игры в этом мире!</red>"
 
   # 🪖 Замедление щита — slowness при блоке
   shieldslowness:
@@ -552,12 +537,24 @@ features:
     max_speed_limit: 999999999
 
     # Множитель ускорения за тик на энергорельсах (безразмерный)
-    # 1.0 = без ускорения, 1.002 = +0.2% за тик (~+4% в сек)
-    acceleration_factor: 1.002
+    # 1.0 = без ускорения, 1.015 = +1.5% за тик (~+35% в сек)
+    # ВАЖНО: вне рельсов скорость НЕ сбрасывается (сохраняется текущее значение)
+    # 1.005 = 25 сек до 100 блк/сек, 1.015 = 8.5 сек — разумно для переплавки
+    acceleration_factor: 1.005
 
     # Множитель замедления за тик вне энергорельсов (безразмерный)
-    # 1.0 = без замедления, 0.995 = −0.5% за тик (~−10% в сек)
-    deceleration_factor: 0.995
+    # 1.0 = без замедления, 0.997 = −0.3% за тик (~−6% в сек)
+    # ДОЛЖЕН быть слабее разгона (acceleration_factor), иначе на стыках
+    # рельсов скорость будет падать быстрее, чем расти.
+    # С дефолтами: разгон ×1.015, замедление ×0.997 → 1.015×0.997 = 1.012 > 1
+    deceleration_factor: 0.998
+
+    # Аддитивный буст скорости за тик (блоки/тик) — добавляется к velocity
+    # на энергорельсах поверх физики Minecraft.
+    # 0.04/тик = ~0.8 блок/сек² — плавное ускорение без схода с рельсов.
+    # 0.08/тик = ~1.6 блок/сек² — быстрее восстанавливает скорость между секциями рельсов.
+    # Больше значение = быстрее разгон, но выше риск схода на поворотах.
+    thrust_per_tick: 0.06
 
     # Минимальная скорость для нанесения урона (блоков/сек)
     # Конвертируется в блоки/тик: 15.0 ÷ 20 = 0.750 блк/тик
@@ -575,7 +572,9 @@ features:
       # Включена ли переплавка
       enabled: true
       # Минимальная скорость для переплавки (блоков/сек)
-      min_speed: 100.0
+      # 100 = ~25 сек разгона на POWERED_RAIL при acceleration_factor 1.005
+      # 50  = ~6 сек разгона при 1.015 — реально достижимо на треке средней длины
+      min_speed: 50.0
 
       # 🔥 Переплавка руд: 1 предмет/сек (rate-limited)
       # При скорости ≥ min_speed вагонетка с воронкой переплавляет
@@ -586,8 +585,6 @@ features:
       # Если попытаться открыть инвентарь вагонетки с воронкой при скорости
       # > 1 блок/тик (20 блоков/сек) — открытие отменяется и наносится
       # 1 ед. урона от огня.
-
-      # ⚠ coal_heat (уголь→алмаз) удалён — больше не поддерживается
 
   # 🔨 Ломание неразрушимых блоков — прогрессивное разрушение с анимацией трещин
   #
@@ -615,7 +612,7 @@ features:
         enabled: true
 
         # Сколько суммарного "урона" нужно нанести, чтобы блок сломался
-        max_damage: 80.0
+        max_damage: 100
 
         # Минимальный тир инструмента:
         #   "NETHERITE" — только незерит
@@ -719,7 +716,7 @@ features:
     # Интервал сканирования инвентарей игроков в тиках
     # (20 тиков = 1 секунда). Чем меньше — тем быстрее обновляется лор,
     # но выше нагрузка на сервер.
-    interval_ticks: 10
+    interval_ticks: 20
 
     # Множитель расхода целостности
     # Формула: (1 / maxDurability) × 100% × cost_multiplier
@@ -752,10 +749,6 @@ features:
       # Отправлять ли сообщение игроку о поломке
       send_message: true
 
-      # Текст сообщения о поломке
-      # {item} — название предмета
-      message: "<dark_red>✖</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>"
-
       # Звук поломки (см. https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html)
       sound: ENTITY_ITEM_BREAK
 
@@ -787,12 +780,6 @@ features:
       # Бонус при объединении в % от макс. целостности
       # 0.1 = +10% бонуса
       combine_bonus: 0.1
-      # Сообщение при ремонте материалом
-      # {current} — текущая целостность в % (например 75.5)
-      repair_message: "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>"
-      # Сообщение при объединении предметов
-      # {current} — текущая целостность в % (например 88.3)
-      combine_message: "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>"
 
       # ===== КРАФТ МАТЕРИАЛОМ =====
       # При совмещении предмета с ремонтным материалом на наковальне
@@ -804,10 +791,6 @@ features:
         enabled: true
         # Сколько % от макс. целостности даёт каждая единица материала
         integrity_per_material: 10.0
-        # Сообщение игроку
-        # {current} — итоговая целостность (например 85.000)
-        # {bonus} — сколько % добавлено за материалы (например 30.000)
-        message: "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>{current}%</yellow> <white>(+{bonus}% за материалы)</white>"
 
     # ===== MENDING (ПОЧИНКА) — восстановление целостности при сборе опыта =====
     # При получении опыта все предметы с зачарованием Mending (Починка)
@@ -819,9 +802,6 @@ features:
       enabled: true
       # Сколько целостности восстанавливается за 1 единицу опыта
       integrity_multiplier: 0.5
-      # Сообщение игроку при восстановлении (пусто — не отправлять)
-      # {amount} — сколько единиц восстановлено
-      message: "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}</yellow> <white>целостности!</white>"
 
     # ===== ОБЪЕДИНЕНИЕ ПРЕДМЕТОВ =====
     # При объединении двух одинаковых предметов в точиле, верстаке или
@@ -843,9 +823,6 @@ features:
       enabled: true
       # Сколько % целостности восстанавливается за 1 единицу опыта
       integrity_per_xp: 0.1
-      # Сообщение игроку при восстановлении (пусто — не отправлять)
-      # {amount} — сколько % восстановлено (например 1.500)
-      message: ""
 
     # ===== LOW INTEGRITY WARNING =====
     # При снижении целостности предмета до пороговых значений (75%, 50%, 25%, 10%, 5%)
@@ -861,10 +838,6 @@ features:
         - 25
         - 10
         - 5
-      # Сообщение игроку
-      # {item} — название предмета
-      # {pct} — текущая целостность в % (например 24.500)
-      message: "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>{item}</yellow> <white>имеет</white> <red>{pct}%</red> <white>целостности!</white>"
 
     # ===== UNBREAKING (НЕРАЗРУШИМОСТЬ) =====
     # Уменьшает шанс расхода прочности в (уровень + 1) раз.
@@ -922,8 +895,6 @@ features:
     max_name_chars: 200
     # Максимальное количество зачарований
     max_enchantments: 40
-    # Сообщение при блокировке
-    message: "<red>Этот предмет содержит слишком много данных!</red>"
 
   # 🎯 Защита от левитации шалкера — убирает эффект левитации при попадании пули шалкера в игрока
   shulker_protection:
@@ -1094,21 +1065,6 @@ auth:
   check_duplicate_name:
     enabled: true
 
-  # Сообщения
-  messages:
-    register_title: "<dark_gray>Зарегистрируйтесь</dark_gray>"
-    login_title: "<dark_gray>Введите пароль</dark_gray>"
-    success_register: "<green>✅ Регистрация прошла успешно!</green>"
-    success_login: "<green>✅ Вы успешно вошли на сервер!</green>"
-    wrong_password: "<red>❌ Неверный пароль! Попробуйте ещё раз.</red>"
-    short_password: "<red>❌ Пароль должен быть не менее 4 символов!</red>"
-    need_auth: "<red>❌ Сначала авторизуйтесь! Введите пароль в открывшемся окне.</red>"
-    ip_changed: "<red>❌</red> <white>Ваш IP-адрес изменился. Пожалуйста, войдите заново.</white>"
-    duplicate_name_kick: "<yellow>❌ Игрок с таким ником уже на сервере!</yellow>
-<white>Пожалуйста, зайдите под другим ником.</white>"
-    max_accounts_per_ip: "<red>❌ С вашего IP-адреса уже зарегистрировано</red> <yellow>{count}</yellow><red> аккаунтов!</red>
-<white>Максимум:</white> <yellow>{limit}</yellow><white> аккаунтов на один IP.</white>"
-
 # =========================
 # 🕳 Защита от падения в пустоту
 # =========================
@@ -1129,21 +1085,12 @@ void_protection:
     yaw: 0.0
     pitch: 0.0
 
-  # Сообщение игроку при телепортации
-  message: "<green>✅</green> <white>Вы были спасены из пустоты!</white>"
-
 # =========================
 # 🔌 Управление питанием сервера
 # =========================
 power:
   # Перехватывать ли /stop и /restart от игроков
   intercept_commands: true
-
-  # Сообщение при попытке использовать /stop
-  stop_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Команда /stop отключена. Используйте:</red> <white>/mp power off</white>"
-
-  # Сообщение при попытке использовать /restart
-  restart_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Команда /restart отключена. Используйте:</red> <white>/mp power reboot</white>"
 
   # Время ожидания подтверждения запроса (секунд)
   request_timeout: 30
@@ -1156,7 +1103,6 @@ power:
     enabled: true
     # {action} — действие (выключается/перезагружается)
     # {seconds} — оставшиеся секунды
-    format: "<red>⚡</red> <white>Сервер {action} через</white> <yellow>{seconds}</yellow> <white>сек</white>"
 
   # Босс-бар — показывается всем игрокам
   bossbar:
@@ -1167,7 +1113,6 @@ power:
     style: SOLID
     # {action} — действие (выключается/перезагружается)
     # {seconds} — оставшиеся секунды
-    text: "<red>⚡ Сервер {action} через</red> <yellow>{seconds}</yellow> <red>сек</red>"
 
   # Звук «пиканья» во время обратного отсчёта
   countdown_sound:
@@ -1209,22 +1154,6 @@ suicide:
     # Звук в момент смерти
     finish: ENTITY_LIGHTNING_BOLT_THUNDER
 
-  # 💬 Сообщения
-  messages:
-    warning_title: "<dark_red>☠</dark_red> <red>ПРЕДУПРЕЖДЕНИЕ!</red>"
-    warning_text: "<white>Вы собираетесь совершить суицид!</white>"
-    warning_no_cancel: "<red>⚠ После подтверждения отмена невозможна!</red>"
-    warning_confirm_hint: "<yellow>Введите</yellow> <white>/mp suicide</white> <yellow>ещё раз чтобы подтвердить и запустить отсчёт.</yellow>"
-    warning_cancel_hint: "<gray>Если передумаете — просто подождите</gray> <yellow>{timeout}</yellow><gray> сек, и запрос сбросится.</gray>"
-    confirmed_title: "<dark_red>☠</dark_red> <red>Запущен обратный отсчёт!</red>"
-    confirmed_no_cancel: "<red>Отмена невозможна!</red>"
-    timer_actionbar: "<red><bold>☠</bold></red> <white>Суицид через</white> <yellow><bold>{seconds}</bold></yellow> <white>сек</white>"
-    timer_chat: "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек...</red>"
-    death_message: "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Вы совершили суицид...</red>"
-    timeout_message: "<yellow>ℹ</yellow> <white>Запрос на суицид сброшен (время вышло).</white>"
-    cooldown_message: "<dark_red>❌</dark_red> <red>Подождите</red> <yellow>{seconds}</yellow><red> сек перед повторным использованием!</red>"
-    already_running: "<dark_red>❌</dark_red> <red>У вас уже запущен обратный отсчёт!</red>"
-
   # 📊 BossBar
   bossbar:
     # Цвет: BLUE, RED, GREEN, PURPLE, PINK, WHITE, YELLOW
@@ -1232,7 +1161,6 @@ suicide:
     # Стиль: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
     style: SOLID
     # {seconds} — оставшиеся секунды
-    title: "<dark_red>☠</dark_red> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек</red>"
 
 # =========================
 # 📦 Защита от пакетов, превышающих лимит размера (PacketGuard)
@@ -1255,12 +1183,6 @@ packet_guard:
   # Логировать ли инжект Netty-обработчика (только для отладки)
   log_inject: false
 
-  # Сообщение при кике за превышение размера пакета
-  # {size} — размер пакета в байтах
-  # {max} — максимальный размер
-  # {packet} — тип пакета
-  kick_message: "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>"
-
 # =========================
 # 🔴 Защита от перегрузки сервера редстуоном (ЗОПСР)
 # =========================
@@ -1268,6 +1190,7 @@ redstone_guard:
   enabled: true
   # MSPT выше порога + глобальные итерации редстоуна за прошлый тик > лимита
   mspt_threshold: 50.0
+
   global_iterations_limit: 1024
   # Блокировать чанк только если его итерации за тик > этого лимита
   chunk_iterations_limit: 10
@@ -1337,9 +1260,6 @@ chat_filter:
   # Включен ли фильтр
   enabled: false
 
-  # Сообщение игроку при обнаружении запрещённых слов
-  message: "<dark_red>❌</dark_red> <red>Ваше сообщение не прошло проверку на запрещённый контент!</red>"
-
   # Список запрещённых слов/шаблонов
   # * — wildcard: 
   #   "блять"     → точное совпадение (целое слово)
@@ -1401,18 +1321,6 @@ changedimmension:
 
   # Задержка между использованиями команды в секундах
   cooldown_seconds: 10
-
-  # Сообщения
-  messages:
-    success: "<green>✅</green> <white>Телепортация в мир</white> <yellow>{world}</yellow> <white>завершена!</white>"
-    return_info: "<yellow>ℹ</yellow> <gray>Чтобы вернуться, просто напишите</gray> <white>/mcplugin changedimmension</white> <gray>ещё раз.</gray>"
-    return_success: "<green>✅</green> <white>Вы вернулись в исходную точку!</white>"
-    return_error: "<dark_red>❌</dark_red> <red>Ошибка: точка возврата повреждена!</red>"
-    no_permission: "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>"
-    world_not_found: "<dark_red>❌</dark_red> <red>Мир</red> <yellow>{world}</yellow> <red>не найден!</red>"
-    player_only: "<dark_red>❌</dark_red> <red>Только игрок может использовать эту команду!</red>"
-    no_default_world: "<dark_red>❌</dark_red> <red>Мир по умолчанию не настроен в конфиге!</red>"
-    cooldown: "<dark_red>❌</dark_red> <red>Подождите</red> <yellow>{seconds}</yellow><red> сек перед повторным использованием!</red>"
 
   # Миры и координаты (world — имя мира в Multiverse или Bukkit)
   worlds:

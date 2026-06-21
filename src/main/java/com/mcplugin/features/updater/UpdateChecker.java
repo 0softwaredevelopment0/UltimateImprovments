@@ -33,12 +33,19 @@ import java.sql.ResultSet;
 import java.time.Duration;
 
 /**
- * Auto-updater: при старте сервера проверяет GitHub Releases.
+ * Auto-updater: проверяет последний коммит на GitHub, а не номер версии.
  * <p>
- * Версия плагина привязана к версии Minecraft (26.2), поэтому
- * сравнение идёт не по version из plugin.yml, а по тегу GitHub-релиза.
- * <p>
- * Логика:\n * <ol>\n *   <li>Читаем из БД (таблица {@code updater_state}) последний скачанный тег;</li>\n *   <li>Запрашиваем GitHub API {@code /releases} — получаем массив релизов;</li>\n *   <li>Если теги РАЗНЫЕ — это новый релиз → скачиваем JAR + заменяем текущий;</li>\n *   <li>После успешной замены сохраняем новый тег в БД.</li>\n * </ol>\n * <p>\n * Вся сетевая работа — в асинхронном потоке, главный поток не блокируется.\n */
+ * Логика:
+ * <ol>
+ *   <li>Читаем из БД последний проверенный SHA коммита и последний установленный тег релиза;</li>
+ *   <li>Запрашиваем GitHub API {@code /commits/main} — получаем SHA последнего коммита;</li>
+ *   <li>Если SHA совпадает с сохранённым — UP_TO_DATE;</li>
+ *   <li>Если SHA отличается — запрашиваем {@code /releases/latest} — получаем тег релиза;</li>
+ *   <li>Если тег релиза отличается от установленного — новый коммит + новый релиз → UPDATE_AVAILABLE;</li>
+ *   <li>Если тег релиза совпадает — есть новые коммиты, но без релиза → не показываем обновление;</li>
+ *   <li>После успешной загрузки сохраняем в БД и новый SHA, и новый тег.</li>
+ * </ol>
+ */
 public class UpdateChecker {
 
     // =========================
@@ -46,8 +53,10 @@ public class UpdateChecker {
     // =========================
     private static final String GITHUB_OWNER = "Minecraft337";
     private static final String GITHUB_REPO = "MC-Plugin";
-    private static final String API_URL = "https://api.github.com/repos/"
+    private static final String RELEASES_API_URL = "https://api.github.com/repos/"
             + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases?per_page=1";
+    private static final String COMMITS_API_URL = "https://api.github.com/repos/"
+            + GITHUB_OWNER + "/" + GITHUB_REPO + "/commits?per_page=1";
     private static final String USER_AGENT = "MC-Plugin-Updater";
     private static final int TIMEOUT_SECONDS = 15;
 
@@ -106,18 +115,102 @@ public class UpdateChecker {
         cleanupOrphanedFiles(pluginDir, currentJar);
 
         // ════════════════════════════════════════
-        // 1. Читаем последний сохранённый тег из БД
+        // 1. Читаем последний SHA и тег из БД
         // ════════════════════════════════════════
-        String dbTag = getStoredTag();
-        plugin.getLogger().info("[Updater] Last known release tag: "
-                + (dbTag.isEmpty() ? "<none>" : dbTag));
+        String storedSha = getStoredSha();
+        String storedTag = getStoredTag();
+        plugin.getLogger().info("[Updater] Last known commit: "
+                + (storedSha.isEmpty() ? "<none>" : storedSha.substring(0, Math.min(7, storedSha.length())) + "..."));
+        plugin.getLogger().info("[Updater] Last installed release: "
+                + (storedTag.isEmpty() ? "<none>" : storedTag));
 
         // ════════════════════════════════════════
-        // 2. HTTP-запрос к GitHub API
+        // 2. HTTP-запрос к GitHub API — проверяем последний коммит
         // ════════════════════════════════════════
+        String latestCommitSha = fetchLatestCommitSha(plugin);
+        if (latestCommitSha == null) return; // CHECK_FAILED уже установлен
+
+        // ════════════════════════════════════════
+        // 3. Сравниваем SHA коммита
+        // ════════════════════════════════════════
+        if (latestCommitSha.equals(storedSha)) {
+            plugin.getLogger().info("[Updater] No new commits (SHA: "
+                    + latestCommitSha.substring(0, Math.min(7, latestCommitSha.length())) + "...)");
+            status = UpdateStatus.UP_TO_DATE;
+            return;
+        }
+
+        plugin.getLogger().info("[Updater] New commit detected: "
+                + latestCommitSha.substring(0, Math.min(7, latestCommitSha.length())) + "...");
+
+        // ════════════════════════════════════════
+        // 4. SHA изменился — проверяем, есть ли новый релиз
+        // ════════════════════════════════════════
+        String githubTag = fetchLatestReleaseTag(plugin);
+        if (githubTag == null) {
+            // fetchLatestReleaseTag мог установить CHECK_FAILED (HTTP ошибка)
+            // или не найти релизов — в любом случае не можем обновиться
+            if (status != UpdateStatus.CHECK_FAILED) {
+                plugin.getLogger().info("[Updater] New commits found (SHA: "
+                        + latestCommitSha.substring(0, Math.min(7, latestCommitSha.length())) + "...)"
+                        + " but no releases available — update not announced.");
+                latestTag = "";
+                status = UpdateStatus.UP_TO_DATE;
+            }
+            return;
+        }
+
+        // Релиз найден — download URL уже закеширован в fetchLatestReleaseTag
+        if (cachedDownloadUrl.isEmpty()) {
+            plugin.getLogger().warning("[Updater] No JAR asset found in release " + githubTag + " — skipping");
+            status = UpdateStatus.UPDATE_FAILED;
+            latestTag = githubTag;
+            return;
+        }
+
+        // ════════════════════════════════════════
+        // 5. Сравниваем тег релиза с установленным
+        // ════════════════════════════════════════
+        if (githubTag.equals(storedTag)) {
+            plugin.getLogger().info("[Updater] New commits found but release tag unchanged (" + githubTag
+                    + ") — no update announced without a new release.");
+            latestTag = githubTag;
+            status = UpdateStatus.UP_TO_DATE;
+            return;
+        }
+
+        // ════════════════════════════════════════
+        // 6. Новый коммит + новый релиз — обновление доступно!
+        // ════════════════════════════════════════
+        plugin.getLogger().info("[Updater] New release detected: "
+                + githubTag + " (was: " + (storedTag.isEmpty() ? "<none>" : storedTag) + ")");
+
+        // Данные для скачивания уже закешированы в fetchLatestReleaseTag
+        // (cachedDownloadUrl, cachedReleaseName, cachedGithubTag)
+        cachedGithubTag = githubTag;
+        latestTag = githubTag;
+        status = UpdateStatus.UPDATE_AVAILABLE;
+
+        plugin.getLogger().warning("");
+        plugin.getLogger().warning("===========================================");
+        plugin.getLogger().warning("  [UPDATE AVAILABLE] " + cachedReleaseName);
+        plugin.getLogger().warning("  Release: " + githubTag);
+        plugin.getLogger().warning("");
+        plugin.getLogger().warning("  To install, type: /mp updatejar");
+        plugin.getLogger().warning("  To ignore this update, do nothing.");
+        plugin.getLogger().warning("===========================================");
+        plugin.getLogger().warning("");
+    }
+
+    // =========================
+    // 🔍 API HELPERS
+    // =========================
+
+    /** Запрашивает GitHub API и возвращает SHA последнего коммита. */
+    private static String fetchLatestCommitSha(Main plugin) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_URL))
+                .uri(URI.create(COMMITS_API_URL))
                 .header("Accept", "application/vnd.github.v3+json")
                 .header("User-Agent", USER_AGENT)
                 .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
@@ -128,105 +221,159 @@ public class UpdateChecker {
                 HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() != 200) {
-            plugin.getLogger().warning("[Updater] GitHub API returned HTTP "
+            plugin.getLogger().warning("[Updater] GitHub Commits API returned HTTP "
                     + response.statusCode());
             status = UpdateStatus.CHECK_FAILED;
-            return;
+            return null;
         }
 
-        // ════════════════════════════════════════
-        // 3. Парсим JSON массив — берём первый (последний) релиз
-        // ════════════════════════════════════════
+        JsonArray commits = JsonParser.parseString(response.body()).getAsJsonArray();
+        if (commits.isEmpty()) {
+            plugin.getLogger().warning("[Updater] No commits found in GitHub repository");
+            status = UpdateStatus.CHECK_FAILED;
+            return null;
+        }
+
+        JsonObject commit = commits.get(0).getAsJsonObject();
+        String sha = commit.get("sha").getAsString();
+        String message = "";
+        try {
+            message = commit.getAsJsonObject("commit").get("message").getAsString();
+            // Берём только первую строку
+            int nl = message.indexOf('\n');
+            if (nl > 0) message = message.substring(0, nl);
+        } catch (Exception ignored) {}
+
+        plugin.getLogger().info("[Updater] GitHub latest commit: "
+                + sha.substring(0, Math.min(7, sha.length())) + "... "
+                + (message.isEmpty() ? "" : "\"" + message + "\""));
+        return sha;
+    }
+
+    /** Запрашивает GitHub API и возвращает тег последнего релиза + кеширует URL для скачивания. */
+    private static String fetchLatestReleaseTag(Main plugin) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(RELEASES_API_URL))
+                .header("Accept", "application/vnd.github.v3+json")
+                .header("User-Agent", USER_AGENT)
+                .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = client.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            plugin.getLogger().warning("[Updater] GitHub Releases API returned HTTP "
+                    + response.statusCode());
+            status = UpdateStatus.CHECK_FAILED;
+            return null;
+        }
+
         JsonArray releases = JsonParser.parseString(response.body()).getAsJsonArray();
         if (releases.isEmpty()) {
-            plugin.getLogger().warning("[Updater] No releases found in GitHub repository");
-            status = UpdateStatus.CHECK_FAILED;
-            return;
+            // Нет релизов — не ошибка, просто нечего скачивать
+            plugin.getLogger().info("[Updater] No releases found in GitHub repository");
+            return null;
         }
+
         JsonObject release = releases.get(0).getAsJsonObject();
-        String githubTag = release.get("tag_name").getAsString();
-
-        plugin.getLogger().info("[Updater] GitHub latest release: " + githubTag);
-
-        // ════════════════════════════════════════
-        // 4. Сравниваем теги
-        // ════════════════════════════════════════
-        if (githubTag.equals(dbTag)) {
-            plugin.getLogger().info("[Updater] No new releases (last tag: " + dbTag + ")");
-            status = UpdateStatus.UP_TO_DATE;
-            latestTag = githubTag;
-            return;
-        }
-
-        plugin.getLogger().info("[Updater] New release detected: "
-                + githubTag + " (was: " + (dbTag.isEmpty() ? "<none>" : dbTag) + ")");
-
-        // ════════════════════════════════════════
-        // 5. Поиск JAR-ассета в релизе
-        // ════════════════════════════════════════
-        String downloadUrl = findJarAsset(release);
-        if (downloadUrl == null) {
-            plugin.getLogger().warning("[Updater] No JAR asset found in release "
-                    + githubTag + " — skipping");
-            status = UpdateStatus.UPDATE_FAILED;
-            latestTag = githubTag;
-            return;
-        }
-
+        String tag = release.get("tag_name").getAsString();
         String releaseName = release.has("name") && !release.get("name").isJsonNull()
-                ? release.get("name").getAsString() : githubTag;
+                ? release.get("name").getAsString() : tag;
 
-        // ════════════════════════════════════════
-        // 6. Кешируем данные для /mp updatejar
-        //    (НЕ качаем автоматически — ждём команду админа)
-        // ════════════════════════════════════════
-        cachedGithubTag = githubTag;
-        cachedDownloadUrl = downloadUrl;
-        cachedReleaseName = releaseName;
-        latestTag = githubTag;
-        status = UpdateStatus.UPDATE_AVAILABLE;
+        // Ищем JAR и кешируем
+        String downloadUrl = findJarAsset(release);
+        if (downloadUrl != null) {
+            cachedDownloadUrl = downloadUrl;
+            cachedReleaseName = releaseName;
+            cachedGithubTag = tag;
+        }
 
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("===========================================");
-        plugin.getLogger().warning("  [UPDATE AVAILABLE] " + releaseName);
-        plugin.getLogger().warning("  Release: " + githubTag);
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("  To install, type: /mp updatejar");
-        plugin.getLogger().warning("  To ignore this update, do nothing.");
-        plugin.getLogger().warning("===========================================");
-        plugin.getLogger().warning("");
+        plugin.getLogger().info("[Updater] GitHub latest release: " + tag);
+        return tag;
     }
 
     // =========================
     // 💾 РАБОТА С БД
     // =========================
 
-    /** Читает последний скачанный тег из таблицы updater_state. */
-    private static String getStoredTag() {
+    /** Читает последний SHA коммита из таблицы updater_state. */
+    private static String getStoredSha() {
         Connection con = DatabaseManager.getConnection();
         if (con == null) return "";
 
         try (PreparedStatement ps = con.prepareStatement(
-                "SELECT value FROM updater_state WHERE key = 'latest_tag'")) {
+                "SELECT value FROM updater_state WHERE key = 'latest_commit_sha'")) {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return rs.getString("value");
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().fine("[Updater] DB read error: " + e.getMessage());
+            Main.getInstance().getLogger().fine("[Updater] DB read sha error: " + e.getMessage());
         }
         return "";
     }
 
-    /** Сохраняет новый тег в таблицу updater_state. */
+    /** Читает последний установленный тег релиза из таблицы updater_state. */
+    private static String getStoredTag() {
+        Connection con = DatabaseManager.getConnection();
+        if (con == null) return "";
+
+        try (PreparedStatement ps = con.prepareStatement(
+                "SELECT value FROM updater_state WHERE key = 'installed_tag'")) {
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("value");
+            }
+        } catch (Exception e) {
+            Main.getInstance().getLogger().fine("[Updater] DB read tag error: " + e.getMessage());
+        }
+        return "";
+    }
+
+    /** Сохраняет SHA коммита в таблицу updater_state. */
+    private static void saveStoredSha(String sha) {
+        Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
+
+        try {
+            // UPSERT: пытаемся обновить, если нет — вставляем
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE updater_state SET value = ? WHERE key = 'latest_commit_sha'")) {
+                ps.setString(1, sha);
+                if (ps.executeUpdate() == 0) {
+                    try (PreparedStatement insert = con.prepareStatement(
+                            "INSERT INTO updater_state (key, value) VALUES ('latest_commit_sha', ?)")) {
+                        insert.setString(1, sha);
+                        insert.executeUpdate();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Main.getInstance().getLogger().warning(
+                    "[Updater] Failed to save commit SHA to DB: " + e.getMessage());
+        }
+    }
+
+    /** Сохраняет тег релиза в таблицу updater_state. */
     private static void saveStoredTag(String tag) {
         Connection con = DatabaseManager.getConnection();
         if (con == null) return;
 
-        try (PreparedStatement ps = con.prepareStatement(
-                "UPDATE updater_state SET value = ? WHERE key = 'latest_tag'")) {
-            ps.setString(1, tag);
-            ps.executeUpdate();
+        try {
+            try (PreparedStatement ps = con.prepareStatement(
+                    "UPDATE updater_state SET value = ? WHERE key = 'installed_tag'")) {
+                ps.setString(1, tag);
+                if (ps.executeUpdate() == 0) {
+                    try (PreparedStatement insert = con.prepareStatement(
+                            "INSERT INTO updater_state (key, value) VALUES ('installed_tag', ?)")) {
+                        insert.setString(1, tag);
+                        insert.executeUpdate();
+                    }
+                }
+            }
         } catch (Exception e) {
             Main.getInstance().getLogger().warning(
                     "[Updater] Failed to save tag to DB: " + e.getMessage());
@@ -276,137 +423,109 @@ public class UpdateChecker {
     // =========================
 
     /**
-     * Выполняет асинхронную проверку GitHub на наличие новых релизов
+     * Выполняет асинхронную проверку GitHub на наличие новых коммитов/релизов
      * и отправляет результат отправителю команды (игроку или консоли).
      * Если обновление доступно — предлагает ввести /mp updatejar.
      */
     public static void checkOnly(CommandSender sender) {
         Main plugin = Main.getInstance();
         String senderName = sender instanceof Player ? ((Player) sender).getName() : "Console";
-        plugin.getLogger().info("[Updater] Manual version check requested by " + senderName);
+        plugin.getLogger().info("[Updater] Manual update check requested by " + senderName);
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                String dbTag = getStoredTag();
+                String storedSha = getStoredSha();
+                String storedTag = getStoredTag();
                 String pluginVersion = plugin.getDescription().getVersion();
 
-                // HTTP-запрос к GitHub API
-                HttpClient client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(API_URL))
-                        .header("Accept", "application/vnd.github.v3+json")
-                        .header("User-Agent", USER_AGENT)
-                        .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
-                        .GET()
-                        .build();
-
-                HttpResponse<String> response = client.send(request,
-                        HttpResponse.BodyHandlers.ofString());
-
-                if (response.statusCode() != 200) {
+                // Шаг 1: проверяем последний коммит
+                String latestCommitSha = fetchLatestCommitSha(plugin);
+                if (latestCommitSha == null) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage("§4❌ §cGitHub API вернул HTTP " + response.statusCode());
-                        sender.sendMessage("§8┃ §7Возможно, превышен лимит запросов или репозиторий недоступен.");
-                    });
-                    plugin.getLogger().warning("[Updater] Manual check: GitHub API returned HTTP "
-                            + response.statusCode());
-                    return;
-                }
-
-                JsonArray releases = JsonParser.parseString(response.body()).getAsJsonArray();
-                if (releases.isEmpty()) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage("§4❌ §cВ репозитории нет релизов!");
+                        sender.sendMessage("§4❌ §cНе удалось проверить последний коммит на GitHub!");
                     });
                     return;
                 }
-                JsonObject release = releases.get(0).getAsJsonObject();
-                String githubTag = release.get("tag_name").getAsString();
-                String releaseName = release.has("name") && !release.get("name").isJsonNull()
-                        ? release.get("name").getAsString() : githubTag;
-                String releaseBody = release.has("body") && !release.get("body").isJsonNull()
-                        ? release.get("body").getAsString() : "";
 
-                // Кешируем URL на случай если пользователь потом введёт /mp updatejar
-                String downloadUrl = findJarAsset(release);
-                if (downloadUrl != null) {
-                    cachedGithubTag = githubTag;
-                    cachedDownloadUrl = downloadUrl;
-                    cachedReleaseName = releaseName;
-                }
+                boolean hasNewCommits = !latestCommitSha.equals(storedSha);
+                String shortSha = latestCommitSha.substring(0, Math.min(7, latestCommitSha.length()));
 
-                boolean isUpdateAvailable = !githubTag.equals(dbTag);
-                boolean isFirstRun = dbTag.isEmpty();
+                // Шаг 2: проверяем последний релиз
+                String githubTag = fetchLatestReleaseTag(plugin);
+                boolean hasRelease = githubTag != null;
+                boolean isNewRelease = hasRelease && !githubTag.equals(storedTag);
+                boolean isFirstRun = storedSha.isEmpty() && storedTag.isEmpty();
 
                 // Отправляем результат на главном потоке
-                final String finalTag = githubTag;
-                final String finalName = releaseName;
-                final String finalBody = releaseBody;
+                final String finalSha = shortSha;
+                final String finalTag = githubTag != null ? githubTag : "<none>";
+                final String finalReleaseName = !cachedReleaseName.isEmpty() ? cachedReleaseName : finalTag;
+
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage("");
                     sender.sendMessage("§6═══════════════════════════════════");
                     sender.sendMessage("§6  ✦ §fMC-Plugin §7— Проверка обновлений");
                     sender.sendMessage("§6═══════════════════════════════════");
                     sender.sendMessage("");
-                    sender.sendMessage("§7Текущая версия:  §f" + pluginVersion);
+                    sender.sendMessage("§7Версия плагина: §f" + pluginVersion);
+                    sender.sendMessage("§7Последний коммит: §f" + finalSha);
                     sender.sendMessage("§7Последний релиз: §f" + finalTag);
 
-                    if (isFirstRun) {
+                    if (!hasRelease) {
                         sender.sendMessage("");
-                        sender.sendMessage("§eℹ §7Это первый запуск проверки обновлений.");
-                        sender.sendMessage("§7Релиз §f" + finalTag + "§7 доступен для установки.");
-                    } else if (isUpdateAvailable) {
+                        sender.sendMessage("§c⚠ В репозитории нет релизов!");
+                    } else if (isFirstRun) {
                         sender.sendMessage("");
-                        sender.sendMessage("§a✨ Доступно обновление! §f" + finalName);
-                        sender.sendMessage("§7Было: §f" + dbTag + " §7→ Стало: §a" + finalTag);
-
-                        if (!finalBody.isEmpty()) {
-                            String[] lines = finalBody.split("\n");
-                            int shown = 0;
-                            for (String line : lines) {
-                                if (shown >= 5) break;
-                                String trimmed = line.trim();
-                                if (!trimmed.isEmpty()) {
-                                    sender.sendMessage("§8  ┃ §7" + (trimmed.length() > 60
-                                            ? trimmed.substring(0, 57) + "..." : trimmed));
-                                    shown++;
-                                }
-                            }
+                        sender.sendMessage("§eℹ §7Первый запуск проверки.");
+                        if (isNewRelease) {
+                            sender.sendMessage("§a✨ Доступно обновление: §f" + finalReleaseName);
                         }
+                    } else if (isNewRelease) {
+                        sender.sendMessage("");
+                        sender.sendMessage("§a✨ Доступно обновление! §f" + finalReleaseName);
+                        sender.sendMessage("§7Было: §f" + (storedTag.isEmpty() ? "<none>" : storedTag)
+                                + " §7→ Стало: §a" + finalTag);
+                    } else if (hasNewCommits) {
+                        sender.sendMessage("");
+                        sender.sendMessage("§eℹ §7Есть новые коммиты, но без нового релиза.");
+                        sender.sendMessage("§7Дождитесь выхода следующего релиза.");
                     } else {
                         sender.sendMessage("");
-                        sender.sendMessage("§2✔ §aУ вас последняя версия плагина!");
+                        sender.sendMessage("§2✔ §aВсё актуально! Последний коммит уже установлен.");
                         sender.sendMessage("");
                         sender.sendMessage("§6═══════════════════════════════════");
                         sender.sendMessage("");
                         return;
                     }
 
-                    sender.sendMessage("");
+                    if (isNewRelease && hasRelease) {
+                        sender.sendMessage("");
 
-                    // Кнопка /mp updatejar (только для игроков)
-                    if (sender instanceof Player) {
-                        TextComponent updateButton = new TextComponent("§8  §2[§a✔ Установить обновление§2]");
-                        updateButton.setClickEvent(new ClickEvent(
-                                ClickEvent.Action.RUN_COMMAND,
-                                "/mp updatejar"
-                        ));
-                        updateButton.setHoverEvent(new HoverEvent(
-                                HoverEvent.Action.SHOW_TEXT,
-                                new ComponentBuilder("§aНажмите чтобы скачать и установить обновление\n")
-                                        .append("§7Релиз: §f" + finalName + "\n")
-                                        .append("§7После установки потребуется перезапуск сервера")
-                                        .create()
-                        ));
-                        ((Player) sender).spigot().sendMessage(updateButton);
+                        // Кнопка /mp updatejar (только для игроков)
+                        if (sender instanceof Player) {
+                            TextComponent updateButton = new TextComponent("§8  §2[§a✔ Установить обновление§2]");
+                            updateButton.setClickEvent(new ClickEvent(
+                                    ClickEvent.Action.RUN_COMMAND,
+                                    "/mp updatejar"
+                            ));
+                            updateButton.setHoverEvent(new HoverEvent(
+                                    HoverEvent.Action.SHOW_TEXT,
+                                    new ComponentBuilder("§aНажмите чтобы скачать и установить обновление\n")
+                                            .append("§7Релиз: §f" + finalReleaseName + "\n")
+                                            .append("§7После установки потребуется перезапуск сервера")
+                                            .create()
+                            ));
+                            ((Player) sender).spigot().sendMessage(updateButton);
 
-                        sender.sendMessage("§8  §7или введите §f/mp updatejar");
-                    } else {
-                        sender.sendMessage("§7Для установки введите: §f/mp updatejar");
+                            sender.sendMessage("§8  §7или введите §f/mp updatejar");
+                        } else {
+                            sender.sendMessage("§7Для установки введите: §f/mp updatejar");
+                        }
+
+                        sender.sendMessage("");
+                        sender.sendMessage("§7Чтобы проигнорировать — ничего не делайте.");
                     }
 
-                    sender.sendMessage("");
-                    sender.sendMessage("§7Чтобы проигнорировать — ничего не делайте.");
                     sender.sendMessage("");
                     sender.sendMessage("§6═══════════════════════════════════");
                     sender.sendMessage("");
@@ -447,6 +566,7 @@ public class UpdateChecker {
     /**
      * Скачивает последний JAR с GitHub, заменяет текущий.
      * При ошибке — fallback в папку plugins + стектрейс в консоль.
+     * После успешной замены сохраняет в БД и SHA коммита, и тег релиза.
      */
     public static void downloadAndReplace(CommandSender sender) {
         Main plugin = Main.getInstance();
@@ -477,56 +597,31 @@ public class UpdateChecker {
                     plugin.getLogger().info("[Updater] Using cached release: " + githubTag);
                 } else {
                     // Фетчим свежие данные с GitHub
-                    HttpClient client = HttpClient.newHttpClient();
-                    HttpRequest request = HttpRequest.newBuilder()
-                            .uri(URI.create(API_URL))
-                            .header("Accept", "application/vnd.github.v3+json")
-                            .header("User-Agent", USER_AGENT)
-                            .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
-                            .GET()
-                            .build();
-
-                    HttpResponse<String> response = client.send(request,
-                            HttpResponse.BodyHandlers.ofString());
-
-                    if (response.statusCode() != 200) {
+                    githubTag = fetchLatestReleaseTag(plugin);
+                    if (githubTag == null) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage("§4❌ §cGitHub API вернул HTTP " + response.statusCode());
+                            sender.sendMessage("§4❌ §cНе удалось получить информацию о последнем релизе!");
                         });
                         return;
                     }
-
-                    JsonArray releases = JsonParser.parseString(response.body()).getAsJsonArray();
-                    if (releases.isEmpty()) {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage("§4❌ §cВ репозитории нет релизов!");
-                        });
-                        return;
-                    }
-                    JsonObject release = releases.get(0).getAsJsonObject();
-                    githubTag = release.get("tag_name").getAsString();
-                    downloadUrl = findJarAsset(release);
-
-                    if (downloadUrl == null) {
+                    downloadUrl = cachedDownloadUrl;
+                    if (downloadUrl == null || downloadUrl.isEmpty()) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             sender.sendMessage("§4❌ §cВ релизе " + githubTag + " не найден JAR-файл!");
                         });
                         return;
                     }
-
-                    // Обновляем кеш свежими данными
-                    cachedGithubTag = githubTag;
-                    cachedDownloadUrl = downloadUrl;
                 }
 
-                // Проверяем — не та же ли версия уже установлена (всегда, даже с кешем)
-                String dbTag = getStoredTag();
-                if (githubTag.equals(dbTag)) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage("§2✔ §aЭта версия уже установлена! (§f" + githubTag + "§a)");
-                    });
-                    return;
-                }
+        // Проверяем — не тот ли самый тег уже установлен?
+        String storedTag = getStoredTag();
+        if (githubTag.equals(storedTag)) {
+            // Если тег совпадает — новый JAR скачать неоткуда (тот же релиз)
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                sender.sendMessage("§2✔ §aЭта версия уже установлена! (§f" + githubTag + "§a)");
+            });
+            return;
+        }
 
                 // Статус: загрузка
                 final String finalTag = githubTag;
@@ -575,7 +670,16 @@ public class UpdateChecker {
                 boolean replaced = replaceJar(plugin, currentJar, tempFile, finalTag);
 
                 if (replaced) {
+                    // Сохраняем и SHA коммита, и тег релиза
+                    String latestSha = fetchLatestCommitSha(plugin);
+                    if (latestSha != null) {
+                        saveStoredSha(latestSha);
+                    }
                     saveStoredTag(finalTag);
+
+                    final String finalSha = (latestSha != null)
+                            ? latestSha.substring(0, Math.min(7, latestSha.length())) : "?";
+
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         sender.sendMessage("");
                         sender.sendMessage("§6═══════════════════════════════════");
@@ -583,6 +687,7 @@ public class UpdateChecker {
                         sender.sendMessage("§6═══════════════════════════════════");
                         sender.sendMessage("");
                         sender.sendMessage("§7Релиз:    §f" + finalTag);
+                        sender.sendMessage("§7Коммит:   §f" + finalSha);
                         sender.sendMessage("§7Загружено: §f" + downloadedKB + " KB");
                         sender.sendMessage("");
                         sender.sendMessage("§c⚠ Перезапустите сервер для применения обновления!");
@@ -731,7 +836,7 @@ public class UpdateChecker {
             plugin.getLogger().warning("");
             plugin.getLogger().warning("  To apply: stop server, then:");
             plugin.getLogger().warning("    1) Delete old JAR: " + currentJar.getName());
-            plugin.getLogger().warning("    2) Rename " + fallbackName + " → " + currentJar.getName());
+            plugin.getLogger().warning("    2) Rename " + fallbackName + " -> " + currentJar.getName());
             plugin.getLogger().warning("    3) Delete " + currentJar.getName() + ".bak");
             plugin.getLogger().warning("    4) Start server");
             plugin.getLogger().warning("===========================================");

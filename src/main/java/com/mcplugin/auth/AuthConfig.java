@@ -1,6 +1,7 @@
 package com.mcplugin.auth;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 
 /**
  * Чтение конфигурации системы авторизации.
@@ -75,7 +76,7 @@ public class AuthConfig {
     // MESSAGE GETTERS
     // =========================
     public static String getMessage(String path, String def) {
-        return getString("auth.messages." + path, def);
+        return MessagesManager.getString("auth.messages." + path, def);
     }
 
     // =========================
@@ -103,5 +104,9 @@ public class AuthConfig {
         } catch (Exception e) {
             return def;
         }
+    }
+
+    public static void reloadMessages() {
+        // stub — сообщения теперь в MessagesManager, этот метод для совместимости
     }
 }

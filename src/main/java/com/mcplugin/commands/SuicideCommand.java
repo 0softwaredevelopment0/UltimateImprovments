@@ -1,6 +1,7 @@
 package com.mcplugin.commands;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -46,7 +47,7 @@ public class SuicideCommand {
         if (suicideCooldowns.containsKey(uuid)) {
             long remaining = (suicideCooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
             if (remaining > 0) {
-                String msg = cfg.getString("suicide.messages.cooldown_message",
+                String msg = MessagesManager.getString("suicide.messages.cooldown_message",
                         "<dark_red>❌</dark_red> <red>Подождите</red> <yellow>{seconds}</yellow><red> сек перед повторным использованием!</red>");
                 player.sendMessage(MessageUtil.parse(msg.replace("{seconds}", String.valueOf(remaining))));
                 return true;
@@ -59,7 +60,7 @@ public class SuicideCommand {
         // ПРОВЕРКА: уже есть активный таймер
         // =========================
         if (suicideTasks.containsKey(uuid)) {
-            String msg = cfg.getString("suicide.messages.already_running",
+            String msg = MessagesManager.getString("suicide.messages.already_running",
                     "<dark_red>❌</dark_red> <red>У вас уже запущен обратный отсчёт!</red>");
             player.sendMessage(MessageUtil.parse(msg));
             return true;
@@ -71,11 +72,11 @@ public class SuicideCommand {
         if (!suicideConfirmed.getOrDefault(uuid, false)) {
             suicideConfirmed.put(uuid, true);
 
-            String warningTitle = cfg.getString("suicide.messages.warning_title", "<dark_red>☠</dark_red> <red>ПРЕДУПРЕЖДЕНИЕ!</red>");
-            String warningText = cfg.getString("suicide.messages.warning_text", "<white>Вы собираетесь совершить суицид!</white>");
-            String warningNoCancel = cfg.getString("suicide.messages.warning_no_cancel", "<red>⚠ После подтверждения отмена невозможна!</red>");
-            String warningConfirmHint = cfg.getString("suicide.messages.warning_confirm_hint", "<yellow>Введите</yellow> <white>/mp suicide</white> <yellow>ещё раз чтобы подтвердить и запустить отсчёт.</yellow>");
-            String warningCancelHint = cfg.getString("suicide.messages.warning_cancel_hint", "<gray>Если передумаете — просто подождите</gray> <yellow>{timeout}</yellow><gray> сек, и запрос сбросится.</gray>")
+            String warningTitle = MessagesManager.getString("suicide.messages.warning_title", "<dark_red>☠</dark_red> <red>ПРЕДУПРЕЖДЕНИЕ!</red>");
+            String warningText = MessagesManager.getString("suicide.messages.warning_text", "<white>Вы собираетесь совершить суицид!</white>");
+            String warningNoCancel = MessagesManager.getString("suicide.messages.warning_no_cancel", "<red>⚠ После подтверждения отмена невозможна!</red>");
+            String warningConfirmHint = MessagesManager.getString("suicide.messages.warning_confirm_hint", "<yellow>Введите</yellow> <white>/mp suicide</white> <yellow>ещё раз чтобы подтвердить и запустить отсчёт.</yellow>");
+            String warningCancelHint = MessagesManager.getString("suicide.messages.warning_cancel_hint", "<gray>Если передумаете — просто подождите</gray> <yellow>{timeout}</yellow><gray> сек, и запрос сбросится.</gray>")
                     .replace("{timeout}", String.valueOf(confirmTimeout));
 
             player.sendMessage("");
@@ -118,7 +119,7 @@ public class SuicideCommand {
                 @Override
                 public void run() {
                     if (suicideConfirmed.remove(uuid) != null) {
-                        String timeoutMsg = cfg.getString("suicide.messages.timeout_message",
+                        String timeoutMsg = MessagesManager.getString("suicide.messages.timeout_message",
                                 "<yellow>ℹ</yellow> <white>Запрос на суицид сброшен (время вышло).</white>");
                         player.sendMessage(MessageUtil.parse(timeoutMsg));
                     }
@@ -138,7 +139,7 @@ public class SuicideCommand {
         // =========================
         String bossColorStr = cfg.getString("suicide.bossbar.color", "RED");
         String bossStyleStr = cfg.getString("suicide.bossbar.style", "SOLID");
-        String bossTitle = cfg.getString("suicide.bossbar.title", "<dark_red>☠</dark_red> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек</red>");
+        String bossTitle = MessagesManager.getString("suicide.bossbar.title", "<dark_red>☠</dark_red> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек</red>");
 
         BarColor bossColor;
         try {
@@ -164,8 +165,8 @@ public class SuicideCommand {
         // =========================
         // ЧАТ: начальное сообщение
         // =========================
-        String confirmedTitle = cfg.getString("suicide.messages.confirmed_title", "<dark_red>☠</dark_red> <red>Запущен обратный отсчёт!</red>");
-        String confirmedNoCancel = cfg.getString("suicide.messages.confirmed_no_cancel", "<red>Отмена невозможна!</red>");
+        String confirmedTitle = MessagesManager.getString("suicide.messages.confirmed_title", "<dark_red>☠</dark_red> <red>Запущен обратный отсчёт!</red>");
+        String confirmedNoCancel = MessagesManager.getString("suicide.messages.confirmed_no_cancel", "<red>Отмена невозможна!</red>");
 
         player.sendMessage("");
         player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
@@ -184,9 +185,9 @@ public class SuicideCommand {
         int totalTicks = duration * 20;
         String tickSoundName = cfg.getString("suicide.sounds.tick", "BLOCK_NOTE_BLOCK_PLING");
         String finishSoundName = cfg.getString("suicide.sounds.finish", "ENTITY_LIGHTNING_BOLT_THUNDER");
-        String timerActionbar = cfg.getString("suicide.messages.timer_actionbar", "<red><bold>☠</bold></red> <white>Суицид через</white> <yellow><bold>{seconds}</bold></yellow> <white>сек</white>");
-        String timerChat = cfg.getString("suicide.messages.timer_chat", "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек...</red>");
-        String deathMsg = cfg.getString("suicide.messages.death_message", "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Вы совершили суицид...</red>");
+        String timerActionbar = MessagesManager.getString("suicide.messages.timer_actionbar", "<red><bold>☠</bold></red> <white>Суицид через</white> <yellow><bold>{seconds}</bold></yellow> <white>сек</white>");
+        String timerChat = MessagesManager.getString("suicide.messages.timer_chat", "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Суицид через</red> <yellow>{seconds}</yellow> <red>сек...</red>");
+        String deathMsg = MessagesManager.getString("suicide.messages.death_message", "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Вы совершили суицид...</red>");
 
         final Sound tickSound = parseSound(tickSoundName, Sound.BLOCK_NOTE_BLOCK_PLING);
         final Sound finishSound = parseSound(finishSoundName, Sound.ENTITY_LIGHTNING_BOLT_THUNDER);

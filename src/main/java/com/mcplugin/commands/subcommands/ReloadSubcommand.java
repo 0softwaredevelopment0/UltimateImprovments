@@ -1,6 +1,7 @@
 package com.mcplugin.commands.subcommands;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.main.TaskManager;
 import com.mcplugin.module.ModuleManager;
 import com.mcplugin.structure.StructureTemplate;
@@ -33,6 +34,7 @@ public final class ReloadSubcommand {
 
                     plugin.reloadConfig();
                     mm.reloadAllConfigs();
+                    MessagesManager.reload();
                     com.mcplugin.listeners.PowerInterceptListener.reloadConfigStatic();
                     com.mcplugin.listeners.ChatFilterManager.reloadConfigStatic();
 

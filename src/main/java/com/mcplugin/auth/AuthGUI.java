@@ -1,5 +1,7 @@
 package com.mcplugin.auth;
 
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Sound;
@@ -36,9 +38,10 @@ public class AuthGUI {
     }
 
     private static void openAnvilGUI(Player player, boolean isRegister) {
-        Component title = isRegister
-                ? Component.text("Зарегистрируйтесь", NamedTextColor.DARK_GRAY)
-                : Component.text("Введите пароль", NamedTextColor.DARK_GRAY);
+        String titleStr = isRegister
+                ? MessagesManager.getString("auth.gui.register", "Register")
+                : MessagesManager.getString("auth.gui.login", "Enter password");
+        Component title = Component.text(titleStr, NamedTextColor.DARK_GRAY);
 
         InventoryView view = MenuType.ANVIL.builder()
                 .title(title)
@@ -72,7 +75,7 @@ public class AuthGUI {
         AuthGUITracker.startResetTask(player);
 
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.4f, 1.0f);
-        player.sendMessage("§e✦ §7Напишите пароль в поле названия, затем нажмите §a✔");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.enter_password_hint", "<yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>")));
     }
 
     // =========================
@@ -93,7 +96,7 @@ public class AuthGUI {
         AuthGUITracker.addChangePasswordPlayer(uuid);
 
         InventoryView view = MenuType.ANVIL.builder()
-                .title(Component.text("Смена пароля", NamedTextColor.DARK_GRAY))
+                .title(Component.text(MessagesManager.getString("auth.gui.change_password", "Change password"), NamedTextColor.DARK_GRAY))
                 .build(player);
 
         AuthGUITracker.addOpeningAuthPlayer(uuid);
@@ -114,7 +117,7 @@ public class AuthGUI {
         AuthGUITracker.startChangePasswordResetTask(player);
 
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.4f, 1.0f);
-        player.sendMessage("§e✦ §7Введите новый пароль в поле названия, затем нажмите §a✔");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.enter_new_password_hint", "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>")));
     }
 
     // =========================
@@ -127,7 +130,7 @@ public class AuthGUI {
         AuthGUITracker.addLogoutPlayer(uuid);
 
         InventoryView view = MenuType.ANVIL.builder()
-                .title(Component.text("Выход из аккаунта", NamedTextColor.DARK_GRAY))
+                .title(Component.text(MessagesManager.getString("auth.gui.logout", "Account logout"), NamedTextColor.DARK_GRAY))
                 .build(player);
 
         AuthGUITracker.addOpeningAuthPlayer(uuid);
@@ -147,6 +150,6 @@ public class AuthGUI {
         AuthGUITracker.startLogoutResetTask(player);
 
         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_USE, 0.4f, 1.0f);
-        player.sendMessage("§e✦ §7Введите ваш пароль для выхода из аккаунта.");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.enter_logout_password_hint", "<yellow>✦</yellow> <gray>Enter your password to log out.</gray>")));
     }
 }

@@ -1,6 +1,7 @@
 package com.mcplugin.features.savedhotbar;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -69,7 +70,7 @@ public class CreativeItemValidator implements Listener {
         maxNameChars = cfg.getInt("max_name_chars", 200);
         maxEnchantments = cfg.getInt("max_enchantments", 40);
         bypassPermission = cfg.getString("bypass_permission", "mcplugin.creative.bypass");
-        denyMessage = cfg.getString("message",
+        denyMessage = MessagesManager.getString("features.creative_item_validator.message",
                 "<red>Этот предмет содержит слишком много данных!</red>");
 
         Main.getInstance().getLogger().info("[CreativeValidator] Config reloaded: enabled="

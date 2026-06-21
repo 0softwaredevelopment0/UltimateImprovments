@@ -1,6 +1,7 @@
 package com.mcplugin.auth;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -60,7 +61,7 @@ public class AuthAuthenticator {
                     Main.getInstance().getLogger().info(
                             "[Auth] Player " + player.getName() + " IP changed: " + lastIp + " → " + currentIp + " — session reset.");
                     String ipMsg = AuthConfig.getMessage("ip_changed",
-                            "<yellow>✦</yellow> <gray>Ваш IP-адрес изменился. Пожалуйста, войдите заново.</gray>");
+                            "<yellow>✦</yellow> <gray>Your IP address has changed. Please log in again.</gray>");
                     player.sendMessage(MessageUtil.parse(ipMsg));
                     AuthDatabase.resetAuth(uuid);
                     registered = true;
@@ -87,7 +88,7 @@ public class AuthAuthenticator {
 
         freezePlayer(player);
 
-        player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <gray>Открываем окно авторизации...</gray>"));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.opening_auth_window", "<yellow>✦</yellow> <gray>Opening authorization window...</gray>")));
 
         // Start login timeout kick timer
         timeoutManager.startLoginTimeout(player);
@@ -109,7 +110,7 @@ public class AuthAuthenticator {
                 } catch (Exception e) {
                     Main.getInstance().getLogger().severe("[Auth] Failed to open auth GUI for " + player.getName() + ": " + e.getMessage());
                     e.printStackTrace();
-                    player.sendMessage(MessageUtil.parse("<red>❌ Ошибка открытия окна авторизации! Сообщите администратору.</red>"));
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.auth_window_error", "<red>❌ Error opening authorization window! Report to an administrator.</red>")));
                 }
             }
         }.runTaskLater(Main.getInstance(), 1L);
@@ -117,6 +118,9 @@ public class AuthAuthenticator {
 
     // =========================
     // HANDLE PASSWORD SUBMIT (login/register)
+    //
+    // ⚠ Argon2id (32MB memory, 2 итерации) выполняется на async thread,
+    // чтобы не фризить сервер на 1-2 секунды при каждом логине.
     // =========================
     public void handlePasswordSubmit(Player player, String password) {
         UUID uuid = player.getUniqueId();
@@ -126,78 +130,106 @@ public class AuthAuthenticator {
 
         String playerIp = getPlayerIp(player);
 
-        if (AuthDatabase.isRegistered(uuid)) {
-            handleLogin(player, password, uuid, playerIp);
-        } else {
-            handleRegister(player, password, uuid, playerIp);
-        }
+        // Argon2id на async thread — предотвращает фриз сервера
+        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+            try {
+                boolean registered = AuthDatabase.isRegistered(uuid);
+
+                if (registered) {
+                    boolean passwordValid = AuthDatabase.checkPassword(uuid, password);
+                    Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                        if (!player.isOnline()) return;
+                        if (passwordValid) {
+                            handleLoginSuccess(player, uuid, playerIp);
+                        } else {
+                            handleWrongPassword(player, uuid);
+                        }
+                    });
+                } else {
+                    // Проверки длины пароля (на async потоке — безопасно, чисто строки)
+                    int minLen = AuthConfig.getMinPasswordLength();
+                    int maxLen = AuthConfig.getMaxPasswordLength();
+                    if (password.length() < minLen || password.length() > maxLen) {
+                        Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                            if (!player.isOnline()) return;
+                            if (password.length() < minLen) {
+                                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("{min}", String.valueOf(minLen))));
+                            } else {
+                                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("{max}", String.valueOf(maxLen))));
+                            }
+                            reopenAfterDelay(player);
+                        });
+                        return;
+                    }
+
+                    // Проверка лимита аккаунтов на IP
+                    if (!playerIp.isEmpty()) {
+                        int maxAccounts = AuthConfig.getMaxAccountsPerIp();
+                        if (maxAccounts > 0) {
+                            int currentCount = AuthDatabase.countAccountsByIp(playerIp);
+                            if (currentCount >= maxAccounts) {
+                                String msg = AuthConfig.getMessage("max_accounts_per_ip",
+                                        "<red>\u274c</red> <red>С вашего IP-адреса уже зарегистрировано <yellow>{count}</yellow> аккаунтов!</red>\n" +
+                                        "<white>Максимум: <yellow>{limit}</yellow> аккаунтов на один IP.</white>")
+                                        .replace("{count}", String.valueOf(currentCount))
+                                        .replace("{limit}", String.valueOf(maxAccounts));
+                                final String finalMsg = msg;
+                                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                                    if (!player.isOnline()) return;
+                                    player.sendMessage("");
+                                    player.sendMessage(MessageUtil.parse(finalMsg));
+                                    player.sendMessage("");
+                                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
+                                    reopenAfterDelay(player);
+                                });
+                                return;
+                            }
+                        }
+                    }
+
+                    // hashArgon2 на async thread (32MB memory)
+                    AuthDatabase.register(uuid, password, playerIp);
+
+                    Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                        if (!player.isOnline()) return;
+                        playerState.resetWrongAttempts(uuid);
+                        authenticatePlayer(player, "<green>\u2705</green> <white>Registration successful!</white>");
+                    });
+                }
+            } catch (Exception e) {
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    if (player.isOnline()) {
+                        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.auth_check_error", "<red>❌ Error checking password! Please try again.</red>")));
+                    }
+                });
+                Main.getInstance().getLogger().severe("[Auth] Async auth error: " + e.getMessage());
+                e.printStackTrace();
+            }
+        });
     }
 
     // =========================
-    // LOGIN
+    // LOGIN SUCCESS (вызывается с main thread после async проверки пароля)
     // =========================
-    private void handleLogin(Player player, String password, UUID uuid, String playerIp) {
-        if (AuthDatabase.checkPassword(uuid, password)) {
-            if (AuthConfig.isIpCheckEnabled()) {
-                String storedIp = AuthDatabase.getLastIp(uuid);
-                if (!storedIp.isEmpty() && !storedIp.equals(playerIp)) {
-                    Main.getInstance().getLogger().info(
-                            "[Auth] Player " + player.getName() + " login IP changed: " + storedIp + " → " + playerIp + " — updating IP.");
-                    AuthDatabase.updateLastIp(uuid, playerIp);
-                }
-            }
-
-            AuthDatabase.updateLastLogin(uuid);
-            playerState.resetWrongAttempts(uuid);
-            authenticatePlayer(player, "<green>✅</green> <white>Вы успешно вошли на сервер!</white>");
-        } else {
-            handleWrongPassword(player, uuid);
-        }
-    }
-
-    // =========================
-    // REGISTER
-    // =========================
-    private void handleRegister(Player player, String password, UUID uuid, String playerIp) {
-        int minLen = AuthConfig.getMinPasswordLength();
-        int maxLen = AuthConfig.getMaxPasswordLength();
-
-        if (password.length() < minLen) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Пароль должен быть не менее </red><yellow>" + minLen + "</yellow><red> символов!</red>"));
-            reopenAfterDelay(player);
-            return;
-        }
-        if (password.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Пароль не должен превышать </red><yellow>" + maxLen + "</yellow><red> символов!</red>"));
-            reopenAfterDelay(player);
-            return;
-        }
-
-        // Check per-IP account limit
-        if (!playerIp.isEmpty()) {
-            int maxAccounts = AuthConfig.getMaxAccountsPerIp();
-            if (maxAccounts > 0) {
-                int currentCount = AuthDatabase.countAccountsByIp(playerIp);
-                if (currentCount >= maxAccounts) {
-                    String msg = AuthConfig.getMessage("max_accounts_per_ip",
-                            "<red>❌ С вашего IP-адреса уже зарегистрировано <yellow>{count}</yellow> аккаунтов!</red>\n" +
-                            "<white>Максимум: <yellow>{limit}</yellow> аккаунтов на один IP.</white>")
-                            .replace("{count}", String.valueOf(currentCount))
-                            .replace("{limit}", String.valueOf(maxAccounts));
-                    player.sendMessage("");
-                    player.sendMessage(MessageUtil.parse(msg));
-                    player.sendMessage("");
-                    player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-                    reopenAfterDelay(player);
-                    return;
-                }
+    private void handleLoginSuccess(Player player, UUID uuid, String playerIp) {
+        if (AuthConfig.isIpCheckEnabled()) {
+            String storedIp = AuthDatabase.getLastIp(uuid);
+            if (!storedIp.isEmpty() && !storedIp.equals(playerIp)) {
+                Main.getInstance().getLogger().info(
+                        "[Auth] Player " + player.getName() + " login IP changed: " + storedIp + " → " + playerIp + " — updating IP.");
+                AuthDatabase.updateLastIp(uuid, playerIp);
             }
         }
 
-        AuthDatabase.register(uuid, password, playerIp);
+        AuthDatabase.updateLastLogin(uuid);
         playerState.resetWrongAttempts(uuid);
-        authenticatePlayer(player, "<green>✅</green> <white>Регистрация прошла успешно!</white>");
+        authenticatePlayer(player, "<green>\u2705</green> <white>You have successfully logged in!</white>");
     }
+
+    // =========================
+    // REGISTER (удалён — логика перенесена в handlePasswordSubmit для async)
+    // =========================
+
 
     // =========================
     // WRONG PASSWORD
@@ -209,23 +241,20 @@ public class AuthAuthenticator {
 
         if (attempts >= maxWrong) {
             timeoutManager.cancelLoginTimeout(uuid);
-            player.kickPlayer(
-                    "§6✦ MC-Plugin\n" +
-                    "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
-                    "§c❌ Слишком много неверных попыток!\n" +
-                    "§7Вы ввели неверный пароль §c" + attempts + "§7 раз.\n\n" +
-                    "§7━━━━━━━━━━━━━━━━━━━━━"
-            );
+            String kickMsg = MessagesManager.getString("auth.admin.kick_too_many_attempts",
+                    "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password {attempts} times.</gray>")
+                    .replace("{attempts}", String.valueOf(attempts));
+            player.kickPlayer(MessageUtil.legacy(kickMsg));
             return;
         }
 
         player.sendMessage("");
-        player.sendMessage(MessageUtil.parse("<red>❌ Неверный пароль! Осталось попыток: </red><yellow>" + remaining + "</yellow>"));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password_remaining", "<red>❌ Incorrect password! Remaining attempts: </red><yellow>{remaining}</yellow>").replace("{remaining}", String.valueOf(remaining))));
         player.sendMessage("");
     }
 
     // =========================
-    // AUTHENTICATE PLAYER
+    // AUTHENTICATE PLAYER (вызывается с main thread)
     // =========================
     private void authenticatePlayer(Player player, String message) {
         UUID uuid = player.getUniqueId();
@@ -242,7 +271,7 @@ public class AuthAuthenticator {
 
         player.sendMessage("");
         player.sendMessage(MessageUtil.parse(message));
-        player.sendMessage(MessageUtil.parse("<gray>Приятной игры! Сессия активна 1 час.</gray>"));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.session_active", "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
         player.sendMessage("");
 
         Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " authenticated.");
@@ -250,6 +279,7 @@ public class AuthAuthenticator {
 
     // =========================
     // SELF CHANGE PASSWORD
+    // hashArgon2 вызывается на async thread
     // =========================
     public void handleSelfChangePassword(Player player, String newPassword) {
         UUID uuid = player.getUniqueId();
@@ -258,33 +288,50 @@ public class AuthAuthenticator {
         int maxLen = AuthConfig.getMaxPasswordLength();
 
         if (newPassword.length() < minLen) {
-            player.sendMessage("§c❌ Пароль должен быть не менее " + minLen + " символов!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("{min}", String.valueOf(minLen))));
             return;
         }
         if (newPassword.length() > maxLen) {
-            player.sendMessage("§c❌ Пароль не должен превышать " + maxLen + " символов!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("{max}", String.valueOf(maxLen))));
             return;
         }
 
-        AuthDatabase.changePasswordSelf(uuid, newPassword);
+        // hashArgon2 на async thread (32MB memory)
+        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+            try {
+                AuthDatabase.changePasswordSelf(uuid, newPassword);
 
-        playerState.setAuthenticated(uuid);
-        savePlayerIp(player);
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    if (!player.isOnline()) return;
 
-        AuthGUITracker.removeAuthItemsFromPlayer(player);
-        player.closeInventory();
-        unfreezePlayer(player);
+                    playerState.setAuthenticated(uuid);
+                    savePlayerIp(player);
 
-        player.sendMessage("");
-        player.sendMessage(MessageUtil.parse("<green>✅</green> <white>Пароль успешно изменён!</white>"));
-        player.sendMessage("§7Приятной игры! Сессия активна 1 час.");
-        player.sendMessage("");
+                    AuthGUITracker.removeAuthItemsFromPlayer(player);
+                    player.closeInventory();
+                    unfreezePlayer(player);
 
-        Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " changed password.");
+                    player.sendMessage("");
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_changed", "<green>✅</green> <white>Password successfully changed!</white>")));
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.session_active", "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
+                    player.sendMessage("");
+
+                    Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " changed password.");
+                });
+            } catch (Exception e) {
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    if (player.isOnline()) {
+                        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.change_password_error", "<red>❌ Password change error! Please try again.</red>")));
+                    }
+                });
+                Main.getInstance().getLogger().severe("[Auth] Async change password error: " + e.getMessage());
+            }
+        });
     }
 
     // =========================
     // SELF-LOGOUT
+    // Argon2 verify на async thread
     // =========================
     public boolean handleLogout(Player player, String password) {
         UUID uuid = player.getUniqueId();
@@ -292,23 +339,38 @@ public class AuthAuthenticator {
         if (!playerState.isAuthenticated(uuid)) return false;
         if (!AuthDatabase.isRegistered(uuid)) return false;
         if (!rateLimiter.checkCooldown(player)) return false;
-        if (!AuthDatabase.checkPassword(uuid, password)) return false;
 
-        playerState.removeAuthenticated(uuid);
-        playerState.removePendingAuth(uuid);
-        AuthDatabase.resetAuth(uuid);
+        // Argon2 verify на async thread
+        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+            try {
+                boolean valid = AuthDatabase.checkPassword(uuid, password);
 
-        player.closeInventory();
-        player.kickPlayer(
-                "§6✦ MC-Plugin\n" +
-                "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
-                "§a✅ Вы успешно вышли из аккаунта!\n" +
-                "§7При следующем входе нужно будет\n" +
-                "§7снова ввести пароль для входа.\n\n" +
-                "§7━━━━━━━━━━━━━━━━━━━━━"
-        );
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    if (!player.isOnline()) return;
 
-        Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " logged out manually.");
+                    if (!valid) {
+                        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password", "<red>❌ Incorrect password! Try again.</red>")));
+                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
+                        return;
+                    }
+
+                    playerState.removeAuthenticated(uuid);
+                    playerState.removePendingAuth(uuid);
+                    AuthDatabase.resetAuth(uuid);
+
+                    player.closeInventory();
+                    String kickLogout = MessagesManager.getString("auth.admin.kick_logout",
+                            "<green>✅</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
+                    player.kickPlayer(MessageUtil.legacy(kickLogout));
+
+                    Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " logged out manually.");
+                });
+            } catch (Exception e) {
+                Main.getInstance().getLogger().severe("[Auth] Async logout error: " + e.getMessage());
+            }
+        });
+
+        // Возвращаем true сразу — реальная проверка асинхронная
         return true;
     }
 

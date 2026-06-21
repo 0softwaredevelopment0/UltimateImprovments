@@ -1,6 +1,7 @@
 package com.mcplugin.features.integrity;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.HashSet;
@@ -120,8 +121,8 @@ public class IntegrityConfig {
             anvilRepairMultiplier = anvil.getDouble("integrity_multiplier", 0.25);
             anvilCombineEnabled = anvil.getBoolean("combine_enabled", true);
             anvilCombineBonus = anvil.getDouble("combine_bonus", 0.1);
-            anvilRepairMessage = anvil.getString("repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>");
-            anvilCombineMessage = anvil.getString("combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>");
+            anvilRepairMessage = MessagesManager.getString("features.integrity.anvil_repair.repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>");
+            anvilCombineMessage = MessagesManager.getString("features.integrity.anvil_repair.combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>");
         }
 
         // ===== XP + MENDING (ПОЧИНКА) =====
@@ -129,14 +130,14 @@ public class IntegrityConfig {
         if (mending != null) {
             mendingXpEnabled = mending.getBoolean("enabled", true);
             mendingXpMultiplier = mending.getDouble("integrity_multiplier", 0.5);
-            mendingMessage = mending.getString("message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+            mendingMessage = MessagesManager.getString("features.integrity.mending_xp.message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
         } else {
             // Fallback: старый ключ silk_touch_xp (для обратной совместимости)
             var stxp = cfg.getConfigurationSection("silk_touch_xp");
             if (stxp != null) {
                 mendingXpEnabled = stxp.getBoolean("enabled", true);
                 mendingXpMultiplier = stxp.getDouble("integrity_multiplier", 0.5);
-                mendingMessage = stxp.getString("message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+                mendingMessage = MessagesManager.getString("features.integrity.silk_touch_message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
             }
         }
 

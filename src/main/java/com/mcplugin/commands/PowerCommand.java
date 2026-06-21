@@ -1,5 +1,6 @@
 package com.mcplugin.commands;
 
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.command.Command;
@@ -16,10 +17,10 @@ public class PowerCommand extends Command {
         super(name);
         this.isRestart = isRestart;
         if (isRestart) {
-            setDescription("Запросить перезапуск сервера (требует подтверждения из консоли)");
+            setDescription("Request server restart (requires console confirmation)");
             setUsage("/restart");
         } else {
-            setDescription("Запросить выключение сервера (требует подтверждения из консоли)");
+            setDescription("Request server shutdown (requires console confirmation)");
             setUsage("/stop");
         }
     }
@@ -27,9 +28,11 @@ public class PowerCommand extends Command {
     @Override
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         if (isRestart) {
-            sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /restart отключена. Используйте: <white>/mp power reboot</white></dark_gray>"));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("power.restart_message",
+                    "<dark_gray>[<dark_red>⚠</dark_red>] <red>The /restart command is disabled. Use:</red> <white>/mp power reboot</white>")));
         } else {
-            sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /stop отключена. Используйте: <white>/mp power off</white></dark_gray>"));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("power.stop_message",
+                    "<dark_gray>[<dark_red>⚠</dark_red>] <red>The /stop command is disabled. Use:</red> <white>/mp power off</white>")));
         }
         return true;
     }

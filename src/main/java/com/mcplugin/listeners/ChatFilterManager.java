@@ -1,6 +1,7 @@
 package com.mcplugin.listeners;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -64,7 +65,7 @@ public class ChatFilterManager implements Listener {
         FileConfiguration cfg = Main.getInstance().getConfig();
 
         enabled = cfg.getBoolean("chat_filter.enabled", true);
-        warningMessage = cfg.getString("chat_filter.message", "");
+        warningMessage = MessagesManager.getString("chat_filter.message", "");
 
         compiledPatterns = new ArrayList<>();
         patternSources = new ArrayList<>();

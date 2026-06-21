@@ -1,6 +1,7 @@
 package com.mcplugin.features.modeprotect;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
@@ -34,7 +35,7 @@ public class ModeProtectManager implements Listener {
         protectedWorlds = new HashSet<>(worlds);
 
         bypassPermission = cfg.getString("bypass_permission", "mcplugin.gmprotect.bypass");
-        message = cfg.getString("message", "<red>Вы не можете сменить режим игры в этом мире!</red>");
+        message = MessagesManager.getString("features.modeprotect.message", "<red>Вы не можете сменить режим игры в этом мире!</red>");
     }
 
     @EventHandler

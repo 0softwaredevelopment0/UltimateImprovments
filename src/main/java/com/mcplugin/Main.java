@@ -1,6 +1,7 @@
 package com.mcplugin;
 
 import com.mcplugin.config.ConfigIntegrityValidator;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.main.CommandRegistrar;
 import com.mcplugin.module.*;
 
@@ -45,6 +46,14 @@ public class Main extends JavaPlugin {
         // Если чего-то не хватает → compromised-config.yml + свежий config.yml
         // =========================
         ConfigIntegrityValidator.validate(this);
+
+        // =========================
+        // MESSAGES.YML — загружаем ДО модулей, чтобы они могли использовать MessagesManager.
+        // init() сам вызывает проверку целостности (через ConfigIntegrityValidator.validateMessages).
+        // Если файл повреждён — переименовывается в compromised-messages.yml
+        // и создаётся свежий из ресурсов.
+        // =========================
+        MessagesManager.init(this);
 
         // =========================
         // PDC KEYS — MUST init BEFORE any module that uses Keys.*

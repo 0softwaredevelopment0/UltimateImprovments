@@ -1,6 +1,7 @@
 package com.mcplugin.commands;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -72,9 +73,8 @@ public class ChgDimCommand {
             long elapsed = now - lastUse;
             if (elapsed < cooldownSecs) {
                 long remaining = cooldownSecs - elapsed;
-                player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
-                        .getString("changedimmension.messages.cooldown",
-                                "<dark_red>❌</dark_red> <red>Подождите</red> <yellow>{seconds}</yellow><red> сек перед повторным использованием!</red>")
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.cooldown",
+                                "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>{seconds}</yellow><red> seconds before using this again!</red>")
                         .replace("{seconds}", String.valueOf(remaining))));
                 return true;
             }
@@ -87,15 +87,14 @@ public class ChgDimCommand {
         ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
 
         if (worldsSection == null || !worldsSection.contains(worldName)) {
-            player.sendMessage("§4❌ §cМир §e" + worldName + "§c не настроен в конфиге!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.world_not_configured", "<red>❌ World</red> <yellow>{world}</yellow> <red>not configured!</red>").replace("{world}", worldName)));
             return true;
         }
 
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
-            player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
-                    .getString("changedimmension.messages.world_not_found",
-                            "<dark_red>❌</dark_red> <red>Мир</red> <yellow>{world}</yellow> <red>не найден!</red>")
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.world_not_found",
+                            "<dark_red>❌</dark_red> <red>World</red> <yellow>{world}</yellow> <red>not found!</red>")
                     .replace("{world}", worldName)));
             return true;
         }
@@ -117,11 +116,8 @@ public class ChgDimCommand {
 
         Location targetLocation = new Location(world, teleportX, teleportY, teleportZ, teleportYaw, teleportPitch);
         player.teleportAsync(targetLocation);
-        cooldowns.put(playerUuid, now);
-
-        player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
-                .getString("changedimmension.messages.success",
-                        "<green>✅</green> <white>Телепортация в мир</white> <yellow>{world}</yellow> <white>завершена!</white>")
+        cooldowns.put(playerUuid, now);            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.success",
+                        "<green>✅</green> <white>Teleportation to</white> <yellow>{world}</yellow> <white>completed!</white>")
                 .replace("{world}", worldName)));
 
         return true;
@@ -132,25 +128,21 @@ public class ChgDimCommand {
      */
     public static boolean teleportBack(Player player) {
         if (!DimensionManager.hasReturnLocation(player)) {
-            player.sendMessage("§4❌ §cНет сохранённой точки для возврата!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.no_return_point", "<red>❌ No saved return point!</red>")));
             return true;
         }
 
         Location returnLoc = DimensionManager.getReturnLocation(player);
         if (returnLoc == null) {
-            player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
-                    .getString("changedimmension.messages.return_error",
-                            "<dark_red>❌</dark_red> <red>Ошибка: точка возврата повреждена!</red>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.return_error",
+                            "<dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>")));
             DimensionManager.removeReturnLocation(player);
             return true;
         }
 
         player.teleportAsync(returnLoc);
-        DimensionManager.removeReturnLocation(player);
-
-        player.sendMessage(MessageUtil.parse(Main.getInstance().getConfig()
-                .getString("changedimmension.messages.return_success",
-                        "<green>✅</green> <white>Вы вернулись в исходную точку!</white>")));
+        DimensionManager.removeReturnLocation(player);            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.return_success",
+                        "<green>✅</green> <white>You have returned to your starting point!</white>")));
 
         return true;
     }

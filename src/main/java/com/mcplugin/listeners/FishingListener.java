@@ -14,6 +14,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -149,7 +150,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
                 // Недостаточно воды — "полное отсутствие рыбы"
                 hook.remove();
                 it.remove();
-                player.sendMessage(MessageUtil.parse("<dark_gray>[<red>⛔</red>] <red>Полное отсутствие рыбы!</red></dark_gray>"));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("fishing.no_fish", "<dark_gray>[<red>⛔</red>] <red>No fish at all!</red></dark_gray>")));
                 continue;
             }
 
@@ -191,7 +192,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     /**
      * Жидкость (вода/лава) потекла — инвалидируем кэш у источника и у цели.
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onBlockFromTo(BlockFromToEvent e) {
         invalidateCacheNear(e.getBlock());
         invalidateCacheNear(e.getToBlock());

@@ -1,6 +1,8 @@
 package com.mcplugin.commands;
 
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.features.vanish.VanishManager;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -19,7 +21,7 @@ public class VanishListCommand extends Command {
 
     public VanishListCommand() {
         super("list");
-        setDescription("Показать список игроков онлайн");
+        setDescription("Show list of online players");
         setUsage("/list");
         setPermission(null);
     }
@@ -45,12 +47,17 @@ public class VanishListCommand extends Command {
         int totalOnline = Bukkit.getOnlinePlayers().size();
         int visibleCount = totalOnline - (canSeeVanished ? 0 : vanishedCount);
 
-        sender.sendMessage("§7На сервере §f" + visibleCount + "§7/§f" + Bukkit.getMaxPlayers() + " §7игроков:");
+        sender.sendMessage(MessageUtil.legacy(MessagesManager.getString("vanish_list.online_players",
+                "<gray>Online: </gray><white>{visible}<gray>/{max}</gray></white><gray> players:</gray>")
+                .replace("{visible}", String.valueOf(visibleCount))
+                .replace("{max}", String.valueOf(Bukkit.getMaxPlayers()))));
         if (!names.isEmpty()) {
             sender.sendMessage(String.join("§7, ", names));
         }
         if (vanishedCount > 0 && canSeeVanished) {
-            sender.sendMessage("§7(" + vanishedCount + " в ванише)");
+            sender.sendMessage(MessageUtil.legacy(MessagesManager.getString("vanish_list.vanished_count",
+                    "<gray>({count} vanished)</gray>")
+                    .replace("{count}", String.valueOf(vanishedCount))));
         }
 
         return true;

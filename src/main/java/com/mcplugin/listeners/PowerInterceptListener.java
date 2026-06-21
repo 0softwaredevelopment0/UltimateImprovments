@@ -1,6 +1,7 @@
 package com.mcplugin.listeners;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.EventHandler;
@@ -51,9 +52,9 @@ public class PowerInterceptListener implements Listener {
     public void reloadConfig() {
         FileConfiguration cfg = Main.getInstance().getConfig();
         interceptEnabled = cfg.getBoolean("power.intercept_commands", true);
-        stopMessage = cfg.getString("power.stop_message",
+        stopMessage = MessagesManager.getString("power.stop_message",
                 "<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /stop отключена. Используйте: <white>/mp power off</white></dark_gray>");
-        restartMessage = cfg.getString("power.restart_message",
+        restartMessage = MessagesManager.getString("power.restart_message",
                 "<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /restart отключена. Используйте: <white>/mp power reboot</white></dark_gray>");
     }
 

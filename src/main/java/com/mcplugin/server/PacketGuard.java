@@ -1,6 +1,7 @@
 package com.mcplugin.server;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
@@ -73,7 +74,7 @@ public class PacketGuard implements Listener {
         enabled = cfg.getBoolean("enabled", true);
         log = cfg.getBoolean("log", true);
         logInject = cfg.getBoolean("log_inject", false);
-        kickMessage = cfg.getString("kick_message",
+        kickMessage = MessagesManager.getString("packet_guard.kick_message",
                 "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>");
         bypassPermission = cfg.getString("bypass_permission", "mcplugin.packetguard.bypass");
     }

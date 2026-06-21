@@ -1,6 +1,8 @@
 package com.mcplugin.auth;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -122,7 +124,7 @@ public class AuthManager {
             player.setWalkSpeed(0.2f);
             player.setFlySpeed(0.1f);
             player.setInvulnerable(false);
-            player.sendMessage(com.mcplugin.util.MessageUtil.parse("<green>✅</green> <white>Вы были принудительно авторизованы администратором!</white>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.force_login_message", "<green>✅</green> <white>You have been force authorized by an administrator!</white>")));
         }
         return true;
     }
@@ -138,14 +140,9 @@ public class AuthManager {
 
         org.bukkit.entity.Player player = org.bukkit.Bukkit.getPlayer(uuid);
         if (player != null && player.isOnline()) {
-            player.kickPlayer(
-                    "§6✦ MC-Plugin\n" +
-                    "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
-                    "§c❌ Ваша регистрация была удалена администратором!\n" +
-                    "§7При следующем входе нужно будет\n" +
-                    "§7зарегистрироваться заново.\n\n" +
-                    "§7━━━━━━━━━━━━━━━━━━━━━"
-            );
+            String kickMsg = MessagesManager.getString("auth.admin.kick_resetauth",
+                    "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>");
+            player.kickPlayer(MessageUtil.legacy(kickMsg));
         }
         return true;
     }
@@ -177,14 +174,9 @@ public class AuthManager {
 
         org.bukkit.entity.Player player = org.bukkit.Bukkit.getPlayer(uuid);
         if (player != null && player.isOnline()) {
-            player.kickPlayer(
-                    "§6✦ MC-Plugin\n" +
-                    "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
-                    "§c❌ Ваша сессия была сброшена администратором!\n" +
-                    "§7При следующем входе нужно будет\n" +
-                    "§7снова ввести пароль для входа.\n\n" +
-                    "§7━━━━━━━━━━━━━━━━━━━━━"
-            );
+            String kickMsg = MessagesManager.getString("auth.admin.kick_delsession",
+                    "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>");
+            player.kickPlayer(MessageUtil.legacy(kickMsg));
         }
         return true;
     }

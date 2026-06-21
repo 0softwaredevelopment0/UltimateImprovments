@@ -21,6 +21,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MagnetManager extends BukkitRunnable {
 
@@ -138,7 +139,7 @@ public class MagnetManager extends BukkitRunnable {
     private static int nextId = 1;
 
     // Игроки, чей металлический статус нужно перепроверить (выбросили предмет)
-    private static final Set<UUID> dirtyPlayers = new HashSet<>();
+    private static final Set<UUID> dirtyPlayers = ConcurrentHashMap.newKeySet();
 
     /**
      * Пометить игрока для перепроверки металлического статуса.
@@ -822,6 +823,11 @@ public class MagnetManager extends BukkitRunnable {
                             // Игрок только что выбросил последний металлический предмет
                             // Сбрасываем скорость, чтобы он не продолжал лететь по инерции
                             player.setVelocity(new Vector(0, 0, 0));
+                        }
+                        // Очистка: если игрок вышел, убираем из dirtyPlayers
+                        // (штатно clean up через PlayerQuitEvent, но подстраховка не помешает)
+                        if (entity instanceof Player && !((Player) entity).isOnline()) {
+                            dirtyPlayers.remove(entity.getUniqueId());
                         }
                         continue;
                     }

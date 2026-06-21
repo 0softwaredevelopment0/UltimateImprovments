@@ -1,7 +1,8 @@
 package com.mcplugin.commands.home;
 
 import com.mcplugin.Main;
-
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -85,15 +86,15 @@ public final class HomeCommand {
     // ============================================================
     private static boolean executeSetHome(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.player_only", "<red>❌ Only players can use this command!</red>")));
             return true;
         }
         if (!player.hasPermission("mcplugin.command.sethome")) {
-            player.sendMessage("§4❌ §cУ вас нет прав на сохранение домашних точек!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_sethome", "<red>❌ You don't have permission to save home points!</red>")));
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage("§4❌ §cИспользование: §f/mp sethome §7<название>");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_sethome", "<red>❌ Usage: </red><white>/mp sethome <name></white>")));
             return true;
         }
 
@@ -101,8 +102,8 @@ public final class HomeCommand {
         int nameMin = getNameMin();
         int nameMax = getNameMax();
         if (homeName.length() < nameMin || homeName.length() > nameMax) {
-            player.sendMessage("§4❌ §cНазвание дома должно быть от " + nameMin + " до " + nameMax + " символов!");
-            player.sendMessage("§8┃ §7Текущая длина: §f" + homeName.length() + " §7символов.");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.name_length_error", "<red>❌ Home name must be between {min} and {max} characters!</red>").replace("{min}", String.valueOf(nameMin)).replace("{max}", String.valueOf(nameMax))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.name_current_length", "<gray> Current length: </gray><white>{length}</white><gray> characters.</gray>").replace("{length}", String.valueOf(homeName.length()))));
             return true;
         }
 
@@ -110,24 +111,24 @@ public final class HomeCommand {
 
         int maxHomes = HomeDatabase.getMaxHomes();
         if (!HomeDatabase.homeExists(uuid, homeName) && HomeDatabase.countHomes(uuid) >= maxHomes) {
-            player.sendMessage("§4❌ §cВы достигли лимита в §e" + maxHomes + " §cдомашних точек!");
-            player.sendMessage("§7┃ Используйте §f/mp delhome <название>§7 чтобы удалить ненужные.");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.limit_reached", "<red>❌ You have reached the limit of</red> <yellow>{max}</yellow> <red>home points!</red>").replace("{max}", String.valueOf(maxHomes))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.limit_hint", "<gray> Use </gray><white>/mp delhome <name></white><gray> to remove unwanted ones.</gray>")));
             return true;
         }
 
         Location loc = player.getLocation();
 
         if (HomeDatabase.saveHome(uuid, homeName, loc)) {
-            player.sendMessage("§a✅ §fДомашняя точка §e" + homeName + "§f сохранена!");
-            player.sendMessage("§8┃ §7Мир: §f" + loc.getWorld().getName());
-            player.sendMessage("§8┃ §7Координаты: §f"
-                    + String.format("%.1f", loc.getX()) + " §7/ §f"
-                    + String.format("%.1f", loc.getY()) + " §7/ §f"
-                    + String.format("%.1f", loc.getZ()));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_success", "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>saved!</white>").replace("{name}", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_world", "<gray>World:</gray> <white>{world}</white>").replace("{world}", loc.getWorld().getName())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_coords", "<gray>Coordinates:</gray> <white>{x} / {y} / {z}</white>")
+                    .replace("{x}", String.format("%.1f", loc.getX()))
+                    .replace("{y}", String.format("%.1f", loc.getY()))
+                    .replace("{z}", String.format("%.1f", loc.getZ()))));
             int used = HomeDatabase.countHomes(uuid);
-            player.sendMessage("§8┃ §7Использовано: §f" + used + "§7/§f" + HomeDatabase.getMaxHomes());
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_used", "<gray>Used:</gray> <white>{used}<gray>/{max}</gray></white>").replace("{used}", String.valueOf(used)).replace("{max}", String.valueOf(HomeDatabase.getMaxHomes()))));
         } else {
-            player.sendMessage("§4❌ §cОшибка при сохранении дома!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_error", "<red>❌ Error saving home!</red>")));
         }
         return true;
     }
@@ -137,15 +138,15 @@ public final class HomeCommand {
     // ============================================================
     private static boolean executeGetHome(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.player_only", "<red>❌ Only players can use this command!</red>")));
             return true;
         }
         if (!player.hasPermission("mcplugin.command.home")) {
-            player.sendMessage("§4❌ §cУ вас нет прав на просмотр домашних точек!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_home", "<red>❌ You don't have permission to view home points!</red>")));
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage("§4❌ §cИспользование: §f/mp home §7<название>");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_home", "<red>❌ Usage: </red><white>/mp home <name></white>")));
             return true;
         }
 
@@ -154,8 +155,8 @@ public final class HomeCommand {
         HomeDatabase.HomeData home = HomeDatabase.getHome(uuid, homeName);
 
         if (home == null) {
-            player.sendMessage("§eℹ §fДом §e" + homeName + "§f не найден.");
-            player.sendMessage("§7┃ Используйте §f/mp sethome " + homeName + "§7 чтобы сохранить.");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found", "<yellow>ℹ</yellow> <white>Home</white> <yellow>{name}</yellow> <white>not found.</white>").replace("{name}", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_hint", "<gray> Use </gray><white>/mp sethome {name}</white><gray> to save it.</gray>").replace("{name}", homeName)));
             return true;
         }
 

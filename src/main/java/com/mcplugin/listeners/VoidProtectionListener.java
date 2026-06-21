@@ -1,6 +1,7 @@
 package com.mcplugin.listeners;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Location;
@@ -128,8 +129,7 @@ public class VoidProtectionListener implements Listener {
             );
 
             // Сообщение игроку
-            String message = Main.getInstance().getConfig()
-                    .getString("void_protection.message", "<green>✅</green> <white>Вы были спасены из пустоты!</white>");
+            String message = MessagesManager.getString("void_protection.message", "<green>✅</green> <white>Вы были спасены из пустоты!</white>");
             player.sendMessage(MessageUtil.parse(message));
         });
     }

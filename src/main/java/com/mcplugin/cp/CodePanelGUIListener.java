@@ -1,6 +1,7 @@
 package com.mcplugin.cp;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.SoundUtil;
 import org.bukkit.Sound;
@@ -218,7 +219,7 @@ public class CodePanelGUIListener implements Listener {
     // =========================
     private String msg(String path) {
         if (!isSafe()) return path;
-        return Main.getInstance().getConfig().getString(path, path);
+        return MessagesManager.getString(path, path);
     }
 
     private int cfgInt(String path, int def) {

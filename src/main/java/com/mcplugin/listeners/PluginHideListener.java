@@ -1,5 +1,6 @@
 package com.mcplugin.listeners;
 
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -47,7 +48,7 @@ public class PluginHideListener implements Listener {
                 event.setCancelled(true);
 
                 event.getPlayer().sendMessage(
-                        MessageUtil.parse("<dark_red>❌</dark_red> <red>Error: <gray>You don't have permission!</gray></red>")
+                        MessageUtil.parse(MessagesManager.getString("plugin_hide.no_permission", "<dark_red>❌</dark_red> <red>Error: <gray>You don't have permission!</gray></red>"))
                 );
             }
 
@@ -82,7 +83,7 @@ public class PluginHideListener implements Listener {
                 event.setCancelled(true);
 
                 event.getPlayer().sendMessage(
-                        MessageUtil.parse("<dark_red>❌</dark_red> <red>Error: <gray>You don't have permission!</gray></red>")
+                        MessageUtil.parse(MessagesManager.getString("plugin_hide.no_permission", "<dark_red>❌</dark_red> <red>Error: <gray>You don't have permission!</gray></red>"))
                 );
             }
         }
