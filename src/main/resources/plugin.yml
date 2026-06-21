@@ -225,3 +225,7 @@ permissions:
   mcplugin.packetguard.bypass:
     description: Allows bypassing the packet size guard (oversized packets)
     default: op
+
+  mcplugin.command.forcesuicide:
+    description: Allows force-suiciding other players (/mp forcesuicide <nick>)
+    default: op

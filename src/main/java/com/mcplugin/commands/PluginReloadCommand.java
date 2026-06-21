@@ -52,6 +52,30 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 SuicideCommand.execute(player);
                 yield true;
             }
+            case "forcesuicide" -> {
+                if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
+                if (!player.hasPermission("mcplugin.command.forcesuicide")) {
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission to use this command!</red>")));
+                    yield true;
+                }
+                if (args.length < 2) {
+                    player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp forcesuicide <nick></white>"));
+                    yield true;
+                }
+                String targetName = args[1];
+                @SuppressWarnings("deprecation")
+                Player target = Bukkit.getPlayerExact(targetName);
+                if (target == null) {
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_player_not_found", "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>").replace("{player}", targetName)));
+                    yield true;
+                }
+                // Cancel any active suicide countdown on the target
+                SuicideCommand.cleanup(target.getUniqueId());
+                target.setHealth(0);
+                target.sendMessage(MessageUtil.parse("<dark_red>☠</dark_red> <red>You were force-suicided by </red><yellow>" + player.getName() + "</yellow><red>!</red>"));
+                player.sendMessage(MessageUtil.parse("<green>✅</green> <white>Player</white> <yellow>" + target.getName() + "</yellow> <white>has been force-suicided.</white>"));
+                yield true;
+            }
             case "modules" -> ModulesSubcommand.execute(sender, args);
             case "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome" -> HomeCommand.dispatch(sender, args);
             case "checkver", "checkupdates" -> UpdateSubcommand.checkOnly(sender);
@@ -96,6 +120,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     "auth", "chgdim", "chgdim_teleport", "chgdim_return", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("forcesuicide")) {
+            for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && args[0].equalsIgnoreCase("auth")) {
             completions.addAll(List.of("forcelogin", "resetauth", "chgpass", "delsession", "logout"));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("auth")
