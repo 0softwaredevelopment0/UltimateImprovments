@@ -1,6 +1,7 @@
 package com.mcplugin.commands.vote;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.database.DatabaseManager;
 import com.mcplugin.util.MessageUtil;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -127,8 +128,8 @@ public class VoteManager {
     // =========================
     public static boolean parseCreate(Player creator, String[] args, int startIndex) {
         if (args.length < startIndex + 3) {
-            creator.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage:</red> <white>/mp vote create <name> <title> <description> -answer_<N>:<title,desc> ... -time:<N><s|m|h|d></white>"));
+            creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.usage_create",
+                    "<red>❌ Usage:</red> <white>/mp vote create <name> <title> <description> -answer_<N>:<title,desc> ... -time:<N><s|m|h|d></white>")));
             return true;
         }
 
@@ -136,16 +137,16 @@ public class VoteManager {
         String title = args[startIndex + 1];
         String question = args[startIndex + 2];
 
-        // валидация имени
+        // name validation
         if (!name.matches("[a-zA-Z0-9_-]{1,32}")) {
-            creator.sendMessage(MessageUtil.parse(
-                    "<red>❌ Название голосования должно содержать только буквы, цифры, дефис и подчёркивание (1-32 символа).</red>"));
+            creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.invalid_name",
+                    "<red>❌ Vote name must contain only letters, numbers, hyphens and underscores (1-32 characters).</red>")));
             return true;
         }
 
         if (votes.containsKey(name.toLowerCase())) {
-            creator.sendMessage(MessageUtil.parse(
-                    "<red>❌ Голосование с таким названием уже существует!</red>"));
+            creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.already_exists",
+                    "<red>❌ A vote with that name already exists!</red>")));
             return true;
         }
 
@@ -159,18 +160,20 @@ public class VoteManager {
                 String withoutPrefix = arg.substring("-answer_".length());
                 int colonIdx = withoutPrefix.indexOf(':');
                 if (colonIdx < 0) {
-                    creator.sendMessage(MessageUtil.parse(
-                            "<red>❌ Неверный формат ответа: </red><yellow>" + arg + "</yellow><red>. Ожидается: -answer_N:title,description</red>"));
+                    creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.invalid_answer",
+                            "<red>❌ Invalid answer format: </red><yellow>{arg}</yellow><red>. Expected: -answer_N:title,description</red>")
+                            .replace("{arg}", arg)));
                     return true;
                 }
-                // число N
+                // number N
                 String numStr = withoutPrefix.substring(0, colonIdx);
                 int answerNum;
                 try {
                     answerNum = Integer.parseInt(numStr);
                 } catch (NumberFormatException e) {
-                    creator.sendMessage(MessageUtil.parse(
-                            "<red>❌ Неверный номер ответа: </red><yellow>" + numStr + "</yellow>"));
+                    creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.invalid_answer_number",
+                            "<red>❌ Invalid answer number: </red><yellow>{num}</yellow>")
+                            .replace("{num}", numStr)));
                     return true;
                 }
                 String rest = withoutPrefix.substring(colonIdx + 1);
@@ -185,8 +188,8 @@ public class VoteManager {
                     answerDesc = "";
                 }
                 if (answerTitle.isEmpty()) {
-                    creator.sendMessage(MessageUtil.parse(
-                            "<red>❌ Заголовок ответа не может быть пустым!</red>"));
+                    creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.empty_answer",
+                            "<red>❌ Answer title cannot be empty!</red>")));
                     return true;
                 }
                 Answer a = new Answer();
@@ -199,9 +202,9 @@ public class VoteManager {
                 String timeStr = arg.substring("-time:".length()).trim();
                 duration = parseDuration(timeStr);
                 if (duration < 0) {
-                    creator.sendMessage(MessageUtil.parse(
-                            "<red>❌ Неверный формат времени: </red><yellow>" + timeStr +
-                            "</yellow><red>. Используйте например: 30s, 5m, 2h, 1d</red>"));
+                    creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.invalid_time",
+                            "<red>❌ Invalid time format: </red><yellow>{time}</yellow><red>. Use e.g.: 30s, 5m, 2h, 1d</red>")
+                            .replace("{time}", timeStr)));
                     return true;
                 }
             }
@@ -210,8 +213,8 @@ public class VoteManager {
         // Remove nulls (gaps in answers)
         answers.removeAll(Collections.singleton(null));
         if (answers.size() < 2) {
-            creator.sendMessage(MessageUtil.parse(
-                    "<red>❌ Нужно минимум 2 варианта ответа!</red>"));
+            creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.min_answers",
+                    "<red>❌ You need at least 2 answer options!</red>")));
             return true;
         }
 
@@ -239,8 +242,10 @@ public class VoteManager {
         scheduleClose(name.toLowerCase(), durationMillis);
         broadcastVote(vote);
 
-        creator.sendMessage(MessageUtil.parse(
-                "<green>✅</green> <white>Голосование </white><yellow>" + name + "</yellow><white> создано! Длительность: </white><yellow>" + formatDuration(durationMillis) + "</yellow>"));
+        creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.create.success",
+                "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> created! Duration: </white><yellow>{duration}</yellow>")
+                .replace("{name}", name)
+                .replace("{duration}", formatDuration(durationMillis))));
     }
 
     // =========================
@@ -249,19 +254,22 @@ public class VoteManager {
     public static boolean vote(Player player, String voteName, String answerStr) {
         Vote vote = votes.get(voteName.toLowerCase());
         if (vote == null) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Голосование </red><yellow>" + voteName + "</yellow><red> не найдено!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.not_found",
+                    "<red>❌ Vote </red><yellow>{name}</yellow><red> not found!</red>")
+                    .replace("{name}", voteName)));
             return true;
         }
         if (vote.ended) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Голосование </red><yellow>" + vote.name + "</yellow><red> уже завершено!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.already_ended",
+                    "<red>❌ Vote </red><yellow>{name}</yellow><red> has already ended!</red>")
+                    .replace("{name}", vote.name)));
             return true;
         }
         if (System.currentTimeMillis() >= vote.expiresAt) {
             closeVote(vote.name);
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Голосование </red><yellow>" + vote.name + "</yellow><red> истекло!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.expired",
+                    "<red>❌ Vote </red><yellow>{name}</yellow><red> has expired!</red>")
+                    .replace("{name}", vote.name)));
             return true;
         }
 
@@ -286,8 +294,8 @@ public class VoteManager {
         }
 
         if (answerIndex < 0) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Неверный вариант ответа! Доступные варианты:</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.answer_not_found",
+                    "<red>❌ Invalid answer option! Available options:</red>")));
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < vote.answers.size(); i++) {
                 if (i > 0) sb.append("§7, ");
@@ -302,13 +310,16 @@ public class VoteManager {
         saveVoteRecord(vote.name, uuid, answerIndex);
 
         Answer chosen = vote.answers.get(answerIndex);
-        player.sendMessage(MessageUtil.parse(
-                "<green>✅</green> <white>Ваш голос учтён: </white><yellow>" + chosen.title + "</yellow>"));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.vote.success",
+                "<green>✅</green> <white>Your vote has been recorded: </white><yellow>{answer}</yellow>")
+                .replace("{answer}", chosen.title)));
 
-        // Текущая статистика голосования (сколько всего проголосовало)
+        // Current vote stats
         int total = vote.votes.size();
-        player.sendMessage(MessageUtil.parse(
-                "<gray>Проголосовало: </gray><yellow>" + total + "</yellow><gray> из </gray><yellow>" + vote.getDisplayTotal() + "</yellow><gray> участников (online).</gray>"));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.vote.total_info",
+                "<gray>Votes cast: </gray><yellow>{total}</yellow><gray> out of </gray><yellow>{display_total}</yellow><gray> eligible players (online).</gray>")
+                .replace("{total}", String.valueOf(total))
+                .replace("{display_total}", String.valueOf(vote.getDisplayTotal()))));
 
         return true;
     }
@@ -319,19 +330,20 @@ public class VoteManager {
     public static boolean view(Player player, String voteName) {
         Vote vote = votes.get(voteName.toLowerCase());
         if (vote == null) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Голосование </red><yellow>" + voteName + "</yellow><red> не найдено!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.not_found",
+                    "<red>❌ Vote </red><yellow>{name}</yellow><red> not found!</red>")
+                    .replace("{name}", voteName)));
             return true;
         }
 
         player.sendMessage("");
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("§6  §e✦ " + vote.title);
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("§7┃ §f" + vote.question);
+        player.sendMessage(MessagesManager.getString("vote.results.header", "§6═══════════════════════════════════"));
+        player.sendMessage(MessagesManager.getString("vote.results.title", "§6  §e✦ {title}").replace("{title}", vote.title));
+        player.sendMessage(MessagesManager.getString("vote.results.header", "§6═══════════════════════════════════"));
+        player.sendMessage(MessagesManager.getString("vote.results.question", "§7┃ §f{question}").replace("{question}", vote.question));
         player.sendMessage("");
 
-        // Подсчёт голосов
+        // Vote counting
         Map<Integer, Integer> counts = new HashMap<>();
         for (int idx : vote.votes.values()) {
             counts.merge(idx, 1, Integer::sum);
@@ -344,26 +356,34 @@ public class VoteManager {
             int pct = totalVotes > 0 ? (count * 100 / totalVotes) : 0;
             String bar = createProgressBar(pct, 20);
 
-            player.sendMessage("§7┃ §e" + i + ". §f" + a.title);
+            player.sendMessage(MessagesManager.getString("vote.results.answer_entry", "§7┃ §e{num}. §f{title}")
+                    .replace("{num}", String.valueOf(i))
+                    .replace("{title}", a.title));
             if (!a.description.isEmpty()) {
-                player.sendMessage("§7┃   §7" + a.description);
+                player.sendMessage(MessagesManager.getString("vote.results.answer_desc", "§7┃   §7{desc}")
+                        .replace("{desc}", a.description));
             }
-            player.sendMessage("§7┃   " + bar + " §e" + count + " §7(" + pct + "%)");
+            player.sendMessage(MessagesManager.getString("vote.results.progress_bar", "§7┃   {bar} §e{count} §7({pct}%)")
+                    .replace("{bar}", bar)
+                    .replace("{count}", String.valueOf(count))
+                    .replace("{pct}", String.valueOf(pct)));
             player.sendMessage("");
         }
 
         String status;
         if (vote.ended) {
-            status = "§cЗавершено";
+            status = MessagesManager.getString("vote.results.status_ended", "§cEnded");
         } else if (System.currentTimeMillis() >= vote.expiresAt) {
-            status = "§cИстекает...";
+            status = MessagesManager.getString("vote.results.status_expiring", "§cExpiring...");
         } else {
             long remaining = vote.expiresAt - System.currentTimeMillis();
-            status = "§aОсталось: §e" + formatDuration(remaining);
+            status = MessagesManager.getString("vote.results.status_active", "§aTime left: §e{remaining}")
+                    .replace("{remaining}", formatDuration(remaining));
         }
-        player.sendMessage("§7┃ §7Всего голосов: §e" + totalVotes);
-        player.sendMessage("§7┃ Статус: " + status);
-        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage(MessagesManager.getString("vote.results.total_votes", "§7┃ §7Total votes: §e{total}")
+                .replace("{total}", String.valueOf(totalVotes)));
+        player.sendMessage("§7┃ Status: " + status);
+        player.sendMessage(MessagesManager.getString("vote.results.header", "§6═══════════════════════════════════"));
         player.sendMessage("");
 
         return true;
@@ -374,32 +394,39 @@ public class VoteManager {
     // =========================
     public static boolean list(Player player) {
         if (votes.isEmpty()) {
-            player.sendMessage(MessageUtil.parse(
-                    "<yellow>✦</yellow> <white>Нет активных голосований.</white>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.empty",
+                    "<yellow>✦</yellow> <white>No active votes.</white>")));
             return true;
         }
 
         player.sendMessage("");
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("§6  ✦ §fГолосования §7(" + votes.size() + ")");
-        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage(MessagesManager.getString("vote.list.header", "§6═══════════════════════════════════"));
+        player.sendMessage(MessagesManager.getString("vote.list.title", "§6  ✦ §fVotes §7({count})")
+                .replace("{count}", String.valueOf(votes.size())));
+        player.sendMessage(MessagesManager.getString("vote.list.header", "§6═══════════════════════════════════"));
 
         for (Vote v : votes.values()) {
             String status;
             if (v.ended) {
-                status = "§c✗ Завершено";
+                status = MessagesManager.getString("vote.list.status_ended", "§c✗ Ended");
             } else if (System.currentTimeMillis() >= v.expiresAt) {
-                status = "§cИстекает...";
+                status = MessagesManager.getString("vote.list.status_expiring", "§cExpiring...");
             } else {
                 long remaining = v.expiresAt - System.currentTimeMillis();
                 status = "§a" + formatDuration(remaining);
             }
-            player.sendMessage("§7┃ §e" + v.name + " §7— §f" + v.title);
-            player.sendMessage("§7┃   §7Вариантов: §e" + v.answers.size() + " §7| Голосов: §e" + v.votes.size() + " §7| " + status);
-            player.sendMessage("§7┃   §7§o/mp vote " + v.name + " §7— проголосовать");
+            player.sendMessage(MessagesManager.getString("vote.list.entry", "§7┃ §e{name} §7— §f{title}")
+                    .replace("{name}", v.name)
+                    .replace("{title}", v.title));
+            player.sendMessage(MessagesManager.getString("vote.list.entry_info", "§7┃   §7Options: §e{answers} §7| Votes: §e{votes} §7| {status}")
+                    .replace("{answers}", String.valueOf(v.answers.size()))
+                    .replace("{votes}", String.valueOf(v.votes.size()))
+                    .replace("{status}", status));
+            player.sendMessage(MessagesManager.getString("vote.list.entry_hint", "§7┃   §7§o/mp vote {name} §7— vote")
+                    .replace("{name}", v.name));
             player.sendMessage("");
         }
-        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage(MessagesManager.getString("vote.list.header", "§6═══════════════════════════════════"));
         player.sendMessage("");
 
         return true;
@@ -411,13 +438,14 @@ public class VoteManager {
     public static boolean delete(Player player, String voteName) {
         Vote vote = votes.get(voteName.toLowerCase());
         if (vote == null) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Голосование </red><yellow>" + voteName + "</yellow><red> не найдено!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.not_found",
+                    "<red>❌ Vote </red><yellow>{name}</yellow><red> not found!</red>")
+                    .replace("{name}", voteName)));
             return true;
         }
         if (!player.getUniqueId().equals(vote.creator) && !player.hasPermission("mcplugin.command.vote.delete.other")) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Только создатель голосования может его удалить!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.delete.not_creator",
+                    "<red>❌ Only the vote creator can delete it!</red>")));
             return true;
         }
 
@@ -425,45 +453,50 @@ public class VoteManager {
         Map<UUID, Boolean> pending = pendingDeletes.computeIfAbsent(nameLower, k -> new ConcurrentHashMap<>());
 
         if (pending.getOrDefault(player.getUniqueId(), false)) {
-            // Подтверждено — удаляем
+            // Confirmed — delete
             pending.remove(player.getUniqueId());
             doDeleteVote(vote);
-            player.sendMessage(MessageUtil.parse(
-                    "<green>✅</green> <white>Голосование </white><yellow>" + vote.name + "</yellow><white> удалено.</white>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.delete.success",
+                    "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> deleted.</white>")
+                    .replace("{name}", vote.name)));
             return true;
         }
 
-        // Запрашиваем подтверждение
+        // Request confirmation
         pending.put(player.getUniqueId(), true);
         player.sendMessage("");
         player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        player.sendMessage("§8┃   §4⚠ §cПодтвердите удаление голосования");
+        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_title", "<dark_red>⚠</dark_red> <red>Confirm vote deletion</red>")));
         player.sendMessage("§8┃");
-        player.sendMessage("§8┃   §7Название: §e" + vote.name);
-        player.sendMessage("§8┃   §7Тема: §f" + vote.title);
+        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_name", "<gray>Name: </gray><gold>{name}</gold>")
+                .replace("{name}", vote.name)));
+        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_topic", "<gray>Topic: </gray><white>{title}</white>")
+                .replace("{title}", vote.title)));
         player.sendMessage("§8┃");
-        player.sendMessage("§8┃   §7Это действие необратимо!");
+        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_irreversible", "<gray>This action cannot be undone!</gray>")));
 
-        TextComponent confirmButton = new TextComponent("§8┃     §c[§4✗ Подтвердить удаление§c]");
+        TextComponent confirmButton = new TextComponent("§8┃     §c[§4✗ " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_button", "Confirm deletion")) + "§c]");
         confirmButton.setClickEvent(new ClickEvent(
                 ClickEvent.Action.RUN_COMMAND,
                 "/mp vote delete " + vote.name
         ));
         confirmButton.setHoverEvent(new HoverEvent(
                 HoverEvent.Action.SHOW_TEXT,
-                new ComponentBuilder("§cНажмите чтобы подтвердить удаление").create()
+                new ComponentBuilder(MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_hover", "<red>Click to confirm deletion</red>"))).create()
         ));
         player.spigot().sendMessage(confirmButton);
 
-        player.sendMessage("§8┃   §7или введите §f/mp vote delete " + vote.name + "§7 снова");
+        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_resend", "<gray>or type </gray><white>/mp vote delete {name}</white><gray> again</gray>")
+                .replace("{name}", vote.name)));
         player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
         player.sendMessage("");
 
-        // Автосброс через 30 сек
+        // Auto-expire after 30 sec
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             if (pending.remove(player.getUniqueId()) != null) {
-                player.sendMessage(MessageUtil.parse(
-                        "<yellow>✦</yellow> <white>Запрос на удаление голосования </white><yellow>" + vote.name + "</yellow><white> сброшен (время вышло).</white>"));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.delete.confirm_expired",
+                        "<yellow>✦</yellow> <white>Vote deletion request for </white><yellow>{name}</yellow><white> expired.</white>")
+                        .replace("{name}", vote.name)));
             }
         }, 600L); // 30 sec
 
@@ -500,8 +533,9 @@ public class VoteManager {
             Main.getInstance().getLogger().severe("[VOTE] Failed to delete vote from DB: " + e.getMessage());
         }
 
-        Bukkit.broadcast(MessageUtil.parse(
-                "<dark_red>✦</dark_red> <red>Голосование </red><yellow>" + vote.name + "</yellow><red> было удалено.</red>"));
+        Bukkit.broadcast(MessageUtil.parse(MessagesManager.getString("vote.delete.broadcast",
+                "<dark_red>✦</dark_red> <red>Vote </red><yellow>{name}</yellow><red> has been deleted.</red>")
+                .replace("{name}", vote.name)));
     }
 
     // =========================
@@ -510,20 +544,21 @@ public class VoteManager {
     public static boolean change(Player player, String voteName, String[] args, int startIndex) {
         Vote oldVote = votes.get(voteName.toLowerCase());
         if (oldVote == null) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Голосование </red><yellow>" + voteName + "</yellow><red> не найдено!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.not_found",
+                    "<red>❌ Vote </red><yellow>{name}</yellow><red> not found!</red>")
+                    .replace("{name}", voteName)));
             return true;
         }
         if (!player.getUniqueId().equals(oldVote.creator) && !player.hasPermission("mcplugin.command.vote.change.other")) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Только создатель голосования может его изменить!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.not_creator",
+                    "<red>❌ Only the vote creator can do this!</red>")));
             return true;
         }
 
         // Parse new params from args
         if (args.length < startIndex + 1) {
-            player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Укажите хотя бы один параметр для изменения!</red>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.need_params",
+                    "<red>❌ Specify at least one parameter to change!</red>")));
             return true;
         }
 
@@ -596,8 +631,8 @@ public class VoteManager {
                 oldVote.answers = new ArrayList<>(newAnswers);
                 changed = true;
             } else {
-                player.sendMessage(MessageUtil.parse(
-                        "<red>❌ После изменения должно быть минимум 2 варианта ответа!</red>"));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.change_min_answers",
+                        "<red>❌ After the change, there must be at least 2 answer options!</red>")));
             }
         }
         if (newDuration != null && newDuration > 0) {
@@ -610,14 +645,14 @@ public class VoteManager {
         }
 
         if (changed) {
-            // saveToDatabase уже сохраняет answers внутри
             saveToDatabase(oldVote);
-            player.sendMessage(MessageUtil.parse(
-                    "<green>✅</green> <white>Голосование </white><yellow>" + oldVote.name + "</yellow><white> обновлено.</white>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.change.success",
+                    "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> updated.</white>")
+                    .replace("{name}", oldVote.name)));
             broadcastVote(oldVote);
         } else {
-            player.sendMessage(MessageUtil.parse(
-                    "<yellow>✦</yellow> <white>Ничего не изменилось.</white>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.no_changes",
+                    "<yellow>✦</yellow> <white>Nothing changed.</white>")));
         }
 
         return true;
@@ -628,15 +663,16 @@ public class VoteManager {
     // =========================
     public static void broadcastVote(Vote vote) {
         String durationStr = formatDuration(vote.expiresAt - System.currentTimeMillis());
+        String header = MessagesManager.getString("vote.broadcast.header", "§6═══════════════════════════════════════");
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.sendMessage("");
-            player.sendMessage("§6═══════════════════════════════════════");
-            player.sendMessage("§6  §e✦ §f" + vote.title);
-            player.sendMessage("§6═══════════════════════════════════════");
-            player.sendMessage("§7┃ §f" + vote.question);
+            player.sendMessage(header);
+            player.sendMessage(MessagesManager.getString("vote.broadcast.title", "§6  §e✦ {title}").replace("{title}", vote.title));
+            player.sendMessage(header);
+            player.sendMessage(MessagesManager.getString("vote.broadcast.question", "§7┃ §f{question}").replace("{question}", vote.question));
             player.sendMessage("");
-            player.sendMessage("§7┃ §7Варианты ответов:");
+            player.sendMessage(MessagesManager.getString("vote.broadcast.options", "§7┃ §7Answer options:"));
 
             for (int i = 0; i < vote.answers.size(); i++) {
                 Answer a = vote.answers.get(i);
@@ -648,8 +684,8 @@ public class VoteManager {
                 ));
                 answerBtn.setHoverEvent(new HoverEvent(
                         HoverEvent.Action.SHOW_TEXT,
-                        new ComponentBuilder("§aНажмите чтобы проголосовать за §f" + a.title + "\n")
-                                .append(!a.description.isEmpty() ? "§7" + a.description : "")
+                        new ComponentBuilder(MessagesManager.getString("vote.broadcast.button_hover", "§aClick to vote for §f{title}").replace("{title}", a.title))
+                                .append(!a.description.isEmpty() ? "\n§7" + a.description : "")
                                 .create()
                 ));
                 player.spigot().sendMessage(answerBtn);
@@ -660,11 +696,11 @@ public class VoteManager {
             }
 
             player.sendMessage("");
-            player.sendMessage("§8┃ §7Чтобы проголосовать, нажмите на кнопку выше");
-            player.sendMessage("§8┃ §7или введите §f/mp vote " + vote.name + " <номер>");
+            player.sendMessage(MessagesManager.getString("vote.broadcast.hint", "§8┃ §7To vote, click the button above"));
+            player.sendMessage(MessagesManager.getString("vote.broadcast.hint2", "§8┃ §7or type §f/mp vote {name} <number>").replace("{name}", vote.name));
             player.sendMessage("§8┃");
-            player.sendMessage("§8┃ §7Осталось: §e" + durationStr);
-            player.sendMessage("§6═══════════════════════════════════════");
+            player.sendMessage(MessagesManager.getString("vote.broadcast.time_left", "§8┃ §7Time left: §e{duration}").replace("{duration}", durationStr));
+            player.sendMessage(header);
             player.sendMessage("");
         }
     }
@@ -689,46 +725,54 @@ public class VoteManager {
         // Определяем победителя
         int maxCount = 0;
         int winnerIdx = -1;
-        boolean tie = false;
+        boolean isTie = false;
         for (int i = 0; i < vote.answers.size(); i++) {
             int c = counts.getOrDefault(i, 0);
             if (c > maxCount) {
                 maxCount = c;
                 winnerIdx = i;
-                tie = false;
+                isTie = false;
             } else if (c == maxCount && maxCount > 0) {
-                tie = true;
+                isTie = true;
             }
         }
 
         // Broadcast results
+        String header = MessagesManager.getString("vote.close.header", "§6═══════════════════════════════════════");
+        String closeTitle = MessagesManager.getString("vote.close.title", "§6  ✦ §fVote ended §7[§e{name}§7]");
+        String noVotes = MessagesManager.getString("vote.close.no_votes", "§7┃ §7Nobody voted.");
+        String tieStr = MessagesManager.getString("vote.close.tie", "§7┃ §eTie! §7Several options received the same number of votes.");
+        String tieEntry = MessagesManager.getString("vote.close.tie_entry", "§7┃ §e{title} §7— §e{count} §7votes");
+        String winner = MessagesManager.getString("vote.close.winner", "§7┃ §aWinner: §e{title} §7(§e{count}§7/{total} — §e{pct}%§7)");
+        String totalStr = MessagesManager.getString("vote.close.total", "§7┃ §7Total votes cast: §e{total}");
+
         Bukkit.broadcast(MessageUtil.parse(""));
-        Bukkit.broadcast(MessageUtil.parse(
-                "§6═══════════════════════════════════════\n" +
-                "§6  ✦ §fГолосование завершено §7[§e" + vote.name + "§7]\n" +
-                "§6═══════════════════════════════════════"));
+        Bukkit.broadcast(MessageUtil.parse(header + "\n" + closeTitle.replace("{name}", vote.name) + "\n" + header));
 
         if (total == 0) {
-            Bukkit.broadcast(MessageUtil.parse("§7┃ §7Никто не проголосовал."));
-        } else if (tie) {
-            Bukkit.broadcast(MessageUtil.parse("§7┃ §eНичья! §7Несколько вариантов набрали одинаковое количество голосов."));
+            Bukkit.broadcast(MessageUtil.parse(noVotes));
+        } else if (isTie) {
+            Bukkit.broadcast(MessageUtil.parse(tieStr));
             for (int i = 0; i < vote.answers.size(); i++) {
                 int c = counts.getOrDefault(i, 0);
                 if (c == maxCount) {
-                    Bukkit.broadcast(MessageUtil.parse("§7┃ §e" + vote.answers.get(i).title + " §7— §e" + c + " §7голосов"));
+                    Bukkit.broadcast(MessageUtil.parse(tieEntry
+                            .replace("{title}", vote.answers.get(i).title)
+                            .replace("{count}", String.valueOf(c))));
                 }
             }
         } else if (winnerIdx >= 0) {
-            Answer winner = vote.answers.get(winnerIdx);
+            Answer win = vote.answers.get(winnerIdx);
             int pct = (maxCount * 100 / total);
-            Bukkit.broadcast(MessageUtil.parse(
-                    "§7┃ §aПобедитель: §e" + winner.title + " §7(§e" + maxCount + "§7/" + total + " — §e" + pct + "%§7)"));
+            Bukkit.broadcast(MessageUtil.parse(winner
+                    .replace("{title}", win.title)
+                    .replace("{count}", String.valueOf(maxCount))
+                    .replace("{total}", String.valueOf(total))
+                    .replace("{pct}", String.valueOf(pct))));
         }
 
-        Bukkit.broadcast(MessageUtil.parse(
-                "§7┃ §7Всего проголосовало: §e" + total));
-        Bukkit.broadcast(MessageUtil.parse(
-                "§6═══════════════════════════════════════"));
+        Bukkit.broadcast(MessageUtil.parse(totalStr.replace("{total}", String.valueOf(total))));
+        Bukkit.broadcast(MessageUtil.parse(header));
         Bukkit.broadcast(MessageUtil.parse(""));
 
         updateVoteEndedInDb(vote.name, true);

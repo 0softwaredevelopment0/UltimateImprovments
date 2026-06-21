@@ -452,3 +452,116 @@ general:
   structure_no_permission: "<red>❌ You don't have permission to manage structures!</red>"
   # Admin message
   unknown_subcommand: "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>"
+
+# =========================
+# 🗳 Voting System
+# =========================
+vote:
+  errors:
+    player_only: "<red>❌ Only players can use this command!</red>"
+    no_permission: "<red>❌ You don't have permission to use voting!</red>"
+    no_permission_create: "<red>❌ You don't have permission to create votes!</red>"
+    no_permission_change: "<red>❌ You don't have permission to change votes!</red>"
+    no_permission_stats: "<red>❌ You don't have permission to view vote statistics!</red>"
+    usage_create: "<red>❌ Usage:</red> <white>/mp vote create <name> <title> <description> -answer_<N>:<title,desc> ... -time:<N><s|m|h|d></white>"
+    usage_delete: "<red>❌ Usage:</red> <white>/mp vote delete <name></white>"
+    usage_change: "<red>❌ Usage:</red> <white>/mp vote change <name> <params...></white>"
+    usage_stats: "<red>❌ Usage:</red> <white>/mp vote stats <name></white>"
+    invalid_name: "<red>❌ Vote name must contain only letters, numbers, hyphens and underscores (1-32 characters).</red>"
+    already_exists: "<red>❌ A vote with that name already exists!</red>"
+    not_found: "<red>❌ Vote </red><yellow>{name}</yellow><red> not found!</red>"
+    already_ended: "<red>❌ Vote </red><yellow>{name}</yellow><red> has already ended!</red>"
+    expired: "<red>❌ Vote </red><yellow>{name}</yellow><red> has expired!</red>"
+    min_answers: "<red>❌ You need at least 2 answer options!</red>"
+    change_min_answers: "<red>❌ After the change, there must be at least 2 answer options!</red>"
+    not_creator: "<red>❌ Only the vote creator can do this!</red>"
+    need_params: "<red>❌ Specify at least one parameter to change!</red>"
+    no_changes: "<yellow>✦</yellow> <white>Nothing changed.</white>"
+    invalid_answer: "<red>❌ Invalid answer format: </red><yellow>{arg}</yellow><red>. Expected: -answer_N:title,description</red>"
+    invalid_answer_number: "<red>❌ Invalid answer number: </red><yellow>{num}</yellow>"
+    empty_answer: "<red>❌ Answer title cannot be empty!</red>"
+    invalid_time: "<red>❌ Invalid time format: </red><yellow>{time}</yellow><red>. Use e.g.: 30s, 5m, 2h, 1d</red>"
+    answer_not_found: "<red>❌ Invalid answer option! Available options:</red>"
+
+  create:
+    success: "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> created! Duration: </white><yellow>{duration}</yellow>"
+
+  vote:
+    success: "<green>✅</green> <white>Your vote has been recorded: </white><yellow>{answer}</yellow>"
+    total_info: "<gray>Votes cast: </gray><yellow>{total}</yellow><gray> out of </gray><yellow>{display_total}</yellow><gray> eligible players (online).</gray>"
+
+  results:
+    header: "<gold>═══════════════════════════════════</gold>"
+    title: "<gold>  </gold><gold>✦ </gold><white>{title}</white>"
+    question: "<gray>┃ </gray><white>{question}</white>"
+    answer_entry: "<gray>┃ </gray><gold>{num}. </gold><white>{title}</white>"
+    answer_desc: "<gray>┃   </gray><gray>{desc}</gray>"
+    progress_bar: "<gray>┃   </gray>{bar} <gold>{count}</gold> <gray>({pct}%)</gray>"
+    total_votes: "<gray>┃ </gray><gray>Total votes: </gray><gold>{total}</gold>"
+    status_active: "<gray>┃ Status: </gray><green>Time left: </green><gold>{remaining}</gold>"
+    status_ended: "<gray>┃ Status: </gray><red>Ended</red>"
+    status_expiring: "<gray>┃ Status: </gray><red>Expiring...</red>"
+
+  list:
+    empty: "<yellow>✦</yellow> <white>No active votes.</white>"
+    header: "<gold>═══════════════════════════════════</gold>"
+    title: "<gold>  ✦ </gold><white>Votes </white><gray>({count})</gray>"
+    entry: "<gray>┃ </gray><gold>{name}</gold> <gray>— </gray><white>{title}</white>"
+    entry_info: "<gray>┃   </gray><gray>Options: </gray><gold>{answers}</gold><gray> | Votes: </gray><gold>{votes}</gold><gray> | </gray>{status}"
+    entry_hint: "<gray>┃   </gray><gray><italic>/mp vote {name}</italic></gray><gray> — vote</gray>"
+    status_ended: "<red>✗ Ended</red>"
+    status_expiring: "<red>Expiring...</red>"
+
+  delete:
+    not_creator: "<red>❌ Only the vote creator can delete it!</red>"
+    confirm_title: "<dark_red>⚠</dark_red> <red>Confirm vote deletion</red>"
+    confirm_name: "<gray>Name: </gray><gold>{name}</gold>"
+    confirm_topic: "<gray>Topic: </gray><white>{title}</white>"
+    confirm_irreversible: "<gray>This action cannot be undone!</gray>"
+    confirm_button: "<dark_red>[<red>✗ Confirm deletion</red><dark_red>]</dark_red>"
+    confirm_hover: "<red>Click to confirm deletion</red>"
+    confirm_resend: "<gray>or type </gray><white>/mp vote delete {name}</white><gray> again</gray>"
+    confirm_expired: "<yellow>✦</yellow> <white>Vote deletion request for </white><yellow>{name}</yellow><white> expired.</white>"
+    success: "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> deleted.</white>"
+    broadcast: "<dark_red>✦</dark_red> <red>Vote </red><yellow>{name}</yellow><red> has been deleted.</red>"
+
+  change:
+    success: "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> updated.</white>"
+
+  stats:
+    header: "<gold>═══════════════════════════════════</gold>"
+    title: "<gold>  </gold><gold>✦ </gold><white>{title}</white>"
+    question: "<gray>┃ </gray><white>{question}</white>"
+
+  close:
+    header: "<gold>═══════════════════════════════════════</gold>"
+    title: "<gold>  ✦ </gold><white>Vote ended </white><gray>[</gray><gold>{name}</gold><gray>]</gray>"
+    no_votes: "<gray>┃ </gray><gray>Nobody voted.</gray>"
+    tie: "<gray>┃ </gray><gold>Tie! </gold><gray>Several options received the same number of votes.</gray>"
+    tie_entry: "<gray>┃ </gray><gold>{title}</gold><gray> — </gray><gold>{count}</gold><gray> votes</gray>"
+    winner: "<gray>┃ </gray><green>Winner: </green><gold>{title}</gold><gray> (</gray><gold>{count}</gold><gray>/</gray>{total}<gray> — </gray><gold>{pct}%</gold><gray>)</gray>"
+    total: "<gray>┃ </gray><gray>Total votes cast: </gray><gold>{total}</gold>"
+
+  broadcast:
+    header: "<gold>═══════════════════════════════════════</gold>"
+    title: "<gold>  </gold><gold>✦ </gold><white>{title}</white>"
+    question: "<gray>┃ </gray><white>{question}</white>"
+    options: "<gray>┃ </gray><gray>Answer options:</gray>"
+    button: "<gray>┃ </gray><gold>{num}. </gold><dark_green>[<green>{title}</green><dark_green>]</dark_green>"
+    button_hover: "<green>Click to vote for </green><white>{title}</white>"
+    desc: "<gray>┃   </gray><gray>{desc}</gray>"
+    hint: "<gray>┃ </gray><gray>To vote, click the button above</gray>"
+    hint2: "<gray>┃ </gray><gray>or type </gray><white>/mp vote {name} <number></white>"
+    time_left: "<gray>┃ </gray><gray>Time left: </gray><gold>{duration}</gold>"
+
+  forced_message: ""
+  forced_message_title: "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>"
+  forced_message_body: "<gray>Player </gray><white>{sender}</white><gray> is force-suiciding you.</gray>"
+  forced_message_nocancel: "<red>Cannot be cancelled!</red>"
+
+suicide:
+  messages:
+    forced_title: "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>"
+    forced_body: "<gray>Player </gray><white>{sender}</white><gray> is force-suiciding you.</gray>"
+    forced_nocancel: "<red>Cannot be cancelled!</red>"
+    forced_sender_success: "<green>✅</green> <white>Player</white> <yellow>{target}</yellow> <white>has been force-suicided.</white>"

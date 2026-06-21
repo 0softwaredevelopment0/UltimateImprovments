@@ -98,11 +98,11 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 switch (voteSub) {
                     case "create" -> {
                         if (!player.hasPermission("mcplugin.command.vote.create")) {
-                            player.sendMessage(MessageUtil.parse("<red>❌ У вас нет прав на создание голосований!</red>"));
+                            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.no_permission_create", "<red>❌ You don't have permission to create votes!</red>")));
                             yield true;
                         }
                         if (args.length < 5) {
-                            player.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/mp vote create <name> <title> <description> -answer_<N>:<title,desc> ... -time:<N><s|m|h|d></white>"));
+                            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.usage_create", "<red>❌ Usage:</red> <white>/mp vote create <name> <title> <description> -answer_<N>:<title,desc> ... -time:<N><s|m|h|d></white>")));
                             yield true;
                         }
                         VoteManager.parseCreate(player, args, 2);
@@ -116,22 +116,22 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     }
                     case "change" -> {
                         if (!player.hasPermission("mcplugin.command.vote.change")) {
-                            player.sendMessage(MessageUtil.parse("<red>❌ У вас нет прав на изменение голосований!</red>"));
+                            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.no_permission_change", "<red>❌ You don't have permission to change votes!</red>")));
                             yield true;
                         }
                         if (args.length < 4) {
-                            player.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/mp vote change <name> <params...></white>"));
+                            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.usage_change", "<red>❌ Usage:</red> <white>/mp vote change <name> <params...></white>")));
                             yield true;
                         }
                         VoteManager.change(player, args[2], args, 3);
                     }
                     case "stats" -> {
                         if (!player.hasPermission("mcplugin.command.vote.stats")) {
-                            player.sendMessage(MessageUtil.parse("<red>❌ У вас нет прав на просмотр статистики голосований!</red>"));
+                            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.no_permission_stats", "<red>❌ You don't have permission to view vote statistics!</red>")));
                             yield true;
                         }
                         if (args.length < 3) {
-                            player.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/mp vote stats <name></white>"));
+                            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.usage_stats", "<red>❌ Usage:</red> <white>/mp vote stats <name></white>")));
                             yield true;
                         }
                         VoteManager.view(player, args[2]);
