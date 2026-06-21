@@ -1,6 +1,7 @@
 package com.mcplugin.module;
 
 import com.mcplugin.Main;
+import com.mcplugin.commands.vote.VoteManager;
 import com.mcplugin.database.DatabaseInit;
 import com.mcplugin.database.DatabaseManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,10 +25,17 @@ public class DatabaseModule extends PluginModule {
         DatabaseInit.init();
         plugin.getLogger().info("[SQLITE] Database initialized successfully.");
 
+        // =========================
+        // 🗳 VOTE MANAGER (загрузить голосования из БД)
+        // =========================
+        VoteManager.init();
+
     }
 
     @Override
     protected void onDisable(JavaPlugin plugin) {
+        // Отменяем все таймеры голосований
+        VoteManager.shutdown();
         try {
             DatabaseManager.close();
         } catch (Exception e) {

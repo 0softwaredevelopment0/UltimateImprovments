@@ -198,6 +198,34 @@ permissions:
     description: Allows opening notes GUI (/mp notes)
     default: op
 
+  mcplugin.command.vote:
+    description: Allows using the voting system (/mp vote)
+    default: op
+
+  mcplugin.command.vote.create:
+    description: Allows creating votes (/mp vote create)
+    default: op
+
+  mcplugin.command.vote.delete:
+    description: Allows deleting own votes (/mp vote delete)
+    default: op
+
+  mcplugin.command.vote.delete.other:
+    description: Allows deleting any vote (/mp vote delete)
+    default: op
+
+  mcplugin.command.vote.change:
+    description: Allows changing votes (/mp vote change)
+    default: op
+
+  mcplugin.command.vote.change.other:
+    description: Allows changing any vote
+    default: op
+
+  mcplugin.command.vote.bypass:
+    description: Excludes from vote total count (admin/staff)
+    default: op
+
   mcplugin.command.sethome:
     description: Allows setting home points (/mp sethome)
     default: op

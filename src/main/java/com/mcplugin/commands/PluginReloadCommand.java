@@ -2,6 +2,7 @@ package com.mcplugin.commands;
 
 import com.mcplugin.Main;
 import com.mcplugin.commands.home.HomeCommand;
+import com.mcplugin.commands.vote.VoteManager;
 import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import com.mcplugin.commands.home.HomeDatabase;
@@ -83,6 +84,60 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "checkrad", "setrad" -> RadiationSubcommand.execute(sender, args);
             case "togglespeed" -> MiscSubcommand.toggleSpeed(sender);
             case "reload" -> ReloadSubcommand.execute(sender);
+            case "vote" -> {
+                if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
+                if (!player.hasPermission("mcplugin.command.vote")) {
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission to use this command!</red>")));
+                    yield true;
+                }
+                if (args.length < 2) {
+                    VoteManager.list(player);
+                    yield true;
+                }
+                String voteSub = args[1].toLowerCase();
+                switch (voteSub) {
+                    case "create" -> {
+                        if (!player.hasPermission("mcplugin.command.vote.create")) {
+                            player.sendMessage(MessageUtil.parse("<red>❌ У вас нет прав на создание голосований!</red>"));
+                            yield true;
+                        }
+                        if (args.length < 5) {
+                            player.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/mp vote create <name> <title> <description> -answer_<N>:<title,desc> ... -time:<N><s|m|h|d></white>"));
+                            yield true;
+                        }
+                        VoteManager.parseCreate(player, args, 2);
+                    }
+                    case "delete" -> {
+                        if (args.length < 3) {
+                            player.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/mp vote delete <name></white>"));
+                            yield true;
+                        }
+                        VoteManager.delete(player, args[2]);
+                    }
+                    case "change" -> {
+                        if (!player.hasPermission("mcplugin.command.vote.change")) {
+                            player.sendMessage(MessageUtil.parse("<red>❌ У вас нет прав на изменение голосований!</red>"));
+                            yield true;
+                        }
+                        if (args.length < 4) {
+                            player.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/mp vote change <name> <params...></white>"));
+                            yield true;
+                        }
+                        VoteManager.change(player, args[2], args, 3);
+                    }
+                    default -> {
+                        // /mp vote <name> [answer]
+                        String voteName = args[1];
+                        if (args.length >= 3) {
+                            String answerStr = args[2];
+                            VoteManager.vote(player, voteName, answerStr);
+                        } else {
+                            VoteManager.view(player, voteName);
+                        }
+                    }
+                }
+                yield true;
+            }
             case "i_want_to_get_impossible_achivement_uwu" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 grantImpossibleAdvancement(player);
@@ -116,8 +171,21 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.addAll(List.of("help", "checkver", "checkupdates", "updatejar",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
                     "auth", "chgdim", "chgdim_teleport", "chgdim_return", "vanish", "notes",
-                    "codepane", "pane_click", "item", "modules", "togglespeed",
+                    "codepane", "pane_click", "item", "modules", "togglespeed", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
+            completions.add("create");
+            completions.add("delete");
+            completions.add("change");
+            completions.addAll(VoteManager.getVoteNames());
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("vote") && (args[1].equalsIgnoreCase("delete") || args[1].equalsIgnoreCase("change"))) {
+            completions.addAll(VoteManager.getVoteNames());
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("vote") && VoteManager.getVote(args[1]) != null) {
+            var vote = VoteManager.getVote(args[1]);
+            for (int i = 0; i < vote.answers.size(); i++) {
+                completions.add(String.valueOf(i));
+                completions.add(vote.answers.get(i).title);
+            }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("forcesuicide")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && args[0].equalsIgnoreCase("auth")) {

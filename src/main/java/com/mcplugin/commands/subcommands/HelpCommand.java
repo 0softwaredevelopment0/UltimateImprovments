@@ -56,6 +56,15 @@ public final class HelpCommand {
         sender.sendMessage("§e/mp notes");
         sender.sendMessage(" §7└ Открыть заметки");
         sender.sendMessage("");
+        sender.sendMessage("§e/mp vote");
+        sender.sendMessage(" §7└ Список голосований");
+        sender.sendMessage("§e/mp vote create §7<название> <заголовок> <описание> -answer_N:... -time:...");
+        sender.sendMessage(" §7└ Создать голосование");
+        sender.sendMessage("§e/mp vote §7<название> [номер_ответа]");
+        sender.sendMessage(" §7└ Проголосовать / посмотреть результаты");
+        sender.sendMessage("§e/mp vote delete §7<название>");
+        sender.sendMessage(" §7└ Удалить голосование (с подтверждением)");
+        sender.sendMessage("");
         sender.sendMessage("§e/mp power off");
         sender.sendMessage(" §7└ Запросить выключение сервера");
         sender.sendMessage("§e/mp power reboot");

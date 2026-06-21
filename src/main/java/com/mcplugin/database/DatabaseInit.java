@@ -276,6 +276,47 @@ public class DatabaseInit {
             );
         """);
 
+        // =========================
+        // 🗳 VOTES
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS votes (
+                name TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                question TEXT NOT NULL,
+                creator_uuid TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                expires_at INTEGER NOT NULL,
+                ended INTEGER DEFAULT 0
+            );
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS vote_answers (
+                vote_name TEXT NOT NULL,
+                answer_index INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT DEFAULT '',
+                PRIMARY KEY(vote_name, answer_index),
+                FOREIGN KEY(vote_name) REFERENCES votes(name) ON DELETE CASCADE
+            );
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS vote_records (
+                vote_name TEXT NOT NULL,
+                player_uuid TEXT NOT NULL,
+                answer_index INTEGER NOT NULL,
+                PRIMARY KEY(vote_name, player_uuid),
+                FOREIGN KEY(vote_name) REFERENCES votes(name) ON DELETE CASCADE
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_vote_records_name
+            ON vote_records(vote_name);
+        """);
+
         // Инициализация строк latest_commit_sha и installed_tag, если их нет
         st.execute("""
             INSERT OR IGNORE INTO updater_state (key, value)
