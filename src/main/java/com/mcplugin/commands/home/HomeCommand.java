@@ -160,14 +160,14 @@ public final class HomeCommand {
             return true;
         }
 
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("§6  ✦ §fДом: §e" + home.homeName());
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("§7Мир: §f" + home.world());
-        player.sendMessage("§7X: §f" + String.format("%.1f", home.x()));
-        player.sendMessage("§7Y: §f" + String.format("%.1f", home.y()));
-        player.sendMessage("§7Z: §f" + String.format("%.1f", home.z()));
-        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_name", "<gold>  ✦ </gold><white>Home: </white><yellow>{name}</yellow>").replace("{name}", home.homeName())));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_world", "<gray>World: </gray><white>{world}</white>").replace("{world}", home.world())));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_x", "<gray>X: </gray><white>{x}</white>").replace("{x}", String.format("%.1f", home.x()))));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_y", "<gray>Y: </gray><white>{y}</white>").replace("{y}", String.format("%.1f", home.y()))));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_z", "<gray>Z: </gray><white>{z}</white>").replace("{z}", String.format("%.1f", home.z()))));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
         return true;
     }
 
@@ -176,29 +176,29 @@ public final class HomeCommand {
     // ============================================================
     private static boolean executeDelHome(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.player_only", "<red>❌ Only players can use this command!</red>")));
             return true;
         }
         if (!player.hasPermission("mcplugin.command.delhome")) {
-            player.sendMessage("§4❌ §cУ вас нет прав на удаление домашних точек!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_delhome", "<red>❌ You don't have permission to delete home points!</red>")));
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage("§4❌ §cИспользование: §f/mp delhome §7<название>");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_delhome", "<red>❌ Usage: </red><white>/mp delhome <name></white>")));
             return true;
         }
 
         String homeName = args[0].trim();
 
         if (!HomeDatabase.homeExists(player.getUniqueId(), homeName)) {
-            player.sendMessage("§4❌ §cДом §e" + homeName + "§c не найден!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_del", "<red>❌ Home</red> <yellow>{name}</yellow> <red>not found!</red>").replace("{name}", homeName)));
             return true;
         }
 
         if (HomeDatabase.deleteHome(player.getUniqueId(), homeName)) {
-            player.sendMessage("§a✅ §fДом §e" + homeName + "§f удалён.");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_success", "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>deleted.</white>").replace("{name}", homeName)));
         } else {
-            player.sendMessage("§4❌ §cОшибка при удалении дома!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_error", "<red>❌ Error deleting home!</red>")));
         }
         return true;
     }
@@ -208,11 +208,11 @@ public final class HomeCommand {
     // ============================================================
     private static boolean executeListHomes(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.player_only", "<red>❌ Only players can use this command!</red>")));
             return true;
         }
         if (!player.hasPermission("mcplugin.command.listhomes")) {
-            player.sendMessage("§4❌ §cУ вас нет прав на просмотр списка домов!");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_listhomes", "<red>❌ You don't have permission to view the home list!</red>")));
             return true;
         }
 
@@ -220,29 +220,34 @@ public final class HomeCommand {
         List<HomeDatabase.HomeData> homes = HomeDatabase.listHomes(uuid);
 
         if (homes.isEmpty()) {
-            player.sendMessage("§eℹ §fУ вас нет сохранённых домашних точек.");
-            player.sendMessage("§7┃ Используйте §f/mp sethome <название>§7 чтобы сохранить.");
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_homes", "<yellow>ℹ</yellow> <white>You have no saved home points.</white>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_homes_hint", "<gray> Use </gray><white>/mp sethome <name></white><gray> to save one.</gray>")));
             return true;
         }
 
         int used = homes.size();
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("§6  ✦ §fВаши дома §7(" + used + "§7/§f" + HomeDatabase.getMaxHomes() + "§7)");
-        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_title", "<gold>  ✦ </gold><white>Your Homes </white><gray>({used}/{max})</gray>")
+                .replace("{used}", String.valueOf(used))
+                .replace("{max}", String.valueOf(HomeDatabase.getMaxHomes()))));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
 
         for (int i = 0; i < homes.size(); i++) {
             HomeDatabase.HomeData h = homes.get(i);
-            player.sendMessage("§8┌─ §e" + (i + 1) + ". §f" + h.homeName());
-            player.sendMessage("§8│ §7Мир: §f" + h.world());
-            player.sendMessage("§8│ §7X: §f" + String.format("%.1f", h.x())
-                    + " §7Y: §f" + String.format("%.1f", h.y())
-                    + " §7Z: §f" + String.format("%.1f", h.z()));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_name", "<gray>┌─ </gray><yellow>{num}. </yellow><white>{name}</white>")
+                    .replace("{num}", String.valueOf(i + 1))
+                    .replace("{name}", h.homeName())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_world", "<gray>│ </gray><gray>World: </gray><white>{world}</white>").replace("{world}", h.world())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_coords", "<gray>│ </gray><gray>X: </gray><white>{x}</white> <gray>Y: </gray><white>{y}</white> <gray>Z: </gray><white>{z}</white>")
+                    .replace("{x}", String.format("%.1f", h.x()))
+                    .replace("{y}", String.format("%.1f", h.y()))
+                    .replace("{z}", String.format("%.1f", h.z()))));
             if (i < homes.size() - 1) {
-                player.sendMessage("§8│");
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_sep", "<gray>│</gray>")));
             }
         }
 
-        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
         return true;
     }
 
@@ -251,11 +256,11 @@ public final class HomeCommand {
     // ============================================================
     private static boolean executeOpHomeLs(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mcplugin.command.ophomels")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на просмотр домов других игроков!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_ophomels", "<red>❌ You don't have permission to view other players' homes!</red>")));
             return true;
         }
         if (args.length < 1) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp ophomels §7<игрок>");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_ophomels", "<red>❌ Usage: </red><white>/mp ophomels <player></white>")));
             return true;
         }
 
@@ -265,27 +270,32 @@ public final class HomeCommand {
         List<HomeDatabase.HomeData> homes = HomeDatabase.listHomes(target.getUniqueId());
 
         if (homes.isEmpty()) {
-            sender.sendMessage("§eℹ §fУ игрока §e" + target.getName() + "§f нет сохранённых домов.");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_homes_player", "<yellow>ℹ</yellow> <white>Player</white> <yellow>{player}</yellow> <white>has no saved homes.</white>").replace("{player}", target.getName())));
             return true;
         }
 
-        sender.sendMessage("§6═══════════════════════════════════");
-        sender.sendMessage("§6  ✦ §fДома игрока §e" + target.getName() + " §7(" + homes.size() + "§7)");
-        sender.sendMessage("§6═══════════════════════════════════");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.op_list_title", "<gold>  ✦ </gold><white>Player's Homes </white><yellow>{player}</yellow> <gray>({count})</gray>")
+                .replace("{player}", target.getName())
+                .replace("{count}", String.valueOf(homes.size()))));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
 
         for (int i = 0; i < homes.size(); i++) {
             HomeDatabase.HomeData h = homes.get(i);
-            sender.sendMessage("§8┌─ §e" + (i + 1) + ". §f" + h.homeName());
-            sender.sendMessage("§8│ §7Мир: §f" + h.world());
-            sender.sendMessage("§8│ §7X: §f" + String.format("%.1f", h.x())
-                    + " §7Y: §f" + String.format("%.1f", h.y())
-                    + " §7Z: §f" + String.format("%.1f", h.z()));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_name", "<gray>┌─ </gray><yellow>{num}. </yellow><white>{name}</white>")
+                    .replace("{num}", String.valueOf(i + 1))
+                    .replace("{name}", h.homeName())));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_world", "<gray>│ </gray><gray>World: </gray><white>{world}</white>").replace("{world}", h.world())));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_coords", "<gray>│ </gray><gray>X: </gray><white>{x}</white> <gray>Y: </gray><white>{y}</white> <gray>Z: </gray><white>{z}</white>")
+                    .replace("{x}", String.format("%.1f", h.x()))
+                    .replace("{y}", String.format("%.1f", h.y()))
+                    .replace("{z}", String.format("%.1f", h.z()))));
             if (i < homes.size() - 1) {
-                sender.sendMessage("§8│");
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_sep", "<gray>│</gray>")));
             }
         }
 
-        sender.sendMessage("§6═══════════════════════════════════");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
         return true;
     }
 
@@ -294,11 +304,11 @@ public final class HomeCommand {
     // ============================================================
     private static boolean executeOpDelHome(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mcplugin.command.opdelhome")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на удаление домов других игроков!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_opdelhome", "<red>❌ You don't have permission to delete other players' homes!</red>")));
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp opdelhome §7<игрок> <название дома>");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_opdelhome", "<red>❌ Usage: </red><white>/mp opdelhome <player> <home_name></white>")));
             return true;
         }
 
@@ -309,14 +319,18 @@ public final class HomeCommand {
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
 
         if (!HomeDatabase.homeExists(target.getUniqueId(), homeName)) {
-            sender.sendMessage("§4❌ §cУ игрока §e" + target.getName() + "§c нет дома §e" + homeName + "§c!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_player", "<red>❌ Player</red> <yellow>{player}</yellow><red> has no home</red> <yellow>{name}</yellow><red>!</red>")
+                    .replace("{player}", target.getName())
+                    .replace("{name}", homeName)));
             return true;
         }
 
         if (HomeDatabase.deleteHome(target.getUniqueId(), homeName)) {
-            sender.sendMessage("§a✅ §fДом §e" + homeName + "§f игрока §e" + target.getName() + "§f удалён.");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_op_success", "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>of player</white> <yellow>{player}</yellow> <white>deleted.</white>")
+                    .replace("{name}", homeName)
+                    .replace("{player}", target.getName())));
         } else {
-            sender.sendMessage("§4❌ §cОшибка при удалении дома!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_error", "<red>❌ Error deleting home!</red>")));
         }
         return true;
     }

@@ -1,7 +1,9 @@
 package com.mcplugin.features.updater;
 
 import com.mcplugin.Main;
+import com.mcplugin.config.MessagesManager;
 import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.MessageUtil;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -441,9 +443,9 @@ public class UpdateChecker {
                 // Шаг 1: проверяем последний коммит
                 String latestCommitSha = fetchLatestCommitSha(plugin);
                 if (latestCommitSha == null) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage("§4❌ §cНе удалось проверить последний коммит на GitHub!");
-                    });
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.check_error", "<red>❌ Error checking for updates!</red>")));
+                });
                     return;
                 }
 
@@ -462,98 +464,86 @@ public class UpdateChecker {
                 final String finalReleaseName = !cachedReleaseName.isEmpty() ? cachedReleaseName : finalTag;
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.header", "<gold>=== <white>MC-Plugin — Update Check</white> ===")));
                     sender.sendMessage("");
-                    sender.sendMessage("§6═══════════════════════════════════");
-                    sender.sendMessage("§6  ✦ §fMC-Plugin §7— Проверка обновлений");
-                    sender.sendMessage("§6═══════════════════════════════════");
-                    sender.sendMessage("");
-                    sender.sendMessage("§7Версия плагина: §f" + pluginVersion);
-                    sender.sendMessage("§7Последний коммит: §f" + finalSha);
-                    sender.sendMessage("§7Последний релиз: §f" + finalTag);
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.plugin_version", "<gray>Plugin version:</gray> <white>{version}</white>").replace("{version}", pluginVersion)));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.latest_commit", "<gray>Latest commit:</gray> <white>{sha}</white>").replace("{sha}", finalSha)));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.latest_release", "<gray>Latest release:</gray> <white>{tag}</white>").replace("{tag}", finalTag)));
 
                     if (!hasRelease) {
-                        sender.sendMessage("");
-                        sender.sendMessage("§c⚠ В репозитории нет релизов!");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.no_releases", "<red>⚠ No releases in the repository!</red>")));
                     } else if (isFirstRun) {
-                        sender.sendMessage("");
-                        sender.sendMessage("§eℹ §7Первый запуск проверки.");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.first_run", "<yellow>ℹ</yellow> <gray>First run check.</gray>")));
                         if (isNewRelease) {
-                            sender.sendMessage("§a✨ Доступно обновление: §f" + finalReleaseName);
+                            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.update_available", "<green>✨</green> <white>Update available!</white> <white>{release}</white>").replace("{release}", finalReleaseName)));
                         }
                     } else if (isNewRelease) {
-                        sender.sendMessage("");
-                        sender.sendMessage("§a✨ Доступно обновление! §f" + finalReleaseName);
-                        sender.sendMessage("§7Было: §f" + (storedTag.isEmpty() ? "<none>" : storedTag)
-                                + " §7→ Стало: §a" + finalTag);
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.update_available", "<green>✨</green> <white>Update available!</white> <white>{release}</white>").replace("{release}", finalReleaseName)));
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.update_from_to", "<gray>Was:</gray> <white>{from}</white> <gray>→ Now:</gray> <green>{to}</green>")
+                                .replace("{from}", storedTag.isEmpty() ? "<none>" : storedTag)
+                                .replace("{to}", finalTag)));
                     } else if (hasNewCommits) {
-                        sender.sendMessage("");
-                        sender.sendMessage("§eℹ §7Есть новые коммиты, но без нового релиза.");
-                        sender.sendMessage("§7Дождитесь выхода следующего релиза.");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.new_commits_no_release", "<yellow>ℹ</yellow> <gray>New commits found, but no new release yet.</gray>")));
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.wait_for_release", "<gray>Wait for the next release.</gray>")));
                     } else {
-                        sender.sendMessage("");
-                        sender.sendMessage("§2✔ §aВсё актуально! Последний коммит уже установлен.");
-                        sender.sendMessage("");
-                        sender.sendMessage("§6═══════════════════════════════════");
-                        sender.sendMessage("");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.up_to_date", "<green>✔</green> <green>All up to date! Latest commit already installed.</green>")));
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.header", "<gold>=== <white>MC-Plugin — Update Check</white> ===")));
                         return;
                     }
 
                     if (isNewRelease && hasRelease) {
-                        sender.sendMessage("");
-
-                        // Кнопка /mp updatejar (только для игроков)
+                        // Install button for players
                         if (sender instanceof Player) {
-                            TextComponent updateButton = new TextComponent("§8  §2[§a✔ Установить обновление§2]");
+                            TextComponent updateButton = new TextComponent(MessageUtil.legacy(MessagesManager.getString("update.install_button", "<dark_green>[<green>✔ Install Update</green><dark_green>]</dark_green>")));
                             updateButton.setClickEvent(new ClickEvent(
                                     ClickEvent.Action.RUN_COMMAND,
                                     "/mp updatejar"
                             ));
                             updateButton.setHoverEvent(new HoverEvent(
                                     HoverEvent.Action.SHOW_TEXT,
-                                    new ComponentBuilder("§aНажмите чтобы скачать и установить обновление\n")
-                                            .append("§7Релиз: §f" + finalReleaseName + "\n")
-                                            .append("§7После установки потребуется перезапуск сервера")
+                                    new ComponentBuilder("§aClick to download and install update\n")
+                                            .append("§7Release: §f" + finalReleaseName + "\n")
+                                            .append("§7Restart required after installation")
                                             .create()
                             ));
                             ((Player) sender).spigot().sendMessage(updateButton);
 
-                            sender.sendMessage("§8  §7или введите §f/mp updatejar");
+                            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_hint", "<gray> or type </gray><white>/mp updatejar</white>")));
                         } else {
-                            sender.sendMessage("§7Для установки введите: §f/mp updatejar");
+                            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_console", "<gray>To install, type: </gray><white>/mp updatejar</white>")));
                         }
 
-                        sender.sendMessage("");
-                        sender.sendMessage("§7Чтобы проигнорировать — ничего не делайте.");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.ignore_hint", "<gray>To ignore, do nothing.</gray>")));
                     }
 
-                    sender.sendMessage("");
-                    sender.sendMessage("§6═══════════════════════════════════");
-                    sender.sendMessage("");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.header", "<gold>=== <white>MC-Plugin — Update Check</white> ===")));
                 });
 
             } catch (java.net.UnknownHostException e) {
                 plugin.getLogger().warning("[Updater] Manual check failed: DNS resolution error");
                 e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage("§4❌ §cОшибка соединения с GitHub!");
-                    sender.sendMessage("§8┃ §7Не удалось разрешить DNS-имя api.github.com");
-                    sender.sendMessage("§8┃ §7Проверьте интернет-соединение сервера.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.connection_error", "<red>❌ Connection error with GitHub!</red>")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.dns_error_hint", "<gray>Could not resolve DNS for api.github.com</gray>")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.connection_check_hint", "<gray>Check server internet connection.</gray>")));
                 });
             } catch (java.net.http.HttpTimeoutException e) {
                 plugin.getLogger().warning("[Updater] Manual check failed: Connection timeout");
                 e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage("§4❌ §cТаймаут соединения с GitHub!");
-                    sender.sendMessage("§8┃ §7Сервер GitHub не ответил за " + TIMEOUT_SECONDS + " сек.");
-                    sender.sendMessage("§8┃ §7Проверьте интернет-соединение или попробуйте позже.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.timeout_error", "<red>❌ Connection timeout with GitHub!</red>")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.timeout_hint", "<gray>GitHub did not respond within {seconds} seconds.</gray>").replace("{seconds}", String.valueOf(TIMEOUT_SECONDS))));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.timeout_retry_hint", "<gray>Check internet connection or try again later.</gray>")));
                 });
             } catch (Exception e) {
                 plugin.getLogger().warning("[Updater] Manual check failed: " + e.getMessage());
                 e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage("§4❌ §cОшибка при проверке обновлений!");
-                    sender.sendMessage("§8┃ §7" + e.getClass().getSimpleName() + ": " + e.getMessage());
-                    sender.sendMessage("§8┃ §7Детали в консоли сервера.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.check_error", "<red>❌ Error checking for updates!</red>")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_error_detail", "<gray>{type}: {message}</gray>")
+                            .replace("{type}", e.getClass().getSimpleName())
+                            .replace("{message}", e.getMessage() != null ? e.getMessage() : "")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_error_console", "<gray>Stack trace in server console.</gray>")));
                 });
             }
         });
@@ -580,7 +570,7 @@ public class UpdateChecker {
 
                 if (currentJar == null || !currentJar.exists()) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage("§4❌ §cНе удалось найти текущий JAR-файл плагина!");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.cant_find_jar", "<red>❌ Cannot find current plugin JAR file!</red>")));
                     });
                     return;
                 }
@@ -600,14 +590,14 @@ public class UpdateChecker {
                     githubTag = fetchLatestReleaseTag(plugin);
                     if (githubTag == null) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage("§4❌ §cНе удалось получить информацию о последнем релизе!");
+                            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.no_release_info", "<red>❌ Could not get latest release info!</red>")));
                         });
                         return;
                     }
                     downloadUrl = cachedDownloadUrl;
                     if (downloadUrl == null || downloadUrl.isEmpty()) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage("§4❌ §cВ релизе " + githubTag + " не найден JAR-файл!");
+                            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.no_jar_in_release", "<red>❌ No JAR file found in release </red><yellow>{tag}</yellow><red>!</red>").replace("{tag}", githubTag)));
                         });
                         return;
                     }
@@ -618,7 +608,7 @@ public class UpdateChecker {
         if (githubTag.equals(storedTag)) {
             // Если тег совпадает — новый JAR скачать неоткуда (тот же релиз)
             Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage("§2✔ §aЭта версия уже установлена! (§f" + githubTag + "§a)");
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.already_installed", "<green>✔</green> <green>This version is already installed! (</green><white>{tag}</white><green>)</green>").replace("{tag}", githubTag)));
             });
             return;
         }
@@ -626,7 +616,7 @@ public class UpdateChecker {
                 // Статус: загрузка
                 final String finalTag = githubTag;
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage("§e⟳ §7Загрузка обновления §f" + finalTag + "§7...");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.downloading_release", "<yellow>⟳</yellow> <gray>Downloading update</gray> <white>{tag}</white><gray>...</gray>").replace("{tag}", finalTag)));
                 });
 
                 // Скачивание JAR
@@ -647,8 +637,7 @@ public class UpdateChecker {
                 if (downloadResponse.statusCode() != 200
                         && downloadResponse.statusCode() != 302) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage("§4❌ §cОшибка загрузки: HTTP "
-                                + downloadResponse.statusCode());
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.download_error", "<red>❌ Download error: HTTP {status}</red>").replace("{status}", String.valueOf(downloadResponse.statusCode()))));
                     });
                     return;
                 }
@@ -681,22 +670,17 @@ public class UpdateChecker {
                             ? latestSha.substring(0, Math.min(7, latestSha.length())) : "?";
 
                     Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_success_header", "<gold>=== <green>Update Installed!</green> ===")));
                         sender.sendMessage("");
-                        sender.sendMessage("§6═══════════════════════════════════");
-                        sender.sendMessage("§6  ✦ §aОбновление установлено!");
-                        sender.sendMessage("§6═══════════════════════════════════");
-                        sender.sendMessage("");
-                        sender.sendMessage("§7Релиз:    §f" + finalTag);
-                        sender.sendMessage("§7Коммит:   §f" + finalSha);
-                        sender.sendMessage("§7Загружено: §f" + downloadedKB + " KB");
-                        sender.sendMessage("");
-                        sender.sendMessage("§c⚠ Перезапустите сервер для применения обновления!");
-                        sender.sendMessage("");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_release", "<gray>Release:</gray> <white>{tag}</white>").replace("{tag}", finalTag)));
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_commit", "<gray>Commit:</gray> <white>{sha}</white>").replace("{sha}", finalSha)));
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_size", "<gray>Downloaded:</gray> <white>{size} KB</white>").replace("{size}", String.valueOf(downloadedKB))));
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_restart", "<red>⚠ Restart the server to apply the update!</red>")));
                     });
                 } else {
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        sender.sendMessage("§4❌ §cНе удалось заменить JAR (файл занят процессом).");
-                        sender.sendMessage("§8┃ §7Проверьте консоль сервера — там инструкции по ручной замене.");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_failed_replace", "<red>❌ Failed to replace JAR (file in use by process).</red>")));
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_failed_manual", "<gray>Check server console for manual replacement instructions.</gray>")));
                     });
                 }
 
@@ -706,9 +690,11 @@ public class UpdateChecker {
                 e.printStackTrace();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage("§4❌ §cОшибка при загрузке обновления!");
-                    sender.sendMessage("§8┃ §7" + e.getClass().getSimpleName() + ": " + e.getMessage());
-                    sender.sendMessage("§8┃ §7Подробный стектрейс в консоли сервера.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_error", "<red>❌ Error downloading update!</red>")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_error_detail", "<gray>{type}: {message}</gray>")
+                            .replace("{type}", e.getClass().getSimpleName())
+                            .replace("{message}", e.getMessage() != null ? e.getMessage() : "")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.install_error_console", "<gray>Stack trace in server console.</gray>")));
                 });
             }
         });

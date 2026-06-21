@@ -313,8 +313,9 @@ public class ChatFilterManager implements Listener {
                 // Сообщение игроку
                 player.sendMessage(MessageUtil.parse(warningMessage));
                 // Highlighted message uses § codes from highlightBadWords(), so send as legacy string
+                // highlighted contains § codes from highlightBadWords() — send as legacy string
                 player.sendMessage("§7→ §f" + highlighted);
-                player.sendMessage(MessageUtil.parse("<gray>└</gray> <white>Совпадение:</white> " + source));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("chat_filter.violation_match", "<gray>└</gray> <white>Match:</white> {source}").replace("{source}", source)));
                 return;
             }
         }

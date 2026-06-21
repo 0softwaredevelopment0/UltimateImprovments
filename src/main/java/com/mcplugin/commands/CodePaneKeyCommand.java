@@ -1,6 +1,8 @@
 package com.mcplugin.commands;
 
 import com.mcplugin.cp.CodePanelDatabase;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -17,7 +19,7 @@ public class CodePaneKeyCommand {
     public static boolean execute(CommandSender sender, String[] args) {
         // Permission check
         if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на управление ключами кодовой панели!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission", "<red>❌ You don't have permission to manage code panel keys!</red>")));
             return true;
         }
 
@@ -33,45 +35,45 @@ public class CodePaneKeyCommand {
             case "list" -> handleList(sender);
             case "remove" -> handleRemove(sender, args);
             case "modify" -> handleModify(sender, args);
-            default -> sender.sendMessage("§4❌ §cНеизвестная подкоманда: §f" + subCmd);
+            default -> sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_subcommand", "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>").replace("{subcommand}", subCmd)));
         }
         return true;
     }
 
     private static void sendUsage(CommandSender sender) {
-        sender.sendMessage("§6=== §fУправление ключами кодовой панели §6===");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.header", "<gold>=== <white>Code Panel Key Management</white> ===")));
         sender.sendMessage("");
-        sender.sendMessage("§e/mp codepane key add §7<название> <код> [флаги]");
-        sender.sendMessage(" §7└ Добавить новый ключ");
-        sender.sendMessage("§e/mp codepane key list");
-        sender.sendMessage(" §7└ Список всех ключей");
-        sender.sendMessage("§e/mp codepane key remove §7<название>");
-        sender.sendMessage(" §7└ Удалить ключ");
-        sender.sendMessage("§e/mp codepane key modify §7<название> <новый_код> [флаги]");
-        sender.sendMessage(" §7└ Изменить ключ");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.add", "<yellow>/mp codepane key add <gray><name> <code> [flags]</gray></yellow>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.add_desc", "<gray> Add a new key</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.list", "<yellow>/mp codepane key list</yellow>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.list_desc", "<gray> List all keys</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.remove", "<yellow>/mp codepane key remove <gray><name></gray></yellow>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.remove_desc", "<gray> Remove a key</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.modify", "<yellow>/mp codepane key modify <gray><name> <new_code> [flags]</gray></yellow>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.modify_desc", "<gray> Modify a key</gray>")));
         sender.sendMessage("");
-        sender.sendMessage("§7Необходимые права:");
-        sender.sendMessage("§7mcplugin.command.codepane.key — базовое");
-        sender.sendMessage(" §7mcplugin.command.codepane.key.add — добавление");
-        sender.sendMessage(" §7mcplugin.command.codepane.key.list — список");
-        sender.sendMessage(" §7mcplugin.command.codepane.key.remove — удаление");
-        sender.sendMessage(" §7mcplugin.command.codepane.key.modify — изменение");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.permissions_header", "<gray>Required permissions:</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_base", "<gray>mcplugin.command.codepane.key — base</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_add", "<gray> mcplugin.command.codepane.key.add — add</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_list", "<gray> mcplugin.command.codepane.key.list — list</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_remove", "<gray> mcplugin.command.codepane.key.remove — remove</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_modify", "<gray> mcplugin.command.codepane.key.modify — modify</gray>")));
         sender.sendMessage("");
-        sender.sendMessage("§7Флаги:");
-        sender.sendMessage(" §7attempts:<N>     — удалить ключ после N успешных использований");
-        sender.sendMessage(" §7time:<N>s|m|h|d  — удалить ключ через N секунд/минут/часов/дней");
-        sender.sendMessage("§7whitelist:<ник1,ник2...>  — разрешить только этим игрокам");
-        sender.sendMessage("§7whitelist:(<ник1,ник2...>)  — то же, но в скобках");
-        sender.sendMessage("§7blacklist:<ник1,ник2...>  — запретить этим игрокам");
-        sender.sendMessage("§7blacklist:(<ник1,ник2...>)  — то же, но в скобках");
-        sender.sendMessage("§7command:(<команда с пробелами>),(<команда 2>)  — команды через запятую, пробелы в скобках");
-        sender.sendMessage(" §7  %entity% — заменится на ник игрока");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flags_header", "<gray>Flags:</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_attempts", "<gray> attempts:<N>     — delete key after N successful uses</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_time", "<gray> time:<N>s|m|h|d  — delete key after N seconds/minutes/hours/days</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_whitelist", "<gray>whitelist:<name1,name2...>  — allow only these players</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_whitelist_parens", "<gray>whitelist:(<name1,name2...>)  — same, but in parentheses</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_blacklist", "<gray>blacklist:<name1,name2...>  — block these players</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_blacklist_parens", "<gray>blacklist:(<name1,name2...>)  — same, but in parentheses</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_command", "<gray>command:(<cmd with spaces>),(<cmd 2>)  — commands separated by commas</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_command_entity", "<gray>  %entity% — replaced with player's nickname</gray>")));
         sender.sendMessage("");
-        sender.sendMessage("§7Примеры:");
-        sender.sendMessage(" §f/mp codepane key add mydoor 1234 attempts:3 time:1h");
-        sender.sendMessage(" §f/mp codepane key add admin 7777 whitelist:Steve,Alex");
-        sender.sendMessage(" §f/mp codepane key add warp 4321 command:(say %entity% got access)");
-        sender.sendMessage(" §f/mp codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.examples_header", "<gray>Examples:</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example1", "<gray> /mp codepane key add mydoor 1234 attempts:3 time:1h</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example2", "<gray> /mp codepane key add admin 7777 whitelist:Steve,Alex</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example3", "<gray> /mp codepane key add warp 4321 command:(say %entity% got access)</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example4", "<gray> /mp codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>")));
     }
 
     // =========================
@@ -79,11 +81,11 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleAdd(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.add")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на добавление ключей!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_add", "<red>❌ You don't have permission to add keys!</red>")));
             return;
         }
         if (args.length < 5) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp codepane key add §7<название> <код> [флаги]");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_add", "<red>❌ Usage: </red><white>/mp codepane key add <name> <code> [flags]</white>")));
             return;
         }
 
@@ -102,34 +104,34 @@ public class CodePaneKeyCommand {
 
             if (flag.startsWith("attempts:")) {
                 if (seenFlags.contains("attempts")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: attempts! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "attempts")));
                     return;
                 }
                 seenFlags.add("attempts");
                 try {
                     maxAttempts = Integer.parseInt(flag.substring(9));
                     if (maxAttempts < 1) {
-                        sender.sendMessage("§4❌ §cattempts должен быть >= 1");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_attempts", "<red>❌ attempts must be >= 1</red>")));
                         return;
                     }
                 } catch (NumberFormatException e) {
-                    sender.sendMessage("§4❌ §cНеверный формат attempts: " + flag);
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_attempts_format", "<red>❌ Invalid attempts format: {value}</red>").replace("{value}", flag)));
                     return;
                 }
             } else if (flag.startsWith("time:")) {
                 if (seenFlags.contains("time")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: time! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "time")));
                     return;
                 }
                 seenFlags.add("time");
                 expiresAt = parseTimeFlag(flag.substring(5));
                 if (expiresAt == 0) {
-                    sender.sendMessage("§4❌ §cНеверный формат time: §7" + flag.substring(5) + " §c(используйте Ns, Nm, Nh, Nd)");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_time_format", "<red>❌ Invalid time format: </red><gray>{value}</gray><red> (use Ns, Nm, Nh, Nd)</red>").replace("{value}", flag.substring(5))));
                     return;
                 }
             } else if (flag.startsWith("whitelist:")) {
                 if (seenFlags.contains("whitelist")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: whitelist! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "whitelist")));
                     return;
                 }
                 seenFlags.add("whitelist");
@@ -138,7 +140,7 @@ public class CodePaneKeyCommand {
                 if (consumed > 0) i += consumed;
             } else if (flag.startsWith("blacklist:")) {
                 if (seenFlags.contains("blacklist")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: blacklist! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "blacklist")));
                     return;
                 }
                 seenFlags.add("blacklist");
@@ -147,7 +149,7 @@ public class CodePaneKeyCommand {
                 if (consumed > 0) i += consumed;
             } else if (flag.startsWith("command:")) {
                 if (seenFlags.contains("command")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: command! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "command")));
                     return;
                 }
                 seenFlags.add("command");
@@ -157,13 +159,13 @@ public class CodePaneKeyCommand {
                 int consumed = countCommandFlagArgs(args, i);
                 if (consumed > 0) i += consumed;
             } else {
-                sender.sendMessage("§e⚠ §7Неизвестный флаг: §f" + flag);
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_flag", "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>{flag}</white>").replace("{flag}", flag)));
             }
         }
 
         // Check if key already exists
         if (CodePanelDatabase.keyExists(keyName)) {
-            sender.sendMessage("§4❌ §cКлюч §e" + keyName + "§c уже существует!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.already_exists", "<red>❌ Key</red> <yellow>{name}</yellow> <red>already exists!</red>").replace("{name}", keyName)));
             return;
         }
 
@@ -171,28 +173,28 @@ public class CodePaneKeyCommand {
                 maxAttempts, expiresAt, whitelistStr, blacklistStr);
 
         if (!success) {
-            sender.sendMessage("§4❌ §cОшибка при добавлении ключа в БД!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.db_add_error", "<red>❌ Error adding key to database!</red>")));
             return;
         }
 
-        sender.sendMessage("§a✅ §fКлюч §e" + keyName + "§f добавлен в БД!");
-        sender.sendMessage("§8┃ §7Код: §f" + code);
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.add_success", "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>added to database!</white>").replace("{name}", keyName)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("{code}", code)));
         if (maxAttempts > 0) {
-            sender.sendMessage("§8┃ §7Макс. использований: §f" + maxAttempts);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_max_attempts", "<gray>Max attempts:</gray> <white>{max}</white>").replace("{max}", String.valueOf(maxAttempts))));
         }
         if (expiresAt > 0) {
             String dateStr = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
                     .format(new java.util.Date(expiresAt));
-            sender.sendMessage("§8┃ §7Истекает: §f" + dateStr);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_at", "<gray>Expires at:</gray> <white>{date}</white>").replace("{date}", dateStr)));
         }
         if (!whitelistStr.isEmpty()) {
-            sender.sendMessage("§8┃ §7Whitelist: §f" + whitelistStr);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("{players}", whitelistStr)));
         }
         if (!blacklistStr.isEmpty()) {
-            sender.sendMessage("§8┃ §7Blacklist: §f" + blacklistStr);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("{players}", blacklistStr)));
         }
         if (!commandStr.isEmpty()) {
-            sender.sendMessage("§8┃ §7Command: §f" + commandStr);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("{commands}", commandStr)));
         }
     }
 
@@ -201,56 +203,61 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleList(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.list")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на просмотр списка ключей!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_list", "<red>❌ You don't have permission to list keys!</red>")));
             return;
         }
 
         List<CodePanelDatabase.CodePanelKey> keys = CodePanelDatabase.getAllKeys();
 
         if (keys.isEmpty()) {
-            sender.sendMessage("§eℹ §fВ базе нет ни одного ключа.");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_keys", "<yellow>ℹ</yellow> <white>No keys in the database.</white>")));
             return;
         }
 
         sender.sendMessage("");
-        sender.sendMessage("§6══════════════════════════════════");
-        sender.sendMessage("§6  ✦ §fСписок ключей кодовой панели §7(" + keys.size() + ")");
-        sender.sendMessage("§6══════════════════════════════════");
+        sender.sendMessage(MessageUtil.parse("<gold>══════════════════════════════════</gold>"));
+        sender.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Code Panel Keys </white><gray>(" + keys.size() + ")</gray>"));
+        sender.sendMessage(MessageUtil.parse("<gold>══════════════════════════════════</gold>"));
 
         for (CodePanelDatabase.CodePanelKey key : keys) {
             sender.sendMessage("");
-            sender.sendMessage("§8┌─ §e" + key.keyName);
-            sender.sendMessage("§8│ §7Код: §f" + key.code);
+            sender.sendMessage(MessageUtil.parse("<gray>┌─ </gray><yellow>" + key.keyName + "</yellow>"));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("{code}", key.code)));
 
             if (key.command != null && !key.command.isEmpty()) {
-                sender.sendMessage("§8│ §7Команды: §f" + key.command);
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("{commands}", key.command)));
             }
 
             if (!key.whitelist.isEmpty()) {
-                sender.sendMessage("§8│ §7Whitelist: §a" + String.join("§7, §a", key.whitelist));
+                String players = String.join("<gray>, </gray><green>", key.whitelist);
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("{players}", players)));
             }
             if (!key.blacklist.isEmpty()) {
-                sender.sendMessage("§8│ §7Blacklist: §c" + String.join("§7, §c", key.blacklist));
+                String players = String.join("<gray>, </gray><red>", key.blacklist);
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("{players}", players)));
             }
 
             if (key.maxAttempts > 0) {
                 int left = key.maxAttempts - key.attemptsUsed;
-                String color = left <= 1 ? "§c" : left <= 3 ? "§e" : "§a";
-                sender.sendMessage("§8│ §7Попытки: " + color + left + "§7/" + key.maxAttempts);
+                String color = left <= 1 ? "<red>" : left <= 3 ? "<yellow>" : "<green>";
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_attempts", "<gray>Attempts:</gray> {color}{remaining}<gray>/{max}</gray>")
+                        .replace("{color}", color)
+                        .replace("{remaining}", String.valueOf(left))
+                        .replace("{max}", String.valueOf(key.maxAttempts))));
             }
 
             if (key.expiresAt > 0) {
                 long remain = key.expiresAt - System.currentTimeMillis();
                 if (remain <= 0) {
-                    sender.sendMessage("§8│ §7Истекает: §cпросрочен");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expired", "<gray>Expires:</gray> <red>expired</red>")));
                 } else {
-                    sender.sendMessage("§8│ §7Истекает: §f" + formatDuration(remain));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_in", "<gray>Expires:</gray> <white>{duration}</white>").replace("{duration}", formatDuration(remain))));
                 }
             }
         }
 
         sender.sendMessage("");
-        sender.sendMessage("§6══════════════════════════════════");
+        sender.sendMessage(MessageUtil.parse("<gold>══════════════════════════════════</gold>"));
         sender.sendMessage("");
     }
 
@@ -259,23 +266,23 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleRemove(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.remove")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на удаление ключей!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_remove", "<red>❌ You don't have permission to remove keys!</red>")));
             return;
         }
         if (args.length < 4) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp codepane key remove §7<название>");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_remove", "<red>❌ Usage: </red><white>/mp codepane key remove <name></white>")));
             return;
         }
 
         String keyName = args[3];
 
         if (!CodePanelDatabase.keyExists(keyName)) {
-            sender.sendMessage("§4❌ §cКлюч §e" + keyName + "§c не найден!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.key_not_found", "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found!</red>").replace("{name}", keyName)));
             return;
         }
 
         CodePanelDatabase.removeKey(keyName);
-        sender.sendMessage("§a✅ §fКлюч §e" + keyName + "§f удалён из БД.");
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.remove_success", "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>removed from database.</white>").replace("{name}", keyName)));
     }
 
     // =========================
@@ -283,11 +290,11 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleModify(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.modify")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на изменение ключей!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_modify", "<red>❌ You don't have permission to modify keys!</red>")));
             return;
         }
         if (args.length < 5) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp codepane key modify §7<название> <новый_код> [флаги]");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_modify", "<red>❌ Usage: </red><white>/mp codepane key modify <name> <new_code> [flags]</white>")));
             return;
         }
 
@@ -296,7 +303,7 @@ public class CodePaneKeyCommand {
         String commandStrOverride = null;
 
         if (!CodePanelDatabase.keyExists(keyName)) {
-            sender.sendMessage("§4❌ §cКлюч §e" + keyName + "§c не найден в БД!");
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.db_not_found", "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found in database!</red>").replace("{name}", keyName)));
             return;
         }
 
@@ -315,34 +322,34 @@ public class CodePaneKeyCommand {
 
             if (flag.startsWith("attempts:")) {
                 if (seenFlags.contains("attempts")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: attempts! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "attempts")));
                     return;
                 }
                 seenFlags.add("attempts");
                 try {
                     maxAttempts = Integer.parseInt(flag.substring(9));
                     if (maxAttempts < 1) {
-                        sender.sendMessage("§4❌ §cattempts должен быть >= 1");
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_attempts", "<red>❌ attempts must be >= 1</red>")));
                         return;
                     }
                 } catch (NumberFormatException e) {
-                    sender.sendMessage("§4❌ §cНеверный формат attempts: " + flag);
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_attempts_format", "<red>❌ Invalid attempts format: {value}</red>").replace("{value}", flag)));
                     return;
                 }
             } else if (flag.startsWith("time:")) {
                 if (seenFlags.contains("time")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: time! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "time")));
                     return;
                 }
                 seenFlags.add("time");
                 expiresAt = parseTimeFlag(flag.substring(5));
                 if (expiresAt == 0) {
-                    sender.sendMessage("§4❌ §cНеверный формат time: §7" + flag.substring(5) + " §c(используйте Ns, Nm, Nh, Nd)");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_time_format", "<red>❌ Invalid time format: </red><gray>{value}</gray><red> (use Ns, Nm, Nh, Nd)</red>").replace("{value}", flag.substring(5))));
                     return;
                 }
             } else if (flag.startsWith("whitelist:")) {
                 if (seenFlags.contains("whitelist")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: whitelist! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "whitelist")));
                     return;
                 }
                 seenFlags.add("whitelist");
@@ -351,7 +358,7 @@ public class CodePaneKeyCommand {
                 if (consumed > 0) i += consumed;
             } else if (flag.startsWith("blacklist:")) {
                 if (seenFlags.contains("blacklist")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: blacklist! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "blacklist")));
                     return;
                 }
                 seenFlags.add("blacklist");
@@ -360,7 +367,7 @@ public class CodePaneKeyCommand {
                 if (consumed > 0) i += consumed;
             } else if (flag.startsWith("command:")) {
                 if (seenFlags.contains("command")) {
-                    sender.sendMessage("§4❌ §cДублирование флага: command! Используйте каждый флаг только один раз.");
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "command")));
                     return;
                 }
                 seenFlags.add("command");
@@ -370,7 +377,7 @@ public class CodePaneKeyCommand {
                 int consumed = countCommandFlagArgs(args, i);
                 if (consumed > 0) i += consumed;
             } else {
-                sender.sendMessage("§e⚠ §7Неизвестный флаг: §f" + flag);
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_flag", "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>{flag}</white>").replace("{flag}", flag)));
             }
         }
 
@@ -393,24 +400,24 @@ public class CodePaneKeyCommand {
         CodePanelDatabase.updateKey(keyName, newCode, commandStr,
                 maxAttempts, expiresAt, whitelistStr, blacklistStr);
 
-        sender.sendMessage("§a✅ §fКлюч §e" + keyName + "§f изменён в БД.");
-        sender.sendMessage("§8┃ §7Новый код: §f" + newCode);
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.modify_success", "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>modified in database.</white>").replace("{name}", keyName)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("{code}", newCode)));
         if (maxAttempts > 0) {
-            sender.sendMessage("§8┃ §7Макс. использований: §f" + maxAttempts);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_max_attempts", "<gray>Max attempts:</gray> <white>{max}</white>").replace("{max}", String.valueOf(maxAttempts))));
         }
         if (expiresAt > 0) {
             String dateStr = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
                     .format(new java.util.Date(expiresAt));
-            sender.sendMessage("§8┃ §7Истекает: §f" + dateStr);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_at", "<gray>Expires at:</gray> <white>{date}</white>").replace("{date}", dateStr)));
         }
         if (!whitelistStr.isEmpty()) {
-            sender.sendMessage("§8┃ §7Whitelist: §f" + whitelistStr);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("{players}", whitelistStr)));
         }
         if (!blacklistStr.isEmpty()) {
-            sender.sendMessage("§8┃ §7Blacklist: §f" + blacklistStr);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("{players}", blacklistStr)));
         }
         if (!commandStr.isEmpty()) {
-            sender.sendMessage("§8┃ §7Command: §f" + commandStr);
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("{commands}", commandStr)));
         }
     }
 

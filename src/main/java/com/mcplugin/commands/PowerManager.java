@@ -90,13 +90,13 @@ public class PowerManager {
         // ActionBar
         actionbarEnabled = cfg.getBoolean("power.actionbar.enabled", true);
         actionbarFormat = cfg.getString("power.actionbar.format",
-                "<red>⚡</red> <white>Сервер {action} через</white> <yellow>{seconds}</yellow> <white>сек</white>");
+                "<red>⚡</red> <white>Server {action} in</white> <yellow>{seconds}</yellow> <white>seconds</white>");
 
         // BossBar
         bossbarEnabled = cfg.getBoolean("power.bossbar.enabled", true);
         bossbarColor = cfg.getString("power.bossbar.color", "RED");
         bossbarStyle = cfg.getString("power.bossbar.style", "SOLID");
-        bossbarText = cfg.getString("power.bossbar.text", "<red>⚡ Сервер {action} через</red> <yellow>{seconds}</yellow> <red>сек</red>");
+        bossbarText = cfg.getString("power.bossbar.text", "<red>⚡ Server {action} in</red> <yellow>{seconds}</yellow> <red>sec</red>");
     }
 
     public int getRequestTimeout() {
