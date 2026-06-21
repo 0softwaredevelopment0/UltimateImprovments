@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-25%2B-orange)](https://www.oracle.com/java/)
-[![Paper](https://img.shields.io/badge/Paper-1.21.4%2B-green)](https://papermc.io/)
+[![Paper](https://img.shields.io/badge/Paper-26.2%2B-green)](https://papermc.io/)
 
 </div>
 
