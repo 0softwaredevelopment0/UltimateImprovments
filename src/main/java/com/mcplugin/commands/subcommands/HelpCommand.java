@@ -15,7 +15,7 @@ public final class HelpCommand {
         sender.sendMessage("§e/mp help");
         sender.sendMessage(" §7└ Список команд");
         sender.sendMessage("");
-        sender.sendMessage("§e/mp checkver §7(или §e/mp checkupdates§7)");
+        sender.sendMessage("§e/mp checkver");
         sender.sendMessage(" §7└ Проверить наличие обновлений плагина");
         sender.sendMessage("§e/mp updatejar");
         sender.sendMessage(" §7└ Скачать и установить обновление");

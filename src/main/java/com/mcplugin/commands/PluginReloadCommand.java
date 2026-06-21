@@ -77,7 +77,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
             case "modules" -> ModulesSubcommand.execute(sender, args);
             case "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome" -> HomeCommand.dispatch(sender, args);
-            case "checkver", "checkupdates" -> UpdateSubcommand.checkOnly(sender);
+            case "checkver" -> UpdateSubcommand.checkOnly(sender);
             case "updatejar" -> UpdateSubcommand.downloadAndReplace(sender);
             case "vanish" -> MiscSubcommand.vanish(sender, args);
             case "notes" -> MiscSubcommand.notes(sender);
@@ -168,7 +168,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(List.of("help", "checkver", "checkupdates", "updatejar",
+            completions.addAll(List.of("help", "checkver", "updatejar",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
                     "auth", "chgdim", "chgdim_teleport", "chgdim_return", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "vote",
