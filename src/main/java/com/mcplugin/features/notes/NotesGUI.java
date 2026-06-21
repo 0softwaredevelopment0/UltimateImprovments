@@ -1,8 +1,11 @@
 package com.mcplugin.features.notes;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundOpenBookPacket;
+import net.minecraft.server.network.Filterable;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.component.WritableBookContent;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -92,31 +95,39 @@ public class NotesGUI {
 
     // =========================
     // OPEN BOOK EDITOR — через ClientboundOpenBookPacket (1.21.4+)
+    //
+    // ⚠ В Paper 1.21.x установка страниц через BookMeta.setPages() на WRITABLE_BOOK
+    //    может привести к открытию книги как read-only (completed book).
+    //    Используем NBT напрямую, чтобы обойти это поведение.
     // =========================
     public static void openBookEditor(Player player, int noteNumber) {
         UUID uuid = player.getUniqueId();
         editingSlots.put(uuid, noteNumber);
 
         ItemStack book = new ItemStack(Material.WRITABLE_BOOK);
-        BookMeta meta = (BookMeta) book.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName("§fЗаметка #" + noteNumber);
 
-            String content = NotesDatabase.loadNote(uuid, noteNumber);
+        // ⚡ В Paper 1.21.4+ BookMeta.setPages() на WRITABLE_BOOK вызывает read-only баг.
+        // Используем Data Component API напрямую через NMS: WritableBookContent + DataComponents.
+        String content = NotesDatabase.loadNote(uuid, noteNumber);
+        try {
+            net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(book);
+
+            List<Filterable<String>> pagesList = new ArrayList<>();
             if (content != null && !content.isEmpty()) {
-                try {
-                    meta.setPages(splitPages(content));
-                } catch (Exception ignored) {}
+                for (String page : splitPages(content)) {
+                    pagesList.add(Filterable.passThrough(page));
+                }
             } else {
-                // New/empty note: add one blank page so the book is editable.
-                // Without at least one page, the WRITABLE_BOOK may open read-only
-                // or not accept text input.
-                try {
-                    meta.setPages(List.of(""));
-                } catch (Exception ignored) {}
+                // Пустая заметка: одна пустая страница, чтобы книга открылась для редактирования
+                pagesList.add(Filterable.passThrough(""));
             }
 
-            book.setItemMeta(meta);
+            WritableBookContent bookContent = new WritableBookContent(pagesList);
+            nms.set(DataComponents.WRITABLE_BOOK_CONTENT, bookContent);
+            book = CraftItemStack.asBukkitCopy(nms);
+        } catch (Exception e) {
+            // Fallback: если Data Component API не сработал — открываем пустую книгу
+            // (контент сохранится в БД при Done и будет виден в главном GUI через lore)
         }
 
         // В Paper 26.x (1.21.4+):

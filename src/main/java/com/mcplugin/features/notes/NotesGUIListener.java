@@ -42,13 +42,19 @@ public class NotesGUIListener implements Listener {
         // Восстанавливаем предмет, который был в руке до открытия редактора книги
         NotesGUI.restorePending(player, uuid);
 
-        // Сохраняем контент
-        try {
-            BookMeta newMeta = event.getNewBookMeta();
-            String content = NotesGUI.joinPages(newMeta.getPages());
-            NotesDatabase.saveNote(uuid, noteNumber, content);
-        } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Notes] Failed to save note: " + e.getMessage());
+        // 🕐 Кулдаун сохранения 5 секунд — предотвращает спам-сохранения
+        if (!NotesDatabase.checkSaveCooldown(uuid)) {
+            // Слишком часто — не сохраняем, но GUI всё равно открываем
+            Main.getInstance().getLogger().fine("[Notes] Save skipped (cooldown) for " + player.getName() + " slot #" + noteNumber);
+        } else {
+            // Сохраняем контент
+            try {
+                BookMeta newMeta = event.getNewBookMeta();
+                String content = NotesGUI.joinPages(newMeta.getPages());
+                NotesDatabase.saveNote(uuid, noteNumber, content);
+            } catch (Exception e) {
+                Main.getInstance().getLogger().warning("[Notes] Failed to save note: " + e.getMessage());
+            }
         }
 
         // Возвращаем GUI
@@ -109,7 +115,8 @@ public class NotesGUIListener implements Listener {
 
         // Escape из книги: игрок закрыл книгу без сохранения
         if (NotesGUI.editingSlots.containsKey(uuid)) {
-            // Сначала чистим note-предметы из инвентаря — книга могла остаться в руке
+            // 🛡 ANTI-DUP: восстанавливаем старый предмет в руку и чистим заметки из инвентаря
+            NotesGUI.restorePending(player, uuid);
             removeNoteItems(player);
             NotesGUI.editingSlots.remove(uuid);
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
@@ -140,10 +147,26 @@ public class NotesGUIListener implements Listener {
 
     /** Remove all WRITABLE_BOOK items that look like note books from a player's inventory. */
     private void removeNoteItems(Player player) {
+        // Main inventory (36 slots)
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack item = player.getInventory().getItem(i);
             if (isNoteBook(item)) {
                 player.getInventory().setItem(i, null);
+            }
+        }
+        // Equipment slots: main hand + off hand
+        if (isNoteBook(player.getInventory().getItemInMainHand())) {
+            player.getInventory().setItemInMainHand(null);
+        }
+        if (isNoteBook(player.getInventory().getItemInOffHand())) {
+            player.getInventory().setItemInOffHand(null);
+        }
+        // Armor slots: check each individually (36= boots, 37= leggings, 38= chestplate, 39= helmet)
+        // Use setItem directly on armor slots if a note book somehow ended up there
+        for (int slot = 36; slot < 40; slot++) {
+            ItemStack armor = player.getInventory().getItem(slot);
+            if (armor != null && isNoteBook(armor)) {
+                player.getInventory().setItem(slot, null);
             }
         }
         // Also clear cursor

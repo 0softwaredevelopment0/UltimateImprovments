@@ -264,8 +264,18 @@ public class AuthAuthenticator {
         timeoutManager.cancelLoginTimeout(uuid);
         playerState.resetWrongAttempts(uuid);
 
+        // =========================
+        // 🛡 ANTI-DUP: очищаем ДО closeInventory
+        // Paper может положить предмет из anvil на курсор при закрытии,
+        // и курсорный предмет упадёт в инвентарь при closeInventory().
+        // Порядок: очистить курсор → убрать auth-предметы → закрыть → очистить ещё раз
+        // =========================
+        player.setItemOnCursor(null);
         AuthGUITracker.removeAuthItemsFromPlayer(player);
         player.closeInventory();
+        // После closeInventory курсорные предметы могли упасть в инвентарь — чистим снова
+        player.setItemOnCursor(null);
+        AuthGUITracker.removeAuthItemsFromPlayer(player);
 
         unfreezePlayer(player);
 
@@ -307,8 +317,12 @@ public class AuthAuthenticator {
                     playerState.setAuthenticated(uuid);
                     savePlayerIp(player);
 
+                    // 🛡 ANTI-DUP: очищаем ДО и ПОСЛЕ closeInventory
+                    player.setItemOnCursor(null);
                     AuthGUITracker.removeAuthItemsFromPlayer(player);
                     player.closeInventory();
+                    player.setItemOnCursor(null);
+                    AuthGUITracker.removeAuthItemsFromPlayer(player);
                     unfreezePlayer(player);
 
                     player.sendMessage("");

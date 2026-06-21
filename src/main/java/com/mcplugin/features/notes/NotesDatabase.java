@@ -5,7 +5,9 @@ import com.mcplugin.Main;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Работа с таблицей notes в SQLite.
@@ -14,6 +16,27 @@ import java.util.UUID;
 public class NotesDatabase {
 
     private NotesDatabase() {}
+
+    // =========================
+    // SAVE COOLDOWN (5 seconds between saves)
+    // =========================
+    private static final long SAVE_COOLDOWN_MS = 5000;
+    private static final Map<UUID, Long> lastSaveTimes = new ConcurrentHashMap<>();
+
+    /**
+     * Проверяет, прошло ли 5 секунд с последнего сохранения для игрока.
+     * Если прошло — обновляет время и возвращает true (можно сохранять).
+     * Если нет — возвращает false (сохранение отклонено).
+     */
+    static boolean checkSaveCooldown(UUID playerUuid) {
+        long now = System.currentTimeMillis();
+        Long last = lastSaveTimes.get(playerUuid);
+        if (last != null && (now - last) < SAVE_COOLDOWN_MS) {
+            return false;
+        }
+        lastSaveTimes.put(playerUuid, now);
+        return true;
+    }
 
     // =========================
     // ENSURE TABLE
@@ -32,6 +55,13 @@ public class NotesDatabase {
         } catch (Exception e) {
             Main.getInstance().getLogger().severe("[Notes] DB init failed: " + e.getMessage());
         }
+    }
+
+    // =========================
+    // RESET SAVE COOLDOWN (for player quit)
+    // =========================
+    static void resetCooldown(UUID playerUuid) {
+        lastSaveTimes.remove(playerUuid);
     }
 
     // =========================
