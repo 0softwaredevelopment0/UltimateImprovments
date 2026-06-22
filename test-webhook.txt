@@ -1,1 +1,0 @@
-Test commit to verify Discord webhook — удали этот файл если видишь сообщение в Discord.
