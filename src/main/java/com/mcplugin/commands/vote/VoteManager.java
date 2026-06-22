@@ -128,7 +128,7 @@ public class VoteManager {
     public static boolean parseCreate(Player creator, String[] args, int startIndex) {
         if (args.length < startIndex + 3) {
             creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.usage_create",
-                    "<red>❌ Usage:</red> <white>/mp vote create <name> <title> <description> -answer_<N>:<title,desc> ... -time:<N><s|m|h|d></white>")));
+                    "<red>❌ Usage:</red> <white>/mp vote create [name] [title] [description] -answer_[N]:[title,desc] ... -time:[N][s|m|h|d]</white>")));
             return true;
         }
 
