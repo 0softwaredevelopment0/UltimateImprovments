@@ -165,7 +165,7 @@ public final class RedstoneGuard {
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "<gray>[<yellow>Server</yellow> <dark_gray>/</dark_gray> <yellow>Warning</yellow>] <white>MSPT </white><red>" + mspt
+                "<gray>[<white>Server</white> <dark_gray>/</dark_gray> <yellow>Warning</yellow>] <white>MSPT </white><red>" + mspt
                         + " </red><gray>→ </gray><red>Redstone overload </red><gray>(global </gray><yellow>" + globalCount
                         + "</yellow><gray>/</gray><yellow>" + globalIterationsLimit
                         + "</yellow><gray>, per-chunk limit </gray><yellow>" + chunkIterationsLimit + "</yellow><gray>)</gray>";
@@ -182,7 +182,7 @@ public final class RedstoneGuard {
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "<gray>[<green>Server</green> <dark_gray>/</dark_gray> <green>Info</green>] <white>MSPT </white><red>" + mspt
+                "<gray>[<white>Server</white> <dark_gray>/</dark_gray> <white>Info</white>] <white>MSPT </white><red>" + mspt
                         + " </red><gray>→ </gray><green>Redstone overload ended </green><gray>(iterations </gray><yellow>" + globalCount + "</yellow><gray>)</gray>";
 
         ServerOverloadNotify.broadcast(playerMsg);
@@ -199,7 +199,7 @@ public final class RedstoneGuard {
         plugin.getLogger().warning(consoleMsg);
 
         String playerMsg =
-                "<gray>[<yellow>Server</yellow> <dark_gray>/</dark_gray> <yellow>Warning</yellow>] <white>MSPT </white><red>" + mspt
+                "<gray>[<white>Server</white> <dark_gray>/</dark_gray> <yellow>Warning</yellow>] <white>MSPT </white><red>" + mspt
                         + " </red><gray>→ </gray><red>Blocked chunk </red><yellow>" + key
                         + " </yellow><gray>for </gray><yellow>" + blockDurationSeconds + "s"
                         + " </yellow><gray>(iterations </gray><yellow>" + iterations + "</yellow><gray>)</gray>";

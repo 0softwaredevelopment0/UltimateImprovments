@@ -154,6 +154,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 AskCordsManager.execute(player, args);
                 yield true;
             }
+            case "bc" -> BroadcastSubcommand.execute(sender, args);
             case "askcords_accept" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 if (args.length < 2) yield true;
@@ -201,7 +202,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     "auth",                    "chgdim", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
-                    "askcords", "forcesuicide"));
+                    "askcords", "forcesuicide", "bc"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
             completions.add("create");
             completions.add("delete");
@@ -226,6 +227,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
         } else if (args.length == 2 && args[0].equalsIgnoreCase("forcesuicide")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("bc")) {
+            completions.addAll(BroadcastSubcommand.tabComplete(args));
+        } else if (args.length >= 3 && args[0].equalsIgnoreCase("bc")) {
+            completions.addAll(BroadcastSubcommand.tabComplete(args));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("auth")) {
             completions.addAll(List.of("forcelogin", "resetauth", "chgpass", "delsession", "logout"));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("auth")

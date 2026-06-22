@@ -61,6 +61,7 @@ permissions:
       mcplugin.command.setrad: true
       mcplugin.command.vanish: true
       mcplugin.command.notes: true
+      mcplugin.command.broadcast: true
 
   mcplugin:
     description: Base permission for MC-Plugin commands (/mp)
@@ -260,6 +261,10 @@ permissions:
 
   mcplugin.command.forcesuicide:
     description: Allows force-suiciding other players (/mp forcesuicide <nick>)
+    default: op
+
+  mcplugin.command.broadcast:
+    description: Allows broadcasting messages (/mp bc <message>)
     default: op
 
   mcplugin.command.askcords:

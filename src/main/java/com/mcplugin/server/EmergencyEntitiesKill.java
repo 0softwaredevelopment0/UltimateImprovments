@@ -87,7 +87,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
                     );
                 }
                 ServerOverloadNotify.broadcast(
-                        "§7[§6Server §8/ §6Caution§7] §fMSPT §c" + String.format("%.1f", mspt)
+                        "§7[§fServer §8/ §6Caution§7] §fMSPT §c" + String.format("%.1f", mspt)
                                 + " §7→ §cУдалено §e" + removed + " §fплазменных снарядов"
                 );
             }
@@ -103,7 +103,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
                 );
             }
             ServerOverloadNotify.broadcast(
-                    "§7[§cServer §8/ §cCritical§7] §fMSPT §c" + String.format("%.1f", mspt)
+                    "§7[§fServer §8/ §4Critical§7] §fMSPT §c" + String.format("%.1f", mspt)
                             + " §fСущности §c" + totalEntities
                             + " §7→ §cМгновенное удаление!"
             );
@@ -202,7 +202,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         }
 
         ServerOverloadNotify.broadcast(
-                "§7[§eServer §8/ §eWarning§7] §fУдалено §e" + removed + " §f" + topType
+                "§7[§fServer §8/ §eWarning§7] §fУдалено §e" + removed + " §f" + topType
         );
     }
 }
