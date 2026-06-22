@@ -45,3 +45,9 @@ nul
 
 ### Extra ignores ###
 .claude/
+
+### Codebuff ###
+.codebuff-memory.db
+buffy-guide.md
+codebuff-memory.js
+node_modules/
