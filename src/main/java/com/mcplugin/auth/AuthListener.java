@@ -199,6 +199,13 @@ public class AuthListener implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (event.getView().getMenuType() != MenuType.ANVIL) return;
 
+        UUID uuid = player.getUniqueId();
+
+        // 🛡 Только для наших auth-GUI, не для ванильной наковальни
+        if (!AuthGUITracker.isChangePasswordPlayer(uuid) &&
+            !AuthGUITracker.isLogoutPlayer(uuid) &&
+            !needsAuth(player)) return;
+
         // Блокируем drag в любые слоты anvil (raw slots 0-2)
         for (int slot : event.getRawSlots()) {
             if (slot < 3) {
@@ -218,6 +225,14 @@ public class AuthListener implements Listener {
         if (!isAuthGUI(event)) return;
 
         UUID uuid = player.getUniqueId();
+
+        // 🛡 Если игрок не в auth-состоянии — не трогаем!
+        // isAuthGUI() проверяет только MenuType.ANVIL, но ванильная наковальня
+        // тоже имеет MenuType.ANVIL. Без этой проверки мы будем чистить курсор
+        // и в обычной наковальне.
+        if (!AuthGUITracker.isChangePasswordPlayer(uuid) &&
+            !AuthGUITracker.isLogoutPlayer(uuid) &&
+            !needsAuth(player)) return;
 
         // ⚡ Очищаем курсор ДО обработки — Paper может положить предмет на курсор
         // ДО того, как событие будет отменено (особенно для result slot anvil)
@@ -435,6 +450,11 @@ public class AuthListener implements Listener {
         if (!isAuthGUI(event)) return;
 
         UUID uuid = player.getUniqueId();
+
+        // 🛡 Не трогаем закрытие ванильной наковальни
+        if (!AuthGUITracker.isChangePasswordPlayer(uuid) &&
+            !AuthGUITracker.isLogoutPlayer(uuid) &&
+            !needsAuth(player)) return;
 
         // Skip if transitioning between GUIs
         if (AuthGUITracker.isTransitioning(uuid)) {
