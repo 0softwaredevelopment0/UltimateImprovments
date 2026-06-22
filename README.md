@@ -146,3 +146,6 @@ See **[INFO.md](INFO.md)** for the full feature breakdown with all commands, per
 ## 👤 Author
 
 **rizer001** — [GitHub](https://github.com/Minecraft337) — Discord: `@error404_user.not.found`
+
+---
+*Last tested: June 22, 2026 — webhook verification*
