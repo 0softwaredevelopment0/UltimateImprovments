@@ -92,11 +92,12 @@ public class CableNetwork {
 
     // =========================
     // SAVE NODE (synchronized на уровне класса для thread safety)
-    // Connection — singleton из DatabaseManager, НЕ закрываем его!
+    // Используем try-with-resources для PreparedStatement, не закрываем Connection.
     // =========================
     public static synchronized void saveNode(CableNode node) {
 
         Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
         Location loc = node.getLocation();
 
         try {
@@ -163,11 +164,12 @@ public class CableNetwork {
 
     // =========================
     // DELETE NODE
-    // Connection — singleton, НЕ закрываем его!
+    // Connection — singleton, НЕ закрываем его (try-with-resources только для Statement).
     // =========================
     private static void deleteNode(Location loc) {
 
         Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
 
         try (PreparedStatement ps = con.prepareStatement("""
                 DELETE FROM cables
@@ -188,11 +190,12 @@ public class CableNetwork {
 
     // =========================
     // LOAD
-    // Connection — singleton, НЕ закрываем его!
+    // Connection — singleton, НЕ закрываем его (try-with-resources только для Statement).
     // =========================
     private static void load() {
 
         Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
 
         try {
             // Загружаем узлы

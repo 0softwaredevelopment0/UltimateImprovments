@@ -969,21 +969,27 @@ public class IntegrityManager extends BukkitRunnable {
     public static boolean hasIntegrity(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
         // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
-        // getItemMeta() always returns non-null for non-AIR items.
-        var pdc = item.getItemMeta().getPersistentDataContainer();
+        // getItemMeta() may return null for some item types.
+        var meta = item.getItemMeta();
+        if (meta == null) return false;
+        var pdc = meta.getPersistentDataContainer();
         return pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)
                 && pdc.has(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE);
     }
 
     public static double getCurrentIntegrity(ItemStack item) {
         if (!hasIntegrity(item)) return -1;
-        return item.getItemMeta().getPersistentDataContainer()
+        var meta = item.getItemMeta();
+        if (meta == null) return -1;
+        return meta.getPersistentDataContainer()
                 .getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
     }
 
     public static double getMaxIntegrity(ItemStack item) {
         if (!hasIntegrity(item)) return -1;
-        return item.getItemMeta().getPersistentDataContainer()
+        var meta = item.getItemMeta();
+        if (meta == null) return -1;
+        return meta.getPersistentDataContainer()
                 .getOrDefault(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 0.0);
     }
 

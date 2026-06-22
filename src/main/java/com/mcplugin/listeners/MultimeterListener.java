@@ -112,8 +112,11 @@ public class MultimeterListener implements Listener {
 
         if (item == null || item.getType() == Material.AIR) return false;
 
+        var meta = item.getItemMeta();
+        if (meta == null) return false;
+
         PersistentDataContainer data =
-                item.getItemMeta().getPersistentDataContainer();
+                meta.getPersistentDataContainer();
 
         Byte val = data.get(KEY, PersistentDataType.BYTE);
 

@@ -1,5 +1,6 @@
 package com.mcplugin.database;
 
+import com.mcplugin.Main;
 import java.sql.Connection;
 import java.sql.Statement;
 
@@ -335,7 +336,7 @@ public class DatabaseInit {
         """);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[DB] Table initialization failed", e);
         }
     }
 }

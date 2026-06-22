@@ -40,8 +40,7 @@ public final class FileLogger {
                     logger.info("[" + description + "] Created directory: " + parent.getPath());
                 }
             } catch (Exception e) {
-                logger.severe("[" + description + "] Failed to create directory: " + parent.getPath());
-                e.printStackTrace();
+                logger.log(java.util.logging.Level.SEVERE, "[" + description + "] Failed to create directory: " + parent.getPath(), e);
             }
         }
 
@@ -53,9 +52,7 @@ public final class FileLogger {
                 logger.info("[" + description + "] File exists: " + file.getName());
             }
         } catch (IOException e) {
-            logger.severe("[" + description + "] ERROR: Failed to create file: " + file.getAbsolutePath());
-            logger.severe("[" + description + "] Exception: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
+            logger.log(java.util.logging.Level.SEVERE, "[" + description + "] ERROR: Failed to create file: " + file.getAbsolutePath(), e);
         }
     }
 
@@ -88,9 +85,7 @@ public final class FileLogger {
                 logger.severe("[" + description + "] ERROR: Failed to create directory: " + dir.getPath());
             }
         } catch (Exception e) {
-            logger.severe("[" + description + "] ERROR: Failed to create directory: " + dir.getPath());
-            logger.severe("[" + description + "] Exception: " + e.getClass().getName() + ": " + e.getMessage());
-            e.printStackTrace();
+            logger.log(java.util.logging.Level.SEVERE, "[" + description + "] ERROR: Failed to create directory: " + dir.getPath(), e);
         }
     }
 

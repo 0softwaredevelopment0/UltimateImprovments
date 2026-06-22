@@ -27,12 +27,8 @@ public class DBBootstrap {
 
         } catch (Exception e) {
 
-            plugin.getLogger().severe(
-                    "[DB] SQLite initialization failed: "
-                            + e.getMessage()
-            );
-
-            e.printStackTrace();
+            plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                    "[DB] SQLite initialization failed", e);
         }
     }
 
@@ -51,12 +47,8 @@ public class DBBootstrap {
 
         } catch (Exception e) {
 
-            plugin.getLogger().severe(
-                    "[DB] SQLite shutdown failed: "
-                            + e.getMessage()
-            );
-
-            e.printStackTrace();
+            plugin.getLogger().log(java.util.logging.Level.WARNING,
+                    "[DB] SQLite shutdown failed", e);
         }
     }
 }

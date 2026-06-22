@@ -1,5 +1,6 @@
 package com.mcplugin.listeners;
 
+import com.mcplugin.Main;
 import io.netty.buffer.Unpooled;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -45,13 +46,8 @@ public class ServerBrandListener implements Listener {
                     .send(packet);
 
         } catch (Exception e) {
-
-            Bukkit.getLogger().warning(
-                    "[MCPLUGIN] Failed to spoof brand for "
-                            + player.getName()
-            );
-
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.WARNING,
+                    "[MCPLUGIN] Failed to spoof brand for " + player.getName(), e);
         }
     }
 }

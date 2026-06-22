@@ -77,7 +77,7 @@ public class AuthDatabase {
 
         } catch (Exception e) {
             Main.getInstance().getLogger().severe("[Auth] DB init failed: " + e.getMessage());
-            e.printStackTrace();
+            Main.getInstance().getLogger().severe("[Auth] DB init stack: " + java.util.Arrays.toString(e.getStackTrace()));
             tableReady = false;
         }
     }
@@ -202,7 +202,7 @@ public class AuthDatabase {
 
         } catch (Exception e) {
             Main.getInstance().getLogger().severe("[Auth] Register failed: " + e.getMessage());
-            e.printStackTrace();
+            Main.getInstance().getLogger().severe("[Auth] Register stack: " + java.util.Arrays.toString(e.getStackTrace()));
         }
     }
 

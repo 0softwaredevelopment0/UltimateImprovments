@@ -108,8 +108,7 @@ public class AuthAuthenticator {
                         AuthGUI.openRegister(player);
                     }
                 } catch (Exception e) {
-                    Main.getInstance().getLogger().severe("[Auth] Failed to open auth GUI for " + player.getName() + ": " + e.getMessage());
-                    e.printStackTrace();
+                    Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Failed to open auth GUI for " + player.getName(), e);
                     player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.auth_window_error", "<red>❌ Error opening authorization window! Report to an administrator.</red>")));
                 }
             }
@@ -202,8 +201,7 @@ public class AuthAuthenticator {
                         player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.auth_check_error", "<red>❌ Error checking password! Please try again.</red>")));
                     }
                 });
-                Main.getInstance().getLogger().severe("[Auth] Async auth error: " + e.getMessage());
-                e.printStackTrace();
+                Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Async auth error", e);
             }
         });
     }
@@ -338,7 +336,7 @@ public class AuthAuthenticator {
                         player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.change_password_error", "<red>❌ Password change error! Please try again.</red>")));
                     }
                 });
-                Main.getInstance().getLogger().severe("[Auth] Async change password error: " + e.getMessage());
+                Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Async change password error", e);
             }
         });
     }
@@ -380,7 +378,7 @@ public class AuthAuthenticator {
                     Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " logged out manually.");
                 });
             } catch (Exception e) {
-                Main.getInstance().getLogger().severe("[Auth] Async logout error: " + e.getMessage());
+                Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Async logout error", e);
             }
         });
 

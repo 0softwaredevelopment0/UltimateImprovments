@@ -39,11 +39,8 @@ public class DatabaseManager {
 
         } catch (Exception e) {
 
-            Main.getInstance().getLogger().severe(
-                    "[Database] Connection failed: " + e.getMessage()
-            );
-
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE,
+                    "[Database] Connection failed", e);
         }
     }
 
@@ -62,7 +59,7 @@ public class DatabaseManager {
             st.execute("PRAGMA cache_size=-10000;");
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.WARNING, "[Database] Failed to apply pragmas", e);
         }
     }
 
@@ -78,7 +75,7 @@ public class DatabaseManager {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.WARNING, "[Database] getConnection error", e);
         }
 
         return connection;
@@ -112,7 +109,7 @@ public class DatabaseManager {
             Main.getInstance().getLogger().fine("[Database] SQLite closed.");
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.WARNING, "[Database] close error", e);
         }
     }
 

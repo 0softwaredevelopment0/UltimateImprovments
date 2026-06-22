@@ -353,10 +353,8 @@ public class StructureTemplate {
             templateErrors.remove(name); // clear any previous error on success
         } catch (Exception e) {
             String err = e.getMessage();
-            Main.getInstance().getLogger().severe(
-                    "[Structure] Failed to load template '" + name + "': " + err
-            );
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE,
+                    "[Structure] Failed to load template '" + name + "'", e);
             templateErrors.put(name, err != null ? err : e.getClass().getSimpleName());
         }
     }

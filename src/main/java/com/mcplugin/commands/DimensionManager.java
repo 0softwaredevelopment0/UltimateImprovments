@@ -1,5 +1,6 @@
 package com.mcplugin.commands;
 
+import com.mcplugin.Main;
 import com.mcplugin.database.DatabaseManager;
 
 import org.bukkit.Location;
@@ -37,7 +38,7 @@ public class DimensionManager {
             ps.executeUpdate();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[DimManager] Save return location error", e);
         }
     }
 
@@ -62,7 +63,7 @@ public class DimensionManager {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[DimManager] Has return location error", e);
         }
 
         return false;
@@ -99,7 +100,7 @@ public class DimensionManager {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[DimManager] Get return location error", e);
         }
 
         return null;
@@ -120,7 +121,7 @@ public class DimensionManager {
             ps.executeUpdate();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[DimManager] Remove return location error", e);
         }
     }
 }
