@@ -82,12 +82,12 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
             if (removed > 0) {
                 if (logEnabled) {
                     Main.getInstance().getLogger().warning(
-                            "[SERVER | CAUTION] MSPT=" + mspt
+                            "[Server/Caution] MSPT=" + mspt
                                     + " -> PLASMA REMOVED: " + removed
                     );
                 }
                 ServerOverloadNotify.broadcast(
-                        "§7[§fSERVER §8| §6CAUTION§7] §fMSPT §c" + String.format("%.1f", mspt)
+                        "§7[§6Server §8/ §6Caution§7] §fMSPT §c" + String.format("%.1f", mspt)
                                 + " §7→ §cУдалено §e" + removed + " §fплазменных снарядов"
                 );
             }
@@ -99,11 +99,11 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         if (mspt >= instantKillMspt && overloadByEntities) {
             if (logEnabled) {
                 Main.getInstance().getLogger().severe(
-                        "[SERVER | CRITICAL] MSPT=" + mspt + " ENTITIES=" + totalEntities
+                        "[Server/Critical] MSPT=" + mspt + " ENTITIES=" + totalEntities
                 );
             }
             ServerOverloadNotify.broadcast(
-                    "§7[§fSERVER §8| §cCRITICAL§7] §fMSPT §c" + String.format("%.1f", mspt)
+                    "§7[§cServer §8/ §cCritical§7] §fMSPT §c" + String.format("%.1f", mspt)
                             + " §fСущности §c" + totalEntities
                             + " §7→ §cМгновенное удаление!"
             );
@@ -196,13 +196,13 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
 
         if (logEnabled) {
             Main.getInstance().getLogger().warning(
-                    "[SERVER | WARNING] Removed " + removed + " " + topType
+                    "[Server/Warning] Removed " + removed + " " + topType
                             + " (total entities: " + counts.values().stream().mapToInt(Integer::intValue).sum() + ")"
             );
         }
 
         ServerOverloadNotify.broadcast(
-                "§7[§fSERVER §8| §eWARNING§7] §fУдалено §e" + removed + " §f" + topType
+                "§7[§eServer §8/ §eWarning§7] §fУдалено §e" + removed + " §f" + topType
         );
     }
 }

@@ -53,9 +53,9 @@ public class ServerOverloadWarning extends BukkitRunnable {
                 warnedCritical = true;
                 Main.getInstance()
                         .getLogger()
-                        .severe("[SERVER | CRITICAL] MSPT=" + mspt);
+                        .severe("[Server/Critical] MSPT=" + mspt);
                 ServerOverloadNotify.broadcast(
-                        "<gray>[<white>SERVER</white> <dark_gray>|</dark_gray> <red>CRITICAL</red>] <white>MSPT </white><red>" + String.format("%.2f", mspt) +
+                        "<gray>[<red>Server</red> <dark_gray>/</dark_gray> <red>Critical</red>] <white>MSPT </white><red>" + String.format("%.2f", mspt) +
                                 " </red><gray>→ </gray><red>Критическая нагрузка на сервер!</red>"
                 );
             }
@@ -68,9 +68,9 @@ public class ServerOverloadWarning extends BukkitRunnable {
                 warnedHigh = true;
                 Main.getInstance()
                         .getLogger()
-                        .warning("[SERVER | WARNING] MSPT=" + mspt);
+                        .warning("[Server/Warning] MSPT=" + mspt);
                 ServerOverloadNotify.broadcast(
-                        "<gray>[<white>SERVER</white> <dark_gray>|</dark_gray> <yellow>WARNING</yellow>] <white>MSPT </white><red>" + String.format("%.2f", mspt) +
+                        "<gray>[<yellow>Server</yellow> <dark_gray>/</dark_gray> <yellow>Warning</yellow>] <white>MSPT </white><red>" + String.format("%.2f", mspt) +
                                 " </red><gray>→ </gray><yellow>Высокая нагрузка на сервер!</yellow>"
                 );
             }
