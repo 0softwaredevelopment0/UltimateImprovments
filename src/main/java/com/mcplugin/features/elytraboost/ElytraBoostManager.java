@@ -2,6 +2,7 @@ package com.mcplugin.features.elytraboost;
 
 import com.mcplugin.Main;
 
+import org.bukkit.Color;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -138,7 +139,7 @@ public class ElytraBoostManager implements Listener {
         // Эффекты
         var loc = player.getLocation();
         player.getWorld().spawnParticle(Particle.FIREWORK, loc, 40, 1.0, 1.0, 1.0, 0.1);
-        player.getWorld().spawnParticle(Particle.FLASH, loc, 1, 0, 0, 0, 0);
+        player.getWorld().spawnParticle(Particle.FLASH, loc, 1, 0, 0, 0, 0, Color.WHITE);
         player.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, loc, 20, 0.5, 0.5, 0.5, 0);
         player.getWorld().playSound(loc, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1.2f, 0.8f);
         player.getWorld().playSound(loc, Sound.ENTITY_FIREWORK_ROCKET_TWINKLE, 1.0f, 1.5f);
