@@ -4,10 +4,9 @@ import com.mcplugin.Main;
 import com.mcplugin.config.MessagesManager;
 import com.mcplugin.database.DatabaseManager;
 import com.mcplugin.util.MessageUtil;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -294,14 +293,14 @@ public class VoteManager {
         }
 
         if (answerIndex < 0) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.answer_not_found",
-                    "<red>❌ Invalid answer option! Available options:</red>")));
-            StringBuilder sb = new StringBuilder();
+            StringBuilder options = new StringBuilder();
             for (int i = 0; i < vote.answers.size(); i++) {
-                if (i > 0) sb.append("§7, ");
-                sb.append("§e").append(i).append(": §f").append(vote.answers.get(i).title);
+                if (i > 0) options.append("<gray>, </gray>");
+                options.append("<yellow>").append(i).append(":</yellow> <white>").append(vote.answers.get(i).title).append("</white>");
             }
-            player.sendMessage(sb.toString());
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.answer_not_found",
+                    "<red>❌ Invalid answer option! Available options:</red>")
+                    + "\n" + options));
             return true;
         }
 
@@ -336,12 +335,12 @@ public class VoteManager {
             return true;
         }
 
-        player.sendMessage("");
-        player.sendMessage(MessagesManager.getString("vote.results.header", "§6═══════════════════════════════════"));
-        player.sendMessage(MessagesManager.getString("vote.results.title", "§6  §e✦ {title}").replace("{title}", vote.title));
-        player.sendMessage(MessagesManager.getString("vote.results.header", "§6═══════════════════════════════════"));
-        player.sendMessage(MessagesManager.getString("vote.results.question", "§7┃ §f{question}").replace("{question}", vote.question));
-        player.sendMessage("");
+        player.sendMessage(MessageUtil.parse(""));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.header", "<gold>═══════════════════════════════════</gold>")));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.title", "<gold>  <yellow>✦ {title}</yellow></gold>").replace("{title}", vote.title)));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.header", "<gold>═══════════════════════════════════</gold>")));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.question", "<gray>┃ <white>{question}</white></gray>").replace("{question}", vote.question)));
+        player.sendMessage(MessageUtil.parse(""));
 
         // Vote counting
         Map<Integer, Integer> counts = new HashMap<>();
@@ -356,35 +355,35 @@ public class VoteManager {
             int pct = totalVotes > 0 ? (count * 100 / totalVotes) : 0;
             String bar = createProgressBar(pct, 20);
 
-            player.sendMessage(MessagesManager.getString("vote.results.answer_entry", "§7┃ §e{num}. §f{title}")
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.answer_entry", "<gray>┃ <yellow>{num}.</yellow> <white>{title}</white></gray>")
                     .replace("{num}", String.valueOf(i))
-                    .replace("{title}", a.title));
+                    .replace("{title}", a.title)));
             if (!a.description.isEmpty()) {
-                player.sendMessage(MessagesManager.getString("vote.results.answer_desc", "§7┃   §7{desc}")
-                        .replace("{desc}", a.description));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.answer_desc", "<gray>┃   <gray>{desc}</gray></gray>")
+                        .replace("{desc}", a.description)));
             }
-            player.sendMessage(MessagesManager.getString("vote.results.progress_bar", "§7┃   {bar} §e{count} §7({pct}%)")
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.progress_bar", "<gray>┃   {bar} <yellow>{count}</yellow> <gray>({pct}%)</gray></gray>")
                     .replace("{bar}", bar)
                     .replace("{count}", String.valueOf(count))
-                    .replace("{pct}", String.valueOf(pct)));
-            player.sendMessage("");
+                    .replace("{pct}", String.valueOf(pct))));
+            player.sendMessage(MessageUtil.parse(""));
         }
 
         String status;
         if (vote.ended) {
-            status = MessagesManager.getString("vote.results.status_ended", "§cEnded");
+            status = MessagesManager.getString("vote.results.status_ended", "<red>Ended</red>");
         } else if (System.currentTimeMillis() >= vote.expiresAt) {
-            status = MessagesManager.getString("vote.results.status_expiring", "§cExpiring...");
+            status = MessagesManager.getString("vote.results.status_expiring", "<red>Expiring...</red>");
         } else {
             long remaining = vote.expiresAt - System.currentTimeMillis();
-            status = MessagesManager.getString("vote.results.status_active", "§aTime left: §e{remaining}")
+            status = MessagesManager.getString("vote.results.status_active", "<green>Time left: <yellow>{remaining}</yellow></green>")
                     .replace("{remaining}", formatDuration(remaining));
         }
-        player.sendMessage(MessagesManager.getString("vote.results.total_votes", "§7┃ §7Total votes: §e{total}")
-                .replace("{total}", String.valueOf(totalVotes)));
-        player.sendMessage("§7┃ Status: " + status);
-        player.sendMessage(MessagesManager.getString("vote.results.header", "§6═══════════════════════════════════"));
-        player.sendMessage("");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.total_votes", "<gray>┃ <gray>Total votes:</gray> <yellow>{total}</yellow></gray>")
+                .replace("{total}", String.valueOf(totalVotes))));
+        player.sendMessage(MessageUtil.parse("<gray>┃ Status:</gray> " + status));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.results.header", "<gold>═══════════════════════════════════</gold>")));
+        player.sendMessage(MessageUtil.parse(""));
 
         return true;
     }
@@ -399,35 +398,35 @@ public class VoteManager {
             return true;
         }
 
-        player.sendMessage("");
-        player.sendMessage(MessagesManager.getString("vote.list.header", "§6═══════════════════════════════════"));
-        player.sendMessage(MessagesManager.getString("vote.list.title", "§6  ✦ §fVotes §7({count})")
-                .replace("{count}", String.valueOf(votes.size())));
-        player.sendMessage(MessagesManager.getString("vote.list.header", "§6═══════════════════════════════════"));
+        player.sendMessage(MessageUtil.parse(""));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.header", "<gold>═══════════════════════════════════</gold>")));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.title", "<gold>  ✦ <white>Votes</white> <gray>({count})</gray></gold>")
+                .replace("{count}", String.valueOf(votes.size()))));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.header", "<gold>═══════════════════════════════════</gold>")));
 
         for (Vote v : votes.values()) {
             String status;
             if (v.ended) {
-                status = MessagesManager.getString("vote.list.status_ended", "§c✗ Ended");
+                status = MessagesManager.getString("vote.list.status_ended", "<red>✗ Ended</red>");
             } else if (System.currentTimeMillis() >= v.expiresAt) {
-                status = MessagesManager.getString("vote.list.status_expiring", "§cExpiring...");
+                status = MessagesManager.getString("vote.list.status_expiring", "<red>Expiring...</red>");
             } else {
                 long remaining = v.expiresAt - System.currentTimeMillis();
-                status = "§a" + formatDuration(remaining);
+                status = "<green>" + formatDuration(remaining) + "</green>";
             }
-            player.sendMessage(MessagesManager.getString("vote.list.entry", "§7┃ §e{name} §7— §f{title}")
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.entry", "<gray>┃ <yellow>{name}</yellow> <gray>—</gray> <white>{title}</white></gray>")
                     .replace("{name}", v.name)
-                    .replace("{title}", v.title));
-            player.sendMessage(MessagesManager.getString("vote.list.entry_info", "§7┃   §7Options: §e{answers} §7| Votes: §e{votes} §7| {status}")
+                    .replace("{title}", v.title)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.entry_info", "<gray>┃   <gray>Options:</gray> <yellow>{answers}</yellow> <gray>| Votes:</gray> <yellow>{votes}</yellow> <gray>|</gray> {status}</gray>")
                     .replace("{answers}", String.valueOf(v.answers.size()))
                     .replace("{votes}", String.valueOf(v.votes.size()))
-                    .replace("{status}", status));
-            player.sendMessage(MessagesManager.getString("vote.list.entry_hint", "§7┃   §7§o/mp vote {name} §7— vote")
-                    .replace("{name}", v.name));
-            player.sendMessage("");
+                    .replace("{status}", status)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.entry_hint", "<gray>┃   <gray><italic>/mp vote {name}</italic> <gray>— vote</gray></gray></gray>")
+                    .replace("{name}", v.name)));
+            player.sendMessage(MessageUtil.parse(""));
         }
-        player.sendMessage(MessagesManager.getString("vote.list.header", "§6═══════════════════════════════════"));
-        player.sendMessage("");
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.header", "<gold>═══════════════════════════════════</gold>")));
+        player.sendMessage(MessageUtil.parse(""));
 
         return true;
     }
@@ -464,32 +463,27 @@ public class VoteManager {
 
         // Request confirmation
         pending.put(player.getUniqueId(), true);
-        player.sendMessage("");
-        player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_title", "<dark_red>⚠</dark_red> <red>Confirm vote deletion</red>")));
-        player.sendMessage("§8┃");
-        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_name", "<gray>Name: </gray><gold>{name}</gold>")
+        player.sendMessage(MessageUtil.parse(""));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</dark_gray>"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray>" + MessagesManager.getString("vote.delete.confirm_title", "<dark_red>⚠</dark_red> <red>Confirm vote deletion</red>")));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray>" + MessagesManager.getString("vote.delete.confirm_name", "<gray>Name: </gray><gold>{name}</gold>")
                 .replace("{name}", vote.name)));
-        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_topic", "<gray>Topic: </gray><white>{title}</white>")
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray>" + MessagesManager.getString("vote.delete.confirm_topic", "<gray>Topic: </gray><white>{title}</white>")
                 .replace("{title}", vote.title)));
-        player.sendMessage("§8┃");
-        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_irreversible", "<gray>This action cannot be undone!</gray>")));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray>" + MessagesManager.getString("vote.delete.confirm_irreversible", "<gray>This action cannot be undone!</gray>")));
 
-        TextComponent confirmButton = new TextComponent("§8┃     §c[§4✗ " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_button", "Confirm deletion")) + "§c]");
-        confirmButton.setClickEvent(new ClickEvent(
-                ClickEvent.Action.RUN_COMMAND,
-                "/mp vote delete " + vote.name
-        ));
-        confirmButton.setHoverEvent(new HoverEvent(
-                HoverEvent.Action.SHOW_TEXT,
-                new ComponentBuilder(MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_hover", "<red>Click to confirm deletion</red>"))).create()
-        ));
-        player.spigot().sendMessage(confirmButton);
+        Component confirmButton = MessageUtil.parse("<dark_gray>┃     <red>[<dark_red>✗ </dark_red></red>"
+                + MessagesManager.getString("vote.delete.confirm_button", "Confirm deletion") + "<red>]</red></dark_gray>")
+                .clickEvent(ClickEvent.runCommand("/mp vote delete " + vote.name))
+                .hoverEvent(HoverEvent.showText(MessageUtil.parse(MessagesManager.getString("vote.delete.confirm_hover", "<red>Click to confirm deletion</red>"))));
+        player.sendMessage(confirmButton);
 
-        player.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("vote.delete.confirm_resend", "<gray>or type </gray><white>/mp vote delete {name}</white><gray> again</gray>")
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray>" + MessagesManager.getString("vote.delete.confirm_resend", "<gray>or type </gray><white>/mp vote delete {name}</white><gray> again</gray>")
                 .replace("{name}", vote.name)));
-        player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
-        player.sendMessage("");
+        player.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</dark_gray>"));
+        player.sendMessage(MessageUtil.parse(""));
 
         // Auto-expire after 30 sec
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
@@ -663,45 +657,43 @@ public class VoteManager {
     // =========================
     public static void broadcastVote(Vote vote) {
         String durationStr = formatDuration(vote.expiresAt - System.currentTimeMillis());
-        String header = MessagesManager.getString("vote.broadcast.header", "§6═══════════════════════════════════════");
+        String header = MessagesManager.getString("vote.broadcast.header", "<gold>═══════════════════════════════════════</gold>");
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage("");
-            player.sendMessage(header);
-            player.sendMessage(MessagesManager.getString("vote.broadcast.title", "§6  §e✦ {title}").replace("{title}", vote.title));
-            player.sendMessage(header);
-            player.sendMessage(MessagesManager.getString("vote.broadcast.question", "§7┃ §f{question}").replace("{question}", vote.question));
-            player.sendMessage("");
-            player.sendMessage(MessagesManager.getString("vote.broadcast.options", "§7┃ §7Answer options:"));
+            player.sendMessage(MessageUtil.parse(""));
+            player.sendMessage(MessageUtil.parse(header));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.title", "<gold>  <yellow>✦ {title}</yellow></gold>").replace("{title}", vote.title)));
+            player.sendMessage(MessageUtil.parse(header));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.question", "<gray>┃ <white>{question}</white></gray>").replace("{question}", vote.question)));
+            player.sendMessage(MessageUtil.parse(""));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.options", "<gray>┃ <gray>Answer options:</gray></gray>")));
 
             for (int i = 0; i < vote.answers.size(); i++) {
                 Answer a = vote.answers.get(i);
 
-                TextComponent answerBtn = new TextComponent("§8┃ §e" + i + ". §a[§2" + a.title + "§a]");
-                answerBtn.setClickEvent(new ClickEvent(
-                        ClickEvent.Action.RUN_COMMAND,
-                        "/mp vote " + vote.name + " " + i
-                ));
-                answerBtn.setHoverEvent(new HoverEvent(
-                        HoverEvent.Action.SHOW_TEXT,
-                        new ComponentBuilder(MessagesManager.getString("vote.broadcast.button_hover", "§aClick to vote for §f{title}").replace("{title}", a.title))
-                                .append(!a.description.isEmpty() ? "\n§7" + a.description : "")
-                                .create()
-                ));
-                player.spigot().sendMessage(answerBtn);
+                Component hoverText = MessageUtil.parse(MessagesManager.getString("vote.broadcast.button_hover", "<green>Click to vote for <white>{title}</white></green>")
+                        .replace("{title}", a.title));
+                if (!a.description.isEmpty()) {
+                    hoverText = hoverText.append(Component.newline()).append(MessageUtil.parse("<gray>" + a.description + "</gray>"));
+                }
+
+                Component answerBtn = MessageUtil.parse("<dark_gray>┃ </dark_gray><yellow>" + i + ".</yellow> <green>[<dark_green>" + a.title + "</dark_green>]</green>")
+                        .clickEvent(ClickEvent.runCommand("/mp vote " + vote.name + " " + i))
+                        .hoverEvent(HoverEvent.showText(hoverText));
+                player.sendMessage(answerBtn);
 
                 if (!a.description.isEmpty()) {
-                    player.sendMessage("§8┃   §7" + a.description);
+                    player.sendMessage(MessageUtil.parse("<dark_gray>┃   <gray>" + a.description + "</gray></dark_gray>"));
                 }
             }
 
-            player.sendMessage("");
-            player.sendMessage(MessagesManager.getString("vote.broadcast.hint", "§8┃ §7To vote, click the button above"));
-            player.sendMessage(MessagesManager.getString("vote.broadcast.hint2", "§8┃ §7or type §f/mp vote {name} <number>").replace("{name}", vote.name));
-            player.sendMessage("§8┃");
-            player.sendMessage(MessagesManager.getString("vote.broadcast.time_left", "§8┃ §7Time left: §e{duration}").replace("{duration}", durationStr));
-            player.sendMessage(header);
-            player.sendMessage("");
+            player.sendMessage(MessageUtil.parse(""));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.hint", "<dark_gray>┃ <gray>To vote, click the button above</gray></dark_gray>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.hint2", "<dark_gray>┃ <gray>or type </gray><white>/mp vote {name} \\<number\\></white></dark_gray>").replace("{name}", vote.name)));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.time_left", "<dark_gray>┃ <gray>Time left:</gray> <yellow>{duration}</yellow></dark_gray>").replace("{duration}", durationStr)));
+            player.sendMessage(MessageUtil.parse(header));
+            player.sendMessage(MessageUtil.parse(""));
         }
     }
 
@@ -738,13 +730,13 @@ public class VoteManager {
         }
 
         // Broadcast results
-        String header = MessagesManager.getString("vote.close.header", "§6═══════════════════════════════════════");
-        String closeTitle = MessagesManager.getString("vote.close.title", "§6  ✦ §fVote ended §7[§e{name}§7]");
-        String noVotes = MessagesManager.getString("vote.close.no_votes", "§7┃ §7Nobody voted.");
-        String tieStr = MessagesManager.getString("vote.close.tie", "§7┃ §eTie! §7Several options received the same number of votes.");
-        String tieEntry = MessagesManager.getString("vote.close.tie_entry", "§7┃ §e{title} §7— §e{count} §7votes");
-        String winner = MessagesManager.getString("vote.close.winner", "§7┃ §aWinner: §e{title} §7(§e{count}§7/{total} — §e{pct}%§7)");
-        String totalStr = MessagesManager.getString("vote.close.total", "§7┃ §7Total votes cast: §e{total}");
+        String header = MessagesManager.getString("vote.close.header", "<gold>═══════════════════════════════════════</gold>");
+        String closeTitle = MessagesManager.getString("vote.close.title", "<gold>  ✦ <white>Vote ended</white> <gray>[<yellow>{name}</yellow><gray>]</gray></gray></gold>");
+        String noVotes = MessagesManager.getString("vote.close.no_votes", "<gray>┃ <gray>Nobody voted.</gray></gray>");
+        String tieStr = MessagesManager.getString("vote.close.tie", "<gray>┃ <yellow>Tie!</yellow> <gray>Several options received the same number of votes.</gray></gray>");
+        String tieEntry = MessagesManager.getString("vote.close.tie_entry", "<gray>┃ <yellow>{title}</yellow> <gray>—</gray> <yellow>{count}</yellow> <gray>votes</gray></gray>");
+        String winner = MessagesManager.getString("vote.close.winner", "<gray>┃ <green>Winner:</green> <yellow>{title}</yellow> <gray>(</gray><yellow>{count}</yellow><gray>/{total} —</gray> <yellow>{pct}%</yellow><gray>)</gray></gray>");
+        String totalStr = MessagesManager.getString("vote.close.total", "<gray>┃ <gray>Total votes cast:</gray> <yellow>{total}</yellow></gray>");
 
         Bukkit.broadcast(MessageUtil.parse(""));
         Bukkit.broadcast(MessageUtil.parse(header + "\n" + closeTitle.replace("{name}", vote.name) + "\n" + header));
@@ -903,17 +895,17 @@ public class VoteManager {
 
     private static String createProgressBar(int pct, int width) {
         int filled = pct * width / 100;
-        StringBuilder sb = new StringBuilder("§8[");
+        StringBuilder sb = new StringBuilder("<dark_gray>[");
         for (int i = 0; i < width; i++) {
             if (i < filled) {
-                if (pct >= 66) sb.append("§a█");
-                else if (pct >= 33) sb.append("§e█");
-                else sb.append("§c█");
+                if (pct >= 66) sb.append("<green>█</green>");
+                else if (pct >= 33) sb.append("<yellow>█</yellow>");
+                else sb.append("<red>█</red>");
             } else {
-                sb.append("§7▒");
+                sb.append("<gray>▒</gray>");
             }
         }
-        sb.append("§8]");
+        sb.append("</dark_gray>]");
         return sb.toString();
     }
 
