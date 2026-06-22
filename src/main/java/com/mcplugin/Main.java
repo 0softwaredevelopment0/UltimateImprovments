@@ -4,6 +4,7 @@ import com.mcplugin.config.ConfigIntegrityValidator;
 import com.mcplugin.config.MessagesManager;
 import com.mcplugin.main.CommandRegistrar;
 import com.mcplugin.module.*;
+import com.mcplugin.util.FileLogger;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -34,11 +35,20 @@ public class Main extends JavaPlugin {
 
         instance = this;
 
-        if (!getDataFolder().exists()) {
-            getDataFolder().mkdirs();
-        }
+        // =========================
+        // DATA FOLDER & CONFIG
+        // =========================
+        FileLogger.ensureDirectory(getDataFolder(), "DataFolder", getLogger());
 
+        // saveDefaultConfig() saves config.yml from JAR resources if it doesn't exist
+        java.io.File configFile = new java.io.File(getDataFolder(), "config.yml");
+        boolean configExisted = configFile.exists();
         saveDefaultConfig();
+        if (!configExisted && configFile.exists()) {
+            getLogger().info("[Config] Created new file: config.yml");
+        } else if (configExisted) {
+            getLogger().info("[Config] File exists: config.yml");
+        }
         reloadConfig();
 
         // =========================
@@ -131,6 +141,7 @@ public class Main extends JavaPlugin {
         mm.register(new AutoSaveModule());
         mm.register(new UpdateModule());
         mm.register(new LeashModule());
+        mm.register(new ElytraBoostModule());
 
         // =========================
         // INIT ALL MODULES

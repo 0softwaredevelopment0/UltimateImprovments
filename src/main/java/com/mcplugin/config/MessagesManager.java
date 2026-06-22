@@ -1,10 +1,12 @@
 package com.mcplugin.config;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.FileLogger;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.util.logging.Logger;
 
 /**
  * Управляет файлом messages.yml — все сообщения плагина вынесены сюда
@@ -49,8 +51,16 @@ public class MessagesManager {
      */
     private static void saveDefaultMessages() {
         File messagesFile = new File(plugin.getDataFolder(), MESSAGES_FILE_NAME);
+        Logger log = plugin.getLogger();
         if (!messagesFile.exists()) {
-            plugin.saveResource(MESSAGES_FILE_NAME, false);
+            try {
+                plugin.saveResource(MESSAGES_FILE_NAME, false);
+                log.info("[Messages] Created new file: messages.yml");
+            } catch (Exception e) {
+                FileLogger.logError("Messages", "Failed to save messages.yml from resources", log, e);
+            }
+        } else {
+            log.info("[Messages] File exists: messages.yml");
         }
     }
 

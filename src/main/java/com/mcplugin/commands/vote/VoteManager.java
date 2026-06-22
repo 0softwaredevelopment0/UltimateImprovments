@@ -73,7 +73,7 @@ public class VoteManager {
                     vote.ended = rs.getInt("ended") == 1;
                     vote.answers = new ArrayList<>();
                     vote.votes = new ConcurrentHashMap<>();
-                    votes.put(vote.name, vote);
+                    votes.put(vote.name.toLowerCase(), vote);
                 }
             }
 

@@ -2,6 +2,7 @@ package com.mcplugin.auth;
 
 import com.mcplugin.Keys;
 import com.mcplugin.Main;
+import com.mcplugin.commands.AskCordsManager;
 import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Sound;
@@ -100,6 +101,7 @@ public class AuthListener implements Listener {
             manager.removePlayer(uuid);
         }
         AuthGUITracker.cleanupPlayer(uuid);
+        AskCordsManager.cleanup(uuid);
     }
 
     // =========================

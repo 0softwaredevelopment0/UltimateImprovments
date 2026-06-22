@@ -1,0 +1,83 @@
+# 📖 Гайд для Buffy по восстановлению контекста сессий
+
+## 🎯 Когда меня просят "прочитай файл buffy-guide.md"
+
+1. **Выполнить команду:**
+   ```bash
+   node codebuff-memory.js load
+   ```
+
+2. **Прочитать JSON-вывод** — там будут:
+   - `sessions` — последние 5 сессий (какая активна сейчас)
+   - `entries` — все сохранённые предпочтения, решения, заметки (до 100)
+   - `messages_count` — сколько всего сообщений сохранено
+
+3. **Применить предпочтения** — применить к текущей сессии:
+   - `auto-commit-push` — после успешного выполнения задачи создавать git commit и push
+   - `session-memory` — контекст сохраняется через `.codebuff-memory.db`
+
+4. **Если нужно больше деталей:**
+   ```bash
+   node codebuff-memory.js load-prefs    # только предпочтения
+   node codebuff-memory.js export        # полный экспорт БД
+   ```
+
+## ⚙️ Команды управления памятью
+
+| Команда | Что делает |
+|---------|-----------|
+| `node codebuff-memory.js save preference key val` | Сохранить предпочтение |
+| `node codebuff-memory.js save decision key val` | Сохранить решение |
+| `node codebuff-memory.js save task key val` | Сохранить задачу |
+| `node codebuff-memory.js save note key val` | Сохранить заметку |
+| `node codebuff-memory.js save summary val` | Сохранить саммари |
+| `node codebuff-memory.js save-msg role text` | Сохранить сообщение |
+| `node codebuff-memory.js load` | Загрузить контекст |
+| `node codebuff-memory.js export` | Экспорт всего в JSON |
+| `node codebuff-memory.js end-session` | Завершить текущую сессию |
+
+## 📌 Важные правила
+
+- **Язык общения с пользователем:** русский
+- **Проект:** Minecraft-плагин MC-Plugin (Java, Spigot/Paper)
+- **Инструменты:** Gradle (сборка), Java 25, Node.js 24 (для скриптов)
+- **БД памяти:** `.codebuff-memory.db` (SQLite через better-sqlite3)
+- **После успешной задачи:** делать `git add` → `git commit` → `git push`, если включена опция `auto-commit-push`
+
+## 🧠 Обязанность: сохранять контекст этой сессии
+
+**В конце этого разговора (и после каждой важной задачи):**
+
+1. Сохранить саммари всей сессии:
+   ```bash
+   node codebuff-memory.js save summary "<кратко что сделано за сессию>"
+   ```
+
+2. Сохранить ключевые решения и договорённости:
+   ```bash
+   node codebuff-memory.js save decision <key> "<описание решения>"
+   ```
+
+3. Сохранить запросы пользователя как `task`:
+   ```bash
+   node codebuff-memory.js save task <key> "<что пользователь просил сделать>"
+   ```
+
+4. Сохранить все новые предпочтения пользователя:
+   ```bash
+   node codebuff-memory.js save preference <key> "<значение>"
+   ```
+
+5. В конце сессии:
+   ```bash
+   node codebuff-memory.js end-session "<итоговое саммари сессии>"
+   ```
+
+**Что конкретно сохранять:**
+- Каждую просьбу пользователя (даже если не выполнена — как `task`)
+- Каждое выполненное изменение в коде (как `summary` или `task`)
+- Каждое новое правило/предпочтение (как `preference`)
+- Каждое архитектурное решение (как `decision`)
+- Сообщения пользователя (как `save-msg` — особенно важные инструкции)
+
+> Цель: чтобы при восстановлении в новой сессии у меня была полная картина — кто пользователь, что просил, что сделано, какие правила действуют.

@@ -149,6 +149,23 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 }
                 yield true;
             }
+            case "askcords" -> {
+                if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
+                AskCordsManager.execute(player, args);
+                yield true;
+            }
+            case "askcords_accept" -> {
+                if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
+                if (args.length < 2) yield true;
+                AskCordsManager.accept(player, args[1]);
+                yield true;
+            }
+            case "askcords_decline" -> {
+                if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
+                if (args.length < 2) yield true;
+                AskCordsManager.decline(player, args[1]);
+                yield true;
+            }
             case "i_want_to_get_impossible_achivement_uwu" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 grantImpossibleAdvancement(player);
@@ -183,7 +200,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
                     "auth", "chgdim", "chgdim_teleport", "chgdim_return", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "vote",
-                    "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome"));
+                    "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
+                    "askcords", "forcesuicide"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
             completions.add("create");
             completions.add("delete");
@@ -257,6 +275,17 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && args[0].equalsIgnoreCase("checkrad")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && args[0].equalsIgnoreCase("setrad")) {
+            for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("item")) {
+            completions.add("int");
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("item") && args[1].equalsIgnoreCase("int")) {
+            completions.addAll(List.of("list", "set", "add"));
+        } else if (args.length == 4 && args[0].equalsIgnoreCase("item") && args[1].equalsIgnoreCase("int")
+                && (args[2].equalsIgnoreCase("set") || args[2].equalsIgnoreCase("add"))) {
+            for (int v : new int[]{0, 10, 20, 50, 100}) completions.add(String.valueOf(v));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("setrad")) {
+            for (int v : new int[]{0, 100, 200, 500, 1000, 2000, 5000}) completions.add(String.valueOf(v));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("askcords")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         }
 

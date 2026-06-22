@@ -261,3 +261,7 @@ permissions:
   mcplugin.command.forcesuicide:
     description: Allows force-suiciding other players (/mp forcesuicide <nick>)
     default: op
+
+  mcplugin.command.askcords:
+    description: Allows requesting player coordinates (/mp askcords <nick>)
+    default: true
