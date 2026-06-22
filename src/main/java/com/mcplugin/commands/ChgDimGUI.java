@@ -4,6 +4,7 @@ import com.mcplugin.Keys;
 import com.mcplugin.Main;
 import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -28,13 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
- * Anvil GUI для выбора мира при /mp chgdim.
- * <p>
- * Левый слот (0) — информационный предмет со списком миров.
- * Поле переименования — ввод названия мира.
- * Результат (слот 2) — подтверждение телепортации.
- * Центр (слот 1) — кнопка «Вернуться назад» (если есть сохранённая точка).
- * Escape — закрывает GUI без последствий.
+ * Anvil GUI for world selection on /mp chgdim.
  */
 public class ChgDimGUI implements Listener {
 
@@ -42,18 +37,13 @@ public class ChgDimGUI implements Listener {
     private static final Map<UUID, BukkitTask> resetTasks = new ConcurrentHashMap<>();
     private static boolean registered = false;
 
-    // Regex for valid world name characters: only alphanumeric, underscore, hyphen
     private static final Pattern VALID_WORLD_NAME = Pattern.compile("[^a-zA-Z0-9_-]");
 
-    // Cached confirm item (never changes)
     private static final ItemStack CONFIRM_ITEM;
     static {
         CONFIRM_ITEM = createConfirmItem();
     }
 
-    /**
-     * Открывает Anvil GUI для выбора мира телепортации.
-     */
     public static void open(Player player) {
         register();
 
@@ -65,31 +55,20 @@ public class ChgDimGUI implements Listener {
             return;
         }
 
-        // Use MenuType.ANVIL.builder() — same as AuthGUI
         InventoryView view = MenuType.ANVIL.builder()
-                .title(net.kyori.adventure.text.Component.text(MessagesManager.getString("changedimmension.gui.title", "§8✦ Change dimension")))
+                .title(MessageUtil.parse(MessagesManager.getString("changedimmension.gui.title", "<dark_gray>✦ Change dimension</dark_gray>")))
                 .build(player);
 
-        // 🛡 Сначала открываем, потом ставим предметы — иначе наковальня
-        // пересчитывает слот результата при инициализации и сбрасывает всё.
-        // (Такая же логика как в AuthGUI.openChangePassword())
         view.open();
 
         Inventory topInv = view.getTopInventory();
 
-        // ===== SLOT 0: информационный предмет со списком миров =====
         ItemStack infoItem = createInfoItem(worldsSection);
         topInv.setItem(0, infoItem);
 
-        // Slot 1 — кнопка «Вернуться назад» (всегда показывается)
-        // Должна ставиться ДО слота 2, потому что установка слота 1
-        // триггерит пересчёт результата наковальни, который затирает слот 2.
         topInv.setItem(1, createReturnItem());
-
-        // Slot 2 — confirm item (будет удерживаться reset task)
         topInv.setItem(2, CONFIRM_ITEM);
 
-        // Start repeating task to keep slot 2 as our confirm item
         startResetTask(player);
 
         openMenus.put(player.getUniqueId(), "chgdim");
@@ -98,9 +77,6 @@ public class ChgDimGUI implements Listener {
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.enter_world_name_hint", "<yellow>✦</yellow> <gray>Enter world name in the field, then click</gray> <green>✔</green>")));
     }
 
-    // =========================
-    // TAG ITEM WITH CHGDIM_GUI PDC KEY (anti-dup)
-    // =========================
     private static ItemStack tagChgdimItem(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -110,17 +86,13 @@ public class ChgDimGUI implements Listener {
         return item;
     }
 
-    // =========================
-    // CREATE INFO ITEM (slot 0)
-    // =========================
     private static ItemStack createInfoItem(ConfigurationSection worldsSection) {
         ItemStack infoItem = new ItemStack(Material.PAPER);
         ItemMeta meta = infoItem.getItemMeta();
-        meta.displayName(net.kyori.adventure.text.Component.text("")
-                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+        meta.displayName(Component.text("").decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
 
         List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
-        lore.add(net.kyori.adventure.text.Component.text("§8┌────────────────────────────┐")
+        lore.add(MessageUtil.parse("<dark_gray>┌────────────────────────────┐</dark_gray>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
 
         Set<String> worldNames = worldsSection.getKeys(false);
@@ -132,23 +104,22 @@ public class ChgDimGUI implements Listener {
             double x = wc != null ? wc.getDouble("x", 0) : 0;
             double y = wc != null ? wc.getDouble("y", 64) : 64;
             double z = wc != null ? wc.getDouble("z", 0) : 0;
-            lore.add(net.kyori.adventure.text.Component.text("§8│ §e" + worldName)
+            lore.add(MessageUtil.parse("<dark_gray>│</dark_gray> <yellow>" + worldName + "</yellow>")
                     .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
-            lore.add(net.kyori.adventure.text.Component.text("§8│ §8» §7" + Math.round(x) + " " + Math.round(y) + " " + Math.round(z))
+            lore.add(MessageUtil.parse("<dark_gray>│</dark_gray> <dark_gray>»</dark_gray> <gray>" + Math.round(x) + " " + Math.round(y) + " " + Math.round(z) + "</gray>")
                     .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
         }
 
-        lore.add(net.kyori.adventure.text.Component.text("§8│")
+        lore.add(MessageUtil.parse("<dark_gray>│</dark_gray>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
-        lore.add(net.kyori.adventure.text.Component.text("§8│ §7Всего миров: §f" + count)
+        lore.add(MessageUtil.parse("<dark_gray>│</dark_gray> <gray>Total worlds: </gray><white>" + count + "</white>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
-        lore.add(net.kyori.adventure.text.Component.text("§8└────────────────────────────┘")
+        lore.add(MessageUtil.parse("<dark_gray>└────────────────────────────┘</dark_gray>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
-        lore.add(net.kyori.adventure.text.Component.text("")
+        lore.add(Component.text("").decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+        lore.add(MessageUtil.parse("<yellow>💡 Enter the world name in the field</yellow>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
-        lore.add(net.kyori.adventure.text.Component.text("§e💡 Введите название мира в поле")
-                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
-        lore.add(net.kyori.adventure.text.Component.text("§eи нажмите на появившийся предмет")
+        lore.add(MessageUtil.parse("<yellow>and click on the item that appears</yellow>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
 
         meta.lore(lore);
@@ -156,16 +127,13 @@ public class ChgDimGUI implements Listener {
         return tagChgdimItem(infoItem);
     }
 
-    // =========================
-    // CREATE CONFIRM ITEM (slot 2)
-    // =========================
     private static ItemStack createConfirmItem() {
         ItemStack item = new ItemStack(Material.NETHER_STAR);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(net.kyori.adventure.text.Component.text("§a§l✔ Телепортироваться")
+        meta.displayName(MessageUtil.parse("<green><bold>✔ Teleport</bold></green>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
         meta.lore(List.of(
-                net.kyori.adventure.text.Component.text("§7Нажмите, чтобы подтвердить телепортацию")
+                MessageUtil.parse("<gray>Click to confirm teleportation</gray>")
                         .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
         ));
         meta.setEnchantmentGlintOverride(true);
@@ -173,9 +141,6 @@ public class ChgDimGUI implements Listener {
         return tagChgdimItem(item);
     }
 
-    // =========================
-    // REPEATING TASK — KEEP RESULT SLOT AS NETHER STAR
-    // =========================
     private static void startResetTask(Player player) {
         UUID uuid = player.getUniqueId();
         cancelResetTask(uuid);
@@ -190,26 +155,20 @@ public class ChgDimGUI implements Listener {
                 }
                 try {
                     var openInv = player.getOpenInventory();
-                    // Use openMenus instead of getMenuType() == ANVIL for Leaf fork compatibility
                     if (!openMenus.containsKey(uuid)) {
                         cancel();
                         resetTasks.remove(uuid);
                         return;
                     }
                     var topInv = openInv.getTopInventory();
-                    // 🛡 Очищаем курсор ТОЛЬКО если там chgdim-предмет (не трогаем предметы игрока)
                     ItemStack cursor = player.getItemOnCursor();
                     if (cursor != null && cursor.getItemMeta() != null &&
                             cursor.getItemMeta().getPersistentDataContainer()
                                     .has(Keys.CHGDIM_GUI, PersistentDataType.BOOLEAN)) {
                         player.setItemOnCursor(null);
                     }
-                    // Slot 1 (return button) ДОЛЖЕН ставиться ДО слота 2 (confirm),
-                    // потому что setItem в slot 1 триггерит пересчёт результата
-                    // наковальни, который затирает предмет в slot 2.
                     topInv.setItem(1, createReturnItem());
                     topInv.setItem(2, CONFIRM_ITEM);
-                    // 🛡 Anti-dup: purge any ChgDimGUI items from player inventory
                     removeChgdimItemsFromPlayer(player);
                 } catch (Exception e) {
                     cancel();
@@ -223,14 +182,9 @@ public class ChgDimGUI implements Listener {
 
     private static void cancelResetTask(UUID uuid) {
         BukkitTask task = resetTasks.remove(uuid);
-        if (task != null) {
-            task.cancel();
-        }
+        if (task != null) task.cancel();
     }
 
-    // =========================
-    // 🛡 ANTI-DUP: Remove any ChgDimGUI items from player inventory
-    // =========================
     public static void removeChgdimItemsFromPlayer(Player player) {
         var inv = player.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {
@@ -244,16 +198,13 @@ public class ChgDimGUI implements Listener {
         }
     }
 
-    // =========================
-    // CREATE RETURN ITEM (slot 1)
-    // =========================
     private static ItemStack createReturnItem() {
         ItemStack item = new ItemStack(Material.ENDER_PEARL);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(net.kyori.adventure.text.Component.text("§b§l↩ Вернуться назад")
+        meta.displayName(MessageUtil.parse("<aqua><bold>↩ Return Back</bold></aqua>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
         meta.lore(List.of(
-                net.kyori.adventure.text.Component.text("§7Нажмите, чтобы вернуться в исходную точку")
+                MessageUtil.parse("<gray>Click to return to your starting point</gray>")
                         .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
         ));
         meta.setEnchantmentGlintOverride(true);
@@ -261,9 +212,6 @@ public class ChgDimGUI implements Listener {
         return tagChgdimItem(item);
     }
 
-    // =========================
-    // GET RENAME TEXT FROM ANVIL (via NMS reflection — same as AuthGUI)
-    // =========================
     private static String getAnvilRenameText(Player player) {
         try {
             InventoryView view = player.getOpenInventory();
@@ -291,10 +239,6 @@ public class ChgDimGUI implements Listener {
         }
     }
 
-    // =========================
-    // 🛡 ANTI-DUP: Cancel item spawn if it has CHGDIM_GUI PDC tag
-    // Prevents GUI items from dropping on the ground when inventory is full
-    // =========================
     @EventHandler
     public void onItemSpawn(ItemSpawnEvent event) {
         ItemStack item = event.getEntity().getItemStack();
@@ -309,30 +253,22 @@ public class ChgDimGUI implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
-        // Use openMenus instead of getMenuType() == ANVIL for Leaf fork compatibility
         if (!openMenus.containsKey(player.getUniqueId())) return;
 
         int slot = e.getSlot();
 
-        // ===== Клик вне окна GUI (слот -999) — блокируем =====
         if (slot < 0) {
             e.setCancelled(true);
             return;
         }
 
-        // ===== Разрешаем клики в СВОЁМ инвентаре (слоты 3+) =====
-        // Игрок может свободно перемещать свои предметы в нижней половине GUI.
-        if (slot >= 3) {
-            return;
-        }
+        if (slot >= 3) return;
 
-        // ===== Слот 0 (информационный предмет) — блокируем =====
         if (slot == 0) {
             e.setCancelled(true);
             return;
         }
 
-        // ===== Слот 1 (кнопка возврата) =====
         if (slot == 1) {
             e.setCancelled(true);
             player.closeInventory();
@@ -340,7 +276,6 @@ public class ChgDimGUI implements Listener {
             return;
         }
 
-        // ===== Слот 2 (подтверждение телепортации) =====
         e.setCancelled(true);
 
         String rawText = getAnvilRenameText(player);
@@ -351,7 +286,6 @@ public class ChgDimGUI implements Listener {
             return;
         }
 
-        // Убираем все символы, кроме a-z, A-Z, 0-9, _, -
         String worldName = VALID_WORLD_NAME.matcher(rawText.trim()).replaceAll("");
 
         if (worldName.isEmpty()) {
@@ -360,7 +294,6 @@ public class ChgDimGUI implements Listener {
             return;
         }
 
-        // ===== CHECK PER-WORLD PERMISSION =====
         if (!player.hasPermission("mcplugin.command.chgdim." + worldName)) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.no_permission",
                             "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>")));
@@ -368,7 +301,6 @@ public class ChgDimGUI implements Listener {
             return;
         }
 
-        // ===== TELEPORT (обрабатывает cooldown, world not found, success) =====
         ChgDimCommand.teleport(player, worldName);
         player.closeInventory();
     }
@@ -378,15 +310,11 @@ public class ChgDimGUI implements Listener {
         UUID uuid = e.getPlayer().getUniqueId();
         openMenus.remove(uuid);
         cancelResetTask(uuid);
-        // 🛡 Anti-dup: remove any ChgDimGUI items from player inventory
         if (e.getPlayer() instanceof Player player) {
             removeChgdimItemsFromPlayer(player);
         }
     }
 
-    /**
-     * Регистрирует слушатель один раз при первом вызове open().
-     */
     private static void register() {
         if (registered) return;
         registered = true;

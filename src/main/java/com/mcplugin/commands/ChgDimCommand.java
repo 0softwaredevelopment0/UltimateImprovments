@@ -25,34 +25,35 @@ public class ChgDimCommand {
      */
     public static void showMenu(Player player) {
         player.sendMessage("");
-        player.sendMessage("§6═══════════════════════════════════");
-        player.sendMessage("§6  ✦ §fСмена измерения");
-        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage("");
+        player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
+        player.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Change Dimension</white>"));
+        player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
         player.sendMessage("");
 
         FileConfiguration config = Main.getInstance().getConfig();
         ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
 
         if (worldsSection == null) {
-            player.sendMessage("§4❌ §cМиры не настроены в конфиге!");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Worlds not configured in config!</red>"));
             return;
         }
 
         for (String worldName : worldsSection.getKeys(false)) {
             String displayName = worldsSection.getString(worldName + ".display_name", worldName);
 
-            player.sendMessage("§8┃ §e[" + worldName + "]§f " + displayName);
-            player.sendMessage("§8┃ §7Нажмите чтобы телепортироваться:");
-            player.sendMessage("§8┃   §f/mp chgdim_teleport " + worldName);
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ </dark_gray><yellow>[" + worldName + "]</yellow><white> " + displayName + "</white>"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ </dark_gray><gray>Click to teleport:</gray>"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray><white>/mp chgdim_teleport " + worldName + "</white>"));
             player.sendMessage("");
         }
 
         if (DimensionManager.hasReturnLocation(player)) {
-            player.sendMessage("§8┃ §e[/mp chgdim_return]§f — вернуться назад");
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ </dark_gray><yellow>[/mp chgdim_return]</yellow><white> — return back</white>"));
             player.sendMessage("");
         }
 
-        player.sendMessage("§6═══════════════════════════════════");
+        player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
         player.sendMessage("");
     }
 

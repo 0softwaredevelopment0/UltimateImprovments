@@ -4,6 +4,7 @@ import com.mcplugin.Main;
 import com.mcplugin.auth.AuthDatabase;
 import com.mcplugin.auth.AuthGUI;
 import com.mcplugin.auth.AuthManager;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -16,11 +17,11 @@ public final class AuthSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!Main.getInstance().getConfig().getBoolean("auth.enabled", true)) {
-            sender.sendMessage("§4❌ §cСистема авторизации отключена в конфиге!");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is disabled in config!</red>"));
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp auth forcelogin|resetauth|chgpass|delsession|logout §7<ник>");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth forcelogin|resetauth|chgpass|delsession|logout </white><gray><nick></gray>"));
             return true;
         }
 
@@ -31,7 +32,7 @@ public final class AuthSubcommand {
             case "logout" -> handleLogout(sender);
             case "chgpass" -> handleChgPass(sender, args);
             default -> {
-                sender.sendMessage("§4❌ §cНеизвестная подкоманда: §f" + args[1]);
+                sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Unknown subcommand: </red><white>" + args[1] + "</white>"));
                 yield true;
             }
         };
@@ -44,72 +45,80 @@ public final class AuthSubcommand {
 
     private static boolean handleForceLogin(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mcplugin.command.auth.forcelogin")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на принудительную авторизацию!");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to force login!</red>"));
             return true;
         }
-        if (args.length < 3) { sender.sendMessage("§4❌ §cИспользование: §f/mp auth forcelogin §7<ник>"); return true; }
+        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth forcelogin </white><gray><nick></gray>")); return true; }
         String name = args[2];
         UUID uuid = getOfflineUuid(name);
-        if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage("§4❌ §cИгрок §e" + name + "§c не зарегистрирован!"); return true; }
+        if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
         AuthManager mgr = AuthManager.getInstance();
-        if (mgr == null) { sender.sendMessage("§4❌ §cСистема авторизации не инициализирована!"); return true; }
-        sender.sendMessage(mgr.forceLogin(uuid) ? "§a✅ §fИгрок §e" + name + "§f принудительно авторизован." : "§4❌ §cНе удалось авторизовать игрока §e" + name);
+        if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
+        sender.sendMessage(mgr.forceLogin(uuid)
+                ? MessageUtil.parse("<green>✅</green> <white>Player </white><yellow>" + name + "</yellow><white> force logged in.</white>")
+                : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to force login player </red><yellow>" + name + "</yellow>"));
         return true;
     }
 
     private static boolean handleResetAuth(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mcplugin.command.auth.resetauth")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на сброс авторизации!");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to reset authentication!</red>"));
             return true;
         }
-        if (args.length < 3) { sender.sendMessage("§4❌ §cИспользование: §f/mp auth resetauth §7<ник>"); return true; }
+        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth resetauth </white><gray><nick></gray>")); return true; }
         String name = args[2];
         UUID uuid = getOfflineUuid(name);
-        if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage("§4❌ §cИгрок §e" + name + "§c не зарегистрирован!"); return true; }
+        if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
         AuthManager mgr = AuthManager.getInstance();
-        if (mgr == null) { sender.sendMessage("§4❌ §cСистема авторизации не инициализирована!"); return true; }
-        sender.sendMessage(mgr.resetAuth(uuid) ? "§a✅ §fРегистрация игрока §e" + name + "§f полностью удалена." : "§4❌ §cНе удалось удалить регистрацию!");
+        if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
+        sender.sendMessage(mgr.resetAuth(uuid)
+                ? MessageUtil.parse("<green>✅</green> <white>Player </white><yellow>" + name + "</yellow><white>'s registration has been completely deleted.</white>")
+                : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to delete registration!</red>"));
         return true;
     }
 
     private static boolean handleDelSession(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mcplugin.command.auth.delsession")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на сброс сессии!");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to reset a session!</red>"));
             return true;
         }
-        if (args.length < 3) { sender.sendMessage("§4❌ §cИспользование: §f/mp auth delsession §7<ник>"); return true; }
+        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth delsession </white><gray><nick></gray>")); return true; }
         String name = args[2];
         UUID uuid = getOfflineUuid(name);
-        if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage("§4❌ §cИгрок §e" + name + "§c не зарегистрирован!"); return true; }
+        if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
         AuthManager mgr = AuthManager.getInstance();
-        if (mgr == null) { sender.sendMessage("§4❌ §cСистема авторизации не инициализирована!"); return true; }
-        sender.sendMessage(mgr.deleteSession(uuid) ? "§a✅ §fСессия игрока §e" + name + "§f сброшена." : "§4❌ §cНе удалось сбросить сессию!");
+        if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
+        sender.sendMessage(mgr.deleteSession(uuid)
+                ? MessageUtil.parse("<green>✅</green> <white>Session for player </white><yellow>" + name + "</yellow><white> has been reset.</white>")
+                : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to reset session!</red>"));
         return true;
     }
 
     private static boolean handleLogout(CommandSender sender) {
-        if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!"); return true; }
-        if (!AuthManager.getInstance().isAuthenticated(player.getUniqueId())) { player.sendMessage("§c❌ Вы не авторизованы!"); return true; }
+        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Only players can use this command!</red>")); return true; }
+        if (!AuthManager.getInstance().isAuthenticated(player.getUniqueId())) { player.sendMessage(MessageUtil.parse("<red>❌ You are not authenticated!</red>")); return true; }
         AuthGUI.openLogout(player);
         return true;
     }
 
     private static boolean handleChgPass(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mcplugin.command.auth.chgpass")) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на смену пароля!");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to change passwords!</red>"));
             return true;
         }
-        if (args.length < 4) { sender.sendMessage("§4❌ §cИспользование: §f/mp auth chgpass §7<ник> <новый пароль>"); return true; }
+        if (args.length < 4) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth chgpass </white><gray><nick> <new_password></gray>")); return true; }
         String name = args[2], newPass = args[3];
         int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
         int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
-        if (newPass.length() < minLen) { sender.sendMessage("§4❌ §cПароль должен быть не менее " + minLen + " символов!"); return true; }
-        if (newPass.length() > maxLen) { sender.sendMessage("§4❌ §cПароль не должен превышать " + maxLen + " символов!"); return true; }
+        if (newPass.length() < minLen) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Password must be at least " + minLen + " characters!</red>")); return true; }
+        if (newPass.length() > maxLen) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Password must not exceed " + maxLen + " characters!</red>")); return true; }
         UUID uuid = getOfflineUuid(name);
-        if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage("§4❌ §cИгрок §e" + name + "§c не зарегистрирован!"); return true; }
+        if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
         AuthManager mgr = AuthManager.getInstance();
-        if (mgr == null) { sender.sendMessage("§4❌ §cСистема авторизации не инициализирована!"); return true; }
-        sender.sendMessage(mgr.changePassword(uuid, newPass) ? "§a✅ §fПароль игрока §e" + name + "§f изменён." : "§4❌ §cНе удалось сменить пароль!");
+        if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
+        sender.sendMessage(mgr.changePassword(uuid, newPass)
+                ? MessageUtil.parse("<green>✅</green> <white>Password for player </white><yellow>" + name + "</yellow><white> changed.</white>")
+                : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to change password!</red>"));
         return true;
     }
 }

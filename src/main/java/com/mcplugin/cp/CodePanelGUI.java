@@ -1,6 +1,7 @@
 package com.mcplugin.cp;
 
 import com.mcplugin.Main;
+import com.mcplugin.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
@@ -15,32 +16,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Строит и обновляет GUI двойного сундука для кодовой панели.
- *
- * Layout:
- *   Row 0 (0-8):   [G][G][P][P][P][P][P][G][G]  — экран (бумага)
- *   Row 1 (9-17):  [G][G][G][G][G][G][G][G][G]  — разделитель
- *   Row 2 (18-26): [G][G][G][1][2][3][G][G][G]  — цифры
- *   Row 3 (27-35): [G][G][G][4][5][6][G][G][G]
- *   Row 4 (36-44): [G][G][G][7][8][9][G][G][G]
- *   Row 5 (45-53): [G][R][G][B][0][E][G][G][G]  — R=Сброс, B=⌫, E=Ввод
- *
- *   G = Light Gray Stained Glass Pane (фон, скрытый тултип)
- *   P = Book (экран, имя меняется)
- *   0-9 = Iron Block с номером
- *   B = Gold Block (⌫ Назад)
- *   R = Redstone Block (R Сброс)
- *   E = Emerald Block (✔ Ввод)
+ * Builds and updates the double-chest GUI for the code panel.
  */
 public class CodePanelGUI {
 
     public static final int GUI_SIZE = 54;
-    public static final String GUI_TITLE = "§8Кодовая панель";
+    public static final String GUI_TITLE = "<dark_gray>Code Panel</dark_gray>";
 
-    // Screen slots (5 paper items showing the code)
     public static final int[] SCREEN_SLOTS = {2, 3, 4, 5, 6};
 
-    // Number button slots
     public static final int SLOT_1 = 21;
     public static final int SLOT_2 = 22;
     public static final int SLOT_3 = 23;
@@ -52,12 +36,10 @@ public class CodePanelGUI {
     public static final int SLOT_9 = 41;
     public static final int SLOT_0 = 49;
 
-    // Action button slots
     public static final int SLOT_RESET = 46;
     public static final int SLOT_BACKSPACE = 48;
     public static final int SLOT_ENTER = 50;
 
-    // Slot → action mapping
     public static final Map<Integer, String> BUTTON_MAP = new HashMap<>();
 
     static {
@@ -78,9 +60,6 @@ public class CodePanelGUI {
 
     private CodePanelGUI() {}
 
-    // =========================
-    // OPEN GUI
-    // =========================
     public static void open(Player player) {
         if (!isSafe()) return;
 
@@ -88,18 +67,15 @@ public class CodePanelGUI {
         String code = CodePanelSession.getCode(player.getUniqueId());
 
         Inventory inv = Bukkit.createInventory(null, GUI_SIZE,
-                Component.text(GUI_TITLE).decoration(TextDecoration.ITALIC, false));
+                MessageUtil.parse(GUI_TITLE).decoration(TextDecoration.ITALIC, false));
 
-        // Fill everything with glass
         ItemStack glass = createGlassPane();
         for (int i = 0; i < GUI_SIZE; i++) {
             inv.setItem(i, glass);
         }
 
-        // Screen
         setScreenItems(inv, code, max);
 
-        // Number buttons
         inv.setItem(SLOT_1, createNumberButton("1"));
         inv.setItem(SLOT_2, createNumberButton("2"));
         inv.setItem(SLOT_3, createNumberButton("3"));
@@ -111,7 +87,6 @@ public class CodePanelGUI {
         inv.setItem(SLOT_9, createNumberButton("9"));
         inv.setItem(SLOT_0, createNumberButton("0"));
 
-        // Action buttons
         inv.setItem(SLOT_BACKSPACE, createActionButton("BACKSPACE"));
         inv.setItem(SLOT_RESET, createActionButton("RESET"));
         inv.setItem(SLOT_ENTER, createActionButton("ENTER"));
@@ -119,43 +94,32 @@ public class CodePanelGUI {
         player.openInventory(inv);
     }
 
-    // =========================
-    // UPDATE SCREEN (вызывается после изменения кода)
-    // =========================
     public static void updateScreen(Player player) {
         if (!player.isOnline()) return;
-
         Inventory top = player.getOpenInventory().getTopInventory();
         if (top == null) return;
         if (top.getSize() != GUI_SIZE) return;
-        if (top.getHolder() != null) return; // not our GUI
-
+        if (top.getHolder() != null) return;
         if (!isSafe()) return;
         int max = Main.getInstance().getConfig().getInt("codepanel.max_length", 10);
         String code = CodePanelSession.getCode(player.getUniqueId());
         setScreenItems(top, code, max);
     }
 
-    // =========================
-    // SET SCREEN ITEMS
-    // =========================
     private static void setScreenItems(Inventory inv, String code, int max) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < max; i++) {
-            if (i < code.length()) {
-                sb.append(code.charAt(i));
-            } else {
-                sb.append("-");
-            }
+            if (i < code.length()) sb.append(code.charAt(i));
+            else sb.append("-");
         }
         String display = sb.toString();
         String fullText = code.isEmpty()
-                ? "§8< §7" + display + " §8>"
-                : "§8< §f" + display + " §8>";
+                ? "<dark_gray>< </dark_gray><gray>" + display + "</gray><dark_gray> ></dark_gray>"
+                : "<dark_gray>< </dark_gray><white>" + display + "</white><dark_gray> ></dark_gray>";
 
         ItemStack screenItem = new ItemStack(Material.BOOK);
         ItemMeta meta = screenItem.getItemMeta();
-        meta.displayName(Component.text(fullText).decoration(TextDecoration.ITALIC, false));
+        meta.displayName(MessageUtil.parse(fullText).decoration(TextDecoration.ITALIC, false));
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         screenItem.setItemMeta(meta);
 
@@ -164,33 +128,24 @@ public class CodePanelGUI {
         }
     }
 
-    // =========================
-    // CREATE GLASS PANE (background, hidden tooltip)
-    // =========================
     private static ItemStack createGlassPane() {
         ItemStack glass = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
         ItemMeta meta = glass.getItemMeta();
-        meta.displayName(Component.text("§r").decoration(TextDecoration.ITALIC, false));
+        meta.displayName(MessageUtil.parse("<reset>").decoration(TextDecoration.ITALIC, false));
         meta.setHideTooltip(true);
         glass.setItemMeta(meta);
         return glass;
     }
 
-    // =========================
-    // CREATE NUMBER BUTTON
-    // =========================
     private static ItemStack createNumberButton(String number) {
         ItemStack item = new ItemStack(Material.IRON_BLOCK);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text("§f" + number).decoration(TextDecoration.ITALIC, false));
+        meta.displayName(MessageUtil.parse("<white>" + number + "</white>").decoration(TextDecoration.ITALIC, false));
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         item.setItemMeta(meta);
         return item;
     }
 
-    // =========================
-    // CREATE ACTION BUTTON
-    // =========================
     private static ItemStack createActionButton(String type) {
         ItemStack item;
         String name;
@@ -198,32 +153,29 @@ public class CodePanelGUI {
         switch (type) {
             case "BACKSPACE" -> {
                 item = new ItemStack(Material.GOLD_BLOCK);
-                name = "§6← §eНазад";
+                name = "<gold>← </gold><yellow>Back</yellow>";
             }
             case "RESET" -> {
                 item = new ItemStack(Material.REDSTONE_BLOCK);
-                name = "§4❌ §cСброс";
+                name = "<dark_red>❌ </dark_red><red>Reset</red>";
             }
             case "ENTER" -> {
                 item = new ItemStack(Material.EMERALD_BLOCK);
-                name = "§2✔ §aВвод";
+                name = "<dark_green>✔ </dark_green><green>Enter</green>";
             }
             default -> {
                 item = new ItemStack(Material.MAGENTA_WOOL);
-                name = "§f?";
+                name = "<white>?</white>";
             }
         }
 
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false));
+        meta.displayName(MessageUtil.parse(name).decoration(TextDecoration.ITALIC, false));
         meta.addItemFlags(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
         item.setItemMeta(meta);
         return item;
     }
 
-    // =========================
-    // SAFE CHECK
-    // =========================
     private static boolean isSafe() {
         return Main.getInstance() != null && Main.getInstance().getConfig() != null;
     }

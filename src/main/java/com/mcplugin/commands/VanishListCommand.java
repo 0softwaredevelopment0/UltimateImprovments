@@ -14,8 +14,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Переопределяет /list команду, чтобы скрывать ванишнутых игроков из вывода.
- * Работает как для консоли, так и для игроков.
+ * Overrides /list command to hide vanished players from output.
+ * Works for both console and players.
  */
 public class VanishListCommand extends Command {
 
@@ -37,10 +37,10 @@ public class VanishListCommand extends Command {
             if (VanishManager.isVanished(online.getUniqueId())) {
                 vanishedCount++;
                 if (canSeeVanished) {
-                    names.add("§7" + online.getDisplayName() + "§r");
+                    names.add(MessageUtil.legacy("<gray>" + online.getDisplayName() + "</gray>"));
                 }
             } else {
-                names.add("§f" + online.getDisplayName() + "§r");
+                names.add(MessageUtil.legacy("<white>" + online.getDisplayName() + "</white>"));
             }
         }
 
@@ -52,7 +52,7 @@ public class VanishListCommand extends Command {
                 .replace("{visible}", String.valueOf(visibleCount))
                 .replace("{max}", String.valueOf(Bukkit.getMaxPlayers()))));
         if (!names.isEmpty()) {
-            sender.sendMessage(String.join("§7, ", names));
+            sender.sendMessage(String.join(MessageUtil.legacy("<gray>, </gray>"), names));
         }
         if (vanishedCount > 0 && canSeeVanished) {
             sender.sendMessage(MessageUtil.legacy(MessagesManager.getString("vanish_list.vanished_count",

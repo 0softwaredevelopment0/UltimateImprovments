@@ -16,7 +16,7 @@ import org.bukkit.inventory.Inventory;
 import java.util.UUID;
 
 /**
- * Обрабатывает клики и закрытие GUI кодовой панели (двойной сундук).
+ * Handles clicks and close events for the code panel GUI (double chest).
  */
 public class CodePanelGUIListener implements Listener {
 
@@ -30,25 +30,22 @@ public class CodePanelGUIListener implements Listener {
         if (!isOurTitle(event.getView().getTitle())) return;
 
         int slot = event.getRawSlot();
-        // Allow clicks in player's own inventory (slots >= GUI_SIZE)
         if (slot < 0 || slot >= CodePanelGUI.GUI_SIZE) return;
 
         event.setCancelled(true);
 
-        // Screen slots → do nothing
         for (int s : CodePanelGUI.SCREEN_SLOTS) {
             if (slot == s) return;
         }
 
         String action = CodePanelGUI.BUTTON_MAP.get(slot);
-        if (action == null) return; // glass pane
+        if (action == null) return;
 
         UUID uuid = player.getUniqueId();
 
-        // Enter cooldown check — защита от спама
         if ("ENTER".equals(action) && CodePanelSession.isEnterOnCooldown(uuid)) {
             long left = CodePanelSession.getRemainingCooldown(uuid) / 1000;
-            player.sendMessage("§cПодождите §e" + Math.max(0, left) + "§c сек перед повторным вводом");
+            player.sendMessage(MessageUtil.parse("<red>Please wait </red><yellow>" + Math.max(0, left) + "</yellow><red> sec before entering again</red>"));
             return;
         }
 
@@ -73,30 +70,24 @@ public class CodePanelGUIListener implements Listener {
     }
 
     // =========================
-    // INVENTORY CLOSE — ничего не сбрасываем,
-    // игрок может открыть панель снова и продолжить ввод.
+    // INVENTORY CLOSE
     // =========================
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player)) return;
         if (!isOurGUI(event.getInventory())) return;
         if (!isOurTitle(event.getView().getTitle())) return;
-        // Session не чистим — код сохраняется между открытиями
     }
 
     // =========================
     // HANDLERS
     // =========================
-
     private void handleDigit(Player player, String digit) {
         if (!isSafe()) return;
-
         UUID uuid = player.getUniqueId();
         int max = Main.getInstance().getConfig().getInt("codepanel.max_length", 10);
         String code = CodePanelSession.getCode(uuid);
-
-        if (code.length() >= max) return; // silently ignore
-
+        if (code.length() >= max) return;
         CodePanelSession.add(uuid, digit);
         CodePanelGUI.updateScreen(player);
         playSound(player, "digit");
@@ -106,7 +97,6 @@ public class CodePanelGUIListener implements Listener {
         UUID uuid = player.getUniqueId();
         StringBuilder sb = CodePanelSession.get(uuid);
         if (sb.length() == 0) return;
-
         sb.setLength(sb.length() - 1);
         CodePanelGUI.updateScreen(player);
         playSound(player, "backspace");
@@ -121,12 +111,8 @@ public class CodePanelGUIListener implements Listener {
 
     private void handleEnter(Player player) {
         UUID uuid = player.getUniqueId();
-
-        // Set Enter cooldown to prevent spam
         int cooldown = cfgInt("codepanel.enter_cooldown", 3);
         CodePanelSession.setEnterCooldown(uuid, cooldown * 1000L);
-
-        // Play enter sound, close GUI instantly, and check code immediately
         playSound(player, "enter");
         player.closeInventory();
         checkCode(player);
@@ -137,11 +123,8 @@ public class CodePanelGUIListener implements Listener {
     // =========================
     private void checkCode(Player player) {
         if (!isSafe()) return;
-
         String input = CodePanelSession.getCode(player.getUniqueId());
-
         CodePanelDatabase.cleanupExpiredKeys();
-
         var keys = CodePanelDatabase.getAllKeys();
 
         if (keys.isEmpty()) {
@@ -151,13 +134,11 @@ public class CodePanelGUIListener implements Listener {
 
         for (var key : keys) {
             if (!key.code.equals(input)) continue;
-
             if (!key.isPlayerAllowed(player.getName())) {
-                player.sendMessage("§4❌ §cУ вас нет доступа к этому коду!");
+                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have access to this code!</red>"));
                 playSound(player, "fail");
                 return;
             }
-
             if (key.maxAttempts > 0) {
                 CodePanelDatabase.incrementAttemptsUsed(key.keyName);
                 int newUsed = key.attemptsUsed + 1;
@@ -165,34 +146,25 @@ public class CodePanelGUIListener implements Listener {
                     CodePanelDatabase.removeKey(key.keyName);
                     Main.getInstance().getLogger().info(
                             "[CodePanel] Key '" + key.keyName + "' removed after "
-                                    + newUsed + "/" + key.maxAttempts + " uses."
-                    );
+                                    + newUsed + "/" + key.maxAttempts + " uses.");
                 }
             }
-
             player.sendMessage(MessageUtil.parse(msg("codepanel.messages.success")));
             playSound(player, "success");
-
             if (key.command != null && !key.command.isEmpty()) {
                 String[] commands = key.command.split(",");
                 for (String rawCmd : commands) {
                     String trimmedCmd = rawCmd.trim();
                     if (trimmedCmd.isEmpty()) continue;
-
                     String cmd = trimmedCmd
                             .replace("$entity", player.getName())
                             .replace("%entity%", player.getName());
-
                     Main.getInstance().getServer().dispatchCommand(
-                            Main.getInstance().getServer().getConsoleSender(),
-                            cmd
-                    );
+                            Main.getInstance().getServer().getConsoleSender(), cmd);
                 }
             }
             return;
         }
-
-        // WRONG CODE — просто сообщение, без блокировки
         player.sendMessage(MessageUtil.parse(msg("codepanel.messages.error")));
         playSound(player, "fail");
     }
@@ -203,14 +175,10 @@ public class CodePanelGUIListener implements Listener {
     private void playSound(Player player, String path) {
         if (!isSafe()) return;
         try {
-            String name = Main.getInstance()
-                    .getConfig()
-                    .getString("codepanel.sounds." + path);
+            String name = Main.getInstance().getConfig().getString("codepanel.sounds." + path);
             if (name == null) return;
             Sound sound = SoundUtil.getSound(name);
-            if (sound != null) {
-                player.playSound(player.getLocation(), sound, 1f, 1f);
-            }
+            if (sound != null) player.playSound(player.getLocation(), sound, 1f, 1f);
         } catch (Exception ignored) {}
     }
 
@@ -227,25 +195,16 @@ public class CodePanelGUIListener implements Listener {
         return Main.getInstance().getConfig().getInt(path, def);
     }
 
-    private boolean isSafe() {
-        return Main.getInstance() != null;
-    }
+    private boolean isSafe() { return Main.getInstance() != null; }
 
-    // =========================
-    // GUI DETECTION — проверяем размер + заголовок инвентаря
-    // =========================
     public static boolean isOurGUI(Inventory inv) {
         if (inv == null) return false;
         if (inv.getSize() != CodePanelGUI.GUI_SIZE) return false;
-        if (inv.getHolder() != null) return false; // our GUI has null holder
-        return true;
+        return inv.getHolder() == null;
     }
 
-    /**
-     * Дополнительная проверка заголовка — чтобы не перехватывать
-     * чужие 54-слотовые GUI (например, NotesManager).
-     */
     private static boolean isOurTitle(String title) {
-        return title != null && title.equals(CodePanelGUI.GUI_TITLE);
+        return title != null && (title.equals(CodePanelGUI.GUI_TITLE)
+                || title.equals(MessageUtil.legacy(CodePanelGUI.GUI_TITLE)));
     }
 }
