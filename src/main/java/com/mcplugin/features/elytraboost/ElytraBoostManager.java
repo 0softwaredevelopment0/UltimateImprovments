@@ -18,7 +18,9 @@ import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ElytraBoost — нажатие пробела во время полёта на элитрах даёт
@@ -47,6 +49,24 @@ public class ElytraBoostManager implements Listener {
     /** Время последнего буста для каждого игрока. */
     private static final Map<UUID, Long> lastBoostTime = new HashMap<>();
 
+    /** Игроки, отключившие автоматический буст при прыжке (/mp togglefly). */
+    private static final Set<UUID> flyDisabled = ConcurrentHashMap.newKeySet();
+
+    // =========================
+    // TOGGLE FLY
+    // =========================
+    public static boolean isFlyEnabled(UUID uuid) {
+        return !flyDisabled.contains(uuid);
+    }
+
+    public static void toggleFlyEnabled(UUID uuid) {
+        if (flyDisabled.contains(uuid)) {
+            flyDisabled.remove(uuid);
+        } else {
+            flyDisabled.add(uuid);
+        }
+    }
+
     // =========================
     // INIT
     // =========================
@@ -68,6 +88,9 @@ public class ElytraBoostManager implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
+
+        // Проверка toggle: если игрок отключил буст — пропускаем
+        if (flyDisabled.contains(player.getUniqueId())) return;
 
         // Должны быть элитры на груди
         ItemStack chest = player.getInventory().getChestplate();
@@ -103,6 +126,9 @@ public class ElytraBoostManager implements Listener {
         if (!event.isFlying()) return;
         Player player = event.getPlayer();
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
+
+        // Проверка toggle: если игрок отключил буст — пропускаем
+        if (flyDisabled.contains(player.getUniqueId())) return;
 
         // Проверяем элитры
         ItemStack chest = player.getInventory().getChestplate();
@@ -154,6 +180,7 @@ public class ElytraBoostManager implements Listener {
         UUID uuid = event.getPlayer().getUniqueId();
         lastYDelta.remove(uuid);
         lastBoostTime.remove(uuid);
+        flyDisabled.remove(uuid);
     }
 
     // =========================

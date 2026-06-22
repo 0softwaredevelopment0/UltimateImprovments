@@ -370,6 +370,9 @@ misc:
   speed_no_permission: "<red>❌ You don't have permission!</red>"
   speed_enabled: "<green>⚡</green> <white>Speed display: </white><green>ON</green>"
   speed_disabled: "<red>⚡</red> <white>Speed display: </white><red>OFF</red>"
+  # Fly toggle
+  fly_enabled: "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>"
+  fly_disabled: "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>"
 
 # =========================
 # 📋 Vanish List (/list)

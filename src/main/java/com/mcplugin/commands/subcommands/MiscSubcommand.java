@@ -4,6 +4,7 @@ import com.mcplugin.commands.home.HomeCommand;
 import com.mcplugin.config.MessagesManager;
 import com.mcplugin.features.notes.NotesGUI;
 import com.mcplugin.features.vanish.VanishManager;
+import com.mcplugin.features.elytraboost.ElytraBoostManager;
 import com.mcplugin.features.minecartspeed.MinecartSpeedManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -65,6 +66,21 @@ public final class MiscSubcommand {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_enabled", "<green>⚡</green> <white>Speed display: </white><green>ON</green>")));
         } else {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_disabled", "<red>⚡</red> <white>Speed display: </white><red>OFF</red>")));
+        }
+        return true;
+    }
+
+    // =========================
+    // TOGGLEFLY
+    // =========================
+    public static boolean toggleFly(CommandSender sender) {
+        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
+        UUID uuid = player.getUniqueId();
+        ElytraBoostManager.toggleFlyEnabled(uuid);
+        if (ElytraBoostManager.isFlyEnabled(uuid)) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.fly_enabled", "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>")));
+        } else {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.fly_disabled", "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>")));
         }
         return true;
     }
