@@ -1,7 +1,6 @@
 package com.mcplugin.database;
 
 import com.mcplugin.Main;
-import com.mcplugin.util.FileLogger;
 
 import java.io.File;
 import java.sql.Connection;
@@ -27,9 +26,6 @@ public class DatabaseManager {
 
             File dataFolder = Main.getInstance().getDataFolder();
             dbFile = new File(dataFolder, "database.db");
-
-            // Log database file status
-            FileLogger.ensureFile(dbFile, "Database", Main.getInstance().getLogger());
 
             Class.forName("org.sqlite.JDBC");
 
