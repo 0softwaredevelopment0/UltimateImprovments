@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  * Левый слот (0) — информационный предмет со списком миров.
  * Поле переименования — ввод названия мира.
  * Результат (слот 2) — подтверждение телепортации.
- * Центр (слот 1) — пустой.
+ * Центр (слот 1) — кнопка «Вернуться назад» (если есть сохранённая точка).
  * Escape — закрывает GUI без последствий.
  */
 public class ChgDimGUI implements Listener {
@@ -70,17 +70,24 @@ public class ChgDimGUI implements Listener {
                 .title(net.kyori.adventure.text.Component.text(MessagesManager.getString("changedimmension.gui.title", "§8✦ Change dimension")))
                 .build(player);
 
+        // 🛡 Сначала открываем, потом ставим предметы — иначе наковальня
+        // пересчитывает слот результата при инициализации и сбрасывает всё.
+        // (Такая же логика как в AuthGUI.openChangePassword())
+        view.open();
+
         Inventory topInv = view.getTopInventory();
 
         // ===== SLOT 0: информационный предмет со списком миров =====
         ItemStack infoItem = createInfoItem(worldsSection);
         topInv.setItem(0, infoItem);
 
-        // Slot 1 — пустой (центр)
-        // Slot 2 — confirm item (will be kept by reset task)
-        topInv.setItem(2, CONFIRM_ITEM);
+        // Slot 1 — кнопка «Вернуться назад» (всегда показывается)
+        // Должна ставиться ДО слота 2, потому что установка слота 1
+        // триггерит пересчёт результата наковальни, который затирает слот 2.
+        topInv.setItem(1, createReturnItem());
 
-        view.open();
+        // Slot 2 — confirm item (будет удерживаться reset task)
+        topInv.setItem(2, CONFIRM_ITEM);
 
         // Start repeating task to keep slot 2 as our confirm item
         startResetTask(player);
@@ -189,7 +196,19 @@ public class ChgDimGUI implements Listener {
                         resetTasks.remove(uuid);
                         return;
                     }
-                    openInv.getTopInventory().setItem(2, CONFIRM_ITEM);
+                    var topInv = openInv.getTopInventory();
+                    // 🛡 Очищаем курсор ТОЛЬКО если там chgdim-предмет (не трогаем предметы игрока)
+                    ItemStack cursor = player.getItemOnCursor();
+                    if (cursor != null && cursor.getItemMeta() != null &&
+                            cursor.getItemMeta().getPersistentDataContainer()
+                                    .has(Keys.CHGDIM_GUI, PersistentDataType.BOOLEAN)) {
+                        player.setItemOnCursor(null);
+                    }
+                    // Slot 1 (return button) ДОЛЖЕН ставиться ДО слота 2 (confirm),
+                    // потому что setItem в slot 1 триггерит пересчёт результата
+                    // наковальни, который затирает предмет в slot 2.
+                    topInv.setItem(1, createReturnItem());
+                    topInv.setItem(2, CONFIRM_ITEM);
                     // 🛡 Anti-dup: purge any ChgDimGUI items from player inventory
                     removeChgdimItemsFromPlayer(player);
                 } catch (Exception e) {
@@ -197,7 +216,7 @@ public class ChgDimGUI implements Listener {
                     resetTasks.remove(uuid);
                 }
             }
-        }.runTaskTimer(Main.getInstance(), 3L, 3L);
+        }.runTaskTimer(Main.getInstance(), 1L, 1L);
 
         resetTasks.put(uuid, task);
     }
@@ -223,6 +242,23 @@ public class ChgDimGUI implements Listener {
                 }
             }
         }
+    }
+
+    // =========================
+    // CREATE RETURN ITEM (slot 1)
+    // =========================
+    private static ItemStack createReturnItem() {
+        ItemStack item = new ItemStack(Material.ENDER_PEARL);
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(net.kyori.adventure.text.Component.text("§b§l↩ Вернуться назад")
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+        meta.lore(List.of(
+                net.kyori.adventure.text.Component.text("§7Нажмите, чтобы вернуться в исходную точку")
+                        .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
+        ));
+        meta.setEnchantmentGlintOverride(true);
+        item.setItemMeta(meta);
+        return tagChgdimItem(item);
     }
 
     // =========================
@@ -276,12 +312,35 @@ public class ChgDimGUI implements Listener {
         // Use openMenus instead of getMenuType() == ANVIL for Leaf fork compatibility
         if (!openMenus.containsKey(player.getUniqueId())) return;
 
-        // Блокируем клики по любым слотам, кроме результата (слот 2)
-        if (e.getSlot() != 2) {
+        int slot = e.getSlot();
+
+        // ===== Клик вне окна GUI (слот -999) — блокируем =====
+        if (slot < 0) {
             e.setCancelled(true);
             return;
         }
 
+        // ===== Разрешаем клики в СВОЁМ инвентаре (слоты 3+) =====
+        // Игрок может свободно перемещать свои предметы в нижней половине GUI.
+        if (slot >= 3) {
+            return;
+        }
+
+        // ===== Слот 0 (информационный предмет) — блокируем =====
+        if (slot == 0) {
+            e.setCancelled(true);
+            return;
+        }
+
+        // ===== Слот 1 (кнопка возврата) =====
+        if (slot == 1) {
+            e.setCancelled(true);
+            player.closeInventory();
+            ChgDimCommand.teleportBack(player);
+            return;
+        }
+
+        // ===== Слот 2 (подтверждение телепортации) =====
         e.setCancelled(true);
 
         String rawText = getAnvilRenameText(player);

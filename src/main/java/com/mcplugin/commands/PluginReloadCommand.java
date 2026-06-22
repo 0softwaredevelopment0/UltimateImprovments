@@ -41,7 +41,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
         return switch (sub) {
             case "help" -> { HelpCommand.execute(sender); yield true; }
-            case "chgdim", "chgdim_teleport", "chgdim_return" -> ChgDimSubcommand.execute(sender, args);
+            case "chgdim" -> ChgDimSubcommand.execute(sender, args);
             case "codepane" -> CodePaneSubcommand.execute(sender, args);
             case "pane_click" -> CodePaneSubcommand.paneClick(sender, args);
             case "structures", "str" -> handleStructures(sender, args);
@@ -198,7 +198,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             completions.addAll(List.of("help", "checkver", "updatejar",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
-                    "auth", "chgdim", "chgdim_teleport", "chgdim_return", "vanish", "notes",
+                    "auth",                    "chgdim", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
                     "askcords", "forcesuicide"));
@@ -232,8 +232,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 && (args[1].equalsIgnoreCase("forcelogin") || args[1].equalsIgnoreCase("resetauth")
                 || args[1].equalsIgnoreCase("chgpass") || args[1].equalsIgnoreCase("delsession"))) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("chgdim_teleport")) {
-            ChgDimSubcommand.tabCompleteChgdimWorlds(completions);
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str"))) {
             completions.addAll(List.of("dfc", "magnet", "lightning"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("codepane")) {
