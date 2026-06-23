@@ -78,13 +78,8 @@ public class CehealthCommand {
         int hp = (int) Math.round(currentHealth);
         int maxHp = (int) Math.round(maxHealth);
 
-        // Color based on health percentage
-        String color;
-        double pct = currentHealth / maxHealth;
-        if (pct > 0.75) color = "<green>";
-        else if (pct > 0.5) color = "<yellow>";
-        else if (pct > 0.25) color = "<gold>";
-        else color = "<red>";
+        // Color based on health percentage (6 segments of 1/6)
+        String colorTag = getHealthColorTag(currentHealth / maxHealth);
 
         // Entity name
         String entityName = living.getType().name().toLowerCase().replace('_', ' ');
@@ -96,13 +91,17 @@ public class CehealthCommand {
             entityName = living.getCustomName();
         }
 
-        // Create health bar
+        // Create health bar (20 blocks, each with per-position color)
+        double pct = currentHealth / maxHealth;
         int barLength = 20;
         int filledBars = (int) Math.round(pct * barLength);
         StringBuilder bar = new StringBuilder();
         for (int i = 0; i < barLength; i++) {
             if (i < filledBars) {
-                bar.append("<green>█</green>");
+                // Each filled block gets color based on its position (0=low, 19=high)
+                double blockPct = (double) (i + 1) / barLength;
+                String blockColor = getHealthColorTag(blockPct);
+                bar.append(blockColor).append("█</").append(blockColor.substring(1));
             } else {
                 bar.append("<dark_gray>█</dark_gray>");
             }
@@ -115,10 +114,23 @@ public class CehealthCommand {
         player.sendMessage(Component.empty());
         player.sendMessage(MessageUtil.parse("<gold>=== <white>Entity Health</white> ==="));
         player.sendMessage(MessageUtil.parse("<gray>Entity: </gray><white>" + entityName + "</white>"));
-        player.sendMessage(MessageUtil.parse("<gray>Health: </gray>" + color + hp + "<reset><gray>/</gray>" + color + maxHp + "<reset>"));
-        player.sendMessage(bar.toString());
+        player.sendMessage(MessageUtil.parse("<gray>Health: </gray>" + colorTag + hp + "<reset><gray>/</gray>" + colorTag + maxHp + "<reset>"));
+        player.sendMessage(MessageUtil.parse(bar.toString()));
         player.sendMessage(MessageUtil.parse("<gold>==========================="));
         return true;
+    }
+
+    /**
+     * Возвращает MiniMessage тег цвета для указанного процента здоровья (0.0 — 1.0).
+     * 6 сегментов по 1/6: тёмно-красный, красный, оранжевый, жёлтый, зелёный, тёмно-зелёный.
+     */
+    private static String getHealthColorTag(double pct) {
+        if (pct > 5.0 / 6.0) return "<dark_green>";
+        if (pct > 4.0 / 6.0) return "<green>";
+        if (pct > 3.0 / 6.0) return "<yellow>";
+        if (pct > 2.0 / 6.0) return "<gold>";
+        if (pct > 1.0 / 6.0) return "<red>";
+        return "<dark_red>";
     }
 
     private static void cleanupCooldowns() {
