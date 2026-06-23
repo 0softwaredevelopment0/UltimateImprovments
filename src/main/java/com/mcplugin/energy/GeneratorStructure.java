@@ -5,7 +5,6 @@ import com.mcplugin.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 
@@ -49,14 +48,15 @@ public class GeneratorStructure {
         World world = center.getWorld();
         if (world == null) return false;
 
+        // Search in block above the furnace (Y range: centerY+0.5 to centerY+1.5)
+        // Frame on TOP face of furnace will be in this area with facing=UP
         for (Entity entity : world.getNearbyEntities(
-                frameArea, 1.5, 0.5, 1.5,
+                frameArea, 1.5, 1.0, 1.5,
                 e -> e instanceof ItemFrame)) {
             ItemFrame frame = (ItemFrame) entity;
-            Block attached = frame.getLocation().getBlock()
-                    .getRelative(frame.getFacing().getOppositeFace());
-            if (LocationUtil.normalize(attached.getLocation())
-                    .equals(LocationUtil.normalize(center))) {
+            // Simple, robust: frame on top face always has facing=UP
+            // (avoids boundary rounding issues with getLocation().getBlock())
+            if (frame.getFacing() == org.bukkit.block.BlockFace.UP) {
                 return true;
             }
         }

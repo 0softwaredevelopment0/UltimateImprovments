@@ -5,7 +5,6 @@ import com.mcplugin.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 
@@ -95,14 +94,12 @@ public class LightningStructure {
         // Frame facing = UP, attached face = UP, so it's attached to the rod below
         Location frameArea = center.clone().add(0.5, 1.0, 0.5);
         for (Entity entity : center.getWorld().getNearbyEntities(
-                frameArea, 1.5, 0.5, 1.5,
+                frameArea, 1.5, 1.0, 1.5,
                 e -> e instanceof ItemFrame)) {
             ItemFrame frame = (ItemFrame) entity;
-            // The block the frame is attached to
-            Block attached = frame.getLocation().getBlock()
-                    .getRelative(frame.getFacing().getOppositeFace());
-            if (LocationUtil.normalize(attached.getLocation())
-                    .equals(LocationUtil.normalize(center))) {
+            // Simple, robust: frame on top face always has facing=UP
+            // (avoids boundary rounding issues with getLocation().getBlock())
+            if (frame.getFacing() == org.bukkit.block.BlockFace.UP) {
                 return true;
             }
         }
