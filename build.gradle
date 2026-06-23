@@ -30,6 +30,36 @@ tasks {
     assemble {
         dependsOn(shadowJar)
     }
+
+    // 📦 После сборки копируем JAR в корень проекта,
+    // удаляя старые jar'ы с "MC-Plugin" в названии
+    shadowJar {
+        doLast {
+            def rootDir = project.projectDir
+            def jarName = "MC-Plugin-${project.version}.jar"
+            def source = shadowJar.archiveFile.get().asFile
+
+            if (!source.exists()) return
+
+            // Удаляем старые jar'ы (содержащие "MC-Plugin" в имени)
+            rootDir.listFiles().each { f ->
+                if (f.name.contains("MC-Plugin") && f.name.endsWith(".jar")) {
+                    if (f.delete()) {
+                        logger.lifecycle("[JAR] Удалён старый: ${f.name}")
+                    }
+                }
+            }
+
+            // Копируем свежий jar через Java NIO
+            def target = new File(rootDir, jarName)
+            java.nio.file.Files.copy(
+                source.toPath(),
+                target.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+            )
+            logger.lifecycle("[JAR] Скопирован: ${jarName}")
+        }
+    }
 }
 
 // Paper 26.x (1.21.4+) uses Mojang mappings natively - no reobf needed
