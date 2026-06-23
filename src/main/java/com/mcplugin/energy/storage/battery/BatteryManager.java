@@ -314,7 +314,7 @@ public class BatteryManager {
     // ════════════════════════════════════════
     // BLOCK BROKEN (hot shrink)
     // ════════════════════════════════════════
-    public static void onBlockBroken(Location loc) {
+    public static void onBlockBroken(Location loc, Player player) {
         loc = LocationUtil.normalize(loc);
         if (loc == null) return;
         long key = toKey(loc);
@@ -326,6 +326,10 @@ public class BatteryManager {
 
         if (cluster.blockKeys.isEmpty()) {
             clustersById.remove(cluster.id);
+            BatteryPersistence.deleteCluster(cluster.id);
+            if (player != null) {
+                player.sendMessage("§e❕ Батарея полностью разобрана (удалено из БД)");
+            }
             return;
         }
 
@@ -339,6 +343,10 @@ public class BatteryManager {
         cluster.blockKeys = newKeys;
         for (long nk : newKeys) locationToCluster.put(nk, cluster);
         cluster.recalculateCenter();
+
+        if (player != null) {
+            player.sendMessage("§7❕ Блок батареи разрушен, ёмкость: §f" + cluster.capacity);
+        }
     }
 
     // ════════════════════════════════════════

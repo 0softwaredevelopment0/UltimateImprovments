@@ -375,7 +375,7 @@ public class LightManager {
         }
     }
 
-    public static void onBlockBroken(Location loc) {
+    public static void onBlockBroken(Location loc, Player player) {
         loc = LocationUtil.normalize(loc);
         if (loc == null) return;
         long key = toKey(loc);
@@ -389,6 +389,10 @@ public class LightManager {
 
         if (cluster.blockKeys.isEmpty()) {
             clustersById.remove(cluster.id);
+            LightPersistence.deleteCluster(cluster.id);
+            if (player != null) {
+                player.sendMessage("§e❕ Лампочка полностью разобрана (удалено из БД)");
+            }
             return;
         }
 
@@ -401,6 +405,10 @@ public class LightManager {
         cluster.blockKeys = newKeys;
         for (long nk : newKeys) locationToCluster.put(nk, cluster);
         cluster.recalculateCenter();
+
+        if (player != null) {
+            player.sendMessage("§7❕ Блок лампочки разрушен, осталось: §f" + cluster.power);
+        }
     }
 
     // ════════════════════════════════════════

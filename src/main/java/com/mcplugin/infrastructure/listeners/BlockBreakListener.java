@@ -9,6 +9,7 @@ import com.mcplugin.infrastructure.util.LocationUtil;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -29,18 +30,20 @@ public class BlockBreakListener implements Listener {
             return;
         }
 
+        Player breaker = e.getPlayer();
+
         // =========================
         // 🔋 BATTERY MULTIBLOCK (hot shrink)
         // =========================
         if (e.getBlock().getType() == Material.WAXED_COPPER_GRATE && BatteryManager.isActive(loc)) {
-            BatteryManager.onBlockBroken(loc);
+            BatteryManager.onBlockBroken(loc, breaker);
         }
 
         // =========================
         // 💡 LIGHT MULTIBLOCK (hot shrink)
         // =========================
         if (e.getBlock().getType() == Material.REDSTONE_LAMP && LightManager.isActive(loc)) {
-            LightManager.onBlockBroken(loc);
+            LightManager.onBlockBroken(loc, breaker);
         }
 
         // =========================
