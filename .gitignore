@@ -45,7 +45,6 @@ nul
 
 ### Extra ignores ###
 .claude/
-Jar/
 
 ### Codebuff ###
 .codebuff-memory.db

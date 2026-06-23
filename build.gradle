@@ -79,10 +79,5 @@ tasks.named('assemble') {
     dependsOn(tasks.named('copyJarToFolder'))
 }
 
-// Paper 26.x (1.21.4+) uses Mojang mappings natively - no reobf needed
-// The dev bundle does not provide reobf mappings for modern Paper
-tasks.configureEach {
-    if (name == "reobfJar") {
-        enabled = false
-    }
-}
+// Paper 26.x (1.21.4+) uses Mojang mappings natively — shadowJar produces production-ready jar.
+// reobfJar is not available in modern Paperweight.
