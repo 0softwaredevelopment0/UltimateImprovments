@@ -91,19 +91,19 @@ public class CehealthCommand {
             entityName = living.getCustomName();
         }
 
-        // Create health bar (20 blocks, each with per-position color)
+        // Create health bar (100 bars "|", each with per-position color)
         double pct = currentHealth / maxHealth;
-        int barLength = 20;
+        int barLength = 100;
         int filledBars = (int) Math.round(pct * barLength);
         StringBuilder bar = new StringBuilder();
         for (int i = 0; i < barLength; i++) {
             if (i < filledBars) {
-                // Each filled block gets color based on its position (0=low, 19=high)
+                // Each filled bar gets color based on its position (0=low, 99=high)
                 double blockPct = (double) (i + 1) / barLength;
                 String blockColor = getHealthColorTag(blockPct);
-                bar.append(blockColor).append("█</").append(blockColor.substring(1));
+                bar.append(blockColor).append("|</").append(blockColor.substring(1));
             } else {
-                bar.append("<dark_gray>█</dark_gray>");
+                bar.append("<dark_gray>|</dark_gray>");
             }
         }
 
