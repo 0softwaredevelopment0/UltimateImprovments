@@ -253,7 +253,7 @@ public class EnergyCraftingListener implements Listener {
                         remaining
                 );
 
-                node.setEnergy(energy - take);
+                node.removeEnergy(take);
 
                 remaining -= take;
             }
