@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.7.73
+version: 1.7.74
 
 main: com.mcplugin.infrastructure.core.Main
 

@@ -24,6 +24,7 @@ public class CraftingModule extends PluginModule {
         ShokerCraftListener.init();
         AntimatterCraftListener.init();
         EntityLocatorCraftListener.init();
+        LeadIngotCraftListener.init();
         LeadShieldCraftListener.init();
         HealthMeterCraftListener.init();
         OreFinderCraftListener.init();
@@ -38,6 +39,7 @@ public class CraftingModule extends PluginModule {
         pm.registerEvents(new ShokerCraftListener(), main);
         pm.registerEvents(new AntimatterCraftListener(), main);
         pm.registerEvents(new EntityLocatorCraftListener(), main);
+        pm.registerEvents(new LeadIngotCraftListener(), main);
         pm.registerEvents(new LeadShieldCraftListener(), main);
         pm.registerEvents(new HealthMeterCraftListener(), main);
         pm.registerEvents(new OreFinderCraftListener(), main);

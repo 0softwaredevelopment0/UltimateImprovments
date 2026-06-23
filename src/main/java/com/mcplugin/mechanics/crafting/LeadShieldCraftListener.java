@@ -82,6 +82,7 @@ public class LeadShieldCraftListener implements Listener {
                 "789"
         );
 
+        // Используем NETHERITE_INGOT как материал — свинцовый слиток тоже NETHERITE_INGOT с PDC
         recipe.setIngredient('1', Material.NETHERITE_INGOT);
         recipe.setIngredient('2', Material.NETHERITE_INGOT);
         recipe.setIngredient('3', Material.NETHERITE_INGOT);
@@ -99,7 +100,7 @@ public class LeadShieldCraftListener implements Listener {
     }
 
     // =========================
-    // OVERRIDE RESULT
+    // OVERRIDE RESULT — проверяем что ингредиенты — свинцовые слитки, не обычный незерит
     // =========================
     @EventHandler
     public void onCraft(PrepareItemCraftEvent e) {
@@ -111,6 +112,24 @@ public class LeadShieldCraftListener implements Listener {
         if (!sr.getKey().equals(RECIPE_KEY)) return;
 
         CraftingInventory inv = e.getInventory();
+
+        // Проверяем что все NETHERITE_INGOT ингредиенты — свинцовые слитки (isLeadIngot)
+        ItemStack[] matrix = inv.getMatrix();
+        if (matrix == null) return;
+        int[] ingotSlots = {0, 1, 2, 3, 5, 6, 7, 8};
+        for (int slot : ingotSlots) {
+            ItemStack ing = matrix[slot];
+            if (ing == null || ing.getType() == Material.AIR) {
+                inv.setResult(null);
+                return;
+            }
+            ItemMeta ingMeta = ing.getItemMeta();
+            if (ingMeta == null || !ingMeta.getPersistentDataContainer().has(Keys.LEAD_INGOT, PersistentDataType.BYTE)) {
+                // Не свинцовый слиток — блокируем
+                inv.setResult(null);
+                return;
+            }
+        }
 
         ItemStack result = new ItemStack(Material.SHIELD);
         ItemMeta meta = result.getItemMeta();
