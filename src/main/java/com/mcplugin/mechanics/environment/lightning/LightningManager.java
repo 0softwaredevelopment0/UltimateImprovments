@@ -69,15 +69,21 @@ public class LightningManager implements Listener {
     }
 
     public static boolean isActiveAt(Location loc) {
+        return getCenterForBlock(loc) != null;
+    }
+
+    /**
+     * Находит центр активной структуры молний, в которую входит данный блок.
+     */
+    public static Location getCenterForBlock(Location loc) {
         loc = LocationUtil.normalize(loc);
-        if (loc == null) return false;
-        // Check if loc is part of any active structure
+        if (loc == null) return null;
         for (Location center : activeStructures.keySet()) {
             if (LightningStructure.isPartOfStructure(center, loc)) {
-                return activeStructures.get(center);
+                return center;
             }
         }
-        return false;
+        return null;
     }
 
     public static void setEnabled(Location center, boolean enabled) {

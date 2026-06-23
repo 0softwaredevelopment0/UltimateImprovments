@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.mcplugin'
-version = '1.7.70'
+version = '1.7.71'
 
 java {
     toolchain {

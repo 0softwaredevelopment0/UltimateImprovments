@@ -121,12 +121,26 @@ public class ReactorListener implements Listener {
 
         Block block = e.getBlock();
         Location loc = LocationUtil.normalize(block.getLocation());
+        Player player = e.getPlayer();
 
         // =========================
         // 🧲 МАГНИТ: LODESTONE в активном кластере → пересчёт
         // =========================
         if (block.getType() == Material.LODESTONE && MagnetManager.isActive(loc)) {
-            MagnetManager.onBlockBroken(loc, e.getPlayer());
+            MagnetManager.onBlockBroken(loc, player);
+            return;
+        }
+
+        // =========================
+        // ⚡ МОЛНИИ: любой блок активной структуры → disassemble
+        // =========================
+        Location lightningCenter = LightningManager.getCenterForBlock(loc);
+        if (lightningCenter != null) {
+            LightningManager.disassemble(lightningCenter);
+            if (player != null) {
+                player.sendMessage("§e⚡ Структура молний разрушена и деактивирована!"
+                        + " §8[§7" + lightningCenter.getBlockX() + " " + lightningCenter.getBlockY() + " " + lightningCenter.getBlockZ() + "§8]");
+            }
             return;
         }
 
@@ -151,6 +165,10 @@ public class ReactorListener implements Listener {
         }
 
         reactor.setReactorLocation(null);
+        if (player != null) {
+            player.sendMessage("§c❕ Реактор разрушен и деактивирован!"
+                    + " §8[§7" + reactorLoc.getBlockX() + " " + reactorLoc.getBlockY() + " " + reactorLoc.getBlockZ() + "§8]");
+        }
     }
 
     // =========================
