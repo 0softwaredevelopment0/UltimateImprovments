@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.mcplugin'
-version = '1.7.57'
+version = '1.7.58'
 
 java {
     toolchain {
@@ -31,33 +31,32 @@ tasks {
         dependsOn(shadowJar)
     }
 
-    // 📦 После сборки копируем JAR в корень проекта,
-    // удаляя старые jar'ы с "MC-Plugin" в названии
     shadowJar {
         doLast {
-            def rootDir = project.projectDir
-            def jarName = "MC-Plugin-${project.version}-all.jar"
+            def jarDir = new File(project.projectDir, "Jar")
+            def jarName = "MC-Plugin-${project.version}.jar"
             def source = shadowJar.archiveFile.get().asFile
 
             if (!source.exists()) return
 
-            // Удаляем старые jar'ы (содержащие "MC-Plugin" в имени)
-            rootDir.listFiles().each { f ->
-                if (f.name.contains("MC-Plugin") && f.name.endsWith(".jar")) {
-                    if (f.delete()) {
-                        logger.lifecycle("[JAR] Удалён старый: ${f.name}")
-                    }
+            // Создаём папку Jar/, если её нет
+            jarDir.mkdirs()
+
+            // Полностью очищаем папку Jar/ от всех файлов
+            jarDir.listFiles().each { f ->
+                if (f.delete()) {
+                    logger.lifecycle("[JAR] Удалён: ${f.name}")
                 }
             }
 
-            // Копируем свежий jar через Java NIO
-            def target = new File(rootDir, jarName)
+            // Копируем свежий fat jar через Java NIO
+            def target = new File(jarDir, jarName)
             java.nio.file.Files.copy(
                 source.toPath(),
                 target.toPath(),
                 java.nio.file.StandardCopyOption.REPLACE_EXISTING
             )
-            logger.lifecycle("[JAR] Скопирован: ${jarName}")
+            logger.lifecycle("[JAR] Скопирован в Jar/: ${jarName}")
         }
     }
 }
