@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class UnbreakableBreakerModule extends PluginModule {
 
-    public UnbreakableBreakerModule() { super("UnbreakableBreaker", false); }
+    public UnbreakableBreakerModule() { super("UnbreakableBreaker", "mechanics/features/unbreakable_breaker", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

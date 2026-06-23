@@ -14,13 +14,20 @@ import org.bukkit.plugin.java.JavaPlugin;
 public abstract class PluginModule {
 
     private final String name;
+    private final String modulePath;
     private boolean enabled = false;
     private final boolean essential;
     private String disableReason = null;
 
-    public PluginModule(String name, boolean essential) {
+    public PluginModule(String name, String modulePath, boolean essential) {
         this.name = name;
+        this.modulePath = modulePath;
         this.essential = essential;
+    }
+
+    /** Backward-compatible constructor without path */
+    public PluginModule(String name, boolean essential) {
+        this(name, name.toLowerCase().replace(" ", "_"), essential);
     }
 
     // =========================
@@ -28,6 +35,7 @@ public abstract class PluginModule {
     // =========================
 
     public String getName() { return name; }
+    public String getModulePath() { return modulePath; }
     public boolean isEnabled() { return enabled; }
     public boolean isEssential() { return essential; }
     public String getDisableReason() { return disableReason; }

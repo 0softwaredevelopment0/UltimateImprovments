@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class EntityLocatorModule extends PluginModule {
 
-    public EntityLocatorModule() { super("EntityLocator", false); }
+    public EntityLocatorModule() { super("EntityLocator", "mechanics/features/entity_locator", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

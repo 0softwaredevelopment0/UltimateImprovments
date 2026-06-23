@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class LeashModule extends PluginModule {
 
     public LeashModule() {
-        super("Leash", false);
+        super("Leash", "mechanics/features/leash", false);
     }
 
     @Override

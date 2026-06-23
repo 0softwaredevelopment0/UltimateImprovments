@@ -11,7 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class CraftingModule extends PluginModule {
 
     public CraftingModule() {
-        super("Crafting", true);
+        super("Crafting", "mechanics/crafting", true);
     }
 
     @Override

@@ -7,7 +7,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class PowerModule extends PluginModule {
 
-    public PowerModule() { super("Power", false); }
+    public PowerModule() { super("Power", "infrastructure/core", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

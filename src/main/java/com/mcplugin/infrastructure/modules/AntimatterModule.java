@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class AntimatterModule extends PluginModule {
 
-    public AntimatterModule() { super("Antimatter", false); }
+    public AntimatterModule() { super("Antimatter", "mechanics/features/antimatter", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

@@ -11,7 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class DatapackModule extends PluginModule {
 
     public DatapackModule() {
-        super("Datapack", false);
+        super("Datapack", "infrastructure/core", false);
     }
 
     @Override

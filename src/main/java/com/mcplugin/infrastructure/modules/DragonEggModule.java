@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class DragonEggModule extends PluginModule {
 
-    public DragonEggModule() { super("DragonEgg", false); }
+    public DragonEggModule() { super("DragonEgg", "mechanics/features/dragon_egg", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

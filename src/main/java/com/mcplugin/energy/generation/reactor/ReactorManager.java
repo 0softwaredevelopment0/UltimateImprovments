@@ -39,11 +39,21 @@ public class ReactorManager {
     }
 
     public static void init() {
+        if (instance != null) return; // prevent double-init
         instance = new ReactorManager();
         ReactorConfig.init();
         instance.cfg = ReactorConfig.getInstance();
         instance.copyConfig();
         loadAll();
+    }
+
+    /** Clean shutdown — saves state, clears instance. Call before re-init for hot-toggle. */
+    public static void shutdown() {
+        if (instance != null) {
+            saveAll();
+            instance.setReactorLocation(null);
+            instance = null;
+        }
     }
 
     // =========================

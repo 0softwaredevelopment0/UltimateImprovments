@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class VoidProtectionModule extends PluginModule {
 
-    public VoidProtectionModule() { super("VoidProtection", false); }
+    public VoidProtectionModule() { super("VoidProtection", "infrastructure/listeners", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

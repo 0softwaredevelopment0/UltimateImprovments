@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class BeaconModule extends PluginModule {
 
-    public BeaconModule() { super("Beacon", false); }
+    public BeaconModule() { super("Beacon", "mechanics/features/beacon", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

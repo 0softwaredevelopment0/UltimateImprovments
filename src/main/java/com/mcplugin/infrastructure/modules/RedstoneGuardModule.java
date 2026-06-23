@@ -9,7 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class RedstoneGuardModule extends PluginModule {
 
-    public RedstoneGuardModule() { super("RedstoneGuard", false); }
+    public RedstoneGuardModule() { super("RedstoneGuard", "infrastructure/server", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

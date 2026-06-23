@@ -22,7 +22,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class CoreModule extends PluginModule {
 
     public CoreModule() {
-        super("Core", true);
+        super("Core", "infrastructure/core", true);
     }
 
     @Override

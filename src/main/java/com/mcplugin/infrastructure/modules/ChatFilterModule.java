@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class ChatFilterModule extends PluginModule {
 
-    public ChatFilterModule() { super("ChatFilter", false); }
+    public ChatFilterModule() { super("ChatFilter", "infrastructure/listeners", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

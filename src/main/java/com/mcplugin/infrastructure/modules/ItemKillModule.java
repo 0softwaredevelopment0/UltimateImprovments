@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class ItemKillModule extends PluginModule {
 
-    public ItemKillModule() { super("ItemKill", false); }
+    public ItemKillModule() { super("ItemKill", "mechanics/features/item_kill", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

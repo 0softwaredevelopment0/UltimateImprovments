@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class TerracotaSpeedModule extends PluginModule {
 
-    public TerracotaSpeedModule() { super("TerracotaSpeed", false); }
+    public TerracotaSpeedModule() { super("TerracotaSpeed", "mechanics/features/terracotta_speed", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

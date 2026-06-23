@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class DatabaseModule extends PluginModule {
 
     public DatabaseModule() {
-        super("Database", true); // essential
+        super("Database", "infrastructure/database", true); // essential
     }
 
     @Override

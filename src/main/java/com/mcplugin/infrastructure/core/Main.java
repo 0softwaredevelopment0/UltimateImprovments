@@ -91,10 +91,15 @@ public class Main extends JavaPlugin {
         mm.register(new CoreModule());
         mm.register(new PowerModule());
 
-        // Mechanics
+        // Energy systems (per-system modules)
         mm.register(new CableModule());
-        mm.register(new EnergyModule());
+        mm.register(new GeneratorBasicModule());
         mm.register(new ReactorModule());
+        mm.register(new FurnaceModule());
+        mm.register(new WorkbenchModule());
+        mm.register(new BatteryModule());
+
+        // Mechanics
         mm.register(new RadiationModule());
         mm.register(new LightningModule());
 

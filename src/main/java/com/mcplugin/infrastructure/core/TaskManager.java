@@ -52,9 +52,9 @@ public class TaskManager {
         if (tasksStarted) return;
         tasksStarted = true;
 
-        generatorTask = new GeneratorTask().runTaskTimer(plugin, 0L, 1L);
+        // GeneratorTask now managed by GeneratorBasicModule
         cableLossTask = new CableLossTask().runTaskTimer(plugin, 0L, 100L);
-        batteryTask = new BatteryDrainTask().runTaskTimer(plugin, 0L, 1L);
+        // BatteryDrainTask now managed by BatteryModule (individually toggleable)
         balancerTask = new EnergyBalancerTask().runTaskTimer(plugin, 0L, 1L);
         cableVisualTask = new CableVisualTask().runTaskTimer(plugin, 0L, 2L);
         overloadTask = new EmergencyEntitiesKill().runTaskTimer(plugin, 20L, 20L);
@@ -62,7 +62,7 @@ public class TaskManager {
         overloadWarningTask = new ServerOverloadWarning().runTaskTimer(plugin, 20L, 20L);
 
         gunTask = new PlasmaProjectileTask().runTaskTimer(plugin, 1L, 1L);
-        reactorTask = new ReactorTask().runTaskTimer(plugin, 1L, 1L);
+        // ReactorTask now managed by ReactorModule
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
         fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
         codePanelCleanupTask = new CodePanelCleanupTask().runTaskTimer(plugin, 200L, 400L);
@@ -71,6 +71,50 @@ public class TaskManager {
     }
 
     public void stopAll() {
+        cancelAll();
+        tasksStarted = false;
+    }
+
+    // =========================
+    // PER-TASK START / STOP (for hot-toggle)
+    // =========================
+    public void startBatteryTask(Main plugin) {
+        if (batteryTask != null) return;
+        batteryTask = new BatteryDrainTask().runTaskTimer(plugin, 0L, 1L);
+    }
+
+    public void stopBatteryTask() {
+        if (batteryTask != null) { batteryTask.cancel(); batteryTask = null; }
+    }
+
+    public void startGeneratorTask(Main plugin) {
+        if (generatorTask != null) return;
+        generatorTask = new GeneratorTask().runTaskTimer(plugin, 0L, 1L);
+    }
+
+    public void stopGeneratorTask() {
+        if (generatorTask != null) { generatorTask.cancel(); generatorTask = null; }
+    }
+
+    public void startReactorTask(Main plugin) {
+        if (reactorTask != null) return;
+        reactorTask = new ReactorTask().runTaskTimer(plugin, 1L, 1L);
+    }
+
+    public void stopReactorTask() {
+        if (reactorTask != null) { reactorTask.cancel(); reactorTask = null; }
+    }
+
+    public void startCableVisualTask(Main plugin) {
+        if (cableVisualTask != null) return;
+        cableVisualTask = new CableVisualTask().runTaskTimer(plugin, 0L, 2L);
+    }
+
+    public void stopCableVisualTask() {
+        if (cableVisualTask != null) { cableVisualTask.cancel(); cableVisualTask = null; }
+    }
+
+    private void cancelAll() {
         if (generatorTask != null) generatorTask.cancel();
         if (cableLossTask != null) cableLossTask.cancel();
         if (batteryTask != null) batteryTask.cancel();
@@ -84,7 +128,5 @@ public class TaskManager {
         if (radiationTask != null) radiationTask.cancel();
         if (fishingTask != null) fishingTask.cancel();
         if (codePanelCleanupTask != null) codePanelCleanupTask.cancel();
-
-        tasksStarted = false;
     }
 }

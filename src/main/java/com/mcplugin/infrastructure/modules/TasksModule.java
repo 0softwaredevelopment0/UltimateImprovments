@@ -12,7 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class TasksModule extends PluginModule {
 
     public TasksModule() {
-        super("Tasks", true);
+        super("Tasks", "infrastructure/core", true);
     }
 
     @Override

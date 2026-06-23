@@ -5,7 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class VanishModule extends PluginModule {
 
-    public VanishModule() { super("Vanish", false); }
+    public VanishModule() { super("Vanish", "mechanics/features/vanish", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

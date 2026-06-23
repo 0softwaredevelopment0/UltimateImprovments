@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class EnderChestModule extends PluginModule {
 
-    public EnderChestModule() { super("EnderChest", false); }
+    public EnderChestModule() { super("EnderChest", "mechanics/features/ender_chest", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

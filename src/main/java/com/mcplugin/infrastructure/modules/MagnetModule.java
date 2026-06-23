@@ -7,7 +7,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class MagnetModule extends PluginModule {
 
-    public MagnetModule() { super("Magnet", false); }
+    public MagnetModule() { super("Magnet", "mechanics/environment/magnet", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

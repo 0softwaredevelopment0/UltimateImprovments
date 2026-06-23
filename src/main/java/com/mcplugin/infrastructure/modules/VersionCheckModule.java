@@ -15,7 +15,7 @@ public class VersionCheckModule extends PluginModule {
     private static final String EXPECTED_SERVER_NAME = "Leaf";
 
     public VersionCheckModule() {
-        super("VersionCheck", false);
+        super("VersionCheck", "infrastructure/core", false);
     }
 
     @Override

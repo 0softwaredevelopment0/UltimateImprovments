@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class HealthMeterModule extends PluginModule {
 
-    public HealthMeterModule() { super("HealthMeter", false); }
+    public HealthMeterModule() { super("HealthMeter", "mechanics/features/health_meter", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

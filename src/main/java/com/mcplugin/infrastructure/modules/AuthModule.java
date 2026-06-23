@@ -12,7 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class AuthModule extends PluginModule {
 
     public AuthModule() {
-        super("Auth", true);
+        super("Auth", "mechanics/security/auth", true);
     }
 
     @Override

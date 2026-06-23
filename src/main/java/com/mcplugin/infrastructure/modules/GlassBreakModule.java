@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class GlassBreakModule extends PluginModule {
 
-    public GlassBreakModule() { super("GlassBreak", false); }
+    public GlassBreakModule() { super("GlassBreak", "mechanics/features/glass_break", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

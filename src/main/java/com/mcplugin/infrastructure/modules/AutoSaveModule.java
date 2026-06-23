@@ -11,7 +11,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class AutoSaveModule extends PluginModule {
 
     public AutoSaveModule() {
-        super("AutoSave", false);
+        super("AutoSave", "infrastructure/database", false);
     }
 
     @Override

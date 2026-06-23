@@ -8,7 +8,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class IntegrityModule extends PluginModule {
 
-    public IntegrityModule() { super("Integrity", false); }
+    public IntegrityModule() { super("Integrity", "mechanics/features/integrity", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

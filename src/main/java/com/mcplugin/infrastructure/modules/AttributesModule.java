@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class AttributesModule extends PluginModule {
 
-    public AttributesModule() { super("Attributes", false); }
+    public AttributesModule() { super("Attributes", "mechanics/features/attributes", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

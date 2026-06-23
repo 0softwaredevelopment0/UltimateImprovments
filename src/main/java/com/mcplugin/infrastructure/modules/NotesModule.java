@@ -5,7 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class NotesModule extends PluginModule {
 
-    public NotesModule() { super("Notes", false); }
+    public NotesModule() { super("Notes", "mechanics/features/notes", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

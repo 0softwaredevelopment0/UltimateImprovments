@@ -5,7 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class CableModule extends PluginModule {
 
-    public CableModule() { super("Cable", true); }
+    public CableModule() { super("Cable", "energy/transfer/cable", true); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class ShieldSlownessModule extends PluginModule {
 
-    public ShieldSlownessModule() { super("ShieldSlowness", false); }
+    public ShieldSlownessModule() { super("ShieldSlowness", "mechanics/features/shield_slowness", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

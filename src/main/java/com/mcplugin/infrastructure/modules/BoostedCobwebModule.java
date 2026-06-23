@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class BoostedCobwebModule extends PluginModule {
 
-    public BoostedCobwebModule() { super("BoostedCobweb", false); }
+    public BoostedCobwebModule() { super("BoostedCobweb", "mechanics/features/cobweb_boost", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

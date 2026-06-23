@@ -208,6 +208,17 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
+    // SHUTDOWN (for hot-disable)
+    // =========================
+    public static void shutdown() {
+        if (instance != null) {
+            org.bukkit.event.HandlerList.unregisterAll(instance);
+            instance = null;
+        }
+        clearAll();
+    }
+
+    // =========================
     // CLEANUP
     // =========================
     public static void clearAll() {

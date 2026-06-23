@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class MinecartSpeedModule extends PluginModule {
 
-    public MinecartSpeedModule() { super("MinecartSpeed", false); }
+    public MinecartSpeedModule() { super("MinecartSpeed", "mechanics/features/minecart_speed", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

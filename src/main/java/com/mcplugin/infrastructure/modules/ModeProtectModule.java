@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class ModeProtectModule extends PluginModule {
 
-    public ModeProtectModule() { super("ModeProtect", false); }
+    public ModeProtectModule() { super("ModeProtect", "mechanics/features/mode_protect", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

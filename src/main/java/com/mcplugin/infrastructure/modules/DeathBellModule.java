@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class DeathBellModule extends PluginModule {
 
-    public DeathBellModule() { super("DeathBell", false); }
+    public DeathBellModule() { super("DeathBell", "mechanics/features/bell_lightning", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

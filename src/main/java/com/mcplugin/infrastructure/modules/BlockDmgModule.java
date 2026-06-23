@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class BlockDmgModule extends PluginModule {
 
-    public BlockDmgModule() { super("BlockDmg", false); }
+    public BlockDmgModule() { super("BlockDmg", "mechanics/features/block_damage", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {

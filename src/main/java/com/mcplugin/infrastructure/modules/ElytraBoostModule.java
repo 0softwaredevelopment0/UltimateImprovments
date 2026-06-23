@@ -13,7 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class ElytraBoostModule extends PluginModule {
 
     public ElytraBoostModule() {
-        super("ElytraBoost", false);
+        super("ElytraBoost", "mechanics/features/elytra_boost", false);
     }
 
     @Override

@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class WaypointModule extends PluginModule {
 
-    public WaypointModule() { super("Waypoint", false); }
+    public WaypointModule() { super("Waypoint", "mechanics/features/waypoint", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {
