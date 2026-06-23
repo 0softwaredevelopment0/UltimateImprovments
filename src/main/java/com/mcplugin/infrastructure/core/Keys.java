@@ -16,6 +16,12 @@ public class Keys {
     public static NamespacedKey CHGDIM_GUI;
     public static NamespacedKey LEAD_SHIELD;
 
+    // Scanner items
+    public static NamespacedKey HEALTH_METER;
+    public static NamespacedKey ORE_FINDER;
+    public static NamespacedKey MOB_FINDER;
+    public static NamespacedKey RADAR;
+
     // Integrity System
     public static NamespacedKey INTEGRITY_TAG;
     public static NamespacedKey INTEGRITY_MAX;
@@ -29,6 +35,10 @@ public class Keys {
         SHOCKER = new NamespacedKey(plugin, "is_shocker");
         ANTIMATTER = new NamespacedKey(plugin, "isAntimatter");
         LOCATOR = new NamespacedKey(plugin, "isLocator");
+        HEALTH_METER = new NamespacedKey(plugin, "isHealthMeter");
+        ORE_FINDER = new NamespacedKey(plugin, "isOreFinder");
+        MOB_FINDER = new NamespacedKey(plugin, "isMobFinder");
+        RADAR = new NamespacedKey(plugin, "isRadar");
         LEAD_SHIELD = new NamespacedKey(plugin, "isLeadShield");
         AUTH_GUI = new NamespacedKey(plugin, "auth_gui");
         CHGDIM_GUI = new NamespacedKey(plugin, "chgdim_gui");

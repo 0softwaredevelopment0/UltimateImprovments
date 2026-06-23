@@ -50,10 +50,10 @@ public class AntimatterCraftListener implements Listener {
         PotionMeta meta = (PotionMeta) result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<white>Колба с антиматерией</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Колба с антиматерией</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<gray>При броске создаёт мощный взрыв.</gray>")
+                MessageUtil.parse("<i:false><gray>При броске создаёт мощный взрыв.</gray>")
         ));
 
         meta.setColor(Color.fromRGB(197379));
@@ -114,10 +114,10 @@ public class AntimatterCraftListener implements Listener {
         PotionMeta meta = (PotionMeta) result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<white>Колба с антиматерией</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Колба с антиматерией</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<gray>При броске создаёт мощный взрыв.</gray>")
+                MessageUtil.parse("<i:false><gray>При броске создаёт мощный взрыв.</gray>")
         ));
 
         meta.setColor(Color.fromRGB(197379));

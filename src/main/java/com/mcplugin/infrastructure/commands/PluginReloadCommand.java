@@ -6,7 +6,20 @@ import com.mcplugin.infrastructure.commands.vote.VoteManager;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.commands.home.HomeDatabase;
-import com.mcplugin.infrastructure.commands.subcommands.*;
+import com.mcplugin.infrastructure.commands.subcommands.HelpCommand;
+import com.mcplugin.infrastructure.commands.subcommands.ChgDimSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.CodePaneSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.ItemSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.AuthSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.PowerSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.ModulesSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.UpdateSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.MiscSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.RadiationSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.ReloadSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.StructureSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.BroadcastSubcommand;
+import com.mcplugin.infrastructure.commands.AskCordsManager;
 import com.mcplugin.mechanics.security.codepanel.CodePanelDatabase;
 import com.mcplugin.infrastructure.modules.ModuleManager;
 import org.bukkit.Bukkit;
@@ -168,9 +181,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 AskCordsManager.decline(player, args[1]);
                 yield true;
             }
-            case "ccores" -> CcoresCommand.execute(sender);
-            case "ccentities" -> CcentitiesCommand.execute(sender);
-            case "cehealth" -> CehealthCommand.execute(sender);
+
             case "toggleradview" -> MiscSubcommand.toggleRadView(sender);
             case "i_want_to_get_impossible_achivement_uwu" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
@@ -202,7 +213,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(List.of("help", "checkver", "updatejar", "ccores", "ccentities", "cehealth", "toggleradview",
+            completions.addAll(List.of("help", "checkver", "updatejar", "toggleradview",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
                     "auth",                    "chgdim", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "vote",

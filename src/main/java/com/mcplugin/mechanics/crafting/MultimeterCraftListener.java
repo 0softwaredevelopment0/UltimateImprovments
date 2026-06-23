@@ -48,7 +48,7 @@ public class MultimeterCraftListener implements Listener {
 
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<white>Multimeter</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Multimeter</white>"));
 
         // =========================
         // PDC TAG (isMultimeter:1b)
@@ -99,7 +99,7 @@ public class MultimeterCraftListener implements Listener {
 
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<white>Multimeter</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Multimeter</white>"));
 
         // =========================
         // PDC AGAIN (isMultimeter:1b)

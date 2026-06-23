@@ -46,10 +46,10 @@ public class ShokerCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<aqua>Electro Shoker</aqua>"));
+        meta.displayName(MessageUtil.parse("<i:false><aqua>Electro Shoker</aqua>"));
 
         meta.lore(java.util.List.of(
-                MessageUtil.parse("<gray>Stuns enemies with electricity.</gray>")
+                MessageUtil.parse("<i:false><gray>Stuns enemies with electricity.</gray>")
         ));
 
         // =========================
@@ -110,10 +110,10 @@ public class ShokerCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<aqua>Electro Shoker</aqua>"));
+        meta.displayName(MessageUtil.parse("<i:false><aqua>Electro Shoker</aqua>"));
 
         meta.lore(java.util.List.of(
-                MessageUtil.parse("<gray>Stuns enemies with electricity.</gray>")
+                MessageUtil.parse("<i:false><gray>Stuns enemies with electricity.</gray>")
         ));
 
         // =========================

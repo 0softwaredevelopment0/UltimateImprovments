@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.7.72
+version: 1.7.73
 
 main: com.mcplugin.infrastructure.core.Main
 
@@ -62,9 +62,6 @@ permissions:
       mcplugin.command.vanish: true
       mcplugin.command.notes: true
       mcplugin.command.broadcast: true
-      mcplugin.command.ccores: true
-      mcplugin.command.ccentities: true
-      mcplugin.command.cehealth: true
       mcplugin.command.toggleradview: true
 
   mcplugin:
@@ -273,18 +270,6 @@ permissions:
 
   mcplugin.command.askcords:
     description: Allows requesting player coordinates (/mp askcords <nick>)
-    default: true
-
-  mcplugin.command.ccores:
-    description: Allows checking ore count in the current chunk (/mp ccores)
-    default: true
-
-  mcplugin.command.ccentities:
-    description: Allows checking entity count in the current chunk (/mp ccentities)
-    default: true
-
-  mcplugin.command.cehealth:
-    description: Allows checking entity health by looking at it (/mp cehealth)
     default: true
 
   mcplugin.command.toggleradview:

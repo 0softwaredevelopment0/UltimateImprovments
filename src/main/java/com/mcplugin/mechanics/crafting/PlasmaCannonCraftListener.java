@@ -47,10 +47,10 @@ public class PlasmaCannonCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<white>Photon cannon</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Photon cannon</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<gray>Shoots with echo_shard.</gray>")
+                MessageUtil.parse("<i:false><gray>Shoots with echo_shard.</gray>")
         ));
 
         // =========================
@@ -109,10 +109,10 @@ public class PlasmaCannonCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<white>Photon cannon</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Photon cannon</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<gray>Shoots with echo_shard.</gray>")
+                MessageUtil.parse("<i:false><gray>Shoots with echo_shard.</gray>")
         ));
 
         // =========================
