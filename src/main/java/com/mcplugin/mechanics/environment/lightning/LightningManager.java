@@ -2,6 +2,8 @@ package com.mcplugin.mechanics.environment.lightning;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.energy.transfer.cable.CableNetwork;
+import com.mcplugin.energy.transfer.cable.CableNode;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -311,6 +313,29 @@ public class LightningManager implements Listener {
      * Handles cooldown, effects, and item replacement.
      * @return true if cooking was performed, false otherwise
      */
+    private static final int ENERGY_COST = 100;
+
+    /**
+     * Проверяет, есть ли кабель рядом с энергетическим блоком (WAXED_CHISELED_COPPER на Y=-3)
+     * и хватает ли энергии (100 за операцию).
+     */
+    private static boolean hasEnergyForOperation(Location center) {
+        Location energyLoc = LightningStructure.getEnergyInputLoc(center);
+        if (energyLoc == null) return false;
+
+        for (Location near : LocationUtil.getNeighbors(energyLoc)) {
+            Location norm = LocationUtil.normalize(near);
+            if (norm == null) continue;
+            CableNode node = CableNetwork.getNode(norm);
+            if (node != null && node.getEnergy() >= ENERGY_COST
+                    && LocationUtil.isFullyConnected(energyLoc, norm)) {
+                node.removeEnergy(ENERGY_COST);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean tryCookItem(Location center, Item item, ItemStack stack) {
         // Cooldown check
         long now = System.currentTimeMillis();
@@ -320,6 +345,11 @@ public class LightningManager implements Listener {
         // Check if item is cookable
         Recipe cooked = findCookingRecipe(stack);
         if (cooked == null) return false;
+
+        // ⚡ ЭНЕРГИЯ: проверяем кабель у WAXED_CHISELED_COPPER (0, -3, 0)
+        if (!hasEnergyForOperation(center)) {
+            return false;
+        }
 
         cookingCooldowns.put(center, now);
 

@@ -62,6 +62,15 @@ public class LightningStructure {
     };
 
     // =========================
+    // ENERGY INPUT LOCATION (WAXED_CHISELED_COPPER at 0, -3, 0 from center)
+    // Сюда должен быть подведён кабель с энергией 100 за операцию.
+    // =========================
+    public static Location getEnergyInputLoc(Location center) {
+        if (center == null) return null;
+        return center.clone().add(0, -3, 0);
+    }
+
+    // =========================
     // IS WAXED COPPER (any variant)
     // =========================
     private static boolean isWaxedCopper(Material mat) {
