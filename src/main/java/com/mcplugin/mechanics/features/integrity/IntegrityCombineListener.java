@@ -282,6 +282,7 @@ public class IntegrityCombineListener implements Listener {
         if (restore <= 0) return;
 
         PlayerInventory inv = player.getInventory();
+        boolean restored = false;
 
         for (int i = 0; i <= 40; i++) {
             ItemStack item = inv.getItem(i);
@@ -291,13 +292,19 @@ public class IntegrityCombineListener implements Listener {
             // Только предметы с зачарованием Mending (Починка)
             if (!item.containsEnchantment(Enchantment.MENDING)) continue;
 
+            double before = IntegrityManager.getCurrentIntegrity(item);
+            if (before >= 100.0) continue;
+
             IntegrityManager.increaseIntegrity(item, restore);
+            restored = true;
         }
 
-        // Сообщение игроку (только если mending_xp.message не пустой)
-        String msg = IntegrityManager.getMendingMessage();
-        if (msg != null && !msg.isEmpty()) {
-            player.sendMessage(MessageUtil.parse(msg.replace("{amount}", String.format("%.3f", restore))));
+        // Сообщение игроку — только если хотя бы 1 предмет реально восстановился
+        if (restored) {
+            String msg = IntegrityManager.getMendingMessage();
+            if (msg != null && !msg.isEmpty()) {
+                player.sendMessage(MessageUtil.parse(msg.replace("{amount}", String.format("%.3f", restore))));
+            }
         }
     }
 
