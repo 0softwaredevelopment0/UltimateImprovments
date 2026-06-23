@@ -109,11 +109,9 @@ public class ChgDimCommand {
         float teleportPitch = worldConfig != null ? (float) worldConfig.getDouble("pitch", 0.0) : 0.0f;
 
         // =========================
-        // СОХРАНЯЕМ ТЕКУЩУЮ ПОЗИЦИЮ В БД
+        // СОХРАНЯЕМ ТЕКУЩУЮ ПОЗИЦИЮ В БД (всегда, перед телепортацией)
         // =========================
-        if (!DimensionManager.hasReturnLocation(player)) {
-            DimensionManager.saveReturnLocation(player);
-        }
+        DimensionManager.saveReturnLocation(player);
 
         Location targetLocation = new Location(world, teleportX, teleportY, teleportZ, teleportYaw, teleportPitch);
         player.teleportAsync(targetLocation);
