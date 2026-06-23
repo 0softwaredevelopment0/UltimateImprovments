@@ -5,8 +5,7 @@ import com.mcplugin.infrastructure.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
+
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 
@@ -49,26 +48,21 @@ public class GeneratorStructure {
         World world = center.getWorld();
         if (world == null) return false;
 
-        // Check the block directly above the furnace
-        Block above = center.clone().add(0, 1, 0).getBlock();
+        double targetX = center.getX() + 0.5;
+        double targetY = center.getY() + 1.0;
+        double targetZ = center.getZ() + 0.5;
 
-        // Iterate entities in the chunk for reliable frame detection
-        for (Entity entity : above.getChunk().getEntities()) {
-            if (!(entity instanceof ItemFrame frame)) continue;
+        // Ищем рамки только среди ItemFrame — гораздо быстрее чем world.getEntities()
+        for (ItemFrame frame : world.getEntitiesByClass(ItemFrame.class)) {
 
-            // Frame must be positioned directly above the furnace center
-            double dx = Math.abs(frame.getLocation().getX() - (center.getX() + 0.5));
-            double dz = Math.abs(frame.getLocation().getZ() - (center.getZ() + 0.5));
-            double dy = Math.abs(frame.getLocation().getY() - (center.getY() + 1.0));
+            double dx = Math.abs(frame.getLocation().getX() - targetX);
+            double dz = Math.abs(frame.getLocation().getZ() - targetZ);
+            double dy = Math.abs(frame.getLocation().getY() - targetY);
 
-            if (dx < 0.6 && dz < 0.6 && dy < 0.3) {
-                // Frame on TOP face — getAttachedFace может быть UP или DOWN
-                // в зависимости от версии Paper API. Проверяем оба варианта,
-                // т.к. позиция (dx/dz/dy) уже гарантирует что это нужная рамка.
-                BlockFace attached = frame.getAttachedFace();
-                if (attached == BlockFace.DOWN || attached == BlockFace.UP) {
-                    return true;
-                }
+            // Position check only — getAttachedFace is unreliable across Paper versions
+            // Tolerance: x/z ±0.6, y ±0.6 (covers all possible frame entity Y positions)
+            if (dx < 0.6 && dz < 0.6 && dy < 0.6) {
+                return true;
             }
         }
         return false;
