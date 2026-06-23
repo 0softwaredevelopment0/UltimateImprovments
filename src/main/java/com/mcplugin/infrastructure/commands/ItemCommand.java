@@ -89,7 +89,7 @@ public class ItemCommand {
                 return;
             }
             IntegrityManager.setCurrentIntegrity(heldItem, value);
-            player.sendMessage(MessageUtil.parse("<green>✅</green> <white>Item integrity set to </white><yellow>" + IntegrityManager.formatPercent(value) + "%</yellow>"));
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item integrity set to </white><yellow>" + IntegrityManager.formatPercent(value) + "%</yellow>"));
         } catch (NumberFormatException e) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format! Use a decimal number (e.g.: 75.500)</red>"));
         }
@@ -109,7 +109,7 @@ public class ItemCommand {
             double current = IntegrityManager.getCurrentIntegrity(heldItem);
             double newVal = Math.min(100.0, current + value);
             IntegrityManager.setCurrentIntegrity(heldItem, newVal);
-            player.sendMessage(MessageUtil.parse("<green>✅</green> <white>Added </white><yellow>" + IntegrityManager.formatPercent(value) + "%</yellow><white>. Current: </white><yellow>" + IntegrityManager.formatPercent(newVal) + "%</yellow>"));
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Added </white><yellow>" + IntegrityManager.formatPercent(value) + "%</yellow><white>. Current: </white><yellow>" + IntegrityManager.formatPercent(newVal) + "%</yellow>"));
         } catch (NumberFormatException e) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format! Use a decimal number (e.g.: 25.500)</red>"));
         }

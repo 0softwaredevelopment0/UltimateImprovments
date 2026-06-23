@@ -242,7 +242,7 @@ public class VoteManager {
         broadcastVote(vote);
 
         creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.create.success",
-                "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> created! Duration: </white><yellow>{duration}</yellow>")
+                "<green>✔</green> <white>Vote </white><yellow>{name}</yellow><white> created! Duration: </white><yellow>{duration}</yellow>")
                 .replace("{name}", name)
                 .replace("{duration}", formatDuration(durationMillis))));
     }
@@ -310,7 +310,7 @@ public class VoteManager {
 
         Answer chosen = vote.answers.get(answerIndex);
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.vote.success",
-                "<green>✅</green> <white>Your vote has been recorded: </white><yellow>{answer}</yellow>")
+                "<green>✔</green> <white>Your vote has been recorded: </white><yellow>{answer}</yellow>")
                 .replace("{answer}", chosen.title)));
 
         // Current vote stats
@@ -407,7 +407,7 @@ public class VoteManager {
         for (Vote v : votes.values()) {
             String status;
             if (v.ended) {
-                status = MessagesManager.getString("vote.list.status_ended", "<red>✗ Ended</red>");
+                status = MessagesManager.getString("vote.list.status_ended", "<red>❌ Ended</red>");
             } else if (System.currentTimeMillis() >= v.expiresAt) {
                 status = MessagesManager.getString("vote.list.status_expiring", "<red>Expiring...</red>");
             } else {
@@ -456,7 +456,7 @@ public class VoteManager {
             pending.remove(player.getUniqueId());
             doDeleteVote(vote);
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.delete.success",
-                    "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> deleted.</white>")
+                    "<green>✔</green> <white>Vote </white><yellow>{name}</yellow><white> deleted.</white>")
                     .replace("{name}", vote.name)));
             return true;
         }
@@ -474,7 +474,7 @@ public class VoteManager {
         player.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>"));
         player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray>" + MessagesManager.getString("vote.delete.confirm_irreversible", "<gray>This action cannot be undone!</gray>")));
 
-        Component confirmButton = MessageUtil.parse("<dark_gray>┃     <red>[<dark_red>✗ </dark_red></red>"
+        Component confirmButton = MessageUtil.parse("<dark_gray>┃     <red>[<dark_red>❌ </dark_red></red>"
                 + MessagesManager.getString("vote.delete.confirm_button", "Confirm deletion") + "<red>]</red></dark_gray>")
                 .clickEvent(ClickEvent.runCommand("/mp vote delete " + vote.name))
                 .hoverEvent(HoverEvent.showText(MessageUtil.parse(MessagesManager.getString("vote.delete.confirm_hover", "<red>Click to confirm deletion</red>"))));
@@ -641,7 +641,7 @@ public class VoteManager {
         if (changed) {
             saveToDatabase(oldVote);
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.change.success",
-                    "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> updated.</white>")
+                    "<green>✔</green> <white>Vote </white><yellow>{name}</yellow><white> updated.</white>")
                     .replace("{name}", oldVote.name)));
             broadcastVote(oldVote);
         } else {

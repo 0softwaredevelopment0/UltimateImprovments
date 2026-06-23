@@ -124,7 +124,7 @@ public class AuthManager {
             player.setWalkSpeed(0.2f);
             player.setFlySpeed(0.1f);
             player.setInvulnerable(false);
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.force_login_message", "<green>✅</green> <white>You have been force authorized by an administrator!</white>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.force_login_message", "<green>✔</green> <white>You have been force authorized by an administrator!</white>")));
         }
         return true;
     }

@@ -37,10 +37,10 @@ public final class MiscSubcommand {
         VanishManager.toggleVanish(target);
         boolean isVanished = VanishManager.isVanished(uuid);
         if (isVanished) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_enabled", "<green>✅</green> <white>Player</white> <yellow>{player}</yellow> <white>is now hidden (vanished).</white>").replace("{player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_enabled", "<green>✔</green> <white>Player</white> <yellow>{player}</yellow> <white>is now hidden (vanished).</white>").replace("{player}", targetName)));
             if (!target.isOnline()) sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_offline_hint", "<gray>Player is offline — vanish will apply on next login.</gray>")));
         } else {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_disabled", "<red>✗</red> <white>Player</white> <yellow>{player}</yellow> <white>is no longer hidden.</white>").replace("{player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_disabled", "<red>❌</red> <white>Player</white> <yellow>{player}</yellow> <white>is no longer hidden.</white>").replace("{player}", targetName)));
         }
         return true;
     }

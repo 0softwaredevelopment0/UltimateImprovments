@@ -20,7 +20,7 @@ public class AuthModule extends PluginModule {
         Main main = (Main) plugin;
         AuthManager.init();
         main.getServer().getPluginManager().registerEvents(new AuthListener(), main);
-        plugin.getLogger().info("[AuthModule] ✓ Auth system initialized.");
+        plugin.getLogger().info("[AuthModule] ✔ Auth system initialized.");
     }
 
     @Override

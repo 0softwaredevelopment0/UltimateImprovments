@@ -324,7 +324,7 @@ public class AuthAuthenticator {
                     unfreezePlayer(player);
 
                     player.sendMessage("");
-                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_changed", "<green>✅</green> <white>Password successfully changed!</white>")));
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_changed", "<green>✔</green> <white>Password successfully changed!</white>")));
                     player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.session_active", "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
                     player.sendMessage("");
 
@@ -372,7 +372,7 @@ public class AuthAuthenticator {
 
                     player.closeInventory();
                     String kickLogout = MessagesManager.getString("auth.admin.kick_logout",
-                            "<green>✅</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
+                            "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
                     player.kickPlayer(MessageUtil.legacy(kickLogout));
 
                     Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " logged out manually.");

@@ -13,7 +13,7 @@ import java.util.*;
  * Дерево строится из путей зарегистрированных модулей (modulePath).
  * Работает идентично в dev и production (не зависит от файловой системы).
  * <p>
- * Каждый листовой модуль: ✓ (включён) / ✗ (выключен) / ? (нет модуля).
+ * Каждый листовой модуль: ✔ (включён) / ❌ (выключен) / ? (нет модуля).
  * Команды:
  * <ul>
  *   <li>{@code /mp modules list} — иерархический список</li>
@@ -80,9 +80,9 @@ public final class ModulesSubcommand {
     private static boolean handleList(CommandSender sender, ModuleManager mm) {
         TreeNode root = buildTree(mm);
 
-        sender.sendMessage("§6═══════════════════════════════════════");
+        sender.sendMessage("§6══════════════════════════════════");
         sender.sendMessage("§6  ✦ §fАрхитектура модулей MC-Plugin");
-        sender.sendMessage("§6═══════════════════════════════════════");
+        sender.sendMessage("§6══════════════════════════════════");
         sender.sendMessage("§3📁 §fmcplugin/");
 
         List<Map.Entry<String, TreeNode>> entries = new ArrayList<>(root.children.entrySet());
@@ -98,8 +98,8 @@ public final class ModulesSubcommand {
             printTree(sender, entries.get(i).getValue(), "", i == entries.size() - 1);
         }
 
-        sender.sendMessage("§6═══════════════════════════════════════");
-        sender.sendMessage("§8  §a✓§8 включён  §c✗§8 выключен  ⚡ ядро");
+        sender.sendMessage("§6══════════════════════════════════");
+        sender.sendMessage("§8  §a✔§8 включён  §c❌§8 выключен  ⚡ ядро");
         return true;
     }
 
@@ -118,7 +118,7 @@ public final class ModulesSubcommand {
         if (node.module != null) {
             // Leaf system
             boolean on = node.module.isEnabled();
-            String status = on ? "§a✓" : "§c✗";
+            String status = on ? "§a✔" : "§c❌";
             String essential = node.module.isEssential() ? " §8⚡" : "";
             String line = prefix + connector + status + " §f" + node.name + essential;
             line += " §7(" + node.module.getName() + ")";
@@ -160,7 +160,7 @@ public final class ModulesSubcommand {
         }
         boolean ok = mm.enableModule(found.getName());
         if (ok && found.isEnabled()) {
-            sender.sendMessage("§a✅ §fМодуль §e" + found.getName() + "§f включён!");
+            sender.sendMessage("§a✔ §fМодуль §e" + found.getName() + "§f включён!");
             sender.sendMessage("§8  Путь: §7" + found.getModulePath());
             Main.getInstance().getLogger().info("[CMD] " + sender.getName() + " enabled: " + found.getModulePath());
         } else {
@@ -200,7 +200,7 @@ public final class ModulesSubcommand {
             return true;
         }
         mm.disableModule(found.getName());
-        sender.sendMessage("§c✗ §fМодуль §e" + found.getName() + "§f отключён.");
+        sender.sendMessage("§c❌ §fМодуль §e" + found.getName() + "§f отключён.");
         sender.sendMessage("§8  Путь: §7" + found.getModulePath());
         Main.getInstance().getLogger().info("[CMD] " + sender.getName() + " disabled: " + found.getModulePath());
         return true;

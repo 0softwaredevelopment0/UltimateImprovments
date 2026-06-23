@@ -395,7 +395,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
             block.getWorld().dropItemNaturally(center, new ItemStack(blockType));
         }
 
-        player.sendActionBar("§a✅ Блок разрушен!");
+        player.sendActionBar("§a✔ Блок разрушен!");
     }
 
     // ========== АНИМАЦИЯ ТРЕЩИН ==========

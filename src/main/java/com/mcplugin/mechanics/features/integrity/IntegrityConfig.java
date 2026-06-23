@@ -40,7 +40,7 @@ public class IntegrityConfig {
     // Поведение при поломке
     private boolean breakPlaySound = true;
     private boolean breakSendMessage = true;
-    private String breakMessage = "<dark_red>✖</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>";
+    private String breakMessage = "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>";
     private String breakSoundName = "ENTITY_ITEM_BREAK";
     private float breakSoundVolume = 1.0f;
     private float breakSoundPitch = 1.0f;
@@ -99,7 +99,7 @@ public class IntegrityConfig {
         if (onBreak != null) {
             breakPlaySound = onBreak.getBoolean("play_sound", true);
             breakSendMessage = onBreak.getBoolean("send_message", true);
-            breakMessage = onBreak.getString("message", "<dark_red>✖</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>");
+            breakMessage = onBreak.getString("message", "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>");
             breakSoundName = onBreak.getString("sound", "ENTITY_ITEM_BREAK");
             breakSoundVolume = (float) onBreak.getDouble("sound_volume", 1.0);
             breakSoundPitch = (float) onBreak.getDouble("sound_pitch", 1.0);

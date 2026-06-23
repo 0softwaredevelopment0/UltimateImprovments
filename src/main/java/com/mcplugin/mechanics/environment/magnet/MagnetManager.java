@@ -331,7 +331,7 @@ public class MagnetManager extends BukkitRunnable {
         String powerDesc = getMagnetPowerTierStatic(power);
         int magnetRadius = getClusterRadius(power);
 
-        player.sendMessage("§a✅ §fМагнит собран!");
+        player.sendMessage("§a✔ §fМагнит собран!");
         player.sendMessage("§8┃ §7Блоков в структуре: §f" + power + " §7шт");
         player.sendMessage("§8┃ §7Сила притяжения: " + powerDesc);
         if (cluster.center != null) {

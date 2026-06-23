@@ -138,7 +138,7 @@ public class LightningManager implements Listener {
             world.playSound(center, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
 
             if (player != null) {
-                player.sendMessage("§a✅ §fСтруктура молний собрана!");
+                player.sendMessage("§a✔ §fСтруктура молний собрана!");
                 player.sendMessage("§8┃ §7Бросайте предметы на громоотвод — молния переплавит их!");
                 player.sendMessage("§8┃ §7Команды: §f/mp str lightning enable§7/§cdisable §7/ §fstats");
             }
@@ -259,7 +259,7 @@ public class LightningManager implements Listener {
         boolean enabled = activeStructures.get(center);
         return "§8┃ §e⚡ Структура молний §8» §f"
                 + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()
-                + " §8[" + (enabled ? "§a✓ Вкл" : "§c✗ Выкл") + "§8]";
+                + " §8[" + (enabled ? "§a✔ Вкл" : "§c❌ Выкл") + "§8]";
     }
 
     public static Collection<Location> getActiveLocations() {

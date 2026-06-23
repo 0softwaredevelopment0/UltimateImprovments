@@ -212,7 +212,7 @@ public class ReactorCommand implements CommandExecutor {
         nameBarrel(pending.center(), 0, -3, -2, "§6Топливо: §bАлмазные блоки");
         nameBarrel(pending.center(), 0, -3, 2, "§6Топливо: §eЗолотые блоки");
 
-        player.sendMessage("§a✅ §fРеактор тёмного синтеза собран! §8(ID: " + reactor.getReactorId() + ")");
+        player.sendMessage("§a✔ §fРеактор тёмного синтеза собран! §8(ID: " + reactor.getReactorId() + ")");
         player.sendMessage("§8┃ §7Температура ядра: §f" + reactor.getCoreTemp() + " C*");
         player.sendMessage("§8┃ §7Давление: §f" + reactor.getCorePress() + " kPa");
         player.sendMessage("§8┃ §7Целостность оболочки: §f" + reactor.getCoreShInt() + "%");

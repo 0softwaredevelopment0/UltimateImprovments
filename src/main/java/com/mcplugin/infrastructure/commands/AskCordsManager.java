@@ -27,7 +27,7 @@ import java.util.UUID;
  * Механика:
  * <ol>
  *   <li>Игрок A вводит {@code /mp askcords ИгрокБ}</li>
- *   <li>Игроку Б приходит clickable-сообщение с кнопками ✅ Принять / ❌ Отклонить</li>
+ *   <li>Игроку Б приходит clickable-сообщение с кнопками ✔ Принять / ❌ Отклонить</li>
  *   <li>Если принял — игрок A получает мир и координаты игрока Б</li>
  *   <li>Если отклонил — игрок A получает сообщение об отказе</li>
  *   <li>Кулдаун на команду: 10 секунд</li>
@@ -100,7 +100,7 @@ public class AskCordsManager {
         // Сообщение отправителю
         sender.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.request_sent",
-                        "<green>✅</green> <white>Coordinates request sent to</white> <yellow>{player}</yellow><white>.</white>")
+                        "<green>✔</green> <white>Coordinates request sent to</white> <yellow>{player}</yellow><white>.</white>")
                         .replace("{player}", target.getName())));
         sender.playSound(sender.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.5f);
 
@@ -130,7 +130,7 @@ public class AskCordsManager {
                         .replace("{player}", sender.getName())));
         target.sendMessage("");
 
-        // ✅ Accept button
+        // ✔ Accept button
         TextComponent acceptBtn = new TextComponent(
                 MessagesManager.getString("askcords.accept_button", "     §a[§2✔ Accept§a]"));
         acceptBtn.setClickEvent(new ClickEvent(
@@ -146,7 +146,7 @@ public class AskCordsManager {
 
         // ❌ Decline button
         TextComponent declineBtn = new TextComponent(
-                MessagesManager.getString("askcords.decline_button", " §c[§4✗ Decline§c]"));
+                MessagesManager.getString("askcords.decline_button", " §c[§4❌ Decline§c]"));
         declineBtn.setClickEvent(new ClickEvent(
                 ClickEvent.Action.RUN_COMMAND,
                 "/mp askcords_decline " + sender.getName()
@@ -234,7 +234,7 @@ public class AskCordsManager {
         // Сообщение цели
         target.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.accepted_notify",
-                        "<green>✅</green> <white>You shared your coordinates with</white> <yellow>{player}</yellow><white>.</white>")
+                        "<green>✔</green> <white>You shared your coordinates with</white> <yellow>{player}</yellow><white>.</white>")
                         .replace("{player}", sender.getName())));
         target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.2f);
 

@@ -394,7 +394,7 @@ public class LeashManager implements Listener {
         leashEntityTo(pending, anchor);
         pendingLink.remove(player.getUniqueId());
         if (player.getGameMode() != org.bukkit.GameMode.CREATIVE) heldItem.setAmount(heldItem.getAmount() - 1);
-        player.sendMessage("§a✅ §e" + getEntityName(pending) + "§f привязан к блоку");
+        player.sendMessage("§a✔ §e" + getEntityName(pending) + "§f привязан к блоку");
     }
 
     // =========================
@@ -426,7 +426,7 @@ public class LeashManager implements Listener {
         }
         leashEntityTo(target, player);
         if (player.getGameMode() != org.bukkit.GameMode.CREATIVE) heldItem.setAmount(heldItem.getAmount() - 1);
-        player.sendMessage("§a✅ §fСущность привязана: §e" + getEntityName(target));
+        player.sendMessage("§a✔ §fСущность привязана: §e" + getEntityName(target));
     }
 
     // =========================
@@ -455,7 +455,7 @@ public class LeashManager implements Listener {
                     ? player.getInventory().getItemInMainHand() : player.getInventory().getItemInOffHand();
             if (held.getType() == Material.LEAD) held.setAmount(held.getAmount() - 1);
         }
-        player.sendMessage("§a✅ §e" + getEntityName(pending) + "§f привязан к §e" + getEntityName(target));
+        player.sendMessage("§a✔ §e" + getEntityName(pending) + "§f привязан к §e" + getEntityName(target));
     }
 
     // =========================

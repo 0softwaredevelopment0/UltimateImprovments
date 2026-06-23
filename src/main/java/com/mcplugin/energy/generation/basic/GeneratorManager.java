@@ -163,7 +163,7 @@ public class GeneratorManager implements Listener {
                 world.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
             }
 
-            player.sendMessage("§a✅ Генератор собран!"
+            player.sendMessage("§a✔ Генератор собран!"
                     + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
             player.sendMessage("§8┃ §7Положите топливо в плавильную печь — энергия пойдёт в сеть!");
 

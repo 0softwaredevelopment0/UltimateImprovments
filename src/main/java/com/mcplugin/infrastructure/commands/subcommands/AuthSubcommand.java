@@ -55,7 +55,7 @@ public final class AuthSubcommand {
         AuthManager mgr = AuthManager.getInstance();
         if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
         sender.sendMessage(mgr.forceLogin(uuid)
-                ? MessageUtil.parse("<green>✅</green> <white>Player </white><yellow>" + name + "</yellow><white> force logged in.</white>")
+                ? MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + name + "</yellow><white> force logged in.</white>")
                 : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to force login player </red><yellow>" + name + "</yellow>"));
         return true;
     }
@@ -72,7 +72,7 @@ public final class AuthSubcommand {
         AuthManager mgr = AuthManager.getInstance();
         if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
         sender.sendMessage(mgr.resetAuth(uuid)
-                ? MessageUtil.parse("<green>✅</green> <white>Player </white><yellow>" + name + "</yellow><white>'s registration has been completely deleted.</white>")
+                ? MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + name + "</yellow><white>'s registration has been completely deleted.</white>")
                 : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to delete registration!</red>"));
         return true;
     }
@@ -89,7 +89,7 @@ public final class AuthSubcommand {
         AuthManager mgr = AuthManager.getInstance();
         if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
         sender.sendMessage(mgr.deleteSession(uuid)
-                ? MessageUtil.parse("<green>✅</green> <white>Session for player </white><yellow>" + name + "</yellow><white> has been reset.</white>")
+                ? MessageUtil.parse("<green>✔</green> <white>Session for player </white><yellow>" + name + "</yellow><white> has been reset.</white>")
                 : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to reset session!</red>"));
         return true;
     }
@@ -117,7 +117,7 @@ public final class AuthSubcommand {
         AuthManager mgr = AuthManager.getInstance();
         if (mgr == null) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is not initialized!</red>")); return true; }
         sender.sendMessage(mgr.changePassword(uuid, newPass)
-                ? MessageUtil.parse("<green>✅</green> <white>Password for player </white><yellow>" + name + "</yellow><white> changed.</white>")
+                ? MessageUtil.parse("<green>✔</green> <white>Password for player </white><yellow>" + name + "</yellow><white> changed.</white>")
                 : MessageUtil.parse("<dark_red>❌</dark_red> <red>Failed to change password!</red>"));
         return true;
     }

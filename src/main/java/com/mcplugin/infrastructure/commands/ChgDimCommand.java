@@ -116,7 +116,7 @@ public class ChgDimCommand {
         Location targetLocation = new Location(world, teleportX, teleportY, teleportZ, teleportYaw, teleportPitch);
         player.teleportAsync(targetLocation);
         cooldowns.put(playerUuid, now);            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.success",
-                        "<green>✅</green> <white>Teleportation to</white> <yellow>{world}</yellow> <white>completed!</white>")
+                        "<green>✔</green> <white>Teleportation to</white> <yellow>{world}</yellow> <white>completed!</white>")
                 .replace("{world}", worldName)));
 
         return true;
@@ -141,7 +141,7 @@ public class ChgDimCommand {
 
         player.teleportAsync(returnLoc);
         DimensionManager.removeReturnLocation(player);            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.return_success",
-                        "<green>✅</green> <white>You have returned to your starting point!</white>")));
+                        "<green>✔</green> <white>You have returned to your starting point!</white>")));
 
         return true;
     }

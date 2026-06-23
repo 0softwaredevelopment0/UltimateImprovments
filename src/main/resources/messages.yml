@@ -26,8 +26,8 @@ auth:
   messages:
     register_title: "<dark_gray>Register</dark_gray>"
     login_title: "<dark_gray>Enter password</dark_gray>"
-    success_register: "<green>✅ Registration successful!</green>"
-    success_login: "<green>✅ You have successfully logged in!</green>"
+    success_register: "<green>✔ Registration successful!</green>"
+    success_login: "<green>✔ You have successfully logged in!</green>"
     wrong_password: "<red>❌ Incorrect password! Try again.</red>"
     wrong_password_short: "<red>❌ Incorrect password!</red>"
     wrong_password_remaining: "<red>❌ Incorrect password! Remaining attempts: </red><yellow>{remaining}</yellow>"
@@ -55,9 +55,9 @@ auth:
     auth_window_error: "<red>❌ Error opening authorization window! Report to an administrator.</red>"
     auth_check_error: "<red>❌ Error checking password! Please try again.</red>"
     change_password_error: "<red>❌ Password change error! Please try again.</red>"
-    password_changed: "<green>✅</green> <white>Password successfully changed!</white>"
+    password_changed: "<green>✔</green> <white>Password successfully changed!</white>"
     session_active: "<gray>Enjoy your game! Session active for 1 hour.</gray>"
-    force_login_message: "<green>✅</green> <white>You have been force authorized by an administrator!</white>"
+    force_login_message: "<green>✔</green> <white>You have been force authorized by an administrator!</white>"
     rate_limit: "<red>❌ Please wait </red><yellow>{seconds}</yellow> <red>seconds before the next request!</red>"
 
   # Admin command messages
@@ -72,27 +72,27 @@ auth:
     forcelogin_usage: "<red>❌ Usage: </red><white>/mp auth forcelogin <nick></white>"
     forcelogin_not_registered: "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>"
     forcelogin_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
-    forcelogin_success: "<green>✅</green> <white>Player</white> <yellow>{player}</yellow> <white>force authorized.</white>"
+    forcelogin_success: "<green>✔</green> <white>Player</white> <yellow>{player}</yellow> <white>force authorized.</white>"
     forcelogin_fail: "<red>❌ Failed to authorize player</red> <yellow>{player}</yellow>"
     # resetauth
     resetauth_no_permission: "<red>❌ You don't have permission to reset authorization!</red>"
     resetauth_usage: "<red>❌ Usage: </red><white>/mp auth resetauth <nick></white>"
     resetauth_not_registered: "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>"
     resetauth_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
-    resetauth_success: "<green>✅</green> <white>Registration of player</white> <yellow>{player}</yellow> <white>completely removed.</white>"
+    resetauth_success: "<green>✔</green> <white>Registration of player</white> <yellow>{player}</yellow> <white>completely removed.</white>"
     resetauth_fail: "<red>❌ Failed to delete registration of player</red> <yellow>{player}</yellow>"
     # delsession
     delsession_no_permission: "<red>❌ You don't have permission to reset sessions!</red>"
     delsession_usage: "<red>❌ Usage: </red><white>/mp auth delsession <nick></white>"
     delsession_not_registered: "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>"
     delsession_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
-    delsession_success: "<green>✅</green> <white>Session of player</white> <yellow>{player}</yellow> <white>reset (logout).</white>"
+    delsession_success: "<green>✔</green> <white>Session of player</white> <yellow>{player}</yellow> <white>reset (logout).</white>"
     delsession_info: "<gray>They will need to enter their password again on next login.</gray>"
     delsession_fail: "<red>❌ Failed to reset session of player</red> <yellow>{player}</yellow>"
     # chgpass
     chgpass_no_permission: "<red>❌ You don't have permission to change passwords!</red>"
     chgpass_usage: "<red>❌ Usage: </red><white>/mp auth chgpass <nick> <new_password></white>"
-    chgpass_success: "<green>✅</green> <white>Password of player</white> <yellow>{player}</yellow> <white>changed to</white> <green>{password}</green><white>.</white>"
+    chgpass_success: "<green>✔</green> <white>Password of player</white> <yellow>{player}</yellow> <white>changed to</white> <green>{password}</green><white>.</white>"
     chgpass_session_reset: "<gray>Session reset — player must log in again.</gray>"
     chgpass_fail: "<red>❌ Failed to change password of player</red> <yellow>{player}</yellow>"
     # kick messages
@@ -100,7 +100,7 @@ auth:
     kick_delsession: "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
     kick_timeout: "<red>⏱ Login timeout!</red>\n<gray>You did not log in within {seconds} seconds.</gray>"
     kick_too_many_attempts: "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password {attempts} times.</gray>"
-    kick_logout: "<green>✅</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>"
+    kick_logout: "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>"
     kick_duplicate_name: "<yellow>✦</yellow> MC-Plugin\n\n{details}\n\n"
 
 # =========================
@@ -135,11 +135,11 @@ codepanel:
     unknown_flag: "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>{flag}</white>"
     already_exists: "<red>❌ Key</red> <yellow>{name}</yellow> <red>already exists!</red>"
     db_add_error: "<red>❌ Error adding key to database!</red>"
-    add_success: "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>added to database!</white>"
+    add_success: "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>added to database!</white>"
     key_not_found: "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found!</red>"
     db_not_found: "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found in database!</red>"
-    remove_success: "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>removed from database.</white>"
-    modify_success: "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>modified in database.</white>"
+    remove_success: "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>removed from database.</white>"
+    modify_success: "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>modified in database.</white>"
     no_keys: "<yellow>ℹ</yellow> <white>No keys in the database.</white>"
     info_code: "<gray>Code:</gray> <white>{code}</white>"
     info_commands: "<gray>Commands:</gray> <white>{commands}</white>"
@@ -209,9 +209,9 @@ suicide:
 # =========================
 changedimmension:
   messages:
-    success: "<green>✅</green> <white>Teleportation to</white> <yellow>{world}</yellow> <white>completed!</white>"
+    success: "<green>✔</green> <white>Teleportation to</white> <yellow>{world}</yellow> <white>completed!</white>"
     return_info: "<yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/mcplugin changedimmension</white> <gray>again.</gray>"
-    return_success: "<green>✅</green> <white>You have returned to your starting point!</white>"
+    return_success: "<green>✔</green> <white>You have returned to your starting point!</white>"
     return_error: "<dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>"
     no_permission: "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>"
     world_not_found: "<dark_red>❌</dark_red> <red>World</red> <yellow>{world}</yellow> <red>not found!</red>"
@@ -245,21 +245,21 @@ home:
   name_current_length: "<gray> Current length: </gray><white>{length}</white><gray> characters.</gray>"
   limit_reached: "<red>❌ You have reached the limit of</red> <yellow>{max}</yellow> <red>home points!</red>"
   limit_hint: "<gray> Use </gray><white>/mp delhome <name></white><gray> to remove unwanted ones.</gray>"
-  save_success: "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>saved!</white>"
+  save_success: "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>saved!</white>"
   save_info_world: "<gray>World:</gray> <white>{world}</white>"
   save_info_coords: "<gray>Coordinates:</gray> <white>{x} / {y} / {z}</white>"
   save_info_used: "<gray>Used:</gray> <white>{used}<gray>/{max}</gray></white>"
   save_error: "<red>❌ Error saving home!</red>"
   not_found: "<yellow>ℹ</yellow> <white>Home</white> <yellow>{name}</yellow> <white>not found.</white>"
   not_found_hint: "<gray> Use </gray><white>/mp sethome {name}</white><gray> to save it.</gray>"
-  delete_success: "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>deleted.</white>"
+  delete_success: "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>deleted.</white>"
   delete_error: "<red>❌ Error deleting home!</red>"
   not_found_del: "<red>❌ Home</red> <yellow>{name}</yellow> <red>not found!</red>"
   no_homes: "<yellow>ℹ</yellow> <white>You have no saved home points.</white>"
   no_homes_hint: "<gray> Use </gray><white>/mp sethome <name></white><gray> to save one.</gray>"
   no_homes_player: "<yellow>ℹ</yellow> <white>Player</white> <yellow>{player}</yellow> <white>has no saved homes.</white>"
   not_found_player: "<red>❌ Player</red> <yellow>{player}</yellow><red> has no home</red> <yellow>{name}</yellow><red>!</red>"
-  delete_op_success: "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>of player</white> <yellow>{player}</yellow> <white>deleted.</white>"
+  delete_op_success: "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>of player</white> <yellow>{player}</yellow> <white>deleted.</white>"
   # Display
   info_header: "<gold>═══════════════════════════════════</gold>"
   info_name: "<gold>  ✦ </gold><white>Home: </white><yellow>{name}</yellow>"
@@ -317,7 +317,7 @@ chat_filter:
 # 🕳 Void Protection
 # =========================
 void_protection:
-  message: "<green>✅</green> <white>You were saved from the void!</white>"
+  message: "<green>✔</green> <white>You were saved from the void!</white>"
 
 # =========================
 # 📦 PacketGuard — kick on packet size limit exceeded
@@ -331,7 +331,7 @@ packet_guard:
 features:
   integrity:
     on_break:
-      message: "<dark_red>✖</dark_red> <red>Your item</red> <white>{item}</white> <red>broke!</red>"
+      message: "<dark_red>❌</dark_red> <red>Your item</red> <white>{item}</white> <red>broke!</red>"
     anvil_repair:
       repair_message: "<green>🔧</green> <white>Integrity restored to</white> <yellow>{current}%</yellow><white>!</white>"
       combine_message: "<green>🔗</green> <white>Items combined! Integrity:</white> <yellow>{current}%</yellow><white></white>"
@@ -359,9 +359,9 @@ misc:
   vanish_no_permission: "<red>❌ You don't have permission to use vanish!</red>"
   vanish_usage: "<red>❌ Usage: </red><white>/mp vanish <nick></white>"
   vanish_player_not_found: "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>"
-  vanish_enabled: "<green>✅</green> <white>Player</white> <yellow>{player}</yellow> <white>is now hidden (vanished).</white>"
+  vanish_enabled: "<green>✔</green> <white>Player</white> <yellow>{player}</yellow> <white>is now hidden (vanished).</white>"
   vanish_offline_hint: "<gray>Player is offline — vanish will apply on next login.</gray>"
-  vanish_disabled: "<red>✗</red> <white>Player</white> <yellow>{player}</yellow> <white>is no longer hidden.</white>"
+  vanish_disabled: "<red>❌</red> <white>Player</white> <yellow>{player}</yellow> <white>is no longer hidden.</white>"
   # Notes
   notes_player_only: "<red>❌ Only players can use notes!</red>"
   notes_no_permission: "<red>❌ You don't have permission to use notes!</red>"
@@ -487,10 +487,10 @@ vote:
     answer_not_found: "<red>❌ Invalid answer option! Available options:</red>"
 
   create:
-    success: "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> created! Duration: </white><yellow>{duration}</yellow>"
+    success: "<green>✔</green> <white>Vote </white><yellow>{name}</yellow><white> created! Duration: </white><yellow>{duration}</yellow>"
 
   vote:
-    success: "<green>✅</green> <white>Your vote has been recorded: </white><yellow>{answer}</yellow>"
+    success: "<green>✔</green> <white>Your vote has been recorded: </white><yellow>{answer}</yellow>"
     total_info: "<gray>Votes cast: </gray><yellow>{total}</yellow><gray> out of </gray><yellow>{display_total}</yellow><gray> eligible players (online).</gray>"
 
   results:
@@ -512,7 +512,7 @@ vote:
     entry: "<gray>┃ </gray><gold>{name}</gold> <gray>— </gray><white>{title}</white>"
     entry_info: "<gray>┃   </gray><gray>Options: </gray><gold>{answers}</gold><gray> | Votes: </gray><gold>{votes}</gold><gray> | </gray>{status}"
     entry_hint: "<gray>┃   </gray><gray><italic>/mp vote {name}</italic></gray><gray> — vote</gray>"
-    status_ended: "<red>✗ Ended</red>"
+    status_ended: "<red>❌ Ended</red>"
     status_expiring: "<red>Expiring...</red>"
 
   delete:
@@ -521,15 +521,15 @@ vote:
     confirm_name: "<gray>Name: </gray><gold>{name}</gold>"
     confirm_topic: "<gray>Topic: </gray><white>{title}</white>"
     confirm_irreversible: "<gray>This action cannot be undone!</gray>"
-    confirm_button: "<dark_red>[<red>✗ Confirm deletion</red><dark_red>]</dark_red>"
+    confirm_button: "<dark_red>[<red>❌ Confirm deletion</red><dark_red>]</dark_red>"
     confirm_hover: "<red>Click to confirm deletion</red>"
     confirm_resend: "<gray>or type </gray><white>/mp vote delete {name}</white><gray> again</gray>"
     confirm_expired: "<yellow>✦</yellow> <white>Vote deletion request for </white><yellow>{name}</yellow><white> expired.</white>"
-    success: "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> deleted.</white>"
+    success: "<green>✔</green> <white>Vote </white><yellow>{name}</yellow><white> deleted.</white>"
     broadcast: "<dark_red>✦</dark_red> <red>Vote </red><yellow>{name}</yellow><red> has been deleted.</red>"
 
   change:
-    success: "<green>✅</green> <white>Vote </white><yellow>{name}</yellow><white> updated.</white>"
+    success: "<green>✔</green> <white>Vote </white><yellow>{name}</yellow><white> updated.</white>"
 
   stats:
     header: "<gold>═══════════════════════════════════</gold>"
@@ -567,4 +567,4 @@ suicide:
     forced_title: "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>"
     forced_body: "<gray>Player </gray><white>{sender}</white><gray> is force-suiciding you.</gray>"
     forced_nocancel: "<red>Cannot be cancelled!</red>"
-    forced_sender_success: "<green>✅</green> <white>Player</white> <yellow>{target}</yellow> <white>has been force-suicided.</white>"
+    forced_sender_success: "<green>✔</green> <white>Player</white> <yellow>{target}</yellow> <white>has been force-suicided.</white>"

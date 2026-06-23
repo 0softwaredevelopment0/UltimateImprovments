@@ -119,7 +119,7 @@ public final class HomeCommand {
         Location loc = player.getLocation();
 
         if (HomeDatabase.saveHome(uuid, homeName, loc)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_success", "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>saved!</white>").replace("{name}", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_success", "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>saved!</white>").replace("{name}", homeName)));
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_world", "<gray>World:</gray> <white>{world}</white>").replace("{world}", loc.getWorld().getName())));
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_coords", "<gray>Coordinates:</gray> <white>{x} / {y} / {z}</white>")
                     .replace("{x}", String.format("%.1f", loc.getX()))
@@ -196,7 +196,7 @@ public final class HomeCommand {
         }
 
         if (HomeDatabase.deleteHome(player.getUniqueId(), homeName)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_success", "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>deleted.</white>").replace("{name}", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_success", "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>deleted.</white>").replace("{name}", homeName)));
         } else {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_error", "<red>❌ Error deleting home!</red>")));
         }
@@ -326,7 +326,7 @@ public final class HomeCommand {
         }
 
         if (HomeDatabase.deleteHome(target.getUniqueId(), homeName)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_op_success", "<green>✅</green> <white>Home</white> <yellow>{name}</yellow> <white>of player</white> <yellow>{player}</yellow> <white>deleted.</white>")
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_op_success", "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>of player</white> <yellow>{player}</yellow> <white>deleted.</white>")
                     .replace("{name}", homeName)
                     .replace("{player}", target.getName())));
         } else {

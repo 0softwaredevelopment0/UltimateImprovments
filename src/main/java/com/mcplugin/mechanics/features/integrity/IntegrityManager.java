@@ -65,7 +65,7 @@ public class IntegrityManager extends BukkitRunnable {
     // Поведение при поломке
     private static boolean breakPlaySound = true;
     private static boolean breakSendMessage = true;
-    private static String breakMessage = "<dark_red>✖</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>";
+    private static String breakMessage = "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>";
     private static String breakSoundName = "ENTITY_ITEM_BREAK";
     private static float breakSoundVolume = 1.0f;
     private static float breakSoundPitch = 1.0f;
@@ -199,7 +199,7 @@ public class IntegrityManager extends BukkitRunnable {
         if (onBreak != null) {
             breakPlaySound = onBreak.getBoolean("play_sound", true);
             breakSendMessage = onBreak.getBoolean("send_message", true);
-            breakMessage = MessagesManager.getString("features.integrity.on_break.message", "<dark_red>✖</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>");
+            breakMessage = MessagesManager.getString("features.integrity.on_break.message", "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>");
             breakSoundName = onBreak.getString("sound", "ENTITY_ITEM_BREAK");
             breakSoundVolume = (float) onBreak.getDouble("sound_volume", 1.0);
             breakSoundPitch = (float) onBreak.getDouble("sound_pitch", 1.0);

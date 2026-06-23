@@ -65,7 +65,7 @@ public class DatapackInstaller {
         targetFolder.mkdirs();
         copyFromJar(plugin, "datapacks/MC-Datapack/", targetFolder);
 
-        log.info("[Datapack] ✓ Installed to " + targetFolder.getAbsolutePath());
+        log.info("[Datapack] ✔ Installed to " + targetFolder.getAbsolutePath());
     }
 
     private void deleteRecursively(File dir) throws Exception {

@@ -175,11 +175,11 @@ public final class StructureSubcommand {
             }
             case "enable" -> {
                 LightningManager.setEnabled(nearest, true);
-                player.sendMessage("§a✅ §fСтруктура молний включена!");
+                player.sendMessage("§a✔ §fСтруктура молний включена!");
             }
             case "disable" -> {
                 LightningManager.setEnabled(nearest, false);
-                player.sendMessage("§c✗ §fСтруктура молний выключена!");
+                player.sendMessage("§c❌ §fСтруктура молний выключена!");
             }
             default -> player.sendMessage("§4❌ §cUsage: /mp str lightning <enable|disable|stats>");
         }

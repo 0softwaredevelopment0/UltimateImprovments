@@ -177,7 +177,7 @@ public class CodePaneKeyCommand {
             return;
         }
 
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.add_success", "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>added to database!</white>").replace("{name}", keyName)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.add_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>added to database!</white>").replace("{name}", keyName)));
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("{code}", code)));
         if (maxAttempts > 0) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_max_attempts", "<gray>Max attempts:</gray> <white>{max}</white>").replace("{max}", String.valueOf(maxAttempts))));
@@ -282,7 +282,7 @@ public class CodePaneKeyCommand {
         }
 
         CodePanelDatabase.removeKey(keyName);
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.remove_success", "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>removed from database.</white>").replace("{name}", keyName)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.remove_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>removed from database.</white>").replace("{name}", keyName)));
     }
 
     // =========================
@@ -400,7 +400,7 @@ public class CodePaneKeyCommand {
         CodePanelDatabase.updateKey(keyName, newCode, commandStr,
                 maxAttempts, expiresAt, whitelistStr, blacklistStr);
 
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.modify_success", "<green>✅</green> <white>Key</white> <yellow>{name}</yellow> <white>modified in database.</white>").replace("{name}", keyName)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.modify_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>modified in database.</white>").replace("{name}", keyName)));
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("{code}", newCode)));
         if (maxAttempts > 0) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_max_attempts", "<gray>Max attempts:</gray> <white>{max}</white>").replace("{max}", String.valueOf(maxAttempts))));

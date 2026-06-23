@@ -96,7 +96,7 @@ public class AuthGUIItems {
                 MessageUtil.parse("<gray>Minimum </gray><yellow>4</yellow><gray> characters</gray>").decoration(TextDecoration.ITALIC, false),
                 Component.text("").decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<gray>Then click </gray><green>✔</green><gray> to confirm</gray>").decoration(TextDecoration.ITALIC, false),
-                MessageUtil.parse("<dark_gray>┃</dark_gray> <gray>Or click </gray><red>✖</red><gray> to cancel</gray>").decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<dark_gray>┃</dark_gray> <gray>Or click </gray><red>❌</red><gray> to cancel</gray>").decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<dark_gray>┃</dark_gray> <gray>Press </gray><white>Escape</white><gray> to exit</gray>").decoration(TextDecoration.ITALIC, false)
         ));
         item.setItemMeta(meta);
@@ -158,7 +158,7 @@ public class AuthGUIItems {
     private static ItemStack createCancelButton() {
         ItemStack item = new ItemStack(Material.BARRIER);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(MessageUtil.parse("<red><bold>✖ Cancel</bold></red>").decoration(TextDecoration.ITALIC, false));
+        meta.displayName(MessageUtil.parse("<red><bold>❌ Cancel</bold></red>").decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
                 MessageUtil.parse("<gray>Click to cancel password change</gray>").decoration(TextDecoration.ITALIC, false)
         ));

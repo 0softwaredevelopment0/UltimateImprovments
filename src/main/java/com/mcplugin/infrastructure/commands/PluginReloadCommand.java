@@ -72,7 +72,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 }
                 // Запускаем таймер суицида у цели (форсированно)
                 SuicideCommand.forceExecute(target, player);
-                player.sendMessage(MessageUtil.parse("<green>✅</green> <white>Player</white> <yellow>" + target.getName() + "</yellow> <white>has been force-suicided.</white>"));
+                player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Player</white> <yellow>" + target.getName() + "</yellow> <white>has been force-suicided.</white>"));
                 yield true;
             }
             case "modules" -> ModulesSubcommand.execute(sender, args);

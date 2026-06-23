@@ -81,7 +81,7 @@ public class ElytraBoostManager implements Listener {
         instance = new ElytraBoostManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         loadFlyDisabledFromDb();
-        plugin.getLogger().info("[ElytraBoost] ✓ Enabled — press SPACE while gliding to boost.");
+        plugin.getLogger().info("[ElytraBoost] ✔ Enabled — press SPACE while gliding to boost.");
     }
 
     public static ElytraBoostManager getInstance() {

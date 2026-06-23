@@ -129,7 +129,7 @@ public class VoidProtectionListener implements Listener {
             );
 
             // Сообщение игроку
-            String message = MessagesManager.getString("void_protection.message", "<green>✅</green> <white>Вы были спасены из пустоты!</white>");
+            String message = MessagesManager.getString("void_protection.message", "<green>✔</green> <white>Вы были спасены из пустоты!</white>");
             player.sendMessage(MessageUtil.parse(message));
         });
     }

@@ -60,7 +60,7 @@ public final class ItemSubcommand {
             double value = Double.parseDouble(args[3]);
             if (value < 0 || value > 100) { player.sendMessage("§4❌ §cЗначение должно быть от 0 до 100!"); return; }
             IntegrityManager.setCurrentIntegrity(held, value);
-            player.sendMessage("§a✅ §fЦелостность установлена на §e" + IntegrityManager.formatPercent(value) + "%");
+            player.sendMessage("§a✔ §fЦелостность установлена на §e" + IntegrityManager.formatPercent(value) + "%");
         } catch (NumberFormatException e) {
             player.sendMessage("§4❌ §cНеверный формат числа!");
         }
@@ -74,7 +74,7 @@ public final class ItemSubcommand {
             double current = IntegrityManager.getCurrentIntegrity(held);
             double newVal = Math.min(100.0, current + value);
             IntegrityManager.setCurrentIntegrity(held, newVal);
-            player.sendMessage("§a✅ §fДобавлено §e" + IntegrityManager.formatPercent(value) + "%§f. Текущая: §e" + IntegrityManager.formatPercent(newVal) + "%");
+            player.sendMessage("§a✔ §fДобавлено §e" + IntegrityManager.formatPercent(value) + "%§f. Текущая: §e" + IntegrityManager.formatPercent(newVal) + "%");
         } catch (NumberFormatException e) {
             player.sendMessage("§4❌ §cНеверный формат числа!");
         }

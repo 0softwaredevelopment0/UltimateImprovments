@@ -35,7 +35,7 @@ public class CraftingModule extends PluginModule {
         pm.registerEvents(new EntityLocatorCraftListener(), main);
         pm.registerEvents(new LeadShieldCraftListener(), main);
 
-        plugin.getLogger().info("[CraftingModule] ✓ Recipes initialized.");
+        plugin.getLogger().info("[CraftingModule] ✔ Recipes initialized.");
     }
 
     @Override

@@ -43,7 +43,7 @@ public final class RadiationSubcommand {
                 if (value < 0) { sender.sendMessage("§4❌ §cЗначение радиации не может быть отрицательным!"); return true; }
                 RadiationManager.setRadiation(target, value);
                 double roentgen = value / 100.0;
-                sender.sendMessage("§a✅ §fРадиация игрока §e" + args[1] + "§f установлена на §e" + value + " §7(§f" + String.format(Locale.US, "%.1f", roentgen) + " Р/Ч§7)");
+                sender.sendMessage("§a✔ §fРадиация игрока §e" + args[1] + "§f установлена на §e" + value + " §7(§f" + String.format(Locale.US, "%.1f", roentgen) + " Р/Ч§7)");
             } catch (NumberFormatException e) {
                 sender.sendMessage("§4❌ §cНеверное число: §f" + args[2]);
             }

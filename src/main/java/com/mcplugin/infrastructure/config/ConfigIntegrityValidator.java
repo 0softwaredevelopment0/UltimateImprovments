@@ -175,7 +175,7 @@ public class ConfigIntegrityValidator {
                 plugin.getLogger().info("[ConfigValidator] Renamed " + fileName + " → " + compromisedName);
             }
             restoreAction.run();
-            plugin.getLogger().info("[ConfigValidator] ✓ Fresh " + fileName + " created from resources.");
+            plugin.getLogger().info("[ConfigValidator] ✔ Fresh " + fileName + " created from resources.");
         } catch (IOException e) {
             plugin.getLogger().severe("[ConfigValidator] Failed to rename " + fileName + ": " + e.getMessage());
         }
