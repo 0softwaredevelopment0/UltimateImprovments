@@ -6,8 +6,10 @@ import org.bukkit.scheduler.BukkitRunnable;
  * Cable tick task — no-op now.
  * Cables no longer store or transfer energy between themselves.
  * Energy flows directly from generators to batteries and from batteries to consumers.
- * Kept for scheduler compatibility; does nothing.
+ *
+ * @deprecated No longer scheduled. Kept for reference only.
  */
+@Deprecated
 public class CableTickTask extends BukkitRunnable {
 
     @Override

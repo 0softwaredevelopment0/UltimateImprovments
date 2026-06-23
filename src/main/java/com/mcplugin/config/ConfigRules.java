@@ -88,34 +88,11 @@ final class ConfigRules {
             bool("energy.generator.log"),
 
             bool("energy.cable.enabled"),
-            integer("energy.cable.loss_per_tick", 0, Integer.MAX_VALUE, "Потери энергии в тик"),
-            integer("energy.cable.max_energy", 1, Integer.MAX_VALUE, "Максимальная энергия кабеля"),
+            integer("energy.cable.max_energy", 0, Integer.MAX_VALUE, "Максимальная энергия кабеля (0 = не хранит)"),
 
-            integer("energy.cable.loss.lightning_rod", 0, Integer.MAX_VALUE),
-            integer("energy.cable.loss.chiseled_copper", 0, Integer.MAX_VALUE),
-            integer("energy.cable.loss.copper_grate", 0, Integer.MAX_VALUE),
-
-            bool("energy.cable.overload.enabled"),
-            bool("energy.cable.overload.break_blocks"),
-            bool("energy.cable.overload.set_fire"),
-            dbl("energy.cable.overload.explosion_power", 0, 100, "Сила взрыва (макс 100)"),
-
-            integer("energy.cable.visual.smoke_threshold", 0, Integer.MAX_VALUE),
-            integer("energy.cable.visual.lava_threshold", 0, Integer.MAX_VALUE),
-
-            bool("energy.cable.sound.enabled"),
-            integer("energy.cable.sound.smoke_interval", 1, 1200),
-            integer("energy.cable.sound.lava_interval", 1, 1200),
-            integer("energy.cable.sound.overload_interval", 1, 1200),
-
-            dbl("energy.cable.sound.smoke.volume", 0, 2, "Громкость звука (0-2)"),
-            dbl("energy.cable.sound.smoke.pitch_min", 0, 2),
-            dbl("energy.cable.sound.smoke.pitch_max", 0, 2),
-            dbl("energy.cable.sound.lava.volume", 0, 2),
-            dbl("energy.cable.sound.lava.pitch_min", 0, 2),
-            dbl("energy.cable.sound.lava.pitch_max", 0, 2),
-            dbl("energy.cable.sound.overload.volume", 0, 2),
-            dbl("energy.cable.sound.overload.pitch", 0, 2),
+            bool("energy.cable.blink.enabled"),
+            integer("energy.cable.blink.off_ticks", 1, 200),
+            integer("energy.cable.blink.on_ticks", 1, 200),
 
             integer("energy.battery.max_energy", 1, Integer.MAX_VALUE, "Макс. энергия батареи"),
             integer("energy.battery.discharge_per_tick", 0, Integer.MAX_VALUE),
@@ -130,7 +107,6 @@ final class ConfigRules {
             integer("energy.battery_drain.transfer_per_tick", 0, Integer.MAX_VALUE),
 
             bool("energy.balancer.enabled"),
-            bool("energy.balancer.include_batteries"),
             integer("energy.balancer.max_transfer", 0, Integer.MAX_VALUE),
 
             integer("codepanel.max_length", 1, 256, "Макс. длина пароля кодовой панели"),
@@ -380,9 +356,6 @@ final class ConfigRules {
 
             integer("changedimmension.cooldown_seconds", 0, 36000),
 
-            notBlank("energy.cable.sound.smoke.sound", 256),
-            notBlank("energy.cable.sound.lava.sound", 256),
-            notBlank("energy.cable.sound.overload.sound", 256),
             notBlank("codepanel.empty_char", 10),
             notBlank("void_protection.target.world", 256),
             notBlank("changedimmension.default_world", 256)

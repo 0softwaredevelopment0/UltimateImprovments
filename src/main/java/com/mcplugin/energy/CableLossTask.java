@@ -2,19 +2,9 @@ package com.mcplugin.energy;
 
 import com.mcplugin.Main;
 
-import com.mcplugin.cable.CableNetwork;
-import com.mcplugin.cable.CableNode;
-import com.mcplugin.cable.NodeType;
-
-import org.bukkit.Location;
-import org.bukkit.Material;
-
 import org.bukkit.configuration.file.FileConfiguration;
 
 import org.bukkit.scheduler.BukkitRunnable;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Cable loss task — no-op for CABLE nodes (cables don't store energy anymore).

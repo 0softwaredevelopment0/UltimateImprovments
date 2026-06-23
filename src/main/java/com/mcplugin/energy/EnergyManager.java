@@ -8,6 +8,12 @@ import com.mcplugin.util.LocationUtil;
 
 import org.bukkit.Location;
 
+/**
+ * @deprecated Cables no longer store energy — energy flows directly
+ * from generators to batteries and from batteries to consumers through BFS.
+ * Use BFS pathfinding via CableNetwork instead.
+ */
+@Deprecated
 public class EnergyManager {
 
     // =========================
