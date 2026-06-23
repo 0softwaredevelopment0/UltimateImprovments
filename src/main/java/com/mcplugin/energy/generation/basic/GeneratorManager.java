@@ -51,36 +51,32 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
-    // SCAN EXISTING (on startup)
+    // SCAN EXISTING (on startup) — позиционная детекция, без getAttachedFace
     // =========================
     private static void scanExistingGenerators() {
-        // Scan all loaded chunks for blast furnaces with item frames
+        int count = 0;
         for (World world : Bukkit.getWorlds()) {
-            for (org.bukkit.entity.Entity entity : world.getEntities()) {
-                if (!(entity instanceof ItemFrame frame)) continue;
+            for (ItemFrame frame : world.getEntitiesByClass(ItemFrame.class)) {
                 if (!frame.isValid() || frame.isDead()) continue;
 
-                // Frame on top face of a block → attachedFace = DOWN
-                if (frame.getAttachedFace() != org.bukkit.block.BlockFace.DOWN) continue;
+                // Блок под рамкой (Y рамки ≈ центр блока над печью)
+                Location below = frame.getLocation().clone().add(0, -1, 0);
+                Location furnaceLoc = LocationUtil.normalize(below);
 
-                // Get block below frame (subtract 1.0 to avoid boundary rounding)
-                Location furnaceLoc = frame.getLocation().clone().subtract(0, 1.0, 0);
-                Location attachedLoc = LocationUtil.normalize(furnaceLoc);
+                if (furnaceLoc == null) continue;
+                if (furnaceLoc.getBlock().getType() != Material.BLAST_FURNACE) continue;
+                if (!GeneratorStructure.isValid(furnaceLoc)) continue;
 
-                if (attachedLoc != null
-                        && attachedLoc.getBlock().getType() == Material.BLAST_FURNACE
-                        && GeneratorStructure.isValid(attachedLoc)) {
-                    // Check if cable is connected nearby
-                    if (hasNearbyCable(attachedLoc)) {
-                        activeGenerators.put(attachedLoc, true);
-                        Main.getInstance().getLogger().info(
-                                "[Generator] Auto-detected at " + attachedLoc);
-                    }
+                if (hasNearbyCable(furnaceLoc)) {
+                    activeGenerators.put(furnaceLoc, true);
+                    count++;
+                    Main.getInstance().getLogger().info(
+                            "[Generator] Auto-detected at " + furnaceLoc);
                 }
             }
         }
         Main.getInstance().getLogger().info(
-                "[Generator] Auto-detected " + activeGenerators.size() + " generators");
+                "[Generator] Auto-detected " + count + " generators");
     }
 
     // =========================
@@ -175,7 +171,7 @@ public class GeneratorManager implements Listener {
     // =========================
     // CABLE NEARBY CHECK
     // =========================
-    private static boolean hasNearbyCable(Location generatorLoc) {
+    public static boolean hasNearbyCable(Location generatorLoc) {
         generatorLoc = LocationUtil.normalize(generatorLoc);
         if (generatorLoc == null) return false;
 
@@ -205,6 +201,32 @@ public class GeneratorManager implements Listener {
             }
         }
         return null;
+    }
+
+    // =========================
+    // ASSEMBLE FROM FRAME (вызывается из ReactorListener)
+    // =========================
+    public static void assembleFromFrame(Player player, Location furnaceLoc) {
+        furnaceLoc = LocationUtil.normalize(furnaceLoc);
+        if (furnaceLoc == null) return;
+
+        activeGenerators.put(furnaceLoc, true);
+
+        World world = furnaceLoc.getWorld();
+        if (world != null) {
+            world.strikeLightningEffect(furnaceLoc.clone().add(0.5, 1.5, 0.5));
+            world.spawnParticle(Particle.ELECTRIC_SPARK,
+                    furnaceLoc.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5, 0);
+            world.playSound(furnaceLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
+            world.playSound(furnaceLoc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
+        }
+
+        player.sendMessage("§a✔ Генератор собран!"
+                + " §8[§7" + furnaceLoc.getBlockX() + " " + furnaceLoc.getBlockY() + " " + furnaceLoc.getBlockZ() + "§8]");
+        player.sendMessage("§8┃ §7Положите топливо в плавильную печь — энергия пойдёт в сеть!");
+
+        Main.getInstance().getLogger().info(
+                "[Generator] Assembled at " + furnaceLoc + " by " + player.getName());
     }
 
     // =========================

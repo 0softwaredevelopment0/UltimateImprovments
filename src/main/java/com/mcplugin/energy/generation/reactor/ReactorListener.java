@@ -6,6 +6,8 @@ import com.mcplugin.mechanics.environment.magnet.MagnetManager;
 import com.mcplugin.mechanics.environment.magnet.MagnetStructure;
 import com.mcplugin.infrastructure.util.StructureTemplate;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.energy.generation.basic.GeneratorManager;
+import com.mcplugin.energy.generation.basic.GeneratorStructure;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -283,12 +285,36 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 3. НИЧЕГО НЕ НАЙДЕНО
+        // 3. ПРОВЕРКА: ГЕНЕРАТОР (BLAST_FURNACE + рамка сверху)
+        // =========================
+        // Блок под рамкой
+        Location generatorLoc = LocationUtil.normalize(
+                frame.getLocation().clone().add(0, -1, 0)
+        );
+        if (generatorLoc != null
+                && generatorLoc.getBlock().getType() == Material.BLAST_FURNACE
+                && GeneratorStructure.isValid(generatorLoc)) {
+            // Проверяем кабель рядом
+            if (GeneratorManager.hasNearbyCable(generatorLoc)) {
+                if (GeneratorManager.isAssembled(generatorLoc)) {
+                    player.sendMessage("§eГенератор уже собран на этом месте!");
+                    return;
+                }
+                GeneratorManager.assembleFromFrame(player, generatorLoc);
+                return;
+            } else {
+                player.sendMessage("§4❌ §cНет кабеля рядом с плавильной печью!");
+                return;
+            }
+        }
+
+        // =========================
+        // 4. НИЧЕГО НЕ НАЙДЕНО
         // =========================
         player.sendMessage("§c❌ Структура не распознана!");
         player.sendMessage("§7Убедитесь, что все блоки структуры соответствуют NBT-шаблону.");
-        player.sendMessage("§7Поддерживаются: громоотвод (молнии), LODESTONE (магнит),");
-        player.sendMessage("§7реактор (алмазная/золотая бочка с рамкой)");
+        player.sendMessage("§7Поддерживаемые структуры: громоотвод (молнии), LODESTONE (магнит),");
+        player.sendMessage("§7реактор (алмазная/золотая бочка с рамкой), BLAST_FURNACE + рамка (генератор)");
     }
 
     // =========================
