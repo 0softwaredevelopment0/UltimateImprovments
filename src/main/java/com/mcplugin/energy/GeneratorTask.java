@@ -14,9 +14,15 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.mcplugin.cable.NodeType;
+
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 public class GeneratorTask extends BukkitRunnable {
 
@@ -126,7 +132,7 @@ public class GeneratorTask extends BukkitRunnable {
                 }
 
                 if (add > 0) {
-                    node.addEnergy(add);
+                    addEnergyToBatteryNetwork(nodeLoc, add);
                 }
 
                 burnTicks.put(furnaceLoc, remaining - 1);
@@ -139,7 +145,7 @@ public class GeneratorTask extends BukkitRunnable {
                 if (log) {
                     Main.getInstance().getLogger().info(
                             "[GENERATOR] +" + add +
-                                    " energy at " + nodeLoc +
+                                    " energy from " + furnaceLoc +
                                     " (remaining burn: " + (remaining - 1) + " ticks)"
                     );
                 }
@@ -176,7 +182,7 @@ public class GeneratorTask extends BukkitRunnable {
                     }
 
                     if (firstAdd > 0) {
-                        node.addEnergy(firstAdd);
+                        addEnergyToBatteryNetwork(nodeLoc, firstAdd);
                     }
 
                     if (!data.isLit()) {
@@ -199,6 +205,45 @@ public class GeneratorTask extends BukkitRunnable {
             if (data.isLit()) {
                 data.setLit(false);
                 block.setBlockData(data);
+            }
+        }
+    }
+
+    // =========================
+    // BFS TO FIND BATTERY AND ADD ENERGY
+    // Cables don't store energy — we pathfind through them to find
+    // the first battery and add energy there, marking cables as flowing.
+    // =========================
+    private void addEnergyToBatteryNetwork(Location startCable, int amount) {
+        CableNode start = CableNetwork.getNode(startCable);
+        if (start == null || amount <= 0) return;
+
+        Set<Location> visited = new HashSet<>();
+        Queue<CableNode> queue = new LinkedList<>();
+        queue.add(start);
+        visited.add(start.getLocation());
+
+        while (!queue.isEmpty()) {
+            CableNode node = queue.poll();
+            if (node == null) continue;
+
+            // Mark cable as flowing (energy is passing through)
+            if (node.getType() == NodeType.CABLE) {
+                CableNetwork.markFlowing(node.getLocation());
+            }
+
+            // Found a battery — add energy here
+            if (node.getType() == NodeType.BATTERY) {
+                node.addEnergy(amount);
+                return;
+            }
+
+            for (Location conn : node.getConnections()) {
+                if (visited.contains(conn)) continue;
+                CableNode next = CableNetwork.getNode(conn);
+                if (next == null) continue;
+                visited.add(conn);
+                queue.add(next);
             }
         }
     }

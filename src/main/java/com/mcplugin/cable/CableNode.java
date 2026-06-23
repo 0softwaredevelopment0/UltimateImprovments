@@ -15,7 +15,7 @@ public class CableNode {
 
     private int energy;
     private NodeType type = NodeType.CABLE;
-    private int maxEnergy = 5000; // default cap for cables; batteries override via config
+    private int maxEnergy = 0; // cables don't store energy; batteries override via config
 
     public CableNode(Location location) {
         this.location = LocationUtil.normalize(location);
@@ -33,11 +33,14 @@ public class CableNode {
     }
 
     public void setEnergy(int energy) {
+        // No type check here — setEnergy is for initialization (DB load, etc.)
+        // Runtime energy changes use addEnergy/removeEnergy which enforce type rules.
         this.energy = Math.max(0, Math.min(energy, maxEnergy));
     }
 
     public void addEnergy(int amount) {
         if (amount <= 0) return;
+        if (type == NodeType.CABLE) return; // cables only transmit, don't store
         this.energy = Math.max(0, Math.min(this.energy + amount, maxEnergy));
     }
 
@@ -56,6 +59,7 @@ public class CableNode {
 
     public void removeEnergy(int amount) {
         if (amount <= 0) return;
+        if (type == NodeType.CABLE) return; // cables only transmit, don't store
 
         this.energy -= amount;
 
@@ -65,7 +69,7 @@ public class CableNode {
     }
 
     public boolean hasEnergy() {
-        return energy > 0;
+        return type != NodeType.CABLE && energy > 0;
     }
 
     // =========================

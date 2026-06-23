@@ -14,6 +14,7 @@ import java.sql.SQLException;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CableNetwork {
@@ -22,6 +23,11 @@ public class CableNetwork {
     // MEMORY CACHE
     // =========================
     private static final Map<Location, CableNode> nodes = new ConcurrentHashMap<>();
+
+    // =========================
+    // FLOWING TRACKING — cables that had energy pass through them this tick
+    // =========================
+    private static final Set<Location> flowingCables = ConcurrentHashMap.newKeySet();
 
     // =========================
     // INIT
@@ -79,6 +85,23 @@ public class CableNetwork {
 
     public static Collection<CableNode> getAllNodes() {
         return nodes.values();
+    }
+
+    // =========================
+    // FLOWING TRACKING
+    // =========================
+    public static void markFlowing(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc != null) flowingCables.add(loc);
+    }
+
+    public static boolean isFlowing(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        return loc != null && flowingCables.contains(loc);
+    }
+
+    public static void clearFlowing() {
+        flowingCables.clear();
     }
 
     // =========================

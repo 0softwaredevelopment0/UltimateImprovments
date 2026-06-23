@@ -15,290 +15,97 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
+/**
+ * Energy balancer — balances energy between BATTERIES only.
+ * Cables no longer store energy, so only batteries are balanced.
+ */
 public class EnergyBalancerTask extends BukkitRunnable {
 
     @Override
     public void run() {
 
-        FileConfiguration cfg =
-                Main.getInstance().getConfig();
+        FileConfiguration cfg = Main.getInstance().getConfig();
 
-        // =========================
-        // ENABLE CHECK
-        // =========================
-        if (!cfg.getBoolean(
-                "energy.balancer.enabled",
-                true
-        )) {
+        if (!cfg.getBoolean("energy.balancer.enabled", true)) {
             return;
         }
 
-        boolean includeBatteries =
-                cfg.getBoolean(
-                        "energy.balancer.include_batteries",
-                        false
-                );
+        int maxTransfer = cfg.getInt("energy.balancer.max_transfer", 25);
+        boolean log = cfg.getBoolean("energy.balancer.log", false);
 
-        int maxTransfer =
-                cfg.getInt(
-                        "energy.balancer.max_transfer",
-                        25
-                );
+        Set<CableNode> allNodes = new HashSet<>(CableNetwork.getAllNodes());
+        Set<Location> visited = new HashSet<>();
 
-        boolean log =
-                cfg.getBoolean(
-                        "energy.balancer.log",
-                        false
-                );
-
-        // =========================
-        // SAFE NODE COPY
-        // =========================
-        Set<CableNode> allNodes =
-                new HashSet<>(
-                        CableNetwork.getAllNodes()
-                );
-
-        Set<Location> visited =
-                new HashSet<>();
-
-        // =========================
-        // FIND NETWORKS
-        // =========================
         for (CableNode start : allNodes) {
+            if (start == null) continue;
+            if (start.getType() != NodeType.BATTERY) continue; // only batteries have energy
 
-            if (start == null) {
-                continue;
-            }
+            Location startLoc = LocationUtil.normalize(start.getLocation());
+            if (visited.contains(startLoc)) continue;
 
-            Location startLoc =
-                    LocationUtil.normalize(
-                            start.getLocation()
-                    );
-
-            if (visited.contains(startLoc)) {
-                continue;
-            }
-
-            Set<CableNode> network =
-                    new HashSet<>();
-
-            Queue<CableNode> queue =
-                    new LinkedList<>();
-
+            // BFS to find all batteries in this network
+            List<CableNode> batteries = new ArrayList<>();
+            Queue<CableNode> queue = new LinkedList<>();
             queue.add(start);
 
-            // =========================
-            // BFS NETWORK SCAN
-            // =========================
             while (!queue.isEmpty()) {
-
-                CableNode node =
-                        queue.poll();
-
-                if (node == null) {
-                    continue;
-                }
-
-                Location nodeLoc =
-                        LocationUtil.normalize(
-                                node.getLocation()
-                        );
-
-                if (visited.contains(nodeLoc)) {
-                    continue;
-                }
-
-                // =========================
-                // BATTERY FILTER
-                // =========================
-                if (!includeBatteries
-                        && node.getType() == NodeType.BATTERY) {
-
-                    continue;
-                }
-
+                CableNode node = queue.poll();
+                if (node == null) continue;
+                Location nodeLoc = LocationUtil.normalize(node.getLocation());
+                if (visited.contains(nodeLoc)) continue;
                 visited.add(nodeLoc);
 
-                network.add(node);
+                if (node.getType() == NodeType.BATTERY) {
+                    batteries.add(node);
+                }
 
-                // =========================
-                // CONNECTIONS
-                // =========================
                 for (Location conn : node.getConnections()) {
-
-                    if (conn == null) {
-                        continue;
-                    }
-
-                    Location targetLoc =
-                            LocationUtil.normalize(conn);
-
-                    CableNode next =
-                            CableNetwork.getNode(targetLoc);
-
-                    if (next == null) {
-                        continue;
-                    }
-
-                    // =========================
-                    // BATTERY FILTER
-                    // =========================
-                    if (!includeBatteries
-                            && next.getType() == NodeType.BATTERY) {
-
-                        continue;
-                    }
-
-                    // =========================
-                    // REAL CONNECTION CHECK
-                    // =========================
-                    if (!LocationUtil.isFullyConnected(
-                            nodeLoc,
-                            targetLoc
-                    )) {
-                        continue;
-                    }
-
-                    // =========================
-                    // DOUBLE LINK CHECK
-                    // =========================
-                    if (!node.isConnected(targetLoc)
-                            || !next.isConnected(nodeLoc)) {
-
-                        continue;
-                    }
-
-                    if (!visited.contains(targetLoc)) {
-                        queue.add(next);
-                    }
+                    if (visited.contains(conn)) continue;
+                    CableNode next = CableNetwork.getNode(conn);
+                    if (next != null) queue.add(next);
                 }
             }
 
-            // =========================
-            // EMPTY NETWORK
-            // =========================
-            if (network.isEmpty()) {
-                continue;
-            }
+            if (batteries.size() <= 1) continue;
 
-            // =========================
-            // TOTAL ENERGY & BALANCE
-            // =========================
+            // Calculate average
             int totalEnergy = 0;
+            for (CableNode b : batteries) totalEnergy += b.getEnergy();
+            int average = totalEnergy / batteries.size();
 
-            for (CableNode node : network) {
-                totalEnergy += node.getEnergy();
-            }
-
-            // =========================
-            // SINGLE NODE
-            // =========================
-            if (network.size() <= 1) {
-                continue;
-            }
-
-            int average =
-                    totalEnergy / network.size();
-
-            // =========================
-            // COLLECT EXCESS ENERGY FROM RICH NODES
-            // =========================
-            int collectedExcess = 0;
-            List<CableNode> poorNodes = new ArrayList<>();
-
-            for (CableNode node : network) {
-
-                int current =
-                        node.getEnergy();
-
-                // =========================
-                // TOO HIGH — remove excess and collect it
-                // =========================
+            // Collect excess
+            int collected = 0;
+            List<CableNode> poor = new ArrayList<>();
+            for (CableNode b : batteries) {
+                int current = b.getEnergy();
                 if (current > average) {
-
-                    int remove =
-                            Math.min(
-                                    current - average,
-                                    maxTransfer
-                            );
-
+                    int remove = Math.min(current - average, maxTransfer);
                     if (remove > 0) {
-
-                        node.removeEnergy(remove);
-                        collectedExcess += remove;
-
-                        CableNetwork.saveNode(node);
-
-                        if (log) {
-
-                            Main.getInstance()
-                                    .getLogger()
-                                    .info(
-                                            "[Balancer] Collected "
-                                                    + remove
-                                                    + " energy from "
-                                                    + node.getLocation()
-                                    );
-                        }
+                        b.removeEnergy(remove);
+                        collected += remove;
+                        CableNetwork.markFlowing(b.getLocation());
                     }
-                }
-
-                // =========================
-                // TOO LOW — mark for distribution
-                // =========================
-                else if (current < average) {
-                    poorNodes.add(node);
+                } else if (current < average) {
+                    poor.add(b);
                 }
             }
 
-            // =========================
-            // DISTRIBUTE COLLECTED ENERGY TO POOR NODES
-            // =========================
-            if (collectedExcess > 0) {
-                for (CableNode node : poorNodes) {
-
-                    if (collectedExcess <= 0) break;
-
-                    int current = node.getEnergy();
-                    int deficit = average - current;
-
-                    if (deficit <= 0) continue;
-
-                    int add = Math.min(
-                            Math.min(deficit, maxTransfer),
-                            collectedExcess
-                    );
-
-                    if (add > 0) {
-
-                        node.addEnergy(add);
-                        collectedExcess -= add;
-
-                        CableNetwork.saveNode(node);
-
-                        if (log) {
-
-                            Main.getInstance()
-                                    .getLogger()
-                                    .info(
-                                            "[Balancer] Distributed "
-                                                    + add
-                                                    + " energy to "
-                                                    + node.getLocation()
-                                    );
-                        }
-                    }
+            // Distribute to poor
+            for (CableNode b : poor) {
+                if (collected <= 0) break;
+                int deficit = average - b.getEnergy();
+                if (deficit <= 0) continue;
+                int add = Math.min(Math.min(deficit, maxTransfer), collected);
+                if (add > 0) {
+                    b.addEnergy(add);
+                    collected -= add;
+                    CableNetwork.markFlowing(b.getLocation());
                 }
             }
 
-            // =========================
-            // LOG REMAINDER
-            // =========================
-            if (collectedExcess > 0 && log) {
+            if (collected > 0 && log) {
                 Main.getInstance().getLogger().info(
-                        "[Balancer] " + collectedExcess + " energy left undistributed (all nodes at cap)"
-                );
+                        "[Balancer] " + collected + " energy left undistributed");
             }
         }
     }

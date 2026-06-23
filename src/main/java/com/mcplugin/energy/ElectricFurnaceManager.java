@@ -5,6 +5,8 @@ import com.mcplugin.cable.CableNetwork;
 import com.mcplugin.cable.CableNode;
 import com.mcplugin.util.LocationUtil;
 
+import com.mcplugin.cable.NodeType;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -264,7 +266,8 @@ public class ElectricFurnaceManager implements Listener {
     }
 
     // =========================
-    // NETWORK ENERGY CHECK (BFS)
+    // NETWORK ENERGY CHECK (BFS to batteries)
+    // Cables don't store energy — only batteries have it.
     // =========================
     private static boolean hasNetworkEnergy(Location cableLoc, int amount) {
         CableNode start = CableNetwork.getNode(LocationUtil.normalize(cableLoc));
@@ -279,8 +282,17 @@ public class ElectricFurnaceManager implements Listener {
         while (!queue.isEmpty()) {
             CableNode node = queue.poll();
             if (node == null) continue;
-            total += node.getEnergy();
-            if (total >= amount) return true;
+
+            // Mark cable as flowing
+            if (node.getType() == NodeType.CABLE) {
+                CableNetwork.markFlowing(node.getLocation());
+            }
+
+            // Only batteries have energy
+            if (node.getType() == NodeType.BATTERY) {
+                total += node.getEnergy();
+                if (total >= amount) return true;
+            }
 
             for (Location conn : node.getConnections()) {
                 if (visited.contains(conn)) continue;
@@ -294,7 +306,7 @@ public class ElectricFurnaceManager implements Listener {
     }
 
     // =========================
-    // NETWORK ENERGY CONSUME (BFS)
+    // NETWORK ENERGY CONSUME (BFS to batteries)
     // =========================
     private static boolean takeNetworkEnergy(Location cableLoc, int amount) {
         CableNode start = CableNetwork.getNode(LocationUtil.normalize(cableLoc));
@@ -310,11 +322,19 @@ public class ElectricFurnaceManager implements Listener {
             CableNode node = queue.poll();
             if (node == null) continue;
 
-            int energy = node.getEnergy();
-            if (energy > 0) {
-                int take = Math.min(energy, remaining);
-                node.setEnergy(energy - take);
-                remaining -= take;
+            // Mark cable as flowing
+            if (node.getType() == NodeType.CABLE) {
+                CableNetwork.markFlowing(node.getLocation());
+            }
+
+            // Consume from batteries only
+            if (node.getType() == NodeType.BATTERY) {
+                int energy = node.getEnergy();
+                if (energy > 0) {
+                    int take = Math.min(energy, remaining);
+                    node.setEnergy(energy - take);
+                    remaining -= take;
+                }
             }
 
             for (Location conn : node.getConnections()) {
