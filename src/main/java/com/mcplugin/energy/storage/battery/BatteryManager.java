@@ -2,6 +2,8 @@ package com.mcplugin.energy.storage.battery;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.energy.transfer.cable.CableNetwork;
+import com.mcplugin.energy.transfer.cable.CableNode;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -381,6 +383,48 @@ public class BatteryManager {
     }
 
     public static int getClusterCount() { return clustersById.size(); }
+
+    // ════════════════════════════════════════
+    // GET CHARGE PERCENTAGE (0.0 - 100.0)
+    // Суммирует энергию всех CableNode блоков кластера / capacity × 100
+    // ════════════════════════════════════════
+    public static double getChargePercentage(BatteryCluster cluster) {
+        if (cluster == null || cluster.capacity <= 0) return 0.0;
+        int totalEnergy = 0;
+        for (long key : cluster.blockKeys) {
+            Location bl = new Location(cluster.world, getX(key), getY(key), getZ(key));
+            CableNode node = CableNetwork.getNode(bl);
+            if (node != null) {
+                totalEnergy += node.getEnergy();
+            }
+        }
+        return Math.min(100.0, (double) totalEnergy / cluster.capacity * 100.0);
+    }
+
+    // ════════════════════════════════════════
+    // PARTICLE TICK — спавн частиц в центре каждого кластера
+    // 0% заряда = 0 частиц, 100% = 10 частиц
+    // ════════════════════════════════════════
+    public static void tick() {
+        for (BatteryCluster cluster : clustersById.values()) {
+            try {
+                if (cluster.world == null || cluster.center == null || cluster.capacity <= 0) continue;
+
+                long firstKey = cluster.blockKeys.iterator().next();
+                if (!cluster.world.isChunkLoaded(getX(firstKey) >> 4, getZ(firstKey) >> 4)) continue;
+
+                double pct = getChargePercentage(cluster);
+                int count = (int) Math.round(pct / 10.0); // 0%→0, 100%→10
+                if (count <= 0) continue;
+
+                Location center = cluster.center.clone().add(0.5, 0.5, 0.5);
+                cluster.world.spawnParticle(Particle.END_ROD, center, count, 0.3, 0.3, 0.3, 0.01);
+                cluster.world.spawnParticle(Particle.ELECTRIC_SPARK, center, count / 2, 0.3, 0.3, 0.3, 0);
+            } catch (Exception e) {
+                Main.getInstance().getLogger().warning("[BatteryMulti] Tick error: " + e.getMessage());
+            }
+        }
+    }
 
     // ════════════════════════════════════════
     // SAVE / LOAD (delegated)
