@@ -32,33 +32,41 @@ tasks {
     }
 
     shadowJar {
-        doLast {
-            def jarDir = new File(project.projectDir, "Jar")
-            def jarName = "MC-Plugin-${project.version}.jar"
-            def source = shadowJar.archiveFile.get().asFile
-
-            if (!source.exists()) return
-
-            // Создаём папку Jar/, если её нет
-            jarDir.mkdirs()
-
-            // Полностью очищаем папку Jar/ от всех файлов
-            jarDir.listFiles()?.each { f ->
-                if (f.delete()) {
-                    logger.lifecycle("[JAR] Удалён: ${f.name}")
-                }
-            }
-
-            // Копируем свежий fat jar через Java NIO
-            def target = new File(jarDir, jarName)
-            java.nio.file.Files.copy(
-                source.toPath(),
-                target.toPath(),
-                java.nio.file.StandardCopyOption.REPLACE_EXISTING
-            )
-            logger.lifecycle("[JAR] Скопирован в Jar/: ${jarName}")
-        }
+        // doLast перенесён в copyJarToFolder
     }
+}
+
+// Отдельная таска — всегда запускается, т.к. у неё нет входов/выходов (UP-TO-DATE не применяется)
+tasks.register('copyJarToFolder') {
+    dependsOn(tasks.named('shadowJar'))
+    doLast {
+        def jarDir = new File(project.projectDir, "Jar")
+        def jarName = "MC-Plugin-${project.version}.jar"
+        def shadowTask = tasks.named('shadowJar').get()
+        def source = shadowTask.archiveFile.get().asFile
+
+        if (!source.exists()) return
+
+        jarDir.mkdirs()
+
+        jarDir.listFiles()?.each { f ->
+            if (f.delete()) {
+                logger.lifecycle("[JAR] Удалён: ${f.name}")
+            }
+        }
+
+        def target = new File(jarDir, jarName)
+        java.nio.file.Files.copy(
+            source.toPath(),
+            target.toPath(),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING
+        )
+        logger.lifecycle("[JAR] Скопирован в Jar/: ${jarName}")
+    }
+}
+
+tasks.named('assemble') {
+    dependsOn(tasks.named('copyJarToFolder'))
 }
 
 // Paper 26.x (1.21.4+) uses Mojang mappings natively - no reobf needed
