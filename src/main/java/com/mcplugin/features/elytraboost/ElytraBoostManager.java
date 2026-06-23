@@ -1,6 +1,7 @@
 package com.mcplugin.features.elytraboost;
 
 import com.mcplugin.Main;
+import com.mcplugin.database.DatabaseManager;
 
 import org.bukkit.Color;
 import org.bukkit.GameMode;
@@ -16,6 +17,10 @@ import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -62,8 +67,10 @@ public class ElytraBoostManager implements Listener {
     public static void toggleFlyEnabled(UUID uuid) {
         if (flyDisabled.contains(uuid)) {
             flyDisabled.remove(uuid);
+            deleteFlyDisabledFromDb(uuid);
         } else {
             flyDisabled.add(uuid);
+            saveFlyDisabledToDb(uuid);
         }
     }
 
@@ -73,6 +80,7 @@ public class ElytraBoostManager implements Listener {
     public static void init(Main plugin) {
         instance = new ElytraBoostManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
+        loadFlyDisabledFromDb();
         plugin.getLogger().info("[ElytraBoost] ✓ Enabled — press SPACE while gliding to boost.");
     }
 
@@ -180,10 +188,58 @@ public class ElytraBoostManager implements Listener {
         UUID uuid = event.getPlayer().getUniqueId();
         lastYDelta.remove(uuid);
         lastBoostTime.remove(uuid);
-        flyDisabled.remove(uuid);
+        // Keep flyDisabled in memory — DB persistence handles server restarts.
+        // Player will re-check on next join via the in-memory set.
     }
 
     // =========================
-    // HELPERS (unused — keep for reference)
+    // DB PERSISTENCE
+    // =========================
+
+    private static void loadFlyDisabledFromDb() {
+        Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
+        try (PreparedStatement ps = con.prepareStatement("SELECT uuid FROM elytra_boost_disabled");
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                try {
+                    flyDisabled.add(UUID.fromString(rs.getString("uuid")));
+                } catch (IllegalArgumentException ignored) {
+                    // Corrupted UUID in DB — skip
+                }
+            }
+            Main.getInstance().getLogger().info(
+                    "[ElytraBoost] Loaded " + flyDisabled.size() + " disabled players from DB");
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().severe("[ElytraBoost] DB load error: " + e.getMessage());
+        }
+    }
+
+    private static void saveFlyDisabledToDb(UUID uuid) {
+        Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
+        try (PreparedStatement ps = con.prepareStatement(
+                "INSERT OR REPLACE INTO elytra_boost_disabled (uuid) VALUES (?)")) {
+            ps.setString(1, uuid.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().severe("[ElytraBoost] DB save error: " + e.getMessage());
+        }
+    }
+
+    private static void deleteFlyDisabledFromDb(UUID uuid) {
+        Connection con = DatabaseManager.getConnection();
+        if (con == null) return;
+        try (PreparedStatement ps = con.prepareStatement(
+                "DELETE FROM elytra_boost_disabled WHERE uuid = ?")) {
+            ps.setString(1, uuid.toString());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().severe("[ElytraBoost] DB delete error: " + e.getMessage());
+        }
+    }
+
+    // =========================
+    // HELPERS
     // =========================
 }

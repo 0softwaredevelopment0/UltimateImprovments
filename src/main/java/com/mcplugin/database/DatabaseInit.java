@@ -182,8 +182,17 @@ public class DatabaseInit {
                 // Column already exists — это нормально
             }
 
-            // =========================
-            // 🌍 DIMENSION RETURNS
+        // =========================
+        // 🦅 ELYTRA BOOST DISABLED (persist /mp togglefly state)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS elytra_boost_disabled (
+                uuid TEXT PRIMARY KEY
+            );
+        """);
+
+        // =========================
+        // 🌍 DIMENSION RETURNS
             // =========================
             st.execute("""
                 CREATE TABLE IF NOT EXISTS dimension_returns (
