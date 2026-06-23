@@ -14,6 +14,46 @@
               "condition": "minecraft:random_chance",
               "chance": 0.99
             }
+          ],
+          "functions": [
+            {
+              "function": "minecraft:set_lore",
+              "lore": [
+                {
+                  "text": "Шанс 99% на выпадение, шанс 0.1% взрыва при открытии.",
+                  "color": "gray",
+                  "bold": false,
+                  "italic": false,
+                  "underlined": false,
+                  "strikethrough": false,
+                  "obfuscated": false
+                },
+                {
+                  "text": "Содержит 54 слота или 3,456 стаканных предметов.",
+                  "type": "text",
+                  "color": "gray",
+                  "bold": false,
+                  "italic": false,
+                  "underlined": false,
+                  "strikethrough": false,
+                  "obfuscated": false
+                }
+              ],
+              "mode": "append"
+            },
+            {
+              "function": "minecraft:set_name",
+              "name": {
+                "text": "Портативное хранилище",
+                "type": "text",
+                "color": "white",
+                "bold": false,
+                "italic": false,
+                "underlined": false,
+                "strikethrough": false,
+                "obfuscated": false
+              }
+            }
           ]
         }
       ]

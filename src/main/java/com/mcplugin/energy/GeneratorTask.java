@@ -14,9 +14,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class GeneratorTask extends BukkitRunnable {
 
@@ -55,91 +55,129 @@ public class GeneratorTask extends BukkitRunnable {
 
         // =========================
         // CALCULATE PER-TICK ENERGY
-        // energy_per_fuel is the TOTAL energy per fuel item,
-        // distributed evenly over the burn duration.
-        // e.g. 100 energy / 1600 ticks = 0 per tick + 100 remainder
-        // → 100 ticks get +1 energy each (the "extra" ticks)
         // =========================
         int effectiveBurn = Math.max(burnDuration, 1);
         int energyPerTick = totalEnergyPerFuel / effectiveBurn;
 
         // =========================
-        // CLEANUP: Remove entries for broken/removed furnaces
+        // CLEANUP: Remove entries for disassembled/broken generators
         // =========================
         burnTicks.entrySet().removeIf(entry -> {
             Location loc = entry.getKey();
-            Material type = loc.getBlock().getType();
-            return type != Material.FURNACE
-                    && type != Material.BLAST_FURNACE
-                    && type != Material.SMOKER;
+            return !GeneratorManager.isAssembled(loc)
+                    || loc.getBlock().getType() != Material.BLAST_FURNACE;
         });
 
-        // Clean up extraTicks for broken furnaces too
         extraTicks.entrySet().removeIf(entry -> {
             Location loc = entry.getKey();
-            Material type = loc.getBlock().getType();
-            return type != Material.FURNACE
-                    && type != Material.BLAST_FURNACE
-                    && type != Material.SMOKER;
+            return !GeneratorManager.isAssembled(loc)
+                    || loc.getBlock().getType() != Material.BLAST_FURNACE;
         });
 
-        Set<CableNode> nodes = Set.copyOf(CableNetwork.getAllNodes());
+        // =========================
+        // ONLY PROCESS ASSEMBLED GENERATORS
+        // =========================
+        Collection<Location> generators = GeneratorManager.getActiveGenerators();
 
-        for (CableNode node : nodes) {
+        for (Location furnaceLoc : generators) {
+
+            if (furnaceLoc == null) continue;
+
+            Block block = furnaceLoc.getBlock();
+            if (block.getType() != Material.BLAST_FURNACE) continue;
+
+            // Find connected cable node
+            CableNode node = GeneratorManager.findConnectedNode(furnaceLoc);
+            if (node == null) continue;
 
             Location nodeLoc = node.getLocation();
 
-            for (Location nearby : LocationUtil.getNeighbors(nodeLoc)) {
+            if (!LocationUtil.isFullyConnected(nodeLoc, furnaceLoc)) {
+                continue;
+            }
 
-                Location furnaceLoc = LocationUtil.normalize(nearby);
-                Block block = furnaceLoc.getBlock();
-                Material type = block.getType();
+            BlockState state = block.getState();
 
-                if (type != Material.FURNACE
-                        && type != Material.BLAST_FURNACE
-                        && type != Material.SMOKER) {
-                    continue;
+            if (!(state instanceof Furnace furnace)) {
+                continue;
+            }
+
+            ItemStack fuel = furnace.getInventory().getFuel();
+
+            // =========================
+            // SAFE BLOCK DATA
+            // =========================
+            org.bukkit.block.data.type.Furnace data =
+                    (org.bukkit.block.data.type.Furnace) block.getBlockData();
+
+            int remaining = burnTicks.getOrDefault(furnaceLoc, 0);
+
+            // =========================
+            // CASE 1: BURNING — generate energy smoothly each tick
+            // =========================
+            if (remaining > 0) {
+                int add = energyPerTick;
+
+                // Distribute the remainder (+1 extra for first N ticks)
+                int extra = extraTicks.getOrDefault(furnaceLoc, 0);
+                if (extra > 0) {
+                    add += 1;
+                    extraTicks.put(furnaceLoc, extra - 1);
                 }
 
-                if (!LocationUtil.isFullyConnected(nodeLoc, furnaceLoc)) {
-                    continue;
+                if (add > 0) {
+                    node.addEnergy(add);
                 }
 
-                BlockState state = block.getState();
+                burnTicks.put(furnaceLoc, remaining - 1);
 
-                if (!(state instanceof Furnace furnace)) {
-                    continue;
+                if (!data.isLit()) {
+                    data.setLit(true);
+                    block.setBlockData(data);
                 }
 
-                ItemStack fuel = furnace.getInventory().getFuel();
+                if (log) {
+                    Main.getInstance().getLogger().info(
+                            "[GENERATOR] +" + add +
+                                    " energy at " + nodeLoc +
+                                    " (remaining burn: " + (remaining - 1) + " ticks)"
+                    );
+                }
+                continue;
+            }
 
-                // =========================
-                // SAFE BLOCK DATA
-                // =========================
-                org.bukkit.block.data.type.Furnace data =
-                        (org.bukkit.block.data.type.Furnace) block.getBlockData();
-
-                int remaining = burnTicks.getOrDefault(furnaceLoc, 0);
-
-                // =========================
-                // CASE 1: BURNING — generate energy smoothly each tick
-                // Total energy added over the full burn = energy_per_fuel.
-                // =========================
-                if (remaining > 0) {
-                    int add = energyPerTick;
-
-                    // Distribute the remainder (+1 extra for first N ticks)
-                    int extra = extraTicks.getOrDefault(furnaceLoc, 0);
-                    if (extra > 0) {
-                        add += 1;
-                        extraTicks.put(furnaceLoc, extra - 1);
+            // =========================
+            // CASE 2: NOT BURNING, HAS FUEL — consume one item, start burning
+            // =========================
+            if (fuel != null && !fuel.getType().isAir() && fuel.getType().isFuel()
+                    && burnDuration > 0) {
+                    // Consume one fuel item
+                    ItemStack newFuel = fuel.clone();
+                    int amount = newFuel.getAmount() - 1;
+                    if (amount <= 0) {
+                        furnace.getInventory().setFuel(null);
+                    } else {
+                        newFuel.setAmount(amount);
+                        furnace.getInventory().setFuel(newFuel);
                     }
 
-                    if (add > 0) {
-                        node.addEnergy(add);
+                    // Start burning (remaining - 1 because we generate energy THIS tick too)
+                    burnTicks.put(furnaceLoc, burnDuration - 1);
+
+                    // First tick: add energyPerTick (and extra if remainder > 0)
+                    int firstAdd = energyPerTick;
+                    int remainder = totalEnergyPerFuel % effectiveBurn;
+                    if (remainder > 0) {
+                        firstAdd += 1;
+                        // Remaining extra ticks = remainder - 1 (one used this tick)
+                        if (remainder > 1) {
+                            extraTicks.put(furnaceLoc, remainder - 1);
+                        }
                     }
 
-                    burnTicks.put(furnaceLoc, remaining - 1);
+                    if (firstAdd > 0) {
+                        node.addEnergy(firstAdd);
+                    }
 
                     if (!data.isLit()) {
                         data.setLit(true);
@@ -148,68 +186,19 @@ public class GeneratorTask extends BukkitRunnable {
 
                     if (log) {
                         Main.getInstance().getLogger().info(
-                                "[GENERATOR] +" + add +
-                                        " energy at " + nodeLoc +
-                                        " (remaining burn: " + (remaining - 1) + " ticks)"
-                        );
-                    }
-                    continue;
-                }
-
-                // =========================
-                // CASE 2: NOT BURNING, HAS FUEL — consume one item, start burning
-                // =========================
-                if (fuel != null && !fuel.getType().isAir() && fuel.getType().isFuel()
-                        && burnDuration > 0) {
-                        // Consume one fuel item
-                        ItemStack newFuel = fuel.clone();
-                        int amount = newFuel.getAmount() - 1;
-                        if (amount <= 0) {
-                            furnace.getInventory().setFuel(null);
-                        } else {
-                            newFuel.setAmount(amount);
-                            furnace.getInventory().setFuel(newFuel);
-                        }
-
-                        // Start burning (remaining - 1 because we generate energy THIS tick too)
-                        burnTicks.put(furnaceLoc, burnDuration - 1);
-
-                        // First tick: add energyPerTick (and extra if remainder > 0)
-                        int firstAdd = energyPerTick;
-                        int remainder = totalEnergyPerFuel % effectiveBurn;
-                        if (remainder > 0) {
-                            firstAdd += 1;
-                            // Remaining extra ticks = remainder - 1 (one used this tick)
-                            if (remainder > 1) {
-                                extraTicks.put(furnaceLoc, remainder - 1);
-                            }
-                        }
-
-                        if (firstAdd > 0) {
-                            node.addEnergy(firstAdd);
-                        }
-
-                        if (!data.isLit()) {
-                            data.setLit(true);
-                            block.setBlockData(data);
-                        }
-
-                        if (log) {
-                            Main.getInstance().getLogger().info(
-                                    "[GENERATOR] Fuel consumed at " + furnaceLoc +
-                                            ", +" + firstAdd + " energy (burn: " + burnDuration + " ticks)"
+                                "[GENERATOR] Fuel consumed at " + furnaceLoc +
+                                        ", +" + firstAdd + " energy (burn: " + burnDuration + " ticks)"
                             );
-                        }
-                    continue;
-                }
+                    }
+                continue;
+            }
 
-                // =========================
-                // CASE 3: NO FUEL — ensure furnace is unlit
-                // =========================
-                if (data.isLit()) {
-                    data.setLit(false);
-                    block.setBlockData(data);
-                }
+            // =========================
+            // CASE 3: NO FUEL — ensure furnace is unlit
+            // =========================
+            if (data.isLit()) {
+                data.setLit(false);
+                block.setBlockData(data);
             }
         }
     }

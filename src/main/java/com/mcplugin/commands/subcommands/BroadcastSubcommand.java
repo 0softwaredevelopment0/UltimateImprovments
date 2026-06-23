@@ -11,7 +11,7 @@ import java.util.List;
 
 public final class BroadcastSubcommand {
 
-    private static final String PREFIX = "<gray>[<white>Server</white> <dark_gray>/</dark_gray> <white>Info</white>]</gray> ";
+    private static final String PREFIX = "<gray>[<white>Server</white><dark_gray>/</dark_gray><white>Info</white>]</gray> ";
 
     private BroadcastSubcommand() {}
 
