@@ -20,6 +20,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -148,6 +149,8 @@ public class GeneratorManager implements Listener {
         } else {
             event.setCancelled(true);
             // ASSEMBLE
+            // Сломать рамку на верхней грани
+            removeFrameOnTop(loc);
             activeGenerators.put(loc, true);
 
             World world = loc.getWorld();
@@ -204,11 +207,40 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
+    // REMOVE FRAME ON TOP (ломает рамку над печью и дропает)
+    // =========================
+    private static void removeFrameOnTop(Location furnaceLoc) {
+        World world = furnaceLoc.getWorld();
+        if (world == null) return;
+
+        double targetX = furnaceLoc.getX() + 0.5;
+        double targetY = furnaceLoc.getY() + 1.0;
+        double targetZ = furnaceLoc.getZ() + 0.5;
+
+        for (ItemFrame frame : world.getEntitiesByClass(ItemFrame.class)) {
+            double dx = Math.abs(frame.getLocation().getX() - targetX);
+            double dz = Math.abs(frame.getLocation().getZ() - targetZ);
+            double dy = Math.abs(frame.getLocation().getY() - targetY);
+
+            if (dx < 0.6 && dz < 0.6 && dy < 0.6) {
+                if (frame.isValid() && !frame.isDead()) {
+                    frame.getWorld().dropItemNaturally(frame.getLocation(), new ItemStack(Material.ITEM_FRAME));
+                    frame.remove();
+                }
+                return;
+            }
+        }
+    }
+
+    // =========================
     // ASSEMBLE FROM FRAME (вызывается из ReactorListener)
     // =========================
     public static void assembleFromFrame(Player player, Location furnaceLoc) {
         furnaceLoc = LocationUtil.normalize(furnaceLoc);
         if (furnaceLoc == null) return;
+
+        // Сломать рамку на верхней грани
+        removeFrameOnTop(furnaceLoc);
 
         activeGenerators.put(furnaceLoc, true);
 
