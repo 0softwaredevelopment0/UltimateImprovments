@@ -342,26 +342,69 @@ public class ScannerItemListener implements Listener {
         }
 
         Location loc = nearest.getLocation();
-        int dx = Math.abs(loc.getBlockX() - playerLoc.getBlockX());
-        int dy = Math.abs(loc.getBlockY() - playerLoc.getBlockY());
-        int dz = Math.abs(loc.getBlockZ() - playerLoc.getBlockZ());
+        String worldName = loc.getWorld().getName();
+        int distBlocks = (int) Math.round(nearestDist);
 
         // Direction indicator
         String dirX = loc.getBlockX() >= playerLoc.getBlockX() ? "восток" : "запад";
         String dirZ = loc.getBlockZ() >= playerLoc.getBlockZ() ? "юг" : "север";
         String dirY = loc.getBlockY() >= playerLoc.getBlockY() ? "↑" : "↓";
 
+        // Distance color: <32 = green, 32-48 = yellow, >48 = red
+        String distColor;
+        String proxLabel;
+        if (nearestDist <= 16) {
+            distColor = "<green>";
+            proxLabel = "<green>Очень близко</green>";
+        } else if (nearestDist <= 32) {
+            distColor = "<#66FF00>";
+            proxLabel = "<#66FF00>Близко</#66FF00>";
+        } else if (nearestDist <= 48) {
+            distColor = "<yellow>";
+            proxLabel = "<yellow>Средне</yellow>";
+        } else {
+            distColor = "<red>";
+            proxLabel = "<red>Далеко</red>";
+        }
+
+        // Distance bar (visual — 20 segments, filled based on proximity)
+        int barSegments = 20;
+        int filled = Math.max(0, barSegments - (int) Math.round(((double) distBlocks / radius) * barSegments));
+        StringBuilder distBar = new StringBuilder();
+        for (int i = 0; i < barSegments; i++) {
+            if (i < filled) {
+                double ratio = (double) (i + 1) / barSegments;
+                if (ratio <= 0.25) {
+                    distBar.append("<red>|</red>");
+                } else if (ratio <= 0.5) {
+                    distBar.append("<yellow>|</yellow>");
+                } else if (ratio <= 0.75) {
+                    distBar.append("<#66FF00>|</#66FF00>");
+                } else {
+                    distBar.append("<green>|</green>");
+                }
+            } else {
+                distBar.append("<dark_gray>|</dark_gray>");
+            }
+        }
+
+        // Action bar — compact info
+        player.sendActionBar(MessageUtil.parse(
+                "<gray>🎯 </gray>" + entityName + " " + proxLabel + " <dark_gray>|</dark_gray> " + distColor + distBlocks + "м</color>"));
+
         player.sendMessage(Component.empty());
         player.sendMessage(MessageUtil.parse("<gold>=== <white>Портативный радар</white> ==="));
         player.sendMessage(MessageUtil.parse("<gray>Существо: </gray><white>" + entityName + "</white>"));
+        player.sendMessage(MessageUtil.parse("<gray>Мир: </gray><yellow>" + worldName + "</yellow>"));
         player.sendMessage(MessageUtil.parse("<gray>Координаты: </gray><white>" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "</white>"));
-        player.sendMessage(MessageUtil.parse("<gray>Мир: </gray><yellow>" + loc.getWorld().getName() + "</yellow>"));
-        player.sendMessage(MessageUtil.parse("<gray>Расстояние: </gray><white>" + String.format("%.1f", nearestDist) + "</white> <gray>блоков</gray>"));
+        player.sendMessage(MessageUtil.parse("<gray>Расстояние: </gray>" + distColor + distBlocks + "</color> <gray>блоков</gray>"));
+        player.sendMessage(MessageUtil.parse("<gray>Дистанция: </gray>" + distBar.toString()));
         player.sendMessage(MessageUtil.parse("<gray>Направление: </gray><white>" + dirX + " " + dirZ + " " + dirY + "</white>"));
         player.sendMessage(MessageUtil.parse("<gold>==========================="));
 
-        // Ping sound to indicate scan result
-        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BIT, 0.5f, 1.5f);
+        // Ping sound based on distance
+        float pitch = (float) Math.max(0.5f, 2.0f - (nearestDist / radius) * 1.5f);
+        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BIT, 0.4f, pitch);
     }
 
     // ========================================================================
