@@ -56,10 +56,10 @@ public class LeadShieldCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Свинцовый щит</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Shield</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Защищает от радиации при держании в руке.</gray>")
+                MessageUtil.parse("<i:false><gray>Protects from radiation when held</gray>")
         ));
 
         // =========================
@@ -137,10 +137,10 @@ public class LeadShieldCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Свинцовый щит</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Shield</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Защищает от радиации при держании в руке.</gray>")
+                MessageUtil.parse("<i:false><gray>Protects from radiation when held</gray>")
         ));
 
         // =========================

@@ -36,10 +36,10 @@ public class PortableRadarCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Портативный радар</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Portable Radar</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>ПКМ — найти ближайшую сущность (64 блока)</gray>")
+                MessageUtil.parse("<i:false><gray>RMB — find nearest entity (64 blocks)</gray>")
         ));
 
         meta.getPersistentDataContainer().set(
@@ -80,9 +80,9 @@ public class PortableRadarCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Портативный радар</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Portable Radar</white>"));
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>ПКМ — найти ближайшую сущность (64 блока)</gray>")
+                MessageUtil.parse("<i:false><gray>RMB — find nearest entity (64 blocks)</gray>")
         ));
 
         meta.getPersistentDataContainer().set(

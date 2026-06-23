@@ -11,134 +11,134 @@ public final class CilistCommand {
     public static void execute(CommandSender sender) {
         sender.sendMessage(Component.empty());
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════════════════════</gold>"));
-        sender.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Кастомные предметы</white> <gray>(крафт только в сборщике)</gray>"));
+        sender.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Custom Items</white> <gray>(craft only in Item Assembler)</gray>"));
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════════════════════</gold>"));
         sender.sendMessage(Component.empty());
 
-        // 1. Свинцовый слиток
-        sender.sendMessage(MessageUtil.parse("<yellow>1. Свинцовый слиток</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Незеритовый слиток</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Железо Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Незерит Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Железо Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>Используется для крафта свинцового щита</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        // 1. Lead Ingot
+        sender.sendMessage(MessageUtil.parse("<yellow>1. Lead Ingot</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Netherite Ingot</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Iron Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Netherite Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Iron Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Used to craft a Lead Shield</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
-        // 2. Свинцовый щит
-        sender.sendMessage(MessageUtil.parse("<yellow>2. Свинцовый щит</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Щит</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Свинец Свинец Свинец</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Свинец Щит Свинец</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Свинец Свинец Свинец</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>Защищает от радиации при держании в руке</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        // 2. Lead Shield
+        sender.sendMessage(MessageUtil.parse("<yellow>2. Lead Shield</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Shield</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Lead Lead Lead</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Lead Shield Lead</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Lead Lead Lead</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Protects from radiation when held</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
-        // 3. Локатор существ
-        sender.sendMessage(MessageUtil.parse("<yellow>3. Локатор существ</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Компас восстановления</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Нез.лом Факел Компас</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Редстоун Ред.блок Компаратор</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Бриз.палка Бриз.палка Крюк</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>Показывает расстояние до ближайшей сущности (action bar)</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        // 3. Entity Locator
+        sender.sendMessage(MessageUtil.parse("<yellow>3. Entity Locator</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Recovery Compass</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Redstone Torch Compass</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Redstone Redstone Block Comparator</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Breeze Rod Breeze Rod Tripwire Hook</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Shows distance to nearest entity (action bar)</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
         // 4. Photon cannon
         sender.sendMessage(MessageUtil.parse("<yellow>4. Photon cannon</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Warped fungus on a stick</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Purpur Стекло Нез.звезда</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Эхо-осколок Сердце моря Стекло</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Бриз.палка Эхо-осколок Purpur</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>Стреляет эхо-осколками (патрон в оффхенд)</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Warped fungus on a stick</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Purpur Glass Pane Nether Star</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Echo Shard Heart of the Sea Glass Pane</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Breeze Rod Echo Shard Purpur</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Shoots echo shards (ammo in offhand)</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
         // 5. Electro Shoker
         sender.sendMessage(MessageUtil.parse("<yellow>5. Electro Shoker</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Warped fungus on a stick</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Чёрн.бетон Жёлт.бетон Огн.стержень</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Жёлт.бетон Чёрн.бетон Бриз.палка</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Палка Нез.лом Нез.лом</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>Оглушает врагов электричеством (патрон — бриз.палка)</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Warped fungus on a stick</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Black Concrete Yellow Concrete Blaze Rod</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Yellow Concrete Black Concrete Breeze Rod</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Stick Netherite Scrap Netherite Scrap</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Stuns enemies with electricity (ammo — breeze rod)</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
-        // 6. Колба с антиматерией
-        sender.sendMessage(MessageUtil.parse("<yellow>6. Колба с антиматерией</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Взрывное зелье</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Нез.лом Нез.лом Нез.лом</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Нез.лом Стекло Нез.лом</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Нез.лом Нез.лом Нез.лом</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>При броске создаёт мощный взрыв с радиацией</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        // 6. Antimatter Flask
+        sender.sendMessage(MessageUtil.parse("<yellow>6. Antimatter Flask</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Splash Potion</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Netherite Scrap Netherite Scrap</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Glass Bottle Netherite Scrap</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Netherite Scrap Netherite Scrap</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Creates a powerful explosion with radiation when thrown</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
         // 7. Multimeter
         sender.sendMessage(MessageUtil.parse("<yellow>7. Multimeter</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Часы</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Алмаз Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Алмаз Часы Алмаз</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Алмаз Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>ПКМ по кабелю/батарее — показать информацию об энергии</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Clock</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Diamond Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Diamond Clock Diamond</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Diamond Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB on cable/battery — show energy info</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
-        // 8. Измеритель здоровья
-        sender.sendMessage(MessageUtil.parse("<yellow>8. Измеритель здоровья</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Бирка</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Лазурит Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Лазурит Сердце моря Лазурит</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Лазурит Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>ПКМ — проверить здоровье существа, на которое смотришь</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        // 8. Health Meter
+        sender.sendMessage(MessageUtil.parse("<yellow>8. Health Meter</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Name Tag</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Lapis Lazuli Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Lapis Lazuli Heart of the Sea Lapis Lazuli</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Lapis Lazuli Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB — check health of the entity you're looking at</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
-        // 9. Рудоискатель
-        sender.sendMessage(MessageUtil.parse("<yellow>9. Рудоискатель</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Компас</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Редстоун Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Алмаз Золото Алмаз</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Железо Редстоун Железо</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>ПКМ — сканировать чанк и показать количество руд</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        // 9. Ore Finder
+        sender.sendMessage(MessageUtil.parse("<yellow>9. Ore Finder</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Compass</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Redstone Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Diamond Gold Diamond</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Redstone Iron</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB — scan chunk and show ore counts</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
-        // 10. Мобоискатель
-        sender.sendMessage(MessageUtil.parse("<yellow>10. Мобоискатель</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Подзорная труба</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Бриз.палка Нез.лом Бриз.палка</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Нез.лом Железо Нез.лом</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Бриз.палка Нез.лом Бриз.палка</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>ПКМ — сканировать чанк и показать количество мобов</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        // 10. Mob Finder
+        sender.sendMessage(MessageUtil.parse("<yellow>10. Mob Finder</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Spyglass</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Breeze Rod Netherite Scrap Breeze Rod</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Iron Breeze Rod</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Breeze Rod Netherite Scrap Breeze Rod</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB — scan chunk and show mob counts</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
-        // 11. Портативный радар
-        sender.sendMessage(MessageUtil.parse("<yellow>11. Портативный радар</yellow>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Материал: </white><gray>Око Края</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Рецепт:</white>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Нез.лом Око края Нез.лом</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Око края Ред.блок Око края</gray>"));
-        sender.sendMessage(MessageUtil.parse("   <gray>Нез.лом Око края Нез.лом</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Описание: </white><gray>ПКМ — найти ближайшую сущность в 64 блоках (тип, координаты, расстояние)</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Только в сборщике</red>"));
+        // 11. Portable Radar
+        sender.sendMessage(MessageUtil.parse("<yellow>11. Portable Radar</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Eye of Ender</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Eye of Ender Netherite Scrap</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Eye of Ender Redstone Block Eye of Ender</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Eye of Ender Netherite Scrap</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB — find nearest entity within 64 blocks (type, coords, distance)</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
         sender.sendMessage(Component.empty());
 
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════════════════════</gold>"));
-        sender.sendMessage(MessageUtil.parse("<gray>💡 Установите верстак и используйте его как сборщик</gray>"));
-        sender.sendMessage(MessageUtil.parse("<gray>   для крафта всех кастомных предметов!</gray>"));
+        sender.sendMessage(MessageUtil.parse("<gray>💡 Place a crafting table and use it as an Item Assembler</gray>"));
+        sender.sendMessage(MessageUtil.parse("<gray>   to craft all custom items!</gray>"));
         sender.sendMessage(Component.empty());
     }
 }

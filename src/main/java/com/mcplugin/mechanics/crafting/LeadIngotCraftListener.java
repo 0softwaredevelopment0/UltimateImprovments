@@ -40,10 +40,10 @@ public class LeadIngotCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Свинцовый слиток</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Используется для крафта свинцового щита.</gray>")
+                MessageUtil.parse("<i:false><gray>Used to craft a Lead Shield</gray>")
         ));
 
         meta.getPersistentDataContainer().set(
@@ -86,9 +86,9 @@ public class LeadIngotCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Свинцовый слиток</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot</white>"));
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Используется для крафта свинцового щита.</gray>")
+                MessageUtil.parse("<i:false><gray>Used to craft a Lead Shield</gray>")
         ));
 
         meta.getPersistentDataContainer().set(

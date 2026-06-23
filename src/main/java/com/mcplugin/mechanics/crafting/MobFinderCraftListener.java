@@ -36,10 +36,10 @@ public class MobFinderCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Мобоискатель</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Mob Finder</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>ПКМ — сканировать чанк на мобов</gray>")
+                MessageUtil.parse("<i:false><gray>RMB — scan chunk for mobs</gray>")
         ));
 
         meta.getPersistentDataContainer().set(
@@ -80,9 +80,9 @@ public class MobFinderCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Мобоискатель</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Mob Finder</white>"));
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>ПКМ — сканировать чанк на мобов</gray>")
+                MessageUtil.parse("<i:false><gray>RMB — scan chunk for mobs</gray>")
         ));
 
         meta.getPersistentDataContainer().set(

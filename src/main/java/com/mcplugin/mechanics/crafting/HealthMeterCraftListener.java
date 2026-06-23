@@ -35,10 +35,10 @@ public class HealthMeterCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Измеритель здоровья</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Health Meter</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>ПКМ — проверить здоровье существа</gray>")
+                MessageUtil.parse("<i:false><gray>RMB — check entity health</gray>")
         ));
 
         meta.getPersistentDataContainer().set(
@@ -79,9 +79,9 @@ public class HealthMeterCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Измеритель здоровья</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Health Meter</white>"));
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>ПКМ — проверить здоровье существа</gray>")
+                MessageUtil.parse("<i:false><gray>RMB — check entity health</gray>")
         ));
 
         meta.getPersistentDataContainer().set(

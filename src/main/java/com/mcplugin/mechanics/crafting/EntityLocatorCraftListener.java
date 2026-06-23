@@ -50,10 +50,10 @@ public class EntityLocatorCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Локатор существ</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Entity Locator</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Показывает расстояние до ближайшей сущности.</gray>")
+                MessageUtil.parse("<i:false><gray>Shows distance to nearest entity</gray>")
         ));
 
         // =========================
@@ -112,10 +112,10 @@ public class EntityLocatorCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><i:false><white>Локатор существ</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><i:false><white>Entity Locator</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><i:false><gray>Показывает расстояние до ближайшей сущности.</gray>")
+                MessageUtil.parse("<i:false><i:false><gray>Shows distance to nearest entity</gray>")
         ));
 
         // =========================

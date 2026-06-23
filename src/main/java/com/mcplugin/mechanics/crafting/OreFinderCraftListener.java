@@ -36,10 +36,10 @@ public class OreFinderCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Рудоискатель</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Ore Finder</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>ПКМ — сканировать чанк на руды</gray>")
+                MessageUtil.parse("<i:false><gray>RMB — scan chunk for ores</gray>")
         ));
 
         meta.getPersistentDataContainer().set(
@@ -81,9 +81,9 @@ public class OreFinderCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Рудоискатель</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Ore Finder</white>"));
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>ПКМ — сканировать чанк на руды</gray>")
+                MessageUtil.parse("<i:false><gray>RMB — scan chunk for ores</gray>")
         ));
 
         meta.getPersistentDataContainer().set(
