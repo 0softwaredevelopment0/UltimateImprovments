@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.mcplugin'
-version = '1.7.61'
+version = '1.7.62'
 
 java {
     toolchain {
@@ -62,6 +62,16 @@ tasks.register('copyJarToFolder') {
             java.nio.file.StandardCopyOption.REPLACE_EXISTING
         )
         logger.lifecycle("[JAR] Скопирован в Jar/: ${jarName}")
+
+        // Очищаем build/libs/ от всех jar'ов
+        def libsDir = new File(project.buildDir, "libs")
+        if (libsDir.exists()) {
+            libsDir.listFiles()?.each { f ->
+                if (f.name.endsWith(".jar") && f.delete()) {
+                    logger.lifecycle("[JAR] Очищен build/libs/: ${f.name}")
+                }
+            }
+        }
     }
 }
 
