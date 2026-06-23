@@ -36,7 +36,7 @@ tasks {
     shadowJar {
         doLast {
             def rootDir = project.projectDir
-            def jarName = "MC-Plugin-${project.version}.jar"
+            def jarName = "MC-Plugin-${project.version}-all.jar"
             def source = shadowJar.archiveFile.get().asFile
 
             if (!source.exists()) return
