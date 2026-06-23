@@ -1,5 +1,6 @@
 package com.mcplugin.mechanics.crafting;
 
+import com.mcplugin.energy.machines.assembler.AssemblerChecker;
 import com.mcplugin.infrastructure.core.Keys;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
@@ -110,6 +111,7 @@ public class LeadShieldCraftListener implements Listener {
         if (!(recipe instanceof ShapedRecipe sr)) return;
 
         if (!sr.getKey().equals(RECIPE_KEY)) return;
+        if (!AssemblerChecker.isAssemblerCraft(e)) return;
 
         CraftingInventory inv = e.getInventory();
 

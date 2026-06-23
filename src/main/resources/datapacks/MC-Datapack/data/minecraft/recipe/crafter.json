@@ -1,0 +1,44 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "crafter",
+  "pattern": [
+    "III",
+    "ICI",
+    "III"
+  ],
+  "key": {
+    "I": [
+      "minecraft:iron_ingot"
+    ],
+    "C": [
+      "minecraft:crafting_table"
+    ]
+  },
+  "result": {
+    "id": "minecraft:crafter",
+    "components": {
+      "minecraft:item_name": {
+        "text": "Item assembler",
+        "color": "white",
+        "bold": false,
+        "italic": false,
+        "underlined": false,
+        "strikethrough": false,
+        "obfuscated": false
+      },
+      "minecraft:lore": [
+        {
+          "text": "Used to craft custom items",
+          "color": "gray",
+          "bold": false,
+          "italic": false,
+          "underlined": false,
+          "strikethrough": false,
+          "obfuscated": false
+        }
+      ]
+    },
+    "count": 1
+  }
+}

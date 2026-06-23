@@ -6,6 +6,7 @@ import com.mcplugin.infrastructure.commands.vote.VoteManager;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.commands.home.HomeDatabase;
+import com.mcplugin.infrastructure.commands.subcommands.CilistCommand;
 import com.mcplugin.infrastructure.commands.subcommands.HelpCommand;
 import com.mcplugin.infrastructure.commands.subcommands.ChgDimSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.CodePaneSubcommand;
@@ -182,6 +183,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 yield true;
             }
 
+            case "cilist" -> { CilistCommand.execute(sender); yield true; }
             case "toggleradview" -> MiscSubcommand.toggleRadView(sender);
             case "i_want_to_get_impossible_achivement_uwu" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
@@ -213,7 +215,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(List.of("help", "checkver", "updatejar", "toggleradview",
+            completions.addAll(List.of("help", "checkver", "updatejar", "cilist", "toggleradview",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
                     "auth",                    "chgdim", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "vote",

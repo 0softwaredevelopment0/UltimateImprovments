@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.mechanics.crafting.*;
+import com.mcplugin.energy.machines.assembler.AssemblerListener;
 import com.mcplugin.mechanics.features.scanner.ScannerItemListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -46,6 +47,7 @@ public class CraftingModule extends PluginModule {
         pm.registerEvents(new MobFinderCraftListener(), main);
         pm.registerEvents(new PortableRadarCraftListener(), main);
         pm.registerEvents(new ScannerItemListener(), main);
+        pm.registerEvents(new AssemblerListener(), main);
 
         plugin.getLogger().info("[CraftingModule] ✔ Recipes initialized.");
     }
