@@ -8,6 +8,8 @@ import com.mcplugin.infrastructure.util.StructureTemplate;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.energy.generation.basic.GeneratorManager;
 import com.mcplugin.energy.generation.basic.GeneratorStructure;
+import com.mcplugin.energy.storage.battery.BatteryManager;
+import com.mcplugin.energy.consumption.light.LightManager;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -285,7 +287,36 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 3. ПРОВЕРКА: ГЕНЕРАТОР (BLAST_FURNACE + рамка сверху)
+        // 3. ПРОВЕРКА: БАТАРЕЯ (WAXED_COPPER_GRATE + рамка)
+        // =========================
+        Location attachedLoc2 = LocationUtil.normalize(
+                frame.getLocation().getBlock().getRelative(
+                        frame.getFacing().getOppositeFace()
+                ).getLocation()
+        );
+        if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Material.WAXED_COPPER_GRATE) {
+            if (BatteryManager.isActive(attachedLoc2)) {
+                player.sendMessage("§eБатарея уже собрана на этом месте!");
+                return;
+            }
+            BatteryManager.assemble(attachedLoc2, player);
+            return;
+        }
+
+        // =========================
+        // 4. ПРОВЕРКА: ЛАМПОЧКА (REDSTONE_LAMP + рамка)
+        // =========================
+        if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Material.REDSTONE_LAMP) {
+            if (LightManager.isActive(attachedLoc2)) {
+                player.sendMessage("§eЛампочка уже собрана на этом месте!");
+                return;
+            }
+            LightManager.assemble(attachedLoc2, player);
+            return;
+        }
+
+        // =========================
+        // 5. ПРОВЕРКА: ГЕНЕРАТОР (BLAST_FURNACE + рамка сверху)
         // =========================
         // Блок под рамкой
         Location generatorLoc = LocationUtil.normalize(
@@ -314,7 +345,8 @@ public class ReactorListener implements Listener {
         player.sendMessage("§c❌ Структура не распознана!");
         player.sendMessage("§7Убедитесь, что все блоки структуры соответствуют NBT-шаблону.");
         player.sendMessage("§7Поддерживаемые структуры: громоотвод (молнии), LODESTONE (магнит),");
-        player.sendMessage("§7реактор (алмазная/золотая бочка с рамкой), BLAST_FURNACE + рамка (генератор)");
+        player.sendMessage("§7реактор (алмазная/золотая бочка с рамкой), BLAST_FURNACE + рамка (генератор),");
+        player.sendMessage("§7WAXED_COPPER_GRATE (батарея), REDSTONE_LAMP (лампочка)");
     }
 
     // =========================

@@ -183,6 +183,67 @@ public class DatabaseInit {
             }
 
         // =========================
+        // 🔋 BATTERY MULTIBLOCK
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS batteries (
+                id INTEGER PRIMARY KEY,
+                world TEXT NOT NULL,
+                center_x INTEGER NOT NULL,
+                center_y INTEGER NOT NULL,
+                center_z INTEGER NOT NULL,
+                block_count INTEGER DEFAULT 1
+            );
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS battery_blocks (
+                battery_id INTEGER NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                z INTEGER NOT NULL,
+                PRIMARY KEY(battery_id, x, y, z),
+                FOREIGN KEY(battery_id) REFERENCES batteries(id) ON DELETE CASCADE
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_battery_blocks_id
+            ON battery_blocks(battery_id);
+        """);
+
+        // =========================
+        // 💡 LIGHT MULTIBLOCK
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS lights (
+                id INTEGER PRIMARY KEY,
+                world TEXT NOT NULL,
+                center_x INTEGER NOT NULL,
+                center_y INTEGER NOT NULL,
+                center_z INTEGER NOT NULL,
+                block_count INTEGER DEFAULT 1,
+                lit INTEGER DEFAULT 0
+            );
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS light_blocks (
+                light_id INTEGER NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                z INTEGER NOT NULL,
+                PRIMARY KEY(light_id, x, y, z),
+                FOREIGN KEY(light_id) REFERENCES lights(id) ON DELETE CASCADE
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_light_blocks_id
+            ON light_blocks(light_id);
+        """);
+
+        // =========================
         // 🦅 ELYTRA BOOST DISABLED (persist /mp togglefly state)
         // =========================
         st.execute("""

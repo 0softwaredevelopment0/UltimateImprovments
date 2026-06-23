@@ -98,6 +98,8 @@ public class Main extends JavaPlugin {
         mm.register(new FurnaceModule());
         mm.register(new WorkbenchModule());
         mm.register(new BatteryModule());
+        mm.register(new BatteryMultiModule());
+        mm.register(new LightModule());
 
         // Mechanics
         mm.register(new RadiationModule());

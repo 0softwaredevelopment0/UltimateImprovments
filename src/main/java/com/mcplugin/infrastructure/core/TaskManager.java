@@ -9,11 +9,13 @@ import com.mcplugin.energy.generation.basic.GeneratorTask;
 import com.mcplugin.energy.transfer.cable.CableVisualTask;
 import com.mcplugin.mechanics.security.codepanel.CodePanelCleanupTask;
 import com.mcplugin.combat.weapons.plasma.PlasmaProjectileTask;
+import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.mechanics.environment.radiation.RadiationTask;
 import com.mcplugin.infrastructure.listeners.FishingListener;
 import com.mcplugin.infrastructure.server.EmergencyEntitiesKill;
 import com.mcplugin.infrastructure.server.RedstoneGuardTask;
 import com.mcplugin.infrastructure.server.ServerOverloadWarning;
+import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
 
 public class TaskManager {
@@ -31,6 +33,7 @@ public class TaskManager {
 
     private BukkitTask gunTask;
     private BukkitTask reactorTask;
+    private BukkitTask lightTask;
     private BukkitTask radiationTask;
     private BukkitTask fishingTask;
     private BukkitTask codePanelCleanupTask;
@@ -105,6 +108,17 @@ public class TaskManager {
         if (reactorTask != null) { reactorTask.cancel(); reactorTask = null; }
     }
 
+    public void startLightTask(Main plugin) {
+        if (lightTask != null) return;
+        lightTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            LightManager.tick();
+        }, 0L, 1L);
+    }
+
+    public void stopLightTask() {
+        if (lightTask != null) { lightTask.cancel(); lightTask = null; }
+    }
+
     public void startCableVisualTask(Main plugin) {
         if (cableVisualTask != null) return;
         cableVisualTask = new CableVisualTask().runTaskTimer(plugin, 0L, 2L);
@@ -128,5 +142,6 @@ public class TaskManager {
         if (radiationTask != null) radiationTask.cancel();
         if (fishingTask != null) fishingTask.cancel();
         if (codePanelCleanupTask != null) codePanelCleanupTask.cancel();
+        if (lightTask != null) lightTask.cancel();
     }
 }

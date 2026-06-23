@@ -1,11 +1,14 @@
 package com.mcplugin.infrastructure.listeners;
 
+import com.mcplugin.energy.storage.battery.BatteryManager;
+import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 import com.mcplugin.infrastructure.util.LocationUtil;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -24,6 +27,20 @@ public class BlockBreakListener implements Listener {
         // =========================
         if (loc == null || loc.getWorld() == null) {
             return;
+        }
+
+        // =========================
+        // 🔋 BATTERY MULTIBLOCK (hot shrink)
+        // =========================
+        if (e.getBlock().getType() == Material.WAXED_COPPER_GRATE && BatteryManager.isActive(loc)) {
+            BatteryManager.onBlockBroken(loc);
+        }
+
+        // =========================
+        // 💡 LIGHT MULTIBLOCK (hot shrink)
+        // =========================
+        if (e.getBlock().getType() == Material.REDSTONE_LAMP && LightManager.isActive(loc)) {
+            LightManager.onBlockBroken(loc);
         }
 
         // =========================

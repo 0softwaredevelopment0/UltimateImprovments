@@ -1,5 +1,7 @@
 package com.mcplugin.infrastructure.listeners;
 
+import com.mcplugin.energy.storage.battery.BatteryManager;
+import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.energy.transfer.cable.CableBlock;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
@@ -28,6 +30,20 @@ public class BlockPlaceListener implements Listener {
 
         Material type =
                 e.getBlock().getType();
+
+        // =========================
+        // 🔋 BATTERY MULTIBLOCK (hot expand)
+        // =========================
+        if (type == Material.WAXED_COPPER_GRATE) {
+            BatteryManager.onBlockPlaced(loc);
+        }
+
+        // =========================
+        // 💡 LIGHT MULTIBLOCK (hot expand)
+        // =========================
+        if (type == Material.REDSTONE_LAMP) {
+            LightManager.onBlockPlaced(loc);
+        }
 
         // =========================
         // 🛠 ENERGY WORKBENCH
