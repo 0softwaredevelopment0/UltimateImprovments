@@ -43,7 +43,7 @@ tasks {
             jarDir.mkdirs()
 
             // Полностью очищаем папку Jar/ от всех файлов
-            jarDir.listFiles().each { f ->
+            jarDir.listFiles()?.each { f ->
                 if (f.delete()) {
                     logger.lifecycle("[JAR] Удалён: ${f.name}")
                 }
