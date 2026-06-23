@@ -75,8 +75,9 @@ public class CehealthCommand {
 
         double maxHealth = living.getMaxHealth();
         double currentHealth = living.getHealth();
-        int hp = (int) Math.round(currentHealth);
-        int maxHp = (int) Math.round(maxHealth);
+        // Format with 1 decimal place
+        String hpFormatted = String.format("%.1f", currentHealth);
+        String maxHpFormatted = String.format("%.1f", maxHealth);
 
         // Color based on health percentage (6 segments of 1/6)
         String colorTag = getHealthColorTag(currentHealth / maxHealth);
@@ -114,7 +115,7 @@ public class CehealthCommand {
         player.sendMessage(Component.empty());
         player.sendMessage(MessageUtil.parse("<gold>=== <white>Entity Health</white> ==="));
         player.sendMessage(MessageUtil.parse("<gray>Entity: </gray><white>" + entityName + "</white>"));
-        player.sendMessage(MessageUtil.parse("<gray>Health: </gray>" + colorTag + hp + "<reset><gray>/</gray>" + colorTag + maxHp + "<reset>"));
+        player.sendMessage(MessageUtil.parse("<gray>Health: </gray>" + colorTag + hpFormatted + "<reset><gray>/</gray>" + colorTag + maxHpFormatted + "<reset>"));
         player.sendMessage(MessageUtil.parse(bar.toString()));
         player.sendMessage(MessageUtil.parse("<gold>==========================="));
         return true;
