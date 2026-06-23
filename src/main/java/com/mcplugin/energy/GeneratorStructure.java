@@ -44,19 +44,19 @@ public class GeneratorStructure {
     // HAS ITEM FRAME ON TOP
     // =========================
     private static boolean hasItemFrameOnTop(Location center) {
-        Location frameArea = center.clone().add(0.5, 1.0, 0.5);
+        // Search ONLY in the block DIRECTLY ABOVE the furnace (Y = centerY + 1)
+        // Center of that block: (centerX+0.5, centerY+1.5, centerZ+0.5)
+        // Y half-size = 0.5 → range [centerY+1.0, centerY+2.0] — only the block above
+        Location frameArea = center.clone().add(0.5, 1.5, 0.5);
         World world = center.getWorld();
         if (world == null) return false;
 
-        // Search in block above the furnace (Y range: centerY+0.5 to centerY+1.5)
-        // Frame on TOP face of furnace will be in this area with facing=UP
         for (Entity entity : world.getNearbyEntities(
-                frameArea, 1.5, 1.0, 1.5,
+                frameArea, 0.5, 0.5, 0.5,
                 e -> e instanceof ItemFrame)) {
             ItemFrame frame = (ItemFrame) entity;
-            // Simple, robust: frame on top face always has facing=UP
-            // (avoids boundary rounding issues with getLocation().getBlock())
-            if (frame.getFacing() == org.bukkit.block.BlockFace.UP) {
+            // Frame on TOP face of furnace → attachedFace = DOWN (mounted on block below)
+            if (frame.getAttachedFace() == org.bukkit.block.BlockFace.DOWN) {
                 return true;
             }
         }

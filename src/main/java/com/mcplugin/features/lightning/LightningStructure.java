@@ -90,16 +90,16 @@ public class LightningStructure {
     // HAS ITEM FRAME ON TOP (frame placed on TOP face of the rod)
     // =========================
     private static boolean hasItemFrameOnTop(Location center) {
-        // Frame entity is in the block above the rod: (centerX, centerY+1, centerZ)
-        // Frame facing = UP, attached face = UP, so it's attached to the rod below
-        Location frameArea = center.clone().add(0.5, 1.0, 0.5);
+        // Search ONLY in the block DIRECTLY ABOVE the rod (Y = centerY + 1)
+        // Center of that block: (centerX+0.5, centerY+1.5, centerZ+0.5)
+        // Y half-size = 0.5 → range [centerY+1.0, centerY+2.0] — only the block above
+        Location frameArea = center.clone().add(0.5, 1.5, 0.5);
         for (Entity entity : center.getWorld().getNearbyEntities(
-                frameArea, 1.5, 1.0, 1.5,
+                frameArea, 0.5, 0.5, 0.5,
                 e -> e instanceof ItemFrame)) {
             ItemFrame frame = (ItemFrame) entity;
-            // Simple, robust: frame on top face always has facing=UP
-            // (avoids boundary rounding issues with getLocation().getBlock())
-            if (frame.getFacing() == org.bukkit.block.BlockFace.UP) {
+            // Frame on TOP face of rod → attachedFace = DOWN (mounted on block below)
+            if (frame.getAttachedFace() == org.bukkit.block.BlockFace.DOWN) {
                 return true;
             }
         }

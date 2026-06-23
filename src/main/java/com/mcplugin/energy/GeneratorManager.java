@@ -60,8 +60,8 @@ public class GeneratorManager implements Listener {
                 if (!(entity instanceof ItemFrame frame)) continue;
                 if (!frame.isValid() || frame.isDead()) continue;
 
-                // Frame on top face always has facing=UP
-                if (frame.getFacing() != org.bukkit.block.BlockFace.UP) continue;
+                // Frame on top face of a block → attachedFace = DOWN
+                if (frame.getAttachedFace() != org.bukkit.block.BlockFace.DOWN) continue;
 
                 // Get block below frame (subtract 1.0 to avoid boundary rounding)
                 Location furnaceLoc = frame.getLocation().clone().subtract(0, 1.0, 0);
