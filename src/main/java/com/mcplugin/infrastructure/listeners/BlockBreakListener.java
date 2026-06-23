@@ -1,5 +1,6 @@
 package com.mcplugin.infrastructure.listeners;
 
+import com.mcplugin.energy.generation.basic.GeneratorManager;
 import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
@@ -31,6 +32,17 @@ public class BlockBreakListener implements Listener {
         }
 
         Player breaker = e.getPlayer();
+
+        // =========================
+        // 🔥 ГЕНЕРАТОР (BLAST_FURNACE) — разобрать при ломании печи
+        // =========================
+        if (e.getBlock().getType() == Material.BLAST_FURNACE && GeneratorManager.isAssembled(loc)) {
+            GeneratorManager.removeGenerator(loc);
+            if (breaker != null) {
+                breaker.sendMessage("§e⚡ Генератор разобран!"
+                        + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
+            }
+        }
 
         // =========================
         // 🔋 BATTERY MULTIBLOCK (hot shrink)

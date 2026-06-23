@@ -133,17 +133,9 @@ public class GeneratorManager implements Listener {
         if (activeGenerators.containsKey(loc)) {
             event.setCancelled(true);
             // DISASSEMBLE
-            boolean wasEnabled = activeGenerators.remove(loc);
-            World world = loc.getWorld();
-            if (world != null) {
-                world.spawnParticle(Particle.ELECTRIC_SPARK,
-                        loc.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0);
-                world.playSound(loc, Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
-            }
-
+            removeGenerator(loc);
             player.sendMessage("§e⚡ Генератор разобран!"
                     + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
-
             Main.getInstance().getLogger().info(
                     "[Generator] Disassembled at " + loc + " by " + player.getName());
         } else {
@@ -174,6 +166,26 @@ public class GeneratorManager implements Listener {
     // =========================
     // CABLE NEARBY CHECK
     // =========================
+    // =========================
+    // REMOVE GENERATOR (вызывается при ломании BLAST_FURNACE / shift+ПКМ)
+    // =========================
+    public static boolean removeGenerator(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return false;
+        Boolean was = activeGenerators.remove(loc);
+        if (was != null) {
+            World world = loc.getWorld();
+            if (world != null) {
+                world.spawnParticle(Particle.ELECTRIC_SPARK,
+                        loc.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0);
+                world.playSound(loc, Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
+            }
+            Main.getInstance().getLogger().info(
+                    "[Generator] Removed at " + loc);
+        }
+        return was != null;
+    }
+
     public static boolean hasNearbyCable(Location generatorLoc) {
         generatorLoc = LocationUtil.normalize(generatorLoc);
         if (generatorLoc == null) return false;
