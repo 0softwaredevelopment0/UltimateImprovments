@@ -5,6 +5,8 @@ import com.mcplugin.infrastructure.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 
@@ -44,20 +46,29 @@ public class GeneratorStructure {
     // HAS ITEM FRAME ON TOP
     // =========================
     private static boolean hasItemFrameOnTop(Location center) {
-        // Search ONLY in the block DIRECTLY ABOVE the furnace (Y = centerY + 1)
-        // Center of that block: (centerX+0.5, centerY+1.5, centerZ+0.5)
-        // Y half-size = 0.5 → range [centerY+1.0, centerY+2.0] — only the block above
-        Location frameArea = center.clone().add(0.5, 1.5, 0.5);
         World world = center.getWorld();
         if (world == null) return false;
 
-        for (Entity entity : world.getNearbyEntities(
-                frameArea, 0.5, 0.5, 0.5,
-                e -> e instanceof ItemFrame)) {
-            ItemFrame frame = (ItemFrame) entity;
-            // Frame on TOP face of furnace → attachedFace = DOWN (mounted on block below)
-            if (frame.getAttachedFace() == org.bukkit.block.BlockFace.DOWN) {
-                return true;
+        // Check the block directly above the furnace
+        Block above = center.clone().add(0, 1, 0).getBlock();
+
+        // Iterate entities in the chunk for reliable frame detection
+        for (Entity entity : above.getChunk().getEntities()) {
+            if (!(entity instanceof ItemFrame frame)) continue;
+
+            // Frame must be positioned directly above the furnace center
+            double dx = Math.abs(frame.getLocation().getX() - (center.getX() + 0.5));
+            double dz = Math.abs(frame.getLocation().getZ() - (center.getZ() + 0.5));
+            double dy = Math.abs(frame.getLocation().getY() - (center.getY() + 1.0));
+
+            if (dx < 0.6 && dz < 0.6 && dy < 0.3) {
+                // Frame on TOP face — getAttachedFace может быть UP или DOWN
+                // в зависимости от версии Paper API. Проверяем оба варианта,
+                // т.к. позиция (dx/dz/dy) уже гарантирует что это нужная рамка.
+                BlockFace attached = frame.getAttachedFace();
+                if (attached == BlockFace.DOWN || attached == BlockFace.UP) {
+                    return true;
+                }
             }
         }
         return false;

@@ -316,16 +316,13 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // SYNC VANILLA DAMAGE — зеркалит integrity в ванильный damage.
-    // Если PDC-теги потеряются, ванильный damage служит резервной копией.
+    // SYNC VANILLA DAMAGE — всегда обнуляет ванильный damage.
+    // Целостность хранится ТОЛЬКО в PDC. Ванильный damage = 0,
+    // чтобы предмет не терял ванильную прочность.
     // =========================
     private static void syncVanillaDamage(ItemStack item, ItemMeta meta, double currentIntegrity) {
         if (meta instanceof Damageable damageable && damageable.hasMaxDamage()) {
-            int maxDura = damageable.getMaxDamage();
-            if (maxDura > 0) {
-                int dmg = (int) Math.round((1.0 - currentIntegrity / 100.0) * maxDura);
-                damageable.setDamage(Math.max(0, Math.min(maxDura, dmg)));
-            }
+            damageable.setDamage(0);
         }
     }
 

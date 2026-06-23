@@ -54,7 +54,7 @@ public class CcentitiesCommand {
                 "<gray>🔍 Scanning chunk [</gray><yellow>" + chunkX + ", " + chunkZ + "</yellow><gray>] in </gray><yellow>" + worldName + "</yellow><gray>...</gray>"));
 
         // Count entities in chunk
-        Map<String, Integer> counts = new TreeMap<>();
+        Map<String, Integer> counts = new HashMap<>();
         int totalEntities = 0;
 
         for (Entity entity : player.getChunk().getEntities()) {
@@ -71,17 +71,17 @@ public class CcentitiesCommand {
         cooldowns.put(uuid, now);
         cleanupCooldowns();
 
-        // Build result
+        // Build result — sorted by count descending
         player.sendMessage(Component.empty());
         player.sendMessage(MessageUtil.parse("<gold>=== <white>Chunk Entities</white> [<yellow>" + chunkX + ", " + chunkZ + "</yellow>] <gray>(" + worldName + ")</gray> ==="));
         player.sendMessage(MessageUtil.parse("<gray>Total entities: <white>" + totalEntities + "</white></gray>"));
 
         if (totalEntities > 0) {
             player.sendMessage(Component.empty());
-            for (Map.Entry<String, Integer> entry : counts.entrySet()) {
-                player.sendMessage(MessageUtil.parse(
-                        "  <gray>▪</gray> <white>" + entry.getKey() + "</white><gray>: <yellow>" + entry.getValue() + "</yellow></gray>"));
-            }
+            counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .forEach(e -> player.sendMessage(MessageUtil.parse(
+                        "  <gray>▪</gray> <white>" + e.getKey() + "</white><gray>: <yellow>" + e.getValue() + "</yellow></gray>")));
         }
 
         player.sendMessage(MessageUtil.parse("<gold>==========================================="));

@@ -7,10 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * /mp ccores — проверяет сколько руды каждого типа в чанке игрока.
@@ -111,20 +108,23 @@ public class CcoresCommand {
         cooldowns.put(uuid, now);
         cleanupCooldowns();
 
-        // Build result message
+        // Build result message — sorted by count descending
         player.sendMessage(Component.empty());
         player.sendMessage(MessageUtil.parse("<gold>=== <white>Chunk Ores</white> [<yellow>" + chunkX + ", " + chunkZ + "</yellow>] <gray>(" + worldName + ")</gray> ==="));
         player.sendMessage(MessageUtil.parse("<gray>Total ores found: <white>" + totalOres + "</white></gray>"));
 
         if (totalOres > 0) {
             player.sendMessage(Component.empty());
-            for (Map.Entry<Material, String> entry : ORE_MATERIALS.entrySet()) {
-                int count = counts.getOrDefault(entry.getKey(), 0);
-                if (count > 0) {
+            ORE_MATERIALS.entrySet().stream()
+                .filter(e -> counts.getOrDefault(e.getKey(), 0) > 0)
+                .sorted(Comparator.<Map.Entry<Material, String>>comparingInt(
+                    e -> counts.get(e.getKey())).reversed()
+                    .thenComparing(Map.Entry.comparingByValue()))
+                .forEach(e -> {
+                    int count = counts.get(e.getKey());
                     player.sendMessage(MessageUtil.parse(
-                            "  <gray>▪</gray> <white>" + entry.getValue() + "</white><gray>: <yellow>" + count + "</yellow></gray>"));
-                }
-            }
+                            "  <gray>▪</gray> <white>" + e.getValue() + "</white><gray>: <yellow>" + count + "</yellow></gray>"));
+                });
         }
 
         player.sendMessage(MessageUtil.parse("<gold>========================================"));
