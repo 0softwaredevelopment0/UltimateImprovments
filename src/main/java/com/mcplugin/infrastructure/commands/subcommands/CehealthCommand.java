@@ -120,17 +120,59 @@ public class CehealthCommand {
         return true;
     }
 
+    // ═══════════════════════════════════════════════
+    // HEX градиент: 6 цветов по 20% каждый
+    // ═══════════════════════════════════════════════
+    // 100% ─ Dark Green  #006600
+    //  80% ─ Green       #00FF00
+    //  60% ─ Yellow      #FFFF00
+    //  40% ─ Orange      #FF8C00
+    //  20% ─ Red         #FF0000
+    //   0% ─ Dark Red    #8B0000
+
+    private static final int[][] GRADIENT_WAYPOINTS = {
+        {0x8B, 0x00, 0x00}, //  0% — Dark Red
+        {0xFF, 0x00, 0x00}, // 20% — Red
+        {0xFF, 0x8C, 0x00}, // 40% — Orange
+        {0xFF, 0xFF, 0x00}, // 60% — Yellow
+        {0x00, 0xFF, 0x00}, // 80% — Green
+        {0x00, 0x66, 0x00}, // 100% — Dark Green
+    };
+
     /**
-     * Возвращает MiniMessage тег цвета для указанного процента здоровья (0.0 — 1.0).
-     * 6 сегментов по 1/6: тёмно-красный, красный, оранжевый, жёлтый, зелёный, тёмно-зелёный.
+     * Возвращает MiniMessage HEX тег цвета для указанного процента (0.0 — 1.0).
+     * Плавный градиент через 6 цветов: тёмно-красный → красный → оранжевый → жёлтый → зелёный → тёмно-зелёный.
      */
     private static String getHealthColorTag(double pct) {
-        if (pct > 5.0 / 6.0) return "<dark_green>";
-        if (pct > 4.0 / 6.0) return "<green>";
-        if (pct > 3.0 / 6.0) return "<yellow>";
-        if (pct > 2.0 / 6.0) return "<gold>";
-        if (pct > 1.0 / 6.0) return "<red>";
-        return "<dark_red>";
+        // Clamp
+        if (pct <= 0.0) return formatHex(GRADIENT_WAYPOINTS[0]);
+        if (pct >= 1.0) return formatHex(GRADIENT_WAYPOINTS[5]);
+
+        // Scale to 0..5 range
+        double scaled = pct * 5.0;
+        int segment = (int) scaled;           // 0..4
+        double t = scaled - segment;           // 0..1 within segment
+
+        if (segment >= 4) {
+            segment = 4;
+            t = Math.min(t, 1.0);
+        }
+
+        int[] from = GRADIENT_WAYPOINTS[segment];
+        int[] to = GRADIENT_WAYPOINTS[segment + 1];
+
+        int r = (int) Math.round(from[0] + (to[0] - from[0]) * t);
+        int g = (int) Math.round(from[1] + (to[1] - from[1]) * t);
+        int b = (int) Math.round(from[2] + (to[2] - from[2]) * t);
+
+        return formatHex(new int[]{r, g, b});
+    }
+
+    private static String formatHex(int[] rgb) {
+        return String.format("<#%02X%02X%02X>",
+            Math.max(0, Math.min(255, rgb[0])),
+            Math.max(0, Math.min(255, rgb[1])),
+            Math.max(0, Math.min(255, rgb[2])));
     }
 
     private static void cleanupCooldowns() {
