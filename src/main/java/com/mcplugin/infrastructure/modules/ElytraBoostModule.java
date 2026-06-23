@@ -1,0 +1,28 @@
+package com.mcplugin.infrastructure.modules;
+
+import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.mechanics.features.player.ElytraBoostManager;
+import org.bukkit.plugin.java.JavaPlugin;
+
+/**
+ * Модуль ElytraBoost — нажатие пробела во время полёта на элитрах
+ * запускает фейерверк из инвентаря для ускорения.
+ * <p>
+ * Не essential — можно отключить без потери основной функциональности.
+ */
+public class ElytraBoostModule extends PluginModule {
+
+    public ElytraBoostModule() {
+        super("ElytraBoost", false);
+    }
+
+    @Override
+    protected void onInit(JavaPlugin plugin) throws Exception {
+        ElytraBoostManager.init((Main) plugin);
+    }
+
+    @Override
+    protected void onDisable(JavaPlugin plugin) {
+        // Nothing to clean up
+    }
+}

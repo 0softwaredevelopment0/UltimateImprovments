@@ -1,10 +1,10 @@
 package com.mcplugin.energy;
 
-import com.mcplugin.cable.CableNetwork;
-import com.mcplugin.cable.CableNode;
-import com.mcplugin.cable.NodeType;
+import com.mcplugin.energy.transfer.cable.CableNetwork;
+import com.mcplugin.energy.transfer.cable.CableNode;
+import com.mcplugin.energy.transfer.cable.NodeType;
 
-import com.mcplugin.util.LocationUtil;
+import com.mcplugin.infrastructure.util.LocationUtil;
 
 import org.bukkit.Location;
 

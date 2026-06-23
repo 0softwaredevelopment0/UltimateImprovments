@@ -2,7 +2,7 @@ name: MC-Plugin
 
 version: 26.2
 
-main: com.mcplugin.Main
+main: com.mcplugin.infrastructure.core.Main
 
 api-version: "26.2"
 
