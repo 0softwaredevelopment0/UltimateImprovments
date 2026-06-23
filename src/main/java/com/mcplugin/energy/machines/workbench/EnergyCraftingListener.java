@@ -6,6 +6,7 @@ import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 
@@ -25,6 +26,8 @@ import java.util.Set;
 
 public class EnergyCraftingListener implements Listener {
 
+    private static final Component ASSEMBLER_TITLE = Component.text("Item assembler");
+
     // =========================
     // PREVIEW
     // =========================
@@ -40,9 +43,13 @@ public class EnergyCraftingListener implements Listener {
         }
 
         // =========================
-        // ONLY REAL WORKBENCH
+        // ONLY ITEM ASSEMBLER
         // =========================
         if (e.getInventory().getType() != InventoryType.WORKBENCH) {
+            return;
+        }
+
+        if (!ASSEMBLER_TITLE.equals(e.getView().title())) {
             return;
         }
 
@@ -75,9 +82,13 @@ public class EnergyCraftingListener implements Listener {
         }
 
         // =========================
-        // ONLY REAL WORKBENCH
+        // ONLY ITEM ASSEMBLER
         // =========================
         if (e.getInventory().getType() != InventoryType.WORKBENCH) {
+            return;
+        }
+
+        if (!ASSEMBLER_TITLE.equals(e.getView().title())) {
             return;
         }
 
