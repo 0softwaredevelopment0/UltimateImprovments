@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.commands.home.HomeCommand;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.mechanics.features.items.NotesGUI;
 import com.mcplugin.mechanics.features.player.VanishManager;
+import com.mcplugin.mechanics.environment.radiation.RadiationManager;
 import com.mcplugin.mechanics.features.player.ElytraBoostManager;
 import com.mcplugin.mechanics.features.world.MinecartSpeedManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
@@ -81,6 +82,21 @@ public final class MiscSubcommand {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.fly_enabled", "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>")));
         } else {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.fly_disabled", "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>")));
+        }
+        return true;
+    }
+
+    // =========================
+    // TOGGLERADVIEW
+    // =========================
+    public static boolean toggleRadView(CommandSender sender) {
+        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>")); return true; }
+        if (!player.hasPermission("mcplugin.command.toggleradview")) { player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>")); return true; }
+        RadiationManager.toggleRadView(player);
+        if (RadiationManager.isRadViewEnabled(player)) {
+            player.sendMessage(MessageUtil.parse("<green>☢</green> <white>Radiation display: </white><green>ON</green>"));
+        } else {
+            player.sendMessage(MessageUtil.parse("<red>☢</red> <white>Radiation display: </white><red>OFF</red>"));
         }
         return true;
     }

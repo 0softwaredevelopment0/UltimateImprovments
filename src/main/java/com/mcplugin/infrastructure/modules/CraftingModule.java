@@ -22,9 +22,7 @@ public class CraftingModule extends PluginModule {
         PlasmaCannonCraftListener.init();
         ShokerCraftListener.init();
         AntimatterCraftListener.init();
-        HealthMeterCraftListener.init();
         EntityLocatorCraftListener.init();
-        DosimeterCraftListener.init();
         LeadShieldCraftListener.init();
         RecipeRegistry.init();
 
@@ -34,9 +32,7 @@ public class CraftingModule extends PluginModule {
         pm.registerEvents(new PlasmaCannonCraftListener(), main);
         pm.registerEvents(new ShokerCraftListener(), main);
         pm.registerEvents(new AntimatterCraftListener(), main);
-        pm.registerEvents(new HealthMeterCraftListener(), main);
         pm.registerEvents(new EntityLocatorCraftListener(), main);
-        pm.registerEvents(new DosimeterCraftListener(), main);
         pm.registerEvents(new LeadShieldCraftListener(), main);
 
         plugin.getLogger().info("[CraftingModule] ✓ Recipes initialized.");

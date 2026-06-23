@@ -114,7 +114,6 @@ public class Main extends JavaPlugin {
         mm.register(new BoostedCobwebModule());
         mm.register(new DragonEggModule());
         mm.register(new EntityLocatorModule());
-        mm.register(new HealthMeterModule());
         mm.register(new ItemKillModule());
         mm.register(new MagnetModule());
         mm.register(new ModeProtectModule());

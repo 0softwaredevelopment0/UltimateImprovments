@@ -4,8 +4,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Модуль проверки — сравнивает версию плагина с версией сервера,
- * а также проверяет тип ядра (рекомендуется Leaf).
+ * Модуль проверки — проверяет тип ядра (рекомендуется Leaf),
+ * наличие LuckPerms и совместимость API-версии с сервером.
+ * <p>
+ * Версия плагина теперь универсальный идентификатор (формат: major.minor.commits),
+ * не привязанный к Paper/Leaf версии. Используется чекером обновлений.
  * <p>
  * Неessential — если проверка не удалась, плагин всё равно работает.
  */
@@ -49,19 +52,14 @@ public class VersionCheckModule extends PluginModule {
         checkServerSoftware(plugin, serverName, serverVersion);
 
         // =========================
-        // ПРОВЕРКА ВЕРСИИ MINECRAFT
+        // ПРОВЕРКА СОВМЕСТИМОСТИ API-ВЕРСИИ С СЕРВЕРОМ
         // =========================
-        checkMinecraftVersion(plugin, pluginVersion, bukkitVersion);
+        checkApiCompatibility(plugin, apiVersion, serverVersion, bukkitVersion);
 
         // =========================
         // ПРОВЕРКА НАЛИЧИЯ LUCKPERMS
         // =========================
         checkLuckPerms(plugin);
-
-        // =========================
-        // ПРОВЕРКА СОВМЕСТИМОСТИ ВЕРСИИ ПЛАГИНА
-        // =========================
-        checkPluginVersionCompatibility(plugin, pluginVersion, serverVersion);
     }
 
     @Override
@@ -113,90 +111,67 @@ public class VersionCheckModule extends PluginModule {
     }
 
     // =========================
-    // ПРОВЕРКА ВЕРСИИ MINECRAFT
+    // ПРОВЕРКА СОВМЕСТИМОСТИ API-ВЕРСИИ
     // =========================
 
-    private void checkMinecraftVersion(JavaPlugin plugin, String pluginVersion, String bukkitVersion) {
-        // Пытаемся извлечь MC версию из Bukkit.getVersion()
-        // "git-Paper-26.2 (MC: 1.21.5)" → "1.21.5"
-        String serverFullVersion = Bukkit.getVersion();
-        String mcVersion = extractMcVersion(serverFullVersion);
+    /**
+     * Сравнивает api-version из plugin.yml с версией сервера.
+     * api-version = "26.2" — Paper internal version (26.x = MC 1.21.x).
+     * <p>
+     * Версия плагина (plugin_version) теперь универсальный идентификатор
+     * формата major.minor.commits и НЕ используется для проверки совместимости.
+     */
+    private void checkApiCompatibility(JavaPlugin plugin, String apiVersion,
+                                        String serverVersion, String bukkitVersion) {
+        if (apiVersion == null) return;
 
-        if (mcVersion == null) {
-            // Fallback: Bukkit.getBukkitVersion() возвращает "1.21.4-R0.1-SNAPSHOT"
-            // (на Leaf может вернуть "26.2-R0.1-SNAPSHOT")
-            mcVersion = bukkitVersion.split("-")[0];
+        // Извлекаем Paper-версию сервера из Bukkit.getVersion()
+        // "git-Paper-26.2 (MC: 1.21.5)" → "26.2"
+        String serverPaperVer = extractServerVersionNumber(serverVersion);
+
+        // Guard: если версия сервера не парсится как число.число — не можем сравнить, пропускаем
+        if (!isNumericVersion(serverPaperVer)) {
+            plugin.getLogger().info("[VersionCheck] Cannot parse server version ("
+                    + serverPaperVer + ") — skipping API compatibility check.");
+            return;
         }
 
-        // Убираем патч-версию для сравнения (1.21.4 → 1.21)
-        String mcMajorMinor = getMajorMinor(mcVersion);
+        String serverMajorMinor = getMajorMinor(serverPaperVer);
+        String apiMajorMinor = getMajorMinor(apiVersion);
 
-        // Парсим версию плагина
-        // plugin.yml version = "26.2" — это Paper internal version
-        // Paper 26.x → Minecraft 1.21.x
-        String pluginMajorStr = pluginVersion.contains(".")
-                ? pluginVersion.split("\\.")[0]
-                : pluginVersion;
-
-        try {
-            int pluginMajor = Integer.parseInt(pluginMajorStr);
-
-            if (pluginMajor >= 20) {
-                // Paper internal version: 26 → MC 1.21
-                int expectedMcMinor = pluginMajor - 5; // 26 - 5 = 21 → 1.21
-                String expectedPrefix = "1." + expectedMcMinor;
-
-                // Определяем, не является ли mcVersion тоже Paper internal версией
-                // (например, на Leaf Bukkit.getBukkitVersion() может вернуть "26.2-R0.1-SNAPSHOT")
-                String mcMajorStr = mcVersion.contains(".")
-                        ? mcVersion.split("\\.")[0]
-                        : mcVersion;
-                boolean mcIsPaperInternal = false;
-                try {
-                    int mcMajor = Integer.parseInt(mcMajorStr);
-                    mcIsPaperInternal = mcMajor >= 20;
-                } catch (NumberFormatException ignored) {}
-
-                boolean mismatch;
-                if (mcIsPaperInternal) {
-                    // Обе версии — Paper internal: сравниваем напрямую
-                    String pluginMajorMinor = getMajorMinor(pluginVersion);
-                    mismatch = !mcMajorMinor.equals(pluginMajorMinor);
-                } else {
-                    // mcVersion — MC версия (1.21.x): сравниваем через конвертацию
-                    mismatch = !mcMajorMinor.equals(expectedPrefix);
-                }
-
-                if (mismatch) {
-                    String serverPaperVer = extractServerVersionNumber(serverFullVersion);
-
-                    plugin.getLogger().warning("");
-                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    plugin.getLogger().warning("!  VERSION MISMATCH DETECTED!                                    !");
-                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    plugin.getLogger().warning("!                                                                 !");
-                    plugin.getLogger().warning("!  Plugin built for:   " + padRight(pluginVersion, 35) + "!");
-                    plugin.getLogger().warning("!  Server running:     " + padRight(serverPaperVer, 35) + "!");
-                    plugin.getLogger().warning("!  MC version:         " + padRight(mcVersion, 35) + "!");
-                    plugin.getLogger().warning("!                                                                 !");
-                    plugin.getLogger().warning("!  The plugin may not work correctly!                             !");
-                    plugin.getLogger().warning("!  Update your server or plugin to matching versions.             !");
-                    plugin.getLogger().warning("!                                                                 !");
-                    plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    plugin.getLogger().warning("");
-                }
-            } else {
-                // Плагин использует Minecraft-версию (1.21.x)
-                String pluginMcVersion = getMajorMinor(pluginVersion);
-                if (!mcMajorMinor.equals(pluginMcVersion)) {
-                    plugin.getLogger().warning("[VersionCheck] \u26A0 Plugin version " + pluginVersion
-                            + " may not match server version " + mcVersion);
-                }
-            }
-        } catch (NumberFormatException e) {
-            // Версия не начинается с числа — не можем сравнить
-            plugin.getLogger().fine("[VersionCheck] Cannot parse plugin version: " + pluginVersion);
+        if (serverMajorMinor.equals(apiMajorMinor)) {
+            plugin.getLogger().info("[VersionCheck] \u2713 API version " + apiVersion
+                    + " matches server (" + serverPaperVer + ")");
+            return;
         }
+
+        // Проверяем BukkitVersion как fallback
+        String bukkitMajorMinor = getMajorMinor(bukkitVersion.split("-")[0]);
+        if (bukkitMajorMinor.equals(apiMajorMinor)) {
+            plugin.getLogger().info("[VersionCheck] \u2713 API version " + apiVersion
+                    + " matches Bukkit version (" + bukkitVersion + ")");
+            return;
+        }
+
+        // Несовпадение API-версии
+        String mcVersion = extractMcVersion(serverVersion);
+
+        plugin.getLogger().warning("");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("!  API VERSION MISMATCH!                                        !");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!  Plugin API:        " + padRight(apiVersion, 35) + "!");
+        plugin.getLogger().warning("!  Server version:    " + padRight(serverPaperVer, 35) + "!");
+        if (mcVersion != null) {
+            plugin.getLogger().warning("!  MC version:        " + padRight(mcVersion, 35) + "!");
+        }
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!  The plugin may not work correctly!                             !");
+        plugin.getLogger().warning("!  Update your server or plugin to matching versions.             !");
+        plugin.getLogger().warning("!                                                                 !");
+        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        plugin.getLogger().warning("");
     }
 
     // =========================
@@ -231,44 +206,6 @@ public class VersionCheckModule extends PluginModule {
     }
 
     // =========================
-    // ПРОВЕРКА СОВМЕСТИМОСТИ ВЕРСИИ ПЛАГИНА (contains)
-    // =========================
-
-    private void checkPluginVersionCompatibility(JavaPlugin plugin, String pluginVersion, String serverVersion) {
-        // Проверяем, содержится ли версия плагина в строке версии сервера
-        // Например: плагин 26.2, сервер "git-Paper-26.2 (MC: 1.21.5)" — совпадает
-        if (serverVersion.contains(pluginVersion)) {
-            plugin.getLogger().info("[VersionCheck] \u2713 Plugin version matches server version.");
-            return;
-        }
-
-        // Дополнительно проверяем BukkitVersion на всякий случай
-        String bukkitVersion = Bukkit.getBukkitVersion();
-        if (bukkitVersion.contains(pluginVersion)) {
-            plugin.getLogger().info("[VersionCheck] \u2713 Plugin version matches Bukkit version.");
-            return;
-        }
-
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("!  PLUGIN VERSION MISMATCH!                                    !");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!  Plugin version:    " + padRight(pluginVersion, 35) + "!");
-        plugin.getLogger().warning("!  Server version:    " + padRight(serverVersion, 35) + "!");
-        plugin.getLogger().warning("!  Bukkit version:    " + padRight(bukkitVersion, 35) + "!");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!  The plugin version '" + pluginVersion + "' was not found        !");
-        plugin.getLogger().warning("!  in the server or Bukkit version string.                        !");
-        plugin.getLogger().warning("!  This may indicate an incompatible server version.              !");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!  Update your server or plugin to matching versions.             !");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("");
-    }
-
-    // =========================
     // HELPERS
     // =========================
 
@@ -280,7 +217,7 @@ public class VersionCheckModule extends PluginModule {
         return sb.toString();
     }
 
-    /** Извлекает major.minor из версии (1.21.4 → 1.21). */
+    /** Извлекает major.minor из версии (1.21.4 → 1.21, 26.2 → 26.2). */
     private String getMajorMinor(String version) {
         if (version == null) return "";
         String[] parts = version.split("\\.");
@@ -288,6 +225,13 @@ public class VersionCheckModule extends PluginModule {
             return parts[0] + "." + parts[1];
         }
         return parts[0];
+    }
+
+    /** Проверяет, выглядит ли строка как числовая версия (например "26.2"). */
+    private boolean isNumericVersion(String version) {
+        if (version == null || version.isEmpty()) return false;
+        // Должна начинаться с цифры и содержать точку
+        return version.matches("\\d+\\.\\d+.*");
     }
 
     /** Извлекает MC-версию из строки Bukkit.getVersion() вида "git-Paper-26.2 (MC: 1.21.5)". */

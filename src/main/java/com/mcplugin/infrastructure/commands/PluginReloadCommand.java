@@ -168,6 +168,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 AskCordsManager.decline(player, args[1]);
                 yield true;
             }
+            case "ccores" -> CcoresCommand.execute(sender);
+            case "ccentities" -> CcentitiesCommand.execute(sender);
+            case "cehealth" -> CehealthCommand.execute(sender);
+            case "toggleradview" -> MiscSubcommand.toggleRadView(sender);
             case "i_want_to_get_impossible_achivement_uwu" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 grantImpossibleAdvancement(player);
@@ -198,7 +202,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(List.of("help", "checkver", "updatejar",
+            completions.addAll(List.of("help", "checkver", "updatejar", "ccores", "ccentities", "cehealth", "toggleradview",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
                     "auth",                    "chgdim", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "vote",

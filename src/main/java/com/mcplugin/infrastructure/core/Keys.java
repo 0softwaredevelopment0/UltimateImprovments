@@ -14,9 +14,7 @@ public class Keys {
     // Auth GUI items
     public static NamespacedKey AUTH_GUI;
     public static NamespacedKey CHGDIM_GUI;
-    public static NamespacedKey HP_METER;
     public static NamespacedKey LEAD_SHIELD;
-    public static NamespacedKey DOSIMETER;
 
     // Integrity System
     public static NamespacedKey INTEGRITY_TAG;
@@ -31,9 +29,7 @@ public class Keys {
         SHOCKER = new NamespacedKey(plugin, "is_shocker");
         ANTIMATTER = new NamespacedKey(plugin, "isAntimatter");
         LOCATOR = new NamespacedKey(plugin, "isLocator");
-        HP_METER = new NamespacedKey(plugin, "isHpMeter");
         LEAD_SHIELD = new NamespacedKey(plugin, "isLeadShield");
-        DOSIMETER = new NamespacedKey(plugin, "isDosimeter");
         AUTH_GUI = new NamespacedKey(plugin, "auth_gui");
         CHGDIM_GUI = new NamespacedKey(plugin, "chgdim_gui");
 

@@ -23,8 +23,10 @@ import org.bukkit.potion.PotionEffectType;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,6 +38,20 @@ public class RadiationManager implements Listener {
     // IN-MEMORY STORAGE (UUID -> radiation)
     // =========================
     private final Map<UUID, Integer> radiationMap = new ConcurrentHashMap<>();
+    private final Set<UUID> radViewEnabled = new HashSet<>();
+
+    public static boolean isRadViewEnabled(Player player) {
+        if (instance == null || player == null) return false;
+        return instance.radViewEnabled.contains(player.getUniqueId());
+    }
+
+    public static void toggleRadView(Player player) {
+        if (instance == null || player == null) return;
+        UUID uuid = player.getUniqueId();
+        if (!instance.radViewEnabled.remove(uuid)) {
+            instance.radViewEnabled.add(uuid);
+        }
+    }
 
     public static RadiationManager getInstance() {
         return instance;
@@ -56,7 +72,6 @@ public class RadiationManager implements Listener {
     private boolean enabled;
     private int naturalDecay;
     private boolean effectsEnabled;
-    private boolean dosimeterEnabled;
     private int ancientDebrisRad;
     private int basaltDeltasRad;
     private int endRad;
@@ -78,7 +93,6 @@ public class RadiationManager implements Listener {
         enabled = cfg.getBoolean("radiation.enabled", true);
         naturalDecay = cfg.getInt("radiation.natural_decay", 1);
         effectsEnabled = cfg.getBoolean("radiation.effects_enabled", true);
-        dosimeterEnabled = cfg.getBoolean("radiation.dosimeter_enabled", true);
         ancientDebrisRad = cfg.getInt("radiation.ancient_debris_radiation", 2);
         basaltDeltasRad = cfg.getInt("radiation.basalt_deltas_radiation", 2);
         endRad = cfg.getInt("radiation.end_radiation", 2);
@@ -210,6 +224,7 @@ public class RadiationManager implements Listener {
         // Сохраняем в БД перед удалением из памяти, чтобы радиация не терялась
         saveToDB(player);
         radiationMap.remove(player.getUniqueId());
+        radViewEnabled.remove(player.getUniqueId());
     }
 
     // =========================
@@ -268,10 +283,9 @@ public class RadiationManager implements Listener {
             }
 
             // =========================
-            // ДОЗИМЕТР — ОТОБРАЖЕНИЕ В ACTIONBAR (Р/Ч)
+            // TOGGLE-ОТОБРАЖЕНИЕ РАДИАЦИИ В ACTIONBAR (Р/Ч)
             // =========================
-            if (dosimeterEnabled && (hasCustomItem(player.getInventory().getItemInMainHand(), Keys.DOSIMETER)
-                    || hasCustomItem(player.getInventory().getItemInOffHand(), Keys.DOSIMETER))) {
+            if (radViewEnabled.contains(uuid)) {
                 double roentgen = rad / 100.0;
                 player.sendActionBar(MessageUtil.parse("<white>Радиация: </white><gray>" + String.format(Locale.US, "%.1f", roentgen) + "</gray> <white>Р/Ч</white>"));
             }
