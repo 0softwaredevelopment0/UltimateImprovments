@@ -6,6 +6,8 @@ import com.mcplugin.infrastructure.util.LocationUtil;
 
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.Material;
+import org.bukkit.block.data.type.Crafter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -152,5 +154,24 @@ public class EnergyWorkbenchManager {
     // =========================
     public static Set<Location> getAll() {
         return workbenches;
+    }
+
+    // =========================
+    // MAINTAIN LOCK — блокируем авто-крафт по редстоуну
+    // Crafter.setTriggered(true) предотвращает ванильный авто-крафт при редстоун-сигнале.
+    // Вызывать периодически, т.к. triggered сбрасывается блоком после импульса.
+    // =========================
+    public static void maintainLocks() {
+        for (Location loc : workbenches) {
+            try {
+                if (loc.getBlock().getType() != Material.CRAFTER) continue;
+                if (loc.getBlock().getBlockData() instanceof Crafter crafter) {
+                    if (!crafter.isTriggered()) {
+                        crafter.setTriggered(true);
+                        loc.getBlock().setBlockData(crafter, false);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
     }
 }

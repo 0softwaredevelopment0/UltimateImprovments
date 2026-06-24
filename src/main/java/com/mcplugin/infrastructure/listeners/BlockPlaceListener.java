@@ -17,6 +17,7 @@ import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.block.data.type.Crafter;
 
 public class BlockPlaceListener implements Listener {
 
@@ -51,6 +52,13 @@ public class BlockPlaceListener implements Listener {
         if (type == Material.CRAFTER) {
 
             EnergyWorkbenchManager.add(loc);
+
+            // Блокируем ванильный авто-крафт CRAFTER блока по редстоуну
+            // Assembler работает только через виртуальный GUI с проверкой энергии
+            if (e.getBlock().getBlockData() instanceof Crafter crafter) {
+                crafter.setTriggered(true);
+                e.getBlock().setBlockData(crafter, false);
+            }
 
             return;
         }
