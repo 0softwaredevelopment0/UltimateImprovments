@@ -31,8 +31,7 @@ public class EnergyBalancerTask extends BukkitRunnable {
             return;
         }
 
-        // No transfer limit — cables should pass energy freely
-        int maxTransfer = cfg.getInt("energy.balancer.max_transfer", 1000000);
+        int maxTransfer = cfg.getInt("energy.balancer.max_transfer", 25);
         boolean log = cfg.getBoolean("energy.balancer.log", false);
 
         Set<CableNode> allNodes = new HashSet<>(CableNetwork.getAllNodes());
