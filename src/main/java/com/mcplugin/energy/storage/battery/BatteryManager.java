@@ -484,8 +484,7 @@ public class BatteryManager implements Listener {
                 }
 
                 double pct = getChargePercentage(cluster);
-                int count = (int) Math.round(pct / 10.0); // 0%→0, 100%→10
-                if (count <= 0) continue;
+                int count = Math.max(1, (int) Math.round(pct / 10.0)); // 0%→1 (min), 100%→10
 
                 Location center = cluster.center.clone().add(0.5, 0.5, 0.5);
                 cluster.world.spawnParticle(Particle.END_ROD, center, count, 0.3, 0.3, 0.3, 0.01);

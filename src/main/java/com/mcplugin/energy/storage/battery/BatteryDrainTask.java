@@ -36,7 +36,8 @@ public class BatteryDrainTask extends BukkitRunnable {
         }
 
         int maxBatteryEnergy = cfg.getInt("energy.battery.max_energy", 100000);
-        int dischargeAmount = cfg.getInt("energy.battery.discharge_per_tick", 10);
+        // No transfer limit — cables should pass energy freely
+        int dischargeAmount = cfg.getInt("energy.battery.discharge_per_tick", 1000000);
 
         boolean smoothEnabled = cfg.getBoolean("energy.battery.smooth_charge.enabled", true);
         double dischargeMultiplier = cfg.getDouble("energy.battery.smooth_charge.discharge_multiplier", 0.5);
