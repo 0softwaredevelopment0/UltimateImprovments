@@ -46,9 +46,9 @@ public class BlockPlaceListener implements Listener {
         }
 
         // =========================
-        // 🛠 ENERGY WORKBENCH
+        // 🛠 ITEM ASSEMBLER (CRAFTER)
         // =========================
-        if (type == Material.CRAFTING_TABLE) {
+        if (type == Material.CRAFTER) {
 
             EnergyWorkbenchManager.add(loc);
 

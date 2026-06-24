@@ -1,6 +1,7 @@
 package com.mcplugin.energy.machines.furnace;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.util.LocationUtil;
@@ -329,6 +330,9 @@ public class ElectricFurnaceManager implements Listener {
 
             // Consume from batteries only
             if (node.getType() == NodeType.BATTERY) {
+                // Проверяем режим: берём энергию только из DISCHARGE/CHARGE_DISCHARGE
+                BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
+                if (bc != null && !bc.canDischarge()) continue;
                 int energy = node.getEnergy();
                 if (energy > 0) {
                     int take = Math.min(energy, remaining);

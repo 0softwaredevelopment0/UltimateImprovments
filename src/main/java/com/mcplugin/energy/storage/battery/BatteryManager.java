@@ -2,6 +2,7 @@ package com.mcplugin.energy.storage.battery;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 
@@ -14,6 +15,10 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
@@ -24,11 +29,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Соединяет соседние блоки WAXED_COPPER_GRATE через flood-fill (как магнит).
  * Каждый блок = +1000 энергии к максимальной ёмкости.
- * При подаче редстоун-сигнала на любой блок структуры — переходит в режим разрядки.
+ * Режим переключается SHIFT+ПКМ пустой рукой: Зарядка / Зарядка+Разрядка / Разрядка.
  * Hot-изменение ёмкости при добавлении/ломании блоков.
  * Сборка через SHIFT+ПКМ по рамке на любом блоке WAXED_COPPER_GRATE.
  */
-public class BatteryManager {
+public class BatteryManager implements Listener {
+
+    // ════════════════════════════════════════
+    // РЕЖИМЫ БАТАРЕИ
+    // ════════════════════════════════════════
+    public enum BatteryMode {
+        /** Только принимает энергию (от генераторов) */
+        CHARGE,
+        /** И принимает, и отдаёт */
+        CHARGE_DISCHARGE,
+        /** Только отдаёт энергию (потребителям) */
+        DISCHARGE
+    }
 
     private static BatteryManager instance;
     private static final Map<Long, BatteryCluster> locationToCluster = new HashMap<>();
@@ -68,6 +85,7 @@ public class BatteryManager {
         public Set<Long> blockKeys = new HashSet<>();
         public Location center;
         public int capacity; // blockKeys.size() * 1000
+        public BatteryMode mode = BatteryMode.CHARGE_DISCHARGE;
 
         private long sumX, sumY, sumZ;
 
@@ -122,17 +140,39 @@ public class BatteryManager {
         }
 
         /**
-         * Проверяет, запитан ли хотя бы один блок кластера редстоуном.
+         * Можно ли заряжать эту батарею (принимать энергию).
          */
-        boolean isAnyBlockPowered() {
-            for (long key : blockKeys) {
-                int bx = getX(key), by = getY(key), bz = getZ(key);
-                Block block = world.getBlockAt(bx, by, bz);
-                if (block.isBlockPowered() || block.isBlockIndirectlyPowered()) {
-                    return true;
-                }
+        public boolean canCharge() {
+            return mode == BatteryMode.CHARGE || mode == BatteryMode.CHARGE_DISCHARGE;
+        }
+
+        /**
+         * Можно ли разряжать эту батарею (отдавать энергию).
+         */
+        public boolean canDischarge() {
+            return mode == BatteryMode.DISCHARGE || mode == BatteryMode.CHARGE_DISCHARGE;
+        }
+
+        /**
+         * Переключает режим в циклическом порядке: CHARGE → CHARGE_DISCHARGE → DISCHARGE → CHARGE
+         */
+        void cycleMode() {
+            switch (mode) {
+                case CHARGE -> mode = BatteryMode.CHARGE_DISCHARGE;
+                case CHARGE_DISCHARGE -> mode = BatteryMode.DISCHARGE;
+                case DISCHARGE -> mode = BatteryMode.CHARGE;
             }
-            return false;
+        }
+
+        /**
+         * @return человекочитаемое название режима (MiniMessage compatible)
+         */
+        String getModeDisplay() {
+            return switch (mode) {
+                case CHARGE -> "<aqua>Зарядка</aqua>";
+                case CHARGE_DISCHARGE -> "<light_purple>Зарядка и разрядка</light_purple>";
+                case DISCHARGE -> "<red>Разрядка</red>";
+            };
         }
     }
 
@@ -141,6 +181,7 @@ public class BatteryManager {
     // ════════════════════════════════════════
     public static void init() {
         instance = new BatteryManager();
+        Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
         BatteryPersistence.loadAll();
         Main.getInstance().getLogger().info("[BatteryMulti] Manager initialized.");
     }
@@ -323,32 +364,49 @@ public class BatteryManager {
         BatteryCluster cluster = locationToCluster.get(key);
         if (cluster == null) return;
 
-        locationToCluster.remove(key);
-        cluster.removeBlock(key);
-
-        if (cluster.blockKeys.isEmpty()) {
-            clustersById.remove(cluster.id);
-            BatteryPersistence.deleteCluster(cluster.id);
-            if (player != null) {
-                player.sendMessage("§e❕ Батарея полностью разобрана (удалено из БД)");
-            }
-            return;
+        // Полная разборка всего кластера при разрушении любого блока
+        for (long bk : cluster.blockKeys) {
+            locationToCluster.remove(bk);
         }
+        clustersById.remove(cluster.id);
+        cluster.blockKeys.clear();
+        BatteryPersistence.deleteCluster(cluster.id);
 
-        // Пересчёт — берём первый оставшийся блок
-        long anyKey = cluster.blockKeys.iterator().next();
-        Set<Long> newKeys = floodFillFast(cluster.world, getX(anyKey), getY(anyKey), getZ(anyKey));
-
-        for (long oldKey : new HashSet<>(cluster.blockKeys)) {
-            if (!newKeys.contains(oldKey)) locationToCluster.remove(oldKey);
+        if (cluster.center != null && cluster.center.getWorld() != null) {
+            Main.getInstance().getLogger().info("[BatteryMulti] Disassembled cluster #" + cluster.id
+                    + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
         }
-        cluster.blockKeys = newKeys;
-        for (long nk : newKeys) locationToCluster.put(nk, cluster);
-        cluster.recalculateCenter();
 
         if (player != null) {
-            player.sendMessage("§7❕ Блок батареи разрушен, ёмкость: §f" + cluster.capacity);
+            player.sendMessage("§e❕ Батарея разобрана (разрушен блок)");
         }
+    }
+
+    // ════════════════════════════════════════
+    // SHIFT+ПКМ ПУСТОЙ РУКОЙ — ПЕРЕКЛЮЧЕНИЕ РЕЖИМА
+    // ════════════════════════════════════════
+    @EventHandler
+    public void onModeSwitch(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (!e.getPlayer().isSneaking()) return;
+        if (e.getClickedBlock() == null || e.getClickedBlock().getType() != Material.WAXED_COPPER_GRATE) return;
+
+        Player player = e.getPlayer();
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand.getType() != Material.AIR) return;
+
+        Location loc = LocationUtil.normalize(e.getClickedBlock().getLocation());
+        if (loc == null) return;
+
+        BatteryCluster cluster = locationToCluster.get(toKey(loc));
+        if (cluster == null) return;
+
+        cluster.cycleMode();
+        e.setCancelled(true);
+
+        player.sendMessage(MessageUtil.parse("<aqua>Режим батареи: </aqua><white>" + cluster.getModeDisplay() + "</white>"));
+        Main.getInstance().getLogger().info("[BatteryMulti] Cluster #" + cluster.id
+                + " mode changed to " + cluster.mode + " by " + player.getName());
     }
 
     // ════════════════════════════════════════
@@ -366,11 +424,10 @@ public class BatteryManager {
         return c != null ? c.capacity : 0;
     }
 
-    public static boolean isDischarging(Location loc) {
+    public static BatteryMode getMode(Location loc) {
         loc = LocationUtil.normalize(loc);
-        if (loc == null) return false;
-        BatteryCluster c = locationToCluster.get(toKey(loc));
-        return c != null && c.isAnyBlockPowered();
+        BatteryCluster c = loc != null ? locationToCluster.get(toKey(loc)) : null;
+        return c != null ? c.mode : BatteryMode.CHARGE_DISCHARGE;
     }
 
     public static BatteryCluster getCluster(Location loc) {
@@ -406,12 +463,25 @@ public class BatteryManager {
     // 0% заряда = 0 частиц, 100% = 10 частиц
     // ════════════════════════════════════════
     public static void tick() {
+        List<Integer> toRemove = new ArrayList<>();
+
         for (BatteryCluster cluster : clustersById.values()) {
             try {
                 if (cluster.world == null || cluster.center == null || cluster.capacity <= 0) continue;
+                if (cluster.blockKeys.isEmpty()) {
+                    toRemove.add(cluster.id);
+                    continue;
+                }
 
                 long firstKey = cluster.blockKeys.iterator().next();
-                if (!cluster.world.isChunkLoaded(getX(firstKey) >> 4, getZ(firstKey) >> 4)) continue;
+                int fx = getX(firstKey), fy = getY(firstKey), fz = getZ(firstKey);
+                if (!cluster.world.isChunkLoaded(fx >> 4, fz >> 4)) continue;
+
+                // Анти-фантом: если первый блок кластера уже не WAXED_COPPER_GRATE — разбираем
+                if (cluster.world.getType(fx, fy, fz) != Material.WAXED_COPPER_GRATE) {
+                    toRemove.add(cluster.id);
+                    continue;
+                }
 
                 double pct = getChargePercentage(cluster);
                 int count = (int) Math.round(pct / 10.0); // 0%→0, 100%→10
@@ -422,6 +492,19 @@ public class BatteryManager {
                 cluster.world.spawnParticle(Particle.ELECTRIC_SPARK, center, count / 2, 0.3, 0.3, 0.3, 0);
             } catch (Exception e) {
                 Main.getInstance().getLogger().warning("[BatteryMulti] Tick error: " + e.getMessage());
+            }
+        }
+
+        // Очищаем фантомные кластеры
+        for (int id : toRemove) {
+            BatteryCluster cluster = clustersById.get(id);
+            if (cluster != null) {
+                for (long bk : cluster.blockKeys) {
+                    locationToCluster.remove(bk);
+                }
+                clustersById.remove(id);
+                BatteryPersistence.deleteCluster(id);
+                Main.getInstance().getLogger().info("[BatteryMulti] Removed phantom cluster #" + id);
             }
         }
     }

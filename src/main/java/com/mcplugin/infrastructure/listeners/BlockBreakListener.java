@@ -59,11 +59,10 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // 🛠 ENERGY WORKBENCH
+        // 🛠 ITEM ASSEMBLER (CRAFTER)
         // =========================
-        if (e.getBlock().getType().name().equals("CRAFTING_TABLE")) {
+        if (e.getBlock().getType() == Material.CRAFTER) {
             EnergyWorkbenchManager.remove(loc);
-            return;
         }
 
         // =========================

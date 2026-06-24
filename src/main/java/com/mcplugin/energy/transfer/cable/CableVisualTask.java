@@ -15,8 +15,6 @@ import org.bukkit.block.data.type.LightningRod;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.Random;
-
 /**
  * Cable visual effects:
  * - Cables blink (10 ticks off / 10 ticks on) ONLY when energy is flowing through them.
@@ -25,7 +23,6 @@ import java.util.Random;
  */
 public class CableVisualTask extends BukkitRunnable {
 
-    private final Random random = new Random();
     private int globalTick = 0;
 
     @Override
@@ -40,8 +37,6 @@ public class CableVisualTask extends BukkitRunnable {
         int onTicks = cfg.getInt("energy.cable.blink.on_ticks", 10);
         int cycleLength = offTicks + onTicks;
 
-        boolean batteryVisuals = cfg.getBoolean("energy.battery.visual.particles_enabled", true);
-
         for (CableNode node : CableNetwork.getAllNodes()) {
 
             Location loc = node.getLocation();
@@ -50,26 +45,6 @@ public class CableVisualTask extends BukkitRunnable {
 
             Block block = loc.getBlock();
             Material blockType = block.getType();
-
-            // =========================
-            // BATTERY ELECTRICITY SPARKS
-            // =========================
-            if (node.getType() == NodeType.BATTERY && node.getEnergy() > 0 && batteryVisuals) {
-                int batteryMax = cfg.getInt("energy.battery.max_energy", 100000);
-                double fill = (double) node.getEnergy() / Math.max(batteryMax, 1);
-                int sparkCount = Math.max(1, (int) (fill * 5));
-                for (int i = 0; i < sparkCount; i++) {
-                    double xOff = loc.getX() + 0.5 + (random.nextDouble() - 0.5) * 0.8;
-                    double yOff = loc.getY() + 0.5 + (random.nextDouble() - 0.5) * 0.8;
-                    double zOff = loc.getZ() + 0.5 + (random.nextDouble() - 0.5) * 0.8;
-                    world.spawnParticle(
-                            Particle.ELECTRIC_SPARK,
-                            xOff, yOff, zOff,
-                            0, 0, 0, 0,
-                            0.01 + fill * 0.05
-                    );
-                }
-            }
 
             // =========================
             // CABLE BLINK — only for lightning rod cables

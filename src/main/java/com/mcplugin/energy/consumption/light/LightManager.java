@@ -2,7 +2,6 @@ package com.mcplugin.energy.consumption.light;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 
 import org.bukkit.Bukkit;
@@ -137,32 +136,7 @@ public class LightManager {
             return false;
         }
 
-        /**
-         * Есть ли энергия в кабелях рядом (в радиусе 1 от любого блока)?
-         */
-        boolean hasNearbyCableEnergy() {
-            for (long key : blockKeys) {
-                int bx = getX(key), by = getY(key), bz = getZ(key);
-                Location bl = new Location(world, bx, by, bz);
-                for (Location n : getNeighbors(bl)) {
-                    CableNode node = CableNetwork.getNode(n);
-                    if (node != null && node.getEnergy() > 0) return true;
-                }
-            }
-            return false;
-        }
 
-        private List<Location> getNeighbors(Location loc) {
-            List<Location> list = new ArrayList<>(6);
-            int x = loc.getBlockX(), y = loc.getBlockY(), z = loc.getBlockZ();
-            list.add(new Location(world, x+1, y, z));
-            list.add(new Location(world, x-1, y, z));
-            list.add(new Location(world, x, y+1, z));
-            list.add(new Location(world, x, y-1, z));
-            list.add(new Location(world, x, y, z+1));
-            list.add(new Location(world, x, y, z-1));
-            return list;
-        }
     }
 
     // ════════════════════════════════════════
@@ -413,6 +387,7 @@ public class LightManager {
 
     // ════════════════════════════════════════
     // TICK — проверка состояния и зажигание
+    // Только по редстоуну (энергия не требуется)
     // ════════════════════════════════════════
     public static void tick() {
         for (LightCluster cluster : clustersById.values()) {
@@ -422,42 +397,15 @@ public class LightManager {
                 long firstKey = cluster.blockKeys.iterator().next();
                 if (!cluster.world.isChunkLoaded(getX(firstKey) >> 4, getZ(firstKey) >> 4)) continue;
 
-                boolean shouldBeLit = cluster.isAnyBlockPowered() && cluster.hasNearbyCableEnergy();
-                final LightCluster cLocal = cluster;
+                // Только редстоун-сигнал — энергия не нужна
+                boolean shouldBeLit = cluster.isAnyBlockPowered();
 
                 if (shouldBeLit != cluster.lit) {
-                    // Async-queued зажигание
                     final boolean newState = shouldBeLit;
                     queueLightingUpdate(() -> {
-                        cLocal.lit = newState;
-                        setBlocksLit(cLocal, newState);
+                        cluster.lit = newState;
+                        setBlocksLit(cluster, newState);
                     });
-                }
-
-                // Потребление энергии
-                if (cluster.lit) {
-                    int consumption = cluster.power; // 1 энергия/блок/тик
-                    int remaining = consumption;
-                    for (long key : cluster.blockKeys) {
-                        if (remaining <= 0) break;
-                        int bx = getX(key), by = getY(key), bz = getZ(key);
-                        Location bl = new Location(cluster.world, bx, by, bz);
-                        for (Location n : getNeighborLocations(cluster.world, bx, by, bz)) {
-                            CableNode node = CableNetwork.getNode(n);
-                            if (node != null && node.getEnergy() > 0) {
-                                int take = Math.min(remaining, node.getEnergy());
-                                node.removeEnergy(take);
-                                remaining -= take;
-                                if (remaining <= 0) break;
-                            }
-                        }
-                        if (remaining > 0) {
-                            // Нет энергии — выключаем
-                            cLocal.lit = false;
-                            queueLightingUpdate(() -> setBlocksLit(cLocal, false));
-                            break;
-                        }
-                    }
                 }
             } catch (Exception e) {
                 Main.getInstance().getLogger().warning("[LightMulti] Tick error: " + e.getMessage());

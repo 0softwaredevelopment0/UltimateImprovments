@@ -210,13 +210,6 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // ⚡ ПОРОГ АСИНХРОННОСТИ
-    // Если кластер больше этого порога — flood-fill выполняется асинхронно,
-    // чтобы не фризить сервер. При активации игрок получает уведомление.
-    // =========================
-    private static final int ASYNC_THRESHOLD = 500;
-
-    // =========================
     // ACTIVATE (синхронно — для внутреннего использования)
     // =========================
     public static void activate(Location loc) {
@@ -420,134 +413,16 @@ public class MagnetManager extends BukkitRunnable {
         MagnetCluster cluster = locationToCluster.get(key);
         if (cluster == null) return false;
 
-        locationToCluster.remove(key);
-        cluster.removeBlock(key);
-
-        if (cluster.blockKeys.isEmpty()) {
-            deactivateCluster(cluster);
-            if (breaker != null) {
-                breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Магнит полностью разрушен и деактивирован!</red>"));
-            }
-            return true;
-        }
-
-        // ════════════════════════════════════════
-        // Если кластер маленький — синхронный пересчёт
-        // Если большой — асинхронный, чтобы не фризить
-        // ════════════════════════════════════════
-        if (cluster.blockKeys.size() < ASYNC_THRESHOLD) {
-            recalculateClusterSync(cluster, breaker);
-        } else {
-            recalculateClusterAsync(cluster, breaker);
-        }
-
-        return false;
-    }
-
-    /**
-     * Синхронный пересчёт кластера после разрушения блока.
-     */
-    private static void recalculateClusterSync(MagnetCluster cluster, Player breaker) {
-        long anyKey = cluster.blockKeys.iterator().next();
-        Set<Long> newKeys = floodFillFast(cluster.world, getX(anyKey), getY(anyKey), getZ(anyKey));
-
-        // Удаляем блоки, которые больше не в структуре
-        for (long oldKey : new HashSet<>(cluster.blockKeys)) {
-            if (!newKeys.contains(oldKey)) {
-                locationToCluster.remove(oldKey);
-            }
-        }
-
-        cluster.blockKeys = newKeys;
-        for (long newKey : newKeys) {
-            locationToCluster.put(newKey, cluster);
-        }
-        cluster.recalculateCenter();
-        // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
+        // Полная деактивация всего кластера при разрушении любого блока
+        deactivateCluster(cluster);
 
         if (breaker != null) {
-            breaker.sendMessage(MessageUtil.parse("<yellow>\u26a1</yellow> <gray>Магнит перестроен! Блоков: </gray><white>" + cluster.blockKeys.size() + "</white> <gray>| Центр смещён</gray>"));
+            breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Магнит деактивирован (разрушен блок)!</red>"));
         }
 
-        Main.getInstance().getLogger().info(
-                "[Magnet] Cluster #" + cluster.id + " recalculated: "
-                        + cluster.blockKeys.size() + " blocks, center at " + cluster.center
-        );
-    }
-
-    /**
-     * Асинхронный пересчёт кластера после разрушения блока.
-     * Запускает flood-fill в асинхронном потоке, затем применяет результаты
-     * на главном потоке.
-     */
-    private static void recalculateClusterAsync(MagnetCluster cluster, Player breaker) {
-        if (breaker != null) {
-            breaker.sendMessage("§8[§bМагнит§8] §7Перестраиваю структуру...");
-            breaker.sendMessage("§8[§bМагнит§8] §7Пожалуйста, подождите.");
-        }
-
-        World world = cluster.world;
-        long anyKey = cluster.blockKeys.iterator().next();
-        int sx = getX(anyKey), sy = getY(anyKey), sz = getZ(anyKey);
-
-        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
-            try {
-                Set<Long> newKeys = floodFillFast(world, sx, sy, sz);
-
-                Bukkit.getScheduler().runTask(Main.getInstance(), () ->
-                        applyRecalculation(cluster, newKeys, breaker)
-                );
-            } catch (Exception e) {
-                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                    if (breaker != null) {
-                        breaker.sendMessage("§4❌ §cОшибка при перестроении магнита!");
-                    }
-                    // Fallback: синхронно
-                    Set<Long> newKeys = floodFillFast(world, sx, sy, sz);
-                    applyRecalculation(cluster, newKeys, breaker);
-                });
-                Main.getInstance().getLogger().severe(
-                        "[Magnet] Async recalculation error: " + e.getMessage()
-                );
-            }
-        });
-    }
-
-    /**
-     * Применяет результат пересчёта к кластеру (на главном потоке).
-     */
-    private static void applyRecalculation(MagnetCluster cluster, Set<Long> newKeys, Player breaker) {
-        if (newKeys.isEmpty()) {
-            // Структура полностью разрушена
-            deactivateCluster(cluster);
-            if (breaker != null) {
-                breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Магнит полностью разрушен и деактивирован!</red>"));
-            }
-            return;
-        }
-
-        // Удаляем блоки, которые больше не в структуре
-        for (long oldKey : new HashSet<>(cluster.blockKeys)) {
-            if (!newKeys.contains(oldKey)) {
-                locationToCluster.remove(oldKey);
-            }
-        }
-
-        cluster.blockKeys = newKeys;
-        for (long newKey : newKeys) {
-            locationToCluster.put(newKey, cluster);
-        }
-        cluster.recalculateCenter();
-        // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
-
-        if (breaker != null) {
-            breaker.sendMessage(MessageUtil.parse("<yellow>\u26a1</yellow> <gray>Магнит перестроен! Блоков: </gray><white>" + cluster.blockKeys.size() + "</white> <gray>| Центр смещён</gray>"));
-        }
-
-        Main.getInstance().getLogger().info(
-                "[Magnet] Cluster #" + cluster.id + " recalculated: "
-                        + cluster.blockKeys.size() + " blocks, center at " + cluster.center
-        );
+        Main.getInstance().getLogger().info("[Magnet] Deactivated cluster #" + cluster.id
+                + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
+        return true;
     }
 
     // =========================

@@ -2,6 +2,7 @@ package com.mcplugin.energy;
 
 import com.mcplugin.infrastructure.core.Main;
 
+import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
@@ -40,6 +41,10 @@ public class EnergyBalancerTask extends BukkitRunnable {
             if (start == null) continue;
             if (start.getType() != NodeType.BATTERY) continue; // only batteries have energy
 
+            // Балансируем только CHARGE_DISCHARGE батареи
+            BatteryManager.BatteryCluster cluster = BatteryManager.getCluster(start.getLocation());
+            if (cluster != null && cluster.mode != BatteryManager.BatteryMode.CHARGE_DISCHARGE) continue;
+
             Location startLoc = LocationUtil.normalize(start.getLocation());
             if (visited.contains(startLoc)) continue;
 
@@ -56,7 +61,11 @@ public class EnergyBalancerTask extends BukkitRunnable {
                 visited.add(nodeLoc);
 
                 if (node.getType() == NodeType.BATTERY) {
-                    batteries.add(node);
+                    // Добавляем в балансировку только CHARGE_DISCHARGE
+                    BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
+                    if (bc == null || bc.mode == BatteryManager.BatteryMode.CHARGE_DISCHARGE) {
+                        batteries.add(node);
+                    }
                 }
 
                 for (Location conn : node.getConnections()) {

@@ -14,6 +14,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.NodeType;
 
 import java.util.Collection;
@@ -27,19 +28,13 @@ import java.util.Set;
 public class GeneratorTask extends BukkitRunnable {
 
     // =========================
-    // MANUAL BURN TRACKING (per furnace location)
+    // BURN TRACKING (per furnace location)
+    // fuelTimer: сколько тиков осталось гореть текущему топливу (decrements every tick)
+    // energyAccumulator: накопленная дробная энергия (>= 1 → добавляем к батарее)
     // Generator works independently of furnace smelting state.
-    // Fuel burn duration is tracked here so energy is generated
-    // smoothly each tick WITHOUT fuel acceleration.
     // =========================
-    private final Map<Location, Integer> burnTicks = new HashMap<>();
-
-    // =========================
-    // REMAINDER TRACKING: distributes the leftover energy
-    // (totalEnergyPerFuel % burnDuration) over the first N ticks
-    // so total energy added = energy_per_fuel exactly.
-    // =========================
-    private final Map<Location, Integer> extraTicks = new HashMap<>();
+    private final Map<Location, Integer> fuelTimer = new HashMap<>();
+    private final Map<Location, Double> energyAccumulator = new HashMap<>();
 
     @Override
     public void run() {
@@ -54,7 +49,7 @@ public class GeneratorTask extends BukkitRunnable {
                 cfg.getInt("energy.generator.energy_per_fuel", 100);
 
         int burnDuration =
-                cfg.getInt("energy.generator.fuel_burn_ticks", 1600);
+                cfg.getInt("energy.generator.fuel_burn_ticks", 100);
 
         boolean log =
                 cfg.getBoolean("energy.generator.log", false);
@@ -63,18 +58,19 @@ public class GeneratorTask extends BukkitRunnable {
         // CALCULATE PER-TICK ENERGY
         // =========================
         int effectiveBurn = Math.max(burnDuration, 1);
+        // Энергия за тик (floor-деление). Остаток распределяется через extraTicks
         int energyPerTick = totalEnergyPerFuel / effectiveBurn;
 
         // =========================
         // CLEANUP: Remove entries for disassembled/broken generators
         // =========================
-        burnTicks.entrySet().removeIf(entry -> {
+        fuelTimer.entrySet().removeIf(entry -> {
             Location loc = entry.getKey();
             return !GeneratorManager.isAssembled(loc)
                     || loc.getBlock().getType() != Material.BLAST_FURNACE;
         });
 
-        extraTicks.entrySet().removeIf(entry -> {
+        energyAccumulator.entrySet().removeIf(entry -> {
             Location loc = entry.getKey();
             return !GeneratorManager.isAssembled(loc)
                     || loc.getBlock().getType() != Material.BLAST_FURNACE;
@@ -91,6 +87,20 @@ public class GeneratorTask extends BukkitRunnable {
 
             Block block = furnaceLoc.getBlock();
             if (block.getType() != Material.BLAST_FURNACE) continue;
+
+            // =========================
+            // REDSTONE CHECK: generator only works when powered
+            // =========================
+            if (!block.isBlockPowered() && !block.isBlockIndirectlyPowered()) {
+                // No redstone — turn off furnace visual
+                org.bukkit.block.data.type.Furnace offData =
+                        (org.bukkit.block.data.type.Furnace) block.getBlockData();
+                if (offData.isLit()) {
+                    offData.setLit(false);
+                    block.setBlockData(offData);
+                }
+                continue;
+            }
 
             // Find connected cable node
             CableNode node = GeneratorManager.findConnectedNode(furnaceLoc);
@@ -116,26 +126,32 @@ public class GeneratorTask extends BukkitRunnable {
             org.bukkit.block.data.type.Furnace data =
                     (org.bukkit.block.data.type.Furnace) block.getBlockData();
 
-            int remaining = burnTicks.getOrDefault(furnaceLoc, 0);
+            int timer = fuelTimer.getOrDefault(furnaceLoc, 0);
 
             // =========================
-            // CASE 1: BURNING — generate energy smoothly each tick
+            // CASE 1: BURNING — generate energy continuously each tick
             // =========================
-            if (remaining > 0) {
-                int add = energyPerTick;
+            if (timer > 0) {
+                // Accumulate fractional energy each tick
+                double energyPerTickDouble = (double) totalEnergyPerFuel / effectiveBurn;
+                double acc = energyAccumulator.getOrDefault(furnaceLoc, 0.0) + energyPerTickDouble;
 
-                // Distribute the remainder (+1 extra for first N ticks)
-                int extra = extraTicks.getOrDefault(furnaceLoc, 0);
-                if (extra > 0) {
-                    add += 1;
-                    extraTicks.put(furnaceLoc, extra - 1);
+                // На последнем тике горения округляем, чтобы не потерять энергию из-за double-precision
+                int toAdd;
+                if (timer == 1) {
+                    toAdd = (int) Math.round(acc);
+                    acc = 0.0;
+                } else {
+                    toAdd = (int) Math.floor(acc);
+                    if (toAdd > 0) acc -= toAdd;
                 }
 
-                if (add > 0) {
-                    addEnergyToBatteryNetwork(nodeLoc, add);
+                if (toAdd > 0) {
+                    addEnergyToBatteryNetwork(nodeLoc, toAdd);
                 }
+                energyAccumulator.put(furnaceLoc, acc);
 
-                burnTicks.put(furnaceLoc, remaining - 1);
+                fuelTimer.put(furnaceLoc, timer - 1);
 
                 if (!data.isLit()) {
                     data.setLit(true);
@@ -144,16 +160,16 @@ public class GeneratorTask extends BukkitRunnable {
 
                 if (log) {
                     Main.getInstance().getLogger().info(
-                            "[GENERATOR] +" + add +
+                            "[GENERATOR] +" + toAdd +
                                     " energy from " + furnaceLoc +
-                                    " (remaining burn: " + (remaining - 1) + " ticks)"
+                                    " (remaining timer: " + (timer - 1) + " ticks)"
                     );
                 }
                 continue;
             }
 
             // =========================
-            // CASE 2: NOT BURNING, HAS FUEL — consume one item, start burning
+            // CASE 2: TIMER EXPIRED, HAS FUEL — consume one item, reset timer
             // =========================
             if (fuel != null && !fuel.getType().isAir() && fuel.getType().isFuel()
                     && burnDuration > 0) {
@@ -167,22 +183,19 @@ public class GeneratorTask extends BukkitRunnable {
                         furnace.getInventory().setFuel(newFuel);
                     }
 
-                    // Start burning (remaining - 1 because we generate energy THIS tick too)
-                    burnTicks.put(furnaceLoc, burnDuration - 1);
+                    // Reset timer and accumulator
+                    fuelTimer.put(furnaceLoc, burnDuration - 1);
+                    energyAccumulator.put(furnaceLoc, 0.0);
 
-                    // First tick: add energyPerTick (and extra if remainder > 0)
-                    int firstAdd = energyPerTick;
-                    int remainder = totalEnergyPerFuel % effectiveBurn;
-                    if (remainder > 0) {
-                        firstAdd += 1;
-                        // Remaining extra ticks = remainder - 1 (one used this tick)
-                        if (remainder > 1) {
-                            extraTicks.put(furnaceLoc, remainder - 1);
-                        }
-                    }
-
+                    // First tick energy
+                    double energyPerTickDouble = (double) totalEnergyPerFuel / effectiveBurn;
+                    int firstAdd = (int) Math.floor(energyPerTickDouble);
+                    double rem = energyPerTickDouble - firstAdd;
                     if (firstAdd > 0) {
                         addEnergyToBatteryNetwork(nodeLoc, firstAdd);
+                    }
+                    if (rem > 0) {
+                        energyAccumulator.put(furnaceLoc, rem);
                     }
 
                     if (!data.isLit()) {
@@ -193,7 +206,7 @@ public class GeneratorTask extends BukkitRunnable {
                     if (log) {
                         Main.getInstance().getLogger().info(
                                 "[GENERATOR] Fuel consumed at " + furnaceLoc +
-                                        ", +" + firstAdd + " energy (burn: " + burnDuration + " ticks)"
+                                        ", +" + firstAdd + " energy (timer: " + burnDuration + " ticks)"
                             );
                     }
                 continue;
@@ -232,10 +245,15 @@ public class GeneratorTask extends BukkitRunnable {
                 CableNetwork.markFlowing(node.getLocation());
             }
 
-            // Found a battery — add energy here
+            // Found a battery — add energy here (только если режим позволяет зарядку)
             if (node.getType() == NodeType.BATTERY) {
-                node.addEnergy(amount);
-                return;
+                BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
+                if ((bc == null || bc.canCharge()) && node.getEnergy() < node.getMaxEnergy()) {
+                    node.addEnergy(amount);
+                    return;
+                }
+                // Если батарея в режиме DISCHARGE или полная — продолжаем BFS к другим батареям
+                continue;
             }
 
             for (Location conn : node.getConnections()) {

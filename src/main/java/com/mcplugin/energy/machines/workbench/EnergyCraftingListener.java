@@ -1,10 +1,12 @@
 package com.mcplugin.energy.machines.workbench;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.mechanics.crafting.RecipeRegistry;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
@@ -15,9 +17,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.inventory.Recipe;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -43,9 +48,9 @@ public class EnergyCraftingListener implements Listener {
         }
 
         // =========================
-        // ONLY ITEM ASSEMBLER
+        // ONLY ITEM ASSEMBLER (CRAFTER)
         // =========================
-        if (e.getInventory().getType() != InventoryType.WORKBENCH) {
+        if (e.getInventory().getType() != InventoryType.CRAFTER) {
             return;
         }
 
@@ -82,39 +87,43 @@ public class EnergyCraftingListener implements Listener {
         }
 
         // =========================
-        // ONLY ITEM ASSEMBLER
+        // ONLY ITEM ASSEMBLER (CRAFTER)
         // =========================
-        if (e.getInventory().getType() != InventoryType.WORKBENCH) {
-            return;
+        boolean inAssembler = (e.getInventory().getType() == InventoryType.CRAFTER)
+                && ASSEMBLER_TITLE.equals(e.getView().title());
+
+        if (inAssembler) {
+            // Energy-based crafting in the Item Assembler
+            Location workbench = findWorkbench(player);
+
+            if (workbench == null) {
+                e.setCancelled(true);
+                player.sendMessage(MessageUtil.parse(getMsg()));
+                return;
+            }
+
+            int cost = getCost();
+
+            if (!hasNetworkEnergy(workbench, cost)) {
+                e.setCancelled(true);
+                player.sendMessage(MessageUtil.parse(getMsg()));
+                return;
+            }
+
+            takeNetworkEnergy(workbench, cost);
+        } else {
+            // =========================
+            // Не в Assembler — блокируем кастомные рецепты
+            // =========================
+            Recipe recipe = e.getRecipe();
+            if (recipe instanceof Keyed keyed) {
+                NamespacedKey recipeKey = keyed.getKey();
+                if (RecipeRegistry.getCustomRecipes().contains(recipeKey)) {
+                    e.setCancelled(true);
+                    player.sendMessage(MessageUtil.parse("<gold>✧</gold> <gray>Этот предмет можно скрафтить только в</gray> <aqua>Item Assembler</aqua><gray>!</gray>"));
+                }
+            }
         }
-
-        if (!ASSEMBLER_TITLE.equals(e.getView().title())) {
-            return;
-        }
-
-        Location workbench = findWorkbench(player);
-
-        if (workbench == null) {
-
-            e.setCancelled(true);
-
-            player.sendMessage(MessageUtil.parse(getMsg()));
-
-            return;
-        }
-
-        int cost = getCost();
-
-        if (!hasNetworkEnergy(workbench, cost)) {
-
-            e.setCancelled(true);
-
-            player.sendMessage(MessageUtil.parse(getMsg()));
-
-            return;
-        }
-
-        takeNetworkEnergy(workbench, cost);
     }
 
     // =========================
@@ -254,6 +263,10 @@ public class EnergyCraftingListener implements Listener {
             if (node == null) {
                 continue;
             }
+
+            // Проверяем режим батареи: берём энергию только из DISCHARGE/CHARGE_DISCHARGE
+            BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
+            if (bc != null && !bc.canDischarge()) continue;
 
             int energy = node.getEnergy();
 

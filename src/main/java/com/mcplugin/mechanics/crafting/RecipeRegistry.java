@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,6 +21,13 @@ public class RecipeRegistry implements Listener {
     // =========================
     public static void registerRecipe(NamespacedKey key) {
         CUSTOM_RECIPES.add(key);
+    }
+
+    /**
+     * @return неизменяемое множество всех зарегистрированных кастомных рецептов
+     */
+    public static Set<NamespacedKey> getCustomRecipes() {
+        return Collections.unmodifiableSet(CUSTOM_RECIPES);
     }
 
     // =========================

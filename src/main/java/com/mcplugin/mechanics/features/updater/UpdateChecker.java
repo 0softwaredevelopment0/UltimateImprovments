@@ -37,18 +37,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Auto-updater: сравнивает номер версии из названия GitHub-релиза
- * с текущей версией плагина (plugin.yml → getDescription().getVersion()).
+ * Auto-updater: сравнивает номер версии из имени JAR-файла в папке {@code Jar/}
+ * на GitHub с текущей версией плагина.
  * <p>
  * Логика:
  * <ol>
  *   <li>Читаем текущую версию плагина (например "1.7.54");</li>
- *   <li>Запрашиваем GitHub API {@code /releases?per_page=1} — получаем тег последнего релиза;</li>
- *   <li>Извлекаем номер версии из тега (например "v1.8.23" → "1.8.23");</li>
+ *   <li>Запрашиваем GitHub API {@code /contents/Jar/} — получаем список файлов;</li>
+ *   <li>Находим все {@code .jar} файлы, извлекаем версию из имени;</li>
+ *   <li>Выбираем JAR с самой новой версией;</li>
  *   <li>Сравниваем по компонентам (major.minor.commits):</li>
- *   <li>Если текущая >= релизной → UP_TO_DATE (мы новее или такие же);</li>
- *   <li>Если текущая < релизной → UPDATE_AVAILABLE;</li>
- *   <li>После успешной загрузки сохраняем в БД тег релиза (чтобы не перекачивать).</li>
+ *   <li>Если jar-версия > текущей → UPDATE_AVAILABLE;</li>
+ *   <li>Если jar-версия <= текущей → UP_TO_DATE;</li>
+ *   <li>После успешной загрузки сохраняем в БД версию (чтобы не перекачивать).</li>
  * </ol>
  */
 public class UpdateChecker {
@@ -58,13 +59,17 @@ public class UpdateChecker {
     // =========================
     private static final String GITHUB_OWNER = "Minecraft337";
     private static final String GITHUB_REPO = "MC-Plugin";
-    private static final String RELEASES_API_URL = "https://api.github.com/repos/"
-            + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases?per_page=1";
+    /** GitHub Contents API — список файлов в папке Jar/ репозитория. */
+    private static final String JAR_DIR_API_URL = "https://api.github.com/repos/"
+            + GITHUB_OWNER + "/" + GITHUB_REPO + "/contents/Jar/";
     private static final String USER_AGENT = "MC-Plugin-Updater";
     private static final int TIMEOUT_SECONDS = 15;
 
-    /** Regex для извлечения major.minor.commits из тега релиза. */
+    /** Regex для извлечения major.minor.commits из имени jar-файла. */
     private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
+    /** Regex для jar-файла вида "MC-Plugin-1.7.54.jar". */
+    private static final Pattern JAR_FILE_PATTERN = Pattern.compile(
+            Pattern.quote(GITHUB_REPO) + "-(\\d+\\.\\d+(?:\\.\\d+)?)\\.jar", Pattern.CASE_INSENSITIVE);
 
     // =========================
     // СТАТУС (volatile — пишется из async, читается с main)
@@ -78,16 +83,16 @@ public class UpdateChecker {
     }
 
     private static volatile UpdateStatus status = UpdateStatus.UP_TO_DATE;
-    private static volatile String latestTag = "";
+    private static volatile String latestJarVersion = "";  // версия из имени последнего jar (напр. "1.7.75")
     private static volatile String errorMessage = "";
 
     // Кеш для /mp updatejar — чтобы не дёргать API повторно
     private static volatile String cachedDownloadUrl = "";
-    private static volatile String cachedReleaseName = "";
-    private static volatile String cachedGithubTag = "";
+    private static volatile String cachedJarName = "";     // имя файла (напр. "MC-Plugin-1.7.75.jar")
+    private static volatile String cachedJarVersion = "";  // версия из jar-файла
 
     public static UpdateStatus getStatus() { return status; }
-    public static String getLatestTag() { return latestTag; }
+    public static String getLatestTag() { return latestJarVersion; }
     public static String getErrorMessage() { return errorMessage; }
 
     // =========================
@@ -95,7 +100,7 @@ public class UpdateChecker {
     // =========================
     public static void checkAsync() {
         Main plugin = Main.getInstance();
-        plugin.getLogger().info("[Updater] Checking for updates...");
+        plugin.getLogger().info("[Updater] Checking for updates (Jar/ folder)...");
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
@@ -124,68 +129,59 @@ public class UpdateChecker {
         // 1. Текущая версия плагина (из plugin.yml)
         // ════════════════════════════════════════
         String currentVersion = plugin.getDescription().getVersion();
-        String storedTag = getStoredTag();
+        String storedVersion = getStoredTag();  // хранит версию последнего установленного jar
         plugin.getLogger().info("[Updater] Current version: " + currentVersion);
-        plugin.getLogger().info("[Updater] Last installed release: "
-                + (storedTag.isEmpty() ? "<none>" : storedTag));
+        plugin.getLogger().info("[Updater] Last installed jar: "
+                + (storedVersion.isEmpty() ? "<none>" : storedVersion));
 
         // ════════════════════════════════════════
-        // 2. HTTP-запрос к GitHub API — последний релиз
+        // 2. HTTP-запрос к GitHub Contents API — список файлов в Jar/
         // ════════════════════════════════════════
-        String githubTag = fetchLatestReleaseTag(plugin);
-        if (githubTag == null) {
-            plugin.getLogger().info("[Updater] No releases found — up to date.");
+        JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
+        if (latestJar == null) {
+            plugin.getLogger().info("[Updater] No jar files found in Jar/ folder — up to date.");
             status = UpdateStatus.UP_TO_DATE;
             return;
         }
 
-        // ════════════════════════════════════════
-        // 3. Извлекаем номер версии из тега релиза
-        // ════════════════════════════════════════
-        String releaseVersion = parseVersion(githubTag);
-        if (releaseVersion == null) {
-            plugin.getLogger().warning("[Updater] Cannot parse version from tag: " + githubTag);
-            status = UpdateStatus.CHECK_FAILED;
-            return;
-        }
-
-        plugin.getLogger().info("[Updater] GitHub latest release: "
-                + githubTag + " (version: " + releaseVersion + ")");
+        String jarVersion = latestJar.version;
+        plugin.getLogger().info("[Updater] Latest jar in Jar/: " + latestJar.name
+                + " (version: " + jarVersion + ")");
 
         // ════════════════════════════════════════
-        // 4. Сравниваем версии
+        // 3. Сравниваем версии
         // ════════════════════════════════════════
-        if (!isNewer(releaseVersion, currentVersion)) {
-            // Текущая >= релизной → мы не старше
+        if (!isNewer(jarVersion, currentVersion)) {
+            // Текущая >= jar-версии → мы не старше
             plugin.getLogger().info("[Updater] Up to date (current: "
-                    + currentVersion + " >= release: " + releaseVersion + ")");
-            latestTag = githubTag;
+                    + currentVersion + " >= jar: " + jarVersion + ")");
+            latestJarVersion = jarVersion;
             status = UpdateStatus.UP_TO_DATE;
             return;
         }
 
         // ════════════════════════════════════════
-        // 5. Релиз новее → проверяем, не установлен ли уже
+        // 4. Jar новее → проверяем, не установлен ли уже
         // ════════════════════════════════════════
-        if (githubTag.equals(storedTag)) {
+        if (jarVersion.equals(storedVersion)) {
             // Уже скачан, ждёт рестарта
-            plugin.getLogger().info("[Updater] Release " + githubTag
+            plugin.getLogger().info("[Updater] Update " + jarVersion
                     + " already downloaded — restart required.");
-            latestTag = githubTag;
+            latestJarVersion = jarVersion;
             status = UpdateStatus.UPDATE_DOWNLOADED;
             return;
         }
 
         // ════════════════════════════════════════
-        // 6. Обновление доступно!
+        // 5. Обновление доступно!
         // ════════════════════════════════════════
-        latestTag = githubTag;
+        latestJarVersion = jarVersion;
         status = UpdateStatus.UPDATE_AVAILABLE;
 
         plugin.getLogger().warning("");
         plugin.getLogger().warning("===========================================");
-        plugin.getLogger().warning("  [UPDATE AVAILABLE] " + cachedReleaseName);
-        plugin.getLogger().warning("  Release: " + githubTag + " (v" + releaseVersion + ")");
+        plugin.getLogger().warning("  [UPDATE AVAILABLE] " + latestJar.name);
+        plugin.getLogger().warning("  Jar: " + jarVersion);
         plugin.getLogger().warning("  Current: v" + currentVersion);
         plugin.getLogger().warning("");
         plugin.getLogger().warning("  To install, type: /mp updatejar");
@@ -195,14 +191,34 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 🔍 API HELPERS
+    // 🔍 GITHUB CONTENTS API — Jar/
     // =========================
 
-    /** Запрашивает GitHub API и возвращает тег последнего релиза + кеширует URL для скачивания. */
-    private static String fetchLatestReleaseTag(Main plugin) throws Exception {
+    /**
+     * Данные о jar-файле из папки Jar/ на GitHub.
+     */
+    private static class JarFileInfo {
+        final String name;          // "MC-Plugin-1.7.75.jar"
+        final String version;       // "1.7.75"
+        final String downloadUrl;   // raw.githubusercontent.com URL
+
+        JarFileInfo(String name, String version, String downloadUrl) {
+            this.name = name;
+            this.version = version;
+            this.downloadUrl = downloadUrl;
+        }
+    }
+
+    /**
+     * Запрашивает GitHub Contents API для папки {@code Jar/} и возвращает
+     * информацию о самом новом jar-файле (с наибольшей версией).
+     *
+     * @return JarFileInfo или null если jar-файлов нет
+     */
+    private static JarFileInfo fetchLatestJarFromRepo(Main plugin) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(RELEASES_API_URL))
+                .uri(URI.create(JAR_DIR_API_URL))
                 .header("Accept", "application/vnd.github.v3+json")
                 .header("User-Agent", USER_AGENT)
                 .timeout(Duration.ofSeconds(TIMEOUT_SECONDS))
@@ -212,35 +228,84 @@ public class UpdateChecker {
         HttpResponse<String> response = client.send(request,
                 HttpResponse.BodyHandlers.ofString());
 
+        if (response.statusCode() == 403 || response.statusCode() == 429) {
+            plugin.getLogger().warning("[Updater] GitHub API rate limit exceeded (HTTP "
+                    + response.statusCode() + "). Check will be skipped.");
+            status = UpdateStatus.CHECK_FAILED;
+            return null;
+        }
+
         if (response.statusCode() != 200) {
-            plugin.getLogger().warning("[Updater] GitHub Releases API returned HTTP "
+            plugin.getLogger().warning("[Updater] GitHub Contents API returned HTTP "
                     + response.statusCode());
             status = UpdateStatus.CHECK_FAILED;
             return null;
         }
 
-        JsonArray releases = JsonParser.parseString(response.body()).getAsJsonArray();
-        if (releases.isEmpty()) {
-            // Нет релизов — не ошибка, просто нечего скачивать
-            plugin.getLogger().info("[Updater] No releases found in GitHub repository");
+        // Парсим JSON-массив
+        JsonArray items;
+        try {
+            items = JsonParser.parseString(response.body()).getAsJsonArray();
+        } catch (Exception e) {
+            // Если ответ не массив — значит это объект с ошибкой или это не директория
+            plugin.getLogger().warning("[Updater] Unexpected API response format");
             return null;
         }
 
-        JsonObject release = releases.get(0).getAsJsonObject();
-        String tag = release.get("tag_name").getAsString();
-        String releaseName = release.has("name") && !release.get("name").isJsonNull()
-                ? release.get("name").getAsString() : tag;
-
-        // Ищем JAR и кешируем
-        String downloadUrl = findJarAsset(release);
-        if (downloadUrl != null) {
-            cachedDownloadUrl = downloadUrl;
-            cachedReleaseName = releaseName;
-            cachedGithubTag = tag;
+        if (items.isEmpty()) {
+            return null;
         }
 
-        plugin.getLogger().info("[Updater] GitHub latest release: " + tag);
-        return tag;
+        // Ищем jar-файлы и выбираем самый новый по версии
+        JarFileInfo best = null;
+        int[] bestVersion = null;
+
+        for (JsonElement elem : items) {
+            JsonObject item = elem.getAsJsonObject();
+            String type = item.get("type").getAsString();
+            if (!"file".equals(type)) continue;
+
+            String name = item.get("name").getAsString();
+            if (!name.endsWith(".jar")) continue;
+
+            // Извлекаем версию из имени "MC-Plugin-1.7.75.jar"
+            Matcher m = JAR_FILE_PATTERN.matcher(name);
+            if (!m.find()) continue;
+
+            String versionStr = m.group(1);
+            int[] versionInts = parseVersionToInts(versionStr);
+            if (versionInts == null) continue;
+
+            // Сравниваем с текущим лучшим
+            if (best == null || compareVersions(versionInts, bestVersion) > 0) {
+                String downloadUrl = item.get("download_url").getAsString();
+                best = new JarFileInfo(name, versionStr, downloadUrl);
+                bestVersion = versionInts;
+            }
+        }
+
+        if (best != null) {
+            // Кешируем для /mp updatejar
+            cachedDownloadUrl = best.downloadUrl;
+            cachedJarName = best.name;
+            cachedJarVersion = best.version;
+
+            plugin.getLogger().info("[Updater] Found latest jar: " + best.name
+                    + " (v" + best.version + ")");
+        }
+
+        return best;
+    }
+
+    /**
+     * Сравнивает два версионных массива.
+     * @return положительное число если a > b, 0 если равны, отрицательное если a < b
+     */
+    private static int compareVersions(int[] a, int[] b) {
+        for (int i = 0; i < 3; i++) {
+            if (a[i] != b[i]) return a[i] - b[i];
+        }
+        return 0;
     }
 
     // =========================
@@ -248,16 +313,15 @@ public class UpdateChecker {
     // =========================
 
     /**
-     * Извлекает номер версии из тега релиза.
-     * Примеры: "v1.8.23" → "1.8.23", "Hotfix-1.7.1" → "1.7.1",
-     *          "release-2.0.0" → "2.0.0", "26.2" → "26.2.0".
+     * Извлекает номер версии из строки.
+     * Примеры: "1.8.23" → "1.8.23", "1.7" → "1.7.0", "v1.8.23" → "1.8.23".
      *
-     * @param tag тег GitHub-релиза (например "v1.8.23")
+     * @param input строка, содержащая номер версии
      * @return строка версии "major.minor.patch" или null если не удалось распарсить
      */
-    private static String parseVersion(String tag) {
-        if (tag == null || tag.isEmpty()) return null;
-        Matcher m = VERSION_PATTERN.matcher(tag);
+    private static String parseVersion(String input) {
+        if (input == null || input.isEmpty()) return null;
+        Matcher m = VERSION_PATTERN.matcher(input);
         if (!m.find()) return null;
         int major = Integer.parseInt(m.group(1));
         int minor = Integer.parseInt(m.group(2));
@@ -268,18 +332,18 @@ public class UpdateChecker {
     /**
      * Сравнивает две версии по компонентам (major.minor.patch).
      *
-     * @param releaseVersion версия из GitHub-релиза (например "1.8.23")
+     * @param jarVersion версия из jar-файла (например "1.8.23")
      * @param currentVersion текущая версия плагина (например "1.7.54")
-     * @return true если release новее current (т.е. есть обновление)
+     * @return true если jar новее current (т.е. есть обновление)
      */
-    private static boolean isNewer(String releaseVersion, String currentVersion) {
-        int[] rel = parseVersionToInts(releaseVersion);
+    private static boolean isNewer(String jarVersion, String currentVersion) {
+        int[] jar = parseVersionToInts(jarVersion);
         int[] cur = parseVersionToInts(currentVersion);
-        if (rel == null || cur == null) return false;
+        if (jar == null || cur == null) return false;
 
-        if (rel[0] != cur[0]) return rel[0] > cur[0];
-        if (rel[1] != cur[1]) return rel[1] > cur[1];
-        return rel[2] > cur[2];
+        if (jar[0] != cur[0]) return jar[0] > cur[0];
+        if (jar[1] != cur[1]) return jar[1] > cur[1];
+        return jar[2] > cur[2];
     }
 
     /** Парсит "1.7.54" в int[]{1, 7, 54}. */
@@ -296,43 +360,49 @@ public class UpdateChecker {
     // 💾 РАБОТА С БД
     // =========================
 
-    /** Читает последний установленный тег релиза из таблицы updater_state. */
+    /** Читает последнюю установленную версию jar из таблицы updater_state. */
     private static String getStoredTag() {
         Connection con = DatabaseManager.getConnection();
         if (con == null) return "";
 
         try (PreparedStatement ps = con.prepareStatement(
-                "SELECT value FROM updater_state WHERE key = 'installed_tag'")) {
+                "SELECT value FROM updater_state WHERE key = 'installed_jar_version'")) {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return rs.getString("value");
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().fine("[Updater] DB read tag error: " + e.getMessage());
+            Main.getInstance().getLogger().fine("[Updater] DB read version error: " + e.getMessage());
         }
         return "";
     }
 
-    /** Сохраняет тег релиза в таблицу updater_state. */
-    private static void saveStoredTag(String tag) {
+    /** Сохраняет версию jar в таблицу updater_state. */
+    private static void saveStoredTag(String version) {
         Connection con = DatabaseManager.getConnection();
         if (con == null) return;
 
         try {
+            // Очищаем старый ключ от предыдущей системы (релизы)
+            try (PreparedStatement clean = con.prepareStatement(
+                    "DELETE FROM updater_state WHERE key = 'installed_tag'")) {
+                clean.executeUpdate();
+            }
+
             try (PreparedStatement ps = con.prepareStatement(
-                    "UPDATE updater_state SET value = ? WHERE key = 'installed_tag'")) {
-                ps.setString(1, tag);
+                    "UPDATE updater_state SET value = ? WHERE key = 'installed_jar_version'")) {
+                ps.setString(1, version);
                 if (ps.executeUpdate() == 0) {
                     try (PreparedStatement insert = con.prepareStatement(
-                            "INSERT INTO updater_state (key, value) VALUES ('installed_tag', ?)")) {
-                        insert.setString(1, tag);
+                            "INSERT INTO updater_state (key, value) VALUES ('installed_jar_version', ?)")) {
+                        insert.setString(1, version);
                         insert.executeUpdate();
                     }
                 }
             }
         } catch (Exception e) {
             Main.getInstance().getLogger().warning(
-                    "[Updater] Failed to save tag to DB: " + e.getMessage());
+                    "[Updater] Failed to save version to DB: " + e.getMessage());
         }
     }
 
@@ -348,40 +418,12 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 🔍 ПОИСК JAR В АССЕТАХ РЕЛИЗА
-    // =========================
-    private static String findJarAsset(JsonObject release) {
-        JsonArray assets = release.getAsJsonArray("assets");
-        if (assets == null || assets.isEmpty()) return null;
-
-        // Приоритет: .jar с именем репозитория
-        for (JsonElement elem : assets) {
-            JsonObject asset = elem.getAsJsonObject();
-            String name = asset.get("name").getAsString();
-            if (name.toLowerCase().contains(GITHUB_REPO.toLowerCase())
-                    && name.endsWith(".jar")) {
-                return asset.get("browser_download_url").getAsString();
-            }
-        }
-        // Fallback: любой .jar
-        for (JsonElement elem : assets) {
-            JsonObject asset = elem.getAsJsonObject();
-            String name = asset.get("name").getAsString();
-            if (name.endsWith(".jar")) {
-                return asset.get("browser_download_url").getAsString();
-            }
-        }
-        return null;
-    }
-
-    // =========================
-    // 🔍 /mp checkver или /mp checkupdates — РУЧНАЯ ПРОВЕРКА ОБНОВЛЕНИЙ
+    // 🔍 /mp checkver — РУЧНАЯ ПРОВЕРКА ОБНОВЛЕНИЙ
     // =========================
 
     /**
-     * Выполняет асинхронную проверку GitHub на наличие новых релизов
-     * и отправляет результат отправителю команды (игроку или консоли).
-     * Сравнивает номера версий: если релиз новее текущей — предлагает обновиться.
+     * Выполняет асинхронную проверку GitHub (папка Jar/) на наличие новых версий
+     * и отправляет результат отправителю команды.
      */
     public static void checkOnly(CommandSender sender) {
         Main plugin = Main.getInstance();
@@ -391,30 +433,26 @@ public class UpdateChecker {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 String currentVersion = plugin.getDescription().getVersion();
-                String storedTag = getStoredTag();
+                String storedVersion = getStoredTag();
 
-                // Шаг 1: получаем последний релиз
-                String githubTag = fetchLatestReleaseTag(plugin);
-                if (githubTag == null) {
+                // Шаг 1: получаем последний jar из Jar/
+                JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
+                if (latestJar == null) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                                "update.check_error", "<red>❌ Error checking for updates!</red>")));
+                                "update.check_error", "<red>❌ No jar files found in GitHub Jar/ folder!</red>")));
                     });
                     return;
                 }
 
-                // Шаг 2: парсим версию релиза
-                String releaseVersion = parseVersion(githubTag);
-                boolean hasVersion = releaseVersion != null;
-                boolean isNewRelease = hasVersion && isNewer(releaseVersion, currentVersion);
-                boolean isPendingRestart = githubTag.equals(storedTag);
+                String jarVersion = latestJar.version;
+                boolean hasVersion = jarVersion != null;
+                boolean isNewRelease = hasVersion && isNewer(jarVersion, currentVersion);
+                boolean isPendingRestart = jarVersion != null && jarVersion.equals(storedVersion);
 
                 // Отправляем результат на главном потоке
-                final String finalTag = githubTag;
-                final String finalReleaseName = !cachedReleaseName.isEmpty()
-                        ? cachedReleaseName : finalTag;
-                final String finalReleaseVer = releaseVersion != null
-                        ? releaseVersion : "<unparseable>";
+                final String finalJarName = latestJar.name;
+                final String finalJarVer = jarVersion != null ? jarVersion : "<unparseable>";
                 final String finalCurrentVer = currentVersion;
                 final boolean finalIsNew = isNewRelease;
                 final boolean finalHasVer = hasVersion;
@@ -431,35 +469,32 @@ public class UpdateChecker {
                             .replace("{version}", finalCurrentVer)));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.latest_release",
-                            "<gray>Latest release:</gray> <white>{tag}</white>")
-                            .replace("{tag}", finalTag)));
+                            "<gray>GitHub Jar/:</gray> <white>{name}</white>")
+                            .replace("{name}", finalJarName)));
 
                     if (finalHasVer) {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.release_version",
-                                "<gray>Release version:</gray> <white>{version}</white>")
-                                .replace("{version}", finalReleaseVer)));
+                                "<gray>Jar version:</gray> <white>{version}</white>")
+                                .replace("{version}", finalJarVer)));
                     }
 
                     if (finalPending && finalIsNew) {
-                        // Уже скачан, ждёт рестарта
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.already_downloaded",
-                                "<yellow>⟳</yellow> <gray>Update already downloaded!</gray> <white>{tag}</white> <gray>— restart server to apply.</gray>")
-                                .replace("{tag}", finalTag)));
+                                "<yellow>⟳</yellow> <gray>Update already downloaded!</gray> <white>{ver}</white> <gray>— restart server to apply.</gray>")
+                                .replace("{ver}", finalJarVer)));
                     } else if (finalIsNew) {
-                        // Доступно обновление
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.update_available",
-                                "<green>✨</green> <white>Update available!</white> <white>{release}</white>")
-                                .replace("{release}", finalReleaseName)));
+                                "<green>✨</green> <white>Update available!</white> <white>{jar}</white>")
+                                .replace("{jar}", finalJarName)));
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.update_from_to",
                                 "<gray>v{from} → v{to}</gray>")
                                 .replace("{from}", finalCurrentVer)
-                                .replace("{to}", finalReleaseVer)));
+                                .replace("{to}", finalJarVer)));
 
-                        // Install button for players
                         if (sender instanceof Player) {
                             TextComponent updateButton = new TextComponent(MessageUtil.legacy(
                                     MessagesManager.getString("update.install_button",
@@ -470,7 +505,7 @@ public class UpdateChecker {
                             updateButton.setHoverEvent(new HoverEvent(
                                     HoverEvent.Action.SHOW_TEXT,
                                     new ComponentBuilder("§aClick to download and install update\n")
-                                            .append("§7Release: §f" + finalReleaseName + "\n")
+                                            .append("§7File: §f" + finalJarName + "\n")
                                             .append("§7Restart required after installation")
                                             .create()));
                             ((Player) sender).spigot().sendMessage(updateButton);
@@ -490,15 +525,14 @@ public class UpdateChecker {
                     } else if (!finalHasVer) {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.cant_parse_version",
-                                "<yellow>⚠</yellow> <gray>Cannot parse version from release tag. Skipping.</gray>")));
+                                "<yellow>⚠</yellow> <gray>Cannot parse version from jar file. Skipping.</gray>")));
                     } else {
-                        // Up to date or newer
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.up_to_date",
                                 "<green>✔</green> <green>All up to date!</green> "
-                                + "<gray>(v{current} ≥ v{release})</gray>")
+                                + "<gray>(v{current} ≥ v{jar})</gray>")
                                 .replace("{current}", finalCurrentVer)
-                                .replace("{release}", finalReleaseVer)));
+                                .replace("{jar}", finalJarVer)));
                     }
 
                     sender.sendMessage("");
@@ -558,9 +592,8 @@ public class UpdateChecker {
     // =========================
 
     /**
-     * Скачивает последний JAR с GitHub, заменяет текущий.
-     * При ошибке — fallback в папку plugins + стектрейс в консоль.
-     * После успешной замены сохраняет в БД тег релиза.
+     * Скачивает последний JAR из папки {@code Jar/} на GitHub, заменяет текущий.
+     * После успешной замены сохраняет в БД версию jar.
      */
     public static void downloadAndReplace(CommandSender sender) {
         Main plugin = Main.getInstance();
@@ -585,55 +618,59 @@ public class UpdateChecker {
 
                 // Используем кеш если есть, иначе фетчим API
                 String downloadUrl;
-                String githubTag;
+                String jarName;
+                String jarVersion;
 
-                if (!cachedDownloadUrl.isEmpty() && !cachedGithubTag.isEmpty()) {
+                if (!cachedDownloadUrl.isEmpty()) {
                     downloadUrl = cachedDownloadUrl;
-                    githubTag = cachedGithubTag;
-                    plugin.getLogger().info("[Updater] Using cached release: " + githubTag);
+                    jarName = cachedJarName;
+                    jarVersion = cachedJarVersion;
+                    plugin.getLogger().info("[Updater] Using cached jar info: " + jarName);
                 } else {
                     // Фетчим свежие данные с GitHub
-                    githubTag = fetchLatestReleaseTag(plugin);
-                    if (githubTag == null) {
+                    JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
+                    if (latestJar == null) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                     "update.no_release_info",
-                                    "<red>❌ Could not get latest release info!</red>")));
+                                    "<red>❌ Could not find any jar files in GitHub Jar/ folder!</red>")));
                         });
                         return;
                     }
-                    downloadUrl = cachedDownloadUrl;
-                    if (downloadUrl == null || downloadUrl.isEmpty()) {
-                        Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                                    "update.no_jar_in_release",
-                                    "<red>❌ No JAR file found in release </red><yellow>{tag}</yellow><red>!</red>")
-                                    .replace("{tag}", githubTag)));
-                        });
-                        return;
-                    }
+                    downloadUrl = latestJar.downloadUrl;
+                    jarName = latestJar.name;
+                    jarVersion = latestJar.version;
                 }
 
-                // Проверяем — не тот ли самый тег уже установлен?
-                String storedTag = getStoredTag();
-                if (githubTag.equals(storedTag)) {
+                if (downloadUrl == null || downloadUrl.isEmpty()) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                                "update.no_jar_in_release",
+                                "<red>❌ No download URL for jar</red>")));
+                    });
+                    return;
+                }
+
+                // Проверяем — не тот ли самый jar уже установлен?
+                String storedVersion = getStoredTag();
+                if (jarVersion != null && jarVersion.equals(storedVersion)) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.already_installed",
                                 "<green>✔</green> <green>This version is already installed! "
-                                + "(</green><white>{tag}</white><green>)</green>")
-                                .replace("{tag}", githubTag)));
+                                + "(</green><white>{ver}</white><green>)</green>")
+                                .replace("{ver}", jarVersion)));
                     });
                     return;
                 }
 
                 // Статус: загрузка
-                final String finalTag = githubTag;
+                final String finalJarName = jarName;
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.downloading_release",
-                            "<yellow>⟳</yellow> <gray>Downloading update</gray> <white>{tag}</white><gray>...</gray>")
-                            .replace("{tag}", finalTag)));
+                            "<yellow>⟳</yellow> <gray>Downloading update</gray> <white>{name}</white><gray>...</gray>")
+                            .replace("{name}", finalJarName)));
                 });
 
                 // Скачивание JAR
@@ -676,11 +713,13 @@ public class UpdateChecker {
                 final long downloadedKB = totalBytes / 1024;
 
                 // Замена JAR
-                boolean replaced = replaceJar(plugin, currentJar, tempFile, finalTag);
+                boolean replaced = replaceJar(plugin, currentJar, tempFile, jarName);
 
                 if (replaced) {
-                    // Сохраняем тег релиза (чтобы не перекачивать при следующей проверке)
-                    saveStoredTag(finalTag);
+                    // Сохраняем версию jar (чтобы не перекачивать при следующей проверке)
+                    if (jarVersion != null) {
+                        saveStoredTag(jarVersion);
+                    }
 
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
@@ -689,8 +728,8 @@ public class UpdateChecker {
                         sender.sendMessage("");
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.install_release",
-                                "<gray>Release:</gray> <white>{tag}</white>")
-                                .replace("{tag}", finalTag)));
+                                "<gray>File:</gray> <white>{name}</white>")
+                                .replace("{name}", finalJarName)));
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.install_size",
                                 "<gray>Downloaded:</gray> <white>{size} KB</white>")
@@ -711,7 +750,6 @@ public class UpdateChecker {
                 }
 
             } catch (Exception e) {
-                // СтекТрейс в консоль
                 plugin.getLogger().severe("[Updater] /mp updatejar failed!");
                 e.printStackTrace();
 
@@ -733,7 +771,7 @@ public class UpdateChecker {
     }
 
     /** @return true если замена прошла успешно (включая fallback) */
-    private static boolean replaceJar(Main plugin, File currentJar, File updateFile, String tagName) {
+    private static boolean replaceJar(Main plugin, File currentJar, File updateFile, String jarName) {
         if (currentJar == null || !currentJar.exists()) {
             plugin.getLogger().warning("[Updater] Cannot find current JAR file");
             status = UpdateStatus.UPDATE_FAILED;
@@ -761,7 +799,6 @@ public class UpdateChecker {
         } catch (Exception e) {
             plugin.getLogger().severe("[Updater] Failed to replace JAR: " + e.getMessage());
 
-            // Try to restore backup first
             boolean backupRestored = false;
             if (backupDone) {
                 try {
@@ -780,8 +817,7 @@ public class UpdateChecker {
                 return false;
             }
 
-            // FALLBACK: поместить скачанный JAR в папку plugins
-            boolean fallbackSuccess = placeUpdateInPluginsFolder(plugin, updateFile, currentJar, tagName);
+            boolean fallbackSuccess = placeUpdateInPluginsFolder(plugin, updateFile, currentJar, jarName);
             if (fallbackSuccess) {
                 return true;
             }
@@ -791,14 +827,13 @@ public class UpdateChecker {
             return false;
         }
 
-        // УСПЕХ — прямой replace сработал
         try { Files.deleteIfExists(backupPath); } catch (Exception ignored) {}
 
         status = UpdateStatus.UPDATE_DOWNLOADED;
         plugin.getLogger().info("");
         plugin.getLogger().info("===========================================");
         plugin.getLogger().info("  [UPDATE INSTALLED]");
-        plugin.getLogger().info("  Release: " + tagName);
+        plugin.getLogger().info("  JAR: " + jarName);
         plugin.getLogger().info("");
         plugin.getLogger().info("  Restart server to apply the update.");
         plugin.getLogger().info("===========================================");
@@ -811,26 +846,24 @@ public class UpdateChecker {
     // =========================
 
     private static boolean placeUpdateInPluginsFolder(Main plugin, File updateFile,
-                                                       File currentJar, String tagName) {
+                                                       File currentJar, String jarName) {
         Path updatePath = updateFile.toPath();
         File pluginDir = currentJar.getParentFile();
         Path targetPath = currentJar.toPath();
 
-        // Стратегия 1: попробовать Files.copy вместо Files.move
         if (!Files.exists(targetPath)) {
             try {
                 Files.copy(updatePath, targetPath);
                 try { Files.deleteIfExists(updatePath); } catch (Exception ignored) {}
                 plugin.getLogger().info("[Updater] JAR copied to plugins folder (copy fallback)");
                 status = UpdateStatus.UPDATE_DOWNLOADED;
-                logFallbackSuccess(plugin, tagName);
+                logFallbackSuccess(plugin, jarName);
                 return true;
             } catch (Exception copyErr) {
                 plugin.getLogger().warning("[Updater] Copy fallback failed: " + copyErr.getMessage());
             }
         }
 
-        // Стратегия 2: переименовать .update в узнаваемое имя в папке plugins
         String fallbackName = currentJar.getName().replace(".jar", "") + "-NEW.jar";
         File fallbackFile = new File(pluginDir, fallbackName);
         try {
@@ -838,7 +871,7 @@ public class UpdateChecker {
             plugin.getLogger().warning("");
             plugin.getLogger().warning("===========================================");
             plugin.getLogger().warning("  [UPDATE DOWNLOADED — MANUAL STEP REQUIRED]");
-            plugin.getLogger().warning("  Release: " + tagName);
+            plugin.getLogger().warning("  JAR: " + jarName);
             plugin.getLogger().warning("");
             plugin.getLogger().warning("  New JAR placed at: plugins/" + fallbackName);
             plugin.getLogger().warning("");
@@ -861,11 +894,11 @@ public class UpdateChecker {
         return false;
     }
 
-    private static void logFallbackSuccess(Main plugin, String tagName) {
+    private static void logFallbackSuccess(Main plugin, String jarName) {
         plugin.getLogger().warning("");
         plugin.getLogger().warning("===========================================");
         plugin.getLogger().warning("  [UPDATE READY — RESTART REQUIRED]");
-        plugin.getLogger().warning("  Release: " + tagName);
+        plugin.getLogger().warning("  JAR: " + jarName);
         plugin.getLogger().warning("");
         plugin.getLogger().warning("  New JAR placed in plugins folder.");
         plugin.getLogger().warning("  Restart server to apply the update.");

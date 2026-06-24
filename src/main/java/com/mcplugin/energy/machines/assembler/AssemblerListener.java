@@ -23,7 +23,7 @@ public class AssemblerListener implements Listener {
     public void onWorkbenchInteract(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (e.getClickedBlock() == null) return;
-        if (e.getClickedBlock().getType() != Material.CRAFTING_TABLE) return;
+        if (e.getClickedBlock().getType() != Material.CRAFTER) return;
 
         Location loc = LocationUtil.normalize(e.getClickedBlock().getLocation());
         if (!EnergyWorkbenchManager.exists(loc)) return;
@@ -31,8 +31,8 @@ public class AssemblerListener implements Listener {
         Player player = e.getPlayer();
         e.setCancelled(true);
 
-        // Open custom WORKBENCH inventory with "Item assembler" title
-        Inventory inv = Bukkit.createInventory(null, InventoryType.WORKBENCH, ASSEMBLER_TITLE);
+        // Open custom CRAFTER inventory with "Item assembler" title
+        Inventory inv = Bukkit.createInventory(null, InventoryType.CRAFTER, ASSEMBLER_TITLE);
         player.openInventory(inv);
     }
 

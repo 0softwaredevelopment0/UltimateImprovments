@@ -25,8 +25,8 @@ public class BatteryPersistence {
         try {
             PreparedStatement ps = con.prepareStatement("""
                 INSERT OR REPLACE INTO batteries
-                (id, world, center_x, center_y, center_z, block_count)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (id, world, center_x, center_y, center_z, block_count, mode)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """);
             ps.setInt(1, cluster.id);
             ps.setString(2, cluster.world.getName());
@@ -34,6 +34,7 @@ public class BatteryPersistence {
             ps.setInt(4, cluster.center.getBlockY());
             ps.setInt(5, cluster.center.getBlockZ());
             ps.setInt(6, cluster.blockKeys.size());
+            ps.setString(7, cluster.mode.name());
             ps.executeUpdate();
             ps.close();
 
@@ -93,6 +94,12 @@ public class BatteryPersistence {
                 cluster.id = id;
                 cluster.world = world;
                 cluster.center = new Location(world, rs.getInt("center_x"), rs.getInt("center_y"), rs.getInt("center_z"));
+                try {
+                    String modeStr = rs.getString("mode");
+                    if (modeStr != null) {
+                        cluster.mode = BatteryManager.BatteryMode.valueOf(modeStr);
+                    }
+                } catch (Exception ignored) {}
 
                 PreparedStatement psb = con.prepareStatement(
                     "SELECT x, y, z FROM battery_blocks WHERE battery_id = ?");

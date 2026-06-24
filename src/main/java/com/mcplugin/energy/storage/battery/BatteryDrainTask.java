@@ -9,7 +9,6 @@ import com.mcplugin.energy.transfer.cable.NodeType;
 import com.mcplugin.infrastructure.util.LocationUtil;
 
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import org.bukkit.scheduler.BukkitRunnable;
@@ -54,14 +53,14 @@ public class BatteryDrainTask extends BukkitRunnable {
 
             double fillRatio = (double) battery.getEnergy() / Math.max(maxBatteryEnergy, 1);
 
-            Block batteryBlock = batteryLoc.getBlock();
-            boolean isRedstonePowered = batteryBlock.isBlockPowered()
-                    || batteryBlock.isBlockIndirectlyPowered();
+            // Режим: отдаём энергию только если DISCHARGE или CHARGE_DISCHARGE
+            BatteryManager.BatteryCluster cluster = BatteryManager.getCluster(batteryLoc);
+            boolean canDischarge = (cluster != null) ? cluster.canDischarge() : (battery.getEnergy() > 0);
 
             // =========================
             // DISCHARGE — battery pushes energy to other batteries in network
             // =========================
-            if (isRedstonePowered && battery.getEnergy() > 0) {
+            if (canDischarge && battery.getEnergy() > 0) {
 
                 int dynamicDischarge = dischargeAmount;
                 if (smoothEnabled) {

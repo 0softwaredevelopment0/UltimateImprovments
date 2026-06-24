@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.environment.lightning;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 
@@ -335,6 +336,9 @@ public class LightningManager implements Listener {
             CableNode node = CableNetwork.getNode(norm);
             if (node != null && node.getEnergy() >= ENERGY_COST
                     && LocationUtil.isFullyConnected(energyLoc, norm)) {
+                // Проверяем режим батареи: берём только из DISCHARGE/CHARGE_DISCHARGE
+                BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
+                if (bc != null && !bc.canDischarge()) continue;
                 node.removeEnergy(ENERGY_COST);
                 return true;
             }

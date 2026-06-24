@@ -39,10 +39,25 @@ public class ScannerItemListener implements Listener {
         if (meta == null) return;
         var pdc = meta.getPersistentDataContainer();
 
+        // =========================
+        // Сначала проверяем, является ли предмет сканером
+        // Если да — всегда отменяем событие, чтобы не сработало
+        // дефолтное поведение (например, ENDER_EYE выбрасывается)
+        // =========================
+        boolean isHealthMeter = pdc.has(Keys.HEALTH_METER, PersistentDataType.BYTE);
+        boolean isOreFinder = pdc.has(Keys.ORE_FINDER, PersistentDataType.BYTE);
+        boolean isMobFinder = pdc.has(Keys.MOB_FINDER, PersistentDataType.BYTE);
+        boolean isRadar = pdc.has(Keys.RADAR, PersistentDataType.BYTE);
+
+        if (!isHealthMeter && !isOreFinder && !isMobFinder && !isRadar) return;
+
+        // Отменяем ВСЕГДА, даже при кулдауне
+        e.setCancelled(true);
+
         UUID uid = player.getUniqueId();
         long now = System.currentTimeMillis();
 
-        // Global cooldown check
+        // Global cooldown check (после cancellation — безопасно)
         Long last = cooldowns.get(uid);
         if (last != null && (now - last) < COOLDOWN_MS) {
             long remaining = ((COOLDOWN_MS - (now - last)) / 1000) + 1;
@@ -50,26 +65,17 @@ public class ScannerItemListener implements Listener {
             return;
         }
 
-        // Check which item
-        if (pdc.has(Keys.HEALTH_METER, PersistentDataType.BYTE)) {
-            e.setCancelled(true);
-            cooldowns.put(uid, now);
-            cleanupCooldowns();
+        cooldowns.put(uid, now);
+        cleanupCooldowns();
+
+        // Route to appropriate handler
+        if (isHealthMeter) {
             handleHealthMeter(player);
-        } else if (pdc.has(Keys.ORE_FINDER, PersistentDataType.BYTE)) {
-            e.setCancelled(true);
-            cooldowns.put(uid, now);
-            cleanupCooldowns();
+        } else if (isOreFinder) {
             handleOreFinder(player);
-        } else if (pdc.has(Keys.MOB_FINDER, PersistentDataType.BYTE)) {
-            e.setCancelled(true);
-            cooldowns.put(uid, now);
-            cleanupCooldowns();
+        } else if (isMobFinder) {
             handleMobFinder(player);
-        } else if (pdc.has(Keys.RADAR, PersistentDataType.BYTE)) {
-            e.setCancelled(true);
-            cooldowns.put(uid, now);
-            cleanupCooldowns();
+        } else if (isRadar) {
             handleRadar(player);
         }
     }
@@ -390,14 +396,14 @@ public class ScannerItemListener implements Listener {
 
         // Action bar — compact info
         player.sendActionBar(MessageUtil.parse(
-                "<gray>🎯 </gray>" + entityName + " " + proxLabel + " <dark_gray>|</dark_gray> " + distColor + distBlocks + "м</color>"));
+                "<gray>🎯 </gray>" + entityName + " " + proxLabel + " <dark_gray>|</dark_gray> " + distColor + distBlocks + "м<reset>"));
 
         player.sendMessage(Component.empty());
         player.sendMessage(MessageUtil.parse("<gold>=== <white>Портативный радар</white> ==="));
         player.sendMessage(MessageUtil.parse("<gray>Существо: </gray><white>" + entityName + "</white>"));
         player.sendMessage(MessageUtil.parse("<gray>Мир: </gray><yellow>" + worldName + "</yellow>"));
         player.sendMessage(MessageUtil.parse("<gray>Координаты: </gray><white>" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "</white>"));
-        player.sendMessage(MessageUtil.parse("<gray>Расстояние: </gray>" + distColor + distBlocks + "</color> <gray>блоков</gray>"));
+        player.sendMessage(MessageUtil.parse("<gray>Расстояние: </gray>" + distColor + distBlocks + "<reset> <gray>блоков</gray>"));
         player.sendMessage(MessageUtil.parse("<gray>Дистанция: </gray>" + distBar.toString()));
         player.sendMessage(MessageUtil.parse("<gray>Направление: </gray><white>" + dirX + " " + dirZ + " " + dirY + "</white>"));
         player.sendMessage(MessageUtil.parse("<gold>==========================="));

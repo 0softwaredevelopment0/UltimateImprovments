@@ -52,6 +52,13 @@ public class MultimeterCraftListener implements Listener {
         meta.displayName(MessageUtil.parse("<i:false><white>Multimeter</white>"));
 
         // =========================
+        // LORE
+        // =========================
+        meta.lore(java.util.List.of(
+                MessageUtil.parse("<i:false><gray>Inspect energy nodes and their connections.</gray>")
+        ));
+
+        // =========================
         // PDC TAG (isMultimeter:1b)
         // =========================
         meta.getPersistentDataContainer().set(
@@ -64,7 +71,8 @@ public class MultimeterCraftListener implements Listener {
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
-        ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, result);
+        ShapedRecipe recipe =        new ShapedRecipe(RECIPE_KEY, result);
+        recipe.setGroup("CI");
 
         recipe.shape(
                 "IDI",
@@ -102,6 +110,13 @@ public class MultimeterCraftListener implements Listener {
         if (meta == null) return;
 
         meta.displayName(MessageUtil.parse("<i:false><white>Multimeter</white>"));
+
+        // =========================
+        // LORE
+        // =========================
+        meta.lore(java.util.List.of(
+                MessageUtil.parse("<i:false><gray>Inspect energy nodes and their connections.</gray>")
+        ));
 
         // =========================
         // PDC AGAIN (isMultimeter:1b)

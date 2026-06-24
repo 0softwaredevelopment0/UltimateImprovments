@@ -70,6 +70,7 @@ public class EntityLocatorCraftListener implements Listener {
         Bukkit.removeRecipe(RECIPE_KEY);
 
         ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, result);
+        recipe.setGroup("CI");
 
         recipe.shape(
                 "123",

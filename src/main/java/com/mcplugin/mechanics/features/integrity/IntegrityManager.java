@@ -569,16 +569,10 @@ public class IntegrityManager extends BukkitRunnable {
         }
 
         if (!isTagged) {
-            // Инициализация: считаем целостность из ванильного износа.
-            // Если предмет уже был повреждён (потерял PDC-теги), не чиним его до 100%.
+            // Инициализация: сбрасываем ванильный damage в 0 и ставим 100% целостности.
+            // При миграции все предметы с неполной прочностью становятся полностью целыми,
+            // т.к. износ теперь управляется только системой целостности.
             double initialCurrent = 100.0;
-            if (meta instanceof Damageable damageable) {
-                int dmg = damageable.getDamage();
-                if (dmg > 0) {
-                    initialCurrent = 100.0 * (1.0 - (double)dmg / (double)maxDurability);
-                    initialCurrent = Math.max(0, Math.min(100.0, initialCurrent));
-                }
-            }
 
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
             pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
@@ -683,10 +677,8 @@ public class IntegrityManager extends BukkitRunnable {
         if (meta == null) return;
 
         var pdc = meta.getPersistentDataContainer();
-        if (pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) return;
-
-        // Инициализация — целостность = 100.0%
-        pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
+        if (pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) return;            // Инициализация — всегда 100.0% целостности, ванильный damage сбрасывается
+            pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
         pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
         pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
@@ -765,17 +757,9 @@ public class IntegrityManager extends BukkitRunnable {
 
         var pdc = meta.getPersistentDataContainer();
 
-        // Если предмет ещё не инициализирован — инициализируем с учётом ванильного износа
+        // Если предмет ещё не инициализирован — инициализируем с 100% целостности
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
-            int maxDura = getMaxDurability(item);
             double initialCurrent = 100.0;
-            if (meta instanceof Damageable damageable) {
-                int dmg = damageable.getDamage();
-                if (dmg > 0 && maxDura > 0) {
-                    initialCurrent = 100.0 * (1.0 - (double)dmg / (double)maxDura);
-                    initialCurrent = Math.max(0, Math.min(100.0, initialCurrent));
-                }
-            }
 
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
             pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);

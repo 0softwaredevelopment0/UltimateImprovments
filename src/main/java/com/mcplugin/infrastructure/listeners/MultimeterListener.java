@@ -1,12 +1,15 @@
 package com.mcplugin.infrastructure.listeners;
 
+import com.mcplugin.energy.generation.basic.GeneratorManager;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.energy.transfer.cable.*;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Furnace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
@@ -37,6 +40,45 @@ public class MultimeterListener implements Listener {
         // =========================
         if (!is_multimeter(item)) return;
 
+        // Звук клика при измерении
+        player.playSound(block.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
+
+        Material type = block.getType();
+
+        // =========================
+        // ⚡ ГЕНЕРАТОР (BLAST_FURNACE)
+        // =========================
+        if (type == Material.BLAST_FURNACE) {
+            boolean assembled = GeneratorManager.isAssembled(block.getLocation());
+            player.sendMessage(MessageUtil.parse("<aqua>Type: Generator</aqua>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Assembled: </aqua><white>" + (assembled ? "yes" : "no") + "</white>"));
+
+            if (block.getState() instanceof Furnace furnace) {
+                ItemStack fuel = furnace.getInventory().getFuel();
+                boolean hasFuel = fuel != null && !fuel.getType().isAir();
+                player.sendMessage(MessageUtil.parse("<aqua>Fuel: </aqua><white>" + (hasFuel ? fuel.getType().name().toLowerCase().replace('_', ' ') + " x" + fuel.getAmount() : "none") + "</white>"));
+
+                boolean isLit = false;
+                if (block.getBlockData() instanceof org.bukkit.block.data.type.Furnace furnaceData) {
+                    isLit = furnaceData.isLit();
+                }
+                player.sendMessage(MessageUtil.parse("<aqua>Burning: </aqua><white>" + (isLit ? "yes" : "no") + "</white>"));
+
+                int cookTime = furnace.getCookTime();
+                int cookTimeTotal = furnace.getCookTimeTotal();
+                if (cookTimeTotal > 0) {
+                    int progress = (cookTime * 100) / cookTimeTotal;
+                    player.sendMessage(MessageUtil.parse("<aqua>Progress: </aqua><white>" + Math.min(progress, 100) + "%</white>"));
+                }
+            }
+
+            // Redstone status
+            boolean hasRedstone = block.isBlockPowered() || block.isBlockIndirectlyPowered();
+            player.sendMessage(MessageUtil.parse("<aqua>Redstone: </aqua><white>" + (hasRedstone ? "yes" : "no") + "</white>"));
+
+            return;
+        }
+
         CableNode node = CableNetwork.getNode(block.getLocation());
 
         player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
@@ -45,8 +87,6 @@ public class MultimeterListener implements Listener {
             player.sendMessage(MessageUtil.parse("<gray>No energy node at this block.</gray>"));
             return;
         }
-
-        Material type = block.getType();
 
         // =========================
         // BATTERY

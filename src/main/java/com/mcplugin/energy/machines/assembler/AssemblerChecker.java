@@ -18,7 +18,7 @@ public class AssemblerChecker {
      * @return true if the craft event is inside the Item Assembler GUI
      */
     public static boolean isAssemblerCraft(PrepareItemCraftEvent e) {
-        if (e.getInventory().getType() != InventoryType.WORKBENCH) return false;
+        if (e.getInventory().getType() != InventoryType.CRAFTER) return false;
 
         InventoryView view = e.getView();
         if (view == null) return false;
