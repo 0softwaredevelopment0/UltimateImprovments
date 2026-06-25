@@ -11,6 +11,8 @@ import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 
 import com.mcplugin.infrastructure.util.LocationUtil;
 
+import net.kyori.adventure.text.Component;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
 
@@ -58,6 +60,13 @@ public class BlockPlaceListener implements Listener {
             if (e.getBlock().getBlockData() instanceof Crafter crafter) {
                 crafter.setTriggered(true);
                 e.getBlock().setBlockData(crafter, false);
+            }
+
+            // Устанавливаем кастомное имя, чтобы GUI крафтера показывал "Item assembler"
+            var state = e.getBlock().getState();
+            if (state instanceof org.bukkit.block.Crafter crafterState) {
+                crafterState.customName(Component.text("Item assembler"));
+                crafterState.update();
             }
 
             return;

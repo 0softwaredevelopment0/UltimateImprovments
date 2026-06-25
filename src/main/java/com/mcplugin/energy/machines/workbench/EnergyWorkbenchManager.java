@@ -4,6 +4,8 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.*;
 import com.mcplugin.infrastructure.util.LocationUtil;
 
+import net.kyori.adventure.text.Component;
+
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.Material;
@@ -169,6 +171,14 @@ public class EnergyWorkbenchManager {
                     if (!crafter.isTriggered()) {
                         crafter.setTriggered(true);
                         loc.getBlock().setBlockData(crafter, false);
+                    }
+                }
+                // Устанавливаем кастомное имя, если его нет (для уже существующих блоков)
+                var state = loc.getBlock().getState();
+                if (state instanceof org.bukkit.block.Crafter crafterState) {
+                    if (crafterState.customName() == null) {
+                        crafterState.customName(Component.text("Item assembler"));
+                        crafterState.update();
                     }
                 }
             } catch (Exception ignored) {}
