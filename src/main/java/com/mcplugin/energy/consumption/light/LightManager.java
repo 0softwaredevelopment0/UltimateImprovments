@@ -123,18 +123,21 @@ public class LightManager {
             return blockKeys.contains(toKey(loc));
         }
 
-        /**
-         * Есть ли редстоун-сигнал хотя бы на одном блоке кластера?
-         */
-        boolean isAnyBlockPowered() {
-            for (long key : blockKeys) {
-                Block block = world.getBlockAt(getX(key), getY(key), getZ(key));
-                if (block.isBlockPowered() || block.isBlockIndirectlyPowered()) {
-                    return true;
-                }
+    /**
+     * Есть ли редстоун-сигнал хотя бы на одном блоке кластера?
+     * Используем ТОЛЬКО isBlockPowered() — без isBlockIndirectlyPowered(),
+     * чтобы кабели и соседние блоки не активировали лампу ложно.
+     * Только прямой редстоун: рычаг, кнопка, редстоун-пыль, факел и т.д.
+     */
+    boolean isAnyBlockPowered() {
+        for (long key : blockKeys) {
+            Block block = world.getBlockAt(getX(key), getY(key), getZ(key));
+            if (block.isBlockPowered()) {
+                return true;
             }
-            return false;
         }
+        return false;
+    }
 
 
     }
@@ -352,36 +355,18 @@ public class LightManager {
     public static void onBlockBroken(Location loc, Player player) {
         loc = LocationUtil.normalize(loc);
         if (loc == null) return;
-        long key = toKey(loc);
-        LightCluster cluster = locationToCluster.get(key);
+        LightCluster cluster = locationToCluster.get(toKey(loc));
         if (cluster == null) return;
 
-        locationToCluster.remove(key);
-        // Если кластер горел — выключаем конкретный блок
-        if (cluster.lit) setBlockLit(loc, false);
-        cluster.removeBlock(key);
-
-        if (cluster.blockKeys.isEmpty()) {
-            clustersById.remove(cluster.id);
-            LightPersistence.deleteCluster(cluster.id);
-            if (player != null) {
-                player.sendMessage("§e❕ Лампочка полностью разобрана (удалено из БД)");
-            }
-            return;
-        }
-
-        long anyKey = cluster.blockKeys.iterator().next();
-        Set<Long> newKeys = floodFillFast(cluster.world, getX(anyKey), getY(anyKey), getZ(anyKey));
-
-        for (long oldKey : new HashSet<>(cluster.blockKeys)) {
-            if (!newKeys.contains(oldKey)) locationToCluster.remove(oldKey);
-        }
-        cluster.blockKeys = newKeys;
-        for (long nk : newKeys) locationToCluster.put(nk, cluster);
-        cluster.recalculateCenter();
+        // Полная разборка всего кластера при разрушении любого блока
+        if (cluster.lit) setBlocksLit(cluster, false);
+        for (long bk : cluster.blockKeys) locationToCluster.remove(bk);
+        clustersById.remove(cluster.id);
+        cluster.blockKeys.clear();
+        LightPersistence.deleteCluster(cluster.id);
 
         if (player != null) {
-            player.sendMessage("§7❕ Блок лампочки разрушен, осталось: §f" + cluster.power);
+            player.sendMessage("§e❕ Лампочка разобрана (разрушен блок)");
         }
     }
 
