@@ -1,9 +1,12 @@
 package com.mcplugin.energy.generation.basic;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.util.LocationUtil;
+
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -52,32 +55,32 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
-    // SCAN EXISTING (on startup) — позиционная детекция, без getAttachedFace
+    // SCAN EXISTING — rebuild from Marker entities
     // =========================
     private static void scanExistingGenerators() {
         int count = 0;
-        for (World world : Bukkit.getWorlds()) {
-            for (ItemFrame frame : world.getEntitiesByClass(ItemFrame.class)) {
-                if (!frame.isValid() || frame.isDead()) continue;
+        for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+            if (!"generator".equals(entry.getValue().type())) continue;
 
-                // Блок под рамкой (Y рамки ≈ центр блока над печью)
-                Location below = frame.getLocation().clone().add(0, -1, 0);
-                Location furnaceLoc = LocationUtil.normalize(below);
+            String fk = entry.getKey();
+            String worldUid = StructureMarker.parseWorldUid(fk);
+            int x = StructureMarker.parseX(fk), y = StructureMarker.parseY(fk), z = StructureMarker.parseZ(fk);
 
+            for (World world : Bukkit.getWorlds()) {
+                if (!world.getUID().toString().equals(worldUid)) continue;
+                Location furnaceLoc = LocationUtil.normalize(new Location(world, x, y, z));
                 if (furnaceLoc == null) continue;
                 if (furnaceLoc.getBlock().getType() != Material.BLAST_FURNACE) continue;
-                if (!GeneratorStructure.isValid(furnaceLoc)) continue;
-
+                if (!GeneratorStructure.isValid(furnaceLoc, false)) continue;
                 if (hasNearbyCable(furnaceLoc)) {
                     activeGenerators.put(furnaceLoc, true);
                     count++;
-                    Main.getInstance().getLogger().info(
-                            "[Generator] Auto-detected at " + furnaceLoc);
                 }
+                break;
             }
         }
         Main.getInstance().getLogger().info(
-                "[Generator] Auto-detected " + count + " generators");
+                "[Generator] Auto-detected " + count + " generators from Marker entities");
     }
 
     // =========================
@@ -141,9 +144,10 @@ public class GeneratorManager implements Listener {
         } else {
             event.setCancelled(true);
             // ASSEMBLE
-            // Сломать рамку на верхней грани
             removeFrameOnTop(loc);
             activeGenerators.put(loc, true);
+            // Marker entity для переноса мира
+            StructureMarker.place(loc, "generator", UUID.randomUUID());
 
             World world = loc.getWorld();
             if (world != null) {
@@ -174,6 +178,8 @@ public class GeneratorManager implements Listener {
         if (loc == null) return false;
         Boolean was = activeGenerators.remove(loc);
         if (was != null) {
+            // Удаляем Marker entity
+            StructureMarker.removeAt(loc);
             World world = loc.getWorld();
             if (world != null) {
                 world.spawnParticle(Particle.ELECTRIC_SPARK,
@@ -251,10 +257,9 @@ public class GeneratorManager implements Listener {
         furnaceLoc = LocationUtil.normalize(furnaceLoc);
         if (furnaceLoc == null) return;
 
-        // Сломать рамку на верхней грани
         removeFrameOnTop(furnaceLoc);
-
         activeGenerators.put(furnaceLoc, true);
+        StructureMarker.place(furnaceLoc, "generator", UUID.randomUUID());
 
         World world = furnaceLoc.getWorld();
         if (world != null) {

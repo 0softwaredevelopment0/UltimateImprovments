@@ -1,10 +1,13 @@
 package com.mcplugin.mechanics.environment.lightning;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
+
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -47,14 +50,36 @@ public class LightningManager implements Listener {
     private static BukkitRunnable periodicScanTask = null;
 
     // =========================
-    // INIT
+    // INIT — rebuild from Marker entities
     // =========================
     public static void init() {
         instance = new LightningManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
+        rebuildFromMarkers();
         cacheCookingRecipes();
         startPeriodicItemScan();
         Main.getInstance().getLogger().info("[Lightning] Manager initialized.");
+    }
+
+    private static void rebuildFromMarkers() {
+        int count = 0;
+        for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+            if (!"lightning".equals(entry.getValue().type())) continue;
+            String fk = entry.getKey();
+            String worldUid = StructureMarker.parseWorldUid(fk);
+            int x = StructureMarker.parseX(fk), y = StructureMarker.parseY(fk), z = StructureMarker.parseZ(fk);
+            for (World w : Bukkit.getWorlds()) {
+                if (w.getUID().toString().equals(worldUid)) {
+                    Location loc = LocationUtil.normalize(new Location(w, x, y, z));
+                    if (LightningStructure.isValid(loc, false)) {
+                        activeStructures.put(loc, true);
+                        count++;
+                    }
+                    break;
+                }
+            }
+        }
+        Main.getInstance().getLogger().info("[Lightning] Loaded " + count + " structures from Marker entities");
     }
 
     public static LightningManager getInstance() {
@@ -97,7 +122,7 @@ public class LightningManager implements Listener {
     }
 
     // =========================
-    // ASSEMBLE
+    // ASSEMBLE (+ Marker entity)
     // =========================
     public static void assemble(Location center, ItemFrame frame, Player player) {
         center = LocationUtil.normalize(center);
@@ -117,7 +142,6 @@ public class LightningManager implements Listener {
 
         final World world = center.getWorld();
 
-        // Validate on main thread (block reads require Bukkit API on main thread)
         try {
             List<String> errors = LightningStructure.getValidationErrors(center);
             if (!errors.isEmpty()) {
@@ -137,8 +161,9 @@ public class LightningManager implements Listener {
                 frame.remove();
             }
 
-            // Activate
+            // Activate + Marker entity
             activeStructures.put(center, true);
+            StructureMarker.place(center, "lightning", UUID.randomUUID());
 
             // Effects
             world.strikeLightningEffect(center.clone().add(0.5, 1.5, 0.5));
@@ -172,6 +197,7 @@ public class LightningManager implements Listener {
         if (center != null && activeStructures.containsKey(center)) {
             activeStructures.remove(center);
             cookingCooldowns.remove(center);
+            StructureMarker.removeAt(center);
             center.getWorld().spawnParticle(Particle.ELECTRIC_SPARK,
                     center.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0);
             Main.getInstance().getLogger().info("[Lightning] Structure disassembled at " + center);

@@ -23,6 +23,8 @@ import org.bukkit.util.Vector;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.mcplugin.infrastructure.structure.StructureMarker;
+
 public class MagnetManager extends BukkitRunnable {
 
     private static MagnetManager instance;
@@ -150,12 +152,12 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // INIT
+    // INIT — rebuild from Marker entities (no SQLite)
     // =========================
     public static void init(Main plugin) {
         instance = new MagnetManager();
         MagnetConfig.reloadConfig();
-        MagnetDatabase.loadAll();
+        rebuildFromMarkers();
         instance.runTaskTimer(plugin, 20L, MagnetConfig.getIntervalTicks());
     }
 
@@ -210,7 +212,60 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // ACTIVATE (синхронно — для внутреннего использования)
+    // REBUILD FROM MARKERS
+    // =========================
+    private static void rebuildFromMarkers() {
+        locationToCluster.clear();
+        clustersById.clear();
+        nextId = 1;
+
+        Map<UUID, Set<Long>> markerGroups = new HashMap<>();
+        Map<UUID, World> foundWorlds = new HashMap<>();
+
+        for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+            if (!"magnet".equals(entry.getValue().type())) continue;
+
+            UUID uuid = entry.getValue().uuid();
+            String fk = entry.getKey();
+            long posKey = toKey(StructureMarker.parseX(fk), StructureMarker.parseY(fk), StructureMarker.parseZ(fk));
+            markerGroups.computeIfAbsent(uuid, k -> new HashSet<>()).add(posKey);
+
+            if (!foundWorlds.containsKey(uuid)) {
+                String wUid = entry.getValue().worldUid();
+                if (wUid != null) {
+                    for (World w : Bukkit.getWorlds()) {
+                        if (w.getUID().toString().equals(wUid)) {
+                            foundWorlds.put(uuid, w);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        Set<UUID> usedUuids = new HashSet<>();
+        for (Map.Entry<UUID, Set<Long>> group : markerGroups.entrySet()) {
+            if (group.getValue().isEmpty()) continue;
+            World world = foundWorlds.get(group.getKey());
+            if (world == null) continue;
+
+            MagnetCluster cluster = new MagnetCluster();
+            cluster.id = nextId++;
+            cluster.world = world;
+            cluster.blockKeys = new HashSet<>(group.getValue());
+            cluster.recalculateCenter();
+
+            for (long key : group.getValue()) locationToCluster.put(key, cluster);
+            clustersById.put(cluster.id, cluster);
+            usedUuids.add(group.getKey());
+        }
+
+        StructureMarker.purgeOrphaned(usedUuids);
+        Main.getInstance().getLogger().info("[Magnet] Loaded " + clustersById.size() + " clusters from Marker entities");
+    }
+
+    // =========================
+    // ACTIVATE (синхронно)
     // =========================
     public static void activate(Location loc) {
         loc = LocationUtil.normalize(loc);
@@ -221,6 +276,7 @@ public class MagnetManager extends BukkitRunnable {
         Set<Long> connected = floodFillFast(loc);
         if (connected.isEmpty()) return;
 
+        UUID uuid = UUID.randomUUID();
         MagnetCluster cluster = new MagnetCluster();
         cluster.id = nextId++;
         cluster.world = loc.getWorld();
@@ -229,10 +285,11 @@ public class MagnetManager extends BukkitRunnable {
 
         for (long blockKey : connected) {
             locationToCluster.put(blockKey, cluster);
+            Location blockLoc = new Location(cluster.world, getX(blockKey), getY(blockKey), getZ(blockKey));
+            StructureMarker.place(blockLoc, "magnet", uuid);
         }
         clustersById.put(cluster.id, cluster);
 
-        // БД: не пишем сразу — данные сохранятся через AsyncAutoSaveManager каждые 5 мин
         addParticleEffect(cluster.center, cluster.blockKeys.size());
 
         Main.getInstance().getLogger().info(
@@ -299,12 +356,12 @@ public class MagnetManager extends BukkitRunnable {
             return;
         }
 
-        // Повторная проверка — могла произойти параллельная активация
         if (locationToCluster.containsKey(key)) {
             player.sendMessage("§eМагнит уже активен на этом месте!");
             return;
         }
 
+        UUID uuid = UUID.randomUUID();
         MagnetCluster cluster = new MagnetCluster();
         cluster.id = nextId++;
         cluster.world = world;
@@ -313,13 +370,13 @@ public class MagnetManager extends BukkitRunnable {
 
         for (long blockKey : connected) {
             locationToCluster.put(blockKey, cluster);
+            Location blockLoc = new Location(cluster.world, getX(blockKey), getY(blockKey), getZ(blockKey));
+            StructureMarker.place(blockLoc, "magnet", uuid);
         }
         clustersById.put(cluster.id, cluster);
 
-        // БД: не пишем сразу — данные сохранятся через AsyncAutoSaveManager каждые 5 мин
         addParticleEffect(cluster.center, cluster.blockKeys.size());
 
-        // Отображаем результат игроку
         int power = cluster.blockKeys.size();
         String powerDesc = getMagnetPowerTierStatic(power);
         int magnetRadius = getClusterRadius(power);
@@ -389,9 +446,10 @@ public class MagnetManager extends BukkitRunnable {
     private static void deactivateCluster(MagnetCluster cluster) {
         for (long blockKey : cluster.blockKeys) {
             locationToCluster.remove(blockKey);
+            Location bl = new Location(cluster.world, getX(blockKey), getY(blockKey), getZ(blockKey));
+            StructureMarker.removeAt(bl);
         }
         clustersById.remove(cluster.id);
-        // БД: не пишем сразу — данные сохранятся через AsyncAutoSaveManager каждые 5 мин
         if (cluster.center != null && cluster.center.getWorld() != null) {
             addParticleEffect(cluster.center, cluster.blockKeys.size());
         }
@@ -455,48 +513,54 @@ public class MagnetManager extends BukkitRunnable {
         if (adjacentClusters.isEmpty()) return;
 
         if (adjacentClusters.size() == 1) {
-            // ════════════════════════════════════════
-            // 🟢 Простой случай: один соседний кластер
-            // Просто добавляем блок в кластер — O(1)!
-            // ════════════════════════════════════════
             MagnetCluster cluster = adjacentClusters.iterator().next();
             cluster.addBlock(key);
             locationToCluster.put(key, cluster);
-            // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
+            // Marker на новом блоке
+            UUID uuid = findUuidFromNeighbor(loc, neighborKeys);
+            if (uuid != null) StructureMarker.place(loc, "magnet", uuid);
 
             Main.getInstance().getLogger().info(
                     "[Magnet] Cluster #" + cluster.id + " expanded: "
                             + cluster.blockKeys.size() + " blocks"
             );
         } else {
-            // ════════════════════════════════════════
-            // 🟡 Сложный случай: блок соединяет 2+ кластера
-            // Объединяем все в первый кластер
-            // ════════════════════════════════════════
             Iterator<MagnetCluster> it = adjacentClusters.iterator();
             MagnetCluster primary = it.next();
+            UUID primaryUuid = findUuidFromNeighbor(loc, neighborKeys);
 
             while (it.hasNext()) {
                 MagnetCluster other = it.next();
-                // Переносим все блоки в primary
                 for (long bk : other.blockKeys) {
                     locationToCluster.put(bk, primary);
                     primary.addBlock(bk);
+                    // Обновляем Marker на блоке other — меняем UUID на primary
+                    Location bl = new Location(primary.world, getX(bk), getY(bk), getZ(bk));
+                    StructureMarker.removeAt(bl);
+                    if (primaryUuid != null) StructureMarker.place(bl, "magnet", primaryUuid);
                 }
                 clustersById.remove(other.id);
-                // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
             }
 
-            // Добавляем новый блок
             primary.addBlock(key);
             locationToCluster.put(key, primary);
-            // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
+            if (primaryUuid != null) StructureMarker.place(loc, "magnet", primaryUuid);
 
             Main.getInstance().getLogger().info(
                     "[Magnet] Clusters merged into #" + primary.id
                             + ": " + primary.blockKeys.size() + " blocks"
             );
         }
+    }
+
+    /** Находит UUID структуры из Marker соседнего блока */
+    private static UUID findUuidFromNeighbor(Location loc, long[] neighborKeys) {
+        for (long nk : neighborKeys) {
+            Location bl = new Location(loc.getWorld(), getX(nk), getY(nk), getZ(nk));
+            StructureMarker.StructureData data = StructureMarker.getAt(bl);
+            if (data != null) return data.uuid();
+        }
+        return null;
     }
 
     // =========================
@@ -882,9 +946,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // 💾 БАЗА ДАННЫХ (delegated to MagnetDatabase)
+    // 💾 SAVE — no-op: Marker entities persist in world files
     // =========================
-    public static void saveAll() {
-        MagnetDatabase.saveAll();
-    }
+    public static void saveAll() { /* no-op */ }
 }

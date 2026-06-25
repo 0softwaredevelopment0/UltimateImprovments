@@ -1,6 +1,7 @@
 package com.mcplugin.energy.generation.reactor;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
@@ -328,8 +329,13 @@ public class ReactorManager {
             this.reactorId = "REACTOR-" + normalized.getBlockX()
                     + "-" + normalized.getBlockY()
                     + "-" + normalized.getBlockZ();
+            // Marker entity для идентификации реактора
+            StructureMarker.place(normalized, "reactor", UUID.randomUUID());
             saveToDb();
         } else {
+            if (reactorLocation != null) {
+                StructureMarker.removeAt(reactorLocation);
+            }
             if (reactorId != null) {
                 deleteFromDb(reactorId);
             }
