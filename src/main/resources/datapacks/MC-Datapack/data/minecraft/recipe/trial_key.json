@@ -1,7 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "show_notification": true,
-  "group": "heavy_crore",
+  "group": "tk",
   "pattern": [
     "123",
     "456",

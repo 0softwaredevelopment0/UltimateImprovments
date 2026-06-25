@@ -109,6 +109,7 @@ public class UpdateChecker {
                 status = UpdateStatus.CHECK_FAILED;
                 errorMessage = e.getMessage();
                 plugin.getLogger().warning("[Updater] Check failed: " + e.getMessage());
+                e.printStackTrace();
             }
         });
     }
@@ -249,6 +250,7 @@ public class UpdateChecker {
         } catch (Exception e) {
             // Если ответ не массив — значит это объект с ошибкой или это не директория
             plugin.getLogger().warning("[Updater] Unexpected API response format");
+            e.printStackTrace();
             return null;
         }
 
@@ -373,6 +375,7 @@ public class UpdateChecker {
             }
         } catch (Exception e) {
             Main.getInstance().getLogger().fine("[Updater] DB read version error: " + e.getMessage());
+            e.printStackTrace();
         }
         return "";
     }
@@ -403,6 +406,7 @@ public class UpdateChecker {
         } catch (Exception e) {
             Main.getInstance().getLogger().warning(
                     "[Updater] Failed to save version to DB: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -543,6 +547,7 @@ public class UpdateChecker {
 
             } catch (java.net.UnknownHostException e) {
                 plugin.getLogger().warning("[Updater] Manual check failed: DNS resolution error");
+                e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.connection_error",
@@ -556,6 +561,7 @@ public class UpdateChecker {
                 });
             } catch (java.net.http.HttpTimeoutException e) {
                 plugin.getLogger().warning("[Updater] Manual check failed: Connection timeout");
+                e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.timeout_error",
@@ -570,6 +576,7 @@ public class UpdateChecker {
                 });
             } catch (Exception e) {
                 plugin.getLogger().warning("[Updater] Manual check failed: " + e.getMessage());
+                e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.check_error",
@@ -791,6 +798,7 @@ public class UpdateChecker {
             backupDone = true;
         } catch (Exception e) {
             plugin.getLogger().warning("[Updater] Backup failed (non-critical): " + e.getMessage());
+            e.printStackTrace();
         }
 
         // ШАГ 2: Перемещаем новый JAR на место текущего
@@ -798,6 +806,7 @@ public class UpdateChecker {
             Files.move(updatePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             plugin.getLogger().severe("[Updater] Failed to replace JAR: " + e.getMessage());
+            e.printStackTrace();
 
             boolean backupRestored = false;
             if (backupDone) {
@@ -808,6 +817,7 @@ public class UpdateChecker {
                 } catch (Exception restoreErr) {
                     plugin.getLogger().severe("[Updater] Could not restore backup! "
                             + "Manual recovery needed. Backup at: " + backupPath);
+                    restoreErr.printStackTrace();
                 }
             }
 
@@ -861,6 +871,7 @@ public class UpdateChecker {
                 return true;
             } catch (Exception copyErr) {
                 plugin.getLogger().warning("[Updater] Copy fallback failed: " + copyErr.getMessage());
+                copyErr.printStackTrace();
             }
         }
 
@@ -889,6 +900,7 @@ public class UpdateChecker {
             plugin.getLogger().severe("[Updater] Update file left at: " + updateFile.getAbsolutePath());
             plugin.getLogger().severe("[Updater] Manual recovery: stop server, move this file to plugins/"
                     + currentJar.getName());
+            renameErr.printStackTrace();
         }
 
         return false;
