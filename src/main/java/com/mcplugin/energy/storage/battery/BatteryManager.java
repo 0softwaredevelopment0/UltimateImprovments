@@ -456,8 +456,6 @@ public class BatteryManager implements Listener {
         e.setCancelled(true);
 
         player.sendMessage(MessageUtil.parse("<aqua>Режим батареи: </aqua><white>" + cluster.getModeDisplay() + "</white>"));
-        Main.getInstance().getLogger().info("[BatteryMulti] Cluster #" + cluster.id
-                + " mode changed to " + cluster.mode + " by " + player.getName());
     }
 
     // ════════════════════════════════════════
