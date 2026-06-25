@@ -31,6 +31,7 @@ public class BoostedCobwebManager extends BukkitRunnable {
             if (player.getLocation().getBlock().getType() == Material.COBWEB) {
                 // Полная остановка движения: XZ = 0, Y только падение вниз (как в паутине)
                 player.setVelocity(player.getVelocity().setX(0).setZ(0).setY(Math.min(player.getVelocity().getY(), 0)));
+                player.sendActionBar("§c🕸 Вы не можете двигаться!");
             }
         }
     }
