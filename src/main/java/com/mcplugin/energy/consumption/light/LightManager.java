@@ -161,33 +161,53 @@ public class LightManager {
         nextId = 1;
 
         Map<UUID, Set<Long>> markerGroups = new HashMap<>();
-        for (Map.Entry<Long, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+        Map<UUID, World> foundWorlds = new HashMap<>();
+
+        for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             if (!"light".equals(entry.getValue().type())) continue;
-            markerGroups.computeIfAbsent(entry.getValue().uuid(), k -> new HashSet<>()).add(entry.getKey());
-        }
 
-        for (Map.Entry<UUID, Set<Long>> group : markerGroups.entrySet()) {
-            if (group.getValue().isEmpty()) continue;
+            UUID uuid = entry.getValue().uuid();
+            String fk = entry.getKey();
+            long posKey = StructureMarker.toKey(
+                StructureMarker.parseX(fk),
+                StructureMarker.parseY(fk),
+                StructureMarker.parseZ(fk)
+            );
+            markerGroups.computeIfAbsent(uuid, k -> new HashSet<>()).add(posKey);
 
-            long firstKey = group.getValue().iterator().next();
-            int fx = getX(firstKey);
-
-            for (World world : Main.getInstance().getServer().getWorlds()) {
-                if (world.getType(fx, getY(firstKey), getZ(firstKey)) == Material.REDSTONE_LAMP) {
-                    LightCluster cluster = new LightCluster();
-                    cluster.id = nextId++;
-                    cluster.uuid = group.getKey();
-                    cluster.world = world;
-                    cluster.blockKeys = new HashSet<>(group.getValue());
-                    cluster.recalculateCenter();
-                    cluster.lit = false;
-
-                    for (long key : group.getValue()) locationToCluster.put(key, cluster);
-                    clustersById.put(cluster.id, cluster);
-                    break;
+            if (!foundWorlds.containsKey(uuid)) {
+                String worldUid = entry.getValue().worldUid();
+                if (worldUid != null) {
+                    for (World w : Bukkit.getServer().getWorlds()) {
+                        if (w.getUID().toString().equals(worldUid)) {
+                            foundWorlds.put(uuid, w);
+                            break;
+                        }
+                    }
                 }
             }
         }
+
+        Set<UUID> usedUuids = new HashSet<>();
+        for (Map.Entry<UUID, Set<Long>> group : markerGroups.entrySet()) {
+            if (group.getValue().isEmpty()) continue;
+            World world = foundWorlds.get(group.getKey());
+            if (world == null) continue;
+
+            LightCluster cluster = new LightCluster();
+            cluster.id = nextId++;
+            cluster.uuid = group.getKey();
+            cluster.world = world;
+            cluster.blockKeys = new HashSet<>(group.getValue());
+            cluster.recalculateCenter();
+            cluster.lit = false;
+
+            for (long key : group.getValue()) locationToCluster.put(key, cluster);
+            clustersById.put(cluster.id, cluster);
+            usedUuids.add(cluster.uuid);
+        }
+
+        StructureMarker.purgeOrphaned(usedUuids);
     }
 
     private static void removeFrameAt(Location blockLoc, Player player) {

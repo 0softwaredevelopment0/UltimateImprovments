@@ -6,6 +6,7 @@ import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
+import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 
 import org.bukkit.Location;
@@ -45,17 +46,26 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // 🔋 BATTERY MULTIBLOCK (hot shrink)
+        // 🔋 BATTERY MULTIBLOCK (hot shrink + orphaned marker cleanup)
         // =========================
-        if (e.getBlock().getType() == Material.WAXED_COPPER_GRATE && BatteryManager.isActive(loc)) {
-            BatteryManager.onBlockBroken(loc, breaker);
+        if (e.getBlock().getType() == Material.WAXED_COPPER_GRATE) {
+            if (BatteryManager.isActive(loc)) {
+                BatteryManager.onBlockBroken(loc, breaker);
+            } else if (StructureMarker.existsAt(loc)) {
+                // Orphaned Marker — кластер был потерян, но Marker остался в мире
+                StructureMarker.removeAt(loc);
+            }
         }
 
         // =========================
-        // 💡 LIGHT MULTIBLOCK (hot shrink)
+        // 💡 LIGHT MULTIBLOCK (hot shrink + orphaned marker cleanup)
         // =========================
-        if (e.getBlock().getType() == Material.REDSTONE_LAMP && LightManager.isActive(loc)) {
-            LightManager.onBlockBroken(loc, breaker);
+        if (e.getBlock().getType() == Material.REDSTONE_LAMP) {
+            if (LightManager.isActive(loc)) {
+                LightManager.onBlockBroken(loc, breaker);
+            } else if (StructureMarker.existsAt(loc)) {
+                StructureMarker.removeAt(loc);
+            }
         }
 
         // =========================

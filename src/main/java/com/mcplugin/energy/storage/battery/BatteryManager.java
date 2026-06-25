@@ -160,46 +160,67 @@ public class BatteryManager implements Listener {
 
     /**
      * Сканирует все загруженные чанки на Marker'ы типа "battery",
-     * группирует по UUID и восстанавливает кластеры.
+     * группирует по UUID, находит мир из worldUid в StructureData
+     * и восстанавливает кластеры. После создания — чистит orphaned Marker'ы.
      */
     private static void rebuildFromMarkers() {
         locationToCluster.clear();
         clustersById.clear();
         nextId = 1;
 
-        // Группируем Marker'ы по UUID
+        // Группируем Marker'ы по UUID + запоминаем мир из StructureData
         Map<UUID, Set<Long>> markerGroups = new HashMap<>();
-        for (Map.Entry<Long, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+        Map<UUID, World> foundWorlds = new HashMap<>();
+
+        for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             if (!"battery".equals(entry.getValue().type())) continue;
-            markerGroups.computeIfAbsent(entry.getValue().uuid(), k -> new HashSet<>()).add(entry.getKey());
-        }
 
-        // Создаём кластеры из групп
-        for (Map.Entry<UUID, Set<Long>> group : markerGroups.entrySet()) {
-            if (group.getValue().isEmpty()) continue;
+            UUID uuid = entry.getValue().uuid();
+            String fk = entry.getKey();
+            long posKey = StructureMarker.toKey(
+                StructureMarker.parseX(fk),
+                StructureMarker.parseY(fk),
+                StructureMarker.parseZ(fk)
+            );
+            markerGroups.computeIfAbsent(uuid, k -> new HashSet<>()).add(posKey);
 
-            // Находим мир по первому ключу
-            long firstKey = group.getValue().iterator().next();
-            int fx = getX(firstKey), fy = getY(firstKey), fz = getZ(firstKey);
-
-            for (World world : Main.getInstance().getServer().getWorlds()) {
-                if (!world.isChunkLoaded(fx >> 4, fz >> 4)) continue;
-                if (world.getType(fx, fy, fz) == Material.WAXED_COPPER_GRATE) {
-                    BatteryCluster cluster = new BatteryCluster();
-                    cluster.id = nextId++;
-                    cluster.uuid = group.getKey();
-                    cluster.world = world;
-                    cluster.blockKeys = new HashSet<>(group.getValue());
-                    cluster.recalculateCenter();
-
-                    for (long key : group.getValue()) {
-                        locationToCluster.put(key, cluster);
+            // Находим мир по worldUid (из StructureData — не из перебора миров!)
+            if (!foundWorlds.containsKey(uuid)) {
+                String worldUid = entry.getValue().worldUid();
+                if (worldUid != null) {
+                    for (World w : Bukkit.getServer().getWorlds()) {
+                        if (w.getUID().toString().equals(worldUid)) {
+                            foundWorlds.put(uuid, w);
+                            break;
+                        }
                     }
-                    clustersById.put(cluster.id, cluster);
-                    break;
                 }
             }
         }
+
+        // Создаём кластеры из групп
+        Set<UUID> usedUuids = new HashSet<>();
+        for (Map.Entry<UUID, Set<Long>> group : markerGroups.entrySet()) {
+            if (group.getValue().isEmpty()) continue;
+            World world = foundWorlds.get(group.getKey());
+            if (world == null) continue;
+
+            BatteryCluster cluster = new BatteryCluster();
+            cluster.id = nextId++;
+            cluster.uuid = group.getKey();
+            cluster.world = world;
+            cluster.blockKeys = new HashSet<>(group.getValue());
+            cluster.recalculateCenter();
+
+            for (long key : group.getValue()) {
+                locationToCluster.put(key, cluster);
+            }
+            clustersById.put(cluster.id, cluster);
+            usedUuids.add(cluster.uuid);
+        }
+
+        // Чистим orphaned Marker'ы (которые не попали ни в один кластер)
+        StructureMarker.purgeOrphaned(usedUuids);
     }
 
     // ════════════════════════════════════════

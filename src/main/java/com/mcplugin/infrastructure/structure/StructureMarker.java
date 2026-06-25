@@ -15,16 +15,13 @@ import java.util.*;
  * 🏷 Утилита для управления Marker-сущностями, заменяющими SQLite.
  * <p>
  * Каждый блок структуры получает Marker entity с PDC:
- *   - "structure_type" → String ("battery", "light", "cable", etc.)
+ *   - "structure_type" → String ("battery", "light", etc.)
  *   - "structure_id"   → String (UUID)
  * <p>
- * In-memory кэш строится из Marker'ов при загрузке чанка.
- * При разрушении блока — Marker удаляется, вся структура разбирается.
+ * ⚠️ Ключ кэша включает world UUID — это критически важно для мультимиров!
+ * Два разных мира с одинаковыми x,y,z НЕ пересекутся.
  * <p>
- * Преимущества:
- *   - Не зависит от БД (мир можно переименовать/перенести)
- *   - Marker сохраняется в world-файлах
- *   - Не требует загрузки на старте (ленивая инициализация через ChunkLoadEvent)
+ * При разрушении блока — Marker удаляется, вся структура разбирается.
  */
 public class StructureMarker {
 
@@ -32,16 +29,54 @@ public class StructureMarker {
     private static final NamespacedKey ID_KEY = new NamespacedKey("mcplugin", "structure_id");
 
     // ════════════════════════════════════════
-    // CACHE: позиция блока → {type, uuid}
+    // CACHE: world_uid:x:y:z → {type, uuid, worldUid}
     // ════════════════════════════════════════
-    private static final Map<Long, StructureData> byPosition = new HashMap<>();
-    // UUID → все позиции блоков этой структуры
-    private static final Map<UUID, Set<Long>> byUuid = new HashMap<>();
+    private static final Map<String, StructureData> byPosition = new HashMap<>();
+    // UUID → Set<fullKey> (world_uid:x:y:z)
+    private static final Map<UUID, Set<String>> byUuid = new HashMap<>();
 
-    public record StructureData(String type, UUID uuid) {}
+    public record StructureData(String type, UUID uuid, String worldUid) {}
 
     // ════════════════════════════════════════
-    // КООРДИНАТНЫЙ КЛЮЧ
+    // WORLD-AWARE KEY
+    // ════════════════════════════════════════
+    public static String fullKey(World world, int x, int y, int z) {
+        return world.getUID().toString() + ":" + x + "," + y + "," + z;
+    }
+
+    public static String fullKey(Location loc) {
+        if (loc == null || loc.getWorld() == null) return "";
+        return fullKey(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+    }
+
+    /** Парсит x из fullKey "worldUid:x,y,z" */
+    public static int parseX(String fullKey) {
+        String[] parts = fullKey.split(":");
+        String[] coords = parts[1].split(",");
+        return Integer.parseInt(coords[0]);
+    }
+
+    /** Парсит y из fullKey */
+    public static int parseY(String fullKey) {
+        String[] parts = fullKey.split(":");
+        String[] coords = parts[1].split(",");
+        return Integer.parseInt(coords[1]);
+    }
+
+    /** Парсит z из fullKey */
+    public static int parseZ(String fullKey) {
+        String[] parts = fullKey.split(":");
+        String[] coords = parts[1].split(",");
+        return Integer.parseInt(coords[2]);
+    }
+
+    /** Парсит worldUid из fullKey */
+    public static String parseWorldUid(String fullKey) {
+        return fullKey.split(":")[0];
+    }
+
+    // ════════════════════════════════════════
+    // COORD KEY (для обратной совместимости — BatteryManager/LightManager используют toKey)
     // ════════════════════════════════════════
     public static final int COORD_OFFSET = 33554432;
     public static final int Y_OFFSET = 64;
@@ -74,13 +109,12 @@ public class StructureMarker {
     public static void place(Location blockLoc, String type, UUID uuid) {
         if (blockLoc == null || blockLoc.getWorld() == null) return;
 
-        // Проверяем, нет ли уже Marker на этом месте
-        if (getAt(blockLoc) != null) return;
+        String fk = fullKey(blockLoc);
+        if (byPosition.containsKey(fk)) return;  // уже есть Marker в этом мире+координатах
 
-        long key = toKey(blockLoc);
-        StructureData data = new StructureData(type, uuid);
-        byPosition.put(key, data);
-        byUuid.computeIfAbsent(uuid, k -> new HashSet<>()).add(key);
+        StructureData data = new StructureData(type, uuid, blockLoc.getWorld().getUID().toString());
+        byPosition.put(fk, data);
+        byUuid.computeIfAbsent(uuid, k -> new HashSet<>()).add(fk);
 
         // Спавним Marker entity в центре блока
         Location center = blockLoc.toCenterLocation();
@@ -97,7 +131,7 @@ public class StructureMarker {
     // ════════════════════════════════════════
     public static StructureData getAt(Location blockLoc) {
         if (blockLoc == null) return null;
-        return byPosition.get(toKey(blockLoc));
+        return byPosition.get(fullKey(blockLoc));
     }
 
     // ════════════════════════════════════════
@@ -129,56 +163,78 @@ public class StructureMarker {
     public static void removeAt(Location blockLoc) {
         if (blockLoc == null || blockLoc.getWorld() == null) return;
 
-        long key = toKey(blockLoc);
-        StructureData data = byPosition.remove(key);
+        String fk = fullKey(blockLoc);
+        StructureData data = byPosition.remove(fk);
         if (data != null) {
-            Set<Long> positions = byUuid.get(data.uuid());
-            if (positions != null) {
-                positions.remove(key);
-                if (positions.isEmpty()) byUuid.remove(data.uuid());
+            Set<String> keys = byUuid.get(data.uuid());
+            if (keys != null) {
+                keys.remove(fk);
+                if (keys.isEmpty()) byUuid.remove(data.uuid());
             }
         }
 
-        // Удаляем Marker entity в мире
         removeMarkerEntityAt(blockLoc);
     }
 
     // ════════════════════════════════════════
-    // REMOVE ALL — удалить ВСЕ Marker'ы структуры по UUID
+    // REMOVE ALL — удалить ВСЕ Marker'ы структуры по UUID в указанном мире
     // ════════════════════════════════════════
     public static void removeAllByUuid(World world, UUID uuid) {
         if (world == null || uuid == null) return;
 
-        Set<Long> positions = byUuid.remove(uuid);
-        if (positions == null) return;
+        Set<String> keys = byUuid.get(uuid);
+        if (keys == null) return;
 
-        for (long key : positions) {
-            byPosition.remove(key);
-            removeMarkerEntityAt(world, key);
+        String worldUid = world.getUID().toString();
+        List<String> toRemove = new ArrayList<>();
+
+        // Сначала собираем ключи этого мира (не удаляем во время итерации)
+        for (String fk : keys) {
+            if (fk.startsWith(worldUid + ":")) {
+                toRemove.add(fk);
+            }
+        }
+
+        if (toRemove.isEmpty()) return;
+
+        for (String fk : toRemove) {
+            byPosition.remove(fk);
+            keys.remove(fk);
+
+            // Удаляем Marker entity в мире
+            int x = parseX(fk), y = parseY(fk), z = parseZ(fk);
+            Location center = new Location(world, x + 0.5, y + 0.5, z + 0.5);
+            world.getNearbyEntities(center, 0.5, 0.5, 0.5, e -> e instanceof Marker).forEach(e -> e.remove());
+        }
+
+        // Если больше не осталось ключей для этого UUID — чистим byUuid
+        if (keys.isEmpty()) {
+            byUuid.remove(uuid);
         }
     }
 
     // ════════════════════════════════════════
-    // GET ALL POSITIONS — получить все позиции структуры по UUID
+    // GET ALL POSITIONS — получить все fullKey структуры по UUID
     // ════════════════════════════════════════
-    public static Set<Long> getPositionsByUuid(UUID uuid) {
-        Set<Long> positions = byUuid.get(uuid);
-        return positions != null ? new HashSet<>(positions) : Collections.emptySet();
+    public static Set<String> getKeysByUuid(UUID uuid) {
+        Set<String> keys = byUuid.get(uuid);
+        return keys != null ? new HashSet<>(keys) : Collections.emptySet();
     }
 
     // ════════════════════════════════════════
-    // GET ALL UUIDs — получить все UUID в мире/кэше
+    // GET ALL UUIDs
     // ════════════════════════════════════════
     public static Set<UUID> getAllUuids() {
         return new HashSet<>(byUuid.keySet());
     }
 
     // ════════════════════════════════════════
-    // SCAN CHUNK — просканировать чанк на Marker'ы и восстановить кэш
-    // Используем getEntities() т.к. Chunk.getEntitiesByClass() не существует в Paper API
+    // SCAN CHUNK — просканировать чанк на Marker'ы
     // ════════════════════════════════════════
     public static void scanChunk(Chunk chunk) {
         if (chunk == null || !chunk.isLoaded()) return;
+
+        String worldUid = chunk.getWorld().getUID().toString();
 
         for (org.bukkit.entity.Entity entity : chunk.getEntities()) {
             if (!(entity instanceof Marker marker)) continue;
@@ -198,18 +254,22 @@ public class StructureMarker {
             }
 
             Location loc = marker.getLocation();
-            long key = toKey(loc);
+            String fk = fullKey(worldUid, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 
             // Не перезаписываем существующую запись
-            if (!byPosition.containsKey(key)) {
-                byPosition.put(key, new StructureData(type, uuid));
-                byUuid.computeIfAbsent(uuid, k -> new HashSet<>()).add(key);
+            if (!byPosition.containsKey(fk)) {
+                byPosition.put(fk, new StructureData(type, uuid, worldUid));
+                byUuid.computeIfAbsent(uuid, k -> new HashSet<>()).add(fk);
             }
         }
     }
 
+    private static String fullKey(String worldUid, int x, int y, int z) {
+        return worldUid + ":" + x + "," + y + "," + z;
+    }
+
     // ════════════════════════════════════════
-    // SCAN ALL LOADED CHUNKS — пересканировать все загруженные чанки
+    // SCAN ALL LOADED CHUNKS
     // ════════════════════════════════════════
     public static void scanAllLoadedChunks() {
         for (World world : Main.getInstance().getServer().getWorlds()) {
@@ -220,9 +280,9 @@ public class StructureMarker {
     }
 
     // ════════════════════════════════════════
-    // GET ALL ENTRIES — получить все записи из кэша
+    // GET ALL ENTRIES — все записи кэша (fullKey → StructureData)
     // ════════════════════════════════════════
-    public static Set<Map.Entry<Long, StructureData>> getAllEntries() {
+    public static Set<Map.Entry<String, StructureData>> getAllEntries() {
         return byPosition.entrySet();
     }
 
@@ -235,6 +295,28 @@ public class StructureMarker {
     }
 
     // ════════════════════════════════════════
+    // PURGE ORPHANED — удалить из кэша Marker'ы, мир которых неизвестен (не загружен)
+    // Вызывается после rebuildFromMarkers() чтобы подчистить orphaned entries.
+    // ════════════════════════════════════════
+    public static void purgeOrphaned(Set<UUID> usedUuids) {
+        Iterator<Map.Entry<String, StructureData>> it = byPosition.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, StructureData> entry = it.next();
+            if (!usedUuids.contains(entry.getValue().uuid())) {
+                String fk = entry.getKey();
+                String worldUid = parseWorldUid(fk);
+                it.remove();
+                // Также убираем из byUuid
+                Set<String> uuidKeys = byUuid.get(entry.getValue().uuid());
+                if (uuidKeys != null) {
+                    uuidKeys.remove(fk);
+                    if (uuidKeys.isEmpty()) byUuid.remove(entry.getValue().uuid());
+                }
+            }
+        }
+    }
+
+    // ════════════════════════════════════════
     // HELPER: удалить Marker entity на позиции
     // ════════════════════════════════════════
     private static void removeMarkerEntityAt(Location blockLoc) {
@@ -242,16 +324,6 @@ public class StructureMarker {
         if (world == null) return;
 
         Location center = blockLoc.toCenterLocation();
-        world.getNearbyEntities(center, 0.5, 0.5, 0.5, e -> e instanceof Marker).forEach(e -> {
-            e.remove();
-        });
-    }
-
-    private static void removeMarkerEntityAt(World world, long key) {
-        int x = getX(key), y = getY(key), z = getZ(key);
-        Location center = new Location(world, x + 0.5, y + 0.5, z + 0.5);
-        world.getNearbyEntities(center, 0.5, 0.5, 0.5, e -> e instanceof Marker).forEach(e -> {
-            e.remove();
-        });
+        world.getNearbyEntities(center, 0.5, 0.5, 0.5, e -> e instanceof Marker).forEach(e -> e.remove());
     }
 }
