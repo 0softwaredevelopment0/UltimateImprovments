@@ -11,6 +11,10 @@ import org.bukkit.World;
 import org.bukkit.Material;
 import org.bukkit.block.data.type.Crafter;
 
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPhysicsEvent;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -159,7 +163,7 @@ public class EnergyWorkbenchManager {
     }
 
     // =========================
-    // MAINTAIN LOCK — блокируем авто-крафт по редстоуну
+    // MAINTAIN LOCK — блокируем авто-крафт по редстоуну (тиковый таймер)
     // Crafter.setTriggered(true) предотвращает ванильный авто-крафт при редстоун-сигнале.
     // Вызывать периодически, т.к. triggered сбрасывается блоком после импульса.
     // =========================
@@ -182,6 +186,31 @@ public class EnergyWorkbenchManager {
                     }
                 }
             } catch (Exception ignored) {}
+        }
+    }
+
+    // =========================
+    // PHYSICS LISTENER — блокирует авто-крафт ДО того, как блок обработает соседний сигнал
+    // BlockPhysicsEvent срабатывает при любом обновлении соседних блоков (включая редстоун).
+    // Если CRAFTER получает соседнее обновление — сразу ставим triggered = true,
+    // чтобы блок НЕ запустил крафт.
+    // =========================
+    public static class RedstoneListener implements Listener {
+
+        @EventHandler
+        public void onBlockPhysics(BlockPhysicsEvent e) {
+            if (e.getBlock().getType() != Material.CRAFTER) return;
+
+            Location loc = LocationUtil.normalize(e.getBlock().getLocation());
+            if (!workbenches.contains(loc)) return;
+
+            // Форсируем triggered = true ДО того, как CRAFTER обработает сигнал
+            if (e.getBlock().getBlockData() instanceof Crafter crafter) {
+                if (!crafter.isTriggered()) {
+                    crafter.setTriggered(true);
+                    e.getBlock().setBlockData(crafter, false);
+                }
+            }
         }
     }
 }

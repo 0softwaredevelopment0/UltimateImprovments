@@ -21,11 +21,13 @@ public class WorkbenchModule extends PluginModule {
         EnergyWorkbenchManager.init();
         craftingListener = new EnergyCraftingListener();
         main.getServer().getPluginManager().registerEvents(craftingListener, main);
+        main.getServer().getPluginManager().registerEvents(new EnergyWorkbenchManager.RedstoneListener(), main);
 
-        // Блокируем авто-крафт CRAFTER по редстоуну каждые 20 тиков
+        // Блокируем авто-крафт CRAFTER по редстоуну каждый тик
+        // (20 тиков — слишком редкая проверка, редстоун-импульс успевает сработать между ними)
         lockTask = Bukkit.getScheduler().runTaskTimer(main, () -> {
             EnergyWorkbenchManager.maintainLocks();
-        }, 0L, 20L);
+        }, 0L, 1L);
     }
 
     @Override
