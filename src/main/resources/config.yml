@@ -307,13 +307,9 @@ features:
     endrod_damage: 1
     interval_ticks: 5
 
-  # 🕸 Усиленная паутина — эффекты в cobweb
+  # 🕸 Усиленная паутина — полная остановка движения в cobweb
   boostedcobweb:
     enabled: true
-    fatigue_amplifier: 255
-    weakness_amplifier: 255
-    slowness_amplifier: 255
-    slowfall_amplifier: 255
     interval_ticks: 5
 
   # 🔔 Колокол смерти — молния при звоне
@@ -1304,4 +1300,4 @@ changedimmension:
 #   minor    — номер подверсии плагина
 #   commits  — количество коммитов с последнего тега (вычисляется автоматически)
 # ═══════════════════════════════════════════════════════
-plugin_version: "1.7.83"
+plugin_version: "1.7.84"
