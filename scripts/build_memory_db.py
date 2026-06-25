@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 PROJECT = Path(r"C:\MC-Plugin")
-DB_PATH = PROJECT / "codebuff-memory.db"
+DB_PATH = PROJECT / ".codebuff-memory.db"
 
 def get_git_log(count=50):
     try:
@@ -588,7 +588,7 @@ voting, homes, radiation, magnetic physics, integrity system, protection modules
     tables = c.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()
     total_rows = 0
     print(f"\n{'='*60}")
-    print(f"  codebuff-memory.db created at: {DB_PATH}")
+    print(f"  .codebuff-memory.db created at: {DB_PATH}")
     print(f"{'='*60}")
     for (tname,) in tables:
         count = c.execute(f"SELECT COUNT(*) FROM [{tname}]").fetchone()[0]
