@@ -120,7 +120,7 @@ public class EnergyCraftingListener implements Listener {
                 NamespacedKey recipeKey = keyed.getKey();
                 if (RecipeRegistry.getCustomRecipes().contains(recipeKey)) {
                     e.setCancelled(true);
-                    player.sendMessage(MessageUtil.parse("<gold>✧</gold> <gray>Этот предмет можно скрафтить только в</gray> <aqua>Item Assembler</aqua><gray>!</gray>"));
+                    player.sendMessage(MessageUtil.parse("<gold>✧</gold> <gray>This item can only be crafted in the</gray> <aqua>Item Assembler</aqua><gray>!</gray>"));
                 }
             }
         }

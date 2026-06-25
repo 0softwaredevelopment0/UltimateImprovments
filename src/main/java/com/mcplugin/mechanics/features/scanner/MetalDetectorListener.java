@@ -11,6 +11,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -126,8 +127,10 @@ public class MetalDetectorListener implements Listener {
 
         if (!meta.getPersistentDataContainer().has(Keys.METAL_DETECTOR, PersistentDataType.BYTE)) return;
 
-        // Cancel always to prevent default stick behavior
+        // Cancel always to prevent default stick/block behavior
         e.setCancelled(true);
+        e.setUseItemInHand(Event.Result.DENY);
+        e.setUseInteractedBlock(Event.Result.DENY);
 
         UUID uid = player.getUniqueId();
         long now = System.currentTimeMillis();
@@ -363,8 +366,11 @@ public class MetalDetectorListener implements Listener {
     }
 
     private static String getItemName(ItemStack stack) {
-        if (stack.hasItemMeta() && stack.getItemMeta().hasDisplayName()) {
-            return stack.getItemMeta().getDisplayName();
+        ItemMeta meta = stack.getItemMeta();
+        if (meta != null && meta.hasDisplayName()) {
+            Component name = meta.displayName();
+            // Convert Adventure Component to plain text
+            return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(name);
         }
         return formatMaterial(stack.getType());
     }
