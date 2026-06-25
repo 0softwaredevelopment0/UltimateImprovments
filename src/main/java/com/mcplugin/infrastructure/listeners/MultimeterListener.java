@@ -1,9 +1,12 @@
 package com.mcplugin.infrastructure.listeners;
 
 import com.mcplugin.energy.generation.basic.GeneratorManager;
+import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.energy.transfer.cable.*;
+import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
@@ -44,6 +47,20 @@ public class MultimeterListener implements Listener {
         player.playSound(block.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
 
         Material type = block.getType();
+
+        // =========================
+        // 🛠 ITEM ASSEMBLER (CRAFTER)
+        // =========================
+        if (type == Material.CRAFTER) {
+            Location loc = LocationUtil.normalize(block.getLocation());
+            if (EnergyWorkbenchManager.exists(loc)) {
+                int buffer = EnergyWorkbenchManager.getBufferEnergy(loc);
+                player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
+                player.sendMessage(MessageUtil.parse("<aqua>Type: Item Assembler</aqua>"));
+                player.sendMessage(MessageUtil.parse("<aqua>Buffer: </aqua><white>" + buffer + "/100 ⚡</white>"));
+                return;
+            }
+        }
 
         // =========================
         // ⚡ ГЕНЕРАТОР (BLAST_FURNACE)

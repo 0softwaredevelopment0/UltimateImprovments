@@ -31,6 +31,9 @@ public class AssemblerListener implements Listener {
         Player player = e.getPlayer();
         e.setCancelled(true);
 
+        // Track which CRAFTER this player is using (for energy buffer)
+        EnergyWorkbenchManager.setPlayerWorkbench(player, loc);
+
         // Open custom CRAFTER inventory with "Item assembler" title
         Inventory inv = Bukkit.createInventory(null, InventoryType.CRAFTER, ASSEMBLER_TITLE);
         player.openInventory(inv);
