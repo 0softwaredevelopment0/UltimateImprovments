@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.config.ConfigIntegrityValidator;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.core.CommandRegistrar;
 import com.mcplugin.infrastructure.modules.*;
+import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.util.FileLogger;
 
 import org.bukkit.plugin.java.JavaPlugin;
@@ -148,6 +149,14 @@ public class Main extends JavaPlugin {
         mm.register(new UpdateModule());
         mm.register(new LeashModule());
         mm.register(new ElytraBoostModule());
+
+        // =========================
+        // REGISTER STRUCTURE CHUNK LISTENER
+        // Сканирует все загруженные чанки на Marker'ы структур ДО инициализации модулей,
+        // чтобы rebuildFromMarkers() в BatteryManager/LightManager увидел кэш.
+        // =========================
+        getServer().getPluginManager().registerEvents(new StructureChunkListener(), this);
+        StructureChunkListener.scanAll();
 
         // =========================
         // INIT ALL MODULES

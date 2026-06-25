@@ -18,6 +18,6 @@ public class LightModule extends PluginModule {
     @Override
     protected void onDisable(JavaPlugin plugin) {
         TaskManager.getInstance().stopLightTask();
-        LightManager.saveAll();
+        // Marker'ы сохраняются в world-файлах, save не нужен
     }
 }

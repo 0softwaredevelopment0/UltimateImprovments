@@ -1,6 +1,7 @@
 package com.mcplugin.energy.storage.battery;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
@@ -22,16 +23,15 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ⚡ Мультиблочная батарея (WAXED_COPPER_GRATE)
  * <p>
- * Соединяет соседние блоки WAXED_COPPER_GRATE через flood-fill (как магнит).
- * Каждый блок = +1000 энергии к максимальной ёмкости.
- * Режим переключается SHIFT+ПКМ пустой рукой: Зарядка / Зарядка+Разрядка / Разрядка.
- * Hot-изменение ёмкости при добавлении/ломании блоков.
- * Сборка через SHIFT+ПКМ по рамке на любом блоке WAXED_COPPER_GRATE.
+ * Хранение — Marker entities (не SQLite). Каждый блок получает Marker с PDC:
+ *   structure_type="battery", structure_id=UUID
+ * <p>
+ * При разрушении любого блока — весь кластер разбирается, все Markers удаляются.
+ * При загрузке чанка — Markers сканируются и кэш восстанавливается.
  */
 public class BatteryManager implements Listener {
 
@@ -39,12 +39,7 @@ public class BatteryManager implements Listener {
     // РЕЖИМЫ БАТАРЕИ
     // ════════════════════════════════════════
     public enum BatteryMode {
-        /** Только принимает энергию (от генераторов) */
-        CHARGE,
-        /** И принимает, и отдаёт */
-        CHARGE_DISCHARGE,
-        /** Только отдаёт энергию (потребителям) */
-        DISCHARGE
+        CHARGE, CHARGE_DISCHARGE, DISCHARGE
     }
 
     private static BatteryManager instance;
@@ -53,38 +48,24 @@ public class BatteryManager implements Listener {
     private static int nextId = 1;
 
     // ════════════════════════════════════════
-    // КООРДИНАТНЫЙ КЛЮЧ (как в MagnetManager)
+    // КООРДИНАТНЫЙ КЛЮЧ (через StructureMarker)
     // ════════════════════════════════════════
-    public static final int COORD_OFFSET = 33554432;
-    public static final int Y_OFFSET = 64;
-
-    public static long toKey(int x, int y, int z) {
-        return ((long)(x + COORD_OFFSET) << 38)
-             | ((long)(z + COORD_OFFSET) << 12)
-             | ((y + Y_OFFSET) & 0xFFFL);
-    }
-    public static long toKey(Location loc) {
-        return toKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-    }
-    public static int getX(long key) {
-        return (int)((key >>> 38) & 0x3FFFFFFL) - COORD_OFFSET;
-    }
-    public static int getZ(long key) {
-        return (int)((key >>> 12) & 0x3FFFFFFL) - COORD_OFFSET;
-    }
-    public static int getY(long key) {
-        return (int)(key & 0xFFFL) - Y_OFFSET;
-    }
+    public static long toKey(int x, int y, int z) { return StructureMarker.toKey(x, y, z); }
+    public static long toKey(Location loc) { return StructureMarker.toKey(loc); }
+    public static int getX(long key) { return StructureMarker.getX(key); }
+    public static int getZ(long key) { return StructureMarker.getZ(key); }
+    public static int getY(long key) { return StructureMarker.getY(key); }
 
     // ════════════════════════════════════════
     // BATTERY CLUSTER
     // ════════════════════════════════════════
     public static class BatteryCluster {
         public int id;
+        public UUID uuid;
         public World world;
         public Set<Long> blockKeys = new HashSet<>();
         public Location center;
-        public int capacity; // blockKeys.size() * 1000
+        public int capacity;
         public BatteryMode mode = BatteryMode.CHARGE_DISCHARGE;
 
         private long sumX, sumY, sumZ;
@@ -135,27 +116,16 @@ public class BatteryManager implements Listener {
             capacity = size * 1000;
         }
 
-        boolean contains(Location loc) {
-            return blockKeys.contains(toKey(loc));
-        }
+        boolean contains(Location loc) { return blockKeys.contains(toKey(loc)); }
 
-        /**
-         * Можно ли заряжать эту батарею (принимать энергию).
-         */
         public boolean canCharge() {
             return mode == BatteryMode.CHARGE || mode == BatteryMode.CHARGE_DISCHARGE;
         }
 
-        /**
-         * Можно ли разряжать эту батарею (отдавать энергию).
-         */
         public boolean canDischarge() {
             return mode == BatteryMode.DISCHARGE || mode == BatteryMode.CHARGE_DISCHARGE;
         }
 
-        /**
-         * Переключает режим в циклическом порядке: CHARGE → CHARGE_DISCHARGE → DISCHARGE → CHARGE
-         */
         void cycleMode() {
             switch (mode) {
                 case CHARGE -> mode = BatteryMode.CHARGE_DISCHARGE;
@@ -164,9 +134,6 @@ public class BatteryManager implements Listener {
             }
         }
 
-        /**
-         * @return человекочитаемое название режима (MiniMessage compatible)
-         */
         String getModeDisplay() {
             return switch (mode) {
                 case CHARGE -> "<aqua>Зарядка</aqua>";
@@ -177,17 +144,62 @@ public class BatteryManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // INIT
+    // INIT — сканируем все загруженные чанки на Marker'ы
     // ════════════════════════════════════════
     public static void init() {
         instance = new BatteryManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
-        BatteryPersistence.loadAll();
-        Main.getInstance().getLogger().info("[BatteryMulti] Manager initialized.");
+
+        // Восстанавливаем кластеры из Marker'ов в загруженных чанках
+        rebuildFromMarkers();
+
+        Main.getInstance().getLogger().info("[BatteryMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");
     }
 
-    public static BatteryManager getInstance() {
-        return instance;
+    public static BatteryManager getInstance() { return instance; }
+
+    /**
+     * Сканирует все загруженные чанки на Marker'ы типа "battery",
+     * группирует по UUID и восстанавливает кластеры.
+     */
+    private static void rebuildFromMarkers() {
+        locationToCluster.clear();
+        clustersById.clear();
+        nextId = 1;
+
+        // Группируем Marker'ы по UUID
+        Map<UUID, Set<Long>> markerGroups = new HashMap<>();
+        for (Map.Entry<Long, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+            if (!"battery".equals(entry.getValue().type())) continue;
+            markerGroups.computeIfAbsent(entry.getValue().uuid(), k -> new HashSet<>()).add(entry.getKey());
+        }
+
+        // Создаём кластеры из групп
+        for (Map.Entry<UUID, Set<Long>> group : markerGroups.entrySet()) {
+            if (group.getValue().isEmpty()) continue;
+
+            // Находим мир по первому ключу
+            long firstKey = group.getValue().iterator().next();
+            int fx = getX(firstKey), fy = getY(firstKey), fz = getZ(firstKey);
+
+            for (World world : Main.getInstance().getServer().getWorlds()) {
+                if (!world.isChunkLoaded(fx >> 4, fz >> 4)) continue;
+                if (world.getType(fx, fy, fz) == Material.WAXED_COPPER_GRATE) {
+                    BatteryCluster cluster = new BatteryCluster();
+                    cluster.id = nextId++;
+                    cluster.uuid = group.getKey();
+                    cluster.world = world;
+                    cluster.blockKeys = new HashSet<>(group.getValue());
+                    cluster.recalculateCenter();
+
+                    for (long key : group.getValue()) {
+                        locationToCluster.put(key, cluster);
+                    }
+                    clustersById.put(cluster.id, cluster);
+                    break;
+                }
+            }
+        }
     }
 
     // ════════════════════════════════════════
@@ -222,10 +234,6 @@ public class BatteryManager implements Listener {
         return visited;
     }
 
-    /**
-     * Удаляет рамку с указанной позиции (блок, на котором рамка висит).
-     * Ищет ItemFrame, прикреплённый к любой грани блока.
-     */
     private static void removeFrameAt(Location blockLoc, Player player) {
         World w = blockLoc.getWorld();
         if (w == null) return;
@@ -235,8 +243,6 @@ public class BatteryManager implements Listener {
             double dx = Math.abs(floc.getX() - (blockLoc.getBlockX() + 0.5));
             double dy = Math.abs(floc.getY() - (blockLoc.getBlockY() + 0.5));
             double dz = Math.abs(floc.getZ() - (blockLoc.getBlockZ() + 0.5));
-            // Рамка крепится к блоку — её центр смещён от центра блока в сторону грани
-            // Допуск ±0.6 покрывает все возможные положения
             if (dx <= 0.6 && dy <= 0.6 && dz <= 0.6) {
                 if (player != null) {
                     w.dropItemNaturally(frame.getLocation(), new ItemStack(Material.ITEM_FRAME));
@@ -248,7 +254,7 @@ public class BatteryManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // ASSEMBLE
+    // ASSEMBLE — создаём Marker на каждом блоке
     // ════════════════════════════════════════
     public static void assemble(Location loc, Player player) {
         loc = LocationUtil.normalize(loc);
@@ -265,19 +271,24 @@ public class BatteryManager implements Listener {
             return;
         }
 
+        UUID uuid = UUID.randomUUID();
         BatteryCluster cluster = new BatteryCluster();
         cluster.id = nextId++;
+        cluster.uuid = uuid;
         cluster.world = loc.getWorld();
         cluster.blockKeys = new HashSet<>(connected);
         cluster.recalculateCenter();
 
-        for (long bk : connected) locationToCluster.put(bk, cluster);
+        for (long bk : connected) {
+            locationToCluster.put(bk, cluster);
+            // Создаём Marker entity на каждом блоке
+            Location blockLoc = new Location(cluster.world, getX(bk), getY(bk), getZ(bk));
+            StructureMarker.place(blockLoc, "battery", uuid);
+        }
         clustersById.put(cluster.id, cluster);
 
-        // Удаляем рамку
         removeFrameAt(loc, player);
 
-        // Эффекты
         if (cluster.center != null) {
             World w = cluster.center.getWorld();
             if (w != null) {
@@ -287,12 +298,12 @@ public class BatteryManager implements Listener {
         }
 
         if (player != null) {
-            player.sendMessage("§a✔ §fБатарея собрана!");
+            player.sendMessage("§a✔ §fБатарея собрана! (Marker-based)");
             player.sendMessage("§8┃ §7Блоков: §f" + cluster.blockKeys.size() + " §7| Ёмкость: §f" + cluster.capacity + " §7энергии");
             player.sendMessage("§8┃ §7Подайте редстоун на любой блок для разрядки");
         }
 
-        Main.getInstance().getLogger().info("[BatteryMulti] Assembled cluster #" + cluster.id + " with " + connected.size() + " blocks");
+        Main.getInstance().getLogger().info("[BatteryMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " blocks");
     }
 
     // ════════════════════════════════════════
@@ -306,7 +317,11 @@ public class BatteryManager implements Listener {
 
         for (long bk : cluster.blockKeys) locationToCluster.remove(bk);
         clustersById.remove(cluster.id);
-        BatteryPersistence.deleteCluster(cluster.id);
+
+        // Удаляем все Marker'ы кластера
+        if (cluster.uuid != null) {
+            StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
+        }
 
         Main.getInstance().getLogger().info("[BatteryMulti] Disassembled cluster #" + cluster.id);
     }
@@ -338,6 +353,10 @@ public class BatteryManager implements Listener {
             BatteryCluster c = adj.iterator().next();
             c.addBlock(key);
             locationToCluster.put(key, c);
+            // Новый Marker на добавленном блоке
+            if (c.uuid != null) {
+                StructureMarker.place(loc, "battery", c.uuid);
+            }
         } else {
             Iterator<BatteryCluster> it = adj.iterator();
             BatteryCluster primary = it.next();
@@ -346,16 +365,25 @@ public class BatteryManager implements Listener {
                 for (long bk : other.blockKeys) {
                     locationToCluster.put(bk, primary);
                     primary.addBlock(bk);
+                    // Обновляем Marker — меняем UUID на primary
+                    Location blockLoc = new Location(primary.world, getX(bk), getY(bk), getZ(bk));
+                    StructureMarker.removeAt(blockLoc);
+                    if (primary.uuid != null) {
+                        StructureMarker.place(blockLoc, "battery", primary.uuid);
+                    }
                 }
                 clustersById.remove(other.id);
             }
             primary.addBlock(key);
             locationToCluster.put(key, primary);
+            if (primary.uuid != null) {
+                StructureMarker.place(loc, "battery", primary.uuid);
+            }
         }
     }
 
     // ════════════════════════════════════════
-    // BLOCK BROKEN (hot shrink)
+    // BLOCK BROKEN — разбираем весь кластер
     // ════════════════════════════════════════
     public static void onBlockBroken(Location loc, Player player) {
         loc = LocationUtil.normalize(loc);
@@ -364,18 +392,20 @@ public class BatteryManager implements Listener {
         BatteryCluster cluster = locationToCluster.get(key);
         if (cluster == null) return;
 
-        // Полная разборка всего кластера при разрушении любого блока
+        // Удаляем все Marker'ы кластера из мира
+        if (cluster.uuid != null) {
+            StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
+        }
+
+        // Очищаем кэш
         for (long bk : cluster.blockKeys) {
             locationToCluster.remove(bk);
         }
         clustersById.remove(cluster.id);
         cluster.blockKeys.clear();
-        BatteryPersistence.deleteCluster(cluster.id);
 
-        if (cluster.center != null && cluster.center.getWorld() != null) {
-            Main.getInstance().getLogger().info("[BatteryMulti] Disassembled cluster #" + cluster.id
-                    + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
-        }
+        Main.getInstance().getLogger().info("[BatteryMulti] Disassembled cluster #" + cluster.id
+                + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
 
         if (player != null) {
             player.sendMessage("§e❕ Батарея разобрана (разрушен блок)");
@@ -435,15 +465,11 @@ public class BatteryManager implements Listener {
         return loc != null ? locationToCluster.get(toKey(loc)) : null;
     }
 
-    public static Collection<BatteryCluster> getAllClusters() {
-        return clustersById.values();
-    }
-
+    public static Collection<BatteryCluster> getAllClusters() { return clustersById.values(); }
     public static int getClusterCount() { return clustersById.size(); }
 
     // ════════════════════════════════════════
-    // GET CHARGE PERCENTAGE (0.0 - 100.0)
-    // Суммирует энергию всех CableNode блоков кластера / capacity × 100
+    // GET CHARGE PERCENTAGE
     // ════════════════════════════════════════
     public static double getChargePercentage(BatteryCluster cluster) {
         if (cluster == null || cluster.capacity <= 0) return 0.0;
@@ -459,8 +485,7 @@ public class BatteryManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // PARTICLE TICK — спавн частиц в центре каждого кластера
-    // 0% заряда = 0 частиц, 100% = 10 частиц
+    // TICK — частицы + анти-фантом
     // ════════════════════════════════════════
     public static void tick() {
         List<Integer> toRemove = new ArrayList<>();
@@ -477,14 +502,14 @@ public class BatteryManager implements Listener {
                 int fx = getX(firstKey), fy = getY(firstKey), fz = getZ(firstKey);
                 if (!cluster.world.isChunkLoaded(fx >> 4, fz >> 4)) continue;
 
-                // Анти-фантом: если первый блок кластера уже не WAXED_COPPER_GRATE — разбираем
+                // Анти-фантом: проверяем Marker и блок
                 if (cluster.world.getType(fx, fy, fz) != Material.WAXED_COPPER_GRATE) {
                     toRemove.add(cluster.id);
                     continue;
                 }
 
                 double pct = getChargePercentage(cluster);
-                int count = Math.max(1, (int) Math.round(pct / 10.0)); // 0%→1 (min), 100%→10
+                int count = Math.max(1, (int) Math.round(pct / 10.0));
 
                 Location center = cluster.center.clone().add(0.5, 0.5, 0.5);
                 cluster.world.spawnParticle(Particle.END_ROD, center, count, 0.3, 0.3, 0.3, 0.01);
@@ -502,25 +527,25 @@ public class BatteryManager implements Listener {
                     locationToCluster.remove(bk);
                 }
                 clustersById.remove(id);
-                BatteryPersistence.deleteCluster(id);
+                // Удаляем Marker'ы
+                if (cluster.uuid != null) {
+                    StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
+                }
                 Main.getInstance().getLogger().info("[BatteryMulti] Removed phantom cluster #" + id);
             }
         }
     }
 
     // ════════════════════════════════════════
-    // SAVE / LOAD (delegated)
+    // SAVE / LOAD — больше не нужны (Marker'ы сами сохраняются)
     // ════════════════════════════════════════
-    public static void saveAll() {
-        BatteryPersistence.saveAll();
-    }
+    public static void saveAll() { /* no-op: Marker entities persist in world files */ }
 
     // ════════════════════════════════════════
-    // INTERNAL (for persistence)
+    // INTERNAL
     // ════════════════════════════════════════
     static Map<Long, BatteryCluster> getLocationMap() { return locationToCluster; }
     static Map<Integer, BatteryCluster> getClustersById() { return clustersById; }
-    static void setNextId(int id) { nextId = id; }
 
     public static void clearAll() {
         locationToCluster.clear();

@@ -1,6 +1,7 @@
 package com.mcplugin.energy.consumption.light;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.energy.transfer.cable.CableNode;
 
@@ -18,16 +19,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 💡 Мультиблочная лампочка (REDSTONE_LAMP)
  * <p>
- * Соединяет соседние REDSTONE_LAMP через flood-fill (как магнит).
- * Каждый блок = +1 энергия/тик потребления когда включена.
- * Включается если: есть редстоун-сигнал НА ЛЮБОМ блоке структуры И есть энергия в кабелях.
- * Async-queued зажигание — обновления собираются в очередь и применяются пачками.
- * Сборка через SHIFT+ПКМ по рамке на любом REDSTONE_LAMP.
+ * Хранение — Marker entities (не SQLite).
+ * Каждый блок получает Marker с PDC: structure_type="light", structure_id=UUID.
+ * При разрушении любого блока — весь кластер разбирается.
  */
 public class LightManager {
 
@@ -39,37 +37,23 @@ public class LightManager {
     // ════════════════════════════════════════
     // КООРДИНАТНЫЙ КЛЮЧ
     // ════════════════════════════════════════
-    public static final int COORD_OFFSET = 33554432;
-    public static final int Y_OFFSET = 64;
-
-    public static long toKey(int x, int y, int z) {
-        return ((long)(x + COORD_OFFSET) << 38)
-             | ((long)(z + COORD_OFFSET) << 12)
-             | ((y + Y_OFFSET) & 0xFFFL);
-    }
-    public static long toKey(Location loc) {
-        return toKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-    }
-    public static int getX(long key) {
-        return (int)((key >>> 38) & 0x3FFFFFFL) - COORD_OFFSET;
-    }
-    public static int getZ(long key) {
-        return (int)((key >>> 12) & 0x3FFFFFFL) - COORD_OFFSET;
-    }
-    public static int getY(long key) {
-        return (int)(key & 0xFFFL) - Y_OFFSET;
-    }
+    public static long toKey(int x, int y, int z) { return StructureMarker.toKey(x, y, z); }
+    public static long toKey(Location loc) { return StructureMarker.toKey(loc); }
+    public static int getX(long key) { return StructureMarker.getX(key); }
+    public static int getZ(long key) { return StructureMarker.getZ(key); }
+    public static int getY(long key) { return StructureMarker.getY(key); }
 
     // ════════════════════════════════════════
     // LIGHT CLUSTER
     // ════════════════════════════════════════
     public static class LightCluster {
         public int id;
+        public UUID uuid;
         public World world;
         public Set<Long> blockKeys = new HashSet<>();
         public Location center;
-        public int power; // blockKeys.size()
-        public boolean lit; // текущее состояние
+        public int power;
+        public boolean lit;
 
         private long sumX, sumY, sumZ;
 
@@ -119,27 +103,15 @@ public class LightManager {
             power = size;
         }
 
-        boolean contains(Location loc) {
-            return blockKeys.contains(toKey(loc));
-        }
+        boolean contains(Location loc) { return blockKeys.contains(toKey(loc)); }
 
-    /**
-     * Есть ли редстоун-сигнал хотя бы на одном блоке кластера?
-     * Используем ТОЛЬКО isBlockPowered() — без isBlockIndirectlyPowered(),
-     * чтобы кабели и соседние блоки не активировали лампу ложно.
-     * Только прямой редстоун: рычаг, кнопка, редстоун-пыль, факел и т.д.
-     */
-    boolean isAnyBlockPowered() {
-        for (long key : blockKeys) {
-            Block block = world.getBlockAt(getX(key), getY(key), getZ(key));
-            if (block.isBlockPowered()) {
-                return true;
+        boolean isAnyBlockPowered() {
+            for (long key : blockKeys) {
+                Block block = world.getBlockAt(getX(key), getY(key), getZ(key));
+                if (block.isBlockPowered()) return true;
             }
+            return false;
         }
-        return false;
-    }
-
-
     }
 
     // ════════════════════════════════════════
@@ -148,19 +120,10 @@ public class LightManager {
     private static final Deque<Runnable> lightingQueue = new ArrayDeque<>();
     private static boolean queueProcessing = false;
 
-    /**
-     * Добавляет задачу в очередь асинхронного зажигания.
-     * Очередь обрабатывается на следующем тике пачками.
-     */
     public static void queueLightingUpdate(Runnable task) {
-        synchronized (lightingQueue) {
-            lightingQueue.addLast(task);
-        }
+        synchronized (lightingQueue) { lightingQueue.addLast(task); }
     }
 
-    /**
-     * Обрабатывает очередь зажигания (вызывается из тика).
-     */
     public static void processLightingQueue() {
         if (queueProcessing) return;
         queueProcessing = true;
@@ -168,20 +131,14 @@ public class LightManager {
             int batchSize = Math.min(50, lightingQueue.size());
             for (int i = 0; i < batchSize && !lightingQueue.isEmpty(); i++) {
                 Runnable task;
-                synchronized (lightingQueue) {
-                    task = lightingQueue.pollFirst();
-                }
+                synchronized (lightingQueue) { task = lightingQueue.pollFirst(); }
                 if (task != null) {
-                    try {
-                        task.run();
-                    } catch (Exception e) {
+                    try { task.run(); } catch (Exception e) {
                         Main.getInstance().getLogger().warning("[Light] Lighting task error: " + e.getMessage());
                     }
                 }
             }
-        } finally {
-            queueProcessing = false;
-        }
+        } finally { queueProcessing = false; }
     }
 
     // ════════════════════════════════════════
@@ -189,17 +146,50 @@ public class LightManager {
     // ════════════════════════════════════════
     public static void init() {
         instance = new LightManager();
-        LightPersistence.loadAll();
-        Main.getInstance().getLogger().info("[LightMulti] Manager initialized.");
+
+        // Восстанавливаем кластеры из Marker'ов
+        rebuildFromMarkers();
+
+        Main.getInstance().getLogger().info("[LightMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");
     }
 
-    public static LightManager getInstance() {
-        return instance;
+    public static LightManager getInstance() { return instance; }
+
+    private static void rebuildFromMarkers() {
+        locationToCluster.clear();
+        clustersById.clear();
+        nextId = 1;
+
+        Map<UUID, Set<Long>> markerGroups = new HashMap<>();
+        for (Map.Entry<Long, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+            if (!"light".equals(entry.getValue().type())) continue;
+            markerGroups.computeIfAbsent(entry.getValue().uuid(), k -> new HashSet<>()).add(entry.getKey());
+        }
+
+        for (Map.Entry<UUID, Set<Long>> group : markerGroups.entrySet()) {
+            if (group.getValue().isEmpty()) continue;
+
+            long firstKey = group.getValue().iterator().next();
+            int fx = getX(firstKey);
+
+            for (World world : Main.getInstance().getServer().getWorlds()) {
+                if (world.getType(fx, getY(firstKey), getZ(firstKey)) == Material.REDSTONE_LAMP) {
+                    LightCluster cluster = new LightCluster();
+                    cluster.id = nextId++;
+                    cluster.uuid = group.getKey();
+                    cluster.world = world;
+                    cluster.blockKeys = new HashSet<>(group.getValue());
+                    cluster.recalculateCenter();
+                    cluster.lit = false;
+
+                    for (long key : group.getValue()) locationToCluster.put(key, cluster);
+                    clustersById.put(cluster.id, cluster);
+                    break;
+                }
+            }
+        }
     }
 
-    /**
-     * Удаляет рамку, прикреплённую к блоку.
-     */
     private static void removeFrameAt(Location blockLoc, Player player) {
         World w = blockLoc.getWorld();
         if (w == null) return;
@@ -210,9 +200,7 @@ public class LightManager {
             double dy = Math.abs(floc.getY() - (blockLoc.getBlockY() + 0.5));
             double dz = Math.abs(floc.getZ() - (blockLoc.getBlockZ() + 0.5));
             if (dx <= 0.6 && dy <= 0.6 && dz <= 0.6) {
-                if (player != null) {
-                    w.dropItemNaturally(frame.getLocation(), new ItemStack(Material.ITEM_FRAME));
-                }
+                if (player != null) w.dropItemNaturally(frame.getLocation(), new ItemStack(Material.ITEM_FRAME));
                 frame.remove();
                 break;
             }
@@ -269,26 +257,31 @@ public class LightManager {
             return;
         }
 
+        UUID uuid = UUID.randomUUID();
         LightCluster cluster = new LightCluster();
         cluster.id = nextId++;
+        cluster.uuid = uuid;
         cluster.world = loc.getWorld();
         cluster.blockKeys = new HashSet<>(connected);
         cluster.recalculateCenter();
         cluster.lit = false;
 
-        for (long bk : connected) locationToCluster.put(bk, cluster);
+        for (long bk : connected) {
+            locationToCluster.put(bk, cluster);
+            Location blockLoc = new Location(cluster.world, getX(bk), getY(bk), getZ(bk));
+            StructureMarker.place(blockLoc, "light", uuid);
+        }
         clustersById.put(cluster.id, cluster);
 
-        // Удаляем рамку
         removeFrameAt(loc, player);
 
         if (player != null) {
-            player.sendMessage("§a✔ §fЛампочка собрана!");
+            player.sendMessage("§a✔ §fЛампочка собрана! (Marker-based)");
             player.sendMessage("§8┃ §7Блоков: §f" + cluster.blockKeys.size() + " §7| Потребление: §f" + cluster.power + " §7энергии/тик");
             player.sendMessage("§8┃ §7Подайте редстоун + энергию для зажигания");
         }
 
-        Main.getInstance().getLogger().info("[LightMulti] Assembled cluster #" + cluster.id + " with " + connected.size() + " lamps");
+        Main.getInstance().getLogger().info("[LightMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " lamps");
     }
 
     // ════════════════════════════════════════
@@ -300,11 +293,13 @@ public class LightManager {
         LightCluster cluster = locationToCluster.get(toKey(loc));
         if (cluster == null) return;
 
-        // Выключаем все лампы
         if (cluster.lit) setBlocksLit(cluster, false);
         for (long bk : cluster.blockKeys) locationToCluster.remove(bk);
         clustersById.remove(cluster.id);
-        LightPersistence.deleteCluster(cluster.id);
+
+        if (cluster.uuid != null) {
+            StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
+        }
     }
 
     // ════════════════════════════════════════
@@ -333,7 +328,7 @@ public class LightManager {
             LightCluster c = adj.iterator().next();
             c.addBlock(key);
             locationToCluster.put(key, c);
-            // Если кластер горел — новый блок тоже зажигаем
+            if (c.uuid != null) StructureMarker.place(loc, "light", c.uuid);
             if (c.lit) setBlockLit(loc, true);
         } else {
             Iterator<LightCluster> it = adj.iterator();
@@ -344,11 +339,15 @@ public class LightManager {
                 for (long bk : other.blockKeys) {
                     locationToCluster.put(bk, primary);
                     primary.addBlock(bk);
+                    Location blockLoc = new Location(primary.world, getX(bk), getY(bk), getZ(bk));
+                    StructureMarker.removeAt(blockLoc);
+                    if (primary.uuid != null) StructureMarker.place(blockLoc, "light", primary.uuid);
                 }
                 clustersById.remove(other.id);
             }
             primary.addBlock(key);
             locationToCluster.put(key, primary);
+            if (primary.uuid != null) StructureMarker.place(loc, "light", primary.uuid);
         }
     }
 
@@ -358,21 +357,18 @@ public class LightManager {
         LightCluster cluster = locationToCluster.get(toKey(loc));
         if (cluster == null) return;
 
-        // Полная разборка всего кластера при разрушении любого блока
         if (cluster.lit) setBlocksLit(cluster, false);
+        if (cluster.uuid != null) StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
+
         for (long bk : cluster.blockKeys) locationToCluster.remove(bk);
         clustersById.remove(cluster.id);
         cluster.blockKeys.clear();
-        LightPersistence.deleteCluster(cluster.id);
 
-        if (player != null) {
-            player.sendMessage("§e❕ Лампочка разобрана (разрушен блок)");
-        }
+        if (player != null) player.sendMessage("§e❕ Лампочка разобрана (разрушен блок)");
     }
 
     // ════════════════════════════════════════
-    // TICK — проверка состояния и зажигание
-    // Только по редстоуну (энергия не требуется)
+    // TICK
     // ════════════════════════════════════════
     public static void tick() {
         for (LightCluster cluster : clustersById.values()) {
@@ -382,9 +378,7 @@ public class LightManager {
                 long firstKey = cluster.blockKeys.iterator().next();
                 if (!cluster.world.isChunkLoaded(getX(firstKey) >> 4, getZ(firstKey) >> 4)) continue;
 
-                // Только редстоун-сигнал — энергия не нужна
                 boolean shouldBeLit = cluster.isAnyBlockPowered();
-
                 if (shouldBeLit != cluster.lit) {
                     final boolean newState = shouldBeLit;
                     queueLightingUpdate(() -> {
@@ -410,8 +404,7 @@ public class LightManager {
     }
 
     private static void setBlockLit(Location loc, boolean lit) {
-        Block block = loc.getBlock();
-        setBlockLitState(block, lit);
+        setBlockLitState(loc.getBlock(), lit);
     }
 
     private static void setBlockLitState(Block block, boolean lit) {
@@ -425,17 +418,6 @@ public class LightManager {
                 }
             }
         } catch (Exception ignored) {}
-    }
-
-    private static List<Location> getNeighborLocations(World world, int x, int y, int z) {
-        List<Location> list = new ArrayList<>(6);
-        list.add(new Location(world, x+1, y, z));
-        list.add(new Location(world, x-1, y, z));
-        list.add(new Location(world, x, y+1, z));
-        list.add(new Location(world, x, y-1, z));
-        list.add(new Location(world, x, y, z+1));
-        list.add(new Location(world, x, y, z-1));
-        return list;
     }
 
     // ════════════════════════════════════════
@@ -458,22 +440,16 @@ public class LightManager {
         return loc != null ? locationToCluster.get(toKey(loc)) : null;
     }
 
-    public static Collection<LightCluster> getAllClusters() {
-        return clustersById.values();
-    }
-
+    public static Collection<LightCluster> getAllClusters() { return clustersById.values(); }
     public static int getClusterCount() { return clustersById.size(); }
 
     // ════════════════════════════════════════
-    // PERSISTENCE
+    // SAVE — no-op (Marker'ы сами сохраняются)
     // ════════════════════════════════════════
-    public static void saveAll() {
-        LightPersistence.saveAll();
-    }
+    public static void saveAll() { /* no-op */ }
 
     static Map<Long, LightCluster> getLocationMap() { return locationToCluster; }
     static Map<Integer, LightCluster> getClustersById() { return clustersById; }
-    static void setNextId(int id) { nextId = id; }
 
     public static void clearAll() {
         locationToCluster.clear();

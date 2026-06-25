@@ -25,6 +25,6 @@ public class BatteryMultiModule extends PluginModule {
             tickTask.cancel();
             tickTask = null;
         }
-        BatteryManager.saveAll();
+        // Marker'ы сохраняются в world-файлах, save не нужен
     }
 }
