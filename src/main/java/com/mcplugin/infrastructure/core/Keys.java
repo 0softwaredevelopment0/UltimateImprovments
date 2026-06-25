@@ -24,6 +24,7 @@ public class Keys {
 
     // Materials
     public static NamespacedKey LEAD_INGOT;
+    public static NamespacedKey METAL_DETECTOR;
 
     // Integrity System
     public static NamespacedKey INTEGRITY_TAG;
@@ -42,6 +43,7 @@ public class Keys {
         ORE_FINDER = new NamespacedKey(plugin, "isOreFinder");
         MOB_FINDER = new NamespacedKey(plugin, "isMobFinder");
         RADAR = new NamespacedKey(plugin, "isRadar");
+        METAL_DETECTOR = new NamespacedKey(plugin, "isMetalDetector");
         LEAD_INGOT = new NamespacedKey(plugin, "isLeadIngot");
         LEAD_SHIELD = new NamespacedKey(plugin, "isLeadShield");
         AUTH_GUI = new NamespacedKey(plugin, "auth_gui");

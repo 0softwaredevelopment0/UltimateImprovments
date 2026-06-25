@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.mechanics.crafting.*;
 import com.mcplugin.energy.machines.assembler.AssemblerListener;
 import com.mcplugin.mechanics.features.scanner.ScannerItemListener;
+import com.mcplugin.mechanics.features.scanner.MetalDetectorListener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -31,6 +32,7 @@ public class CraftingModule extends PluginModule {
         OreFinderCraftListener.init();
         MobFinderCraftListener.init();
         PortableRadarCraftListener.init();
+        MetalDetectorCraftListener.init();
         RecipeRegistry.init();
 
         // Register craft event listeners
@@ -46,7 +48,9 @@ public class CraftingModule extends PluginModule {
         pm.registerEvents(new OreFinderCraftListener(), main);
         pm.registerEvents(new MobFinderCraftListener(), main);
         pm.registerEvents(new PortableRadarCraftListener(), main);
+        pm.registerEvents(new MetalDetectorCraftListener(), main);
         pm.registerEvents(new ScannerItemListener(), main);
+        pm.registerEvents(new MetalDetectorListener(), main);
         pm.registerEvents(new AssemblerListener(), main);
 
         plugin.getLogger().info("[CraftingModule] ✔ Recipes initialized.");
