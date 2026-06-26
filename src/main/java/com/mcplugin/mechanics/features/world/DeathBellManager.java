@@ -26,7 +26,7 @@ public class DeathBellManager implements Listener {
         lightning = cfg.getBoolean("lightning", true);
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onBellRing(BellRingEvent e) {
         if (!enabled || !lightning) return;
 

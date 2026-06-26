@@ -64,7 +64,7 @@ public class GlassBreakManager implements Listener {
         damage = cfg.getInt("damage", 5);
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onGlassBreak(BlockBreakEvent e) {
         if (!enabled) return;
         if (!GLASS.contains(e.getBlock().getType())) return;

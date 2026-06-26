@@ -29,7 +29,7 @@ public class ShieldSlownessManager implements Listener {
         slownessDuration = cfg.getInt("slowness_duration", 20);
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent e) {
         if (!enabled) return;
         if (!(e.getEntity() instanceof Player player)) return;

@@ -90,9 +90,8 @@ public class EnderChestManager implements Listener {
      * Записывает время и позицию сундука при ПКМ по эндер-сундуку.
      * Также обрабатывает шанс взрыва (0.1% по умолчанию).
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onEnderChestInteract(PlayerInteractEvent e) {
-        if (e.isCancelled()) return;
         if (!enabled) return;
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (e.getClickedBlock() == null || e.getClickedBlock().getType() != Material.ENDER_CHEST) return;
@@ -146,7 +145,7 @@ public class EnderChestManager implements Listener {
      * не сработал — например, при открытии через API).
      * Пытается определить позицию сундука через targetBlock.
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onEnderChestOpen(InventoryOpenEvent e) {
         if (!enabled || !quickCloseEnabled) return;
         if (e.getInventory().getType() != org.bukkit.event.inventory.InventoryType.ENDER_CHEST) return;

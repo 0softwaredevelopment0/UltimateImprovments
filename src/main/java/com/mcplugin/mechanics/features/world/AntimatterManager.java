@@ -57,7 +57,7 @@ public class AntimatterManager implements Listener {
     // RIGHT CLICK — МГНОВЕННЫЙ ВЗРЫВ
     // Срабатывает СРАЗУ при ПКМ, удаляет колбу из руки
     // =========================
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onAntimatterInteract(PlayerInteractEvent e) {
         if (!enabled) return;
         if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
@@ -127,7 +127,7 @@ public class AntimatterManager implements Listener {
     // =========================
     // DROP — защита от выпадения (старая логика)
     // =========================
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onAntimatterDrop(PlayerDropItemEvent e) {
         if (!enabled) return;
 

@@ -232,7 +232,7 @@ public class MinecartSpeedManager implements Listener {
     // =========================
     // MINECART VISIBLE ON CREATE
     // =========================
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onVehicleCreate(VehicleCreateEvent event) {
         if (!enabled) return;
         if (event.getVehicle() instanceof Minecart cart) {
@@ -501,10 +501,9 @@ public class MinecartSpeedManager implements Listener {
     // =========================
     // COLLISION DAMAGE
     // =========================
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onVehicleEntityCollision(VehicleEntityCollisionEvent event) {
         if (!enabled) return;
-        if (event.isCancelled()) return;
         if (!(event.getVehicle() instanceof Minecart cart)) return;
 
         UUID cartId = cart.getUniqueId();
@@ -556,7 +555,7 @@ public class MinecartSpeedManager implements Listener {
     // =========================
     // CLEANUP: Remove dead carts from tracking (replaces expensive UUID scan)
     // =========================
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onVehicleDestroy(VehicleDestroyEvent event) {
         if (event.getVehicle() instanceof Minecart cart) {
             UUID uuid = cart.getUniqueId();
@@ -569,10 +568,9 @@ public class MinecartSpeedManager implements Listener {
     // =========================
     // BLOCK HOPPER MINECART INVENTORY AT SPEED > 1 blk/tick
     // =========================
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!enabled) return;
-        if (event.isCancelled()) return;
 
         if (!(event.getInventory().getHolder() instanceof HopperMinecart hopper)) return;
 

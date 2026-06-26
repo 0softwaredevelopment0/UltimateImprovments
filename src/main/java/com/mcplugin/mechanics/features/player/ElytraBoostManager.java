@@ -129,7 +129,7 @@ public class ElytraBoostManager implements Listener {
     // FALLBACK: PlayerToggleFlightEvent (на случай если сработает)
     // =========================
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
         if (!event.isFlying()) return;
         Player player = event.getPlayer();

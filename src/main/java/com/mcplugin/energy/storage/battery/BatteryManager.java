@@ -436,7 +436,7 @@ public class BatteryManager implements Listener {
     // ════════════════════════════════════════
     // SHIFT+ПКМ ПУСТОЙ РУКОЙ — ПЕРЕКЛЮЧЕНИЕ РЕЖИМА
     // ════════════════════════════════════════
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onModeSwitch(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (!e.getPlayer().isSneaking()) return;

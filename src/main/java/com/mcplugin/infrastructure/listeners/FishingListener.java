@@ -82,7 +82,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     // =========================
     // EVENT: ЗАБРОС УДОЧКИ
     // =========================
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onFish(PlayerFishEvent e) {
         if (e.getState() != PlayerFishEvent.State.FISHING) return;
 
@@ -176,7 +176,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     /**
      * Блок сломан — инвалидируем кэш поблизости.
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
         invalidateCacheNear(e.getBlock());
     }
@@ -184,7 +184,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     /**
      * Блок поставлен — инвалидируем кэш поблизости.
      */
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent e) {
         invalidateCacheNear(e.getBlock());
     }

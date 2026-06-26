@@ -38,10 +38,9 @@ public class ModeProtectManager implements Listener {
         message = MessagesManager.getString("features.modeprotect.message", "<red>Вы не можете сменить режим игры в этом мире!</red>");
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onGameModeChange(PlayerGameModeChangeEvent event) {
         if (!enabled) return;
-        if (event.isCancelled()) return;
 
         Player player = event.getPlayer();
 

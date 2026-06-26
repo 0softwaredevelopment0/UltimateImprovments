@@ -23,7 +23,7 @@ import org.bukkit.block.data.type.Crafter;
 
 public class BlockPlaceListener implements Listener {
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent e) {
 
         Location loc =

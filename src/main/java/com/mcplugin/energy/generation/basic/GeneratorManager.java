@@ -99,7 +99,7 @@ public class GeneratorManager implements Listener {
     // =========================
     // SHIFT+RMB → ASSEMBLE / DISASSEMBLE
     // =========================
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (event.getHand() != EquipmentSlot.HAND) return;
