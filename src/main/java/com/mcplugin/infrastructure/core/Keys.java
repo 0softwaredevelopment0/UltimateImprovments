@@ -25,6 +25,7 @@ public class Keys {
     // Materials
     public static NamespacedKey LEAD_INGOT;
     public static NamespacedKey METAL_DETECTOR;
+    public static NamespacedKey CONCRETE_BUCKET;
 
     // Integrity System
     public static NamespacedKey INTEGRITY_TAG;
@@ -46,6 +47,7 @@ public class Keys {
         METAL_DETECTOR = new NamespacedKey(plugin, "isMetalDetector");
         LEAD_INGOT = new NamespacedKey(plugin, "isLeadIngot");
         LEAD_SHIELD = new NamespacedKey(plugin, "isLeadShield");
+        CONCRETE_BUCKET = new NamespacedKey(plugin, "is_concrete_bucket");
         AUTH_GUI = new NamespacedKey(plugin, "auth_gui");
         CHGDIM_GUI = new NamespacedKey(plugin, "chgdim_gui");
 
