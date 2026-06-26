@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.7.99
+version: 1.8.00
 
 main: com.mcplugin.infrastructure.core.Main
 
@@ -275,3 +275,7 @@ permissions:
   mcplugin.command.toggleradview:
     description: Allows toggling radiation display on actionbar (/mp toggleradview)
     default: true
+
+  mcplugin.autocraft:
+    description: Allows using auto-craft mode (/mp toggleautocraft)
+    default: op

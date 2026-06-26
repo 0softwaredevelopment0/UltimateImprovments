@@ -6,6 +6,7 @@ import com.mcplugin.mechanics.features.items.NotesGUI;
 import com.mcplugin.mechanics.features.player.VanishManager;
 import com.mcplugin.mechanics.environment.radiation.RadiationManager;
 import com.mcplugin.mechanics.features.player.ElytraBoostManager;
+import com.mcplugin.mechanics.features.items.AutoCraftManager;
 import com.mcplugin.mechanics.features.world.MinecartSpeedManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -98,6 +99,16 @@ public final class MiscSubcommand {
         } else {
             player.sendMessage(MessageUtil.parse("<red>☢</red> <white>Radiation display: </white><red>OFF</red>"));
         }
+        return true;
+    }
+
+    // =========================
+    // TOGGLEAUTOCRAFT
+    // =========================
+    public static boolean toggleAutoCraft(CommandSender sender) {
+        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
+        if (!player.hasPermission("mcplugin.autocraft")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        AutoCraftManager.toggleAutoCraft(player);
         return true;
     }
 
