@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.mechanics.features.items.ChestplateFlightListener;
+import com.mcplugin.mechanics.features.items.NetheriteUpgradeListener;
 import com.mcplugin.mechanics.features.player.ElytraBoostManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -22,6 +23,7 @@ public class ElytraBoostModule extends PluginModule {
         Main main = (Main) plugin;
         ElytraBoostManager.init(main);
         main.getServer().getPluginManager().registerEvents(new ChestplateFlightListener(), main);
+        main.getServer().getPluginManager().registerEvents(new NetheriteUpgradeListener(), main);
     }
 
     @Override

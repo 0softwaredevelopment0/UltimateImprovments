@@ -30,6 +30,9 @@ public class Keys {
     // Chestplate Flight
     public static NamespacedKey CHESTPLATE_FLIGHT;
 
+    // Netherite Upgrade
+    public static NamespacedKey NETHERITE_UPGRADE;
+
     // Integrity System
     public static NamespacedKey INTEGRITY_TAG;
     public static NamespacedKey INTEGRITY_MAX;
@@ -52,6 +55,7 @@ public class Keys {
         LEAD_SHIELD = new NamespacedKey(plugin, "isLeadShield");
         CONCRETE_BUCKET = new NamespacedKey(plugin, "is_concrete_bucket");
         CHESTPLATE_FLIGHT = new NamespacedKey(plugin, "chestplate_flight");
+        NETHERITE_UPGRADE = new NamespacedKey(plugin, "netherite_upgrade");
         AUTH_GUI = new NamespacedKey(plugin, "auth_gui");
         CHGDIM_GUI = new NamespacedKey(plugin, "chgdim_gui");
 
