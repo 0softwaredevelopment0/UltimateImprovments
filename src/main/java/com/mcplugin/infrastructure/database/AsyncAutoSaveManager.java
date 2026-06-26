@@ -8,9 +8,9 @@ import com.mcplugin.mechanics.environment.radiation.RadiationManager;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * AsyncAutoSaveManager — автоматическое сохранение всех систем в БД каждые 5 минут.
+ * AutoSaveManager — автоматическое сохранение всех систем в БД каждые 5 минут.
  * <p>
- * Запускается асинхронно (Async) чтобы не лагать сервер.
+ * Запускается синхронно на главном серверном потоке.
  * Сохраняет: CableNetwork, ReactorManager, MagnetManager, RadiationManager.
  */
 public class AsyncAutoSaveManager extends BukkitRunnable {
@@ -28,8 +28,9 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
         }
         instance = new AsyncAutoSaveManager();
         // Запускаем с задержкой 5 минут, потом каждые 5 минут
-        instance.runTaskTimerAsynchronously(plugin, SAVE_INTERVAL_TICKS, SAVE_INTERVAL_TICKS);
-        plugin.getLogger().info("[AutoSave] Async auto-save started (every 5 minutes)");
+        // Синхронно — предотвращает data race при чтении ReactorManager/RadiationManager из async потока
+        instance.runTaskTimer(plugin, SAVE_INTERVAL_TICKS, SAVE_INTERVAL_TICKS);
+        plugin.getLogger().info("[AutoSave] Auto-save started (every 5 minutes)");
     }
 
     /**
@@ -77,65 +78,30 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
 
     @Override
     public void run() {
-        // Async save — не блокирует основной серверный поток
         Main plugin = Main.getInstance();
         if (plugin == null) return;
 
-        plugin.getLogger().fine("[AutoSave] Starting async auto-save...");
+        plugin.getLogger().fine("[AutoSave] Starting auto-save...");
 
-        saveWithRetry("CableNetwork", () -> {
-            CableNetwork.save();
-            return null;
-        }, plugin);
-
-        saveWithRetry("Reactor", () -> {
-            ReactorManager.saveAll();
-            return null;
-        }, plugin);
-
-        saveWithRetry("Radiation", () -> {
-            RadiationManager.saveAll();
-            return null;
-        }, plugin);
-
-        saveWithRetry("Magnet", () -> {
-            MagnetManager.saveAll();
-            return null;
-        }, plugin);
-
-        plugin.getLogger().fine("[AutoSave] Async auto-save complete.");
-    }
-
-    /**
-     * Выполняет сохранение с повторными попытками при SQLITE_BUSY.
-     * SQLite в WAL mode поддерживает конкурентные чтения, но записи
-     * могут блокироваться. busy_timeout=5000 помогает, но не всегда.
-     */
-    private void saveWithRetry(String name, java.util.concurrent.Callable<Void> task, Main plugin) {
-        int maxRetries = 5;
-        int retryDelay = 1000; // 1 секунда между попытками
-
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                task.call();
-                return; // Успех
-            } catch (Exception e) {
-                String msg = e.getMessage();
-                boolean isBusy = msg != null && (msg.contains("BUSY") || msg.contains("locked") || msg.contains("timeout"));
-                
-                if (isBusy && attempt < maxRetries) {
-                    plugin.getLogger().warning("[AutoSave] " + name + " busy (attempt " + attempt + "/" + maxRetries + "), retrying in " + retryDelay + "ms...");
-                    try {
-                        Thread.sleep(retryDelay);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        return;
-                    }
-                } else {
-                    plugin.getLogger().warning("[AutoSave] " + name + " save error: " + msg);
-                    return;
-                }
-            }
+        // Все save() методы теперь либо no-op (CableNetwork, MagnetManager),
+        // либо используют SQLite с busy_timeout=5000 (ReactorManager, RadiationManager).
+        // На синхронном потоке BUSY практически невозможен — нет конкурентных писателей.
+        try { CableNetwork.save(); } catch (Exception e) {
+            plugin.getLogger().warning("[AutoSave] CableNetwork error: " + e.getMessage());
         }
+
+        try { ReactorManager.saveAll(); } catch (Exception e) {
+            plugin.getLogger().warning("[AutoSave] Reactor error: " + e.getMessage());
+        }
+
+        try { RadiationManager.saveAll(); } catch (Exception e) {
+            plugin.getLogger().warning("[AutoSave] Radiation error: " + e.getMessage());
+        }
+
+        try { MagnetManager.saveAll(); } catch (Exception e) {
+            plugin.getLogger().warning("[AutoSave] Magnet error: " + e.getMessage());
+        }
+
+        plugin.getLogger().fine("[AutoSave] Auto-save complete.");
     }
 }

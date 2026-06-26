@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mcplugin.infrastructure.structure.StructureMarker;
+import org.bukkit.ChunkSnapshot;
 
 public class MagnetManager extends BukkitRunnable {
 
@@ -281,8 +282,50 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
+    // 🔥 БЫСТРЫЙ FLOOD-FILL С ChunkSnapshot (thread-safe для async)
+    // =========================
+    private static Set<Long> floodFillFastSnapshots(World world, int sx, int sy, int sz) {
+        if (world == null) return new HashSet<>(0);
+        if (!world.isChunkLoaded(sx >> 4, sz >> 4)) return new HashSet<>(0);
+
+        Map<Long, ChunkSnapshot> snapshots = new HashMap<>();
+
+        Set<Long> visited = new HashSet<>();
+        Deque<int[]> queue = new ArrayDeque<>();
+        long startKey = toKey(sx, sy, sz);
+        visited.add(startKey);
+        queue.add(new int[]{sx, sy, sz});
+
+        while (!queue.isEmpty()) {
+            int[] pos = queue.pollFirst();
+            int x = pos[0], y = pos[1], z = pos[2];
+            for (int[] d : DIR) {
+                int nx = x + d[0], ny = y + d[1], nz = z + d[2];
+                long nk = toKey(nx, ny, nz);
+                if (visited.contains(nk)) continue;
+                if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
+
+                // Получаем или создаём ChunkSnapshot — thread-safe immutable копию
+                long chunkKey = ((long)(nx >> 4) << 32) | (nz >> 4) & 0xFFFFFFFFL;
+                ChunkSnapshot snap = snapshots.get(chunkKey);
+                if (snap == null) {
+                    snap = world.getChunkAt(nx >> 4, nz >> 4).getChunkSnapshot(true, false, false);
+                    snapshots.put(chunkKey, snap);
+                }
+
+                if (snap.getBlockType(nx & 15, ny, nz & 15) == Material.LODESTONE) {
+                    visited.add(nk);
+                    queue.addLast(new int[]{nx, ny, nz});
+                }
+            }
+        }
+        return visited;
+    }
+
+    // =========================
     // ACTIVATE ASYNC (для сборки через команду)
     // Запускает flood-fill асинхронно, чтобы не фризить сервер.
+    // Использует ChunkSnapshot для thread-safe чтения блоков.
     // Игрок получает уведомление о начале и завершении сборки.
     // =========================
     public static void activateAsync(Location loc, Player player) {
@@ -306,7 +349,7 @@ public class MagnetManager extends BukkitRunnable {
 
         Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
             try {
-                Set<Long> connected = floodFillFast(world, sx, sy, sz);
+                Set<Long> connected = floodFillFastSnapshots(world, sx, sy, sz);
 
                 Bukkit.getScheduler().runTask(Main.getInstance(), () ->
                         finishActivation(connected, world, key, player)

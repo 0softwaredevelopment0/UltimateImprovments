@@ -302,15 +302,15 @@ public class StructureMarker {
         Iterator<Map.Entry<String, StructureData>> it = byPosition.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, StructureData> entry = it.next();
-            if (!usedUuids.contains(entry.getValue().uuid())) {
+            StructureData data = entry.getValue();
+            if (!usedUuids.contains(data.uuid())) {
                 String fk = entry.getKey();
-                String worldUid = parseWorldUid(fk);
                 it.remove();
                 // Также убираем из byUuid
-                Set<String> uuidKeys = byUuid.get(entry.getValue().uuid());
+                Set<String> uuidKeys = byUuid.get(data.uuid());
                 if (uuidKeys != null) {
                     uuidKeys.remove(fk);
-                    if (uuidKeys.isEmpty()) byUuid.remove(entry.getValue().uuid());
+                    if (uuidKeys.isEmpty()) byUuid.remove(data.uuid());
                 }
             }
         }

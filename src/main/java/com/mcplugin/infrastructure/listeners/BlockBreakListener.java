@@ -20,7 +20,7 @@ import java.util.Set;
 
 public class BlockBreakListener implements Listener {
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
 
         Location loc = LocationUtil.normalize(e.getBlock().getLocation());
