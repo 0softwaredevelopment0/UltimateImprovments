@@ -30,32 +30,13 @@ public class MagnetManager extends BukkitRunnable {
     private static MagnetManager instance;
 
     // =========================
-    // ⚙ УПАКОВКА КООРДИНАТ В long-клюЧ
+    // ⚙ УПАКОВКА КООРДИНАТ В long-клюЧ (делегировано в StructureMarker)
     // =========================
-    public static final int COORD_OFFSET = 33554432;
-    public static final int Y_OFFSET = 64;
-
-    public static long toKey(int x, int y, int z) {
-        return ((long)(x + COORD_OFFSET) << 38)
-             | ((long)(z + COORD_OFFSET) << 12)
-             | ((y + Y_OFFSET) & 0xFFFL);
-    }
-
-    public static long toKey(Location loc) {
-        return toKey(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-    }
-
-    public static int getX(long key) {
-        return (int)((key >>> 38) & 0x3FFFFFFL) - COORD_OFFSET;
-    }
-
-    public static int getZ(long key) {
-        return (int)((key >>> 12) & 0x3FFFFFFL) - COORD_OFFSET;
-    }
-
-    public static int getY(long key) {
-        return (int)(key & 0xFFFL) - Y_OFFSET;
-	}
+    public static long toKey(int x, int y, int z) { return StructureMarker.toKey(x, y, z); }
+    public static long toKey(Location loc) { return StructureMarker.toKey(loc); }
+    public static int getX(long key) { return StructureMarker.getX(key); }
+    public static int getZ(long key) { return StructureMarker.getZ(key); }
+    public static int getY(long key) { return StructureMarker.getY(key); }
 
     // =========================
     // 🧲 MAGNET CLUSTER
@@ -553,12 +534,12 @@ public class MagnetManager extends BukkitRunnable {
         }
     }
 
-    /** Находит UUID структуры из Marker соседнего блока */
+    /** Находит UUID магнита из Marker соседнего блока */
     private static UUID findUuidFromNeighbor(Location loc, long[] neighborKeys) {
         for (long nk : neighborKeys) {
             Location bl = new Location(loc.getWorld(), getX(nk), getY(nk), getZ(nk));
             StructureMarker.StructureData data = StructureMarker.getAt(bl);
-            if (data != null) return data.uuid();
+            if (data != null && "magnet".equals(data.type())) return data.uuid();
         }
         return null;
     }

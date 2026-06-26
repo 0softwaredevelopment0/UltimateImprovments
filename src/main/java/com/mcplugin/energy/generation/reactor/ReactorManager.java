@@ -335,6 +335,12 @@ public class ReactorManager {
         } else {
             if (reactorLocation != null) {
                 StructureMarker.removeAt(reactorLocation);
+
+                // Удаляем кабельный узел, созданный реактором для выдачи энергии
+                Location coreLoc = reactorLocation.clone().add(0, -1, 0);
+                if (CableNetwork.exists(coreLoc)) {
+                    CableNetwork.removeNode(coreLoc);
+                }
             }
             if (reactorId != null) {
                 deleteFromDb(reactorId);

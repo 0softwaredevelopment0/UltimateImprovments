@@ -76,6 +76,16 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
+        // 🧲 МАГНИТ (LODESTONE) — очистка orphaned Marker'ов
+        // Активные магниты обрабатываются в ReactorListener.onBlockBreak
+        // =========================
+        if (e.getBlock().getType() == Material.LODESTONE) {
+            if (StructureMarker.existsAt(loc)) {
+                StructureMarker.removeAt(loc);
+            }
+        }
+
+        // =========================
         // ⚡ ONLY IF NODE EXISTS
         // =========================
         if (!CableNetwork.exists(loc)) {

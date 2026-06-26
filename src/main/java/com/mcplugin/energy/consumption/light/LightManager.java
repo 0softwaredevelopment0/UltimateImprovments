@@ -391,12 +391,20 @@ public class LightManager {
     // TICK
     // ════════════════════════════════════════
     public static void tick() {
+        List<Integer> toRemove = new ArrayList<>();
+
         for (LightCluster cluster : clustersById.values()) {
             try {
                 if (cluster.world == null || cluster.blockKeys.isEmpty()) continue;
 
                 long firstKey = cluster.blockKeys.iterator().next();
                 if (!cluster.world.isChunkLoaded(getX(firstKey) >> 4, getZ(firstKey) >> 4)) continue;
+
+                // Анти-фантом: проверяем, что блок всё ещё REDSTONE_LAMP
+                if (cluster.world.getType(getX(firstKey), getY(firstKey), getZ(firstKey)) != Material.REDSTONE_LAMP) {
+                    toRemove.add(cluster.id);
+                    continue;
+                }
 
                 boolean shouldBeLit = cluster.isAnyBlockPowered();
                 if (shouldBeLit != cluster.lit) {
@@ -410,6 +418,21 @@ public class LightManager {
                 Main.getInstance().getLogger().warning("[LightMulti] Tick error: " + e.getMessage());
             }
         }
+
+        // Очищаем фантомные кластеры
+        for (int id : toRemove) {
+            LightCluster cluster = clustersById.get(id);
+            if (cluster != null) {
+                if (cluster.uuid != null) {
+                    StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
+                }
+                for (long bk : cluster.blockKeys) locationToCluster.remove(bk);
+                clustersById.remove(id);
+                cluster.blockKeys.clear();
+                Main.getInstance().getLogger().info("[LightMulti] Removed phantom cluster #" + id);
+            }
+        }
+
         processLightingQueue();
     }
 

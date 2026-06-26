@@ -45,6 +45,11 @@ public class LightningManager implements Listener {
     private static final Map<Location, Long> cookingCooldowns = new ConcurrentHashMap<>();
     private static final long COOKING_COOLDOWN_MS = 1000L; // 1 second
 
+    // Защита от дублирования крафта: UUID предметов, которые уже были обработаны
+    private static final Set<UUID> cookedItemIds = ConcurrentHashMap.newKeySet();
+    // Периодическая очистка cookedItemIds от старых записей (каждые 100 тиков)
+    private static int cookedItemCleanupTick = 0;
+
     // Periodic scan task — catches items that were already on the rod
     // (chunk loads, structure assembly with existing items, etc.)
     private static BukkitRunnable periodicScanTask = null;
@@ -312,6 +317,13 @@ public class LightningManager implements Listener {
         periodicScanTask = new BukkitRunnable() {
             @Override
             public void run() {
+                // Периодическая очистка cookedItemIds от старых записей (каждые ~5 секунд)
+                cookedItemCleanupTick++;
+                if (cookedItemCleanupTick >= 100) {
+                    cookedItemCleanupTick = 0;
+                    cookedItemIds.clear();
+                }
+
                 for (Map.Entry<Location, Boolean> entry : activeStructures.entrySet()) {
                     if (!entry.getValue()) continue; // disabled
                     Location center = entry.getKey();
@@ -378,6 +390,9 @@ public class LightningManager implements Listener {
         Long lastCook = cookingCooldowns.get(center);
         if (lastCook != null && (now - lastCook) < COOKING_COOLDOWN_MS) return false;
 
+        // Защита от дублирования: проверяем, не был ли уже обработан этот предмет
+        if (item.getUniqueId() != null && cookedItemIds.contains(item.getUniqueId())) return false;
+
         // Check if item is cookable
         Recipe cooked = findCookingRecipe(stack);
         if (cooked == null) return false;
@@ -388,6 +403,11 @@ public class LightningManager implements Listener {
         }
 
         cookingCooldowns.put(center, now);
+
+        // Помечаем предмет как обработанный
+        if (item.getUniqueId() != null) {
+            cookedItemIds.add(item.getUniqueId());
+        }
 
         // Strike lightning!
         World world = center.getWorld();
