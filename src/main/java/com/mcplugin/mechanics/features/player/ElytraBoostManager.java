@@ -5,7 +5,6 @@ import com.mcplugin.infrastructure.database.DatabaseManager;
 
 import org.bukkit.Color;
 import org.bukkit.GameMode;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -15,6 +14,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
 import java.sql.Connection;
@@ -100,9 +100,11 @@ public class ElytraBoostManager implements Listener {
         // Проверка toggle: если игрок отключил буст — пропускаем
         if (flyDisabled.contains(player.getUniqueId())) return;
 
-        // Должны быть элитры на груди
+        // Должен быть нагрудник/элитра с glider-компонентом
         ItemStack chest = player.getInventory().getChestplate();
-        if (chest == null || chest.getType() != Material.ELYTRA) return;
+        if (chest == null) return;
+        ItemMeta meta = chest.getItemMeta();
+        if (meta == null || !meta.isGlider()) return;
 
         // Должны быть в воздухе
         if (player.isOnGround()) return;
@@ -138,9 +140,11 @@ public class ElytraBoostManager implements Listener {
         // Проверка toggle: если игрок отключил буст — пропускаем
         if (flyDisabled.contains(player.getUniqueId())) return;
 
-        // Проверяем элитры
+        // Проверяем нагрудник/элитры с glider-компонентом
         ItemStack chest = player.getInventory().getChestplate();
-        if (chest == null || chest.getType() != Material.ELYTRA) return;
+        if (chest == null) return;
+        ItemMeta meta = chest.getItemMeta();
+        if (meta == null || !meta.isGlider()) return;
 
         // Защита: если игрок НЕ летел до этого — пропускаем (начало полёта)
         if (!player.isGliding() && !lastYDelta.containsKey(player.getUniqueId())) return;
