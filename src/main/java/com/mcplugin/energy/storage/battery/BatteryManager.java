@@ -6,6 +6,7 @@ import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
+import com.mcplugin.energy.transfer.cable.NodeType;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -214,6 +215,9 @@ public class BatteryManager implements Listener {
 
             for (long key : group.getValue()) {
                 locationToCluster.put(key, cluster);
+                // Создаём CableNode с типом BATTERY (без "cable" маркера)
+                Location blockLoc = new Location(world, getX(key), getY(key), getZ(key));
+                CableNetwork.ensureNode(blockLoc, NodeType.BATTERY);
             }
             clustersById.put(cluster.id, cluster);
             usedUuids.add(cluster.uuid);
@@ -305,6 +309,8 @@ public class BatteryManager implements Listener {
             // Создаём Marker entity на каждом блоке
             Location blockLoc = new Location(cluster.world, getX(bk), getY(bk), getZ(bk));
             StructureMarker.place(blockLoc, "battery", uuid);
+            // Создаём CableNode с типом BATTERY
+            CableNetwork.ensureNode(blockLoc, NodeType.BATTERY);
         }
         clustersById.put(cluster.id, cluster);
 
@@ -336,7 +342,12 @@ public class BatteryManager implements Listener {
         BatteryCluster cluster = locationToCluster.get(toKey(loc));
         if (cluster == null) return;
 
-        for (long bk : cluster.blockKeys) locationToCluster.remove(bk);
+        for (long bk : cluster.blockKeys) {
+            locationToCluster.remove(bk);
+            // Удаляем CableNode для этого блока
+            Location blockLoc = new Location(cluster.world, getX(bk), getY(bk), getZ(bk));
+            CableNetwork.removeNode(blockLoc);
+        }
         clustersById.remove(cluster.id);
 
         // Удаляем все Marker'ы кластера
@@ -378,6 +389,8 @@ public class BatteryManager implements Listener {
             if (c.uuid != null) {
                 StructureMarker.place(loc, "battery", c.uuid);
             }
+            // Создаём CableNode с типом BATTERY
+            CableNetwork.ensureNode(loc, NodeType.BATTERY);
         } else {
             Iterator<BatteryCluster> it = adj.iterator();
             BatteryCluster primary = it.next();
@@ -400,6 +413,8 @@ public class BatteryManager implements Listener {
             if (primary.uuid != null) {
                 StructureMarker.place(loc, "battery", primary.uuid);
             }
+            // Создаём CableNode с типом BATTERY
+            CableNetwork.ensureNode(loc, NodeType.BATTERY);
         }
     }
 
@@ -418,9 +433,10 @@ public class BatteryManager implements Listener {
             StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
         }
 
-        // Очищаем кэш
+        // Очищаем кэш и CableNode
         for (long bk : cluster.blockKeys) {
             locationToCluster.remove(bk);
+            CableNetwork.removeNode(new Location(cluster.world, getX(bk), getY(bk), getZ(bk)));
         }
         clustersById.remove(cluster.id);
         cluster.blockKeys.clear();
@@ -544,6 +560,7 @@ public class BatteryManager implements Listener {
             if (cluster != null) {
                 for (long bk : cluster.blockKeys) {
                     locationToCluster.remove(bk);
+                    CableNetwork.removeNode(new Location(cluster.world, getX(bk), getY(bk), getZ(bk)));
                 }
                 clustersById.remove(id);
                 // Удаляем Marker'ы

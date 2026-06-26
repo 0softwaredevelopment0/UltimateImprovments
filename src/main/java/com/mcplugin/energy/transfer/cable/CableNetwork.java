@@ -32,16 +32,14 @@ public class CableNetwork {
     }
 
     /**
-     * Сканирует кэш StructureMarker на type="cable" и type="battery" и создаёт CableNode для каждого.
-     * "battery" обрабатывается, т.к. WAXED_COPPER_GRATE уже имеет "battery" маркер от BatteryManager,
-     * и "cable" маркер не создаётся из-за позиционного дедупликации в StructureMarker.place().
+     * Сканирует кэш StructureMarker на type="cable" и создаёт CableNode для каждого.
+     * Батарейные блоки регенерируют свои CableNode через {@code BatteryManager.rebuildFromMarkers()}.
      * После создания — авто-соединяет соседние кабели.
      */
     private static void rebuildFromMarkers() {
         int count = 0;
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
-            String markerType = entry.getValue().type();
-            if (!"cable".equals(markerType) && !"battery".equals(markerType)) continue;
+            if (!"cable".equals(entry.getValue().type())) continue;
 
             String fk = entry.getKey();
             String worldUid = StructureMarker.parseWorldUid(fk);
@@ -62,14 +60,7 @@ public class CableNetwork {
             Location loc = LocationUtil.normalize(new Location(world, x, y, z));
             if (nodes.containsKey(loc)) continue;
 
-            CableNode node = new CableNode(loc);
-
-            // Определяем тип: если блок WAXED_COPPER_GRATE — это BATTERY (старый формат)
-            if (world.getBlockAt(x, y, z).getType() == Material.WAXED_COPPER_GRATE) {
-                node.setType(NodeType.BATTERY);
-            }
-
-            nodes.put(loc, node);
+            nodes.put(loc, new CableNode(loc));
             count++;
         }
 
@@ -108,6 +99,18 @@ public class CableNetwork {
 
         // Marker entity для переноса мира без БД
         StructureMarker.place(loc, "cable", UUID.randomUUID());
+    }
+
+    // =========================
+    // ENSURE NODE — создаёт CableNode без Marker entity
+    // Используется BatteryManager при восстановлении из "battery" маркеров
+    // =========================
+    public static void ensureNode(Location loc, NodeType type) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null || nodes.containsKey(loc)) return;
+        CableNode node = new CableNode(loc);
+        if (type != null) node.setType(type);
+        nodes.put(loc, node);
     }
 
     // =========================
