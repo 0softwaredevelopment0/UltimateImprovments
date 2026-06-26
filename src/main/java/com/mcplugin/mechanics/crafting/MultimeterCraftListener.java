@@ -49,7 +49,7 @@ public class MultimeterCraftListener implements Listener {
 
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Multimeter</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Multimeter *</white>"));
 
         // =========================
         // LORE
@@ -67,6 +67,7 @@ public class MultimeterCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "multimeter"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -109,7 +110,7 @@ public class MultimeterCraftListener implements Listener {
 
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Multimeter</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Multimeter *</white>"));
 
         // =========================
         // LORE
@@ -127,6 +128,7 @@ public class MultimeterCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "multimeter"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

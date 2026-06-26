@@ -40,7 +40,7 @@ public class LeadIngotCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Used to craft a Lead Shield</gray>")
@@ -52,6 +52,7 @@ public class LeadIngotCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "lead_ingot"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -87,7 +88,7 @@ public class LeadIngotCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Used to craft a Lead Shield</gray>")
         ));
@@ -98,6 +99,7 @@ public class LeadIngotCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "lead_ingot"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

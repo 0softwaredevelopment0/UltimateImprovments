@@ -36,7 +36,7 @@ public class MetalDetectorCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Metal Detector</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Metal Detector *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>RMB — scan for metal blocks, items and entities</gray>")
@@ -48,6 +48,7 @@ public class MetalDetectorCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "metal_detector"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -82,7 +83,7 @@ public class MetalDetectorCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Metal Detector</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Metal Detector *</white>"));
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>RMB — scan for metal blocks, items and entities</gray>")
         ));
@@ -93,6 +94,7 @@ public class MetalDetectorCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "metal_detector"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

@@ -36,7 +36,7 @@ public class PortableRadarCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Portable Radar</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Portable Radar *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>RMB — find nearest entity (64 blocks)</gray>")
@@ -48,6 +48,7 @@ public class PortableRadarCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "portable_radar"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -81,7 +82,7 @@ public class PortableRadarCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Portable Radar</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Portable Radar *</white>"));
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>RMB — find nearest entity (64 blocks)</gray>")
         ));
@@ -92,6 +93,7 @@ public class PortableRadarCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "portable_radar"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

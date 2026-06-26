@@ -56,7 +56,7 @@ public class LeadShieldCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Lead Shield</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Shield *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Protects from radiation when held</gray>")
@@ -71,6 +71,7 @@ public class LeadShieldCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "lead_shield"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -138,7 +139,7 @@ public class LeadShieldCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Lead Shield</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Shield *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Protects from radiation when held</gray>")
@@ -153,6 +154,7 @@ public class LeadShieldCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "lead_shield"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

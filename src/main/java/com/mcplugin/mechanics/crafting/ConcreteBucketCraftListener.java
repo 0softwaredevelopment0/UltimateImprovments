@@ -38,7 +38,7 @@ public class ConcreteBucketCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Water that hardens into concrete after 60 seconds</gray>"),
@@ -51,6 +51,7 @@ public class ConcreteBucketCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "concrete_bucket"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -91,7 +92,7 @@ public class ConcreteBucketCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket *</white>"));
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Water that hardens into concrete after 60 seconds</gray>"),
                 MessageUtil.parse("<i:false><gray>Creates gray-tinted water (Pale Garden biome)</gray>")
@@ -101,6 +102,7 @@ public class ConcreteBucketCraftListener implements Listener {
                 PersistentDataType.BYTE,
                 (byte) 1
         );
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "concrete_bucket"));
         result.setItemMeta(meta);
         e.getInventory().setResult(result);
     }

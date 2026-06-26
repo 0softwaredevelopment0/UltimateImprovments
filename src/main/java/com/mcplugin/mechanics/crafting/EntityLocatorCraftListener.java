@@ -50,7 +50,7 @@ public class EntityLocatorCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Entity Locator</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Entity Locator *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Shows distance to nearest entity</gray>")
@@ -65,6 +65,7 @@ public class EntityLocatorCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "entity_locator"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -113,7 +114,7 @@ public class EntityLocatorCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><i:false><white>Entity Locator</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><i:false><white>Entity Locator *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><i:false><gray>Shows distance to nearest entity</gray>")
@@ -128,6 +129,7 @@ public class EntityLocatorCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "entity_locator"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

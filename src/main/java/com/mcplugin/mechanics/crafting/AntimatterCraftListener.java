@@ -51,7 +51,7 @@ public class AntimatterCraftListener implements Listener {
         PotionMeta meta = (PotionMeta) result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Antimatter Flask</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Antimatter Flask *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Creates a powerful explosion when thrown</gray>")
@@ -69,6 +69,7 @@ public class AntimatterCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "antimatter"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -117,7 +118,7 @@ public class AntimatterCraftListener implements Listener {
         PotionMeta meta = (PotionMeta) result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Antimatter Flask</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Antimatter Flask *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Creates a powerful explosion when thrown</gray>")
@@ -135,6 +136,7 @@ public class AntimatterCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "antimatter"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

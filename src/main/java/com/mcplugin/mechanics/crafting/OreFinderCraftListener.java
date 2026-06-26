@@ -36,7 +36,7 @@ public class OreFinderCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Ore Finder</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Ore Finder *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>RMB — scan chunk for ores</gray>")
@@ -48,6 +48,7 @@ public class OreFinderCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "ore_finder"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -82,7 +83,7 @@ public class OreFinderCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Ore Finder</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Ore Finder *</white>"));
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>RMB — scan chunk for ores</gray>")
         ));
@@ -93,6 +94,7 @@ public class OreFinderCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "ore_finder"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

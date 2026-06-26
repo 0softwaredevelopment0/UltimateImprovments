@@ -48,7 +48,7 @@ public class PlasmaCannonCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Photon cannon</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Photon cannon *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Shoots with echo_shard.</gray>")
@@ -63,6 +63,7 @@ public class PlasmaCannonCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "plasma_cannon"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -112,7 +113,7 @@ public class PlasmaCannonCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Photon cannon</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Photon cannon *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Shoots with echo_shard.</gray>")
@@ -127,6 +128,7 @@ public class PlasmaCannonCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "plasma_cannon"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

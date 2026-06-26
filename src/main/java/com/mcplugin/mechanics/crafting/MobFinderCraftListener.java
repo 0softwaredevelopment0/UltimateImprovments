@@ -36,7 +36,7 @@ public class MobFinderCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Mob Finder</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Mob Finder *</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>RMB — scan chunk for mobs</gray>")
@@ -48,6 +48,7 @@ public class MobFinderCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "mob_finder"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -81,7 +82,7 @@ public class MobFinderCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Mob Finder</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Mob Finder *</white>"));
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>RMB — scan chunk for mobs</gray>")
         ));
@@ -92,6 +93,7 @@ public class MobFinderCraftListener implements Listener {
                 (byte) 1
         );
 
+        meta.setItemModel(new NamespacedKey(Main.getInstance(), "mob_finder"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }
