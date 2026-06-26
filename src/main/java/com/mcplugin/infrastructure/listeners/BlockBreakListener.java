@@ -69,10 +69,14 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // 🛠 ITEM ASSEMBLER (CRAFTER)
+        // 🛠 ITEM ASSEMBLER (CRAFTER) — remove + orphaned Marker cleanup
         // =========================
         if (e.getBlock().getType() == Material.CRAFTER) {
             EnergyWorkbenchManager.remove(loc);
+            // Orphaned Marker cleanup (если CRAFTER разбит, а в кэше остался маркер)
+            if (StructureMarker.existsAt(loc)) {
+                StructureMarker.removeAt(loc);
+            }
         }
 
         // =========================

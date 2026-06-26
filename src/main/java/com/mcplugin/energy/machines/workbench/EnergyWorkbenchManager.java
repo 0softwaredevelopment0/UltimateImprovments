@@ -1,7 +1,7 @@
 package com.mcplugin.energy.machines.workbench;
 
 import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.database.*;
+import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
@@ -18,10 +18,6 @@ import org.bukkit.block.data.type.Crafter;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPhysicsEvent;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
 import java.util.*;
 
@@ -40,61 +36,47 @@ public class EnergyWorkbenchManager {
     private static final Map<UUID, Location> playerWorkbench = new HashMap<>();
 
     // =========================
-    // INIT
+    // INIT — rebuild from Marker entities
     // =========================
     public static void init() {
 
         workbenches.clear();
         energyBuffer.clear();
         playerWorkbench.clear();
-        load();
+        scanFromMarkers();
     }
 
     // =========================
-    // LOAD FROM DB
+    // SCAN FROM MARKER ENTITIES
     // =========================
-    private static void load() {
-
+    private static void scanFromMarkers() {
         workbenches.clear();
 
-        try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "SELECT * FROM workbenches"
-             );
-             ResultSet rs = ps.executeQuery()) {
+        for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+            if (!"workbench".equals(entry.getValue().type())) continue;
 
-            while (rs.next()) {
+            String fk = entry.getKey();
+            String worldUid = StructureMarker.parseWorldUid(fk);
+            int x = StructureMarker.parseX(fk), y = StructureMarker.parseY(fk), z = StructureMarker.parseZ(fk);
 
-                World world = Main.getInstance()
-                        .getServer()
-                        .getWorld(rs.getString("world"));
-
-                if (world == null) continue;
-
-                Location loc = new Location(
-                        world,
-                        rs.getInt("x"),
-                        rs.getInt("y"),
-                        rs.getInt("z")
-                );
-
-                workbenches.add(LocationUtil.normalize(loc));
+            // Находим мир по UUID
+            for (World world : Main.getInstance().getServer().getWorlds()) {
+                if (!world.getUID().toString().equals(worldUid)) continue;
+                Location loc = LocationUtil.normalize(new Location(world, x, y, z));
+                if (loc != null) {
+                    workbenches.add(loc);
+                }
+                break;
             }
-
-            Main.getInstance().getLogger().info(
-                    "[EnergyWorkbenchManager] Loaded " + workbenches.size() + " workbenches"
-            );
-
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe(
-                    "[EnergyWorkbenchManager] Load failed: " + e.getMessage()
-            );
-            e.printStackTrace();
         }
+
+        Main.getInstance().getLogger().info(
+                "[EnergyWorkbenchManager] Loaded " + workbenches.size() + " workbenches from Marker entities"
+        );
     }
 
     // =========================
-    // ADD
+    // ADD (+ Marker entity)
     // =========================
     public static void add(Location loc) {
 
@@ -105,29 +87,11 @@ public class EnergyWorkbenchManager {
         if (workbenches.contains(loc)) return;
 
         workbenches.add(loc);
-
-        try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "INSERT OR REPLACE INTO workbenches (world, x, y, z) VALUES (?, ?, ?, ?)"
-             )) {
-
-            ps.setString(1, loc.getWorld().getName());
-            ps.setInt(2, loc.getBlockX());
-            ps.setInt(3, loc.getBlockY());
-            ps.setInt(4, loc.getBlockZ());
-
-            ps.executeUpdate();
-
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe(
-                    "[EnergyWorkbenchManager] Add failed: " + e.getMessage()
-            );
-            e.printStackTrace();
-        }
+        StructureMarker.place(loc, "workbench", UUID.randomUUID());
     }
 
     // =========================
-    // REMOVE
+    // REMOVE (+ Marker cleanup)
     // =========================
     public static void remove(Location loc) {
 
@@ -137,25 +101,7 @@ public class EnergyWorkbenchManager {
 
         workbenches.remove(loc);
         energyBuffer.remove(loc);
-
-        try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                     "DELETE FROM workbenches WHERE world = ? AND x = ? AND y = ? AND z = ?"
-             )) {
-
-            ps.setString(1, loc.getWorld().getName());
-            ps.setInt(2, loc.getBlockX());
-            ps.setInt(3, loc.getBlockY());
-            ps.setInt(4, loc.getBlockZ());
-
-            ps.executeUpdate();
-
-        } catch (Exception e) {
-            Main.getInstance().getLogger().severe(
-                    "[EnergyWorkbenchManager] Remove failed: " + e.getMessage()
-            );
-            e.printStackTrace();
-        }
+        StructureMarker.removeAt(loc);
     }
 
     // =========================
