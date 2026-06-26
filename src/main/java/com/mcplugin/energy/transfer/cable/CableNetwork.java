@@ -32,13 +32,16 @@ public class CableNetwork {
     }
 
     /**
-     * Сканирует кэш StructureMarker на type="cable" и создаёт CableNode для каждого.
+     * Сканирует кэш StructureMarker на type="cable" и type="battery" и создаёт CableNode для каждого.
+     * "battery" обрабатывается, т.к. WAXED_COPPER_GRATE уже имеет "battery" маркер от BatteryManager,
+     * и "cable" маркер не создаётся из-за позиционного дедупликации в StructureMarker.place().
      * После создания — авто-соединяет соседние кабели.
      */
     private static void rebuildFromMarkers() {
         int count = 0;
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
-            if (!"cable".equals(entry.getValue().type())) continue;
+            String markerType = entry.getValue().type();
+            if (!"cable".equals(markerType) && !"battery".equals(markerType)) continue;
 
             String fk = entry.getKey();
             String worldUid = StructureMarker.parseWorldUid(fk);
