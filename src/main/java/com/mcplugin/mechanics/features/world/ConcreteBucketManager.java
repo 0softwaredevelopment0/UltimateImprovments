@@ -96,6 +96,10 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
         // Отслеживаем блок воды
         trackedWater.put(waterLoc, new ConcreteWater(originalBiome, System.currentTimeMillis()));
+
+        // 🪣 Сервер Paper сам заменяет WATER_BUCKET на обычный BUCKET после этого события.
+        // PDC теряется при замене, поэтому ведро становится обычным.
+        // Комментарий оставлен намеренно, чтобы не добавлять ручную замену (это приведёт к дублированию).
     }
 
     // =========================

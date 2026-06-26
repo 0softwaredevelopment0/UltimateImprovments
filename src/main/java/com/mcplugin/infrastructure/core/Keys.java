@@ -27,6 +27,9 @@ public class Keys {
     public static NamespacedKey METAL_DETECTOR;
     public static NamespacedKey CONCRETE_BUCKET;
 
+    // Chestplate Flight
+    public static NamespacedKey CHESTPLATE_FLIGHT;
+
     // Integrity System
     public static NamespacedKey INTEGRITY_TAG;
     public static NamespacedKey INTEGRITY_MAX;
@@ -48,6 +51,7 @@ public class Keys {
         LEAD_INGOT = new NamespacedKey(plugin, "isLeadIngot");
         LEAD_SHIELD = new NamespacedKey(plugin, "isLeadShield");
         CONCRETE_BUCKET = new NamespacedKey(plugin, "is_concrete_bucket");
+        CHESTPLATE_FLIGHT = new NamespacedKey(plugin, "chestplate_flight");
         AUTH_GUI = new NamespacedKey(plugin, "auth_gui");
         CHGDIM_GUI = new NamespacedKey(plugin, "chgdim_gui");
 

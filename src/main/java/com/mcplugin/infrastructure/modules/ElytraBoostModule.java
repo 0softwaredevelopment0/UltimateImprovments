@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.mechanics.features.items.ChestplateFlightListener;
 import com.mcplugin.mechanics.features.player.ElytraBoostManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -18,7 +19,9 @@ public class ElytraBoostModule extends PluginModule {
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {
-        ElytraBoostManager.init((Main) plugin);
+        Main main = (Main) plugin;
+        ElytraBoostManager.init(main);
+        main.getServer().getPluginManager().registerEvents(new ChestplateFlightListener(), main);
     }
 
     @Override
