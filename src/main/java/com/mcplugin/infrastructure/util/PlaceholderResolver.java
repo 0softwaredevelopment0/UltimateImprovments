@@ -52,7 +52,7 @@ import java.util.regex.Pattern;
  */
 public class PlaceholderResolver {
 
-    private static final DecimalFormat TPS_FORMAT = new DecimalFormat("#.##");
+    private static final DecimalFormat TPS_FORMAT = new DecimalFormat("0.00");
     private static final DecimalFormat PCT_FORMAT = new DecimalFormat("#.#");
     private static final Pattern DYNAMIC_PLACEHOLDER = Pattern.compile(
             "\\{(tps|mspt|online|ram)(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(color))?\\}"
