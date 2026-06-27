@@ -87,8 +87,12 @@ public class EnderChestManager implements Listener {
     }
 
     /**
-     * Записывает время и позицию сундука при ПКМ по эндер-сундуку.
-     * Также обрабатывает шанс взрыва (0.1% по умолчанию).
+     * При ПКМ по эндер-сундуку:
+     * <ul>
+     *   <li>Всегда наносит 1 единицу урона</li>
+     *   <li>Записывает время и позицию для проверки быстрого закрытия</li>
+     *   <li>С шансом {@code explosion_chance} сундук взрывается (GUI не открывается)</li>
+     * </ul>
      */
     @EventHandler(ignoreCancelled = true)
     public void onEnderChestInteract(PlayerInteractEvent e) {
@@ -99,22 +103,28 @@ public class EnderChestManager implements Listener {
         Player player = e.getPlayer();
         Location loc = e.getClickedBlock().getLocation();
 
-        // Всегда записываем данные для quick_close (даже если сундук взорвётся — close не сработает)
+        // Всегда 1 урон при открытии
+        if (quickCloseDamage > 0) {
+            player.damage(quickCloseDamage);
+            player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.8f, 1.2f);
+        }
+
+        // Записываем данные для быстрого закрытия
         if (quickCloseEnabled) {
             enderChestOpenData.put(player.getUniqueId(), new EnderChestOpenData(System.currentTimeMillis(), loc));
         }
 
-        // Шанс взрыва (фиксируем значение ДО проверки, чтобы лог был корректен)
+        // Шанс взрыва
         double roll = RANDOM.nextDouble();
         if (roll >= explosionChance) return;
 
         // Удаляем сам блок сундука (взрыв может его не уничтожить из-за blast resistance)
         loc.getBlock().setType(Material.AIR);
 
-        // Взрыв с разрушением блоков (сила 10)
+        // Взрыв с разрушением блоков
         loc.getWorld().createExplosion(loc, (float) explosionPower, false, true);
 
-        // Дополнительный урон игроку
+        // Дополнительный урон игроку от взрыва
         if (damage > 0) {
             player.damage(damage);
         }
@@ -164,12 +174,15 @@ public class EnderChestManager implements Listener {
     }
 
     /**
-     * При закрытии эндер-сундука проверяем:
+     * При закрытии эндер-сундука:
      * <ul>
-     *   <li>Если закрыл быстрее чем threshold_ms — проверяем куда смотрел</li>
-     *   <li>Смотрит на сундук (≤ angle_threshold°) → {@code quickCloseDamage} урона</li>
-     *   <li>Отвёл взгляд (> angle_threshold°) → взрыв (charged creeper)</li>
+     *   <li>Всегда наносит 1 урон</li>
+     *   <li>Если закрыл быстрее чем threshold_ms — через 0.5 сек проверяет, куда смотрит игрок</li>
+     *   <li>Отвёл взгляд (> angle_threshold°) → взрыв</li>
      * </ul>
+     * <p>
+     * Проверка взгляда отложена на 10 тиков (0.5 сек), чтобы игрок физически успел
+     * отвернуться от сундука после закрытия GUI.
      */
     @EventHandler
     public void onEnderChestClose(InventoryCloseEvent e) {
@@ -179,19 +192,22 @@ public class EnderChestManager implements Listener {
 
         UUID uuid = player.getUniqueId();
         EnderChestOpenData data = enderChestOpenData.remove(uuid);
+
+        // Всегда 1 урон при закрытии
+        if (quickCloseDamage > 0) {
+            player.damage(quickCloseDamage);
+            player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.8f, 1.2f);
+        }
+
+        // Если нет данных о времени открытия — не проверяем быстрый поворот
         if (data == null) return;
 
         long elapsed = System.currentTimeMillis() - data.openTime;
         if (elapsed >= quickCloseThresholdMs) return;
 
-        // Игрок закрыл сундук быстро — проверяем, куда он смотрит
-        if (lookAwayEnabled && isLookingAway(player, data.chestLocation)) {
-            // Отвёл взгляд → ВЗРЫВ
-            triggerLookAwayExplosion(player, data.chestLocation);
-        } else if (quickCloseDamage > 0) {
-            // Смотрит на сундук → 1 урона
-            player.damage(quickCloseDamage);
-            player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.8f, 1.2f);
+        // Отложенная проверка взгляда (10 тиков = 0.5 сек)
+        if (lookAwayEnabled) {
+            scheduleLookAwayCheck(player, data.chestLocation);
         }
     }
 
@@ -223,6 +239,23 @@ public class EnderChestManager implements Listener {
         double angleDeg = Math.toDegrees(Math.acos(dot));
 
         return angleDeg > lookAwayAngleThreshold;
+    }
+
+    /**
+     * Отложенная проверка взгляда игрока.
+     * Через 10 тиков (0.5 сек) после закрытия проверяет, смотрит ли игрок
+     * в сторону от сундука — если да, вызывает взрыв.
+     */
+    private static void scheduleLookAwayCheck(Player player, Location chestLocation) {
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!player.isOnline()) return;
+                if (isLookingAway(player, chestLocation)) {
+                    triggerLookAwayExplosion(player, chestLocation);
+                }
+            }
+        }.runTaskLater(Main.getInstance(), 10L); // 10 тиков = 0.5 сек
     }
 
     /**
