@@ -32,6 +32,13 @@ public final class MaintSubcommand {
             return true;
         }
 
+        // Проверка: включена ли фича техработ в config.yml
+        if (!MaintenanceManager.getInstance().isFeatureEnabled()) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Maintenance system is disabled in config!</red>"));
+            return true;
+        }
+
         if (args.length < 2) {
             sendUsage(sender);
             return true;

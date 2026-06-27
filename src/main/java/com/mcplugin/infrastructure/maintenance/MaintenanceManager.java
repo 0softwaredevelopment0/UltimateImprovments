@@ -48,16 +48,26 @@ public class MaintenanceManager implements Listener {
         return instance;
     }
 
+    /**
+     * Проверяет, включена ли фича техработ в config.yml.
+     * Отключает всю систему: /mp maint будет недоступен, вход не блокируется.
+     */
+    public boolean isFeatureEnabled() {
+        return Main.getInstance().getConfig().getBoolean("maintenance.enabled", true);
+    }
+
     // =========================
     // DATABASE
     // =========================
 
     /**
-     * Загружает enabled-флаг из БД с миграцией из config.yml.
+     * Загружает enabled-флаг из БД.
+     * При первом запуске (нет записи в БД) — статус = false (техработы выключены).
+     * Флаг config.yml "maintenance.enabled" теперь НЕ влияет на статус —
+     * он только включает/выключает саму фичу (проверяется в isFeatureEnabled()).
      */
     public void loadFromDb() {
         try (Connection con = DatabaseManager.getConnection()) {
-            // Миграция: если в БД ещё нет enabled, берём из config.yml
             try (PreparedStatement st = con.prepareStatement(
                      "SELECT value FROM maintenance_meta WHERE key = ?")) {
                 st.setString(1, "enabled");
@@ -65,19 +75,15 @@ public class MaintenanceManager implements Listener {
                     if (rs.next()) {
                         maintenanceMode = Boolean.parseBoolean(rs.getString("value"));
                     } else {
-                        // Первый запуск — мигрируем из config.yml
-                        boolean oldEnabled = Main.getInstance().getConfig()
-                                .getBoolean("maintenance.enabled", false);
-                        maintenanceMode = oldEnabled;
-                        // Сохраняем в БД
+                        // Первый запуск — начинаем с выключенным статусом.
+                        // Раньше тут мигрировалось из config.yml, теперь
+                        // config.yml управляет только вкл/выкл фичи, а статус = false.
+                        maintenanceMode = false;
                         try (PreparedStatement ins = con.prepareStatement(
                                 "INSERT OR REPLACE INTO maintenance_meta (key, value) VALUES (?, ?)")) {
                             ins.setString(1, "enabled");
-                            ins.setString(2, String.valueOf(oldEnabled));
+                            ins.setString(2, "false");
                             ins.executeUpdate();
-                        }
-                        if (oldEnabled) {
-                            Main.getInstance().getLogger().info("[Maintenance] Migrated enabled=true from config.yml to SQLite");
                         }
                     }
                 }
@@ -283,7 +289,8 @@ public class MaintenanceManager implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerLogin(PlayerLoginEvent event) {
-        if (!maintenanceMode) return;
+        // Проверка: включена ли фича техработ в config.yml
+        if (!isFeatureEnabled() || !maintenanceMode) return;
 
         Player player = event.getPlayer();
         if (isWhitelisted(player.getUniqueId())) return;
