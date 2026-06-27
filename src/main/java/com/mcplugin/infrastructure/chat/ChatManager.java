@@ -44,6 +44,7 @@ public class ChatManager implements Listener {
     private boolean enabled;
     private Mode mode;
     private boolean playerMiniMessage;
+    private boolean messagePlaceholders;
     private String bypassPermission;
 
     // Default format (used for STATIC and as fallback)
@@ -80,6 +81,7 @@ public class ChatManager implements Listener {
 
         this.enabled = cfg.getBoolean("chat.enabled", false);
         this.playerMiniMessage = cfg.getBoolean("chat.player_minimessage", false);
+        this.messagePlaceholders = cfg.getBoolean("chat.message_placeholders", true);
         this.bypassPermission = cfg.getString("chat.bypass_permission", "mcplugin.chat.custom.bypass");
 
         // Mode: static | per-group | per-world
@@ -119,7 +121,8 @@ public class ChatManager implements Listener {
         Main.getInstance().getLogger().info("[Chat] Custom chat "
                 + (enabled ? "enabled" : "disabled")
                 + " | mode=" + mode.name().toLowerCase()
-                + " | player-minimessage=" + playerMiniMessage);
+                + " | player-minimessage=" + playerMiniMessage
+                + " | message-placeholders=" + messagePlaceholders);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -135,8 +138,11 @@ public class ChatManager implements Listener {
         String format = resolveFormat(player);
         if (format == null || format.isEmpty()) return;
 
-        // Build message component
+        // Build message component (resolve placeholders if enabled)
         String rawMessage = event.getMessage();
+        if (messagePlaceholders) {
+            rawMessage = PlaceholderResolver.resolve(rawMessage, player);
+        }
         Component messageComponent;
         if (playerMiniMessage) {
             // Parse player message as MiniMessage (allows color, bold, etc.)

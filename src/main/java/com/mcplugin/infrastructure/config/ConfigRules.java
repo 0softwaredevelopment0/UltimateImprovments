@@ -358,6 +358,7 @@ final class ConfigRules {
             bool("chat.enabled"),
             notBlank("chat.mode", 16),
             bool("chat.player_minimessage"),
+            bool("chat.message_placeholders"),
             string("chat.bypass_permission", false, 64),
             notBlank("chat.format", 512),
 

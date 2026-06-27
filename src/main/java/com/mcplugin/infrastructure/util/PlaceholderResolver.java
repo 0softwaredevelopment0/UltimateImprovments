@@ -12,55 +12,69 @@ import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Резольвер плейсхолдеров — встроенные + PAPI + LuckPerms (если установлен).
+ * Резольвер плейсхолдеров — встроенные + PAPI + динамические (time-based).
  * <p>
- * Встроенные плейсхолдеры:
+ * <b>Существующие плейсхолдеры:</b>
  * <ul>
- *   <li>{player_name} — ник игрока</li>
- *   <li>{player_displayname} — отображаемое имя</li>
- *   <li>{player_uuid} — UUID игрока</li>
- *   <li>{player_ping} — пинг игрока</li>
- *   <li>{player_gamemode} — режим игры</li>
- *   <li>{player_health} — здоровье (HP)</li>
- *   <li>{player_food} — сытость</li>
- *   <li>{player_level} — уровень опыта</li>
- *   <li>{player_xp} — опыт (0.0–1.0)</li>
- *   <li>{world_name} — название мира</li>
- *   <li>{world_players} — игроков в мире игрока</li>
- *   <li>{online} — онлайн</li>
- *   <li>{max_players} — макс. игроков</li>
- *   <li>{tps} — TPS сервера (1m avg)</li>
- *   <li>{uptime} — аптайм сервера</li>
- *   <li>{server_name} — имя сервера (bukkit.name)</li>
- *   <li>{server_version} — версия сервера</li>
- *   <li>{prefix} — префикс LuckPerms (legacy → MiniMessage)</li>
- *   <li>{suffix} — суффикс LuckPerms (legacy → MiniMessage)</li>
- *   <li>{group} — основная группа LuckPerms</li>
+ *   <li>{player_name}, {player_displayname}, {player_uuid}</li>
+ *   <li>{player_ping}, {player_ping_color}, {player_ping_gradient}</li>
+ *   <li>{player_gamemode}, {player_health}, {player_food}</li>
+ *   <li>{player_level}, {player_xp}</li>
+ *   <li>{world_name}, {world_players}</li>
+ *   <li>{online}, {max_players}</li>
+ *   <li>{tps}</li>
+ *   <li>{uptime}, {server_name}, {server_version}</li>
+ *   <li>{prefix}, {suffix}, {group} — LuckPerms</li>
  * </ul>
+ *
+ * <b>Новые динамические плейсхолдеры (time-based):</b>
+ * <ul>
+ *   <li>{tps_&lt;time&gt;}</li>
+ *   <li>{tps_min_&lt;time&gt;}, {tps_max_&lt;time&gt;}</li>
+ *   <li>{tps_&lt;time&gt;_color}, {tps_min_&lt;time&gt;_color}, {tps_max_&lt;time&gt;_color}</li>
+ *   <li>{mspt}, {mspt_&lt;time&gt;}</li>
+ *   <li>{mspt_min_&lt;time&gt;}, {mspt_max_&lt;time&gt;}</li>
+ *   <li>{mspt_&lt;time&gt;_color}, {mspt_min_&lt;time&gt;_color}, {mspt_max_&lt;time&gt;_color}</li>
+ *   <li>{online_min_&lt;time&gt;}, {online_max_&lt;time&gt;}</li>
+ *   <li>{ram}, {ram_min_&lt;time&gt;}, {ram_avg_&lt;time&gt;}, {ram_max_&lt;time&gt;}</li>
+ *   <li>{ram_min_&lt;time&gt;_color}, {ram_avg_&lt;time&gt;_color}, {ram_max_&lt;time&gt;_color}</li>
+ * </ul>
+ * <p>
+ * <b>Формат &lt;time&gt;:</b> 1s, 5m, 1h, 1d, ss (серверная сессия).<br>
+ * <b>Цветные версии (_color):</b> содержат встроенный MiniMessage HEX-цвет
+ * ({@code <#RRGGBB>}) и НЕ переопределяются внешним MiniMessage.<br>
+ * <b>Обычные версии (без _color):</b> просто числа, переопределяются
+ * внешним MiniMessage-форматированием.
  */
 public class PlaceholderResolver {
 
     private static final DecimalFormat TPS_FORMAT = new DecimalFormat("#.##");
+    private static final DecimalFormat PCT_FORMAT = new DecimalFormat("#.#");
+    private static final Pattern DYNAMIC_PLACEHOLDER = Pattern.compile(
+            "\\{(tps|mspt|online|ram)(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(color))?\\}"
+    );
+
     private static final Map<String, BiFunction<Player, String, String>> BUILTIN = new HashMap<>();
 
     // ===== Пинг-градиент (0ms → 1000ms) =====
-    // Стопы: [ping, R, G, B]
     private static final int[][] PING_COLOR_STOPS = {
-        {0,     0x00, 0xAA, 0x00},   // 0ms:   тёмно-зелёный
-        {200,   0x55, 0xFF, 0x55},   // 200ms: зелёный
-        {400,   0xFF, 0xFF, 0x55},   // 400ms: жёлтый
-        {600,   0xFF, 0xAA, 0x00},   // 600ms: оранжевый
-        {800,   0xFF, 0x55, 0x55},   // 800ms: красный
-        {1000,  0xAA, 0x00, 0x00}    // 1000ms: тёмно-красный
+        {0,     0x00, 0xAA, 0x00},
+        {200,   0x55, 0xFF, 0x55},
+        {400,   0xFF, 0xFF, 0x55},
+        {600,   0xFF, 0xAA, 0x00},
+        {800,   0xFF, 0x55, 0x55},
+        {1000,  0xAA, 0x00, 0x00}
     };
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final LegacyComponentSerializer LEGACY_AMPERSAND = LegacyComponentSerializer.legacyAmpersand();
 
     private static boolean papiAvailable = false;
     private static boolean luckPermsAvailable = false;
-    private static Object lpInstance; // net.luckperms.api.LuckPerms
+    private static Object lpInstance;
     private static java.lang.reflect.Method lpGetUserManager;
     private static java.lang.reflect.Method lpUserManagerGetUser;
     private static java.lang.reflect.Method lpUserGetCachedData;
@@ -86,12 +100,36 @@ public class PlaceholderResolver {
         BUILTIN.put("world_name", (p, s) -> p != null ? p.getWorld().getName() : "?");
         BUILTIN.put("world_players", (p, s) -> p != null ? String.valueOf(p.getWorld().getPlayers().size()) : "0");
 
-        // ── Server ──
+        // ── Server (static) ──
         BUILTIN.put("online", (p, s) -> String.valueOf(Bukkit.getOnlinePlayers().size()));
         BUILTIN.put("max_players", (p, s) -> String.valueOf(Bukkit.getMaxPlayers()));
         BUILTIN.put("tps", (p, s) -> {
             double tps = Bukkit.getTPS()[0];
             return TPS_FORMAT.format(Math.min(tps, 20.0));
+        });
+        BUILTIN.put("tps_color", (p, s) -> {
+            double tps = Math.min(Bukkit.getTPS()[0], 20.0);
+            return StatsTracker.tpsColor(tps) + TPS_FORMAT.format(tps);
+        });
+        BUILTIN.put("mspt", (p, s) -> TPS_FORMAT.format(Bukkit.getAverageTickTime()));
+        BUILTIN.put("mspt_color", (p, s) -> {
+            double mspt = Bukkit.getAverageTickTime();
+            return StatsTracker.msptColor(mspt) + TPS_FORMAT.format(mspt);
+        });
+        BUILTIN.put("ram", (p, s) -> {
+            Runtime rt = Runtime.getRuntime();
+            long used = rt.totalMemory() - rt.freeMemory();
+            long max = rt.maxMemory();
+            if (max <= 0) return "0%";
+            return PCT_FORMAT.format((double) used / (double) max * 100.0) + "%";
+        });
+        BUILTIN.put("ram_color", (p, s) -> {
+            Runtime rt = Runtime.getRuntime();
+            long used = rt.totalMemory() - rt.freeMemory();
+            long max = rt.maxMemory();
+            if (max <= 0) return StatsTracker.ramColor(0) + "0%";
+            double pct = (double) used / (double) max * 100.0;
+            return StatsTracker.ramColor(pct) + PCT_FORMAT.format(pct) + "%";
         });
         BUILTIN.put("uptime", (p, s) -> {
             long uptimeMs = ManagementFactory.getRuntimeMXBean().getUptime();
@@ -104,15 +142,12 @@ public class PlaceholderResolver {
         BUILTIN.put("server_name", (p, s) -> Bukkit.getName());
         BUILTIN.put("server_version", (p, s) -> Bukkit.getVersion());
 
-        // ── LuckPerms placeholders (lazy — resolved after init()) ──
+        // ── LuckPerms ──
         BUILTIN.put("prefix", PlaceholderResolver::resolveLuckPermsPrefix);
         BUILTIN.put("suffix", PlaceholderResolver::resolveLuckPermsSuffix);
         BUILTIN.put("group", PlaceholderResolver::resolveLuckPermsGroup);
     }
 
-    /**
-     * Вызывается при старте — проверяет наличие PAPI и LuckPerms.
-     */
     public static void init() {
         // ── PAPI ──
         try {
@@ -134,7 +169,6 @@ public class PlaceholderResolver {
             Object userManager = lpGetUserManager.invoke(lpInstance);
 
             Class<?> userManagerClass = Class.forName("net.luckperms.api.user.UserManager");
-            // getIfLoaded returns User directly (no CompletableFuture) — safe for online players
             lpUserManagerGetUser = userManagerClass.getMethod("getIfLoaded", java.util.UUID.class);
 
             Class<?> userClass = Class.forName("net.luckperms.api.model.user.User");
@@ -145,7 +179,6 @@ public class PlaceholderResolver {
             lpMetaDataGetSuffix = cachedDataClass.getMethod("getSuffix");
             lpMetaDataGetPrimaryGroup = cachedDataClass.getMethod("getPrimaryGroup");
 
-            // Убеждаемся что API работает: пробный вызов getUserManager
             if (userManager != null) {
                 luckPermsAvailable = true;
                 Main.getInstance().getLogger().info("[PlaceholderResolver] LuckPerms API detected!");
@@ -154,9 +187,14 @@ public class PlaceholderResolver {
             luckPermsAvailable = false;
             Main.getInstance().getLogger().info("[PlaceholderResolver] LuckPerms not found — {prefix}/{suffix}/{group} disabled");
         }
+
+        // Инициализируем StatsTracker
+        StatsTracker.init();
     }
 
-    // ── LuckPerms resolvers ──
+    // ════════════════════════════════════════════
+    // LuckPerms
+    // ════════════════════════════════════════════
 
     private static String resolveLuckPermsPrefix(Player player, String unused) {
         return getLuckPermsMeta(player, lpMetaDataGetPrefix);
@@ -170,10 +208,6 @@ public class PlaceholderResolver {
         return getLuckPermsMeta(player, lpMetaDataGetPrimaryGroup);
     }
 
-    /**
-     * Получает мета-данные LuckPerms для игрока (prefix/suffix/group)
-     * и конвертирует legacy-формат (&7) в MiniMessage (<gray>).
-     */
     private static String getLuckPermsMeta(Player player, java.lang.reflect.Method metaMethod) {
         if (player == null || !luckPermsAvailable || lpInstance == null) return "";
         try {
@@ -188,7 +222,6 @@ public class PlaceholderResolver {
             String legacyStr = value.toString();
             if (legacyStr.isEmpty()) return "";
 
-            // Конвертируем legacy (&7) → Component → MiniMessage (<gray>)
             Component comp = LEGACY_AMPERSAND.deserialize(legacyStr);
             return MM.serialize(comp);
         } catch (Exception e) {
@@ -196,25 +229,19 @@ public class PlaceholderResolver {
         }
     }
 
-    /**
-     * Возвращает MiniMessage-цвет (<#RRGGBB>) для пинга игрока.
-     * Градиент от тёмно-зелёного (0ms) до тёмно-красного (1000ms+).
-     */
+    // ════════════════════════════════════════════
+    // Ping color
+    // ════════════════════════════════════════════
+
     private static String resolvePingColor(Player player, String unused) {
         if (player == null) return "<#00AA00>";
         int ping = Math.min(player.getPing(), 1000);
-
-        // Находим две стопы между которыми находится ping
         for (int i = 0; i < PING_COLOR_STOPS.length - 1; i++) {
             int[] lower = PING_COLOR_STOPS[i];
             int[] upper = PING_COLOR_STOPS[i + 1];
             if (ping >= lower[0] && ping <= upper[0]) {
-                if (ping == lower[0]) {
-                    return String.format("<#%02X%02X%02X>", lower[1], lower[2], lower[3]);
-                }
-                if (ping == upper[0]) {
-                    return String.format("<#%02X%02X%02X>", upper[1], upper[2], upper[3]);
-                }
+                if (ping == lower[0]) return String.format("<#%02X%02X%02X>", lower[1], lower[2], lower[3]);
+                if (ping == upper[0]) return String.format("<#%02X%02X%02X>", upper[1], upper[2], upper[3]);
                 double t = (double) (ping - lower[0]) / (upper[0] - lower[0]);
                 int r = (int) Math.round(lower[1] + (upper[1] - lower[1]) * t);
                 int g = (int) Math.round(lower[2] + (upper[2] - lower[2]) * t);
@@ -222,21 +249,12 @@ public class PlaceholderResolver {
                 return String.format("<#%02X%02X%02X>", r, g, b);
             }
         }
-
-        // fallback — тёмно-красный (1000ms+)
         return "<#AA0000>";
     }
 
-    /**
-     * Возвращает MiniMessage-градиент (<gradient:#lower:#upper>) для пинга игрока,
-     * обёрнутый вокруг значения пинга с "ms".
-     * Пример: <gradient:#00AA00:#55FF55>42ms</gradient>
-     */
     private static String resolvePingGradient(Player player, String unused) {
         if (player == null) return "<#00AA00>0ms";
         int ping = Math.min(player.getPing(), 1000);
-
-        // Находим две стопы между которыми находится ping
         for (int i = 0; i < PING_COLOR_STOPS.length - 1; i++) {
             int[] lower = PING_COLOR_STOPS[i];
             int[] upper = PING_COLOR_STOPS[i + 1];
@@ -246,23 +264,21 @@ public class PlaceholderResolver {
                 return String.format("<gradient:%s:%s>%dms</gradient>", lowerHex, upperHex, ping);
             }
         }
-
-        // fallback — тёмно-красный градиент (1000ms+)
         return "<gradient:#FF5555:#AA0000>" + ping + "ms</gradient>";
     }
 
+    // ════════════════════════════════════════════
+    // RESOLVE
+    // ════════════════════════════════════════════
+
     /**
      * Разрешает плейсхолдеры в строке.
-     * Сначала встроенные, затем PAPI (если доступен).
-     *
-     * @param text   строка с плейсхолдерами
-     * @param player игрок (может быть null для общих плейсхолдеров)
-     * @return строка с разрешёнными значениями
+     * Сначала встроенные (статичные + динамические), затем PAPI.
      */
     public static String resolve(String text, Player player) {
         if (text == null || text.isEmpty()) return text;
 
-        // 1. Встроенные плейсхолдеры {name}
+        // 1. Статичные встроенные {name}
         StringBuilder sb = new StringBuilder(text);
         for (Map.Entry<String, BiFunction<Player, String, String>> entry : BUILTIN.entrySet()) {
             String placeholder = "{" + entry.getKey() + "}";
@@ -273,7 +289,10 @@ public class PlaceholderResolver {
             }
         }
 
-        // 2. PAPI (если установлен)
+        // 2. Динамические плейсхолдеры (regex-матчинг)
+        sb = new StringBuilder(resolveDynamic(sb.toString()));
+
+        // 3. PAPI
         if (player != null && papiAvailable) {
             try {
                 Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
@@ -286,9 +305,102 @@ public class PlaceholderResolver {
         return sb.toString();
     }
 
+    // ════════════════════════════════════════════
+    // Dynamic placeholders (time-based)
+    // ════════════════════════════════════════════
+
     /**
-     * @return true если PlaceholderAPI установлен на сервере
+     * Разрешает динамические плейсхолдеры вида {tps_5m}, {mspt_max_1h_color} и т.д.
      */
+    private static String resolveDynamic(String text) {
+        if (text == null || text.isEmpty()) return text;
+
+        StringBuffer sb = new StringBuffer();
+        Matcher m = DYNAMIC_PLACEHOLDER.matcher(text);
+        while (m.find()) {
+            String metric = m.group(1);      // tps, mspt, online, ram
+            String stat = m.group(2);        // min, max, avg, or null
+            String timeStr = m.group(3);     // 1s, 5m, 1h, 1d, ss, or null
+            String colorFlag = m.group(4);   // color or null
+
+            // Определяем время
+            int timeSec;
+            if (timeStr == null) {
+                timeSec = 0; // ss = server session / всё время
+            } else {
+                timeSec = StatsTracker.parseTimeSeconds(timeStr);
+                if (timeSec < 0) {
+                    m.appendReplacement(sb, Matcher.quoteReplacement(m.group(0)));
+                    continue;
+                }
+            }
+
+            StatsTracker st = StatsTracker.getInstance();
+            if (st == null) {
+                m.appendReplacement(sb, "?");
+                continue;
+            }
+
+            int samples = timeSec <= 0 ? st.getSampleCount(0) : st.getSampleCount(timeSec);
+
+            String value = resolveMetric(metric, stat, colorFlag, st, samples);
+            if (value == null) {
+                m.appendReplacement(sb, Matcher.quoteReplacement(m.group(0)));
+                continue;
+            }
+
+            m.appendReplacement(sb, Matcher.quoteReplacement(value));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    /**
+     * Разрешает конкретный metric+stat+color.
+     */
+    private static String resolveMetric(String metric, String stat, boolean isColor,
+                                         StatsTracker st, int samples) {
+        switch (metric) {
+            case "tps" -> {
+                double val;
+                if ("min".equals(stat)) val = st.getMinTps(samples);
+                else if ("max".equals(stat)) val = st.getMaxTps(samples);
+                else val = st.getAvgTps(samples);
+                val = Math.min(val, 20.0);
+                if (isColor) return StatsTracker.tpsColor(val) + TPS_FORMAT.format(val);
+                return TPS_FORMAT.format(val);
+            }
+            case "mspt" -> {
+                double val;
+                if ("min".equals(stat)) val = st.getMinMspt(samples);
+                else if ("max".equals(stat)) val = st.getMaxMspt(samples);
+                else val = st.getAvgMspt(samples);
+                if (isColor) return StatsTracker.msptColor(val) + TPS_FORMAT.format(val);
+                return TPS_FORMAT.format(val);
+            }
+            case "online" -> {
+                if ("min".equals(stat)) return String.valueOf(st.getMinOnline(samples));
+                if ("max".equals(stat)) return String.valueOf(st.getMaxOnline(samples));
+                return String.valueOf(st.getCurrentOnline());
+            }
+            case "ram" -> {
+                double val;
+                if ("min".equals(stat)) val = st.getMinRam(samples);
+                else if ("max".equals(stat)) val = st.getMaxRam(samples);
+                else val = st.getAvgRam(samples); // avg = default, also "avg" explicitly
+                if (isColor) return StatsTracker.ramColor(val) + PCT_FORMAT.format(val) + "%";
+                return PCT_FORMAT.format(val) + "%";
+            }
+            default -> { return null; }
+        }
+    }
+
+    /** Overload with String colorFlag */
+    private static String resolveMetric(String metric, String stat, String colorFlag,
+                                         StatsTracker st, int samples) {
+        return resolveMetric(metric, stat, "color".equals(colorFlag), st, samples);
+    }
+
     public static boolean isPapiAvailable() {
         return papiAvailable;
     }
