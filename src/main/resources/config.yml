@@ -1425,6 +1425,10 @@ tab:
     # Включён ли objective (префикс/суффикс у ника в табе)
     objective_enabled: true
 
+    # Интервал обновления player_list name (тики, 20 = 1 сек)
+    # Если 0 — обновляется вместе с header/footer (tab.update_interval_ticks)
+    update_interval_ticks: 0
+
     # 📝 Кастомный формат строки для каждого игрока в табе
     # Если НЕ пустой — заменяет objective_prefix + {name} + objective_suffix
     # Поддерживает:

@@ -46,6 +46,8 @@ public class TabManager extends BukkitRunnable implements Listener {
     private String objectiveFormat;
     private boolean hideSpectators;
     private int intervalTicks;
+    private int playerListIntervalTicks;
+    private int playerListTickCounter;
     private SortMode sortMode;
 
     public enum SortMode {
@@ -127,6 +129,14 @@ public class TabManager extends BukkitRunnable implements Listener {
         this.objectiveFormat = config.getString("tab.player_list.format", "");
         this.hideSpectators = config.getBoolean("tab.hide_spectators", false);
         this.intervalTicks = Math.max(10, config.getInt("tab.update_interval_ticks", 20));
+        this.playerListIntervalTicks = config.getInt("tab.player_list.update_interval_ticks", 0);
+        // Если 0 — обновляется с той же частотой, что header/footer
+        if (playerListIntervalTicks <= 0) {
+            playerListIntervalTicks = intervalTicks;
+        } else {
+            playerListIntervalTicks = Math.max(5, playerListIntervalTicks);
+        }
+        this.playerListTickCounter = 0;
 
         // Sort mode
         String sortStr = config.getString("tab.sort.mode", "none").toUpperCase().replace("-", "_");
@@ -286,19 +296,25 @@ public class TabManager extends BukkitRunnable implements Listener {
         List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
         sortPlayers(players);
 
+        // playerListTickCounter отслеживает РЕАЛЬНЫЕ тики, а не вызовы run()
+        // run() вызывается раз в intervalTicks тиков
+        playerListTickCounter += intervalTicks;
+        boolean updatePlayerList = (playerListTickCounter >= playerListIntervalTicks);
+        if (updatePlayerList) {
+            playerListTickCounter = 0;
+        }
+
         for (Player player : players) {
             if (player == null || !player.isOnline()) continue;
 
-            // Проверка per-player toggle скорборда (через PlayerSettingsDB)
-            // Это не влияет на таб, но команда /mp togglesb скрывает скорборд
-
             // Per-player header/footer (with player-specific placeholders)
+            // Обновляется каждый tick (раз в intervalTicks)
             Component playerHeader = buildComponent(headerLines, player);
             Component playerFooter = buildComponent(footerLines, player);
             player.sendPlayerListHeaderAndFooter(playerHeader, playerFooter);
 
-            // Player list name — кастомный формат или prefix+name+suffix
-            if (objectiveEnabled) {
+            // Player list name — обновляется по отдельному интервалу
+            if (objectiveEnabled && updatePlayerList) {
                 if (!objectiveFormat.isEmpty()) {
                     // Кастомный формат — полный контроль: %luckperms_prefix%{player_name}...
                     String resolved = PlaceholderResolver.resolve(objectiveFormat, player);
@@ -318,6 +334,7 @@ public class TabManager extends BukkitRunnable implements Listener {
         }
 
         // Apply sorting via playerListOrder (Paper API)
+        // Сортировка обновляется каждый тик, потому что игроки заходят/выходят
         if (sortMode != SortMode.NONE) {
             applySortOrder(players);
         }
