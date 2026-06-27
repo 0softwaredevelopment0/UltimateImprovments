@@ -11,6 +11,7 @@ import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.Damageable;
@@ -743,6 +744,16 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
+    // HELPER: проверка, является ли предмет броней
+    // =========================
+    private static boolean isArmorItem(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return false;
+        EquipmentSlot slot = item.getType().getEquipmentSlot();
+        return slot == EquipmentSlot.FEET || slot == EquipmentSlot.LEGS
+            || slot == EquipmentSlot.CHEST || slot == EquipmentSlot.HEAD;
+    }
+
+    // =========================
     // DECREASE INTEGRITY — уменьшение целостности предмета
     // =========================
     public static void decreaseIntegrity(ItemStack item, double amount, Player owner) {
@@ -771,12 +782,17 @@ public class IntegrityManager extends BukkitRunnable {
 
         if (current <= 0) return;
 
-        // Новая механика: цена = (1 / maxDurability) * 100.0% × costMultiplier
-        // Пример: maxDura=1000 → 0.1% за исп., 1000 исп. → 100% → слом.
-        // Пример: maxDura=2 → 50% за исп., 2 исп. → слом.
         int maxDura = getMaxDurability(item);
         if (maxDura <= 0) return;
-        double cost = (amount / (double) maxDura) * 100.0 * costMultiplier;
+
+        // 🛡 Броня: прямая пропорция — 1 ед. урона = costMultiplier% целостности
+        // ⛏ Инструменты/оружие: нормированная формула (1/maxDura) × 100% × costMultiplier
+        double cost;
+        if (isArmorItem(item)) {
+            cost = amount * costMultiplier;
+        } else {
+            cost = (amount / (double) maxDura) * 100.0 * costMultiplier;
+        }
 
         // ⚔ PIERCING (Пробитие): добавляет +piercingExtraCost% к трате целостности брони
         if (piercingEnabled && isPiercingActive()) {
