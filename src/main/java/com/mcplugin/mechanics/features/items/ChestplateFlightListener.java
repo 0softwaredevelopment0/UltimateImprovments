@@ -47,7 +47,7 @@ public class ChestplateFlightListener implements Listener {
     );
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
-    private static final DecimalFormat PCT_FMT = new DecimalFormat("0.0");
+    private static final DecimalFormat PCT_FMT = new DecimalFormat("0.0", new java.text.DecimalFormatSymbols(java.util.Locale.US));
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPrepareAnvil(PrepareAnvilEvent event) {
@@ -95,7 +95,7 @@ public class ChestplateFlightListener implements Listener {
             filteredLore.add(MessageUtil.parse("<green>Пригоден для полёта</green>"));
         } else {
             filteredLore.add(MessageUtil.parse(
-                "<white>Улучшение полёта:</white> <gradient:#8B0000:#FF0000:#FF8C00:#FFFF00:#00FF00:#006400>" +
+                "<white>Улучшение полёта:</white> <gradient:#8B0000:#00FF00>" +
                 PCT_FMT.format(newPct) + "%</gradient>"
             ));
         }

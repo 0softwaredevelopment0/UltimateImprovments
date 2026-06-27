@@ -70,7 +70,7 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
-    private static final DecimalFormat PCT_FMT = new DecimalFormat("0.0");
+    private static final DecimalFormat PCT_FMT = new DecimalFormat("0.0", new java.text.DecimalFormatSymbols(java.util.Locale.US));
     /** 0.1% = 0.001 в виде ADD_SCALAR (умножает базовое значение) */
     private static final double PER_SCRAP_BONUS = 0.001;
 
@@ -133,7 +133,7 @@ public class NetheriteUpgradeListener implements Listener {
         }
 
         // +1 к макс. прочности за каждый скрап (для всех незеритовых предметов)
-        if (meta instanceof Damageable damageable) {
+        if (meta instanceof Damageable damageable && damageable.hasMaxDamage()) {
             int currentMax = damageable.getMaxDamage();
             damageable.setMaxDamage(currentMax + scrapCount);
         }
