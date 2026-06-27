@@ -1407,9 +1407,28 @@ tab:
   player_list:
     # Включён ли objective (префикс/суффикс у ника в табе)
     objective_enabled: true
+
+    # 📝 Кастомный формат строки для каждого игрока в табе
+    # Если НЕ пустой — заменяет objective_prefix + {name} + objective_suffix
+    # Поддерживает:
+    #   - MiniMessage разметку: <white>, <gray>, <gradient>, <dark_gray>, <red> и т.д.
+    #   - Встроенные плейсхолдеры: {player_name}, {player_ping}, {player_displayname} и т.д.
+    #   - PAPI плейсхолдеры: %luckperms_prefix%, %luckperms_primary_group_name%,
+    #     %luckperms_suffix%, %player_world%, %vault_eco_balance%, и любые другие
+    #
+    # Примеры:
+    #   "<gray>%luckperms_prefix%</gray><white>{player_name}</white><gray>%luckperms_suffix%</gray>"
+    #   "<dark_gray>[</dark_gray><white>{player_ping}ms</white><dark_gray>]</dark_gray> <white>{player_name}</white>"
+    #   "<gradient:#00AAFF:#FF55FF>%luckperms_primary_group_name%</gradient> <white>{player_name}</white>"
+    #
+    # Если пусто — используется старая логика: objective_prefix + {name} + objective_suffix
+    format: ""
+
     # Текст перед ником (MiniMessage + плейсхолдеры)
+    # Используется ТОЛЬКО если format пустой
     objective_prefix: "<dark_gray>[</dark_gray><white>{player_ping}ms</white><dark_gray>] </dark_gray>"
     # Текст после ника
+    # Используется ТОЛЬКО если format пустой
     objective_suffix: ""
 
 # =========================
@@ -1500,4 +1519,4 @@ scoreboard:
 #   minor    — номер подверсии плагина
 #   commits  — количество коммитов с последнего тега (вычисляется автоматически)
 # ═══════════════════════════════════════════════════════
-plugin_version: "1.8.13"
+plugin_version: "1.8.14"

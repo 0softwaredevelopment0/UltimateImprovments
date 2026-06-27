@@ -28,6 +28,7 @@ public class TabManager extends BukkitRunnable {
     private boolean objectiveEnabled;
     private String objectivePrefix;
     private String objectiveSuffix;
+    private String objectiveFormat;
     private int intervalTicks;
 
     public static void init() {
@@ -63,6 +64,7 @@ public class TabManager extends BukkitRunnable {
         this.objectiveEnabled = config.getBoolean("tab.player_list.objective_enabled", false);
         this.objectivePrefix = config.getString("tab.player_list.objective_prefix", "");
         this.objectiveSuffix = config.getString("tab.player_list.objective_suffix", "");
+        this.objectiveFormat = config.getString("tab.player_list.format", "");
         this.intervalTicks = Math.max(10, config.getInt("tab.update_interval_ticks", 20));
     }
 
@@ -78,19 +80,23 @@ public class TabManager extends BukkitRunnable {
             Component playerFooter = buildComponent(footerLines, player);
             player.sendPlayerListHeaderAndFooter(playerHeader, playerFooter);
 
-            // Player list name (prefix + name + suffix) — экранируем имя от MiniMessage
+            // Player list name — кастомный формат или prefix+name+suffix
             if (objectiveEnabled) {
-                String prefix = PlaceholderResolver.resolve(objectivePrefix, player);
-                String suffix = PlaceholderResolver.resolve(objectiveSuffix, player);
+                if (!objectiveFormat.isEmpty()) {
+                    // Кастомный формат — полный контроль: %luckperms_prefix%{player_name}...
+                    String resolved = PlaceholderResolver.resolve(objectiveFormat, player);
+                    player.playerListName(MessageUtil.parse(resolved));
+                } else {
+                    // Старая логика: prefix + name + suffix
+                    String prefix = PlaceholderResolver.resolve(objectivePrefix, player);
+                    String suffix = PlaceholderResolver.resolve(objectiveSuffix, player);
 
-                // Используем Component.text() для безопасного экранирования имени игрока
-                Component prefixComp = prefix.isEmpty() ? Component.empty() : MessageUtil.parse(prefix);
-                Component nameComp = Component.text(player.getName());
-                Component suffixComp = suffix.isEmpty() ? Component.empty() : MessageUtil.parse(suffix);
+                    Component prefixComp = prefix.isEmpty() ? Component.empty() : MessageUtil.parse(prefix);
+                    Component nameComp = Component.text(player.getName());
+                    Component suffixComp = suffix.isEmpty() ? Component.empty() : MessageUtil.parse(suffix);
 
-                // prefix + name + suffix — всегда оба, независимо от position
-                Component listName = prefixComp.append(nameComp).append(suffixComp);
-                player.playerListName(listName);
+                    player.playerListName(prefixComp.append(nameComp).append(suffixComp));
+                }
             }
         }
     }
