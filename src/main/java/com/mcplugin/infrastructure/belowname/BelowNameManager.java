@@ -14,11 +14,15 @@ import org.bukkit.scoreboard.Team;
 
 /**
  * Manages the per-player team suffix system — displays formatted text
- * (MiniMessage + placeholders) below each player's nametag in the world.
+ * (MiniMessage + placeholders) after each player's name (in the nametag).
  * <p>
- * Uses {@code Team.suffix(Component)} with a newline prefix to show custom text
- * below the player name. Unlike the old BELOW_NAME + Score.customName approach
+ * Uses {@code Team.suffix(Component)} with a separator prefix ({@code " • "}).
+ * Unlike the old BELOW_NAME + Score.customName approach
  * (which is limited to integer scores), Team suffix properly renders Components.
+ * <p>
+ * <b>Заметка:</b> Полноценный текст под ником (на второй строке), к сожалению,
+ * невозможен через стандартный Bukkit API в 1.21.4 — {@code Component.newline()}
+ * рендерится как символ {@code [LF]}. Текст отображается после ника с разделителем.
  * <p>
  * Config example:
  * <pre>
@@ -114,10 +118,10 @@ public class BelowNameManager extends BukkitRunnable {
                     team.addEntry(player.getName());
                 }
 
-                // Set suffix: newline + formatted belowname text
-                // Component.newline() creates a line break in the nametag,
-                // pushing the belowname text to the row below the player name.
-                team.suffix(Component.newline().append(component));
+                // Set suffix: bullet separator + formatted belowname text after the name.
+                // Заметка: Component.newline() в Minecraft 1.21.4 рендерится как символ [LF],
+                // а не как перенос строки в намейте. Текст идёт после ника через разделитель.
+                team.suffix(Component.text(" \u2022 ").append(component));
 
             } catch (Exception e) {
                 // Silently skip on error (player might have disconnected)
