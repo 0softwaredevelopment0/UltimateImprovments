@@ -4,6 +4,8 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.energy.transfer.cable.CableNode;
+import com.mcplugin.energy.transfer.cable.CableNetwork;
+import com.mcplugin.energy.storage.battery.BatteryManager;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -53,7 +55,11 @@ public class LightManager {
         public Set<Long> blockKeys = new HashSet<>();
         public Location center;
         public int power;
+        public int buffer;
         public boolean lit;
+
+        int getBufferCapacity() { return power * 2; }
+        boolean isBufferFull() { return buffer >= getBufferCapacity(); }
 
         private long sumX, sumY, sumZ;
 
@@ -201,6 +207,7 @@ public class LightManager {
             cluster.blockKeys = new HashSet<>(group.getValue());
             cluster.recalculateCenter();
             cluster.lit = false;
+            cluster.buffer = 0;
 
             for (long key : group.getValue()) locationToCluster.put(key, cluster);
             clustersById.put(cluster.id, cluster);
@@ -250,7 +257,7 @@ public class LightManager {
                 long nk = toKey(nx, ny, nz);
                 if (visited.contains(nk)) continue;
                 if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
-                if (world.getType(nx, ny, nz) == Material.REDSTONE_LAMP) {
+                if (world.getType(nx, ny, nz) == Material.WAXED_COPPER_BULB) {
                     visited.add(nk);
                     queue.addLast(new int[]{nx, ny, nz});
                 }
@@ -273,7 +280,7 @@ public class LightManager {
 
         Set<Long> connected = floodFillFast(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         if (connected.isEmpty()) {
-            if (player != null) player.sendMessage("§4❌ §cНет блоков REDSTONE_LAMP рядом!");
+            if (player != null) player.sendMessage("§4❌ §cНет блоков WAXED_COPPER_BULB рядом!");
             return;
         }
 
@@ -285,6 +292,7 @@ public class LightManager {
         cluster.blockKeys = new HashSet<>(connected);
         cluster.recalculateCenter();
         cluster.lit = false;
+        cluster.buffer = 0;
 
         for (long bk : connected) {
             locationToCluster.put(bk, cluster);
@@ -296,9 +304,9 @@ public class LightManager {
         removeFrameAt(loc, player);
 
         if (player != null) {
-            player.sendMessage("§a✔ §fЛампочка собрана! (Marker-based)");
+            player.sendMessage("§a✔ §fЛампа собрана! (Marker-based)");
             player.sendMessage("§8┃ §7Блоков: §f" + cluster.blockKeys.size() + " §7| Потребление: §f" + cluster.power + " §7энергии/тик");
-            player.sendMessage("§8┃ §7Подайте редстоун + энергию для зажигания");
+            player.sendMessage("§8┃ §7Буфер: §f" + cluster.getBufferCapacity() + " ⚡ §7(редстоун + буфер для зажигания)");
         }
 
         Main.getInstance().getLogger().info("[LightMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " lamps");
@@ -388,6 +396,74 @@ public class LightManager {
     }
 
     // ════════════════════════════════════════
+    // CHARGE BUFFER FROM CABLE NETWORK
+    // ════════════════════════════════════════
+    private static void chargeClusterBuffer(LightCluster cluster) {
+        if (cluster == null || cluster.buffer >= cluster.getBufferCapacity()) return;
+
+        // Ищем первый блок кластера, рядом с которым есть кабель
+        for (long key : cluster.blockKeys) {
+            Location blockLoc = new Location(cluster.world, getX(key), getY(key), getZ(key));
+            CableNode start = findAdjacentCableNode(blockLoc);
+            if (start == null) continue;
+
+            int needed = cluster.getBufferCapacity() - cluster.buffer;
+            int pulled = pullEnergyFromNetwork(start, needed);
+            if (pulled > 0) {
+                cluster.buffer += pulled;
+            }
+            break; // Одна точка входа за тик
+        }
+    }
+
+    private static CableNode findAdjacentCableNode(Location loc) {
+        for (Location near : LocationUtil.getNeighbors(loc)) {
+            CableNode node = CableNetwork.getNode(near);
+            if (node != null) return node;
+        }
+        return null;
+    }
+
+    private static int pullEnergyFromNetwork(CableNode start, int amount) {
+        if (start == null || amount <= 0) return 0;
+
+        Set<Location> visited = new HashSet<>();
+        Queue<CableNode> queue = new LinkedList<>();
+        queue.add(start);
+        visited.add(start.getLocation());
+
+        int remaining = amount;
+
+        while (!queue.isEmpty() && remaining > 0) {
+            CableNode node = queue.poll();
+            if (node == null) continue;
+
+            // Уважаем режим батареи: берём только из DISCHARGE/CHARGE_DISCHARGE
+            BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
+            if (bc != null && !bc.canDischarge()) continue;
+
+            int energy = node.getEnergy();
+            if (energy > 0) {
+                int take = Math.min(energy, remaining);
+                node.removeEnergy(take);
+                remaining -= take;
+            }
+
+            if (remaining <= 0) break;
+
+            for (Location conn : node.getConnections()) {
+                if (visited.contains(conn)) continue;
+                CableNode next = CableNetwork.getNode(conn);
+                if (next == null) continue;
+                visited.add(conn);
+                queue.add(next);
+            }
+        }
+
+        return amount - remaining;
+    }
+
+    // ════════════════════════════════════════
     // TICK
     // ════════════════════════════════════════
     public static void tick() {
@@ -400,19 +476,33 @@ public class LightManager {
                 long firstKey = cluster.blockKeys.iterator().next();
                 if (!cluster.world.isChunkLoaded(getX(firstKey) >> 4, getZ(firstKey) >> 4)) continue;
 
-                // Анти-фантом: проверяем, что блок всё ещё REDSTONE_LAMP
-                if (cluster.world.getType(getX(firstKey), getY(firstKey), getZ(firstKey)) != Material.REDSTONE_LAMP) {
+                // Анти-фантом: проверяем, что блок всё ещё WAXED_COPPER_BULB
+                if (cluster.world.getType(getX(firstKey), getY(firstKey), getZ(firstKey)) != Material.WAXED_COPPER_BULB) {
                     toRemove.add(cluster.id);
                     continue;
                 }
 
-                boolean shouldBeLit = cluster.isAnyBlockPowered();
+                boolean hasRedstone = cluster.isAnyBlockPowered();
+
+                // Если есть редстоун и буфер не полон — заряжаем от сети
+                if (hasRedstone && !cluster.isBufferFull()) {
+                    chargeClusterBuffer(cluster);
+                }
+
+                // Лампочка горит ТОЛЬКО если редстоун И буфер полон
+                boolean shouldBeLit = hasRedstone && cluster.isBufferFull();
+
                 if (shouldBeLit != cluster.lit) {
                     final boolean newState = shouldBeLit;
                     queueLightingUpdate(() -> {
                         cluster.lit = newState;
                         setBlocksLit(cluster, newState);
                     });
+                }
+
+                // Если горим — потребляем энергию из буфера
+                if (cluster.lit) {
+                    cluster.buffer = Math.max(0, cluster.buffer - cluster.power);
                 }
             } catch (Exception e) {
                 Main.getInstance().getLogger().warning("[LightMulti] Tick error: " + e.getMessage());
@@ -451,7 +541,7 @@ public class LightManager {
     }
 
     private static void setBlockLitState(Block block, boolean lit) {
-        if (block.getType() != Material.REDSTONE_LAMP) return;
+        if (block.getType() != Material.WAXED_COPPER_BULB) return;
         try {
             BlockData data = block.getBlockData();
             if (data instanceof Lightable lightable) {
