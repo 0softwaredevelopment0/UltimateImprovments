@@ -48,7 +48,6 @@ public class PortableRadarCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "portable_radar"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -93,7 +92,6 @@ public class PortableRadarCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "portable_radar"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

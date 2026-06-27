@@ -62,7 +62,6 @@ public class ShokerCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "shocker"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -129,7 +128,6 @@ public class ShokerCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "shocker"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

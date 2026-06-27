@@ -71,7 +71,6 @@ public class LeadShieldCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "lead_shield"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -154,7 +153,6 @@ public class LeadShieldCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "lead_shield"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

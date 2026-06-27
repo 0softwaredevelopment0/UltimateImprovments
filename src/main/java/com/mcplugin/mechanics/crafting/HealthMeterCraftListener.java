@@ -47,7 +47,6 @@ public class HealthMeterCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "health_meter"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -92,7 +91,6 @@ public class HealthMeterCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "health_meter"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

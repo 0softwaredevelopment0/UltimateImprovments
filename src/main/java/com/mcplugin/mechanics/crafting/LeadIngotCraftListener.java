@@ -52,7 +52,6 @@ public class LeadIngotCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "lead_ingot"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -99,7 +98,6 @@ public class LeadIngotCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "lead_ingot"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

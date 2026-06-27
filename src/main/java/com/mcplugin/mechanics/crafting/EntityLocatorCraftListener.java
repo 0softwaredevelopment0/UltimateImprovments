@@ -65,7 +65,6 @@ public class EntityLocatorCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "entity_locator"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -129,7 +128,6 @@ public class EntityLocatorCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "entity_locator"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

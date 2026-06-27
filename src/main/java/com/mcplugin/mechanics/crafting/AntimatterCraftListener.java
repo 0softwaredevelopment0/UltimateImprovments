@@ -69,7 +69,6 @@ public class AntimatterCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "antimatter"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -136,7 +135,6 @@ public class AntimatterCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "antimatter"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

@@ -67,7 +67,6 @@ public class MultimeterCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "multimeter"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -128,7 +127,6 @@ public class MultimeterCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "multimeter"));
         result.setItemMeta(meta);
 
         inv.setResult(result);

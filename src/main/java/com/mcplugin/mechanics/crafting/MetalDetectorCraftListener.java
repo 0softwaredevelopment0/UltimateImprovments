@@ -48,7 +48,6 @@ public class MetalDetectorCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "metal_detector"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -94,7 +93,6 @@ public class MetalDetectorCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "metal_detector"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

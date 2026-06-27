@@ -48,7 +48,6 @@ public class MobFinderCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "mob_finder"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -93,7 +92,6 @@ public class MobFinderCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "mob_finder"));
         result.setItemMeta(meta);
         inv.setResult(result);
     }

@@ -63,7 +63,6 @@ public class PlasmaCannonCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "plasma_cannon"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -128,7 +127,6 @@ public class PlasmaCannonCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "plasma_cannon"));
         result.setItemMeta(meta);
 
         inv.setResult(result);
