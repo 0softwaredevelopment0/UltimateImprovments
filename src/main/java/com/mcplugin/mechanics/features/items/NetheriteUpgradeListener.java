@@ -63,7 +63,6 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
-    private static final DecimalFormat BONUS_FMT = new DecimalFormat("0.0", new java.text.DecimalFormatSymbols(java.util.Locale.US));
     /** +0.1 flat за каждый скрап (ADD_NUMBER) */
     private static final double PER_SCRAP_BONUS = 0.1;
     /** 1 незеритовый слиток = 9 скрапов */
