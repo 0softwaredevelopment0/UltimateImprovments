@@ -149,11 +149,12 @@ public class ChatManager implements Listener {
         // Resolve placeholders in format (except {message})
         String resolved = PlaceholderResolver.resolve(format, player);
 
-        // Split on {message} and rebuild with Component
-        String[] parts = resolved.split("\\{message\\}", -1);
-
         // Build final broadcast component
-        Component broadcast = Component.empty();
+        // ВАЖНО: НЕ сплитим по {message} — иначе MiniMessage-теги, оборачивающие
+        // {message} (например <white>{message}</white>), разбиваются на части
+        // и closing-тег </white> в отдельном фрагменте показывается как текст.
+        // Вместо этого подставляем сообщение прямо в строку и парсим целиком.
+        Component broadcast;
         boolean hasMessageToken = resolved.contains("{message}");
 
         if (!hasMessageToken) {
@@ -162,13 +163,22 @@ public class ChatManager implements Listener {
                     .append(Component.text(" "))
                     .append(messageComponent);
         } else {
-            for (int i = 0; i < parts.length; i++) {
-                if (!parts[i].isEmpty()) {
-                    broadcast = broadcast.append(MessageUtil.parse(parts[i]));
-                }
-                if (i < parts.length - 1) {
-                    broadcast = broadcast.append(messageComponent);
-                }
+            // Replace {message} with the actual message text in the format
+            String msgForFormat;
+            if (playerMiniMessage) {
+                msgForFormat = rawMessage;
+            } else {
+                // Escape MiniMessage tags so <color>text</color> in the message appear as plain text
+                msgForFormat = rawMessage.replace("<", "\\<").replace(">", "\\>");
+            }
+
+            String finalFormat = resolved.replace("{message}", msgForFormat);
+            try {
+                broadcast = MessageUtil.parse(finalFormat);
+            } catch (Exception e) {
+                // Fallback: parse format without message, append as plain text
+                String formatWithoutMsg = resolved.replace("{message}", "");
+                broadcast = MessageUtil.parse(formatWithoutMsg).append(messageComponent);
             }
         }
 
