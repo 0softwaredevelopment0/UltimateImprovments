@@ -188,6 +188,7 @@ public class MOTDListener implements Listener {
         return switch (mode) {
             case "hide" -> 0;
             case "fixed" -> Math.max(0, config.getInt(basePath + ".value", 0));
+            case "scale" -> Math.max(0, realValue * Math.max(0, config.getInt(basePath + ".scale", 50)) / 100);
             case "percent" -> realValue + (realValue * Math.max(0, config.getInt(basePath + ".percent", 20)) / 100);
             case "add" -> realValue + Math.max(0, config.getInt(basePath + ".add", 5));
             case "random" -> getCachedRandom(config, basePath);
