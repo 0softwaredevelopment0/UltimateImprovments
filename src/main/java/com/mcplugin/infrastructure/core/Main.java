@@ -6,6 +6,7 @@ import com.mcplugin.infrastructure.core.CommandRegistrar;
 import com.mcplugin.infrastructure.maintenance.MaintenanceManager;
 import com.mcplugin.infrastructure.modules.*;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
+import com.mcplugin.infrastructure.structure.StructureChunkTracker;
 import com.mcplugin.infrastructure.util.FileLogger;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
 
@@ -185,6 +186,13 @@ public class Main extends JavaPlugin {
         StructureChunkListener.scanAll();
 
         // =========================
+        // STRUCTURE CHUNK TRACKER — загружаем координаты чанков со структурами
+        // и принудительно загружаем эти чанки, чтобы Marker'ы попали в кэш.
+        // =========================
+        StructureChunkTracker.load();
+        StructureChunkTracker.loadTrackedChunks();
+
+        // =========================
         // INIT ALL MODULES
         // Каждый модуль инициализируется в try-catch.
         // Если модуль упал — он отключается, но плагин продолжает работу.
@@ -217,6 +225,9 @@ public class Main extends JavaPlugin {
         if (mm != null) {
             mm.shutdownAll();
         }
+
+        // Сохраняем трекер чанков структур (принудительно)
+        StructureChunkTracker.save();
 
         getLogger().info("[PLUGIN] Disabled");
     }

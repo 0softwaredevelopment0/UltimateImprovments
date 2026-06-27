@@ -124,6 +124,12 @@ public class StructureMarker {
         PersistentDataContainer pdc = marker.getPersistentDataContainer();
         pdc.set(TYPE_KEY, PersistentDataType.STRING, type);
         pdc.set(ID_KEY, PersistentDataType.STRING, uuid.toString());
+
+        // Добавляем plugin chunk ticket — чанк останется загруженным
+        StructureChunkTracker.addTicket(blockLoc.getWorld(), blockLoc.getBlockX(), blockLoc.getBlockZ());
+
+        // Обновляем трекер чанков (сохраняем координаты в JSON)
+        StructureChunkTracker.rebuildFromCache();
     }
 
     // ════════════════════════════════════════
@@ -174,6 +180,9 @@ public class StructureMarker {
         }
 
         removeMarkerEntityAt(blockLoc);
+
+        // Обновляем трекер чанков
+        StructureChunkTracker.rebuildFromCache();
     }
 
     // ════════════════════════════════════════
@@ -211,6 +220,9 @@ public class StructureMarker {
         if (keys.isEmpty()) {
             byUuid.remove(uuid);
         }
+
+        // Обновляем трекер чанков
+        StructureChunkTracker.rebuildFromCache();
     }
 
     // ════════════════════════════════════════

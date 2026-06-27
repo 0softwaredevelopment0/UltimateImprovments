@@ -107,7 +107,6 @@ public class MetalDetectorListener implements Listener {
             Material.MINECART, Material.CHEST_MINECART,
             Material.HOPPER_MINECART, Material.FURNACE_MINECART,
             Material.TNT_MINECART,
-            Material.CHAINMAIL_CHESTPLATE, // already listed
 
             // Scrap
             Material.IRON_HORSE_ARMOR, Material.GOLDEN_HORSE_ARMOR,
