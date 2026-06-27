@@ -150,9 +150,8 @@ public class NetheriteUpgradeListener implements Listener {
             }
         }
 
-        // Line 1: upgrade count + attribute bonus (flat ADD_NUMBER, ПРИБАВЛЯЕТСЯ к базе)
+        // Line: upgrade count + attribute bonus (flat ADD_NUMBER, ПРИБАВЛЯЕТСЯ к базе)
         double bonusDisplay = newUpgrades * PER_SCRAP_BONUS;
-        // База: меч=8.0 урона, топор/кирка/лопата/мотыга=скорость копания, броня=защита
         String attrName;
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
             attrName = "к урону";
@@ -165,11 +164,6 @@ public class NetheriteUpgradeListener implements Listener {
         filteredLore.add(MessageUtil.parse(
             "<!italic><white>Незеритовое улучшение:</white> <yellow>+" + newUpgrades + "</yellow> " +
             "<gradient:#8B4513:#DAA520>+" + BONUS_FMT.format(bonusDisplay) + " " + attrName + "</gradient>"
-        ));
-
-        // Line 2: durability bonus
-        filteredLore.add(MessageUtil.parse(
-            "<gray>+</gray><gray>" + newUpgrades + "</gray> <gray>к прочности</gray>"
         ));
 
         meta.lore(filteredLore);
