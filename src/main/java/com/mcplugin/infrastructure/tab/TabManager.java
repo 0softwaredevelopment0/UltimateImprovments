@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 public class TabManager extends BukkitRunnable implements Listener {
 
     private static TabManager instance;
+    private static boolean listenersRegistered = false;
     private boolean enabled;
     private List<String> headerLines;
     private List<String> footerLines;
@@ -55,9 +56,23 @@ public class TabManager extends BukkitRunnable implements Listener {
         OP          // OP players first, then non-OP
     }
 
+    /**
+     * Инициализирует TabManager. Если уже был запущен — clean up предыдущего.
+     */
     public static void init() {
+        // Clean up previous BukkitRunnable (но НЕ cancelTasks — это убивает ВСЕ задачи плагина)
+        if (instance != null) {
+            try { instance.cancel(); } catch (Exception ignored) {}
+        }
+
         instance = new TabManager();
-        Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
+
+        // Регистрируем Listener ТОЛЬКО один раз за всё время работы плагина
+        if (!listenersRegistered) {
+            Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
+            listenersRegistered = true;
+        }
+
         instance.reloadConfig();
 
         // Скрываем уже онлайн спектаторов при старте/reload
@@ -72,25 +87,33 @@ public class TabManager extends BukkitRunnable implements Listener {
         }
 
         if (instance.enabled) {
+            // BukkitRunnable НЕЛЬЗЯ переиспользовать после cancel() — всегда новый instance
             instance.runTaskTimer(Main.getInstance(), 20L, instance.intervalTicks);
         }
     }
 
     public static void shutdown() {
         if (instance != null) {
-            instance.cancel();
+            try { instance.cancel(); } catch (Exception ignored) {}
             instance = null;
         }
     }
 
+    /**
+     * Сбрасывает флаг регистрации listener'ов (вызывается из Main.onDisable()).
+     * Нужен чтобы при следующем старте плагина (после /reload) listeners зарегистрировались заново.
+     */
+    public static void resetListenerState() {
+        listenersRegistered = false;
+    }
+
+    /**
+     * Перезагрузка конфига. BukkitRunnable нельзя переиспользовать после cancel(),
+     * поэтому при reload создаём новый instance через init().
+     */
     public static void reload() {
-        if (instance != null) {
-            instance.cancel();
-            instance.reloadConfig();
-            if (instance.enabled) {
-                instance.runTaskTimer(Main.getInstance(), 20L, instance.intervalTicks);
-            }
-        }
+        // Просто переинициализируем — создаётся новый BukkitRunnable
+        init();
     }
 
     private void reloadConfig() {

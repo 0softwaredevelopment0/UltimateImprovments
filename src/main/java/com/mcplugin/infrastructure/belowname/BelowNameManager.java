@@ -58,8 +58,9 @@ public class BelowNameManager extends BukkitRunnable {
         if (instance != null) {
             instance.cancel();
             instance.cleanupObjective();
-            instance.reloadConfig();
+            instance = null;
         }
+        init();
     }
 
     private void reloadConfig() {

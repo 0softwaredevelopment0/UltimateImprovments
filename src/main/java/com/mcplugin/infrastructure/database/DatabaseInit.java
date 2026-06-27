@@ -393,6 +393,26 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🛠 MAINTENANCE WHITELIST — белый список для режима техработ
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS maintenance_whitelist (
+                player_name TEXT PRIMARY KEY,
+                added_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+        """);
+
+        // Служебная таблица для хранения enabled/maintenance_meta
+        // БЕЗ INSERT OR IGNORE — миграция из config.yml происходит в
+        // MaintenanceManager.loadFromDb() при первом запуске.
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS maintenance_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            );
+        """);
+
+        // =========================
         // 🗳 VOTES
         // =========================
         st.execute("""

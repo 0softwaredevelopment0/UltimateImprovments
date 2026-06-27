@@ -1,9 +1,10 @@
 package com.mcplugin.infrastructure.maintenance;
 
+import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -11,24 +12,28 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
  * Maintenance mode manager.
  * <p>
- * When maintenance is enabled, only whitelisted players can join the server.
- * Non-whitelisted players are kicked with a configurable message.
- * Supports timed on/off with -time flag.
+ * Когда техработы включены, только белый список может зайти на сервер.
+ * Все настройки и whitelist хранятся в SQLite (maintenance_whitelist + maintenance_meta),
+ * кроме kick_message и текстов сообщений — они в messages.yml.
  */
 public class MaintenanceManager implements Listener {
 
     private static MaintenanceManager instance;
 
     private boolean maintenanceMode = false;
-    private final List<UUID> whitelist = new ArrayList<>();
     private BukkitRunnable scheduledTask = null;
 
     private MaintenanceManager() {}
@@ -36,7 +41,7 @@ public class MaintenanceManager implements Listener {
     public static void init() {
         instance = new MaintenanceManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
-        instance.loadConfig();
+        instance.loadFromDb();
     }
 
     public static MaintenanceManager getInstance() {
@@ -44,55 +49,57 @@ public class MaintenanceManager implements Listener {
     }
 
     // =========================
-    // CONFIG
+    // DATABASE
     // =========================
 
     /**
-     * Loads whitelist and maintenance state from config.yml.
+     * Загружает enabled-флаг из БД с миграцией из config.yml.
      */
-    public void loadConfig() {
-        FileConfiguration cfg = Main.getInstance().getConfig();
-
-        // Load maintenance mode state
-        maintenanceMode = cfg.getBoolean("maintenance.enabled", false);
-
-        // Load whitelist (stored as string list of player names for readability)
-        whitelist.clear();
-        List<String> names = cfg.getStringList("maintenance.whitelist");
-        for (String name : names) {
-            @SuppressWarnings("deprecation")
-            UUID uuid = Bukkit.getOfflinePlayer(name).getUniqueId();
-            if (!whitelist.contains(uuid)) {
-                whitelist.add(uuid);
+    public void loadFromDb() {
+        try (Connection con = DatabaseManager.getConnection()) {
+            // Миграция: если в БД ещё нет enabled, берём из config.yml
+            try (PreparedStatement st = con.prepareStatement(
+                     "SELECT value FROM maintenance_meta WHERE key = ?")) {
+                st.setString(1, "enabled");
+                try (ResultSet rs = st.executeQuery()) {
+                    if (rs.next()) {
+                        maintenanceMode = Boolean.parseBoolean(rs.getString("value"));
+                    } else {
+                        // Первый запуск — мигрируем из config.yml
+                        boolean oldEnabled = Main.getInstance().getConfig()
+                                .getBoolean("maintenance.enabled", false);
+                        maintenanceMode = oldEnabled;
+                        // Сохраняем в БД
+                        try (PreparedStatement ins = con.prepareStatement(
+                                "INSERT OR REPLACE INTO maintenance_meta (key, value) VALUES (?, ?)")) {
+                            ins.setString(1, "enabled");
+                            ins.setString(2, String.valueOf(oldEnabled));
+                            ins.executeUpdate();
+                        }
+                        if (oldEnabled) {
+                            Main.getInstance().getLogger().info("[Maintenance] Migrated enabled=true from config.yml to SQLite");
+                        }
+                    }
+                }
             }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Maintenance] Failed to load state from DB", e);
         }
     }
 
     /**
-     * Saves current whitelist and maintenance state to config.yml.
+     * Сохраняет enabled-флаг в БД.
      */
-    public void saveConfig() {
-        FileConfiguration cfg = Main.getInstance().getConfig();
-
-        // Save whitelist as player names (human-readable)
-        List<String> names = new ArrayList<>();
-        for (UUID uuid : whitelist) {
-            @SuppressWarnings("deprecation")
-            String name = Bukkit.getOfflinePlayer(uuid).getName();
-            if (name != null) {
-                names.add(name);
-            } else {
-                names.add(uuid.toString());
-            }
+    private void saveStateToDb() {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "INSERT OR REPLACE INTO maintenance_meta (key, value) VALUES (?, ?)")) {
+            st.setString(1, "enabled");
+            st.setString(2, String.valueOf(maintenanceMode));
+            st.executeUpdate();
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Maintenance] Failed to save state to DB", e);
         }
-        cfg.set("maintenance.whitelist", names);
-        cfg.set("maintenance.enabled", maintenanceMode);
-
-        Main.getInstance().saveConfig();
-        // Reload to keep in-memory and on-disk in sync
-        Main.getInstance().reloadConfig();
-        // Re-read our own whitelist from the freshly saved config
-        loadConfig();
     }
 
     // =========================
@@ -104,20 +111,18 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Enables maintenance mode immediately.
-     * Kicks all non-whitelisted players.
+     * Включает режим техработ немедленно.
      */
     public void enable() {
         cancelScheduled();
         maintenanceMode = true;
-        saveConfig();
+        saveStateToDb();
         kickNonWhitelisted();
         broadcastMaintenance(true, null);
     }
 
     /**
-     * Enables maintenance mode after a delay.
-     * @param delayTicks ticks to wait before enabling
+     * Включает режим техработ через задержку.
      */
     public void enableLater(long delayTicks) {
         cancelScheduled();
@@ -133,19 +138,17 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Disables maintenance mode immediately.
-     * All players can join freely.
+     * Выключает режим техработ немедленно.
      */
     public void disable() {
         cancelScheduled();
         maintenanceMode = false;
-        saveConfig();
+        saveStateToDb();
         broadcastMaintenance(false, null);
     }
 
     /**
-     * Disables maintenance mode after a delay.
-     * @param delayTicks ticks to wait before disabling
+     * Выключает режим техработ через задержку.
      */
     public void disableLater(long delayTicks) {
         cancelScheduled();
@@ -160,9 +163,6 @@ public class MaintenanceManager implements Listener {
         scheduledTask.runTaskLater(Main.getInstance(), delayTicks);
     }
 
-    /**
-     * Cancels any pending scheduled maintenance toggle.
-     */
     public void cancelScheduled() {
         if (scheduledTask != null) {
             scheduledTask.cancel();
@@ -175,75 +175,100 @@ public class MaintenanceManager implements Listener {
     }
 
     // =========================
-    // WHITELIST
+    // WHITELIST — SQLite
     // =========================
 
     public List<String> getWhitelistNames() {
         List<String> names = new ArrayList<>();
-        for (UUID uuid : whitelist) {
-            @SuppressWarnings("deprecation")
-            String name = Bukkit.getOfflinePlayer(uuid).getName();
-            if (name != null) {
-                names.add(name);
-            } else {
-                names.add(uuid.toString());
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "SELECT player_name FROM maintenance_whitelist ORDER BY player_name");
+             ResultSet rs = st.executeQuery()) {
+            while (rs.next()) {
+                names.add(rs.getString("player_name"));
             }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Maintenance] Failed to list whitelist", e);
         }
         return names;
     }
 
     public boolean isWhitelisted(UUID uuid) {
-        return whitelist.contains(uuid);
+        // Проверяем по имени игрока
+        String name = Bukkit.getOfflinePlayer(uuid).getName();
+        if (name == null) return false;
+        return isWhitelisted(name);
     }
 
     public boolean isWhitelisted(String playerName) {
-        @SuppressWarnings("deprecation")
-        UUID uuid = Bukkit.getOfflinePlayer(playerName).getUniqueId();
-        return whitelist.contains(uuid);
-    }
-
-    /**
-     * Adds a player to the whitelist.
-     * @param playerName the player's name
-     * @return true if added, false if already whitelisted
-     */
-    public boolean addWhitelist(String playerName) {
-        @SuppressWarnings("deprecation")
-        UUID uuid = Bukkit.getOfflinePlayer(playerName).getUniqueId();
-        if (whitelist.contains(uuid)) {
+        String lower = playerName.toLowerCase().trim();
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "SELECT 1 FROM maintenance_whitelist WHERE player_name = ?")) {
+            st.setString(1, lower);
+            try (ResultSet rs = st.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.FINE, "[Maintenance] Check error for: " + lower, e);
             return false;
         }
-        whitelist.add(uuid);
-        saveConfig();
-        return true;
     }
 
     /**
-     * Removes a player from the whitelist.
-     * @param playerName the player's name
-     * @return true if removed, false if not found
+     * Добавляет игрока в whitelist.
+     */
+    public boolean addWhitelist(String playerName) {
+        if (playerName == null || playerName.isBlank()) return false;
+        String lower = playerName.toLowerCase().trim();
+
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "INSERT OR IGNORE INTO maintenance_whitelist (player_name) VALUES (?)")) {
+            st.setString(1, lower);
+            int rows = st.executeUpdate();
+            if (rows > 0) {
+                Main.getInstance().getLogger().info("[Maintenance] Added to whitelist: " + lower);
+                return true;
+            }
+            return false; // уже есть
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Maintenance] Failed to add: " + lower, e);
+            return false;
+        }
+    }
+
+    /**
+     * Удаляет игрока из whitelist.
      */
     public boolean removeWhitelist(String playerName) {
-        @SuppressWarnings("deprecation")
-        UUID uuid = Bukkit.getOfflinePlayer(playerName).getUniqueId();
-        boolean removed = whitelist.remove(uuid);
-        if (removed) {
-            saveConfig();
+        if (playerName == null || playerName.isBlank()) return false;
+        String lower = playerName.toLowerCase().trim();
+
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "DELETE FROM maintenance_whitelist WHERE player_name = ?")) {
+            st.setString(1, lower);
+            int rows = st.executeUpdate();
+            if (rows > 0) {
+                Main.getInstance().getLogger().info("[Maintenance] Removed from whitelist: " + lower);
+                return true;
+            }
+            return false; // не найден
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Maintenance] Failed to remove: " + lower, e);
+            return false;
         }
-        return removed;
     }
 
     // =========================
     // KICK LOGIC
     // =========================
 
-    /**
-     * Kicks all online players who are not in the whitelist.
-     */
     private void kickNonWhitelisted() {
         String kickMessage = MessageUtil.legacy(
-                Main.getInstance().getConfig().getString("maintenance.kick_message",
-                        "<red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>")
+                MessagesManager.getString("maintenance.kick_message",
+                        "<red>⛏ Server is currently under maintenance!</red>\\n<gray>Please come back later.</gray>")
         );
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!isWhitelisted(player.getUniqueId())) {
@@ -264,14 +289,14 @@ public class MaintenanceManager implements Listener {
         if (isWhitelisted(player.getUniqueId())) return;
 
         String kickMessage = MessageUtil.legacy(
-                Main.getInstance().getConfig().getString("maintenance.kick_message",
-                        "<red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>")
+                MessagesManager.getString("maintenance.kick_message",
+                        "<red>⛏ Server is currently under maintenance!</red>\\n<gray>Please come back later.</gray>")
         );
         event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, kickMessage);
     }
 
     // =========================
-    // BROADCASTS
+    // BROADCASTS — из messages.yml
     // =========================
 
     private void broadcastMaintenance(boolean enabled, String timeStr) {
@@ -280,7 +305,7 @@ public class MaintenanceManager implements Listener {
                 ? "<red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>"
                 : "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>";
 
-        String msg = Main.getInstance().getConfig().getString(key, def);
+        String msg = MessagesManager.getString(key, def);
         Bukkit.broadcast(MessageUtil.parse(msg));
     }
 
@@ -290,13 +315,14 @@ public class MaintenanceManager implements Listener {
                 ? "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>{time}</yellow>"
                 : "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>{time}</yellow>";
 
-        String msg = Main.getInstance().getConfig().getString(key, def).replace("{time}", timeStr);
+        String msg = MessagesManager.getString(key, def).replace("{time}", timeStr);
         Bukkit.broadcast(MessageUtil.parse(msg));
     }
 
-    /**
-     * Formats ticks into a human-readable time string.
-     */
+    // =========================
+    // TIME HELPERS
+    // =========================
+
     private static String formatTime(long ticks) {
         long totalSeconds = ticks / 20;
         if (totalSeconds < 60) {
@@ -317,11 +343,6 @@ public class MaintenanceManager implements Listener {
         return days + "d " + hours + "h";
     }
 
-    /**
-     * Parses a -time flag value like "30s", "5m", "2h", "1d" into ticks.
-     * @param timeStr the time string (e.g. "30s", "5m", "2h", "1d")
-     * @return ticks, or -1 if invalid
-     */
     public static long parseTimeToTicks(String timeStr) {
         if (timeStr == null || timeStr.isEmpty()) return -1;
         String lower = timeStr.toLowerCase().trim();

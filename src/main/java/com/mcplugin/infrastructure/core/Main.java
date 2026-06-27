@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.core.CommandRegistrar;
 import com.mcplugin.infrastructure.maintenance.MaintenanceManager;
 import com.mcplugin.infrastructure.modules.*;
+import com.mcplugin.infrastructure.tab.TabManager;
 import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.structure.StructureChunkTracker;
@@ -232,6 +233,9 @@ public class Main extends JavaPlugin {
 
         // Сохраняем OP whitelist
         OpWhitelistManager.shutdown();
+
+        // Сбрасываем флаг регистрации TabManager listener'ов
+        TabManager.resetListenerState();
 
         getLogger().info("[PLUGIN] Disabled");
     }

@@ -1425,17 +1425,7 @@ tab:
     # Включён ли objective (префикс/суффикс у ника в табе)
     objective_enabled: true
 
-    # 🔢 Сортировка игроков в табе (порядок отображения)
-  sort:
-    # Режим сортировки:
-    #   none      — без сортировки (порядок подключения)
-    #   a_z       — по алфавиту A→Z
-    #   z_a       — по алфавиту Z→A
-    #   luckperms — по группам LuckPerms (высший вес выше)
-    #   op        — операторы выше, затем по алфавиту
-    mode: none
-
-  # 📝 Кастомный формат строки для каждого игрока в табе
+    # 📝 Кастомный формат строки для каждого игрока в табе
     # Если НЕ пустой — заменяет objective_prefix + {name} + objective_suffix
     # Поддерживает:
     #   - MiniMessage разметку: <white>, <gray>, <gradient>, <dark_gray>, <red> и т.д.
@@ -1457,6 +1447,16 @@ tab:
     # Текст после ника
     # Используется ТОЛЬКО если format пустой
     objective_suffix: ""
+
+  # 🔢 Сортировка игроков в табе (порядок отображения)
+  sort:
+    # Режим сортировки:
+    #   none      — без сортировки (порядок подключения)
+    #   a_z       — по алфавиту A→Z
+    #   z_a       — по алфавиту Z→A
+    #   luckperms — по группам LuckPerms (высший вес выше)
+    #   op        — операторы выше, затем по алфавиту
+    mode: none
 
 # =========================
 # 📊 Скорборды — кастомные scoreboard с условиями
@@ -1607,30 +1607,11 @@ belowname:
 # =========================
 # ⛏ Режим технических работ (Maintenance)
 # =========================
+# Данные хранятся в SQLite (maintenance_whitelist + maintenance_meta).
+# Тексты сообщений — в messages.yml.
 maintenance:
-  # Включён ли режим техработ
+  # Включён ли режим техработ (загружается из SQLite, но можно задать тут для первого запуска)
   enabled: false
-
-  # Список ников игроков, которые НЕ будут кикнуты при включении техработ
-  # Администраторы и операторы — добавьте себя сюда до включения!
-  whitelist:
-    - "Notch"
-    # - "Steve"
-    # - "Alex"
-
-  # Сообщение, которое получают исключённые игроки (MiniMessage)
-  kick_message: "<red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>"
-
-  # Сообщения в чат
-  messages:
-    # При включении техработ
-    enabled: "<red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>"
-    # При выключении техработ
-    disabled: "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>"
-    # При запланированном включении
-    scheduled_enable: "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>{time}</yellow>"
-    # При запланированном выключении
-    scheduled_disable: "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>{time}</yellow>"
 
 # ═══════════════════════════════════════════════════════
 # 🔢 УНИВЕРСАЛЬНЫЙ ИДЕНТИФИКАТОР ВЕРСИИ (НЕ ТРОГАТЬ)

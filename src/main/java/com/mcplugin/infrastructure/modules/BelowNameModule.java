@@ -22,4 +22,9 @@ public class BelowNameModule extends PluginModule {
     protected void onDisable(JavaPlugin plugin) {
         BelowNameManager.shutdown();
     }
+
+    @Override
+    protected void onReloadConfig(JavaPlugin plugin) {
+        BelowNameManager.reload();
+    }
 }

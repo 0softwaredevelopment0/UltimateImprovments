@@ -452,6 +452,23 @@ update:
   check_error: "<red>❌ Error checking for updates!</red>"
 
 # =========================
+# ⛏ Режим технических работ (Maintenance)
+# =========================
+maintenance:
+  # Сообщение при кике (MiniMessage)
+  kick_message: "<red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>"
+  # Сообщения в чат
+  messages:
+    # При включении техработ
+    enabled: "<red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>"
+    # При выключении техработ
+    disabled: "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>"
+    # При запланированном включении
+    scheduled_enable: "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>{time}</yellow>"
+    # При запланированном выключении
+    scheduled_disable: "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>{time}</yellow>"
+
+# =========================
 # 🌐 General / Common Messages
 # =========================
 general:
