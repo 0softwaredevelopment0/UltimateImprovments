@@ -107,6 +107,7 @@ public class Main extends JavaPlugin {
         mm.register(new GeneratorBasicModule());
         mm.register(new ReactorModule());
         mm.register(new FurnaceModule());
+        mm.register(new AssemblerModule());
         mm.register(new WorkbenchModule());
         mm.register(new BatteryModule());
         mm.register(new BatteryMultiModule());

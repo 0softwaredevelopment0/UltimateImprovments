@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.listeners;
 
 import com.mcplugin.energy.generation.basic.GeneratorManager;
+import com.mcplugin.energy.machines.assembler.AssemblerManager;
 import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
@@ -69,12 +70,13 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // 🛠 ITEM ASSEMBLER (CRAFTER) — remove + orphaned Marker cleanup
+        // 🛠 СБОРЩИК (CRAFTER) — разобрать при ломании, очистить Marker
         // =========================
         if (e.getBlock().getType() == Material.CRAFTER) {
-            EnergyWorkbenchManager.remove(loc);
-            // Orphaned Marker cleanup (если CRAFTER разбит, а в кэше остался маркер)
-            if (StructureMarker.existsAt(loc)) {
+            if (AssemblerManager.isAssembled(loc)) {
+                AssemblerManager.removeAssembler(loc);
+            } else if (StructureMarker.existsAt(loc)) {
+                // Orphaned Marker cleanup
                 StructureMarker.removeAt(loc);
             }
         }

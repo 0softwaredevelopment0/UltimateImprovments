@@ -7,11 +7,7 @@ import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
 
-import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
-
 import com.mcplugin.infrastructure.util.LocationUtil;
-
-import net.kyori.adventure.text.Component;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -19,7 +15,6 @@ import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.block.data.type.Crafter;
 
 public class BlockPlaceListener implements Listener {
 
@@ -46,30 +41,6 @@ public class BlockPlaceListener implements Listener {
         // =========================
         if (type == Material.REDSTONE_LAMP) {
             LightManager.onBlockPlaced(loc);
-        }
-
-        // =========================
-        // 🛠 ITEM ASSEMBLER (CRAFTER)
-        // =========================
-        if (type == Material.CRAFTER) {
-
-            EnergyWorkbenchManager.add(loc);
-
-            // Блокируем ванильный авто-крафт CRAFTER блока по редстоуну
-            // Assembler работает только через виртуальный GUI с проверкой энергии
-            if (e.getBlock().getBlockData() instanceof Crafter crafter) {
-                crafter.setTriggered(true);
-                e.getBlock().setBlockData(crafter, false);
-            }
-
-            // Устанавливаем кастомное имя, чтобы GUI крафтера показывал "Item assembler"
-            var state = e.getBlock().getState();
-            if (state instanceof org.bukkit.block.Crafter crafterState) {
-                crafterState.customName(Component.text("Item assembler"));
-                crafterState.update();
-            }
-
-            return;
         }
 
         // =========================

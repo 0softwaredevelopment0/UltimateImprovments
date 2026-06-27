@@ -1,0 +1,46 @@
+package com.mcplugin.infrastructure.modules;
+
+import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.energy.machines.assembler.AssemblerManager;
+import com.mcplugin.energy.machines.assembler.AssemblerTask;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
+
+/**
+ * Модуль сборщика предметов — CRAFTER + рамка наверху.
+ * Собирается shift+ПКМ и авто-крафтит предметы раз в 2 тика.
+ */
+public class AssemblerModule extends PluginModule {
+
+    private BukkitTask assemblerTask;
+
+    public AssemblerModule() {
+        super("Assembler", "energy/machines/assembler", true);
+    }
+
+    @Override
+    protected void onInit(JavaPlugin plugin) throws Exception {
+        Main main = (Main) plugin;
+
+        AssemblerManager.init();
+
+        // Запускаем таск авто-крафта раз в 2 тика
+        assemblerTask = plugin.getServer().getScheduler().runTaskTimer(
+                main,
+                new AssemblerTask(),
+                40L,  // первый запуск через 2 секунды (чтобы всё успело загрузиться)
+                2L    // каждые 2 тика
+        );
+
+        plugin.getLogger().info("[AssemblerModule] ✔ Assembler system initialized.");
+    }
+
+    @Override
+    protected void onDisable(JavaPlugin plugin) {
+        if (assemblerTask != null) {
+            assemblerTask.cancel();
+            assemblerTask = null;
+        }
+        AssemblerManager.shutdown();
+    }
+}
