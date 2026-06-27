@@ -16,6 +16,7 @@ import com.mcplugin.infrastructure.server.EmergencyEntitiesKill;
 import com.mcplugin.infrastructure.server.RedstoneGuardTask;
 import com.mcplugin.infrastructure.server.ServerOverloadWarning;
 import org.bukkit.Bukkit;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 public class TaskManager {
@@ -67,11 +68,9 @@ public class TaskManager {
         gunTask = new PlasmaProjectileTask().runTaskTimer(plugin, 1L, 1L);
         // ReactorTask now managed by ReactorModule
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
-        // Используем Bukkit.getScheduler().runTaskTimer() вместо runnable.runTaskTimer(),
-        // потому что FishingListener — singleton: BukkitRunnable хранит internal task ID,
-        // который не сбрасывается при cancel(). Повторный вызов .runTaskTimer() упадёт с
-        // "Already scheduled as N" после stopAll() → startAll() (например при /mp reload).
-        fishingTask = Bukkit.getScheduler().runTaskTimer(plugin, FishingListener.getInstance(), 1L, 1L);
+        // FishingListener — singleton. При cancel() мы сбрасываем его internal task
+        // через resetBukkitRunnableTask(), поэтому .runTaskTimer() не упадёт с "Already scheduled".
+        fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
         codePanelCleanupTask = new CodePanelCleanupTask().runTaskTimer(plugin, 200L, 400L);
 
         plugin.getLogger().info("[TASKS] Started.");
@@ -144,8 +143,27 @@ public class TaskManager {
         if (gunTask != null) gunTask.cancel();
         if (reactorTask != null) reactorTask.cancel();
         if (radiationTask != null) radiationTask.cancel();
-        if (fishingTask != null) fishingTask.cancel();
+        if (fishingTask != null) {
+            fishingTask.cancel();
+            // Сбрасываем internal task BukkitRunnable после cancel(),
+            // чтобы повторный .runTaskTimer() не упал с "Already scheduled"
+            resetBukkitRunnableTask(FishingListener.getInstance());
+        }
         if (codePanelCleanupTask != null) codePanelCleanupTask.cancel();
         if (lightTask != null) lightTask.cancel();
+    }
+
+    /**
+     * Сбрасывает внутреннее поле task BukkitRunnable через рефлексию.
+     * BukkitRunnable.checkNotYetScheduled() падает если task != null даже после cancel().
+     * Это фикс для singleton'ов (например FishingListener) при /mp reload.
+     */
+    private static void resetBukkitRunnableTask(BukkitRunnable runnable) {
+        try {
+            java.lang.reflect.Field taskField = BukkitRunnable.class.getDeclaredField("task");
+            taskField.setAccessible(true);
+            taskField.set(runnable, null);
+        } catch (Exception ignored) {
+        }
     }
 }
