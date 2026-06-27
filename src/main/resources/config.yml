@@ -1447,7 +1447,7 @@ tab:
 
     # Текст перед ником (MiniMessage + плейсхолдеры)
     # Используется ТОЛЬКО если format пустой
-    objective_prefix: "<dark_gray>[</dark_gray><white>{player_ping}ms</white><dark_gray>] </dark_gray>"
+    objective_prefix: "<dark_gray>[</dark_gray>{player_ping_color}{player_ping}ms<dark_gray>] </dark_gray>"
     # Текст после ника
     # Используется ТОЛЬКО если format пустой
     objective_suffix: ""

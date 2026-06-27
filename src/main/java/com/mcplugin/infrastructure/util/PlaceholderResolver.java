@@ -44,6 +44,17 @@ public class PlaceholderResolver {
 
     private static final DecimalFormat TPS_FORMAT = new DecimalFormat("#.##");
     private static final Map<String, BiFunction<Player, String, String>> BUILTIN = new HashMap<>();
+
+    // ===== Пинг-градиент (0ms → 1000ms) =====
+    // Стопы: [ping, R, G, B]
+    private static final int[][] PING_COLOR_STOPS = {
+        {0,     0x00, 0xAA, 0x00},   // 0ms:   тёмно-зелёный
+        {200,   0x55, 0xFF, 0x55},   // 200ms: зелёный
+        {400,   0xFF, 0xFF, 0x55},   // 400ms: жёлтый
+        {600,   0xFF, 0xAA, 0x00},   // 600ms: оранжевый
+        {800,   0xFF, 0x55, 0x55},   // 800ms: красный
+        {1000,  0xAA, 0x00, 0x00}    // 1000ms: тёмно-красный
+    };
     private static final MiniMessage MM = MiniMessage.miniMessage();
     private static final LegacyComponentSerializer LEGACY_AMPERSAND = LegacyComponentSerializer.legacyAmpersand();
 
@@ -63,6 +74,7 @@ public class PlaceholderResolver {
         BUILTIN.put("player_displayname", (p, s) -> p != null ? p.getDisplayName() : "?");
         BUILTIN.put("player_uuid", (p, s) -> p != null ? p.getUniqueId().toString() : "?");
         BUILTIN.put("player_ping", (p, s) -> p != null ? String.valueOf(p.getPing()) : "0");
+        BUILTIN.put("player_ping_color", PlaceholderResolver::resolvePingColor);
         BUILTIN.put("player_gamemode", (p, s) -> p != null ? p.getGameMode().name().toLowerCase() : "?");
         BUILTIN.put("player_health", (p, s) -> p != null ? String.valueOf((int) p.getHealth()) : "0");
         BUILTIN.put("player_food", (p, s) -> p != null ? String.valueOf(p.getFoodLevel()) : "0");
@@ -181,6 +193,37 @@ public class PlaceholderResolver {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    /**
+     * Возвращает MiniMessage-цвет (<#RRGGBB>) для пинга игрока.
+     * Градиент от тёмно-зелёного (0ms) до тёмно-красного (1000ms+).
+     */
+    private static String resolvePingColor(Player player, String unused) {
+        if (player == null) return "<#00AA00>";
+        int ping = Math.min(player.getPing(), 1000);
+
+        // Находим две стопы между которыми находится ping
+        for (int i = 0; i < PING_COLOR_STOPS.length - 1; i++) {
+            int[] lower = PING_COLOR_STOPS[i];
+            int[] upper = PING_COLOR_STOPS[i + 1];
+            if (ping >= lower[0] && ping <= upper[0]) {
+                if (ping == lower[0]) {
+                    return String.format("<%02X%02X%02X>", lower[1], lower[2], lower[3]);
+                }
+                if (ping == upper[0]) {
+                    return String.format("<%02X%02X%02X>", upper[1], upper[2], upper[3]);
+                }
+                double t = (double) (ping - lower[0]) / (upper[0] - lower[0]);
+                int r = (int) Math.round(lower[1] + (upper[1] - lower[1]) * t);
+                int g = (int) Math.round(lower[2] + (upper[2] - lower[2]) * t);
+                int b = (int) Math.round(lower[3] + (upper[3] - lower[3]) * t);
+                return String.format("<%02X%02X%02X>", r, g, b);
+            }
+        }
+
+        // fallback — тёмно-красный (1000ms+)
+        return "<#AA0000>";
     }
 
     /**
