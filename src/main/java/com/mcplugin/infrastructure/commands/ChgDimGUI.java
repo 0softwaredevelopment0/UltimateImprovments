@@ -271,6 +271,8 @@ public class ChgDimGUI implements Listener {
 
         if (slot == 1) {
             e.setCancelled(true);
+            // Очищаем верхний инвентарь перед закрытием, чтобы предметы не выпали/не вернулись
+            e.getView().getTopInventory().clear();
             player.closeInventory();
             ChgDimCommand.teleportBack(player);
             return;
@@ -302,6 +304,8 @@ public class ChgDimGUI implements Listener {
         }
 
         ChgDimCommand.teleport(player, worldName);
+        // Очищаем верхний инвентарь перед закрытием, чтобы предметы не выпали/не вернулись
+        e.getView().getTopInventory().clear();
         player.closeInventory();
     }
 
@@ -310,6 +314,21 @@ public class ChgDimGUI implements Listener {
         UUID uuid = e.getPlayer().getUniqueId();
         openMenus.remove(uuid);
         cancelResetTask(uuid);
+
+        // Очищаем CHGDIM-предметы из верхнего инвентаря (чтобы не вернулись игроку)
+        Inventory topInv = e.getView().getTopInventory();
+        if (topInv != null) {
+            for (int i = 0; i < topInv.getSize(); i++) {
+                ItemStack item = topInv.getItem(i);
+                if (item != null && item.getItemMeta() != null) {
+                    var pdc = item.getItemMeta().getPersistentDataContainer();
+                    if (pdc.has(Keys.CHGDIM_GUI, PersistentDataType.BOOLEAN)) {
+                        topInv.setItem(i, null);
+                    }
+                }
+            }
+        }
+
         if (e.getPlayer() instanceof Player player) {
             removeChgdimItemsFromPlayer(player);
         }
