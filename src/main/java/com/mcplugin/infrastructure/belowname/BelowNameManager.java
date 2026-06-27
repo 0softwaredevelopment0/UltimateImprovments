@@ -8,17 +8,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.scoreboard.Team;
 
 /**
- * Manages the BELOW_NAME scoreboard objective — displays formatted text
+ * Manages the per-player team suffix system — displays formatted text
  * (MiniMessage + placeholders) below each player's nametag in the world.
  * <p>
- * Uses {@code Score.customName(Component)} to show custom text instead of
- * a plain number. Falls back to a numeric score if customName is not supported.
+ * Uses {@code Team.suffix(Component)} with a newline prefix to show custom text
+ * below the player name. Unlike the old BELOW_NAME + Score.customName approach
+ * (which is limited to integer scores), Team suffix properly renders Components.
  * <p>
  * Config example:
  * <pre>
@@ -31,15 +31,12 @@ import org.bukkit.scoreboard.Scoreboard;
 public class BelowNameManager extends BukkitRunnable {
 
     private static BelowNameManager instance;
-    private static final String OBJECTIVE_NAME = "mcplugin_bn";
-    private static final String OBJECTIVE_CRITERIA = "dummy";
+    /** Prefix for team names, max 3 chars (team names max 16 chars). */
+    private static final String TEAM_PREFIX = "bn_";
 
     private boolean enabled;
     private String format;
     private int intervalTicks;
-
-    private Scoreboard scoreboard;
-    private Objective objective;
 
     public static void init() {
         instance = new BelowNameManager();
@@ -49,7 +46,7 @@ public class BelowNameManager extends BukkitRunnable {
     public static void shutdown() {
         if (instance != null) {
             instance.cancel();
-            instance.cleanupObjective();
+            cleanupAllTeams();
             instance = null;
         }
     }
@@ -57,7 +54,7 @@ public class BelowNameManager extends BukkitRunnable {
     public static void reload() {
         if (instance != null) {
             instance.cancel();
-            instance.cleanupObjective();
+            cleanupAllTeams();
             instance = null;
         }
         init();
@@ -71,57 +68,34 @@ public class BelowNameManager extends BukkitRunnable {
         this.intervalTicks = Math.max(5, config.getInt("belowname.update_interval_ticks", 10));
 
         if (enabled) {
-            initObjective();
             this.runTaskTimer(Main.getInstance(), 20L, intervalTicks);
         }
     }
 
-    // =========================
-    // SCOREBOARD OBJECTIVE
-    // =========================
-
     /**
-     * Creates or finds the BELOW_NAME objective.
+     * Unregisters ALL belowname teams from the main scoreboard.
+     * Called on shutdown and before reload to clean up stale entries.
      */
-    private void initObjective() {
-        // Use the main scoreboard (Bukkit.getScoreboardManager().getMainScoreboard())
-        // to ensure BELOW_NAME is visible to all players
-        scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-
-        // Unregister existing objective if it exists
-        Objective existing = scoreboard.getObjective(OBJECTIVE_NAME);
-        if (existing != null) {
-            existing.unregister();
-        }
-
-        // Create new objective with BELOW_NAME display slot
-        objective = scoreboard.registerNewObjective(
-                OBJECTIVE_NAME,
-                OBJECTIVE_CRITERIA,
-                Component.text("BelowName") // display name (not shown in BELOW_NAME slot)
-        );
-        objective.setDisplaySlot(DisplaySlot.BELOW_NAME);
+    private static void cleanupAllTeams() {
+        try {
+            ScoreboardManager mgr = Bukkit.getScoreboardManager();
+            if (mgr == null) return;
+            Scoreboard sb = mgr.getMainScoreboard();
+            for (Team team : sb.getTeams()) {
+                if (team.getName().startsWith(TEAM_PREFIX)) {
+                    team.unregister();
+                }
+            }
+        } catch (Exception ignored) {}
     }
-
-    /**
-     * Cleans up the objective on shutdown/reload.
-     */
-    private void cleanupObjective() {
-        if (objective != null) {
-            try {
-                objective.unregister();
-            } catch (Exception ignored) {}
-            objective = null;
-        }
-    }
-
-    // =========================
-    // TICK
-    // =========================
 
     @Override
     public void run() {
-        if (!enabled || objective == null) return;
+        if (!enabled) return;
+
+        ScoreboardManager mgr = Bukkit.getScoreboardManager();
+        if (mgr == null) return;
+        Scoreboard sb = mgr.getMainScoreboard();
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player == null || !player.isOnline()) continue;
@@ -130,13 +104,21 @@ public class BelowNameManager extends BukkitRunnable {
                 String resolved = PlaceholderResolver.resolve(format, player);
                 Component component = MessageUtil.parse(resolved);
 
-                // Get or create the score entry for this player
-                Score score = objective.getScore(player.getName());
-                score.setScore(0); // dummy value, custom name overrides display
+                // Build safe team name from UUID hash (always 11 chars, no collisions)
+                String teamName = TEAM_PREFIX + Integer.toHexString(player.getUniqueId().hashCode());
 
-                // Set custom name — this replaces the number with formatted text
-                // Paper API: Score.setCustomName(@Nullable Component)
-                score.customName(component);
+                // Get or create the player's team
+                Team team = sb.getTeam(teamName);
+                if (team == null) {
+                    team = sb.registerNewTeam(teamName);
+                    team.addEntry(player.getName());
+                }
+
+                // Set suffix: newline + formatted belowname text
+                // Component.newline() creates a line break in the nametag,
+                // pushing the belowname text to the row below the player name.
+                team.suffix(Component.newline().append(component));
+
             } catch (Exception e) {
                 // Silently skip on error (player might have disconnected)
             }
