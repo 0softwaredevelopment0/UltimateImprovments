@@ -67,7 +67,11 @@ public class TaskManager {
         gunTask = new PlasmaProjectileTask().runTaskTimer(plugin, 1L, 1L);
         // ReactorTask now managed by ReactorModule
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
-        fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
+        // Используем Bukkit.getScheduler().runTaskTimer() вместо runnable.runTaskTimer(),
+        // потому что FishingListener — singleton: BukkitRunnable хранит internal task ID,
+        // который не сбрасывается при cancel(). Повторный вызов .runTaskTimer() упадёт с
+        // "Already scheduled as N" после stopAll() → startAll() (например при /mp reload).
+        fishingTask = Bukkit.getScheduler().runTaskTimer(plugin, FishingListener.getInstance(), 1L, 1L);
         codePanelCleanupTask = new CodePanelCleanupTask().runTaskTimer(plugin, 200L, 400L);
 
         plugin.getLogger().info("[TASKS] Started.");
