@@ -1382,6 +1382,117 @@ motd:
       max: 500
       update_interval_ticks: 100
 
+# =========================
+# 📋 Таб-лист — кастомный header/footer + playerList
+# =========================
+tab:
+  # Включён ли кастомный таб
+  enabled: true
+
+  # Интервал обновления (тики, 20 = 1 сек)
+  update_interval_ticks: 20
+
+  # 🏷 Header — строки над списком игроков (MiniMessage + плейсхолдеры)
+  header:
+    - "<gradient:#00AAFF:#FF55FF>  ✦ MC-Plugin ✦  </gradient>"
+    - "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"
+
+  # 🏷 Footer — строки под списком игроков (MiniMessage + плейсхолдеры)
+  footer:
+    - "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"
+    - "<gray>  Online: <white>{online}</white><gray>/{max_players}  •  TPS: <white>{tps}</white></gray>"
+    - "<gray>  Discord: <aqua>discord.gg/mcplugin</aqua></gray>"
+
+  # 👤 Настройки списка игроков (префикс/суффикс в табе)
+  player_list:
+    # Включён ли objective (префикс/суффикс у ника в табе)
+    objective_enabled: true
+    # Текст перед ником (MiniMessage + плейсхолдеры)
+    objective_prefix: "<dark_gray>[</dark_gray><white>{player_ping}ms</white><dark_gray>] </dark_gray>"
+    # Текст после ника
+    objective_suffix: ""
+    # Позиция: BEFORE — префикс перед ником, AFTER — суффикс после
+    objective_position: BEFORE
+
+# =========================
+# 📊 Скорборды — кастомные scoreboard с условиями
+# =========================
+scoreboard:
+  # Включены ли кастомные скорборды
+  enabled: true
+
+  # Интервал обновления (тики, 20 = 1 сек)
+  update_interval_ticks: 20
+
+  # 📋 Список конфигураций скорбордов
+  # Первый подходящий по условию — будет показан
+  boards:
+
+    # ════════════════════════════════════
+    # 🏠 ОСНОВНОЙ СКОРБОРД (все миры)
+    # ════════════════════════════════════
+    default:
+      # Условие отображения:
+      #   always          — всегда
+      #   world           — только в указанных мирах (worlds)
+      #   world_blacklist — во всех, кроме указанных (worlds)
+      #   permission      — только если есть право (permission)
+      condition:
+        type: always
+        worlds: []
+        permission: ""
+
+      # 🏷 Заголовок скорборда (MiniMessage + плейсхолдеры)
+      title: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient>"
+
+      # 📝 Строки скорборда (MiniMessage + плейсхолдеры)
+      # Пустая строка = разделитель
+      # Максимум 15 строк (лимит Minecraft)
+      lines:
+        - ""
+        - "<gray>Online: <white>{online}</white><gray>/{max_players}</gray>"
+        - "<gray>TPS: <white>{tps}</white></gray>"
+        - ""
+        - "<gray>Ваш пинг: <white>{player_ping}ms</white></gray>"
+        - "<gray>Мир: <white>{world_name}</white></gray>"
+        - ""
+        - "<dark_gray>discord.gg/mcplugin</dark_gray>"
+
+    # ════════════════════════════════════
+    # 🌌 В РАЗНЫХ МИРАХ — другой скорборд
+    # ════════════════════════════════════
+    # world_example:
+    #   condition:
+    #     type: world
+    #     worlds:
+    #       - "world_nether"
+    #       - "world_the_end"
+    #     permission: ""
+    #   title: "<red>\u26a0 Nether \u26a0</red>"
+    #   lines:
+    #     - ""
+    #     - "<gray>Online: <white>{online}</white></gray>"
+    #     - "<gray>\u26a0 \u26a0 \u26a0 \u26a0 \u26a0</gray>"
+    #     - ""
+    #     - "<gray>Ping: <white>{player_ping}ms</white></gray>"
+
+    # ════════════════════════════════════
+    # 🛡 АДМИНСКИЙ СКОРБОРД (с правом)
+    # ════════════════════════════════════
+    # admin:
+    #   condition:
+    #     type: permission
+    #     worlds: []
+    #     permission: "mcplugin.admin"
+    #   title: "<red>ADMIN</red>"
+    #   lines:
+    #     - ""
+    #     - "<gray>Online: <white>{online}</white></gray>"
+    #     - "<gray>TPS: <white>{tps}</white></gray>"
+    #     - "<gray>Uptime: <white>{uptime}</white></gray>"
+    #     - ""
+    #     - "<gray>Ping: <white>{player_ping}ms</white></gray>"
+
 # ═══════════════════════════════════════════════════════
 # 🔢 УНИВЕРСАЛЬНЫЙ ИДЕНТИФИКАТОР ВЕРСИИ (НЕ ТРОГАТЬ)
 # ═══════════════════════════════════════════════════════
@@ -1391,4 +1502,4 @@ motd:
 #   minor    — номер подверсии плагина
 #   commits  — количество коммитов с последнего тега (вычисляется автоматически)
 # ═══════════════════════════════════════════════════════
-plugin_version: "1.8.11"
+plugin_version: "1.8.12"

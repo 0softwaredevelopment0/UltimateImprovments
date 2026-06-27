@@ -6,6 +6,7 @@ import com.mcplugin.infrastructure.core.CommandRegistrar;
 import com.mcplugin.infrastructure.modules.*;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.util.FileLogger;
+import com.mcplugin.infrastructure.util.PlaceholderResolver;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -65,6 +66,11 @@ public class Main extends JavaPlugin {
         // и создаётся свежий из ресурсов.
         // =========================
         MessagesManager.init(this);
+
+        // =========================
+        // PLACEHOLDER RESOLVER — проверка PAPI
+        // =========================
+        PlaceholderResolver.init();
 
         // =========================
         // PDC KEYS — MUST init BEFORE any module that uses Keys.*
@@ -148,6 +154,10 @@ public class Main extends JavaPlugin {
 
         // MOTD
         mm.register(new MOTDModule());
+
+        // Tab & Scoreboard
+        mm.register(new TabModule());
+        mm.register(new ScoreboardModule());
 
         // Background tasks & updates
         mm.register(new TasksModule());
