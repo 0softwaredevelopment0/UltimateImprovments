@@ -150,10 +150,6 @@ public class ChatManager implements Listener {
         String resolved = PlaceholderResolver.resolve(format, player);
 
         // Build final broadcast component
-        // ВАЖНО: НЕ сплитим по {message} — иначе MiniMessage-теги, оборачивающие
-        // {message} (например <white>{message}</white>), разбиваются на части
-        // и closing-тег </white> в отдельном фрагменте показывается как текст.
-        // Вместо этого подставляем сообщение прямо в строку и парсим целиком.
         Component broadcast;
         boolean hasMessageToken = resolved.contains("{message}");
 
@@ -162,16 +158,34 @@ public class ChatManager implements Listener {
             broadcast = MessageUtil.parse(resolved)
                     .append(Component.text(" "))
                     .append(messageComponent);
-        } else {
-            // Replace {message} with the actual message text in the format
-            String msgForFormat;
-            if (playerMiniMessage) {
-                msgForFormat = rawMessage;
-            } else {
-                // Escape MiniMessage tags so <color>text</color> in the message appear as plain text
-                msgForFormat = rawMessage.replace("<", "\\<").replace(">", "\\>");
+        } else if (playerMiniMessage) {
+            // ⚠️ Когда playerMiniMessage: true, НЕ вставляем сообщение в строку.
+            // Иначе теги игрока (</white>, <red>) могут перекрыть теги формата
+            // (<white>{message}</white> → игроковский </white> закроет форматный <white>).
+            // Вместо этого: парсим формат слева и справа от {message} как MiniMessage,
+            // а между ними вставляем уже распаршенный messageComponent.
+            int msgIdx = resolved.indexOf("{message}");
+            String beforeStr = resolved.substring(0, msgIdx);
+            String afterStr = resolved.substring(msgIdx + 9); // "{message}".length()
+
+            Component beforeComp;
+            Component afterComp;
+            try {
+                beforeComp = MessageUtil.parse(beforeStr);
+            } catch (Exception e) {
+                beforeComp = Component.text(beforeStr);
+            }
+            try {
+                afterComp = MessageUtil.parse(afterStr);
+            } catch (Exception e) {
+                afterComp = Component.text(afterStr);
             }
 
+            broadcast = beforeComp.append(messageComponent).append(afterComp);
+        } else {
+            // playerMiniMessage: false — экранируем < и > в сообщении,
+            // подставляем в строку и парсим целиком.
+            String msgForFormat = rawMessage.replace("<", "\\<").replace(">", "\\>");
             String finalFormat = resolved.replace("{message}", msgForFormat);
             try {
                 broadcast = MessageUtil.parse(finalFormat);
