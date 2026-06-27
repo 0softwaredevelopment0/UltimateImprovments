@@ -933,11 +933,11 @@ features:
 # поддельный brand вместо реального (например "Paper" в F3).
 brand_spoof:
   # Включена ли подмена brand
-  enabled: false
+  enabled: true
 
   # Кастомная строка brand, которую увидят игроки без права
-  # Пустая строка = ничего не передаётся (brand скрыт полностью)
-  custom_brand: ""
+  # "Paper" — прячет оригинальный brand (Leaf) от игроков без права mcplugin.show.brand
+  custom_brand: "Paper"
 
 # =========================
 # 👻 Система ваниша

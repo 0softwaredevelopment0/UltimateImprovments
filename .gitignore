@@ -45,6 +45,7 @@ nul
 
 ### Extra ignores ###
 .claude/
+TODOs.odt
 
 ### Codebuff ###
 .codebuff-memory.db
