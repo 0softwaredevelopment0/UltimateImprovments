@@ -180,26 +180,20 @@ public class Main extends JavaPlugin {
         mm.register(new ElytraBoostModule());
 
         // =========================
-        // REGISTER STRUCTURE CHUNK LISTENER
-        // Сканирует все загруженные чанки на Marker'ы структур ДО инициализации модулей,
-        // чтобы rebuildFromMarkers() в BatteryManager/LightManager увидел кэш.
-        // =========================
-        getServer().getPluginManager().registerEvents(new StructureChunkListener(), this);
-        StructureChunkListener.scanAll();
-
-        // =========================
-        // STRUCTURE CHUNK TRACKER — загружаем координаты чанков со структурами
-        // и принудительно загружаем эти чанки, чтобы Marker'ы попали в кэш.
-        // =========================
-        StructureChunkTracker.load();
-        StructureChunkTracker.loadTrackedChunks();
-
-        // =========================
         // INIT ALL MODULES
         // Каждый модуль инициализируется в try-catch.
         // Если модуль упал — он отключается, но плагин продолжает работу.
         // =========================
         mm.initAll();
+
+        // =========================
+        // REGISTER STRUCTURE CHUNK LISTENER + TRACKER
+        // ПОСЛЕ mm.initAll() — таблицы БД уже созданы.
+        // =========================
+        getServer().getPluginManager().registerEvents(new StructureChunkListener(), this);
+        StructureChunkListener.scanAll();
+        StructureChunkTracker.load();
+        StructureChunkTracker.loadTrackedChunks();
 
         // =========================
         // OP WHITELIST — белый список операторов (ПОСЛЕ initAll, чтобы таблицы БД уже существовали)

@@ -371,6 +371,18 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🗺 STRUCTURE CHUNKS — чанки, в которых есть Marker'ы структур
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS structure_chunks (
+                world TEXT NOT NULL,
+                cx INTEGER NOT NULL,
+                cz INTEGER NOT NULL,
+                PRIMARY KEY(world, cx, cz)
+            );
+        """);
+
+        // =========================
         // 🔄 UPDATER STATE (последний SHA коммита / тег релиза)
         // =========================
         st.execute("""
