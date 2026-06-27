@@ -88,20 +88,6 @@ public class GeneratorTask extends BukkitRunnable {
             Block block = furnaceLoc.getBlock();
             if (block.getType() != Material.BLAST_FURNACE) continue;
 
-            // =========================
-            // REDSTONE CHECK: generator only works when powered
-            // =========================
-            if (!block.isBlockPowered() && !block.isBlockIndirectlyPowered()) {
-                // No redstone — turn off furnace visual
-                org.bukkit.block.data.type.Furnace offData =
-                        (org.bukkit.block.data.type.Furnace) block.getBlockData();
-                if (offData.isLit()) {
-                    offData.setLit(false);
-                    block.setBlockData(offData);
-                }
-                continue;
-            }
-
             // Find connected cable node
             CableNode node = GeneratorManager.findConnectedNode(furnaceLoc);
             if (node == null) continue;
