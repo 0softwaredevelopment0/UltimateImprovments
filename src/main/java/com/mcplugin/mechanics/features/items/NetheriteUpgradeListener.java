@@ -32,7 +32,8 @@ import java.util.Set;
  * <b>Механика:</b>
  * <ul>
  *   <li>Слот 1: незеритовый меч или инструмент</li>
- *   <li>Слот 2: незеритовый скрап (каждый = +0.1% к атрибуту, +1 к макс. прочности)</li>
+ *   <li>Слот 2: незеритовый скрап (+0.1 к атрибуту, +1 прочности) или
+ *       незеритовый слиток (1 слиток = 9 скрапам = +0.9 к атрибуту, +9 прочности)</li>
  *   <li>Меч: +0.1% к урону от атаки ({@link Attribute#ATTACK_DAMAGE})</li>
  *   <li>Топор/кирка/лопата/мотыга: +0.1 к скорости копания ({@link Attribute#BLOCK_BREAK_SPEED})</li>
  *   <li>Броня: не улучшается (только через ванильный незерит)</li>
@@ -65,6 +66,8 @@ public class NetheriteUpgradeListener implements Listener {
     private static final DecimalFormat BONUS_FMT = new DecimalFormat("0.0", new java.text.DecimalFormatSymbols(java.util.Locale.US));
     /** +0.1 flat за каждый скрап (ADD_NUMBER) */
     private static final double PER_SCRAP_BONUS = 0.1;
+    /** 1 незеритовый слиток = 9 скрапов */
+    private static final int INGOT_TO_SCRAP = 9;
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPrepareAnvil(PrepareAnvilEvent event) {
@@ -74,7 +77,8 @@ public class NetheriteUpgradeListener implements Listener {
 
         if (slot0 == null || slot0.getType() == Material.AIR) return;
         if (slot1 == null || slot1.getType() == Material.AIR) return;
-        if (slot1.getType() != Material.NETHERITE_SCRAP) return;
+        Material slot1Type = slot1.getType();
+        if (slot1Type != Material.NETHERITE_SCRAP && slot1Type != Material.NETHERITE_INGOT) return;
         if (!ALL_NETHERITE.contains(slot0.getType())) return;
 
         ItemMeta meta0 = slot0.getItemMeta();
@@ -83,8 +87,11 @@ public class NetheriteUpgradeListener implements Listener {
         var pdc = meta0.getPersistentDataContainer();
         int existingUpgrades = pdc.getOrDefault(Keys.NETHERITE_UPGRADE, PersistentDataType.INTEGER, 0);
 
-        int scrapCount = slot1.getAmount();
-        int newUpgrades = existingUpgrades + scrapCount;
+        int itemCount = slot1.getAmount();
+        int scrapEquivalent = (slot1Type == Material.NETHERITE_INGOT)
+                ? itemCount * INGOT_TO_SCRAP
+                : itemCount;
+        int newUpgrades = existingUpgrades + scrapEquivalent;
 
         // Clone and apply upgrades
         ItemStack result = slot0.clone();
@@ -114,10 +121,10 @@ public class NetheriteUpgradeListener implements Listener {
             ));
         }
 
-        // +1 к макс. прочности за каждый скрап (для всех незеритовых предметов)
+        // +1 к макс. прочности за каждый скрап/слиток (для всех незеритовых предметов)
         if (meta instanceof Damageable damageable && damageable.hasMaxDamage()) {
             int currentMax = damageable.getMaxDamage();
-            damageable.setMaxDamage(currentMax + scrapCount);
+            damageable.setMaxDamage(currentMax + scrapEquivalent);
         }
 
         // Build lore: preserve existing, remove old upgrade line, append new
@@ -150,7 +157,8 @@ public class NetheriteUpgradeListener implements Listener {
         result.setItemMeta(meta);
 
         event.setResult(result);
-        setAnvilCost(inv, 0, scrapCount);
+        // Стоимость — сколько предметов потребляется из слот 2
+        setAnvilCost(inv, 0, itemCount);
     }
 
     /**
