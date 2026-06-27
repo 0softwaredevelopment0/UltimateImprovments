@@ -92,11 +92,11 @@ public class ChestplateFlightListener implements Listener {
 
         if (newPct >= 100.0) {
             meta.setGlider(true);
-            filteredLore.add(MessageUtil.parse("<green>Пригоден для полёта</green>"));
+            filteredLore.add(MessageUtil.parse("<!italic><green>Пригоден для полёта</green>"));
         } else {
             String pctColor = flightGradientColor(newPct);
             filteredLore.add(MessageUtil.parse(
-                "<white>Улучшение полёта:</white> " + pctColor + PCT_FMT.format(newPct) + "%"
+                "<!italic><white>Улучшение полёта:</white> " + pctColor + PCT_FMT.format(newPct) + "%"
             ));
         }
 
