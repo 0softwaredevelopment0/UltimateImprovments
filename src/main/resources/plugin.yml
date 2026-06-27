@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.8.15
+version: 1.8.16
 
 main: com.mcplugin.infrastructure.core.Main
 
@@ -280,4 +280,8 @@ permissions:
 
   mcplugin.autocraft:
     description: Allows using auto-craft mode (/mp toggleautocraft)
+    default: op
+
+  mcplugin.command.maintenance:
+    description: Allows managing maintenance mode (/mp maint)
     default: op

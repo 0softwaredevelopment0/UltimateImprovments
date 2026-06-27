@@ -9,6 +9,7 @@ import com.mcplugin.infrastructure.commands.home.HomeDatabase;
 import com.mcplugin.infrastructure.commands.subcommands.CilistCommand;
 import com.mcplugin.infrastructure.commands.subcommands.HelpCommand;
 import com.mcplugin.infrastructure.commands.subcommands.ChgDimSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.MaintSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.CodePaneSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ItemSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.AuthSubcommand;
@@ -171,6 +172,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 yield true;
             }
             case "bc" -> BroadcastSubcommand.execute(sender, args);
+            case "maint", "maintenance" -> MaintSubcommand.execute(sender, args);
             case "askcords_accept" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 if (args.length < 2) yield true;
@@ -221,7 +223,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     "auth",                    "chgdim", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
-                    "askcords", "forcesuicide", "bc"));
+                    "askcords", "forcesuicide", "bc", "maint"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
             completions.add("create");
             completions.add("delete");
@@ -256,6 +258,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 && (args[1].equalsIgnoreCase("forcelogin") || args[1].equalsIgnoreCase("resetauth")
                 || args[1].equalsIgnoreCase("chgpass") || args[1].equalsIgnoreCase("delsession"))) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
+        } else if (args.length >= 2 && args[0].equalsIgnoreCase("maint")) {
+            completions.addAll(MaintSubcommand.tabComplete(args));
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str"))) {
             completions.addAll(List.of("dfc", "magnet", "lightning"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("codepane")) {

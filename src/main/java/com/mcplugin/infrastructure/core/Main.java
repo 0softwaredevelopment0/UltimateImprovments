@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.core;
 import com.mcplugin.infrastructure.config.ConfigIntegrityValidator;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.core.CommandRegistrar;
+import com.mcplugin.infrastructure.maintenance.MaintenanceManager;
 import com.mcplugin.infrastructure.modules.*;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.util.FileLogger;
@@ -158,6 +159,9 @@ public class Main extends JavaPlugin {
         // Tab & Scoreboard
         mm.register(new TabModule());
         mm.register(new ScoreboardModule());
+
+        // Maintenance
+        MaintenanceManager.init();
 
         // Background tasks & updates
         mm.register(new TasksModule());
