@@ -31,11 +31,11 @@ import java.util.Set;
  * <p>
  * <b>Механика:</b>
  * <ul>
- *   <li>Слот 1: любой незеритовый предмет (меч, инструмент, броня)</li>
+ *   <li>Слот 1: незеритовый меч или инструмент</li>
  *   <li>Слот 2: незеритовый скрап (каждый = +0.1% к атрибуту, +1 к макс. прочности)</li>
  *   <li>Меч: +0.1% к урону от атаки ({@link Attribute#ATTACK_DAMAGE})</li>
  *   <li>Топор/кирка/лопата/мотыга: +0.1% к скорости копания ({@link Attribute#MINING_EFFICIENCY})</li>
- *   <li>Броня: +0.1% к броне ({@link Attribute#ARMOR}) + сопротивление отбрасыванию</li>
+ *   <li>Броня: не улучшается (только через ванильный незерит)</li>
  *   <li>Все предметы: +1 к макс. прочности за каждый скрап</li>
  * </ul>
  * <p>
@@ -54,19 +54,11 @@ public class NetheriteUpgradeListener implements Listener {
         Material.NETHERITE_HOE
     );
 
-    private static final Set<Material> NETHERITE_ARMOR = Set.of(
-        Material.NETHERITE_HELMET,
-        Material.NETHERITE_CHESTPLATE,
-        Material.NETHERITE_LEGGINGS,
-        Material.NETHERITE_BOOTS
-    );
-
     private static final Set<Material> ALL_NETHERITE;
     static {
         ALL_NETHERITE = new java.util.HashSet<>();
         ALL_NETHERITE.addAll(NETHERITE_WEAPONS);
         ALL_NETHERITE.addAll(NETHERITE_TOOLS);
-        ALL_NETHERITE.addAll(NETHERITE_ARMOR);
     }
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
@@ -120,16 +112,6 @@ public class NetheriteUpgradeListener implements Listener {
             meta.addAttributeModifier(Attribute.MINING_EFFICIENCY, new AttributeModifier(
                 modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
-        } else if (NETHERITE_ARMOR.contains(slot0.getType())) {
-            // Броня: базовая броня + бонус
-            meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(
-                modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR
-            ));
-
-            NamespacedKey kbKey = new NamespacedKey(Main.getInstance(), "netherite_upgrade_kb");
-            meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, new AttributeModifier(
-                kbKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR
-            ));
         }
 
         // +1 к макс. прочности за каждый скрап (для всех незеритовых предметов)
@@ -155,10 +137,8 @@ public class NetheriteUpgradeListener implements Listener {
         String attrName;
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
             attrName = "к урону";
-        } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
-            attrName = "к скорости";
         } else {
-            attrName = "к защите";
+            attrName = "к скорости";
         }
 
         filteredLore.add(MessageUtil.parse(
