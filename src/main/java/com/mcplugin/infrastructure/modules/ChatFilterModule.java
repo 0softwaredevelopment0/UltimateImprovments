@@ -2,20 +2,29 @@ package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.listeners.ChatFilterManager;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class ChatFilterModule extends PluginModule {
+
+    private ChatFilterManager filterManager;
 
     public ChatFilterModule() { super("ChatFilter", "infrastructure/listeners", false); }
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {
         Main main = (Main) plugin;
-        main.getServer().getPluginManager().registerEvents(new ChatFilterManager(), main);
+        filterManager = new ChatFilterManager();
+        main.getServer().getPluginManager().registerEvents(filterManager, main);
     }
 
     @Override
-    protected void onDisable(JavaPlugin plugin) {}
+    protected void onDisable(JavaPlugin plugin) {
+        if (filterManager != null) {
+            HandlerList.unregisterAll(filterManager);
+            filterManager = null;
+        }
+    }
 
     @Override
     protected void onReloadConfig(JavaPlugin plugin) {

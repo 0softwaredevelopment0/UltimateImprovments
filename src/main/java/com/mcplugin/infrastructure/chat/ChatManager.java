@@ -6,10 +6,12 @@ import com.mcplugin.infrastructure.util.PlaceholderResolver;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
@@ -61,7 +63,10 @@ public class ChatManager implements Listener {
     }
 
     public static void shutdown() {
-        instance = null;
+        if (instance != null) {
+            HandlerList.unregisterAll(instance);
+            instance = null;
+        }
     }
 
     public static void reload() {
@@ -199,16 +204,21 @@ public class ChatManager implements Listener {
         // Cancel original event and broadcast manually
         event.setCancelled(true);
 
-        // Get recipients (already filtered by Bukkit for vanish/world)
-        // Send to all recipients including the sender (for consistency)
-        for (Player recipient : event.getRecipients()) {
-            recipient.sendMessage(broadcast);
-        }
-
-        // Ensure the sender always sees their message
-        // (in case they were excluded from recipients for some reason)
-        if (!event.getRecipients().contains(player)) {
-            player.sendMessage(broadcast);
+        // ⚠ Paper 1.21.4 может не заполнять recipients
+        // Если recipients пуст — шлём всем онлайн
+        java.util.Set<Player> recipients = event.getRecipients();
+        if (recipients == null || recipients.isEmpty()) {
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                online.sendMessage(broadcast);
+            }
+        } else {
+            for (Player recipient : recipients) {
+                recipient.sendMessage(broadcast);
+            }
+            // Ensure the sender always sees their message
+            if (!recipients.contains(player)) {
+                player.sendMessage(broadcast);
+            }
         }
 
         // Console log
