@@ -70,9 +70,9 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
-    private static final DecimalFormat PCT_FMT = new DecimalFormat("0.0", new java.text.DecimalFormatSymbols(java.util.Locale.US));
-    /** 0.1% = 0.001 в виде ADD_SCALAR (умножает базовое значение) */
-    private static final double PER_SCRAP_BONUS = 0.001;
+    private static final DecimalFormat BONUS_FMT = new DecimalFormat("0.0", new java.text.DecimalFormatSymbols(java.util.Locale.US));
+    /** +0.1 flat за каждый скрап (ADD_NUMBER) */
+    private static final double PER_SCRAP_BONUS = 0.1;
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPrepareAnvil(PrepareAnvilEvent event) {
@@ -110,25 +110,25 @@ public class NetheriteUpgradeListener implements Listener {
             // Меч: +0.1% к урону от атаки
             meta.removeAttributeModifier(Attribute.ATTACK_DAMAGE);
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, new AttributeModifier(
-                modKey, totalBonus, AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.MAINHAND
+                modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
             // Инструменты: +0.1% к скорости копания
             meta.removeAttributeModifier(Attribute.MINING_EFFICIENCY);
             meta.addAttributeModifier(Attribute.MINING_EFFICIENCY, new AttributeModifier(
-                modKey, totalBonus, AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.MAINHAND
+                modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_ARMOR.contains(slot0.getType())) {
             // Броня: +0.1% к броне + сопротивление отбрасыванию
             meta.removeAttributeModifier(Attribute.ARMOR);
             meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(
-                modKey, totalBonus, AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ARMOR
+                modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR
             ));
 
             NamespacedKey kbKey = new NamespacedKey(Main.getInstance(), "netherite_upgrade_kb");
             meta.removeAttributeModifier(Attribute.KNOCKBACK_RESISTANCE);
             meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, new AttributeModifier(
-                kbKey, totalBonus, AttributeModifier.Operation.ADD_SCALAR, EquipmentSlotGroup.ARMOR
+                kbKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR
             ));
         }
 
@@ -150,8 +150,8 @@ public class NetheriteUpgradeListener implements Listener {
             }
         }
 
-        // Line 1: upgrade count + attribute bonus with gradient
-        double pctDisplay = newUpgrades * 0.1; // for display (0.1% per scrap)
+        // Line 1: upgrade count + attribute bonus (flat ADD_NUMBER)
+        double bonusDisplay = newUpgrades * 0.1; // +0.1 flat per scrap
         String attrName;
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
             attrName = "к урону";
@@ -162,8 +162,8 @@ public class NetheriteUpgradeListener implements Listener {
         }
 
         filteredLore.add(MessageUtil.parse(
-            "<white>Незеритовое улучшение:</white> <yellow>+" + newUpgrades + "</yellow> " +
-            "<gradient:#8B4513:#DAA520>+" + PCT_FMT.format(pctDisplay) + "% " + attrName + "</gradient>"
+            "<!italic><white>Незеритовое улучшение:</white> <yellow>+" + newUpgrades + "</yellow> " +
+            "<gradient:#8B4513:#DAA520>+" + BONUS_FMT.format(bonusDisplay) + " " + attrName + "</gradient>"
         ));
 
         // Line 2: durability bonus
