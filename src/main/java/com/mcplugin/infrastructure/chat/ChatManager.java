@@ -170,29 +170,13 @@ public class ChatManager implements Listener {
                     .append(Component.text(" "))
                     .append(messageComponent);
         } else if (playerMiniMessage) {
-            // ⚠️ Когда playerMiniMessage: true, НЕ вставляем сообщение в строку.
-            // Иначе теги игрока (</white>, <red>) могут перекрыть теги формата
-            // (<white>{message}</white> → игроковский </white> закроет форматный <white>).
-            // Вместо этого: парсим формат слева и справа от {message} как MiniMessage,
-            // а между ними вставляем уже распаршенный messageComponent.
-            int msgIdx = resolved.indexOf("{message}");
-            String beforeStr = resolved.substring(0, msgIdx);
-            String afterStr = resolved.substring(msgIdx + 9); // "{message}".length()
-
-            Component beforeComp;
-            Component afterComp;
-            try {
-                beforeComp = MessageUtil.parse(beforeStr);
-            } catch (Exception e) {
-                beforeComp = Component.text(beforeStr);
-            }
-            try {
-                afterComp = MessageUtil.parse(afterStr);
-            } catch (Exception e) {
-                afterComp = Component.text(afterStr);
-            }
-
-            broadcast = beforeComp.append(messageComponent).append(afterComp);
+            // Парсим сообщение игрока через MiniMessage, затем сериализуем обратно
+            // в строку и подставляем в формат. Благодаря этому форматный
+            // <white>{message} НЕ теряется, а теги игрока (<red>) корректно
+            // переопределяют цвет формата внутри своего участка.
+            String serializedMsg = MM.serialize(messageComponent);
+            String finalFormat = resolved.replace("{message}", serializedMsg);
+            broadcast = MessageUtil.parse(finalFormat);
         } else {
             // playerMiniMessage: false — экранируем < и > в сообщении,
             // подставляем в строку и парсим целиком.
