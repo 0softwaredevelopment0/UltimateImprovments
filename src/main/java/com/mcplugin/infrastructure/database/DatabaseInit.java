@@ -279,6 +279,17 @@ public class DatabaseInit {
                     ip_address TEXT DEFAULT ''
                 );
             """);        // =========================
+        // ⚙ PLAYER SETTINGS (bossbar/scoreboard toggles)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS player_settings (
+                uuid TEXT PRIMARY KEY,
+                bossbar_enabled INTEGER DEFAULT 1,
+                scoreboard_enabled INTEGER DEFAULT 1
+            );
+        """);
+
+        // =========================
         // 🔑 CODE PANEL KEYS
         // =========================
             st.execute("""

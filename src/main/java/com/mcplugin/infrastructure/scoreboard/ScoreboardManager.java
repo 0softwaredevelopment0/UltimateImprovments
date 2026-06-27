@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.scoreboard;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.database.PlayerSettingsDB;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
 import net.kyori.adventure.text.Component;
@@ -134,6 +135,15 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player == null || !player.isOnline()) continue;
+
+            // Per-player toggle: если скорборд отключён — прячем
+            if (!PlayerSettingsDB.isScoreboardEnabled(player.getUniqueId())) {
+                org.bukkit.scoreboard.Scoreboard old = playerBoards.remove(player.getUniqueId());
+                if (old != null) {
+                    player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+                }
+                continue;
+            }
 
             ScoreboardConfig config = findBestConfig(player);
             if (config == null) {

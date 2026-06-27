@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.commands.subcommands;
 
 import com.mcplugin.infrastructure.commands.home.HomeCommand;
 import com.mcplugin.infrastructure.config.MessagesManager;
+import com.mcplugin.infrastructure.database.PlayerSettingsDB;
 import com.mcplugin.mechanics.features.items.NotesGUI;
 import com.mcplugin.mechanics.features.player.VanishManager;
 import com.mcplugin.mechanics.environment.radiation.RadiationManager;
@@ -109,6 +110,38 @@ public final class MiscSubcommand {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
         if (!player.hasPermission("mcplugin.autocraft")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
         AutoCraftManager.toggleAutoCraft(player);
+        return true;
+    }
+
+    // =========================
+    // TOGGLEBB — bossbar per-player
+    // =========================
+    public static boolean toggleBossBar(CommandSender sender) {
+        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
+        if (!player.hasPermission("mcplugin.command.togglebb")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        UUID uuid = player.getUniqueId();
+        boolean enabled = PlayerSettingsDB.toggleBossbar(uuid);
+        if (enabled) {
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>BossBar: </white><green>ON</green>"));
+        } else {
+            player.sendMessage(MessageUtil.parse("<red>❌</red> <white>BossBar: </white><red>OFF</red>"));
+        }
+        return true;
+    }
+
+    // =========================
+    // TOGGLESB — scoreboard per-player
+    // =========================
+    public static boolean toggleScoreboard(CommandSender sender) {
+        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
+        if (!player.hasPermission("mcplugin.command.togglesb")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        UUID uuid = player.getUniqueId();
+        boolean enabled = PlayerSettingsDB.toggleScoreboard(uuid);
+        if (enabled) {
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Scoreboard: </white><green>ON</green>"));
+        } else {
+            player.sendMessage(MessageUtil.parse("<red>❌</red> <white>Scoreboard: </white><red>OFF</red>"));
+        }
         return true;
     }
 

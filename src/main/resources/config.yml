@@ -1412,7 +1412,17 @@ tab:
     # Включён ли objective (префикс/суффикс у ника в табе)
     objective_enabled: true
 
-    # 📝 Кастомный формат строки для каждого игрока в табе
+    # 🔢 Сортировка игроков в табе (порядок отображения)
+  sort:
+    # Режим сортировки:
+    #   none      — без сортировки (порядок подключения)
+    #   a_z       — по алфавиту A→Z
+    #   z_a       — по алфавиту Z→A
+    #   luckperms — по группам LuckPerms (высший вес выше)
+    #   op        — операторы выше, затем по алфавиту
+    mode: none
+
+  # 📝 Кастомный формат строки для каждого игрока в табе
     # Если НЕ пустой — заменяет objective_prefix + {name} + objective_suffix
     # Поддерживает:
     #   - MiniMessage разметку: <white>, <gray>, <gradient>, <dark_gray>, <red> и т.д.
@@ -1515,6 +1525,43 @@ scoreboard:
     #     - "<gray>Ping: <white>{player_ping}ms</white></gray>"
 
 # =========================
+# 📊 BossBar — кастомный боссбар над хотбаром
+# =========================
+bossbar:
+  # Включён ли кастомный боссбар
+  enabled: true
+
+  # 📝 Текст боссбара (MiniMessage + плейсхолдеры)
+  format: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient> <dark_gray>|</dark_gray> <gray>Online: <white>{online}</white></gray>"
+
+  # 🎨 Цвет: BLUE, RED, GREEN, PURPLE, PINK, WHITE, YELLOW
+  color: YELLOW
+
+  # 🎭 Стиль: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+  style: SOLID
+
+  # 📈 Режим прогресса:
+  #   static             — статичное значение (static_value)
+  #   increase_decrease  — растёт → падает → растёт (циклично)
+  #   increase_reset     — растёт → сброс → растёт
+  #   decrease_increase  — падает → растёт → падает
+  #   decrease_reset     — падает → сброс → падает
+  #   random             — случайное значение каждый тик
+  progress_mode: increase_decrease
+
+  # Статичное значение прогресса (0.0 — 1.0), используется при mode: static
+  static_value: 0.5
+
+  # Скорость изменения прогресса (приращение за тик)
+  progress_speed: 0.005
+
+  # Направление: true = увеличивается, false = уменьшается
+  progress_increasing: true
+
+  # Интервал обновления (тики, 20 = 1 сек)
+  update_interval_ticks: 20
+
+# =========================
 # 👇 BelowName — текст под ником в мире
 # =========================
 # Показывает кастомный текст (MiniMessage + плейсхолдеры) под именем каждого
@@ -1581,4 +1628,4 @@ maintenance:
 #   minor    — номер подверсии плагина
 #   commits  — количество коммитов с последнего тега (вычисляется автоматически)
 # ═══════════════════════════════════════════════════════
-plugin_version: "1.8.17"
+plugin_version: "1.8.18"

@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.8.17
+version: 1.8.18
 
 main: com.mcplugin.infrastructure.core.Main
 
@@ -281,6 +281,14 @@ permissions:
   mcplugin.autocraft:
     description: Allows using auto-craft mode (/mp toggleautocraft)
     default: op
+
+  mcplugin.command.togglebb:
+    description: Allows toggling the bossbar (/mp togglebb)
+    default: true
+
+  mcplugin.command.togglesb:
+    description: Allows toggling the scoreboard (/mp togglesb)
+    default: true
 
   mcplugin.command.maintenance:
     description: Allows managing maintenance mode (/mp maint)

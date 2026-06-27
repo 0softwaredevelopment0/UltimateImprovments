@@ -100,6 +100,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "togglespeed" -> MiscSubcommand.toggleSpeed(sender);
             case "togglefly" -> MiscSubcommand.toggleFly(sender);
             case "toggleautocraft" -> MiscSubcommand.toggleAutoCraft(sender);
+            case "togglebb" -> MiscSubcommand.toggleBossBar(sender);
+            case "togglesb" -> MiscSubcommand.toggleScoreboard(sender);
             case "reload" -> ReloadSubcommand.execute(sender);
             case "vote" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
@@ -221,7 +223,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.addAll(List.of("help", "checkver", "updatejar", "cilist", "toggleradview",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
                     "auth",                    "chgdim", "vanish", "notes",
-                    "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "vote",
+                    "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "togglebb", "togglesb", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
                     "askcords", "forcesuicide", "bc", "maint", "maintenance"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {

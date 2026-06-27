@@ -163,6 +163,9 @@ public class Main extends JavaPlugin {
         // BelowName — текст под ником в мире
         mm.register(new BelowNameModule());
 
+        // BossBar — кастомный боссбар с прогрессией
+        mm.register(new BossBarModule());
+
         // Maintenance
         MaintenanceManager.init();
 
