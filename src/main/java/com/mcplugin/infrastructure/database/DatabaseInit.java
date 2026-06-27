@@ -349,6 +349,28 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🛡 OP WHITELIST — белый список операторов
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS op_whitelist (
+                player_name TEXT PRIMARY KEY,
+                added_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+        """);
+
+        // Служебная таблица для хранения enabled-флага
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS op_whitelist_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            );
+        """);
+        st.execute("""
+            INSERT OR IGNORE INTO op_whitelist_meta (key, value)
+            VALUES ('enabled', 'false');
+        """);
+
+        // =========================
         // 🔄 UPDATER STATE (последний SHA коммита / тег релиза)
         // =========================
         st.execute("""

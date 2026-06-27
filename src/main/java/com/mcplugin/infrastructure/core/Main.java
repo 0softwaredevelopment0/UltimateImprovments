@@ -195,16 +195,16 @@ public class Main extends JavaPlugin {
         StructureChunkTracker.loadTrackedChunks();
 
         // =========================
-        // OP WHITELIST — белый список операторов
-        // =========================
-        OpWhitelistManager.init(this);
-
-        // =========================
         // INIT ALL MODULES
         // Каждый модуль инициализируется в try-catch.
         // Если модуль упал — он отключается, но плагин продолжает работу.
         // =========================
         mm.initAll();
+
+        // =========================
+        // OP WHITELIST — белый список операторов (ПОСЛЕ initAll, чтобы таблицы БД уже существовали)
+        // =========================
+        OpWhitelistManager.init(this);
 
         // =========================
         // REGISTER COMMANDS
