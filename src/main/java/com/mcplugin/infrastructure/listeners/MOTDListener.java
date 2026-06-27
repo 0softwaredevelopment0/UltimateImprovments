@@ -35,8 +35,9 @@ public class MOTDListener implements Listener {
     private CachedServerIcon cachedIcon;
     private boolean iconLoaded = false;
 
-    // ── Random counter caching ──
-    private long lastRandomUpdate = 0;
+    // ── Random counter caching (независимо для online и max) ──
+    private long lastRandomUpdateOnline = 0;
+    private long lastRandomUpdateMax = 0;
     private int cachedRandomOnline = 0;
     private int cachedRandomMax = 0;
 
@@ -176,7 +177,7 @@ public class MOTDListener implements Listener {
                 break;
         }
 
-        // Apply max mode
+        // Apply max mode (теперь тоже поддерживает random — независимо от online)
         String maxMode = config.getString("motd.online_counter.max_mode", "normal");
         switch (maxMode) {
             case "hide":
@@ -191,6 +192,9 @@ public class MOTDListener implements Listener {
             case "add":
                 max = Bukkit.getMaxPlayers() + Math.max(0, config.getInt("motd.online_counter.max_add", 0));
                 break;
+            case "random":
+                max = getCachedRandomMax(config);
+                break;
             default:
                 // normal — ничего не меняем
                 break;
@@ -202,19 +206,37 @@ public class MOTDListener implements Listener {
 
     /**
      * Возвращает кэшированное рандомное значение онлайна, обновляя его
-     * раз в update_interval_ticks.
+     * раз в update_interval_ticks (независимо от max).
      */
     private int getCachedRandomOnline(FileConfiguration config) {
         long now = System.currentTimeMillis();
         int intervalTicks = Math.max(1, config.getInt("motd.online_counter.update_interval_ticks", 100));
         long intervalMs = intervalTicks * 50L; // 1 тик = ~50 мс
 
-        if (now - lastRandomUpdate >= intervalMs) {
+        if (now - lastRandomUpdateOnline >= intervalMs) {
             int min = Math.max(0, config.getInt("motd.online_counter.online_min", 10));
             int max = Math.max(min + 1, config.getInt("motd.online_counter.online_max", 100));
             cachedRandomOnline = RANDOM.nextInt(max - min + 1) + min;
-            lastRandomUpdate = now;
+            lastRandomUpdateOnline = now;
         }
         return cachedRandomOnline;
+    }
+
+    /**
+     * Возвращает кэшированное рандомное значение максимального онлайна,
+     * обновляя его раз в update_interval_ticks (независимо от online).
+     */
+    private int getCachedRandomMax(FileConfiguration config) {
+        long now = System.currentTimeMillis();
+        int intervalTicks = Math.max(1, config.getInt("motd.online_counter.update_interval_ticks", 100));
+        long intervalMs = intervalTicks * 50L; // 1 тик = ~50 мс
+
+        if (now - lastRandomUpdateMax >= intervalMs) {
+            int min = Math.max(1, config.getInt("motd.online_counter.max_min", 50));
+            int max = Math.max(min + 1, config.getInt("motd.online_counter.max_max", 500));
+            cachedRandomMax = RANDOM.nextInt(max - min + 1) + min;
+            lastRandomUpdateMax = now;
+        }
+        return cachedRandomMax;
     }
 }
