@@ -94,9 +94,9 @@ public class ChestplateFlightListener implements Listener {
             meta.setGlider(true);
             filteredLore.add(MessageUtil.parse("<green>Пригоден для полёта</green>"));
         } else {
+            String pctColor = flightGradientColor(newPct);
             filteredLore.add(MessageUtil.parse(
-                "<white>Улучшение полёта:</white> <gradient:#8B0000:#00FF00>" +
-                PCT_FMT.format(newPct) + "%</gradient>"
+                "<white>Улучшение полёта:</white> " + pctColor + PCT_FMT.format(newPct) + "%"
             ));
         }
 
@@ -105,6 +105,39 @@ public class ChestplateFlightListener implements Listener {
 
         event.setResult(result);
         setAnvilCost(inv, 0, membraneCount);
+    }
+
+    /**
+     * Возвращает MiniMessage color tag для процента улучшения полёта.
+     * Цвет интерполируется между 6 стопами в зависимости от pct (0-100):
+     * 0% → #006400 (тёмно-зелёный)
+     * 20% → #00FF00 (зелёный)
+     * 40% → #FFFF00 (жёлтый)
+     * 60% → #FF8C00 (оранжевый)
+     * 80% → #FF0000 (красный)
+     * 100% → #8B0000 (тёмно-красный)
+     */
+    private static String flightGradientColor(double pct) {
+        double clamped = Math.max(0.0, Math.min(100.0, pct));
+        // 6 color stops: dark green → green → yellow → orange → red → dark red
+        int[][] stops = {
+            {0x00, 0x64, 0x00},  // 0%:  #006400 dark green
+            {0x00, 0xFF, 0x00},  // 20%: #00FF00 green
+            {0xFF, 0xFF, 0x00},  // 40%: #FFFF00 yellow
+            {0xFF, 0x8C, 0x00},  // 60%: #FF8C00 orange
+            {0xFF, 0x00, 0x00},  // 80%: #FF0000 red
+            {0x8B, 0x00, 0x00}   // 100%: #8B0000 dark red
+        };
+
+        double segmentPct = 100.0 / (stops.length - 1); // 20% per segment
+        int seg = (int) Math.min(stops.length - 2, Math.floor(clamped / segmentPct));
+        double t = (clamped - seg * segmentPct) / segmentPct; // 0..1 within segment
+
+        int r = (int) Math.round(stops[seg][0] + (stops[seg + 1][0] - stops[seg][0]) * t);
+        int g = (int) Math.round(stops[seg][1] + (stops[seg + 1][1] - stops[seg][1]) * t);
+        int b = (int) Math.round(stops[seg][2] + (stops[seg + 1][2] - stops[seg][2]) * t);
+
+        return String.format("<#%02X%02X%02X>", r, g, b);
     }
 
     /**
