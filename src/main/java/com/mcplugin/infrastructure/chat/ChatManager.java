@@ -117,7 +117,7 @@ public class ChatManager implements Listener {
                 + " | player-minimessage=" + playerMiniMessage);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         if (!enabled) return;
 

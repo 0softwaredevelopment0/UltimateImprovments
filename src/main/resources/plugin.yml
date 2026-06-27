@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.8.31
+version: 1.8.32
 
 main: com.mcplugin.infrastructure.core.Main
 
@@ -300,4 +300,4 @@ permissions:
 
   mcplugin.chat.custom.bypass:
     description: Allows bypassing the custom chat formatting
-    default: op
+    default: false

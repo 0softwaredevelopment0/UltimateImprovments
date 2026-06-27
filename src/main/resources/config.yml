@@ -1672,8 +1672,8 @@ chat:
   player_minimessage: false
 
   # Право для байпасса кастомного чата (игроки с этим правом используют обычный чат)
-  # Оставьте пустым "" чтобы отключить байпасс
-  bypass_permission: "mcplugin.chat.custom.bypass"
+  # Оставьте пустым "" чтобы отключить байпасс (по умолчанию отключён)
+  bypass_permission: ""
 
   # ===== Per-group форматы для LuckPerms =====
   # Используются только при chat.mode: "per-group"
