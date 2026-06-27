@@ -230,11 +230,13 @@ public class StructureMarker {
 
     // ════════════════════════════════════════
     // SCAN CHUNK — просканировать чанк на Marker'ы
+    // @return true если были добавлены новые Marker'ы в кэш
     // ════════════════════════════════════════
-    public static void scanChunk(Chunk chunk) {
-        if (chunk == null || !chunk.isLoaded()) return;
+    public static boolean scanChunk(Chunk chunk) {
+        if (chunk == null || !chunk.isLoaded()) return false;
 
         String worldUid = chunk.getWorld().getUID().toString();
+        boolean foundNew = false;
 
         for (org.bukkit.entity.Entity entity : chunk.getEntities()) {
             if (!(entity instanceof Marker marker)) continue;
@@ -260,8 +262,11 @@ public class StructureMarker {
             if (!byPosition.containsKey(fk)) {
                 byPosition.put(fk, new StructureData(type, uuid, worldUid));
                 byUuid.computeIfAbsent(uuid, k -> new HashSet<>()).add(fk);
+                foundNew = true;
             }
         }
+
+        return foundNew;
     }
 
     private static String fullKey(String worldUid, int x, int y, int z) {
