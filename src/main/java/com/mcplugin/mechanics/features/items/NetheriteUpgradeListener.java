@@ -34,7 +34,7 @@ import java.util.Set;
  *   <li>Слот 1: незеритовый меч или инструмент</li>
  *   <li>Слот 2: незеритовый скрап (каждый = +0.1% к атрибуту, +1 к макс. прочности)</li>
  *   <li>Меч: +0.1% к урону от атаки ({@link Attribute#ATTACK_DAMAGE})</li>
- *   <li>Топор/кирка/лопата/мотыга: +0.1% к скорости копания ({@link Attribute#MINING_EFFICIENCY})</li>
+ *   <li>Топор/кирка/лопата/мотыга: +0.1 к скорости копания ({@link Attribute#BLOCK_BREAK_SPEED})</li>
  *   <li>Броня: не улучшается (только через ванильный незерит)</li>
  *   <li>Все предметы: +1 к макс. прочности за каждый скрап</li>
  * </ul>
@@ -109,7 +109,7 @@ public class NetheriteUpgradeListener implements Listener {
             ));
         } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
             // Инструменты: базовая скорость копания + бонус
-            meta.addAttributeModifier(Attribute.MINING_EFFICIENCY, new AttributeModifier(
+            meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(
                 modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         }
