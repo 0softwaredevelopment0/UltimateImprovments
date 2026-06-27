@@ -1570,7 +1570,7 @@ bossbar:
   static_value: 0.5
 
   # Скорость изменения прогресса (приращение за тик)
-  progress_speed: 0.005
+  progress_speed: 0.01
 
   # Направление: true = увеличивается, false = уменьшается
   progress_increasing: true
@@ -1606,7 +1606,7 @@ belowname:
   format: "<red>❤ {player_health}</red> <dark_gray>|</dark_gray> <gold>{player_food}</gold>"
 
   # Интервал обновления (тики, 20 = 1 сек)
-  update_interval_ticks: 10
+  update_interval_ticks: 20
 
 # =========================
 # ⛏ Режим технических работ (Maintenance)

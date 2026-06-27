@@ -106,18 +106,17 @@ public class NetheriteUpgradeListener implements Listener {
         // Вместо этого просто добавляем наш модификатор с тем же NamespacedKey.
         // addAttributeModifier() с одинаковым key ЗАМЕНЯЕТ старый модификатор,
         // не трогая базовый модификатор предмета (который задаёт 8 урона меча, 6 брони и т.д.).
-        double totalBonus = newUpgrades * PER_SCRAP_BONUS;
         NamespacedKey modKey = new NamespacedKey(Main.getInstance(), "netherite_upgrade");
 
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
             // Меч: базовый урон 8 + бонус
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, new AttributeModifier(
-                modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
+                modKey, newUpgrades * PER_SCRAP_BONUS, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
             // Инструменты: базовая скорость копания + бонус
             meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(
-                modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
+                modKey, newUpgrades * PER_SCRAP_BONUS, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         }
 
@@ -131,26 +130,19 @@ public class NetheriteUpgradeListener implements Listener {
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
         if (lore == null) lore = new ArrayList<>();
 
+        // Фильтруем старые строки улучшения (оба формата — старый и новый)
         List<Component> filteredLore = new ArrayList<>();
         for (Component c : lore) {
             String text = LEGACY.serialize(c);
-            if (!text.contains("Незеритовое улучшение:")) {
+            if (!text.contains("Незеритовое улучшение:") && !text.contains("✦ Незерит")) {
                 filteredLore.add(c);
             }
         }
 
-        // Line: upgrade count + attribute bonus (flat ADD_NUMBER, ПРИБАВЛЯЕТСЯ к базе)
-        double bonusDisplay = newUpgrades * PER_SCRAP_BONUS;
-        String attrName;
-        if (NETHERITE_WEAPONS.contains(slot0.getType())) {
-            attrName = "к урону";
-        } else {
-            attrName = "к скорости";
-        }
-
+        // Line: upgrade level (одна строка, одно число — каждый скрап = +1 уровень)
+        // Без отдельных "+X к урону/скорости" — атрибут применяется внутри.
         filteredLore.add(MessageUtil.parse(
-            "<!italic><white>Незеритовое улучшение:</white> <yellow>+" + newUpgrades + "</yellow> " +
-            "<gradient:#8B4513:#DAA520>+" + BONUS_FMT.format(bonusDisplay) + " " + attrName + "</gradient>"
+            "<!italic><gradient:#8B4513:#DAA520>✦ Незерит +" + newUpgrades + "</gradient>"
         ));
 
         meta.lore(filteredLore);
