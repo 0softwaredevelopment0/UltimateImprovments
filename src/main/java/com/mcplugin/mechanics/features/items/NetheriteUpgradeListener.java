@@ -102,31 +102,31 @@ public class NetheriteUpgradeListener implements Listener {
         var resultPdc = meta.getPersistentDataContainer();
         resultPdc.set(Keys.NETHERITE_UPGRADE, PersistentDataType.INTEGER, newUpgrades);
 
-        // Remove old modifiers for affected attributes and re-apply with new total
+        // ⚠ ВАЖНО: НЕ вызываем removeAttributeModifier(Attribute) — это удаляет
+        // ВСЕ модификаторы атрибута, включая БАЗОВЫЙ урон/скорость/защиту предмета!
+        // Вместо этого просто добавляем наш модификатор с тем же NamespacedKey.
+        // addAttributeModifier() с одинаковым key ЗАМЕНЯЕТ старый модификатор,
+        // не трогая базовый модификатор предмета (который задаёт 8 урона меча, 6 брони и т.д.).
         double totalBonus = newUpgrades * PER_SCRAP_BONUS;
         NamespacedKey modKey = new NamespacedKey(Main.getInstance(), "netherite_upgrade");
 
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
-            // Меч: +0.1% к урону от атаки
-            meta.removeAttributeModifier(Attribute.ATTACK_DAMAGE);
+            // Меч: базовый урон 8 + бонус
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, new AttributeModifier(
                 modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
-            // Инструменты: +0.1% к скорости копания
-            meta.removeAttributeModifier(Attribute.MINING_EFFICIENCY);
+            // Инструменты: базовая скорость копания + бонус
             meta.addAttributeModifier(Attribute.MINING_EFFICIENCY, new AttributeModifier(
                 modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_ARMOR.contains(slot0.getType())) {
-            // Броня: +0.1% к броне + сопротивление отбрасыванию
-            meta.removeAttributeModifier(Attribute.ARMOR);
+            // Броня: базовая броня + бонус
             meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(
                 modKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR
             ));
 
             NamespacedKey kbKey = new NamespacedKey(Main.getInstance(), "netherite_upgrade_kb");
-            meta.removeAttributeModifier(Attribute.KNOCKBACK_RESISTANCE);
             meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, new AttributeModifier(
                 kbKey, totalBonus, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ARMOR
             ));
@@ -150,8 +150,9 @@ public class NetheriteUpgradeListener implements Listener {
             }
         }
 
-        // Line 1: upgrade count + attribute bonus (flat ADD_NUMBER)
-        double bonusDisplay = newUpgrades * 0.1; // +0.1 flat per scrap
+        // Line 1: upgrade count + attribute bonus (flat ADD_NUMBER, ПРИБАВЛЯЕТСЯ к базе)
+        double bonusDisplay = newUpgrades * PER_SCRAP_BONUS;
+        // База: меч=8.0 урона, топор/кирка/лопата/мотыга=скорость копания, броня=защита
         String attrName;
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
             attrName = "к урону";
