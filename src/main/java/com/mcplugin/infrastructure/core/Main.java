@@ -160,6 +160,9 @@ public class Main extends JavaPlugin {
         mm.register(new TabModule());
         mm.register(new ScoreboardModule());
 
+        // BelowName — текст под ником в мире
+        mm.register(new BelowNameModule());
+
         // Maintenance
         MaintenanceManager.init();
 

@@ -1515,6 +1515,36 @@ scoreboard:
     #     - "<gray>Ping: <white>{player_ping}ms</white></gray>"
 
 # =========================
+# 👇 BelowName — текст под ником в мире
+# =========================
+# Показывает кастомный текст (MiniMessage + плейсхолдеры) под именем каждого
+# игрока в мире — например здоровье, сытость, пинг, группу и т.д.
+#
+# Использует DisplaySlot.BELOW_NAME из системы скорбордов.
+# Каждому игроку назначается своя строка (per-player).
+#
+# Формат поддерживает:
+#   - MiniMessage: <red>, <white>, <gray>, <gradient>, <bold> и т.д.
+#   - Встроенные плейсхолдеры: {player_health}, {player_food}, {player_ping} и т.д.
+#   - PAPI плейсхолдеры: %luckperms_prefix%, %player_world% и т.д.
+#
+belowname:
+  # Включён ли BelowName
+  enabled: true
+
+  # 📝 Формат строки под ником (MiniMessage + плейсхолдеры)
+  # Примеры:
+  #   "<red>❤ {player_health}</red> <dark_gray>|</dark_gray> <gold>🍖 {player_food}</gold>"
+  #   "<gray>⚡ {player_ping}ms</gray>"
+  #   "<gradient:#00AAFF:#FF55FF>%luckperms_primary_group_name%</gradient>"
+  #   "<white>{player_health}</white><red>❤</red> <gray>/</gray> <gold>{player_food}</gold>"
+  #
+  format: "<red>❤ {player_health}</red> <dark_gray>|</dark_gray> <gold>{player_food}</gold>"
+
+  # Интервал обновления (тики, 20 = 1 сек)
+  update_interval_ticks: 10
+
+# =========================
 # ⛏ Режим технических работ (Maintenance)
 # =========================
 maintenance:
@@ -1551,4 +1581,4 @@ maintenance:
 #   minor    — номер подверсии плагина
 #   commits  — количество коммитов с последнего тега (вычисляется автоматически)
 # ═══════════════════════════════════════════════════════
-plugin_version: "1.8.16"
+plugin_version: "1.8.17"

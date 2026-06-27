@@ -223,7 +223,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     "auth",                    "chgdim", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
-                    "askcords", "forcesuicide", "bc", "maint"));
+                    "askcords", "forcesuicide", "bc", "maint", "maintenance"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
             completions.add("create");
             completions.add("delete");
@@ -258,7 +258,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 && (args[1].equalsIgnoreCase("forcelogin") || args[1].equalsIgnoreCase("resetauth")
                 || args[1].equalsIgnoreCase("chgpass") || args[1].equalsIgnoreCase("delsession"))) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
-        } else if (args.length >= 2 && args[0].equalsIgnoreCase("maint")) {
+        } else if (args.length >= 2 && (args[0].equalsIgnoreCase("maint") || args[0].equalsIgnoreCase("maintenance"))) {
             completions.addAll(MaintSubcommand.tabComplete(args));
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str"))) {
             completions.addAll(List.of("dfc", "magnet", "lightning"));
