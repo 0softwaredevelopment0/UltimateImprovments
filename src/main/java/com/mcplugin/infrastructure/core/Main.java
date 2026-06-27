@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.core.CommandRegistrar;
 import com.mcplugin.infrastructure.maintenance.MaintenanceManager;
 import com.mcplugin.infrastructure.modules.*;
+import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.structure.StructureChunkTracker;
 import com.mcplugin.infrastructure.util.FileLogger;
@@ -193,6 +194,11 @@ public class Main extends JavaPlugin {
         StructureChunkTracker.loadTrackedChunks();
 
         // =========================
+        // OP WHITELIST — белый список операторов
+        // =========================
+        OpWhitelistManager.init(this);
+
+        // =========================
         // INIT ALL MODULES
         // Каждый модуль инициализируется в try-catch.
         // Если модуль упал — он отключается, но плагин продолжает работу.
@@ -226,8 +232,11 @@ public class Main extends JavaPlugin {
             mm.shutdownAll();
         }
 
-        // Сохраняем трекер чанков структур (принудительно)
+        // Сохраняем трекер чанков структур
         StructureChunkTracker.save();
+
+        // Сохраняем OP whitelist
+        OpWhitelistManager.shutdown();
 
         getLogger().info("[PLUGIN] Disabled");
     }
