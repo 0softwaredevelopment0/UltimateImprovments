@@ -1447,7 +1447,7 @@ tab:
 
     # Текст перед ником (MiniMessage + плейсхолдеры)
     # Используется ТОЛЬКО если format пустой
-    objective_prefix: "<dark_gray>[</dark_gray>{player_ping_color}{player_ping}ms<dark_gray>] </dark_gray>"
+    objective_prefix: "<dark_gray>[</dark_gray>{player_ping_gradient}<dark_gray>] </dark_gray>"
     # Текст после ника
     # Используется ТОЛЬКО если format пустой
     objective_suffix: ""
@@ -1641,7 +1641,7 @@ chat:
   # {group} — основная группа LuckPerms
   # Поддерживаются все встроенные плейсхолдеры и PAPI: {player_ping}, {world_name},
   # %luckperms_prefix%, %luckperms_primary_group_name%, %player_world% и т.д.
-  format: "<green>ᴄʜᴀᴛ <dark_gray>» <white>{player_name}<gray>: <white>{message}</white>"
+  format: "<green>ᴄʜᴀᴛ <dark_gray>» <white>{player_name}<gray>: <white>{message}"
 
   # Разрешить ли игрокам использовать MiniMessage в своих сообщениях
   # Если true — <red>, <bold>, <gradient> и т.д. работают в чате
@@ -1663,17 +1663,17 @@ chat:
 
     # Форматы для конкретных групп LuckPerms
     formats:
-      # admin: "<red>[Admin]</red> <white>{player_name}</white>: <red>{message}</red>"
-      # vip: "<gold>[VIP]</gold> <white>{player_name}</white>: <gold>{message}</gold>"
-      # moderator: "<dark_green>[Mod]</dark_green> <white>{player_name}</white>: <green>{message}</green>"
-      # default: "<gray>{player_name}</gray>: <white>{message}</white>"
+      admin: "<red>[Admin]</red> <white>{player_name}</white>: <red>{message}</red>"
+      vip: "<gold>[VIP]</gold> <white>{player_name}</white>: <gold>{message}</gold>"
+      moderator: "<dark_green>[Mod]</dark_green> <white>{player_name}</white>: <green>{message}</green>"
+      default: "<gray>{player_name}</gray>: <white>{message}</white>"
 
   # ===== Per-world форматы =====
   # Используются только при chat.mode: "per-world"
   worlds:
-    # world: "<green>{player_name}</green>: <white>{message}</white>"
-    # world_nether: "<red>{player_name}</red>: <white>{message}</white>"
-    # world_the_end: "<dark_purple>{player_name}</dark_purple>: <white>{message}</white>"
+    world: "<green>{player_name}</green>: <white>{message}</white>"
+    world_nether: "<red>{player_name}</red>: <white>{message}</white>"
+    world_the_end: "<dark_purple>{player_name}</dark_purple>: <white>{message}</white>"
 
 # ═══════════════════════════════════════════════════════
 # 🔢 УНИВЕРСАЛЬНЫЙ ИДЕНТИФИКАТОР ВЕРСИИ (НЕ ТРОГАТЬ)

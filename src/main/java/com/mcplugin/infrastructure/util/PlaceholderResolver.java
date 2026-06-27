@@ -75,6 +75,7 @@ public class PlaceholderResolver {
         BUILTIN.put("player_uuid", (p, s) -> p != null ? p.getUniqueId().toString() : "?");
         BUILTIN.put("player_ping", (p, s) -> p != null ? String.valueOf(p.getPing()) : "0");
         BUILTIN.put("player_ping_color", PlaceholderResolver::resolvePingColor);
+        BUILTIN.put("player_ping_gradient", PlaceholderResolver::resolvePingGradient);
         BUILTIN.put("player_gamemode", (p, s) -> p != null ? p.getGameMode().name().toLowerCase() : "?");
         BUILTIN.put("player_health", (p, s) -> p != null ? String.valueOf((int) p.getHealth()) : "0");
         BUILTIN.put("player_food", (p, s) -> p != null ? String.valueOf(p.getFoodLevel()) : "0");
@@ -224,6 +225,30 @@ public class PlaceholderResolver {
 
         // fallback — тёмно-красный (1000ms+)
         return "<#AA0000>";
+    }
+
+    /**
+     * Возвращает MiniMessage-градиент (<gradient:#lower:#upper>) для пинга игрока,
+     * обёрнутый вокруг значения пинга с "ms".
+     * Пример: <gradient:#00AA00:#55FF55>42ms</gradient>
+     */
+    private static String resolvePingGradient(Player player, String unused) {
+        if (player == null) return "<#00AA00>0ms";
+        int ping = Math.min(player.getPing(), 1000);
+
+        // Находим две стопы между которыми находится ping
+        for (int i = 0; i < PING_COLOR_STOPS.length - 1; i++) {
+            int[] lower = PING_COLOR_STOPS[i];
+            int[] upper = PING_COLOR_STOPS[i + 1];
+            if (ping >= lower[0] && ping <= upper[0]) {
+                String lowerHex = String.format("#%02X%02X%02X", lower[1], lower[2], lower[3]);
+                String upperHex = String.format("#%02X%02X%02X", upper[1], upper[2], upper[3]);
+                return String.format("<gradient:%s:%s>%dms</gradient>", lowerHex, upperHex, ping);
+            }
+        }
+
+        // fallback — тёмно-красный градиент (1000ms+)
+        return "<gradient:#FF5555:#AA0000>" + ping + "ms</gradient>";
     }
 
     /**
