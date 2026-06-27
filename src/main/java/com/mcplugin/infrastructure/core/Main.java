@@ -7,6 +7,7 @@ import com.mcplugin.infrastructure.maintenance.MaintenanceManager;
 import com.mcplugin.infrastructure.modules.*;
 import com.mcplugin.infrastructure.tab.TabManager;
 import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
+import com.mcplugin.infrastructure.report.ReportManager;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.structure.StructureChunkTracker;
 import com.mcplugin.infrastructure.util.FileLogger;
@@ -201,6 +202,11 @@ public class Main extends JavaPlugin {
         // OP WHITELIST — белый список операторов (ПОСЛЕ initAll, чтобы таблицы БД уже существовали)
         // =========================
         OpWhitelistManager.init(this);
+
+        // =========================
+        // REPORTS — система репортов (ПОСЛЕ initAll, чтобы таблицы БД уже существовали)
+        // =========================
+        ReportManager.init();
 
         // =========================
         // REGISTER COMMANDS
