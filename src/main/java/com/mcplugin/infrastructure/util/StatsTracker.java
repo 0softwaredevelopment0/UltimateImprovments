@@ -2,19 +2,18 @@ package com.mcplugin.infrastructure.util;
 
 import com.mcplugin.infrastructure.core.Main;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import java.lang.management.ManagementFactory;
 
 /**
  * 📊 StatsTracker — сбор и хранение статистики сервера за временные окна.
  * <p>
- * Каждые 20 тиков (1 сек) записывает текущие TPS, MSPT, RAM%, Online
+ * Каждые 20 тиков (1 сек) записывает текущие TPS, MSPT, RAM%, Online, средний Ping
  * в циклические буферы. Позволяет получать min/avg/max за любой период
  * (1s, 5m, 1h, 1d, ss = server session).
  * <p>
  * Используется {@link PlaceholderResolver} для плейсхолдеров
- * {tps_1s}, {mspt_5m}, {online_max_1h}, {ram_avg_ss} и т.д.
+ * {tps_1s}, {mspt_5m}, {online_max_1h}, {ram_avg_ss}, {ping_min_30s_all} и т.д.
  */
 public class StatsTracker extends BukkitRunnable {
 
@@ -28,6 +27,7 @@ public class StatsTracker extends BukkitRunnable {
     private final double[] msptBuffer = new double[MAX_SAMPLES];
     private final double[] ramBuffer = new double[MAX_SAMPLES];
     private final int[] onlineBuffer = new int[MAX_SAMPLES];
+    private final double[] pingBuffer = new double[MAX_SAMPLES];
     private int sampleCount = 0;
 
     private StatsTracker() {}
@@ -51,13 +51,26 @@ public class StatsTracker extends BukkitRunnable {
         double mspt = Bukkit.getAverageTickTime();
         double ram = getRamUsage();
         int online = Bukkit.getOnlinePlayers().size();
+        double avgPing = getAvgPlayerPing();
 
         int idx = sampleCount % MAX_SAMPLES;
         tpsBuffer[idx] = tps;
         msptBuffer[idx] = mspt;
         ramBuffer[idx] = ram;
         onlineBuffer[idx] = online;
+        pingBuffer[idx] = avgPing;
         sampleCount++;
+    }
+
+    /** Средний пинг всех онлайн игроков */
+    private static double getAvgPlayerPing() {
+        Player[] players = Bukkit.getOnlinePlayers().toArray(new Player[0]);
+        if (players.length == 0) return 0;
+        long sum = 0;
+        for (Player p : players) {
+            sum += p.getPing();
+        }
+        return (double) sum / players.length;
     }
 
     /**
@@ -111,7 +124,6 @@ public class StatsTracker extends BukkitRunnable {
         for (int i = 0; i < count; i++) {
             int bufIdx = (sampleCount - 1 - i) % MAX_SAMPLES;
             double val = tpsBuffer[bufIdx];
-            // TPS capped at 20.0 by Paper, but just in case
             sum += Math.min(val, 20.0);
             idx++;
         }
@@ -237,6 +249,52 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     // ════════════════════════════════════════════
+    // PING (средний пинг всех игроков)
+    // ════════════════════════════════════════════
+
+    /** Текущий средний пинг всех игроков */
+    public double getCurrentPing() {
+        return getAvgPlayerPing();
+    }
+
+    /** Средний пинг за N сэмплов */
+    public double getAvgPing(int samples) {
+        if (samples <= 0 || sampleCount <= 0) return getCurrentPing();
+        int count = Math.min(samples, sampleCount);
+        double sum = 0;
+        int idx = 0;
+        for (int i = 0; i < count; i++) {
+            sum += pingBuffer[(sampleCount - 1 - i) % MAX_SAMPLES];
+            idx++;
+        }
+        return idx > 0 ? sum / idx : 0;
+    }
+
+    /** Мин. пинг за N сэмплов */
+    public double getMinPing(int samples) {
+        if (samples <= 0 || sampleCount <= 0) return getCurrentPing();
+        int count = Math.min(samples, sampleCount);
+        double min = Double.MAX_VALUE;
+        for (int i = 0; i < count; i++) {
+            double val = pingBuffer[(sampleCount - 1 - i) % MAX_SAMPLES];
+            if (val < min) min = val;
+        }
+        return min == Double.MAX_VALUE ? 0 : min;
+    }
+
+    /** Макс. пинг за N сэмплов */
+    public double getMaxPing(int samples) {
+        if (samples <= 0 || sampleCount <= 0) return getCurrentPing();
+        int count = Math.min(samples, sampleCount);
+        double max = 0;
+        for (int i = 0; i < count; i++) {
+            double val = pingBuffer[(sampleCount - 1 - i) % MAX_SAMPLES];
+            if (val > max) max = val;
+        }
+        return max;
+    }
+
+    // ════════════════════════════════════════════
     // ONLINE
     // ════════════════════════════════════════════
 
@@ -270,98 +328,99 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     // ════════════════════════════════════════════
-    // COLOR GRADIENTS
+    // COLOR GRADIENTS — плавный 3-стопный градиент
     // ════════════════════════════════════════════
 
     /**
-     * HEX-градиент для TPS (0–20).
-     * 0 = <#AA0000> (dark-red), 10 = <#FFAA00> (orange), 20 = <#00AA00> (green)
+     * Плавный HEX-градиент для TPS (0–20).
+     * 0  = #AA0000 (dark-red)
+     * 10 = #FFAA00 (orange/yellow)
+     * 20 = #00AA00 (green)
      */
     public static String tpsColor(double tps) {
         double clamped = Math.max(0, Math.min(20.0, tps));
-        if (clamped >= 20.0) return "<#00AA00>";
-        if (clamped >= 15.0) {
-            double t = (clamped - 15.0) / 5.0;
-            int r = lerp(0xFF, 0x00, t);
-            int g = lerp(0xAA, 0xAA, t);
-            int b = lerp(0x00, 0x00, t);
-            return String.format("<#%02X%02X%02X>", r, g, b);
-        }
-        if (clamped >= 10.0) {
-            double t = (clamped - 10.0) / 5.0;
-            int r = 0xFF;
-            int g = lerp(0x55, 0xAA, t);
-            int b = 0x00;
-            return String.format("<#%02X%02X%02X>", r, g, b);
-        }
-        if (clamped >= 5.0) {
-            double t = (clamped - 5.0) / 5.0;
-            int r = lerp(0xAA, 0xFF, t);
-            int g = lerp(0x00, 0x55, t);
-            int b = 0x00;
-            return String.format("<#%02X%02X%02X>", r, g, b);
-        }
-        // 0-5
-        double t = clamped / 5.0;
-        int r = lerp(0xAA, 0xAA, t);
-        int g = lerp(0x00, 0x00, t);
-        int b = 0x00;
-        return String.format("<#%02X%02X%02X>", r, g, b);
+        return gradient3(clamped, 0, 10, 20,
+                         0xAA, 0x00, 0x00,
+                         0xFF, 0xAA, 0x00,
+                         0x00, 0xAA, 0x00);
     }
 
     /**
-     * HEX-градиент для MSPT (0–50+).
-     * 0 = <#00AA00> (green), 25 = <#FFAA00> (yellow), 50+ = <#AA0000> (dark-red)
+     * Плавный HEX-градиент для MSPT (0–50+).
+     * 0  = #00AA00 (green)
+     * 25 = #FFAA00 (yellow)
+     * 50+ = #AA0000 (dark-red, clips at 100)
      */
     public static String msptColor(double mspt) {
         double clamped = Math.max(0, Math.min(100.0, mspt));
-        if (clamped >= 50.0) {
-            double t = Math.min(1.0, (clamped - 50.0) / 50.0);
-            int r = lerp(0xFF, 0xAA, t);
-            int g = lerp(0x55, 0x00, t);
-            int b = lerp(0x00, 0x00, t);
-            return String.format("<#%02X%02X%02X>", r, g, b);
-        }
-        if (clamped >= 25.0) {
-            double t = (clamped - 25.0) / 25.0;
-            int r = lerp(0x00, 0xFF, t);
-            int g = lerp(0xAA, 0x55, t);
-            int b = 0x00;
-            return String.format("<#%02X%02X%02X>", r, g, b);
-        }
-        // 0-25
-        double t = clamped / 25.0;
-        int r = 0x00;
-        int g = lerp(0xAA, 0xAA, t);
-        int b = 0x00;
-        return String.format("<#%02X%02X%02X>", r, g, b);
+        return gradient3(clamped, 0, 25, 50,
+                         0x00, 0xAA, 0x00,
+                         0xFF, 0xAA, 0x00,
+                         0xAA, 0x00, 0x00);
     }
 
     /**
-     * HEX-градиент для RAM (0–100%).
-     * 0% = <#00AA00> (green), 50% = <#FFAA00> (yellow), 100% = <#AA0000> (dark-red)
+     * Плавный HEX-градиент для RAM (0–100%).
+     * 0%   = #00AA00 (green)
+     * 50%  = #FFAA00 (yellow)
+     * 100% = #AA0000 (dark-red)
      */
     public static String ramColor(double pct) {
         double clamped = Math.max(0, Math.min(100.0, pct));
-        if (clamped >= 75.0) {
-            double t = (clamped - 75.0) / 25.0;
-            int r = lerp(0xFF, 0xAA, t);
-            int g = lerp(0x55, 0x00, t);
-            int b = lerp(0x00, 0x00, t);
-            return String.format("<#%02X%02X%02X>", r, g, b);
+        return gradient3(clamped, 0, 50, 100,
+                         0x00, 0xAA, 0x00,
+                         0xFF, 0xAA, 0x00,
+                         0xAA, 0x00, 0x00);
+    }
+
+    /**
+     * Плавный HEX-градиент для Ping (0–1000ms).
+     * 0    = #00AA00 (green)
+     * 200  = #55FF55 (light green)
+     * 400  = #FFFF55 (yellow)
+     * 600  = #FFAA00 (orange)
+     * 800  = #FF5555 (light red)
+     * 1000 = #AA0000 (dark-red)
+     */
+    public static String pingColor(double ping) {
+        double clamped = Math.max(0, Math.min(1000.0, ping));
+        if (clamped <= 200) {
+            double t = clamped / 200.0;
+            return lerpColor(0x00, 0xAA, 0x00, 0x55, 0xFF, 0x55, t);
+        } else if (clamped <= 400) {
+            double t = (clamped - 200) / 200.0;
+            return lerpColor(0x55, 0xFF, 0x55, 0xFF, 0xFF, 0x55, t);
+        } else if (clamped <= 600) {
+            double t = (clamped - 400) / 200.0;
+            return lerpColor(0xFF, 0xFF, 0x55, 0xFF, 0xAA, 0x00, t);
+        } else if (clamped <= 800) {
+            double t = (clamped - 600) / 200.0;
+            return lerpColor(0xFF, 0xAA, 0x00, 0xFF, 0x55, 0x55, t);
+        } else {
+            double t = (clamped - 800) / 200.0;
+            return lerpColor(0xFF, 0x55, 0x55, 0xAA, 0x00, 0x00, t);
         }
-        if (clamped >= 50.0) {
-            double t = (clamped - 50.0) / 25.0;
-            int r = lerp(0x00, 0xFF, t);
-            int g = lerp(0xAA, 0x55, t);
-            int b = 0x00;
-            return String.format("<#%02X%02X%02X>", r, g, b);
+    }
+
+    /** 3-стопный градиент */
+    private static String gradient3(double val, double stop0, double stop1, double stop2,
+                                     int r0, int g0, int b0,
+                                     int r1, int g1, int b1,
+                                     int r2, int g2, int b2) {
+        if (val <= stop1) {
+            double t = stop1 == stop0 ? 0 : (val - stop0) / (stop1 - stop0);
+            return lerpColor(r0, g0, b0, r1, g1, b1, t);
+        } else {
+            double t = stop2 == stop1 ? 1.0 : (val - stop1) / (stop2 - stop1);
+            return lerpColor(r1, g1, b1, r2, g2, b2, Math.min(1.0, t));
         }
-        // 0-50
-        double t = clamped / 50.0;
-        int r = 0x00;
-        int g = lerp(0xAA, 0xAA, t);
-        int b = 0x00;
+    }
+
+    /** Лерп между двумя цветами */
+    private static String lerpColor(int r0, int g0, int b0, int r1, int g1, int b1, double t) {
+        int r = lerp(r0, r1, t);
+        int g = lerp(g0, g1, t);
+        int b = lerp(b0, b1, t);
         return String.format("<#%02X%02X%02X>", r, g, b);
     }
 
@@ -378,6 +437,5 @@ public class StatsTracker extends BukkitRunnable {
         if (max <= 0) return 0;
         return (double) used / (double) max * 100.0;
     }
-
 
 }
