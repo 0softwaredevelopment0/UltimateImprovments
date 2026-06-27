@@ -354,14 +354,13 @@ final class ConfigRules {
             notBlank("void_protection.target.world", 256),
 
             bool("chat.enabled"),
+            notBlank("chat.mode", 16),
             bool("chat.player_minimessage"),
             string("chat.bypass_permission", false, 64),
             notBlank("chat.format", 512),
 
-            bool("chat.groups.enabled"),
             string("chat.groups.default", false, 512),
 
-            bool("chat.per_world.enabled"),
             notBlank("changedimmension.default_world", 256)
     );
 }

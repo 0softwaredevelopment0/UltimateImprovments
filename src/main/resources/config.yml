@@ -1649,7 +1649,14 @@ chat:
   # Включён ли кастомный чат
   enabled: false
 
+  # Режим чата:
+  #   "static"     — единый формат для всех (chat.format)
+  #   "per-group"  — свой формат для каждой группы LuckPerms (chat.groups.formats)
+  #   "per-world"  — свой формат для каждого мира (chat.per_world.worlds)
+  mode: "static"
+
   # Формат чата (MiniMessage + плейсхолдеры)
+  # Используется при режиме "static" и как fallback для других режимов.
   # {player_name} — ник игрока
   # {message} — сообщение игрока
   # Поддерживаются все встроенные плейсхолдеры и PAPI: {player_ping}, {world_name},
@@ -1666,16 +1673,11 @@ chat:
   bypass_permission: "mcplugin.chat.custom.bypass"
 
   # ===== Per-group форматы для LuckPerms =====
-  # Каждая группа LuckPerms может иметь свой формат чата.
-  # По умолчанию ОТКЛЮЧЕНО.
-  #
+  # Используются только при chat.mode: "per-group"
   # Ключ — название группы в LuckPerms (регистронезависимо).
-  # Если у игрока нет группы из списка — используется default.
-  # Если default не указан — используется chat.format.
+  # Если у игрока нет группы из списка — используется chat.groups.default.
+  # Если chat.groups.default не указан — используется chat.format.
   groups:
-    # Включены ли per-group форматы
-    enabled: false
-
     # Формат для группы по умолчанию (если нет своей группы в списке)
     default: "<gray>[<white>{player_name}</white>]</gray> <white>{message}</white>"
 
@@ -1687,17 +1689,11 @@ chat:
       # default: "<gray>{player_name}</gray>: <white>{message}</white>"
 
   # ===== Per-world форматы =====
-  # Разный формат чата для разных миров.
-  # По умолчанию ОТКЛЮЧЕНО.
-  per_world:
-    # Включены ли per-world форматы
-    enabled: false
-
-    # Форматы для каждого мира (регистронезависимо)
-    worlds:
-      # world: "<green>{player_name}</green>: <white>{message}</white>"
-      # world_nether: "<red>{player_name}</red>: <white>{message}</white>"
-      # world_the_end: "<dark_purple>{player_name}</dark_purple>: <white>{message}</white>"
+  # Используются только при chat.mode: "per-world"
+  worlds:
+    # world: "<green>{player_name}</green>: <white>{message}</white>"
+    # world_nether: "<red>{player_name}</red>: <white>{message}</white>"
+    # world_the_end: "<dark_purple>{player_name}</dark_purple>: <white>{message}</white>"
 
 # ═══════════════════════════════════════════════════════
 plugin_version: "1.8.18"

@@ -25,8 +25,9 @@ import java.util.Map;
  *   <li>MiniMessage в формате и сообщениях игроков</li>
  *   <li>Встроенные плейсхолдеры {player_name}, {world_name} и т.д.</li>
  *   <li>PAPI плейсхолдеры %luckperms_prefix%, %player_world% и т.д.</li>
- *   <li>Per-group форматы для LuckPerms (enabled: false по умолчанию)</li>
- *   <li>Per-world форматы (enabled: false по умолчанию)</li>
+ *   <li>Режим static — единый формат для всех</li>
+ *   <li>Режим per-group — свой формат для каждой группы LuckPerms</li>
+ *   <li>Режим per-world — свой формат для каждого мира</li>
  * </ul>
  * По умолчанию система ОТКЛЮЧЕНА (chat.enabled: false).
  */
@@ -35,20 +36,22 @@ public class ChatManager implements Listener {
     private static ChatManager instance;
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
+    /** Режим чата. */
+    enum Mode { STATIC, PER_GROUP, PER_WORLD }
+
     private boolean enabled;
+    private Mode mode;
     private boolean playerMiniMessage;
     private String bypassPermission;
 
-    // Default format
+    // Default format (used for STATIC and as fallback)
     private String defaultFormat;
 
-    // Per-group formats (LuckPerms)
-    private boolean groupsEnabled;
+    // Per-group formats (LuckPerms) — used when mode == PER_GROUP
     private Map<String, String> groupFormats;
     private String defaultGroupFormat;
 
-    // Per-world formats
-    private boolean perWorldEnabled;
+    // Per-world formats — used when mode == PER_WORLD
     private Map<String, String> worldFormats;
 
     public static void init() {
@@ -74,11 +77,18 @@ public class ChatManager implements Listener {
         this.playerMiniMessage = cfg.getBoolean("chat.player_minimessage", false);
         this.bypassPermission = cfg.getString("chat.bypass_permission", "mcplugin.chat.custom.bypass");
 
+        // Mode: static | per-group | per-world
+        String modeStr = cfg.getString("chat.mode", "static").toLowerCase().replace("-", "_");
+        switch (modeStr) {
+            case "per_group" -> this.mode = Mode.PER_GROUP;
+            case "per_world" -> this.mode = Mode.PER_WORLD;
+            default -> this.mode = Mode.STATIC;
+        }
+
         this.defaultFormat = cfg.getString("chat.format",
                 "<dark_gray>[</dark_gray><white>{player_name}</white><dark_gray>]</dark_gray> <white>{message}</white>");
 
-        // ===== Per-group (LuckPerms) =====
-        this.groupsEnabled = cfg.getBoolean("chat.groups.enabled", false);
+        // ===== Per-group (LuckPerms) — загружается всегда для /mp chat reload =====
         this.groupFormats = new HashMap<>();
         if (cfg.isConfigurationSection("chat.groups.formats")) {
             for (String key : cfg.getConfigurationSection("chat.groups.formats").getKeys(false)) {
@@ -90,12 +100,11 @@ public class ChatManager implements Listener {
         }
         this.defaultGroupFormat = cfg.getString("chat.groups.default", defaultFormat);
 
-        // ===== Per-world =====
-        this.perWorldEnabled = cfg.getBoolean("chat.per_world.enabled", false);
+        // ===== Per-world — загружается всегда =====
         this.worldFormats = new HashMap<>();
-        if (cfg.isConfigurationSection("chat.per_world.worlds")) {
-            for (String key : cfg.getConfigurationSection("chat.per_world.worlds").getKeys(false)) {
-                String fmt = cfg.getString("chat.per_world.worlds." + key);
+        if (cfg.isConfigurationSection("chat.worlds")) {
+            for (String key : cfg.getConfigurationSection("chat.worlds").getKeys(false)) {
+                String fmt = cfg.getString("chat.worlds." + key);
                 if (fmt != null && !fmt.isEmpty()) {
                     worldFormats.put(key.toLowerCase(), fmt);
                 }
@@ -104,7 +113,7 @@ public class ChatManager implements Listener {
 
         Main.getInstance().getLogger().info("[Chat] Custom chat "
                 + (enabled ? "enabled" : "disabled")
-                + " | groups=" + groupsEnabled + " worlds=" + perWorldEnabled
+                + " | mode=" + mode.name().toLowerCase()
                 + " | player-minimessage=" + playerMiniMessage);
     }
 
@@ -183,31 +192,30 @@ public class ChatManager implements Listener {
     }
 
     /**
-     * Resolves the chat format for a player based on per-world and per-group settings.
-     * Priority: per-world (if enabled) > per-group (if enabled) > default format.
+     * Resolves the chat format for a player based on the configured mode.
+     * Mode determines the lookup strategy: static / per-group / per-world.
      */
     private String resolveFormat(Player player) {
-        String worldName = player.getWorld().getName().toLowerCase();
-
-        // 1. Per-world format (highest priority)
-        if (perWorldEnabled) {
-            String wf = worldFormats.get(worldName);
-            if (wf != null) return wf;
-        }
-
-        // 2. Per-group format (LuckPerms)
-        if (groupsEnabled) {
-            String group = getPrimaryGroup(player);
-            if (group != null) {
-                String gf = groupFormats.get(group.toLowerCase());
-                if (gf != null) return gf;
+        switch (mode) {
+            case PER_WORLD: {
+                String worldName = player.getWorld().getName().toLowerCase();
+                String wf = worldFormats.get(worldName);
+                if (wf != null) return wf;
+                // Fallback to default format
+                return defaultFormat;
             }
-            // Fallback to default group format
-            if (defaultGroupFormat != null) return defaultGroupFormat;
+            case PER_GROUP: {
+                String group = getPrimaryGroup(player);
+                if (group != null) {
+                    String gf = groupFormats.get(group.toLowerCase());
+                    if (gf != null) return gf;
+                }
+                // Fallback to default group format, then to default format
+                return defaultGroupFormat != null ? defaultGroupFormat : defaultFormat;
+            }
+            default:
+                return defaultFormat;
         }
-
-        // 3. Default format
-        return defaultFormat;
     }
 
     /**
