@@ -1641,7 +1641,7 @@ chat:
   # {group} — основная группа LuckPerms
   # Поддерживаются все встроенные плейсхолдеры и PAPI: {player_ping}, {world_name},
   # %luckperms_prefix%, %luckperms_primary_group_name%, %player_world% и т.д.
-  format: "<dark_gray>[</dark_gray><white>{player_name}</white><dark_gray>]</dark_gray> <white>{message}</white>"
+  format: "<green>ᴄʜᴀᴛ <dark_gray>» <white>{player_name}<gray>: <white>{message}</white>"
 
   # Разрешить ли игрокам использовать MiniMessage в своих сообщениях
   # Если true — <red>, <bold>, <gradient> и т.д. работают в чате

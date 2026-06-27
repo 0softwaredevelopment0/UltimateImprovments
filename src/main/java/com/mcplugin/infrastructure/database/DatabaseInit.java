@@ -413,6 +413,17 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // =========================
+        // 🤖 BOT PROTECTION COOLDOWNS (persist across restarts)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS bot_protection_cooldowns (
+                uuid TEXT PRIMARY KEY,
+                quit_time INTEGER NOT NULL
+            );
+        """);
+
+        // =========================
         // 🗳 VOTES
         // =========================
         st.execute("""

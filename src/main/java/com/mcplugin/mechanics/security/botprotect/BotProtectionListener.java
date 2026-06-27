@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.security.botprotect;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
+import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -12,6 +13,9 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +30,8 @@ import java.util.concurrent.atomic.AtomicLong;
  *   <li><b>Очередь входа</b> — если больше N игроков пытаются зайти за окно времени,
  *       лишние получают сообщение об очереди. Операторы и консоль уведомляются.</li>
  *   <li><b>Кулдаун реджоина</b> — если игрок вышел и пытается зайти снова слишком быстро,
- *       получает сообщение подождать.</li>
+ *       получает сообщение подождать. Время выхода сохраняется в БД, так что перезапуск
+ *       сервера не сбрасывает кулдаун.</li>
  * </ol>
  * <p>
  * Использует {@link AsyncPlayerPreLoginEvent} (асинхронный, до захода игрока).
@@ -40,7 +45,7 @@ public class BotProtectionListener implements Listener {
     private final ConcurrentLinkedDeque<Long> joinTimestamps = new ConcurrentLinkedDeque<>();
     private final AtomicLong lastOpNotify = new AtomicLong(0);
 
-    // ── Feature 2: Player quit times ──
+    // ── Feature 2: Player quit times (in-memory cache + DB persisted) ──
     private final Map<UUID, Long> quitTimes = new ConcurrentHashMap<>();
 
     // ── Config cache ──
@@ -68,8 +73,64 @@ public class BotProtectionListener implements Listener {
     }
 
     // =========================================================
+    //  DB HELPERS
+    // =========================================================
+
+    /**
+     * Сохраняет время выхода в БД.
+     */
+    private void dbSaveQuitTime(UUID uuid, long quitTime) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try (Connection con = DatabaseManager.getConnection();
+                 PreparedStatement st = con.prepareStatement(
+                         "INSERT OR REPLACE INTO bot_protection_cooldowns (uuid, quit_time) VALUES (?, ?)")) {
+                st.setString(1, uuid.toString());
+                st.setLong(2, quitTime);
+                st.executeUpdate();
+            } catch (Exception e) {
+                plugin.getLogger().warning("[BotProtect] Failed to save quit time to DB: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Удаляет время выхода из БД (после успешного захода или истечения кулдауна).
+     */
+    private void dbRemoveQuitTime(UUID uuid) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try (Connection con = DatabaseManager.getConnection();
+                 PreparedStatement st = con.prepareStatement(
+                         "DELETE FROM bot_protection_cooldowns WHERE uuid = ?")) {
+                st.setString(1, uuid.toString());
+                st.executeUpdate();
+            } catch (Exception e) {
+                plugin.getLogger().warning("[BotProtect] Failed to remove quit time from DB: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Читает время выхода из БД (если в памяти нет — перезагрузка сервера).
+     */
+    private Long dbLoadQuitTime(UUID uuid) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "SELECT quit_time FROM bot_protection_cooldowns WHERE uuid = ?")) {
+            st.setString(1, uuid.toString());
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("quit_time");
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("[BotProtect] Failed to load quit time from DB: " + e.getMessage());
+        }
+        return null;
+    }
+
+    // =========================================================
     //  FEATURE 1: JOIN QUEUE (sliding-window rate limiter)
-    //  FEATURE 2: REJOIN COOLDOWN
+    //  FEATURE 2: REJOIN COOLDOWN (persisted in DB)
     // =========================================================
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -83,7 +144,12 @@ public class BotProtectionListener implements Listener {
         // ═════════════════════════════════════════════════════
         //  FEATURE 2: Rejoin cooldown
         // ═════════════════════════════════════════════════════
+        // Пробуем из in-memory кэша, потом из БД (на случай перезагрузки)
         Long quitTime = quitTimes.remove(uuid);
+        if (quitTime == null) {
+            quitTime = dbLoadQuitTime(uuid);
+        }
+
         if (quitTime != null) {
             long elapsed = now - quitTime;
             int cooldownMs = rejoinCooldownSeconds * 1000;
@@ -94,8 +160,15 @@ public class BotProtectionListener implements Listener {
                         .replace("{seconds}", String.valueOf(remaining));
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
                 plugin.getLogger().info("[BotProtect] " + name + " rejected: rejoin cooldown (" + remaining + "s remaining)");
+
+                // ВАЖНО: возвращаем quitTime обратно в кэш, чтобы следующий реконнект
+                // (в пределах того же кулдауна) тоже был отклонён.
+                quitTimes.put(uuid, quitTime);
                 return;
             }
+
+            // Кулдаун истёк — удаляем из БД (запись в памяти уже удалена через remove)
+            dbRemoveQuitTime(uuid);
         }
 
         // ═════════════════════════════════════════════════════
@@ -166,13 +239,18 @@ public class BotProtectionListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
+        UUID uuid = event.getPlayer().getUniqueId();
         // Clear rejoin cooldown if player successfully joined
-        quitTimes.remove(event.getPlayer().getUniqueId());
+        quitTimes.remove(uuid);
+        dbRemoveQuitTime(uuid);
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (!enabled) return;
-        quitTimes.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
+        UUID uuid = event.getPlayer().getUniqueId();
+        long now = System.currentTimeMillis();
+        quitTimes.put(uuid, now);
+        dbSaveQuitTime(uuid, now);
     }
 }
