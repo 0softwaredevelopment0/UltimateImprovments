@@ -353,6 +353,8 @@ final class ConfigRules {
             notBlank("codepanel.empty_char", 10),
             notBlank("void_protection.target.world", 256),
 
+            string("report.expire_time", false, 16),
+
             bool("chat.enabled"),
             notBlank("chat.mode", 16),
             bool("chat.player_minimessage"),

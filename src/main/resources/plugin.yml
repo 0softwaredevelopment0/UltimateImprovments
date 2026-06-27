@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.8.56
+version: 1.8.57
 
 main: com.mcplugin.infrastructure.core.Main
 
@@ -272,11 +272,17 @@ permissions:
 
   mcplugin.command.askcords:
     description: Allows requesting player coordinates (/mp askcords <nick>)
-    default: true
+    default: true      mcplugin.command.toggleradview:
+        description: Allows toggling radiation display on actionbar (/mp toggleradview)
+        default: true
 
-  mcplugin.command.toggleradview:
-    description: Allows toggling radiation display on actionbar (/mp toggleradview)
-    default: true
+      mcplugin.command.report:
+        description: Allows reporting players (/mp report)
+        default: true
+
+      mcplugin.command.reports:
+        description: Allows managing reports (/mp reports)
+        default: op
 
   mcplugin.autocraft:
     description: Allows using auto-craft mode (/mp toggleautocraft)
@@ -288,11 +294,17 @@ permissions:
 
   mcplugin.command.togglesb:
     description: Allows toggling the scoreboard (/mp togglesb)
-    default: true
+    default: true      mcplugin.command.report:
+        description: Allows reporting players (/mp report)
+        default: true
 
-  mcplugin.command.maintenance:
-    description: Allows managing maintenance mode (/mp maint)
-    default: op
+      mcplugin.command.reports:
+        description: Allows managing reports (/mp reports)
+        default: op
+
+      mcplugin.command.maintenance:
+        description: Allows managing maintenance mode (/mp maint)
+        default: op
 
   mcplugin.command.opwhitelist:
     description: Allows managing the OP whitelist (/mp opwhitelist)

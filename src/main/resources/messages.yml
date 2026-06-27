@@ -587,6 +587,32 @@ vote:
   forced_message_body: "<gray>Player </gray><white>{sender}</white><gray> is force-suiciding you.</gray>"
   forced_message_nocancel: "<red>Cannot be cancelled!</red>"
 
+# =========================
+# 📋 Система репортов
+# =========================
+report:
+  success: "<green>✔</green> <white>Репорт на игрока </white><yellow>{player}</yellow> <white>отправлен!</white>"
+  reported_notification: "<yellow>⚠</yellow> <white>На вас была подана жалоба!</white>"
+  reporter_notified: "<green>✔</green> <white>Ваш репорт рассмотрен! Вердикт: </white><yellow>{verdict}</yellow>"
+  no_active_report: "<yellow>✦</yellow> <white>У вас нет активных репортов.</white>"
+  errors:
+    already_pending: "<red>❌ У вас уже есть активный репорт! Дождитесь его модерации.</red>"
+    never_joined: "<red>❌ Игрок <yellow>{player}</yellow> <red>ни разу не заходил на сервер!</red>"
+    self_report: "<red>❌ Вы не можете подать репорт на самого себя!</red>"
+    db_error: "<red>❌ Ошибка базы данных при создании репорта!</red>"
+  moderation:
+    enter_conclusion: "<green>✔</green> <white>Напишите заключение по репорту </white><yellow>{name}</yellow>"
+    type_or_cancel: "<gray>Напишите текст или </gray><red>cancel</red><gray> для отмены.</gray>"
+    verdict_prompt: "<green>✔</green> <white>Заключение сохранено. Выберите вердикт:</white>"
+    cancelled: "<yellow>✦</yellow> <gray>Модерация отменена.</gray>"
+    verdict_saved: "<green>✔</green> <white>Вердикт </white><yellow>{verdict}</yellow> <white>сохранён по репорту </white><yellow>{name}</yellow>"
+  verdict:
+    confirmed: "Подтверждён"
+    rejected: "Отклонён"
+    closed: "Закрыт"
+  admin:
+    remove_confirm: "<yellow>⚠</yellow> <white>Удалить </white><yellow>{name}</yellow><white>? Напишите </white><yellow>/mp reports remove confirm</yellow><white> для подтверждения.</white>"
+
 suicide:
   messages:
     forced_title: "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>"

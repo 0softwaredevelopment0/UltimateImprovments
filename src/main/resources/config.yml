@@ -1296,6 +1296,18 @@ bot_protection:
 # 🏠 Домашние точки (/mp sethome, /mp home, /mp listhomes)
 # =========================
 home:
+# =========================
+# 📋 Система репортов
+# =========================
+report:
+  # Время, через которое репорт автоматически удаляется, если не отмодерирован
+  # Формат: 3d (дни), 12h (часы), 30m (минуты), 60s (секунды)
+  expire_time: "3d"
+
+# =========================
+# 🏠 Домашние точки (/mp sethome, /mp home, /mp listhomes)
+# =========================
+home:
   # Максимальное количество домов на одного игрока
   max_homes: 10
   # Минимальная длина названия дома
@@ -1447,10 +1459,10 @@ tab:
 
     # Текст перед ником (MiniMessage + плейсхолдеры)
     # Используется ТОЛЬКО если format пустой
-    objective_prefix: "<dark_gray>[</dark_gray>{player_ping_gradient}<dark_gray>] </dark_gray>"
+    objective_prefix: ""
     # Текст после ника
     # Используется ТОЛЬКО если format пустой
-    objective_suffix: ""
+    objective_suffix: " <dark_gray>[</dark_gray>{player_ping_gradient}<dark_gray>] </dark_gray>"
 
   # 🔢 Сортировка игроков в табе (порядок отображения)
   sort:

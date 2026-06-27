@@ -414,6 +414,64 @@ public class DatabaseInit {
 
         // =========================
         // =========================
+        // 📋 PLAYER VISITS — отслеживание первого входа
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS player_visits (
+                uuid TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                first_join INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                last_join INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+        """);
+
+        // =========================
+        // 📋 REPORTS — жалобы на игроков
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                reporter_uuid TEXT NOT NULL,
+                reported_uuid TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                expires_at INTEGER NOT NULL,
+                moderator_uuid TEXT DEFAULT '',
+                verdict TEXT DEFAULT '',
+                verdict_option TEXT DEFAULT '',
+                moderated_at INTEGER DEFAULT 0
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_reports_status
+            ON reports(status);
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_reports_reporter
+            ON reports(reporter_uuid);
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_reports_reported
+            ON reports(reported_uuid);
+        """);
+
+        // =========================
+        // 📋 MOD REPORTS — список репортов для модерации
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS mod_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                report_id INTEGER NOT NULL,
+                name TEXT NOT NULL UNIQUE,
+                FOREIGN KEY(report_id) REFERENCES reports(id) ON DELETE CASCADE
+            );
+        """);
+
+        // =========================
         // 🤖 BOT PROTECTION COOLDOWNS (persist across restarts)
         // =========================
         st.execute("""
