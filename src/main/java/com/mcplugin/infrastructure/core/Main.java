@@ -150,6 +150,7 @@ public class Main extends JavaPlugin {
 
         // Utility modules
         mm.register(new ChatFilterModule());
+        mm.register(new ChatModule());
         mm.register(new VoidProtectionModule());
 
         // Security

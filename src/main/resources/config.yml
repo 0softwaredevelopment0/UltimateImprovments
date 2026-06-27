@@ -1640,5 +1640,64 @@ maintenance:
 #   major    — номер версии плагина
 #   minor    — номер подверсии плагина
 #   commits  — количество коммитов с последнего тега (вычисляется автоматически)
+# =========================
+# 💬 Кастомный чат
+# =========================
+# Перехватывает AsyncPlayerChatEvent и форматирует сообщение по шаблону.
+# По умолчанию ОТКЛЮЧЕН — включите через chat.enabled: true
+chat:
+  # Включён ли кастомный чат
+  enabled: false
+
+  # Формат чата (MiniMessage + плейсхолдеры)
+  # {player_name} — ник игрока
+  # {message} — сообщение игрока
+  # Поддерживаются все встроенные плейсхолдеры и PAPI: {player_ping}, {world_name},
+  # %luckperms_prefix%, %luckperms_primary_group_name%, %player_world% и т.д.
+  format: "<dark_gray>[</dark_gray><white>{player_name}</white><dark_gray>]</dark_gray> <white>{message}</white>"
+
+  # Разрешить ли игрокам использовать MiniMessage в своих сообщениях
+  # Если true — <red>, <bold>, <gradient> и т.д. работают в чате
+  # Если false — теги показываются как обычный текст
+  player_minimessage: false
+
+  # Право для байпасса кастомного чата (игроки с этим правом используют обычный чат)
+  # Оставьте пустым "" чтобы отключить байпасс
+  bypass_permission: "mcplugin.chat.custom.bypass"
+
+  # ===== Per-group форматы для LuckPerms =====
+  # Каждая группа LuckPerms может иметь свой формат чата.
+  # По умолчанию ОТКЛЮЧЕНО.
+  #
+  # Ключ — название группы в LuckPerms (регистронезависимо).
+  # Если у игрока нет группы из списка — используется default.
+  # Если default не указан — используется chat.format.
+  groups:
+    # Включены ли per-group форматы
+    enabled: false
+
+    # Формат для группы по умолчанию (если нет своей группы в списке)
+    default: "<gray>[<white>{player_name}</white>]</gray> <white>{message}</white>"
+
+    # Форматы для конкретных групп LuckPerms
+    formats:
+      # admin: "<red>[Admin]</red> <white>{player_name}</white>: <red>{message}</red>"
+      # vip: "<gold>[VIP]</gold> <white>{player_name}</white>: <gold>{message}</gold>"
+      # moderator: "<dark_green>[Mod]</dark_green> <white>{player_name}</white>: <green>{message}</green>"
+      # default: "<gray>{player_name}</gray>: <white>{message}</white>"
+
+  # ===== Per-world форматы =====
+  # Разный формат чата для разных миров.
+  # По умолчанию ОТКЛЮЧЕНО.
+  per_world:
+    # Включены ли per-world форматы
+    enabled: false
+
+    # Форматы для каждого мира (регистронезависимо)
+    worlds:
+      # world: "<green>{player_name}</green>: <white>{message}</white>"
+      # world_nether: "<red>{player_name}</red>: <white>{message}</white>"
+      # world_the_end: "<dark_purple>{player_name}</dark_purple>: <white>{message}</white>"
+
 # ═══════════════════════════════════════════════════════
 plugin_version: "1.8.18"

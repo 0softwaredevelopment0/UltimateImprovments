@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.8.24
+version: 1.8.25
 
 main: com.mcplugin.infrastructure.core.Main
 
@@ -296,4 +296,8 @@ permissions:
 
   mcplugin.command.opwhitelist:
     description: Allows managing the OP whitelist (/mp opwhitelist)
+    default: op
+
+  mcplugin.chat.custom.bypass:
+    description: Allows bypassing the custom chat formatting
     default: op
