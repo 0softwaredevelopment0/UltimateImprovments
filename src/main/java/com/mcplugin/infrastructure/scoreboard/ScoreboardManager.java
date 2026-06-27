@@ -186,22 +186,25 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
         // Objective name limited to 16 chars in Bukkit API
         String objName = "sb_" + config.name();
         if (objName.length() > 16) objName = objName.substring(0, 16);
+        // Title supports Component (Paper API)
         Objective objective = board.registerNewObjective(objName, "dummy", MessageUtil.parse(resolvedTitle));
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
         // Build lines bottom-to-top (score 0 = bottom)
-        List<String> resolvedLines = new ArrayList<>();
+        int score = config.lines().size();
         for (String line : config.lines()) {
-            resolvedLines.add(PlaceholderResolver.resolve(line, player));
-        }
-
-        // Уникальные коды для пустых строк-разделителей
-        int score = resolvedLines.size();
-        for (String line : resolvedLines) {
-            if (line.isEmpty()) {
-                line = "§" + (char) ('a' + (score % 26));
+            String resolved = PlaceholderResolver.resolve(line, player);
+            String display;
+            if (resolved.isEmpty()) {
+                // Пустой разделитель — §-код для уникальности + невидимости
+                display = "§" + (char) ('a' + (score % 26));
+            } else {
+                // Конвертируем MiniMessage в §-формат для scoreboard (getScore принимает String)
+                display = MessageUtil.legacy(resolved);
+                if (display.length() > 40) {
+                    display = display.substring(0, 40);
+                }
             }
-            String display = line.length() > 40 ? line.substring(0, 40) : line;
             objective.getScore(display).setScore(score);
             score--;
         }

@@ -4,12 +4,23 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
 import net.kyori.adventure.text.Component;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * Управляет кастомным таб-листом:
@@ -17,9 +28,10 @@ import java.util.List;
  *   <li>Header — текст над списком игроков (MiniMessage + плейсхолдеры)</li>
  *   <li>Footer — текст под списком игроков (MiniMessage + плейсхолдеры)</li>
  *   <li>PlayerList name — префикс/суффикс перед/после ника (пинг, PAPI и т.д.)</li>
+ *   <li>Hide spectators — скрытие игроков в спектаторе из таба</li>
  * </ul>
  */
-public class TabManager extends BukkitRunnable {
+public class TabManager extends BukkitRunnable implements Listener {
 
     private static TabManager instance;
     private boolean enabled;
@@ -29,11 +41,25 @@ public class TabManager extends BukkitRunnable {
     private String objectivePrefix;
     private String objectiveSuffix;
     private String objectiveFormat;
+    private boolean hideSpectators;
     private int intervalTicks;
 
     public static void init() {
         instance = new TabManager();
+        Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
         instance.reloadConfig();
+
+        // Скрываем уже онлайн спектаторов при старте/reload
+        if (instance.hideSpectators) {
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (p.getGameMode() == GameMode.SPECTATOR) {
+                        removeSpectatorFromTabList(p);
+                    }
+                }
+            }, 1L);
+        }
+
         if (instance.enabled) {
             instance.runTaskTimer(Main.getInstance(), 20L, instance.intervalTicks);
         }
@@ -65,7 +91,141 @@ public class TabManager extends BukkitRunnable {
         this.objectivePrefix = config.getString("tab.player_list.objective_prefix", "");
         this.objectiveSuffix = config.getString("tab.player_list.objective_suffix", "");
         this.objectiveFormat = config.getString("tab.player_list.format", "");
+        this.hideSpectators = config.getBoolean("tab.hide_spectators", false);
         this.intervalTicks = Math.max(10, config.getInt("tab.update_interval_ticks", 20));
+    }
+
+    // ── Spectator hide / show ──
+
+    /**
+     * Отправляет ClientboundPlayerInfoRemovePacket всем онлайн-игрокам,
+     * чтобы скрыть спектатора из их tab list.
+     */
+    private static void removeSpectatorFromTabList(Player spectator) {
+        ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(
+                List.of(spectator.getUniqueId())
+        );
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online.getUniqueId().equals(spectator.getUniqueId())) continue;
+            try {
+                ((CraftPlayer) online).getHandle().connection.send(packet);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    /**
+     * Возвращает спектатора в tab list всех онлайн-игроков.
+     */
+    private static void addSpectatorToTabList(Player spectator) {
+        try {
+            ServerPlayer serverPlayer = ((CraftPlayer) spectator).getHandle();
+            ClientboundPlayerInfoUpdatePacket packet = new ClientboundPlayerInfoUpdatePacket(
+                    EnumSet.of(
+                            ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER,
+                            ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME,
+                            ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY,
+                            ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE,
+                            ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED
+                    ),
+                    List.of(serverPlayer)
+            );
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                if (online.getUniqueId().equals(spectator.getUniqueId())) continue;
+                try {
+                    ((CraftPlayer) online).getHandle().connection.send(packet);
+                } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Скрывает всех текущих спектаторов из таба данного игрока.
+     */
+    private static void hideCurrentSpectatorsFrom(Player viewer) {
+        List<UUID> spectatorUuids = new ArrayList<>();
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (online.getUniqueId().equals(viewer.getUniqueId())) continue;
+            if (online.getGameMode() == GameMode.SPECTATOR) {
+                spectatorUuids.add(online.getUniqueId());
+            }
+        }
+        if (spectatorUuids.isEmpty()) return;
+        try {
+            ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(spectatorUuids);
+            ((CraftPlayer) viewer).getHandle().connection.send(packet);
+        } catch (Exception ignored) {}
+    }
+
+    // ── Listeners ──
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onGameModeChange(PlayerGameModeChangeEvent event) {
+        if (!hideSpectators) return;
+
+        Player player = event.getPlayer();
+        GameMode newMode = event.getNewGameMode();
+        GameMode oldMode = player.getGameMode();
+
+        // Delay 1 tick so the game mode is actually applied
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            if (!player.isOnline()) return;
+
+            if (newMode == GameMode.SPECTATOR && oldMode != GameMode.SPECTATOR) {
+                // Переключился в спектатор — скрыть из таба
+                removeSpectatorFromTabList(player);
+            } else if (oldMode == GameMode.SPECTATOR && newMode != GameMode.SPECTATOR) {
+                // Вышел из спектатора — вернуть в таб
+                addSpectatorToTabList(player);
+            }
+        }, 1L);
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        if (!hideSpectators) return;
+
+        Player player = event.getPlayer();
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            if (!player.isOnline()) return;
+
+            // Если сам новый игрок в спектаторе — скрыть его от всех
+            if (player.getGameMode() == GameMode.SPECTATOR) {
+                removeSpectatorFromTabList(player);
+            }
+
+            // Скрыть всех текущих спектаторов от нового игрока
+            hideCurrentSpectatorsFrom(player);
+        }, 1L);
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        if (!hideSpectators) return;
+
+        Player player = event.getPlayer();
+        if (player.getGameMode() == GameMode.SPECTATOR) {
+            // При смене мира клиент пере-добавляет в таб — скрываем снова
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                if (player.isOnline() && player.getGameMode() == GameMode.SPECTATOR) {
+                    removeSpectatorFromTabList(player);
+                }
+            }, 2L);
+        }
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        if (!hideSpectators) return;
+
+        Player player = event.getPlayer();
+        if (player.getGameMode() == GameMode.SPECTATOR) {
+            // При респавне клиент пере-добавляет в таб — скрываем снова
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                if (player.isOnline() && player.getGameMode() == GameMode.SPECTATOR) {
+                    removeSpectatorFromTabList(player);
+                }
+            }, 2L);
+        }
     }
 
     @Override
