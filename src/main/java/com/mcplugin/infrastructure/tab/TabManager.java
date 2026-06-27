@@ -4,7 +4,6 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -29,7 +28,6 @@ public class TabManager extends BukkitRunnable {
     private boolean objectiveEnabled;
     private String objectivePrefix;
     private String objectiveSuffix;
-    private String objectivePosition;
     private int intervalTicks;
 
     public static void init() {
@@ -65,7 +63,6 @@ public class TabManager extends BukkitRunnable {
         this.objectiveEnabled = config.getBoolean("tab.player_list.objective_enabled", false);
         this.objectivePrefix = config.getString("tab.player_list.objective_prefix", "");
         this.objectiveSuffix = config.getString("tab.player_list.objective_suffix", "");
-        this.objectivePosition = config.getString("tab.player_list.objective_position", "BEFORE");
         this.intervalTicks = Math.max(10, config.getInt("tab.update_interval_ticks", 20));
     }
 
@@ -91,13 +88,8 @@ public class TabManager extends BukkitRunnable {
                 Component nameComp = Component.text(player.getName());
                 Component suffixComp = suffix.isEmpty() ? Component.empty() : MessageUtil.parse(suffix);
 
-                Component listName;
-                if ("AFTER".equalsIgnoreCase(objectivePosition)) {
-                    listName = nameComp.append(suffixComp);
-                } else {
-                    listName = prefixComp.append(nameComp);
-                }
-
+                // prefix + name + suffix — всегда оба, независимо от position
+                Component listName = prefixComp.append(nameComp).append(suffixComp);
                 player.playerListName(listName);
             }
         }

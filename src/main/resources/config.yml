@@ -1411,8 +1411,6 @@ tab:
     objective_prefix: "<dark_gray>[</dark_gray><white>{player_ping}ms</white><dark_gray>] </dark_gray>"
     # Текст после ника
     objective_suffix: ""
-    # Позиция: BEFORE — префикс перед ником, AFTER — суффикс после
-    objective_position: BEFORE
 
 # =========================
 # 📊 Скорборды — кастомные scoreboard с условиями
@@ -1502,4 +1500,4 @@ scoreboard:
 #   minor    — номер подверсии плагина
 #   commits  — количество коммитов с последнего тега (вычисляется автоматически)
 # ═══════════════════════════════════════════════════════
-plugin_version: "1.8.12"
+plugin_version: "1.8.13"
