@@ -51,7 +51,6 @@ public class ConcreteBucketCraftListener implements Listener {
                 (byte) 1
         );
 
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "concrete_bucket"));
         result.setItemMeta(meta);
 
         Bukkit.removeRecipe(RECIPE_KEY);
@@ -102,7 +101,6 @@ public class ConcreteBucketCraftListener implements Listener {
                 PersistentDataType.BYTE,
                 (byte) 1
         );
-        meta.setItemModel(new NamespacedKey(Main.getInstance(), "concrete_bucket"));
         result.setItemMeta(meta);
         e.getInventory().setResult(result);
     }

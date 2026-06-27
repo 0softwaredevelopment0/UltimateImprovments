@@ -36,10 +36,13 @@ import java.util.Map;
 public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
     private static ConcreteBucketManager instance;
+    private static Main plugin;
     private static final long CONCRETE_DELAY_MS = 60_000; // 60 секунд
 
     // Отслеживаемые блоки воды: location -> {originalBiome, placeTime}
     private static final Map<Location, ConcreteWater> trackedWater = new HashMap<>();
+    // Ожидающие установки биома (вода появится через 1 тик)
+    private static final Map<Location, Biome> pendingBiomes = new HashMap<>();
 
     private record ConcreteWater(Biome originalBiome, long placeTime) {}
 
@@ -47,6 +50,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     // INIT
     // =========================
     public static void init(Main plugin) {
+        ConcreteBucketManager.plugin = plugin;
         instance = new ConcreteBucketManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         // Проверяем каждый тик (плавное превращение)
@@ -69,7 +73,6 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     // =========================
     @EventHandler(ignoreCancelled = true)
     public void onBucketEmpty(PlayerBucketEmptyEvent e) {
-        // В Paper 26.x getBucket() возвращает Material, проверяем PDC из предмета в руке
         if (e.getBucket() != Material.WATER_BUCKET) return;
 
         // Проверяем PDC на предмете в руке игрока
@@ -85,21 +88,23 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
         Block waterBlock = clicked.getRelative(e.getBlockFace());
         Location waterLoc = waterBlock.getLocation();
-
         if (waterLoc.getWorld() == null) return;
 
         // Сохраняем исходный биом
-        Biome originalBiome = waterBlock.getBiome();
+        Biome originalBiome = waterLoc.getWorld().getBiome(waterLoc.getBlockX(), waterLoc.getBlockY(), waterLoc.getBlockZ());
+        // Если локация уже отслеживалась — переиспользуем оригинальный биом (иначе PALE_GARDEN будет считаться "оригиналом")
+        ConcreteWater existing = trackedWater.get(waterLoc);
+        if (existing != null) {
+            originalBiome = existing.originalBiome();
+        }
 
-        // Устанавливаем биом PALE_GARDEN — вода становится серой
-        waterBlock.setBiome(Biome.PALE_GARDEN);
-
+        // Вода ещё НЕ поставлена — откладываем установку биома на 1 тик
+        pendingBiomes.put(waterLoc, Biome.PALE_GARDEN);
         // Отслеживаем блок воды
         trackedWater.put(waterLoc, new ConcreteWater(originalBiome, System.currentTimeMillis()));
 
         // 🪣 Сервер Paper сам заменяет WATER_BUCKET на обычный BUCKET после этого события.
         // PDC теряется при замене, поэтому ведро становится обычным.
-        // Комментарий оставлен намеренно, чтобы не добавлять ручную замену (это приведёт к дублированию).
     }
 
     // =========================
@@ -116,8 +121,8 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
         ConcreteWater fromData = trackedWater.get(fromLoc);
         if (fromData != null && toBlock.getType() == Material.WATER) {
-            // Новая порция воды тоже получает серый биом
-            toBlock.setBiome(Biome.PALE_GARDEN);
+            // Новая порция воды — откладываем установку биома
+            pendingBiomes.put(toLoc, Biome.PALE_GARDEN);
             trackedWater.put(toLoc, new ConcreteWater(fromData.originalBiome(), System.currentTimeMillis()));
         }
 
@@ -156,10 +161,30 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     }
 
     // =========================
-    // ⏱ ТИК — проверка на превращение в бетон через 60 секунд
+    // ⏱ ТИК — установка отложенных биомов + проверка на бетон
     // =========================
     @Override
     public void run() {
+        // ════════════════════════════════════════
+        // Обрабатываем отложенные биомы
+        // ════════════════════════════════════════
+        if (!pendingBiomes.isEmpty()) {
+            Iterator<Map.Entry<Location, Biome>> pit = pendingBiomes.entrySet().iterator();
+            while (pit.hasNext()) {
+                Map.Entry<Location, Biome> entry = pit.next();
+                Location loc = entry.getKey();
+                if (loc.getBlock().getType() == Material.WATER) {
+                    // World.setBiome() отправляет обновление клиенту (в отличие от Block.setBiome())
+                    loc.getWorld().setBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), entry.getValue());
+                    pit.remove();
+                }
+                // Если вода ещё не появилась — ждём следующего тика
+            }
+        }
+
+        // ════════════════════════════════════════
+        // Проверка на превращение в бетон через 60 секунд
+        // ════════════════════════════════════════
         if (trackedWater.isEmpty()) return;
 
         long now = System.currentTimeMillis();
@@ -179,8 +204,8 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
             // Прошло 60 секунд?
             if (now - data.placeTime() >= CONCRETE_DELAY_MS) {
-                // Превращаем в булыжник (бетон!)
-                loc.getBlock().setType(Material.COBBLESTONE);
+                // Превращаем в бетон (GRAY_CONCRETE вместо булыжника)
+                loc.getBlock().setType(Material.GRAY_CONCRETE);
                 it.remove();
                 // Биом НЕ восстанавливаем — бетон окрасил землю
             }
@@ -191,8 +216,8 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     // 🔄 ВОССТАНОВЛЕНИЕ БИОМА
     // =========================
     private static void restoreBiome(Location loc, Biome biome) {
-        if (biome != null && biome != Biome.PALE_GARDEN) {
-            loc.getBlock().setBiome(biome);
+        if (biome != null && biome != Biome.PALE_GARDEN && loc.getWorld() != null) {
+            loc.getWorld().setBiome(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), biome);
         }
     }
 
@@ -205,5 +230,6 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
             instance = null;
         }
         trackedWater.clear();
+        pendingBiomes.clear();
     }
 }
