@@ -1659,6 +1659,9 @@ chat:
   # Используется при режиме "static" и как fallback для других режимов.
   # {player_name} — ник игрока
   # {message} — сообщение игрока
+  # {prefix} — префикс LuckPerms (авто-конвертация legacy → MiniMessage)
+  # {suffix} — суффикс LuckPerms (авто-конвертация legacy → MiniMessage)
+  # {group} — основная группа LuckPerms
   # Поддерживаются все встроенные плейсхолдеры и PAPI: {player_ping}, {world_name},
   # %luckperms_prefix%, %luckperms_primary_group_name%, %player_world% и т.д.
   format: "<dark_gray>[</dark_gray><white>{player_name}</white><dark_gray>]</dark_gray> <white>{message}</white>"

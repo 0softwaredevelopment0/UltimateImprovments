@@ -1,6 +1,9 @@
 package com.mcplugin.infrastructure.util;
 
 import com.mcplugin.infrastructure.core.Main;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -11,7 +14,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * Резольвер плейсхолдеров — встроенные + PAPI (если установлен).
+ * Резольвер плейсхолдеров — встроенные + PAPI + LuckPerms (если установлен).
  * <p>
  * Встроенные плейсхолдеры:
  * <ul>
@@ -32,14 +35,27 @@ import java.util.function.BiFunction;
  *   <li>{uptime} — аптайм сервера</li>
  *   <li>{server_name} — имя сервера (bukkit.name)</li>
  *   <li>{server_version} — версия сервера</li>
+ *   <li>{prefix} — префикс LuckPerms (legacy → MiniMessage)</li>
+ *   <li>{suffix} — суффикс LuckPerms (legacy → MiniMessage)</li>
+ *   <li>{group} — основная группа LuckPerms</li>
  * </ul>
  */
 public class PlaceholderResolver {
 
     private static final DecimalFormat TPS_FORMAT = new DecimalFormat("#.##");
     private static final Map<String, BiFunction<Player, String, String>> BUILTIN = new HashMap<>();
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+    private static final LegacyComponentSerializer LEGACY_AMPERSAND = LegacyComponentSerializer.legacyAmpersand();
 
     private static boolean papiAvailable = false;
+    private static boolean luckPermsAvailable = false;
+    private static Object lpInstance; // net.luckperms.api.LuckPerms
+    private static java.lang.reflect.Method lpGetUserManager;
+    private static java.lang.reflect.Method lpUserManagerGetUser;
+    private static java.lang.reflect.Method lpUserGetCachedData;
+    private static java.lang.reflect.Method lpMetaDataGetPrefix;
+    private static java.lang.reflect.Method lpMetaDataGetSuffix;
+    private static java.lang.reflect.Method lpMetaDataGetPrimaryGroup;
 
     static {
         // ── Player ──
@@ -74,18 +90,96 @@ public class PlaceholderResolver {
         });
         BUILTIN.put("server_name", (p, s) -> Bukkit.getName());
         BUILTIN.put("server_version", (p, s) -> Bukkit.getVersion());
+
+        // ── LuckPerms placeholders (lazy — resolved after init()) ──
+        BUILTIN.put("prefix", PlaceholderResolver::resolveLuckPermsPrefix);
+        BUILTIN.put("suffix", PlaceholderResolver::resolveLuckPermsSuffix);
+        BUILTIN.put("group", PlaceholderResolver::resolveLuckPermsGroup);
     }
 
     /**
-     * Вызывается при старте — проверяет наличие PAPI.
+     * Вызывается при старте — проверяет наличие PAPI и LuckPerms.
      */
     public static void init() {
+        // ── PAPI ──
         try {
             Class.forName("me.clip.placeholderapi.PlaceholderAPI");
             papiAvailable = true;
             Main.getInstance().getLogger().info("[PlaceholderResolver] PlaceholderAPI detected!");
         } catch (ClassNotFoundException e) {
             papiAvailable = false;
+        }
+
+        // ── LuckPerms ──
+        try {
+            Class<?> lpClass = Class.forName("net.luckperms.api.LuckPerms");
+            Class<?> lpProvider = Class.forName("net.luckperms.api.LuckPermsProvider");
+            java.lang.reflect.Method getMethod = lpProvider.getMethod("get");
+            lpInstance = getMethod.invoke(null);
+
+            lpGetUserManager = lpClass.getMethod("getUserManager");
+            Object userManager = lpGetUserManager.invoke(lpInstance);
+
+            Class<?> userManagerClass = Class.forName("net.luckperms.api.user.UserManager");
+            // getIfLoaded returns User directly (no CompletableFuture) — safe for online players
+            lpUserManagerGetUser = userManagerClass.getMethod("getIfLoaded", java.util.UUID.class);
+
+            Class<?> userClass = Class.forName("net.luckperms.api.model.user.User");
+            lpUserGetCachedData = userClass.getMethod("getCachedData");
+
+            Class<?> cachedDataClass = Class.forName("net.luckperms.api.cacheddata.CachedMetaData");
+            lpMetaDataGetPrefix = cachedDataClass.getMethod("getPrefix");
+            lpMetaDataGetSuffix = cachedDataClass.getMethod("getSuffix");
+            lpMetaDataGetPrimaryGroup = cachedDataClass.getMethod("getPrimaryGroup");
+
+            // Убеждаемся что API работает: пробный вызов getUserManager
+            if (userManager != null) {
+                luckPermsAvailable = true;
+                Main.getInstance().getLogger().info("[PlaceholderResolver] LuckPerms API detected!");
+            }
+        } catch (Exception e) {
+            luckPermsAvailable = false;
+            Main.getInstance().getLogger().info("[PlaceholderResolver] LuckPerms not found — {prefix}/{suffix}/{group} disabled");
+        }
+    }
+
+    // ── LuckPerms resolvers ──
+
+    private static String resolveLuckPermsPrefix(Player player, String unused) {
+        return getLuckPermsMeta(player, lpMetaDataGetPrefix);
+    }
+
+    private static String resolveLuckPermsSuffix(Player player, String unused) {
+        return getLuckPermsMeta(player, lpMetaDataGetSuffix);
+    }
+
+    private static String resolveLuckPermsGroup(Player player, String unused) {
+        return getLuckPermsMeta(player, lpMetaDataGetPrimaryGroup);
+    }
+
+    /**
+     * Получает мета-данные LuckPerms для игрока (prefix/suffix/group)
+     * и конвертирует legacy-формат (&7) в MiniMessage (<gray>).
+     */
+    private static String getLuckPermsMeta(Player player, java.lang.reflect.Method metaMethod) {
+        if (player == null || !luckPermsAvailable || lpInstance == null) return "";
+        try {
+            Object userManager = lpGetUserManager.invoke(lpInstance);
+            Object user = lpUserManagerGetUser.invoke(userManager, player.getUniqueId());
+            if (user == null) return "";
+
+            Object cachedData = lpUserGetCachedData.invoke(user);
+            Object value = metaMethod.invoke(cachedData);
+            if (value == null) return "";
+
+            String legacyStr = value.toString();
+            if (legacyStr.isEmpty()) return "";
+
+            // Конвертируем legacy (&7) → Component → MiniMessage (<gray>)
+            Component comp = LEGACY_AMPERSAND.deserialize(legacyStr);
+            return MM.serialize(comp);
+        } catch (Exception e) {
+            return "";
         }
     }
 
