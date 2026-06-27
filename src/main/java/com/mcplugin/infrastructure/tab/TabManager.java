@@ -338,6 +338,16 @@ public class TabManager extends BukkitRunnable implements Listener {
         if (sortMode != SortMode.NONE) {
             applySortOrder(players);
         }
+
+        // Re-hide spectators — setPlayerListOrder() и другие операции могут
+        // заставить клиент пере-добавить скрытого спектатора в таб
+        if (hideSpectators) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p != null && p.getGameMode() == GameMode.SPECTATOR) {
+                    removeSpectatorFromTabList(p);
+                }
+            }
+        }
     }
 
     /**
