@@ -25,12 +25,8 @@ public class AssemblerModule extends PluginModule {
         AssemblerManager.init();
 
         // Запускаем таск авто-крафта раз в 2 тика
-        assemblerTask = plugin.getServer().getScheduler().runTaskTimer(
-                main,
-                new AssemblerTask(),
-                40L,  // первый запуск через 2 секунды (чтобы всё успело загрузиться)
-                2L    // каждые 2 тика
-        );
+        // ⚠ Paper 1.21.4+: BukkitRunnable нельзя передавать в Scheduler.runTaskTimer()
+        assemblerTask = new AssemblerTask().runTaskTimer(main, 40L, 2L);
 
         plugin.getLogger().info("[AssemblerModule] ✔ Assembler system initialized.");
     }
