@@ -209,16 +209,16 @@ public class PlaceholderResolver {
             int[] upper = PING_COLOR_STOPS[i + 1];
             if (ping >= lower[0] && ping <= upper[0]) {
                 if (ping == lower[0]) {
-                    return String.format("<%02X%02X%02X>", lower[1], lower[2], lower[3]);
+                    return String.format("<#%02X%02X%02X>", lower[1], lower[2], lower[3]);
                 }
                 if (ping == upper[0]) {
-                    return String.format("<%02X%02X%02X>", upper[1], upper[2], upper[3]);
+                    return String.format("<#%02X%02X%02X>", upper[1], upper[2], upper[3]);
                 }
                 double t = (double) (ping - lower[0]) / (upper[0] - lower[0]);
                 int r = (int) Math.round(lower[1] + (upper[1] - lower[1]) * t);
                 int g = (int) Math.round(lower[2] + (upper[2] - lower[2]) * t);
                 int b = (int) Math.round(lower[3] + (upper[3] - lower[3]) * t);
-                return String.format("<%02X%02X%02X>", r, g, b);
+                return String.format("<#%02X%02X%02X>", r, g, b);
             }
         }
 
