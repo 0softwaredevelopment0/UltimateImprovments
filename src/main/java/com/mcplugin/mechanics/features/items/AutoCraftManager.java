@@ -13,6 +13,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,8 +22,11 @@ import java.util.UUID;
 /**
  * ⚡ AutoCraftManager — режим автокрафтера.
  * <p>
- * Когда режим включён, клик по результату крафта в верстаке
- * отменяет стандартное действие и сразу выдаёт результат в инвентарь игрока.
+ * Когда режим включён, клик по результату крафта в верстаке:
+ * <ul>
+ *   <li>Обычный левый клик — результат сразу выпадает в инвентарь</li>
+ *   <li>Shift+клик — крафтит всё, что возможно (как ванильный шифт-клик + авто-цикл)</li>
+ * </ul>
  * <p>
  * Команда: {@code /mp toggleautocraft}
  * Право: {@code mcplugin.autocraft} (default: op)
@@ -34,6 +38,7 @@ public class AutoCraftManager implements Listener {
     // =========================
     // TOGGLE
     // =========================
+
     public static void toggleAutoCraft(Player player) {
         UUID uuid = player.getUniqueId();
         if (autoCraftEnabled.contains(uuid)) {
@@ -56,6 +61,7 @@ public class AutoCraftManager implements Listener {
     // =========================
     // INIT
     // =========================
+
     public static void init(Main plugin) {
         plugin.getServer().getPluginManager().registerEvents(new AutoCraftManager(), plugin);
         plugin.getLogger().info("[AutoCraft] ✔ Auto-craft mode registered.");
@@ -64,7 +70,8 @@ public class AutoCraftManager implements Listener {
     // =========================
     // CRAFT INTERCEPTION
     // =========================
-    @EventHandler(priority = EventPriority.LOWEST)
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!autoCraftEnabled.contains(player.getUniqueId())) return;
@@ -73,18 +80,128 @@ public class AutoCraftManager implements Listener {
         InventoryType invType = event.getInventory().getType();
         if (invType != InventoryType.WORKBENCH && invType != InventoryType.CRAFTING) return;
 
-        // Only intercept clicks on the result slot (slot 0)
+        // Only intercept clicks on the result slot
         if (event.getSlot() != 0) return;
         if (!(event.getInventory() instanceof CraftingInventory craftInv)) return;
 
-        // Allow shift-click to work but still intercept
         ItemStack result = craftInv.getResult();
         if (result == null || result.getType() == Material.AIR) return;
 
-        // Cancel the normal click action
+        boolean isShiftClick = event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT;
+
+        // ── SHIFT-CLICK: let Minecraft handle it naturally, then re-craft ──
+        if (isShiftClick) {
+            // Don't cancel — let Paper's shift-click handle the craft.
+            // After 1 tick, check if more can be crafted and auto-craft again.
+            scheduleAutoCraft(player, craftInv, player.getUniqueId());
+            return;
+        }
+
+        // ── REGULAR LEFT/RIGHT CLICK: manual handling ──
+        // Cancel so item doesn't go to cursor
         event.setCancelled(true);
 
         // Check inventory space
+        if (!hasSpaceFor(player, result)) {
+            player.sendMessage(MessageUtil.parse(
+                "<red>❌</red> <white>Inventory is full!</white>"
+            ));
+            return;
+        }
+
+        // Consume ONE layer of ingredients and give result
+        if (consumeOneCraft(craftInv)) {
+            // Give the crafted item to player
+            ItemStack crafted = result.clone();
+            player.getInventory().addItem(crafted).values().forEach(drop ->
+                player.getWorld().dropItemNaturally(player.getLocation(), drop)
+            );
+            SoundUtil.playCraftSound(player);
+
+            // Schedule auto-recraft if ingredients remain
+            scheduleAutoCraft(player, craftInv, player.getUniqueId());
+        }
+    }
+
+    /**
+     * After a shift-click or a successful manual craft, schedule a task
+     * to re-craft if ingredients are still available.
+     */
+    private static void scheduleAutoCraft(Player player, CraftingInventory ignoredInv, UUID uuid) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!autoCraftEnabled.contains(uuid)) return;
+                if (!player.isOnline()) return;
+                if (!(player.getOpenInventory().getTopInventory() instanceof CraftingInventory ci)) return;
+
+                ItemStack nextResult = ci.getResult();
+                if (nextResult == null || nextResult.getType() == Material.AIR) return;
+
+                // Try to craft another set
+                if (consumeOneCraft(ci)) {
+                    ItemStack crafted = nextResult.clone();
+                    player.getInventory().addItem(crafted).values().forEach(drop ->
+                        player.getWorld().dropItemNaturally(player.getLocation(), drop)
+                    );
+                    SoundUtil.playCraftSound(player);
+
+                    // Still more ingredients? Schedule again
+                    scheduleAutoCraft(player, ci, uuid);
+                }
+            }
+        }.runTask(Main.getInstance());
+    }
+
+    // =========================
+    // INGREDIENT CONSUMPTION
+    // =========================
+
+    /**
+     * Consumes ONE layer of ingredients from the crafting matrix.
+     * Handles container items (buckets → empty bucket, etc.)
+     *
+     * @param craftInv the crafting inventory
+     * @return true if ingredients were consumed, false if not enough ingredients
+     */
+    private static boolean consumeOneCraft(CraftingInventory craftInv) {
+        ItemStack[] matrix = craftInv.getMatrix();
+        if (matrix == null || matrix.length == 0) return false;
+
+        // Verify all ingredients have at least 1 item
+        for (ItemStack item : matrix) {
+            if (item == null || item.getType() == Material.AIR) continue;
+            if (item.getAmount() < 1) return false;
+        }
+
+        // Consume ingredients
+        ItemStack[] newMatrix = new ItemStack[matrix.length];
+        for (int i = 0; i < matrix.length; i++) {
+            ItemStack item = matrix[i];
+            if (item == null || item.getType() == Material.AIR) {
+                newMatrix[i] = null;
+                continue;
+            }
+            int newAmount = item.getAmount() - 1;
+            if (newAmount <= 0) {
+                // Check for container remainder (e.g. WATER_BUCKET → BUCKET)
+                ItemStack remainder = getContainerRemainder(item.getType());
+                newMatrix[i] = remainder;
+            } else {
+                ItemStack reduced = item.clone();
+                reduced.setAmount(newAmount);
+                newMatrix[i] = reduced;
+            }
+        }
+
+        craftInv.setMatrix(newMatrix);
+        return true;
+    }
+
+    /**
+     * Checks if the player has inventory space for at least one craft result.
+     */
+    private static boolean hasSpaceFor(Player player, ItemStack result) {
         int maxStack = result.getMaxStackSize();
         int freeSpace = 0;
         for (ItemStack item : player.getInventory().getStorageContents()) {
@@ -94,54 +211,7 @@ public class AutoCraftManager implements Listener {
                 freeSpace += item.getMaxStackSize() - item.getAmount();
             }
         }
-        int totalOutput = result.getAmount(); // per craft
-        if (freeSpace < totalOutput) {
-            player.sendMessage(MessageUtil.parse(
-                "<red>❌</red> <white>Inventory is full!</white>"
-            ));
-            return;
-        }
-
-        // Calculate craft count: shift-click = max, regular click = 1
-        boolean isShiftClick = event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT;
-
-        ItemStack[] matrix = craftInv.getMatrix();
-        int maxCrafts = Integer.MAX_VALUE;
-
-        for (int i = 0; i < matrix.length; i++) {
-            if (matrix[i] == null || matrix[i].getType() == Material.AIR) continue;
-            maxCrafts = Math.min(maxCrafts, matrix[i].getAmount());
-        }
-
-        if (maxCrafts <= 0 || maxCrafts == Integer.MAX_VALUE) return;
-
-        int craftCount = isShiftClick
-            ? Math.min(maxCrafts, result.getMaxStackSize())
-            : 1;
-
-        // Consume ingredients, handling container items (buckets, bowls, etc.)
-        for (int i = 0; i < matrix.length; i++) {
-            if (matrix[i] == null || matrix[i].getType() == Material.AIR) continue;
-            int newAmount = matrix[i].getAmount() - craftCount;
-            if (newAmount <= 0) {
-                // Check if ingredient leaves a container (e.g. WATER_BUCKET → BUCKET)
-                ItemStack remainder = getContainerRemainder(matrix[i].getType());
-                matrix[i] = remainder;
-            } else {
-                matrix[i].setAmount(newAmount);
-            }
-        }
-        craftInv.setMatrix(matrix);
-
-        // Give result to player
-        ItemStack crafted = result.clone();
-        crafted.setAmount(craftCount * result.getAmount());
-        player.getInventory().addItem(crafted).values().forEach(drop ->
-            player.getWorld().dropItemNaturally(player.getLocation(), drop)
-        );
-
-        // Play sound
-        player.playSound(player.getLocation(), Sound.BLOCK_CRAFTER_CRAFT, 0.8f, 1.2f);
+        return freeSpace >= result.getAmount();
     }
 
     /**
@@ -158,4 +228,14 @@ public class AutoCraftManager implements Listener {
         };
     }
 
+    /**
+     * Internal sound helper.
+     */
+    private static class SoundUtil {
+        static void playCraftSound(Player player) {
+            try {
+                player.playSound(player.getLocation(), Sound.BLOCK_CRAFTER_CRAFT, 0.8f, 1.2f);
+            } catch (Exception ignored) {}
+        }
+    }
 }
