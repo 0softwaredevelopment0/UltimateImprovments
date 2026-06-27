@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.mechanics.security.botprotect.BotProtectionListener;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -28,7 +29,10 @@ public class BotProtectionModule extends PluginModule {
 
     @Override
     protected void onDisable(JavaPlugin plugin) {
-        // Nothing to clean up
+        if (listener != null) {
+            HandlerList.unregisterAll(listener);
+            this.listener = null;
+        }
     }
 
     @Override
