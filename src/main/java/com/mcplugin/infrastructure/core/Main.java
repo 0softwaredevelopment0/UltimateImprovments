@@ -176,6 +176,14 @@ public class Main extends JavaPlugin {
         // =========================
         CommandRegistrar.getInstance().registerAll(this);
 
+        // =========================
+        // ОТЛОЖЕННАЯ ПЕРЕСТРОЙКА СТРУКТУР ИЗ MARKER'ОВ
+        // При старте сервера загружены только спавн-чанки, поэтому scanAll()
+        // до initAll() находит почти ничего. Через 5 и 30 секунд после старта
+        // перестраиваем все структуры из загрузившихся чанков.
+        // =========================
+        StructureChunkListener.scheduleDelayedRebuild(this);
+
         getLogger().info("[PLUGIN] Plugin enabled!");
     }
 

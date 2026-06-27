@@ -164,7 +164,7 @@ public class BatteryManager implements Listener {
      * группирует по UUID, находит мир из worldUid в StructureData
      * и восстанавливает кластеры. После создания — чистит orphaned Marker'ы.
      */
-    private static void rebuildFromMarkers() {
+    public static void rebuildFromMarkers() {
         locationToCluster.clear();
         clustersById.clear();
         nextId = 1;

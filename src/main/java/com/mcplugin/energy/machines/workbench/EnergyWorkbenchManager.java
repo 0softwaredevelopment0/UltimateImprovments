@@ -49,7 +49,7 @@ public class EnergyWorkbenchManager {
     // =========================
     // SCAN FROM MARKER ENTITIES
     // =========================
-    private static void scanFromMarkers() {
+    public static void scanFromMarkers() {
         workbenches.clear();
 
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {

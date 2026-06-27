@@ -196,7 +196,7 @@ public class MagnetManager extends BukkitRunnable {
     // =========================
     // REBUILD FROM MARKERS
     // =========================
-    private static void rebuildFromMarkers() {
+    public static void rebuildFromMarkers() {
         locationToCluster.clear();
         clustersById.clear();
         nextId = 1;

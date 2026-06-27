@@ -66,7 +66,7 @@ public class LightningManager implements Listener {
         Main.getInstance().getLogger().info("[Lightning] Manager initialized.");
     }
 
-    private static void rebuildFromMarkers() {
+    public static void rebuildFromMarkers() {
         int count = 0;
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             if (!"lightning".equals(entry.getValue().type())) continue;

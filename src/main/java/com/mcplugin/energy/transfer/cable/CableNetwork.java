@@ -36,7 +36,7 @@ public class CableNetwork {
      * Батарейные блоки регенерируют свои CableNode через {@code BatteryManager.rebuildFromMarkers()}.
      * После создания — авто-соединяет соседние кабели.
      */
-    private static void rebuildFromMarkers() {
+    public static void rebuildFromMarkers() {
         int count = 0;
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             if (!"cable".equals(entry.getValue().type())) continue;
