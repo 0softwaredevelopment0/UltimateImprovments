@@ -143,6 +143,12 @@ public class Main extends JavaPlugin {
         mm.register(new ChatFilterModule());
         mm.register(new VoidProtectionModule());
 
+        // Security
+        mm.register(new BotProtectionModule());
+
+        // MOTD
+        mm.register(new MOTDModule());
+
         // Background tasks & updates
         mm.register(new TasksModule());
         mm.register(new AutoSaveModule());

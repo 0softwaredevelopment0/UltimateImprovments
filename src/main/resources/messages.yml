@@ -394,6 +394,14 @@ fishing:
   no_fish: "<dark_gray>[<red>⛔</red>] <red>No fish at all!</red></dark_gray>"
 
 # =========================
+# 🤖 Bot Protection
+# =========================
+bot_protection:
+  queue_full: "<red>❌ Сервер перегружен! Вы в очереди: позиция #{position}. Подождите и попробуйте снова.</red>"
+  queue_notify_op: "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>{count}</yellow> <red>игрок(а) пытались зайти за</red> <yellow>{seconds}s</yellow><red>. Включена очередь.</red>"
+  rejoin_cooldown: "<red>❌ Вы вышли слишком недавно! Подождите</red> <yellow>{seconds}</yellow> <red>сек перед повторным входом.</red>"
+
+# =========================
 # 🔄 Update Checker
 # =========================
 update:
