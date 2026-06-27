@@ -199,10 +199,16 @@ public class TabManager extends BukkitRunnable implements Listener {
     }
 
     // ── Listeners ──
+    // ВАЖНО: все event handler'ы используют TabManager.getInstance() вместо this,
+    // потому что после /mp reload Bukkit всё ещё держит ссылку на СТАРЫЙ instance
+    // (listenersRegistered=true → registerEvents() не вызывается заново).
+    // Если бы handler'ы использовали this.hideSpectators, они бы читали устаревшие
+    // значения из старого объекта, а не из текущего.
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onGameModeChange(PlayerGameModeChangeEvent event) {
-        if (!hideSpectators) return;
+        TabManager tab = instance;
+        if (tab == null || !tab.hideSpectators) return;
 
         Player player = event.getPlayer();
         GameMode newMode = event.getNewGameMode();
@@ -224,7 +230,8 @@ public class TabManager extends BukkitRunnable implements Listener {
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if (!hideSpectators) return;
+        TabManager tab = instance;
+        if (tab == null || !tab.hideSpectators) return;
 
         Player player = event.getPlayer();
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
@@ -242,7 +249,8 @@ public class TabManager extends BukkitRunnable implements Listener {
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onWorldChange(PlayerChangedWorldEvent event) {
-        if (!hideSpectators) return;
+        TabManager tab = instance;
+        if (tab == null || !tab.hideSpectators) return;
 
         Player player = event.getPlayer();
         if (player.getGameMode() == GameMode.SPECTATOR) {
@@ -257,7 +265,8 @@ public class TabManager extends BukkitRunnable implements Listener {
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
-        if (!hideSpectators) return;
+        TabManager tab = instance;
+        if (tab == null || !tab.hideSpectators) return;
 
         Player player = event.getPlayer();
         if (player.getGameMode() == GameMode.SPECTATOR) {
