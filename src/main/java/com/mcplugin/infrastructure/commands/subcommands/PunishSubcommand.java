@@ -579,6 +579,9 @@ public final class PunishSubcommand {
             sender.sendMessage(MessageUtil.parse(
                     "<green>✔</green> <white>Player</white> <yellow>" + targetName + "</yellow> <white>has been unbanned.</white>"
             ));
+            broadcastToModerators(
+                    "<green>✔</green> <yellow>" + targetName + "</yellow> <gray>unbanned by</gray> <white>" + sender.getName() + "</white>"
+            );
         } else {
             sender.sendMessage(MessageUtil.parse(
                     "<yellow>⚠</yellow> <white>No active ban found for</white> <yellow>" + targetName + "</yellow>"
@@ -621,6 +624,9 @@ public final class PunishSubcommand {
             sender.sendMessage(MessageUtil.parse(
                     "<green>✔</green> <white>Player</white> <yellow>" + targetName + "</yellow> <white>has been unmuted.</white>"
             ));
+            broadcastToModerators(
+                    "<green>🔊</green> <yellow>" + targetName + "</yellow> <gray>unmuted by</gray> <white>" + sender.getName() + "</white>"
+            );
         } else {
             sender.sendMessage(MessageUtil.parse(
                     "<yellow>⚠</yellow> <white>No active mute found for</white> <yellow>" + targetName + "</yellow>"
@@ -669,6 +675,10 @@ public final class PunishSubcommand {
                     "<green>✔</green> <white>Warn</white> <yellow>#" + warnId + "</yellow> <white>for</white> <yellow>" + targetName + "</yellow> <white>has been removed.</white>\n" +
                     "<gray>Reason: " + reason + "</gray>"
             ));
+            broadcastToModerators(
+                    "<green>✔</green> <yellow>" + targetName + "</yellow> <gray>warn</gray> <yellow>#" + warnId + "</yellow> <gray>removed by</gray> <white>" + sender.getName() + "</white>" +
+                    "<gray> | Reason:</gray> <white>" + reason + "</white>"
+            );
         } else {
             sender.sendMessage(MessageUtil.parse(
                     "<yellow>⚠</yellow> <white>No active warn with ID</white> <yellow>" + warnId + "</yellow> <white>found for</white> <yellow>" + targetName + "</yellow>"
