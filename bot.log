@@ -22,3 +22,71 @@ Traceback (most recent call last):
   File "C:\Users\danal\AppData\Local\Python\pythoncore-INFO:root:Sending code 753128 to chat 7984647039 for player rizer001
 INFO:aiohttp.access:127.0.0.1 [29/Jun/2026:03:00:34 +0600] "POST /send-code HTTP/1.1" 200 154 "-" "Java/25.0.3"
 .0', 3000): [winerror 10048] обычно разрешается только одно использование адреса сокета (протокол/сетевой адрес/порт)
+2026-06-29 04:15:37,858 [INFO] === BOT STARTING ===
+2026-06-29 04:15:37,859 [INFO] Python version: 3.14.6 (tags/v3.14.6:c63aec6, Jun 10 2026, 10:26:10) [MSC v.1944 64 bit (AMD64)]
+2026-06-29 04:15:37,859 [INFO] PID: 28100
+2026-06-29 04:15:42,489 [INFO] Creating Bot instance...
+2026-06-29 04:15:42,508 [INFO] === __main__ ===
+2026-06-29 04:15:42,508 [DEBUG] Using proactor: IocpProactor
+2026-06-29 04:15:42,510 [INFO] Running bot! https://t.me/OakworldSRVbot
+2026-06-29 04:15:42,510 [INFO] HTTP server on port 3000
+2026-06-29 04:15:42,510 [INFO] Creating web application...
+2026-06-29 04:15:42,514 [INFO] Cleanup task started
+2026-06-29 04:15:42,517 [INFO] Starting Telegram polling...
+2026-06-29 04:15:42,517 [INFO] Start polling
+2026-06-29 04:16:07,635 [INFO] === BOT STARTING ===
+2026-06-29 04:16:07,635 [INFO] Python version: 3.14.6 (tags/v3.14.6:c63aec6, Jun 10 2026, 10:26:10) [MSC v.1944 64 bit (AMD64)]
+2026-06-29 04:16:07,635 [INFO] PID: 25284
+2026-06-29 04:16:08,058 [INFO] [OK] aiohttp imported
+2026-06-29 04:16:12,121 [INFO] [OK] aiogram imported
+2026-06-29 04:16:12,121 [INFO] Creating Bot instance...
+2026-06-29 04:16:12,138 [INFO] [OK] Bot + Dispatcher created
+2026-06-29 04:16:12,138 [INFO] === __main__ ===
+2026-06-29 04:16:12,139 [DEBUG] Using proactor: IocpProactor
+2026-06-29 04:16:12,141 [INFO] Running bot! https://t.me/OakworldSRVbot
+2026-06-29 04:16:12,141 [INFO] HTTP server on port 3000
+2026-06-29 04:16:12,141 [INFO] Creating web application...
+2026-06-29 04:16:12,141 [INFO] [OK] Routes: POST /confirm-request, GET /check-confirm, GET /stats
+2026-06-29 04:16:12,141 [INFO] Cleanup task started
+2026-06-29 04:16:12,142 [INFO] [OK] HTTP server started on 0.0.0.0:3000
+2026-06-29 04:16:12,142 [INFO] Starting Telegram polling...
+2026-06-29 04:16:12,142 [INFO] Start polling
+2026-06-29 04:16:12,648 [INFO] Run polling for bot @OakworldSRVbot id=8770086137 - 'Oakworld'
+2026-06-29 04:16:12,757 [INFO] /start from chat_id=7984647039 username=Error404_555
+2026-06-29 04:16:12,758 [INFO] /start from chat_id=7984647039 username=Error404_555
+2026-06-29 04:16:12,759 [INFO] /start from chat_id=7984647039 username=Error404_555
+2026-06-29 04:16:12,760 [INFO] /start from chat_id=7984647039 username=Error404_555
+2026-06-29 04:16:12,761 [INFO] /start from chat_id=7984647039 username=Error404_555
+2026-06-29 04:16:12,762 [INFO] /start from chat_id=7984647039 username=Error404_555
+2026-06-29 04:16:12,763 [INFO] /start from chat_id=7984647039 username=Error404_555
+2026-06-29 04:16:13,307 [INFO] /start ответ отправлен chat_id=7984647039
+2026-06-29 04:16:13,307 [INFO] Update id=969214347 is handled. Duration 549 ms by bot id=8770086137
+2026-06-29 04:16:13,341 [INFO] /start ответ отправлен chat_id=7984647039
+2026-06-29 04:16:13,341 [INFO] Update id=969214352 is handled. Duration 577 ms by bot id=8770086137
+2026-06-29 04:16:13,395 [INFO] /start ответ отправлен chat_id=7984647039
+2026-06-29 04:16:13,396 [INFO] Update id=969214349 is handled. Duration 635 ms by bot id=8770086137
+2026-06-29 04:16:13,417 [INFO] /start ответ отправлен chat_id=7984647039
+2026-06-29 04:16:13,417 [INFO] Update id=969214350 is handled. Duration 655 ms by bot id=8770086137
+2026-06-29 04:16:13,443 [INFO] /start ответ отправлен chat_id=7984647039
+2026-06-29 04:16:13,443 [INFO] Update id=969214351 is handled. Duration 680 ms by bot id=8770086137
+2026-06-29 04:16:13,462 [INFO] /start ответ отправлен chat_id=7984647039
+2026-06-29 04:16:13,462 [INFO] Update id=969214348 is handled. Duration 703 ms by bot id=8770086137
+2026-06-29 04:16:13,496 [INFO] /start ответ отправлен chat_id=7984647039
+2026-06-29 04:16:13,496 [INFO] Update id=969214346 is handled. Duration 740 ms by bot id=8770086137
+2026-06-29 04:17:09,325 [INFO] === BOT STARTING ===
+2026-06-29 04:17:09,325 [INFO] Python version: 3.14.6 (tags/v3.14.6:c63aec6, Jun 10 2026, 10:26:10) [MSC v.1944 64 bit (AMD64)]
+2026-06-29 04:17:09,325 [INFO] PID: 27944
+2026-06-29 04:17:09,831 [INFO] [OK] aiohttp imported
+2026-06-29 04:17:13,887 [INFO] [OK] aiogram imported
+2026-06-29 04:17:13,887 [INFO] Creating Bot instance...
+2026-06-29 04:17:13,905 [INFO] [OK] Bot + Dispatcher created
+2026-06-29 04:17:13,905 [INFO] === __main__ ===
+2026-06-29 04:17:13,905 [DEBUG] Using proactor: IocpProactor
+2026-06-29 04:17:13,907 [INFO] Running bot! https://t.me/OakworldSRVbot
+2026-06-29 04:17:13,907 [INFO] HTTP server on port 3000
+2026-06-29 04:17:13,907 [INFO] Creating web application...
+2026-06-29 04:17:13,908 [INFO] [OK] Routes: POST /confirm-request, GET /check-confirm, GET /stats
+2026-06-29 04:17:13,908 [INFO] Cleanup task started
+2026-06-29 04:17:13,909 [INFO] [OK] HTTP server started on 0.0.0.0:3000
+2026-06-29 04:17:13,909 [INFO] Starting Telegram polling...
+2026-06-29 04:17:13,909 [INFO] Start polling

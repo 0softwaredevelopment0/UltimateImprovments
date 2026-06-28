@@ -14,6 +14,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -150,13 +151,13 @@ public class NetheriteUpgradeListener implements Listener {
         // Формируем строку с ИТОГОВЫМ значением атрибута (база + все улучшения)
         String upgradeLine;
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
-            double total = getTotalAttribute(meta, Attribute.ATTACK_DAMAGE);
+            double total = getTotalAttribute(meta, Attribute.ATTACK_DAMAGE, slot0.getType());
             upgradeLine = "<!italic><gradient:#8B4513:#DAA520>✦ Незерит — ⚔ " + DF.format(total) + " урона</gradient>";
         } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
-            double total = getTotalAttribute(meta, Attribute.BLOCK_BREAK_SPEED);
+            double total = getTotalAttribute(meta, Attribute.BLOCK_BREAK_SPEED, slot0.getType());
             upgradeLine = "<!italic><gradient:#8B4513:#DAA520>✦ Незерит — ⛏ " + DF.format(total) + " скорости</gradient>";
         } else {
-            double totalArmor = getTotalAttribute(meta, Attribute.ARMOR);
+            double totalArmor = getTotalAttribute(meta, Attribute.ARMOR, slot0.getType());
             upgradeLine = "<!italic><gradient:#8B4513:#DAA520>✦ Незерит — 🛡 " + DF.format(totalArmor)
                 + " защиты</gradient>";
         }
@@ -171,19 +172,47 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     /**
-     * Суммирует все ADD_NUMBER модификаторы указанного атрибута на предмете.
-     * Включает базовый модификатор предмета (8 для меча, 6 для нагрудника и т.д.)
-     * и все бонусы от улучшений.
+     * Определяет EquipmentSlot для получения базовых атрибутов материала.
+     * Оружие/инструменты — HAND, броня — HEAD/CHEST/LEGS/FEET.
      */
-    private static double getTotalAttribute(ItemMeta meta, Attribute attribute) {
-        var mods = meta.getAttributeModifiers(attribute);
-        if (mods == null || mods.isEmpty()) return 0;
+    private static EquipmentSlot getDefaultSlot(Material material) {
+        String name = material.name();
+        if (name.endsWith("_HELMET") || name.equals("TURTLE_HELMET")) return EquipmentSlot.HEAD;
+        if (name.endsWith("_CHESTPLATE")) return EquipmentSlot.CHEST;
+        if (name.endsWith("_LEGGINGS")) return EquipmentSlot.LEGS;
+        if (name.endsWith("_BOOTS")) return EquipmentSlot.FEET;
+        return EquipmentSlot.HAND;
+    }
+
+    /**
+     * Суммирует БАЗОВОЕ значение атрибута материала предмета
+     * (8 для меча, 6 для нагрудника и т.д.) + все ADD_NUMBER модификаторы
+     * от улучшений незеритом.
+     */
+    private static double getTotalAttribute(ItemMeta meta, Attribute attribute, Material material) {
         double total = 0;
-        for (AttributeModifier mod : mods) {
-            if (mod.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
-                total += mod.getAmount();
+
+        // 1) Базовое значение из материала (8 урона у меча, 6 защиты у нагрудника и т.д.)
+        EquipmentSlot slot = getDefaultSlot(material);
+        var defaultMods = material.getDefaultAttributeModifiers(slot);
+        if (defaultMods != null && defaultMods.containsKey(attribute)) {
+            for (AttributeModifier mod : defaultMods.get(attribute)) {
+                if (mod.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
+                    total += mod.getAmount();
+                }
             }
         }
+
+        // 2) Кастомные модификаторы от улучшений незеритом
+        var mods = meta.getAttributeModifiers(attribute);
+        if (mods != null) {
+            for (AttributeModifier mod : mods) {
+                if (mod.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
+                    total += mod.getAmount();
+                }
+            }
+        }
+
         return total;
     }
 

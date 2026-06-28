@@ -1,0 +1,19 @@
+[Unit]
+Description=Telegram 2FA bot for MC-Plugin (@OakworldSRVbot)
+Documentation=https://t.me/OakworldSRVbot
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+User=n7k4x2v9q1m8t5r3p6w0z4c1y7b2h8
+WorkingDirectory=/opt
+ExecStart=/usr/bin/python3 /opt/bot.py
+
+# Автоматический перезапуск при падении
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
