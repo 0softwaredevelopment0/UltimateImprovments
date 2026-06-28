@@ -37,6 +37,23 @@ public final class PunishSubcommand {
 
     private PunishSubcommand() {}
 
+    // =========================
+    // BROADCAST TO MODERATORS — рассылка уведомлений о наказаниях
+    // =========================
+
+    /**
+     * Отправляет уведомление о наказании всем онлайн-игрокам с правом {@code mcplugin.punish.notify}.
+     * Консольное логирование уже есть в {@link PunishmentManager#punish}.
+     */
+    private static void broadcastToModerators(String message) {
+        var parsed = MessageUtil.parse(message);
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p.hasPermission("mcplugin.punish.notify")) {
+                p.sendMessage(parsed);
+            }
+        }
+    }
+
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mcplugin.command.punish")) {
             sender.sendMessage(MessageUtil.parse(
@@ -158,6 +175,15 @@ public final class PunishSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<green>✔</green> <white>Player</white> <yellow>" + name + "</yellow> <white>has been banned.</white>" + scope
         ));
+
+        // Уведомление операторам
+        String duration = parsed.isPermanent ? "<red>permanent</red>" : "<yellow>" + parsed.timeStr + "</yellow>";
+        broadcastToModerators(
+                "<red>⛔</red> <yellow>" + name + "</yellow> <gray>banned by</gray> <white>" + sender.getName() + "</white>" +
+                "<gray> | Reason:</gray> <white>" + parsed.reason + "</white>" +
+                "<gray> | Duration:</gray> " + duration +
+                scope
+        );
         return true;
     }
 
@@ -220,8 +246,15 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Уведомление цели если онлайн
+        // Добавляем в кеш мута (если цель онлайн)
         if (target != null && target.isOnline()) {
+            PunishmentManager.PunishmentRecord muteRecord = PunishmentManager.getActiveMute(
+                    uuid, ip, hwId);
+            if (muteRecord != null) {
+                PunishJoinListener.addMuteCache(target, muteRecord);
+            }
+
+            // Уведомление цели
             String duration = parsed.isPermanent ? "permanent" : parsed.timeStr;
             target.sendMessage(MessageUtil.parse(
                     "<red>🔇 You have been muted!</red>\n" +
@@ -235,6 +268,15 @@ public final class PunishSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<green>✔</green> <white>Player</white> <yellow>" + name + "</yellow> <white>has been muted.</white>" + scope
         ));
+
+        // Уведомление операторам
+        String duration = parsed.isPermanent ? "<red>permanent</red>" : "<yellow>" + parsed.timeStr + "</yellow>";
+        broadcastToModerators(
+                "<red>🔇</red> <yellow>" + name + "</yellow> <gray>muted by</gray> <white>" + sender.getName() + "</white>" +
+                "<gray> | Reason:</gray> <white>" + parsed.reason + "</white>" +
+                "<gray> | Duration:</gray> " + duration +
+                scope
+        );
         return true;
     }
 
@@ -285,6 +327,12 @@ public final class PunishSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<green>✔</green> <white>Player</white> <yellow>" + target.getName() + "</yellow> <white>has been kicked.</white>"
         ));
+
+        // Уведомление операторам
+        broadcastToModerators(
+                "<red>👢</red> <yellow>" + target.getName() + "</yellow> <gray>kicked by</gray> <white>" + sender.getName() + "</white>" +
+                "<gray> | Reason:</gray> <white>" + reason + "</white>"
+        );
 
         // Если -ip или -hw — кикаем всех подходящих
         if (flags.ip || flags.hw) {
@@ -378,6 +426,15 @@ public final class PunishSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<green>✔</green> <white>Player</white> <yellow>" + name + "</yellow> <white>has been warned.</white>"
         ));
+
+        // Уведомление операторам
+        String duration = parsed.isPermanent ? "<red>permanent</red>" : "<yellow>" + parsed.timeStr + "</yellow>";
+        broadcastToModerators(
+                "<yellow>⚠</yellow> <yellow>" + name + "</yellow> <gray>warned by</gray> <white>" + sender.getName() + "</white>" +
+                "<gray> | Reason:</gray> <white>" + parsed.reason + "</white>" +
+                "<gray> | Duration:</gray> " + duration +
+                (parsed.ip ? " [IP]" : parsed.hw ? " [HW]" : "")
+        );
         return true;
     }
 

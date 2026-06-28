@@ -109,6 +109,13 @@ public class PunishJoinListener implements Listener {
     }
 
     /**
+     * Добавляет игрока в кеш мута (вызывается из PunishSubcommand.handleMute()).
+     */
+    public static void addMuteCache(Player player, PunishmentManager.PunishmentRecord record) {
+        mutedPlayers.put(player.getUniqueId(), record);
+    }
+
+    /**
      * Снимает мут с игрока (очищает кеш).
      */
     public static void removeMuteCache(Player player) {

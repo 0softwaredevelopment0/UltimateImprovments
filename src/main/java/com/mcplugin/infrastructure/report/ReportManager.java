@@ -442,6 +442,15 @@ public class ReportManager implements Listener {
     // ════════════════════════════════════════
 
     /**
+     * Проверяет, находится ли игрок в активной сессии модерации.
+     * Используется в {@link com.mcplugin.infrastructure.chat.ChatManager#onPlayerChat}
+     * чтобы не отправлять сообщения модератора в чат.
+     */
+    public static boolean isInModeration(Player player) {
+        return modSessions.containsKey(player.getUniqueId());
+    }
+
+    /**
      * Начинает сессию модерации для игрока.
      */
     public static void startModeration(Player moderator, int reportId, String modName) {
@@ -463,7 +472,7 @@ public class ReportManager implements Listener {
     /**
      * Обработка сообщений от игроков в режиме модерации.
      */
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();

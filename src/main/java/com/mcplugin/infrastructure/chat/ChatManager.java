@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.chat;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.report.ReportManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
 import net.kyori.adventure.text.Component;
@@ -132,6 +133,15 @@ public class ChatManager implements Listener {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
+
+        // =========================
+        // 🛡 MODERATION SESSION — не отправляем в чат сообщения модератора.
+        // НЕ отменяем ивент — ReportManager (тоже LOWEST priority) сам отменит
+        // и обработает сообщение (заключение/вердикт).
+        // =========================
+        if (ReportManager.isInModeration(player)) {
+            return;
+        }
 
         // =========================
         // 🛡 MUTE CHECK — проверяем, не замучен ли игрок
