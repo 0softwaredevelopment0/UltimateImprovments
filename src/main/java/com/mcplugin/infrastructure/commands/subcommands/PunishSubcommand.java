@@ -675,6 +675,17 @@ public final class PunishSubcommand {
                     "<green>✔</green> <white>Warn</white> <yellow>#" + warnId + "</yellow> <white>for</white> <yellow>" + targetName + "</yellow> <white>has been removed.</white>\n" +
                     "<gray>Reason: " + reason + "</gray>"
             ));
+
+            // Уведомление цели (если онлайн)
+            @SuppressWarnings("deprecation")
+            Player warnTarget = Bukkit.getPlayerExact(targetName);
+            if (warnTarget != null && warnTarget.isOnline()) {
+                warnTarget.sendMessage(MessageUtil.parse(
+                        "<green>✔</green> <white>Your warn</white> <yellow>#" + warnId + "</yellow> <white>has been removed.</white>\n" +
+                        "<gray>Reason: " + reason + "</gray>"
+                ));
+            }
+
             broadcastToModerators(
                     "<green>✔</green> <yellow>" + targetName + "</yellow> <gray>warn</gray> <yellow>#" + warnId + "</yellow> <gray>removed by</gray> <white>" + sender.getName() + "</white>" +
                     "<gray> | Reason:</gray> <white>" + reason + "</white>"
