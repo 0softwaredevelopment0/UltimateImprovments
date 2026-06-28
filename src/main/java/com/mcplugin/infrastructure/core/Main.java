@@ -215,6 +215,9 @@ public class Main extends JavaPlugin {
         // 🚫 Блокировка ванильной команды /whitelist — плагин использует свою (/mp whitelist)
         getServer().getPluginManager().registerEvents(new WhitelistCommandBlocker(), this);
 
+        // 🔄 Периодическая проверка whitelist/blacklist/opwhitelist онлайна
+        com.mcplugin.infrastructure.server.AccessListCheckTask.start(this);
+
         // =========================
         // 📋 BLACKLIST — чёрный список
         // =========================
@@ -257,6 +260,9 @@ public class Main extends JavaPlugin {
 
         // Сохраняем OP whitelist
         OpWhitelistManager.shutdown();
+
+        // Останавливаем периодическую проверку access control
+        com.mcplugin.infrastructure.server.AccessListCheckTask.stop();
 
         // Сбрасываем флаг регистрации TabManager listener'ов
         TabManager.resetListenerState();

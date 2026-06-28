@@ -44,15 +44,10 @@ public class OpWhitelistManager implements Listener {
     public static void init(Main plugin) {
         load();
         plugin.getServer().getPluginManager().registerEvents(new OpWhitelistManager(), plugin);
-        // Проверка OP каждые 3 секунды
-        taskId = Bukkit.getScheduler().runTaskTimer(plugin, OpWhitelistManager::checkAllOnline, 60L, 60L).getTaskId();
+        // ⚠ Периодическая проверка вынесена в AccessListCheckTask (configurable interval)
     }
 
     public static void shutdown() {
-        if (taskId != -1) {
-            Bukkit.getScheduler().cancelTask(taskId);
-            taskId = -1;
-        }
         // Данные уже сохранены в БД — ничего делать не нужно
     }
 
@@ -263,7 +258,7 @@ public class OpWhitelistManager implements Listener {
     // ════════════════════════════════════════
     // CHECK HELPERS
     // ════════════════════════════════════════
-    private static boolean isWhitelisted(String playerName) {
+    public static boolean isWhitelisted(String playerName) {
         String lower = playerName.toLowerCase().trim();
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement st = con.prepareStatement(
