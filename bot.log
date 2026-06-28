@@ -1,14 +1,17 @@
-INFO:root:Bot started on http://0.0.0.0:3000
-INFO:root:Sending code 123456 to chat test for player test
-ERROR:root:Error: Telegram server says - Bad Request: chat not found
-INFO:aiohttp.access:127.0.0.1 [29/Jun/2026:02:52:27 +0600] "POST /send-code HTTP/1.1" 500 222 "-" "curl/8.18.0"
-14-64\Lib\site-packages\aiohttp\web.py", line 502, in run_app
-    loop.run_until_complete(main_task)
-    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+Traceback (most recent call last):
+  File "C:\MC-Plugin\bot.py", line 96, in <module>
+    asyncio.run(main())
+    ~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\danal\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\runners.py", line 205, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Users\danal\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\runners.py", line 128, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
   File "C:\Users\danal\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\base_events.py", line 719, in run_until_complete
     return future.result()
            ~~~~~~~~~~~~~^^
-  File "C:\Users\danal\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiohttp\web.py", line 404, in _run_app
+  File "C:\MC-Plugin\bot.py", line 87, in main
     await site.start()
   File "C:\Users\danal\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiohttp\web_runner.py", line 138, in start
     self._server = await loop.create_server(
@@ -16,6 +19,6 @@ INFO:aiohttp.access:127.0.0.1 [29/Jun/2026:02:52:27 +0600] "POST /send-code HTTP
     ...<7 lines>...
     )
     ^
-  File "C:\Users\danal\AppData\Local\Python\pythoncore-3.14-64\Lib\asyncio\base_events.py", line 1637, in create_server
-    raise OSError(err.errno, msg) from None
-OSError: [Errno 10048] error while attempting to bind on address ('0.0.0.0', 3000): [winerror 10048] обычно разрешается только одно использование адреса сокета (протокол/сетевой адрес/порт)
+  File "C:\Users\danal\AppData\Local\Python\pythoncore-INFO:root:Sending code 753128 to chat 7984647039 for player rizer001
+INFO:aiohttp.access:127.0.0.1 [29/Jun/2026:03:00:34 +0600] "POST /send-code HTTP/1.1" 200 154 "-" "Java/25.0.3"
+.0', 3000): [winerror 10048] обычно разрешается только одно использование адреса сокета (протокол/сетевой адрес/порт)

@@ -16,17 +16,17 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 2FA система — генерация и проверка кодов через Telegram-бота.
+ * 2FA система — генерация и проверка кодов через Telegram Bot API.
  * <p>
  * Поток работы:
  * 1. Игрок включает 2FA: /mp auth 2fa setup &lt;telegram_chat_id&gt;
  * 2. При входе (после пароля): генерируется 6-значный код
- * 3. Код отправляется POST-запросом на бота (config: auth.2fa.bot_url)
+ * 3. Код отправляется напрямую через Telegram Bot API (config: auth.2fa.bot_token)
  * 4. Игрок вводит: /mp auth 2fa &lt;code&gt;
  * 5. Если код верный — вход разрешён
  * <p>
- * Telegram-бот должен принимать POST на /send-code с JSON:
- * { "chat_id": 123456789, "code": "482916", "player": "Steve" }
+ * Не требует запуска отдельного бота — плагин сам вызывает
+ * https://api.telegram.org/bot&lt;token&gt;/sendMessage
  */
 public class Auth2FA {
 
@@ -171,16 +171,17 @@ public class Auth2FA {
     }
 
     // =========================
-    // SEND CODE VIA HTTP → BOT
+    // SEND CODE VIA TELEGRAM BOT API (прямой вызов)
     // =========================
     private void sendCode(UUID uuid, String code, String chatId) {
-        String botUrl = getBotUrl();
-        if (botUrl == null || botUrl.isEmpty()) {
-            // Если бот не настроен — логируем код в консоль
+        String token = getBotToken();
+        if (token == null || token.isEmpty()) {
+            // Если токен не настроен — логируем код в консоль
             String playerName = org.bukkit.Bukkit.getPlayer(uuid) != null
                     ? org.bukkit.Bukkit.getPlayer(uuid).getName() : uuid.toString();
             Main.getInstance().getLogger().info(
                     "[Auth2FA] Code for " + playerName + " (chat: " + chatId + "): " + code);
+            Main.getInstance().getLogger().warning("[Auth2FA] Set auth.2fa.bot_token in config.yml to send via Telegram!");
             return;
         }
 
@@ -190,15 +191,23 @@ public class Auth2FA {
                 String playerName = org.bukkit.Bukkit.getOfflinePlayer(uuid).getName();
                 if (playerName == null) playerName = uuid.toString();
 
-                String json = "{\"chat_id\":\"" + escapeJson(chatId) + "\",\"code\":\"" + escapeJson(code) + "\",\"player\":\"" + escapeJson(playerName) + "\"}";
+                // Формируем текст сообщения
+                String text = "🔐 <b>Код подтверждения</b>\n\n"
+                        + "Игрок: <code>" + escapeHtml(playerName) + "</code>\n"
+                        + "Код: <b><code>" + escapeHtml(code) + "</code></b>\n\n"
+                        + "Никому не сообщайте этот код!";
 
-                URI uri = new URI(botUrl);
+                String json = "{\"chat_id\":" + escapeJson(chatId)
+                        + ",\"text\":\"" + escapeJson(text)
+                        + "\",\"parse_mode\":\"HTML\"}";
+
+                URI uri = new URI("https://api.telegram.org/bot" + token + "/sendMessage");
                 HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
+                conn.setConnectTimeout(8000);
+                conn.setReadTimeout(8000);
 
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(json.getBytes(StandardCharsets.UTF_8));
@@ -206,38 +215,50 @@ public class Auth2FA {
                 }
 
                 int responseCode = conn.getResponseCode();
-                // Consume response body to free connection
+
+                // Читаем ответ для отладки
+                StringBuilder responseBody = new StringBuilder();
                 try (java.io.InputStream is = conn.getInputStream()) {
-                    byte[] buf = new byte[256];
-                    while (is.read(buf) != -1) {}
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = is.read(buf)) != -1) {
+                        responseBody.append(new String(buf, 0, len, StandardCharsets.UTF_8));
+                    }
                 } catch (Exception ignored) {}
                 try (java.io.InputStream es = conn.getErrorStream()) {
                     if (es != null) {
-                        byte[] buf = new byte[256];
-                        while (es.read(buf) != -1) {}
+                        byte[] buf = new byte[1024];
+                        int len;
+                        while ((len = es.read(buf)) != -1) {
+                            responseBody.append(new String(buf, 0, len, StandardCharsets.UTF_8));
+                        }
                     }
                 } catch (Exception ignored) {}
 
-                if (responseCode < 200 || responseCode >= 300) {
-                    Main.getInstance().getLogger().warning(
-                            "[Auth2FA] Bot returned HTTP " + responseCode + " for " + playerName);
-                }
-
                 conn.disconnect();
+
+                if (responseCode == 200) {
+                    Main.getInstance().getLogger().info(
+                            "[Auth2FA] Code sent to " + playerName + " via Telegram (chat: " + chatId + ")");
+                } else {
+                    Main.getInstance().getLogger().warning(
+                            "[Auth2FA] Telegram API returned HTTP " + responseCode
+                                    + " for " + playerName + ": " + responseBody);
+                }
 
             } catch (Exception e) {
                 Main.getInstance().getLogger().warning(
-                        "[Auth2FA] HTTP send failed: " + e.getMessage());
+                        "[Auth2FA] Telegram send failed: " + e.getMessage());
             }
         });
     }
 
     // =========================
-    // GET BOT URL FROM CONFIG
+    // GET BOT TOKEN FROM CONFIG
     // =========================
-    private String getBotUrl() {
+    private String getBotToken() {
         try {
-            return Main.getInstance().getConfig().getString("auth.2fa.bot_url", "");
+            return Main.getInstance().getConfig().getString("auth.2fa.bot_token", "");
         } catch (Exception e) {
             return "";
         }
@@ -253,6 +274,14 @@ public class Auth2FA {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t");
+    }
+
+    private String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     // =========================
