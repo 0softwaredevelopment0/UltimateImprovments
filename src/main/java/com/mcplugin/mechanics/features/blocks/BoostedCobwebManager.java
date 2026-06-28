@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.util.Vector;
 
 /**
  * Полная остановка движения в паутине (cobweb).
@@ -50,7 +51,8 @@ public class BoostedCobwebManager implements Listener {
         // Проверяем блоки: у ног игрока и на уровне тела (Y+1)
         if (isInCobweb(from) || isInCobweb(to)) {
             event.setCancelled(true);
-            player.setVelocity(player.getVelocity().setX(0).setZ(0).setY(Math.min(player.getVelocity().getY(), 0)));
+            player.teleport(from);
+            player.setVelocity(new Vector(0, 0, 0));
             player.sendActionBar("§c🕸 Вы не можете двигаться!");
         }
     }
