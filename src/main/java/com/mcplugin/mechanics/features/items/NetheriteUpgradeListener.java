@@ -21,6 +21,8 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -104,27 +106,30 @@ public class NetheriteUpgradeListener implements Listener {
         var resultPdc = meta.getPersistentDataContainer();
         resultPdc.set(Keys.NETHERITE_UPGRADE, PersistentDataType.INTEGER, newUpgrades);
 
-        // ⚠ НЕ вызываем removeAttributeModifier(Attribute) — это удаляет
-        // ВСЕ модификаторы атрибута, включая БАЗОВЫЙ урон/скорость/защиту предмета!
-        // addAttributeModifier() с одинаковым key ЗАМЕНЯЕТ старый модификатор.
+        // ⚠ Paper/Leaf НЕ заменяет модификатор с тем же key — кидает исключение.
+        // Сначала удаляем старый модификатор по ключу, не трогая базовые атрибуты.
         NamespacedKey modKey = new NamespacedKey(Main.getInstance(), "netherite_upgrade");
         double upgradeAmount = newUpgrades * PER_SCRAP_BONUS;
 
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
             // Меч: +0.1 урона атаки за скрап
+            removeOurModifier(meta, Attribute.ATTACK_DAMAGE, modKey);
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, new AttributeModifier(
                 modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
             // Инструменты: +0.1 скорости копания за скрап
+            removeOurModifier(meta, Attribute.BLOCK_BREAK_SPEED, modKey);
             meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(
                 modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_ARMOR.contains(slot0.getType())) {
             // Броня: +0.1 к защите и +0.05 к прочности брони за скрап
+            removeOurModifier(meta, Attribute.ARMOR, modKey);
             meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(
                 modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY
             ));
+            removeOurModifier(meta, Attribute.ARMOR_TOUGHNESS, modKey);
             meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, new AttributeModifier(
                 modKey, upgradeAmount * 0.5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY
             ));
@@ -182,6 +187,28 @@ public class NetheriteUpgradeListener implements Listener {
         if (name.endsWith("_LEGGINGS")) return EquipmentSlot.LEGS;
         if (name.endsWith("_BOOTS")) return EquipmentSlot.FEET;
         return EquipmentSlot.HAND;
+    }
+
+    /**
+     * Удаляет модификатор с указанным ключом из атрибута, если он есть.
+     * Используется перед addAttributeModifier, так как Paper/Leaf не заменяет
+     * модификатор с тем же key, а кидает IllegalArgumentException.
+     */
+    private static void removeOurModifier(ItemMeta meta, Attribute attribute, NamespacedKey key) {
+        var allMods = meta.getAttributeModifiers();
+        if (allMods == null || allMods.isEmpty()) return;
+
+        Multimap<Attribute, AttributeModifier> newMods = ArrayListMultimap.create();
+        for (var entry : allMods.entries()) {
+            Attribute attr = entry.getKey();
+            AttributeModifier mod = entry.getValue();
+            // Пропускаем только наш модификатор, остальные (включая базовые) сохраняем
+            if (attr == attribute && key.equals(mod.getKey())) {
+                continue;
+            }
+            newMods.put(attr, mod);
+        }
+        meta.setAttributeModifiers(newMods);
     }
 
     /**
