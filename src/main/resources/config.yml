@@ -596,12 +596,7 @@ server_overload_warning:
 
 chat_ping:
   enabled: true
-
-  # Стиль пинга — MiniMessage формат для @меток
-  # %s заменяется на ник игрока
   ping_style: "<underlined><color:#FFAA00>@%s</color></underlined>"
-
-  # Звук пинга
   sound_name: "ENTITY_EXPERIENCE_ORB_PICKUP"
   sound_volume: 0.5
   sound_pitch: 1.5
@@ -641,13 +636,12 @@ bot_protection:
   rejoin_cooldown_seconds: 3
 
 home:
-report:
-  expire_time: "3d"
-
-home:
   max_homes: 10
   name_min_length: 1
   name_max_length: 16
+
+report:
+  expire_time: "3d"
 
 changedimmension:
   default_world: "pocketworld"
@@ -812,4 +806,4 @@ chat:
 access_control:
   check_interval_ticks: 20
 
-plugin_version: "1.8.74"
+plugin_version: "1.8.75"
