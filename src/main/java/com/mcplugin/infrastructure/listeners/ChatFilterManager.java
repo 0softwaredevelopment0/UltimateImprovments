@@ -91,7 +91,19 @@ public class ChatFilterManager implements Listener {
         }
 
         // 2. Загружаем сложные regex-выражения
+        // Если в конфиге нет regex_patterns — используем хардкодные дефолты (чтобы избежать
+        // проблем с SnakeYAML 2.6, который не переваривает \p{L} в двойных кавычках YAML)
         List<String> rawRegexes = cfg.getStringList("chat_filter.regex_patterns");
+        if (rawRegexes == null || rawRegexes.isEmpty()) {
+            rawRegexes = new ArrayList<>();
+            rawRegexes.add(".*(?<![\\p{L}])(?:бля(?:дь|ть|т)|бляд(?:ь|и|ина)|еб(?:ать|ан|лан|уч)|хуй|хуйня|пизд(?:а|ец|еть)|муд(?:ак|ила)|гандон)(?![\\p{L}]).*");
+            rawRegexes.add(".*(?<![\\p{L}])(?:долбо(?:еб|ёб)|идиот|дебил|кретин|имбецил|придурок)(?![\\p{L}]).*");
+            rawRegexes.add(".*п[^а-яёa-z0-9]{0,3}и[^а-яёa-z0-9]{0,3}д[^а-яёa-z0-9]{0,3}(?:а|о)?[^а-яёa-z0-9]{0,3}р.*");
+            rawRegexes.add(".*х[^а-яёa-z0-9]{0,3}у[^а-яёa-z0-9]{0,3}й.*");
+            rawRegexes.add(".*[А-ЯЁA-Z]{15,}.*");
+            rawRegexes.add(".*(.)\\1{8,}.*");
+            rawRegexes.add(".*ж[^а-яёa-z0-9]{0,3}[иi1і][^а-яёa-z0-9]{0,3}р(?:н(?:ы(?:й|е|х|м)?|ая|ое)?|уха|ок|дяй)? .*");
+        }
         if (rawRegexes != null) {
             for (String raw : rawRegexes) {
                 Pattern p = compileRegexPattern(raw);
