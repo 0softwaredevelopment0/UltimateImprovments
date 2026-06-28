@@ -151,23 +151,42 @@ public final class ChgOpSubcommand {
 
         boolean currentlyOp = target.isOp();
         String actionRu = currentlyOp ? "снять" : "выдать";
-        String actionColor = currentlyOp ? "<red>REVOKE</red>" : "<green>GRANT</green>";
 
         // Сохраняем подтверждение
         pendingConfirmations.put(player.getUniqueId(), target.getName());
 
         // Показываем диалог подтверждения
         player.sendMessage("");
-        player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        player.sendMessage("§8┃   §6⚡ Operator Status Change");
-        player.sendMessage("§8┃");
-        player.sendMessage("§8┃   §7Player: §f" + target.getName());
-        player.sendMessage("§8┃   §7Current: " + (currentlyOp ? "§e[OP]" : "§7[NOT OP]"));
-        player.sendMessage("§8┃   §7Action: " + (currentlyOp ? "§cREVOKE" : "§aGRANT"));
-        player.sendMessage("§8┃");
-        player.sendMessage("§8┃   §7Are you sure you want to " + actionRu + " OP");
-        player.sendMessage("§8┃   §7for §f" + target.getName() + "§7?");
-        player.sendMessage("§8┃");
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</dark_gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gold>⚡ Operator Status Change</gold>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>Player:</gray> <white>" + target.getName() + "</white>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>Current:</gray> " + (currentlyOp ? "<yellow>[OP]</yellow>" : "<gray>[NOT OP]</gray>")
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>Action:</gray> " + (currentlyOp ? "<red>REVOKE</red>" : "<green>GRANT</green>")
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>Are you sure you want to " + actionRu + " OP</gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>for</gray> <white>" + target.getName() + "</white><gray>?</gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray>"
+        ));
 
         // Кнопка подтверждения — кликабельная
         Component confirmBtn = MessageUtil.parse(
@@ -185,10 +204,18 @@ public final class ChgOpSubcommand {
                  MessageUtil.parse("<gray>Click to cancel and return to player list</gray>")));
         player.sendMessage(cancelBtn);
 
-        player.sendMessage("§8┃");
-        player.sendMessage("§8┃   §7Or type again: §f/mp chgop toggle " + target.getName());
-        player.sendMessage("§8┃   §7to confirm and " + actionRu + " OP rights.");
-        player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>Or type again:</gray> <white>/mp chgop toggle " + target.getName() + "</white>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>to confirm and " + actionRu + " OP rights.</gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</dark_gray>"
+        ));
         player.sendMessage("");
 
         return true;
