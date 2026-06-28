@@ -38,6 +38,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
@@ -190,6 +191,48 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "modreport" -> ModReportSubcommand.execute(sender, args);
             case "repstatus" -> RepStatusSubcommand.execute(sender);
             case "chgop" -> ChgOpSubcommand.execute(sender, args);
+            case "op" -> {
+                if (!(sender instanceof ConsoleCommandSender)) {
+                    sender.sendMessage(MessageUtil.parse("<red>❌ This command is console-only!</red>"));
+                    yield true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp op <nick></white>"));
+                    yield true;
+                }
+                @SuppressWarnings("deprecation")
+                Player target = Bukkit.getPlayerExact(args[1]);
+                if (target == null) {
+                    sender.sendMessage(MessageUtil.parse("<red>❌ Player</red> <yellow>" + args[1] + "</yellow> <red>not found or not online!</red>"));
+                    yield true;
+                }
+                target.setOp(true);
+                target.sendMessage(MessageUtil.parse("<gold>⚡</gold> <white>Operator status granted by console.</white>"));
+                sender.sendMessage(MessageUtil.parse("<green>✔</green> <gold>Operator</gold> <white>status granted to</white> <yellow>" + target.getName() + "</yellow><white>.</white>"));
+                Bukkit.getLogger().info("[OpManager] Console granted OP to " + target.getName());
+                yield true;
+            }
+            case "deop" -> {
+                if (!(sender instanceof ConsoleCommandSender)) {
+                    sender.sendMessage(MessageUtil.parse("<red>❌ This command is console-only!</red>"));
+                    yield true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp deop <nick></white>"));
+                    yield true;
+                }
+                @SuppressWarnings("deprecation")
+                Player target = Bukkit.getPlayerExact(args[1]);
+                if (target == null) {
+                    sender.sendMessage(MessageUtil.parse("<red>❌ Player</red> <yellow>" + args[1] + "</yellow> <red>not found or not online!</red>"));
+                    yield true;
+                }
+                target.setOp(false);
+                target.sendMessage(MessageUtil.parse("<red>⛔</red> <white>Operator status revoked by console.</white>"));
+                sender.sendMessage(MessageUtil.parse("<green>✔</green> <gold>Operator</gold> <white>status revoked from</white> <yellow>" + target.getName() + "</yellow><white>.</white>"));
+                Bukkit.getLogger().info("[OpManager] Console revoked OP from " + target.getName());
+                yield true;
+            }
             case "opwhitelist" -> OpWhitelistSubcommand.execute(sender, args);
             case "punish" -> PunishSubcommand.execute(sender, args);
             case "whitelist" -> WhitelistSubcommand.execute(sender, args);
@@ -241,7 +284,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             completions.addAll(List.of("help", "checkver", "updatejar", "cilist", "toggleradview",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
-                    "auth", "chgdim", "chgop", "vanish", "notes",
+                    "auth", "chgdim", "chgop", "op", "deop", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "togglebb", "togglesb", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
                     "askcords", "forcesuicide", "bc", "maint", "opwhitelist",
@@ -285,6 +328,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("maint")) {
             completions.addAll(MaintSubcommand.tabComplete(args));
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("op") || args[0].equalsIgnoreCase("deop"))) {
+            for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("chgop")) {
             completions.addAll(ChgOpSubcommand.tabComplete(args));
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("opwhitelist")) {
