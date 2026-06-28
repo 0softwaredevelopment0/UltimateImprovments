@@ -4,7 +4,7 @@ import com.mcplugin.infrastructure.core.Keys;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -71,7 +71,7 @@ public class NetheriteUpgradeListener implements Listener {
         ALL_NETHERITE.addAll(NETHERITE_ARMOR);
     }
 
-    private static final MiniMessage MM = MiniMessage.miniMessage();
+    private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
     /** +0.1 flat за каждый скрап (ADD_NUMBER) */
     private static final double PER_SCRAP_BONUS = 0.1;
     private static final DecimalFormat DF = new DecimalFormat("0.0");
@@ -146,9 +146,10 @@ public class NetheriteUpgradeListener implements Listener {
 
         List<Component> filteredLore = new ArrayList<>();
         for (Component c : lore) {
-            // Сериализуем через MiniMessage — корректно работает с MiniMessage-компонентами
-            // (LegacyComponentSerializer НЕ может правильно сериализовать градиенты)
-            String text = MM.serialize(c);
+            // Используем PlainText — вытаскивает ТОЛЬКО видимый текст, без форматирования.
+            // В отличие от MM.serialize(), PlainText работает с ЛЮБЫМИ компонентами:
+            // будь то MiniMessage, NBT-десериализованные, или Legacy.
+            String text = PLAIN.serialize(c);
             // Удаляем старые строки незеритового улучшения
             if (!text.contains("✦ Незерит") && !text.contains("Незеритовое улучшение")) {
                 filteredLore.add(c);
