@@ -27,6 +27,7 @@ import com.mcplugin.infrastructure.commands.subcommands.WhitelistSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.BlacklistSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReportSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReportsSubcommand;
+import com.mcplugin.infrastructure.report.ReportManager;
 import com.mcplugin.infrastructure.commands.subcommands.ModReportSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.RepStatusSubcommand;
 import com.mcplugin.infrastructure.commands.AskCordsManager;
@@ -292,6 +293,18 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && args[0].equalsIgnoreCase("reports")) {
             completions.addAll(List.of("list", "add", "remove"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("reports") && args[1].equalsIgnoreCase("add")) {
+            // Suggest report IDs from pending reports (for add)
+            for (var r : ReportManager.getAllReports()) {
+                if ("pending".equals(r.status)) completions.add(String.valueOf(r.id));
+            }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("reports") && args[1].equalsIgnoreCase("remove")) {
+            // Suggest report IDs that are in the mod queue (for remove)
+            for (var r : ReportManager.getAllReports()) {
+                completions.add(String.valueOf(r.id));
+            }
+        } else if (args.length == 4 && args[0].equalsIgnoreCase("reports") && args[1].equalsIgnoreCase("add")) {
+            completions.add("<name>"); // hint for the mod queue name
         } else if (args.length == 2 && args[0].equalsIgnoreCase("modreport")) {
             completions.add("<name>");
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str"))) {
