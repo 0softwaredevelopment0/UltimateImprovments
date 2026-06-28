@@ -134,8 +134,8 @@ public class Auth2FA {
     // GENERATE CODE
     // =========================
     public String generateCode(UUID uuid) {
-        // 6-значный код
-        int code = 100000 + random.nextInt(900000);
+        // 9-значный код
+        int code = 100000000 + random.nextInt(900000000);
         String codeStr = String.valueOf(code);
 
         // Получаем chat_id
@@ -191,7 +191,7 @@ public class Auth2FA {
                 String playerName = org.bukkit.Bukkit.getOfflinePlayer(uuid).getName();
                 if (playerName == null) playerName = uuid.toString();
 
-                // Формируем текст сообщения
+                // Формируем текст сообщения (с реальными newline — escapeJson сам превратит их в \\n для JSON)
                 String text = "🔐 <b>Код подтверждения</b>\n\n"
                         + "Игрок: <code>" + escapeHtml(playerName) + "</code>\n"
                         + "Код: <b><code>" + escapeHtml(code) + "</code></b>\n\n"
