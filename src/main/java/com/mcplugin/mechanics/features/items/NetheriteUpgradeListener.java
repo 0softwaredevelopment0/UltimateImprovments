@@ -126,13 +126,15 @@ public class NetheriteUpgradeListener implements Listener {
             ));
         } else if (NETHERITE_ARMOR.contains(slot0.getType())) {
             // Броня: +0.1 к защите и +0.05 к прочности брони за скрап
+            // Важно: НЕ EquipmentSlotGroup.ANY — иначе броня даёт защиту даже в руке!
+            EquipmentSlotGroup armorSlot = getArmorSlotGroup(slot0.getType());
             removeOurModifier(meta, Attribute.ARMOR, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(
-                modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY
+                modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, armorSlot
             ));
             removeOurModifier(meta, Attribute.ARMOR_TOUGHNESS, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, new AttributeModifier(
-                modKey, upgradeAmount * 0.5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY
+                modKey, upgradeAmount * 0.5, AttributeModifier.Operation.ADD_NUMBER, armorSlot
             ));
         }
 
@@ -221,6 +223,19 @@ public class NetheriteUpgradeListener implements Listener {
         if (name.endsWith("_LEGGINGS")) return EquipmentSlot.LEGS;
         if (name.endsWith("_BOOTS")) return EquipmentSlot.FEET;
         return EquipmentSlot.HAND;
+    }
+
+    /**
+     * Определяет EquipmentSlotGroup для брони (HEAD/CHEST/LEGS/FEET).
+     * Используется вместо ANY, чтобы броня давала защиту ТОЛЬКО когда надета.
+     */
+    private static EquipmentSlotGroup getArmorSlotGroup(Material material) {
+        String name = material.name();
+        if (name.endsWith("_HELMET")) return EquipmentSlotGroup.HEAD;
+        if (name.endsWith("_CHESTPLATE")) return EquipmentSlotGroup.CHEST;
+        if (name.endsWith("_LEGGINGS")) return EquipmentSlotGroup.LEGS;
+        if (name.endsWith("_BOOTS")) return EquipmentSlotGroup.FEET;
+        return EquipmentSlotGroup.ANY; // fallback
     }
 
     /**
