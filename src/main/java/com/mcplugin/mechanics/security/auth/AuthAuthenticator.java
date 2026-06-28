@@ -268,7 +268,8 @@ public class AuthAuthenticator {
         player.sendMessage("");
         player.sendMessage("§6✦ §f2FA §8— §7Двухфакторная аутентификация");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        player.sendMessage("§eКод отправлен вам в Telegram!");
+        player.sendMessage("§eКод отправлен в Telegram!");
+        player.sendMessage("§7Бот: §f@OakworldSRVbot");
         player.sendMessage("§7Введите код для входа:");
         player.sendMessage("§e/mp auth 2fa §7<§ocode§7>");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
