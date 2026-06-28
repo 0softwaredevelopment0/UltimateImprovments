@@ -600,28 +600,262 @@
   mcplugin.show.brand          — видеть реальный brand
 
 ╔══════════════════════════════════════════════════════╗
-║           ПЛЕЙСХОЛДЕРЫ                              ║
+║           ПЛЕЙСХОЛДЕРЫ — ПОЛНЫЙ СПРАВОЧНИК          ║
 ╚══════════════════════════════════════════════════════╝
 
-  Встроенные (работают без PAPI):
-    {online}         — текущий онлайн
-    {max_players}    — макс игроков
-    {tps}            — TPS (форматированные)
-    {mspt}           — MSPT
-    {uptime}         — аптайм сервера
-    {ram_used}       — используемая RAM
-    {ram_max}        — максимальная RAM
-    {player_name}    — имя игрока
-    {player_ping}    — пинг игрока (ms)
-    {player_health}  — здоровье
-    {player_food}    — сытость
-    {world_name}     — название мира
+  Все плейсхолдеры разрешаются через PlaceholderResolver.
+  Работают в формате MiniMessage: цвета, градиенты, теги.
+  Порядок разрешения: Встроенные → Ping → Динамические → PAPI.
 
-  PAPI (если установлен PlaceholderAPI):
-    %luckperms_prefix%, %luckperms_suffix%
-    %luckperms_primary_group_name%
-    %player_world%, %vault_eco_balance%
-    и любые другие PAPI плейсхолдеры
+────────────────────────────────────────────────
+ 1. 👤 ПЛЕЙСХОЛДЕРЫ ИГРОКА (без PAPI)
+────────────────────────────────────────────────
+
+  {player_name}           — ник игрока
+  {player_displayname}    — отображаемое имя (с префиксами)
+  {player_uuid}           — UUID игрока
+  {player_ping}           — пинг в мс (только число)
+  {player_ping_color}     — пинг с HEX-цветом (MiniMessage <#RRGGBB>)
+  {player_ping_gradient}  — пинг с MiniMessage-градиентом
+  {player_gamemode}       — режим игры (survival/creative/...)
+  {player_health}         — здоровье (число)
+  {player_food}           — сытость (число)
+  {player_level}          — уровень опыта
+  {player_xp}             — прогресс опыта (0-100%)
+
+────────────────────────────────────────────────
+ 2. 🌍 ПЛЕЙСХОЛДЕРЫ МИРА (без PAPI)
+────────────────────────────────────────────────
+
+  {world_name}            — название текущего мира
+  {world_players}         — количество игроков в текущем мире
+
+────────────────────────────────────────────────
+ 3. 🖥 ПЛЕЙСХОЛДЕРЫ СЕРВЕРА (без PAPI)
+────────────────────────────────────────────────
+
+  {online}                — текущий онлайн
+  {max_players}           — максимальное количество игроков
+  {tps}                   — TPS (форматированное, 0.00)
+  {tps_color}             — TPS с HEX-цветом (зелёный → жёлтый → красный)
+  {mspt}                  — MSPT (миллисекунды на тик)
+  {mspt_color}            — MSPT с HEX-цветом
+  {ram}                   — использование RAM в % (напр "45.2%")
+  {ram_color}             — RAM с HEX-цветом
+  {uptime}                — аптайм сервера (напр "12d 5h 30m")
+  {server_name}           — имя сервера (Bukkit.getName())
+  {server_version}        — версия сервера
+
+────────────────────────────────────────────────
+ 4. 🔤 LUCKPERMS (без PAPI, встроенный)
+────────────────────────────────────────────────
+
+  {prefix}                — префикс группы (из LuckPerms)
+  {suffix}                — суффикс группы (из LuckPerms)
+  {group}                 — название первичной группы
+
+  ⚠ Для работы нужен LuckPerms на сервере.
+  Автоматически определяется при старте плагина.
+
+────────────────────────────────────────────────
+ 5. ⏱ ДИНАМИЧЕСКИЕ ПЛЕЙСХОЛДЕРЫ (time-based)
+────────────────────────────────────────────────
+
+  Позволяют получать min/avg/max метрик за временной период.
+  Статистика собирается раз в секунду (буфер: ~24 часа).
+
+  Формат:
+    {<метрика>[_min|max|avg]_<время>[_color]}
+
+  Метрики:
+    tps     — TPS
+    mspt    — MSPT (ms/tick)
+    online  — количество игроков
+    ram     — использование RAM (%)
+
+  Формат времени (<время>):
+    1s      — за последнюю 1 секунду
+    5m      — за последние 5 минут
+    1h      — за последний 1 час
+    1d      — за последний 1 день
+    ss      — за всю серверную сессию
+
+  Суффиксы:
+    _min    — минимальное значение за период
+    _max    — максимальное значение за период
+    _avg    — среднее значение за период (по умолчанию)
+    (без суффикса) — среднее за период
+    _color  — значение с HEX-цветом (MiniMessage <#RRGGBB>)
+            только для tps, mspt, ram (online без цвета)
+
+  Примеры:
+    {tps}             — TPS сейчас
+    {tps_5m}          — средний TPS за 5 минут
+    {tps_min_1h}      — минимальный TPS за час
+    {tps_max_ss}      — максимальный TPS за сессию
+    {tps_1s_color}    — TPS за 1 сек с цветом
+    {mspt_5m}         — средний MSPT за 5 минут
+    {mspt_max_1h}     — максимальный MSPT за час
+    {mspt_30s_color}  — MSPT за 30 сек с цветом
+    {online_max_1h}   — максимальный онлайн за час
+    {online_min_ss}   — минимальный онлайн за сессию
+    {ram}             — RAM сейчас
+    {ram_avg_5m}      — средняя RAM за 5 минут
+    {ram_min_1h}      — минимальная RAM за час
+    {ram_color}       — RAM с цветом
+
+────────────────────────────────────────────────
+ 6. 📶 ПИНГ-ПЛЕЙСХОЛДЕРЫ
+────────────────────────────────────────────────
+
+  Формат:
+    {ping[_min|max|avg]_<время>_<scope>[_color]}
+
+  Scope (область):
+    all     — средний пинг ВСЕХ онлайн игроков (из StatsTracker)
+    ys      — пинг СЕБЯ (текущий, без истории)
+    <ник>   — пинг конкретного игрока (текущий, без истории)
+             например {ping_1s_Steve} или {ping_Steve_color}
+
+  Без scope — то же что и ys (свой пинг)
+
+  Примеры:
+    {ping}              — средний пинг всех игроков
+    {ping_5m}           — средний пинг всех за 5 минут
+    {ping_ys}           — свой текущий пинг
+    {ping_all}          — средний пинг всех сейчас
+    {ping_min_30s_all}  — минимальный пинг всех за 30 сек
+    {ping_max_1h_all}   — максимальный пинг всех за час
+    {ping_ys_color}     — свой пинг с градиентом
+    {ping_1s_Steve}     — пинг игрока Steve
+    {ping_Steve_color}  — пинг Steve с цветом
+
+  Цветовой градиент пинга:
+    0-200ms   — зелёный     (#00AA00 → #55FF55)
+    200-400ms — светло-зелёный → жёлтый (#55FF55 → #FFFF55)
+    400-600ms — жёлтый → оранжевый (#FFFF55 → #FFAA00)
+    600-800ms — оранжевый → красный (#FFAA00 → #FF5555)
+    800-1000ms— красный → тёмно-красный (#FF5555 → #AA0000)
+
+────────────────────────────────────────────────
+ 7. 🟢 PAPI (PlaceholderAPI)
+────────────────────────────────────────────────
+
+  Если на сервере установлен PlaceholderAPI — любые PAPI-плейсхолдеры
+  работают наравне со встроенными. Примеры:
+
+    %luckperms_prefix%           — префикс из LuckPerms
+    %luckperms_suffix%           — суффикс из LuckPerms
+    %luckperms_primary_group_name%  — название группы
+    %luckperms_primary_group_weight% — вес группы
+    %player_world%               — название мира
+    %player_xp%                  — опыт (PAPI версия)
+    %vault_eco_balance%          — баланс (Vault)
+    %player_health%              — здоровье (PAPI версия)
+    ... и любые другие
+
+  PAPI-плейсхолдеры разрешаются ПОСЛЕ встроенных, поэтому
+  можно комбинировать: {player_name} %luckperms_prefix%
+
+────────────────────────────────────────────────
+ 8. 🔔 ПИНГИ В ЧАТЕ (@mentions)
+────────────────────────────────────────────────
+
+  Работают в сообщениях чата (не в формате, а в тексте сообщения).
+  Автоматически заменяются на подчёркнутый оранжевый ник.
+
+  @everyone       — пинг всех онлайн (кроме себя)
+  @<ник>          — пинг конкретного игрока (напр @Steve)
+  @non-op         — пинг всех без OP
+  @is-admin       — пинг всех с правом mcplugin.admin/mcplugin.*
+  @is-non-admin   — пинг всех без админ-прав
+
+  Пропингованные игроки слышат звук и получают уведомление.
+  Стиль пинга настраивается в config.yml → chat_ping.ping_style
+
+────────────────────────────────────────────────
+ 9. 📍 ГДЕ РАБОТАЮТ ПЛЕЙСХОЛДЕРЫ
+────────────────────────────────────────────────
+
+  ┌──────────────────────────┬──────────────────────────────────┐
+  │ ГДЕ                      │ КАКИЕ ПЛЕЙСХОЛДЕРЫ               │
+  ├──────────────────────────┼──────────────────────────────────┤
+  │ chat.format              │ Любые + {message} (сообщение)     │
+  │ chat.groups.formats.*    │ Любые + {message}                │
+  │ chat.worlds.*            │ Любые + {message}                │
+  │                          │                                  │
+  │ tab.header               │ Любые (per-player)               │
+  │ tab.footer               │ Любые (per-player)               │
+  │ tab.player_list.format   │ Любые (напр %prefix%{name}%suffix%)│
+  │ tab.player_list.objective_prefix  │ Любые                    │
+  │ tab.player_list.objective_suffix  │ Любые                    │
+  │                          │                                  │
+  │ bossbar.format           │ Любые                            │
+  │                          │                                  │
+  │ scoreboard.boards.*.title  │ Любые                          │
+  │ scoreboard.boards.*.lines  │ Любые                          │
+  │                          │                                  │
+  │ belowname.format         │ Любые (per-player)               │
+  │                          │                                  │
+  │ motd.line1               │ {online}, {max_players},          │
+  │ motd.line2               │ {tps}, {uptime}, {server_name},  │
+  │                          │ {player_name} не работает (нет p)|
+  │                          │                                  │
+  │ Сообщения игроков        │ Любые (если message_placeholders:│
+  │ (если message_placeholders: true)│ true в config.yml)        │
+  │                          │                                  │
+  │ Пинг-плейсхолдеры        │ {ping_<time>_<ник>} — только     │
+  │ с ником                  │ если игрок онлайн                 │
+  └──────────────────────────┴──────────────────────────────────┘
+
+  ⚠ {player_name} НЕ работает в MOTD — там нет контекста игрока.
+  ⚠ _color версии содержат MiniMessage-тег (<#RRGGBB>),
+    не переопределяются внешним MiniMessage-форматированием.
+  ⚠ Обычные версии (без _color) — просто число/строка,
+    переопределяются внешним MiniMessage.
+
+────────────────────────────────────────────────
+ ПРИМЕРЫ КОНФИГУРАЦИИ
+────────────────────────────────────────────────
+
+  ── Чат ──
+  chat:
+    format: "<dark_gray>[</dark_gray><gray>{group}</gray><dark_gray>]</dark_gray> {player_name}<dark_gray>:</dark_gray> <white>{message}</white>"
+    message_placeholders: true
+
+  ── Таб ──
+  tab:
+    header:
+      - "<gradient:#FFAA00:#FF5555>           My Server           </gradient>"
+      - "<gray>Online:</gray> <white>{online}</white><dark_gray> / </dark_gray><gray>Max:</gray> <white>{max_players}</white>"
+      - ""
+    footer:
+      - ""
+      - "<gray>TPS:</gray> {tps_color}  <gray>MSPT:</gray> {mspt_color}"
+      - "<gray>RAM:</gray> {ram_color}  <gray>Uptime:</gray> <white>{uptime}</white>"
+    player_list:
+      objective_enabled: true
+      format: "%luckperms_prefix%{player_name} <dark_gray>[</dark_gray>{player_ping_gradient}<dark_gray>]</dark_gray>"
+
+  ── Боссбар ──
+  bossbar:
+    format: "<gradient:#FFAA00:#FFFFFF>MC-Plugin</gradient> | <white>{online}</white> online | TPS: {tps_color}"
+
+  ── Скорборд ──
+  scoreboard:
+    boards:
+      info:
+        title: "<gradient:#FFAA00:#FF5555>My Server</gradient>"
+        lines:
+          - "<gray>Онлайн:</gray> <white>{online}</white>"
+          - "<gray>Мир:</gray> <white>{world_name}</white>"
+          - ""
+          - "<gray>TPS:</gray> {tps_color}"
+          - "<gray>Пинг:</gray> {player_ping_gradient}"
+
+  ── Belowname ──
+  belowname:
+    format: "<red>❤</red> {player_health} <dark_gray>|</dark_gray> <gold>{player_food}</gold> <dark_gray>|</dark_gray> {player_ping_gradient}"
 
 ╔══════════════════════════════════════════════════════╗
 ║           ДОПОЛНИТЕЛЬНО                             ║
