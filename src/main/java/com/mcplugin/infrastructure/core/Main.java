@@ -74,6 +74,11 @@ public class Main extends JavaPlugin {
         MessagesManager.init(this);
 
         // =========================
+        // 📖 PLUGIN GUIDE — синхронизация plugin-guide.txt
+        // =========================
+        com.mcplugin.infrastructure.config.ConfigGuideManager.init(this);
+
+        // =========================
         // PLACEHOLDER RESOLVER — проверка PAPI
         // =========================
         PlaceholderResolver.init();

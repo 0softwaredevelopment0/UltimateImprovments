@@ -1,0 +1,644 @@
+╔══════════════════════════════════════════════════════╗
+║               MC-PLUGIN — GUIDE                     ║
+║          https://github.com/Minecraft337/MC-Plugin   ║
+╚══════════════════════════════════════════════════════╝
+
+▸ ЧТО ТАКОЕ MC-PLUGIN?
+  MC-Plugin — это многофункциональный плагин для Minecraft (Paper 1.21.4+),
+  который добавляет на сервер системы энергии, реакторов, крафта, наказаний,
+  вайтлиста, блэклиста, кастомного чата, таба, скорборда, MOTD, ваниша,
+  авторизации, радиации и многое другое.
+
+  Все команды управления — через /mp <подкоманда>.
+  Полный список команд: /mp help
+
+▸ ФАЙЛЫ КОНФИГУРАЦИИ
+
+  1. plugins/MC-Plugin/config.yml      — основные настройки плагина
+  2. plugins/MC-Plugin/messages.yml    — все сообщения (для перевода)
+  3. plugins/MC-Plugin/plugin-guide.txt — этот файл-инструкция
+
+  config.yml и messages.yml содержат ТОЛЬКО значения — без комментариев.
+  Вся документация по настройке — в этом файле (plugin-guide.txt).
+
+╔══════════════════════════════════════════════════════╗
+║           СИСТЕМА КОНФИГУРАЦИИ                       ║
+╚══════════════════════════════════════════════════════╝
+
+  Если в вашем config.yml не хватает каких-то ключей
+  (например после обновления плагина) — плагин АВТОМАТИЧЕСКИ
+  добавит недостающие значения в КОНЕЦ файла.
+
+  Все ваши настройки СОХРАНЯТСЯ — ничего не сбросится.
+  Недостающие ключи добавляются с комментарием:
+    # === Missing keys added by MC-Plugin (auto-repair) ===
+
+  Если этот файл (plugin-guide.txt) устарел — плагин
+  перезапишет его своей актуальной версией при следующем запуске.
+
+╔══════════════════════════════════════════════════════╗
+║           config.yml — ВСЕ СЕКЦИИ                    ║
+╚══════════════════════════════════════════════════════╝
+
+────────────────────────────────────────────────
+ 1. ⚡ СИСТЕМА ЭНЕРГИИ (energy)
+────────────────────────────────────────────────
+
+  energy.generator:
+    enabled              — вкл/выкл генератор энергии
+    energy_per_fuel      — сколько энергии даёт 1 топливо за тик
+    fuel_burn_ticks      — сколько тиков горит 1 топливо (100 = 5 сек)
+    log                  — логировать работу
+
+  energy.electric_furnace:
+    enabled              — вкл/выкл электрическую печку
+    energy_per_smelt     — энергия за 1 переплавку
+    cooldown_ms          — кулдаун между молниями (мс)
+
+  energy.cable:
+    enabled              — вкл/выкл кабели
+    max_energy           — макс энергия кабеля (0 = не хранит)
+    log                  — логировать
+    blink.enabled        — мигание кабеля при передаче
+    blink.off_ticks      — тиков в выкл состоянии
+    blink.on_ticks       — тиков во вкл состоянии
+
+  energy.battery:
+    max_energy           — макс энергия батареи (100000)
+    discharge_per_tick   — отдача в сеть за тик при редстоун-сигнале
+    smooth_charge.enabled     — плавная динамическая зарядка
+    smooth_charge.charge_multiplier    — множитель скорости зарядки
+    smooth_charge.discharge_multiplier — множитель скорости разрядки
+    visual.particles_enabled  — частицы электричества
+
+  energy.battery_drain:
+    enabled              — вкл/выкл (устарело)
+    log                  — логировать
+
+  energy.balancer:
+    enabled              — вкл/выкл балансировщик энергии
+    include_batteries    — включать батареи в балансировку
+    max_transfer         — макс перенос за тик
+    log                  — логировать
+
+────────────────────────────────────────────────
+ 2. 💻 СИСТЕМА КОДОВОЙ ПАНЕЛИ (codepanel)
+────────────────────────────────────────────────
+
+  codepanel:
+    max_length           — макс длина пароля (10)
+    empty_char           — символ пустого места ("-")
+    keyboard_offset      — сдвиг клавиатуры (2)
+    loading.step_ticks   — шаг анимации загрузки (5)
+    loading.step         — количество шагов (10)
+    loading.delay_after  — задержка после загрузки (20)
+    enter_cooldown       — кулдаун Enter (3 сек)
+    colors               — цвета элементов панели
+    buttons              — цвета кнопок
+    sounds               — звуки панели
+
+  Все ключи кодовой панели хранятся в SQLite (database.db),
+  управляются через /mp codepane key add|remove|modify|list
+
+────────────────────────────────────────────────
+ 3. ⚛ РЕАКТОР ТЁМНОГО СИНТЕЗА (reactor)
+────────────────────────────────────────────────
+
+  reactor.enabled                  — вкл/выкл
+  reactor.temp_decay_rate          — скорость спада температуры
+  reactor.core_temp_max/min        — макс/мин температура ядра
+  reactor.heat_rate                — скорость нагрева
+  reactor.cool_rate                — скорость охлаждения
+  reactor.core_press_reduce_rate   — скорость снижения давления
+  reactor.case_temp_*              — настройки корпуса (температура)
+  reactor.case_press_*             — настройки корпуса (давление)
+  reactor.shell_*                  — целостность оболочки ядра
+  reactor.case_*                   — целостность корпуса
+  reactor.wear.*                   — износ реактора
+  reactor.meltdown_explosion_radius — радиус взрыва (10)
+  reactor.recipe_time_max          — макс время рецепта (100)
+
+────────────────────────────────────────────────
+ 4. ⚙ КАСТОМНЫЕ ФИЧИ (features.*)
+────────────────────────────────────────────────
+
+  features.antimatter:
+    enabled              — вкл/выкл
+    explosion_radius     — радиус взрыва (5)
+    break_blocks         — разрушать блоки
+    set_fire             — зажигать огонь
+
+  features.attributes:
+    enabled              — вкл/выкл атрибуты
+    attack_damage        — базовая атака (0.1)
+    sneak_speed          — скорость крадучись (8192)
+    attack_speed         — скорость атаки (3.5)
+    interval_ticks       — интервал (200)
+
+  features.beacon:
+    enabled              — вкл/выкл маяк-ловушку
+    glowing/blindness    — эффекты
+    regeneration_amplifier — сила регенерации (4)
+    resistance_amplifier   — сила сопротивления (4)
+    interval_ticks       — интервал (5)
+
+  features.blockdmg:
+    enabled              — вкл/выкл
+    dripstone_damage     — урон сталактита (1)
+    endrod_damage        — урон эндер-стержня (1)
+    interval_ticks       — интервал (5)
+
+  features.boostedcobweb:
+    enabled              — полная остановка в паутине
+
+  features.deathbell:
+    enabled              — молния при звоне в колокол
+
+  features.dragonegg:
+    enabled              — вкл/выкл яйцо дракона
+    world/x/y/z          — координаты спавна
+    interval_ticks       — интервал спавна (1728000 = 24ч)
+    spawn_chance         — шанс спавна (0.0-1.0)
+
+  features.enderchest:
+    enabled              — вкл/выкл механику эндер-сундука
+    explosion_chance     — шанс взрыва при открытии (0.001)
+    explosion_power      — сила взрыва (10.0)
+    damage               — урон игроку (8192)
+    quick_close.*        — урон/взрыв при быстром закрытии
+
+  features.entitylocator:
+    enabled              — компас поиска существ
+    scan_radius          — радиус сканирования (12)
+    interval_ticks       — интервал (20)
+
+  features.glassbreak:
+    enabled              — урон за ломание стекла рукой
+    damage               — урон (4)
+
+  features.itemskill:
+    enabled              — антилаг: удаление >6400 предметов
+    item_limit           — лимит предметов (6400)
+    interval_ticks       — интервал (20)
+    warn_operators       — предупреждать операторов
+
+  features.magnet:
+    enabled              — вкл/выкл магнит
+    radius.min/max       — радиус притяжения
+    interval_ticks       — интервал (1)
+    force.*              — параметры силы притяжения
+    item_y_boost         — подъём предметов по Y
+    force_curve.*        — кривая мощности
+    distance_curve.*     — кривая дистанции
+    particles.*          — лимиты частиц
+
+  features.modeprotect:
+    enabled              — защита режима игры
+    worlds               — список миров
+    bypass_permission    — право для байпасса
+
+  features.shieldslowness:
+    enabled              — замедление при блоке щитом
+
+  features.terracotaspeed:
+    enabled              — скорость на терракоте
+
+  features.minecart_speed:
+    enabled              — разгон вагонеток
+    base_max_speed       — базовая макс скорость (8.0 блк/с)
+    max_speed_limit      — абсолютный потолок
+    acceleration_factor  — множитель ускорения (1.005)
+    deceleration_factor  — множитель замедления (0.998)
+    thrust_per_tick      — аддитивный буст (0.06)
+    collision_min_speed  — мин скорость для урона (15.0)
+    interval_ticks       — интервал (1)
+    hopper_smelt.*       — переплавка в HopperMinecart
+
+  features.unbreakable_breaker:
+    enabled              — ломание неразрушимых блоков
+    hit_interval_ticks   — интервал ударов (4)
+    blocks.*             — настройки блоков (BEDROCK, BARRIER)
+
+  features.integrity:
+    enabled              — система целостности
+    interval_ticks       — интервал (20)
+    cost_multiplier      — множитель расхода
+    gradient.*           — цвета градиента
+    lore_text            — текст в описании
+    on_break.*           — поведение при поломке
+    logging.*            — логирование
+    anvil_repair.*       — ремонт в наковальне
+    mending_xp.*         — починка через опыт
+    combine.*            — объединение предметов
+    xp_integrity.*       — XP → целостность
+    low_integrity_warning.* — предупреждения
+    unbreaking.*         — неразрушимость
+    piercing.*           — пробитие
+    blacklist/whitelist  — списки материалов
+
+  features.creative_item_validator:
+    enabled              — защита от краш-предметов
+
+  features.shulker_protection:
+    enabled              — защита от левитации шалкера
+
+  features.leash:
+    enabled              — привязка существ на поводок
+    max_distance         — макс дистанция (10)
+    pull_back_interval   — интервал проверки (2)
+    prevent_break        — не рвать поводок
+    hard_stop            — жёсткий стоп
+
+  features.container_trigger:
+    enabled              — триггер контейнеров
+    interval_ticks       — интервал (1)
+    triggers             — список триггеров
+
+  features.waypoint:
+    enabled              — вейпоинты
+    interval_ticks       — интервал (200)
+
+────────────────────────────────────────────────
+ 5. 🏷 BRAND SPOOF (brand_spoof)
+────────────────────────────────────────────────
+
+  brand_spoof.enabled       — подмена brand сервера в F3
+  brand_spoof.custom_brand  — кастомная строка (напр "Paper")
+  Право для просмотра реального brand: mcplugin.show.brand
+
+────────────────────────────────────────────────
+ 6. 👻 СИСТЕМА ВАНИША (vanish)
+────────────────────────────────────────────────
+
+  vanish.vanished_players — список UUID в ванише (авто)
+  Команда: /mp vanish <ник>
+
+────────────────────────────────────────────────
+ 7. ☢ РАДИАЦИЯ (radiation)
+────────────────────────────────────────────────
+
+  radiation.enabled                — вкл/выкл
+  radiation.natural_decay          — спад радиации за тик (1)
+  radiation.effects_enabled        — эффекты (тошнота и т.д.)
+  radiation.ancient_debris_*       — радиация от обломков
+  radiation.basalt_deltas_*        — радиация в базальтовых дельтах
+  radiation.end_*                  — радиация в энде
+  radiation.lead_shield_reduction  — снижение свинцовым щитом (2)
+  radiation.antirad_reduction      — снижение антирадом (100)
+  radiation.kill_reduction         — снижение убийством (100)
+  radiation.death_reset            — сброс при смерти
+  radiation.mace_use_*             — радиация от булавы
+  radiation.trident_use_*          — радиация от трезубца
+  radiation.elytra_use_*           — радиация от элитр
+  radiation.reactor_*              — радиация от реактора
+
+────────────────────────────────────────────────
+ 8. 🔐 АВТОРИЗАЦИЯ (auth)
+────────────────────────────────────────────────
+
+  auth.enabled                    — вкл/выкл систему
+  auth.min/max_password_length    — длина пароля
+  auth.session_duration_minutes   — длительность сессии (60)
+  auth.check_ip.enabled           — проверка IP при сессии
+  auth.login_timeout_seconds      — таймаут на авторизацию (60)
+  auth.max_wrong_attempts         — макс неверных попыток (5)
+  auth.request_cooldown_seconds   — кулдаун запросов (5)
+  auth.max_accounts_per_ip        — макс аккаунтов на IP (3)
+  auth.check_duplicate_name.enabled — защита от дубликатов
+
+────────────────────────────────────────────────
+ 9. 🕳 ЗАЩИТА ОТ ПУСТОТЫ (void_protection)
+────────────────────────────────────────────────
+
+  void_protection.enabled    — вкл/выкл
+  void_protection.worlds     — список миров
+  void_protection.target     — точка телепортации
+
+────────────────────────────────────────────────
+ 10. 🔌 УПРАВЛЕНИЕ ПИТАНИЕМ (power)
+────────────────────────────────────────────────
+
+  power.intercept_commands     — перехват /stop и /restart
+  power.request_timeout        — время подтверждения (30 сек)
+  power.countdown_duration     — отсчёт до выполнения (10 сек)
+  power.actionbar.*            — экранная строка
+  power.bossbar.*              — босс-бар
+  power.countdown_sound.*      — звук пиканья
+
+────────────────────────────────────────────────
+ 11. ☠ СУИЦИД (suicide)
+────────────────────────────────────────────────
+
+  suicide.countdown_duration  — таймер перед смертью (10 сек)
+  suicide.cooldown_seconds    — кулдаун (10 сек)
+  suicide.confirm_timeout     — время подтверждения (30 сек)
+  suicide.sounds.*            — звуки
+  suicide.bossbar.*           — босс-бар
+
+────────────────────────────────────────────────
+ 12. 📦 PACKET GUARD (packet_guard)
+────────────────────────────────────────────────
+
+  packet_guard.enabled              — защита от больших пакетов
+  packet_guard.bypass_permission    — право для байпасса
+  packet_guard.max_packet_size      — макс размер (7MB)
+  packet_guard.log                  — логировать
+
+────────────────────────────────────────────────
+ 13. 🔴 REDSTONE GUARD (redstone_guard)
+────────────────────────────────────────────────
+
+  redstone_guard.enabled                  — защита от перегрузки редстоуном
+  redstone_guard.mspt_threshold           — порог MSPT (50.0)
+  redstone_guard.global_iterations_limit  — лимит итераций (1024)
+  redstone_guard.chunk_iterations_limit   — лимит на чанк (10)
+  redstone_guard.block_duration_seconds   — длительность блокировки (32)
+  redstone_guard.chunks_per_tick          — чанков за тик (1)
+
+────────────────────────────────────────────────
+ 14. 🛡 EMERGENCY ENTITY KILL
+────────────────────────────────────────────────
+
+  emergency_entity_kill.enabled               — защита от перегрузки сущностями
+  emergency_entity_kill.entity_limit          — лимит сущностей (1000)
+  emergency_entity_kill.instant_kill_mspt     — мгновенное убийство при MSPT (600)
+  emergency_entity_kill.overload_mspt_threshold — порог перегрузки (60)
+  emergency_entity_kill.max_overload_accumulation — макс накопление (200)
+  emergency_entity_kill.overload_increment_per_tick — прирост за тик (20)
+  emergency_entity_kill.remove_plasma_*       — удаление плазмы
+  emergency_entity_kill.kill_worlds           — список миров
+  emergency_entity_kill.log                   — логировать
+
+────────────────────────────────────────────────
+ 15. ⚠ SERVER OVERLOAD WARNING
+────────────────────────────────────────────────
+
+  server_overload_warning.enabled            — предупреждения о перегрузке
+  server_overload_warning.high_mspt          — HIGH порог (40.0)
+  server_overload_warning.critical_mspt      — CRITICAL порог (50.0)
+  server_overload_warning.notify_cooldown_seconds — кулдаун уведомлений (30)
+
+────────────────────────────────────────────────
+ 16. 🔇 ФИЛЬТР ЧАТА (chat_filter)
+────────────────────────────────────────────────
+
+  chat_filter.enabled        — вкл/выкл фильтр матов
+  chat_filter.words          — список запрещённых слов
+  chat_filter.regex_patterns — regex-выражения
+  Право байпасса: mcplugin.chat.filter.bypass
+
+────────────────────────────────────────────────
+ 17. 🤖 ЗАЩИТА ОТ БОТОВ (bot_protection)
+────────────────────────────────────────────────
+
+  bot_protection.enabled                     — вкл/выкл
+  bot_protection.queue.max_joins_per_window  — макс входов за окно (2)
+  bot_protection.queue.window_seconds        — временное окно (1)
+  bot_protection.queue.notify_ops            — уведомлять операторов
+  bot_protection.rejoin_cooldown_seconds     — кулдаун реджойна (3)
+
+────────────────────────────────────────────────
+ 18. 🏠 ДОМАШНИЕ ТОЧКИ (home)
+────────────────────────────────────────────────
+
+  home.max_homes        — макс домов на игрока (10)
+  home.name_min/max_length — длина названия дома
+
+────────────────────────────────────────────────
+ 19. 📋 СИСТЕМА РЕПОРТОВ (report)
+────────────────────────────────────────────────
+
+  report.expire_time    — время автоудаления ("3d")
+
+────────────────────────────────────────────────
+ 20. 🌍 СМЕНА ИЗМЕРЕНИЯ (changedimmension)
+────────────────────────────────────────────────
+
+  changedimmension.default_world    — мир по умолчанию
+  changedimmension.cooldown_seconds — кулдаун (10)
+  changedimmension.worlds           — список миров и координат
+
+────────────────────────────────────────────────
+ 21. 📋 MOTD (motd)
+────────────────────────────────────────────────
+
+  motd.enabled           — кастомный MOTD
+  motd.line1             — первая строка (MiniMessage)
+  motd.line2             — вторая строка (MiniMessage)
+  motd.icon_enabled      — иконка сервера
+  motd.player_list.*     — кастомный список игроков
+  motd.online_counter.*  — управление счётчиком онлайна
+
+────────────────────────────────────────────────
+ 22. 📋 ТАБ-ЛИСТ (tab)
+────────────────────────────────────────────────
+
+  tab.enabled                   — кастомный таб
+  tab.update_interval_ticks     — интервал (20)
+  tab.hide_spectators           — скрыть спектаторов
+  tab.header/footer             — строки (MiniMessage + плейсхолдеры)
+  tab.player_list.*             — префикс/суффикс/формат в табе
+  tab.sort.mode                 — сортировка (none/a_z/z_a/luckperms/op)
+
+  Доступные плейсхолдеры:
+    {player_name}, {player_ping}, {player_health}, {player_food}
+    {online}, {max_players}, {tps}, {mspt}, {world_name}
+    {uptime}, {ram_used}, {ram_max}
+    %luckperms_prefix%, %luckperms_primary_group_name% и любые PAPI
+
+────────────────────────────────────────────────
+ 23. 📊 СКОРБОРД (scoreboard)
+────────────────────────────────────────────────
+
+  scoreboard.enabled               — кастомный скорборд
+  scoreboard.update_interval_ticks — интервал (20)
+  scoreboard.boards                — список конфигураций
+    Каждая board:
+      condition.type  — always/world/world_blacklist/permission
+      condition.worlds — список миров
+      title           — заголовок (MiniMessage)
+      lines           — строки (макс 15, MiniMessage + плейсхолдеры)
+
+────────────────────────────────────────────────
+ 24. 📊 BOSSBAR (bossbar)
+────────────────────────────────────────────────
+
+  bossbar.enabled               — кастомный боссбар
+  bossbar.format                — текст (MiniMessage + плейсхолдеры)
+  bossbar.color                 — цвет (BLUE/RED/GREEN/etc)
+  bossbar.style                 — стиль (SOLID/SEGMENTED_*)
+  bossbar.progress_mode         — режим прогресса
+  bossbar.progress_speed        — скорость изменения
+  bossbar.update_interval_ticks — интервал (20)
+
+────────────────────────────────────────────────
+ 25. 👇 BELOWNAME (belowname)
+────────────────────────────────────────────────
+
+  belowname.enabled               — текст под ником
+  belowname.format                — формат (MiniMessage + плейсхолдеры)
+  belowname.update_interval_ticks — интервал (20)
+
+────────────────────────────────────────────────
+ 26. ⛏ ТЕХНИЧЕСКИЕ РАБОТЫ (maintenance)
+────────────────────────────────────────────────
+
+  maintenance.enabled     — вкл/выкл систему
+  Команда: /mp maint on|off
+  Вайтлист техработ: /mp maint whitelist add|remove|list
+
+────────────────────────────────────────────────
+ 27. 💬 КАСТОМНЫЙ ЧАТ (chat)
+────────────────────────────────────────────────
+
+  chat.enabled                  — вкл/выкл кастомный чат
+  chat.mode                     — static/per-group/per-world
+  chat.format                   — формат (MiniMessage + плейсхолдеры)
+  chat.player_minimessage       — разрешить MiniMessage игрокам
+  chat.message_placeholders     — плейсхолдеры в сообщениях
+  chat.bypass_permission        — право байпасса
+  chat.groups.*                 — per-group форматы
+  chat.per_world.*              — per-world форматы
+
+────────────────────────────────────────────────
+ 28. 📋 УПРАВЛЕНИЕ ДОСТУПОМ (access_control)
+────────────────────────────────────────────────
+
+  access_control.check_interval_ticks — интервал проверки онлайна
+    (20 тиков = 1 сек). Если whitelist/blacklist/opwhitelist включены,
+    каждые N тиков проверяются все онлайн-игроки.
+    0 = отключить периодическую проверку.
+
+╔══════════════════════════════════════════════════════╗
+║           КОМАНДЫ УПРАВЛЕНИЯ                         ║
+╚══════════════════════════════════════════════════════╝
+
+  Все команды базовые: /mp <подкоманда> [аргументы]
+
+  ───── ОСНОВНЫЕ ─────
+  /mp reload              — перезагрузить плагин
+  /mp help                — справка
+
+  ───── ЭНЕРГИЯ ─────
+  /mp power off           — выключить сервер
+  /mp power reboot        — перезагрузить сервер
+  /mp power undo          — отменить запрос
+
+  ───── ТЕЛЕПОРТАЦИЯ ─────
+  /mp chgdim [мир]        — сменить измерение
+  /mp askcords <ник>      — запросить координаты
+
+  ───── ДОМА ─────
+  /mp sethome <название>  — установить дом
+  /mp home <название>     — телепортироваться домой
+  /mp delhome <название>  — удалить дом
+  /mp listhomes           — список домов
+  /mp ophomels <ник>      — список домов игрока (op)
+  /mp opdelhome <ник> <название> — удалить дом игрока (op)
+
+  ───── НАКАЗАНИЯ ─────
+  /mp punish ban <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
+  /mp punish mute <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
+  /mp punish kick <ник> <причина> [-ip] [-hw]
+  /mp punish warn <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
+  /mp punish listwarns [ник]
+  /mp punish unban <ник>
+  /mp punish unmute <ник>
+  /mp punish unwarn <ник> <причина> <warnId>
+
+  Флаги:
+    -time:<N>s|m|h|d  — временное наказание
+    -permanent         — перманентное
+    -ip                — наказание по IP
+    -hw                — наказание по железу
+
+  ───── ВАЙТЛИСТ / БЛЭКЛИСТ ─────
+  /mp whitelist on|off|add <ник>|remove <ник>|list
+  /mp blacklist on|off|add <ник>|remove <ник>|list
+
+  ───── OP ВАЙТЛИСТ ─────
+  /mp opwhitelist on|off|add <ник>|remove <ник>|list
+
+  ───── ТЕХРАБОТЫ ─────
+  /mp maint on|off|whitelist add <ник>|whitelist remove <ник>|whitelist list
+
+  ───── ПРОЧЕЕ ─────
+  /mp vanish <ник>       — включить/выключить ваниш
+  /mp suicide            — суицид (с подтверждением)
+  /mp togglebb           — вкл/выкл боссбар
+  /mp togglesb           — вкл/выкл скорборд
+  /mp togglefly          — вкл/выкл полёт
+  /mp checkrad [ник]     — проверить радиацию
+  /mp setrad <ник> <N>   — установить радиацию
+  /mp toggleradview      — вкл/выкл дозиметр
+  /mp codepane [название] — открыть кодовую панель
+  /mp notes              — открыть заметки
+  /mp checkver           — проверить обновления
+  /mp bc <сообщение>     —广播 сообщение
+  /mp item int set|add|list <ник> <предмет> [кол-во]
+
+╔══════════════════════════════════════════════════════╗
+║           ПРАВА ДОСТУПА (permissions)               ║
+╚══════════════════════════════════════════════════════╝
+
+  mcplugin.admin               — все права (op)
+  mcplugin.command.punish      — наказания
+  mcplugin.command.punish.ban/mute/kick/warn
+  mcplugin.command.punish.listwarns.self/other
+  mcplugin.command.whitelist   — управление вайтлистом
+  mcplugin.command.blacklist   — управление блэклистом
+  mcplugin.command.opwhitelist — управление OP вайтлистом
+  mcplugin.command.maintenance — техработы
+  mcplugin.command.vanish      — ваниш
+  mcplugin.command.plugins     — /pl, /plugins
+  mcplugin.command.version     — /ver, /version
+  mcplugin.chat.filter.bypass  — байпас фильтра чата
+  mcplugin.chat.custom.bypass  — байпас кастомного чата
+  mcplugin.packetguard.bypass  — байпас PacketGuard
+  mcplugin.creative.bypass     — байпас валидатора предметов
+  mcplugin.gmprotect.bypass    — байпас защиты режима
+  mcplugin.show.brand          — видеть реальный brand
+
+╔══════════════════════════════════════════════════════╗
+║           ПЛЕЙСХОЛДЕРЫ                              ║
+╚══════════════════════════════════════════════════════╝
+
+  Встроенные (работают без PAPI):
+    {online}         — текущий онлайн
+    {max_players}    — макс игроков
+    {tps}            — TPS (форматированные)
+    {mspt}           — MSPT
+    {uptime}         — аптайм сервера
+    {ram_used}       — используемая RAM
+    {ram_max}        — максимальная RAM
+    {player_name}    — имя игрока
+    {player_ping}    — пинг игрока (ms)
+    {player_health}  — здоровье
+    {player_food}    — сытость
+    {world_name}     — название мира
+
+  PAPI (если установлен PlaceholderAPI):
+    %luckperms_prefix%, %luckperms_suffix%
+    %luckperms_primary_group_name%
+    %player_world%, %vault_eco_balance%
+    и любые другие PAPI плейсхолдеры
+
+╔══════════════════════════════════════════════════════╗
+║           ДОПОЛНИТЕЛЬНО                             ║
+╚══════════════════════════════════════════════════════╝
+
+  ───── ВАНИЛЬНЫЙ /whitelist ─────
+  Ванильная команда /whitelist ЗАБЛОКИРОВАНА.
+  Используйте: /mp whitelist on|off|add|remove|list
+
+  ───── ВАНИЛЬНЫЙ /stop и /restart ─────
+  Перехвачены плагином.
+  Используйте: /mp power off и /mp power reboot
+
+  ───── БАЗА ДАННЫХ ─────
+  Все данные хранятся в plugins/MC-Plugin/database.db (SQLite).
+  Регулярное резервное копирование рекомендуется.
+
+  ───── ДАТАПАК ─────
+  Плагин автоматически устанавливает датапак MC-Datapack
+  в папку world/datapacks/ при первом запуске.

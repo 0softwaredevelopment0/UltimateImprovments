@@ -66,10 +66,11 @@ public class PlaceholderResolver {
     private static final Pattern DYNAMIC_PLACEHOLDER = Pattern.compile(
             "\\{(tps|mspt|online|ram)(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(color))?\\}"
     );
-    // Формат ping: {ping_[min|max|avg]_<time>_<ys|all>[_color]}
+    // Формат ping: {ping_[min|max|avg]_<time>_<scope>[_color]}
+    // scope может быть: ys (yourself), all (все), или ник игрока (Steve)
     // Также: {ping} (без суффиксов), {ping_<time>}, {ping_ys}, {ping_all}, {ping_<time>_color}
     private static final Pattern PING_PLACEHOLDER = Pattern.compile(
-            "\\{ping(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(ys|all))?(?:_(color))?\\}"
+            "\\{ping(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(\\w+))?(?:_(color))?\\}"
     );
 
     private static final Map<String, BiFunction<Player, String, String>> BUILTIN = new HashMap<>();
@@ -332,13 +333,22 @@ public class PlaceholderResolver {
             boolean isColor = "color".equals(colorFlag);
             boolean isAll = "all".equals(scope);
 
-            // _ys или без scope → текущий пинг игрока (без истории)
+            // _ys, конкретный ник или без scope → текущий пинг игрока (без истории)
             if (!isAll) {
-                if (player == null) {
+                Player targetPlayer = player;
+                // Если scope — ник конкретного игрока
+                if (scope != null && !scope.equals("ys")) {
+                    targetPlayer = Bukkit.getPlayerExact(scope);
+                    if (targetPlayer == null || !targetPlayer.isOnline()) {
+                        m.appendReplacement(sb, "0");
+                        continue;
+                    }
+                }
+                if (targetPlayer == null) {
                     m.appendReplacement(sb, "0");
                     continue;
                 }
-                int ping = Math.min(player.getPing(), 1000);
+                int ping = Math.min(targetPlayer.getPing(), 1000);
                 String val = String.valueOf(ping);
                 if (isColor) {
                     val = StatsTracker.pingColor(ping) + ping;
