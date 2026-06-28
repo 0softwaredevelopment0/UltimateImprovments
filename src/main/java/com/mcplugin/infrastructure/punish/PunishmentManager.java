@@ -222,13 +222,23 @@ public class PunishmentManager {
 
     /**
      * Деактивирует все активные наказания данного типа для UUID/IP/HW.
+     * Если uuid начинается с "offline:" — также ищет по имени игрока.
+     *
+     * @param playerName имя игрока (используется для поиска если uuid начинается с "offline:")
      */
-    public static boolean unpunish(PunishType type, String uuid, String ip, String hwId) {
+    public static boolean unpunish(PunishType type, String uuid, String ip, String hwId, String playerName) {
+        boolean isOffline = uuid != null && uuid.startsWith("offline:");
+
         StringBuilder sql = new StringBuilder("""
                 UPDATE punishments SET active = 0
                 WHERE type = ? AND active = 1
                 AND (player_uuid = ?
                 """);
+
+        // Для офлайн-игроков добавляем поиск по имени (т.к. при бане мог быть реальный UUID)
+        if (isOffline && playerName != null && !playerName.isEmpty()) {
+            sql.append(" OR LOWER(player_name) = ?");
+        }
 
         if (ip != null && !ip.isEmpty()) {
             sql.append(" OR ip_address = ?");
@@ -244,6 +254,9 @@ public class PunishmentManager {
             st.setString(2, uuid);
 
             int idx = 3;
+            if (isOffline && playerName != null && !playerName.isEmpty()) {
+                st.setString(idx++, playerName.toLowerCase());
+            }
             if (ip != null && !ip.isEmpty()) {
                 st.setString(idx++, ip);
             }

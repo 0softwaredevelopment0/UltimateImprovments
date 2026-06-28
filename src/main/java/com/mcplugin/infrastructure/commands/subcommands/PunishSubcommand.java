@@ -83,7 +83,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        PunishArgs parsed = parsePunishArgs(sender, args, 2);
+        PunishArgs parsed = parsePunishArgs(sender, args, 3);
         if (parsed == null) return true;
 
         String targetName = args[2];
@@ -176,7 +176,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        PunishArgs parsed = parsePunishArgs(sender, args, 2);
+        PunishArgs parsed = parsePunishArgs(sender, args, 3);
         if (parsed == null) return true;
 
         String targetName = args[2];
@@ -316,7 +316,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        PunishArgs parsed = parsePunishArgs(sender, args, 2);
+        PunishArgs parsed = parsePunishArgs(sender, args, 3);
         if (parsed == null) return true;
 
         String targetName = args[2];
@@ -517,7 +517,7 @@ public final class PunishSubcommand {
             uuid = "offline:" + targetName.toLowerCase();
         }
 
-        boolean ok = PunishmentManager.unpunish(PunishmentManager.PunishType.BAN, uuid, null, null);
+        boolean ok = PunishmentManager.unpunish(PunishmentManager.PunishType.BAN, uuid, null, null, targetName);
         if (ok) {
             sender.sendMessage(MessageUtil.parse(
                     "<green>✔</green> <white>Player</white> <yellow>" + targetName + "</yellow> <white>has been unbanned.</white>"
@@ -559,7 +559,7 @@ public final class PunishSubcommand {
             uuid = "offline:" + targetName.toLowerCase();
         }
 
-        boolean ok = PunishmentManager.unpunish(PunishmentManager.PunishType.MUTE, uuid, null, null);
+        boolean ok = PunishmentManager.unpunish(PunishmentManager.PunishType.MUTE, uuid, null, null, targetName);
         if (ok) {
             sender.sendMessage(MessageUtil.parse(
                     "<green>✔</green> <white>Player</white> <yellow>" + targetName + "</yellow> <white>has been unmuted.</white>"
