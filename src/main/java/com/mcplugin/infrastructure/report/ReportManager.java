@@ -394,6 +394,22 @@ public class ReportManager implements Listener {
     }
 
     /**
+     * Получает только имена из очереди модерации (для таб-комплита /mp modreport).
+     */
+    public static List<String> getModQueueNameList() {
+        List<String> names = new ArrayList<>();
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT name FROM mod_reports ORDER BY name")) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                names.add(rs.getString("name"));
+            }
+        } catch (Exception ignored) {}
+        return names;
+    }
+
+    /**
      * Получает ID репорта по имени mod_reports.
      */
     public static int getReportIdByModName(String name) {

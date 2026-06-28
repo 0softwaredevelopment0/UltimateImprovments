@@ -306,7 +306,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 4 && args[0].equalsIgnoreCase("reports") && args[1].equalsIgnoreCase("add")) {
             completions.add("<name>"); // hint for the mod queue name
         } else if (args.length == 2 && args[0].equalsIgnoreCase("modreport")) {
-            completions.add("<name>");
+            // Suggest clean names from the moderation queue (for /mp modreport <name>)
+            completions.addAll(ReportManager.getModQueueNameList());
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str"))) {
             completions.addAll(List.of("dfc", "magnet", "lightning"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("codepane")) {
