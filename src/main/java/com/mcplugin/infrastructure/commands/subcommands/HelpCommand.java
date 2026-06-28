@@ -120,6 +120,9 @@ public final class HelpCommand {
         sender.sendMessage(MessageUtil.parse("<yellow>/mp opdelhome </yellow><gray><player> <name></gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>└ Delete player's home (operator)</gray>"));
         sender.sendMessage("");
+        sender.sendMessage(MessageUtil.parse("<yellow>/mp chgop</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>└ Interactive OP management (clickable player list)</gray>"));
+        sender.sendMessage("");
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
         sender.sendMessage("");
     }

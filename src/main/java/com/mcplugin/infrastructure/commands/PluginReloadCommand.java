@@ -241,7 +241,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             completions.addAll(List.of("help", "checkver", "updatejar", "cilist", "toggleradview",
                     "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
-                    "auth", "chgdim", "vanish", "notes",
+                    "auth", "chgdim", "chgop", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "togglebb", "togglesb", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
                     "askcords", "forcesuicide", "bc", "maint", "opwhitelist",
