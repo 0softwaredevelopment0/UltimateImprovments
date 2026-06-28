@@ -3,6 +3,7 @@ package com.mcplugin.mechanics.security.auth;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -11,31 +12,29 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 2FA система — генерация и проверка кодов через Telegram Bot API.
+ * 2FA система — подтверждение входа через кнопки в Telegram.
  * <p>
  * Поток работы:
  * 1. Игрок включает 2FA: /mp auth 2fa setup &lt;telegram_chat_id&gt;
- * 2. При входе (после пароля): генерируется 6-значный код
- * 3. Код отправляется напрямую через Telegram Bot API (config: auth.2fa.bot_token)
- * 4. Игрок вводит: /mp auth 2fa &lt;code&gt;
- * 5. Если код верный — вход разрешён
+ * 2. При входе (после пароля): плагин отправляет HTTP-запрос на бота
+ * 3. Бот присылает inline кнопки ✅ Подтвердить / ❌ Отклонить
+ * 4. Игрок нажимает кнопку в Telegram
+ * 5. Плагин периодически проверяет статус подтверждения
+ * 6. Если подтверждено — вход разрешён
  * <p>
- * Не требует запуска отдельного бота — плагин сам вызывает
- * https://api.telegram.org/bot&lt;token&gt;/sendMessage
+ * Требует запущенного bot.py (HTTP-сервер на порту 3000).
  */
 public class Auth2FA {
 
     private static Auth2FA instance;
     private static boolean tableChecked = false;
 
-    // Хранилище ожидающих кодов: uuid → codeData
-    private final Map<UUID, CodeData> pendingCodes = new ConcurrentHashMap<>();
-    private final Random random = new Random();
+    // Хранилище ожидающих подтверждений: uuid → ConfirmationData
+    private final Map<UUID, ConfirmationData> pendingConfirmations = new ConcurrentHashMap<>();
 
     // =========================
     // INIT
@@ -43,7 +42,7 @@ public class Auth2FA {
     public static void init() {
         instance = new Auth2FA();
         initTable();
-        Main.getInstance().getLogger().info("[Auth2FA] Initialized.");
+        Main.getInstance().getLogger().info("[Auth2FA] Initialized (button-based confirmation).");
     }
 
     public static Auth2FA getInstance() {
@@ -131,83 +130,70 @@ public class Auth2FA {
     }
 
     // =========================
-    // GENERATE CODE
+    // SEND CONFIRMATION REQUEST TO BOT
     // =========================
-    public String generateCode(UUID uuid) {
-        // 9-значный код
-        int code = 100000000 + random.nextInt(900000000);
-        String codeStr = String.valueOf(code);
-
-        // Получаем chat_id
+    public String sendConfirmation(UUID uuid, String playerName, String playerIp) {
         String chatId = getChatId(uuid);
+        if (chatId == null || chatId.isEmpty()) return null;
 
-        // Сохраняем в память с временем создания
-        pendingCodes.put(uuid, new CodeData(codeStr, chatId, System.currentTimeMillis()));
+        String requestId = UUID.randomUUID().toString();
 
-        // Отправляем код через HTTP
-        sendCode(uuid, codeStr, chatId);
+        // Сохраняем в память
+        pendingConfirmations.put(uuid, new ConfirmationData(requestId, chatId, System.currentTimeMillis()));
 
-        return codeStr;
+        // Отправляем асинхронно
+        sendRequestToBot(uuid, requestId, chatId, playerName, playerIp);
+
+        return requestId;
     }
 
     // =========================
-    // VERIFY CODE
+    // CHECK CONFIRMATION STATUS (PULLING)
     // =========================
-    public boolean verifyCode(UUID uuid, String code) {
-        CodeData data = pendingCodes.get(uuid);
-        if (data == null) return false;
+    public String checkConfirmation(UUID uuid) {
+        ConfirmationData data = pendingConfirmations.get(uuid);
+        if (data == null) return "not_found";
 
-        // Проверка срока действия (5 минут)
+        // Проверка срока (5 минут)
         if (System.currentTimeMillis() - data.createdAt > 300_000) {
-            pendingCodes.remove(uuid);
-            return false;
+            pendingConfirmations.remove(uuid);
+            return "timeout";
         }
 
-        if (!data.code.equals(code)) return false;
+        // Если уже знаем результат (получен через callback в будущем)
+        if (data.result != null) {
+            pendingConfirmations.remove(uuid);
+            return data.result;
+        }
 
-        // Код верный — удаляем из памяти
-        pendingCodes.remove(uuid);
-        return true;
+        // Опрашиваем бота
+        return pollBotStatus(data.requestId, uuid);
     }
 
     // =========================
-    // SEND CODE VIA TELEGRAM BOT API (прямой вызов)
+    // HTTP: отправить запрос боту
     // =========================
-    private void sendCode(UUID uuid, String code, String chatId) {
-        String token = getBotToken();
-        if (token == null || token.isEmpty()) {
-            // Если токен не настроен — логируем код в консоль
-            String playerName = org.bukkit.Bukkit.getPlayer(uuid) != null
-                    ? org.bukkit.Bukkit.getPlayer(uuid).getName() : uuid.toString();
-            Main.getInstance().getLogger().info(
-                    "[Auth2FA] Code for " + playerName + " (chat: " + chatId + "): " + code);
-            Main.getInstance().getLogger().warning("[Auth2FA] Set auth.2fa.bot_token in config.yml to send via Telegram!");
+    private void sendRequestToBot(UUID uuid, String requestId, String chatId, String playerName, String playerIp) {
+        String botUrl = getBotUrl();
+        if (botUrl == null || botUrl.isEmpty()) {
+            Main.getInstance().getLogger().warning("[Auth2FA] No bot.url configured — can't send confirmation request!");
             return;
         }
 
-        // Отправляем асинхронно в отдельном потоке (не блокируем сервер)
         org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
             try {
-                String playerName = org.bukkit.Bukkit.getOfflinePlayer(uuid).getName();
-                if (playerName == null) playerName = uuid.toString();
+                String json = "{\"chat_id\":\"" + escapeJson(chatId)
+                        + "\",\"player\":\"" + escapeJson(playerName)
+                        + "\",\"ip\":\"" + escapeJson(playerIp)
+                        + "\",\"request_id\":\"" + escapeJson(requestId) + "\"}";
 
-                // Формируем текст сообщения (с реальными newline — escapeJson сам превратит их в \\n для JSON)
-                String text = "🔐 <b>Код подтверждения</b>\n\n"
-                        + "Игрок: <code>" + escapeHtml(playerName) + "</code>\n"
-                        + "Код: <b><code>" + escapeHtml(code) + "</code></b>\n\n"
-                        + "Никому не сообщайте этот код!";
-
-                String json = "{\"chat_id\":" + escapeJson(chatId)
-                        + ",\"text\":\"" + escapeJson(text)
-                        + "\",\"parse_mode\":\"HTML\"}";
-
-                URI uri = new URI("https://api.telegram.org/bot" + token + "/sendMessage");
+                URI uri = new URI(botUrl + "/confirm-request");
                 HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
-                conn.setConnectTimeout(8000);
-                conn.setReadTimeout(8000);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
 
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(json.getBytes(StandardCharsets.UTF_8));
@@ -215,50 +201,94 @@ public class Auth2FA {
                 }
 
                 int responseCode = conn.getResponseCode();
-
-                // Читаем ответ для отладки
-                StringBuilder responseBody = new StringBuilder();
-                try (java.io.InputStream is = conn.getInputStream()) {
+                StringBuilder resp = new StringBuilder();
+                try (InputStream is = conn.getInputStream()) {
                     byte[] buf = new byte[1024];
                     int len;
                     while ((len = is.read(buf)) != -1) {
-                        responseBody.append(new String(buf, 0, len, StandardCharsets.UTF_8));
+                        resp.append(new String(buf, 0, len, StandardCharsets.UTF_8));
                     }
                 } catch (Exception ignored) {}
-                try (java.io.InputStream es = conn.getErrorStream()) {
+                try (InputStream es = conn.getErrorStream()) {
                     if (es != null) {
                         byte[] buf = new byte[1024];
                         int len;
                         while ((len = es.read(buf)) != -1) {
-                            responseBody.append(new String(buf, 0, len, StandardCharsets.UTF_8));
+                            resp.append(new String(buf, 0, len, StandardCharsets.UTF_8));
                         }
                     }
                 } catch (Exception ignored) {}
-
                 conn.disconnect();
 
                 if (responseCode == 200) {
                     Main.getInstance().getLogger().info(
-                            "[Auth2FA] Code sent to " + playerName + " via Telegram (chat: " + chatId + ")");
+                            "[Auth2FA] Confirmation sent to " + playerName + " via Telegram (chat: " + chatId + ")");
                 } else {
                     Main.getInstance().getLogger().warning(
-                            "[Auth2FA] Telegram API returned HTTP " + responseCode
-                                    + " for " + playerName + ": " + responseBody);
+                            "[Auth2FA] Bot returned HTTP " + responseCode + ": " + resp);
                 }
 
             } catch (Exception e) {
                 Main.getInstance().getLogger().warning(
-                        "[Auth2FA] Telegram send failed: " + e.getMessage());
+                        "[Auth2FA] Failed to send confirmation: " + e.getMessage());
             }
         });
     }
 
     // =========================
-    // GET BOT TOKEN FROM CONFIG
+    // HTTP: опросить статус
     // =========================
-    private String getBotToken() {
+    private String pollBotStatus(String requestId, UUID uuid) {
+        String botUrl = getBotUrl();
+        if (botUrl == null || botUrl.isEmpty()) return "error";
+
+        // Синхронный HTTP GET (вызывается с async потока)
         try {
-            return Main.getInstance().getConfig().getString("auth.2fa.bot_token", "");
+            URI uri = new URI(botUrl + "/check-confirm?request_id=" + requestId);
+            HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+
+            int responseCode = conn.getResponseCode();
+            StringBuilder resp = new StringBuilder();
+            try (InputStream is = conn.getInputStream()) {
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = is.read(buf)) != -1) {
+                    resp.append(new String(buf, 0, len, StandardCharsets.UTF_8));
+                }
+            } catch (Exception ignored) {}
+            conn.disconnect();
+
+            if (responseCode == 200) {
+                // Парсим JSON вручную (без зависимостей)
+                String body = resp.toString();
+                if (body.contains("\"status\":\"approved\"")) {
+                    return "approved";
+                } else if (body.contains("\"status\":\"denied\"")) {
+                    return "denied";
+                } else if (body.contains("\"status\":\"timeout\"")) {
+                    pendingConfirmations.remove(uuid);
+                    return "timeout";
+                } else if (body.contains("\"status\":\"not_found\"")) {
+                    pendingConfirmations.remove(uuid);
+                    return "not_found";
+                }
+            }
+        } catch (Exception e) {
+            Main.getInstance().getLogger().warning(
+                    "[Auth2FA] Poll failed for " + requestId + ": " + e.getMessage());
+        }
+        return "pending";
+    }
+
+    // =========================
+    // HTTP: получить URL бота
+    // =========================
+    private String getBotUrl() {
+        try {
+            return Main.getInstance().getConfig().getString("auth.2fa.bot_url", "");
         } catch (Exception e) {
             return "";
         }
@@ -276,42 +306,34 @@ public class Auth2FA {
                 .replace("\t", "\\t");
     }
 
-    private String escapeHtml(String s) {
-        if (s == null) return "";
-        return s.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;");
-    }
-
     // =========================
     // GETTERS
     // =========================
-    public boolean hasPendingCode(UUID uuid) {
-        CodeData data = pendingCodes.get(uuid);
+    public boolean hasPendingConfirmation(UUID uuid) {
+        ConfirmationData data = pendingConfirmations.get(uuid);
         if (data == null) return false;
-        // Auto-clean expired
         if (System.currentTimeMillis() - data.createdAt > 300_000) {
-            pendingCodes.remove(uuid);
+            pendingConfirmations.remove(uuid);
             return false;
         }
         return true;
     }
 
-    public void clearPendingCode(UUID uuid) {
-        pendingCodes.remove(uuid);
+    public void clearPending(UUID uuid) {
+        pendingConfirmations.remove(uuid);
     }
 
     // =========================
     // INNER CLASS
     // =========================
-    private static class CodeData {
-        final String code;
+    private static class ConfirmationData {
+        final String requestId;
         final String chatId;
         final long createdAt;
+        String result; // null, "approved", "denied"
 
-        CodeData(String code, String chatId, long createdAt) {
-            this.code = code;
+        ConfirmationData(String requestId, String chatId, long createdAt) {
+            this.requestId = requestId;
             this.chatId = chatId;
             this.createdAt = createdAt;
         }

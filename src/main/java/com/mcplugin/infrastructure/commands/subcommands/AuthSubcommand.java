@@ -75,7 +75,7 @@ public final class AuthSubcommand {
             player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
             player.sendMessage("§a✔ 2FA включена!");
             player.sendMessage("§7Chat ID: §f" + args[3]);
-            player.sendMessage("§7При следующей авторизации код придёт в Telegram.");
+            player.sendMessage("§7При следующей авторизации придёт запрос в Telegram.");
             player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
             player.sendMessage("");
             return true;
@@ -96,9 +96,17 @@ public final class AuthSubcommand {
             return true;
         }
 
-        // /mp auth 2fa <code>
+        // /mp auth 2fa — коды больше не используются, показываем статус
         if (args.length >= 3) {
-            mgr.verify2FACode(player, args[2]);
+            if (mgr.is2FAEnabled(uuid)) {
+                player.sendMessage("§a✔ 2FA включена");
+                player.sendMessage("§7Chat ID: §f" + mgr.get2FAChatId(uuid));
+                player.sendMessage("§7При входе нажмите \"Подтвердить\" в Telegram.");
+                player.sendMessage("§7Отключить: §e/mp auth 2fa disable");
+            } else {
+                player.sendMessage("§c✖ 2FA выключена");
+                player.sendMessage("§7Включить: §e/mp auth 2fa setup <telegram_chat_id>");
+            }
             return true;
         }
 

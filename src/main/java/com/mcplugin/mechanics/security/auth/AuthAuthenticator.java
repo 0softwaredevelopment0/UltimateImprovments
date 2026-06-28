@@ -250,7 +250,7 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // 2FA CHALLENGE
+    // 2FA CHALLENGE — подтверждение через кнопки в Telegram
     // =========================
     public void start2FAChallenge(Player player) {
         UUID uuid = player.getUniqueId();
@@ -262,41 +262,94 @@ public class AuthAuthenticator {
             return;
         }
 
-        // Генерируем и отправляем код
-        String code = Auth2FA.getInstance().generateCode(uuid);
+        String playerName = player.getName();
+        String playerIp = getPlayerIp(player);
+
+        // Отправляем запрос подтверждения боту
+        String requestId = Auth2FA.getInstance().sendConfirmation(uuid, playerName, playerIp);
+        if (requestId == null) {
+            player.sendMessage("§c❌ Ошибка отправки запроса 2FA! Попробуйте позже.");
+            return;
+        }
 
         player.sendMessage("");
         player.sendMessage("§6✦ §f2FA §8— §7Двухфакторная аутентификация");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        player.sendMessage("§eКод отправлен в Telegram!");
+        player.sendMessage("§eЗапрос отправлен в Telegram!");
         player.sendMessage("§7Бот: §f@OakworldSRVbot");
-        player.sendMessage("§7Введите код для входа:");
-        player.sendMessage("§e/mp auth 2fa §7<§ocode§7>");
+        player.sendMessage("§7Откройте Telegram и подтвердите вход");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage("§7Ожидание подтверждения...");
         player.sendMessage("");
 
-        Main.getInstance().getLogger().info("[Auth2FA] Challenge started for " + player.getName()
-                + " (chat: " + chatId + ", code: " + code + ")");
+        Main.getInstance().getLogger().info("[Auth2FA] Challenge started for " + playerName
+                + " (chat: " + chatId + ", request: " + requestId + ")");
+
+        // Запускаем polling — проверяем статус каждые 20 тиков (1 секунда)
+        new BukkitRunnable() {
+            int ticks = 0;
+            final int maxTicks = 20 * 60; // 60 секунд максимум
+
+            @Override
+            public void run() {
+                if (!player.isOnline()) {
+                    Auth2FA.getInstance().clearPending(uuid);
+                    cancel();
+                    return;
+                }
+
+                if (playerState.isAuthenticated(uuid)) {
+                    cancel();
+                    return;
+                }
+
+                ticks += 20;
+                if (ticks > maxTicks) {
+                    // Таймаут
+                    Auth2FA.getInstance().clearPending(uuid);
+                    player.sendMessage("§c❌ Время ожидания 2FA истекло! Используйте /mp auth login заново.");
+                    cancel();
+                    return;
+                }
+
+                // Проверяем статус (на async потоке, чтобы не блокировать сервер)
+                Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+                    String status = Auth2FA.getInstance().checkConfirmation(uuid);
+
+                    Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                        if (!player.isOnline()) return;
+                        if (playerState.isAuthenticated(uuid)) return;
+
+                        switch (status) {
+                            case "approved" -> {
+                                Auth2FA.getInstance().clearPending(uuid);
+                                authenticatePlayer(player, "<green>\u2705</green> <white>2FA подтверждена! Добро пожаловать.</white>");
+                                cancel();
+                            }
+                            case "denied" -> {
+                                Auth2FA.getInstance().clearPending(uuid);
+                                player.kickPlayer("§c❌ Вход отклонён через Telegram 2FA.");
+                                cancel();
+                            }
+                            case "timeout", "not_found" -> {
+                                Auth2FA.getInstance().clearPending(uuid);
+                                player.sendMessage("§c❌ Ошибка 2FA! Используйте /mp auth login заново.");
+                                cancel();
+                            }
+                        }
+                    });
+                });
+            }
+        }.runTaskTimer(Main.getInstance(), 20L, 20L); // первый через 1 сек, потом каждую секунду
     }
 
+    /**
+     * Устаревший метод — больше не нужен (2FA через кнопки, а не коды).
+     * Оставлен для обратной совместимости.
+     */
+    @Deprecated
     public boolean verify2FACode(Player player, String code) {
-        UUID uuid = player.getUniqueId();
-
-        if (!Auth2FA.getInstance().hasPendingCode(uuid)) {
-            player.sendMessage("§c❌ Нет активного кода 2FA! Используйте /mp auth login.");
-            return false;
-        }
-
-        if (Auth2FA.getInstance().verifyCode(uuid, code)) {
-            authenticatePlayer(player, "<green>\u2705</green> <white>2FA пройдена! Добро пожаловать.</white>");
-            return true;
-        } else {
-            player.sendMessage("");
-            player.sendMessage("§c❌ Неверный код 2FA! Попробуйте снова.");
-            player.sendMessage("§e/mp auth 2fa §7<§ocode§7>");
-            player.sendMessage("");
-            return false;
-        }
+        return false;
     }
 
     // =========================

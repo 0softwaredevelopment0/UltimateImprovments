@@ -494,6 +494,7 @@ auth:
 
   2fa:
     bot_token: "8770086137:AAHHv6ASBEeqHE2IxOmiq-HdC6xTD9R7D6g"
+    bot_url: "http://localhost:3000"
 
 void_protection:
   enabled: true

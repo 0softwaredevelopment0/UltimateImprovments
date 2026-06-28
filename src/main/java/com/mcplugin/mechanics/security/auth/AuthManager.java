@@ -116,12 +116,8 @@ public class AuthManager {
         authenticator.start2FAChallenge(player);
     }
 
-    public boolean verify2FACode(Player player, String code) {
-        return authenticator.verify2FACode(player, code);
-    }
-
-    public boolean has2FAPendingCode(UUID uuid) {
-        return Auth2FA.getInstance() != null && Auth2FA.getInstance().hasPendingCode(uuid);
+    public boolean hasPending2FA(UUID uuid) {
+        return Auth2FA.getInstance() != null && Auth2FA.getInstance().hasPendingConfirmation(uuid);
     }
 
     // =========================
