@@ -274,7 +274,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         } else if (args.length >= 3 && args[0].equalsIgnoreCase("bc")) {
             completions.addAll(BroadcastSubcommand.tabComplete(args));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("auth")) {
-            completions.addAll(List.of("forcelogin", "resetauth", "chgpass", "delsession", "logout"));
+            completions.addAll(List.of("login", "register", "2fa", "forcelogin", "resetauth", "chgpass", "delsession", "logout"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("auth") && args[1].equalsIgnoreCase("2fa")) {
+            completions.addAll(List.of("setup", "disable"));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("auth")
                 && (args[1].equalsIgnoreCase("forcelogin") || args[1].equalsIgnoreCase("resetauth")
                 || args[1].equalsIgnoreCase("chgpass") || args[1].equalsIgnoreCase("delsession"))) {
