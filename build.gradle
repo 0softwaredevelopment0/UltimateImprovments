@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.mcplugin'
-version = '1.8.76'
+version = '1.8.101'
 
 java {
     toolchain {
@@ -24,6 +24,20 @@ dependencies {
     paperweight.paperDevBundle("26.2.build.+")
     implementation 'org.xerial:sqlite-jdbc:3.46.1.3'
     implementation 'de.mkammerer:argon2-jvm:2.11'
+}
+
+// =========================
+// AUTO-VERSION: version в build.gradle — единственный источник
+// При сборке подставляется в plugin.yml и config.yml
+// =========================
+processResources {
+    filteringCharset = 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand(project: project)
+    }
+    filesMatching('config.yml') {
+        expand(project: project)
+    }
 }
 
 tasks {
