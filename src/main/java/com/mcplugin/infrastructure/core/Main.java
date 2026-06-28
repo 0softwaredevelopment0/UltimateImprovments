@@ -8,6 +8,7 @@ import com.mcplugin.infrastructure.modules.*;
 import com.mcplugin.infrastructure.tab.TabManager;
 import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
 import com.mcplugin.infrastructure.report.ReportManager;
+import com.mcplugin.infrastructure.listeners.WhitelistCommandBlocker;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.structure.StructureChunkTracker;
 import com.mcplugin.infrastructure.util.FileLogger;
@@ -210,6 +211,9 @@ public class Main extends JavaPlugin {
         // 📋 CUSTOM WHITELIST — кастомный вайтлист MC-Plugin (не OP вайтлист)
         // =========================
         com.mcplugin.infrastructure.whitelist.WhitelistManager.init(this);
+
+        // 🚫 Блокировка ванильной команды /whitelist — плагин использует свою (/mp whitelist)
+        getServer().getPluginManager().registerEvents(new WhitelistCommandBlocker(), this);
 
         // =========================
         // 📋 BLACKLIST — чёрный список
