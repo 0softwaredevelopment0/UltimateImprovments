@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.PlayerSettingsDB;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
+import com.mcplugin.mechanics.features.player.VanishManager;
 import net.kyori.adventure.text.Component;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
@@ -159,6 +160,20 @@ public class TabManager extends BukkitRunnable implements Listener {
         );
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.getUniqueId().equals(spectator.getUniqueId())) continue;
+            try {
+                ((CraftPlayer) online).getHandle().connection.send(packet);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    /**
+     * Отправляет ClientboundPlayerInfoRemovePacket с батчем UUID всех ванишнутых
+     * всем онлайн-игрокам (кроме самих ванишнутых).
+     */
+    private static void batchRemoveVanishedFromTabList(List<UUID> vanishedUuids) {
+        ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(vanishedUuids);
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (vanishedUuids.contains(online.getUniqueId())) continue;
             try {
                 ((CraftPlayer) online).getHandle().connection.send(packet);
             } catch (Exception ignored) {}
@@ -347,6 +362,18 @@ public class TabManager extends BukkitRunnable implements Listener {
                     removeSpectatorFromTabList(p);
                 }
             }
+        }
+
+        // Re-hide vanished players — то же самое: любые tab-операции могут
+        // заставить клиент пере-добавить ванишнутых в таб-лист
+        List<UUID> vanishedUuids = new ArrayList<>();
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p != null && VanishManager.isVanished(p.getUniqueId())) {
+                vanishedUuids.add(p.getUniqueId());
+            }
+        }
+        if (!vanishedUuids.isEmpty()) {
+            batchRemoveVanishedFromTabList(vanishedUuids);
         }
     }
 
