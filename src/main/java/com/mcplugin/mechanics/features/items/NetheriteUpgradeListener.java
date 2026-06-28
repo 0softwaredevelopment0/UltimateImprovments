@@ -14,6 +14,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -113,23 +114,23 @@ public class NetheriteUpgradeListener implements Listener {
 
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
             // Меч: +0.1 урона атаки за скрап
-            removeOurModifier(meta, Attribute.ATTACK_DAMAGE, modKey);
+            removeOurModifier(meta, Attribute.ATTACK_DAMAGE, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, new AttributeModifier(
                 modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
             // Инструменты: +0.1 скорости копания за скрап
-            removeOurModifier(meta, Attribute.BLOCK_BREAK_SPEED, modKey);
+            removeOurModifier(meta, Attribute.BLOCK_BREAK_SPEED, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(
                 modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_ARMOR.contains(slot0.getType())) {
             // Броня: +0.1 к защите и +0.05 к прочности брони за скрап
-            removeOurModifier(meta, Attribute.ARMOR, modKey);
+            removeOurModifier(meta, Attribute.ARMOR, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(
                 modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY
             ));
-            removeOurModifier(meta, Attribute.ARMOR_TOUGHNESS, modKey);
+            removeOurModifier(meta, Attribute.ARMOR_TOUGHNESS, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, new AttributeModifier(
                 modKey, upgradeAmount * 0.5, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.ANY
             ));
@@ -210,25 +211,56 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     /**
+     * Определяет EquipmentSlot по материалу (броня → HEAD/CHEST/LEGS/FEET, всё остальное → HAND).
+     * Нужен для получения дефолтных модификаторов материала.
+     */
+    private static EquipmentSlot getDefaultSlot(Material material) {
+        String name = material.name();
+        if (name.endsWith("_HELMET") || name.equals("TURTLE_HELMET")) return EquipmentSlot.HEAD;
+        if (name.endsWith("_CHESTPLATE")) return EquipmentSlot.CHEST;
+        if (name.endsWith("_LEGGINGS")) return EquipmentSlot.LEGS;
+        if (name.endsWith("_BOOTS")) return EquipmentSlot.FEET;
+        return EquipmentSlot.HAND;
+    }
+
+    /**
      * Удаляет модификатор с указанным ключом из атрибута, если он есть.
      * Используется перед addAttributeModifier, так как Paper/Leaf не заменяет
      * модификатор с тем же key, а кидает IllegalArgumentException.
+     * <p>
+     * Важно: после setAttributeModifiers() Paper чистит internalCustomAttributes,
+     * поэтому явно добавляем дефолтные модификаторы материала обратно.
      */
-    private static void removeOurModifier(ItemMeta meta, Attribute attribute, NamespacedKey key) {
+    private static void removeOurModifier(ItemMeta meta, Attribute attribute, NamespacedKey key, Material material) {
         var allMods = meta.getAttributeModifiers();
-        if (allMods == null || allMods.isEmpty()) return;
 
         Multimap<Attribute, AttributeModifier> newMods = ArrayListMultimap.create();
-        for (var entry : allMods.entries()) {
-            Attribute attr = entry.getKey();
-            AttributeModifier mod = entry.getValue();
-            // Пропускаем только наш модификатор, остальные (включая базовые) сохраняем.
-            // ⚠ mod.getKey() может быть null у модификаторов от других плагинов/старых версий
-            if (attr == attribute && mod.getKey() != null && key.equals(mod.getKey())) {
-                continue;
+
+        // 1) Копируем все существующие кастомные модификаторы, КРОМЕ нашего
+        if (allMods != null && !allMods.isEmpty()) {
+            for (var entry : allMods.entries()) {
+                AttributeModifier mod = entry.getValue();
+                if (entry.getKey() == attribute && mod.getKey() != null && key.equals(mod.getKey())) {
+                    continue;
+                }
+                newMods.put(entry.getKey(), mod);
             }
-            newMods.put(attr, mod);
         }
+
+        // 2) Добавляем дефолтные модификаторы материала, если их ещё нет в newMods
+        //    (Paper/Leaf при setAttributeModifiers() чистит internalCustomAttributes,
+        //     в которых могут храниться базовые атрибуты материала)
+        EquipmentSlot slot = getDefaultSlot(material);
+        var defaults = material.getDefaultAttributeModifiers(slot);
+        if (defaults != null) {
+            for (var entry : defaults.entries()) {
+                AttributeModifier mod = entry.getValue();
+                if (!newMods.containsEntry(entry.getKey(), mod)) {
+                    newMods.put(entry.getKey(), mod);
+                }
+            }
+        }
+
         meta.setAttributeModifiers(newMods);
     }
 
