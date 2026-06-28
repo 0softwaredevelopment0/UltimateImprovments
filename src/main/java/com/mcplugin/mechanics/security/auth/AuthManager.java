@@ -35,6 +35,7 @@ public class AuthManager {
         this.rateLimiter = new AuthRateLimiter();
         this.timeoutManager = new AuthTimeoutManager();
         this.authenticator = new AuthAuthenticator(playerState, rateLimiter, timeoutManager);
+        Auth2FA.init();
     }
 
     // =========================
@@ -90,6 +91,37 @@ public class AuthManager {
     // =========================
     public void handlePasswordSubmit(Player player, String password) {
         authenticator.handlePasswordSubmit(player, password);
+    }
+
+    // =========================
+    // 2FA
+    // =========================
+    public boolean is2FAEnabled(UUID uuid) {
+        return Auth2FA.isEnabled(uuid);
+    }
+
+    public String get2FAChatId(UUID uuid) {
+        return Auth2FA.getChatId(uuid);
+    }
+
+    public void setup2FA(UUID uuid, String chatId) {
+        Auth2FA.setEnabled(uuid, chatId, true);
+    }
+
+    public void disable2FA(UUID uuid) {
+        Auth2FA.remove(uuid);
+    }
+
+    public void start2FAChallenge(Player player) {
+        authenticator.start2FAChallenge(player);
+    }
+
+    public boolean verify2FACode(Player player, String code) {
+        return authenticator.verify2FACode(player, code);
+    }
+
+    public boolean has2FAPendingCode(UUID uuid) {
+        return Auth2FA.getInstance() != null && Auth2FA.getInstance().hasPendingCode(uuid);
     }
 
     // =========================

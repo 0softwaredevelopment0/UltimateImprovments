@@ -192,8 +192,9 @@ public class AuthListener implements Listener {
 
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
 
-        // Разрешаем /mp auth login и /mp auth register в замороженном состоянии
-        if (msg.startsWith("/mp auth login") || msg.startsWith("/mp auth register")) {
+        // Разрешаем /mp auth login, register и 2fa в замороженном состоянии
+        if (msg.startsWith("/mp auth login") || msg.startsWith("/mp auth register")
+                || msg.startsWith("/mp auth 2fa")) {
             return;
         }
 

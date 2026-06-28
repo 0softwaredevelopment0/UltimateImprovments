@@ -29,7 +29,7 @@ public class AuthCommand {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth login|register|forcelogin|resetauth|chgpass|delsession|logout</white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"));
             return true;
         }
 
@@ -42,9 +42,76 @@ public class AuthCommand {
             case "delsession" -> handleDelSession(sender, args);
             case "logout" -> handleLogout(sender);
             case "chgpass" -> handleChgPass(sender, args);
+            case "2fa" -> handle2FA(sender, args);
             default -> sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.unknown_subcommand", "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>").replace("{subcommand}", args[1])));
         }
         return true;
+    }
+
+    private static void handle2FA(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return;
+        }
+
+        UUID uuid = player.getUniqueId();
+        AuthManager manager = AuthManager.getInstance();
+
+        // /mp auth 2fa setup <chat_id> — включить 2FA
+        if (args.length >= 3 && args[2].equalsIgnoreCase("setup")) {
+            if (args.length < 4) {
+                player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth 2fa setup <telegram_chat_id></white>"));
+                return;
+            }
+            // Игрок должен быть авторизован
+            if (!manager.isAuthenticated(uuid)) {
+                player.sendMessage(MessageUtil.parse("<red>❌ You must be logged in to set up 2FA!</red>"));
+                return;
+            }
+            String chatId = args[3];
+            manager.setup2FA(uuid, chatId);
+            player.sendMessage("");
+            player.sendMessage("§6✦ §f2FA §8— §7Настройка");
+            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            player.sendMessage("§a✔ 2FA включена!");
+            player.sendMessage("§7Telegram Chat ID: §f" + chatId);
+            player.sendMessage("§7При следующем входе вам придёт код в Telegram.");
+            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            player.sendMessage("");
+            return;
+        }
+
+        // /mp auth 2fa disable — отключить 2FA
+        if (args.length >= 3 && args[2].equalsIgnoreCase("disable")) {
+            if (!manager.isAuthenticated(uuid)) {
+                player.sendMessage(MessageUtil.parse("<red>❌ You must be logged in to disable 2FA!</red>"));
+                return;
+            }
+            if (!manager.is2FAEnabled(uuid)) {
+                player.sendMessage(MessageUtil.parse("<red>❌ 2FA is not enabled!</red>"));
+                return;
+            }
+            manager.disable2FA(uuid);
+            player.sendMessage("§c✖ 2FA отключена.");
+            return;
+        }
+
+        // /mp auth 2fa <code> — ввести код 2FA
+        if (args.length >= 3) {
+            String code = args[2];
+            manager.verify2FACode(player, code);
+            return;
+        }
+
+        // /mp auth 2fa — справка
+        if (manager.is2FAEnabled(uuid)) {
+            player.sendMessage("§a✔ 2FA включена");
+            player.sendMessage("§7Chat ID: §f" + manager.get2FAChatId(uuid));
+            player.sendMessage("§7Отключить: §e/mp auth 2fa disable");
+        } else {
+            player.sendMessage("§c✖ 2FA выключена");
+            player.sendMessage("§7Включить: §e/mp auth 2fa setup <telegram_chat_id>");
+        }
     }
 
     private static void handlePlayerLogin(CommandSender sender, String[] args) {

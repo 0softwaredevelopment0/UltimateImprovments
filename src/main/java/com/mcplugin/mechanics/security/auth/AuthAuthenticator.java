@@ -199,6 +199,18 @@ public class AuthAuthenticator {
                         if (!player.isOnline()) return;
                         playerState.resetWrongAttempts(uuid);
                         authenticatePlayer(player, "<green>\u2705</green> <white>Registration successful!</white>");
+
+                        // Предлагаем настроить 2FA
+                        player.sendMessage("");
+                        player.sendMessage("§6✦ §fДвухфакторная аутентификация (2FA)");
+                        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+                        player.sendMessage("§eХотите защитить аккаунт через Telegram?");
+                        player.sendMessage("§f1. Напишите боту @userinfobot — получите свой Chat ID");
+                        player.sendMessage("§f2. Введите: §e/mp auth 2fa setup <ваш_chat_id>");
+                        player.sendMessage("§7При каждом входе будет приходить код в Telegram.");
+                        player.sendMessage("§7Вы можете настроить 2FA позже той же командой.");
+                        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+                        player.sendMessage("");
                     });
                 }
             } catch (Exception e) {
@@ -227,7 +239,63 @@ public class AuthAuthenticator {
 
         AuthDatabase.updateLastLogin(uuid);
         playerState.resetWrongAttempts(uuid);
+
+        // Если 2FA включена — запускаем challenge вместо полной аутентификации
+        if (Auth2FA.isEnabled(uuid)) {
+            start2FAChallenge(player);
+            return;
+        }
+
         authenticatePlayer(player, "<green>\u2705</green> <white>You have successfully logged in!</white>");
+    }
+
+    // =========================
+    // 2FA CHALLENGE
+    // =========================
+    public void start2FAChallenge(Player player) {
+        UUID uuid = player.getUniqueId();
+        String chatId = Auth2FA.getChatId(uuid);
+        if (chatId == null || chatId.isEmpty()) {
+            // Нет chat_id — отключаем 2FA и пускаем без кода
+            Auth2FA.remove(uuid);
+            authenticatePlayer(player, "<green>\u2705</green> <white>Logged in (2FA reset — no Telegram linked).</white>");
+            return;
+        }
+
+        // Генерируем и отправляем код
+        String code = Auth2FA.getInstance().generateCode(uuid);
+
+        player.sendMessage("");
+        player.sendMessage("§6✦ §f2FA §8— §7Двухфакторная аутентификация");
+        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage("§eКод отправлен вам в Telegram!");
+        player.sendMessage("§7Введите код для входа:");
+        player.sendMessage("§e/mp auth 2fa §7<§ocode§7>");
+        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage("");
+
+        Main.getInstance().getLogger().info("[Auth2FA] Challenge started for " + player.getName()
+                + " (chat: " + chatId + ", code: " + code + ")");
+    }
+
+    public boolean verify2FACode(Player player, String code) {
+        UUID uuid = player.getUniqueId();
+
+        if (!Auth2FA.getInstance().hasPendingCode(uuid)) {
+            player.sendMessage("§c❌ Нет активного кода 2FA! Используйте /mp auth login.");
+            return false;
+        }
+
+        if (Auth2FA.getInstance().verifyCode(uuid, code)) {
+            authenticatePlayer(player, "<green>\u2705</green> <white>2FA пройдена! Добро пожаловать.</white>");
+            return true;
+        } else {
+            player.sendMessage("");
+            player.sendMessage("§c❌ Неверный код 2FA! Попробуйте снова.");
+            player.sendMessage("§e/mp auth 2fa §7<§ocode§7>");
+            player.sendMessage("");
+            return false;
+        }
     }
 
     // =========================

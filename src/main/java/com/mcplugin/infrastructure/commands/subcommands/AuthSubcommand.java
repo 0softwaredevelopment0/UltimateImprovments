@@ -21,13 +21,14 @@ public final class AuthSubcommand {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth login|register|forcelogin|resetauth|chgpass|delsession|logout</white>"));
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"));
             return true;
         }
 
         return switch (args[1].toLowerCase()) {
             case "login" -> handlePlayerLogin(sender, args);
             case "register" -> handlePlayerRegister(sender, args);
+            case "2fa" -> handle2FA(sender, args);
             case "forcelogin" -> handleForceLogin(sender, args);
             case "resetauth" -> handleResetAuth(sender, args);
             case "delsession" -> handleDelSession(sender, args);
@@ -43,6 +44,74 @@ public final class AuthSubcommand {
     @SuppressWarnings("deprecation")
     private static UUID getOfflineUuid(String name) {
         return Bukkit.getOfflinePlayer(name).getUniqueId();
+    }
+
+    private static boolean handle2FA(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Only players can use this command!</red>"));
+            return true;
+        }
+
+        UUID uuid = player.getUniqueId();
+        AuthManager mgr = AuthManager.getInstance();
+        if (mgr == null) {
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authorization system not initialized!</red>"));
+            return true;
+        }
+
+        // /mp auth 2fa setup <chat_id>
+        if (args.length >= 3 && args[2].equalsIgnoreCase("setup")) {
+            if (args.length < 4) {
+                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth 2fa setup <telegram_chat_id></white>"));
+                return true;
+            }
+            if (!mgr.isAuthenticated(uuid)) {
+                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You must be logged in to set up 2FA!</red>"));
+                return true;
+            }
+            mgr.setup2FA(uuid, args[3]);
+            player.sendMessage("");
+            player.sendMessage("§6✦ §f2FA §8— §7Настройка");
+            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            player.sendMessage("§a✔ 2FA включена!");
+            player.sendMessage("§7Chat ID: §f" + args[3]);
+            player.sendMessage("§7При следующем входе код придёт в Telegram.");
+            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            player.sendMessage("");
+            return true;
+        }
+
+        // /mp auth 2fa disable
+        if (args.length >= 3 && args[2].equalsIgnoreCase("disable")) {
+            if (!mgr.isAuthenticated(uuid)) {
+                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You must be logged in to disable 2FA!</red>"));
+                return true;
+            }
+            if (!mgr.is2FAEnabled(uuid)) {
+                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>2FA is not enabled!</red>"));
+                return true;
+            }
+            mgr.disable2FA(uuid);
+            player.sendMessage("§c✖ 2FA отключена.");
+            return true;
+        }
+
+        // /mp auth 2fa <code>
+        if (args.length >= 3) {
+            mgr.verify2FACode(player, args[2]);
+            return true;
+        }
+
+        // /mp auth 2fa — статус
+        if (mgr.is2FAEnabled(uuid)) {
+            player.sendMessage("§a✔ 2FA включена");
+            player.sendMessage("§7Chat ID: §f" + mgr.get2FAChatId(uuid));
+            player.sendMessage("§7Отключить: §e/mp auth 2fa disable");
+        } else {
+            player.sendMessage("§c✖ 2FA выключена");
+            player.sendMessage("§7Включить: §e/mp auth 2fa setup <telegram_chat_id>");
+        }
+        return true;
     }
 
     private static boolean handlePlayerLogin(CommandSender sender, String[] args) {

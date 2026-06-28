@@ -489,6 +489,9 @@ auth:
   check_duplicate_name:
     enabled: true
 
+  2fa:
+    bot_url: ""
+
 void_protection:
   enabled: true
 
