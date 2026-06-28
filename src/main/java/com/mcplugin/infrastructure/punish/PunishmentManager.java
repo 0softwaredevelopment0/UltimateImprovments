@@ -305,6 +305,30 @@ public class PunishmentManager {
     }
 
     /**
+     * Деактивирует предупреждение по его ID.
+     * Устанавливает expires_at = 1 (прошлое время), чтобы warn перестал быть активным.
+     *
+     * @param id ID предупреждения из таблицы warns
+     * @return true если успешно
+     */
+    public static boolean removeWarnById(int id) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "UPDATE warns SET expires_at = 1 WHERE id = ?")) {
+            st.setInt(1, id);
+            int rows = st.executeUpdate();
+            if (rows > 0) {
+                Main.getInstance().getLogger().info("[Punish] Warn id=" + id + " removed.");
+                return true;
+            }
+            return false;
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Punish] Failed to remove warn id=" + id, e);
+            return false;
+        }
+    }
+
+    /**
      * Возвращает список активных предупреждений игрока.
      */
     public static List<WarnRecord> getActiveWarns(String uuid) {

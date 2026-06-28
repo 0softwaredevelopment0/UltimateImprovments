@@ -60,6 +60,7 @@ public final class PunishSubcommand {
             case "listwarns" -> handleListWarns(sender, args);
             case "unban" -> handleUnban(sender, args);
             case "unmute" -> handleUnmute(sender, args);
+            case "unwarn" -> handleUnwarn(sender, args);
             default -> {
                 sendUsage(sender);
                 yield true;
@@ -456,7 +457,7 @@ public final class PunishSubcommand {
             PunishmentManager.WarnRecord w = warns.get(i);
             String duration = w.isPermanent() ? "<red>permanent</red>" : "<yellow>" + w.formatRemaining() + "</yellow>";
             sender.sendMessage(MessageUtil.parse(
-                    "  <white>" + (i + 1) + ".</white> <gray>" + w.reason + "</gray>\n" +
+                    "  <white>#" + w.id + ".</white> <gray>" + w.reason + "</gray>\n" +
                     "    <dark_gray>By: " + w.warnedBy + " | Duration: " + duration + "</dark_gray>"
             ));
         }
@@ -566,6 +567,54 @@ public final class PunishSubcommand {
         } else {
             sender.sendMessage(MessageUtil.parse(
                     "<yellow>⚠</yellow> <white>No active mute found for</white> <yellow>" + targetName + "</yellow>"
+            ));
+        }
+        return true;
+    }
+
+    // =========================
+    // UNWARN
+    // =========================
+    private static boolean handleUnwarn(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.punish.warn")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unwarn!</red>"));
+            return true;
+        }
+        if (args.length < 5) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/mp punish unwarn <player> <reason> <warnId></white>"
+            ));
+            return true;
+        }
+
+        String targetName = args[2];
+        String reason = args[3];
+        int warnId;
+        try {
+            warnId = Integer.parseInt(args[4]);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Invalid warn ID: </red><yellow>" + args[4] + "</yellow>"
+            ));
+            return true;
+        }
+
+        if (warnId <= 0) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Warn ID must be a positive number!</red>"
+            ));
+            return true;
+        }
+
+        boolean ok = PunishmentManager.removeWarnById(warnId);
+        if (ok) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<green>✔</green> <white>Warn</white> <yellow>#" + warnId + "</yellow> <white>for</white> <yellow>" + targetName + "</yellow> <white>has been removed.</white>\n" +
+                    "<gray>Reason: " + reason + "</gray>"
+            ));
+        } else {
+            sender.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠</yellow> <white>No active warn with ID</white> <yellow>" + warnId + "</yellow> <white>found for</white> <yellow>" + targetName + "</yellow>"
             ));
         }
         return true;
@@ -739,6 +788,7 @@ public final class PunishSubcommand {
                 "<white>/mp punish listwarns [player]</white>\n" +
                 "<white>/mp punish unban <player></white>\n" +
                 "<white>/mp punish unmute <player></white>\n" +
+                "<white>/mp punish unwarn <player> <reason> <warnId></white>\n" +
                 "<gray>Flags: -time:<N>s|m|h|d, -permanent, -ip, -hw</gray>"
         ));
     }
@@ -751,14 +801,14 @@ public final class PunishSubcommand {
 
         if (args.length == 2) {
             String prefix = args[1].toLowerCase();
-            for (String action : List.of("ban", "mute", "kick", "warn", "listwarns", "unban", "unmute")) {
+            for (String action : List.of("ban", "mute", "kick", "warn", "listwarns", "unban", "unmute", "unwarn")) {
                 if (action.startsWith(prefix)) {
                     completions.add(action);
                 }
             }
         } else if (args.length == 3) {
             String action = args[1].toLowerCase();
-            if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "listwarns").contains(action)) {
+            if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "unwarn", "listwarns").contains(action)) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     completions.add(p.getName());
                 }
