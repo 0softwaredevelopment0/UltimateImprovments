@@ -151,7 +151,6 @@ features:
 
   boostedcobweb:
     enabled: true
-    interval_ticks: 5
 
   deathbell:
     enabled: true
