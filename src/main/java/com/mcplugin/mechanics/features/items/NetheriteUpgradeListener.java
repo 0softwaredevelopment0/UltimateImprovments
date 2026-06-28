@@ -202,8 +202,9 @@ public class NetheriteUpgradeListener implements Listener {
         for (var entry : allMods.entries()) {
             Attribute attr = entry.getKey();
             AttributeModifier mod = entry.getValue();
-            // Пропускаем только наш модификатор, остальные (включая базовые) сохраняем
-            if (attr == attribute && key.equals(mod.getKey())) {
+            // Пропускаем только наш модификатор, остальные (включая базовые) сохраняем.
+            // ⚠ mod.getKey() может быть null у модификаторов от других плагинов/старых версий
+            if (attr == attribute && mod.getKey() != null && key.equals(mod.getKey())) {
                 continue;
             }
             newMods.put(attr, mod);
