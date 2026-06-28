@@ -9,74 +9,90 @@ import java.io.File;
 import java.util.logging.Logger;
 
 /**
- * Управляет файлом messages.yml — все сообщения плагина вынесены сюда
- * из config.yml для удобной настройки и перевода.
+ * Управляет файлом messages-*.yml — все сообщения плагина вынесены сюда
+ * для удобной настройки и перевода.
  * <p>
- * При старте messages.yml создаётся из ресурсов, если ещё не существует.
- * Использует те же пути, что и в config.yml, чтобы код мог просто
- * заменить {@code getConfig().getString(path, def)} на
- * {@code MessagesManager.getString(path, def)} без изменения путей.
+ * Язык выбирается в config.yml: messages.lang (ru | en). По умолчанию ru.
+ * Загружается messages-{lang}.yml. Если файла нет — создаётся из ресурсов.
+ * Если ресурса нет — fallback на messages.yml.
  */
 public class MessagesManager {
 
-    private static final String MESSAGES_FILE_NAME = "messages.yml";
+    private static final String DEFAULT_MESSAGES = "messages.yml";
+    private static String messagesFileName = DEFAULT_MESSAGES;
     private static FileConfiguration messages;
     private static Main plugin;
 
     private MessagesManager() {}
 
     /**
-     * Инициализирует MessagesManager: сохраняет messages.yml из ресурсов
-     * (если не существует), проверяет целостность и загружает.
-     * <p>
-     * Если integrity check не проходит — файл переименовывается
-     * в compromised-messages.yml и создаётся свежий из ресурсов.
+     * Инициализирует MessagesManager: читает lang из config,
+     * сохраняет messages-{lang}.yml из ресурсов (если не существует),
+     * проверяет целостность и загружает.
      */
     public static void init(Main plugin) {
         MessagesManager.plugin = plugin;
-        saveDefaultMessages();
-        // Проверка целостности: если чего-то не хватает,
-        // ConfigIntegrityValidator переименует в compromised-messages.yml
-        // и создаст свежий файл из ресурсов
+
+        // Читаем язык из config.yml
+        String lang = plugin.getConfig().getString("messages.lang", "ru");
+        if (!lang.equals("ru") && !lang.equals("en")) {
+            lang = "ru";
+        }
+
+        messagesFileName = "messages-" + lang + ".yml";
+        saveMessagesFile();
         ConfigIntegrityValidator.validateMessages(plugin);
-        // Если файл был пересоздан — saveDefaultMessages(false) не сработает,
-        // потому что файл уже существует (только что создан через saveResource).
-        // Просто загружаем его.
         reload();
+
+        plugin.getLogger().info("[Messages] Loaded: " + messagesFileName);
     }
 
     /**
-     * Сохраняет дефолтный messages.yml из ресурсов плагина,
-     * если файл ещё не существует в папке плагина.
+     * Сохраняет messages-{lang}.yml из ресурсов плагина,
+     * если файл ещё не существует. Fallback на messages.yml.
      */
-    private static void saveDefaultMessages() {
-        File messagesFile = new File(plugin.getDataFolder(), MESSAGES_FILE_NAME);
+    private static void saveMessagesFile() {
+        File messagesFile = new File(plugin.getDataFolder(), messagesFileName);
         Logger log = plugin.getLogger();
         if (!messagesFile.exists()) {
             try {
-                plugin.saveResource(MESSAGES_FILE_NAME, false);
-                log.info("[Messages] Created new file: messages.yml");
+                plugin.saveResource(messagesFileName, false);
+                log.info("[Messages] Created new file: " + messagesFileName);
+                return;
             } catch (Exception e) {
-                FileLogger.logError("Messages", "Failed to save messages.yml from resources", log, e);
+                log.warning("[Messages] Resource " + messagesFileName + " not found, trying fallback: " + DEFAULT_MESSAGES);
             }
         } else {
-            log.info("[Messages] File exists: messages.yml");
+            log.info("[Messages] File exists: " + messagesFileName);
+            return;
+        }
+
+        // Fallback на messages.yml
+        messagesFileName = DEFAULT_MESSAGES;
+        File fallbackFile = new File(plugin.getDataFolder(), messagesFileName);
+        if (!fallbackFile.exists()) {
+            try {
+                plugin.saveResource(messagesFileName, false);
+                log.info("[Messages] Created fallback file: " + messagesFileName);
+            } catch (Exception e) {
+                FileLogger.logError("Messages", "Failed to save " + messagesFileName + " from resources", log, e);
+            }
+        } else {
+            log.info("[Messages] Fallback file exists: " + messagesFileName);
         }
     }
 
-
-
     /**
-     * Перезагружает messages.yml с диска.
-     * Вызывается при {@code /mcplugin reload}.
+     * Перезагружает messages-файл с диска.
+     * Вызывается при /mp reload.
      */
     public static void reload() {
-        File messagesFile = new File(plugin.getDataFolder(), MESSAGES_FILE_NAME);
+        File messagesFile = new File(plugin.getDataFolder(), messagesFileName);
         messages = YamlConfiguration.loadConfiguration(messagesFile);
     }
 
     /**
-     * Возвращает строку сообщения из messages.yml по указанному пути.
+     * Возвращает строку сообщения из messages-файла по указанному пути.
      *
      * @param path путь в YAML (например "auth.messages.wrong_password")
      * @param def  значение по умолчанию, если путь не найден
@@ -88,9 +104,16 @@ public class MessagesManager {
     }
 
     /**
-     * Проверяет, загружен ли messages.yml.
+     * Проверяет, загружен ли messages-файл.
      */
     public static boolean isLoaded() {
         return messages != null;
+    }
+
+    /**
+     * Возвращает имя текущего загруженного messages-файла (например "messages-ru.yml").
+     */
+    public static String getMessagesFileName() {
+        return messagesFileName;
     }
 }

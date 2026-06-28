@@ -467,6 +467,9 @@ radiation:
   reactor_meltdown_close: 6400
   reactor_meltdown_far: 3200
 
+messages:
+  lang: ru
+
 auth:
   enabled: true
 
