@@ -29,11 +29,14 @@ public class AuthCommand {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.usage", "<red>❌ Usage: </red><white>/mp auth forcelogin|resetauth|chgpass|delsession|logout <nick></white>")));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth login|register|forcelogin|resetauth|chgpass|delsession|logout</white>"));
             return true;
         }
 
-        switch (args[1].toLowerCase()) {
+        String subCmd = args[1].toLowerCase();
+        switch (subCmd) {
+            case "login" -> handlePlayerLogin(sender, args);
+            case "register" -> handlePlayerRegister(sender, args);
             case "forcelogin" -> handleForceLogin(sender, args);
             case "resetauth" -> handleResetAuth(sender, args);
             case "delsession" -> handleDelSession(sender, args);
@@ -42,6 +45,42 @@ public class AuthCommand {
             default -> sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.unknown_subcommand", "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>").replace("{subcommand}", args[1])));
         }
         return true;
+    }
+
+    private static void handlePlayerLogin(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return;
+        }
+        if (args.length < 3) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth login <password></white>"));
+            return;
+        }
+        String password = args[2];
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Authorization system is not initialized!</red>"));
+            return;
+        }
+        manager.handlePasswordSubmit(player, password);
+    }
+
+    private static void handlePlayerRegister(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return;
+        }
+        if (args.length < 3) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth register <password></white>"));
+            return;
+        }
+        String password = args[2];
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Authorization system is not initialized!</red>"));
+            return;
+        }
+        manager.handlePasswordSubmit(player, password);
     }
 
     private static void handleForceLogin(CommandSender sender, String[] args) {

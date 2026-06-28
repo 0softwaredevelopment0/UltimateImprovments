@@ -64,7 +64,6 @@ public class AuthAuthenticator {
                             "<yellow>✦</yellow> <gray>Your IP address has changed. Please log in again.</gray>");
                     player.sendMessage(MessageUtil.parse(ipMsg));
                     AuthDatabase.resetAuth(uuid);
-                    registered = true;
                 } else if (AuthDatabase.hasValidSession(uuid, AuthConfig.getSessionDurationMs())) {
                     savePlayerIp(player);
                     playerState.setAuthenticated(uuid);
@@ -81,38 +80,45 @@ public class AuthAuthenticator {
             }
         }
 
-        // No valid session — freeze and show GUI on next tick
-        // MUST delay by 1 tick: opening any inventory inside PlayerJoinEvent
-        // can fail because the client connection is not yet fully ready.
+        // Сохраняем финальное состояние registered для использования в Runnable
+        final boolean isRegistered = registered;
+
+        // Freeze player and show chat prompt
         playerState.setPendingAuth(uuid);
-
         freezePlayer(player);
-
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.opening_auth_window", "<yellow>✦</yellow> <gray>Opening authorization window...</gray>")));
-
-        // Start login timeout kick timer
         timeoutManager.startLoginTimeout(player);
 
-        // ⏱ 1-tick delay — client must finish join handshake before receiving inventory packets
-        final boolean isRegistered = registered;
+        // Show auth instructions in chat with 1-tick delay (handshake must complete)
         new BukkitRunnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
                 if (!playerState.needsAuth(player)) return;
-
-                try {
-                    if (isRegistered) {
-                        AuthGUI.openLogin(player);
-                    } else {
-                        AuthGUI.openRegister(player);
-                    }
-                } catch (Exception e) {
-                    Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Failed to open auth GUI for " + player.getName(), e);
-                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.auth_window_error", "<red>❌ Error opening authorization window! Report to an administrator.</red>")));
-                }
+                sendAuthPrompt(player, isRegistered);
             }
         }.runTaskLater(Main.getInstance(), 1L);
+    }
+
+    /**
+     * Отправляет в чат инструкцию по авторизации.
+     */
+    private void sendAuthPrompt(Player player, boolean isRegistered) {
+        player.sendMessage("");
+        player.sendMessage("§6✦ §fMC-Plugin §8— §7Authorization");
+        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage("");
+        if (isRegistered) {
+            player.sendMessage("§c❌ §fYou are §lNOT§r §fauthorized!");
+            player.sendMessage("§7Please log in to continue playing:");
+            player.sendMessage("§e/mp auth login §7<§opassword§7>");
+        } else {
+            player.sendMessage("§c❌ §fYou are §lNOT§r §fregistered!");
+            player.sendMessage("§7Please register to continue playing:");
+            player.sendMessage("§e/mp auth register §7<§opassword§7>");
+        }
+        player.sendMessage("");
+        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage("");
     }
 
     // =========================
@@ -249,6 +255,9 @@ public class AuthAuthenticator {
         player.sendMessage("");
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password_remaining", "<red>❌ Incorrect password! Remaining attempts: </red><yellow>{remaining}</yellow>").replace("{remaining}", String.valueOf(remaining))));
         player.sendMessage("");
+        // Resend auth prompt
+        boolean isRegistered = AuthDatabase.isRegistered(uuid);
+        sendAuthPrompt(player, isRegistered);
     }
 
     // =========================
@@ -261,19 +270,6 @@ public class AuthAuthenticator {
 
         timeoutManager.cancelLoginTimeout(uuid);
         playerState.resetWrongAttempts(uuid);
-
-        // =========================
-        // 🛡 ANTI-DUP: очищаем ДО closeInventory
-        // Paper может положить предмет из anvil на курсор при закрытии,
-        // и курсорный предмет упадёт в инвентарь при closeInventory().
-        // Порядок: очистить курсор → убрать auth-предметы → закрыть → очистить ещё раз
-        // =========================
-        player.setItemOnCursor(null);
-        AuthGUITracker.removeAuthItemsFromPlayer(player);
-        player.closeInventory();
-        // После closeInventory курсорные предметы могли упасть в инвентарь — чистим снова
-        player.setItemOnCursor(null);
-        AuthGUITracker.removeAuthItemsFromPlayer(player);
 
         unfreezePlayer(player);
 
@@ -315,12 +311,6 @@ public class AuthAuthenticator {
                     playerState.setAuthenticated(uuid);
                     savePlayerIp(player);
 
-                    // 🛡 ANTI-DUP: очищаем ДО и ПОСЛЕ closeInventory
-                    player.setItemOnCursor(null);
-                    AuthGUITracker.removeAuthItemsFromPlayer(player);
-                    player.closeInventory();
-                    player.setItemOnCursor(null);
-                    AuthGUITracker.removeAuthItemsFromPlayer(player);
                     unfreezePlayer(player);
 
                     player.sendMessage("");
@@ -370,7 +360,6 @@ public class AuthAuthenticator {
                     playerState.removePendingAuth(uuid);
                     AuthDatabase.resetAuth(uuid);
 
-                    player.closeInventory();
                     String kickLogout = MessagesManager.getString("auth.admin.kick_logout",
                             "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
                     player.kickPlayer(MessageUtil.legacy(kickLogout));
@@ -406,7 +395,7 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // RE-OPEN GUI AFTER DELAY
+    // RESEND AUTH PROMPT AFTER DELAY
     // =========================
     public void reopenAfterDelay(Player player) {
         if (playerState.isAuthenticated(player.getUniqueId())) return;
@@ -416,12 +405,7 @@ public class AuthAuthenticator {
             public void run() {
                 if (!player.isOnline()) return;
                 if (playerState.isAuthenticated(player.getUniqueId())) return;
-
-                if (AuthDatabase.isRegistered(player.getUniqueId())) {
-                    AuthGUI.openLogin(player);
-                } else {
-                    AuthGUI.openRegister(player);
-                }
+                sendAuthPrompt(player, AuthDatabase.isRegistered(player.getUniqueId()));
             }
         }.runTaskLater(Main.getInstance(), 5L);
     }

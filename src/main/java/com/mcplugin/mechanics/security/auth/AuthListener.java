@@ -112,6 +112,33 @@ public class AuthListener implements Listener {
     }
 
     // =========================
+    // BLOCK DAMAGE TO ENTITIES if not authed
+    // =========================
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onEntityDamageByEntity(org.bukkit.event.entity.EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player player)) return;
+        if (!needsAuth(player)) return;
+        event.setCancelled(true);
+    }
+
+    // =========================
+    // BLOCK BUCKET USE if not authed
+    // =========================
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
+        Player player = event.getPlayer();
+        if (!needsAuth(player)) return;
+        event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onPlayerBucketFill(PlayerBucketFillEvent event) {
+        Player player = event.getPlayer();
+        if (!needsAuth(player)) return;
+        event.setCancelled(true);
+    }
+
+    // =========================
     // BLOCK MOVEMENT if not authed
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
@@ -162,8 +189,19 @@ public class AuthListener implements Listener {
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
         if (!needsAuth(player)) return;
+
+        String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
+
+        // Разрешаем /mp auth login и /mp auth register в замороженном состоянии
+        if (msg.startsWith("/mp auth login") || msg.startsWith("/mp auth register")) {
+            return;
+        }
+
         event.setCancelled(true);
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.need_auth", "<red>❌ Please authenticate first! Enter your password in the opened window.</red>")));
+        player.sendMessage("");
+        player.sendMessage("§c❌ §fПожалуйста, авторизуйтесь!");
+        player.sendMessage("§e/mp auth login §7<§opassword§7> §f| §e/mp auth register §7<§opassword§7>");
+        player.sendMessage("");
     }
 
     // =========================
