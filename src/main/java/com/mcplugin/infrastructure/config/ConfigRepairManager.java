@@ -152,6 +152,9 @@ public class ConfigRepairManager {
         }
         if (value instanceof List) {
             List<?> list = (List<?>) value;
+            if (list.isEmpty()) {
+                return key + ": []";
+            }
             StringBuilder sb = new StringBuilder(key).append(":\n");
             for (Object item : list) {
                 sb.append("  - ").append(formatScalar(item)).append("\n");

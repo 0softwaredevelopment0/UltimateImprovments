@@ -61,7 +61,8 @@ public class Main extends JavaPlugin {
 
         // =========================
         // ПРОВЕРКА ЦЕЛОСТНОСТИ КОНФИГА
-        // Если чего-то не хватает → compromised-config.yml + свежий config.yml
+        // ConfigRepairManager найдет недостающие ключи и ДОБАВИТ их в конец файла,
+        // ничего не перезаписывая. Существующие значения сохраняются.
         // =========================
         ConfigIntegrityValidator.validate(this);
 

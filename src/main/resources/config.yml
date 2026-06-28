@@ -806,4 +806,4 @@ chat:
 access_control:
   check_interval_ticks: 20
 
-plugin_version: "1.8.75"
+plugin_version: "1.8.76"
