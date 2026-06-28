@@ -467,6 +467,19 @@ radiation:
   reactor_meltdown_close: 6400
   reactor_meltdown_far: 3200
 
+netherite_upgrade:
+  base_values:
+    # Базовые значения атрибутов для расчёта лора улучшения
+    armor:
+      helmet: 3
+      chestplate: 8
+      leggings: 6
+      boots: 3
+    weapons:
+      sword: 8
+      mace: 5
+    block_break_speed: 1
+
 messages:
   lang: ru
 

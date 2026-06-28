@@ -14,7 +14,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.inventory.AnvilInventory;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -46,7 +45,8 @@ import java.util.*;
 public class NetheriteUpgradeListener implements Listener {
 
     private static final Set<Material> NETHERITE_WEAPONS = Set.of(
-        Material.NETHERITE_SWORD
+        Material.NETHERITE_SWORD,
+        Material.MACE
     );
 
     private static final Set<Material> NETHERITE_TOOLS = Set.of(
@@ -179,16 +179,33 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     /**
-     * Определяет EquipmentSlot для получения базовых атрибутов материала.
-     * Оружие/инструменты — HAND, броня — HEAD/CHEST/LEGS/FEET.
+     * Возвращает базовое значение атрибута из config.yml.
+     * Используется для расчёта итогового значения в лоре.
      */
-    private static EquipmentSlot getDefaultSlot(Material material) {
+    private static double getBaseValue(Material material) {
+        var config = Main.getInstance().getConfig();
         String name = material.name();
-        if (name.endsWith("_HELMET") || name.equals("TURTLE_HELMET")) return EquipmentSlot.HEAD;
-        if (name.endsWith("_CHESTPLATE")) return EquipmentSlot.CHEST;
-        if (name.endsWith("_LEGGINGS")) return EquipmentSlot.LEGS;
-        if (name.endsWith("_BOOTS")) return EquipmentSlot.FEET;
-        return EquipmentSlot.HAND;
+
+        if (name.equals("NETHERITE_SWORD")) {
+            return config.getDouble("netherite_upgrade.base_values.weapons.sword", 8);
+        }
+        if (name.equals("MACE")) {
+            return config.getDouble("netherite_upgrade.base_values.weapons.mace", 5);
+        }
+        if (name.endsWith("_HELMET")) {
+            return config.getDouble("netherite_upgrade.base_values.armor.helmet", 3);
+        }
+        if (name.endsWith("_CHESTPLATE")) {
+            return config.getDouble("netherite_upgrade.base_values.armor.chestplate", 8);
+        }
+        if (name.endsWith("_LEGGINGS")) {
+            return config.getDouble("netherite_upgrade.base_values.armor.leggings", 6);
+        }
+        if (name.endsWith("_BOOTS")) {
+            return config.getDouble("netherite_upgrade.base_values.armor.boots", 3);
+        }
+        // Инструменты: block_break_speed
+        return config.getDouble("netherite_upgrade.base_values.block_break_speed", 1);
     }
 
     /**
@@ -215,25 +232,14 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     /**
-     * Суммирует БАЗОВОЕ значение атрибута материала предмета
-     * (8 для меча, 6 для нагрудника и т.д.) + все ADD_NUMBER модификаторы
+     * Суммирует базовое значение атрибута из config.yml
+     * (3 для шлема, 8 для меча и т.д.) + все ADD_NUMBER модификаторы
      * от улучшений незеритом.
      */
     private static double getTotalAttribute(ItemMeta meta, Attribute attribute, Material material) {
-        double total = 0;
+        double total = getBaseValue(material);
 
-        // 1) Базовое значение из материала (8 урона у меча, 6 защиты у нагрудника и т.д.)
-        EquipmentSlot slot = getDefaultSlot(material);
-        var defaultMods = material.getDefaultAttributeModifiers(slot);
-        if (defaultMods != null && defaultMods.containsKey(attribute)) {
-            for (AttributeModifier mod : defaultMods.get(attribute)) {
-                if (mod.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
-                    total += mod.getAmount();
-                }
-            }
-        }
-
-        // 2) Кастомные модификаторы от улучшений незеритом
+        // Кастомные модификаторы от улучшений незеритом
         var mods = meta.getAttributeModifiers(attribute);
         if (mods != null) {
             for (AttributeModifier mod : mods) {
