@@ -75,7 +75,7 @@ public class AuthCommand {
             player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
             player.sendMessage("§a✔ 2FA включена!");
             player.sendMessage("§7Telegram Chat ID: §f" + chatId);
-            player.sendMessage("§7При следующем входе вам придёт код в Telegram.");
+            player.sendMessage("§7При следующей авторизации вам придёт код в Telegram.");
             player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
             player.sendMessage("");
             return;

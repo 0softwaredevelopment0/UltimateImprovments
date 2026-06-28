@@ -207,7 +207,7 @@ public class AuthAuthenticator {
                         player.sendMessage("§eХотите защитить аккаунт через Telegram?");
                         player.sendMessage("§f1. Напишите боту @OakworldSRVbot команду §e/start§f — получите свой Chat ID");
                         player.sendMessage("§f2. Введите: §e/mp auth 2fa setup <ваш_chat_id>");
-                        player.sendMessage("§7При каждом входе будет приходить код в Telegram.");
+                        player.sendMessage("§7Код будет приходить только при авторизации на сервере.");
                         player.sendMessage("§7Вы можете настроить 2FA позже той же командой.");
                         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
                         player.sendMessage("");
