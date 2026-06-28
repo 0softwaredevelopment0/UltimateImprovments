@@ -3,7 +3,6 @@ package com.mcplugin.infrastructure.opwhitelist;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -36,7 +35,6 @@ import java.util.logging.Level;
 public class OpWhitelistManager implements Listener {
 
     private static boolean enabled = false;
-    private static int taskId = -1;
 
     // ════════════════════════════════════════
     // INIT
@@ -250,7 +248,10 @@ public class OpWhitelistManager implements Listener {
         }
 
         if (enabled) {
-            checkAllOnline();
+            // Мгновенная проверка всех онлайн при включении (AccessListCheckTask подхватит далее)
+            for (Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
+                checkAndDeop(p);
+            }
         }
         return true;
     }
@@ -280,16 +281,6 @@ public class OpWhitelistManager implements Listener {
     public void onPlayerJoin(PlayerJoinEvent e) {
         if (!enabled) return;
         checkAndDeop(e.getPlayer());
-    }
-
-    // ════════════════════════════════════════
-    // CHECK ALL ONLINE — периодическая проверка
-    // ════════════════════════════════════════
-    public static void checkAllOnline() {
-        if (!enabled) return;
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            checkAndDeop(player);
-        }
     }
 
     // ════════════════════════════════════════
