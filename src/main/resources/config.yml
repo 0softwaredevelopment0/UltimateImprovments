@@ -490,7 +490,7 @@ auth:
     enabled: true
 
   2fa:
-    bot_url: ""
+    bot_url: "http://localhost:3000/send-code"
 
 void_protection:
   enabled: true
