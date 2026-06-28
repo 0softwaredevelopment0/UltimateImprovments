@@ -1,0 +1,283 @@
+package com.mcplugin.infrastructure.commands.subcommands;
+
+import com.mcplugin.infrastructure.util.MessageUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 🛡 ChgOpSubcommand — обработчик /mp chgop.
+ * <p>
+ * Показывает список онлайн-игроков с их OP-статусом.
+ * Каждый игрок кликабелен — можно выдать или снять OP с подтверждением.
+ * <p>
+ * Использование:
+ *   /mp chgop                  — показать список игроков
+ *   /mp chgop toggle <player>  — показать подтверждение для смены OP
+ *   /mp chgop confirm <player> — подтвердить и выполнить смену OP
+ */
+public final class ChgOpSubcommand {
+
+    // Игроки, ожидающие подтверждения на смену OP (player → target)
+    private static final Map<UUID, String> pendingConfirmations = new HashMap<>();
+
+    private ChgOpSubcommand() {}
+
+    // ════════════════════════════════════════
+    // EXECUTE
+    // ════════════════════════════════════════
+    public static boolean execute(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.chgop")) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ You don't have permission to manage operator status!</red>"
+            ));
+            return true;
+        }
+
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Only players can use this command!</red>"
+            ));
+            return true;
+        }
+
+        // /mp chgop → показать список
+        if (args.length < 2) {
+            showPlayerList(player);
+            return true;
+        }
+
+        String action = args[1].toLowerCase();
+
+        return switch (action) {
+            case "toggle" -> showConfirmation(player, args);
+            case "confirm" -> executeToggle(player, args);
+            default -> {
+                showPlayerList(player);
+                yield true;
+            }
+        };
+    }
+
+    // ════════════════════════════════════════
+    // SHOW PLAYER LIST (кликабельные имена)
+    // ════════════════════════════════════════
+    private static void showPlayerList(Player player) {
+        Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
+        int opCount = 0;
+
+        // Сортируем: сначала OP, потом обычные, внутри — по алфавиту
+        List<Player> sorted = onlinePlayers.stream()
+                .sorted(Comparator.comparing(Player::isOp).reversed()
+                        .thenComparing(Player::getName, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
+
+        for (Player p : sorted) {
+            if (p.isOp()) opCount++;
+        }
+
+        // Верхняя граница
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <white>⚡ Operator Management</white>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>Online: <white>" + onlinePlayers.size() +
+                "</white> | OP: <gold>" + opCount + "</gold></gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray>"
+        ));
+
+        // Каждый игрок — кликабельная строка
+        for (Player target : sorted) {
+            String dot = target.isOp() ? "<gold>●</gold>" : "<dark_gray>●</dark_gray>";
+            String nameColor = target.isOp() ? "<white>" : "<gray>";
+            String opTag = target.isOp() ? " <gold>[OP]</gold>" : "";
+            String mmString = "  <dark_gray>┃</dark_gray> " + dot + " " + nameColor + target.getName() + "</" + nameColor.substring(1) + ">" + opTag;
+
+            Component line = MessageUtil.parse(mmString)
+                    .clickEvent(ClickEvent.runCommand("/mp chgop toggle " + target.getName()));
+
+            Component hover = MessageUtil.parse(target.isOp()
+                    ? "<yellow>● " + target.getName() + " <yellow>is OP</yellow>\n<gray>Click to <red>remove</red> <gray>OP rights</gray>"
+                    : "<gray>● " + target.getName() + " <gray>is not OP</gray>\n<gray>Click to <green>grant</green> <gray>OP rights</gray>");
+            line = line.hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, hover));
+
+            player.sendMessage(line);
+        }
+
+        // Нижняя граница с подсказкой
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┃</dark_gray> <gray>Click a player to toggle their OP status</gray>"
+        ));
+        player.sendMessage(MessageUtil.parse(
+                "<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+        ));
+    }
+
+    // ════════════════════════════════════════
+    // SHOW CONFIRMATION
+    // ════════════════════════════════════════
+    private static boolean showConfirmation(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/mp chgop toggle <player></white>"
+            ));
+            return true;
+        }
+
+        String targetName = args[2];
+        @SuppressWarnings("deprecation")
+        Player target = Bukkit.getPlayerExact(targetName);
+
+        if (target == null) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ Player</red> <yellow>" + targetName + "</yellow> <red>not found or not online!</red>"
+            ));
+            return true;
+        }
+
+        boolean currentlyOp = target.isOp();
+        String actionRu = currentlyOp ? "снять" : "выдать";
+        String actionColor = currentlyOp ? "<red>REVOKE</red>" : "<green>GRANT</green>";
+
+        // Сохраняем подтверждение
+        pendingConfirmations.put(player.getUniqueId(), target.getName());
+
+        // Показываем диалог подтверждения
+        player.sendMessage("");
+        player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
+        player.sendMessage("§8┃   §6⚡ Operator Status Change");
+        player.sendMessage("§8┃");
+        player.sendMessage("§8┃   §7Player: §f" + target.getName());
+        player.sendMessage("§8┃   §7Current: " + (currentlyOp ? "§e[OP]" : "§7[NOT OP]"));
+        player.sendMessage("§8┃   §7Action: " + (currentlyOp ? "§cREVOKE" : "§aGRANT"));
+        player.sendMessage("§8┃");
+        player.sendMessage("§8┃   §7Are you sure you want to " + actionRu + " OP");
+        player.sendMessage("§8┃   §7for §f" + target.getName() + "§7?");
+        player.sendMessage("§8┃");
+
+        // Кнопка подтверждения — кликабельная
+        Component confirmBtn = MessageUtil.parse(
+                "<dark_gray>┃     <dark_green>[</dark_green><green>✔ Confirm " + (currentlyOp ? "Revoke" : "Grant") + "</green><dark_green>]</dark_green>"
+        ).clickEvent(ClickEvent.runCommand("/mp chgop confirm " + target.getName()))
+         .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
+                 MessageUtil.parse("<green>Click to confirm</green>\n<red>This action cannot be undone!</red>")));
+        player.sendMessage(confirmBtn);
+
+        // Кнопка отмены — кликабельная
+        Component cancelBtn = MessageUtil.parse(
+                "<dark_gray>┃     <dark_red>[</dark_red><red>✕ Cancel</red><dark_red>]</dark_red>"
+        ).clickEvent(ClickEvent.runCommand("/mp chgop"))
+         .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
+                 MessageUtil.parse("<gray>Click to cancel and return to player list</gray>")));
+        player.sendMessage(cancelBtn);
+
+        player.sendMessage("§8┃");
+        player.sendMessage("§8┃   §7Or type again: §f/mp chgop toggle " + target.getName());
+        player.sendMessage("§8┃   §7to confirm and " + actionRu + " OP rights.");
+        player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        player.sendMessage("");
+
+        return true;
+    }
+
+    // ════════════════════════════════════════
+    // EXECUTE TOGGLE
+    // ════════════════════════════════════════
+    private static boolean executeToggle(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ Invalid confirmation. Use </red><white>/mp chgop</white><red> to see the player list.</red>"
+            ));
+            return true;
+        }
+
+        String targetName = args[2];
+        UUID uuid = player.getUniqueId();
+
+        // Проверяем, есть ли ожидающее подтверждение
+        String pending = pendingConfirmations.get(uuid);
+        if (pending == null || !pending.equalsIgnoreCase(targetName)) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ No pending confirmation for</red> <yellow>" + targetName + "</yellow><red>.</red> " +
+                            "<gray>Use </gray><white>/mp chgop</white><gray> first.</gray>"
+            ));
+            return true;
+        }
+
+        // Удаляем подтверждение
+        pendingConfirmations.remove(uuid);
+
+        @SuppressWarnings("deprecation")
+        Player target = Bukkit.getPlayerExact(targetName);
+
+        if (target == null) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ Player</red> <yellow>" + targetName + "</yellow> <red>is no longer online!</red>"
+            ));
+            return true;
+        }
+
+        // Выполняем смену OP
+        boolean newOp = !target.isOp();
+        target.setOp(newOp);
+
+        if (newOp) {
+            // Выдали OP
+            player.sendMessage(MessageUtil.parse(
+                    "<green>✔</green> <gold>Operator</gold> <white>status granted to</white> <yellow>" + target.getName() + "</yellow><white>.</white>"
+            ));
+            target.sendMessage(MessageUtil.parse(
+                    "<gold>⚡</gold> <white>You are now an</white> <gold>operator</gold><white>!</white>"
+            ));
+            Bukkit.getLogger().info("[OpManager] " + player.getName() + " granted OP to " + target.getName());
+        } else {
+            // Сняли OP
+            player.sendMessage(MessageUtil.parse(
+                    "<green>✔</green> <gold>Operator</gold> <white>status revoked from</white> <yellow>" + target.getName() + "</yellow><white>.</white>"
+            ));
+            target.sendMessage(MessageUtil.parse(
+                    "<red>⛔</red> <white>Your</white> <gold>operator</gold> <white>status has been revoked.</white>"
+            ));
+            Bukkit.getLogger().info("[OpManager] " + player.getName() + " revoked OP from " + target.getName());
+        }
+
+        return true;
+    }
+
+    // ════════════════════════════════════════
+    // TAB COMPLETION
+    // ════════════════════════════════════════
+    public static List<String> tabComplete(String[] args) {
+        List<String> completions = new ArrayList<>();
+
+        if (args.length == 2) {
+            String prefix = args[1].toLowerCase();
+            for (String action : List.of("toggle")) {
+                if (action.startsWith(prefix)) {
+                    completions.add(action);
+                }
+            }
+        } else if (args.length == 3 && args[1].equalsIgnoreCase("toggle")) {
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                completions.add(p.getName());
+            }
+        }
+
+        String last = args[args.length - 1].toLowerCase();
+        return completions.stream().filter(s -> s.toLowerCase().startsWith(last)).collect(Collectors.toList());
+    }
+}

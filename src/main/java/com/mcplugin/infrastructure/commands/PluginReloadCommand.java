@@ -21,6 +21,7 @@ import com.mcplugin.infrastructure.commands.subcommands.RadiationSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReloadSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.StructureSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.BroadcastSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.ChgOpSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.OpWhitelistSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.PunishSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.WhitelistSubcommand;
@@ -188,6 +189,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "reports" -> ReportsSubcommand.execute(sender, args);
             case "modreport" -> ModReportSubcommand.execute(sender, args);
             case "repstatus" -> RepStatusSubcommand.execute(sender);
+            case "chgop" -> ChgOpSubcommand.execute(sender, args);
             case "opwhitelist" -> OpWhitelistSubcommand.execute(sender, args);
             case "punish" -> PunishSubcommand.execute(sender, args);
             case "whitelist" -> WhitelistSubcommand.execute(sender, args);
@@ -283,6 +285,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("maint")) {
             completions.addAll(MaintSubcommand.tabComplete(args));
+        } else if (args.length >= 2 && args[0].equalsIgnoreCase("chgop")) {
+            completions.addAll(ChgOpSubcommand.tabComplete(args));
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("opwhitelist")) {
             completions.addAll(OpWhitelistSubcommand.tabComplete(args));
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("punish")) {

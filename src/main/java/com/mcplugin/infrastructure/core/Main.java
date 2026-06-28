@@ -8,6 +8,7 @@ import com.mcplugin.infrastructure.modules.*;
 import com.mcplugin.infrastructure.tab.TabManager;
 import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
 import com.mcplugin.infrastructure.report.ReportManager;
+import com.mcplugin.infrastructure.listeners.OpCommandBlocker;
 import com.mcplugin.infrastructure.listeners.WhitelistCommandBlocker;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.structure.StructureChunkTracker;
@@ -220,6 +221,9 @@ public class Main extends JavaPlugin {
 
         // 🚫 Блокировка ванильной команды /whitelist — плагин использует свою (/mp whitelist)
         getServer().getPluginManager().registerEvents(new WhitelistCommandBlocker(), this);
+
+        // 🚫 Блокировка ванильных команд /op и /deop — плагин использует свой (/mp chgop)
+        getServer().getPluginManager().registerEvents(new OpCommandBlocker(), this);
 
         // 🔄 Периодическая проверка whitelist/blacklist/opwhitelist онлайна
         com.mcplugin.infrastructure.server.AccessListCheckTask.start(this);
