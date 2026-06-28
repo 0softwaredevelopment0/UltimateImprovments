@@ -182,6 +182,9 @@ public class Main extends JavaPlugin {
         mm.register(new LeashModule());
         mm.register(new ElytraBoostModule());
 
+        // PunishModule — система наказаний (бан/мут/кик/варн + вайтлист/блэклист)
+        mm.register(new PunishModule());
+
         // =========================
         // INIT ALL MODULES
         // Каждый модуль инициализируется в try-catch.
@@ -202,6 +205,16 @@ public class Main extends JavaPlugin {
         // OP WHITELIST — белый список операторов (ПОСЛЕ initAll, чтобы таблицы БД уже существовали)
         // =========================
         OpWhitelistManager.init(this);
+
+        // =========================
+        // 📋 CUSTOM WHITELIST — кастомный вайтлист MC-Plugin (не OP вайтлист)
+        // =========================
+        com.mcplugin.infrastructure.whitelist.WhitelistManager.init(this);
+
+        // =========================
+        // 📋 BLACKLIST — чёрный список
+        // =========================
+        com.mcplugin.infrastructure.blacklist.BlacklistManager.init(this);
 
         // =========================
         // REPORTS — система репортов (ПОСЛЕ initAll, чтобы таблицы БД уже существовали)

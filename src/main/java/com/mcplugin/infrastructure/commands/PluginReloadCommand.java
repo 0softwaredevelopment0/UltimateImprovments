@@ -22,6 +22,9 @@ import com.mcplugin.infrastructure.commands.subcommands.ReloadSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.StructureSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.BroadcastSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.OpWhitelistSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.PunishSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.WhitelistSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.BlacklistSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReportSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReportsSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ModReportSubcommand;
@@ -185,6 +188,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "modreport" -> ModReportSubcommand.execute(sender, args);
             case "repstatus" -> RepStatusSubcommand.execute(sender);
             case "opwhitelist" -> OpWhitelistSubcommand.execute(sender, args);
+            case "punish" -> PunishSubcommand.execute(sender, args);
+            case "whitelist" -> WhitelistSubcommand.execute(sender, args);
+            case "blacklist" -> BlacklistSubcommand.execute(sender, args);
             case "askcords_accept" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 if (args.length < 2) yield true;
@@ -236,6 +242,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "togglebb", "togglesb", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
                     "askcords", "forcesuicide", "bc", "maint", "opwhitelist",
+                    "punish", "whitelist", "blacklist",
                     "report", "reports", "modreport", "repstatus"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
             completions.add("create");
@@ -275,6 +282,12 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             completions.addAll(MaintSubcommand.tabComplete(args));
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("opwhitelist")) {
             completions.addAll(OpWhitelistSubcommand.tabComplete(args));
+        } else if (args.length >= 2 && args[0].equalsIgnoreCase("punish")) {
+            completions.addAll(PunishSubcommand.tabComplete(args));
+        } else if (args.length >= 2 && args[0].equalsIgnoreCase("whitelist")) {
+            completions.addAll(WhitelistSubcommand.tabComplete(args));
+        } else if (args.length >= 2 && args[0].equalsIgnoreCase("blacklist")) {
+            completions.addAll(BlacklistSubcommand.tabComplete(args));
         } else if (args.length >= 2 && args[0].equalsIgnoreCase("report")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && args[0].equalsIgnoreCase("reports")) {

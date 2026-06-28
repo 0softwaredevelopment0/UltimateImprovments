@@ -472,6 +472,111 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🛡 PUNISHMENTS — баны, муты, кики
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS punishments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL,
+                player_uuid TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                ip_address TEXT DEFAULT '',
+                hw_id TEXT DEFAULT '',
+                punished_by TEXT NOT NULL,
+                punished_at INTEGER NOT NULL,
+                expires_at INTEGER DEFAULT 0,
+                active INTEGER DEFAULT 1
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_punishments_uuid
+            ON punishments(player_uuid);
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_punishments_type_active
+            ON punishments(type, active);
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_punishments_ip
+            ON punishments(ip_address);
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_punishments_hw
+            ON punishments(hw_id);
+        """);
+
+        // =========================
+        // ⚠ WARNS — предупреждения
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS warns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_uuid TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                reason TEXT NOT NULL,
+                warned_by TEXT NOT NULL,
+                warned_at INTEGER NOT NULL,
+                expires_at INTEGER DEFAULT 0,
+                ip_address TEXT DEFAULT '',
+                hw_id TEXT DEFAULT ''
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_warns_uuid
+            ON warns(player_uuid);
+        """);
+
+        // =========================
+        // 📋 CUSTOM WHITELIST (MC-Plugin, не ванильный)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS whitelist (
+                player_name TEXT PRIMARY KEY,
+                added_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS whitelist_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            );
+        """);
+
+        st.execute("""
+            INSERT OR IGNORE INTO whitelist_meta (key, value)
+            VALUES ('enabled', 'false');
+        """);
+
+        // =========================
+        // 📋 BLACKLIST — чёрный список
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS blacklist (
+                player_name TEXT PRIMARY KEY,
+                added_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS blacklist_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            );
+        """);
+
+        st.execute("""
+            INSERT OR IGNORE INTO blacklist_meta (key, value)
+            VALUES ('enabled', 'false');
+        """);
+
+        // =========================
         // 🤖 BOT PROTECTION COOLDOWNS (persist across restarts)
         // =========================
         st.execute("""

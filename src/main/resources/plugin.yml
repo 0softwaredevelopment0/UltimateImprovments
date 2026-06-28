@@ -1,6 +1,6 @@
 name: MC-Plugin
 
-version: 1.8.68
+version: 1.8.69
 
 main: com.mcplugin.infrastructure.core.Main
 
@@ -301,3 +301,48 @@ permissions:
   mcplugin.chat.custom.bypass:
     description: Allows bypassing the custom chat formatting
     default: false
+
+  # =========================
+  # 🛡 PUNISH SYSTEM
+  # =========================
+  mcplugin.command.punish:
+    description: Base permission for punish commands (/mp punish)
+    default: op
+
+  mcplugin.command.punish.ban:
+    description: Allows banning players (/mp punish ban)
+    default: op
+
+  mcplugin.command.punish.mute:
+    description: Allows muting players (/mp punish mute)
+    default: op
+
+  mcplugin.command.punish.kick:
+    description: Allows kicking players (/mp punish kick)
+    default: op
+
+  mcplugin.command.punish.warn:
+    description: Allows warning players (/mp punish warn)
+    default: op
+
+  mcplugin.command.punish.listwarns.self:
+    description: Allows listing own warns (/mp punish listwarns)
+    default: true
+
+  mcplugin.command.punish.listwarns.other:
+    description: Allows listing other players' warns (/mp punish listwarns <player>)
+    default: op
+
+  # =========================
+  # 📋 CUSTOM WHITELIST (MC-Plugin)
+  # =========================
+  mcplugin.command.whitelist:
+    description: Allows managing the MC-Plugin whitelist (/mp whitelist)
+    default: op
+
+  # =========================
+  # 📋 BLACKLIST
+  # =========================
+  mcplugin.command.blacklist:
+    description: Allows managing the blacklist (/mp blacklist)
+    default: op

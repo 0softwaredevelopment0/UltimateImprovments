@@ -127,9 +127,26 @@ public class ChatManager implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
-        if (!enabled) return;
-
         Player player = event.getPlayer();
+
+        // =========================
+        // 🛡 MUTE CHECK — проверяем, не замучен ли игрок
+        // =========================
+        if (com.mcplugin.infrastructure.punish.PunishJoinListener.isMuted(player)) {
+            event.setCancelled(true);
+            var muteRecord = com.mcplugin.infrastructure.punish.PunishJoinListener.getMuteRecord(player);
+            if (muteRecord != null) {
+                String duration = muteRecord.isPermanent() ? "permanent" : muteRecord.getRemainingMs() / 1000 + "s";
+                player.sendMessage(MessageUtil.parse(
+                        "<red>🔇 You are muted!</red>\n" +
+                        "<gray>Reason:</gray> <white>" + muteRecord.reason + "</white>\n" +
+                        "<gray>Remaining:</gray> <white>" + duration + "</white>"
+                ));
+            }
+            return;
+        }
+
+        if (!enabled) return;
 
         // Bypass permission
         if (!bypassPermission.isEmpty() && player.hasPermission(bypassPermission)) return;
