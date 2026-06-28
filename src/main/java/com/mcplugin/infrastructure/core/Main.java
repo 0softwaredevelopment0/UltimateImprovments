@@ -58,7 +58,26 @@ public class Main extends JavaPlugin {
         } else if (configExisted) {
             getLogger().info("[Config] File exists: config.yml");
         }
-        reloadConfig();
+
+        // Попытка загрузить конфиг. Если файл повреждён (например, SnakeYAML 2.6
+        // не переваривает старые escape-последовательности в двойных кавычках) —
+        // удаляем битый файл и создаём свежий из JAR.
+        try {
+            reloadConfig();
+        } catch (Exception e) {
+            getLogger().warning("[Config] Failed to load config.yml: " + e.getMessage());
+            getLogger().warning("[Config] Deleting broken config.yml and recreating from JAR...");
+
+            // Удаляем битый файл
+            if (configFile.exists()) {
+                configFile.delete();
+            }
+
+            // Пересоздаём из JAR
+            saveDefaultConfig();
+            reloadConfig();
+            getLogger().info("[Config] Recreated config.yml from JAR resources.");
+        }
 
         // =========================
         // ПРОВЕРКА ЦЕЛОСТНОСТИ КОНФИГА

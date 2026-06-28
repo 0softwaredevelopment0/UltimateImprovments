@@ -161,15 +161,16 @@ public class ConfigRepairManager {
             }
             return sb.toString().trim();
         }
-        // Строка — в кавычки
-        return key + ": \"" + value + "\"";
+        // Строка — в кавычки (экранируем бэкслеши, чтобы SnakeYAML не споткнулся о \p, \n и т.д.)
+        return key + ": \"" + value.toString().replace("\\", "\\\\") + "\"";
     }
 
     private static String formatScalar(Object value) {
         if (value == null) return "null";
         if (value instanceof Boolean || value instanceof Number) return value.toString();
-        if (value.toString().contains(" ")) return "\"" + value + "\"";
-        return value.toString();
+        String str = value.toString();
+        if (str.contains(" ") || str.contains("\\")) return "\"" + str.replace("\\", "\\\\") + "\"";
+        return str;
     }
 
     // =========================
