@@ -16,6 +16,7 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -43,6 +44,26 @@ public class LeadShieldCraftListener implements Listener {
         Bukkit.removeRecipe(NamespacedKey.minecraft("lead_shield"));
 
         registerRecipe();
+    }
+
+    // =========================
+    // СОЗДАТЬ ITEMSTACK СВИНЦОВОГО СЛИТКА (для ExactChoice)
+    // =========================
+    private static ItemStack createLeadIngotStack() {
+        ItemStack ingot = new ItemStack(Material.NETHERITE_INGOT);
+        ItemMeta ingotMeta = ingot.getItemMeta();
+        if (ingotMeta == null) return ingot;
+        ingotMeta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
+        ingotMeta.lore(List.of(
+                MessageUtil.parse("<i:false><gray>Used to craft a Lead Shield</gray>")
+        ));
+        ingotMeta.getPersistentDataContainer().set(
+                Keys.LEAD_INGOT,
+                PersistentDataType.BYTE,
+                (byte) 1
+        );
+        ingot.setItemMeta(ingotMeta);
+        return ingot;
     }
 
     // =========================
@@ -84,16 +105,18 @@ public class LeadShieldCraftListener implements Listener {
                 "789"
         );
 
-        // Используем NETHERITE_INGOT как материал — свинцовый слиток тоже NETHERITE_INGOT с PDC
-        recipe.setIngredient('1', Material.NETHERITE_INGOT);
-        recipe.setIngredient('2', Material.NETHERITE_INGOT);
-        recipe.setIngredient('3', Material.NETHERITE_INGOT);
-        recipe.setIngredient('4', Material.NETHERITE_INGOT);
+        // Используем ExactChoice — матчит по точному ItemStack (с PDC + display name),
+        // поэтому в книге рецептов покажется "Lead Ingot *", а не "Netherite Ingot"
+        RecipeChoice leadIngotChoice = new RecipeChoice.ExactChoice(createLeadIngotStack());
+        recipe.setIngredient('1', leadIngotChoice);
+        recipe.setIngredient('2', leadIngotChoice);
+        recipe.setIngredient('3', leadIngotChoice);
+        recipe.setIngredient('4', leadIngotChoice);
         recipe.setIngredient('5', Material.SHIELD);
-        recipe.setIngredient('6', Material.NETHERITE_INGOT);
-        recipe.setIngredient('7', Material.NETHERITE_INGOT);
-        recipe.setIngredient('8', Material.NETHERITE_INGOT);
-        recipe.setIngredient('9', Material.NETHERITE_INGOT);
+        recipe.setIngredient('6', leadIngotChoice);
+        recipe.setIngredient('7', leadIngotChoice);
+        recipe.setIngredient('8', leadIngotChoice);
+        recipe.setIngredient('9', leadIngotChoice);
 
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
