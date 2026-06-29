@@ -277,8 +277,17 @@ public class Auth2FA {
                 }
             }
         } catch (Exception e) {
+            String msg = e.getMessage();
             Main.getInstance().getLogger().warning(
-                    "[Auth2FA] Poll failed for " + requestId + ": " + e.getMessage());
+                    "[Auth2FA] Poll failed for " + requestId + ": " + msg
+                    + " — cancelling 2FA for " + uuid);
+            pendingConfirmations.remove(uuid);
+
+            // Если бот недоступен (Connection refused) — логиним игрока без 2FA
+            if (msg != null && msg.contains("Connection refused")) {
+                return "bot_down";
+            }
+            return "error";
         }
         return "pending";
     }

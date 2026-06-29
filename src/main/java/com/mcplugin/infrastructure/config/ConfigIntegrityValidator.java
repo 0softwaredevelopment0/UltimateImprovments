@@ -42,14 +42,10 @@ public class ConfigIntegrityValidator {
     }
 
     // =========================
-    // MESSAGES VALIDATION (поддерживает messages-ru.yml, messages-en.yml)
+    // MESSAGES VALIDATION
     // =========================
     public static void validateMessages(Main plugin) {
-        // Получаем имя файла из MessagesManager (уже учтён язык)
-        String fileName = MessagesManager.getMessagesFileName();
-        if (fileName == null) fileName = MESSAGES_FILE;
-
-        File messagesFile = new File(plugin.getDataFolder(), fileName);
+        File messagesFile = new File(plugin.getDataFolder(), MESSAGES_FILE);
         if (!messagesFile.exists()) {
             // При первом запуске MessagesManager создаст файл из ресурсов
             return;
@@ -58,7 +54,7 @@ public class ConfigIntegrityValidator {
         FileConfiguration userMessages = YamlConfiguration.loadConfiguration(messagesFile);
 
         // Умный ремонт: недостающие ключи добавляются в конец файла
-        boolean repaired = ConfigRepairManager.repair(plugin, fileName, userMessages, messagesFile);
+        boolean repaired = ConfigRepairManager.repair(plugin, MESSAGES_FILE, userMessages, messagesFile);
 
         if (repaired) {
             // Перезагружаем messages через MessagesManager

@@ -331,6 +331,20 @@ public class AuthAuthenticator {
                                 player.kickPlayer("§c❌ Вход отклонён через Telegram 2FA.");
                                 cancel();
                             }
+                            case "bot_down" -> {
+                                // Бот 2FA недоступен — логиним игрока с предупреждением
+                                Auth2FA.getInstance().clearPending(uuid);
+                                player.sendMessage("§c⚠ Бот 2FA временно недоступен! Пропускаем 2FA для этого входа.");
+                                Main.getInstance().getLogger().warning(
+                                        "[Auth2FA] Bot unreachable — logging in " + player.getName() + " without 2FA");
+                                authenticatePlayer(player, "<green>\u2705</green> <white>Выполнен вход без 2FA (бот недоступен).</white>");
+                                cancel();
+                            }
+                            case "error" -> {
+                                Auth2FA.getInstance().clearPending(uuid);
+                                player.sendMessage("§c❌ Ошибка 2FA! Используйте /mp auth login заново.");
+                                cancel();
+                            }
                             case "timeout", "not_found" -> {
                                 Auth2FA.getInstance().clearPending(uuid);
                                 player.sendMessage("§c❌ Ошибка 2FA! Используйте /mp auth login заново.");
