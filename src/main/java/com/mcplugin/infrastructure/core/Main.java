@@ -10,6 +10,8 @@ import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
 import com.mcplugin.infrastructure.report.ReportManager;
 import com.mcplugin.infrastructure.listeners.OpCommandBlocker;
 import com.mcplugin.infrastructure.listeners.WhitelistCommandBlocker;
+import com.mcplugin.mechanics.security.check.CheckListener;
+import com.mcplugin.mechanics.security.check.CheckManager;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.structure.StructureChunkTracker;
 import com.mcplugin.infrastructure.util.FileLogger;
@@ -261,6 +263,12 @@ public class Main extends JavaPlugin {
         ReportManager.init();
 
         // =========================
+        // ✅ CHECK MANAGER — система проверки на читы
+        // =========================
+        CheckManager.init();
+        getServer().getPluginManager().registerEvents(new CheckListener(), this);
+
+        // =========================
         // REGISTER COMMANDS
         // =========================
         CommandRegistrar.getInstance().registerAll(this);
@@ -298,6 +306,9 @@ public class Main extends JavaPlugin {
 
         // Сбрасываем флаг регистрации TabManager listener'ов
         TabManager.resetListenerState();
+
+        // Очищаем CheckManager — разморозить всех проверяемых
+        CheckManager.shutdown();
 
         getLogger().info("[PLUGIN] Disabled");
     }

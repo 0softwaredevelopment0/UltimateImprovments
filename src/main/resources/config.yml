@@ -835,4 +835,4 @@ access_control:
 wireless_redstone:
   enabled: true
 
-plugin_version: "1.8.119"
+plugin_version: "1.8.120"

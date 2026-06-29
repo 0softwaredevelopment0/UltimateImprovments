@@ -26,6 +26,7 @@ import com.mcplugin.infrastructure.commands.subcommands.OpWhitelistSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.PunishSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.WhitelistSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.BlacklistSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.CheckSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReportSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReportsSubcommand;
 import com.mcplugin.infrastructure.report.ReportManager;
@@ -257,6 +258,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "punish" -> PunishSubcommand.execute(sender, args);
             case "whitelist" -> WhitelistSubcommand.execute(sender, args);
             case "blacklist" -> BlacklistSubcommand.execute(sender, args);
+            case "check" -> CheckSubcommand.execute(sender, args);
+            case "uncheck" -> CheckSubcommand.uncheck(sender, args);
             case "askcords_accept" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 if (args.length < 2) yield true;
@@ -309,7 +312,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
                     "askcords", "forcesuicide", "bc", "maint", "opwhitelist",
                     "punish", "whitelist", "blacklist",
-                    "report", "reports", "modreport", "repstatus"));
+                    "report", "reports", "modreport", "repstatus",
+                    "check", "uncheck"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
             completions.add("create");
             completions.add("delete");
@@ -428,6 +432,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             for (int v : new int[]{0, 10, 20, 50, 100}) completions.add(String.valueOf(v));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("setrad")) {
             for (int v : new int[]{0, 100, 200, 500, 1000, 2000, 5000}) completions.add(String.valueOf(v));
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("check") || args[0].equalsIgnoreCase("uncheck"))) {
+            for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && args[0].equalsIgnoreCase("askcords")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         }
