@@ -18,9 +18,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 🧊 Управляет механикой "Ведра бетона".
@@ -44,7 +42,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
     // Ожидающие установки биома (вода появится через 1 тик)
     private static final Map<Location, Biome> pendingBiomes = new HashMap<>();
 
-    private record ConcreteWater(Biome originalBiome, long placeTime) {}
+    private record ConcreteWater(Biome originalBiome, long placeTime, UUID groupId) {}
 
     // =========================
     // INIT
@@ -100,8 +98,9 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
         // Вода ещё НЕ поставлена — откладываем установку биома на 1 тик
         pendingBiomes.put(waterLoc, Biome.PALE_GARDEN);
-        // Отслеживаем блок воды
-        trackedWater.put(waterLoc, new ConcreteWater(originalBiome, System.currentTimeMillis()));
+        // Отслеживаем блок воды с уникальным groupId для этой заливки
+        UUID groupId = UUID.randomUUID();
+        trackedWater.put(waterLoc, new ConcreteWater(originalBiome, System.currentTimeMillis(), groupId));
 
         // 🪣 Сервер Paper сам заменяет WATER_BUCKET на обычный BUCKET после этого события.
         // PDC теряется при замене, поэтому ведро становится обычным.
@@ -121,9 +120,9 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
 
         ConcreteWater fromData = trackedWater.get(fromLoc);
         if (fromData != null && toBlock.getType() == Material.WATER) {
-            // Новая порция воды — откладываем установку биома
+            // Новая порция воды — наследуем groupId от источника
             pendingBiomes.put(toLoc, Biome.PALE_GARDEN);
-            trackedWater.put(toLoc, new ConcreteWater(fromData.originalBiome(), System.currentTimeMillis()));
+            trackedWater.put(toLoc, new ConcreteWater(fromData.originalBiome(), System.currentTimeMillis(), fromData.groupId()));
         }
 
         // Если блок-назначение был отслеженной водой, но теперь заменяется чем-то другим
@@ -188,6 +187,8 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         if (trackedWater.isEmpty()) return;
 
         long now = System.currentTimeMillis();
+        // Собираем groupId блоков, которые пора превращать в бетон
+        Set<UUID> readyGroups = new HashSet<>();
         Iterator<Map.Entry<Location, ConcreteWater>> it = trackedWater.entrySet().iterator();
 
         while (it.hasNext()) {
@@ -202,12 +203,25 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
                 continue;
             }
 
-            // Прошло 60 секунд?
+            // Прошло 60 секунд? Добавляем ВСЮ группу в readyGroups
             if (now - data.placeTime() >= CONCRETE_DELAY_MS) {
-                // Превращаем в бетон (GRAY_CONCRETE вместо булыжника)
-                loc.getBlock().setType(Material.GRAY_CONCRETE);
-                it.remove();
-                // Биом НЕ восстанавливаем — бетон окрасил землю
+                readyGroups.add(data.groupId());
+            }
+        }
+
+        // Превращаем ВСЮ воду из readyGroups в бетон за один раз
+        if (!readyGroups.isEmpty()) {
+            it = trackedWater.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Location, ConcreteWater> entry = it.next();
+                if (readyGroups.contains(entry.getValue().groupId())) {
+                    Location loc = entry.getKey();
+                    if (loc.getBlock().getType() == Material.WATER) {
+                        loc.getBlock().setType(Material.GRAY_CONCRETE);
+                    }
+                    it.remove();
+                    // Биом НЕ восстанавливаем — бетон окрасил землю
+                }
             }
         }
     }
