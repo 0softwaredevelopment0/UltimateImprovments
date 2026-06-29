@@ -15,6 +15,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 import org.bukkit.Keyed;
@@ -68,6 +69,28 @@ public class EnergyCraftingListener implements Listener {
         int cost = getCost();
 
         if (!hasNetworkEnergy(workbench, cost)) {
+            e.getInventory().setResult(null);
+        }
+    }
+
+    // =========================
+    // БЛОКИРОВКА КАСТОМНЫХ РЕЦЕПТОВ ВНЕ ITEM ASSEMBLER
+    // Блокирует PrepareItemCraftEvent для кастомных рецептов
+    // в обычном верстаке (WORKBENCH), ванильном Crafter и 2x2 крафте.
+    // =========================
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPrepareCraftBlockOutside(PrepareItemCraftEvent e) {
+        Recipe recipe = e.getRecipe();
+        if (!(recipe instanceof Keyed keyed)) return;
+
+        NamespacedKey recipeKey = keyed.getKey();
+        if (!RecipeRegistry.getCustomRecipes().contains(recipeKey)) return;
+
+        // Разрешаем только в Item Assembler GUI (CRAFTER + "Item assembler" title)
+        boolean isAssembler = (e.getInventory().getType() == InventoryType.CRAFTER)
+                && ASSEMBLER_TITLE.equals(e.getView().title());
+
+        if (!isAssembler) {
             e.getInventory().setResult(null);
         }
     }

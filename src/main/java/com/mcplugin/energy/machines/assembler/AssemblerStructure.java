@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.BlockFace;
 
 import org.bukkit.entity.ItemFrame;
 
@@ -46,16 +47,25 @@ public class AssemblerStructure {
         World world = center.getWorld();
         if (world == null) return false;
 
-        double targetX = center.getX() + 0.5;
-        double targetY = center.getY() + 1.0;
-        double targetZ = center.getZ() + 0.5;
+        int cx = center.getBlockX();
+        int cy = center.getBlockY();
+        int cz = center.getBlockZ();
 
         for (ItemFrame frame : world.getEntitiesByClass(ItemFrame.class)) {
-            double dx = Math.abs(frame.getLocation().getX() - targetX);
-            double dz = Math.abs(frame.getLocation().getZ() - targetZ);
-            double dy = Math.abs(frame.getLocation().getY() - targetY);
+            // Только рамка, висящая на ВЕРХНЕЙ грани (facing UP)
+            if (frame.getFacing() != BlockFace.UP) continue;
 
-            if (dx < 0.6 && dz < 0.6 && dy < 0.6) {
+            Location floc = frame.getLocation();
+            int fx = floc.getBlockX();
+            int fz = floc.getBlockZ();
+
+            // Проверяем, что рамка в той же колонке (x,z), что и крафтер
+            if (fx != cx || fz != cz) continue;
+
+            // Рамка на верхней грани: entity находится на y ~ cy+0.9375 или на cy+1
+            // (floored до cy или cy+1). Допускаем оба варианта.
+            int fy = floc.getBlockY();
+            if (fy == cy || fy == cy + 1) {
                 return true;
             }
         }
