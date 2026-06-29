@@ -274,13 +274,13 @@ public class LightManager {
         if (loc == null) return;
         long key = toKey(loc);
         if (locationToCluster.containsKey(key)) {
-            if (player != null) player.sendMessage("§eЛампочка уже собрана на этом месте!");
+            if (player != null) player.sendMessage("§eLight cluster already assembled here!");
             return;
         }
 
         Set<Long> connected = floodFillFast(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         if (connected.isEmpty()) {
-            if (player != null) player.sendMessage("§4❌ §cНет блоков WAXED_COPPER_BULB рядом!");
+            if (player != null) player.sendMessage("§4❌ §cNo WAXED_COPPER_BULB blocks nearby!");
             return;
         }
 
@@ -304,9 +304,9 @@ public class LightManager {
         removeFrameAt(loc, player);
 
         if (player != null) {
-            player.sendMessage("§a✔ §fЛампа собрана! (Marker-based)");
-            player.sendMessage("§8┃ §7Блоков: §f" + cluster.blockKeys.size() + " §7| Потребление: §f" + cluster.power + " §7энергии/тик");
-            player.sendMessage("§8┃ §7Буфер: §f" + cluster.getBufferCapacity() + " ⚡ §7(редстоун + буфер для зажигания)");
+            player.sendMessage("§a✔ §fLight assembled! (Marker-based)");
+            player.sendMessage("§8┃ §7Blocks: §f" + cluster.blockKeys.size() + " §7| Consumption: §f" + cluster.power + " §7energy/tick");
+            player.sendMessage("§8┃ §7Buffer: §f" + cluster.getBufferCapacity() + " ⚡ §7(redstone + buffer for lighting)");
         }
 
         Main.getInstance().getLogger().info("[LightMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " lamps");
@@ -392,7 +392,7 @@ public class LightManager {
         clustersById.remove(cluster.id);
         cluster.blockKeys.clear();
 
-        if (player != null) player.sendMessage("§e❕ Лампочка разобрана (разрушен блок)");
+        if (player != null) player.sendMessage("§e❕ Light disassembled (block broken)");
     }
 
     // ════════════════════════════════════════

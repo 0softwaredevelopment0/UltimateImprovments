@@ -17,18 +17,18 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * Фильтр чата (защита от матов).
+ * Chat filter (protection against profanity).
  *
- * Проверяет сообщения игроков на наличие запрещённых слов из конфига.
- * Поддерживает wildcard-шаблоны:
- *   - "блять"     → точное совпадение слова (целиком, регистронезависимо)
- *   - "блять*"    → слово начинается с "блять" (после могут быть любые символы)
- *   - "*блять"    → слово заканчивается на "блять" (до могут быть любые символы)
- *   - "*блять*"   → слово содержится в сообщении
+ * Checks player messages for prohibited words from config.
+ * Supports wildcard patterns:
+ *   - "badword"     → exact word match (whole word, case-insensitive)
+ *   - "badword*"    → word starts with "badword"
+ *   - "*badword"    → word ends with "badword"
+ *   - "*badword*"   → word contained in message
  *
- * Использует Unicode-свойства (\p{L}) для корректной обработки кириллицы.
- * Регистронезависимость — полная.
- * При обнаружении: сообщение отменяется, игроку отправляется предупреждение.
+ * Uses Unicode property (\p{L}) for correct Cyrillic handling.
+ * Case-insensitive matching.
+ * On detection: message cancelled, player warned.
  */
 public class ChatFilterManager implements Listener {
 
@@ -37,9 +37,9 @@ public class ChatFilterManager implements Listener {
     private boolean enabled;
     private String warningMessage;
     private List<Pattern> compiledPatterns;
-    private List<String> patternSources;   // исходное правило из конфига (для отображения)
+    private List<String> patternSources;
 
-    // Для подсветки запрещённых слов в сообщении
+    // For highlighting bad words in messages
     private List<String> highlightWords;
     private List<Pattern> highlightPatterns;
 
@@ -55,11 +55,11 @@ public class ChatFilterManager implements Listener {
     }
 
     /**
-     * Загружает/перезагружает настройки фильтра из config.yml.
+     * Loads/reloads filter settings from config.yml.
      *
-     * Загружает два источника шаблонов:
-     *   1. {@code chat_filter.words} — простые слова с wildcard (*): "блять", "*хуй*", "пидор*"
-     *   2. {@code chat_filter.regex_patterns} — сложные Java regex-выражения: "\\b(?:блять|хуй)\\p{L}*"
+     * Loads two pattern sources:
+     *   1. {@code chat_filter.words} — simple words with wildcard (*): "badword", "*bad*"
+     *   2. {@code chat_filter.regex_patterns} — complex Java regex expressions (YAML literal block scalars)
      */
     public void reloadConfig() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -72,7 +72,7 @@ public class ChatFilterManager implements Listener {
         highlightWords = new ArrayList<>();
         highlightPatterns = new ArrayList<>();
 
-        // 1. Загружаем простые слова с wildcard
+        // 1. Load simple words with wildcard
         List<String> rawWords = cfg.getStringList("chat_filter.words");
         if (rawWords == null) {
             rawWords = new ArrayList<>();
@@ -81,8 +81,8 @@ public class ChatFilterManager implements Listener {
             Pattern p = compileWordPattern(raw);
             if (p != null) {
                 compiledPatterns.add(p);
-                patternSources.add("<green>слово</green><white>: </white><red>" + raw.trim() + "</red><white></white>");
-                // Сохраняем чистое слово для подсветки
+                patternSources.add("<green>word</green><white>: </white><red>" + raw.trim() + "</red><white></white>");
+                // Save clean word for highlighting
                 String clean = raw.trim().replace("*", "");
                 if (!clean.isEmpty()) {
                     highlightWords.add(clean);
@@ -90,31 +90,20 @@ public class ChatFilterManager implements Listener {
             }
         }
 
-        // 2. Загружаем сложные regex-выражения
-        // Если в конфиге нет regex_patterns — используем хардкодные дефолты (чтобы избежать
-        // проблем с SnakeYAML 2.6, который не переваривает \p{L} в двойных кавычках YAML)
+        // 2. Load complex regex expressions from config.yml (YAML literal block scalars)
         List<String> rawRegexes = cfg.getStringList("chat_filter.regex_patterns");
-        if (rawRegexes == null || rawRegexes.isEmpty()) {
+        if (rawRegexes == null) {
             rawRegexes = new ArrayList<>();
-            rawRegexes.add(".*(?<![\\p{L}])(?:бля(?:дь|ть|т)|бляд(?:ь|и|ина)|еб(?:ать|ан|лан|уч)|хуй|хуйня|пизд(?:а|ец|еть)|муд(?:ак|ила)|гандон)(?![\\p{L}]).*");
-            rawRegexes.add(".*(?<![\\p{L}])(?:долбо(?:еб|ёб)|идиот|дебил|кретин|имбецил|придурок)(?![\\p{L}]).*");
-            rawRegexes.add(".*п[^а-яёa-z0-9]{0,3}и[^а-яёa-z0-9]{0,3}д[^а-яёa-z0-9]{0,3}(?:а|о)?[^а-яёa-z0-9]{0,3}р.*");
-            rawRegexes.add(".*х[^а-яёa-z0-9]{0,3}у[^а-яёa-z0-9]{0,3}й.*");
-            rawRegexes.add(".*[А-ЯЁA-Z]{15,}.*");
-            rawRegexes.add(".*(.)\\1{8,}.*");
-            rawRegexes.add(".*ж[^а-яёa-z0-9]{0,3}[иi1і][^а-яёa-z0-9]{0,3}р(?:н(?:ы(?:й|е|х|м)?|ая|ое)?|уха|ок|дяй)? .*");
         }
-        if (rawRegexes != null) {
-            for (String raw : rawRegexes) {
-                Pattern p = compileRegexPattern(raw);
-                if (p != null) {
-                    compiledPatterns.add(p);
-                    patternSources.add("<green>regex</green><white>: </white><gray>" + raw.trim() + "</gray><white></white>");
-                    // Создаём «находилку» без .* по краям для точного определения позиций
-                    Pattern finder = compileHighlightFinder(raw);
-                    if (finder != null) {
-                        highlightPatterns.add(finder);
-                    }
+        for (String raw : rawRegexes) {
+            Pattern p = compileRegexPattern(raw);
+            if (p != null) {
+                compiledPatterns.add(p);
+                patternSources.add("<green>regex</green><white>: </white><gray>" + raw.trim() + "</gray><white></white>");
+                // Create highlight finder without .* around edges for precise position detection
+                Pattern finder = compileHighlightFinder(raw);
+                if (finder != null) {
+                    highlightPatterns.add(finder);
                 }
             }
         }
@@ -125,16 +114,16 @@ public class ChatFilterManager implements Listener {
     }
 
     /**
-     * Превращает строку с опциональным wildcard (*) в регулярное выражение.
+     * Converts a string with optional wildcard (*) into a regex pattern.
      *
-     * Использует Unicode-свойство \p{L} для границ слов, чтобы корректно
-     * обрабатывать кириллицу (в отличие от \b, которое работает только с [a-zA-Z0-9_]).
+     * Uses Unicode property \p{L} for word boundaries to correctly handle
+     * Cyrillic (unlike \b which only works with [a-zA-Z0-9_]).
      *
-     * Примеры:
-     *   "блять"     → (?i).*(?<!\p{L})блять(?!\p{L}).*
-     *   "блять*"    → (?i).*(?<!\p{L})блять.*
-     *   "*блять"    → (?i).*блять(?!\p{L}).*
-     *   "*блять*"   → (?i).*блять.*
+     * Examples:
+     *   "badword"     → (?i).*(?<!\p{L})badword(?!\p{L}).*
+     *   "badword*"    → (?i).*(?<!\p{L})badword.*
+     *   "*badword"    → (?i).*badword(?!\p{L}).*
+     *   "*badword*"   → (?i).*badword.*
      */
     private Pattern compileWordPattern(String raw) {
         if (raw == null || raw.isEmpty()) return null;
@@ -143,24 +132,24 @@ public class ChatFilterManager implements Listener {
         boolean startsWithStar = word.startsWith("*");
         boolean endsWithStar = word.endsWith("*");
 
-        // Убираем wildcard-символы для получения чистого слова
+        // Remove wildcard symbols to get the clean word
         if (startsWithStar) word = word.substring(1);
         if (endsWithStar) word = word.substring(0, word.length() - (endsWithStar ? 1 : 0));
 
         if (word.isEmpty()) return null;
 
-        // Экранируем специальные символы regex
+        // Escape regex special characters
         String escaped = Pattern.quote(word);
 
         StringBuilder regex = new StringBuilder("(?i).*");
 
         if (!startsWithStar) {
-            // Начало слова: перед словом не должно быть буквы (Unicode-aware)
+            // Word start: no Unicode letter before the word
             regex.append("(?<!\\p{L})");
         }
         regex.append(escaped);
         if (!endsWithStar) {
-            // Конец слова: после слова не должно быть буквы (Unicode-aware)
+            // Word end: no Unicode letter after the word
             regex.append("(?!\\p{L})");
         }
 
@@ -175,22 +164,20 @@ public class ChatFilterManager implements Listener {
     }
 
     /**
-     * Компилирует строку как готовое Java regex-выражение.
+     * Compiles a raw string as a Java regex expression.
      *
-     * Автоматически добавляет флаг (?i) для регистронезависимости,
-     * но если автор regex уже указал (?i) вручную — флаг не дублируется.
+     * Automatically adds (?i) for case-insensitivity,
+     * but does not duplicate it if already present.
      *
-     * Важно: паттерн применяется к ВСЕМУ сообщению через Matcher.matches(),
-     * поэтому для поиска подстроки используйте .* в начале и конце:
-     *   ".*\\b(?:блять|хуй)\\b.*"
-     * или просто добавьте .* в regex вручную.
+     * The pattern is applied to the ENTIRE message via Matcher.matches(),
+     * so use .* at start and end for substring matching.
      */
     private Pattern compileRegexPattern(String raw) {
         if (raw == null || raw.isEmpty()) return null;
 
         String regex = raw.trim();
 
-        // Добавляем (?i) в начало, если его ещё нет
+        // Add (?i) at the start if not already present
         if (!regex.startsWith("(?i)") && !regex.startsWith("(?-i)")) {
             regex = "(?i)" + regex;
         }
@@ -204,21 +191,21 @@ public class ChatFilterManager implements Listener {
     }
 
     /**
-     * Создаёт облегчённый паттерн для {@code find()}, без «.*» по краям,
-     * чтобы точно определить позиции совпадения в сообщении.
+     * Creates a lightweight pattern for find(), without .* around edges,
+     * for precise match position detection.
      */
     private Pattern compileHighlightFinder(String raw) {
         if (raw == null || raw.isEmpty()) return null;
 
         String stripped = raw.trim();
 
-        // Убираем ведущий .* и хвостовой .*
+        // Remove leading .* and trailing .*
         if (stripped.startsWith(".*")) stripped = stripped.substring(2);
         if (stripped.endsWith(".*")) stripped = stripped.substring(0, stripped.length() - 2);
 
         if (stripped.isEmpty()) return null;
 
-        // Добавляем (?i) если ещё нет
+        // Add (?i) if not present
         if (!stripped.startsWith("(?i)") && !stripped.startsWith("(?-i)")) {
             stripped = "(?i)" + stripped;
         }
@@ -231,9 +218,9 @@ public class ChatFilterManager implements Listener {
     }
 
     /**
-     * Строит строку с подсветкой запрещённых участков красным (§c…§r).
-     * Находит все вхождения слов из highlightWords и совпадения highlightPatterns,
-     * объединяет перекрывающиеся диапазоны и вставляет цветовые коды.
+     * Builds a string with bad words highlighted in red (§c…§r).
+     * Finds all occurrences from highlightWords and highlightPatterns,
+     * merges overlapping ranges and inserts color codes.
      */
     private String highlightBadWords(String message) {
         if (message == null || message.isEmpty()) return message;
@@ -241,7 +228,7 @@ public class ChatFilterManager implements Listener {
         List<int[]> ranges = new ArrayList<>();
         String lowerMsg = message.toLowerCase();
 
-        // 1. Ищем вхождения простых слов
+        // 1. Find simple word occurrences
         for (String word : highlightWords) {
             String lowerWord = word.toLowerCase();
             int idx = 0;
@@ -251,7 +238,7 @@ public class ChatFilterManager implements Listener {
             }
         }
 
-        // 2. Ищем совпадения regex-паттернов через find()
+        // 2. Find regex pattern matches via find()
         for (Pattern p : highlightPatterns) {
             Matcher m = p.matcher(message);
             while (m.find()) {
@@ -263,10 +250,10 @@ public class ChatFilterManager implements Listener {
             return message;
         }
 
-        // Сортируем по начальной позиции
+        // Sort by start position
         ranges.sort((a, b) -> Integer.compare(a[0], b[0]));
 
-        // Объединяем перекрывающиеся диапазоны
+        // Merge overlapping ranges
         List<int[]> merged = new ArrayList<>();
         for (int[] r : ranges) {
             if (merged.isEmpty()) {
@@ -281,7 +268,7 @@ public class ChatFilterManager implements Listener {
             }
         }
 
-        // Строим итоговую строку с §c…§r
+        // Build final string with §c…§r
         StringBuilder sb = new StringBuilder();
         int lastEnd = 0;
         for (int[] r : merged) {
@@ -302,7 +289,7 @@ public class ChatFilterManager implements Listener {
 
         Player player = event.getPlayer();
 
-        // Если у игрока есть право на байпасс — пропускаем
+        // Skip if player has bypass permission
         if (player.hasPermission("mcplugin.chat.filter.bypass")) return;
 
         String message = event.getMessage();
@@ -313,19 +300,17 @@ public class ChatFilterManager implements Listener {
                 event.setCancelled(true);
 
                 String source = patternSources.get(i);
-                String plainSource = source.replaceAll("<[^>]+>", ""); // убираем MiniMessage-теги для консоли
+                String plainSource = source.replaceAll("<[^>]+>", ""); // remove MiniMessage tags for console
 
-                // Сообщение с подсветкой
+                // Message with highlighting
                 String highlighted = highlightBadWords(message);
 
-                // Лог в консоль (с подсвеченным сообщением)
+                // Console log (with highlighted message)
                 Main.getInstance().getLogger().warning("[CHAT-FILTER] " + player.getName()
-                        + " нарушил правило «" + plainSource + "»: " + highlighted);
+                        + " violated rule '" + plainSource + "': " + highlighted);
 
-                // Сообщение игроку
+                // Player message
                 player.sendMessage(MessageUtil.parse(warningMessage));
-                // Highlighted message uses § codes from highlightBadWords(), so send as legacy string
-                // highlighted contains § codes from highlightBadWords() — send as legacy string
                 player.sendMessage("§7→ §f" + highlighted);
                 player.sendMessage(MessageUtil.parse(MessagesManager.getString("chat_filter.violation_match", "<gray>└</gray> <white>Match:</white> {source}").replace("{source}", source)));
                 return;

@@ -323,7 +323,10 @@ plugin_hide:
 fishing:
   no_fish: "<dark_gray>[<red>⛔</red>] <red>No fish at all!</red></dark_gray>"
 
-bot_protection:    queue_full: "<red>❌ Server overloaded! You are in queue: position"    queue_notify_op: "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>{count}</yellow> <red>player(s) tried to connect in</red> <yellow>{seconds}s</yellow><red>. Queue enabled.</red>"    rejoin_cooldown: "<red>❌ You left too recently! Wait</red> <yellow>{seconds}</yellow> <red>sec before reconnecting.</red>"
+bot_protection:
+  queue_full: "<red>❌ Server overloaded! You are in queue: position"
+  queue_notify_op: "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>{count}</yellow> <red>player(s) tried to connect in</red> <yellow>{seconds}s</yellow><red>. Queue enabled.</red>"
+  rejoin_cooldown: "<red>❌ You left too recently! Wait</red> <yellow>{seconds}</yellow> <red>sec before reconnecting.</red>"
 
 update:
   no_permission_check: "<red>❌ You don't have permission to check for updates!</red>"

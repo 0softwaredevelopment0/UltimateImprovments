@@ -24,7 +24,7 @@ public class CodePanelCommand implements CommandExecutor {
 
         // 💥 RELOAD SAFETY
         if (!isSafe()) {
-            player.sendMessage("§cКодовая панель перезагружается, попробуйте позже...");
+            player.sendMessage("§cCode panel is reloading, try again later...");
             return true;
         }
 

@@ -132,17 +132,17 @@ public class LightningManager implements Listener {
     public static void assemble(Location center, ItemFrame frame, Player player) {
         center = LocationUtil.normalize(center);
         if (center == null || center.getWorld() == null) {
-            if (player != null) player.sendMessage("§4❌ §cНекорректная позиция!");
+            if (player != null) player.sendMessage("§4❌ §cInvalid position!");
             return;
         }
 
         if (activeStructures.containsKey(center)) {
-            if (player != null) player.sendMessage("§e⚡ Структура молний уже собрана на этом месте!");
+            if (player != null) player.sendMessage("§e⚡ Lightning structure already assembled here!");
             return;
         }
 
         if (player != null) {
-            player.sendMessage("§8[§e⚡ Молнии§8] §7Проверка структуры...");
+            player.sendMessage("§8[§e⚡ Lightning§8] §7Checking structure...");
         }
 
         final World world = center.getWorld();
@@ -151,7 +151,7 @@ public class LightningManager implements Listener {
             List<String> errors = LightningStructure.getValidationErrors(center);
             if (!errors.isEmpty()) {
                 if (player != null) {
-                    player.sendMessage("§4❌ §cСтруктура молний повреждена! §7Ошибки:");
+                    player.sendMessage("§4❌ §cLightning structure damaged! §7Errors:");
                     for (String err : errors) {
                         player.sendMessage("§8 • §f" + err);
                     }
@@ -177,9 +177,9 @@ public class LightningManager implements Listener {
             world.playSound(center, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
 
             if (player != null) {
-                player.sendMessage("§a✔ §fСтруктура молний собрана!");
-                player.sendMessage("§8┃ §7Бросайте предметы на громоотвод — молния переплавит их!");
-                player.sendMessage("§8┃ §7Команды: §f/mp str lightning enable§7/§cdisable §7/ §fstats");
+                player.sendMessage("§a✔ §fLightning structure assembled!");
+                player.sendMessage("§8┃ §7Drop items on the lightning rod — lightning will smelt them!");
+                player.sendMessage("§8┃ §7Commands: §f/mp str lightning enable§7/§cdisable §7/ §fstats");
             }
 
             Main.getInstance().getLogger().info(
@@ -187,7 +187,7 @@ public class LightningManager implements Listener {
                 + " by " + (player != null ? player.getName() : "unknown"));
         } catch (Exception e) {
             if (player != null) {
-                player.sendMessage("§4❌ §cОшибка при проверке структуры!");
+                player.sendMessage("§4❌ §cError checking structure!");
             }
             Main.getInstance().getLogger().severe("[Lightning] Assembly error: " + e.getMessage());
             e.printStackTrace();
@@ -297,9 +297,9 @@ public class LightningManager implements Listener {
         if (center == null || !activeStructures.containsKey(center)) return null;
 
         boolean enabled = activeStructures.get(center);
-        return "§8┃ §e⚡ Структура молний §8» §f"
+        return "§8┃ §e⚡ Lightning structure §8» §f"
                 + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()
-                + " §8[" + (enabled ? "§a✔ Вкл" : "§c❌ Выкл") + "§8]";
+                + " §8[" + (enabled ? "§a✔ On" : "§c❌ Off") + "§8]";
     }
 
     public static Collection<Location> getActiveLocations() {

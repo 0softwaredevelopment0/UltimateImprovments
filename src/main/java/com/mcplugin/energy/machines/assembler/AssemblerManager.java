@@ -114,7 +114,7 @@ public class AssemblerManager implements Listener {
         if (!AssemblerStructure.isValid(loc)) {
             List<String> errors = AssemblerStructure.getValidationErrors(loc);
             if (!errors.isEmpty()) {
-                player.sendMessage("§4❌ §cСтруктура сборщика повреждена! §7Ошибки:");
+                player.sendMessage("§4❌ §cAssembler structure damaged! §7Errors:");
                 for (String err : errors) {
                     player.sendMessage("§8 • §f" + err);
                 }
@@ -126,7 +126,7 @@ public class AssemblerManager implements Listener {
             event.setCancelled(true);
             // DISASSEMBLE
             removeAssembler(loc);
-            player.sendMessage("§e⚡ Сборщик разобран!"
+            player.sendMessage("§e⚡ Assembler disassembled!"
                     + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
             Main.getInstance().getLogger().info(
                     "[Assembler] Disassembled at " + loc + " by " + player.getName());
@@ -146,9 +146,9 @@ public class AssemblerManager implements Listener {
                 world.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
             }
 
-            player.sendMessage("§a✔ Сборщик собран!"
+            player.sendMessage("§a✔ Assembler assembled!"
                     + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
-            player.sendMessage("§8┃ §7Разложите предметы в крафтере по схеме крафта — предметы будут собираться автоматически!");
+            player.sendMessage("§8┃ §7Place items in the crafter according to the recipe — they will be crafted automatically!");
 
             Main.getInstance().getLogger().info(
                     "[Assembler] Assembled at " + loc + " by " + player.getName());

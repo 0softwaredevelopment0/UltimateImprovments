@@ -331,7 +331,7 @@ public class MagnetManager extends BukkitRunnable {
     public static void activateAsync(Location loc, Player player) {
         loc = LocationUtil.normalize(loc);
         if (loc == null) {
-            player.sendMessage("§4❌ §cНекорректная позиция!");
+            player.sendMessage("§4❌ §cInvalid position!");
             return;
         }
         long key = toKey(loc);
@@ -340,9 +340,9 @@ public class MagnetManager extends BukkitRunnable {
             return;
         }
 
-        player.sendMessage("§8[§bМагнит§8] §7Начинаю сканирование структуры...");
-        player.sendMessage("§8[§bМагнит§8] §7Пожалуйста, подождите. Это может занять время");
-        player.sendMessage("§8[§bМагнит§8] §7при большом количестве блоков.");
+        player.sendMessage("§8[§bMagnet§8] §7Starting structure scan...");
+        player.sendMessage("§8[§bMagnet§8] §7Please wait. This may take a while");
+        player.sendMessage("§8[§bMagnet§8] §7with a large number of blocks.");
 
         World world = loc.getWorld();
         int sx = loc.getBlockX(), sy = loc.getBlockY(), sz = loc.getBlockZ();
@@ -356,8 +356,8 @@ public class MagnetManager extends BukkitRunnable {
                 );
             } catch (Exception e) {
                 Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                    player.sendMessage("§4❌ §cОшибка при асинхронном сканировании!");
-                    player.sendMessage("§7Пробую синхронный режим...");
+                    player.sendMessage("§4❌ §cError during async scan!");
+                    player.sendMessage("§7Trying sync mode...");
 
                     // Fallback: синхронное выполнение
                     Set<Long> connected = floodFillFast(world, sx, sy, sz);
@@ -376,7 +376,7 @@ public class MagnetManager extends BukkitRunnable {
      */
     private static void finishActivation(Set<Long> connected, World world, long key, Player player) {
         if (connected.isEmpty()) {
-            player.sendMessage("§4❌ §cМагнит не собран: структура из LODESTONE не найдена!");
+            player.sendMessage("§4❌ §cMagnet not assembled: LODESTONE structure not found!");
             return;
         }
 
@@ -405,16 +405,16 @@ public class MagnetManager extends BukkitRunnable {
         String powerDesc = getMagnetPowerTierStatic(power);
         int magnetRadius = getClusterRadius(power);
 
-        player.sendMessage("§a✔ §fМагнит собран!");
-        player.sendMessage("§8┃ §7Блоков в структуре: §f" + power + " §7шт");
-        player.sendMessage("§8┃ §7Сила притяжения: " + powerDesc);
+        player.sendMessage("§a✔ §fMagnet assembled!");
+        player.sendMessage("§8┃ §7Blocks in structure: §f" + power + " §7pcs");
+        player.sendMessage("§8┃ §7Attraction force: " + powerDesc);
         if (cluster.center != null) {
-            player.sendMessage("§8┃ §7Центр притяжения: §f"
+            player.sendMessage("§8┃ §7Center: §f"
                     + cluster.center.getBlockX() + " "
                     + cluster.center.getBlockY() + " "
                     + cluster.center.getBlockZ());
         }
-        player.sendMessage("§8┃ §7Радиус действия: §f" + magnetRadius + " §7блоков (мин. " + MagnetConfig.getMinRadius() + ")");
+        player.sendMessage("§8┃ §7Radius: §f" + magnetRadius + " §7blocks (min. " + MagnetConfig.getMinRadius() + ")");
 
         Main.getInstance().getLogger().info(
                 "[Magnet] Activated cluster #" + cluster.id
@@ -427,33 +427,33 @@ public class MagnetManager extends BukkitRunnable {
      * Возвращает название тира магнита по мощности.
      */
     public static String getMagnetPowerTierStatic(int power) {
-        if (power >= 10000000) return "§k✧ §4✧✧ АБСОЛЮТНАЯ БЕСКОНЕЧНОСТЬ ✧✧ §k✧ §8(" + power + ")";
-        if (power >= 5000000) return "§4✧✧ БЕСКОНЕЧНАЯ БЕЗДНА ✧✧ §8(" + power + ")";
-        if (power >= 2500000) return "§c✦ ВСЕЛЕНСКАЯ КАТАСТРОФА ✦ §8(" + power + ")";
-        if (power >= 1000000) return "§d✧ ПЕРВОЗДАННАЯ СИНГУЛЯРНОСТЬ ✧ §8(" + power + ")";
-        if (power >= 500000) return "§6☠ НЕПОСТИЖИМАЯ ☠ §8(" + power + ")";
-        if (power >= 250000) return "§3✦ БОГОПОДОБНАЯ ✦ §8(" + power + ")";
-        if (power >= 100000) return "§4✧✧✧ ВСЕСОКРУШАЮЩАЯ СИНГУЛЯРНОСТЬ ✧✧✧ §8(" + power + ")";
-        if (power >= 50000) return "§c☠ АБСОЛЮТНАЯ СИНГУЛЯРНОСТЬ ☠ §8(" + power + ")";
-        if (power >= 25000) return "§6⚡ БОЖЕСТВЕННАЯ СИНГУЛЯРНОСТЬ ⚡ §8(" + power + ")";
-        if (power >= 10000) return "§d✧✧ НЕПРЕВЗОЙДЁННАЯ ✧✧ §8(" + power + ")";
-        if (power >= 5000) return "§5✦ ТРАНСЦЕНДЕНТНАЯ ✦ §8(" + power + ")";
-        if (power >= 2500) return "§9⚜ СИНГУЛЯРНАЯ ⚜ §8(" + power + ")";
-        if (power >= 1000) return "§3✦ БЕСКОНЕЧНАЯ ✦ §8(" + power + ")";
-        if (power >= 500) return "§5✧✧ АБСОЛЮТНАЯ ✧✧ §8(" + power + ")";
-        if (power >= 300) return "§5☯ КОСМИЧЕСКАЯ ☯ §8(" + power + ")";
-        if (power >= 200) return "§d✦ ТИТАНИЧЕСКАЯ ✦ §8(" + power + ")";
-        if (power >= 150) return "§d◈ ЛЕГЕНДАРНАЯ ◈ §8(" + power + ")";
-        if (power >= 100) return "§c☆ НЕВЕРОЯТНАЯ ☆ §8(" + power + ")";
-        if (power >= 75) return "§c♦ ЧРЕЗВЫЧАЙНАЯ ♦ §8(" + power + ")";
-        if (power >= 50) return "§6★ ИСКЛЮЧИТЕЛЬНАЯ ★ §8(" + power + ")";
-        if (power >= 30) return "§6⬆ ОЧЕНЬ СИЛЬНАЯ ⬆ §8(" + power + ")";
-        if (power >= 20) return "§e⬆ СИЛЬНАЯ ⬆ §8(" + power + ")";
-        if (power >= 12) return "§e⬆ ВЫШЕ СРЕДНЕГО ⬆ §8(" + power + ")";
-        if (power >= 7) return "§a➤ СРЕДНЯЯ ➤ §8(" + power + ")";
-        if (power >= 4) return "§7➤ НИЖЕ СРЕДНЕГО ➤ §8(" + power + ")";
-        if (power >= 2) return "§7▸ СЛАБАЯ ▸ §8(" + power + ")";
-        return "§7▸ ОЧЕНЬ СЛАБАЯ ▸ §8(" + power + ")";
+        if (power >= 10000000) return "§k✧ §4✧✧ ABSOLUTE INFINITY ✧✧ §k✧ §8(" + power + ")";
+        if (power >= 5000000) return "§4✧✧ INFINITE ABYSS ✧✧ §8(" + power + ")";
+        if (power >= 2500000) return "§c✦ COSMIC CATASTROPHE ✦ §8(" + power + ")";
+        if (power >= 1000000) return "§d✧ PRIMORDIAL SINGULARITY ✧ §8(" + power + ")";
+        if (power >= 500000) return "§6☠ INCOMPREHENSIBLE ☠ §8(" + power + ")";
+        if (power >= 250000) return "§3✦ GODLIKE ✦ §8(" + power + ")";
+        if (power >= 100000) return "§4✧✧✧ ALL-CRUSHING SINGULARITY ✧✧✧ §8(" + power + ")";
+        if (power >= 50000) return "§c☠ ABSOLUTE SINGULARITY ☠ §8(" + power + ")";
+        if (power >= 25000) return "§6⚡ DIVINE SINGULARITY ⚡ §8(" + power + ")";
+        if (power >= 10000) return "§d✧✧ UNMATCHED ✧✧ §8(" + power + ")";
+        if (power >= 5000) return "§5✦ TRANSCENDENT ✦ §8(" + power + ")";
+        if (power >= 2500) return "§9⚜ SINGULAR ⚜ §8(" + power + ")";
+        if (power >= 1000) return "§3✦ INFINITE ✦ §8(" + power + ")";
+        if (power >= 500) return "§5✧✧ ABSOLUTE ✧✧ §8(" + power + ")";
+        if (power >= 300) return "§5☯ COSMIC ☯ §8(" + power + ")";
+        if (power >= 200) return "§d✦ TITANIC ✦ §8(" + power + ")";
+        if (power >= 150) return "§d◈ LEGENDARY ◈ §8(" + power + ")";
+        if (power >= 100) return "§c☆ INCREDIBLE ☆ §8(" + power + ")";
+        if (power >= 75) return "§c♦ EXTREME ♦ §8(" + power + ")";
+        if (power >= 50) return "§6★ EXCEPTIONAL ★ §8(" + power + ")";
+        if (power >= 30) return "§6⬆ VERY STRONG ⬆ §8(" + power + ")";
+        if (power >= 20) return "§e⬆ STRONG ⬆ §8(" + power + ")";
+        if (power >= 12) return "§e⬆ ABOVE AVERAGE ⬆ §8(" + power + ")";
+        if (power >= 7) return "§a➤ AVERAGE ➤ §8(" + power + ")";
+        if (power >= 4) return "§7➤ BELOW AVERAGE ➤ §8(" + power + ")";
+        if (power >= 2) return "§7▸ WEAK ▸ §8(" + power + ")";
+        return "§7▸ VERY WEAK ▸ §8(" + power + ")";
     }
 
     // =========================
@@ -499,7 +499,7 @@ public class MagnetManager extends BukkitRunnable {
         deactivateCluster(cluster);
 
         if (breaker != null) {
-            breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Магнит деактивирован (разрушен блок)!</red>"));
+            breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Magnet deactivated (block broken)!</red>"));
         }
 
         Main.getInstance().getLogger().info("[Magnet] Deactivated cluster #" + cluster.id

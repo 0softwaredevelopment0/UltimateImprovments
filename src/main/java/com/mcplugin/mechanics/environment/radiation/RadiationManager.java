@@ -287,7 +287,7 @@ public class RadiationManager implements Listener {
             // =========================
             if (radViewEnabled.contains(uuid)) {
                 double roentgen = rad / 100.0;
-                player.sendActionBar(MessageUtil.parse("<white>Радиация: </white><gray>" + String.format(Locale.US, "%.1f", roentgen) + "</gray> <white>Р/Ч</white>"));
+                player.sendActionBar(MessageUtil.parse("<white>Radiation: </white><gray>" + String.format(Locale.US, "%.1f", roentgen) + "</gray> <white>R/h</white>"));
             }
 
             radiationMap.put(uuid, Math.max(0, rad));

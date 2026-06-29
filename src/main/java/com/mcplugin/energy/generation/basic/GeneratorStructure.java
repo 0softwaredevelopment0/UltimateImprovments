@@ -105,24 +105,24 @@ public class GeneratorStructure {
     public static List<String> getValidationErrors(Location center) {
         List<String> errors = new ArrayList<>();
         if (center == null || center.getWorld() == null) {
-            errors.add("§c[1] Центр структуры = null");
+            errors.add("§c[1] Structure center = null");
             return errors;
         }
         Location base = LocationUtil.normalize(center);
 
         // 1. Blast furnace
         if (base.getBlock().getType() != Material.BLAST_FURNACE) {
-            errors.add("§6[1] Плавильная печь §e(0, 0, 0)"
-                    + " §7— должна быть BLAST_FURNACE на §f["
+            errors.add("§6[1] Blast furnace §e(0, 0, 0)"
+                    + " §7— must be BLAST_FURNACE at §f["
                     + base.getBlockX() + " " + base.getBlockY() + " " + base.getBlockZ() + "]"
-                    + " §7(сейчас: §f" + base.getBlock().getType() + "§7)");
+                    + " §7(current: §f" + base.getBlock().getType() + "§7)");
         }
 
         // 2. Item frame on top
         if (!hasItemFrameOnTop(base)) {
-            errors.add("§6[2] Рамка §7— не найдена на верхней грани плавильной печи §f["
+            errors.add("§6[2] Item frame §7— not found on top of blast furnace §f["
                     + base.getBlockX() + " " + base.getBlockY() + " " + base.getBlockZ() + "]"
-                    + "§7. Повесьте рамку НА ВЕРХНЮЮ ГРАНЬ плавильной печи");
+                    + "§7. Place the item frame ON THE TOP FACE of the blast furnace");
         }
 
         return errors;

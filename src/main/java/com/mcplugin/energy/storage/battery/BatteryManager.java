@@ -137,9 +137,9 @@ public class BatteryManager implements Listener {
 
         String getModeDisplay() {
             return switch (mode) {
-                case CHARGE -> "<aqua>Зарядка</aqua>";
-                case CHARGE_DISCHARGE -> "<light_purple>Зарядка и разрядка</light_purple>";
-                case DISCHARGE -> "<red>Разрядка</red>";
+                case CHARGE -> "<aqua>Charge</aqua>";
+                case CHARGE_DISCHARGE -> "<light_purple>Charge & Discharge</light_purple>";
+                case DISCHARGE -> "<red>Discharge</red>";
             };
         }
     }
@@ -286,13 +286,13 @@ public class BatteryManager implements Listener {
         if (loc == null) return;
         long key = toKey(loc);
         if (locationToCluster.containsKey(key)) {
-            if (player != null) player.sendMessage("§eБатарея уже собрана на этом месте!");
+            if (player != null) player.sendMessage("§eBattery already assembled here!");
             return;
         }
 
         Set<Long> connected = floodFillFast(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         if (connected.isEmpty()) {
-            if (player != null) player.sendMessage("§4❌ §cНет блоков WAXED_COPPER_GRATE рядом!");
+            if (player != null) player.sendMessage("§4❌ §cNo WAXED_COPPER_GRATE blocks nearby!");
             return;
         }
 
@@ -325,9 +325,9 @@ public class BatteryManager implements Listener {
         }
 
         if (player != null) {
-            player.sendMessage("§a✔ §fБатарея собрана! (Marker-based)");
-            player.sendMessage("§8┃ §7Блоков: §f" + cluster.blockKeys.size() + " §7| Ёмкость: §f" + cluster.capacity + " §7энергии");
-            player.sendMessage("§8┃ §7Подайте редстоун на любой блок для разрядки");
+            player.sendMessage("§a✔ §fBattery assembled! (Marker-based)");
+            player.sendMessage("§8┃ §7Blocks: §f" + cluster.blockKeys.size() + " §7| Capacity: §f" + cluster.capacity + " §7energy");
+            player.sendMessage("§8┃ §7Apply redstone to any block to discharge");
         }
 
         Main.getInstance().getLogger().info("[BatteryMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " blocks");
@@ -445,7 +445,7 @@ public class BatteryManager implements Listener {
                 + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
 
         if (player != null) {
-            player.sendMessage("§e❕ Батарея разобрана (разрушен блок)");
+            player.sendMessage("§e❕ Battery disassembled (block broken)");
         }
     }
 

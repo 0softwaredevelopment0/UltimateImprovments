@@ -57,7 +57,7 @@ public class GunListener implements Listener {
                 || ammo.getType() != Material.ECHO_SHARD
                 || ammo.getAmount() <= 0) {
 
-            p.sendActionBar("§7[§dPLASMA§7] §cНет патронов");
+            p.sendActionBar("§7[§dPLASMA§7] §cNo ammo");
             return;
         }
 

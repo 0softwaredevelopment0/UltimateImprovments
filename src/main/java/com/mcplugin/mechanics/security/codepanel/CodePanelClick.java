@@ -32,14 +32,14 @@ public class CodePanelClick implements CommandExecutor {
     private boolean handleClickInternal(Player player, String value) {
 
         if (!isSafe()) {
-            player.sendMessage("§cСистема перезагружается...");
+            player.sendMessage("§cSystem is reloading...");
             return true;
         }
 
         // Enter cooldown check
         if ("E".equals(value) && CodePanelSession.isEnterOnCooldown(player.getUniqueId())) {
             long left = CodePanelSession.getRemainingCooldown(player.getUniqueId()) / 1000;
-            player.sendMessage("§cПодождите §e" + Math.max(0, left) + "§c сек перед повторным вводом");
+            player.sendMessage("§cPlease wait §e" + Math.max(0, left) + "§c sec before entering again");
             return true;
         }
 
@@ -149,7 +149,7 @@ public class CodePanelClick implements CommandExecutor {
 
             // Проверка whitelist / blacklist
             if (!key.isPlayerAllowed(player.getName())) {
-                player.sendMessage("§4❌ §cУ вас нет доступа к этому коду!");
+                player.sendMessage("§4❌ §cYou don't have access to this code!");
                 play(player, "fail");
                 return;
             }
@@ -194,7 +194,7 @@ public class CodePanelClick implements CommandExecutor {
         }
 
         // НЕВЕРНЫЙ КОД — просто сообщение, без блокировки
-        player.sendMessage("§c❌ Неверный код!");
+        player.sendMessage("§c❌ Wrong code!");
         play(player, "fail");
     }
 

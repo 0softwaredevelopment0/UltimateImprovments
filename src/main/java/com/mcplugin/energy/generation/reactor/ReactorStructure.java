@@ -177,7 +177,7 @@ public class ReactorStructure {
         List<String> errors = new ArrayList<>();
 
         if (center == null || center.getWorld() == null) {
-            errors.add("§c[1] Центр реактора = null (ошибка поиска)");
+            errors.add("§c[1] Reactor center = null (search error)");
             return errors;
         }
 
@@ -187,62 +187,62 @@ public class ReactorStructure {
         // 1. COPPER BULBS
         // =========================
         checkBlockDetailed(errors, base, BULB_COOL, Material.WAXED_COPPER_BULB,
-                "§6[1] Лампочка охлаждения §e(1, 0, -2)"
-                        + "§7 — должна быть WAXED_COPPER_BULB на координатах §f"
+                "§6[1] Cooling bulb §e(1, 0, -2)"
+                        + "§7 — must be WAXED_COPPER_BULB at §f"
                         + locStr(base, BULB_COOL));
 
         checkBlockDetailed(errors, base, BULB_HEAT, Material.WAXED_COPPER_BULB,
-                "§6[2] Лампочка нагрева §e(-1, 0, -2)"
-                        + "§7 — должна быть WAXED_COPPER_BULB на §f"
+                "§6[2] Heating bulb §e(-1, 0, -2)"
+                        + "§7 — must be WAXED_COPPER_BULB at §f"
                         + locStr(base, BULB_HEAT));
 
         checkBlockDetailed(errors, base, BULB_SH_INT, Material.WAXED_COPPER_BULB,
-                "§6[3] Лампочка целостности оболочки §e(-1, 0, 2)"
-                        + "§7 — должна быть WAXED_COPPER_BULB на §f"
+                "§6[3] Shell integrity bulb §e(-1, 0, 2)"
+                        + "§7 — must be WAXED_COPPER_BULB at §f"
                         + locStr(base, BULB_SH_INT));
 
         checkBlockDetailed(errors, base, BULB_CASE_INT, Material.WAXED_COPPER_BULB,
-                "§6[4] Лампочка целостности корпуса §e(1, 0, 2)"
-                        + "§7 — должна быть WAXED_COPPER_BULB на §f"
+                "§6[4] Case integrity bulb §e(1, 0, 2)"
+                        + "§7 — must be WAXED_COPPER_BULB at §f"
                         + locStr(base, BULB_CASE_INT));
 
         // =========================
         // 2. BARRELS (fuel input)
         // =========================
         checkBlockDetailed(errors, base, DIAMOND_BARREL, Material.BARREL,
-                "§6[5] Бочка с алмазами (вход топлива) §e(0, -3, -2)"
-                        + "§7 — должна быть BARREL на §f"
+                "§6[5] Diamond barrel (fuel input) §e(0, -3, -2)"
+                        + "§7 — must be BARREL at §f"
                         + locStr(base, DIAMOND_BARREL));
 
         checkBlockDetailed(errors, base, GOLD_BARREL, Material.BARREL,
-                "§6[6] Бочка с золотом (вход топлива) §e(0, -3, 2)"
-                        + "§7 — должна быть BARREL на §f"
+                "§6[6] Gold barrel (fuel input) §e(0, -3, 2)"
+                        + "§7 — must be BARREL at §f"
                         + locStr(base, GOLD_BARREL));
 
         // =========================
         // 2.5. CORE BLOCKS (upper and lower — polished blackstone)
         // =========================
         checkBlockDetailed(errors, base, UPPER_CORE, Material.POLISHED_BLACKSTONE,
-                "§6[5.5] Верхний сердечник §e(0, -1, 0)"
-                        + "§7 — должен быть POLISHED_BLACKSTONE на §f"
+                "§6[5.5] Upper core §e(0, -1, 0)"
+                        + "§7 — must be POLISHED_BLACKSTONE at §f"
                         + locStr(base, UPPER_CORE));
 
         checkBlockDetailed(errors, base, LOWER_CORE, Material.POLISHED_BLACKSTONE,
-                "§6[5.6] Нижний сердечник §e(0, -5, 0)"
-                        + "§7 — должен быть POLISHED_BLACKSTONE на §f"
+                "§6[5.6] Lower core §e(0, -5, 0)"
+                        + "§7 — must be POLISHED_BLACKSTONE at §f"
                         + locStr(base, LOWER_CORE));
 
         // =========================
         // 3. LEVERS (optional)
         // =========================
         checkBlockDetailedOptional(errors, base, LEVER, Material.LEVER,
-                "§6[7] Рычаг нагрева §e(-1, 0, -3)"
-                        + "§7 — опционально, но если есть — LEVER на §f"
+                "§6[7] Heating lever §e(-1, 0, -3)"
+                        + "§7 — optional, but must be LEVER at §f"
                         + locStr(base, LEVER));
 
         checkBlockDetailedOptional(errors, base, LEVER_COOL, Material.LEVER,
-                "§6[7.2] Рычаг охлаждения §e(1, 0, -3)"
-                        + "§7 — опционально, но если есть — LEVER на §f"
+                "§6[7.2] Cooling lever §e(1, 0, -3)"
+                        + "§7 — optional, but must be LEVER at §f"
                         + locStr(base, LEVER_COOL));
 
         // =========================
@@ -254,16 +254,16 @@ public class ReactorStructure {
             Material actual = getBlock(base, dx, dy, dz);
             if (!isAnyWallSign(actual)) {
                 String side = switch (i) {
-                    case 0 -> "левый";
-                    case 1 -> "центральный";
-                    case 2 -> "правый";
+                    case 0 -> "left";
+                    case 1 -> "center";
+                    case 2 -> "right";
                     default -> "";
                 };
-                errors.add("§6[8." + (i + 1) + "] Настенная табличка (" + side + ") §e("
+                errors.add("§6[8." + (i + 1) + "] Wall sign (" + side + ") §e("
                         + dx + ", " + dy + ", " + dz + ")"
-                        + "§7 — не найдена на §f" + locStr(base, pos)
-                        + "§7. Текущий блок: §f" + actual
-                        + "§7. Установите любую настенную табличку (OAK/DARK_OAK/BIRCH/...)");
+                        + "§7 — not found at §f" + locStr(base, pos)
+                        + "§7. Current block: §f" + actual
+                        + "§7. Place any wall sign (OAK/DARK_OAK/BIRCH/...)");
             }
         }
 
@@ -281,10 +281,10 @@ public class ReactorStructure {
         // 7. ITEM FRAME
         // =========================
         if (!hasItemFrame(base)) {
-            errors.add("§6[11] Рамка (ItemFrame) §e(0, 0, 0)"
-                    + "§7 — не найдена на верхней грани сердечника §f"
+            errors.add("§6[11] ItemFrame §e(0, 0, 0)"
+                    + "§7 — not found on top of core §f"
                     + locStr(base, new int[]{0, 0, 0})
-                    + "§7. Повесьте рамку НА ВЕРХНЮЮ ГРАНЬ центрального блока (пол. чернит)");
+                    + "§7. Place the item frame ON THE TOP FACE of the center block (polished blackstone)");
         }
 
         return errors;
@@ -330,10 +330,10 @@ public class ReactorStructure {
         };
 
         String[] wallNames = {
-                "северная стена (угол)", "северная стена (центр)", "северная стена (угол)",
-                "южная стена (угол)", "южная стена (центр)", "южная стена (угол)",
-                "западная стена (центр)",
-                "восточная стена (центр)",
+                "north wall (corner)", "north wall (center)", "north wall (corner)",
+                "south wall (corner)", "south wall (center)", "south wall (corner)",
+                "west wall (center)",
+                "east wall (center)",
         };
 
         for (int i = 0; i < checkPositions.length; i++) {
@@ -341,10 +341,10 @@ public class ReactorStructure {
             Material mat = getBlock(base, dx, dy, dz);
             if (mat == Material.GLASS) continue;
             if (mat == Material.AIR) {
-                errors.add("§6[9." + (i + 1) + "] Стена реактора (" + wallNames[i] + ") §e("
+                errors.add("§6[9." + (i + 1) + "] Reactor wall (" + wallNames[i] + ") §e("
                         + dx + ", " + dy + ", " + dz + ")"
-                        + "§7 — пусто (AIR) на §f" + locStr(base, checkPositions[i])
-                        + "§7. Поставьте любой твёрдый блок");
+                        + "§7 — empty (AIR) at §f" + locStr(base, checkPositions[i])
+                        + "§7. Place any solid block");
                 continue;
             }
             if (isCopperBlock(mat)) continue;
@@ -353,11 +353,11 @@ public class ReactorStructure {
             if (mat == Material.GOLD_BLOCK) continue;
             if (mat == Material.BARREL) continue;
             if (mat == Material.END_ROD) continue;
-            errors.add("§6[9." + (i + 1) + "] Стена реактора (" + wallNames[i] + ") §e("
+            errors.add("§6[9." + (i + 1) + "] Reactor wall (" + wallNames[i] + ") §e("
                     + dx + ", " + dy + ", " + dz + ")"
-                    + "§7 — недопустимый блок §f" + mat + "§7 на §f"
+                    + "§7 — invalid block §f" + mat + "§7 at §f"
                     + locStr(base, checkPositions[i])
-                    + "§7. Разрешены: медные блоки, стекло, WAXED_CHISELED_COPPER");
+                    + "§7. Allowed: copper blocks, glass, WAXED_CHISELED_COPPER");
         }
     }
 
@@ -372,21 +372,21 @@ public class ReactorStructure {
             int dx = floorPositions[i][0], dy = floorPositions[i][1], dz = floorPositions[i][2];
             Material mat = getBlock(base, dx, dy, dz);
             if (mat == Material.AIR) {
-                errors.add("§6[10." + (i + 1) + "] Пол реактора §e("
+                errors.add("§6[10." + (i + 1) + "] Reactor floor §e("
                         + dx + ", " + dy + ", " + dz + ")"
-                        + "§7 — пусто (AIR) на §f" + locStr(base, floorPositions[i])
-                        + "§7. Заполните пол реактора любыми твёрдыми блоками");
+                        + "§7 — empty (AIR) at §f" + locStr(base, floorPositions[i])
+                        + "§7. Fill the reactor floor with any solid blocks");
             }
         }
     }
 
     private static String getBlockAdvice(Material expected) {
         return switch (expected) {
-            case WAXED_COPPER_BULB -> "§aСовет: вощёная медная лампочка (WAXED_COPPER_BULB)";
-            case BARREL -> "§aСовет: бочка (BARREL) — в неё кладётся топливо";
-            case LEVER -> "§aСовет: рычаг (LEVER)";
-            case WAXED_CHISELED_COPPER -> "§aСовет: вощёный резной медный блок (WAXED_CHISELED_COPPER)";
-            case POLISHED_BLACKSTONE -> "§aСовет: полированный чернит (POLISHED_BLACKSTONE)";
+            case WAXED_COPPER_BULB -> "§aTip: waxed copper bulb (WAXED_COPPER_BULB)";
+            case BARREL -> "§aTip: barrel (BARREL) — fuel goes inside";
+            case LEVER -> "§aTip: lever (LEVER)";
+            case WAXED_CHISELED_COPPER -> "§aTip: waxed chiseled copper (WAXED_CHISELED_COPPER)";
+            case POLISHED_BLACKSTONE -> "§aTip: polished blackstone (POLISHED_BLACKSTONE)";
             default -> "";
         };
     }

@@ -35,9 +35,8 @@ processResources {
     filesMatching('plugin.yml') {
         expand(project: project)
     }
-    filesMatching('config.yml') {
-        expand(project: project)
-    }
+    // config.yml не расширяется через expand — там YAML literal block scalars с \p{L}
+    // которые ломают Groovy SimpleTemplateEngine. Версия хардкодная в config.yml.
 }
 
 tasks {

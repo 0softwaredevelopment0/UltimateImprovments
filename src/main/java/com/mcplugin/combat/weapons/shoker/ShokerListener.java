@@ -57,7 +57,7 @@ public class ShokerListener implements Listener {
                 || ammo.getType() != Material.BREEZE_ROD
                 || ammo.getAmount() <= 0) {
 
-            p.sendActionBar(MessageUtil.parse("<gray>[<dark_red>SHOCKER</dark_red>] <red>Нет патронов</red></gray>"));
+            p.sendActionBar(MessageUtil.parse("<gray>[<dark_red>SHOCKER</dark_red>] <red>No ammo</red></gray>"));
             return;
         }
 
