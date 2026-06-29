@@ -1,7 +1,6 @@
 package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.bossbar.BossBarManager;
-import com.mcplugin.infrastructure.database.PlayerSettingsDB;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -15,12 +14,16 @@ public class BossBarModule extends PluginModule {
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {
-        PlayerSettingsDB.init();
         BossBarManager.init();
     }
 
     @Override
     protected void onDisable(JavaPlugin plugin) {
         BossBarManager.shutdown();
+    }
+
+    @Override
+    protected void onReloadConfig(JavaPlugin plugin) {
+        BossBarManager.reload();
     }
 }

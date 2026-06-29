@@ -68,6 +68,26 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         return switch (sub) {
             case "help" -> { HelpCommand.execute(sender); yield true; }
             case "chgdim" -> ChgDimSubcommand.execute(sender, args);
+            case "chgdim_teleport" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>")));
+                    yield true;
+                }
+                if (args.length < 2) {
+                    player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp chgdim_teleport <world></white>"));
+                    yield true;
+                }
+                ChgDimCommand.teleport(player, args[1]);
+                yield true;
+            }
+            case "chgdim_return" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>")));
+                    yield true;
+                }
+                ChgDimCommand.teleportBack(player);
+                yield true;
+            }
             case "codepane" -> CodePaneSubcommand.execute(sender, args);
             case "pane_click" -> CodePaneSubcommand.paneClick(sender, args);
             case "structures", "str" -> handleStructures(sender, args);
@@ -107,7 +127,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "updatejar" -> UpdateSubcommand.downloadAndReplace(sender);
             case "vanish" -> MiscSubcommand.vanish(sender, args);
             case "notes" -> MiscSubcommand.notes(sender);
-            case "checkrad", "setrad" -> RadiationSubcommand.execute(sender, args);
+            case "setrad" -> RadiationSubcommand.execute(sender, args);
             case "togglespeed" -> MiscSubcommand.toggleSpeed(sender);
             case "togglefly" -> MiscSubcommand.toggleFly(sender);
             case "toggleautocraft" -> MiscSubcommand.toggleAutoCraft(sender);
@@ -283,7 +303,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             completions.addAll(List.of("help", "checkver", "updatejar", "cilist", "toggleradview",
-                    "checkrad", "setrad", "reload", "structures", "str", "power", "suicide",
+                    "setrad", "reload", "structures", "str", "power", "suicide",
                     "auth", "chgdim", "chgop", "op", "deop", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "togglebb", "togglesb", "vote",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
@@ -396,8 +416,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 3 && (args[0].equalsIgnoreCase("structures") || args[0].equalsIgnoreCase("str")) && args[1].equalsIgnoreCase("lightning")) {
             completions.addAll(List.of("enable", "disable", "stats"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vanish")) {
-            for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("checkrad")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && args[0].equalsIgnoreCase("setrad")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());

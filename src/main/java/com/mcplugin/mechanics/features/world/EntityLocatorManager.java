@@ -69,15 +69,15 @@ public class EntityLocatorManager extends BukkitRunnable {
             double q3 = scanRadius * 0.75;
 
             if (nearest == null) {
-                player.sendActionBar("§fСтатус обнаружения: §7Не найдено");
+                player.sendMessage("§fСтатус обнаружения: §7Не найдено");
             } else if (nearestDist <= q1) {
-                player.sendActionBar("§fСтатус обнаружения: §aОчень близко");
+                player.sendMessage("§fСтатус обнаружения: §aОчень близко");
             } else if (nearestDist <= q2) {
-                player.sendActionBar("§fСтатус обнаружения: §eБлизко");
+                player.sendMessage("§fСтатус обнаружения: §eБлизко");
             } else if (nearestDist <= q3) {
-                player.sendActionBar("§fСтатус обнаружения: §6Средне-далеко");
+                player.sendMessage("§fСтатус обнаружения: §6Средне-далеко");
             } else {
-                player.sendActionBar("§fСтатус обнаружения: §cДалеко");
+                player.sendMessage("§fСтатус обнаружения: §cДалеко");
             }
         }
     }

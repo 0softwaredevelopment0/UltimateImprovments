@@ -4,67 +4,46 @@ import com.mcplugin.infrastructure.core.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.util.Vector;
 
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Менеджер эндер-сундуков.
  * <p>
- * При ломании — блок ведёт себя как обычный эндер-сундук (дропает обсидиан).
- * При открытии (ПКМ) — есть шанс {@code explosion_chance} (0.001 = 0.1%),
- * что сундук взорвётся как заряженный крипер, нанеся урон игроку.
- * <p>
- * При быстром открытии и закрытии эндер-сундука (быстрее {@code quick_close_threshold_ms}):
+ * <b>Механики:</b>
  * <ul>
- *   <li>Если игрок смотрит на сундук — получает {@code quick_close_damage} урона</li>
- *   <li>Если игрок отвёл взгляд (дальше {@code look_away.angle_threshold} градусов) — сундук взрывается</li>
+ *   <li>При открытии — шанс {@code explosion_chance} что сундук взорвётся (random-взрыв)</li>
+ *   <li><b>Rate-limit:</b> если игрок открывает эндер-сундук больше {@code rate_limit.max_opens} раз
+ *       в течение {@code rate_limit.window_ms} миллисекунд — сундук взрывается,
+ *       нанося {@code rate_limit.damage} урона (игнорируя защиту через {@code damage(double, EntityDamageSource)})</li>
  * </ul>
  */
 public class EnderChestManager implements Listener {
 
     private static boolean enabled = true;
     private static double explosionChance = 0.001; // 0.1%
+    private static double explosionPower = 10.0;
     private static double damage = 8192;
-    private static double explosionPower = 10.0; // сила взрыва (разрушает блоки)
+
+    // Rate-limit
+    private static boolean rateLimitEnabled = true;
+    private static int rateLimitMaxOpens = 5;
+    private static long rateLimitWindowMs = 5000; // 5 секунд
+    private static double rateLimitDamage = 10;
+    private static double rateLimitExplosionPower = 10.0;
+
     private static final Random RANDOM = new Random();
 
-    // Быстрое открытие/закрытие
-    private static boolean quickCloseEnabled = true;
-    private static long quickCloseThresholdMs = 1000; // 1 секунда
-    private static double quickCloseDamage = 1;
-
-    // Взрыв при отведённом взгляде
-    private static boolean lookAwayEnabled = true;
-    private static double lookAwayAngleThreshold = 45.0; // градусов
-    private static double lookAwayExplosionDamage = 20;
-
-    // Хранит время открытия + позицию сундука для каждого игрока
-    private static final Map<UUID, EnderChestOpenData> enderChestOpenData = new ConcurrentHashMap<>();
-
-    /**
-     * Данные об открытии эндер-сундука игроком.
-     */
-    private static class EnderChestOpenData {
-        final long openTime;
-        final Location chestLocation;
-
-        EnderChestOpenData(long openTime, Location chestLocation) {
-            this.openTime = openTime;
-            this.chestLocation = chestLocation.clone();
-        }
-    }
+    // Для rate-limit: UUID игрока → список таймстемпов открытий (отсортирован по возрастанию)
+    private static final Map<UUID, List<Long>> openTimestamps = new ConcurrentHashMap<>();
 
     public static void init(Main plugin) {
         reloadConfig();
@@ -78,19 +57,18 @@ public class EnderChestManager implements Listener {
         explosionChance = cfg.getDouble("explosion_chance", 0.001);
         explosionPower = cfg.getDouble("explosion_power", 10.0);
         damage = cfg.getDouble("damage", 8192);
-        quickCloseEnabled = cfg.getBoolean("quick_close.enabled", true);
-        quickCloseThresholdMs = cfg.getLong("quick_close.threshold_ms", 1000);
-        quickCloseDamage = cfg.getDouble("quick_close.damage", 1);
-        lookAwayEnabled = cfg.getBoolean("quick_close.look_away.enabled", true);
-        lookAwayAngleThreshold = cfg.getDouble("quick_close.look_away.angle_threshold", 45.0);
-        lookAwayExplosionDamage = cfg.getDouble("quick_close.look_away.explosion_damage", 20);
+        rateLimitEnabled = cfg.getBoolean("rate_limit.enabled", true);
+        rateLimitMaxOpens = cfg.getInt("rate_limit.max_opens", 5);
+        rateLimitWindowMs = cfg.getLong("rate_limit.window_ms", 5000);
+        rateLimitDamage = cfg.getDouble("rate_limit.damage", 10);
+        rateLimitExplosionPower = cfg.getDouble("rate_limit.explosion_power", 10.0);
     }
 
     /**
      * При ПКМ по эндер-сундуку:
      * <ul>
-     *   <li>Всегда наносит 1 единицу урона</li>
-     *   <li>Записывает время и позицию для проверки быстрого закрытия</li>
+     *   <li>Записывает таймстемп для rate-limit</li>
+     *   <li>Проверяет rate-limit — если превышен, наносит урон и взрывает сундук</li>
      *   <li>С шансом {@code explosion_chance} сундук взрывается (GUI не открывается)</li>
      * </ul>
      */
@@ -103,182 +81,118 @@ public class EnderChestManager implements Listener {
         Player player = e.getPlayer();
         Location loc = e.getClickedBlock().getLocation();
 
-        // Всегда 1 урон при открытии
-        if (quickCloseDamage > 0) {
-            player.damage(quickCloseDamage);
-            player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.8f, 1.2f);
+        // Rate-limit проверка
+        if (rateLimitEnabled) {
+            if (checkAndApplyRateLimit(player, loc)) {
+                // Rate-limit превышен — сундук взорвался, GUI не открываем
+                e.setCancelled(true);
+                return;
+            }
         }
 
-        // Записываем данные для быстрого закрытия
-        if (quickCloseEnabled) {
-            enderChestOpenData.put(player.getUniqueId(), new EnderChestOpenData(System.currentTimeMillis(), loc));
-        }
-
-        // Шанс взрыва
+        // Шанс взрыва (random)
         double roll = RANDOM.nextDouble();
         if (roll >= explosionChance) return;
 
-        // Удаляем сам блок сундука (взрыв может его не уничтожить из-за blast resistance)
-        loc.getBlock().setType(Material.AIR);
+        explodeEnderChest(player, loc, (float) explosionPower, damage,
+                "[EnderChest] " + player.getName()
+                        + " opened an ender chest at "
+                        + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ()
+                        + " and it EXPLODED! (roll=" + String.format("%.4f", roll)
+                        + " < chance=" + explosionChance + ")");
 
-        // Взрыв с разрушением блоков
-        loc.getWorld().createExplosion(loc, (float) explosionPower, false, true);
-
-        // Дополнительный урон игроку от взрыва
-        if (damage > 0) {
-            player.damage(damage);
-        }
-
-        // Отменяем событие — сундук взорвался, не открываем GUI
         e.setCancelled(true);
-
-        // Логирование
-        Main.getInstance().getLogger().info("[EnderChest] " + player.getName()
-                + " opened an ender chest at "
-                + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ()
-                + " and it EXPLODED! (power=" + explosionPower + ", roll=" + String.format("%.4f", roll) + " < chance=" + explosionChance + ")");
-
-        // 🏆 Достижение: blowed_by_echest
-        try {
-            var adv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("minecraft", "datapack/blowed_by_echest"));
-            if (adv != null) {
-                var progress = player.getAdvancementProgress(adv);
-                if (!progress.isDone()) {
-                    progress.awardCriteria("1");
-                }
-            }
-        } catch (Exception ignored) {}
     }
 
     /**
-     * Резервное запоминание времени открытия (на случай, если PlayerInteractEvent
-     * не сработал — например, при открытии через API).
-     * Пытается определить позицию сундука через targetBlock.
+     * Резервный учёт открытий (на случай, если PlayerInteractEvent не сработал).
      */
     @EventHandler(ignoreCancelled = true)
     public void onEnderChestOpen(InventoryOpenEvent e) {
-        if (!enabled || !quickCloseEnabled) return;
+        if (!enabled || !rateLimitEnabled) return;
         if (e.getInventory().getType() != org.bukkit.event.inventory.InventoryType.ENDER_CHEST) return;
         if (!(e.getPlayer() instanceof Player player)) return;
 
-        // Если данные уже есть от PlayerInteractEvent — не перезаписываем (там точный Location)
+        // Если данные уже есть от PlayerInteractEvent — не дублируем
         UUID uuid = player.getUniqueId();
-        if (enderChestOpenData.containsKey(uuid)) return;
+        List<Long> timestamps = openTimestamps.get(uuid);
+        if (timestamps != null && !timestamps.isEmpty()) {
+            long lastTs = timestamps.get(timestamps.size() - 1);
+            // Если последнее открытие было < 50 мс назад — это наш же вызов из onEnderChestInteract
+            if (System.currentTimeMillis() - lastTs < 50) {
+                return;
+            }
+        }
 
-        // Пытаемся найти эндер-сундук, на который смотрит игрок
+        // Пытаемся найти эндер-сундук
         var target = player.getTargetBlockExact(5);
         Location chestLoc = (target != null && target.getType() == Material.ENDER_CHEST)
                 ? target.getLocation()
                 : player.getLocation();
-        enderChestOpenData.put(uuid, new EnderChestOpenData(System.currentTimeMillis(), chestLoc));
+
+        checkAndApplyRateLimit(player, chestLoc);
     }
 
     /**
-     * При закрытии эндер-сундука:
-     * <ul>
-     *   <li>Всегда наносит 1 урон</li>
-     *   <li>Если закрыл быстрее чем threshold_ms — через 0.5 сек проверяет, куда смотрит игрок</li>
-     *   <li>Отвёл взгляд (> angle_threshold°) → взрыв</li>
-     * </ul>
-     * <p>
-     * Проверка взгляда отложена на 10 тиков (0.5 сек), чтобы игрок физически успел
-     * отвернуться от сундука после закрытия GUI.
-     */
-    @EventHandler
-    public void onEnderChestClose(InventoryCloseEvent e) {
-        if (!enabled || !quickCloseEnabled) return;
-        if (e.getInventory().getType() != org.bukkit.event.inventory.InventoryType.ENDER_CHEST) return;
-        if (!(e.getPlayer() instanceof Player player)) return;
-
-        UUID uuid = player.getUniqueId();
-        EnderChestOpenData data = enderChestOpenData.remove(uuid);
-
-        // Всегда 1 урон при закрытии
-        if (quickCloseDamage > 0) {
-            player.damage(quickCloseDamage);
-            player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_HURT, 0.8f, 1.2f);
-        }
-
-        // Если нет данных о времени открытия — не проверяем быстрый поворот
-        if (data == null) return;
-
-        long elapsed = System.currentTimeMillis() - data.openTime;
-        if (elapsed >= quickCloseThresholdMs) return;
-
-        // Отложенная проверка взгляда (10 тиков = 0.5 сек)
-        if (lookAwayEnabled) {
-            scheduleLookAwayCheck(player, data.chestLocation);
-        }
-    }
-
-    /**
-     * Проверяет, смотрит ли игрок в сторону от блока дальше чем angle_threshold.
+     * Добавляет таймстемп открытия, проверяет rate-limit и применяет наказание.
      *
-     * @param player  игрок
-     * @param targetLocation позиция блока (эпизод сундука)
-     * @return true если игрок смотрит дальше angle_threshold градусов от блока
+     * @param player игрок
+     * @param chestLocation позиция сундука
+     * @return true если rate-limit превышен и наказание применено
      */
-    private static boolean isLookingAway(Player player, Location targetLocation) {
-        // Вектор направления взгляда игрока (нормализован)
-        Vector playerDir = player.getEyeLocation().getDirection().normalize();
+    private static boolean checkAndApplyRateLimit(Player player, Location chestLocation) {
+        UUID uuid = player.getUniqueId();
+        long now = System.currentTimeMillis();
 
-        // Вектор от глаз игрока к центру блока сундука
-        // Центр блока = location + 0.5 по X и Z для точности
-        Location targetCenter = targetLocation.clone().add(0.5, 0.5, 0.5);
-        Vector toTarget = targetCenter.toVector().subtract(player.getEyeLocation().toVector());
+        // Получаем или создаём список таймстемпов
+        List<Long> timestamps = openTimestamps.computeIfAbsent(uuid, k -> new CopyOnWriteArrayList<>());
 
-        // Проверяем, чтобы игрок не стоял прямо на сундуке (длина == 0)
-        if (toTarget.lengthSquared() < 0.01) return false;
+        // Добавляем текущий таймстемп
+        timestamps.add(now);
 
-        toTarget.normalize();
+        // Удаляем таймстемпы старше window_ms
+        long cutoff = now - rateLimitWindowMs;
+        timestamps.removeIf(ts -> ts < cutoff);
 
-        // Угол между направлением взгляда и направлением на сундук
-        double dot = playerDir.dot(toTarget);
-        // Ограничиваем от -1 до 1 (защита от floating point ошибок)
-        dot = Math.max(-1.0, Math.min(1.0, dot));
-        double angleDeg = Math.toDegrees(Math.acos(dot));
+        // Проверяем лимит
+        if (timestamps.size() > rateLimitMaxOpens) {
+            // Превышен — взрыв!
+            explodeEnderChest(player, chestLocation, (float) rateLimitExplosionPower, rateLimitDamage,
+                    "[EnderChest] " + player.getName()
+                            + " opened ender chest " + timestamps.size()
+                            + " times in " + rateLimitWindowMs + "ms at "
+                            + chestLocation.getBlockX() + " " + chestLocation.getBlockY() + " " + chestLocation.getBlockZ()
+                            + " — RATE LIMIT EXCEEDED! (max=" + rateLimitMaxOpens + ")");
 
-        return angleDeg > lookAwayAngleThreshold;
+            // Сбрасываем счётчик после наказания
+            openTimestamps.remove(uuid);
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * Отложенная проверка взгляда игрока.
-     * Через 10 тиков (0.5 сек) после закрытия проверяет, смотрит ли игрок
-     * в сторону от сундука — если да, вызывает взрыв.
+     * Взрывает эндер-сундук: удаляет блок, создаёт взрыв, наносит урон, логирует, даёт ачивку.
      */
-    private static void scheduleLookAwayCheck(Player player, Location chestLocation) {
-        new org.bukkit.scheduler.BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) return;
-                if (isLookingAway(player, chestLocation)) {
-                    triggerLookAwayExplosion(player, chestLocation);
-                }
-            }
-        }.runTaskLater(Main.getInstance(), 10L); // 10 тиков = 0.5 сек
-    }
-
-    /**
-     * Вызывает взрыв с разрушением блоков на позиции сундука.
-     * Сам блок сундука гарантированно удаляется.
-     */
-    private static void triggerLookAwayExplosion(Player player, Location chestLocation) {
-        // Удаляем сам блок сундука (взрыв может его не уничтожить из-за blast resistance)
+    private static void explodeEnderChest(Player player, Location chestLocation,
+                                           float explosionPower, double damageAmount,
+                                           String logMessage) {
+        // Удаляем сам блок сундука
         chestLocation.getBlock().setType(Material.AIR);
 
-        // Взрыв с разрушением блоков (сила 10)
-        chestLocation.getWorld().createExplosion(chestLocation, (float) explosionPower, false, true);
+        // Взрыв с разрушением блоков
+        if (explosionPower > 0) {
+            chestLocation.getWorld().createExplosion(chestLocation, explosionPower, false, true);
+        }
 
         // Урон игроку
-        if (lookAwayExplosionDamage > 0) {
-            player.damage(lookAwayExplosionDamage);
+        if (damageAmount > 0) {
+            player.damage(damageAmount);
         }
 
         // Логирование
-        Main.getInstance().getLogger().info("[EnderChest] " + player.getName()
-                + " quickly closed ender chest while looking away at "
-                + chestLocation.getBlockX() + " " + chestLocation.getBlockY() + " " + chestLocation.getBlockZ()
-                + " — EXPLODED! (power=" + explosionPower + ")");
+        Main.getInstance().getLogger().info(logMessage);
 
         // 🏆 Достижение: blowed_by_echest
         try {

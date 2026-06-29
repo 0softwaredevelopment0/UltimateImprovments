@@ -53,7 +53,8 @@ public class EnergyWorkbenchManager {
         workbenches.clear();
 
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
-            if (!"workbench".equals(entry.getValue().type())) continue;
+            String type = entry.getValue().type();
+            if (!"workbench".equals(type) && !"assembler".equals(type)) continue;
 
             String fk = entry.getKey();
             String worldUid = StructureMarker.parseWorldUid(fk);

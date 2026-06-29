@@ -34,6 +34,7 @@ public class CraftingModule extends PluginModule {
         MobFinderCraftListener.init();
         PortableRadarCraftListener.init();
         MetalDetectorCraftListener.init();
+        EnderChestCraftListener.init();
         ConcreteBucketCraftListener.init();
         RecipeRegistry.init();
 
@@ -51,6 +52,7 @@ public class CraftingModule extends PluginModule {
         pm.registerEvents(new MobFinderCraftListener(), main);
         pm.registerEvents(new PortableRadarCraftListener(), main);
         pm.registerEvents(new MetalDetectorCraftListener(), main);
+        pm.registerEvents(new EnderChestCraftListener(), main);
         pm.registerEvents(new ScannerItemListener(), main);
         pm.registerEvents(new MetalDetectorListener(), main);
         pm.registerEvents(new AssemblerListener(), main);

@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -76,7 +77,6 @@ public class RadiationManager implements Listener {
     private int basaltDeltasRad;
     private int endRad;
     private int leadShieldReduction;
-    private int antiradReduction;
     private int killReduction;
     private boolean deathReset;
     private int maceUseRad;
@@ -97,7 +97,6 @@ public class RadiationManager implements Listener {
         basaltDeltasRad = cfg.getInt("radiation.basalt_deltas_radiation", 2);
         endRad = cfg.getInt("radiation.end_radiation", 2);
         leadShieldReduction = cfg.getInt("radiation.lead_shield_reduction", 2);
-        antiradReduction = cfg.getInt("radiation.antirad_reduction", 100);
         killReduction = cfg.getInt("radiation.kill_reduction", 100);
         deathReset = cfg.getBoolean("radiation.death_reset", true);
         maceUseRad = cfg.getInt("radiation.mace_use_radiation", 50);
@@ -270,7 +269,7 @@ public class RadiationManager implements Listener {
             // THE END — РАДИАЦИЯ ПОД ОТКРЫТЫМ НЕБОМ
             // =========================
             if (player.getWorld().getEnvironment() == World.Environment.THE_END
-                    && player.getLocation().getBlock().getLightFromSky() > 0) {
+                    && player.getLocation().getBlock().getLightFromSky() >= 15) {
                 rad += endRad;
             }
 
@@ -395,11 +394,27 @@ public class RadiationManager implements Listener {
         addRadiation(player, instance.elytraUseRad);
     }
 
-    public static void onAntiRad(Player player) {
-        if (instance == null || !instance.enabled) return;
-        int rad = instance.radiationMap.getOrDefault(player.getUniqueId(), 0);
+    // =========================
+    // ЕДА УМЕНЬШАЕТ РАДИАЦИЮ (-10, если радиация > 200)
+    // =========================
+
+    @EventHandler
+    public void onPlayerConsume(PlayerItemConsumeEvent e) {
+        if (!enabled) return;
+        Player player = e.getPlayer();
+        if (player.getGameMode() == GameMode.CREATIVE
+                || player.getGameMode() == GameMode.SPECTATOR) return;
+
+        ItemStack item = e.getItem();
+        if (item == null || item.getType().isAir()) return;
+        if (!item.getType().isEdible()) return;
+
+        int rad = radiationMap.getOrDefault(player.getUniqueId(), 0);
         if (rad >= 200) {
-            addRadiation(player, -instance.antiradReduction);
+            int reduction = 10;
+            int newRad = Math.max(0, rad - reduction);
+            radiationMap.put(player.getUniqueId(), newRad);
+            player.sendMessage(MessageUtil.parse("<green>🥗 -10 Radiation (ate food)</green>"));
         }
     }
 

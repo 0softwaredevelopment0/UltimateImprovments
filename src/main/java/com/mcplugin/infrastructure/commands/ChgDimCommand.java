@@ -9,16 +9,81 @@ import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 import java.util.HashMap;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Обрабатывает команды /mp chgdim — телепортацию между мирами.
+ * <p>
+ * Теперь работает через чат-ввод: /mp chgdim → список миров →
+ * следующее сообщение в чате = название мира (не отправляется в общий чат).
+ * Напишите "cancel" в чате чтобы отменить.
  */
 public class ChgDimCommand {
 
     private static final HashMap<UUID, Long> cooldowns = new HashMap<>();
+
+    // 🎯 Игроки, ожидающие ввод названия мира в чат
+    private static final Set<UUID> chatInputPlayers = ConcurrentHashMap.newKeySet();
+    private static boolean listenerRegistered = false;
+
+    /**
+     * Начинает режим чат-ввода: показывает меню миров + инструкцию.
+     */
+    public static void startChatInput(Player player) {
+        registerListener();
+        chatInputPlayers.add(player.getUniqueId());
+        showMenu(player);
+        player.sendMessage(MessageUtil.parse("<yellow>✏</yellow> <white>Type the </white><yellow>world name</yellow><white> in chat to teleport, or </white><red>cancel</red><white> to abort.</white>"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>💡 Your message will not be sent to global chat.</dark_gray>"));
+    }
+
+    /**
+     * Регистрирует слушатель чата (однократно).
+     */
+    private static void registerListener() {
+        if (listenerRegistered) return;
+        listenerRegistered = true;
+        Bukkit.getPluginManager().registerEvents(new Listener() {
+            @EventHandler(priority = EventPriority.LOWEST)
+            public void onChat(AsyncPlayerChatEvent e) {
+                Player player = e.getPlayer();
+                UUID uuid = player.getUniqueId();
+                if (!chatInputPlayers.contains(uuid)) return;
+
+                e.setCancelled(true);
+                chatInputPlayers.remove(uuid);
+
+                String msg = e.getMessage().trim();
+
+                // Отмена
+                if (msg.equalsIgnoreCase("cancel")) {
+                    player.sendMessage(MessageUtil.parse("<gray>✦ ChgDim input cancelled.</gray>"));
+                    return;
+                }
+
+                // Разрешение на конкретный мир
+                if (!player.hasPermission("mcplugin.command.chgdim." + msg)) {
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.no_permission",
+                            "<dark_red>❌</dark_red> <red>You do not have permission to teleport to this world!</red>")));
+                    return;
+                }
+
+                // Телепортация (синхронизируем на главный поток)
+                String worldName = msg;
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    ChgDimCommand.teleport(player, worldName);
+                });
+            }
+        }, Main.getInstance());
+    }
 
     /**
      * Показывает меню телепортации (список миров).
@@ -43,7 +108,7 @@ public class ChgDimCommand {
             String displayName = worldsSection.getString(worldName + ".display_name", worldName);
 
             player.sendMessage(MessageUtil.parse("<dark_gray>┃ </dark_gray><yellow>[" + worldName + "]</yellow><white> " + displayName + "</white>"));
-            player.sendMessage(MessageUtil.parse("<dark_gray>┃ </dark_gray><gray>Click to teleport:</gray>"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ </dark_gray><gray>Type or click:</gray>"));
             player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray><white>/mp chgdim_teleport " + worldName + "</white>"));
             player.sendMessage("");
         }
@@ -115,7 +180,8 @@ public class ChgDimCommand {
 
         Location targetLocation = new Location(world, teleportX, teleportY, teleportZ, teleportYaw, teleportPitch);
         player.teleportAsync(targetLocation);
-        cooldowns.put(playerUuid, now);            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.success",
+        cooldowns.put(playerUuid, now);
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.success",
                         "<green>✔</green> <white>Teleportation to</white> <yellow>{world}</yellow> <white>completed!</white>")
                 .replace("{world}", worldName)));
 
@@ -140,10 +206,18 @@ public class ChgDimCommand {
         }
 
         player.teleportAsync(returnLoc);
-        DimensionManager.removeReturnLocation(player);            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.return_success",
+        DimensionManager.removeReturnLocation(player);
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.return_success",
                         "<green>✔</green> <white>You have returned to your starting point!</white>")));
 
         return true;
+    }
+
+    /**
+     * Убирает игрока из режима чат-ввода (если он там был).
+     */
+    public static void cancelChatInput(Player player) {
+        chatInputPlayers.remove(player.getUniqueId());
     }
 
     public static void clearCooldown(UUID uuid) {

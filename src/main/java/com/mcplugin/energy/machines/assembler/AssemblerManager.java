@@ -3,6 +3,7 @@ package com.mcplugin.energy.machines.assembler;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 
 import java.util.UUID;
 
@@ -136,6 +137,8 @@ public class AssemblerManager implements Listener {
             removeFrameOnTop(loc);
             activeAssemblers.put(loc, true);
             StructureMarker.place(loc, "assembler", UUID.randomUUID());
+            // Регистрируем в EnergyWorkbenchManager, чтобы AssemblerListener мог открыть GUI
+            EnergyWorkbenchManager.add(loc);
 
             World world = loc.getWorld();
             if (world != null) {
@@ -162,6 +165,8 @@ public class AssemblerManager implements Listener {
         loc = LocationUtil.normalize(loc);
         if (loc == null) return false;
         Boolean was = activeAssemblers.remove(loc);
+        // Удаляем из EnergyWorkbenchManager, чтобы не пытаться открыть GUI для разобранного CRAFTER
+        EnergyWorkbenchManager.remove(loc);
         if (was != null) {
             StructureMarker.removeAt(loc);
             World world = loc.getWorld();

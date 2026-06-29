@@ -36,7 +36,7 @@ import java.util.*;
  *   <li>Слот 2: незеритовый скрап (НЕ слиток — слиток конфликтует с починкой)</li>
  *   <li>Оружие: +0.1 к урону атаки ({@link Attribute#ATTACK_DAMAGE}) за скрап</li>
  *   <li>Инструменты: +0.1 к скорости копания ({@link Attribute#BLOCK_BREAK_SPEED}) за скрап</li>
- *   <li>Броня: +0.1 к защите ({@link Attribute#ARMOR}) +0.05 к прочности ({@link Attribute#ARMOR_TOUGHNESS}) за скрап</li>
+ *   <li>Броня: +0.1 к защите ({@link Attribute#ARMOR}) +0.05 к прочности ({@link Attribute#ARMOR_TOUGHNESS}) +0.1 к сопротивлению отбрасыванию ({@link Attribute#KNOCKBACK_RESISTANCE}) за скрап</li>
  *   <li>Все предметы: +1 к макс. прочности за скрап</li>
  *   <li>Улучшение бесконечно — стоимость всегда 0 уровней</li>
  * </ul>
@@ -136,6 +136,10 @@ public class NetheriteUpgradeListener implements Listener {
             meta.addAttributeModifier(Attribute.ARMOR_TOUGHNESS, new AttributeModifier(
                 modKey, upgradeAmount * 0.5, AttributeModifier.Operation.ADD_NUMBER, armorSlot
             ));
+            removeOurModifier(meta, Attribute.KNOCKBACK_RESISTANCE, modKey, slot0.getType());
+            meta.addAttributeModifier(Attribute.KNOCKBACK_RESISTANCE, new AttributeModifier(
+                modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, armorSlot
+            ));
         }
 
         // +1 к макс. прочности за каждый скрап (для всех незеритовых предметов)
@@ -169,8 +173,9 @@ public class NetheriteUpgradeListener implements Listener {
             upgradeLine = "<!italic><gradient:#8B4513:#DAA520>✦ Незерит — ⛏ " + DF.format(total) + " скорости</gradient>";
         } else {
             double totalArmor = getTotalAttribute(meta, Attribute.ARMOR, slot0.getType());
+            double totalKnockback = newUpgrades * PER_SCRAP_BONUS;
             upgradeLine = "<!italic><gradient:#8B4513:#DAA520>✦ Незерит — 🛡 " + DF.format(totalArmor)
-                + " защиты</gradient>";
+                + " защиты | ↺ " + DF.format(totalKnockback) + " отбрасывания</gradient>";
         }
 
         filteredLore.add(MessageUtil.parse(upgradeLine));

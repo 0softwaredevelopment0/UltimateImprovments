@@ -1,11 +1,9 @@
 package com.mcplugin.infrastructure.commands.subcommands;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.commands.ChgDimGUI;
+import com.mcplugin.infrastructure.commands.ChgDimCommand;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
 public final class ChgDimSubcommand {
@@ -23,7 +21,7 @@ public final class ChgDimSubcommand {
                             "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>")));
             return true;
         }
-        ChgDimGUI.open(player);
+        ChgDimCommand.startChatInput(player);
         return true;
     }
 }

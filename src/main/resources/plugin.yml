@@ -59,7 +59,6 @@ permissions:
       mcplugin.command.auth.delsession: true
       mcplugin.command.item: true
       mcplugin.command.checkver: true
-      mcplugin.command.checkrad: true
       mcplugin.command.setrad: true
       mcplugin.command.vanish: true
       mcplugin.command.notes: true
@@ -184,10 +183,6 @@ permissions:
 
   mcplugin.command.checkver:
     description: Allows checking for plugin updates (/mp checkver)
-    default: op
-
-  mcplugin.command.checkrad:
-    description: Allows checking player radiation (/mp checkrad)
     default: op
 
   mcplugin.command.setrad:

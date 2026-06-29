@@ -64,6 +64,8 @@ public class BossBarManager extends BukkitRunnable {
             instance.cancel();
             instance.removeAllBars();
             instance.reloadConfig();
+        } else {
+            init();
         }
     }
 
@@ -142,7 +144,15 @@ public class BossBarManager extends BukkitRunnable {
 
     @Override
     public void run() {
-        if (!enabled) return;
+        // Safety net: перечитываем enabled из конфига на каждый тик.
+        // Если кто-то выключил bossbar.enabled в config.yml и сделал reload,
+        // но таск по какой-то причине остался запущен — проверка отсечёт.
+        if (!Main.getInstance().getConfig().getBoolean("bossbar.enabled", false)) {
+            // Если таск всё ещё работает, а конфиг говорит false — останавливаемся
+            removeAllBars();
+            this.cancel();
+            return;
+        }
 
         // Update progress
         updateProgress();

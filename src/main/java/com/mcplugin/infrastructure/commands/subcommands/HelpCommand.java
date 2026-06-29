@@ -21,8 +21,6 @@ public final class HelpCommand {
         sender.sendMessage(MessageUtil.parse("<yellow>/mp updatejar</yellow>"));
         sender.sendMessage(MessageUtil.parse(" <gray>└ Download and install update</gray>"));
         sender.sendMessage("");
-        sender.sendMessage(MessageUtil.parse("<yellow>/mp checkrad </yellow><gray>[nick]</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>└ Check radiation (without nick — your own)</gray>"));
         sender.sendMessage(MessageUtil.parse("<yellow>/mp setrad <nick> <value></yellow>"));
         sender.sendMessage(MessageUtil.parse(" <gray>└ Set player radiation</gray>"));
         sender.sendMessage("");

@@ -34,7 +34,7 @@
     "1": {
       "trigger": "minecraft:recipe_crafted",
       "conditions": {
-        "recipe_id": "minecraft:ender_chest"
+        "recipe_id": "mcplugin:ender_chest"
       }
     }
   },

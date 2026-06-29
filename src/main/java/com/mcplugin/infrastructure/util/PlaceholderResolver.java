@@ -70,7 +70,7 @@ public class PlaceholderResolver {
     // scope может быть: ys (yourself), all (все), или ник игрока (Steve)
     // Также: {ping} (без суффиксов), {ping_<time>}, {ping_ys}, {ping_all}, {ping_<time>_color}
     private static final Pattern PING_PLACEHOLDER = Pattern.compile(
-            "\\{ping(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(\\w+))?(?:_(color))?\\}"
+            "\\{ping(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(?!(?:color)\\b)(\\w+))?(?:_(color))?\\}"
     );
 
     private static final Map<String, BiFunction<Player, String, String>> BUILTIN = new HashMap<>();
@@ -339,7 +339,7 @@ public class PlaceholderResolver {
                 Player targetPlayer = player;
                 // Если scope — ник конкретного игрока
                 if (scope != null && !scope.equals("ys")) {
-                    targetPlayer = Bukkit.getPlayerExact(scope);
+                    targetPlayer = Bukkit.getPlayer(scope);
                     if (targetPlayer == null || !targetPlayer.isOnline()) {
                         m.appendReplacement(sb, "0");
                         continue;
