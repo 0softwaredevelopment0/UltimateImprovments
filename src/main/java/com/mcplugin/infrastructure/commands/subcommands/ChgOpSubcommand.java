@@ -99,17 +99,43 @@ public final class ChgOpSubcommand {
 
         // Каждый игрок — кликабельная строка
         for (Player target : sorted) {
-            String dot = target.isOp() ? "<gold>●</gold>" : "<dark_gray>●</dark_gray>";
-            String nameColor = target.isOp() ? "<white>" : "<gray>";
-            String opTag = target.isOp() ? " <gold>[OP]</gold>" : "";
-            String mmString = "  <dark_gray>┃</dark_gray> " + dot + " " + nameColor + target.getName() + "</" + nameColor.substring(1) + ">" + opTag;
+            boolean isSelf = target.equals(player);
+            String dot;
+            String nameOpen;
+            String nameClose;
+            String opTag;
+            String youTag;
+
+            if (isSelf) {
+                // Свой ник — ярко-голубым с пометкой ★ YOU
+                dot = target.isOp() ? "<aqua>●</aqua>" : "<dark_aqua>●</dark_aqua>";
+                nameOpen = "<aqua><bold>";
+                nameClose = "</bold></aqua>";
+                opTag = target.isOp() ? " <gold>[OP]</gold>" : "";
+                youTag = " <dark_aqua>★ YOU</dark_aqua>";
+            } else {
+                dot = target.isOp() ? "<gold>●</gold>" : "<dark_gray>●</dark_gray>";
+                nameOpen = target.isOp() ? "<white>" : "<gray>";
+                nameClose = "</" + nameOpen.substring(1);
+                opTag = target.isOp() ? " <gold>[OP]</gold>" : "";
+                youTag = "";
+            }
+
+            String mmString = "  <dark_gray>┃</dark_gray> " + dot + " " + nameOpen + target.getName() + nameClose + opTag + youTag;
 
             Component line = MessageUtil.parse(mmString)
                     .clickEvent(ClickEvent.runCommand("/mp chgop toggle " + target.getName()));
 
-            Component hover = MessageUtil.parse(target.isOp()
-                    ? "<yellow>● " + target.getName() + " <yellow>is OP</yellow>\n<gray>Click to <red>remove</red> <gray>OP rights</gray>"
-                    : "<gray>● " + target.getName() + " <gray>is not OP</gray>\n<gray>Click to <green>grant</green> <gray>OP rights</gray>");
+            Component hover;
+            if (isSelf) {
+                hover = MessageUtil.parse(target.isOp()
+                        ? "<aqua>● You are OP</aqua>\n<gray>You cannot remove OP from yourself</gray>"
+                        : "<dark_aqua>● You are not OP</dark_aqua>\n<gray>Click to <green>grant</green> OP to yourself</gray>");
+            } else {
+                hover = MessageUtil.parse(target.isOp()
+                        ? "<yellow>● " + target.getName() + " <yellow>is OP</yellow>\n<gray>Click to <red>remove</red> <gray>OP rights</gray>"
+                        : "<gray>● " + target.getName() + " <gray>is not OP</gray>\n<gray>Click to <green>grant</green> <gray>OP rights</gray>");
+            }
             line = line.hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT, hover));
 
             player.sendMessage(line);
@@ -145,6 +171,14 @@ public final class ChgOpSubcommand {
         if (target == null) {
             player.sendMessage(MessageUtil.parse(
                     "<red>❌ Player</red> <yellow>" + targetName + "</yellow> <red>not found or not online!</red>"
+            ));
+            return true;
+        }
+
+        // 🚫 Failsafe: нельзя снять OP у самого себя
+        if (target.equals(player) && target.isOp()) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ You cannot remove operator status from yourself!</red>"
             ));
             return true;
         }
@@ -254,6 +288,14 @@ public final class ChgOpSubcommand {
         if (target == null) {
             player.sendMessage(MessageUtil.parse(
                     "<red>❌ Player</red> <yellow>" + targetName + "</yellow> <red>is no longer online!</red>"
+            ));
+            return true;
+        }
+
+        // 🚫 Failsafe: двойная защита от снятия OP у себя
+        if (target.equals(player) && target.isOp()) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ You cannot remove operator status from yourself!</red>"
             ));
             return true;
         }

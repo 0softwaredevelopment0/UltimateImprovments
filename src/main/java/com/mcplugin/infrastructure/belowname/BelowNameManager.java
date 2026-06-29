@@ -7,6 +7,9 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
@@ -32,7 +35,7 @@ import org.bukkit.scoreboard.Team;
  *   update_interval_ticks: 10
  * </pre>
  */
-public class BelowNameManager extends BukkitRunnable {
+public class BelowNameManager extends BukkitRunnable implements Listener {
 
     private static BelowNameManager instance;
     /** Prefix for team names, max 3 chars (team names max 16 chars). */
@@ -45,6 +48,7 @@ public class BelowNameManager extends BukkitRunnable {
     public static void init() {
         instance = new BelowNameManager();
         instance.reloadConfig();
+        Main.getInstance().getServer().getPluginManager().registerEvents(instance, Main.getInstance());
     }
 
     public static void shutdown() {
@@ -93,6 +97,35 @@ public class BelowNameManager extends BukkitRunnable {
         } catch (Exception ignored) {}
     }
 
+    // ════════════════════════════════════════
+    // SHIFT+RMB ON PLAYER — показать здоровье и еду
+    // ════════════════════════════════════════
+    @EventHandler
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
+        if (!enabled) return;
+        if (!e.getPlayer().isSneaking()) return;
+        if (!(e.getRightClicked() instanceof Player target)) return;
+
+        e.setCancelled(true);
+
+        Player viewer = e.getPlayer();
+        String healthStr = String.valueOf((int) target.getHealth());
+        String foodStr = String.valueOf(target.getFoodLevel());
+        String maxHealthStr = String.valueOf((int) target.getMaxHealth());
+
+        Component msg = MessageUtil.parse(
+                "<gold>" + target.getName() + "</gold>"
+                + " <dark_gray>|</dark_gray> "
+                + "<red>❤ " + healthStr + "/" + maxHealthStr + "</red>"
+                + " <dark_gray>|</dark_gray> "
+                + "<gold>\uD83C\uDF56 " + foodStr + "/20</gold>"
+        );
+        viewer.sendActionBar(msg);
+    }
+
+    // ════════════════════════════════════════
+    // RUN — teams cleanup only, no suffix
+    // ════════════════════════════════════════
     @Override
     public void run() {
         if (!enabled) return;
@@ -105,26 +138,18 @@ public class BelowNameManager extends BukkitRunnable {
             if (player == null || !player.isOnline()) continue;
 
             try {
-                String resolved = PlaceholderResolver.resolve(format, player);
-                Component component = MessageUtil.parse(resolved);
-
-                // Build safe team name from UUID hash (always 11 chars, no collisions)
+                // Build safe team name from UUID hash
                 String teamName = TEAM_PREFIX + Integer.toHexString(player.getUniqueId().hashCode());
 
-                // Get or create the player's team
+                // Ensure team exists (without suffix)
                 Team team = sb.getTeam(teamName);
                 if (team == null) {
                     team = sb.registerNewTeam(teamName);
                     team.addEntry(player.getName());
                 }
 
-                // Set suffix: bullet separator + formatted belowname text after the name.
-                // Заметка: Component.newline() в Minecraft 1.21.4 рендерится как символ [LF],
-                // а не как перенос строки в намейте. Текст идёт после ника через разделитель.
-                team.suffix(Component.text(" \u2022 ").append(component));
-
             } catch (Exception e) {
-                // Silently skip on error (player might have disconnected)
+                // Silently skip on error
             }
         }
     }

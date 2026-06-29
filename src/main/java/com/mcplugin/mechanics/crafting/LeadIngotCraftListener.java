@@ -11,11 +11,14 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.block.Crafter;
+import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -128,6 +131,27 @@ public class LeadIngotCraftListener implements Listener {
             if (ingMeta.getPersistentDataContainer().has(Keys.LEAD_INGOT, PersistentDataType.BYTE)) {
                 // Найден свинцовый слиток в нелегальном рецепте — блокируем
                 inv.setResult(null);
+                return;
+            }
+        }
+    }
+
+    // =========================
+    // ДОП. ЗАЩИТА ОТ РАСКРАФЧИВАНИЯ ЧЕРЕЗ ВАНИЛЬНЫЙ CRAFTER
+    // Ванильный Crafter при авто-крафте (по редстоуну) НЕ стреляет
+    // PrepareItemCraftEvent — только CrafterCraftEvent.
+    // =========================
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onCrafterCraft(CrafterCraftEvent e) {
+        // Проверяем все слоты матрицы Crafter на наличие LEAD_INGOT PDC
+        if (!(e.getBlock().getState() instanceof Crafter crafter)) return;
+        Inventory inv = crafter.getInventory();
+        for (ItemStack item : inv.getContents()) {
+            if (item == null || item.getType() != Material.NETHERITE_INGOT) continue;
+            ItemMeta meta = item.getItemMeta();
+            if (meta == null) continue;
+            if (meta.getPersistentDataContainer().has(Keys.LEAD_INGOT, PersistentDataType.BYTE)) {
+                e.setCancelled(true);
                 return;
             }
         }

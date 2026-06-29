@@ -832,4 +832,7 @@ chat:
 access_control:
   check_interval_ticks: 20
 
+wireless_redstone:
+  enabled: true
+
 plugin_version: "1.8.117"

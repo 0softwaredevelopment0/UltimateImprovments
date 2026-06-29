@@ -627,6 +627,27 @@ public class DatabaseInit {
             ON vote_records(vote_name);
         """);
 
+        // =========================
+        // 📡 WIRELESS REDSTONE — связанные лампы
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS wireless_links (
+                world TEXT NOT NULL,
+                x1 INTEGER NOT NULL,
+                y1 INTEGER NOT NULL,
+                z1 INTEGER NOT NULL,
+                x2 INTEGER NOT NULL,
+                y2 INTEGER NOT NULL,
+                z2 INTEGER NOT NULL,
+                PRIMARY KEY(world, x1, y1, z1, x2, y2, z2)
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_wireless_links_world
+            ON wireless_links(world);
+        """);
+
         // Инициализация строк latest_commit_sha и installed_tag, если их нет
         st.execute("""
             INSERT OR IGNORE INTO updater_state (key, value)

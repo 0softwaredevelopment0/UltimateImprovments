@@ -174,6 +174,9 @@ public class Main extends JavaPlugin {
         mm.register(new NotesModule());
         mm.register(new MinecartSpeedModule());
 
+        // Wireless Redstone
+        mm.register(new WirelessRedstoneModule());
+
         // Protection
         mm.register(new RedstoneGuardModule());
         mm.register(new PacketGuardModule());
