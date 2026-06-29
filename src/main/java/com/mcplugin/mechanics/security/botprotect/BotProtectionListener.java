@@ -156,7 +156,7 @@ public class BotProtectionListener implements Listener {
             if (elapsed < cooldownMs) {
                 long remaining = (cooldownMs - elapsed + 999) / 1000; // округление вверх
                 String msg = MessagesManager.getString("bot_protection.rejoin_cooldown",
-                        "<red>❌ Вы вышли слишком недавно! Подождите</red> <yellow>{seconds}</yellow> <red>сек перед повторным входом.</red>")
+                        "<red>❌ You left too recently! Wait</red> <yellow>{seconds}</yellow> <red>sec before reconnecting.</red>")
                         .replace("{seconds}", String.valueOf(remaining));
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
                 plugin.getLogger().info("[BotProtect] " + name + " rejected: rejoin cooldown (" + remaining + "s remaining)");
@@ -189,7 +189,7 @@ public class BotProtectionListener implements Listener {
         if (count > maxJoinsPerWindow) {
             int position = count - maxJoinsPerWindow;
             String msg = MessagesManager.getString("bot_protection.queue_full",
-                    "<red>❌ Сервер перегружен! Вы в очереди: позиция #{position}. Подождите и попробуйте снова.</red>")
+                    "<red>❌ Server overloaded! You are in queue: position #{position}. Please wait and try again.</red>")
                     .replace("{position}", String.valueOf(position));
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
 
@@ -213,7 +213,7 @@ public class BotProtectionListener implements Listener {
         if (now - lastNotify > notifyCooldown) {
             if (lastOpNotify.compareAndSet(lastNotify, now)) {
                 String msg = MessagesManager.getString("bot_protection.queue_notify_op",
-                        "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>{count}</yellow> <red>игрок(а) пытались зайти за</red> <yellow>{seconds}s</yellow><red>. Включена очередь.</red>")
+                        "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>{count}</yellow> <red>player(s) tried to connect in</red> <yellow>{seconds}s</yellow><red>. Queue enabled.</red>")
                         .replace("{count}", String.valueOf(count))
                         .replace("{seconds}", String.valueOf(windowSeconds));
 
