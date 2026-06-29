@@ -57,7 +57,7 @@ public class LeadIngotCraftListener implements Listener {
         Bukkit.removeRecipe(RECIPE_KEY);
 
         ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, result);
-        recipe.setGroup("CI");
+        recipe.setGroup(RECIPE_KEY.getKey());
         recipe.shape(
                 "III",
                 "INI",
