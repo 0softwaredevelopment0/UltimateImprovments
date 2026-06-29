@@ -250,23 +250,24 @@ public class PlaceholderResolver {
 
     private static String resolvePingColor(Player player, String unused) {
         if (player == null) return "<#00AA00>";
-        int ping = Math.min(player.getPing(), 1000);
+        int ping = player.getPing(); // не обрезаем — pingColor сам обработает >1000 как тёмно-красный
         return StatsTracker.pingColor(ping);
     }
 
     private static String resolvePingGradient(Player player, String unused) {
         if (player == null) return "<#00AA00>0ms";
-        int ping = Math.min(player.getPing(), 1000);
+        int rawPing = player.getPing();          // реальный пинг для отображения
+        int clamped = Math.min(rawPing, 1000);    // для выбора цвета градиента
         for (int i = 0; i < PING_COLOR_STOPS.length - 1; i++) {
             int[] lower = PING_COLOR_STOPS[i];
             int[] upper = PING_COLOR_STOPS[i + 1];
-            if (ping >= lower[0] && ping <= upper[0]) {
+            if (clamped >= lower[0] && clamped <= upper[0]) {
                 String lowerHex = String.format("#%02X%02X%02X", lower[1], lower[2], lower[3]);
                 String upperHex = String.format("#%02X%02X%02X", upper[1], upper[2], upper[3]);
-                return String.format("<gradient:%s:%s>%dms</gradient>", lowerHex, upperHex, ping);
+                return String.format("<gradient:%s:%s>%dms</gradient>", lowerHex, upperHex, rawPing);
             }
         }
-        return "<gradient:#FF5555:#AA0000>" + ping + "ms</gradient>";
+        return "<gradient:#FF5555:#AA0000>" + rawPing + "ms</gradient>";
     }
 
     // ════════════════════════════════════════════
@@ -348,7 +349,7 @@ public class PlaceholderResolver {
                     m.appendReplacement(sb, "0");
                     continue;
                 }
-                int ping = Math.min(targetPlayer.getPing(), 1000);
+                int ping = targetPlayer.getPing();
                 String val = String.valueOf(ping);
                 if (isColor) {
                     val = StatsTracker.pingColor(ping) + ping;

@@ -743,7 +743,7 @@ tab:
     format: ""
 
     objective_prefix: ""
-    objective_suffix: " <dark_gray>[</dark_gray>{player_ping_gradient}<dark_gray>] </dark_gray>"
+    objective_suffix: " <dark_gray>[</dark_gray>{player_ping_color}{player_ping}<dark_gray>ms] </dark_gray>"
 
   sort:
     mode: none
@@ -832,4 +832,4 @@ chat:
 access_control:
   check_interval_ticks: 20
 
-plugin_version: "1.8.112"
+plugin_version: "1.8.113"
