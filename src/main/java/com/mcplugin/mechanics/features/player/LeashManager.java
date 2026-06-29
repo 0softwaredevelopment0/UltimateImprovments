@@ -480,7 +480,9 @@ public class LeashManager implements Listener {
             addCustomLeash(leashed, holder);
             if (leashed instanceof Player player) {
                 immobilizedPlayers.add(player.getUniqueId());
-                originalWalkSpeeds.putIfAbsent(player.getUniqueId(), player.getWalkSpeed());
+                // Не сохраняем 0.0f (например, от заморозки авторизацией) — используем дефолт 0.2f
+                float currentSpeed = player.getWalkSpeed();
+                originalWalkSpeeds.putIfAbsent(player.getUniqueId(), currentSpeed > 0.01f ? currentSpeed : 0.2f);
                 player.setWalkSpeed(0);
             }
             return;

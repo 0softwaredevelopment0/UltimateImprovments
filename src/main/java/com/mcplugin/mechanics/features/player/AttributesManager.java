@@ -10,7 +10,7 @@ public class AttributesManager extends BukkitRunnable {
     private static AttributesManager instance;
     private static boolean enabled = true;
     private static double attackDmg = 0.1;
-    private static double sneakSpeed = 8192;
+    private static double sneakSpeed = 1.0;
     private static double attackSpeed = 3.5;
 
     public static void init(Main plugin) {
@@ -25,7 +25,7 @@ public class AttributesManager extends BukkitRunnable {
         if (cfg == null) return;
         enabled = cfg.getBoolean("enabled", true);
         attackDmg = cfg.getDouble("attack_damage", 0.1);
-        sneakSpeed = cfg.getDouble("sneak_speed", 8192);
+        sneakSpeed = cfg.getDouble("sneak_speed", 1.0);
         attackSpeed = cfg.getDouble("attack_speed", 3.5);
     }
 

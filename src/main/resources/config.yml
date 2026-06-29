@@ -131,7 +131,7 @@ features:
   attributes:
     enabled: true
     attack_damage: 0.1
-    sneak_speed: 8192
+    sneak_speed: 1.0
     attack_speed: 3.5
     interval_ticks: 200
 
@@ -832,4 +832,4 @@ chat:
 access_control:
   check_interval_ticks: 20
 
-plugin_version: "1.8.111"
+plugin_version: "1.8.112"

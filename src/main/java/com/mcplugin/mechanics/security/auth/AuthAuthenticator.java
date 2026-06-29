@@ -269,6 +269,7 @@ public class AuthAuthenticator {
         String requestId = Auth2FA.getInstance().sendConfirmation(uuid, playerName, playerIp);
         if (requestId == null) {
             player.sendMessage("§c❌ Ошибка отправки запроса 2FA! Попробуйте позже.");
+            unfreezePlayer(player);
             return;
         }
 
