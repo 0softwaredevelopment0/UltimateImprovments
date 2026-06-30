@@ -3,14 +3,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
-
-### IntelliJ IDEA ###
 .idea/
 *.iws
 *.iml
 *.ipr
-
-### Eclipse ###
 .apt_generated
 .classpath
 .factorypath
@@ -18,36 +14,22 @@ target/
 .settings
 .springBeans
 .sts4-cache
-
-### NetBeans ###
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-
-### Gradle ###
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 .gradle/
-
-### VS Code ###
 .vscode/
-
-### Mac OS ###
 .DS_Store
-
-# Project exclude paths
 /.gradle/__pycache__/
 __pycache__/
 nul
-
-### Extra ignores ###
 .claude/
 TODOs.odt
-
-### Codebuff ###
 .codebuff-memory.db
 buffy-guide.md
 codebuff-memory.js
