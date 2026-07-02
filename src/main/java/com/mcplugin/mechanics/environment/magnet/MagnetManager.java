@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.mcplugin.infrastructure.structure.StructureMarker;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.ChunkSnapshot;
 
 public class MagnetManager extends BukkitRunnable {
@@ -243,7 +244,7 @@ public class MagnetManager extends BukkitRunnable {
         }
 
         StructureMarker.purgeOrphaned(usedUuids);
-        Main.getInstance().getLogger().info("[Magnet] Loaded " + clustersById.size() + " clusters from Marker entities");
+        ConsoleLogger.info("[Magnet] Loaded " + clustersById.size() + " clusters from Marker entities");
     }
 
     // =========================
@@ -274,7 +275,7 @@ public class MagnetManager extends BukkitRunnable {
 
         addParticleEffect(cluster.center, cluster.blockKeys.size());
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Magnet] Activated cluster #" + cluster.id
                         + " with " + connected.size() + " blocks"
                         + " at center " + cluster.center
@@ -363,7 +364,7 @@ public class MagnetManager extends BukkitRunnable {
                     Set<Long> connected = floodFillFast(world, sx, sy, sz);
                     finishActivation(connected, world, key, player);
                 });
-                Main.getInstance().getLogger().severe(
+                ConsoleLogger.error(
                         "[Magnet] Async activation error: " + e.getMessage()
                 );
             }
@@ -416,7 +417,7 @@ public class MagnetManager extends BukkitRunnable {
         }
         player.sendMessage("§8┃ §7Radius: §f" + magnetRadius + " §7blocks (min. " + MagnetConfig.getMinRadius() + ")");
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Magnet] Activated cluster #" + cluster.id
                         + " with " + connected.size() + " blocks"
                         + " at center " + cluster.center
@@ -477,7 +478,7 @@ public class MagnetManager extends BukkitRunnable {
         if (cluster.center != null && cluster.center.getWorld() != null) {
             addParticleEffect(cluster.center, cluster.blockKeys.size());
         }
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Magnet] Deactivated cluster #" + cluster.id
                         + " (" + cluster.power + " blocks)"
         );
@@ -502,7 +503,7 @@ public class MagnetManager extends BukkitRunnable {
             breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Magnet deactivated (block broken)!</red>"));
         }
 
-        Main.getInstance().getLogger().info("[Magnet] Deactivated cluster #" + cluster.id
+        ConsoleLogger.info("[Magnet] Deactivated cluster #" + cluster.id
                 + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
         return true;
     }
@@ -544,7 +545,7 @@ public class MagnetManager extends BukkitRunnable {
             UUID uuid = findUuidFromNeighbor(loc, neighborKeys);
             if (uuid != null) StructureMarker.place(loc, "magnet", uuid);
 
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Magnet] Cluster #" + cluster.id + " expanded: "
                             + cluster.blockKeys.size() + " blocks"
             );
@@ -570,7 +571,7 @@ public class MagnetManager extends BukkitRunnable {
             locationToCluster.put(key, primary);
             if (primaryUuid != null) StructureMarker.place(loc, "magnet", primaryUuid);
 
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Magnet] Clusters merged into #" + primary.id
                             + ": " + primary.blockKeys.size() + " blocks"
             );
@@ -797,7 +798,7 @@ public class MagnetManager extends BukkitRunnable {
                     applyMagneticForce(entity, center, power, clusterRadius);
                 }
             } catch (Exception e) {
-                Main.getInstance().getLogger().severe(
+                ConsoleLogger.error(
                         "[Magnet] Error processing cluster #" + cluster.id + ": " + e.getMessage()
                 );
                 e.printStackTrace();

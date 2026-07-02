@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.features.items;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 
@@ -17,7 +18,7 @@ public class NotesManager {
     public static void init() {
         instance = new NotesManager();
         Bukkit.getPluginManager().registerEvents(new NotesGUIListener(), Main.getInstance());
-        Main.getInstance().getLogger().info("[Notes] Manager initialized.");
+        ConsoleLogger.info("[Notes] Manager initialized.");
     }
 
     public static NotesManager getInstance() {

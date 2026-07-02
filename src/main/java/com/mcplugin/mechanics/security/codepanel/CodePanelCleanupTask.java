@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.security.codepanel;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
@@ -15,7 +16,7 @@ public class CodePanelCleanupTask extends BukkitRunnable {
         try {
             CodePanelDatabase.cleanupExpiredKeys();
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning(
+            ConsoleLogger.warn(
                     "[CodePanel] Cleanup task error: " + e.getMessage()
             );
         }

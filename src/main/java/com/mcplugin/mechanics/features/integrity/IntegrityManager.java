@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.SoundUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -154,7 +155,7 @@ public class IntegrityManager extends BukkitRunnable {
         // Регистрируем PiercingListener (обработчик PIERCING-ударов)
         PiercingListener.init(plugin);
 
-        Main.getInstance().getLogger().info("[INTEGRITY] System initialized (interval=" + intervalTicks + " ticks)");
+        ConsoleLogger.info("[INTEGRITY] System initialized (interval=" + intervalTicks + " ticks)");
     }
 
     // =========================
@@ -298,7 +299,7 @@ public class IntegrityManager extends BukkitRunnable {
                 instance = new IntegrityManager();
                 instance.runTaskTimer(Main.getInstance(), 40L, intervalTicks);
             } catch (Exception e) {
-                Main.getInstance().getLogger().warning("[INTEGRITY] Failed to restart task: " + e.getMessage());
+                ConsoleLogger.warn("[INTEGRITY] Failed to restart task: " + e.getMessage());
             }
         }
     }
@@ -507,7 +508,7 @@ public class IntegrityManager extends BukkitRunnable {
                     checkLowIntegrityWarning(item, player);
                 } catch (Exception e) {
                     if (logErrors) {
-                        Main.getInstance().getLogger().warning("[INTEGRITY] Error processing item " + item.getType() + ": " + e.getMessage());
+                        ConsoleLogger.warn("[INTEGRITY] Error processing item " + item.getType() + ": " + e.getMessage());
                     }
                 }
             }
@@ -563,7 +564,7 @@ public class IntegrityManager extends BukkitRunnable {
             migrated = true;
 
             if (logInit) {
-                Main.getInstance().getLogger().info("[INTEGRITY] Migrated to V3 " + item.getType()
+                ConsoleLogger.info("[INTEGRITY] Migrated to V3 " + item.getType()
                         + " (current=" + String.format("%.1f%%", newCurrent) + ")");
             }
         }
@@ -582,7 +583,7 @@ public class IntegrityManager extends BukkitRunnable {
             syncVanillaDamage(item, meta, initialCurrent);
 
             if (logInit) {
-                Main.getInstance().getLogger().info("[INTEGRITY] Initialized " + item.getType()
+                ConsoleLogger.info("[INTEGRITY] Initialized " + item.getType()
                         + " with max=" + (int)itemMaxDura + " integrity (current="
                         + String.format("%.1f%%", initialCurrent) + ")");
             }
@@ -914,7 +915,7 @@ public class IntegrityManager extends BukkitRunnable {
         }
 
         if (logBreak) {
-            Main.getInstance().getLogger().info("[INTEGRITY] " + owner.getName() + "'s " + itemName + " broke!");
+            ConsoleLogger.info("[INTEGRITY] " + owner.getName() + "'s " + itemName + " broke!");
         }
     }
 

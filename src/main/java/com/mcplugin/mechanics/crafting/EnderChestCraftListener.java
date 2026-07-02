@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.crafting;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -56,7 +57,7 @@ public class EnderChestCraftListener implements Listener {
         recipe.setIngredient('2', Material.NETHER_STAR);
 
         plugin.getServer().addRecipe(recipe);
-        plugin.getLogger().info("[ENDERCHEST] Ender chest recipe registered (replaced vanilla).");
+        ConsoleLogger.info("[ENDERCHEST] Ender chest recipe registered (replaced vanilla).");
     }
 
     /**

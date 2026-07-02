@@ -4,6 +4,7 @@ import com.mcplugin.energy.machines.assembler.AssemblerChecker;
 import com.mcplugin.infrastructure.core.Keys;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -65,7 +66,7 @@ public class PortableRadarCraftListener implements Listener {
 
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
-        plugin.getLogger().info("[RADAR] Recipe registered with Keys system");
+        ConsoleLogger.info("[RADAR] Recipe registered with Keys system");
     }
 
     @EventHandler

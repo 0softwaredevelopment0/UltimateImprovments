@@ -130,6 +130,22 @@ public final class MiscSubcommand {
     }
 
     // =========================
+    // TOGGLEPING — ping sound per-player
+    // =========================
+    public static boolean togglePing(CommandSender sender) {
+        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
+        if (!player.hasPermission("mcplugin.command.toggleping")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        UUID uuid = player.getUniqueId();
+        boolean enabled = PlayerSettingsDB.togglePing(uuid);
+        if (enabled) {
+            player.sendMessage(MessageUtil.parse("<green>🔔</green> <white>Ping sound: </white><green>ON</green>"));
+        } else {
+            player.sendMessage(MessageUtil.parse("<red>🔕</red> <white>Ping sound: </white><red>OFF</red>"));
+        }
+        return true;
+    }
+
+    // =========================
     // TOGGLESB — scoreboard per-player
     // =========================
     public static boolean toggleScoreboard(CommandSender sender) {

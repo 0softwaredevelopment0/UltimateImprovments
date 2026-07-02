@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.environment.magnet;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 /**
  * Конфигурация магнита — все параметры из config.yml (features.magnet).
@@ -73,7 +74,7 @@ public final class MagnetConfig {
             particlePortalMax = pc.getInt("portal_max", 15);
         }
 
-        Main.getInstance().getLogger().info("[Magnet] Config reloaded.");
+        ConsoleLogger.info("[Magnet] Config reloaded.");
     }
 
     // =========================

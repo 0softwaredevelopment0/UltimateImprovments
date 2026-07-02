@@ -3,6 +3,7 @@ package com.mcplugin.energy.consumption.light;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.storage.battery.BatteryManager;
@@ -140,7 +141,7 @@ public class LightManager {
                 synchronized (lightingQueue) { task = lightingQueue.pollFirst(); }
                 if (task != null) {
                     try { task.run(); } catch (Exception e) {
-                        Main.getInstance().getLogger().warning("[Light] Lighting task error: " + e.getMessage());
+                        ConsoleLogger.warn("[Light] Lighting task error: " + e.getMessage());
                     }
                 }
             }
@@ -156,7 +157,7 @@ public class LightManager {
         // Восстанавливаем кластеры из Marker'ов
         rebuildFromMarkers();
 
-        Main.getInstance().getLogger().info("[LightMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");
+        ConsoleLogger.info("[LightMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");
     }
 
     public static LightManager getInstance() { return instance; }
@@ -309,7 +310,7 @@ public class LightManager {
             player.sendMessage("§8┃ §7Buffer: §f" + cluster.getBufferCapacity() + " ⚡ §7(redstone + buffer for lighting)");
         }
 
-        Main.getInstance().getLogger().info("[LightMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " lamps");
+        ConsoleLogger.info("[LightMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " lamps");
     }
 
     // ════════════════════════════════════════
@@ -505,7 +506,7 @@ public class LightManager {
                     cluster.buffer = Math.max(0, cluster.buffer - cluster.power);
                 }
             } catch (Exception e) {
-                Main.getInstance().getLogger().warning("[LightMulti] Tick error: " + e.getMessage());
+                ConsoleLogger.warn("[LightMulti] Tick error: " + e.getMessage());
             }
         }
 
@@ -519,7 +520,7 @@ public class LightManager {
                 for (long bk : cluster.blockKeys) locationToCluster.remove(bk);
                 clustersById.remove(id);
                 cluster.blockKeys.clear();
-                Main.getInstance().getLogger().info("[LightMulti] Removed phantom cluster #" + id);
+                ConsoleLogger.info("[LightMulti] Removed phantom cluster #" + id);
             }
         }
 

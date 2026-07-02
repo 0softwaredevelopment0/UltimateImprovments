@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.mechanics.security.auth.AuthListener;
 import com.mcplugin.mechanics.security.auth.AuthManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,7 +21,7 @@ public class AuthModule extends PluginModule {
         Main main = (Main) plugin;
         AuthManager.init();
         main.getServer().getPluginManager().registerEvents(new AuthListener(), main);
-        plugin.getLogger().info("[AuthModule] ✔ Auth system initialized.");
+        ConsoleLogger.info("[AuthModule] ✔ Auth system initialized.");
     }
 
     @Override

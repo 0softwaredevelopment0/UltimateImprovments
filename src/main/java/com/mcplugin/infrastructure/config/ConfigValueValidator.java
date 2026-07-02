@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.config;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -37,22 +38,22 @@ final class ConfigValueValidator {
             if (!config.isSet(rule.key)) continue;
             Result result = checkValue(config, rule);
             switch (result.severity) {
-                case ERROR -> { errors++; plugin.getLogger().warning("[ConfigValidator] \u26A0 [ERROR] " + rule.key + ": " + result.message); }
-                case WARN -> { warnings++; plugin.getLogger().warning("[ConfigValidator] \u26A0 [WARN] " + rule.key + ": " + result.message); }
+                case ERROR -> { errors++; ConsoleLogger.warn("[ConfigValidator] \u26A0 [ERROR] " + rule.key + ": " + result.message); }
+                case WARN -> { warnings++; ConsoleLogger.warn("[ConfigValidator] \u26A0 [WARN] " + rule.key + ": " + result.message); }
             }
         }
 
         if (errors > 0 || warnings > 0) {
-            plugin.getLogger().warning("");
-            plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            plugin.getLogger().warning("!  CONFIG VALUE VALIDATION COMPLETE                     !");
-            plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            if (errors > 0) plugin.getLogger().warning("!  " + errors + " error(s) found - fix these values!              !");
-            if (warnings > 0) plugin.getLogger().warning("!  " + warnings + " warning(s) found - review recommended.         !");
-            plugin.getLogger().warning("!  Plugin will use defaults for invalid values.          !");
-            plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+            ConsoleLogger.warn("");
+            ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            ConsoleLogger.warn("!  CONFIG VALUE VALIDATION COMPLETE                     !");
+            ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            if (errors > 0) ConsoleLogger.warn("!  " + errors + " error(s) found - fix these values!              !");
+            if (warnings > 0) ConsoleLogger.warn("!  " + warnings + " warning(s) found - review recommended.         !");
+            ConsoleLogger.warn("!  Plugin will use defaults for invalid values.          !");
+            ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
         } else {
-            plugin.getLogger().info("[ConfigValidator] \u2713 All config values passed validation.");
+            ConsoleLogger.info("[ConfigValidator] \u2713 All config values passed validation.");
         }
     }
 

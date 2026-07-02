@@ -48,7 +48,10 @@ public final class CheckSubcommand {
     }
 
     /**
-     * /mp uncheck <player> — завершить проверку читов
+     * /mp uncheck [player] — завершить проверку читов
+     * <p>
+     * Без аргумента — завершает текущую проверку (force-end, если suspect офлайн).
+     * С аргументом — завершает проверку указанного игрока.
      */
     public static boolean uncheck(CommandSender sender, String[] args) {
         if (!(sender instanceof Player inspector)) {
@@ -63,8 +66,9 @@ public final class CheckSubcommand {
             return true;
         }
 
-        if (args.length < 2) {
-            inspector.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp uncheck <nick></white>"));
+        // /mp uncheck (без аргумента) — force-end текущей проверки
+        if (args.length < 2 || args[1].isEmpty()) {
+            CheckManager.forceEndCheck(inspector);
             return true;
         }
 
@@ -72,14 +76,17 @@ public final class CheckSubcommand {
         @SuppressWarnings("deprecation")
         Player suspect = Bukkit.getPlayerExact(targetName);
 
-        if (suspect == null || !suspect.isOnline()) {
-            inspector.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_not_found",
-                    "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>")
-                    .replace("{player}", targetName)));
+        // Если suspect найден и онлайн — normal end
+        if (suspect != null && suspect.isOnline()) {
+            CheckManager.endCheck(inspector, suspect);
             return true;
         }
 
-        CheckManager.endCheck(inspector, suspect);
+        // Если suspect офлайн — force-end
+        inspector.sendMessage(MessageUtil.parse(
+                "<yellow>⚠</yellow> <white>Player</white> <yellow>" + targetName +
+                "</yellow> <white>is offline. Forcing check end...</white>"));
+        CheckManager.forceEndCheck(inspector);
         return true;
     }
 }

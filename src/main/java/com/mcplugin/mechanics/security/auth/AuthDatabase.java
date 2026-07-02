@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.security.auth;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
@@ -76,8 +77,8 @@ public class AuthDatabase {
             tableReady = true;
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] DB init failed: " + e.getMessage());
-            Main.getInstance().getLogger().severe("[Auth] DB init stack: " + java.util.Arrays.toString(e.getStackTrace()));
+            ConsoleLogger.error("[Auth] DB init failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] DB init stack: " + java.util.Arrays.toString(e.getStackTrace()));
             tableReady = false;
         }
     }
@@ -97,7 +98,7 @@ public class AuthDatabase {
             }
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Check failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Check failed: " + e.getMessage());
             return false;
         }
     }
@@ -122,7 +123,7 @@ public class AuthDatabase {
             }
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Session check failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Session check failed: " + e.getMessage());
             return false;
         }
     }
@@ -144,7 +145,7 @@ public class AuthDatabase {
             }
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Get IP failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Get IP failed: " + e.getMessage());
             return "";
         }
     }
@@ -162,7 +163,7 @@ public class AuthDatabase {
             ps.executeUpdate();
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Update IP failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Update IP failed: " + e.getMessage());
         }
     }
 
@@ -179,7 +180,7 @@ public class AuthDatabase {
             ps.executeUpdate();
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Update last_login failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Update last_login failed: " + e.getMessage());
         }
     }
 
@@ -201,8 +202,8 @@ public class AuthDatabase {
             ps.executeUpdate();
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Register failed: " + e.getMessage());
-            Main.getInstance().getLogger().severe("[Auth] Register stack: " + java.util.Arrays.toString(e.getStackTrace()));
+            ConsoleLogger.error("[Auth] Register failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Register stack: " + java.util.Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -240,7 +241,7 @@ public class AuthDatabase {
             }
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Check password failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Check password failed: " + e.getMessage());
             return false;
         }
     }
@@ -262,7 +263,7 @@ public class AuthDatabase {
             return updated > 0;
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Change password failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Change password failed: " + e.getMessage());
             return false;
         }
     }
@@ -280,7 +281,7 @@ public class AuthDatabase {
             return updated > 0;
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Reset auth failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Reset auth failed: " + e.getMessage());
             return false;
         }
     }
@@ -303,7 +304,7 @@ public class AuthDatabase {
             return updated > 0;
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Self change password failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Self change password failed: " + e.getMessage());
             return false;
         }
     }
@@ -325,7 +326,7 @@ public class AuthDatabase {
             }
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Get all UUIDs failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Get all UUIDs failed: " + e.getMessage());
         }
         return uuids;
     }
@@ -349,7 +350,7 @@ public class AuthDatabase {
             }
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Count by IP failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Count by IP failed: " + e.getMessage());
         }
         return 0;
     }
@@ -367,7 +368,7 @@ public class AuthDatabase {
             return deleted > 0;
 
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Delete registration failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Delete registration failed: " + e.getMessage());
             return false;
         }
     }
@@ -382,7 +383,7 @@ public class AuthDatabase {
             argon2.wipeArray(chars);
             return hash;
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Argon2 hash failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Argon2 hash failed: " + e.getMessage());
             return "";
         }
     }
@@ -394,7 +395,7 @@ public class AuthDatabase {
             argon2.wipeArray(chars);
             return valid;
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] Argon2 verify failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] Argon2 verify failed: " + e.getMessage());
             return false;
         }
     }
@@ -414,7 +415,7 @@ public class AuthDatabase {
             byte[] hash = factory.generateSecret(spec).getEncoded();
             return HexFormat.of().formatHex(hash);
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Auth] PBKDF2 hash failed: " + e.getMessage());
+            ConsoleLogger.error("[Auth] PBKDF2 hash failed: " + e.getMessage());
             return "";
         }
     }
@@ -440,10 +441,10 @@ public class AuthDatabase {
                 ps.setString(3, uuid.toString());
                 ps.executeUpdate();
 
-                Main.getInstance().getLogger().info("[Auth] Upgraded password to Argon2id for UUID: " + uuid);
+                ConsoleLogger.info("[Auth] Upgraded password to Argon2id for UUID: " + uuid);
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Auth] Auto-upgrade to Argon2id failed for UUID " + uuid + ": " + e.getMessage());
+            ConsoleLogger.warn("[Auth] Auto-upgrade to Argon2id failed for UUID " + uuid + ": " + e.getMessage());
         }
     }
 }

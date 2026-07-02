@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.punish.PunishJoinListener;
 import com.mcplugin.infrastructure.punish.PunishmentManager;
 import com.mcplugin.infrastructure.blacklist.BlacklistManager;
 import com.mcplugin.infrastructure.whitelist.WhitelistManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 /**
  * 🛡 PunishModule — система наказаний, вайтлиста и блэклиста.
@@ -34,7 +35,7 @@ public class PunishModule extends PluginModule {
         var pm = main.getServer().getPluginManager();
         pm.registerEvents(new PunishJoinListener(), main);
 
-        main.getLogger().info("[PunishModule] Punishment, Whitelist & Blacklist systems initialized.");
+        ConsoleLogger.info("[PunishModule] Punishment, Whitelist & Blacklist systems initialized.");
     }
 
     @Override

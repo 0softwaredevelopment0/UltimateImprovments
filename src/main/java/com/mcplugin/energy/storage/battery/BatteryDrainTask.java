@@ -7,6 +7,7 @@ import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
 
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -96,7 +97,7 @@ public class BatteryDrainTask extends BukkitRunnable {
                                 remaining -= transfer;
 
                                 if (log) {
-                                    Main.getInstance().getLogger().info(
+                                    ConsoleLogger.info(
                                             "[Battery] Discharged " + transfer
                                                     + " from " + batteryLoc + " to " + node.getLocation());
                                 }

@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.server;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -25,7 +26,7 @@ public class ServerOverloadWarning extends BukkitRunnable {
     public static void reload() {
         if (instance != null) {
             instance.reloadConfig();
-            Main.getInstance().getLogger().info("[OVERLOAD_WARNING] Config reloaded (enabled=" + instance.enabled + ")");
+            ConsoleLogger.info("[OVERLOAD_WARNING] Config reloaded (enabled=" + instance.enabled + ")");
         }
     }
 

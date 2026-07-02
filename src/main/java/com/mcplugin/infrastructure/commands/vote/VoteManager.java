@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -49,7 +50,7 @@ public class VoteManager {
         pendingDeletes.clear();
         closeTimers.clear();
         loadFromDatabase();
-        Main.getInstance().getLogger().info("[VOTE] Loaded " + votes.size() + " votes from database.");
+        ConsoleLogger.info("[VOTE] Loaded " + votes.size() + " votes from database.");
     }
 
     // =========================
@@ -117,7 +118,7 @@ public class VoteManager {
                 }
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[VOTE] Failed to load votes: " + e.getMessage());
+            ConsoleLogger.error("[VOTE] Failed to load votes: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -524,7 +525,7 @@ public class VoteManager {
                 st.executeUpdate();
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[VOTE] Failed to delete vote from DB: " + e.getMessage());
+            ConsoleLogger.error("[VOTE] Failed to delete vote from DB: " + e.getMessage());
         }
 
         Bukkit.broadcast(MessageUtil.parse(MessagesManager.getString("vote.delete.broadcast",
@@ -802,7 +803,7 @@ public class VoteManager {
             }
             saveAnswersToDatabase(vote);
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[VOTE] DB save error: " + e.getMessage());
+            ConsoleLogger.error("[VOTE] DB save error: " + e.getMessage());
         }
     }
 
@@ -827,7 +828,7 @@ public class VoteManager {
                 st.executeBatch();
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[VOTE] DB save answers error: " + e.getMessage());
+            ConsoleLogger.error("[VOTE] DB save answers error: " + e.getMessage());
         }
     }
 
@@ -842,7 +843,7 @@ public class VoteManager {
                 st.executeUpdate();
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[VOTE] DB save record error: " + e.getMessage());
+            ConsoleLogger.error("[VOTE] DB save record error: " + e.getMessage());
         }
     }
 
@@ -853,7 +854,7 @@ public class VoteManager {
             st.setString(2, voteName);
             st.executeUpdate();
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[VOTE] DB update ended error: " + e.getMessage());
+            ConsoleLogger.error("[VOTE] DB update ended error: " + e.getMessage());
         }
     }
 
@@ -946,7 +947,7 @@ public class VoteManager {
             } catch (Exception ignored) {}
         }
         closeTimers.clear();
-        Main.getInstance().getLogger().info("[VOTE] All timers cancelled.");
+        ConsoleLogger.info("[VOTE] All timers cancelled.");
     }
 
     // =========================

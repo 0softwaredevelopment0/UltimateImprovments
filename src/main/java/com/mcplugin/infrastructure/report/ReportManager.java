@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -86,7 +87,7 @@ public class ReportManager implements Listener {
                 ps.setString(3, player.getName());
                 ps.executeUpdate();
             } catch (Exception e) {
-                Main.getInstance().getLogger().warning("[Reports] Failed to track player visit: " + e.getMessage());
+                ConsoleLogger.warn("[Reports] Failed to track player visit: " + e.getMessage());
             }
         });
     }
@@ -167,7 +168,7 @@ public class ReportManager implements Listener {
             ps.setLong(5, expiresAt);
             ps.executeUpdate();
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Reports] Failed to create report: " + e.getMessage());
+            ConsoleLogger.warn("[Reports] Failed to create report: " + e.getMessage());
             return MessagesManager.getString("report.errors.db_error",
                     "<red>❌ Ошибка базы данных при создании репорта!</red>");
         }
@@ -544,7 +545,7 @@ public class ReportManager implements Listener {
                     ps.setInt(5, session.reportId);
                     ps.executeUpdate();
                 } catch (Exception e) {
-                    Main.getInstance().getLogger().warning("[Reports] Failed to save verdict: " + e.getMessage());
+                    ConsoleLogger.warn("[Reports] Failed to save verdict: " + e.getMessage());
                 }
             });
 
@@ -617,10 +618,10 @@ public class ReportManager implements Listener {
             ps.setLong(1, now);
             int expired = ps.executeUpdate();
             if (expired > 0) {
-                Main.getInstance().getLogger().info("[Reports] Expired " + expired + " pending report(s).");
+                ConsoleLogger.info("[Reports] Expired " + expired + " pending report(s).");
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Reports] Failed to expire reports: " + e.getMessage());
+            ConsoleLogger.warn("[Reports] Failed to expire reports: " + e.getMessage());
         }
     }
 

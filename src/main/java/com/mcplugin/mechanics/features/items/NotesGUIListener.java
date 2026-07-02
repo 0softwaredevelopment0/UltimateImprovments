@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.features.items;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -53,7 +54,7 @@ public class NotesGUIListener implements Listener {
                 String content = NotesGUI.joinPages(newMeta.getPages());
                 NotesDatabase.saveNote(uuid, noteNumber, content);
             } catch (Exception e) {
-                Main.getInstance().getLogger().warning("[Notes] Failed to save note: " + e.getMessage());
+                ConsoleLogger.warn("[Notes] Failed to save note: " + e.getMessage());
             }
         }
 

@@ -1,10 +1,13 @@
 package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.mechanics.crafting.*;
 import com.mcplugin.energy.machines.assembler.AssemblerListener;
 import com.mcplugin.mechanics.features.scanner.ScannerItemListener;
 import com.mcplugin.mechanics.features.scanner.MetalDetectorListener;
+import com.mcplugin.mechanics.features.world.ChunkLoaderItemListener;
+import com.mcplugin.mechanics.crafting.StructureIntegrityCraftListener;
 import com.mcplugin.mechanics.features.world.ConcreteBucketManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -36,6 +39,8 @@ public class CraftingModule extends PluginModule {
         MetalDetectorCraftListener.init();
         EnderChestCraftListener.init();
         ConcreteBucketCraftListener.init();
+        ChunkLoaderCraftListener.init();
+        StructureIntegrityCraftListener.init();
         RecipeRegistry.init();
 
         // Register craft event listeners
@@ -57,9 +62,12 @@ public class CraftingModule extends PluginModule {
         pm.registerEvents(new MetalDetectorListener(), main);
         pm.registerEvents(new AssemblerListener(), main);
         pm.registerEvents(new ConcreteBucketCraftListener(), main);
+        pm.registerEvents(new ChunkLoaderCraftListener(), main);
+        pm.registerEvents(new ChunkLoaderItemListener(), main);
+        pm.registerEvents(new StructureIntegrityCraftListener(), main);
         ConcreteBucketManager.init(main);
 
-        plugin.getLogger().info("[CraftingModule] ✔ Recipes initialized.");
+        ConsoleLogger.info("[CraftingModule] ✔ Recipes initialized.");
     }
 
     @Override

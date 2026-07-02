@@ -1,5 +1,7 @@
 package com.mcplugin.infrastructure.modules;
 
+import com.mcplugin.infrastructure.util.ConsoleLogger;
+
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -56,13 +58,13 @@ public abstract class PluginModule {
             onInit(plugin);
             enabled = true;
             disableReason = null;
-            plugin.getLogger().info("[Module:" + name + "] \u2713 Enabled");
+            ConsoleLogger.info("[Module:" + name + "] \u2713 Enabled");
             return true;
         } catch (Throwable t) {
             enabled = false;
             disableReason = t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName();
-            plugin.getLogger().severe("[Module:" + name + "] \u2717 FAILED: " + disableReason);
-            plugin.getLogger().severe("[Module:" + name + "] Stack trace:");
+            ConsoleLogger.error("[Module:" + name + "] \u2717 FAILED: " + disableReason);
+            ConsoleLogger.error("[Module:" + name + "] Stack trace:");
             t.printStackTrace();
             return false;
         }
@@ -75,9 +77,9 @@ public abstract class PluginModule {
         if (!enabled) return true;
         try {
             onDisable(plugin);
-            plugin.getLogger().info("[Module:" + name + "] \u2713 Disabled");
+            ConsoleLogger.info("[Module:" + name + "] \u2713 Disabled");
         } catch (Throwable t) {
-            plugin.getLogger().warning("[Module:" + name + "] Shutdown error: " + t.getMessage());
+            ConsoleLogger.warn("[Module:" + name + "] Shutdown error: " + t.getMessage());
         }
         enabled = false;
         return true;
@@ -91,7 +93,7 @@ public abstract class PluginModule {
         try {
             onReloadConfig(plugin);
         } catch (Throwable t) {
-            plugin.getLogger().warning("[Module:" + name + "] ReloadConfig error: " + t.getMessage());
+            ConsoleLogger.warn("[Module:" + name + "] ReloadConfig error: " + t.getMessage());
         }
     }
 

@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.listeners;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -73,7 +74,7 @@ public class VoidProtectionListener implements Listener {
                 .getConfigurationSection("void_protection.target");
 
         if (targetSection == null) {
-            Main.getInstance().getLogger().warning("[VOID] void_protection.target не настроен в config.yml!");
+            ConsoleLogger.warn("[VOID] void_protection.target не настроен в config.yml!");
             return;
         }
 
@@ -81,7 +82,7 @@ public class VoidProtectionListener implements Listener {
         World targetWorld = Main.getInstance().getServer().getWorld(targetWorldName);
 
         if (targetWorld == null) {
-            Main.getInstance().getLogger().warning("[VOID] Мир " + targetWorldName + " не найден!");
+            ConsoleLogger.warn("[VOID] Мир " + targetWorldName + " не найден!");
             return;
         }
 

@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.features.world;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -94,7 +95,7 @@ public class WirelessRedstoneManager implements Listener {
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         instance.loadFromDatabase();
         instance.startObserverTask();
-        plugin.getLogger().info("[WirelessRedstone] Initialized with " + countLinks() + " active links");
+        ConsoleLogger.info("[WirelessRedstone] Initialized with " + countLinks() + " active links");
     }
 
     private static int countLinks() {
@@ -206,7 +207,7 @@ public class WirelessRedstoneManager implements Listener {
                 addChunkTicket(b);
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[WirelessRedstone] Failed to load from DB: " + e.getMessage());
+            ConsoleLogger.warn("[WirelessRedstone] Failed to load from DB: " + e.getMessage());
         }
     }
 
@@ -219,7 +220,7 @@ public class WirelessRedstoneManager implements Listener {
             st.setInt(5, b.x()); st.setInt(6, b.y()); st.setInt(7, b.z());
             st.executeUpdate();
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[WirelessRedstone] Failed to save link: " + e.getMessage());
+            ConsoleLogger.warn("[WirelessRedstone] Failed to save link: " + e.getMessage());
         }
     }
 
@@ -235,7 +236,7 @@ public class WirelessRedstoneManager implements Listener {
                 st.executeUpdate();
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[WirelessRedstone] Failed to remove link: " + e.getMessage());
+            ConsoleLogger.warn("[WirelessRedstone] Failed to remove link: " + e.getMessage());
         }
     }
 
@@ -323,23 +324,45 @@ public class WirelessRedstoneManager implements Listener {
         if (lightable.isLit() == lit) return;
 
         lightable.setLit(lit);
-        // Применяем блок-дату с applyPhysics=true, чтобы обновить соседей (компараторы, повторители, пыль)
-        // Если метод вызван из контекста BlockRedstoneEvent, физика может подавляться —
-        // дублируем в следующем тике для гарантии
         block.setBlockData(lightable, true);
+
+        // Принудительно обновляем компараторы и повторители в радиусе 1 блок
+        // (setBlockData с applyPhysics=true не всегда срабатывает из контекста BlockRedstoneEvent)
+        forceComparatorUpdate(block);
+
         Location loc = block.getLocation().clone();
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
             Block b = loc.getBlock();
             if (b.getType() != Material.REDSTONE_LAMP) return;
             if (b.getBlockData() instanceof Lightable l) {
+                if (l.isLit() == lit) return;
                 l.setLit(lit);
                 b.setBlockData(l, true);
             }
+            // Дублируем обновление компараторов на следующем тике — для гарантии
+            forceComparatorUpdate(b);
         });
 
         // Cascade to partners
         BlockPos pos = BlockPos.fromLocation(block.getLocation());
         activateAllPartners(pos, lit);
+    }
+
+    /**
+     * Обновить состояние всех компараторов и повторителей,
+     * которые находятся в радиусе 1 блок от указанного блока.
+     */
+    private static void forceComparatorUpdate(Block block) {
+        for (BlockFace face : List.of(BlockFace.UP, BlockFace.DOWN,
+                BlockFace.NORTH, BlockFace.SOUTH,
+                BlockFace.EAST, BlockFace.WEST)) {
+            Block adj = block.getRelative(face);
+            Material type = adj.getType();
+            if (type == Material.COMPARATOR || type == Material.REPEATER) {
+                // Повторно применяем блок-дату с физикой — компаратор пересчитает сигнал
+                adj.getState().update(true);
+            }
+        }
     }
 
     private void triggerObserver(Block block, boolean activate) {

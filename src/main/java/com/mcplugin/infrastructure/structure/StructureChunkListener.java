@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.structure;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 import com.mcplugin.energy.storage.battery.BatteryManager;
@@ -34,7 +35,7 @@ public class StructureChunkListener implements Listener {
     @EventHandler
     public void onWorldLoad(WorldLoadEvent e) {
         World world = e.getWorld();
-        Main.getInstance().getLogger().info("[StructureMarker] World loaded: " + world.getName() + " — scanning chunks...");
+        ConsoleLogger.info("[StructureMarker] World loaded: " + world.getName() + " — scanning chunks...");
         for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
             StructureMarker.scanChunk(chunk);
         }
@@ -58,7 +59,7 @@ public class StructureChunkListener implements Listener {
     // SCAN ALL — сканировать все загруженные чанки на всех мирах
     // ════════════════════════════════════════
     public static void scanAll() {
-        Main.getInstance().getLogger().info("[StructureMarker] Scanning all loaded chunks for structure markers...");
+        ConsoleLogger.info("[StructureMarker] Scanning all loaded chunks for structure markers...");
         int count = 0;
         for (org.bukkit.World world : Main.getInstance().getServer().getWorlds()) {
             for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
@@ -66,7 +67,7 @@ public class StructureChunkListener implements Listener {
                 count++;
             }
         }
-        Main.getInstance().getLogger().info("[StructureMarker] Scanned " + count + " chunks");
+        ConsoleLogger.info("[StructureMarker] Scanned " + count + " chunks");
     }
 
     // ════════════════════════════════════════
@@ -86,7 +87,7 @@ public class StructureChunkListener implements Listener {
                 synchronized (StructureChunkListener.class) {
                     chunkRebuildTaskId = -1;
                 }
-                Main.getInstance().getLogger().info("[StructureMarker] Chunk-triggered rebuild...");
+                ConsoleLogger.info("[StructureMarker] Chunk-triggered rebuild...");
                 rebuildAllManagers();
             },
             40L // 2 секунды debounce
@@ -104,19 +105,19 @@ public class StructureChunkListener implements Listener {
     public static void scheduleDelayedRebuild(Plugin plugin) {
         // 5 секунд
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            Main.getInstance().getLogger().info("[StructureMarker] Scheduled rebuild (5s)...");
+            ConsoleLogger.info("[StructureMarker] Scheduled rebuild (5s)...");
             rebuildAllManagers();
         }, 100L);
 
         // 30 секунд
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            Main.getInstance().getLogger().info("[StructureMarker] Scheduled rebuild (30s)...");
+            ConsoleLogger.info("[StructureMarker] Scheduled rebuild (30s)...");
             rebuildAllManagers();
         }, 600L);
 
         // 120 секунд
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            Main.getInstance().getLogger().info("[StructureMarker] Scheduled rebuild (120s)...");
+            ConsoleLogger.info("[StructureMarker] Scheduled rebuild (120s)...");
             rebuildAllManagers();
         }, 2400L);
     }
@@ -131,7 +132,7 @@ public class StructureChunkListener implements Listener {
         scanAll();
 
         int markerCount = StructureMarker.getAllEntries().size();
-        Main.getInstance().getLogger().info("[StructureMarker] Rebuilding all managers from cache (" + markerCount + " markers)...");
+        ConsoleLogger.info("[StructureMarker] Rebuilding all managers from cache (" + markerCount + " markers)...");
 
         // 2. Перестраиваем каждый менеджер из маркеров
         CableNetwork.rebuildFromMarkers();
@@ -141,6 +142,6 @@ public class StructureChunkListener implements Listener {
         EnergyWorkbenchManager.scanFromMarkers();
         MagnetManager.rebuildFromMarkers();
 
-        Main.getInstance().getLogger().info("[StructureMarker] Rebuild complete.");
+        ConsoleLogger.info("[StructureMarker] Rebuild complete.");
     }
 }

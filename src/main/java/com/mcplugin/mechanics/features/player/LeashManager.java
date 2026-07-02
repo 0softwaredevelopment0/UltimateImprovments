@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.features.player;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
@@ -114,7 +115,7 @@ public class LeashManager implements Listener {
         proxyUpdateTask.runTaskTimer(plugin, 1L, 1L);
         running = true;
 
-        plugin.getLogger().info("[Leash] Initialized. maxDist=" + maxLeashDistance
+        ConsoleLogger.info("[Leash] Initialized. maxDist=" + maxLeashDistance
                 + " interval=" + pullBackInterval + " hardStop=" + hardStop
                 + " preventBreak=" + preventBreak);
     }

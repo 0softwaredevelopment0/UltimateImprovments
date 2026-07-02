@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.commands.PluginReloadCommand;
 import com.mcplugin.infrastructure.commands.PowerCommand;
 import com.mcplugin.infrastructure.commands.VanishListCommand;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.generation.reactor.ReactorCommand;
 
 import org.bukkit.command.Command;
@@ -41,7 +42,7 @@ public class CommandRegistrar {
 
     private void register(Main plugin, String name, CommandExecutor executor) {
         if (plugin.getCommand(name) == null) {
-            plugin.getLogger().warning("Command /" + name + " not found!");
+            ConsoleLogger.warn("Command /" + name + " not found!");
             return;
         }
         plugin.getCommand(name).setExecutor(executor);
@@ -77,16 +78,16 @@ public class CommandRegistrar {
 
             // Register our command
             commandMap.register(name, plugin.getName().toLowerCase(), command);
-            plugin.getLogger().info("[COMMANDS] Registered /" + name + " (overridden via CommandMap)");
+            ConsoleLogger.info("[COMMANDS] Registered /" + name + " (overridden via CommandMap)");
         } catch (Exception e) {
-            plugin.getLogger().warning("[COMMANDS] Failed to override /" + name + ": " + e.getMessage());
+            ConsoleLogger.warn("[COMMANDS] Failed to override /" + name + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     private void registerTab(Main plugin, String name, TabCompleter completer) {
         if (plugin.getCommand(name) == null) {
-            plugin.getLogger().warning("Command /" + name + " not found!");
+            ConsoleLogger.warn("Command /" + name + " not found!");
             return;
         }
         plugin.getCommand(name).setTabCompleter(completer);

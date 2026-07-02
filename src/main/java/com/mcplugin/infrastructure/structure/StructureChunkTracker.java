@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.structure;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
@@ -57,9 +58,9 @@ public class StructureChunkTracker {
 
             int total = countTotal();
             if (total > 0) {
-                Main.getInstance().getLogger().info("[StructureChunkTracker] Loaded " + total + " chunk positions from SQLite.");
+                ConsoleLogger.info("[StructureChunkTracker] Loaded " + total + " chunk positions from SQLite.");
             } else {
-                Main.getInstance().getLogger().info("[StructureChunkTracker] No saved chunks in DB.");
+                ConsoleLogger.info("[StructureChunkTracker] No saved chunks in DB.");
             }
         } catch (Exception e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to load from DB", e);
@@ -130,7 +131,7 @@ public class StructureChunkTracker {
             String worldUid = entry.getKey();
             World world = Bukkit.getWorld(UUID.fromString(worldUid));
             if (world == null) {
-                Main.getInstance().getLogger().warning("[StructureChunkTracker] World not found: " + worldUid);
+                ConsoleLogger.warn("[StructureChunkTracker] World not found: " + worldUid);
                 continue;
             }
 
@@ -141,7 +142,7 @@ public class StructureChunkTracker {
             }
         }
         if (loaded > 0) {
-            Main.getInstance().getLogger().info("[StructureChunkTracker] Loaded " + loaded + " structure chunks.");
+            ConsoleLogger.info("[StructureChunkTracker] Loaded " + loaded + " structure chunks.");
         }
     }
 
@@ -257,11 +258,11 @@ public class StructureChunkTracker {
                 st.executeBatch();
             }
 
-            Main.getInstance().getLogger().info("[StructureChunkTracker] Migrated " + imported + " chunk positions from JSON to SQLite.");
+            ConsoleLogger.info("[StructureChunkTracker] Migrated " + imported + " chunk positions from JSON to SQLite.");
 
             // Удаляем JSON после успешной миграции
             jsonFile.delete();
-            Main.getInstance().getLogger().info("[StructureChunkTracker] Deleted old structure-chunks.json");
+            ConsoleLogger.info("[StructureChunkTracker] Deleted old structure-chunks.json");
         } catch (Exception e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to migrate from JSON", e);
         }

@@ -5,6 +5,7 @@ import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import com.mcplugin.energy.transfer.cable.NodeType;
 
@@ -55,7 +56,7 @@ public class ElectricFurnaceManager implements Listener {
         cacheCookingRecipes();
         loadConfig();
         startPeriodicItemScan();
-        Main.getInstance().getLogger().info("[ElectricFurnace] Manager initialized.");
+        ConsoleLogger.info("[ElectricFurnace] Manager initialized.");
     }
 
     public static ElectricFurnaceManager getInstance() {

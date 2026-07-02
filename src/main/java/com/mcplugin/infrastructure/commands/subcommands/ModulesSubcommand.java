@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.commands.subcommands;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.modules.ModuleManager;
 import com.mcplugin.infrastructure.modules.PluginModule;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.command.CommandSender;
 
 import java.util.*;
@@ -162,7 +163,7 @@ public final class ModulesSubcommand {
         if (ok && found.isEnabled()) {
             sender.sendMessage("§a✔ §fМодуль §e" + found.getName() + "§f включён!");
             sender.sendMessage("§8  Путь: §7" + found.getModulePath());
-            Main.getInstance().getLogger().info("[CMD] " + sender.getName() + " enabled: " + found.getModulePath());
+            ConsoleLogger.info("[CMD] " + sender.getName() + " enabled: " + found.getModulePath());
         } else {
             sender.sendMessage("§4❌ §cНе удалось включить модуль §e" + found.getName() + "§c!");
             if (found.getDisableReason() != null)
@@ -202,7 +203,7 @@ public final class ModulesSubcommand {
         mm.disableModule(found.getName());
         sender.sendMessage("§c❌ §fМодуль §e" + found.getName() + "§f отключён.");
         sender.sendMessage("§8  Путь: §7" + found.getModulePath());
-        Main.getInstance().getLogger().info("[CMD] " + sender.getName() + " disabled: " + found.getModulePath());
+        ConsoleLogger.info("[CMD] " + sender.getName() + " disabled: " + found.getModulePath());
         return true;
     }
 

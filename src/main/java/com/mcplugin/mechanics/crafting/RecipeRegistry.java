@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.crafting;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -46,6 +47,6 @@ public class RecipeRegistry implements Listener {
     public static void init() {
         Main plugin = Main.getInstance();
         plugin.getServer().getPluginManager().registerEvents(new RecipeRegistry(), plugin);
-        plugin.getLogger().info("[RECIPES] RecipeRegistry initialized (" + CUSTOM_RECIPES.size() + " recipes).");
+        ConsoleLogger.info("[RECIPES] RecipeRegistry initialized (" + CUSTOM_RECIPES.size() + " recipes).");
     }
 }

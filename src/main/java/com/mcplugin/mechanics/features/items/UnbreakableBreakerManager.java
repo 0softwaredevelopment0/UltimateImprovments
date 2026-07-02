@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.features.items;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
@@ -123,7 +124,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
                 try {
                     material = Material.valueOf(key.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    Main.getInstance().getLogger().warning("[UnbreakableBreaker] Unknown material: " + key);
+                    ConsoleLogger.warn("[UnbreakableBreaker] Unknown material: " + key);
                     continue;
                 }
 
@@ -156,7 +157,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
 
         instance.blockConfigs = newConfigs;
 
-        Main.getInstance().getLogger().info("[UnbreakableBreaker] Loaded " + newConfigs.size() + " breakable block(s)");
+        ConsoleLogger.info("[UnbreakableBreaker] Loaded " + newConfigs.size() + " breakable block(s)");
     }
 
     // ========== ДЕТЕКТ УДЕРЖАНИЯ ЛКМ ЧЕРЕЗ PAPI ==========

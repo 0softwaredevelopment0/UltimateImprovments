@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.database;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,13 +32,17 @@ public class PlayerSettingsDB {
     public record PlayerSettings(
             UUID uuid,
             boolean bossbarEnabled,
-            boolean scoreboardEnabled
+            boolean scoreboardEnabled,
+            boolean pingEnabled
     ) {
         public PlayerSettings withBossbar(boolean val) {
-            return new PlayerSettings(uuid, val, scoreboardEnabled);
+            return new PlayerSettings(uuid, val, scoreboardEnabled, pingEnabled);
         }
         public PlayerSettings withScoreboard(boolean val) {
-            return new PlayerSettings(uuid, bossbarEnabled, val);
+            return new PlayerSettings(uuid, bossbarEnabled, val, pingEnabled);
+        }
+        public PlayerSettings withPing(boolean val) {
+            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, val);
         }
     }
 
@@ -56,30 +61,32 @@ public class PlayerSettingsDB {
                      "CREATE TABLE IF NOT EXISTS player_settings (" +
                      "uuid TEXT PRIMARY KEY," +
                      "bossbar_enabled INTEGER DEFAULT 1," +
-                     "scoreboard_enabled INTEGER DEFAULT 1" +
+                     "scoreboard_enabled INTEGER DEFAULT 1," +
+                     "ping_enabled INTEGER DEFAULT 1" +
                      ")")) {
             ps.executeUpdate();
         } catch (SQLException e) {
-            Main.getInstance().getLogger().severe("[PlayerSettings] Create table failed: " + e.getMessage());
+            ConsoleLogger.error("[PlayerSettings] Create table failed: " + e.getMessage());
         }
     }
 
     private static void loadAll() {
         cache.clear();
         try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT uuid, bossbar_enabled, scoreboard_enabled FROM player_settings");
+             PreparedStatement ps = con.prepareStatement("SELECT uuid, bossbar_enabled, scoreboard_enabled, ping_enabled FROM player_settings");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 try {
                     UUID uuid = UUID.fromString(rs.getString("uuid"));
                     boolean bb = rs.getInt("bossbar_enabled") == 1;
                     boolean sb = rs.getInt("scoreboard_enabled") == 1;
-                    cache.put(uuid, new PlayerSettings(uuid, bb, sb));
+                    boolean ping = rs.getInt("ping_enabled") == 1;
+                    cache.put(uuid, new PlayerSettings(uuid, bb, sb, ping));
                 } catch (IllegalArgumentException ignored) {}
             }
-            Main.getInstance().getLogger().info("[PlayerSettings] Loaded " + cache.size() + " player settings from DB");
+            ConsoleLogger.info("[PlayerSettings] Loaded " + cache.size() + " player settings from DB");
         } catch (SQLException e) {
-            Main.getInstance().getLogger().severe("[PlayerSettings] Load failed: " + e.getMessage());
+            ConsoleLogger.error("[PlayerSettings] Load failed: " + e.getMessage());
         }
     }
 
@@ -89,7 +96,7 @@ public class PlayerSettingsDB {
 
     public static PlayerSettings get(UUID uuid) {
         return cache.computeIfAbsent(uuid, u ->
-                new PlayerSettings(u, true, true));
+                new PlayerSettings(u, true, true, true));
     }
 
     public static boolean isBossbarEnabled(UUID uuid) {
@@ -98,6 +105,10 @@ public class PlayerSettingsDB {
 
     public static boolean isScoreboardEnabled(UUID uuid) {
         return get(uuid).scoreboardEnabled();
+    }
+
+    public static boolean isPingEnabled(UUID uuid) {
+        return get(uuid).pingEnabled();
     }
 
     /**
@@ -123,6 +134,17 @@ public class PlayerSettingsDB {
     }
 
     /**
+     * Toggle ping sound. Returns the new state.
+     */
+    public static boolean togglePing(UUID uuid) {
+        PlayerSettings cur = get(uuid);
+        boolean newVal = !cur.pingEnabled();
+        cache.put(uuid, cur.withPing(newVal));
+        saveSetting(uuid, "ping_enabled", newVal);
+        return newVal;
+    }
+
+    /**
      * Explicitly set bossbar state.
      */
     public static void setBossbarEnabled(UUID uuid, boolean enabled) {
@@ -140,6 +162,15 @@ public class PlayerSettingsDB {
         saveSetting(uuid, "scoreboard_enabled", enabled);
     }
 
+    /**
+     * Explicitly set ping sound state.
+     */
+    public static void setPingEnabled(UUID uuid, boolean enabled) {
+        PlayerSettings cur = get(uuid);
+        cache.put(uuid, cur.withPing(enabled));
+        saveSetting(uuid, "ping_enabled", enabled);
+    }
+
     // =========================
     // DB PERSISTENCE
     // =========================
@@ -154,7 +185,7 @@ public class PlayerSettingsDB {
             ps.setInt(3, value ? 1 : 0);
             ps.executeUpdate();
         } catch (SQLException e) {
-            Main.getInstance().getLogger().severe("[PlayerSettings] Save failed: " + e.getMessage());
+            ConsoleLogger.error("[PlayerSettings] Save failed: " + e.getMessage());
         }
     }
 
@@ -168,7 +199,7 @@ public class PlayerSettingsDB {
             ps.setString(1, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            Main.getInstance().getLogger().severe("[PlayerSettings] Delete failed: " + e.getMessage());
+            ConsoleLogger.error("[PlayerSettings] Delete failed: " + e.getMessage());
         }
     }
 }

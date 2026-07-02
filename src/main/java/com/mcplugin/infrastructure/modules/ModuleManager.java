@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.util.*;
 
@@ -33,7 +34,7 @@ public class ModuleManager {
 
     public void register(PluginModule module) {
         if (moduleMap.containsKey(module.getName())) {
-            plugin.getLogger().warning("[ModuleManager] Module '" + module.getName() + "' already registered!");
+            ConsoleLogger.warn("[ModuleManager] Module '" + module.getName() + "' already registered!");
             return;
         }
         modules.add(module);
@@ -45,11 +46,11 @@ public class ModuleManager {
     // =========================
 
     public void initAll() {
-        plugin.getLogger().info("");
-        plugin.getLogger().info("===========================================");
-        plugin.getLogger().info("  Initializing modules...");
-        plugin.getLogger().info("===========================================");
-        plugin.getLogger().info("");
+        ConsoleLogger.info("");
+        ConsoleLogger.info("===========================================");
+        ConsoleLogger.info("  Initializing modules...");
+        ConsoleLogger.info("===========================================");
+        ConsoleLogger.info("");
 
         int succeeded = 0;
         int failed = 0;
@@ -61,23 +62,23 @@ public class ModuleManager {
             } else {
                 failed++;
                 if (module.isEssential()) {
-                    plugin.getLogger().severe("");
-                    plugin.getLogger().severe("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    plugin.getLogger().severe("! ESSENTIAL MODULE FAILED: " + module.getName());
-                    plugin.getLogger().severe("! Reason: " + module.getDisableReason());
-                    plugin.getLogger().severe("! Plugin may not function correctly!");
-                    plugin.getLogger().severe("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    plugin.getLogger().severe("");
+                    ConsoleLogger.error("");
+                    ConsoleLogger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    ConsoleLogger.error("! ESSENTIAL MODULE FAILED: " + module.getName());
+                    ConsoleLogger.error("! Reason: " + module.getDisableReason());
+                    ConsoleLogger.error("! Plugin may not function correctly!");
+                    ConsoleLogger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    ConsoleLogger.error("");
                 }
             }
         }
 
-        plugin.getLogger().info("");
-        plugin.getLogger().info("===========================================");
-        plugin.getLogger().info("  Modules: " + succeeded + " OK, " + failed + " failed"
+        ConsoleLogger.info("");
+        ConsoleLogger.info("===========================================");
+        ConsoleLogger.info("  Modules: " + succeeded + " OK, " + failed + " failed"
                 + (failed > 0 ? " \u26A0" : ""));
-        plugin.getLogger().info("===========================================");
-        plugin.getLogger().info("");
+        ConsoleLogger.info("===========================================");
+        ConsoleLogger.info("");
     }
 
     // =========================
@@ -85,7 +86,7 @@ public class ModuleManager {
     // =========================
 
     public void shutdownAll() {
-        plugin.getLogger().info("[ModuleManager] Shutting down all modules...");
+        ConsoleLogger.info("[ModuleManager] Shutting down all modules...");
         for (int i = modules.size() - 1; i >= 0; i--) {
             modules.get(i).disable(plugin);
         }
@@ -96,7 +97,7 @@ public class ModuleManager {
     // =========================
 
     public void reloadAllConfigs() {
-        plugin.getLogger().info("[ModuleManager] Reloading configs...");
+        ConsoleLogger.info("[ModuleManager] Reloading configs...");
         for (PluginModule module : modules) {
             module.reloadConfig(plugin);
         }

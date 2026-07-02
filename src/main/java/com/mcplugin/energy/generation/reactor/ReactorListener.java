@@ -109,8 +109,6 @@ public class ReactorListener implements Listener {
             return;
         }
 
-        // Подсказка
-        player.sendMessage("§7Нажмите §fSHIFT+ПКМ§7 по рамке, чтобы собрать структуру");
     }
 
     // =========================

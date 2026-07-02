@@ -3,6 +3,7 @@ package com.mcplugin.mechanics.security.auth;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -50,12 +51,12 @@ public class AuthManager {
         } catch (Exception ignored) {}
 
         if (!enabled) {
-            Main.getInstance().getLogger().info("[Auth] System is disabled in config.yml (auth.enabled: false).");
+            ConsoleLogger.info("[Auth] System is disabled in config.yml (auth.enabled: false).");
             return;
         }
 
         AuthDatabase.initTable();
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Auth] Initialized. Session: " + AuthConfig.getSessionDurationMinutes() + "min"
                 + ", IP check: " + AuthConfig.isIpCheckEnabled()
                 + ", Dup name check: " + AuthConfig.isDupNameCheckEnabled()

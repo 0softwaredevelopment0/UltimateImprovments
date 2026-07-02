@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -100,7 +101,7 @@ public class UpdateChecker {
     // =========================
     public static void checkAsync() {
         Main plugin = Main.getInstance();
-        plugin.getLogger().info("[Updater] Checking for updates (Jar/ folder)...");
+        ConsoleLogger.info("[Updater] Checking for updates (Jar/ folder)...");
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
@@ -108,7 +109,7 @@ public class UpdateChecker {
             } catch (Exception e) {
                 status = UpdateStatus.CHECK_FAILED;
                 errorMessage = e.getMessage();
-                plugin.getLogger().warning("[Updater] Check failed: " + e.getMessage());
+                ConsoleLogger.warn("[Updater] Check failed: " + e.getMessage());
                 e.printStackTrace();
             }
         });
@@ -131,8 +132,8 @@ public class UpdateChecker {
         // ════════════════════════════════════════
         String currentVersion = plugin.getDescription().getVersion();
         String storedVersion = getStoredTag();  // хранит версию последнего установленного jar
-        plugin.getLogger().info("[Updater] Current version: " + currentVersion);
-        plugin.getLogger().info("[Updater] Last installed jar: "
+        ConsoleLogger.info("[Updater] Current version: " + currentVersion);
+        ConsoleLogger.info("[Updater] Last installed jar: "
                 + (storedVersion.isEmpty() ? "<none>" : storedVersion));
 
         // ════════════════════════════════════════
@@ -140,13 +141,13 @@ public class UpdateChecker {
         // ════════════════════════════════════════
         JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
         if (latestJar == null) {
-            plugin.getLogger().info("[Updater] No jar files found in Jar/ folder — up to date.");
+            ConsoleLogger.info("[Updater] No jar files found in Jar/ folder — up to date.");
             status = UpdateStatus.UP_TO_DATE;
             return;
         }
 
         String jarVersion = latestJar.version;
-        plugin.getLogger().info("[Updater] Latest jar in Jar/: " + latestJar.name
+        ConsoleLogger.info("[Updater] Latest jar in Jar/: " + latestJar.name
                 + " (version: " + jarVersion + ")");
 
         // ════════════════════════════════════════
@@ -154,7 +155,7 @@ public class UpdateChecker {
         // ════════════════════════════════════════
         if (!isNewer(jarVersion, currentVersion)) {
             // Текущая >= jar-версии → мы не старше
-            plugin.getLogger().info("[Updater] Up to date (current: "
+            ConsoleLogger.info("[Updater] Up to date (current: "
                     + currentVersion + " >= jar: " + jarVersion + ")");
             latestJarVersion = jarVersion;
             status = UpdateStatus.UP_TO_DATE;
@@ -166,7 +167,7 @@ public class UpdateChecker {
         // ════════════════════════════════════════
         if (jarVersion.equals(storedVersion)) {
             // Уже скачан, ждёт рестарта
-            plugin.getLogger().info("[Updater] Update " + jarVersion
+            ConsoleLogger.info("[Updater] Update " + jarVersion
                     + " already downloaded — restart required.");
             latestJarVersion = jarVersion;
             status = UpdateStatus.UPDATE_DOWNLOADED;
@@ -179,16 +180,16 @@ public class UpdateChecker {
         latestJarVersion = jarVersion;
         status = UpdateStatus.UPDATE_AVAILABLE;
 
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("===========================================");
-        plugin.getLogger().warning("  [UPDATE AVAILABLE] " + latestJar.name);
-        plugin.getLogger().warning("  Jar: " + jarVersion);
-        plugin.getLogger().warning("  Current: v" + currentVersion);
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("  To install, type: /mp updatejar");
-        plugin.getLogger().warning("  To ignore this update, do nothing.");
-        plugin.getLogger().warning("===========================================");
-        plugin.getLogger().warning("");
+        ConsoleLogger.warn("");
+        ConsoleLogger.warn("===========================================");
+        ConsoleLogger.warn("  [UPDATE AVAILABLE] " + latestJar.name);
+        ConsoleLogger.warn("  Jar: " + jarVersion);
+        ConsoleLogger.warn("  Current: v" + currentVersion);
+        ConsoleLogger.warn("");
+        ConsoleLogger.warn("  To install, type: /mp updatejar");
+        ConsoleLogger.warn("  To ignore this update, do nothing.");
+        ConsoleLogger.warn("===========================================");
+        ConsoleLogger.warn("");
     }
 
     // =========================
@@ -230,14 +231,14 @@ public class UpdateChecker {
                 HttpResponse.BodyHandlers.ofString());
 
         if (response.statusCode() == 403 || response.statusCode() == 429) {
-            plugin.getLogger().warning("[Updater] GitHub API rate limit exceeded (HTTP "
+            ConsoleLogger.warn("[Updater] GitHub API rate limit exceeded (HTTP "
                     + response.statusCode() + "). Check will be skipped.");
             status = UpdateStatus.CHECK_FAILED;
             return null;
         }
 
         if (response.statusCode() != 200) {
-            plugin.getLogger().warning("[Updater] GitHub Contents API returned HTTP "
+            ConsoleLogger.warn("[Updater] GitHub Contents API returned HTTP "
                     + response.statusCode());
             status = UpdateStatus.CHECK_FAILED;
             return null;
@@ -249,7 +250,7 @@ public class UpdateChecker {
             items = JsonParser.parseString(response.body()).getAsJsonArray();
         } catch (Exception e) {
             // Если ответ не массив — значит это объект с ошибкой или это не директория
-            plugin.getLogger().warning("[Updater] Unexpected API response format");
+            ConsoleLogger.warn("[Updater] Unexpected API response format");
             e.printStackTrace();
             return null;
         }
@@ -292,7 +293,7 @@ public class UpdateChecker {
             cachedJarName = best.name;
             cachedJarVersion = best.version;
 
-            plugin.getLogger().info("[Updater] Found latest jar: " + best.name
+            ConsoleLogger.info("[Updater] Found latest jar: " + best.name
                     + " (v" + best.version + ")");
         }
 
@@ -404,7 +405,7 @@ public class UpdateChecker {
                 }
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning(
+            ConsoleLogger.warn(
                     "[Updater] Failed to save version to DB: " + e.getMessage());
             e.printStackTrace();
         }
@@ -432,7 +433,7 @@ public class UpdateChecker {
     public static void checkOnly(CommandSender sender) {
         Main plugin = Main.getInstance();
         String senderName = sender instanceof Player ? ((Player) sender).getName() : "Console";
-        plugin.getLogger().info("[Updater] Manual update check requested by " + senderName);
+        ConsoleLogger.info("[Updater] Manual update check requested by " + senderName);
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
@@ -546,7 +547,7 @@ public class UpdateChecker {
                 });
 
             } catch (java.net.UnknownHostException e) {
-                plugin.getLogger().warning("[Updater] Manual check failed: DNS resolution error");
+                ConsoleLogger.warn("[Updater] Manual check failed: DNS resolution error");
                 e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
@@ -560,7 +561,7 @@ public class UpdateChecker {
                             "<gray>Check server internet connection.</gray>")));
                 });
             } catch (java.net.http.HttpTimeoutException e) {
-                plugin.getLogger().warning("[Updater] Manual check failed: Connection timeout");
+                ConsoleLogger.warn("[Updater] Manual check failed: Connection timeout");
                 e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
@@ -575,7 +576,7 @@ public class UpdateChecker {
                             "<gray>Check internet connection or try again later.</gray>")));
                 });
             } catch (Exception e) {
-                plugin.getLogger().warning("[Updater] Manual check failed: " + e.getMessage());
+                ConsoleLogger.warn("[Updater] Manual check failed: " + e.getMessage());
                 e.printStackTrace();
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
@@ -605,7 +606,7 @@ public class UpdateChecker {
     public static void downloadAndReplace(CommandSender sender) {
         Main plugin = Main.getInstance();
         String senderName = sender instanceof Player ? ((Player) sender).getName() : "Console";
-        plugin.getLogger().info("[Updater] /mp updatejar requested by " + senderName);
+        ConsoleLogger.info("[Updater] /mp updatejar requested by " + senderName);
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
@@ -632,7 +633,7 @@ public class UpdateChecker {
                     downloadUrl = cachedDownloadUrl;
                     jarName = cachedJarName;
                     jarVersion = cachedJarVersion;
-                    plugin.getLogger().info("[Updater] Using cached jar info: " + jarName);
+                    ConsoleLogger.info("[Updater] Using cached jar info: " + jarName);
                 } else {
                     // Фетчим свежие данные с GitHub
                     JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
@@ -757,7 +758,7 @@ public class UpdateChecker {
                 }
 
             } catch (Exception e) {
-                plugin.getLogger().severe("[Updater] /mp updatejar failed!");
+                ConsoleLogger.error("[Updater] /mp updatejar failed!");
                 e.printStackTrace();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
@@ -780,7 +781,7 @@ public class UpdateChecker {
     /** @return true если замена прошла успешно (включая fallback) */
     private static boolean replaceJar(Main plugin, File currentJar, File updateFile, String jarName) {
         if (currentJar == null || !currentJar.exists()) {
-            plugin.getLogger().warning("[Updater] Cannot find current JAR file");
+            ConsoleLogger.warn("[Updater] Cannot find current JAR file");
             status = UpdateStatus.UPDATE_FAILED;
             return false;
         }
@@ -794,10 +795,10 @@ public class UpdateChecker {
         boolean backupDone = false;
         try {
             Files.move(targetPath, backupPath, StandardCopyOption.REPLACE_EXISTING);
-            plugin.getLogger().info("[Updater] Backed up current JAR");
+            ConsoleLogger.info("[Updater] Backed up current JAR");
             backupDone = true;
         } catch (Exception e) {
-            plugin.getLogger().warning("[Updater] Backup failed (non-critical): " + e.getMessage());
+            ConsoleLogger.warn("[Updater] Backup failed (non-critical): " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -805,17 +806,17 @@ public class UpdateChecker {
         try {
             Files.move(updatePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
-            plugin.getLogger().severe("[Updater] Failed to replace JAR: " + e.getMessage());
+            ConsoleLogger.error("[Updater] Failed to replace JAR: " + e.getMessage());
             e.printStackTrace();
 
             boolean backupRestored = false;
             if (backupDone) {
                 try {
                     Files.move(backupPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                    plugin.getLogger().info("[Updater] Backup restored");
+                    ConsoleLogger.info("[Updater] Backup restored");
                     backupRestored = true;
                 } catch (Exception restoreErr) {
-                    plugin.getLogger().severe("[Updater] Could not restore backup! "
+                    ConsoleLogger.error("[Updater] Could not restore backup! "
                             + "Manual recovery needed. Backup at: " + backupPath);
                     restoreErr.printStackTrace();
                 }
@@ -840,14 +841,14 @@ public class UpdateChecker {
         try { Files.deleteIfExists(backupPath); } catch (Exception ignored) {}
 
         status = UpdateStatus.UPDATE_DOWNLOADED;
-        plugin.getLogger().info("");
-        plugin.getLogger().info("===========================================");
-        plugin.getLogger().info("  [UPDATE INSTALLED]");
-        plugin.getLogger().info("  JAR: " + jarName);
-        plugin.getLogger().info("");
-        plugin.getLogger().info("  Restart server to apply the update.");
-        plugin.getLogger().info("===========================================");
-        plugin.getLogger().info("");
+        ConsoleLogger.info("");
+        ConsoleLogger.info("===========================================");
+        ConsoleLogger.info("  [UPDATE INSTALLED]");
+        ConsoleLogger.info("  JAR: " + jarName);
+        ConsoleLogger.info("");
+        ConsoleLogger.info("  Restart server to apply the update.");
+        ConsoleLogger.info("===========================================");
+        ConsoleLogger.info("");
         return true;
     }
 
@@ -865,12 +866,12 @@ public class UpdateChecker {
             try {
                 Files.copy(updatePath, targetPath);
                 try { Files.deleteIfExists(updatePath); } catch (Exception ignored) {}
-                plugin.getLogger().info("[Updater] JAR copied to plugins folder (copy fallback)");
+                ConsoleLogger.info("[Updater] JAR copied to plugins folder (copy fallback)");
                 status = UpdateStatus.UPDATE_DOWNLOADED;
                 logFallbackSuccess(plugin, jarName);
                 return true;
             } catch (Exception copyErr) {
-                plugin.getLogger().warning("[Updater] Copy fallback failed: " + copyErr.getMessage());
+                ConsoleLogger.warn("[Updater] Copy fallback failed: " + copyErr.getMessage());
                 copyErr.printStackTrace();
             }
         }
@@ -879,26 +880,26 @@ public class UpdateChecker {
         File fallbackFile = new File(pluginDir, fallbackName);
         try {
             Files.move(updatePath, fallbackFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            plugin.getLogger().warning("");
-            plugin.getLogger().warning("===========================================");
-            plugin.getLogger().warning("  [UPDATE DOWNLOADED — MANUAL STEP REQUIRED]");
-            plugin.getLogger().warning("  JAR: " + jarName);
-            plugin.getLogger().warning("");
-            plugin.getLogger().warning("  New JAR placed at: plugins/" + fallbackName);
-            plugin.getLogger().warning("");
-            plugin.getLogger().warning("  To apply: stop server, then:");
-            plugin.getLogger().warning("    1) Delete old JAR: " + currentJar.getName());
-            plugin.getLogger().warning("    2) Rename " + fallbackName + " -> " + currentJar.getName());
-            plugin.getLogger().warning("    3) Delete " + currentJar.getName() + ".bak");
-            plugin.getLogger().warning("    4) Start server");
-            plugin.getLogger().warning("===========================================");
-            plugin.getLogger().warning("");
+            ConsoleLogger.warn("");
+            ConsoleLogger.warn("===========================================");
+            ConsoleLogger.warn("  [UPDATE DOWNLOADED — MANUAL STEP REQUIRED]");
+            ConsoleLogger.warn("  JAR: " + jarName);
+            ConsoleLogger.warn("");
+            ConsoleLogger.warn("  New JAR placed at: plugins/" + fallbackName);
+            ConsoleLogger.warn("");
+            ConsoleLogger.warn("  To apply: stop server, then:");
+            ConsoleLogger.warn("    1) Delete old JAR: " + currentJar.getName());
+            ConsoleLogger.warn("    2) Rename " + fallbackName + " -> " + currentJar.getName());
+            ConsoleLogger.warn("    3) Delete " + currentJar.getName() + ".bak");
+            ConsoleLogger.warn("    4) Start server");
+            ConsoleLogger.warn("===========================================");
+            ConsoleLogger.warn("");
             status = UpdateStatus.UPDATE_DOWNLOADED;
             return true;
         } catch (Exception renameErr) {
-            plugin.getLogger().severe("[Updater] All fallback strategies failed: " + renameErr.getMessage());
-            plugin.getLogger().severe("[Updater] Update file left at: " + updateFile.getAbsolutePath());
-            plugin.getLogger().severe("[Updater] Manual recovery: stop server, move this file to plugins/"
+            ConsoleLogger.error("[Updater] All fallback strategies failed: " + renameErr.getMessage());
+            ConsoleLogger.error("[Updater] Update file left at: " + updateFile.getAbsolutePath());
+            ConsoleLogger.error("[Updater] Manual recovery: stop server, move this file to plugins/"
                     + currentJar.getName());
             renameErr.printStackTrace();
         }
@@ -907,14 +908,14 @@ public class UpdateChecker {
     }
 
     private static void logFallbackSuccess(Main plugin, String jarName) {
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("===========================================");
-        plugin.getLogger().warning("  [UPDATE READY — RESTART REQUIRED]");
-        plugin.getLogger().warning("  JAR: " + jarName);
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("  New JAR placed in plugins folder.");
-        plugin.getLogger().warning("  Restart server to apply the update.");
-        plugin.getLogger().warning("===========================================");
-        plugin.getLogger().warning("");
+        ConsoleLogger.warn("");
+        ConsoleLogger.warn("===========================================");
+        ConsoleLogger.warn("  [UPDATE READY — RESTART REQUIRED]");
+        ConsoleLogger.warn("  JAR: " + jarName);
+        ConsoleLogger.warn("");
+        ConsoleLogger.warn("  New JAR placed in plugins folder.");
+        ConsoleLogger.warn("  Restart server to apply the update.");
+        ConsoleLogger.warn("===========================================");
+        ConsoleLogger.warn("");
     }
 }

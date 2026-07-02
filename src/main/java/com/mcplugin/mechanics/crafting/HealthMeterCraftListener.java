@@ -4,6 +4,7 @@ import com.mcplugin.energy.machines.assembler.AssemblerChecker;
 import com.mcplugin.infrastructure.core.Keys;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -64,7 +65,7 @@ public class HealthMeterCraftListener implements Listener {
 
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
-        plugin.getLogger().info("[HEALTHMETER] Recipe registered with Keys system");
+        ConsoleLogger.info("[HEALTHMETER] Recipe registered with Keys system");
     }
 
     @EventHandler

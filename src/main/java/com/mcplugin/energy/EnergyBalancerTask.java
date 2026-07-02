@@ -8,6 +8,7 @@ import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
 
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -113,7 +114,7 @@ public class EnergyBalancerTask extends BukkitRunnable {
             }
 
             if (collected > 0 && log) {
-                Main.getInstance().getLogger().info(
+                ConsoleLogger.info(
                         "[Balancer] " + collected + " energy left undistributed");
             }
         }

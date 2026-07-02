@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.listeners;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -108,7 +109,7 @@ public class ChatFilterManager implements Listener {
             }
         }
 
-        Main.getInstance().getLogger().info("[CHAT-FILTER] Loaded " + compiledPatterns.size() + " pattern(s) ("
+        ConsoleLogger.info("[CHAT-FILTER] Loaded " + compiledPatterns.size() + " pattern(s) ("
                 + rawWords.size() + " word(s) + "
                 + (rawRegexes != null ? rawRegexes.size() : 0) + " regex(es)).");
     }
@@ -158,7 +159,7 @@ public class ChatFilterManager implements Listener {
         try {
             return Pattern.compile(regex.toString());
         } catch (PatternSyntaxException e) {
-            Main.getInstance().getLogger().warning("[CHAT-FILTER] Invalid pattern: " + raw + " (" + e.getMessage() + ")");
+            ConsoleLogger.warn("[CHAT-FILTER] Invalid pattern: " + raw + " (" + e.getMessage() + ")");
             return null;
         }
     }
@@ -185,7 +186,7 @@ public class ChatFilterManager implements Listener {
         try {
             return Pattern.compile(regex);
         } catch (PatternSyntaxException e) {
-            Main.getInstance().getLogger().warning("[CHAT-FILTER] Invalid regex: " + raw + " (" + e.getMessage() + ")");
+            ConsoleLogger.warn("[CHAT-FILTER] Invalid regex: " + raw + " (" + e.getMessage() + ")");
             return null;
         }
     }
@@ -306,7 +307,7 @@ public class ChatFilterManager implements Listener {
                 String highlighted = highlightBadWords(message);
 
                 // Console log (with highlighted message)
-                Main.getInstance().getLogger().warning("[CHAT-FILTER] " + player.getName()
+                ConsoleLogger.warn("[CHAT-FILTER] " + player.getName()
                         + " violated rule '" + plainSource + "': " + highlighted);
 
                 // Player message

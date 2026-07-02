@@ -3,6 +3,7 @@ package com.mcplugin.energy.generation.reactor;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -58,9 +59,9 @@ public class ReactorPersistence {
             ps.executeUpdate();
             ps.close();
 
-            Main.getInstance().getLogger().info("[Reactor] Saved reactor " + id);
+            ConsoleLogger.info("[Reactor] Saved reactor " + id);
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Reactor] Save error: " + e.getMessage());
+            ConsoleLogger.error("[Reactor] Save error: " + e.getMessage());
         }
     }
 
@@ -85,7 +86,7 @@ public class ReactorPersistence {
                 ));
 
                 if (!ReactorStructure.isValid(loc, false)) {
-                    Main.getInstance().getLogger().warning("[Reactor] Stored reactor at " + loc + " — structure invalid, skipping");
+                    ConsoleLogger.warn("[Reactor] Stored reactor at " + loc + " — structure invalid, skipping");
                     continue;
                 }
 
@@ -102,7 +103,7 @@ public class ReactorPersistence {
                 try { state.setReactorWear(rs.getInt("reactor_wear")); } catch (Exception ignored) {}
                 try { state.setEnergyGenerated(rs.getLong("energy_generated")); } catch (Exception ignored) {}
 
-                Main.getInstance().getLogger().info("[Reactor] Loaded reactor " + state.getReactorId());
+                ConsoleLogger.info("[Reactor] Loaded reactor " + state.getReactorId());
                 rs.close();
                 ps.close();
                 return true;
@@ -111,7 +112,7 @@ public class ReactorPersistence {
             rs.close();
             ps.close();
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Reactor] Load error: " + e.getMessage());
+            ConsoleLogger.error("[Reactor] Load error: " + e.getMessage());
         }
         return false;
     }
@@ -128,7 +129,7 @@ public class ReactorPersistence {
             ps.executeUpdate();
             ps.close();
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Reactor] Delete error: " + e.getMessage());
+            ConsoleLogger.error("[Reactor] Delete error: " + e.getMessage());
         }
     }
 

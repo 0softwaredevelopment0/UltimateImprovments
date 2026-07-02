@@ -3,6 +3,7 @@ package com.mcplugin.mechanics.features.creativeitem;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.block.ShulkerBox;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -57,7 +58,7 @@ public class CreativeItemValidator implements Listener {
         instance = new CreativeItemValidator();
         reloadConfig();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
-        plugin.getLogger().info("[CreativeItem] Initialized. enabled=" + enabled
+        ConsoleLogger.info("[CreativeItem] Initialized. enabled=" + enabled
                 + " maxBytes=" + maxItemBytes + " maxTotalNbt=" + maxTotalNbtSize
                 + " maxDepth=" + maxRecursionDepth);
     }
@@ -65,7 +66,7 @@ public class CreativeItemValidator implements Listener {
     public static void reloadConfig() {
         var cfg = Main.getInstance().getConfig().getConfigurationSection("features.creativeitem");
         if (cfg == null) {
-            Main.getInstance().getLogger().warning("[CreativeItem] No config section 'features.creativeitem' found, using defaults");
+            ConsoleLogger.warn("[CreativeItem] No config section 'features.creativeitem' found, using defaults");
             return;
         }
 
@@ -82,7 +83,7 @@ public class CreativeItemValidator implements Listener {
         denyMessage = MessagesManager.getString("features.creativeitem.message",
                 "<red>Этот предмет содержит слишком много данных!</red>");
 
-        Main.getInstance().getLogger().info("[CreativeItem] Config reloaded: enabled="
+        ConsoleLogger.info("[CreativeItem] Config reloaded: enabled="
                 + enabled + " maxBytes=" + maxItemBytes
                 + " maxTotalNbt=" + maxTotalNbtSize + " maxDepth=" + maxRecursionDepth);
     }
@@ -254,7 +255,7 @@ public class CreativeItemValidator implements Listener {
                            ItemStack item, String reason) {
         e.setCancelled(true);
 
-        Main.getInstance().getLogger().warning(
+        ConsoleLogger.warn(
                 "[CreativeItem] BLOCKED " + item.getType()
                         + " for " + player.getName()
                         + " reason=" + reason);

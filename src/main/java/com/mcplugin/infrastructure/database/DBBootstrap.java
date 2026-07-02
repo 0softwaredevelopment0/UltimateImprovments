@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.database;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 public class DBBootstrap {
 
@@ -21,7 +22,7 @@ public class DBBootstrap {
             // =========================
             DatabaseInit.init();
 
-            plugin.getLogger().info(
+            ConsoleLogger.info(
                     "[DB] SQLite initialized successfully."
             );
 
@@ -41,7 +42,7 @@ public class DBBootstrap {
 
             DatabaseManager.close();
 
-            plugin.getLogger().info(
+            ConsoleLogger.info(
                     "[DB] SQLite connection closed."
             );
 

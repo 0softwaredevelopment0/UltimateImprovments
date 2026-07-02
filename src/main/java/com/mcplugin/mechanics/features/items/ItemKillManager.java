@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.features.items;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.EntityType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -38,7 +39,7 @@ public class ItemKillManager extends BukkitRunnable {
                 .sum();
 
         if (itemCount >= itemLimit) {
-            Bukkit.getLogger().warning("[ItemKill] Item count: " + itemCount + " — killing all items!");
+            ConsoleLogger.warn("[ItemKill] Item count: " + itemCount + " — killing all items!");
 
             if (warnOperators) {
                 Bukkit.getOnlinePlayers().stream()

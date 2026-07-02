@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.config;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -45,14 +46,14 @@ public class ConfigRepairManager {
             return false; // всё ок
         }
 
-        plugin.getLogger().warning("[ConfigRepair] Missing " + missing.size() + " key(s) in " + dataFile.getName());
+        ConsoleLogger.warn("[ConfigRepair] Missing " + missing.size() + " key(s) in " + dataFile.getName());
         for (String path : missing) {
-            plugin.getLogger().warning("[ConfigRepair]   + " + path);
+            ConsoleLogger.warn("[ConfigRepair]   + " + path);
         }
 
         // Добавляем недостающие ключи в конец файла
         appendMissingKeys(plugin, dataFile, defaultConfig, missing);
-        plugin.getLogger().info("[ConfigRepair] ✔ Added " + missing.size() + " missing key(s) to " + dataFile.getName());
+        ConsoleLogger.info("[ConfigRepair] ✔ Added " + missing.size() + " missing key(s) to " + dataFile.getName());
         return true;
     }
 
@@ -182,7 +183,7 @@ public class ConfigRepairManager {
             if (in == null) return null;
             return YamlConfiguration.loadConfiguration(new InputStreamReader(in));
         } catch (Exception e) {
-            plugin.getLogger().warning("[ConfigRepair] Failed to load default " + resourcePath + ": " + e.getMessage());
+            ConsoleLogger.warn("[ConfigRepair] Failed to load default " + resourcePath + ": " + e.getMessage());
             return null;
         }
     }

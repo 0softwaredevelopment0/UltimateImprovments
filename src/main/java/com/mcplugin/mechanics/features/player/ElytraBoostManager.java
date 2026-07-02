@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.features.player;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Color;
 import org.bukkit.GameMode;
@@ -81,7 +82,7 @@ public class ElytraBoostManager implements Listener {
         instance = new ElytraBoostManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         loadFlyDisabledFromDb();
-        plugin.getLogger().info("[ElytraBoost] ✔ Enabled — press SPACE while gliding to boost.");
+        ConsoleLogger.info("[ElytraBoost] ✔ Enabled — press SPACE while gliding to boost.");
     }
 
     public static ElytraBoostManager getInstance() {
@@ -212,10 +213,10 @@ public class ElytraBoostManager implements Listener {
                     // Corrupted UUID in DB — skip
                 }
             }
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[ElytraBoost] Loaded " + flyDisabled.size() + " disabled players from DB");
         } catch (SQLException e) {
-            Main.getInstance().getLogger().severe("[ElytraBoost] DB load error: " + e.getMessage());
+            ConsoleLogger.error("[ElytraBoost] DB load error: " + e.getMessage());
         }
     }
 
@@ -227,7 +228,7 @@ public class ElytraBoostManager implements Listener {
             ps.setString(1, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            Main.getInstance().getLogger().severe("[ElytraBoost] DB save error: " + e.getMessage());
+            ConsoleLogger.error("[ElytraBoost] DB save error: " + e.getMessage());
         }
     }
 
@@ -239,11 +240,21 @@ public class ElytraBoostManager implements Listener {
             ps.setString(1, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            Main.getInstance().getLogger().severe("[ElytraBoost] DB delete error: " + e.getMessage());
+            ConsoleLogger.error("[ElytraBoost] DB delete error: " + e.getMessage());
         }
     }
 
     // =========================
     // HELPERS
     // =========================
+
+    /**
+     * Проверяет, был ли игрок забущен плагином в последние windowMs миллисекунд.
+     * Используется античит-проверкой ElytraCheck, чтобы не флагать легитимные бусты.
+     */
+    public static boolean isRecentlyBoosted(UUID uuid, long windowMs) {
+        Long lastTime = lastBoostTime.get(uuid);
+        if (lastTime == null) return false;
+        return System.currentTimeMillis() - lastTime <= windowMs;
+    }
 }

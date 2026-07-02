@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.PlayerSettingsDB;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
@@ -112,7 +113,7 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
 
             // Ограничение: макс 15 строк для sidebar
             if (lines.size() > 15) {
-                Main.getInstance().getLogger().warning("[Scoreboard] Board '" + key + "' has " + lines.size()
+                ConsoleLogger.warn("[Scoreboard] Board '" + key + "' has " + lines.size()
                         + " lines, max is 15. Extra lines will be ignored.");
                 lines = lines.subList(0, 15);
             }

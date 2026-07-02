@@ -3,6 +3,7 @@ package com.mcplugin.energy.transfer.cable;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -82,7 +83,7 @@ public class CableNetwork {
             }
         }
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[CableNetwork] Loaded " + count + " nodes from Marker entities"
         );
     }

@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.chat;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
+import com.mcplugin.infrastructure.database.PlayerSettingsDB;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.SoundUtil;
 import net.kyori.adventure.text.Component;
@@ -124,7 +125,10 @@ public class ChatPingManager {
         Component notification = notificationMsg.isEmpty() ? null
                 : MessageUtil.parse(notificationMsg.replace("{sender}", sender.getName()));
         for (Player p : players) {
-            SoundUtil.playSound(p, sound, pingSoundVolume, pingSoundPitch);
+            // Respect per-player ping sound toggle
+            if (PlayerSettingsDB.isPingEnabled(p.getUniqueId())) {
+                SoundUtil.playSound(p, sound, pingSoundVolume, pingSoundPitch);
+            }
             if (notification != null) {
                 p.sendMessage(notification);
             }

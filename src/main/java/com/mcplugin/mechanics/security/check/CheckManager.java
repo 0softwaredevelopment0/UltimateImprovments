@@ -2,9 +2,12 @@ package com.mcplugin.mechanics.security.check;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.Map;
 import java.util.UUID;
@@ -15,6 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Хранит пары (проверяющий → проверяемый).
  * При выходе проверяющего — автоматически завершает проверку.
+ * При выходе проверяемого — проверка ставится на паузу,
+ * при реконнекте автоматически восстанавливается.
  * Проверяемый игрок заморожен (не может двигаться, взаимодействовать и т.д.).
  */
 public class CheckManager {
@@ -27,11 +32,20 @@ public class CheckManager {
     // suspect UUID → inspector UUID (обратный индекс)
     private final Map<UUID, UUID> suspectToInspector = new ConcurrentHashMap<>();
 
+    // inspector UUID → original location (для возврата после проверки)
+    private final Map<UUID, Location> inspectorLocations = new ConcurrentHashMap<>();
+
+    // suspect UUID → repeating title task ID (-1 if not started)
+    private final Map<UUID, Integer> suspectTitleTasks = new ConcurrentHashMap<>();
+
+    // suspect UUID → имя инспектора (для восстановления тайтла при реконнекте)
+    private final Map<UUID, String> suspectInspectorNames = new ConcurrentHashMap<>();
+
     private CheckManager() {}
 
     public static void init() {
         instance = new CheckManager();
-        Main.getInstance().getLogger().info("[CheckManager] ✔ Initialized.");
+        ConsoleLogger.info("[CheckManager] ✔ Initialized.");
     }
 
     public static CheckManager getInstance() {
@@ -62,27 +76,30 @@ public class CheckManager {
         instance.activeChecks.put(inspectorId, suspectId);
         instance.suspectToInspector.put(suspectId, inspectorId);
 
+        // Save inspector's location and teleport to suspect
+        instance.inspectorLocations.put(inspectorId, inspector.getLocation());
+        inspector.teleport(suspect.getLocation());
+
         // Freeze suspect
         freezePlayer(suspect);
 
-        // Title (используем legacy строки, т.к. sendTitle() принимает String)
-        suspect.sendTitle(
-                "§4❌ §c§lПРОВЕРКА НА ЧИТЫ",
-                "§fВсе инструкции находятся в чате.",
-                10, 70, 20
-        );
+        // Save inspector name for rejoin
+        instance.suspectInspectorNames.put(suspectId, inspector.getName());
+
+        // Start repeating title task (every 3 seconds)
+        startTitleTask(suspect, inspector.getName());
 
         // Chat instructions
         suspect.sendMessage("");
-        suspect.sendMessage("§4❌ §f§lВЫ ВЫЗВАНЫ НА ПРОВЕРКУ!");
+        suspect.sendMessage("§4❌ §cVerification");
         suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        suspect.sendMessage("§fПроверяющий: §e" + inspector.getName());
+        suspect.sendMessage("§fInspector: §e" + inspector.getName());
         suspect.sendMessage("");
-        suspect.sendMessage("§7Вы не можете двигаться или взаимодействовать");
-        suspect.sendMessage("§7до завершения проверки.");
+        suspect.sendMessage("§7You cannot move or interact with anything");
+        suspect.sendMessage("§7until the check is complete.");
         suspect.sendMessage("");
-        suspect.sendMessage("§7Если у вас есть запрещённые модификации —");
-        suspect.sendMessage("§7отключите их. Это в ваших интересах.");
+        suspect.sendMessage("§7If you have any prohibited modifications —");
+        suspect.sendMessage("§7disable them now. It is in your best interest.");
         suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
         suspect.sendMessage("");
 
@@ -90,7 +107,7 @@ public class CheckManager {
         inspector.sendMessage(MessageUtil.parse("<green>✔</green> <white>Check started for</white> <yellow>" + suspect.getName() + "</yellow><white>.</white>"));
         inspector.sendMessage(MessageUtil.parse("<gray>Use </gray><white>/mp uncheck " + suspect.getName() + "</white><gray> when finished.</gray>"));
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[CheckManager] " + inspector.getName() + " started checking " + suspect.getName());
         return true;
     }
@@ -112,23 +129,82 @@ public class CheckManager {
 
         instance.activeChecks.remove(inspectorId);
         instance.suspectToInspector.remove(suspectId);
+        instance.suspectInspectorNames.remove(suspectId);
 
-        // Unfreeze suspect (если он ещё онлайн)
+        // Teleport inspector back to original location
+        Location originalLoc = instance.inspectorLocations.remove(inspectorId);
+        if (originalLoc != null && inspector.isOnline()) {
+            inspector.teleport(originalLoc);
+            inspector.sendMessage(MessageUtil.parse("<gray>You have been teleported back to your original location.</gray>"));
+        }
+
+        // Cancel repeating title task and clear title
+        cancelTitleTask(suspectId);
         if (suspect.isOnline()) {
-            unfreezePlayer(suspect);
             suspect.sendTitle(" ", " ", 0, 1, 0);
+            unfreezePlayer(suspect);
             suspect.sendMessage("");
-            suspect.sendMessage("§a✔ §f§lПРОВЕРКА ЗАВЕРШЕНА!");
+            suspect.sendMessage("§a✔ §f§lCHECK COMPLETE!");
             suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-            suspect.sendMessage("§fПроверяющий: §e" + inspector.getName());
+            suspect.sendMessage("§fInspector: §e" + inspector.getName());
             suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
             suspect.sendMessage("");
         }
 
         inspector.sendMessage(MessageUtil.parse("<green>✔</green> <white>Check ended for</white> <yellow>" + suspect.getName() + "</yellow><white>.</white>"));
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[CheckManager] " + inspector.getName() + " ended check for " + suspect.getName());
+        return true;
+    }
+
+    // =========================
+    // FORCE END CHECK — завершить проверку без объекта suspect (он может быть офлайн)
+    // =========================
+    public static boolean forceEndCheck(Player inspector) {
+        if (instance == null) return false;
+
+        UUID inspectorId = inspector.getUniqueId();
+        UUID suspectId = instance.activeChecks.get(inspectorId);
+        if (suspectId == null) {
+            inspector.sendMessage(MessageUtil.parse("<red>❌ You don't have an active check!</red>"));
+            return false;
+        }
+
+        String suspectName = Bukkit.getOfflinePlayer(suspectId).getName();
+        if (suspectName == null) suspectName = suspectId.toString();
+
+        instance.activeChecks.remove(inspectorId);
+        instance.suspectToInspector.remove(suspectId);
+        instance.suspectInspectorNames.remove(suspectId);
+
+        // Teleport inspector back
+        Location originalLoc = instance.inspectorLocations.remove(inspectorId);
+        if (originalLoc != null) {
+            inspector.teleport(originalLoc);
+            inspector.sendMessage(MessageUtil.parse("<gray>You have been teleported back to your original location.</gray>"));
+        }
+
+        // Cancel title task
+        cancelTitleTask(suspectId);
+
+        // Если suspect онлайн — разморозить
+        Player suspect = Bukkit.getPlayer(suspectId);
+        if (suspect != null && suspect.isOnline()) {
+            suspect.sendTitle(" ", " ", 0, 1, 0);
+            unfreezePlayer(suspect);
+            suspect.sendMessage("");
+            suspect.sendMessage("§a✔ §f§lCHECK COMPLETE!");
+            suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            suspect.sendMessage("§fInspector: §e" + inspector.getName());
+            suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            suspect.sendMessage("");
+        }
+
+        inspector.sendMessage(MessageUtil.parse("<green>✔</green> <white>Check ended for</white> <yellow>" + suspectName + "</yellow><white>.</white>"));
+
+        ConsoleLogger.info(
+                "[CheckManager] " + inspector.getName() + " force-ended check (suspect: " + suspectName + ")");
         return true;
     }
 
@@ -142,45 +218,105 @@ public class CheckManager {
         if (suspectId == null) return;
 
         instance.suspectToInspector.remove(suspectId);
+        instance.inspectorLocations.remove(inspectorId);
+        cancelTitleTask(suspectId);
 
         Player suspect = Bukkit.getPlayer(suspectId);
         if (suspect != null && suspect.isOnline()) {
-            unfreezePlayer(suspect);
             suspect.sendTitle(" ", " ", 0, 1, 0);
+            unfreezePlayer(suspect);
             suspect.sendMessage("");
-            suspect.sendMessage("§e⚠ §f§lПРОВЕРКА ПРЕРВАНА!");
+            suspect.sendMessage("§e⚠ §f§lCHECK INTERRUPTED!");
             suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-            suspect.sendMessage("§fПроверяющий вышел с сервера.");
+            suspect.sendMessage("§fInspector disconnected.");
             suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
             suspect.sendMessage("");
         }
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[CheckManager] Auto-cleaned check (inspector disconnected): " + suspectId);
     }
 
     // =========================
-    // CLEANUP BY SUSPECT QUIT
+    // CLEANUP BY SUSPECT QUIT — ставит проверку на паузу, не удаляет данные
     // =========================
     public static void cleanupBySuspect(UUID suspectId) {
         if (instance == null) return;
 
-        UUID inspectorId = instance.suspectToInspector.remove(suspectId);
+        // Если suspect не в проверке — игнорируем
+        UUID inspectorId = instance.suspectToInspector.get(suspectId);
         if (inspectorId == null) return;
 
-        instance.activeChecks.remove(inspectorId);
+        // Отменяем тайтл-таск (игрок офлайн)
+        cancelTitleTask(suspectId);
 
+        // Уведомляем инспектора
         Player inspector = Bukkit.getPlayer(inspectorId);
         if (inspector != null && inspector.isOnline()) {
             inspector.sendMessage(MessageUtil.parse(
                     "<yellow>⚠</yellow> <white>Checked player</white> <yellow>" +
                     (Bukkit.getOfflinePlayer(suspectId).getName() != null ?
                      Bukkit.getOfflinePlayer(suspectId).getName() : suspectId.toString()) +
-                    "</yellow> <white>disconnected. Check ended.</white>"));
+                    "</yellow> <white>disconnected. Check will resume on rejoin.</white>"));
         }
 
-        Main.getInstance().getLogger().info(
-                "[CheckManager] Auto-cleaned check (suspect disconnected): " + suspectId);
+        ConsoleLogger.info(
+                "[CheckManager] Suspect disconnected — check paused: " + suspectId);
+    }
+
+    // =========================
+    // REJOIN CHECK — восстановить проверку при реконнекте suspect
+    // =========================
+    public static void rejoinCheck(Player suspect) {
+        if (instance == null) return;
+
+        UUID suspectId = suspect.getUniqueId();
+        UUID inspectorId = instance.suspectToInspector.get(suspectId);
+        if (inspectorId == null) return;
+
+        UUID storedSuspect = instance.activeChecks.get(inspectorId);
+        if (storedSuspect == null || !storedSuspect.equals(suspectId)) return;
+
+        // Замораживаем suspect
+        freezePlayer(suspect);
+
+        // Восстанавливаем тайтл
+        String inspectorName = instance.suspectInspectorNames.get(suspectId);
+        if (inspectorName == null) {
+            Player inspector = Bukkit.getPlayer(inspectorId);
+            inspectorName = inspector != null ? inspector.getName() : "Unknown";
+        }
+        startTitleTask(suspect, inspectorName);
+
+        // Отправляем сообщения
+        suspect.sendMessage("");
+        suspect.sendMessage("§4❌ §c§lVERIFICATION RESUMED");
+        suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        suspect.sendMessage("§fInspector: §e" + inspectorName);
+        suspect.sendMessage("");
+        suspect.sendMessage("§7Your check was paused while you were offline.");
+        suspect.sendMessage("§7It has now resumed. You are still frozen.");
+        suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        suspect.sendMessage("");
+
+        // Уведомляем инспектора
+        Player inspector = Bukkit.getPlayer(inspectorId);
+        if (inspector != null && inspector.isOnline()) {
+            inspector.sendMessage(MessageUtil.parse(
+                    "<green>✔</green> <white>Player</white> <yellow>" + suspect.getName() +
+                    "</yellow> <white>rejoined — check resumed automatically.</white>"));
+            // Телепортируем инспектора к suspect если он далеко
+            if (!inspector.getWorld().equals(suspect.getWorld())
+                    || inspector.getLocation().distance(suspect.getLocation()) > 50) {
+                inspector.teleport(suspect.getLocation());
+                inspector.sendMessage(MessageUtil.parse(
+                        "<gray>Teleported to suspect's new location.</gray>"));
+            }
+        }
+
+        ConsoleLogger.info(
+                "[CheckManager] Check resumed for suspect: " + suspect.getName()
+                + " (inspector: " + inspectorName + ")");
     }
 
     // =========================
@@ -211,6 +347,37 @@ public class CheckManager {
     }
 
     // =========================
+    // REPEATING TITLE TASK (every 3 seconds)
+    // =========================
+    private static void startTitleTask(Player suspect, String inspectorName) {
+        if (instance == null) return;
+        UUID suspectId = suspect.getUniqueId();
+        int taskId = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!suspect.isOnline()) {
+                    cancel();
+                    return;
+                }
+                suspect.sendTitle(
+                        "§cVerification",
+                        "§fAll instructions are in the chat",
+                        5, 50, 10
+                );
+            }
+        }.runTaskTimer(Main.getInstance(), 0L, 60L).getTaskId(); // every 3 seconds (60 ticks)
+        instance.suspectTitleTasks.put(suspectId, taskId);
+    }
+
+    private static void cancelTitleTask(UUID suspectId) {
+        if (instance == null) return;
+        Integer taskId = instance.suspectTitleTasks.remove(suspectId);
+        if (taskId != null && taskId != -1) {
+            Bukkit.getScheduler().cancelTask(taskId);
+        }
+    }
+
+    // =========================
     // FREEZE / UNFREEZE (аналогично AuthAuthenticator)
     // =========================
     private static void freezePlayer(Player player) {
@@ -235,16 +402,23 @@ public class CheckManager {
     // =========================
     public static void shutdown() {
         if (instance == null) return;
+        // Cancel all title tasks
+        for (UUID suspectId : instance.suspectTitleTasks.keySet()) {
+            cancelTitleTask(suspectId);
+        }
         for (UUID suspectId : instance.suspectToInspector.keySet()) {
             Player suspect = Bukkit.getPlayer(suspectId);
             if (suspect != null && suspect.isOnline()) {
-                unfreezePlayer(suspect);
                 suspect.sendTitle(" ", " ", 0, 1, 0);
-                suspect.sendMessage("§e⚠ Проверка прервана (перезагрузка плагина).");
+                unfreezePlayer(suspect);
+                suspect.sendMessage("§e⚠ Check interrupted (plugin reload).");
             }
         }
         instance.activeChecks.clear();
         instance.suspectToInspector.clear();
+        instance.inspectorLocations.clear();
+        instance.suspectTitleTasks.clear();
+        instance.suspectInspectorNames.clear();
         instance = null;
     }
 }

@@ -1,6 +1,7 @@
 package com.mcplugin.energy.generation.reactor;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.mechanics.environment.magnet.MagnetManager;
 
 import org.bukkit.Location;
@@ -220,7 +221,7 @@ public class ReactorCommand implements CommandExecutor {
 
         ReactorManager.clearPendingAssembly(player);
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Reactor] Assembled by " + player.getName()
                         + " at " + pending.center()
         );
@@ -314,7 +315,7 @@ public class ReactorCommand implements CommandExecutor {
 
         ReactorManager.clearPendingAssembly(player);
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Magnet] Assembled by " + player.getName()
                         + " at " + loc
         );

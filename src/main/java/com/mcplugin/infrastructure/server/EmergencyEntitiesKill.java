@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.server;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.combat.weapons.core.ProjectileManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -42,7 +43,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
     public static void reload() {
         if (instance != null) {
             instance.reloadConfig();
-            Main.getInstance().getLogger().info("[EMERGENCY_KILL] Config reloaded (enabled=" + instance.enabled + ")");
+            ConsoleLogger.info("[EMERGENCY_KILL] Config reloaded (enabled=" + instance.enabled + ")");
         }
     }
 
@@ -81,14 +82,14 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
             int removed = ProjectileManager.removePlasmaProjectiles();
             if (removed > 0) {
                 if (logEnabled) {
-                    Main.getInstance().getLogger().warning(
+                    ConsoleLogger.warn(
                             "[Server/Caution] MSPT=" + mspt
                                     + " -> PLASMA REMOVED: " + removed
                     );
                 }
                 ServerOverloadNotify.broadcast(
-                        "§7[§fServer §8/ §6Caution§7] §fMSPT §c" + String.format("%.1f", mspt)
-                                + " §7→ §cУдалено §e" + removed + " §fплазменных снарядов"
+                        "<gray>[<white>Server</white><dark_gray>/</dark_gray><yellow>Caution</yellow>] <white>MSPT </white><red>" + String.format("%.1f", mspt)
+                                + " </red><gray>→ </gray><red>Удалено </red><yellow>" + removed + " </yellow><white>плазменных снарядов</white>"
                 );
             }
         }
@@ -98,7 +99,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         // =========================
         if (mspt >= instantKillMspt && overloadByEntities) {
             if (logEnabled) {
-                Main.getInstance().getLogger().severe(
+                ConsoleLogger.error(
                         "[Server/Critical] MSPT=" + mspt + " ENTITIES=" + totalEntities
                 );
             }
@@ -195,14 +196,14 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         }
 
         if (logEnabled) {
-            Main.getInstance().getLogger().warning(
+            ConsoleLogger.warn(
                     "[Server/Warning] Removed " + removed + " " + topType
                             + " (total entities: " + counts.values().stream().mapToInt(Integer::intValue).sum() + ")"
             );
         }
 
         ServerOverloadNotify.broadcast(
-                "§7[§fServer §8/ §eWarning§7] §fУдалено §e" + removed + " §f" + topType
+                "<gray>[<white>Server</white><dark_gray>/</dark_gray><yellow>Warning</yellow>] <white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
         );
     }
 }

@@ -3,6 +3,7 @@ package com.mcplugin.mechanics.security.auth;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Sound;
@@ -46,7 +47,7 @@ public class AuthAuthenticator {
         if (playerState.isAuthenticated(uuid)) return;
 
         if (!AuthDatabase.isTableReady()) {
-            Main.getInstance().getLogger().warning("[Auth] DB not ready — skipping auth for " + player.getName());
+            ConsoleLogger.warn("[Auth] DB not ready — skipping auth for " + player.getName());
             return;
         }
 
@@ -58,7 +59,7 @@ public class AuthAuthenticator {
                 String currentIp = getPlayerIp(player);
 
                 if (!lastIp.isEmpty() && !lastIp.equals(currentIp)) {
-                    Main.getInstance().getLogger().info(
+                    ConsoleLogger.info(
                             "[Auth] Player " + player.getName() + " IP changed: " + lastIp + " → " + currentIp + " — session reset.");
                     String ipMsg = AuthConfig.getMessage("ip_changed",
                             "<yellow>✦</yellow> <gray>Your IP address has changed. Please log in again.</gray>");
@@ -67,14 +68,14 @@ public class AuthAuthenticator {
                 } else if (AuthDatabase.hasValidSession(uuid, AuthConfig.getSessionDurationMs())) {
                     savePlayerIp(player);
                     playerState.setAuthenticated(uuid);
-                    Main.getInstance().getLogger().info(
+                    ConsoleLogger.info(
                             "[Auth] Player " + player.getName() + " auto-authenticated (session + IP match).");
                     return;
                 }
             } else if (AuthDatabase.hasValidSession(uuid, AuthConfig.getSessionDurationMs())) {
                 savePlayerIp(player);
                 playerState.setAuthenticated(uuid);
-                Main.getInstance().getLogger().info(
+                ConsoleLogger.info(
                         "[Auth] Player " + player.getName() + " auto-authenticated (session, IP check disabled).");
                 return;
             }
@@ -231,7 +232,7 @@ public class AuthAuthenticator {
         if (AuthConfig.isIpCheckEnabled()) {
             String storedIp = AuthDatabase.getLastIp(uuid);
             if (!storedIp.isEmpty() && !storedIp.equals(playerIp)) {
-                Main.getInstance().getLogger().info(
+                ConsoleLogger.info(
                         "[Auth] Player " + player.getName() + " login IP changed: " + storedIp + " → " + playerIp + " — updating IP.");
                 AuthDatabase.updateLastIp(uuid, playerIp);
             }
@@ -283,7 +284,7 @@ public class AuthAuthenticator {
         player.sendMessage("§7Ожидание подтверждения...");
         player.sendMessage("");
 
-        Main.getInstance().getLogger().info("[Auth2FA] Challenge started for " + playerName
+        ConsoleLogger.info("[Auth2FA] Challenge started for " + playerName
                 + " (chat: " + chatId + ", request: " + requestId + ")");
 
         // Запускаем polling — проверяем статус каждые 20 тиков (1 секунда)
@@ -336,7 +337,7 @@ public class AuthAuthenticator {
                                 // Бот 2FA недоступен — логиним игрока с предупреждением
                                 Auth2FA.getInstance().clearPending(uuid);
                                 player.sendMessage("§c⚠ Бот 2FA временно недоступен! Пропускаем 2FA для этого входа.");
-                                Main.getInstance().getLogger().warning(
+                                ConsoleLogger.warn(
                                         "[Auth2FA] Bot unreachable — logging in " + player.getName() + " without 2FA");
                                 authenticatePlayer(player, "<green>\u2705</green> <white>Выполнен вход без 2FA (бот недоступен).</white>");
                                 cancel();
@@ -415,7 +416,7 @@ public class AuthAuthenticator {
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.session_active", "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
         player.sendMessage("");
 
-        Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " authenticated.");
+        ConsoleLogger.info("[Auth] Player " + player.getName() + " authenticated.");
     }
 
     // =========================
@@ -455,7 +456,7 @@ public class AuthAuthenticator {
                     player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.session_active", "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
                     player.sendMessage("");
 
-                    Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " changed password.");
+                    ConsoleLogger.info("[Auth] Player " + player.getName() + " changed password.");
                 });
             } catch (Exception e) {
                 Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
@@ -501,7 +502,7 @@ public class AuthAuthenticator {
                             "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
                     player.kickPlayer(MessageUtil.legacy(kickLogout));
 
-                    Main.getInstance().getLogger().info("[Auth] Player " + player.getName() + " logged out manually.");
+                    ConsoleLogger.info("[Auth] Player " + player.getName() + " logged out manually.");
                 });
             } catch (Exception e) {
                 Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Async logout error", e);

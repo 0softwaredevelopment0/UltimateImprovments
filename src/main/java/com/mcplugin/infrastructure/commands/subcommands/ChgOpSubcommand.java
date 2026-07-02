@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.commands.subcommands;
 
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -312,7 +313,7 @@ public final class ChgOpSubcommand {
             target.sendMessage(MessageUtil.parse(
                     "<gold>⚡</gold> <white>You are now an</white> <gold>operator</gold><white>!</white>"
             ));
-            Bukkit.getLogger().info("[OpManager] " + player.getName() + " granted OP to " + target.getName());
+            ConsoleLogger.info("[OpManager] " + player.getName() + " granted OP to " + target.getName());
         } else {
             // Сняли OP
             player.sendMessage(MessageUtil.parse(
@@ -321,7 +322,7 @@ public final class ChgOpSubcommand {
             target.sendMessage(MessageUtil.parse(
                     "<red>⛔</red> <white>Your</white> <gold>operator</gold> <white>status has been revoked.</white>"
             ));
-            Bukkit.getLogger().info("[OpManager] " + player.getName() + " revoked OP from " + target.getName());
+            ConsoleLogger.info("[OpManager] " + player.getName() + " revoked OP from " + target.getName());
         }
 
         return true;

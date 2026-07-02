@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.whitelist.WhitelistManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -36,12 +37,12 @@ public class AccessListCheckTask extends BukkitRunnable {
 
         int interval = plugin.getConfig().getInt("access_control.check_interval_ticks", 20);
         if (interval <= 0) {
-            plugin.getLogger().info("[AccessCheck] Periodic check disabled (interval <= 0).");
+            ConsoleLogger.info("[AccessCheck] Periodic check disabled (interval <= 0).");
             return;
         }
 
         taskId = new AccessListCheckTask().runTaskTimer(plugin, interval, interval).getTaskId();
-        plugin.getLogger().info("[AccessCheck] Started with interval " + interval + " ticks.");
+        ConsoleLogger.info("[AccessCheck] Started with interval " + interval + " ticks.");
     }
 
     /**
@@ -97,7 +98,7 @@ public class AccessListCheckTask extends BukkitRunnable {
                     player.sendMessage(MessageUtil.parse(
                             "<red>⛔</red> <white>Your operator status has been removed — you are not in the OP whitelist.</white>"
                     ));
-                    Main.getInstance().getLogger().info("[OpWhitelist] Removed OP from " + name + " (not whitelisted)");
+                    ConsoleLogger.info("[OpWhitelist] Removed OP from " + name + " (not whitelisted)");
                 }
             }
         }

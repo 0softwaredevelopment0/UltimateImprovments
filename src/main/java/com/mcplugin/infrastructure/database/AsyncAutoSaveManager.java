@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.database;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.generation.reactor.ReactorManager;
 import com.mcplugin.mechanics.environment.magnet.MagnetManager;
@@ -30,7 +31,7 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
         // Запускаем с задержкой 5 минут, потом каждые 5 минут
         // Синхронно — предотвращает data race при чтении ReactorManager/RadiationManager из async потока
         instance.runTaskTimer(plugin, SAVE_INTERVAL_TICKS, SAVE_INTERVAL_TICKS);
-        plugin.getLogger().info("[AutoSave] Auto-save started (every 5 minutes)");
+        ConsoleLogger.info("[AutoSave] Auto-save started (every 5 minutes)");
     }
 
     /**
@@ -51,28 +52,28 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
             CableNetwork.save();
             Main.getInstance().getLogger().finer("[AutoSave] CableNetwork saved.");
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[AutoSave] CableNetwork save error: " + e.getMessage());
+            ConsoleLogger.warn("[AutoSave] CableNetwork save error: " + e.getMessage());
         }
 
         try {
             ReactorManager.saveAll();
             Main.getInstance().getLogger().finer("[AutoSave] Reactor saved.");
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[AutoSave] Reactor save error: " + e.getMessage());
+            ConsoleLogger.warn("[AutoSave] Reactor save error: " + e.getMessage());
         }
 
         try {
             RadiationManager.saveAll();
             Main.getInstance().getLogger().finer("[AutoSave] Radiation saved.");
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[AutoSave] Radiation save error: " + e.getMessage());
+            ConsoleLogger.warn("[AutoSave] Radiation save error: " + e.getMessage());
         }
 
         try {
             MagnetManager.saveAll();
             Main.getInstance().getLogger().finer("[AutoSave] Magnet saved.");
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[AutoSave] Magnet save error: " + e.getMessage());
+            ConsoleLogger.warn("[AutoSave] Magnet save error: " + e.getMessage());
         }
     }
 
@@ -87,19 +88,19 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
         // либо используют SQLite с busy_timeout=5000 (ReactorManager, RadiationManager).
         // На синхронном потоке BUSY практически невозможен — нет конкурентных писателей.
         try { CableNetwork.save(); } catch (Exception e) {
-            plugin.getLogger().warning("[AutoSave] CableNetwork error: " + e.getMessage());
+            ConsoleLogger.warn("[AutoSave] CableNetwork error: " + e.getMessage());
         }
 
         try { ReactorManager.saveAll(); } catch (Exception e) {
-            plugin.getLogger().warning("[AutoSave] Reactor error: " + e.getMessage());
+            ConsoleLogger.warn("[AutoSave] Reactor error: " + e.getMessage());
         }
 
         try { RadiationManager.saveAll(); } catch (Exception e) {
-            plugin.getLogger().warning("[AutoSave] Radiation error: " + e.getMessage());
+            ConsoleLogger.warn("[AutoSave] Radiation error: " + e.getMessage());
         }
 
         try { MagnetManager.saveAll(); } catch (Exception e) {
-            plugin.getLogger().warning("[AutoSave] Magnet error: " + e.getMessage());
+            ConsoleLogger.warn("[AutoSave] Magnet error: " + e.getMessage());
         }
 
         plugin.getLogger().fine("[AutoSave] Auto-save complete.");

@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.features.world;
 
 import com.mcplugin.infrastructure.core.Keys;
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -53,7 +54,7 @@ public class ConcreteBucketManager extends BukkitRunnable implements Listener {
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         // Проверяем каждый тик (плавное превращение)
         instance.runTaskTimer(plugin, 20L, 20L);
-        plugin.getLogger().info("[ConcreteBucket] Initialized");
+        ConsoleLogger.info("[ConcreteBucket] Initialized");
     }
 
     /**

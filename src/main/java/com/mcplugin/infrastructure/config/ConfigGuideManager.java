@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.config;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.FileLogger;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.io.File;
 import java.io.InputStream;
@@ -37,7 +38,7 @@ public class ConfigGuideManager {
         // При первом запуске — просто сохраняем
         if (!guideFile.exists()) {
             saveGuideFromResources(plugin);
-            plugin.getLogger().info("[Guide] Created: " + GUIDE_FILE);
+            ConsoleLogger.info("[Guide] Created: " + GUIDE_FILE);
             saveHash(plugin, computeHash(guideFile));
             return;
         }
@@ -47,12 +48,12 @@ public class ConfigGuideManager {
         String savedHash = loadHash(plugin);
 
         if (currentHash == null || !currentHash.equals(savedHash)) {
-            plugin.getLogger().info("[Guide] Guide file changed or hash mismatch — overriding with plugin version.");
+            ConsoleLogger.info("[Guide] Guide file changed or hash mismatch — overriding with plugin version.");
             saveGuideFromResources(plugin);
             saveHash(plugin, computeHash(guideFile));
-            plugin.getLogger().info("[Guide] Override complete.");
+            ConsoleLogger.info("[Guide] Override complete.");
         } else {
-            plugin.getLogger().info("[Guide] Guide is up-to-date.");
+            ConsoleLogger.info("[Guide] Guide is up-to-date.");
         }
     }
 
@@ -62,7 +63,7 @@ public class ConfigGuideManager {
     private static void saveGuideFromResources(Main plugin) {
         try (InputStream in = plugin.getResource(GUIDE_FILE)) {
             if (in == null) {
-                plugin.getLogger().warning("[Guide] Resource not found: " + GUIDE_FILE);
+                ConsoleLogger.warn("[Guide] Resource not found: " + GUIDE_FILE);
                 return;
             }
             File target = new File(plugin.getDataFolder(), GUIDE_FILE);

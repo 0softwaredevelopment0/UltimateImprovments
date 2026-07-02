@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.whitelist;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -58,7 +59,7 @@ public class WhitelistManager implements Listener {
                 if (rs.next()) count = rs.getInt(1);
             }
 
-            Main.getInstance().getLogger().info("[Whitelist] Loaded " + count + " players, enabled=" + enabled);
+            ConsoleLogger.info("[Whitelist] Loaded " + count + " players, enabled=" + enabled);
 
             // Обновляем ванильный вайтлист
             syncVanillaWhitelist();
@@ -115,7 +116,7 @@ public class WhitelistManager implements Listener {
             st.setString(1, lower);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[Whitelist] Added: " + lower);
+                ConsoleLogger.info("[Whitelist] Added: " + lower);
                 return true;
             }
             return false;
@@ -135,7 +136,7 @@ public class WhitelistManager implements Listener {
             st.setString(1, lower);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[Whitelist] Removed: " + lower);
+                ConsoleLogger.info("[Whitelist] Removed: " + lower);
                 return true;
             }
             return false;

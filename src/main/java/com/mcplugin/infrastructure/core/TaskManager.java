@@ -15,6 +15,7 @@ import com.mcplugin.infrastructure.listeners.FishingListener;
 import com.mcplugin.infrastructure.server.EmergencyEntitiesKill;
 import com.mcplugin.infrastructure.server.RedstoneGuardTask;
 import com.mcplugin.infrastructure.server.ServerOverloadWarning;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -73,7 +74,7 @@ public class TaskManager {
         fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
         codePanelCleanupTask = new CodePanelCleanupTask().runTaskTimer(plugin, 200L, 400L);
 
-        plugin.getLogger().info("[TASKS] Started.");
+        ConsoleLogger.info("[TASKS] Started.");
     }
 
     public void stopAll() {

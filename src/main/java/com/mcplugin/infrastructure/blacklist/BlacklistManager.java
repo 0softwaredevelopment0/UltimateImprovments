@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.blacklist;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -57,7 +58,7 @@ public class BlacklistManager implements Listener {
                 if (rs.next()) count = rs.getInt(1);
             }
 
-            Main.getInstance().getLogger().info("[Blacklist] Loaded " + count + " players, enabled=" + enabled);
+            ConsoleLogger.info("[Blacklist] Loaded " + count + " players, enabled=" + enabled);
         } catch (Exception e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[Blacklist] Failed to load", e);
         }
@@ -98,7 +99,7 @@ public class BlacklistManager implements Listener {
             st.setString(1, lower);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[Blacklist] Added: " + lower);
+                ConsoleLogger.info("[Blacklist] Added: " + lower);
 
                 // Если игрок онлайн — кикаем
                 @SuppressWarnings("deprecation")
@@ -127,7 +128,7 @@ public class BlacklistManager implements Listener {
             st.setString(1, lower);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[Blacklist] Removed: " + lower);
+                ConsoleLogger.info("[Blacklist] Removed: " + lower);
                 return true;
             }
             return false;

@@ -14,6 +14,7 @@ import com.mcplugin.mechanics.security.check.CheckListener;
 import com.mcplugin.mechanics.security.check.CheckManager;
 import com.mcplugin.infrastructure.structure.StructureChunkListener;
 import com.mcplugin.infrastructure.structure.StructureChunkTracker;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.infrastructure.util.FileLogger;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
 
@@ -47,18 +48,23 @@ public class Main extends JavaPlugin {
         instance = this;
 
         // =========================
+        // 🎨 CONSOLE LOGGER — цветной логгер (MiniMessage)
+        // =========================
+        ConsoleLogger.init();
+
+        // =========================
         // DATA FOLDER & CONFIG
         // =========================
-        FileLogger.ensureDirectory(getDataFolder(), "DataFolder", getLogger());
+        FileLogger.ensureDirectory(getDataFolder(), "DataFolder");
 
         // saveDefaultConfig() saves config.yml from JAR resources if it doesn't exist
         java.io.File configFile = new java.io.File(getDataFolder(), "config.yml");
         boolean configExisted = configFile.exists();
         saveDefaultConfig();
         if (!configExisted && configFile.exists()) {
-            getLogger().info("[Config] Created new file: config.yml");
+            ConsoleLogger.info("[Config] Created new file: config.yml");
         } else if (configExisted) {
-            getLogger().info("[Config] File exists: config.yml");
+            ConsoleLogger.info("[Config] File exists: config.yml");
         }
 
         // Попытка загрузить конфиг. Если файл повреждён (например, SnakeYAML 2.6
@@ -67,8 +73,8 @@ public class Main extends JavaPlugin {
         try {
             reloadConfig();
         } catch (Exception e) {
-            getLogger().warning("[Config] Failed to load config.yml: " + e.getMessage());
-            getLogger().warning("[Config] Deleting broken config.yml and recreating from JAR...");
+            ConsoleLogger.warn("[Config] Failed to load config.yml: " + e.getMessage());
+            ConsoleLogger.warn("[Config] Deleting broken config.yml and recreating from JAR...");
 
             // Удаляем битый файл
             if (configFile.exists()) {
@@ -78,7 +84,7 @@ public class Main extends JavaPlugin {
             // Пересоздаём из JAR
             saveDefaultConfig();
             reloadConfig();
-            getLogger().info("[Config] Recreated config.yml from JAR resources.");
+            ConsoleLogger.info("[Config] Recreated config.yml from JAR resources.");
         }
 
         // =========================
@@ -217,6 +223,12 @@ public class Main extends JavaPlugin {
         // PunishModule — система наказаний (бан/мут/кик/варн + вайтлист/блэклист)
         mm.register(new PunishModule());
 
+        // AntiCheatModule — модульная система античита (~40 проверок по 4 категориям)
+        mm.register(new AntiCheatModule());
+
+        // StructureIntegrity — система целостности структур (stress/degradation/integrity)
+        mm.register(new StructureIntegrityModule());
+
         // =========================
         // INIT ALL MODULES
         // Каждый модуль инициализируется в try-catch.
@@ -281,7 +293,23 @@ public class Main extends JavaPlugin {
         // =========================
         StructureChunkListener.scheduleDelayedRebuild(this);
 
-        getLogger().info("[PLUGIN] Plugin enabled!");
+        // =========================
+        // 🎮 ASCII-BANNER
+        // =========================
+        ConsoleLogger.info("");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF> __  __  _____      _____  _     _    _  _____ _____ _   _ </gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>|  \\/  |/ ____|    |  __ \\| |   | |  | |/ ____|_   _| \\ | |</gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| \\  / | |   ______| |__) | |   | |  | | |  __  | | |  \\| |</gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| |\\/| | |  |______|  ___/| |   | |  | | | |_ | | | | . ` |</gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| |  | | |____     | |    | |___| |__| | |__| |_| |_| |\\  |</gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>|_|  |_|\\_____|    |_|    |______\\____/ \\_____|_____|_| \\_|</gradient>");
+        ConsoleLogger.info("");
+        ConsoleLogger.raw("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>");
+        ConsoleLogger.raw("<gray>  Version: <white>" + getDescription().getVersion() + "</white>  |  Server: <white>" + getServer().getName() + " " + getServer().getVersion() + "</white></gray>");
+        ConsoleLogger.raw("<gray>  Authors: <white>" + String.join(", ", getDescription().getAuthors()) + "</white></gray>");
+        ConsoleLogger.raw("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>");
+        ConsoleLogger.info("");
+        ConsoleLogger.success("[PLUGIN] Plugin enabled!");
     }
 
     @Override
@@ -310,6 +338,6 @@ public class Main extends JavaPlugin {
         // Очищаем CheckManager — разморозить всех проверяемых
         CheckManager.shutdown();
 
-        getLogger().info("[PLUGIN] Disabled");
+        ConsoleLogger.info("[PLUGIN] Disabled");
     }
 }

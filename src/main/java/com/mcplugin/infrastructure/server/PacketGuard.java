@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.server;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -64,7 +65,7 @@ public class PacketGuard implements Listener {
             instance.injectPlayer(player);
         }
 
-        plugin.getLogger().info("[PacketGuard] Initialized. enabled=" + enabled);
+        ConsoleLogger.info("[PacketGuard] Initialized. enabled=" + enabled);
     }
 
     public static void reloadConfig() {
@@ -142,7 +143,7 @@ public class PacketGuard implements Listener {
             }
 
             if (logInject) {
-                Main.getInstance().getLogger().info("[PacketGuard] Injected handler for " + player.getName());
+                ConsoleLogger.info("[PacketGuard] Injected handler for " + player.getName());
             }
 
         } catch (Exception e) {
@@ -209,7 +210,7 @@ public class PacketGuard implements Listener {
         }
 
         if (log) {
-            Main.getInstance().getLogger().warning(
+            ConsoleLogger.warn(
                     "[PacketGuard] § Caught PacketTooLargeException for " + player.getName()
                             + ": " + errorMsg
             );

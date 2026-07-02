@@ -3,6 +3,7 @@ package com.mcplugin.energy.machines.workbench;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
@@ -71,7 +72,7 @@ public class EnergyWorkbenchManager {
             }
         }
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[EnergyWorkbenchManager] Loaded " + workbenches.size() + " workbenches from Marker entities"
         );
     }

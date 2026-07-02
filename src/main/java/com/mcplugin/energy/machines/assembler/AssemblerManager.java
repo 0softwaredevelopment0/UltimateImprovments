@@ -3,6 +3,7 @@ package com.mcplugin.energy.machines.assembler;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 
 import java.util.UUID;
@@ -46,7 +47,7 @@ public class AssemblerManager implements Listener {
         instance = new AssemblerManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
         scanExistingAssemblers();
-        Main.getInstance().getLogger().info("[Assembler] Manager initialized.");
+        ConsoleLogger.info("[Assembler] Manager initialized.");
     }
 
     public static AssemblerManager getInstance() {
@@ -76,7 +77,7 @@ public class AssemblerManager implements Listener {
                 break;
             }
         }
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Assembler] Auto-detected " + count + " assemblers from Marker entities");
     }
 
@@ -129,7 +130,7 @@ public class AssemblerManager implements Listener {
             removeAssembler(loc);
             player.sendMessage("§e⚡ Assembler disassembled!"
                     + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Assembler] Disassembled at " + loc + " by " + player.getName());
         } else {
             event.setCancelled(true);
@@ -153,7 +154,7 @@ public class AssemblerManager implements Listener {
                     + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
             player.sendMessage("§8┃ §7Place items in the crafter according to the recipe — they will be crafted automatically!");
 
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Assembler] Assembled at " + loc + " by " + player.getName());
         }
     }
@@ -175,7 +176,7 @@ public class AssemblerManager implements Listener {
                         loc.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0);
                 world.playSound(loc, Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
             }
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Assembler] Removed at " + loc);
         }
         return was != null;

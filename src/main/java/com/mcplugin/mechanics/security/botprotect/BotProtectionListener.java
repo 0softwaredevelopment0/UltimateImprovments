@@ -4,8 +4,8 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -48,16 +48,25 @@ public class BotProtectionListener implements Listener {
     // ── Feature 2: Player quit times (in-memory cache + DB persisted) ──
     private final Map<UUID, Long> quitTimes = new ConcurrentHashMap<>();
 
+    // ── Feature 3: Priority session queue for legit players during bot attack ──
+    private final ConcurrentLinkedDeque<Long> priorityTimestamps = new ConcurrentLinkedDeque<>();
+    private final Map<UUID, Long> prioritySessions = new ConcurrentHashMap<>();
+    private final AtomicLong underAttackUntil = new AtomicLong(0);
+
     // ── Config cache ──
     private boolean enabled = true;
     private int maxJoinsPerWindow = 2;
     private int windowSeconds = 1;
     private boolean notifyOps = true;
     private int rejoinCooldownSeconds = 3;
+    private int prioritySessionDuration = 10;
+    private int priorityMaxJoinsPerWindow = 5;
 
     public BotProtectionListener(Main plugin) {
         this.plugin = plugin;
         loadConfig();
+        // Clean up expired priority sessions every 10 seconds
+        Bukkit.getScheduler().runTaskTimer(plugin, this::cleanupStaleData, 200L, 200L);
     }
 
     /**
@@ -70,6 +79,8 @@ public class BotProtectionListener implements Listener {
         windowSeconds = Math.max(1, config.getInt("bot_protection.queue.window_seconds", 1));
         notifyOps = config.getBoolean("bot_protection.queue.notify_ops", true);
         rejoinCooldownSeconds = Math.max(1, config.getInt("bot_protection.rejoin_cooldown_seconds", 3));
+        prioritySessionDuration = Math.max(1, config.getInt("bot_protection.priority_session_duration", 10));
+        priorityMaxJoinsPerWindow = Math.max(1, config.getInt("bot_protection.queue.priority_max_joins_per_window", 5));
     }
 
     // =========================================================
@@ -88,7 +99,7 @@ public class BotProtectionListener implements Listener {
                 st.setLong(2, quitTime);
                 st.executeUpdate();
             } catch (Exception e) {
-                plugin.getLogger().warning("[BotProtect] Failed to save quit time to DB: " + e.getMessage());
+                ConsoleLogger.warn("[BotProtect] Failed to save quit time to DB: " + e.getMessage());
             }
         });
     }
@@ -104,7 +115,7 @@ public class BotProtectionListener implements Listener {
                 st.setString(1, uuid.toString());
                 st.executeUpdate();
             } catch (Exception e) {
-                plugin.getLogger().warning("[BotProtect] Failed to remove quit time from DB: " + e.getMessage());
+                ConsoleLogger.warn("[BotProtect] Failed to remove quit time from DB: " + e.getMessage());
             }
         });
     }
@@ -123,7 +134,7 @@ public class BotProtectionListener implements Listener {
                 }
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("[BotProtect] Failed to load quit time from DB: " + e.getMessage());
+            ConsoleLogger.warn("[BotProtect] Failed to load quit time from DB: " + e.getMessage());
         }
         return null;
     }
@@ -140,6 +151,38 @@ public class BotProtectionListener implements Listener {
         UUID uuid = event.getUniqueId();
         String name = event.getName();
         long now = System.currentTimeMillis();
+
+        // ═════════════════════════════════════════════════════
+        //  FEATURE 3: Priority session queue — bypass cooldown,
+        //  но имеет свою rate-limit очередь (не конфликтует с обычной)
+        // ═════════════════════════════════════════════════════
+        Long sessionExpiry = prioritySessions.remove(uuid);
+        if (sessionExpiry != null && now < sessionExpiry) {
+            // Priority queue check (свой sliding window)
+            long cutoff = now - (windowSeconds * 1000L);
+            while (!priorityTimestamps.isEmpty() && priorityTimestamps.peekFirst() < cutoff) {
+                priorityTimestamps.pollFirst();
+            }
+            priorityTimestamps.addLast(now);
+
+            int priorityCount = priorityTimestamps.size();
+            if (priorityCount > priorityMaxJoinsPerWindow) {
+                int position = priorityCount - priorityMaxJoinsPerWindow;
+                String msg = MessagesManager.getString("bot_protection.queue_full",
+                        "<red>❌ Server overloaded! You are in queue: position {position}. Please wait and try again.</red>")
+                        .replace("{position}", String.valueOf(position));
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
+                ConsoleLogger.info("[BotProtect] " + name + " priority queued: position #" + position
+                        + " (" + priorityCount + " priority joins in " + windowSeconds + "s window)");
+
+                // Возвращаем сессию — пусть попробует снова через секунду
+                prioritySessions.put(uuid, sessionExpiry);
+                return;
+            }
+
+            ConsoleLogger.info("[BotProtect] " + name + " used priority session to reconnect");
+            return; // skip cooldown + regular queue
+        }
 
         // ═════════════════════════════════════════════════════
         //  FEATURE 2: Rejoin cooldown
@@ -159,7 +202,7 @@ public class BotProtectionListener implements Listener {
                         "<red>❌ You left too recently! Wait</red> <yellow>{seconds}</yellow> <red>sec before reconnecting.</red>")
                         .replace("{seconds}", String.valueOf(remaining));
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
-                plugin.getLogger().info("[BotProtect] " + name + " rejected: rejoin cooldown (" + remaining + "s remaining)");
+                ConsoleLogger.info("[BotProtect] " + name + " rejected: rejoin cooldown (" + remaining + "s remaining)");
 
                 // ВАЖНО: возвращаем quitTime обратно в кэш, чтобы следующий реконнект
                 // (в пределах того же кулдауна) тоже был отклонён.
@@ -189,14 +232,17 @@ public class BotProtectionListener implements Listener {
         if (count > maxJoinsPerWindow) {
             int position = count - maxJoinsPerWindow;
             String msg = MessagesManager.getString("bot_protection.queue_full",
-                    "<red>❌ Server overloaded! You are in queue: position #{position}. Please wait and try again.</red>")
+                    "<red>❌ Server overloaded! You are in queue: position {position}. Please wait and try again.</red>")
                     .replace("{position}", String.valueOf(position));
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
 
-            // Notify ops + console (rate-limited to once per window)
+            // Mark as under attack
+            underAttackUntil.set(now + (windowSeconds * 1000L) + (prioritySessionDuration * 1000L));
+
+            // Notify console (rate-limited to once per window)
             notifyOpsAsync(now, count);
 
-            plugin.getLogger().info("[BotProtect] " + name + " queued: position #" + position
+            ConsoleLogger.info("[BotProtect] " + name + " queued: position #" + position
                     + " (" + count + " joins in " + windowSeconds + "s window)");
         }
     }
@@ -219,15 +265,8 @@ public class BotProtectionListener implements Listener {
 
                 // Планируем на главный поток (Bukkit API не thread-safe)
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    // Console
-                    Bukkit.getConsoleSender().sendMessage(MessageUtil.legacy(msg));
-
-                    // Ops
-                    for (Player player : Bukkit.getOnlinePlayers()) {
-                        if (player.isOp()) {
-                            player.sendMessage(MessageUtil.parse(msg));
-                        }
-                    }
+                    // Console only
+                    Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(msg));
                 });
             }
         }
@@ -252,5 +291,35 @@ public class BotProtectionListener implements Listener {
         long now = System.currentTimeMillis();
         quitTimes.put(uuid, now);
         dbSaveQuitTime(uuid, now);
+
+        // Priority session for legit players during bot attack
+        if (underAttackUntil.get() > now) {
+            long sessionExpiry = now + (prioritySessionDuration * 1000L);
+            prioritySessions.put(uuid, sessionExpiry);
+            ConsoleLogger.info("[BotProtect] Priority session (" + prioritySessionDuration + "s) granted for " + event.getPlayer().getName());
+        }
+    }
+
+    /**
+     * Периодическая очистка устаревших данных:
+     * — prioritySessions (истекшие сессии)
+     * — priorityTimestamps (окна вне интервала)
+     * — quitTimes (игроки вышли и кулдаун давно истёк — не вернутся)
+     */
+    private void cleanupStaleData() {
+        long now = System.currentTimeMillis();
+
+        // Clean expired priority sessions
+        prioritySessions.entrySet().removeIf(entry -> entry.getValue() <= now);
+
+        // Clean old priority timestamps outside the window
+        long cutoff = now - (windowSeconds * 1000L);
+        while (!priorityTimestamps.isEmpty() && priorityTimestamps.peekFirst() < cutoff) {
+            priorityTimestamps.pollFirst();
+        }
+
+        // Clean stale quitTimes — кулдаун истёк, игрок явно не вернётся
+        long cooldownMs = rejoinCooldownSeconds * 1000L;
+        quitTimes.entrySet().removeIf(entry -> now - entry.getValue() > cooldownMs);
     }
 }

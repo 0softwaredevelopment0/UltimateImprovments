@@ -123,6 +123,10 @@ public class AuthCommand {
     }
 
     private static void handlePlayerLogin(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.auth.login")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            return;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return;
@@ -141,6 +145,10 @@ public class AuthCommand {
     }
 
     private static void handlePlayerRegister(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.auth.register")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            return;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return;

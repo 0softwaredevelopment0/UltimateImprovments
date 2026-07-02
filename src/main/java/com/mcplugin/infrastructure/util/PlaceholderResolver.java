@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.util;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -168,7 +169,7 @@ public class PlaceholderResolver {
         try {
             Class.forName("me.clip.placeholderapi.PlaceholderAPI");
             papiAvailable = true;
-            Main.getInstance().getLogger().info("[PlaceholderResolver] PlaceholderAPI detected!");
+            ConsoleLogger.info("[PlaceholderResolver] PlaceholderAPI detected!");
         } catch (ClassNotFoundException e) {
             papiAvailable = false;
         }
@@ -196,11 +197,11 @@ public class PlaceholderResolver {
 
             if (userManager != null) {
                 luckPermsAvailable = true;
-                Main.getInstance().getLogger().info("[PlaceholderResolver] LuckPerms API detected!");
+                ConsoleLogger.info("[PlaceholderResolver] LuckPerms API detected!");
             }
         } catch (Exception e) {
             luckPermsAvailable = false;
-            Main.getInstance().getLogger().info("[PlaceholderResolver] LuckPerms not found — {prefix}/{suffix}/{group} disabled");
+            ConsoleLogger.info("[PlaceholderResolver] LuckPerms not found — {prefix}/{suffix}/{group} disabled");
         }
 
         // Инициализируем StatsTracker
@@ -298,7 +299,10 @@ public class PlaceholderResolver {
         // 3. Динамические плейсхолдеры (time-based)
         sb = new StringBuilder(resolveDynamic(sb.toString()));
 
-        // 4. PAPI
+        // 4. {copy:"..."} и {link:"..."} плейсхолдеры
+        sb = new StringBuilder(resolveCopyLink(sb.toString()));
+
+        // 5. PAPI
         if (player != null && papiAvailable) {
             try {
                 Class<?> papiClass = Class.forName("me.clip.placeholderapi.PlaceholderAPI");
@@ -486,6 +490,47 @@ public class PlaceholderResolver {
     private static String resolveMetric(String metric, String stat, String colorFlag,
                                          StatsTracker st, int samples) {
         return resolveMetric(metric, stat, "color".equals(colorFlag), st, samples);
+    }
+
+    // ════════════════════════════════════════════
+    // {copy:"..."} и {link:"..."} плейсхолдеры
+    // ════════════════════════════════════════════
+
+    private static final Pattern COPY_LINK_PATTERN = Pattern.compile(
+            "\\{(copy|link):\"([^\"]+)\"\\}"
+    );
+
+    /**
+     * Преобразует:
+     * {copy:"текст"} → MiniMessage click-to-copy
+     * {link:"url"}   → MiniMessage click-to-open-url
+     *
+     * Текст в кавычках поддерживает MiniMessage (цвета, градиенты и т.д.).
+     * Для copy: копируется сырой текст (без MiniMessage тегов).
+     * Для link: URL используется как есть.
+     */
+    private static String resolveCopyLink(String text) {
+        if (text == null || text.isEmpty()) return text;
+
+        StringBuffer sb = new StringBuffer();
+        Matcher m = COPY_LINK_PATTERN.matcher(text);
+        while (m.find()) {
+            String type = m.group(1);     // "copy" or "link"
+            String content = m.group(2);   // текст внутри кавычек (с MiniMessage)
+
+            String action = "copy".equals(type) ? "copy_to_clipboard" : "open_url";
+
+            // Для click-значения экранируем только одинарные кавычки (ломают MiniMessage синтаксис)
+            String clickValue = content.replace("'", "\\'");
+
+            // Display-текст используем как есть — MiniMessage сам разберёт форматирование
+            String display = content;
+
+            String replacement = "<click:" + action + ":'" + clickValue + "'>" + display + "</click>";
+            m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     public static boolean isPapiAvailable() {

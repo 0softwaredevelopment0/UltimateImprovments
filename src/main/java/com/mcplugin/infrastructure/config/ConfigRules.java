@@ -420,11 +420,16 @@ final class ConfigRules {
             integer("bot_protection.queue.max_joins_per_window", 1, 100),
             integer("bot_protection.queue.window_seconds", 1, 600),
             bool("bot_protection.queue.notify_ops"),
+            integer("bot_protection.queue.priority_max_joins_per_window", 1, 100),
             integer("bot_protection.rejoin_cooldown_seconds", 0, 3600),
+            integer("bot_protection.priority_session_duration", 0, 3600),
+
+            notBlank("spawn.mode", 16),
 
             integer("home.max_homes", 1, 1000),
             integer("home.name_min_length", 1, 100),
             integer("home.name_max_length", 1, 100),
+            notBlank("home.mode", 16),
 
             notBlank("report.expire_time", 16),
 
@@ -490,6 +495,8 @@ final class ConfigRules {
             bool("belowname.enabled"),
             notBlank("belowname.format", 256),
             integer("belowname.update_interval_ticks", 1, 72000),
+
+            bool("endersee.enabled"),
 
             bool("maintenance.enabled"),
 

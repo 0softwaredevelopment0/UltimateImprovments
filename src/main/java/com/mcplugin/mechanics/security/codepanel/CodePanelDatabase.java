@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.security.codepanel;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -96,7 +97,7 @@ public class CodePanelDatabase {
                 );
             """);
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] DB init failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] DB init failed: " + e.getMessage());
         }
     }
 
@@ -122,7 +123,7 @@ public class CodePanelDatabase {
             ps.executeUpdate();
             return true;
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] Add key failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] Add key failed: " + e.getMessage());
             return false;
         }
     }
@@ -137,7 +138,7 @@ public class CodePanelDatabase {
             ps.setString(1, keyName);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] Remove key failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] Remove key failed: " + e.getMessage());
             return false;
         }
     }
@@ -166,7 +167,7 @@ public class CodePanelDatabase {
             ps.setString(7, keyName);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] Update key failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] Update key failed: " + e.getMessage());
             return false;
         }
     }
@@ -200,7 +201,7 @@ public class CodePanelDatabase {
                 names.add(rs.getString("key_name"));
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] Get key names failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] Get key names failed: " + e.getMessage());
         }
         return names;
     }
@@ -218,7 +219,7 @@ public class CodePanelDatabase {
                 keys.add(CodePanelKey.fromResultSet(rs));
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] Get all keys failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] Get all keys failed: " + e.getMessage());
         }
         return keys;
     }
@@ -237,7 +238,7 @@ public class CodePanelDatabase {
                 }
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] Get key failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] Get key failed: " + e.getMessage());
         }
         return null;
     }
@@ -252,7 +253,7 @@ public class CodePanelDatabase {
             ps.setString(1, keyName);
             ps.executeUpdate();
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] Increment attempts failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] Increment attempts failed: " + e.getMessage());
         }
     }
 
@@ -284,10 +285,10 @@ public class CodePanelDatabase {
             }
             ps.executeUpdate();
             for (String name : removed) {
-                Main.getInstance().getLogger().info("[CodePanel] Cleaned up key: " + name);
+                ConsoleLogger.info("[CodePanel] Cleaned up key: " + name);
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[CodePanel] Cleanup failed: " + e.getMessage());
+            ConsoleLogger.error("[CodePanel] Cleanup failed: " + e.getMessage());
         }
         return removed;
     }

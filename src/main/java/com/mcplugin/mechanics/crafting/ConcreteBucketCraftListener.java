@@ -3,6 +3,7 @@ package com.mcplugin.mechanics.crafting;
 import com.mcplugin.infrastructure.core.Keys;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -75,7 +76,7 @@ public class ConcreteBucketCraftListener implements Listener {
 
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
-        plugin.getLogger().info("[ConcreteBucket] Recipe registered (8 Gravel + Water Bucket)");
+        ConsoleLogger.info("[ConcreteBucket] Recipe registered (8 Gravel + Water Bucket)");
     }
 
     // =========================

@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.security.auth;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,7 +43,7 @@ public class Auth2FA {
     public static void init() {
         instance = new Auth2FA();
         initTable();
-        Main.getInstance().getLogger().info("[Auth2FA] Initialized (button-based confirmation).");
+        ConsoleLogger.info("[Auth2FA] Initialized (button-based confirmation).");
     }
 
     public static Auth2FA getInstance() {
@@ -67,7 +68,7 @@ public class Auth2FA {
 
             tableChecked = true;
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Auth2FA] DB init failed: " + e.getMessage());
+            ConsoleLogger.warn("[Auth2FA] DB init failed: " + e.getMessage());
         }
     }
 
@@ -98,7 +99,7 @@ public class Auth2FA {
                 if (rs.next()) return rs.getString("telegram_chat_id");
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Auth2FA] Get chat ID failed: " + e.getMessage());
+            ConsoleLogger.warn("[Auth2FA] Get chat ID failed: " + e.getMessage());
         }
         return null;
     }
@@ -113,7 +114,7 @@ public class Auth2FA {
             ps.setInt(3, enabled ? 1 : 0);
             ps.executeUpdate();
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Auth2FA] Save 2FA settings failed: " + e.getMessage());
+            ConsoleLogger.warn("[Auth2FA] Save 2FA settings failed: " + e.getMessage());
         }
     }
 
@@ -125,7 +126,7 @@ public class Auth2FA {
             ps.setString(1, uuid.toString());
             ps.executeUpdate();
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Auth2FA] Remove 2FA failed: " + e.getMessage());
+            ConsoleLogger.warn("[Auth2FA] Remove 2FA failed: " + e.getMessage());
         }
     }
 
@@ -176,7 +177,7 @@ public class Auth2FA {
     private void sendRequestToBot(UUID uuid, String requestId, String chatId, String playerName, String playerIp) {
         String botUrl = getBotUrl();
         if (botUrl == null || botUrl.isEmpty()) {
-            Main.getInstance().getLogger().warning("[Auth2FA] No bot.url configured — can't send confirmation request!");
+            ConsoleLogger.warn("[Auth2FA] No bot.url configured — can't send confirmation request!");
             return;
         }
 
@@ -221,15 +222,15 @@ public class Auth2FA {
                 conn.disconnect();
 
                 if (responseCode == 200) {
-                    Main.getInstance().getLogger().info(
+                    ConsoleLogger.info(
                             "[Auth2FA] Confirmation sent to " + playerName + " via Telegram (chat: " + chatId + ")");
                 } else {
-                    Main.getInstance().getLogger().warning(
+                    ConsoleLogger.warn(
                             "[Auth2FA] Bot returned HTTP " + responseCode + ": " + resp);
                 }
 
             } catch (Exception e) {
-                Main.getInstance().getLogger().warning(
+                ConsoleLogger.warn(
                         "[Auth2FA] Failed to send confirmation: " + e.getMessage());
             }
         });
@@ -278,7 +279,7 @@ public class Auth2FA {
             }
         } catch (Exception e) {
             String msg = e.getMessage();
-            Main.getInstance().getLogger().warning(
+            ConsoleLogger.warn(
                     "[Auth2FA] Poll failed for " + requestId + ": " + msg
                     + " — cancelling 2FA for " + uuid);
             pendingConfirmations.remove(uuid);

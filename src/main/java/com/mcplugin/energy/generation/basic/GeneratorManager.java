@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.util.UUID;
 
@@ -47,7 +48,7 @@ public class GeneratorManager implements Listener {
         instance = new GeneratorManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
         scanExistingGenerators();
-        Main.getInstance().getLogger().info("[Generator] Manager initialized.");
+        ConsoleLogger.info("[Generator] Manager initialized.");
     }
 
     public static GeneratorManager getInstance() {
@@ -79,7 +80,7 @@ public class GeneratorManager implements Listener {
                 break;
             }
         }
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Generator] Auto-detected " + count + " generators from Marker entities");
     }
 
@@ -139,7 +140,7 @@ public class GeneratorManager implements Listener {
             removeGenerator(loc);
             player.sendMessage("§e⚡ Генератор разобран!"
                     + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Generator] Disassembled at " + loc + " by " + player.getName());
         } else {
             event.setCancelled(true);
@@ -162,7 +163,7 @@ public class GeneratorManager implements Listener {
                     + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
             player.sendMessage("§8┃ §7Положите топливо в плавильную печь — энергия пойдёт в сеть!");
 
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Generator] Assembled at " + loc + " by " + player.getName());
         }
     }
@@ -186,7 +187,7 @@ public class GeneratorManager implements Listener {
                         loc.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0);
                 world.playSound(loc, Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
             }
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Generator] Removed at " + loc);
         }
         return was != null;
@@ -274,7 +275,7 @@ public class GeneratorManager implements Listener {
                 + " §8[§7" + furnaceLoc.getBlockX() + " " + furnaceLoc.getBlockY() + " " + furnaceLoc.getBlockZ() + "§8]");
         player.sendMessage("§8┃ §7Положите топливо в плавильную печь — энергия пойдёт в сеть!");
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Generator] Assembled at " + furnaceLoc + " by " + player.getName());
     }
 

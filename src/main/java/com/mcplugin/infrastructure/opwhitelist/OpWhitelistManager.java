@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.opwhitelist;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -78,7 +79,7 @@ public class OpWhitelistManager implements Listener {
                 }
             }
 
-            Main.getInstance().getLogger().info("[OpWhitelist] Loaded " + count + " players from SQLite, enabled=" + enabled);
+            ConsoleLogger.info("[OpWhitelist] Loaded " + count + " players from SQLite, enabled=" + enabled);
         } catch (Exception e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[OpWhitelist] Failed to load from DB", e);
         }
@@ -150,13 +151,13 @@ public class OpWhitelistManager implements Listener {
                         }
                         st.executeBatch();
                     }
-                    Main.getInstance().getLogger().info("[OpWhitelist] Migrated " + imported + " players from op-whitelist.json to SQLite");
+                    ConsoleLogger.info("[OpWhitelist] Migrated " + imported + " players from op-whitelist.json to SQLite");
                 }
             }
 
             // Удаляем JSON-файл после успешной миграции
             jsonFile.delete();
-            Main.getInstance().getLogger().info("[OpWhitelist] Deleted old op-whitelist.json");
+            ConsoleLogger.info("[OpWhitelist] Deleted old op-whitelist.json");
         } catch (Exception e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[OpWhitelist] Failed to migrate from JSON", e);
         }
@@ -200,7 +201,7 @@ public class OpWhitelistManager implements Listener {
             st.setString(1, lower);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[OpWhitelist] Added: " + lower);
+                ConsoleLogger.info("[OpWhitelist] Added: " + lower);
                 return true;
             }
             return false; // уже есть
@@ -220,7 +221,7 @@ public class OpWhitelistManager implements Listener {
             st.setString(1, lower);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[OpWhitelist] Removed: " + lower);
+                ConsoleLogger.info("[OpWhitelist] Removed: " + lower);
                 return true;
             }
             return false; // не найден
@@ -297,6 +298,6 @@ public class OpWhitelistManager implements Listener {
         player.sendMessage(MessageUtil.parse(
                 "<red>⛔</red> <white>Your operator status has been removed — you are not in the OP whitelist.</white>"
         ));
-        Main.getInstance().getLogger().info("[OpWhitelist] Removed OP from " + player.getName() + " (not whitelisted)");
+        ConsoleLogger.info("[OpWhitelist] Removed OP from " + player.getName() + " (not whitelisted)");
     }
 }

@@ -1,6 +1,8 @@
 package com.mcplugin.mechanics.features.blocks;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.mechanics.features.structure.StructureIntegrityManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -8,7 +10,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.*;
@@ -40,14 +44,28 @@ public class EnderChestManager implements Listener {
     private static double rateLimitDamage = 10;
     private static double rateLimitExplosionPower = 10.0;
 
+    // Игроки, которые просматривают чужой эндер-сундук через /mp endersee — не дамажим их при закрытии
+    private static final Set<UUID> enderseeViewers = ConcurrentHashMap.newKeySet();
+
     private static final Random RANDOM = new Random();
 
     // Для rate-limit: UUID игрока → список таймстемпов открытий (отсортирован по возрастанию)
     private static final Map<UUID, List<Long>> openTimestamps = new ConcurrentHashMap<>();
 
+    // Для Structure Integrity: отслеживаем последнюю локацию открытого эндер-сундука
+    private static final Map<UUID, Location> lastOpenedChest = new ConcurrentHashMap<>();
+
     public static void init(Main plugin) {
         reloadConfig();
         plugin.getServer().getPluginManager().registerEvents(new EnderChestManager(), plugin);
+    }
+
+    // =========================
+    // /MP ENDERSEE — пометить игрока как просматривающего чужой сундук
+    // (чтобы не дамажить при закрытии)
+    // =========================
+    public static void addEnderseeViewer(UUID uuid) {
+        enderseeViewers.add(uuid);
     }
 
     public static void reloadConfig() {
@@ -81,6 +99,20 @@ public class EnderChestManager implements Listener {
         Player player = e.getPlayer();
         Location loc = e.getClickedBlock().getLocation();
 
+        // Наносим урон при каждом открытии
+        if (damage > 0) {
+            player.damage(damage);
+        }
+
+        // Structure Integrity — добавляем stress
+        StructureIntegrityManager sim = StructureIntegrityManager.getInstance();
+        if (sim != null) {
+            sim.onEnderChestInteract(loc);
+        }
+
+        // Запоминаем последний открытый сундук (для структуры и закрытия)
+        lastOpenedChest.put(player.getUniqueId(), loc);
+
         // Rate-limit проверка
         if (rateLimitEnabled) {
             if (checkAndApplyRateLimit(player, loc)) {
@@ -102,6 +134,36 @@ public class EnderChestManager implements Listener {
                         + " < chance=" + explosionChance + ")");
 
         e.setCancelled(true);
+    }
+
+    /**
+     * Урон при закрытии эндер-сундука.
+     * Не срабатывает для /mp endersee (чужие сундуки).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onEnderChestClose(InventoryCloseEvent e) {
+        if (!enabled) return;
+        if (e.getInventory().getType() != InventoryType.ENDER_CHEST) return;
+        if (!(e.getPlayer() instanceof Player player)) return;
+
+        // Пропускаем если игрок использует /mp endersee (просмотр чужого сундука)
+        if (enderseeViewers.remove(player.getUniqueId())) {
+            lastOpenedChest.remove(player.getUniqueId());
+            return;
+        }
+
+        if (damage > 0) {
+            player.damage(damage);
+        }
+
+        // Structure Integrity — добавляем stress при закрытии
+        StructureIntegrityManager sim = StructureIntegrityManager.getInstance();
+        if (sim != null) {
+            Location chestLoc = lastOpenedChest.remove(player.getUniqueId());
+            if (chestLoc != null) {
+                sim.onEnderChestInteract(chestLoc);
+            }
+        }
     }
 
     /**
@@ -192,7 +254,7 @@ public class EnderChestManager implements Listener {
         }
 
         // Логирование
-        Main.getInstance().getLogger().info(logMessage);
+        ConsoleLogger.info(logMessage);
 
         // 🏆 Достижение: blowed_by_echest
         try {

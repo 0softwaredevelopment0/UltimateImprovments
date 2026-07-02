@@ -5,6 +5,8 @@ import com.mcplugin.infrastructure.punish.PunishmentManager;
 import com.mcplugin.infrastructure.punish.PunishJoinListener;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -78,6 +80,7 @@ public final class PunishSubcommand {
             case "unban" -> handleUnban(sender, args);
             case "unmute" -> handleUnmute(sender, args);
             case "unwarn" -> handleUnwarn(sender, args);
+            case "crash" -> handleCrash(sender, args);
             default -> {
                 sendUsage(sender);
                 yield true;
@@ -854,6 +857,48 @@ public final class PunishSubcommand {
     }
 
     // =========================
+    // CRASH
+    // =========================
+    private static boolean handleCrash(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.punish.crash")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to crash players!</red>"));
+            return true;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/mp punish crash <player></white>"
+            ));
+            return true;
+        }
+
+        String targetName = args[2];
+        @SuppressWarnings("deprecation")
+        Player target = Bukkit.getPlayerExact(targetName);
+        if (target == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Player</red> <yellow>" + targetName + "</yellow> <red>not found or not online!</red>"
+            ));
+            return true;
+        }
+
+        Location loc = target.getLocation();
+
+        // Спавним 999,999,999 campfire_signal_smoke particles только для цели, с force-рендером
+        target.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, 999999999, 0, 0, 0, 0);
+
+        sender.sendMessage(MessageUtil.parse(
+                "<green>✔</green> <white>Player</white> <yellow>" + target.getName() + "</yellow> <white>has been crashed with particles.</white>"
+        ));
+
+        // Уведомление операторам
+        broadcastToModerators(
+                "<red>💥</red> <yellow>" + target.getName() + "</yellow> <gray>crashed by</gray> <white>" + sender.getName() + "</white>"
+        );
+
+        return true;
+    }
+
+    // =========================
     // USAGE
     // =========================
     private static void sendUsage(CommandSender sender) {
@@ -879,22 +924,24 @@ public final class PunishSubcommand {
 
         if (args.length == 2) {
             String prefix = args[1].toLowerCase();
-            for (String action : List.of("ban", "mute", "kick", "warn", "listwarns", "unban", "unmute", "unwarn")) {
+            for (String action : List.of("ban", "mute", "kick", "warn", "listwarns", "unban", "unmute", "unwarn", "crash")) {
                 if (action.startsWith(prefix)) {
                     completions.add(action);
                 }
             }
         } else if (args.length == 3) {
             String action = args[1].toLowerCase();
-            if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "unwarn", "listwarns").contains(action)) {
+            if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "unwarn", "listwarns", "crash").contains(action)) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     completions.add(p.getName());
                 }
             }
         } else if (args.length >= 4) {
-            // Флаги
-            String action = args[1].toLowerCase();
-            if (List.of("ban", "mute", "warn").contains(action)) {
+        // Флаги
+        String action = args[1].toLowerCase();
+        if (action.equals("crash")) {
+            // crash не имеет флагов
+        } else if (List.of("ban", "mute", "warn").contains(action)) {
                 boolean hasTime = false, hasPerm = false, hasIp = false, hasHw = false;
                 for (int i = 3; i < args.length; i++) {
                     String a = args[i].toLowerCase();

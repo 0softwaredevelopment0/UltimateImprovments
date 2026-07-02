@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.SoundUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.mechanics.security.codepanel.CodePanelDatabase;
 import org.bukkit.Sound;
 import org.bukkit.command.*;
@@ -161,7 +162,7 @@ public class CodePanelClick implements CommandExecutor {
 
                 if (newUsed >= key.maxAttempts) {
                     CodePanelDatabase.removeKey(key.keyName);
-                    Main.getInstance().getLogger().info(
+                    ConsoleLogger.info(
                             "[CodePanel] Key '" + key.keyName + "' removed after "
                                     + newUsed + "/" + key.maxAttempts + " uses."
                     );

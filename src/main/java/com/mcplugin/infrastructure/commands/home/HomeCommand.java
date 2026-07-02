@@ -6,6 +6,7 @@ import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -152,22 +153,38 @@ public final class HomeCommand {
 
         String homeName = args[0].trim();
         UUID uuid = player.getUniqueId();
-        HomeDatabase.HomeData home = HomeDatabase.getHome(uuid, homeName);
+        HomeDatabase.HomeData homeEntry = HomeDatabase.getHome(uuid, homeName);
 
-        if (home == null) {
+        if (homeEntry == null) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found", "<yellow>ℹ</yellow> <white>Home</white> <yellow>{name}</yellow> <white>not found.</white>").replace("{name}", homeName)));
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_hint", "<gray> Use </gray><white>/mp sethome {name}</white><gray> to save it.</gray>").replace("{name}", homeName)));
             return true;
         }
 
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_name", "<gold>  ✦ </gold><white>Home: </white><yellow>{name}</yellow>").replace("{name}", home.homeName())));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_world", "<gray>World: </gray><white>{world}</white>").replace("{world}", home.world())));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_x", "<gray>X: </gray><white>{x}</white>").replace("{x}", String.format("%.1f", home.x()))));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_y", "<gray>Y: </gray><white>{y}</white>").replace("{y}", String.format("%.1f", home.y()))));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_z", "<gray>Z: </gray><white>{z}</white>").replace("{z}", String.format("%.1f", home.z()))));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
+        String mode = Main.getInstance().getConfig().getString("home.mode", "legit");
+
+        if (mode.equalsIgnoreCase("standard")) {
+            // Teleport to home
+            World world = player.getServer().getWorld(homeEntry.world());
+            if (world == null) {
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.world_not_found", "<red>❌ World</red> <yellow>{world}</yellow> <red>not found!</red>").replace("{world}", homeEntry.world())));
+                return true;
+            }
+            Location homeLoc = new Location(world, homeEntry.x(), homeEntry.y(), homeEntry.z(), homeEntry.yaw(), homeEntry.pitch());
+            player.teleport(homeLoc);
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.teleported", "<green>✔</green> <white>Teleported to home</white> <yellow>{name}</yellow><white>!</white>").replace("{name}", homeName)));
+        } else {
+            // Legit mode — show coordinates
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_name", "<gold>  ✦ </gold><white>Home: </white><yellow>{name}</yellow>").replace("{name}", homeEntry.homeName())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_world", "<gray>World: </gray><white>{world}</white>").replace("{world}", homeEntry.world())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_x", "<gray>X: </gray><white>{x}</white>").replace("{x}", String.format("%.1f", homeEntry.x()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_y", "<gray>Y: </gray><white>{y}</white>").replace("{y}", String.format("%.1f", homeEntry.y()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_z", "<gray>Z: </gray><white>{z}</white>").replace("{z}", String.format("%.1f", homeEntry.z()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
+            player.sendMessage(MessageUtil.parse("<yellow>⚠</yellow> <gray>Home is in </gray><yellow>legit</yellow> <gray>mode — no teleport. Travel manually.</gray>"));
+        }
         return true;
     }
 

@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.features.items;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -64,7 +65,7 @@ public class AutoCraftManager implements Listener {
 
     public static void init(Main plugin) {
         plugin.getServer().getPluginManager().registerEvents(new AutoCraftManager(), plugin);
-        plugin.getLogger().info("[AutoCraft] ✔ Auto-craft mode registered.");
+        ConsoleLogger.info("[AutoCraft] ✔ Auto-craft mode registered.");
     }
 
     // =========================

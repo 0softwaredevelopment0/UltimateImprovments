@@ -2,6 +2,7 @@ package com.mcplugin.infrastructure.server;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Chunk;
 import org.bukkit.configuration.file.FileConfiguration;
 import java.util.*;
@@ -44,7 +45,7 @@ public final class RedstoneGuard {
     public static void reload() {
         if (instance != null) {
             instance.loadConfig();
-            Main.getInstance().getLogger().info("[REDSTONE_GUARD] Config reloaded (enabled=" + instance.enabled + ")");
+            ConsoleLogger.info("[REDSTONE_GUARD] Config reloaded (enabled=" + instance.enabled + ")");
         }
     }
 
@@ -162,7 +163,7 @@ public final class RedstoneGuard {
                         + ", per-chunk limit " + chunkIterationsLimit + ")"
                         + " → redstone chunk blocking active";
 
-        plugin.getLogger().warning(consoleMsg);
+        ConsoleLogger.warn(consoleMsg);
 
         String playerMsg =
                 "<gray>[<white>Server</white><dark_gray>/</dark_gray><yellow>Warning</yellow>] <white>MSPT </white><red>" + mspt
@@ -179,7 +180,7 @@ public final class RedstoneGuard {
                         + " REDSTONE=" + globalCount
                         + " → redstone overload ended";
 
-        plugin.getLogger().warning(consoleMsg);
+        ConsoleLogger.warn(consoleMsg);
 
         String playerMsg =
                 "<gray>[<white>Server</white><dark_gray>/</dark_gray><white>Info</white>] <white>MSPT </white><red>" + mspt
@@ -196,7 +197,7 @@ public final class RedstoneGuard {
                         + " (iterations=" + iterations
                         + ", chunk limit " + chunkIterationsLimit + ")";
 
-        plugin.getLogger().warning(consoleMsg);
+        ConsoleLogger.warn(consoleMsg);
 
         String playerMsg =
                 "<gray>[<white>Server</white><dark_gray>/</dark_gray><yellow>Warning</yellow>] <white>MSPT </white><red>" + mspt

@@ -48,8 +48,18 @@ public class BoostedCobwebManager implements Listener {
             return;
         }
 
-        // Проверяем блоки: у ног игрока и на уровне тела (Y+1)
-        if (isInCobweb(from) || isInCobweb(to)) {
+        boolean inCobwebFrom = isInCobweb(from);
+        boolean inCobwebTo = isInCobweb(to);
+
+        if (inCobwebFrom || inCobwebTo) {
+            // ── Разрешаем падение вниз (гравитация):
+            //    - падение в паутину сверху
+            //    - падение внутри/сквозь паутину
+            if (to.getY() < from.getY()) {
+                return;
+            }
+
+            // Блокируем всё остальное (ходьба, прыжки, горизонтальное движение)
             event.setCancelled(true);
             player.teleport(from);
             player.setVelocity(new Vector(0, 0, 0));
@@ -58,10 +68,9 @@ public class BoostedCobwebManager implements Listener {
     }
 
     /**
-     * Проверяет, находится ли локация внутри cobweb (проверка 2 слоёв: ноги + тело).
+     * Проверяет, находится ли игрок в cobweb ровно в ~ ~ ~ (блок в ногах).
      */
     private boolean isInCobweb(Location loc) {
-        return loc.getBlock().getType() == Material.COBWEB
-                || loc.clone().add(0, 1, 0).getBlock().getType() == Material.COBWEB;
+        return loc.getBlock().getType() == Material.COBWEB;
     }
 }

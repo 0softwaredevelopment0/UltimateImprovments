@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.SoundUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -144,7 +145,7 @@ public class CodePanelGUIListener implements Listener {
                 int newUsed = key.attemptsUsed + 1;
                 if (newUsed >= key.maxAttempts) {
                     CodePanelDatabase.removeKey(key.keyName);
-                    Main.getInstance().getLogger().info(
+                    ConsoleLogger.info(
                             "[CodePanel] Key '" + key.keyName + "' removed after "
                                     + newUsed + "/" + key.maxAttempts + " uses.");
                 }

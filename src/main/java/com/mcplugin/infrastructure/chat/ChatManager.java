@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.report.ReportManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -123,7 +124,7 @@ public class ChatManager implements Listener {
             }
         }
 
-        Main.getInstance().getLogger().info("[Chat] Custom chat "
+        ConsoleLogger.info("[Chat] Custom chat "
                 + (enabled ? "enabled" : "disabled")
                 + " | mode=" + mode.name().toLowerCase()
                 + " | player-minimessage=" + playerMiniMessage
@@ -239,7 +240,7 @@ public class ChatManager implements Listener {
         }
 
         // Console log
-        Main.getInstance().getLogger().info(PlainTextComponentSerializer.plainText().serialize(broadcast));
+        ConsoleLogger.info(PlainTextComponentSerializer.plainText().serialize(broadcast));
 
         // 🔔 Play ping sounds + send notification for pinged players
         if (!pingedPlayers.isEmpty()) {

@@ -2,11 +2,11 @@ package com.mcplugin.infrastructure.config;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.FileLogger;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.util.logging.Logger;
 
 /**
  * Управляет файлом messages.yml — все сообщения плагина вынесены сюда
@@ -34,7 +34,7 @@ public class MessagesManager {
         ConfigIntegrityValidator.validateMessages(plugin);
         reload();
 
-        plugin.getLogger().info("[Messages] Loaded: " + MESSAGES_FILE);
+        ConsoleLogger.info("[Messages] Loaded: " + MESSAGES_FILE);
     }
 
     /**
@@ -42,16 +42,15 @@ public class MessagesManager {
      */
     private static void saveMessagesFile() {
         File messagesFile = new File(plugin.getDataFolder(), MESSAGES_FILE);
-        Logger log = plugin.getLogger();
         if (!messagesFile.exists()) {
             try {
                 plugin.saveResource(MESSAGES_FILE, false);
-                log.info("[Messages] Created new file: " + MESSAGES_FILE);
+                ConsoleLogger.info("[Messages] Created new file: " + MESSAGES_FILE);
             } catch (Exception e) {
-                FileLogger.logError("Messages", "Failed to save " + MESSAGES_FILE + " from resources", log, e);
+                FileLogger.logError("Messages", "Failed to save " + MESSAGES_FILE + " from resources");
             }
         } else {
-            log.info("[Messages] File exists: " + MESSAGES_FILE);
+            ConsoleLogger.info("[Messages] File exists: " + MESSAGES_FILE);
         }
     }
 

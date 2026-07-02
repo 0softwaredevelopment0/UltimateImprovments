@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.machines.assembler.AssemblerManager;
 import com.mcplugin.energy.machines.assembler.AssemblerTask;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -28,7 +29,7 @@ public class AssemblerModule extends PluginModule {
         // ⚠ Paper 1.21.4+: BukkitRunnable нельзя передавать в Scheduler.runTaskTimer()
         assemblerTask = new AssemblerTask().runTaskTimer(main, 40L, 2L);
 
-        plugin.getLogger().info("[AssemblerModule] ✔ Assembler system initialized.");
+        ConsoleLogger.info("[AssemblerModule] ✔ Assembler system initialized.");
     }
 
     @Override

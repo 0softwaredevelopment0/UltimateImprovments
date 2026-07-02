@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.commands.vote.VoteManager;
 import com.mcplugin.infrastructure.database.DatabaseInit;
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -23,7 +24,7 @@ public class DatabaseModule extends PluginModule {
         // =========================
         DatabaseManager.connect();
         DatabaseInit.init();
-        plugin.getLogger().info("[SQLITE] Database initialized successfully.");
+        ConsoleLogger.info("[SQLITE] Database initialized successfully.");
 
         // =========================
         // 🗳 VOTE MANAGER (загрузить голосования из БД)
@@ -39,7 +40,7 @@ public class DatabaseModule extends PluginModule {
         try {
             DatabaseManager.close();
         } catch (Exception e) {
-            plugin.getLogger().warning("[DatabaseModule] Close error: " + e.getMessage());
+            ConsoleLogger.warn("[DatabaseModule] Close error: " + e.getMessage());
         }
     }
 }

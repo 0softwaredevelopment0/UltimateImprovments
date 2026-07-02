@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.features.world;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -107,7 +108,7 @@ public class MinecartSpeedManager implements Listener {
         reloadConfig();
 
         if (!enabled) {
-            plugin.getLogger().info("[MinecartSpeed] Disabled in config.");
+            ConsoleLogger.info("[MinecartSpeed] Disabled in config.");
             return;
         }
 
@@ -214,11 +215,11 @@ public class MinecartSpeedManager implements Listener {
         };
         displayTask.runTaskTimer(plugin, 0L, 1L); // every 1 tick
 
-        plugin.getLogger().info("[MinecartSpeed] Hopper smelt: " + (hopperSmeltEnabled
+        ConsoleLogger.info("[MinecartSpeed] Hopper smelt: " + (hopperSmeltEnabled
                 ? "ON (min=" + String.format("%.1f", hopperSmeltMinSpeed * 20) + " blk/sec)"
                 : "OFF"));
 
-        plugin.getLogger().info("[MinecartSpeed] Initialized."
+        ConsoleLogger.info("[MinecartSpeed] Initialized."
                 + " base=" + String.format("%.3f", baseMaxSpeed) + " blk/tick"
                 + " (" + String.format("%.1f", baseMaxSpeed * 20) + " blk/sec)"
                 + " limit=" + String.format("%.0f", maxSpeedLimit * 20) + " blk/sec"
@@ -252,7 +253,7 @@ public class MinecartSpeedManager implements Listener {
                 cookingRecipes.add(cr);
             }
         }
-        plugin.getLogger().info("[MinecartSpeed] Cached " + cookingRecipes.size() + " cooking recipes.");
+        ConsoleLogger.info("[MinecartSpeed] Cached " + cookingRecipes.size() + " cooking recipes.");
     }
 
     private static CookingRecipe<?> findCookingRecipe(ItemStack input) {
@@ -407,7 +408,7 @@ public class MinecartSpeedManager implements Listener {
         try {
             cart.setMaxSpeed(currentSpeed * 20.0);
         } catch (Exception e) {
-            plugin.getLogger().warning("[MinecartSpeed] setMaxSpeed failed: " + e.getMessage());
+            ConsoleLogger.warn("[MinecartSpeed] setMaxSpeed failed: " + e.getMessage());
         }
 
         // Применяем буст скорости:

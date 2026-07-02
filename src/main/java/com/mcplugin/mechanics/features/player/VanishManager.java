@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -56,7 +57,7 @@ public class VanishManager implements Listener {
         instance = new VanishManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
         reloadConfig();
-        Main.getInstance().getLogger().info("[Vanish] Manager initialized. " + vanishedPlayers.size() + " vanished player(s) loaded.");
+        ConsoleLogger.info("[Vanish] Manager initialized. " + vanishedPlayers.size() + " vanished player(s) loaded.");
     }
 
     public static void reloadConfig() {
@@ -87,11 +88,11 @@ public class VanishManager implements Listener {
                 try {
                     vanishedPlayers.add(UUID.fromString(rs.getString("uuid")));
                 } catch (IllegalArgumentException ignored) {
-                    Main.getInstance().getLogger().warning("[Vanish] Invalid UUID in database: " + rs.getString("uuid"));
+                    ConsoleLogger.warn("[Vanish] Invalid UUID in database: " + rs.getString("uuid"));
                 }
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Vanish] Failed to load vanished players from DB: " + e.getMessage());
+            ConsoleLogger.warn("[Vanish] Failed to load vanished players from DB: " + e.getMessage());
         }
     }
 
@@ -123,12 +124,12 @@ public class VanishManager implements Listener {
                     ps.setString(1, s);
                     ps.executeUpdate();
                 } catch (IllegalArgumentException ignored) {
-                    Main.getInstance().getLogger().warning("[Vanish] Skipping invalid UUID in config: " + s);
+                    ConsoleLogger.warn("[Vanish] Skipping invalid UUID in config: " + s);
                 }
             }
-            Main.getInstance().getLogger().info("[Vanish] Migrated " + uuidStrings.size() + " vanished player(s) from config.yml to database.");
+            ConsoleLogger.info("[Vanish] Migrated " + uuidStrings.size() + " vanished player(s) from config.yml to database.");
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[Vanish] Migration failed: " + e.getMessage());
+            ConsoleLogger.warn("[Vanish] Migration failed: " + e.getMessage());
         }
 
         // Очищаем config от старых данных
@@ -165,7 +166,7 @@ public class VanishManager implements Listener {
         } catch (Exception e) {
             try { con.rollback(); } catch (Exception ignored) {}
             try { con.setAutoCommit(true); } catch (Exception ignored) {}
-            Main.getInstance().getLogger().warning("[Vanish] Failed to save vanished players to DB: " + e.getMessage());
+            ConsoleLogger.warn("[Vanish] Failed to save vanished players to DB: " + e.getMessage());
         }
     }
 

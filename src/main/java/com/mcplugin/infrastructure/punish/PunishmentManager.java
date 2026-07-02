@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.punish;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -60,7 +61,7 @@ public class PunishmentManager {
             }
             return hex.toString();
         } catch (NoSuchAlgorithmException e) {
-            Main.getInstance().getLogger().warning("[Punish] SHA-256 not available!");
+            ConsoleLogger.warn("[Punish] SHA-256 not available!");
             return ip != null ? ip : "unknown";
         }
     }
@@ -148,7 +149,7 @@ public class PunishmentManager {
             st.setLong(9, expiresAt);
             st.executeUpdate();
 
-            Main.getInstance().getLogger().info("[Punish] " + type.name() + " " + targetName
+            ConsoleLogger.info("[Punish] " + type.name() + " " + targetName
                     + " by " + punisher + " reason: " + reason);
             return true;
         } catch (SQLException e) {
@@ -331,7 +332,7 @@ public class PunishmentManager {
             st.setInt(1, id);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[Punish] Warn id=" + id + " removed.");
+                ConsoleLogger.info("[Punish] Warn id=" + id + " removed.");
                 return true;
             }
             return false;

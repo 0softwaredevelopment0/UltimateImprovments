@@ -1,5 +1,7 @@
 package com.mcplugin.infrastructure.modules;
 
+import com.mcplugin.infrastructure.util.ConsoleLogger;
+
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -32,19 +34,19 @@ public class VersionCheckModule extends PluginModule {
         // =========================
         // ВЫВОД ИНФОРМАЦИИ О ВЕРСИЯХ
         // =========================
-        plugin.getLogger().info("");
-        plugin.getLogger().info("╔═══════════════════════════════════════╗");
-        plugin.getLogger().info("║         Version Information           ║");
-        plugin.getLogger().info("╠═══════════════════════════════════════╣");
-        plugin.getLogger().info("║ Plugin ver: " + padRight(pluginVersion, 35) + "║");
+        ConsoleLogger.info("");
+        ConsoleLogger.info("╔═══════════════════════════════════════╗");
+        ConsoleLogger.info("║         Version Information           ║");
+        ConsoleLogger.info("╠═══════════════════════════════════════╣");
+        ConsoleLogger.info("║ Plugin ver: " + padRight(pluginVersion, 35) + "║");
         if (apiVersion != null) {
-            plugin.getLogger().info("║ API ver:    " + padRight(apiVersion, 35) + "║");
+            ConsoleLogger.info("║ API ver:    " + padRight(apiVersion, 35) + "║");
         }
-        plugin.getLogger().info("║ Server:     " + padRight(serverVersion, 35) + "║");
-        plugin.getLogger().info("║ Bukkit:     " + padRight(bukkitVersion, 35) + "║");
-        plugin.getLogger().info("║ ServerName: " + padRight(serverName, 35) + "║");
-        plugin.getLogger().info("╚═══════════════════════════════════════╝");
-        plugin.getLogger().info("");
+        ConsoleLogger.info("║ Server:     " + padRight(serverVersion, 35) + "║");
+        ConsoleLogger.info("║ Bukkit:     " + padRight(bukkitVersion, 35) + "║");
+        ConsoleLogger.info("║ ServerName: " + padRight(serverName, 35) + "║");
+        ConsoleLogger.info("╚═══════════════════════════════════════╝");
+        ConsoleLogger.info("");
 
         // =========================
         // ПРОВЕРКА ТИПА ЯДРА (Leaf или нет)
@@ -73,7 +75,7 @@ public class VersionCheckModule extends PluginModule {
 
     private void checkServerSoftware(JavaPlugin plugin, String serverName, String serverVersion) {
         if (EXPECTED_SERVER_NAME.equalsIgnoreCase(serverName)) {
-            plugin.getLogger().info("[VersionCheck] \u2713 Server software: " + serverName + " (recommended)");
+            ConsoleLogger.info("[VersionCheck] \u2713 Server software: " + serverName + " (recommended)");
             return;
         }
 
@@ -89,25 +91,25 @@ public class VersionCheckModule extends PluginModule {
             } catch (ClassNotFoundException ignored) {}
         }
 
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("!  SERVER SOFTWARE NOT RECOMMENDED                  !");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("!  Detected:        " + padRight(serverName + " (" + getServerShortVersion(serverVersion) + ")", 33) + "!");
-        plugin.getLogger().warning("!  Recommended:     " + padRight(EXPECTED_SERVER_NAME, 33) + "!");
-        plugin.getLogger().warning("!                                                   !");
-        plugin.getLogger().warning("!  This plugin is designed and tested for Leaf.      !");
+        ConsoleLogger.warn("");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("!  SERVER SOFTWARE NOT RECOMMENDED                  !");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("!  Detected:        " + padRight(serverName + " (" + getServerShortVersion(serverVersion) + ")", 33) + "!");
+        ConsoleLogger.warn("!  Recommended:     " + padRight(EXPECTED_SERVER_NAME, 33) + "!");
+        ConsoleLogger.warn("!                                                   !");
+        ConsoleLogger.warn("!  This plugin is designed and tested for Leaf.      !");
         if (isPaper) {
-            plugin.getLogger().warning("!  While Paper is compatible, some features may     !");
-            plugin.getLogger().warning("!  not work as expected.                             !");
+            ConsoleLogger.warn("!  While Paper is compatible, some features may     !");
+            ConsoleLogger.warn("!  not work as expected.                             !");
         } else {
-            plugin.getLogger().warning("!  Your server software may not be compatible!       !");
-            plugin.getLogger().warning("!  Features may be broken or missing entirely.       !");
+            ConsoleLogger.warn("!  Your server software may not be compatible!       !");
+            ConsoleLogger.warn("!  Features may be broken or missing entirely.       !");
         }
-        plugin.getLogger().warning("!                                                   !");
-        plugin.getLogger().warning("!  Download Leaf: https://github.com/Winds-Studio/Leaf!");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("");
+        ConsoleLogger.warn("!                                                   !");
+        ConsoleLogger.warn("!  Download Leaf: https://github.com/Winds-Studio/Leaf!");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("");
     }
 
     // =========================
@@ -131,7 +133,7 @@ public class VersionCheckModule extends PluginModule {
 
         // Guard: если версия сервера не парсится как число.число — не можем сравнить, пропускаем
         if (!isNumericVersion(serverPaperVer)) {
-            plugin.getLogger().info("[VersionCheck] Cannot parse server version ("
+            ConsoleLogger.info("[VersionCheck] Cannot parse server version ("
                     + serverPaperVer + ") — skipping API compatibility check.");
             return;
         }
@@ -140,7 +142,7 @@ public class VersionCheckModule extends PluginModule {
         String apiMajorMinor = getMajorMinor(apiVersion);
 
         if (serverMajorMinor.equals(apiMajorMinor)) {
-            plugin.getLogger().info("[VersionCheck] \u2713 API version " + apiVersion
+            ConsoleLogger.info("[VersionCheck] \u2713 API version " + apiVersion
                     + " matches server (" + serverPaperVer + ")");
             return;
         }
@@ -148,7 +150,7 @@ public class VersionCheckModule extends PluginModule {
         // Проверяем BukkitVersion как fallback
         String bukkitMajorMinor = getMajorMinor(bukkitVersion.split("-")[0]);
         if (bukkitMajorMinor.equals(apiMajorMinor)) {
-            plugin.getLogger().info("[VersionCheck] \u2713 API version " + apiVersion
+            ConsoleLogger.info("[VersionCheck] \u2713 API version " + apiVersion
                     + " matches Bukkit version (" + bukkitVersion + ")");
             return;
         }
@@ -156,22 +158,22 @@ public class VersionCheckModule extends PluginModule {
         // Несовпадение API-версии
         String mcVersion = extractMcVersion(serverVersion);
 
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("!  API VERSION MISMATCH!                                        !");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!  Plugin API:        " + padRight(apiVersion, 35) + "!");
-        plugin.getLogger().warning("!  Server version:    " + padRight(serverPaperVer, 35) + "!");
+        ConsoleLogger.warn("");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("!  API VERSION MISMATCH!                                        !");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("!                                                                 !");
+        ConsoleLogger.warn("!  Plugin API:        " + padRight(apiVersion, 35) + "!");
+        ConsoleLogger.warn("!  Server version:    " + padRight(serverPaperVer, 35) + "!");
         if (mcVersion != null) {
-            plugin.getLogger().warning("!  MC version:        " + padRight(mcVersion, 35) + "!");
+            ConsoleLogger.warn("!  MC version:        " + padRight(mcVersion, 35) + "!");
         }
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!  The plugin may not work correctly!                             !");
-        plugin.getLogger().warning("!  Update your server or plugin to matching versions.             !");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("");
+        ConsoleLogger.warn("!                                                                 !");
+        ConsoleLogger.warn("!  The plugin may not work correctly!                             !");
+        ConsoleLogger.warn("!  Update your server or plugin to matching versions.             !");
+        ConsoleLogger.warn("!                                                                 !");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("");
     }
 
     // =========================
@@ -180,29 +182,29 @@ public class VersionCheckModule extends PluginModule {
 
     private void checkLuckPerms(JavaPlugin plugin) {
         if (Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
-            plugin.getLogger().info("[VersionCheck] \u2713 LuckPerms detected — permission system ready.");
+            ConsoleLogger.info("[VersionCheck] \u2713 LuckPerms detected — permission system ready.");
             return;
         }
 
-        plugin.getLogger().warning("");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("!  LUCKPERMS NOT FOUND!                                       !");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!  This plugin uses LuckPerms for full permission management.    !");
-        plugin.getLogger().warning("!  Without LuckPerms, many permission-based features will       !");
-        plugin.getLogger().warning("!  NOT work correctly:                                          !");
-        plugin.getLogger().warning("!    - /mp sethome, /mp home, /mp delhome                       !");
-        plugin.getLogger().warning("!    - /mp auth (forcelogin, resetauth, chgpass, delsession)    !");
-        plugin.getLogger().warning("!    - /mp power (off, reboot)                                  !");
-        plugin.getLogger().warning("!    - /mp structures (dfc, magnet)                             !");
-        plugin.getLogger().warning("!    - And many other commands                                  !");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!  Download LuckPerms: https://luckperms.net/download           !");
-        plugin.getLogger().warning("!  Or place LuckPerms.jar in your plugins/ folder               !");
-        plugin.getLogger().warning("!                                                                 !");
-        plugin.getLogger().warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        plugin.getLogger().warning("");
+        ConsoleLogger.warn("");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("!  LUCKPERMS NOT FOUND!                                       !");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("!                                                                 !");
+        ConsoleLogger.warn("!  This plugin uses LuckPerms for full permission management.    !");
+        ConsoleLogger.warn("!  Without LuckPerms, many permission-based features will       !");
+        ConsoleLogger.warn("!  NOT work correctly:                                          !");
+        ConsoleLogger.warn("!    - /mp sethome, /mp home, /mp delhome                       !");
+        ConsoleLogger.warn("!    - /mp auth (forcelogin, resetauth, chgpass, delsession)    !");
+        ConsoleLogger.warn("!    - /mp power (off, reboot)                                  !");
+        ConsoleLogger.warn("!    - /mp structures (dfc, magnet)                             !");
+        ConsoleLogger.warn("!    - And many other commands                                  !");
+        ConsoleLogger.warn("!                                                                 !");
+        ConsoleLogger.warn("!  Download LuckPerms: https://luckperms.net/download           !");
+        ConsoleLogger.warn("!  Or place LuckPerms.jar in your plugins/ folder               !");
+        ConsoleLogger.warn("!                                                                 !");
+        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn("");
     }
 
     // =========================

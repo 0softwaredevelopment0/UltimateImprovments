@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
@@ -154,7 +155,7 @@ public class BatteryManager implements Listener {
         // Восстанавливаем кластеры из Marker'ов в загруженных чанках
         rebuildFromMarkers();
 
-        Main.getInstance().getLogger().info("[BatteryMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");
+        ConsoleLogger.info("[BatteryMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");
     }
 
     public static BatteryManager getInstance() { return instance; }
@@ -330,7 +331,7 @@ public class BatteryManager implements Listener {
             player.sendMessage("§8┃ §7Apply redstone to any block to discharge");
         }
 
-        Main.getInstance().getLogger().info("[BatteryMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " blocks");
+        ConsoleLogger.info("[BatteryMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " blocks");
     }
 
     // ════════════════════════════════════════
@@ -355,7 +356,7 @@ public class BatteryManager implements Listener {
             StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
         }
 
-        Main.getInstance().getLogger().info("[BatteryMulti] Disassembled cluster #" + cluster.id);
+        ConsoleLogger.info("[BatteryMulti] Disassembled cluster #" + cluster.id);
     }
 
     // ════════════════════════════════════════
@@ -441,7 +442,7 @@ public class BatteryManager implements Listener {
         clustersById.remove(cluster.id);
         cluster.blockKeys.clear();
 
-        Main.getInstance().getLogger().info("[BatteryMulti] Disassembled cluster #" + cluster.id
+        ConsoleLogger.info("[BatteryMulti] Disassembled cluster #" + cluster.id
                 + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
 
         if (player != null) {
@@ -550,7 +551,7 @@ public class BatteryManager implements Listener {
                 cluster.world.spawnParticle(Particle.END_ROD, center, count, 0.3, 0.3, 0.3, 0.01);
                 cluster.world.spawnParticle(Particle.ELECTRIC_SPARK, center, count / 2, 0.3, 0.3, 0.3, 0);
             } catch (Exception e) {
-                Main.getInstance().getLogger().warning("[BatteryMulti] Tick error: " + e.getMessage());
+                ConsoleLogger.warn("[BatteryMulti] Tick error: " + e.getMessage());
             }
         }
 
@@ -567,7 +568,7 @@ public class BatteryManager implements Listener {
                 if (cluster.uuid != null) {
                     StructureMarker.removeAllByUuid(cluster.world, cluster.uuid);
                 }
-                Main.getInstance().getLogger().info("[BatteryMulti] Removed phantom cluster #" + id);
+                ConsoleLogger.info("[BatteryMulti] Removed phantom cluster #" + id);
             }
         }
     }

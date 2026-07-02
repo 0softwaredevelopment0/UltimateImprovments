@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.util;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -165,7 +166,7 @@ public class StructureTemplate {
                 }
                 Material mat = Material.matchMaterial(blockName, false);
                 if (mat == null) {
-                    Main.getInstance().getLogger().warning(
+                    ConsoleLogger.warn(
                             "[Structure] Unknown material in palette[" + i + "]: " + blockName
                     );
                     // Use a placeholder — but this will cause matching to fail,
@@ -204,7 +205,7 @@ public class StructureTemplate {
                 tmpl.addBlock(dx, dy, dz, mat);
             }
 
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                     "[Structure] Loaded template '" + name + "' with "
                             + tmpl.blocks.size() + " non-air blocks, size "
                             + size[0] + "×" + size[1] + "×" + size[2]
@@ -335,7 +336,7 @@ public class StructureTemplate {
         loadTemplate("reactor",   "NBT-Files/reactorcore1.nbt");
         loadTemplate("lightning", "NBT-Files/lightning_str.nbt");
 
-        Main.getInstance().getLogger().info(
+        ConsoleLogger.info(
                 "[Structure] Loaded " + templates.size() + " structure templates"
         );
     }
@@ -344,7 +345,7 @@ public class StructureTemplate {
         try (InputStream is = Main.getInstance().getResource(resourcePath)) {
             if (is == null) {
                 String err = "Resource not found: " + resourcePath;
-                Main.getInstance().getLogger().severe("[Structure] " + err);
+                ConsoleLogger.error("[Structure] " + err);
                 templateErrors.put(name, err);
                 return;
             }

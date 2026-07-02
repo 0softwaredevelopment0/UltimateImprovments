@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.SoundUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.boss.BarColor;
@@ -348,7 +349,7 @@ public class PowerManager {
 
         Sound sound = SoundUtil.getSound(countdownSoundName);
         if (sound == null) {
-            Main.getInstance().getLogger().warning("[POWER] Unknown sound: " + countdownSoundName);
+            ConsoleLogger.warn("[POWER] Unknown sound: " + countdownSoundName);
             return;
         }
 
@@ -398,7 +399,7 @@ public class PowerManager {
                 .replace("{action}", action)
                 .replace("{by}", cancelerName != null ? " (" + cancelerName + ")" : "")
                 .replace("{from}", requester != null ? ". Request from " + requester : "");
-        Bukkit.getConsoleSender().sendMessage(MessageUtil.legacy(consoleMsg));
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(consoleMsg));
 
         return action;
     }
@@ -443,7 +444,7 @@ public class PowerManager {
                 .replace("{action}", action)
                 .replace("{by}", "")
                 .replace("{from}", requester != null ? " (request from " + requester + ")" : "");
-        Bukkit.getConsoleSender().sendMessage(MessageUtil.legacy(consoleMsg));
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(consoleMsg));
     }
 
     /**

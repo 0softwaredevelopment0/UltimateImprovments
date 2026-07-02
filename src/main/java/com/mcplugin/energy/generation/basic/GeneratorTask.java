@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -145,7 +146,7 @@ public class GeneratorTask extends BukkitRunnable {
                 }
 
                 if (log) {
-                    Main.getInstance().getLogger().info(
+                    ConsoleLogger.info(
                             "[GENERATOR] +" + toAdd +
                                     " energy from " + furnaceLoc +
                                     " (remaining timer: " + (timer - 1) + " ticks)"
@@ -190,7 +191,7 @@ public class GeneratorTask extends BukkitRunnable {
                     }
 
                     if (log) {
-                        Main.getInstance().getLogger().info(
+                        ConsoleLogger.info(
                                 "[GENERATOR] Fuel consumed at " + furnaceLoc +
                                         ", +" + firstAdd + " energy (timer: " + burnDuration + " ticks)"
                             );

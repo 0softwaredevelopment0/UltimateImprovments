@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.features.items;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -53,7 +54,7 @@ public class NotesDatabase {
                 );
             """);
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Notes] DB init failed: " + e.getMessage());
+            ConsoleLogger.error("[Notes] DB init failed: " + e.getMessage());
         }
     }
 
@@ -80,7 +81,7 @@ public class NotesDatabase {
                 }
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Notes] Load failed: " + e.getMessage());
+            ConsoleLogger.error("[Notes] Load failed: " + e.getMessage());
         }
         return null;
     }
@@ -98,7 +99,7 @@ public class NotesDatabase {
             ps.setString(3, content != null ? content : "");
             ps.executeUpdate();
         } catch (Exception e) {
-            Main.getInstance().getLogger().severe("[Notes] Save failed: " + e.getMessage());
+            ConsoleLogger.error("[Notes] Save failed: " + e.getMessage());
         }
     }
 }

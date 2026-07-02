@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -234,7 +235,7 @@ public class MaintenanceManager implements Listener {
             st.setString(1, lower);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[Maintenance] Added to whitelist: " + lower);
+                ConsoleLogger.info("[Maintenance] Added to whitelist: " + lower);
                 return true;
             }
             return false; // уже есть
@@ -257,7 +258,7 @@ public class MaintenanceManager implements Listener {
             st.setString(1, lower);
             int rows = st.executeUpdate();
             if (rows > 0) {
-                Main.getInstance().getLogger().info("[Maintenance] Removed from whitelist: " + lower);
+                ConsoleLogger.info("[Maintenance] Removed from whitelist: " + lower);
                 return true;
             }
             return false; // не найден

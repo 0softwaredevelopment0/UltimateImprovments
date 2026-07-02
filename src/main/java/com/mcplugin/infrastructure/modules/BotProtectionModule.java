@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.modules;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.mechanics.security.botprotect.BotProtectionListener;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -24,7 +25,7 @@ public class BotProtectionModule extends PluginModule {
         Main main = (Main) plugin;
         this.listener = new BotProtectionListener(main);
         main.getServer().getPluginManager().registerEvents(listener, main);
-        plugin.getLogger().info("[BotProtection] ✔ Anti-bot system initialized.");
+        ConsoleLogger.info("[BotProtection] ✔ Anti-bot system initialized.");
     }
 
     @Override

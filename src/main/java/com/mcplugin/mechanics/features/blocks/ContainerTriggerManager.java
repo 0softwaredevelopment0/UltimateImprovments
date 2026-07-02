@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.features.blocks;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -61,7 +62,7 @@ public class ContainerTriggerManager extends BukkitRunnable {
         reloadConfig();
         if (intervalTicks < 1) intervalTicks = 1;
         instance.runTaskTimer(plugin, 20L, intervalTicks);
-        Main.getInstance().getLogger().info("[ContainerTrigger] Initialized with " + triggers.size() + " trigger(s).");
+        ConsoleLogger.info("[ContainerTrigger] Initialized with " + triggers.size() + " trigger(s).");
     }
 
     // =========================
@@ -87,7 +88,7 @@ public class ContainerTriggerManager extends BukkitRunnable {
 
         List<Map<?, ?>> triggersRaw = cfg.getMapList("triggers");
         if (triggersRaw == null || triggersRaw.isEmpty()) {
-            Main.getInstance().getLogger().info("[ContainerTrigger] No triggers configured.");
+            ConsoleLogger.info("[ContainerTrigger] No triggers configured.");
             return;
         }
 
@@ -98,7 +99,7 @@ public class ContainerTriggerManager extends BukkitRunnable {
 
                 Map<?, ?> source = (Map<?, ?>) raw.get("source");
                 if (source == null) {
-                    Main.getInstance().getLogger().warning("[ContainerTrigger] Trigger '" + trigger.name + "': missing 'source' section, skipping.");
+                    ConsoleLogger.warn("[ContainerTrigger] Trigger '" + trigger.name + "': missing 'source' section, skipping.");
                     continue;
                 }
                 trigger.sourceWorld = strVal(source, "world", "world");
@@ -108,7 +109,7 @@ public class ContainerTriggerManager extends BukkitRunnable {
 
                 List<Map<?, ?>> targetsRaw = (List<Map<?, ?>>) raw.get("target_blocks");
                 if (targetsRaw == null || targetsRaw.isEmpty()) {
-                    Main.getInstance().getLogger().warning("[ContainerTrigger] Trigger '" + trigger.name + "': missing 'target_blocks', skipping.");
+                    ConsoleLogger.warn("[ContainerTrigger] Trigger '" + trigger.name + "': missing 'target_blocks', skipping.");
                     continue;
                 }
                 for (Map<?, ?> t : targetsRaw) {
@@ -127,7 +128,7 @@ public class ContainerTriggerManager extends BukkitRunnable {
                 if (trigger.blinkRate <= 0) trigger.blinkRate = 2.0;
 
                 triggers.add(trigger);
-                Main.getInstance().getLogger().info("[ContainerTrigger] Loaded trigger '" + trigger.name
+                ConsoleLogger.info("[ContainerTrigger] Loaded trigger '" + trigger.name
                         + "': source=" + trigger.sourceWorld + " " + trigger.sourceX + "," + trigger.sourceY + "," + trigger.sourceZ
                         + " targets=" + trigger.targetBlocks.size()
                         + " blink_rate=" + trigger.blinkRate + "/s");

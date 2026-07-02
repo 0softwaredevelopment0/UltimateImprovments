@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.core.TaskManager;
 import com.mcplugin.infrastructure.modules.ModuleManager;
 import com.mcplugin.infrastructure.util.StructureTemplate;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
@@ -72,10 +73,10 @@ public final class ReloadSubcommand {
             long time = System.currentTimeMillis() - start;
             sender.sendMessage("§2✔ §aSuccess: §7Reload complete.");
             sender.sendMessage("§2✔ §aSuccess: §7Reload time: §e" + time + "ms");
-            plugin.getLogger().info("[MCPLUGIN] Reload complete in " + time + "ms");
+            ConsoleLogger.info("[MCPLUGIN] Reload complete in " + time + "ms");
         } catch (Exception e) {
             sender.sendMessage("§4❌ §cError: §7Reload failed! Check console.");
-            plugin.getLogger().severe("[MCPLUGIN] Reload failed: " + e.getMessage());
+            ConsoleLogger.error("[MCPLUGIN] Reload failed: " + e.getMessage());
             e.printStackTrace();
         }
     }

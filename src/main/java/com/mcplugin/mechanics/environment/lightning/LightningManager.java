@@ -3,6 +3,7 @@ package com.mcplugin.mechanics.environment.lightning;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
@@ -63,7 +64,7 @@ public class LightningManager implements Listener {
         rebuildFromMarkers();
         cacheCookingRecipes();
         startPeriodicItemScan();
-        Main.getInstance().getLogger().info("[Lightning] Manager initialized.");
+        ConsoleLogger.info("[Lightning] Manager initialized.");
     }
 
     public static void rebuildFromMarkers() {
@@ -84,7 +85,7 @@ public class LightningManager implements Listener {
                 }
             }
         }
-        Main.getInstance().getLogger().info("[Lightning] Loaded " + count + " structures from Marker entities");
+        ConsoleLogger.info("[Lightning] Loaded " + count + " structures from Marker entities");
     }
 
     public static LightningManager getInstance() {
@@ -121,7 +122,7 @@ public class LightningManager implements Listener {
         center = LocationUtil.normalize(center);
         if (activeStructures.containsKey(center)) {
             activeStructures.put(center, enabled);
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                 "[Lightning] Structure at " + center + " " + (enabled ? "enabled" : "disabled"));
         }
     }
@@ -182,14 +183,14 @@ public class LightningManager implements Listener {
                 player.sendMessage("§8┃ §7Commands: §f/mp str lightning enable§7/§cdisable §7/ §fstats");
             }
 
-            Main.getInstance().getLogger().info(
+            ConsoleLogger.info(
                 "[Lightning] Structure assembled at " + center
                 + " by " + (player != null ? player.getName() : "unknown"));
         } catch (Exception e) {
             if (player != null) {
                 player.sendMessage("§4❌ §cError checking structure!");
             }
-            Main.getInstance().getLogger().severe("[Lightning] Assembly error: " + e.getMessage());
+            ConsoleLogger.error("[Lightning] Assembly error: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -205,7 +206,7 @@ public class LightningManager implements Listener {
             StructureMarker.removeAt(center);
             center.getWorld().spawnParticle(Particle.ELECTRIC_SPARK,
                     center.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0);
-            Main.getInstance().getLogger().info("[Lightning] Structure disassembled at " + center);
+            ConsoleLogger.info("[Lightning] Structure disassembled at " + center);
         }
     }
 
@@ -258,7 +259,7 @@ public class LightningManager implements Listener {
                 cookingRecipes.add(cr);
             }
         }
-        Main.getInstance().getLogger().info("[Lightning] Cached " + cookingRecipes.size() + " cooking recipes.");
+        ConsoleLogger.info("[Lightning] Cached " + cookingRecipes.size() + " cooking recipes.");
     }
 
     private static Recipe findCookingRecipe(ItemStack input) {

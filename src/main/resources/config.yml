@@ -658,13 +658,16 @@ bot_protection:
     max_joins_per_window: 2
     window_seconds: 1
     notify_ops: true
+    priority_max_joins_per_window: 5
 
   rejoin_cooldown_seconds: 3
+  priority_session_duration: 10
 
 home:
   max_homes: 10
   name_min_length: 1
   name_max_length: 16
+  mode: legit
 
 report:
   expire_time: "3d"
@@ -835,4 +838,420 @@ access_control:
 wireless_redstone:
   enabled: true
 
-plugin_version: "1.8.121"
+endersee:
+  enabled: false
+
+structure_integrity:
+  enabled: true
+  stress_per_open_close: 1.0
+  stress_decay_per_second: 0.03333
+  base_degradation_rate: 1.0
+  degradation_exponent_multiplier: 0.1
+  integrity_recovery_per_second: 0.01666
+  integrity_recovery_threshold: 100.0
+
+spawn:
+  mode: legit
+  # location будет заполнена через /mp setspawn
+
+# =========================
+# 🛡 ANTICHEAT — модульная система обнаружения читов
+# =========================
+# Каждая проверка может быть включена/выключена отдельно.
+# max_vl — максимальный Violation Level до срабатывания действия.
+# vl_decay — сколько VL убывает каждую секунду без нарушений.
+#
+# Античит НЕ банит и НЕ кикает — только:
+#   log     — запись в консоль
+#   notify  — уведомление админам (perm: mcplugin.anticheat.notify)
+#   setback — телепорт на последнюю безопасную позицию
+# =========================
+anticheat:
+  enabled: true
+
+  # Игроки с этим пермишеном полностью пропускают все проверки
+  bypass_permission: "mcplugin.anticheat.bypass"
+
+  # Кулдаун между действиями для одного игрока (мс)
+  action_cooldown_ms: 100
+
+  # Глобальные действия по порогам VL
+  actions:
+    log:
+      enabled: true
+    notify:
+      vl_threshold: 1.0
+    setback:
+      vl_threshold: 1.0
+
+  # NMS packet-перехватчик на уровне Netty (до Bukkit событий)
+  # Даёт более точные данные для движения, CPS и взаимодействий
+  packet:
+    enabled: true
+    # Логировать инжект каждого игрока
+    log_inject: false
+
+  # ── COMBAT проверки ──
+  combat:
+    killaura:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_angle_snap: 90.0
+      max_attack_angle: 180.0
+      check_multi_target: true
+
+    aimbot:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_angle_for_perfect: 3.0
+      max_rotation_speed: 30.0
+      max_tracking_stddev: 0.5
+      min_tracking_samples: 5
+
+    fightbot:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_interval_consistency: 0.95
+
+    forcefield:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_attack_angle: 90.0
+
+    aimassist:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_consistency: 0.85
+
+    fastbow:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_bow_interval_ms: 1100
+
+    velocity:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_velocity_threshold: 0.1
+      min_expected_movement: 0.05
+
+    reach:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_reach: 3.01
+      max_reach_creative: 5.0
+      ping_compensation: 0.5
+
+    criticals:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+
+    autoclicker:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_cps: 20
+      max_click_consistency: 0.95
+
+    backtrack:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_distance: 6.0
+
+    arrowdmg:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_arrow_speed: 3.2
+      max_arrow_speed_creative: 6.0
+      max_crossbow_speed: 3.5
+
+  # ── MOVEMENT проверки ──
+  movement:
+    flight:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_air_ticks: 20
+      max_hover_y: 0.1
+      max_horizontal_speed: 0.5
+      jump_velocity: 0.42
+
+    glide:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_glide_speed: -0.05
+      min_glide_ticks: 20
+
+    fastfall:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_fall_speed: -3.92
+
+    speed:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_speed_ground: 0.4
+      max_speed_air: 0.4
+      min_jump_height: 0.05
+      sprint_jump_speed_multiplier: 1.3
+
+    alljumps:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_jump_velocity: 0.42
+      max_air_jumps: 0
+
+    clip:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_clip_distance: 10.0
+      check_passable_blocks: true
+
+    teleport:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_horizontal_distance: 20.0
+      max_vertical_distance: 100.0
+
+    nofall:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_fall_distance: 3.0
+
+    spider:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_climb_speed: 0.1
+      min_climb_ticks: 10
+
+    jesus:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_water_walk_ticks: 15
+
+    fastladder:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_climb_speed_up: 0.25
+      max_climb_speed_down: -0.15
+
+    timer:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_packets_per_second: 60
+      window_ms: 1000
+
+    blink:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_silence_ms: 2000
+      min_jump_distance: 3.0
+
+    step:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_step_height: 0.6
+
+    derp:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_pitch: -90.0
+      max_pitch: 90.0
+      max_yaw_delta: 180.0
+
+    fasteat:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_eat_time_ms: 1500
+
+    foodsprint:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+
+    groundspoof:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_fall_distance: 2.0
+      min_spoof_ticks: 5
+
+    movementspoof:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_micro_distance: 0.001
+      min_repeat_count: 20
+
+    elytra:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_elytra_speed: 2.0
+      max_glide_up_speed: 0.1
+      boost_check_window_ms: 1000
+      riptide_max_speed: 3.5
+      riptide_climb_limit: 2.0
+
+    verticalmotion:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_ascent_speed: 0.05
+      jump_velocity: 0.42
+      water_ascent_speed: 0.3
+      ladder_climb_speed: 0.25
+      riptide_ascent_speed: 2.0
+
+    entitymovement:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_entity_speed: 1.0
+
+  # ── WORLD проверки ──
+  world:
+    fastplace:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_blocks_per_second: 8
+
+    blockreach:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_reach: 5.5
+      max_reach_creative: 6.5
+      ping_compensation: 0.5
+
+    liquids:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_distance: 6.0
+
+    scaffold:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_place_speed_ms: 50
+      require_look_down: false
+
+    tower:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_blocks_per_second: 5
+      max_y_per_block: 1.0
+
+    xray:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_ore_ratio: 0.3
+      min_total_blocks: 50
+
+    ghosthand:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_ray_distance: 6
+      check_occluding: true
+
+    fastbreak:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_breaks_per_second: 8
+
+    bedbreaker:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_beds_per_second: 2
+
+    airplace:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_trace_distance: 5.0
+
+  # ── MISC проверки ──
+  misc:
+    regen:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_regen_interval_ms: 2500
+      min_heal_amount: 1.0
+
+    noswing:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_swing_delay_ms: 500
+
+    autorespawn:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_respawn_delay_ms: 100
+
+    inventorymove:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      min_move_distance: 0.1
+
+    autoloot:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_clicks_per_second: 20
+
+    portalinventory:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+
+    extrainventory:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_survival_slot: 40
+
+    antihunger:
+      enabled: true
+      max_vl: 10.0
+      vl_decay: 0.5
+      max_sprint_ticks_without_hunger_loss: 100
+      max_jumps_without_hunger_loss: 5
+      min_jump_height_for_exhaustion: 0.4
+
+plugin_version: "1.8.122"

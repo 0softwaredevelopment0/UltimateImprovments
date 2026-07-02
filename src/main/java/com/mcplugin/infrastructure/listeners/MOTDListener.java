@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.listeners;
 import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -60,9 +61,9 @@ public class MOTDListener implements Listener {
         try {
             this.cachedIcon = Bukkit.getServer().loadServerIcon(iconFile);
             this.iconLoaded = true;
-            Main.getInstance().getLogger().info("[MOTD] Loaded server icon: motd.png");
+            ConsoleLogger.info("[MOTD] Loaded server icon: motd.png");
         } catch (Exception e) {
-            Main.getInstance().getLogger().warning("[MOTD] Failed to load motd.png (must be 64×64 PNG): " + e.getMessage());
+            ConsoleLogger.warn("[MOTD] Failed to load motd.png (must be 64×64 PNG): " + e.getMessage());
             this.iconLoaded = false;
             this.cachedIcon = null;
         }

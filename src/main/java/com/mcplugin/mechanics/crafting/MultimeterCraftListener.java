@@ -3,6 +3,7 @@ package com.mcplugin.mechanics.crafting;
 import com.mcplugin.energy.machines.assembler.AssemblerChecker;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -87,7 +88,7 @@ public class MultimeterCraftListener implements Listener {
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
 
-        plugin.getLogger().info("[MULTIMETER] Recipe registered with ITEM MODEL");
+        ConsoleLogger.info("[MULTIMETER] Recipe registered with ITEM MODEL");
     }
 
     // =========================

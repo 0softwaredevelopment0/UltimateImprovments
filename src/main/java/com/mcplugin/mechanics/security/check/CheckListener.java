@@ -13,6 +13,7 @@ import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -26,12 +27,25 @@ import java.util.Locale;
  * использование вёдер, нанесение урона, открытие инвентарей.
  * <p>
  * При выходе проверяющего — автоматически завершает проверку.
- * При выходе проверяемого — автоматически очищает проверку.
+ * При выходе проверяемого — проверка ставится на паузу.
+ * При реконнекте проверяемого — проверка восстанавливается автоматически.
  */
 public class CheckListener implements Listener {
 
     // =========================
-    // QUIT → auto-cleanup
+    // JOIN → resume check if paused
+    // =========================
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerJoin(PlayerJoinEvent e) {
+        Player player = e.getPlayer();
+        // Если игрок был на проверке до выхода — восстанавливаем
+        if (CheckManager.isBeingChecked(player)) {
+            CheckManager.rejoinCheck(player);
+        }
+    }
+
+    // =========================
+    // QUIT → auto-cleanup or pause
     // =========================
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
@@ -43,7 +57,7 @@ public class CheckListener implements Listener {
             return;
         }
 
-        // Если проверяемый вышел — чистим через suspect
+        // Если проверяемый вышел — ставим на паузу (данные сохраняются)
         if (CheckManager.isBeingChecked(player)) {
             CheckManager.cleanupBySuspect(player.getUniqueId());
         }
