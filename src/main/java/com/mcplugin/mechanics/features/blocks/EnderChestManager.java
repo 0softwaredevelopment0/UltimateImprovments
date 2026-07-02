@@ -197,6 +197,9 @@ public class EnderChestManager implements Listener {
 
     /**
      * Добавляет таймстемп открытия, проверяет rate-limit и применяет наказание.
+     * <p>
+     * При превышении rate-limit: наносит урон, блокирует открытие, сбрасывает счётчик.
+     * Взрыва НЕТ — эндер-сундук взрывается только от случайного шанса или 0% integrity.
      *
      * @param player игрок
      * @param chestLocation позиция сундука
@@ -218,13 +221,16 @@ public class EnderChestManager implements Listener {
 
         // Проверяем лимит
         if (timestamps.size() > rateLimitMaxOpens) {
-            // Превышен — взрыв!
-            explodeEnderChest(player, chestLocation, (float) rateLimitExplosionPower, rateLimitDamage,
-                    "[EnderChest] " + player.getName()
-                            + " opened ender chest " + timestamps.size()
-                            + " times in " + rateLimitWindowMs + "ms at "
-                            + chestLocation.getBlockX() + " " + chestLocation.getBlockY() + " " + chestLocation.getBlockZ()
-                            + " — RATE LIMIT EXCEEDED! (max=" + rateLimitMaxOpens + ")");
+            // Наносим урон (без взрыва)
+            if (rateLimitDamage > 0) {
+                player.damage(rateLimitDamage);
+            }
+
+            ConsoleLogger.warn("[EnderChest] " + player.getName()
+                    + " opened ender chest " + timestamps.size()
+                    + " times in " + rateLimitWindowMs + "ms at "
+                    + chestLocation.getBlockX() + " " + chestLocation.getBlockY() + " " + chestLocation.getBlockZ()
+                    + " — RATE LIMIT EXCEEDED! (max=" + rateLimitMaxOpens + ")");
 
             // Сбрасываем счётчик после наказания
             openTimestamps.remove(uuid);

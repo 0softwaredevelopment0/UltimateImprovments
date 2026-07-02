@@ -1,7 +1,10 @@
 package com.mcplugin.infrastructure.commands;
 
 import com.mcplugin.mechanics.features.integrity.IntegrityManager;
+import com.mcplugin.infrastructure.core.Keys;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -50,6 +53,7 @@ public class ItemCommand {
             case "list" -> handleList(player, heldItem);
             case "set" -> handleSet(player, heldItem, args);
             case "add" -> handleAdd(player, heldItem, args);
+            case "unbreakable" -> handleUnbreakable(player, heldItem, args);
             default -> {
                 player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Unknown subcommand: </red><white>" + args[2] + "</white>"));
                 player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/mp item int set|add|list</white>"));
@@ -92,6 +96,43 @@ public class ItemCommand {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item integrity set to </white><yellow>" + IntegrityManager.formatPercent(value) + "%</yellow>"));
         } catch (NumberFormatException e) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format! Use a decimal number (e.g.: 75.500)</red>"));
+        }
+    }
+
+    private static void handleUnbreakable(Player player, ItemStack heldItem, String[] args) {
+        boolean setUnbreakable;
+        if (args.length >= 4) {
+            setUnbreakable = Boolean.parseBoolean(args[3]);
+        } else {
+            // Toggle: если есть тег — снять, если нет — добавить
+            ItemMeta meta = heldItem.getItemMeta();
+            if (meta == null) {
+                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Cannot modify item meta!</red>"));
+                return;
+            }
+            boolean hasTag = meta.getPersistentDataContainer()
+                    .has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE);
+            setUnbreakable = !hasTag;
+        }
+
+        ItemMeta meta = heldItem.getItemMeta();
+        if (meta == null) {
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Cannot modify item meta!</red>"));
+            return;
+        }
+
+        if (setUnbreakable) {
+            meta.getPersistentDataContainer().set(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE, (byte) 1);
+            heldItem.setItemMeta(meta);
+            // Force 100% integrity and update lore
+            IntegrityManager.setCurrentIntegrity(heldItem, 100.0);
+            IntegrityManager.updateItemLore(heldItem);
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item is now </white><aqua>Unbreakable</aqua><white>! Integrity locked at 100%.</white>"));
+        } else {
+            meta.getPersistentDataContainer().remove(Keys.INTEGRITY_UNBREAKABLE);
+            heldItem.setItemMeta(meta);
+            IntegrityManager.updateItemLore(heldItem);
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item is no longer </white><aqua>Unbreakable</aqua><white>.</white>"));
         }
     }
 

@@ -7,24 +7,53 @@ import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
+import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
+import java.util.Map;
 import java.util.Set;
 
 public class BlockBreakListener implements Listener {
 
+    private static final Map<Material, Material> ORE_TO_STONE = Map.ofEntries(
+        // Stone ores -> STONE
+        Map.entry(Material.COAL_ORE, Material.STONE),
+        Map.entry(Material.IRON_ORE, Material.STONE),
+        Map.entry(Material.COPPER_ORE, Material.STONE),
+        Map.entry(Material.GOLD_ORE, Material.STONE),
+        Map.entry(Material.REDSTONE_ORE, Material.STONE),
+        Map.entry(Material.LAPIS_ORE, Material.STONE),
+        Map.entry(Material.DIAMOND_ORE, Material.STONE),
+        Map.entry(Material.EMERALD_ORE, Material.STONE),
+        // Deepslate ores -> DEEPSLATE
+        Map.entry(Material.DEEPSLATE_COAL_ORE, Material.DEEPSLATE),
+        Map.entry(Material.DEEPSLATE_IRON_ORE, Material.DEEPSLATE),
+        Map.entry(Material.DEEPSLATE_COPPER_ORE, Material.DEEPSLATE),
+        Map.entry(Material.DEEPSLATE_GOLD_ORE, Material.DEEPSLATE),
+        Map.entry(Material.DEEPSLATE_REDSTONE_ORE, Material.DEEPSLATE),
+        Map.entry(Material.DEEPSLATE_LAPIS_ORE, Material.DEEPSLATE),
+        Map.entry(Material.DEEPSLATE_DIAMOND_ORE, Material.DEEPSLATE),
+        Map.entry(Material.DEEPSLATE_EMERALD_ORE, Material.DEEPSLATE),
+        // Nether ores -> NETHERRACK
+        Map.entry(Material.NETHER_QUARTZ_ORE, Material.NETHERRACK),
+        Map.entry(Material.NETHER_GOLD_ORE, Material.NETHERRACK)
+    );
+
     @EventHandler(ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
 
-        Location loc = LocationUtil.normalize(e.getBlock().getLocation());
+        Block block = e.getBlock();
+        Location loc = LocationUtil.normalize(block.getLocation());
 
         // =========================
         // SAFETY CHECK
@@ -89,6 +118,22 @@ public class BlockBreakListener implements Listener {
             if (StructureMarker.existsAt(loc)) {
                 StructureMarker.removeAt(loc);
             }
+        }
+
+        // =========================
+        // ⛏ ORE -> STONE / DEEPSLATE / NETHERRACK
+        // =========================
+        Material replacement = ORE_TO_STONE.get(block.getType());
+        if (replacement != null) {
+            Material finalReplacement = replacement;
+            Bukkit.getScheduler().runTask(
+                Main.getInstance(),
+                () -> {
+                    if (block.getType() == Material.AIR) {
+                        block.setType(finalReplacement, false);
+                    }
+                }
+            );
         }
 
         // =========================

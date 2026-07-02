@@ -25,6 +25,12 @@ public class IntegrityListener implements Listener {
         ItemStack item = event.getItem();
         if (item == null || item.getType() == Material.AIR) return;
 
+        // Unbreakable предметы не получают урон вообще
+        if (IntegrityManager.isUnbreakable(item)) {
+            event.setCancelled(true);
+            return;
+        }
+
         // Проверяем, есть ли у предмета прочность
         if (IntegrityManager.getMaxDurability(item) <= 0) return;
 

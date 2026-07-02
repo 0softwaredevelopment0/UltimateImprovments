@@ -40,6 +40,7 @@ public class Keys {
     public static NamespacedKey INTEGRITY_LAST_SEEN;
     public static NamespacedKey INTEGRITY_WARN_FLAGS;
     public static NamespacedKey INTEGRITY_VERSION;
+    public static NamespacedKey INTEGRITY_UNBREAKABLE;
 
     public static void init(Main plugin) {
         PLASMA = new NamespacedKey(plugin, "is_plasma_cannon");
@@ -65,5 +66,6 @@ public class Keys {
         INTEGRITY_LAST_SEEN = new NamespacedKey(plugin, "integrity_last_seen");
         INTEGRITY_WARN_FLAGS = new NamespacedKey(plugin, "integrity_warn_flags");
         INTEGRITY_VERSION = new NamespacedKey(plugin, "integrity_version");
+        INTEGRITY_UNBREAKABLE = new NamespacedKey(plugin, "integrity_unbreakable");
     }
 }

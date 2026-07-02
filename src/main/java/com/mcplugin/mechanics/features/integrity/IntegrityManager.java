@@ -519,6 +519,22 @@ public class IntegrityManager extends BukkitRunnable {
     // PROCESS ITEM — инициализация + обновление лора
     // =========================
     private void processItem(ItemStack item) {
+        // Unbreakable предметы всегда имеют 100% целостности
+        if (isUnbreakable(item)) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                var pdc = meta.getPersistentDataContainer();
+                pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
+                pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
+                pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
+                pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
+                syncVanillaDamage(item, meta, 100.0);
+                updateLore(meta);
+                item.setItemMeta(meta);
+            }
+            return;
+        }
+
         int maxDurability = getMaxDurability(item);
         if (maxDurability <= 0) return;
 
@@ -602,6 +618,19 @@ public class IntegrityManager extends BukkitRunnable {
     // =========================
     private static boolean updateLore(ItemMeta meta) {
         var pdc = meta.getPersistentDataContainer();
+
+        // Unbreakable — показываем "◆ Unbreakable" вместо процента
+        if (pdc.has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE)) {
+            List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
+            if (lore == null) lore = new ArrayList<>();
+            // Удаляем старые строки целостности
+            lore.removeIf(line -> stripColor(line).contains(bareLorePrefix));
+            // Добавляем "◆ Unbreakable"
+            lore.add(loreText + " §b◆ Unbreakable");
+            meta.setLore(lore);
+            pdc.set(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, 100.0);
+            return true;
+        }
 
         double maxIntegrity = pdc.getOrDefault(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 0.0);
         double currentIntegrity = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
@@ -744,9 +773,23 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
+    // CHECK UNBREAKABLE — проверяет, есть ли у предмета тег неразрушимости
+    // =========================
+    public static boolean isUnbreakable(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        return meta.getPersistentDataContainer()
+                .has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE);
+    }
+
+    // =========================
     // DECREASE INTEGRITY — уменьшение целостности предмета
     // =========================
     public static void decreaseIntegrity(ItemStack item, double amount, Player owner) {
+        // Unbreakable предметы не теряют целостность
+        if (isUnbreakable(item)) return;
+
         if (item == null || item.getType() == Material.AIR) return;
 
         String matName = item.getType().name();

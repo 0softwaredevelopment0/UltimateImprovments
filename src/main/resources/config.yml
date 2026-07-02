@@ -1254,4 +1254,4 @@ anticheat:
       max_jumps_without_hunger_loss: 5
       min_jump_height_for_exhaustion: 0.4
 
-plugin_version: "1.8.122"
+plugin_version: "1.8.123"
