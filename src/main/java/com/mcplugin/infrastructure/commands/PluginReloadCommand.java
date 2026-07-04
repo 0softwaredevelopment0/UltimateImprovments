@@ -325,6 +325,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "god" -> MiscSubcommand.god(sender, args);
             case "heal" -> HealFeedSubcommand.heal(sender, args);
             case "feed" -> HealFeedSubcommand.feed(sender, args);
+            case "menu" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>")));
+                    yield true;
+                }
+                com.mcplugin.mechanics.features.omniscanner.AdminMenuGUI.open(player);
+                yield true;
+            }
             case "i_want_to_get_impossible_achivement_uwu" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 grantImpossibleAdvancement(player);
@@ -374,7 +382,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     "setspawn",
                     "spawn",
                     "unlock", "fly", "god",
-                    "heal", "feed"));
+                    "heal", "feed",
+                    "menu"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
             completions.add("create");
             completions.add("delete");
@@ -540,6 +549,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
         } else if (args[0].equalsIgnoreCase("money")) {
             completions.addAll(EconomySubcommand.tabComplete(args));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("menu")) {
+            // no extra args for menu
         }
 
         String last = args[args.length - 1].toLowerCase();

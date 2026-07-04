@@ -33,6 +33,13 @@ public class Keys {
     // Netherite Upgrade
     public static NamespacedKey NETHERITE_UPGRADE;
 
+    // Omniscanner
+    public static NamespacedKey OMNISCANNER;
+    public static NamespacedKey OMNISCANNER_BLOCKS;
+    public static NamespacedKey OMNISCANNER_ITEMS;
+    public static NamespacedKey OMNISCANNER_ENTITIES;
+    public static NamespacedKey OMNISCANNER_RADIUS;
+
     // Totem Charge
     public static NamespacedKey TOTEM_CHARGE;
 
@@ -62,6 +69,12 @@ public class Keys {
         NETHERITE_UPGRADE = new NamespacedKey(plugin, "netherite_upgrade");
         AUTH_GUI = new NamespacedKey(plugin, "auth_gui");
         CHGDIM_GUI = new NamespacedKey(plugin, "chgdim_gui");
+
+        OMNISCANNER = new NamespacedKey(plugin, "omniscanner");
+        OMNISCANNER_BLOCKS = new NamespacedKey(plugin, "omniscanner_blocks");
+        OMNISCANNER_ITEMS = new NamespacedKey(plugin, "omniscanner_items");
+        OMNISCANNER_ENTITIES = new NamespacedKey(plugin, "omniscanner_entities");
+        OMNISCANNER_RADIUS = new NamespacedKey(plugin, "omniscanner_radius");
 
         TOTEM_CHARGE = new NamespacedKey(plugin, "totem_charge");
 

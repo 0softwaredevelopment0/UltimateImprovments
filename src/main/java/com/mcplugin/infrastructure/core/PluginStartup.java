@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.config.ConfigGuideManager;
 import com.mcplugin.infrastructure.config.ConfigIntegrityValidator;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.maintenance.MaintenanceManager;
+import com.mcplugin.mechanics.features.omniscanner.OmniscannerModule;
 import com.mcplugin.infrastructure.modules.*;
 import com.mcplugin.infrastructure.report.ReportManager;
 import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
@@ -197,6 +198,9 @@ public class PluginStartup {
 
         // ── Particle Accelerator ──
         mm.register(new ParticleModule());
+
+        // ── Admin Tools ──
+        mm.register(new OmniscannerModule());
 
         // ── Security ──
         mm.register(new PunishModule());
