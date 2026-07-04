@@ -191,6 +191,9 @@ public class PluginStartup {
         // ── Economy ──
         mm.register(new EconomyModule());
 
+        // ── Particle Accelerator ──
+        mm.register(new ParticleModule());
+
         // ── Security ──
         mm.register(new PunishModule());
         mm.register(new AntiCheatModule());
