@@ -11,32 +11,40 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.util.Vector;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
- * Изменяет скорость ходьбы игрока в зависимости от блока под ним.
+ * Кастомное трение блоков — модификация горизонтальной velocity игрока.
+ * <p>
+ * <b>Механика Minecraft:</b><br>
+ * Каждый тик сервер умножает горизонтальную velocity на {@code friction * 0.91}.<br>
+ * Default (0.6): {@code vel *= 0.546} — экспоненциальное замедление.<br>
+ * Custom (1.1):  {@code vel *= 1.001} — экспоненциальное ускорение!<br>
+ * Custom (0.9):  {@code vel *= 0.819} — замедление быстрее default.
+ * <p>
+ * <b>Как работает:</b><br>
+ * Сервер уже применил default friction (0.6 * 0.91). Наш корректор
+ * умножает velocity на {@code customFriction / 0.6}, чтобы итоговое
+ * трение за тик стало {@code customFriction * 0.91}.
  * <p>
  * Настройка в config.yml → block_friction:
  * <pre>
  * block_friction:
- *   BLUE_ICE: 1.1
- *   PACKED_ICE: 0.9
+ *   BLUE_ICE: 1.1    # экспоненциальное ускорение
+ *   PACKED_ICE: 0.9  # мягкое замедление
+ *   SOUL_SAND: 0.4   # сильное замедление
  * </pre>
- * <p>
- * Значение friction — множитель относительно стандартного трения (0.6).
- * 1.1 = быстрее, 0.5 = медленнее.
  */
 public class BlockFrictionListener implements Listener {
 
     /** Карта блок → friction (загружается из config.yml) */
     private static Map<Material, Double> frictionMap = new HashMap<>();
 
-    /** Текущие игроки на кастомных блоках: UUID → тип блока */
-    private final Map<UUID, Material> trackedPlayers = new HashMap<>();
+    /** DEFAULT friction для большинства блоков в Minecraft */
+    private static final double DEFAULT_FRICTION = 0.6;
 
     // =========================
     // INIT / RELOAD
@@ -65,9 +73,15 @@ public class BlockFrictionListener implements Listener {
                 ConsoleLogger.warn("[BlockFriction] Unknown material: " + key);
                 continue;
             }
-            double friction = cfg.getDouble(key, 0.6);
+            double friction = cfg.getDouble(key, DEFAULT_FRICTION);
             frictionMap.put(mat, friction);
-            ConsoleLogger.info("[BlockFriction] " + mat.name() + " → friction=" + friction);
+
+            // Показываем эффект: экспонента за тик
+            double effect = friction * 0.91;
+            String direction = effect > 1.0 ? "🔼 ACCEL" : effect < 1.0 ? "🔽 DECEL" : "➡ NEUTRAL";
+            ConsoleLogger.info("[BlockFriction] " + mat.name()
+                    + " → friction=" + friction
+                    + " (vel×" + String.format("%.4f", effect) + "/tick " + direction + ")");
         }
 
         if (frictionMap.isEmpty()) {
@@ -81,14 +95,25 @@ public class BlockFrictionListener implements Listener {
     // EVENTS
     // =========================
 
+    /**
+     * При каждом движении игрока по блоку с кастомным friction
+     * корректируем горизонтальную velocity.
+     * <p>
+     * Формула коррекции:
+     * {@code vel *= customFriction / DEFAULT_FRICTION}
+     * <p>
+     * Почему: сервер уже умножил vel на {@code 0.6 * 0.91} (DEFAULT).
+     * Нам нужно, чтобы итог был {@code customFriction * 0.91}.
+     * {@code vel * 0.6*0.91 * (custom/0.6) = vel * custom*0.91} ✓
+     */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
         if (frictionMap.isEmpty()) return;
 
-        // Only process when player changes block position (not just rotation)
-        Location from = event.getFrom();
+        // Пропускаем rotation-only (без смены позиции)
         Location to = event.getTo();
         if (to == null) return;
+        Location from = event.getFrom();
         if (from.getBlockX() == to.getBlockX()
                 && from.getBlockY() == to.getBlockY()
                 && from.getBlockZ() == to.getBlockZ()) {
@@ -96,36 +121,32 @@ public class BlockFrictionListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
 
-        // Block below the player's feet (what they're standing on)
+        // Блок ПОД ногами игрока (на чём стоит)
         Block ground = to.getBlock().getRelative(BlockFace.DOWN);
-        Material groundType = ground.getType();
+        Double friction = frictionMap.get(ground.getType());
+        if (friction == null) return;
 
-        Material prevType = trackedPlayers.get(uuid);
+        // Множитель velocity: customFriction / 0.6
+        double multiplier = friction / DEFAULT_FRICTION;
 
-        // Same block type — no change needed
-        if (groundType == prevType) return;
+        // Берём текущую velocity и умножаем горизонталь
+        Vector vel = player.getVelocity();
+        double newX = vel.getX() * multiplier;
+        double newZ = vel.getZ() * multiplier;
 
-        Double friction = frictionMap.get(groundType);
-
-        if (friction != null) {
-            // Entering (or switching to) a custom friction block
-            trackedPlayers.put(uuid, groundType);
-            float newSpeed = (float) (0.2f * friction / 0.6);
-            newSpeed = Math.max(0f, Math.min(1f, newSpeed)); // clamp 0..1
-            player.setWalkSpeed(newSpeed);
-        } else if (prevType != null) {
-            // Leaving a custom friction block — restore default speed
-            trackedPlayers.remove(uuid);
-            player.setWalkSpeed(0.2f);
+        // Лимит: не быстрее 50 м/с (режим креатива/лога)
+        double speed = Math.sqrt(newX * newX + newZ * newZ);
+        double maxSpeed = 50.0;
+        if (speed > maxSpeed) {
+            double scale = maxSpeed / speed;
+            newX *= scale;
+            newZ *= scale;
         }
-    }
 
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        trackedPlayers.remove(event.getPlayer().getUniqueId());
-        // Walk speed resets on rejoin automatically
+        vel.setX(newX);
+        vel.setZ(newZ);
+        player.setVelocity(vel);
     }
 
     // =========================
@@ -137,6 +158,6 @@ public class BlockFrictionListener implements Listener {
     }
 
     public static double getFriction(Material material) {
-        return frictionMap.getOrDefault(material, 0.6);
+        return frictionMap.getOrDefault(material, DEFAULT_FRICTION);
     }
 }
