@@ -555,6 +555,22 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🏗 STRUCTURE INTEGRITY — stress/integrity данных эндер-сундуков
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS structure_integrity (
+                world TEXT NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                z INTEGER NOT NULL,
+                stress REAL DEFAULT 0,
+                integrity REAL DEFAULT 100,
+                degradation_ticks INTEGER DEFAULT 0,
+                PRIMARY KEY(world, x, y, z)
+            );
+        """);
+
+        // =========================
         // 📋 BLACKLIST — чёрный список
         // =========================
         st.execute("""

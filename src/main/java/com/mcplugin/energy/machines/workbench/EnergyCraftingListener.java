@@ -1,9 +1,6 @@
 package com.mcplugin.energy.machines.workbench;
 
 import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.energy.storage.battery.BatteryManager;
-import com.mcplugin.energy.transfer.cable.CableNetwork;
-import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.mechanics.crafting.RecipeRegistry;
@@ -24,11 +21,6 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.inventory.Recipe;
-
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
 
 public class EnergyCraftingListener implements Listener {
 
@@ -68,7 +60,7 @@ public class EnergyCraftingListener implements Listener {
 
         int cost = getCost();
 
-        if (!hasNetworkEnergy(workbench, cost)) {
+        if (!EnergyWorkbenchManager.hasBufferEnergy(workbench, cost)) {
             e.getInventory().setResult(null);
         }
     }
@@ -127,13 +119,13 @@ public class EnergyCraftingListener implements Listener {
 
             int cost = getCost();
 
-            if (!hasNetworkEnergy(workbench, cost)) {
+            if (!EnergyWorkbenchManager.hasBufferEnergy(workbench, cost)) {
                 e.setCancelled(true);
                 player.sendMessage(MessageUtil.parse(getMsg()));
                 return;
             }
 
-            takeNetworkEnergy(workbench, cost);
+            EnergyWorkbenchManager.consumeBufferEnergy(workbench, cost);
         } else {
             // =========================
             // Не в Assembler — блокируем кастомные рецепты
@@ -181,164 +173,8 @@ public class EnergyCraftingListener implements Listener {
                         continue;
                     }
 
-                    if (!isConnectedToNetwork(loc)) {
-                        continue;
-                    }
-
                     return loc;
                 }
-            }
-        }
-
-        return null;
-    }
-
-    // =========================
-    // NETWORK CHECK
-    // =========================
-    private boolean isConnectedToNetwork(Location workbench) {
-
-        for (Location near : LocationUtil.getNeighbors(workbench)) {
-
-            Location n = LocationUtil.normalize(near);
-
-            if (CableNetwork.getNode(n) != null) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // =========================
-    // ENERGY CHECK
-    // =========================
-    private boolean hasNetworkEnergy(Location workbench, int amount) {
-
-        CableNode start = findConnectedNode(workbench);
-
-        if (start == null) {
-            return false;
-        }
-
-        Set<Location> visited = new HashSet<>();
-        Queue<CableNode> queue = new LinkedList<>();
-
-        queue.add(start);
-        visited.add(start.getLocation());
-
-        int total = 0;
-
-        while (!queue.isEmpty()) {
-
-            CableNode node = queue.poll();
-
-            if (node == null) {
-                continue;
-            }
-
-            total += node.getEnergy();
-
-            for (Location loc : node.getConnections()) {
-
-                if (visited.contains(loc)) {
-                    continue;
-                }
-
-                CableNode next =
-                        CableNetwork.getNode(loc);
-
-                if (next == null) {
-                    continue;
-                }
-
-                visited.add(loc);
-                queue.add(next);
-            }
-        }
-
-        return total >= amount;
-    }
-
-    // =========================
-    // ENERGY CONSUME
-    // =========================
-    private void takeNetworkEnergy(Location workbench, int amount) {
-
-        CableNode start = findConnectedNode(workbench);
-
-        if (start == null) {
-            return;
-        }
-
-        Set<Location> visited = new HashSet<>();
-        Queue<CableNode> queue = new LinkedList<>();
-
-        queue.add(start);
-        visited.add(start.getLocation());
-
-        int remaining = amount;
-
-        while (!queue.isEmpty() && remaining > 0) {
-
-            CableNode node = queue.poll();
-
-            if (node == null) {
-                continue;
-            }
-
-            // Проверяем режим батареи: берём энергию только из DISCHARGE/CHARGE_DISCHARGE
-            BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
-            if (bc != null && !bc.canDischarge()) continue;
-
-            int energy = node.getEnergy();
-
-            if (energy > 0) {
-
-                int take = Math.min(
-                        energy,
-                        remaining
-                );
-
-                node.removeEnergy(take);
-
-                remaining -= take;
-            }
-
-            for (Location loc : node.getConnections()) {
-
-                if (visited.contains(loc)) {
-                    continue;
-                }
-
-                CableNode next =
-                        CableNetwork.getNode(loc);
-
-                if (next == null) {
-                    continue;
-                }
-
-                visited.add(loc);
-                queue.add(next);
-            }
-        }
-    }
-
-    // =========================
-    // FIND START NODE
-    // =========================
-    private CableNode findConnectedNode(Location workbench) {
-
-        for (Location near : LocationUtil.getNeighbors(workbench)) {
-
-            Location norm =
-                    LocationUtil.normalize(near);
-
-            CableNode node =
-                    CableNetwork.getNode(norm);
-
-            if (node != null) {
-                return node;
             }
         }
 

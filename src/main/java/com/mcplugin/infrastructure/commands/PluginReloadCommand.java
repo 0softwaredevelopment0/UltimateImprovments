@@ -17,6 +17,12 @@ import com.mcplugin.infrastructure.commands.subcommands.PowerSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ModulesSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.UpdateSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.MiscSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.PluginSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.EconomySubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.SwapJarSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.NearSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.RtpSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.MeteorSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.RadiationSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReloadSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.StructureSubcommand;
@@ -29,6 +35,7 @@ import com.mcplugin.infrastructure.commands.subcommands.BlacklistSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.CheckSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.AcStatsSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.ExpSplitSubcommand;
+import com.mcplugin.infrastructure.commands.subcommands.HealFeedSubcommand;
 import com.mcplugin.infrastructure.commands.subcommands.InvseeCommand;
 import com.mcplugin.infrastructure.commands.subcommands.SpawnCommand;
 import com.mcplugin.infrastructure.commands.subcommands.ReportSubcommand;
@@ -47,6 +54,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -140,6 +148,12 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             case "togglebb" -> MiscSubcommand.toggleBossBar(sender);
             case "togglesb" -> MiscSubcommand.toggleScoreboard(sender);
             case "toggleping" -> MiscSubcommand.togglePing(sender);
+            case "swapjar" -> SwapJarSubcommand.execute(sender, args);
+            case "near" -> NearSubcommand.execute(sender, args);
+            case "rtp" -> RtpSubcommand.execute(sender, args);
+            case "meteor" -> MeteorSubcommand.execute(sender, args);
+            case "money" -> EconomySubcommand.execute(sender, args);
+            case "plugin" -> PluginSubcommand.execute(sender, args);
             case "reload" -> ReloadSubcommand.execute(sender);
             case "vote" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
@@ -287,6 +301,29 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
             case "cilist" -> { CilistCommand.execute(sender); yield true; }
             case "toggleradview" -> MiscSubcommand.toggleRadView(sender);
+            case "unlock" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+                    yield true;
+                }
+                if (args.length < 2) {
+                    sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp unlock <book|sign></white>"));
+                    yield true;
+                }
+                yield switch (args[1].toLowerCase()) {
+                    case "book" -> MiscSubcommand.unlockBook(sender);
+                    case "sign" -> MiscSubcommand.unlockSign(sender);
+                    default -> {
+                        sender.sendMessage(MessageUtil.parse("<red>❌ Unknown unlock type: </red><white>" + args[1] + "</white>"));
+                        sender.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/mp unlock <book|sign></white>"));
+                        yield true;
+                    }
+                };
+            }
+            case "fly" -> MiscSubcommand.fly(sender, args);
+            case "god" -> MiscSubcommand.god(sender, args);
+            case "heal" -> HealFeedSubcommand.heal(sender, args);
+            case "feed" -> HealFeedSubcommand.feed(sender, args);
             case "i_want_to_get_impossible_achivement_uwu" -> {
                 if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); yield true; }
                 grantImpossibleAdvancement(player);
@@ -319,19 +356,24 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             completions.addAll(List.of("help", "checkver", "updatejar", "cilist", "toggleradview",
                     "setrad", "reload", "str", "power", "suicide",
-                    "auth", "chgdim", "chgop", "op", "deop", "vanish", "notes",
-                    "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft", "togglebb", "togglesb", "toggleping", "vote",
+                    "auth", "chgdim", "chgdim_teleport", "chgdim_return", "chgop", "op", "deop", "vanish", "notes",
+                    "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft",                    "togglebb", "togglesb", "toggleping", "swapjar", "near", "rtp", "vote",
+                    "meteor",
                     "sethome", "home", "delhome", "listhomes", "ophomels", "opdelhome",
                     "askcords", "forcesuicide", "bc", "maint", "opwhitelist",
                     "punish", "whitelist", "blacklist",
                     "report", "reports", "modreport", "repstatus",
+                    "plugin",
+                    "money",
                     "check", "uncheck",
                     "ac",
                     "expsplit",
                     "invsee",
                     "endersee",
                     "setspawn",
-                    "spawn"));
+                    "spawn",
+                    "unlock", "fly", "god",
+                    "heal", "feed"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("vote")) {
             completions.add("create");
             completions.add("delete");
@@ -452,14 +494,37 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             for (int v : new int[]{0, 100, 200, 500, 1000, 2000, 5000}) completions.add(String.valueOf(v));
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("check") || args[0].equalsIgnoreCase("uncheck"))) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("ac")) {
-            completions.addAll(List.of("overview", "checks", "players", "player"));
-        } else if (args.length == 3 && args[0].equalsIgnoreCase("ac") && args[1].equalsIgnoreCase("player")) {
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("unlock")) {
+            completions.addAll(List.of("book", "sign"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("fly")) {
+            completions.addAll(List.of("on", "off"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("fly")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("heal") || args[0].equalsIgnoreCase("feed"))) {
+            completions.addAll(HealFeedSubcommand.tabComplete(args));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("god")) {
+            completions.addAll(List.of("on", "off"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("god")) {
+            for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("plugin")) {
+            // Suggest plugin names
+            for (Plugin p : Bukkit.getPluginManager().getPlugins()) {
+                completions.add(p.getName());
+            }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("plugin")) {
+            completions.addAll(List.of("on", "off", "restart", "info"));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("ac")) {
+            completions.addAll(List.of("overview", "checks", "players", "player", "exempt", "unexempt", "toggle"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("ac") && (args[1].equalsIgnoreCase("player") || args[1].equalsIgnoreCase("exempt") || args[1].equalsIgnoreCase("unexempt"))) {
+            for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("ac") && args[1].equalsIgnoreCase("toggle")) {
+            completions.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("askcords")) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("invsee") || args[0].equalsIgnoreCase("endersee"))) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
+        } else if (args[0].equalsIgnoreCase("money")) {
+            completions.addAll(EconomySubcommand.tabComplete(args));
         }
 
         String last = args[args.length - 1].toLowerCase();

@@ -38,7 +38,6 @@ public class CableNetwork {
      * После создания — авто-соединяет соседние кабели.
      */
     public static void rebuildFromMarkers() {
-        int count = 0;
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             if (!"cable".equals(entry.getValue().type())) continue;
 
@@ -62,7 +61,6 @@ public class CableNetwork {
             if (nodes.containsKey(loc)) continue;
 
             nodes.put(loc, new CableNode(loc));
-            count++;
         }
 
         // Авто-соединение: каждый узел соединяется с соседями
@@ -82,10 +80,6 @@ public class CableNetwork {
                 neighbor.connect(loc);
             }
         }
-
-        ConsoleLogger.info(
-                "[CableNetwork] Loaded " + count + " nodes from Marker entities"
-        );
     }
 
     // =========================

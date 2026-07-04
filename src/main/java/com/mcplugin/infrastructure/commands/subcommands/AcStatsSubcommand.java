@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.mechanics.security.anticheat.AntiCheatManager;
 import com.mcplugin.mechanics.security.anticheat.core.AbstractCheck;
 import com.mcplugin.mechanics.security.anticheat.core.CheckCategory;
+import com.mcplugin.mechanics.security.anticheat.core.ExemptionManager;
 import com.mcplugin.mechanics.security.anticheat.core.PlayerData;
 import com.mcplugin.mechanics.security.anticheat.nms.PacketHandler;
 import org.bukkit.Bukkit;
@@ -42,13 +43,19 @@ public final class AcStatsSubcommand {
             case "checks" -> showChecks(sender, acm);
             case "players" -> showPlayers(sender, acm);
             case "player" -> showPlayer(sender, acm, args);
+            case "exempt" -> exemptPlayer(sender, args);
+            case "unexempt" -> unexemptPlayer(sender, args);
+            case "toggle" -> toggleAntiCheat(sender, args);
             default -> {
                 sender.sendMessage(MessageUtil.parse(
                         "<red>❌ Неизвестная подкоманда. Используйте:</red>\n"
                         + "<white>/mp ac overview</white> — общая статистика\n"
                         + "<white>/mp ac checks</white> — список проверок\n"
                         + "<white>/mp ac players</white> — VL всех игроков\n"
-                        + "<white>/mp ac player <ник></white> — VL конкретного игрока"));
+                        + "<white>/mp ac player <ник></white> — VL конкретного игрока\n"
+                        + "<white>/mp ac exempt <ник></white> — освободить игрока от античита\n"
+                        + "<white>/mp ac unexempt <ник></white> — снять освобождение\n"
+                        + "<white>/mp ac toggle [on|off]</white> — глобально включить/выключить античит"));
                 yield true;
             }
         };
@@ -278,6 +285,119 @@ public final class AcStatsSubcommand {
         }
         sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
         sender.sendMessage("");
+
+        return true;
+    }
+
+    // =========================
+    // EXEMPT / UNEXEMPT / TOGGLE
+    // =========================
+
+    /**
+     * /mp ac exempt <player> — освободить игрока от всех проверок античита
+     */
+    private static boolean exemptPlayer(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp ac exempt <ник></white>"));
+            return true;
+        }
+
+        String targetName = args[2];
+        @SuppressWarnings("deprecation")
+        Player target = Bukkit.getPlayerExact(targetName);
+        if (target == null || !target.isOnline()) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Player</red> <yellow>" + targetName + "</yellow> <red>not found!</red>"));
+            return true;
+        }
+
+        ExemptionManager.getInstance().exemptAll(target.getUniqueId());
+
+        // Also update PlayerData flag for quick checks
+        PlayerData data = AntiCheatManager.getInstance().getPlayerData(target);
+        if (data != null) data.setExempted(true);
+
+        sender.sendMessage(MessageUtil.parse(
+                "<green>✔</green> <white>Player</white> <yellow>" + target.getName()
+                + "</yellow> <white>is now exempt from all anticheat checks.</white>"));
+
+        if (!sender.equals(target)) {
+            target.sendMessage(MessageUtil.parse(
+                    "<yellow>✦</yellow> <white>You have been exempted from anticheat checks.</white>"));
+        }
+
+        return true;
+    }
+
+    /**
+     * /mp ac unexempt <player> — снять освобождение с игрока
+     */
+    private static boolean unexemptPlayer(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp ac unexempt <ник></white>"));
+            return true;
+        }
+
+        String targetName = args[2];
+        @SuppressWarnings("deprecation")
+        Player target = Bukkit.getPlayerExact(targetName);
+        if (target == null || !target.isOnline()) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Player</red> <yellow>" + targetName + "</yellow> <red>not found!</red>"));
+            return true;
+        }
+
+        ExemptionManager.getInstance().unexemptAll(target.getUniqueId());
+
+        PlayerData data = AntiCheatManager.getInstance().getPlayerData(target);
+        if (data != null) data.setExempted(false);
+
+        sender.sendMessage(MessageUtil.parse(
+                "<green>✔</green> <white>Player</white> <yellow>" + target.getName()
+                + "</yellow> <white>is no longer exempt from anticheat checks.</white>"));
+
+        if (!sender.equals(target)) {
+            target.sendMessage(MessageUtil.parse(
+                    "<yellow>✦</yellow> <white>You are no longer exempt from anticheat checks.</white>"));
+        }
+
+        return true;
+    }
+
+    /**
+     * /mp ac toggle [on|off] — глобально включить/выключить античит
+     */
+    private static boolean toggleAntiCheat(CommandSender sender, String[] args) {
+        AntiCheatManager acm = AntiCheatManager.getInstance();
+        if (acm == null) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ AntiCheatManager не инициализирован!</red>"));
+            return true;
+        }
+
+        boolean newState;
+        if (args.length >= 3) {
+            String state = args[2].toLowerCase();
+            switch (state) {
+                case "on", "enable", "true", "1" -> newState = true;
+                case "off", "disable", "false", "0" -> newState = false;
+                default -> {
+                    sender.sendMessage(MessageUtil.parse(
+                            "<red>❌ Usage: </red><white>/mp ac toggle [on|off]</white>"));
+                    return true;
+                }
+            }
+        } else {
+            // Toggle current state
+            newState = !acm.isGlobalEnabled();
+        }
+
+        acm.setGlobalEnabled(newState);
+
+        if (newState) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<green>✔</green> <white>AntiCheat is now</white> <green>ENABLED</green><white>.</white>"));
+        } else {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>✔</red> <white>AntiCheat is now</white> <red>DISABLED</red><white>.</white>"));
+        }
 
         return true;
     }

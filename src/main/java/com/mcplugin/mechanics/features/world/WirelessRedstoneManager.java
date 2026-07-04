@@ -324,10 +324,12 @@ public class WirelessRedstoneManager implements Listener {
         if (lightable.isLit() == lit) return;
 
         lightable.setLit(lit);
-        block.setBlockData(lightable, true);
+        // ⚠ applyPhysics=false — критично! Лампа не имеет реального редстоун-сигнала
+        // (беспроводное питание), поэтому applyPhysics=true заставит сервер перепроверить
+        // сигнал и погасить лампу обратно.
+        block.setBlockData(lightable, false);
 
-        // Принудительно обновляем компараторы и повторители в радиусе 1 блок
-        // (setBlockData с applyPhysics=true не всегда срабатывает из контекста BlockRedstoneEvent)
+        // Обновляем компараторы и повторители вручную
         forceComparatorUpdate(block);
 
         Location loc = block.getLocation().clone();
@@ -337,9 +339,8 @@ public class WirelessRedstoneManager implements Listener {
             if (b.getBlockData() instanceof Lightable l) {
                 if (l.isLit() == lit) return;
                 l.setLit(lit);
-                b.setBlockData(l, true);
+                b.setBlockData(l, false);
             }
-            // Дублируем обновление компараторов на следующем тике — для гарантии
             forceComparatorUpdate(b);
         });
 

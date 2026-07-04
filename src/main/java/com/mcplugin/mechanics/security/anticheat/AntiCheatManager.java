@@ -32,6 +32,10 @@ public class AntiCheatManager {
     private final Map<CheckCategory, List<AbstractCheck>> checksByCategory = new EnumMap<>(CheckCategory.class);
     private final Map<String, AbstractCheck> checksByName = new ConcurrentHashMap<>();
 
+    // Global enabled flag (runtime toggle) — по дефолту ВЫКЛ
+    private volatile boolean globalEnabled = false;
+    private static final String CONFIG_ENABLED_PATH = "anticheat.enabled";
+
     // VL decay task
     private int decayTaskId = -1;
 
@@ -114,6 +118,7 @@ public class AntiCheatManager {
      * Обрабатывает результат проверки и выполняет действие если нужно.
      */
     public void handleResult(Player player, AbstractCheck check, CheckResult result) {
+        if (!globalEnabled) return;
         if (player == null || !player.isOnline() || result == null || !result.isFlagged()) return;
 
         PlayerData data = getOrCreatePlayerData(player);
@@ -150,7 +155,16 @@ public class AntiCheatManager {
     // RELOAD
     // =========================
 
+    public boolean isGlobalEnabled() { return globalEnabled; }
+
+    public void setGlobalEnabled(boolean enabled) {
+        this.globalEnabled = enabled;
+        ConsoleLogger.info("[AntiCheat] " + (enabled ? "ENABLED" : "DISABLED"));
+    }
+
     public void reloadAll() {
+        // Sync globalEnabled from config on reload
+        this.globalEnabled = Main.getInstance().getConfig().getBoolean(CONFIG_ENABLED_PATH, false);
         for (AbstractCheck check : getAllChecks()) {
             check.loadConfig();
             check.onReload();

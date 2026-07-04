@@ -69,7 +69,7 @@ public class ActionManager {
 
         // Always log
         if (cfg.getBoolean(basePath + ".log.enabled", true)) {
-            ConsoleLogger.warn("<gray>[<white>Server<dark_gray>/<yellow>Warning<gray>]</dark_gray> " + player.getName() + " flagged " + checkName
+            ConsoleLogger.raw("<gray>[<white>Server<dark_gray>/<yellow>Warning<gray>]</dark_gray> " + player.getName() + " flagged " + checkName
                     + " (VL: " + String.format("%.1f", vl) + ") — " + message);
         }
 

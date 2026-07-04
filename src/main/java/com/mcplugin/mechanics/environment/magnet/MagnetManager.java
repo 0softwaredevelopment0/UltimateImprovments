@@ -244,7 +244,7 @@ public class MagnetManager extends BukkitRunnable {
         }
 
         StructureMarker.purgeOrphaned(usedUuids);
-        ConsoleLogger.info("[Magnet] Loaded " + clustersById.size() + " clusters from Marker entities");
+        // Log suppressed — too spammy on server start
     }
 
     // =========================

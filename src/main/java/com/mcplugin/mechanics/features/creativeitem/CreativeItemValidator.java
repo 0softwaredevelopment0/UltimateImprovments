@@ -64,9 +64,9 @@ public class CreativeItemValidator implements Listener {
     }
 
     public static void reloadConfig() {
-        var cfg = Main.getInstance().getConfig().getConfigurationSection("features.creativeitem");
+        var cfg = Main.getInstance().getConfig().getConfigurationSection("features.creative_item_validator");
         if (cfg == null) {
-            ConsoleLogger.warn("[CreativeItem] No config section 'features.creativeitem' found, using defaults");
+            ConsoleLogger.warn("[CreativeItem] No config section 'features.creative_item_validator' found, using defaults");
             return;
         }
 

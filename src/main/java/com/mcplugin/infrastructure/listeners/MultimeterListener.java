@@ -6,6 +6,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.energy.transfer.cable.*;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.mechanics.features.structure.StructureIntegrityManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -28,7 +29,7 @@ public class MultimeterListener implements Listener {
     private static final NamespacedKey KEY =
             new NamespacedKey(Main.getInstance(), "is_multimeter");
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onUse(PlayerInteractEvent e) {
 
         if (e.getClickedBlock() == null) return;
@@ -60,6 +61,20 @@ public class MultimeterListener implements Listener {
                 player.sendMessage(MessageUtil.parse("<aqua>Buffer: </aqua><white>" + buffer + "/100 ⚡</white>"));
                 return;
             }
+        }
+
+        // =========================
+        // 🏗 STRUCTURE INTEGRITY (ENDER_CHEST)
+        // =========================
+        if (type == Material.ENDER_CHEST) {
+            Location loc = LocationUtil.normalize(block.getLocation());
+            StructureIntegrityManager sim = StructureIntegrityManager.getInstance();
+            if (sim != null) {
+                sim.showInfo(player, loc);
+            } else {
+                player.sendMessage(MessageUtil.parse("<red>❌ Structure Integrity system not available.</red>"));
+            }
+            return;
         }
 
         // =========================

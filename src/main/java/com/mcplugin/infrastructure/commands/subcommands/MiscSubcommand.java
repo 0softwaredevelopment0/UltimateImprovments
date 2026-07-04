@@ -11,7 +11,10 @@ import com.mcplugin.mechanics.features.items.AutoCraftManager;
 import com.mcplugin.mechanics.features.world.MinecartSpeedManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -166,5 +169,206 @@ public final class MiscSubcommand {
     // =========================
     public static boolean home(CommandSender sender, String[] args) {
         return HomeCommand.dispatch(sender, args);
+    }
+
+    // =========================
+    // FLY — включает/выключает полёт (даже в выживании)
+    // /mp fly on|off [player]
+    // =========================
+    public static boolean fly(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp fly <on|off> [player]</white>"));
+            return true;
+        }
+
+        boolean enable;
+        switch (args[1].toLowerCase()) {
+            case "on" -> enable = true;
+            case "off" -> enable = false;
+            default -> {
+                sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp fly <on|off> [player]</white>"));
+                return true;
+            }
+        }
+
+        Player target;
+        if (args.length >= 3) {
+            // Применяем к другому игроку
+            if (!sender.hasPermission("mcplugin.command.fly.other")) {
+                sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle flight for other players!</red>"));
+                return true;
+            }
+            target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(MessageUtil.parse("<red>❌ Player</red> <yellow>" + args[2] + "</yellow> <red>not found!</red>"));
+                return true;
+            }
+        } else {
+            // Применяем к себе
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command on themselves!</red>"));
+                return true;
+            }
+            if (!player.hasPermission("mcplugin.command.fly")) {
+                player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle flight!</red>"));
+                return true;
+            }
+            target = player;
+        }
+
+        target.setAllowFlight(enable);
+        target.setFlying(enable);
+
+        String state = enable ? "<green>ON</green>" : "<red>OFF</red>";
+        String msg = "<green>✔</green> <white>Flight for</white> <yellow>" + target.getName() + "</yellow> <white>:</white> " + state;
+        sender.sendMessage(MessageUtil.parse(msg));
+        if (!sender.equals(target)) {
+            target.sendMessage(MessageUtil.parse("<white>Your flight has been toggled:</white> " + state));
+        }
+        return true;
+    }
+
+    // =========================
+    // GOD — включает/выключает неуязвимость
+    // /mp god on|off [player]
+    // =========================
+    public static boolean god(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp god <on|off> [player]</white>"));
+            return true;
+        }
+
+        boolean enable;
+        switch (args[1].toLowerCase()) {
+            case "on" -> enable = true;
+            case "off" -> enable = false;
+            default -> {
+                sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp god <on|off> [player]</white>"));
+                return true;
+            }
+        }
+
+        Player target;
+        if (args.length >= 3) {
+            // Применяем к другому игроку
+            if (!sender.hasPermission("mcplugin.command.god.other")) {
+                sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle god mode for other players!</red>"));
+                return true;
+            }
+            target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(MessageUtil.parse("<red>❌ Player</red> <yellow>" + args[2] + "</yellow> <red>not found!</red>"));
+                return true;
+            }
+        } else {
+            // Применяем к себе
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command on themselves!</red>"));
+                return true;
+            }
+            if (!player.hasPermission("mcplugin.command.god")) {
+                player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle god mode!</red>"));
+                return true;
+            }
+            target = player;
+        }
+
+        target.setInvulnerable(enable);
+
+        String state = enable ? "<green>ON</green>" : "<red>OFF</red>";
+        String msg = "<green>✔</green> <white>God mode for</white> <yellow>" + target.getName() + "</yellow> <white>:</white> " + state;
+        sender.sendMessage(MessageUtil.parse(msg));
+        if (!sender.equals(target)) {
+            target.sendMessage(MessageUtil.parse("<white>Your god mode has been toggled:</white> " + state));
+        }
+        return true;
+    }
+
+    // =========================
+    // UNLOCK BOOK — превращает подписанную книгу в книгу с пером
+    // =========================
+    public static boolean unlockBook(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return true;
+        }
+        if (!player.hasPermission("mcplugin.command.unlock")) {
+            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unlock items!</red>"));
+            return true;
+        }
+
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || item.getType() != Material.WRITTEN_BOOK) {
+            player.sendMessage(MessageUtil.parse("<red>❌ You must hold a signed book in your hand!</red>"));
+            return true;
+        }
+
+        BookMeta oldMeta = (BookMeta) item.getItemMeta();
+        if (oldMeta == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Failed to read book data!</red>"));
+            return true;
+        }
+
+        // Копируем страницы из подписанной книги (List<String>) и создаём книгу с пером
+        var pages = oldMeta.getPages();
+        ItemStack newBook = new ItemStack(Material.WRITABLE_BOOK, item.getAmount());
+        BookMeta newMeta = (BookMeta) newBook.getItemMeta();
+        if (newMeta == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Failed to create new book!</red>"));
+            return true;
+        }
+
+        newMeta.setPages(pages);
+        newBook.setItemMeta(newMeta);
+        player.getInventory().setItemInMainHand(newBook);
+        player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Book unlocked! You can now edit it.</white>"));
+        return true;
+    }
+
+    // =========================
+    // UNLOCK SIGN — убирает намазанность воском с таблички
+    // =========================
+    public static boolean unlockSign(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return true;
+        }
+        if (!player.hasPermission("mcplugin.command.unlock")) {
+            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unlock items!</red>"));
+            return true;
+        }
+
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || item.getType() == Material.AIR) {
+            player.sendMessage(MessageUtil.parse("<red>❌ You must hold a sign in your hand!</red>"));
+            return true;
+        }
+
+        String typeName = item.getType().name();
+        if (!typeName.endsWith("_SIGN")) {
+            player.sendMessage(MessageUtil.parse("<red>❌ You must hold a sign in your hand!</red>"));
+            return true;
+        }
+
+        // Создаём новую табличку без компонента waxed (свежий предмет не имеет waxed)
+        ItemStack newSign = new ItemStack(item.getType(), item.getAmount());
+        if (item.hasItemMeta()) {
+            var oldMeta = item.getItemMeta();
+            var newMeta = newSign.getItemMeta();
+            if (newMeta == null) {
+                player.sendMessage(MessageUtil.parse("<red>❌ Failed to create new sign!</red>"));
+                return true;
+            }
+            // Копируем display name и lore
+            if (oldMeta.hasDisplayName()) newMeta.displayName(oldMeta.displayName());
+            if (oldMeta.hasLore()) newMeta.lore(oldMeta.lore());
+            // Копируем PDC
+            oldMeta.getPersistentDataContainer().copyTo(newMeta.getPersistentDataContainer(), true);
+            newSign.setItemMeta(newMeta);
+        }
+
+        player.getInventory().setItemInMainHand(newSign);
+        player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Sign unwaxed! You can now edit it after placing.</white>"));
+        return true;
     }
 }

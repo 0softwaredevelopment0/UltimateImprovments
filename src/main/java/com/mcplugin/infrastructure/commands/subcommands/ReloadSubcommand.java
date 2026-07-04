@@ -1,10 +1,8 @@
 package com.mcplugin.infrastructure.commands.subcommands;
 
 import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.core.TaskManager;
-import com.mcplugin.infrastructure.modules.ModuleManager;
-import com.mcplugin.infrastructure.util.StructureTemplate;
+import com.mcplugin.infrastructure.core.PluginShutdown;
+import com.mcplugin.infrastructure.core.PluginStartup;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -16,7 +14,6 @@ public final class ReloadSubcommand {
     private ReloadSubcommand() {}
 
     public static boolean execute(CommandSender sender) {
-        // Проверка прав: консоль может всё, игрок — только с пермишеном
         if (sender instanceof Player player && !player.hasPermission("mcplugin.command.reload")) {
             player.sendMessage("§4❌ §cError: §7You don't have permission!");
             return true;
@@ -25,13 +22,11 @@ public final class ReloadSubcommand {
         sender.sendMessage("§eReloading MC-Plugin...");
         Main plugin = Main.getInstance();
 
-        // Если отправитель — консоль, выполняем reload сразу (уже на главном потоке)
         if (sender instanceof ConsoleCommandSender) {
             executeReload(sender, plugin);
             return true;
         }
 
-        // Если отправитель — игрок, планируем на главный поток (защита от асинхронных команд)
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -42,33 +37,23 @@ public final class ReloadSubcommand {
     }
 
     /**
-     * Выполняет перезагрузку плагина: выключает не-essential модули,
-     * перезагружает конфиги, включает модули обратно.
-     * <p>
-     * ДОЛЖЕН вызываться только с главного потока сервера!
+     * ПОЛНЫЙ disable + enable плагина:
+     * 1. PluginShutdown — останавливает всё (модули → сохранение → задачи → чистка)
+     * 2. reloadConfig
+     * 3. PluginStartup — запускает всё заново (инфра → модули → пост-системы → финиш)
      */
     private static void executeReload(CommandSender sender, Main plugin) {
         try {
             long start = System.currentTimeMillis();
-            TaskManager.getInstance().stopAll();
 
-            var mm = ModuleManager.getInstance();
-            for (var m : mm.getModules()) {
-                if (!m.isEssential()) m.disable(plugin);
-            }
+            // 1. Полный shutdown
+            new PluginShutdown(plugin).shutdownPlugin();
 
+            // 2. Перезагрузка конфига
             plugin.reloadConfig();
-            mm.reloadAllConfigs();
-            MessagesManager.reload();
-            com.mcplugin.infrastructure.listeners.PowerInterceptListener.reloadConfigStatic();
-            com.mcplugin.infrastructure.listeners.ChatFilterManager.reloadConfigStatic();
 
-            for (var m : mm.getModules()) {
-                if (!m.isEssential()) m.initialize(plugin);
-            }
-
-            StructureTemplate.initAll();
-            TaskManager.getInstance().startAll(plugin);
+            // 3. Полный startup
+            new PluginStartup(plugin).startupPlugin();
 
             long time = System.currentTimeMillis() - start;
             sender.sendMessage("§2✔ §aSuccess: §7Reload complete.");

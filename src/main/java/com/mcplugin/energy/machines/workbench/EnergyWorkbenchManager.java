@@ -72,9 +72,7 @@ public class EnergyWorkbenchManager {
             }
         }
 
-        ConsoleLogger.info(
-                "[EnergyWorkbenchManager] Loaded " + workbenches.size() + " workbenches from Marker entities"
-        );
+        // Log suppressed — too spammy on server start
     }
 
     // =========================

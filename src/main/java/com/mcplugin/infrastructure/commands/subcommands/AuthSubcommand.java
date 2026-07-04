@@ -71,11 +71,11 @@ public final class AuthSubcommand {
             }
             mgr.setup2FA(uuid, args[3]);
             player.sendMessage("");
-            player.sendMessage("§6✦ §f2FA §8— §7Настройка");
+            player.sendMessage("§6✦ §f2FA §8— §7Setup");
             player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-            player.sendMessage("§a✔ 2FA включена!");
+            player.sendMessage("§a✔ 2FA enabled!");
             player.sendMessage("§7Chat ID: §f" + args[3]);
-            player.sendMessage("§7При следующей авторизации придёт запрос в Telegram.");
+            player.sendMessage("§7You'll receive a confirmation request in Telegram on next login.");
             player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
             player.sendMessage("");
             return true;
@@ -92,32 +92,32 @@ public final class AuthSubcommand {
                 return true;
             }
             mgr.disable2FA(uuid);
-            player.sendMessage("§c✖ 2FA отключена.");
+            player.sendMessage("§c✖ 2FA disabled.");
             return true;
         }
 
         // /mp auth 2fa — коды больше не используются, показываем статус
         if (args.length >= 3) {
             if (mgr.is2FAEnabled(uuid)) {
-                player.sendMessage("§a✔ 2FA включена");
+                player.sendMessage("§a✔ 2FA enabled");
                 player.sendMessage("§7Chat ID: §f" + mgr.get2FAChatId(uuid));
-                player.sendMessage("§7При входе нажмите \"Подтвердить\" в Telegram.");
-                player.sendMessage("§7Отключить: §e/mp auth 2fa disable");
+                player.sendMessage("§7Click \"Confirm\" in Telegram when logging in.");
+                player.sendMessage("§7Disable: §e/mp auth 2fa disable");
             } else {
-                player.sendMessage("§c✖ 2FA выключена");
-                player.sendMessage("§7Включить: §e/mp auth 2fa setup <telegram_chat_id>");
+                player.sendMessage("§c✖ 2FA disabled");
+                player.sendMessage("§7Enable: §e/mp auth 2fa setup <telegram_chat_id>");
             }
             return true;
         }
 
         // /mp auth 2fa — статус
         if (mgr.is2FAEnabled(uuid)) {
-            player.sendMessage("§a✔ 2FA включена");
+            player.sendMessage("§a✔ 2FA enabled");
             player.sendMessage("§7Chat ID: §f" + mgr.get2FAChatId(uuid));
-            player.sendMessage("§7Отключить: §e/mp auth 2fa disable");
+            player.sendMessage("§7Disable: §e/mp auth 2fa disable");
         } else {
-            player.sendMessage("§c✖ 2FA выключена");
-            player.sendMessage("§7Включить: §e/mp auth 2fa setup <telegram_chat_id>");
+            player.sendMessage("§c✖ 2FA disabled");
+            player.sendMessage("§7Enable: §e/mp auth 2fa setup <telegram_chat_id>");
         }
         return true;
     }

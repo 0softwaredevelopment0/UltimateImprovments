@@ -52,7 +52,7 @@ public class ConfigRepairManager {
         }
 
         // Добавляем недостающие ключи в конец файла
-        appendMissingKeys(plugin, dataFile, defaultConfig, missing);
+        appendMissingKeys(plugin, config, dataFile, defaultConfig, missing);
         ConsoleLogger.info("[ConfigRepair] ✔ Added " + missing.size() + " missing key(s) to " + dataFile.getName());
         return true;
     }
@@ -60,54 +60,91 @@ public class ConfigRepairManager {
     /**
      * Добавляет недостающие ключи в конец YAML-файла, сохраняя структуру.
      */
-    private static void appendMissingKeys(Main plugin, File dataFile, FileConfiguration defaultConfig, List<String> missing) {
-        // Сортируем пути по длине (короткие раньше), чтобы родительские секции создавались раньше дочерних
-        missing.sort(Comparator.comparingInt(String::length));
-
-        // Собираем уникальные корневые секции для недостающих ключей
-        StringBuilder appendix = new StringBuilder();
-        appendix.append("\n");
-        appendix.append("# === Missing keys added by MC-Plugin (auto-repair) ===\n");
-
-        // Строим YAML-дерево недостающих ключей
-        // Группируем по корневой секции
-        Map<String, Set<String>> sectionMap = new LinkedHashMap<>();
+    /**
+     * Добавляет недостающие ключи в конфиг.
+     * <p>
+     * Два режима:
+     * <ol>
+     *   <li><b>Новые root-секции</b> (корень не существует в userConfig) — дописываются YAML-блоком
+     *       в конец файла. Это безопасно, т.к. дубликатов не будет.</li>
+     *   <li><b>Под-ключи в существующих секциях</b> (корень уже есть) — устанавливаются через
+     *       {@code config.set()}, после чего весь файл перезаписывается {@code config.save()}.
+     *       Это необходимо, чтобы SnakeYAML не перезатёр существующие значения дубликатом root-секции.</li>
+     * </ol>
+     */
+    private static void appendMissingKeys(Main plugin, FileConfiguration userConfig, File dataFile, FileConfiguration defaultConfig, List<String> missing) {
+        // Разделяем недостающие ключи на две группы:
+        //   A — root-секция уже существует → config.set() + save
+        //   B — новая root-секция → YAML append (без риска дубликата)
+        List<String> appendPaths = new ArrayList<>();
+        boolean needsFullSave = false;
 
         for (String path : missing) {
             String rootKey = path.contains(".") ? path.substring(0, path.indexOf('.')) : path;
-            String relativePath = path.contains(".") ? path.substring(path.indexOf('.') + 1) : "";
-            sectionMap.computeIfAbsent(rootKey, k -> new LinkedHashSet<>()).add(relativePath);
-        }
 
-        for (Map.Entry<String, Set<String>> entry : sectionMap.entrySet()) {
-            String rootKey = entry.getKey();
-            Set<String> subPaths = entry.getValue();
-
-            // Проверяем, есть ли у значения defaultConfig прямое значение для rootKey
-            if (defaultConfig.isConfigurationSection(rootKey)) {
-                ConfigurationSection section = defaultConfig.getConfigurationSection(rootKey);
-                appendix.append(rootKey).append(":\n");
-                for (String subPath : subPaths) {
-                    if (subPath.isEmpty()) {
-                        // Прямое значение
-                        Object val = defaultConfig.get(rootKey);
-                        appendix.append("  ").append(formatYamlValue(rootKey, val)).append("\n");
-                    } else {
-                        // Вложенное значение
-                        appendYamlPath(appendix, section, subPath, 1);
-                    }
-                }
+            if (userConfig.isSet(rootKey)) {
+                // Root-секция уже существует — устанавливаем через set(),
+                // чтобы избежать YAML-дубликата root-ключа
+                userConfig.set(path, defaultConfig.get(path));
+                needsFullSave = true;
             } else {
-                Object val = defaultConfig.get(rootKey);
-                appendix.append(formatYamlValue(rootKey, val)).append("\n");
+                appendPaths.add(path);
             }
         }
 
-        // Добавляем в конец файла
-        try (FileWriter fw = new FileWriter(dataFile, true)) {
-            fw.write(appendix.toString());
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.WARNING, "[ConfigRepair] Failed to append keys to " + dataFile.getName(), e);
+        // ── Группа A: под-ключи в существующих секциях → config.set() + save ──
+        // Выполняется ПЕРВЫМ, чтобы save() не перезаписал YAML-append, который будет после.
+        if (needsFullSave) {
+            try {
+                userConfig.save(dataFile);
+                ConsoleLogger.info("[ConfigRepair] Saved config with merged missing sub-keys.");
+            } catch (IOException e) {
+                plugin.getLogger().log(Level.WARNING, "[ConfigRepair] Failed to save config after merging missing keys", e);
+            }
+        }
+
+        // ── Группа B: новые root-секции → YAML append в КОНЕЦ уже сохранённого файла ──
+        if (!appendPaths.isEmpty()) {
+            appendPaths.sort(Comparator.comparingInt(String::length));
+
+            StringBuilder appendix = new StringBuilder();
+            appendix.append("\n");
+            appendix.append("# === Missing keys added by MC-Plugin (auto-repair) ===\n");
+
+            // Группируем по корневой секции
+            Map<String, Set<String>> sectionMap = new LinkedHashMap<>();
+            for (String path : appendPaths) {
+                String rootKey = path.contains(".") ? path.substring(0, path.indexOf('.')) : path;
+                String relativePath = path.contains(".") ? path.substring(path.indexOf('.') + 1) : "";
+                sectionMap.computeIfAbsent(rootKey, k -> new LinkedHashSet<>()).add(relativePath);
+            }
+
+            for (Map.Entry<String, Set<String>> entry : sectionMap.entrySet()) {
+                String rootKey = entry.getKey();
+                Set<String> subPaths = entry.getValue();
+
+                if (defaultConfig.isConfigurationSection(rootKey)) {
+                    ConfigurationSection section = defaultConfig.getConfigurationSection(rootKey);
+                    appendix.append(rootKey).append(":\n");
+                    for (String subPath : subPaths) {
+                        if (subPath.isEmpty()) {
+                            Object val = defaultConfig.get(rootKey);
+                            appendix.append("  ").append(formatYamlValue(rootKey, val)).append("\n");
+                        } else {
+                            appendYamlPath(appendix, section, subPath, 1);
+                        }
+                    }
+                } else {
+                    Object val = defaultConfig.get(rootKey);
+                    appendix.append(formatYamlValue(rootKey, val)).append("\n");
+                }
+            }
+
+            try (FileWriter fw = new FileWriter(dataFile, true)) {
+                fw.write(appendix.toString());
+            } catch (IOException e) {
+                plugin.getLogger().log(Level.WARNING, "[ConfigRepair] Failed to append keys to " + dataFile.getName(), e);
+            }
         }
     }
 

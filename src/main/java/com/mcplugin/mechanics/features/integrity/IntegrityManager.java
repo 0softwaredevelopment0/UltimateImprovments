@@ -121,6 +121,10 @@ public class IntegrityManager extends BukkitRunnable {
     // Сбрасывается при старте следующего тика (run())
     private static boolean piercingActive = false;
 
+    // Флаг: таск был запланирован (runTaskTimer вызывался)
+    // Предотвращает cancel() незапланированного таска в reloadConfig() при init()
+    private static boolean taskScheduled = false;
+
     // Крафт / точило — объединение
     private static boolean combineEnabled = true;
     private static double combineLossRate = 0.0;
@@ -149,8 +153,10 @@ public class IntegrityManager extends BukkitRunnable {
             instance.cancel();
         }
         instance = new IntegrityManager();
+        taskScheduled = false;
         reloadConfig();
         instance.runTaskTimer(plugin, 40L, intervalTicks);
+        taskScheduled = true;
 
         // Регистрируем PiercingListener (обработчик PIERCING-ударов)
         PiercingListener.init(plugin);
@@ -292,8 +298,8 @@ public class IntegrityManager extends BukkitRunnable {
             combineLossRate = combine.getDouble("loss_rate", 0.0);
         }
 
-        // Перезапуск таска
-        if (instance != null) {
+        // Перезапуск таска — только если он уже был запланирован (защита от init())
+        if (instance != null && taskScheduled) {
             try {
                 instance.cancel();
                 instance = new IntegrityManager();
@@ -620,7 +626,7 @@ public class IntegrityManager extends BukkitRunnable {
         var pdc = meta.getPersistentDataContainer();
 
         // Unbreakable — показываем "◆ Unbreakable" вместо процента
-        if (pdc.has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE)) {
+        if (meta.isUnbreakable() || pdc.has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE)) {
             List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
             if (lore == null) lore = new ArrayList<>();
             // Удаляем старые строки целостности
@@ -779,6 +785,8 @@ public class IntegrityManager extends BukkitRunnable {
         if (item == null || item.getType() == Material.AIR) return false;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
+        // Кастомный PDC тег ИЛИ ванильный Unbreakable (ItemMeta.isUnbreakable())
+        if (meta.isUnbreakable()) return true;
         return meta.getPersistentDataContainer()
                 .has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE);
     }

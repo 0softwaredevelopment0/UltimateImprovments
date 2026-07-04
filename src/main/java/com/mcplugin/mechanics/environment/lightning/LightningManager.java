@@ -85,7 +85,7 @@ public class LightningManager implements Listener {
                 }
             }
         }
-        ConsoleLogger.info("[Lightning] Loaded " + count + " structures from Marker entities");
+        // Log suppressed — too spammy on server start
     }
 
     public static LightningManager getInstance() {

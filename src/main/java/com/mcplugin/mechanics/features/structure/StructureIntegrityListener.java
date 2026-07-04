@@ -25,7 +25,7 @@ public class StructureIntegrityListener implements Listener {
     private static final NamespacedKey KEY =
             new NamespacedKey(Main.getInstance(), "is_structure_integrity_indicator");
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (!e.getPlayer().isSneaking()) return; // Shift+RMB only
@@ -49,10 +49,9 @@ public class StructureIntegrityListener implements Listener {
 
         Location loc = clickedBlock.getLocation();
 
-        // Register the interaction (adds stress)
+        // Show info only — stress is added by EnderChestManager on open/close
         StructureIntegrityManager manager = StructureIntegrityManager.getInstance();
         if (manager != null) {
-            manager.onEnderChestInteract(loc);
             manager.showInfo(player, loc);
             player.playSound(loc, Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
         }

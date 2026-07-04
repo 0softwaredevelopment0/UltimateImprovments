@@ -37,7 +37,7 @@ public class StructureIntegrityCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Structure Integrity Indicator</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Structure Integrity Indicator*</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Shift+RMB on a structure to inspect</gray>"),
@@ -79,7 +79,7 @@ public class StructureIntegrityCraftListener implements Listener {
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
-        meta.displayName(MessageUtil.parse("<i:false><white>Structure Integrity Indicator</white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Structure Integrity Indicator*</white>"));
 
         meta.lore(List.of(
                 MessageUtil.parse("<i:false><gray>Shift+RMB on a structure to inspect</gray>"),

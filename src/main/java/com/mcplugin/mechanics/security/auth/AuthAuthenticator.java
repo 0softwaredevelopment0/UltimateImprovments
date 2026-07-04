@@ -105,20 +105,20 @@ public class AuthAuthenticator {
      */
     private void sendAuthPrompt(Player player, boolean isRegistered) {
         player.sendMessage("");
-        player.sendMessage("§6✦ §fMC-Plugin §8— §7Authorization");
-        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage("§6✦ §fLogin Required");
+        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         player.sendMessage("");
         if (isRegistered) {
-            player.sendMessage("§c❌ §fYou are §lNOT§r §fauthorized!");
-            player.sendMessage("§7Please log in to continue playing:");
-            player.sendMessage("§e/mp auth login §7<§opassword§7>");
+            player.sendMessage("§c❌ §fYou are not logged in!");
+            player.sendMessage("§7Type the following command with your password:");
+            player.sendMessage("§e/mp auth login <your password>");
         } else {
-            player.sendMessage("§c❌ §fYou are §lNOT§r §fregistered!");
-            player.sendMessage("§7Please register to continue playing:");
-            player.sendMessage("§e/mp auth register §7<§opassword§7>");
+            player.sendMessage("§c❌ §fYou need to create an account!");
+            player.sendMessage("§7Type the following command with a new password:");
+            player.sendMessage("§e/mp auth register <your password>");
         }
         player.sendMessage("");
-        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         player.sendMessage("");
     }
 
@@ -201,15 +201,15 @@ public class AuthAuthenticator {
                         playerState.resetWrongAttempts(uuid);
                         authenticatePlayer(player, "<green>\u2705</green> <white>Registration successful!</white>");
 
-                        // Предлагаем настроить 2FA
+                        // Suggest 2FA setup
                         player.sendMessage("");
-                        player.sendMessage("§6✦ §fДвухфакторная аутентификация (2FA)");
+                        player.sendMessage("§6✦ §fTwo-Factor Authentication (2FA)");
                         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-                        player.sendMessage("§eХотите защитить аккаунт через Telegram?");
-                        player.sendMessage("§f1. Напишите боту @OakworldSRVbot команду §e/start§f — получите свой Chat ID");
-                        player.sendMessage("§f2. Введите: §e/mp auth 2fa setup <ваш_chat_id>");
-                        player.sendMessage("§7Код будет приходить только при авторизации на сервере.");
-                        player.sendMessage("§7Вы можете настроить 2FA позже той же командой.");
+                        player.sendMessage("§eWant to secure your account via Telegram?");
+                        player.sendMessage("§f1. Send §e/start §fto §e@OakworldSRVbot §fto get your Chat ID");
+                        player.sendMessage("§f2. Enter: §e/mp auth 2fa setup <your_chat_id>");
+                        player.sendMessage("§7You'll receive a confirmation request when logging into the server.");
+                        player.sendMessage("§7You can set up 2FA later with the same command.");
                         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
                         player.sendMessage("");
                     });
@@ -269,19 +269,19 @@ public class AuthAuthenticator {
         // Отправляем запрос подтверждения боту
         String requestId = Auth2FA.getInstance().sendConfirmation(uuid, playerName, playerIp);
         if (requestId == null) {
-            player.sendMessage("§c❌ Ошибка отправки запроса 2FA! Попробуйте позже.");
+            player.sendMessage("§c❌ Failed to send 2FA request! Try again later.");
             unfreezePlayer(player);
             return;
         }
 
         player.sendMessage("");
-        player.sendMessage("§6✦ §f2FA §8— §7Двухфакторная аутентификация");
+        player.sendMessage("§6✦ §f2FA §8— §7Two-Factor Authentication");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        player.sendMessage("§eЗапрос отправлен в Telegram!");
-        player.sendMessage("§7Бот: §f@OakworldSRVbot");
-        player.sendMessage("§7Откройте Telegram и подтвердите вход");
+        player.sendMessage("§eRequest sent via Telegram!");
+        player.sendMessage("§7Bot: §f@OakworldSRVbot");
+        player.sendMessage("§7Open Telegram and confirm the login");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        player.sendMessage("§7Ожидание подтверждения...");
+        player.sendMessage("§7Awaiting confirmation...");
         player.sendMessage("");
 
         ConsoleLogger.info("[Auth2FA] Challenge started for " + playerName
@@ -309,7 +309,7 @@ public class AuthAuthenticator {
                 if (ticks > maxTicks) {
                     // Таймаут
                     Auth2FA.getInstance().clearPending(uuid);
-                    player.sendMessage("§c❌ Время ожидания 2FA истекло! Используйте /mp auth login заново.");
+                    player.sendMessage("§c❌ 2FA timeout! Use /mp auth login again.");
                     cancel();
                     return;
                 }
@@ -325,31 +325,31 @@ public class AuthAuthenticator {
                         switch (status) {
                             case "approved" -> {
                                 Auth2FA.getInstance().clearPending(uuid);
-                                authenticatePlayer(player, "<green>\u2705</green> <white>2FA подтверждена! Добро пожаловать.</white>");
+                                authenticatePlayer(player, "<green>\u2705</green> <white>2FA confirmed! Welcome.</white>");
                                 cancel();
                             }
                             case "denied" -> {
                                 Auth2FA.getInstance().clearPending(uuid);
-                                player.kickPlayer("§c❌ Вход отклонён через Telegram 2FA.");
+                                player.kickPlayer("§c❌ Login rejected via Telegram 2FA.");
                                 cancel();
                             }
                             case "bot_down" -> {
-                                // Бот 2FA недоступен — логиним игрока с предупреждением
+                                // 2FA bot down — log the player in with a warning
                                 Auth2FA.getInstance().clearPending(uuid);
-                                player.sendMessage("§c⚠ Бот 2FA временно недоступен! Пропускаем 2FA для этого входа.");
+                                player.sendMessage("§c⚠ 2FA bot is temporarily unavailable! Skipping 2FA for this login.");
                                 ConsoleLogger.warn(
                                         "[Auth2FA] Bot unreachable — logging in " + player.getName() + " without 2FA");
-                                authenticatePlayer(player, "<green>\u2705</green> <white>Выполнен вход без 2FA (бот недоступен).</white>");
+                                authenticatePlayer(player, "<green>\u2705</green> <white>Logged in without 2FA (bot unavailable).</white>");
                                 cancel();
                             }
                             case "error" -> {
                                 Auth2FA.getInstance().clearPending(uuid);
-                                player.sendMessage("§c❌ Ошибка 2FA! Используйте /mp auth login заново.");
+                                player.sendMessage("§c❌ 2FA error! Use /mp auth login again.");
                                 cancel();
                             }
                             case "timeout", "not_found" -> {
                                 Auth2FA.getInstance().clearPending(uuid);
-                                player.sendMessage("§c❌ Ошибка 2FA! Используйте /mp auth login заново.");
+                                player.sendMessage("§c❌ 2FA error! Use /mp auth login again.");
                                 cancel();
                             }
                         }

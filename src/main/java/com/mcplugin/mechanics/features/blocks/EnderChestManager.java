@@ -1,19 +1,22 @@
 package com.mcplugin.mechanics.features.blocks;
 
 import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.mechanics.features.structure.StructureIntegrityManager;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,30 +27,23 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p>
  * <b>Механики:</b>
  * <ul>
- *   <li>При открытии — шанс {@code explosion_chance} что сундук взорвётся (random-взрыв)</li>
+ *   <li>При открытии/закрытии наносит 1 единицу урона (игнорирует защиту)</li>
  *   <li><b>Rate-limit:</b> если игрок открывает эндер-сундук больше {@code rate_limit.max_opens} раз
- *       в течение {@code rate_limit.window_ms} миллисекунд — сундук взрывается,
- *       нанося {@code rate_limit.damage} урона (игнорируя защиту через {@code damage(double, EntityDamageSource)})</li>
+ *       в течение {@code rate_limit.window_ms} миллисекунд — открытие блокируется</li>
  * </ul>
  */
 public class EnderChestManager implements Listener {
 
     private static boolean enabled = true;
-    private static double explosionChance = 0.001; // 0.1%
-    private static double explosionPower = 10.0;
-    private static double damage = 8192;
+    private static double damage = 1;
 
     // Rate-limit
     private static boolean rateLimitEnabled = true;
     private static int rateLimitMaxOpens = 5;
     private static long rateLimitWindowMs = 5000; // 5 секунд
-    private static double rateLimitDamage = 10;
-    private static double rateLimitExplosionPower = 10.0;
 
     // Игроки, которые просматривают чужой эндер-сундук через /mp endersee — не дамажим их при закрытии
     private static final Set<UUID> enderseeViewers = ConcurrentHashMap.newKeySet();
-
-    private static final Random RANDOM = new Random();
 
     // Для rate-limit: UUID игрока → список таймстемпов открытий (отсортирован по возрастанию)
     private static final Map<UUID, List<Long>> openTimestamps = new ConcurrentHashMap<>();
@@ -72,24 +68,43 @@ public class EnderChestManager implements Listener {
         var cfg = Main.getInstance().getConfig().getConfigurationSection("features.enderchest");
         if (cfg == null) return;
         enabled = cfg.getBoolean("enabled", true);
-        explosionChance = cfg.getDouble("explosion_chance", 0.001);
-        explosionPower = cfg.getDouble("explosion_power", 10.0);
-        damage = cfg.getDouble("damage", 8192);
+        damage = cfg.getDouble("damage", 1);
         rateLimitEnabled = cfg.getBoolean("rate_limit.enabled", true);
         rateLimitMaxOpens = cfg.getInt("rate_limit.max_opens", 5);
         rateLimitWindowMs = cfg.getLong("rate_limit.window_ms", 5000);
-        rateLimitDamage = cfg.getDouble("rate_limit.damage", 10);
-        rateLimitExplosionPower = cfg.getDouble("rate_limit.explosion_power", 10.0);
     }
 
     /**
      * При ПКМ по эндер-сундуку:
      * <ul>
      *   <li>Записывает таймстемп для rate-limit</li>
-     *   <li>Проверяет rate-limit — если превышен, наносит урон и взрывает сундук</li>
-     *   <li>С шансом {@code explosion_chance} сундук взрывается (GUI не открывается)</li>
+     *   <li>Проверяет rate-limit — если превышен, блокирует открытие</li>
      * </ul>
      */
+    private static final NamespacedKey INTEGRITY_INDICATOR_KEY =
+            new NamespacedKey(Main.getInstance(), "is_structure_integrity_indicator");
+
+    /** Проверяет, держит ли игрок индикатор целостности структуры */
+    private static boolean isHoldingIntegrityIndicator(Player player) {
+        var mainHand = player.getInventory().getItemInMainHand();
+        if (mainHand != null && mainHand.getType() != Material.AIR) {
+            var meta = mainHand.getItemMeta();
+            if (meta != null) {
+                Byte val = meta.getPersistentDataContainer().get(INTEGRITY_INDICATOR_KEY, PersistentDataType.BYTE);
+                if (val != null && val == (byte) 1) return true;
+            }
+        }
+        var offHand = player.getInventory().getItemInOffHand();
+        if (offHand != null && offHand.getType() != Material.AIR) {
+            var meta = offHand.getItemMeta();
+            if (meta != null) {
+                Byte val = meta.getPersistentDataContainer().get(INTEGRITY_INDICATOR_KEY, PersistentDataType.BYTE);
+                if (val != null && val == (byte) 1) return true;
+            }
+        }
+        return false;
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onEnderChestInteract(PlayerInteractEvent e) {
         if (!enabled) return;
@@ -98,6 +113,19 @@ public class EnderChestManager implements Listener {
 
         Player player = e.getPlayer();
         Location loc = e.getClickedBlock().getLocation();
+
+        // Shift+RMB с индикатором целостности — показать инфо, без stress/урона
+        if (player.isSneaking() && isHoldingIntegrityIndicator(player)) {
+            e.setCancelled(true);
+            Location normLoc = LocationUtil.normalize(loc);
+            StructureIntegrityManager sim = StructureIntegrityManager.getInstance();
+            if (sim != null) {
+                sim.showInfo(player, normLoc);
+            } else {
+                player.sendMessage(MessageUtil.parse("<red>❌ Structure Integrity system not available.</red>"));
+            }
+            return;
+        }
 
         // Наносим урон при каждом открытии
         if (damage > 0) {
@@ -122,18 +150,6 @@ public class EnderChestManager implements Listener {
             }
         }
 
-        // Шанс взрыва (random)
-        double roll = RANDOM.nextDouble();
-        if (roll >= explosionChance) return;
-
-        explodeEnderChest(player, loc, (float) explosionPower, damage,
-                "[EnderChest] " + player.getName()
-                        + " opened an ender chest at "
-                        + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ()
-                        + " and it EXPLODED! (roll=" + String.format("%.4f", roll)
-                        + " < chance=" + explosionChance + ")");
-
-        e.setCancelled(true);
     }
 
     /**
@@ -196,14 +212,33 @@ public class EnderChestManager implements Listener {
     }
 
     /**
-     * Добавляет таймстемп открытия, проверяет rate-limit и применяет наказание.
-     * <p>
-     * При превышении rate-limit: наносит урон, блокирует открытие, сбрасывает счётчик.
-     * Взрыва НЕТ — эндер-сундук взрывается только от случайного шанса или 0% integrity.
+     * Защита от ломания эндер-сундука, пока структура деградирует (integrity < 100%).
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onEnderChestBreak(BlockBreakEvent e) {
+        if (!enabled) return;
+        if (e.getBlock().getType() != Material.ENDER_CHEST) return;
+
+        StructureIntegrityManager sim = StructureIntegrityManager.getInstance();
+        if (sim == null) return;
+
+        Location loc = e.getBlock().getLocation();
+        if (sim.isDegrading(loc)) {
+            e.setCancelled(true);
+            Player p = e.getPlayer();
+            if (p != null) {
+                p.sendMessage(MessageUtil.parse("<red>❌ You cannot break this ender chest while it's degrading!</red>"
+                        + "\n<gray>Use the Structure Integrity Indicator to check its status.</gray>"));
+            }
+        }
+    }
+
+    /**
+     * Добавляет таймстемп открытия, проверяет rate-limit и блокирует открытие.
      *
      * @param player игрок
      * @param chestLocation позиция сундука
-     * @return true если rate-limit превышен и наказание применено
+     * @return true если rate-limit превышен
      */
     private static boolean checkAndApplyRateLimit(Player player, Location chestLocation) {
         UUID uuid = player.getUniqueId();
@@ -219,20 +254,8 @@ public class EnderChestManager implements Listener {
         long cutoff = now - rateLimitWindowMs;
         timestamps.removeIf(ts -> ts < cutoff);
 
-        // Проверяем лимит
+        // Проверяем лимит — если превышен, просто блокируем открытие
         if (timestamps.size() > rateLimitMaxOpens) {
-            // Наносим урон (без взрыва)
-            if (rateLimitDamage > 0) {
-                player.damage(rateLimitDamage);
-            }
-
-            ConsoleLogger.warn("[EnderChest] " + player.getName()
-                    + " opened ender chest " + timestamps.size()
-                    + " times in " + rateLimitWindowMs + "ms at "
-                    + chestLocation.getBlockX() + " " + chestLocation.getBlockY() + " " + chestLocation.getBlockZ()
-                    + " — RATE LIMIT EXCEEDED! (max=" + rateLimitMaxOpens + ")");
-
-            // Сбрасываем счётчик после наказания
             openTimestamps.remove(uuid);
             return true;
         }
@@ -240,37 +263,5 @@ public class EnderChestManager implements Listener {
         return false;
     }
 
-    /**
-     * Взрывает эндер-сундук: удаляет блок, создаёт взрыв, наносит урон, логирует, даёт ачивку.
-     */
-    private static void explodeEnderChest(Player player, Location chestLocation,
-                                           float explosionPower, double damageAmount,
-                                           String logMessage) {
-        // Удаляем сам блок сундука
-        chestLocation.getBlock().setType(Material.AIR);
 
-        // Взрыв с разрушением блоков
-        if (explosionPower > 0) {
-            chestLocation.getWorld().createExplosion(chestLocation, explosionPower, false, true);
-        }
-
-        // Урон игроку
-        if (damageAmount > 0) {
-            player.damage(damageAmount);
-        }
-
-        // Логирование
-        ConsoleLogger.info(logMessage);
-
-        // 🏆 Достижение: blowed_by_echest
-        try {
-            var adv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("minecraft", "datapack/blowed_by_echest"));
-            if (adv != null) {
-                var progress = player.getAdvancementProgress(adv);
-                if (!progress.isDone()) {
-                    progress.awardCriteria("1");
-                }
-            }
-        } catch (Exception ignored) {}
-    }
 }
