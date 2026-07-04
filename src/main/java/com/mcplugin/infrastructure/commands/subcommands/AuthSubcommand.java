@@ -127,16 +127,20 @@ public final class AuthSubcommand {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Only players can use this command!</red>"));
             return true;
         }
-        if (args.length < 3) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth login <password></white>"));
-            return true;
-        }
-        String password = args[2];
         AuthManager mgr = AuthManager.getInstance();
         if (mgr == null) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authorization system is not initialized!</red>"));
             return true;
         }
+        if (mgr.isAuthenticated(player.getUniqueId())) {
+            player.sendMessage(MessageUtil.parse("<gold>✦</gold> <white>You are already logged in!</white>"));
+            return true;
+        }
+        if (args.length < 3) {
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth login <password></white>"));
+            return true;
+        }
+        String password = args[2];
         mgr.handlePasswordSubmit(player, password);
         return true;
     }
@@ -146,16 +150,20 @@ public final class AuthSubcommand {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Only players can use this command!</red>"));
             return true;
         }
-        if (args.length < 3) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth register <password></white>"));
-            return true;
-        }
-        String password = args[2];
         AuthManager mgr = AuthManager.getInstance();
         if (mgr == null) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authorization system is not initialized!</red>"));
             return true;
         }
+        if (mgr.isAuthenticated(player.getUniqueId())) {
+            player.sendMessage(MessageUtil.parse("<gold>✦</gold> <white>You are already logged in!</white>"));
+            return true;
+        }
+        if (args.length < 3) {
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth register <password></white>"));
+            return true;
+        }
+        String password = args[2];
         mgr.handlePasswordSubmit(player, password);
         return true;
     }

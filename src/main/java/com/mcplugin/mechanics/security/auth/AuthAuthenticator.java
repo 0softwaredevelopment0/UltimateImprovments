@@ -131,7 +131,11 @@ public class AuthAuthenticator {
     public void handlePasswordSubmit(Player player, String password) {
         UUID uuid = player.getUniqueId();
 
-        if (playerState.isAuthenticated(uuid)) return;
+        if (playerState.isAuthenticated(uuid)) {
+            player.sendMessage(MessageUtil.parse(
+                    "<gold>✦</gold> <white>You are already logged in!</white>"));
+            return;
+        }
         if (!rateLimiter.checkCooldown(player)) return;
 
         String playerIp = getPlayerIp(player);
