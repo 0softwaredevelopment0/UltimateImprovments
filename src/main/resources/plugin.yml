@@ -4,7 +4,6 @@ description: A modular Minecraft plugin that adds authentication, advanced mecha
 website: N/A
 version: ${project.version}
 main: com.mcplugin.infrastructure.core.Main
-api-version: "26.2"
 author: rizer001
 load: STARTUP
 softdepend: [PlaceholderAPI, LuckPerms, Vault, DeluxeMenus]
