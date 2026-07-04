@@ -64,20 +64,28 @@ tasks.register('copyJarToFolder') {
     dependsOn(tasks.named('shadowJar'))
     doLast {
         def jarDir = new File(project.projectDir, "Jar")
-        def jarName = "MC-Plugin-${project.version}.jar"
-        def shadowTask = tasks.named('shadowJar').get()
-        def source = shadowTask.archiveFile.get().asFile
+        def libsDir = new File(project.buildDir, "libs")
 
-        if (!source.exists()) return
+        // Ищем первый .jar файл в build/libs/ (не sources/javadoc)
+        def source = libsDir.listFiles()?.find { f ->
+            f.name.endsWith(".jar") && !f.name.contains("sources") && !f.name.contains("javadoc")
+        }
+
+        if (source == null || !source.exists()) {
+            logger.warn("[JAR] Файл не найден в build/libs/")
+            return
+        }
 
         jarDir.mkdirs()
 
+        // Удаляем старые JAR'ы в Jar/
         jarDir.listFiles()?.each { f ->
-            if (f.delete()) {
-                logger.lifecycle("[JAR] Удалён: ${f.name}")
+            if (f.name.endsWith(".jar") && f.delete()) {
+                logger.lifecycle("[JAR] Удалён старый: ${f.name}")
             }
         }
 
+        def jarName = "MC-Plugin-${project.version}.jar"
         def target = new File(jarDir, jarName)
         java.nio.file.Files.copy(
             source.toPath(),
@@ -85,16 +93,6 @@ tasks.register('copyJarToFolder') {
             java.nio.file.StandardCopyOption.REPLACE_EXISTING
         )
         logger.lifecycle("[JAR] Скопирован в Jar/: ${jarName}")
-
-        // Очищаем build/libs/ от всех jar'ов
-        def libsDir = new File(project.buildDir, "libs")
-        if (libsDir.exists()) {
-            libsDir.listFiles()?.each { f ->
-                if (f.name.endsWith(".jar") && f.delete()) {
-                    logger.lifecycle("[JAR] Очищен build/libs/: ${f.name}")
-                }
-            }
-        }
     }
 }
 
