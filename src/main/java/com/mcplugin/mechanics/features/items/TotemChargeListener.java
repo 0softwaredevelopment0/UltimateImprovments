@@ -104,9 +104,8 @@ public class TotemChargeListener implements Listener {
         // Урон не фатальный — пропускаем
         if (health - finalDamage > 0) return;
 
-        // Ищем ЛЮБОЙ тотем в инвентаре (offhand → mainhand → остальные слоты)
-        // Ванильный тотем (без PDC) — тоже подходит, будет потреблён
-        ItemStack totem = findAnyTotem(player);
+        // Ищем РАБОЧИЙ тотем (ванильный или с зарядом > 0)
+        ItemStack totem = findUsableTotem(player);
         if (totem == null) return;
 
         // Отменяем урон — смерти не будет
@@ -117,32 +116,41 @@ public class TotemChargeListener implements Listener {
     }
 
     /**
-     * Ищет ЛЮБОЙ тотем в инвентаре игрока.
+     * Ищет РАБОЧИЙ тотем в инвентаре игрока.
      * Приоритет: offhand → mainhand → остальные слоты.
-     * Возвращает первый найденный тотем (ванильный или заряженный).
+     * Возвращает первый найденный тотем, который может сработать:
+     * ванильный (без PDC) или заряженный (charge > 0).
+     * Тотемы с charge <= 0 пропускаются.
      */
-    private static ItemStack findAnyTotem(Player player) {
+    private static ItemStack findUsableTotem(Player player) {
         // Сначала offhand
         ItemStack offhand = player.getInventory().getItemInOffHand();
-        if (isTotem(offhand)) return offhand;
+        if (isUsableTotem(offhand)) return offhand;
 
         // Потом mainhand
         ItemStack mainhand = player.getInventory().getItemInMainHand();
-        if (isTotem(mainhand)) return mainhand;
+        if (isUsableTotem(mainhand)) return mainhand;
 
         // Остальные слоты (hotbar + storage)
         for (ItemStack item : player.getInventory().getContents()) {
-            if (isTotem(item)) return item;
+            if (isUsableTotem(item)) return item;
         }
 
         return null;
     }
 
     /**
-     * Проверяет, является ли предмет тотемом (ванильным или заряженным).
+     * Проверяет, может ли тотем сработать:
+     * ванильный (без PDC TOTEM_CHARGE) ИЛИ заряженный (charge > 0).
+     * Тотемы с charge <= 0 считаются НЕ рабочими.
      */
-    private static boolean isTotem(ItemStack item) {
-        return item != null && item.getType() == Material.TOTEM_OF_UNDYING;
+    private static boolean isUsableTotem(ItemStack item) {
+        if (item == null || item.getType() != Material.TOTEM_OF_UNDYING) return false;
+        if (!item.hasItemMeta()) return true; // ванильный тотем без меты — подходит
+        var pdc = item.getItemMeta().getPersistentDataContainer();
+        if (!pdc.has(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER)) return true; // ванильный
+        int charge = pdc.getOrDefault(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, 0);
+        return charge > 0; // только с зарядом > 0
     }
 
     // =========================
