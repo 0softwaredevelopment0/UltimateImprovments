@@ -26,6 +26,7 @@ public class ElytraBoostModule extends PluginModule {
         main.getServer().getPluginManager().registerEvents(new ChestplateFlightListener(), main);
         main.getServer().getPluginManager().registerEvents(new NetheriteUpgradeListener(), main);
         main.getServer().getPluginManager().registerEvents(new TotemChargeListener(), main);
+        TotemChargeListener.startPeriodicLoreCheck();
     }
 
     @Override

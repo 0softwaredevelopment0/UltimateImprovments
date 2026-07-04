@@ -1,9 +1,11 @@
 package com.mcplugin.mechanics.features.items;
 
 import com.mcplugin.infrastructure.core.Keys;
+import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -12,9 +14,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityResurrectEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.AnvilInventory;
@@ -23,6 +27,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -38,7 +43,7 @@ import java.util.List;
  *   <li>Если заряд = 0 — тотем не работает</li>
  *   <li>Без PDC {@code TOTEM_CHARGE} — ванильное поведение (предмет потребляется)</li>
  *   <li>При фатальном уроне тотем срабатывает ДО смерти (через EntityDamageEvent)</li>
- *   <li>Лор тотема авто-добавляется, если отсутствует (даже при charge=0)</li>
+ *   <li>Лор тотема авто-добавляется при любом способе получения (пикап, клик, вход, открытие инвентаря + таск каждые 5с)</li>
  * </ul>
  */
 public class TotemChargeListener implements Listener {
@@ -64,7 +69,6 @@ public class TotemChargeListener implements Listener {
         int currentCharge = pdc.getOrDefault(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, 0);
         int newCharge = currentCharge + 1;
 
-        // Clone and apply charge
         ItemStack result = slot0.clone();
         ItemMeta resultMeta = result.getItemMeta();
         if (resultMeta == null) return;
@@ -72,7 +76,6 @@ public class TotemChargeListener implements Listener {
         var resultPdc = resultMeta.getPersistentDataContainer();
         resultPdc.set(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, newCharge);
 
-        // Update lore
         updateChargeLore(resultMeta, newCharge);
         result.setItemMeta(resultMeta);
 
@@ -83,55 +86,32 @@ public class TotemChargeListener implements Listener {
     // =========================
     // ⚡ ФАТАЛЬНЫЙ УРОН: перехватываем ДО смерти
     // =========================
-    /**
-     * Перехватывает фатальный урон ДО того, как игрок умрёт.
-     * Если у игрока есть тотем (любой — ванильный или с зарядом) —
-     * отменяем урон и активируем тотем.
-     * Это предотвращает лимбо, взрывы эндер-сундуков и другой фатальный урон.
-     */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFatalDamage(EntityDamageEvent event) {
         if (event.isCancelled()) return;
         if (!(event.getEntity() instanceof Player player)) return;
 
-        // Игнорируем VOID — void_protection обрабатывает отдельно
         if (event.getCause() == EntityDamageEvent.DamageCause.VOID) return;
 
-        // Расчёт финального урона (с учётом брони, резистенса и т.д.)
         double finalDamage = event.getFinalDamage();
         double health = player.getHealth();
 
-        // Урон не фатальный — пропускаем
         if (health - finalDamage > 0) return;
 
-        // Ищем РАБОЧИЙ тотем (ванильный или с зарядом > 0)
         ItemStack totem = findUsableTotem(player);
         if (totem == null) return;
 
-        // Отменяем урон — смерти не будет
         event.setCancelled(true);
-
-        // Активируем тотем (списываем заряд ИЛИ потребляем предмет, эффекты)
         activateTotem(player, totem);
     }
 
-    /**
-     * Ищет РАБОЧИЙ тотем в инвентаре игрока.
-     * Приоритет: offhand → mainhand → остальные слоты.
-     * Возвращает первый найденный тотем, который может сработать:
-     * ванильный (без PDC) или заряженный (charge > 0).
-     * Тотемы с charge <= 0 пропускаются.
-     */
     private static ItemStack findUsableTotem(Player player) {
-        // Сначала offhand
         ItemStack offhand = player.getInventory().getItemInOffHand();
         if (isUsableTotem(offhand)) return offhand;
 
-        // Потом mainhand
         ItemStack mainhand = player.getInventory().getItemInMainHand();
         if (isUsableTotem(mainhand)) return mainhand;
 
-        // Остальные слоты (hotbar + storage)
         for (ItemStack item : player.getInventory().getContents()) {
             if (isUsableTotem(item)) return item;
         }
@@ -139,18 +119,13 @@ public class TotemChargeListener implements Listener {
         return null;
     }
 
-    /**
-     * Проверяет, может ли тотем сработать:
-     * ванильный (без PDC TOTEM_CHARGE) ИЛИ заряженный (charge > 0).
-     * Тотемы с charge <= 0 считаются НЕ рабочими.
-     */
     private static boolean isUsableTotem(ItemStack item) {
         if (item == null || item.getType() != Material.TOTEM_OF_UNDYING) return false;
-        if (!item.hasItemMeta()) return true; // ванильный тотем без меты — подходит
+        if (!item.hasItemMeta()) return true;
         var pdc = item.getItemMeta().getPersistentDataContainer();
-        if (!pdc.has(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER)) return true; // ванильный
+        if (!pdc.has(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER)) return true;
         int charge = pdc.getOrDefault(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, 0);
-        return charge > 0; // только с зарядом > 0
+        return charge > 0;
     }
 
     // =========================
@@ -172,47 +147,34 @@ public class TotemChargeListener implements Listener {
 
         var pdc = meta.getPersistentDataContainer();
 
-        // Нет PDC — ванильное поведение (предмет потребляется)
         if (!pdc.has(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER)) return;
 
         int charge = pdc.getOrDefault(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, 0);
 
         if (charge <= 0) {
-            // Заряда нет — тотем не работает, НО обновляем лор
             event.setCancelled(true);
             updateChargeLore(meta, charge);
             totem.setItemMeta(meta);
             return;
         }
 
-        // Заряд есть — отменяем ванильное потребление, обрабатываем сами
         event.setCancelled(true);
 
-        // Уменьшаем заряд (всегда сохраняем PDC, даже 0 — чтобы при charge=0
-        // тотем НЕ потреблялся, а просто не срабатывал)
         charge--;
         pdc.set(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, charge);
 
-        // Обновляем лор
         updateChargeLore(meta, charge);
         totem.setItemMeta(meta);
 
-        // Ручное применение эффектов тотема
         applyTotemEffects(player);
     }
 
     // =========================
     // АКТИВАЦИЯ ТОТЕМА: списать заряд + эффекты
     // =========================
-    /**
-     * Активирует тотем: списывает 1 заряд (или потребляет ванильный тотем),
-     * обновляет мету и применяет эффекты.
-     * Используется из onFatalDamage.
-     */
     private static void activateTotem(Player player, ItemStack totem) {
         ItemMeta meta = totem.getItemMeta();
 
-        // Если есть PDC TOTEM_CHARGE — заряженный тотем, списываем заряд
         if (meta != null && meta.getPersistentDataContainer()
                 .has(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER)) {
 
@@ -224,7 +186,6 @@ public class TotemChargeListener implements Listener {
             updateChargeLore(meta, charge);
             totem.setItemMeta(meta);
         } else {
-            // Ванильный тотем — потребляем предмет (уменьшаем количество или удаляем)
             if (totem.getAmount() > 1) {
                 totem.setAmount(totem.getAmount() - 1);
             } else {
@@ -236,23 +197,19 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // ЭФФЕКТЫ ТОТЕМА (как у ванильного)
+    // ЭФФЕКТЫ ТОТЕМА
     // =========================
     private static void applyTotemEffects(Player player) {
-        // Здоровье
         player.setHealth(1.0);
 
-        // Очистка негативных эффектов
         for (var effect : player.getActivePotionEffects()) {
             player.removePotionEffect(effect.getType());
         }
 
-        // Баффы
-        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 900, 1));   // Regeneration II, 45 сек
-        player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 100, 1));      // Absorption II, 5 сек
-        player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 800, 0)); // Fire Resistance I, 40 сек
+        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 900, 1));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 100, 1));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, 800, 0));
 
-        // Партиклы и звук
         player.getWorld().spawnParticle(
                 Particle.TOTEM_OF_UNDYING,
                 player.getLocation().add(0, 1, 0),
@@ -262,77 +219,82 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // LORE — обновление строки заряда
+    // LORE
     // =========================
     private static void updateChargeLore(ItemMeta meta, int charge) {
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
         if (lore == null) lore = new ArrayList<>();
 
-        // Удаляем старые строки Charge:
         lore.removeIf(c -> PLAIN.serialize(c).contains("Charge:"));
 
-        // Добавляем новую
         lore.add(MessageUtil.parse("<!italic><white>Charge: <gray>" + charge));
 
         meta.lore(lore);
     }
 
     // =========================
-    // АВТО-ЛОР ПРИ ВХОДЕ В ИГРУ
+    // ПОДНЯТИЕ ПРЕДМЕТА
     // =========================
-    /**
-     * Сканирует инвентарь игрока при входе и добавляет лор тотемам,
-     * у которых есть PDC TOTEM_CHARGE, но нет строки "Charge:" в лоре.
-     */
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        ensureTotemLore(event.getPlayer());
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onItemPickup(EntityPickupItemEvent event) {
+        if (event.isCancelled()) return;
+        if (!(event.getEntity() instanceof Player player)) return;
+
+        ItemStack item = event.getItem().getItemStack();
+        if (fixSingleTotemLore(item)) {
+            event.getItem().setItemStack(item);
+        }
     }
 
     // =========================
-    // АВТО-ЛОР ПРИ КЛИКЕ В ИНВЕНТАРЕ
+    // ОТКРЫТИЕ ИНВЕНТАРЯ
     // =========================
-    /**
-     * При клике по тотему в инвентаре — проверяем и фиксим лор.
-     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onInventoryOpen(InventoryOpenEvent event) {
+        if (!(event.getPlayer() instanceof Player player)) return;
+        // При открытии любого инвентаря проверяем тотемы в инвентаре игрока
+        ensureTotemLore(player);
+    }
+
+    // =========================
+    // КЛИК В ИНВЕНТАРЕ
+    // =========================
     @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
-        // Проверяем кликнутый предмет
         ItemStack current = event.getCurrentItem();
         if (current != null && fixSingleTotemLore(current)) {
             event.setCurrentItem(current);
         }
 
-        // Проверяем предмет на курсоре
         ItemStack cursor = event.getCursor();
         if (cursor != null && fixSingleTotemLore(cursor)) {
             event.setCursor(cursor);
         }
     }
 
-    /**
-     * При drag-перемещении — проверяем предмет.
-     */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryDrag(InventoryDragEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
         ItemStack oldCursor = event.getOldCursor();
         if (oldCursor != null && fixSingleTotemLore(oldCursor)) {
-            // Old cursor не меняем — он уже не в руке
         }
     }
 
     // =========================
-    // УТИЛИТЫ: проверка/фикс лора тотема
+    // ВХОД В ИГРУ
+    // =========================
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        ensureTotemLore(event.getPlayer());
+    }
+
+    // =========================
+    // УТИЛИТЫ
     // =========================
 
-    /**
-     * Проверяет, нужно ли обновить лор тотема, и если да — обновляет.
-     * Возвращает true, если лор был изменён.
-     */
     private static boolean fixSingleTotemLore(ItemStack item) {
         if (item == null || item.getType() != Material.TOTEM_OF_UNDYING) return false;
         if (!item.hasItemMeta()) return false;
@@ -342,7 +304,6 @@ public class TotemChargeListener implements Listener {
 
         if (!pdc.has(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER)) return false;
 
-        // Проверяем, есть ли уже строка Charge: в лоре
         if (meta.hasLore()) {
             List<Component> lore = meta.lore();
             if (lore != null) {
@@ -353,28 +314,37 @@ public class TotemChargeListener implements Listener {
                         break;
                     }
                 }
-                if (hasChargeLine) return false; // Лор уже есть — ничего не делаем
+                if (hasChargeLine) return false;
             }
         }
 
-        // Лора нет — добавляем
         int charge = pdc.getOrDefault(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, 0);
         updateChargeLore(meta, charge);
         item.setItemMeta(meta);
         return true;
     }
 
-    /**
-     * Сканирует весь инвентарь игрока и фиксит лор у всех тотемов.
-     */
     private static void ensureTotemLore(Player player) {
         for (ItemStack item : player.getInventory().getContents()) {
             fixSingleTotemLore(item);
         }
-        // Also check armor/offhand
         for (ItemStack item : player.getInventory().getExtraContents()) {
             fixSingleTotemLore(item);
         }
+    }
+
+    // =========================
+    // ПЕРИОДИЧЕСКИЙ ТАСК (каждые 5 сек — defence-in-depth)
+    // =========================
+    public static void startPeriodicLoreCheck() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    ensureTotemLore(player);
+                }
+            }
+        }.runTaskTimer(Main.getInstance(), 100L, 100L); // каждые 5 секунд
     }
 
     // =========================
