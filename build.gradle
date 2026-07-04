@@ -5,11 +5,11 @@ plugins {
 }
 
 group = 'com.mcplugin'
-version = '1.8.124'
+version = '1.8.138'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.of(26)
     }
 }
 
