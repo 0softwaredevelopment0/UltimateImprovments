@@ -65,16 +65,19 @@ public class CommandRegistrar {
                 existing.unregister(commandMap);
             }
 
-            // Remove from knownCommands to avoid conflicts
+            // Remove from knownCommands to avoid conflicts (Bukkit/Spigot legacy).
+            // Paper 1.21+ commandMap не имеет поля knownCommands — это нормально, не варним.
             try {
-                Field knownFields = commandMap.getClass().getDeclaredField("knownCommands");
-                knownFields.setAccessible(true);
-                Map<String, Command> knownCommands = (Map<String, Command>) knownFields.get(commandMap);
-                knownCommands.remove(name);
-                knownCommands.remove("bukkit:" + name);
-                knownCommands.remove("minecraft:" + name);
+                Field knownFields = findField(commandMap.getClass(), "knownCommands");
+                if (knownFields != null) {
+                    knownFields.setAccessible(true);
+                    Map<String, Command> knownCommands = (Map<String, Command>) knownFields.get(commandMap);
+                    knownCommands.remove(name);
+                    knownCommands.remove("bukkit:" + name);
+                    knownCommands.remove("minecraft:" + name);
+                }
             } catch (Exception e) {
-                ConsoleLogger.warn("[COMMANDS] KnownCommands cleanup error: " + e.getMessage());
+                ConsoleLogger.info("[COMMANDS] KnownCommands not available (Paper 1.21+): " + e.getMessage());
             }
 
             // Register our command
@@ -84,6 +87,23 @@ public class CommandRegistrar {
             ConsoleLogger.warn("[COMMANDS] Failed to override /" + name + ": " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Ищет поле в классе и всех его суперклассах.
+     * Возвращает null если поле не найдено (Paper 1.21+ commandMap).
+     */
+    private static Field findField(Class<?> clazz, String name) {
+        Class<?> current = clazz;
+        while (current != null) {
+            try {
+                Field field = current.getDeclaredField(name);
+                return field;
+            } catch (NoSuchFieldException ignored) {
+                current = current.getSuperclass();
+            }
+        }
+        return null;
     }
 
     private void registerTab(Main plugin, String name, TabCompleter completer) {
