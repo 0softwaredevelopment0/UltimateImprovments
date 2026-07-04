@@ -51,10 +51,59 @@ public class PluginStartup {
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("");
 
+        // Проверка Java-версии: если сервер слишком старый для скомпилированных классов,
+        // Paper зафлудит консоль 'Fatal error trying to convert...' для каждого класса.
+        // Ловим это заранее одним сообщением.
+        if (!checkJavaVersion()) {
+            ConsoleLogger.error("!!! INCOMPATIBLE JAVA VERSION !!!");
+            ConsoleLogger.error("!!! This plugin was compiled for Java 25+.");
+            ConsoleLogger.error("!!! Current Java: " + Runtime.version());
+            ConsoleLogger.error("!!! Update your server's Java to version 25 or higher.");
+            ConsoleLogger.error("!!! Plugin disabled due to version mismatch.");
+            return;
+        }
+
         initInfrastructure();
         initModuleSystem();
         initPostModuleSystems();
         finishStartup();
+    }
+
+    /**
+     * Проверяет, может ли текущая Java-версия загрузить классы плагина.
+     * <p>
+     * Вместо хардкода номера версии — реально пробуем загрузить один класс
+     * через classloader плагина. Если Paper не может сконвертировать class файл
+     * (IllegalArgumentException: Unsupported class file major version),
+     * ловим это и печатаем одно понятное сообщение, вместо того чтобы Paper
+     * зафлудил консоль 'Fatal error' для каждого класса в плагине.
+     */
+    private boolean checkJavaVersion() {
+        try {
+            // Пробуем загрузить класс — если версия Java несовместима,
+            // Paper выбросит IllegalArgumentException ТОЛЬКО для этого класса
+            this.plugin.getClass().getClassLoader().loadClass(
+                    "com.mcplugin.infrastructure.core.DatapackInstaller");
+            return true;
+        } catch (IllegalArgumentException e) {
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            if (msg.contains("major version") || msg.contains("Unsupported class file")) {
+                ConsoleLogger.error("");
+                ConsoleLogger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                ConsoleLogger.error("! INCOMPATIBLE JAVA VERSION!");
+                ConsoleLogger.error("! Plugin compiled for newer Java than server.");
+                ConsoleLogger.error("! Server Java: " + Runtime.version());
+                ConsoleLogger.error("! Update your Java Runtime to fix this issue.");
+                ConsoleLogger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                ConsoleLogger.error("");
+                return false;
+            }
+            ConsoleLogger.warn("[Version] Class loading warning: " + msg);
+            return true;
+        } catch (ClassNotFoundException e) {
+            // Класс обязан быть — но если нет, продолжаем
+            return true;
+        }
     }
 
     // ==========================================================================

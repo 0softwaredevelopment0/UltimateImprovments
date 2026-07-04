@@ -62,10 +62,16 @@ public abstract class PluginModule {
             return true;
         } catch (Throwable t) {
             enabled = false;
-            disableReason = t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName();
-            ConsoleLogger.error("[Module:" + name + "] \u2717 FAILED: " + disableReason);
-            ConsoleLogger.error("[Module:" + name + "] Stack trace:");
-            t.printStackTrace();
+            String msg = t.getMessage() != null ? t.getMessage() : "";
+            disableReason = msg.isEmpty() ? t.getClass().getSimpleName() : msg;
+
+            // Детектируем ошибку несовместимости Java-версии (Paper не может сконвертировать class)
+            if (msg.contains("major version") || msg.contains("Unsupported class file")) {
+                ConsoleLogger.error("[Module:" + name + "] \u2717 Java version mismatch!");
+                ConsoleLogger.error("[Module:" + name + "]   Update your Java Runtime to fix this issue.");
+            } else {
+                ConsoleLogger.error("[Module:" + name + "] \u2717 FAILED: " + disableReason);
+            }
             return false;
         }
     }
