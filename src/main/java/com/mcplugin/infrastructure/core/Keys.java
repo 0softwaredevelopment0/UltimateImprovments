@@ -43,6 +43,12 @@ public class Keys {
     // GUI Protection
     public static NamespacedKey GUI_PROTECTED;
 
+    // Multimeter
+    public static NamespacedKey MULTIMETER;
+
+    // Chunk Loader
+    public static NamespacedKey CHUNK_LOADER;
+
     // Totem Charge
     public static NamespacedKey TOTEM_CHARGE;
 
@@ -80,6 +86,9 @@ public class Keys {
         OMNISCANNER_RADIUS = new NamespacedKey(plugin, "omniscanner_radius");
 
         GUI_PROTECTED = new NamespacedKey(plugin, "gui_protected");
+
+        MULTIMETER = new NamespacedKey(plugin, "is_multimeter");
+        CHUNK_LOADER = new NamespacedKey(plugin, "is_chunk_loader");
 
         TOTEM_CHARGE = new NamespacedKey(plugin, "totem_charge");
 

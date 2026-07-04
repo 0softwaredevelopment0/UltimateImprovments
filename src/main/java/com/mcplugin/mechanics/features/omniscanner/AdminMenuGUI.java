@@ -6,10 +6,12 @@ import com.mcplugin.infrastructure.modules.ModuleManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.StatsTracker;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.mechanics.features.world.ChunkLoaderItemListener;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -295,61 +297,61 @@ public class AdminMenuGUI implements Listener {
         CUSTOM_ITEMS.add(OmniscannerManager.createItem());
 
         // 2. Plasma Cannon
-        CUSTOM_ITEMS.add(createNamedItem(Material.WARPED_FUNGUS_ON_A_STICK,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.WARPED_FUNGUS_ON_A_STICK,
                 "<white>Photon Cannon *</white>",
-                "<gray>Strange gun shoots with echo shards.</gray>"));
+                "<gray>Strange gun shoots with echo shards.</gray>"), Keys.PLASMA));
 
         // 3. Shoker
-        CUSTOM_ITEMS.add(createNamedItem(Material.WARPED_FUNGUS_ON_A_STICK,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.WARPED_FUNGUS_ON_A_STICK,
                 "<aqua>Electro Shoker *</aqua>",
-                "<gray>Stuns enemies with electricity.</gray>"));
+                "<gray>Stuns enemies with electricity.</gray>"), Keys.SHOCKER));
 
         // 4. Multimeter
-        CUSTOM_ITEMS.add(createNamedItem(Material.CLOCK,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.CLOCK,
                 "<white>Multimeter *</white>",
-                "<gray>Inspect energy nodes and their connections.</gray>"));
+                "<gray>Inspect energy nodes and their connections.</gray>"), Keys.MULTIMETER));
 
         // 5. Metal Detector
-        CUSTOM_ITEMS.add(createNamedItem(Material.STICK,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.STICK,
                 "<white>Metal Detector *</white>",
-                "<gray>Scans for metal blocks and items nearby.</gray>"));
+                "<gray>Scans for metal blocks and items nearby.</gray>"), Keys.METAL_DETECTOR));
 
         // 6. Ore Finder
-        CUSTOM_ITEMS.add(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
                 "<white>Ore Finder *</white>",
-                "<gray>Scans chunk for ores.</gray>"));
+                "<gray>Scans chunk for ores.</gray>"), Keys.ORE_FINDER));
 
         // 7. Mob Finder
-        CUSTOM_ITEMS.add(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
                 "<white>Mob Finder *</white>",
-                "<gray>Scans chunk for entities.</gray>"));
+                "<gray>Scans chunk for entities.</gray>"), Keys.MOB_FINDER));
 
         // 8. Health Meter
-        CUSTOM_ITEMS.add(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
                 "<white>Health Meter *</white>",
-                "<gray>Check entity health.</gray>"));
+                "<gray>Check entity health.</gray>"), Keys.HEALTH_METER));
 
         // 9. Portable Radar
-        CUSTOM_ITEMS.add(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
                 "<white>Portable Radar *</white>",
-                "<gray>Find nearby entities.</gray>"));
+                "<gray>Find nearby entities.</gray>"), Keys.RADAR));
 
         // 10. Lead Ingot
-        CUSTOM_ITEMS.add(createNamedItem(Material.IRON_INGOT,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.IRON_INGOT,
                 "<gray>Lead Ingot *</gray>",
-                "<gray>Radiation shielding material.</gray>"));
+                "<gray>Radiation shielding material.</gray>"), Keys.LEAD_INGOT));
 
         // 11. Lead Shield
-        CUSTOM_ITEMS.add(createNamedItem(Material.SHIELD,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.SHIELD,
                 "<gray>Lead Shield *</gray>",
-                "<gray>Protects from radiation.</gray>"));
+                "<gray>Protects from radiation.</gray>"), Keys.LEAD_SHIELD));
 
         // 12. Concrete Bucket
-        CUSTOM_ITEMS.add(createNamedItem(Material.BUCKET,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.BUCKET,
                 "<white>Concrete Bucket *</white>",
-                "<gray>Place instant concrete.</gray>"));
+                "<gray>Place instant concrete.</gray>"), Keys.CONCRETE_BUCKET));
 
-        // 13. Portable Ender Chest
+        // 13. Portable Ender Chest (без PDC — работает по типу блока ENDER_CHEST)
         ItemStack echest = new ItemStack(Material.ENDER_CHEST);
         ItemMeta echestMeta = echest.getItemMeta();
         if (echestMeta != null) {
@@ -368,36 +370,37 @@ public class AdminMenuGUI implements Listener {
                     MessageUtil.parse("<!italic><gray>При установке чанк остается загруженным</gray>"),
                     MessageUtil.parse("<!italic><gray>Разрушить — получить предмет обратно</gray>")
             ));
+            clMeta.getPersistentDataContainer().set(ChunkLoaderItemListener.getChunkLoaderKey(), PersistentDataType.BYTE, (byte) 1);
             cl.setItemMeta(clMeta);
         }
         CUSTOM_ITEMS.add(cl);
 
         // 15. Entity Locator
-        CUSTOM_ITEMS.add(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
                 "<white>Entity Locator *</white>",
-                "<gray>Points to nearest entity.</gray>"));
+                "<gray>Points to nearest entity.</gray>"), Keys.LOCATOR));
 
         // 16. Antimatter
-        CUSTOM_ITEMS.add(createNamedItem(Material.NETHER_STAR,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.NETHER_STAR,
                 "<light_purple>Antimatter *</light_purple>",
-                "<gray>Dangerous substance.</gray>"));
+                "<gray>Dangerous substance.</gray>"), Keys.ANTIMATTER));
 
-        // 17. Particle Ring
+        // 17. Particle Ring (без PDC — блок-плейсер, определение по типу)
         CUSTOM_ITEMS.add(createNamedItem(Material.CHISELED_TUFF,
                 "<white>Particle Ring *</white>",
                 "<gray>Guides particles along the accelerator path.</gray>"));
 
-        // 18. Particle Engine
+        // 18. Particle Engine (без PDC — блок-плейсер)
         CUSTOM_ITEMS.add(createNamedItem(Material.TUFF_BRICKS,
                 "<white>Particle Engine *</white>",
                 "<gray>Accelerates particles. Requires 500⚡ buffer.</gray>"));
 
-        // 19. Particle Speed Sensor
+        // 19. Particle Speed Sensor (без PDC — блок-плейсер)
         CUSTOM_ITEMS.add(createNamedItem(Material.POLISHED_DIORITE,
                 "<white>Particle Speed Sensor *</white>",
                 "<gray>Measures particle speed (0-99.999% light speed).</gray>"));
 
-        // 20. Particle Injector
+        // 20. Particle Injector (без PDC — блок-плейсер)
         CUSTOM_ITEMS.add(createNamedItem(Material.REINFORCED_DEEPSLATE,
                 "<white>Particle Injector *</white>",
                 "<gray>Right-click with any item to inject it as a particle.</gray>"));
@@ -415,12 +418,13 @@ public class AdminMenuGUI implements Listener {
         }
         CUSTOM_ITEMS.add(netheriteSword);
 
-        // 22. Elytra Chestplate (пример элитрового нагрудника)
+        // 22. Elytra Chestplate
         ItemStack elytraChest = new ItemStack(Material.NETHERITE_CHESTPLATE);
         ItemMeta ecMeta = elytraChest.getItemMeta();
         if (ecMeta != null) {
             ecMeta.displayName(MessageUtil.parse("<!italic><gradient:#00AAFF:#FF55FF>✦ Нагрудник полёта ✦</gradient>"));
             ecMeta.setGlider(true);
+            ecMeta.getPersistentDataContainer().set(Keys.CHESTPLATE_FLIGHT, PersistentDataType.DOUBLE, 100.0);
             ecMeta.lore(List.of(
                     MessageUtil.parse("<!italic><green>Пригоден для полёта</green>"),
                     MessageUtil.parse("<!italic><gray>Пример улучшенного предмета</gray>")
@@ -451,6 +455,16 @@ public class AdminMenuGUI implements Listener {
         meta.displayName(MessageUtil.parse("<!italic>" + name));
         meta.lore(List.of(MessageUtil.parse("<!italic>" + lore)));
         item.setItemMeta(meta);
+        return item;
+    }
+
+    /** Помечает предмет PDC ключом PersistentDataType.BYTE (1). */
+    private static ItemStack tagPdc(ItemStack item, NamespacedKey key) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
+            item.setItemMeta(meta);
+        }
         return item;
     }
 
