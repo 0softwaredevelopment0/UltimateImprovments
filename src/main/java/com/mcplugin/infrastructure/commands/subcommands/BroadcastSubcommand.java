@@ -1,6 +1,7 @@
 package com.mcplugin.infrastructure.commands.subcommands;
 
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.PlaceholderResolver;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -62,6 +63,10 @@ public final class BroadcastSubcommand {
 
         // Build final MiniMessage string
         String fullMessage = clean ? message : PREFIX + message;
+
+        // Resolve placeholders ({tps_avg_1s_color}, {online}, etc.)
+        Player senderPlayer = sender instanceof Player ? (Player) sender : null;
+        fullMessage = PlaceholderResolver.resolve(fullMessage, senderPlayer);
 
         Component component = MessageUtil.parse(fullMessage);
 
