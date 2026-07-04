@@ -218,7 +218,9 @@ public class CodePanelClick implements CommandExecutor {
                 player.playSound(player.getLocation(), sound, 1f, 1f);
             }
 
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[CodePanel] Sound error: " + e.getMessage());
+        }
     }
 
     // =========================

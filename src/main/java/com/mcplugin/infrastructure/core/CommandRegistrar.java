@@ -73,7 +73,8 @@ public class CommandRegistrar {
                 knownCommands.remove(name);
                 knownCommands.remove("bukkit:" + name);
                 knownCommands.remove("minecraft:" + name);
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                ConsoleLogger.warn("[COMMANDS] KnownCommands cleanup error: " + e.getMessage());
             }
 
             // Register our command

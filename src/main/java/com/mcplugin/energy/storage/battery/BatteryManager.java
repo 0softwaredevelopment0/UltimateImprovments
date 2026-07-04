@@ -25,6 +25,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ⚡ Мультиблочная батарея (WAXED_COPPER_GRATE)
@@ -45,8 +46,8 @@ public class BatteryManager implements Listener {
     }
 
     private static BatteryManager instance;
-    private static final Map<Long, BatteryCluster> locationToCluster = new HashMap<>();
-    private static final Map<Integer, BatteryCluster> clustersById = new HashMap<>();
+    private static final Map<Long, BatteryCluster> locationToCluster = new ConcurrentHashMap<>();
+    private static final Map<Integer, BatteryCluster> clustersById = new ConcurrentHashMap<>();
     private static int nextId = 1;
 
     // ════════════════════════════════════════

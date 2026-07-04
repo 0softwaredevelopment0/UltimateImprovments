@@ -164,7 +164,8 @@ public class TaskManager {
             java.lang.reflect.Field taskField = BukkitRunnable.class.getDeclaredField("task");
             taskField.setAccessible(true);
             taskField.set(runnable, null);
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            ConsoleLogger.warn("[TASKS] Failed to reset BukkitRunnable task: " + e.getMessage());
         }
     }
 }

@@ -145,8 +145,7 @@ public class ElectricFurnaceManager implements Listener {
             public void run() {
                 if (!isEnabled()) return;
 
-                // Scan all cable nodes' nearby blast furnaces
-                for (CableNode node : CableNetwork.getAllNodes()) {
+                CableNetwork.forEachNode(node -> {
                     Location nodeLoc = node.getLocation();
 
                     for (Location nearby : LocationUtil.getNeighbors(nodeLoc)) {
@@ -174,7 +173,7 @@ public class ElectricFurnaceManager implements Listener {
                             if (tryCookItem(blockLoc, item, stack)) break;
                         }
                     }
-                }
+                });
             }
         };
         periodicScanTask.runTaskTimer(Main.getInstance(), 20L, 20L);
@@ -275,10 +274,10 @@ public class ElectricFurnaceManager implements Listener {
         CableNode start = CableNetwork.getNode(LocationUtil.normalize(cableLoc));
         if (start == null) return false;
 
-        Set<Location> visited = new HashSet<>();
+        Set<Long> visited = new HashSet<>();
         Queue<CableNode> queue = new LinkedList<>();
         queue.add(start);
-        visited.add(start.getLocation());
+        visited.add(start.getKey());
 
         int total = 0;
         while (!queue.isEmpty()) {
@@ -287,7 +286,7 @@ public class ElectricFurnaceManager implements Listener {
 
             // Mark cable as flowing
             if (node.getType() == NodeType.CABLE) {
-                CableNetwork.markFlowing(node.getLocation());
+                CableNetwork.markFlowingKey(node.getWorld().getUID().toString(), node.getKey());
             }
 
             // Only batteries have energy
@@ -296,11 +295,11 @@ public class ElectricFurnaceManager implements Listener {
                 if (total >= amount) return true;
             }
 
-            for (Location conn : node.getConnections()) {
-                if (visited.contains(conn)) continue;
-                CableNode next = CableNetwork.getNode(conn);
+            for (long connKey : node.getConnectionKeys()) {
+                if (visited.contains(connKey)) continue;
+                CableNode next = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), connKey);
                 if (next == null) continue;
-                visited.add(conn);
+                visited.add(connKey);
                 queue.add(next);
             }
         }
@@ -314,10 +313,10 @@ public class ElectricFurnaceManager implements Listener {
         CableNode start = CableNetwork.getNode(LocationUtil.normalize(cableLoc));
         if (start == null) return false;
 
-        Set<Location> visited = new HashSet<>();
+        Set<Long> visited = new HashSet<>();
         Queue<CableNode> queue = new LinkedList<>();
         queue.add(start);
-        visited.add(start.getLocation());
+        visited.add(start.getKey());
 
         int remaining = amount;
         while (!queue.isEmpty() && remaining > 0) {
@@ -326,7 +325,7 @@ public class ElectricFurnaceManager implements Listener {
 
             // Mark cable as flowing
             if (node.getType() == NodeType.CABLE) {
-                CableNetwork.markFlowing(node.getLocation());
+                CableNetwork.markFlowingKey(node.getWorld().getUID().toString(), node.getKey());
             }
 
             // Consume from batteries only
@@ -342,11 +341,11 @@ public class ElectricFurnaceManager implements Listener {
                 }
             }
 
-            for (Location conn : node.getConnections()) {
-                if (visited.contains(conn)) continue;
-                CableNode next = CableNetwork.getNode(conn);
+            for (long connKey : node.getConnectionKeys()) {
+                if (visited.contains(connKey)) continue;
+                CableNode next = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), connKey);
                 if (next == null) continue;
-                visited.add(conn);
+                visited.add(connKey);
                 queue.add(next);
             }
         }

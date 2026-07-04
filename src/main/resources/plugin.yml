@@ -1,17 +1,15 @@
+# Main plugin data
 name: MC-Plugin
-
+description: A modular Minecraft plugin that adds authentication, advanced mechanics, custom crafting, and server protection.
+website: N/A
 version: ${project.version}
-
 main: com.mcplugin.infrastructure.core.Main
-
 api-version: "26.2"
-
 author: rizer001
+load: STARTUP
+softdepend: [PlaceholderAPI, LuckPerms, Vault, DeluxeMenus]
 
-load: POSTWORLD
-
-softdepend: [PlaceholderAPI, LuckPerms]
-
+# Other sections
 commands:
 
   mp:
@@ -64,6 +62,32 @@ permissions:
       mcplugin.command.notes: true
       mcplugin.command.broadcast: true
       mcplugin.command.toggleradview: true
+      mcplugin.proxy.server: true
+      mcplugin.command.unlock: true
+      mcplugin.command.fly: true
+      mcplugin.command.fly.other: true
+      mcplugin.command.god: true
+      mcplugin.command.god.other: true
+      mcplugin.command.plugin: true
+      mcplugin.command.money: true
+      mcplugin.command.swapjar: true
+      mcplugin.command.near: true
+      mcplugin.command.rtp: true
+      mcplugin.command.rtp.other: true
+      mcplugin.command.rtp.bypasscooldown: true
+      mcplugin.command.meteor: true
+      mcplugin.command.meteor.spawn: true
+      mcplugin.command.check: true
+      mcplugin.command.chgop: true
+      mcplugin.command.invsee: true
+      mcplugin.command.endersee: true
+      mcplugin.command.setspawn: true
+      mcplugin.command.reports: true
+      mcplugin.command.toggleping: true
+      mcplugin.punish.notify: true
+      mcplugin.command.punish.crash: true
+      mcplugin.anticheat.notify: true
+      mcplugin.anticheat.bypass: true
 
   mcplugin:
     description: Base permission for MC-Plugin commands (/mp)
@@ -281,6 +305,10 @@ permissions:
     description: Allows toggling the bossbar (/mp togglebb)
     default: true
 
+  mcplugin.command.toggleping:
+    description: Allows toggling ping display on tab (/mp toggleping)
+    default: true
+
   mcplugin.command.togglesb:
     description: Allows toggling the scoreboard (/mp togglesb)
     default: true
@@ -296,6 +324,52 @@ permissions:
   mcplugin.chat.custom.bypass:
     description: Allows bypassing the custom chat formatting
     default: false
+
+  mcplugin.proxy.server:
+    description: Allows switching servers through proxy (/server, /hub, etc.)
+    default: op
+
+  mcplugin.command.unlock:
+    description: Allows unlocking books and signs (/mp unlock book|sign)
+    default: op
+
+  mcplugin.command.fly:
+    description: Allows toggling flight (/mp fly on|off)
+    default: op
+
+  mcplugin.command.fly.other:
+    description: Allows toggling flight for other players (/mp fly on|off <player>)
+    default: op
+
+  mcplugin.command.god:
+    description: Allows toggling god mode (/mp god on|off)
+    default: op
+
+  mcplugin.command.god.other:
+    description: Allows toggling god mode for other players (/mp god on|off <player>)
+    default: op
+
+  # =========================
+  # 🏠 SPAWN
+  # =========================
+  mcplugin.command.setspawn:
+    description: Allows setting the server spawn (/mp setspawn)
+    default: op
+
+  mcplugin.command.spawn:
+    description: Allows teleporting to spawn (/mp spawn)
+    default: true
+
+  # =========================
+  # 📢 REPORT
+  # =========================
+  mcplugin.command.report:
+    description: Allows reporting players (/mp report)
+    default: true
+
+  mcplugin.command.reports:
+    description: Allows viewing player reports (/mp reports)
+    default: op
 
   # =========================
   # 🛡 PUNISH SYSTEM
@@ -328,6 +402,36 @@ permissions:
     description: Allows listing other players' warns (/mp punish listwarns <player>)
     default: op
 
+  mcplugin.punish.notify:
+    description: Receive notifications when players are punished
+    default: op
+
+  mcplugin.command.punish.crash:
+    description: Allows crashing a player's client (/mp punish crash <player>)
+    default: op
+
+  # =========================
+  # 🛡 ANTICHEAT
+  # =========================
+  mcplugin.anticheat.notify:
+    description: Receive anti-cheat violation notifications in chat
+    default: op
+
+  mcplugin.anticheat.bypass:
+    description: Bypass anti-cheat checks entirely
+    default: op
+
+  # =========================
+  # 🔐 AUTH
+  # =========================
+  mcplugin.command.auth.login:
+    description: Allows logging in (/auth login)
+    default: true
+
+  mcplugin.command.auth.register:
+    description: Allows registering (/auth register)
+    default: true
+
   # =========================
   # 📋 CUSTOM WHITELIST (MC-Plugin)
   # =========================
@@ -340,4 +444,83 @@ permissions:
   # =========================
   mcplugin.command.blacklist:
     description: Allows managing the blacklist (/mp blacklist)
+    default: op
+
+  # =========================
+  # 📋 CHECK (ANTI-CHEAT)
+  # =========================
+  mcplugin.command.check:
+    description: Allows using the anti-cheat check system (/mp check)
+    default: op
+
+  # =========================
+  # 🔄 CHGOP (OP MANAGEMENT)
+  # =========================
+  mcplugin.command.chgop:
+    description: Allows changing operator status (/mp chgop)
+    default: op
+
+  # =========================
+  # 👁 INVSEE / ENDERSEE
+  # =========================
+  mcplugin.command.invsee:
+    description: Allows viewing player inventories (/mp invsee)
+    default: op
+
+  mcplugin.command.endersee:
+    description: Allows viewing player ender chests (/mp endersee)
+    default: op
+
+  # =========================
+  # 🧩 PLUGIN MANAGEMENT
+  # =========================
+  mcplugin.command.plugin:
+    description: Allows managing other plugins (/mp plugin <name> <on|off|restart|info>)
+    default: op
+
+  # =========================
+  # 💰 ECONOMY
+  # =========================
+  mcplugin.command.money:
+    description: Allows managing player balances (/mp money give|list|remove|set)
+    default: op
+
+  # =========================
+  # 🔄 SWAP JAR
+  # =========================
+  mcplugin.command.swapjar:
+    description: Allows hot-swapping the plugin JAR (/mp swapjar)
+    default: op
+
+  # =========================
+  # 📍 NEAR
+  # =========================
+  mcplugin.command.near:
+    description: Allows finding nearby players (/mp near [radius])
+    default: true
+
+  # =========================
+  # 🎲 RTP
+  # =========================
+  mcplugin.command.rtp:
+    description: Allows random teleport (/mp rtp [player])
+    default: true
+
+  mcplugin.command.rtp.other:
+    description: Allows teleporting other players with RTP (/mp rtp <player>)
+    default: op
+
+  mcplugin.command.rtp.bypasscooldown:
+    description: Allows bypassing the RTP cooldown
+    default: op
+
+  # =========================
+  # ☄️ METEOR
+  # =========================
+  mcplugin.command.meteor:
+    description: Base permission for meteor commands (/mp meteor)
+    default: op
+
+  mcplugin.command.meteor.spawn:
+    description: Allows force-spawning meteors (/mp meteor spawn <count>)
     default: op

@@ -82,8 +82,8 @@ public class VanishManager implements Listener {
         if (con == null) return;
 
         try (PreparedStatement ps = con.prepareStatement(
-                "SELECT uuid FROM vanished_players")) {
-            ResultSet rs = ps.executeQuery();
+                "SELECT uuid FROM vanished_players");
+             ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 try {
                     vanishedPlayers.add(UUID.fromString(rs.getString("uuid")));
@@ -106,8 +106,8 @@ public class VanishManager implements Listener {
         if (con == null) return;
 
         try (PreparedStatement check = con.prepareStatement(
-                "SELECT COUNT(*) FROM vanished_players")) {
-            ResultSet rs = check.executeQuery();
+                "SELECT COUNT(*) FROM vanished_players");
+             ResultSet rs = check.executeQuery()) {
             if (rs.next() && rs.getInt(1) > 0) {
                 // В БД уже есть данные — чистим config и выходим
                 clearConfigSection();

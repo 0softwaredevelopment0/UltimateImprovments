@@ -169,7 +169,7 @@ features:
     enabled: true
     explosion_chance: 0.001
     explosion_power: 10.0
-    damage: 8192
+    damage: 1
 
     quick_close:
       enabled: true
@@ -574,6 +574,15 @@ packet_guard:
 
   log_inject: false
 
+proxy_server:
+  enabled: true
+
+  # Логировать блокированные команды прокси
+  log_commands: true
+
+  # Сообщение при отсутствии права mcplugin.proxy.server
+  no_permission_message: "<red>❌ You don't have permission to switch servers!</red>"
+
 redstone_guard:
   enabled: true
   mspt_threshold: 50.0
@@ -843,12 +852,73 @@ endersee:
 
 structure_integrity:
   enabled: true
+
+  # Максимальный stress (0–stress_max)
+  stress_max: 1000.0
+
+  # Порог stress, выше которого начинается деградация integrity
+  stress_threshold: 100.0
+
+  # +stress за каждое открытие/закрытие эндер-сундука
   stress_per_open_close: 1.0
+
+  # Естественный спад stress в секунду
   stress_decay_per_second: 0.03333
-  base_degradation_rate: 1.0
-  degradation_exponent_multiplier: 0.1
+
+  # Базовая скорость деградации (%/сек) при stress = stress_threshold
+  base_degradation_rate: 0.1
+
+  # Степень экспоненты стресса: (stress / stress_threshold)^exponent
+  degradation_exponent: 2.0
+
+  # Временна́я экспонента: exp(degradation_ticks * time_exponent)
+  degradation_time_exponent: 0.01
+
+  # Восстановление integrity (%/сек) когда stress < stress_threshold
   integrity_recovery_per_second: 0.01666
-  integrity_recovery_threshold: 100.0
+
+  # Параметры взрыва при 0% integrity
+  explosion_power: 10.0
+  explosion_damage: 8192.0
+  explosion_damage_radius: 12
+
+# =========================
+# 💰 ECONOMY — валютная система
+# =========================
+economy:
+  enabled: true
+
+  # Стартовый баланс при первом входе
+  default_balance: 100.0
+
+  # Основная валюта (используется Vault)
+  primary_currency: "coins"
+
+  # Заработок с блоков и мобов (ВЫКЛЮЧЕН по умолчанию)
+  income:
+    enabled: false
+
+    # Доход за добычу блоков: <MATERIAL>: <сумма>
+    blocks: {}
+    # Пример:
+    #   DIAMOND_ORE: 10.0
+    #   IRON_ORE: 3.0
+
+    # Доход за убийство мобов: <ENTITY_TYPE>: <сумма>
+    mobs: {}
+    # Пример:
+    #   ZOMBIE: 1.0
+    #   SKELETON: 1.0
+
+# =========================
+# ❤️ HEAL / FEED — восстановление здоровья и голода
+# =========================
+# Команды: /mp heal <player>, /mp feed <player>
+# heal_amount = 0 → всё хп, feed_amount = 0 → вся сытость
+heal_feed:
+  enabled: true
+  heal_amount: 0
+  feed_amount: 0
 
 spawn:
   mode: legit
@@ -1254,4 +1324,125 @@ anticheat:
       max_jumps_without_hunger_loss: 5
       min_jump_height_for_exhaustion: 0.4
 
-plugin_version: "1.8.123"
+# =========================
+# 🎲 RTP — случайная телепортация
+# =========================
+# Выключено по умолчанию (ванильный сервер — /rtp это чит).
+# Все параметры настраиваются для максимальной гибкости.
+rtp:
+  enabled: false
+
+  # Кулдаун между использованиями (сек). 0 = без кулдауна.
+  cooldown_seconds: 60
+
+  # Максимум попыток найти безопасное место
+  max_attempts: 50
+
+  # Радиус телепортации от спавна (0,0)
+  radius:
+    min: 500
+    max: 10000
+
+  # Форма области: "square" (квадрат) или "circle" (круг)
+  shape: "square"
+
+  # Список миров, где разрешён RTP. Пустой список = все миры.
+  worlds:
+    - "world"
+
+  # Лимиты высоты (Y-координата)
+  height:
+    min: 0
+    max: 255
+
+  # Радиус поиска безопасного места (проверка соседних блоков)
+  safe_search_radius: 5
+
+  # ⛔ Блоки, НА которые НЕ телепортироваться
+  avoid_blocks:
+    - "MAGMA_BLOCK"
+    - "CACTUS"
+    - "FIRE"
+    - "SWEET_BERRY_BUSH"
+    - "POWDER_SNOW"
+    - "CAMPFIRE"
+    - "SOUL_CAMPFIRE"
+    - "BEDROCK"
+    - "WITHER_ROSE"
+    - "POINTED_DRIPSTONE"
+
+  # ✅ Только на эти блоки телепортироваться (пусто = любой твёрдый блок)
+  # Удобно для ультра-ванта: grass_block, stone, sand, gravel
+  only_surface: []
+
+  # Какие ситуации избегать
+  avoid:
+    # Избегать ли жидкостей (лава, вода) под ногами
+    liquid: true
+
+    # Избегать ли пустоты под ногами (void, Y < min height мира)
+    void: true
+
+# =========================
+# 📍 NEAR — поиск ближайших игроков
+# =========================
+# Выключен по умолчанию (ванильный сервер — /near это чит).
+# Включите для других серверов, где это уместно.
+near:
+  enabled: false
+
+  # Максимальный радиус поиска (настраиваемый лимит)
+  max_radius: 128
+
+# =========================
+# ☄️ METEOR — метеоритный дождь
+# =========================
+# Выключен по умолчанию (ванильный сервер — это визуальный чит/атмосфера).
+# Работает только в настроенном мире, падает рядом с игроками.
+meteor:
+  enabled: false
+
+  # Мир, в котором падают метеоры
+  world: "world"
+
+  # Интервал между метеоритными дождями (в минутах, random min..max)
+  interval:
+    min: 30
+    max: 90
+
+  # Сколько метеоров спавнить за один дождь
+  count_per_spawn: 1
+
+  # Радиус спавна вокруг игрока (блоки)
+  spawn_radius:
+    min: 30
+    max: 120
+
+  # Лимиты высоты поиска поверхности
+  height:
+    min: -64
+    max: 320
+
+  # Длительность анимации падения (тики, 20 = 1 сек)
+  fall_duration_ticks: 60
+
+  # Радиус сферы из блоков вокруг центра метеора
+  sphere_radius:
+    min: 1.0
+    max: 3.0
+
+  # Блоки для визуализации сферы
+  display_blocks:
+    - "CRACKED_DEEPSLATE_BRICKS"
+    - "CRACKED_DEEPSLATE_TILES"
+    - "CHISELED_DEEPSLATE"
+    - "MAGMA_BLOCK"
+
+  # Параметры взрыва
+  explosion_radius: 3.0
+  explosion_set_fire: true
+
+  # Блок, который остаётся после падения
+  ore_block: "DEEPSLATE_DIAMOND_ORE"
+
+plugin_version: "1.8.125"

@@ -24,9 +24,8 @@ public class ReactorPersistence {
         String id = state.getReactorId();
         if (loc == null || id == null) return;
 
-        Connection con = DatabaseManager.getConnection();
-        try {
-            PreparedStatement ps = con.prepareStatement("""
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("""
                 INSERT OR REPLACE INTO reactors
                 (reactor_id, world, x, y, z,
                  core_temp, core_press, core_sh_int,
@@ -38,7 +37,7 @@ public class ReactorPersistence {
                         ?, ?, ?,
                         ?, ?,
                         ?, ?)
-            """);
+            """)) {
 
             ps.setString(1, id);
             ps.setString(2, loc.getWorld().getName());
@@ -57,7 +56,6 @@ public class ReactorPersistence {
             ps.setLong(15, state.getEnergyGenerated());
 
             ps.executeUpdate();
-            ps.close();
 
             ConsoleLogger.info("[Reactor] Saved reactor " + id);
         } catch (Exception e) {
@@ -69,10 +67,9 @@ public class ReactorPersistence {
      * Загружает реактор из БД и заполняет состояние.
      */
     public static boolean loadFromDb(ReactorState state) {
-        Connection con = DatabaseManager.getConnection();
-        try {
-            PreparedStatement ps = con.prepareStatement("SELECT * FROM reactors");
-            ResultSet rs = ps.executeQuery();
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT * FROM reactors");
+             ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 World world = Main.getInstance().getServer().getWorld(rs.getString("world"));
@@ -100,17 +97,17 @@ public class ReactorPersistence {
                 state.setRecipeTime(rs.getInt("recipe_time"));
                 state.setSelfDestruct(rs.getInt("self_destruct") == 1);
 
-                try { state.setReactorWear(rs.getInt("reactor_wear")); } catch (Exception ignored) {}
-                try { state.setEnergyGenerated(rs.getLong("energy_generated")); } catch (Exception ignored) {}
+                try { state.setReactorWear(rs.getInt("reactor_wear")); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load reactor_wear: " + e.getMessage());
+                }
+                try { state.setEnergyGenerated(rs.getLong("energy_generated")); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load energy_generated: " + e.getMessage());
+                }
 
                 ConsoleLogger.info("[Reactor] Loaded reactor " + state.getReactorId());
-                rs.close();
-                ps.close();
                 return true;
             }
 
-            rs.close();
-            ps.close();
         } catch (Exception e) {
             ConsoleLogger.error("[Reactor] Load error: " + e.getMessage());
         }
@@ -122,12 +119,10 @@ public class ReactorPersistence {
      */
     public static void deleteFromDb(String reactorId) {
         if (reactorId == null) return;
-        Connection con = DatabaseManager.getConnection();
-        try {
-            PreparedStatement ps = con.prepareStatement("DELETE FROM reactors WHERE reactor_id = ?");
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("DELETE FROM reactors WHERE reactor_id = ?")) {
             ps.setString(1, reactorId);
             ps.executeUpdate();
-            ps.close();
         } catch (Exception e) {
             ConsoleLogger.error("[Reactor] Delete error: " + e.getMessage());
         }

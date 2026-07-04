@@ -44,7 +44,9 @@ public class AssemblerTask extends BukkitRunnable {
                 if (state instanceof org.bukkit.block.Crafter cs) {
                     crafterState = cs;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                continue;
+            }
             if (crafterState == null) continue;
 
             var inventory = crafterState.getInventory();
@@ -93,12 +95,14 @@ public class AssemblerTask extends BukkitRunnable {
                 }
             }
 
-            // Eject result item at the crafter's location
+            // Eject result item at the crafter's location (with null-safety)
             org.bukkit.inventory.ItemStack toDrop = result.clone();
-            crafterLoc.getWorld().dropItemNaturally(
-                    crafterLoc.clone().add(0.5, 1.0, 0.5),
-                    toDrop
-            );
+            if (crafterLoc.getWorld() != null) {
+                crafterLoc.getWorld().dropItemNaturally(
+                        crafterLoc.clone().add(0.5, 1.0, 0.5),
+                        toDrop
+                );
+            }
         }
     }
 

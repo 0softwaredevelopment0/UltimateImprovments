@@ -88,6 +88,9 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
     // UUID игрока → активная сессия
     private final Map<UUID, ActiveBreak> activeBreaks = new HashMap<>();
 
+    // Обратная карта: Location → UUID для O(1) доступа в getProgress()
+    private final Map<Location, UUID> locationToPlayer = new HashMap<>();
+
     // UUID игрока → tick последнего взаимодействия с блоком (для детекта отпускания ЛКМ)
     // Обновляется в onBlockInteract при каждом клике. Если прошло > 30 тиков без клика — сессия сбрасывается.
     private final Map<UUID, Long> lastInteractTick = new HashMap<>();
@@ -318,14 +321,19 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
 
         lastInteractTick.put(player.getUniqueId(), (long) Bukkit.getCurrentTick());
 
+        // Обновляем обратную карту (старая запись будет перезаписана)
+        locationToPlayer.put(loc, player.getUniqueId());
+
         // Создаём или обновляем сессию
         ActiveBreak brk = activeBreaks.computeIfAbsent(
                 player.getUniqueId(), k -> new ActiveBreak(loc, config));
         if (!brk.blockLoc.equals(loc)) {
             sendCrackProgress(player, brk.blockLoc, 0.0f);
+            locationToPlayer.remove(brk.blockLoc); // убираем старую локацию
             brk.blockLoc = loc;
             brk.config = config;
             brk.currentDamage = 0.0;
+            locationToPlayer.put(loc, player.getUniqueId()); // обновляем на новую
         }
 
         // ─── НАНОСИМ ПЕРВЫЙ УРОН ───
@@ -359,7 +367,10 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
     }
 
     private void cleanup(UUID uuid) {
-        activeBreaks.remove(uuid);
+        ActiveBreak brk = activeBreaks.remove(uuid);
+        if (brk != null) {
+            locationToPlayer.remove(brk.blockLoc);
+        }
         lastInteractTick.remove(uuid);
     }
 
@@ -500,12 +511,11 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
     public static double getProgress(Location loc) {
         if (instance == null) return 0.0;
         Location norm = normalizeLoc(loc);
-        for (ActiveBreak brk : instance.activeBreaks.values()) {
-            if (brk.blockLoc.equals(norm)) {
-                return Math.min(1.0, brk.currentDamage / brk.config.maxDamage());
-            }
-        }
-        return 0.0;
+        UUID uuid = instance.locationToPlayer.get(norm);
+        if (uuid == null) return 0.0;
+        ActiveBreak brk = instance.activeBreaks.get(uuid);
+        if (brk == null || !brk.blockLoc.equals(norm)) return 0.0;
+        return Math.min(1.0, brk.currentDamage / brk.config.maxDamage());
     }
 
     public static void resetProgress(Location loc) {

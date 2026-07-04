@@ -29,9 +29,5 @@ build/
 __pycache__/
 nul
 .claude/
-TODOs.odt
-.codebuff-memory.db
-buffy-guide.md
-codebuff-memory.js
+agent.md
 node_modules/
-.~lock.TODOs.odt#

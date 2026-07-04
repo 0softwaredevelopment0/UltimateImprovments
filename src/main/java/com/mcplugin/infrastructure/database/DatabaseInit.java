@@ -11,9 +11,7 @@ public class DatabaseInit {
         try (Connection con = DatabaseManager.getConnection();
              Statement st = con.createStatement()) {
 
-            // =========================
-            // ⚡ CABLES
-            // =========================
+            // Execute each CREATE TABLE/INDEX individually for consistency
             st.execute("""
                 CREATE TABLE IF NOT EXISTS cables (
                     world TEXT NOT NULL,
@@ -673,6 +671,7 @@ public class DatabaseInit {
             INSERT OR IGNORE INTO updater_state (key, value)
             VALUES ('installed_tag', '');
         """);
+
         // Миграция: если был старый latest_tag (c предыдущих версий) — переносим в installed_tag
         st.execute("""
             UPDATE updater_state SET value = (

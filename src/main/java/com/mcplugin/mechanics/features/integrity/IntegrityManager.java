@@ -136,15 +136,6 @@ public class IntegrityManager extends BukkitRunnable {
 
     private static final DecimalFormat PCT_FMT = new DecimalFormat("0.000");
 
-    // ===== NMS REFLECTION CACHE (for getMaxDurability fallback) =====
-    /** Cached CraftItemStack.asNMSCopy(ItemStack) method */
-    private static java.lang.reflect.Method nmsAsCopyMethod;
-    /** Cached NMS ItemStack.getMaxDamage() method */
-    private static java.lang.reflect.Method nmsGetMaxDamageMethod;
-    /** false if NMS reflection failed to init — skip NMS path entirely */
-    private static boolean nmsAvailable = true;
-    private static boolean nmsInitTried = false;
-
     // =========================
     // INIT
     // =========================
@@ -364,40 +355,9 @@ public class IntegrityManager extends BukkitRunnable {
         int matMax = item.getType().getMaxDurability();
         if (matMax > 0) return matMax;
 
-        // 3) NMS fallback via cached CraftItemStack.asNMSCopy → getMaxDamage()
-        //    This is the most reliable way in 1.21.4+ because it reads the
-        //    minecraft:max_damage data component directly from the NMS item.
-        if (!nmsAvailable) return 0;
-        return getMaxDurabilityNms(item);
-    }
-
-    /**
-     * NMS fallback: uses cached reflection methods to call
-     * {@code CraftItemStack.asNMSCopy(item).getMaxDamage()}.
-     * Methods are looked up once on first call and cached statically.
-     */
-    private static int getMaxDurabilityNms(ItemStack item) {
-        try {
-            if (!nmsInitTried) {
-                nmsInitTried = true;
-                Class<?> craftClass = Class.forName(
-                        "org.bukkit.craftbukkit.inventory.CraftItemStack");
-                nmsAsCopyMethod = craftClass.getMethod("asNMSCopy", ItemStack.class);
-                // NMS stack type is the return type of asNMSCopy
-                Class<?> nmsStackClass = nmsAsCopyMethod.getReturnType();
-                nmsGetMaxDamageMethod = nmsStackClass.getMethod("getMaxDamage");
-            }
-            if (nmsAsCopyMethod == null || nmsGetMaxDamageMethod == null) {
-                nmsAvailable = false;
-                return 0;
-            }
-            Object nmsStack = nmsAsCopyMethod.invoke(null, item);
-            int nmsMax = (int) nmsGetMaxDamageMethod.invoke(nmsStack);
-            return Math.max(0, nmsMax);
-        } catch (Exception e) {
-            nmsAvailable = false;
-            return 0;
-        }
+        // 3) No further fallback available in Paper 26.2+.
+        //    The component API (Damageable.hasMaxDamage()) covers all items with durability.
+        return 0;
     }
 
     // =========================
@@ -935,23 +895,12 @@ public class IntegrityManager extends BukkitRunnable {
         // Получаем имя ДО setAmount(0), иначе item станет AIR
         String itemName = getItemName(item);
 
-        if (owner == null) {
-            // Fallback: ищем владельца по инвентарям
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                for (ItemStack invItem : player.getInventory().getContents()) {
-                    if (invItem == item) {
-                        owner = player;
-                        break;
-                    }
-                }
-                if (owner != null) break;
-            }
-        }
-
         // Устанавливаем количество 0 (предмет исчезает) — только после получения имени
         item.setAmount(0);
 
         if (owner == null) return;
+        // Примечание: owner теперь всегда должен передаваться из контекста (decreaseIntegrity, etc.)
+        // ВАЖНО: вызывающий код всегда передаёт Player — удаляем дорогой O(n²) fallback
 
         // Воспроизводим звук поломки
         if (breakPlaySound) {

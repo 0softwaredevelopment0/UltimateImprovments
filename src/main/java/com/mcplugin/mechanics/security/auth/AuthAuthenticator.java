@@ -556,7 +556,9 @@ public class AuthAuthenticator {
             if (player.getAddress() != null && player.getAddress().getAddress() != null) {
                 return player.getAddress().getAddress().getHostAddress();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Auth] Failed to get player IP: " + e.getMessage());
+        }
         return "";
     }
 

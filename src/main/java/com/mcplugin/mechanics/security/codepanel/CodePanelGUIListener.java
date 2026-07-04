@@ -180,7 +180,9 @@ public class CodePanelGUIListener implements Listener {
             if (name == null) return;
             Sound sound = SoundUtil.getSound(name);
             if (sound != null) player.playSound(player.getLocation(), sound, 1f, 1f);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[CodePanel] Sound error: " + e.getMessage());
+        }
     }
 
     // =========================

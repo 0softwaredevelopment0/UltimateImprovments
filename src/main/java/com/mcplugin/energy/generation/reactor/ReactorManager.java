@@ -7,6 +7,7 @@ import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
 import com.mcplugin.mechanics.environment.radiation.RadiationManager;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import org.bukkit.*;
 import org.bukkit.block.Barrel;
@@ -236,11 +237,14 @@ public class ReactorManager {
                     progress.awardCriteria("1");
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Reactor] grantAdvancement error: " + e.getMessage());
+        }
     }
 
     private void grantAdvancementAll(String key) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
+        for (Player player : online) {
             if (reactorLocation != null
                     && player.getWorld().equals(reactorLocation.getWorld())
                     && player.getLocation().distanceSquared(reactorLocation) <= 225) {
@@ -461,7 +465,8 @@ public class ReactorManager {
         if (coreTemp >= 1000) {
             int radiationAmount = Math.min(coreTemp / 500, 10);
             int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
-            for (Player player : Bukkit.getOnlinePlayers()) {
+            Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
+            for (Player player : online) {
                 if (!player.getWorld().equals(base.getWorld())) continue;
                 Location ploc = player.getLocation();
                 int px = ploc.getBlockX(), py = ploc.getBlockY(), pz = ploc.getBlockZ();
@@ -535,13 +540,13 @@ public class ReactorManager {
                 energyRemainder -= toGenerate;
                 energyGenerated += toGenerate;
 
+                // Optimized: iterate only nodes in the same world, not ALL worlds
+                java.util.Collection<CableNode> worldNodes = CableNetwork.getWorldNodes(base.getWorld().getUID().toString());
                 java.util.List<CableNode> nearbyCables = new java.util.ArrayList<>();
-                for (CableNode node : CableNetwork.getAllNodes()) {
-                    Location nLoc = node.getLocation();
-                    if (!nLoc.getWorld().equals(base.getWorld())) continue;
-                    int dx = Math.abs(nLoc.getBlockX() - base.getBlockX());
-                    int dy = Math.abs(nLoc.getBlockY() - base.getBlockY());
-                    int dz = Math.abs(nLoc.getBlockZ() - base.getBlockZ());
+                for (CableNode node : worldNodes) {
+                    int dx = Math.abs(node.getBlockX() - base.getBlockX());
+                    int dy = Math.abs(node.getBlockY() - base.getBlockY());
+                    int dz = Math.abs(node.getBlockZ() - base.getBlockZ());
                     if (dx <= 3 && dy <= 5 && dz <= 3) {
                         nearbyCables.add(node);
                     }
@@ -918,7 +923,8 @@ public class ReactorManager {
         // 🏆 Достижение: one_time_heater — игрок внутри реактора во время взрыва
         if (reactorLocation != null) {
             int bx = reactorLocation.getBlockX(), by = reactorLocation.getBlockY(), bz = reactorLocation.getBlockZ();
-            for (Player player : Bukkit.getOnlinePlayers()) {
+            Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
+            for (Player player : online) {
                 if (!player.getWorld().equals(base.getWorld())) continue;
                 if (advOneTimeHeaterGranted.contains(player.getUniqueId())) continue;
                 Location ploc = player.getLocation();
@@ -1048,7 +1054,8 @@ public class ReactorManager {
     // =========================
     private void broadcast(String message) {
         String prefix = "§4Р.Т.С §8» §f";
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
+        for (Player player : online) {
             if (reactorLocation != null
                     && player.getWorld().equals(reactorLocation.getWorld())
                     && player.getLocation().distanceSquared(reactorLocation) <= 225) {

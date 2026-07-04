@@ -3,6 +3,7 @@ package com.mcplugin.infrastructure.belowname;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -94,7 +95,9 @@ public class BelowNameManager extends BukkitRunnable implements Listener {
                     team.unregister();
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[BelowName] cleanup error: " + e.getMessage());
+        }
     }
 
     // ════════════════════════════════════════
@@ -149,7 +152,7 @@ public class BelowNameManager extends BukkitRunnable implements Listener {
                 }
 
             } catch (Exception e) {
-                // Silently skip on error
+                ConsoleLogger.warn("[BelowName] Error updating team: " + e.getMessage());
             }
         }
     }

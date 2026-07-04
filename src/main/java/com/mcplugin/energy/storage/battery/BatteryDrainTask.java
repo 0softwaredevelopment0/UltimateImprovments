@@ -1,52 +1,40 @@
 package com.mcplugin.energy.storage.battery;
 
 import com.mcplugin.infrastructure.core.Main;
-
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
-
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
-
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
-
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 
-/**
- * Battery drain/charge task.
- * Cables no longer store energy, so batteries only interact with other batteries.
- *
- * DISCHARGE: when redstone-powered, battery distributes energy to other batteries
- *            in the network through BFS pathfinding.
- *
- * Note: Charging is handled by GeneratorTask (generator → battery through cables).
- */
 public class BatteryDrainTask extends BukkitRunnable {
 
     @Override
     public void run() {
-
         FileConfiguration cfg = Main.getInstance().getConfig();
-
-        if (!cfg.getBoolean("energy.battery_drain.enabled", true)) {
-            return;
-        }
+        if (!cfg.getBoolean("energy.battery_drain.enabled", true)) return;
 
         int maxBatteryEnergy = cfg.getInt("energy.battery.max_energy", 100000);
         int dischargeAmount = cfg.getInt("energy.battery.discharge_per_tick", 10);
 
         boolean smoothEnabled = cfg.getBoolean("energy.battery.smooth_charge.enabled", true);
         double dischargeMultiplier = cfg.getDouble("energy.battery.smooth_charge.discharge_multiplier", 0.5);
-
         boolean log = cfg.getBoolean("energy.battery_drain.log", false);
 
-        Set<CableNode> nodes = new HashSet<>(CableNetwork.getAllNodes());
+        // Используем прямой итератор без создания копии
+        List<CableNode> batteries = new ArrayList<>();
+        CableNetwork.forEachNode(node -> {
+            if (node != null && node.getType() == NodeType.BATTERY) {
+                batteries.add(node);
+            }
+        });
 
-        for (CableNode battery : nodes) {
+        for (CableNode battery : batteries) {
             if (battery == null || battery.getType() != NodeType.BATTERY) continue;
 
             Location batteryLoc = LocationUtil.normalize(battery.getLocation());
@@ -54,26 +42,21 @@ public class BatteryDrainTask extends BukkitRunnable {
 
             double fillRatio = (double) battery.getEnergy() / Math.max(maxBatteryEnergy, 1);
 
-            // Режим: отдаём энергию только если DISCHARGE или CHARGE_DISCHARGE
             BatteryManager.BatteryCluster cluster = BatteryManager.getCluster(batteryLoc);
             boolean canDischarge = (cluster != null) ? cluster.canDischarge() : (battery.getEnergy() > 0);
 
-            // =========================
-            // DISCHARGE — battery pushes energy to other batteries in network
-            // =========================
             if (canDischarge && battery.getEnergy() > 0) {
-
                 int dynamicDischarge = dischargeAmount;
                 if (smoothEnabled) {
                     double factor = dischargeMultiplier + (1.0 - dischargeMultiplier) * fillRatio;
                     dynamicDischarge = Math.max(1, (int) (dischargeAmount * factor));
                 }
 
-                // BFS to find other batteries
-                Set<Location> visited = new HashSet<>();
+                // BFS to find other batteries - using connection keys for efficiency
+                Set<Long> visited = new HashSet<>();
                 Queue<CableNode> queue = new LinkedList<>();
                 queue.add(battery);
-                visited.add(batteryLoc);
+                visited.add(battery.getKey());
 
                 int remaining = dynamicDischarge;
 
@@ -81,12 +64,10 @@ public class BatteryDrainTask extends BukkitRunnable {
                     CableNode node = queue.poll();
                     if (node == null) continue;
 
-                    // Mark cables as flowing
                     if (node.getType() == NodeType.CABLE) {
-                        CableNetwork.markFlowing(node.getLocation());
+                        CableNetwork.markFlowingKey(node.getWorld().getUID().toString(), node.getKey());
                     }
 
-                    // Push energy to other batteries
                     if (node != battery && node.getType() == NodeType.BATTERY) {
                         int space = maxBatteryEnergy - node.getEnergy();
                         if (space > 0) {
@@ -107,11 +88,11 @@ public class BatteryDrainTask extends BukkitRunnable {
 
                     if (remaining <= 0) break;
 
-                    for (Location conn : node.getConnections()) {
-                        if (visited.contains(conn)) continue;
-                        CableNode next = CableNetwork.getNode(conn);
+                    for (long connKey : node.getConnectionKeys()) {
+                        if (visited.contains(connKey)) continue;
+                        CableNode next = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), connKey);
                         if (next != null) {
-                            visited.add(conn);
+                            visited.add(connKey);
                             queue.add(next);
                         }
                     }

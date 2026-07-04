@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import com.mcplugin.infrastructure.config.MessagesManager;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -241,7 +242,8 @@ public class FishingListener extends BukkitRunnable implements Listener {
                 if (dx <= WATER_CHECK_RADIUS && dy <= WATER_CHECK_RADIUS && dz <= WATER_CHECK_RADIUS) {
                     it.remove();
                 }
-            } catch (NumberFormatException ignored) {
+            } catch (NumberFormatException e) {
+                ConsoleLogger.warn("[Fishing] Invalid cache key format: " + e.getMessage());
                 it.remove();
             }
         }
@@ -285,15 +287,21 @@ public class FishingListener extends BukkitRunnable implements Listener {
             try {
                 timeUntilLuredField = nmsClass.getDeclaredField("timeUntilLured");
                 timeUntilLuredField.setAccessible(true);
-            } catch (NoSuchFieldException ignored) {}
+            } catch (NoSuchFieldException e) {
+                ConsoleLogger.warn("[Fishing] No timeUntilLured field: " + e.getMessage());
+            }
 
             try {
                 timeUntilHookedField = nmsClass.getDeclaredField("timeUntilHooked");
                 timeUntilHookedField.setAccessible(true);
-            } catch (NoSuchFieldException ignored) {}
+            } catch (NoSuchFieldException e) {
+                ConsoleLogger.warn("[Fishing] No timeUntilHooked field: " + e.getMessage());
+            }
 
             reflectionReady = (timeUntilLuredField != null || timeUntilHookedField != null);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Fishing] initReflection error: " + e.getMessage());
+        }
     }
 
     private void forceInstantBiteNMS(FishHook hook) {
@@ -310,6 +318,8 @@ public class FishingListener extends BukkitRunnable implements Listener {
             if (timeUntilHookedField != null) {
                 timeUntilHookedField.setInt(nmsHook, 0);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Fishing] forceInstantBiteNMS error: " + e.getMessage());
+        }
     }
 }

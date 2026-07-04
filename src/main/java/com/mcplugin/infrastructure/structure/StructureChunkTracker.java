@@ -107,15 +107,21 @@ public class StructureChunkTracker {
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             String fk = entry.getKey();  // "worldUid:x,y,z"
             String[] parts = fk.split(":");
+            if (parts.length < 2) continue; // защита от некорректного формата
             String worldUid = parts[0];
             String[] coords = parts[1].split(",");
-            int x = Integer.parseInt(coords[0]);
-            int z = Integer.parseInt(coords[2]);
+            if (coords.length < 3) continue; // защита от некорректного формата
+            try {
+                int x = Integer.parseInt(coords[0]);
+                int z = Integer.parseInt(coords[2]);
 
-            int cx = x >> 4;
-            int cz = z >> 4;
+                int cx = x >> 4;
+                int cz = z >> 4;
 
-            chunksByWorld.computeIfAbsent(worldUid, k -> new HashSet<>()).add(new ChunkPos(cx, cz));
+                chunksByWorld.computeIfAbsent(worldUid, k -> new HashSet<>()).add(new ChunkPos(cx, cz));
+            } catch (NumberFormatException ignored) {
+                // Некорректные координаты — пропускаем
+            }
         }
 
         save();

@@ -150,19 +150,15 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // REMOVE CONNECTIONS FIRST
+        // REMOVE CONNECTIONS FIRST (via efficient long keys)
         // =========================
-        Set<Location> connections = Set.copyOf(node.getConnections());
+        Set<Long> connectionKeys = Set.copyOf(node.getConnectionKeys());
+        String worldUid = loc.getWorld().getUID().toString();
 
-        for (Location conn : connections) {
-
-            CableNode neighbor = CableNetwork.getNode(conn);
-
+        for (long connKey : connectionKeys) {
+            CableNode neighbor = CableNetwork.getNodeByKey(worldUid, connKey);
             if (neighbor != null) {
-
-                neighbor.disconnect(loc);
-
-                CableNetwork.saveNode(neighbor);
+                neighbor.disconnectKey(LocationUtil.toKey(loc));
             }
         }
 

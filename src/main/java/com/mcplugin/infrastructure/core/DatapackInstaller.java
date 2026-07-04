@@ -1,13 +1,14 @@
 package com.mcplugin.infrastructure.core;
 
-import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.infrastructure.util.FileLogger;
 
 import org.bukkit.Bukkit;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.Properties;
 import java.util.zip.ZipFile;
 
 public class DatapackInstaller {
@@ -27,25 +28,25 @@ public class DatapackInstaller {
     // =========================
     public void install(Main plugin) throws Exception {
         // В Paper 1.21.4+ (Minecraft 1.21.4+) миры хранятся в новой структуре:
-        //   <worlddir>/<worldname>/dimensions/<namespace>/<dimension>/
-        // Bukkit.getWorlds().get(0).getWorldFolder() возвращает путь к измерению
-        // (например, world/dimensions/minecraft/overworld/), НО датапаки должны
-        // лежать в корне мира: <world>/datapacks/, а НЕ в подпапке измерения.
+        //   <worlddir>/<level-name>/dimensions/<namespace>/<dimension>/
+        // Датапаки должны лежать в корне мира: <level-name>/datapacks/.
         //
-        // Используем Bukkit.getWorldContainer() + имя мира — это гарантированно
-        // даёт корневую папку мира независимо от структуры измерений,
-        // уважает настройку world-container в bukkit.yml и не требует
-        // навигации по подпапкам dimensions/.
+        // Во время load: STARTUP Bukkit.getWorlds() пуст (миры ещё не загружены),
+        // поэтому читаем level-name напрямую из server.properties.
+        // Bukkit.getWorldContainer() доступен всегда — он из bukkit.yml.
 
-        if (Bukkit.getWorlds().isEmpty()) {
-            throw new IllegalStateException("No worlds loaded yet — cannot install datapack");
+        String levelName = "world"; // значение по умолчанию
+        File serverDir = new File("").getAbsoluteFile();
+        File serverPropsFile = new File(serverDir, "server.properties");
+        if (serverPropsFile.exists()) {
+            Properties props = new Properties();
+            try (FileInputStream fis = new FileInputStream(serverPropsFile)) {
+                props.load(fis);
+                levelName = props.getProperty("level-name", "world");
+            }
         }
 
-        File worldRoot = new File(
-                Bukkit.getWorldContainer(),
-                Bukkit.getWorlds().get(0).getName()
-        );
-
+        File worldRoot = new File(Bukkit.getWorldContainer(), levelName);
         File datapacksFolder = new File(worldRoot, "datapacks");
 
         FileLogger.ensureDirectory(datapacksFolder, "Datapack");

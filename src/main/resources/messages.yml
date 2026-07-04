@@ -488,6 +488,52 @@ vote:
 
   forced_message: ""
   forced_message_title: "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>"
+
+rtp:
+  player_only: "<red>❌ Only players can use this command!</red>"
+  disabled: "<red>❌ Random teleport is disabled on this server.</red>"
+  no_permission_other: "<red>❌ You don't have permission to teleport other players!</red>"
+  player_not_found: "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>"
+  world_not_allowed: "<red>❌ Random teleport is not allowed in this world.</red>"
+  cooldown: "<red>❌ Please wait </red><yellow>{seconds}</yellow><red> seconds before using RTP again.</red>"
+  no_location: "<red>❌ Could not find a safe location to teleport. Try again.</red>"
+  teleport_failed: "<red>❌ Teleport failed! Try again.</red>"
+  success: "<green>✔</green> <white>Random teleport complete!</white>"
+  success_coords: "<green>✔</green> <white>You have been randomly teleported to:</white> <yellow>{coords}</yellow>"
+  teleported_other: "<gray>Teleported </gray><yellow>{player}</yellow> <gray>→</gray> <white>{coords}</white>"
+  usage: "<red>❌ Usage: </red><white>/mp rtp [player]</white>"
+
+near:
+  player_only: "<red>❌ Only players can use this command!</red>"
+  disabled: "<red>❌ This command is disabled on this server.</red>"
+  invalid_radius: "<red>❌ Invalid radius! Usage: </red><white>/mp near [radius]</white>"
+  no_players: "<gray>No players found within </gray><yellow>{radius}</yellow><gray> blocks.</gray>"
+  header: "<gray>Players within </gray><yellow>{radius}</yellow><gray> blocks (</gray><yellow>{count}</yellow><gray>):</gray>"
+  entry: "  <gray>{num}.</gray> <white>{player}</white> <gray>—</gray> <yellow>{distance}</yellow>"
+  block: "1 block"
+  blocks: "{distance} blocks"
+
+meteor:
+  usage: "<red>❌ Usage: </red><white>/mp meteor spawn [count]</white>"
+  unknown_sub: "<red>❌ Unknown meteor subcommand: </red><white>{sub}</white>"
+  no_permission: "<red>❌ You don't have permission to spawn meteors!</red>"
+  invalid_count: "<red>❌ Invalid count!</red>"
+  module_disabled: "<red>❌ Meteor module is disabled in config.yml!</red>"
+  module_not_init: "<red>❌ Meteor module is not initialized!</red>"
+  spawned: "<green>✔</green> <white>Spawned </white><yellow>{count}</yellow><white> meteor(s)!</white>"
+
+economy:
+  messages:
+    received: "<green>+</green> <yellow>{amount}</yellow> <white>received!</white>"
+    gave: "<green>✔</green> <white>Gave </white><yellow>{amount}</yellow> <white>to </white><yellow>{player}</yellow>"
+    removed: "<green>✔</green> <white>Removed </white><yellow>{amount}</yellow> <white>from </white><yellow>{player}</yellow>"
+    set: "<green>✔</green> <white>Set </white><yellow>{player}</yellow><white>'s </white><gold>{currency}</gold> <white>balance to </white><yellow>{amount}</yellow>"
+    insufficient_funds: "<red>❌ </red><yellow>{player}</yellow> <red>only has </red><gold>{balance}</gold>"
+    no_balances: "<gray>No balances found.</gray>"
+    balance_header: "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+    balance_title: "  <gold>💰</gold> <yellow>{player}</yellow> <gray>— Balances</gray>"
+    balance_separator: "  <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+    balance_entry: "  <gray>•</gray> <white>{currency}</white><gray>: </gray><gold>{amount}</gold>"
   forced_message_body: "<gray>Player </gray><white>{sender}</white><gray> is force-suiciding you.</gray>"
   forced_message_nocancel: "<red>Cannot be cancelled!</red>"
 

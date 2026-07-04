@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.PlayerSettingsDB;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -177,7 +178,9 @@ public class BossBarManager extends BukkitRunnable {
                 bar.color(color);
                 bar.overlay(style);
                 bar.progress((float) progress);
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                ConsoleLogger.warn("[BossBar] Tick error for " + player.getName() + ": " + e.getMessage());
+            }
         }
     }
 

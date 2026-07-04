@@ -48,7 +48,9 @@ public class AuthManager {
         boolean enabled = true;
         try {
             enabled = Main.getInstance().getConfig().getBoolean("auth.enabled", true);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Auth] Config check error: " + e.getMessage());
+        }
 
         if (!enabled) {
             ConsoleLogger.info("[Auth] System is disabled in config.yml (auth.enabled: false).");

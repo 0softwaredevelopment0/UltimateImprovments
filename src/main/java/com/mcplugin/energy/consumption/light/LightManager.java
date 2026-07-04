@@ -22,6 +22,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 💡 Мультиблочная лампочка (REDSTONE_LAMP)
@@ -33,8 +34,8 @@ import java.util.*;
 public class LightManager {
 
     private static LightManager instance;
-    private static final Map<Long, LightCluster> locationToCluster = new HashMap<>();
-    private static final Map<Integer, LightCluster> clustersById = new HashMap<>();
+    private static final Map<Long, LightCluster> locationToCluster = new ConcurrentHashMap<>();
+    private static final Map<Integer, LightCluster> clustersById = new ConcurrentHashMap<>();
     private static int nextId = 1;
 
     // ════════════════════════════════════════
@@ -141,8 +142,8 @@ public class LightManager {
                 synchronized (lightingQueue) { task = lightingQueue.pollFirst(); }
                 if (task != null) {
                     try { task.run(); } catch (Exception e) {
-                        ConsoleLogger.warn("[Light] Lighting task error: " + e.getMessage());
-                    }
+                    ConsoleLogger.warn("[Light] Lighting task error: " + e.getMessage());
+                }
                 }
             }
         } finally { queueProcessing = false; }
@@ -428,10 +429,11 @@ public class LightManager {
     private static int pullEnergyFromNetwork(CableNode start, int amount) {
         if (start == null || amount <= 0) return 0;
 
-        Set<Location> visited = new HashSet<>();
+        String worldUid = start.getWorld().getUID().toString();
+        Set<Long> visited = new HashSet<>();
         Queue<CableNode> queue = new LinkedList<>();
         queue.add(start);
-        visited.add(start.getLocation());
+        visited.add(start.getKey());
 
         int remaining = amount;
 
@@ -452,11 +454,11 @@ public class LightManager {
 
             if (remaining <= 0) break;
 
-            for (Location conn : node.getConnections()) {
-                if (visited.contains(conn)) continue;
-                CableNode next = CableNetwork.getNode(conn);
+            for (long connKey : node.getConnectionKeys()) {
+                if (visited.contains(connKey)) continue;
+                CableNode next = CableNetwork.getNodeByKey(worldUid, connKey);
                 if (next == null) continue;
-                visited.add(conn);
+                visited.add(connKey);
                 queue.add(next);
             }
         }
@@ -551,7 +553,9 @@ public class LightManager {
                     block.setBlockData(lightable, false);
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Light] setBlockLitState error: " + e.getMessage());
+        }
     }
 
     // ════════════════════════════════════════

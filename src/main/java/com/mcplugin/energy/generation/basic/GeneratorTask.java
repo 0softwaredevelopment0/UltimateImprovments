@@ -218,10 +218,10 @@ public class GeneratorTask extends BukkitRunnable {
         CableNode start = CableNetwork.getNode(startCable);
         if (start == null || amount <= 0) return;
 
-        Set<Location> visited = new HashSet<>();
+        Set<Long> visited = new HashSet<>();
         Queue<CableNode> queue = new LinkedList<>();
         queue.add(start);
-        visited.add(start.getLocation());
+        visited.add(start.getKey());
 
         while (!queue.isEmpty()) {
             CableNode node = queue.poll();
@@ -229,7 +229,7 @@ public class GeneratorTask extends BukkitRunnable {
 
             // Mark cable as flowing (energy is passing through)
             if (node.getType() == NodeType.CABLE) {
-                CableNetwork.markFlowing(node.getLocation());
+                CableNetwork.markFlowingKey(node.getWorld().getUID().toString(), node.getKey());
             }
 
             // Found a battery — add energy here (только если режим позволяет зарядку)
@@ -243,11 +243,11 @@ public class GeneratorTask extends BukkitRunnable {
                 continue;
             }
 
-            for (Location conn : node.getConnections()) {
-                if (visited.contains(conn)) continue;
-                CableNode next = CableNetwork.getNode(conn);
+            for (long connKey : node.getConnectionKeys()) {
+                if (visited.contains(connKey)) continue;
+                CableNode next = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), connKey);
                 if (next == null) continue;
-                visited.add(conn);
+                visited.add(connKey);
                 queue.add(next);
             }
         }
