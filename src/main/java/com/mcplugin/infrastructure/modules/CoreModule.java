@@ -11,6 +11,7 @@ import com.mcplugin.infrastructure.listeners.PluginHideListener;
 import com.mcplugin.infrastructure.listeners.ServerBrandListener;
 import com.mcplugin.infrastructure.listeners.ShulkerBulletListener;
 import com.mcplugin.mechanics.features.items.AutoCraftManager;
+import com.mcplugin.mechanics.features.movement.BlockFrictionListener;
 import com.mcplugin.mechanics.security.codepanel.CodePanelGUIListener;
 import com.mcplugin.combat.weapons.plasma.GunListener;
 import com.mcplugin.combat.weapons.shoker.ShokerListener;
@@ -50,6 +51,9 @@ public class CoreModule extends PluginModule {
         pm.registerEvents(new ShulkerBulletListener(), main);
         pm.registerEvents(FishingListener.getInstance(), main);
         pm.registerEvents(new CodePanelGUIListener(), main);
+
+        BlockFrictionListener.init();
+        pm.registerEvents(new BlockFrictionListener(), main);
 
         AutoCraftManager.init(main);
     }
