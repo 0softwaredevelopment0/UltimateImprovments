@@ -1,13 +1,11 @@
 package com.mcplugin.mechanics.particle;
 
 import com.mcplugin.infrastructure.util.ConsoleLogger;
-import com.mcplugin.infrastructure.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 
@@ -108,7 +106,7 @@ public class ParticleMovementTask extends BukkitRunnable {
             // Try to consume energy and accelerate
             boolean success = ParticleAcceleratorManager.consumeEngineEnergy(blockLoc);
             if (success && data.speed < ParticleAcceleratorManager.MAX_SPEED) {
-                data.speed = Math.min(ParticleAcceleratorManager.MAX_SPEED, data.speed + 0.1);
+                data.speed = Math.min(ParticleAcceleratorManager.MAX_SPEED, data.speed + ParticleAcceleratorManager.SPEED_INCREMENT);
                 // Visual: electric spark
                 Location center = blockLoc.clone().add(0.5, 0.5, 0.5);
                 blockLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, center, 5, 0.2, 0.2, 0.2, 0);

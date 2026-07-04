@@ -33,6 +33,9 @@ public class Keys {
     // Netherite Upgrade
     public static NamespacedKey NETHERITE_UPGRADE;
 
+    // Totem Charge
+    public static NamespacedKey TOTEM_CHARGE;
+
     // Integrity System
     public static NamespacedKey INTEGRITY_TAG;
     public static NamespacedKey INTEGRITY_MAX;
@@ -59,6 +62,8 @@ public class Keys {
         NETHERITE_UPGRADE = new NamespacedKey(plugin, "netherite_upgrade");
         AUTH_GUI = new NamespacedKey(plugin, "auth_gui");
         CHGDIM_GUI = new NamespacedKey(plugin, "chgdim_gui");
+
+        TOTEM_CHARGE = new NamespacedKey(plugin, "totem_charge");
 
         INTEGRITY_TAG = new NamespacedKey(plugin, "integrity_tag");
         INTEGRITY_MAX = new NamespacedKey(plugin, "integrity_max");

@@ -47,5 +47,6 @@ public class ParticleModule extends PluginModule {
             movementTask.cancel();
             movementTask = null;
         }
+        ParticleAcceleratorManager.shutdown();
     }
 }

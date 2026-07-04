@@ -54,7 +54,7 @@ public class ParticleAcceleratorManager implements Listener {
     private static final int ENGINE_MAX_ENERGY = 500;
     private static final int ENGINE_COST_PER_USE = 50;
     private static final int ENGINE_CHARGE_RATE = 10;
-    private static final double SPEED_INCREMENT = 0.1;
+    public static final double SPEED_INCREMENT = 0.1;
     public static final double MAX_SPEED = 5.0;
     public static final double INITIAL_SPEED = 0.1;
 
@@ -64,7 +64,6 @@ public class ParticleAcceleratorManager implements Listener {
     // Active particles
     private static final Map<UUID, ParticleData> activeParticles = new ConcurrentHashMap<>();
 
-    private static final Random RANDOM = new Random();
     private static boolean enabled = true;
 
     // =========================
@@ -153,7 +152,9 @@ public class ParticleAcceleratorManager implements Listener {
     }
 
     public static int getEngineEnergy(Location loc) {
-        return engineEnergy.getOrDefault(LocationUtil.normalize(loc), 0);
+        Location norm = LocationUtil.normalize(loc);
+        if (norm == null) return 0;
+        return engineEnergy.getOrDefault(norm, 0);
     }
 
     // =========================
@@ -166,20 +167,25 @@ public class ParticleAcceleratorManager implements Listener {
 
         // Find path from injector
         List<Location> path = findPath(norm);
-        if (path.isEmpty()) {
-            return null;
-        }
+        if (path.isEmpty()) return null;
 
-        World world = norm.getWorld();
-        if (world == null) return null;
+        return createParticleWithPath(norm, item, path);
+    }
+
+    // =========================
+    // CREATE PARTICLE WITH PRE-COMPUTED PATH
+    // =========================
+    public static ParticleData createParticleWithPath(Location normLoc, ItemStack item, List<Location> path) {
+        World world = normLoc.getWorld();
+        if (world == null || path.isEmpty()) return null;
 
         UUID id = UUID.randomUUID();
         Material sourceMat = item.getType();
 
         // Spawn Marker entity at injector center
-        Location spawnLoc = norm.clone().add(0.5, 0.5, 0.5);
+        Location spawnLoc = normLoc.clone().add(0.5, 0.5, 0.5);
         Marker marker = world.spawn(spawnLoc, Marker.class);
-        marker.setPersistent(false); // particles don't need to persist
+        marker.setPersistent(false);
 
         PersistentDataContainer pdc = marker.getPersistentDataContainer();
         pdc.set(PARTICLE_ID_KEY, PersistentDataType.STRING, id.toString());
@@ -189,7 +195,7 @@ public class ParticleAcceleratorManager implements Listener {
         activeParticles.put(id, data);
 
         ConsoleLogger.info("[ParticleAccelerator] Created particle " + id.toString().substring(0, 8)
-                + " from " + sourceMat.name() + " at " + norm.getBlockX() + " " + norm.getBlockY() + " " + norm.getBlockZ());
+                + " from " + sourceMat.name() + " at " + normLoc.getBlockX() + " " + normLoc.getBlockY() + " " + normLoc.getBlockZ());
 
         return data;
     }
@@ -218,6 +224,17 @@ public class ParticleAcceleratorManager implements Listener {
         return path;
     }
 
+    /**
+     * Check if two paths share at least one block location.
+     */
+    private static boolean pathsOverlap(List<Location> pathA, List<Location> pathB) {
+        Set<Location> setA = new HashSet<>(pathA);
+        for (Location loc : pathB) {
+            if (setA.contains(loc)) return true;
+        }
+        return false;
+    }
+
     private static Location findNextAcceleratorBlock(Location from, Location exclude) {
         if (from == null || from.getWorld() == null) return null;
         int[][] dirs = {{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}};
@@ -240,6 +257,7 @@ public class ParticleAcceleratorManager implements Listener {
     public static void chargeEngines() {
         for (Map.Entry<Location, Integer> entry : engineEnergy.entrySet()) {
             Location loc = entry.getKey();
+            if (loc.getWorld() == null) continue; // skip unloaded worlds
             int current = entry.getValue();
             if (current >= ENGINE_MAX_ENERGY) continue;
 
@@ -378,17 +396,24 @@ public class ParticleAcceleratorManager implements Listener {
         e.setCancelled(true);
         Location loc = clicked.getLocation();
 
-        // Don't inject if there's already a particle in the system
+        // Compute path first (before checking if already running)
         Location normLoc = LocationUtil.normalize(loc);
+        List<Location> newPath = findPath(normLoc);
+        if (newPath.isEmpty()) {
+            player.sendMessage("§7[§c✗§7] §cNo accelerator path found! Place rings/engines/sensors in a line.");
+            return;
+        }
+
+        // Don't inject if there's already a particle in this accelerator
         boolean alreadyRunning = activeParticles.values().stream()
-                .anyMatch(p -> !p.dead && p.path.contains(normLoc));
+                .anyMatch(p -> !p.dead && pathsOverlap(p.path, newPath));
         if (alreadyRunning) {
             player.sendMessage("§7[§b⚠§7] §7A particle is already running in this accelerator!");
             return;
         }
 
-        // Create the particle
-        ParticleData data = createParticle(loc, hand);
+        // Create the particle with pre-computed path
+        ParticleData data = createParticleWithPath(normLoc, hand, newPath);
         if (data == null) {
             player.sendMessage("§7[§c✗§7] §cNo accelerator path found! Place rings/engines/sensors in a line.");
             return;
@@ -408,6 +433,21 @@ public class ParticleAcceleratorManager implements Listener {
         player.sendMessage("§7[§a✓§7] §f" + formatMaterialName(data.sourceMaterial.name())
                 + " §7particle injected! Speed: §b" + String.format("%.1f", data.speed)
                 + " §7(" + String.format("%.3f", data.speed / MAX_SPEED * 100.0) + "% light speed)");
+    }
+
+    // =========================
+    // SHUTDOWN — clean up on disable
+    // =========================
+    public static void shutdown() {
+        // Remove all particle Marker entities
+        for (ParticleData p : activeParticles.values()) {
+            if (p.entity != null && !p.entity.isDead()) {
+                p.entity.remove();
+            }
+        }
+        activeParticles.clear();
+        engineEnergy.clear();
+        ConsoleLogger.info("[ParticleAccelerator] Shutdown complete.");
     }
 
     // =========================
