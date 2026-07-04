@@ -47,6 +47,7 @@ import com.mcplugin.infrastructure.commands.AskCordsManager;
 import com.mcplugin.mechanics.security.codepanel.CodePanelDatabase;
 import com.mcplugin.infrastructure.modules.ModuleManager;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
+import java.io.File;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -523,6 +524,20 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("invsee") || args[0].equalsIgnoreCase("endersee"))) {
             for (Player p : Bukkit.getOnlinePlayers()) completions.add(p.getName());
+        } else if (args.length >= 2 && args[0].equalsIgnoreCase("swapjar")) {
+            if (args.length == 2) {
+                // Suggest confirm/cancel when typing c
+                completions.add("confirm");
+                completions.add("cancel");
+            }
+            // Tab-complete .jar files from plugins/ directory (relative path)
+            String pluginsDir = Main.getInstance().getDataFolder().getParentFile().getAbsolutePath();
+            File[] jars = new File(pluginsDir).listFiles((dir, name) -> name.endsWith(".jar"));
+            if (jars != null) {
+                for (File jar : jars) {
+                    completions.add("plugins/" + jar.getName());
+                }
+            }
         } else if (args[0].equalsIgnoreCase("money")) {
             completions.addAll(EconomySubcommand.tabComplete(args));
         }
