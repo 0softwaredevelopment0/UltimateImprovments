@@ -85,7 +85,8 @@ public class TotemChargeListener implements Listener {
     // =========================
     /**
      * Перехватывает фатальный урон ДО того, как игрок умрёт.
-     * Если у игрока есть тотем с зарядом > 0 — отменяем урон и активируем тотем.
+     * Если у игрока есть тотем (любой — ванильный или с зарядом) —
+     * отменяем урон и активируем тотем.
      * Это предотвращает лимбо, взрывы эндер-сундуков и другой фатальный урон.
      */
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -103,51 +104,45 @@ public class TotemChargeListener implements Listener {
         // Урон не фатальный — пропускаем
         if (health - finalDamage > 0) return;
 
-        // Ищем тотем в инвентаре (offhand → mainhand → остальные слоты)
-        ItemStack totem = findChargedTotem(player);
+        // Ищем ЛЮБОЙ тотем в инвентаре (offhand → mainhand → остальные слоты)
+        // Ванильный тотем (без PDC) — тоже подходит, будет потреблён
+        ItemStack totem = findAnyTotem(player);
         if (totem == null) return;
 
         // Отменяем урон — смерти не будет
         event.setCancelled(true);
 
-        // Активируем тотем (списываем заряд, эффекты)
+        // Активируем тотем (списываем заряд ИЛИ потребляем предмет, эффекты)
         activateTotem(player, totem);
     }
 
     /**
-     * Ищет тотем с зарядом > 0 в инвентаре игрока.
+     * Ищет ЛЮБОЙ тотем в инвентаре игрока.
      * Приоритет: offhand → mainhand → остальные слоты.
+     * Возвращает первый найденный тотем (ванильный или заряженный).
      */
-    private static ItemStack findChargedTotem(Player player) {
+    private static ItemStack findAnyTotem(Player player) {
         // Сначала offhand
         ItemStack offhand = player.getInventory().getItemInOffHand();
-        if (isChargedTotem(offhand)) return offhand;
+        if (isTotem(offhand)) return offhand;
 
         // Потом mainhand
         ItemStack mainhand = player.getInventory().getItemInMainHand();
-        if (isChargedTotem(mainhand)) return mainhand;
+        if (isTotem(mainhand)) return mainhand;
 
         // Остальные слоты (hotbar + storage)
         for (ItemStack item : player.getInventory().getContents()) {
-            if (isChargedTotem(item)) return item;
+            if (isTotem(item)) return item;
         }
 
         return null;
     }
 
     /**
-     * Проверяет, является ли предмет тотемом с зарядом > 0.
+     * Проверяет, является ли предмет тотемом (ванильным или заряженным).
      */
-    private static boolean isChargedTotem(ItemStack item) {
-        if (item == null || item.getType() != Material.TOTEM_OF_UNDYING) return false;
-        if (!item.hasItemMeta()) return false;
-
-        var pdc = item.getItemMeta().getPersistentDataContainer();
-        int charge = pdc.getOrDefault(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, -1);
-
-        // charge = -1 означает, что PDC нет — ванильный тотем, пусть работает как обычно
-        if (charge == -1) return false;
-        return charge > 0;
+    private static boolean isTotem(ItemStack item) {
+        return item != null && item.getType() == Material.TOTEM_OF_UNDYING;
     }
 
     // =========================
@@ -202,20 +197,32 @@ public class TotemChargeListener implements Listener {
     // АКТИВАЦИЯ ТОТЕМА: списать заряд + эффекты
     // =========================
     /**
-     * Активирует тотем: списывает 1 заряд, обновляет мету и применяет эффекты.
-     * Используется из onFatalDamage и onEntityResurrect.
+     * Активирует тотем: списывает 1 заряд (или потребляет ванильный тотем),
+     * обновляет мету и применяет эффекты.
+     * Используется из onFatalDamage.
      */
     private static void activateTotem(Player player, ItemStack totem) {
         ItemMeta meta = totem.getItemMeta();
-        if (meta == null) return;
 
-        var pdc = meta.getPersistentDataContainer();
-        int charge = pdc.getOrDefault(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, 0);
-        charge--;
-        pdc.set(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, charge);
+        // Если есть PDC TOTEM_CHARGE — заряженный тотем, списываем заряд
+        if (meta != null && meta.getPersistentDataContainer()
+                .has(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER)) {
 
-        updateChargeLore(meta, charge);
-        totem.setItemMeta(meta);
+            var pdc = meta.getPersistentDataContainer();
+            int charge = pdc.getOrDefault(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, 0);
+            charge--;
+            pdc.set(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, charge);
+
+            updateChargeLore(meta, charge);
+            totem.setItemMeta(meta);
+        } else {
+            // Ванильный тотем — потребляем предмет (уменьшаем количество или удаляем)
+            if (totem.getAmount() > 1) {
+                totem.setAmount(totem.getAmount() - 1);
+            } else {
+                totem.setAmount(0);
+            }
+        }
 
         applyTotemEffects(player);
     }
