@@ -1445,4 +1445,4 @@ meteor:
   # Блок, который остаётся после падения
   ore_block: "DEEPSLATE_DIAMOND_ORE"
 
-plugin_version: "1.8.125"
+plugin_version: "1.8.126"
