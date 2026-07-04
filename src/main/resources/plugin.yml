@@ -8,6 +8,8 @@ api-version: "26.2"
 author: rizer001
 load: STARTUP
 softdepend: [PlaceholderAPI, LuckPerms, Vault, DeluxeMenus]
+libraries:
+  - de.mkammerer:argon2-jvm:2.12
 
 # Other sections
 commands:
