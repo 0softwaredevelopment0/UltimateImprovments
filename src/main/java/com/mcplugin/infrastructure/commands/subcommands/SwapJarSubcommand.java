@@ -13,6 +13,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.UnknownDependencyException;
 
 import java.io.File;
+import com.google.common.graph.MutableGraph;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -213,7 +214,7 @@ public final class SwapJarSubcommand {
             // ШАГ 4: Валидируем установленный JAR (битая копия из-за I/O ошибок)
             String postCopyError = validateJarFile(oldJar);
             if (postCopyError != null) {
-                Files.copy(backupFile.toPath(), oldJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                forceReplaceFile(backupFile, oldJar);
                 sender.sendMessage(MessageUtil.parse(
                         "<dark_red>❌</dark_red> <red>Copied JAR is corrupted! Backup restored.</red>"));
                 ConsoleLogger.error("[SwapJar] Post-copy validation failed: " + postCopyError);
@@ -268,7 +269,7 @@ public final class SwapJarSubcommand {
             try {
                 File backupFile = new File(oldJar.getParentFile(), oldJar.getName() + ".bak");
                 if (backupFile.exists()) {
-                    Files.copy(backupFile.toPath(), oldJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    forceReplaceFile(backupFile, oldJar);
                     ConsoleLogger.info("[SwapJar] Backup restored.");
 
                     try {
@@ -303,7 +304,7 @@ public final class SwapJarSubcommand {
             try {
                 File backupFile = new File(oldJar.getParentFile(), oldJar.getName() + ".bak");
                 if (backupFile.exists()) {
-                    Files.copy(backupFile.toPath(), oldJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    forceReplaceFile(backupFile, oldJar);
                     ConsoleLogger.info("[SwapJar] Backup restored.");
                     sender.sendMessage(MessageUtil.parse(
                             "<yellow>⚠</yellow> <gray>Old JAR restored from backup.</gray>"));
@@ -375,6 +376,52 @@ public final class SwapJarSubcommand {
     }
 
     // ==========================================================================
+    // 💾 FORCE REPLACE: обход Windows file lock
+    // ==========================================================================
+
+    /**
+     * Заменяет файл, даже если он заблокирован (Windows).
+     * Сначала пытается удалить, потом rename (если удаление не удалось),
+     * затем копирует источник на место цели.
+     *
+     * @param source файл-источник (что копируем)
+     * @param target файл-цель (что заменяем, может быть locked)
+     */
+    private static void forceReplaceFile(File source, File target) throws Exception {
+        // Попытка 1: обычное копирование с заменой
+        try {
+            Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return;
+        } catch (Exception e) {
+            // Возможно файл locked (Windows) — пробуем другие методы
+        }
+
+        // Попытка 2: удалить locked файл, потом скопировать
+        try {
+            Files.deleteIfExists(target.toPath());
+            Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return;
+        } catch (Exception e) {
+            // Удаление тоже не сработало
+        }
+
+        // Попытка 3: переименовать locked файл, потом скопировать
+        File tmpFile = new File(target.getParentFile(), target.getName() + ".deleted." + System.currentTimeMillis());
+        try {
+            target.renameTo(tmpFile);
+            Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            // Пытаемся удалить временный файл в фоне
+            tmpFile.deleteOnExit();
+            return;
+        } catch (Exception e) {
+            // Переименование тоже не сработало
+        }
+
+        // Всё failed — бросаем исключение
+        throw new Exception("Cannot replace file " + target.getName() + " after multiple attempts (locked on Windows?)");
+    }
+
+    // ==========================================================================
     // 🔄 REFLECTION: удалить плагин из внутренних списков PluginManager
     // ==========================================================================
 
@@ -431,27 +478,30 @@ public final class SwapJarSubcommand {
         Map<String, Plugin> lookupNames = (Map<String, Plugin>) lookupNamesField.get(instanceManager);
         lookupNames.remove(plugin.getName());
 
-        // 3. Пытаемся удалить из dependencyTree (MetaDependencyTree)
+        // 3. Удаляем из dependencyTree: SimpleMetaDependencyTree хранит MutableGraph<String>,
+        //    remove() принимает PluginProvider, которого у нас нет — лезем напрямую в граф.
         try {
             Field depTreeField = imClass.getDeclaredField("dependencyTree");
             depTreeField.setAccessible(true);
             Object depTree = depTreeField.get(instanceManager);
 
-            // Пробуем разные сигнатуры remove
-            try {
-                // Сначала remove(PluginMeta pluginMeta)
-                Method removeMethod = depTree.getClass().getMethod("remove",
-                    io.papermc.paper.plugin.configuration.PluginMeta.class);
-                removeMethod.invoke(depTree, plugin.getPluginMeta());
-            } catch (NoSuchMethodException e1) {
-                try {
-                    // Потом remove(String name) — может быть по идентификатору
-                    Method removeMethod = depTree.getClass().getMethod("remove", String.class);
-                    removeMethod.invoke(depTree, plugin.getName());
-                } catch (NoSuchMethodException e2) {
-                    // dependencyTree.remove может принимать PluginProvider,
-                    // которого у нас нет — пропускаем, не критично
+            // Ищем поле типа MutableGraph через всю иерархию классов
+            Field graphField = null;
+            for (Class<?> c = depTree.getClass(); c != null && graphField == null; c = c.getSuperclass()) {
+                for (Field f : c.getDeclaredFields()) {
+                    if (MutableGraph.class.isAssignableFrom(f.getType())) {
+                        graphField = f;
+                        break;
+                    }
                 }
+            }
+            if (graphField != null) {
+                graphField.setAccessible(true);
+                Object graph = graphField.get(depTree);
+                // MutableGraph.removeNode(Object) удаляет узел из графа
+                Method removeNode = graph.getClass().getMethod("removeNode", Object.class);
+                removeNode.invoke(graph, plugin.getName());
+                ConsoleLogger.info("[SwapJar] Removed plugin from dependency graph.");
             }
         } catch (Exception ignored) {
             // dependencyTree очистка — не критична, если не удалась
