@@ -312,13 +312,16 @@ public class OmniscannerGUI implements Listener {
             return;
         }
         if (slot == SLOT_RADIUS_SET && e.isLeftClick()) {
-            // Сохраняем состояние, закрываем GUI, ждём ввод в чат
             openMenus.remove(uuid);
             pendingInputs.put(uuid, new PendingInput(player, scanner, state.currentTab, "RADIUS"));
+            player.setItemOnCursor(null); // очищаем курсор — предметы не попадут в инвентарь
             player.closeInventory();
-            player.sendMessage(MessageUtil.parse(
-                    "<gold>⏵ Введите радиус (1-500) в чат:</gold>\n" +
-                    "<gray>Или напишите <red>отмена</red> чтобы отменить.</gray>"));
+            player.sendMessage(
+                    MessageUtil.parse("<gold>⏵ Введите радиус (1-500)</gold>")
+                            .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand(" ")));
+            player.sendMessage(
+                    MessageUtil.parse("<gray>Напишите <red>отмена</red> или <red>cancel</red> чтобы отменить</gray>")
+                            .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand("отмена")));
             return;
         }
 
@@ -367,11 +370,16 @@ public class OmniscannerGUI implements Listener {
             };
             openMenus.remove(uuid);
             pendingInputs.put(uuid, new PendingInput(player, scanner, state.currentTab, "ADD"));
+            player.setItemOnCursor(null); // очищаем курсор — предметы не попадут в инвентарь
             player.closeInventory();
-            player.sendMessage(MessageUtil.parse(
-                    "<gold>⏵ Введите название " + categoryName + " в чат:</gold>\n" +
-                    "<gray>Например: DIAMOND_ORE, CHEST, ZOMBIE</gray>\n" +
-                    "<gray>Или напишите <red>отмена</red> чтобы отменить.</gray>"));
+            player.sendMessage(
+                    MessageUtil.parse("<gold>⏵ Введите название " + categoryName + "</gold>")
+                            .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand("")));
+            player.sendMessage(
+                    MessageUtil.parse("<gray>Например: DIAMOND_ORE, CHEST, ZOMBIE</gray>"));
+            player.sendMessage(
+                    MessageUtil.parse("<gray>Напишите <red>отмена</red> или <red>cancel</red> чтобы отменить</gray>")
+                            .clickEvent(net.kyori.adventure.text.event.ClickEvent.suggestCommand("отмена")));
             return;
         }
 
