@@ -9,6 +9,7 @@ import com.mcplugin.infrastructure.report.ReportManager;
 import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
 import com.mcplugin.infrastructure.listeners.OpCommandBlocker;
 import com.mcplugin.infrastructure.listeners.WhitelistCommandBlocker;
+import com.mcplugin.infrastructure.util.AuthCommandLogFilter;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.infrastructure.util.FileLogger;
 import com.mcplugin.infrastructure.util.PlaceholderResolver;
@@ -39,6 +40,9 @@ public class PluginStartup {
     public void startupPlugin() {
         // ConsoleLogger init FIRST — before any log calls
         ConsoleLogger.init();
+
+        // Auth command log filter — hide passwords from server console
+        AuthCommandLogFilter.register();
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
