@@ -210,7 +210,7 @@ public class AdminMenuGUI implements Listener {
         inv.setItem(18, createInfoItem(Material.REDSTONE,
                 "<gold>TPS</gold>",
                 Arrays.asList(
-                        StatsTracker.tpsColor(tps) + "Текущий: <white>" + DF2.format(tps) + "</white></" + StatsTracker.tpsColor(tps).substring(1),
+                        "<gray>Текущий: </gray>" + StatsTracker.tpsColor(tps) + DF2.format(tps) + "</" + StatsTracker.tpsColor(tps).substring(1),
                         "<gray>Средний (1м): <white>" + DF2.format(st.getAvgTps(60)) + "</white></gray>",
                         "<gray>Мин (1м): " + StatsTracker.tpsColor(st.getMinTps(60)) + DF2.format(st.getMinTps(60)) + "</" + StatsTracker.tpsColor(st.getMinTps(60)).substring(1) + "</gray>"
                 )));
@@ -221,7 +221,7 @@ public class AdminMenuGUI implements Listener {
         inv.setItem(20, createInfoItem(Material.COMPARATOR,
                 "<gold>MSPT</gold>",
                 Arrays.asList(
-                        StatsTracker.msptColor(mspt) + "Текущий: <white>" + DF1.format(msptPct) + "%</white></" + StatsTracker.msptColor(mspt).substring(1),
+                        "<gray>Текущий: </gray>" + StatsTracker.msptColor(mspt) + DF1.format(msptPct) + "%</" + StatsTracker.msptColor(mspt).substring(1),
                         "<gray>Средний (1м): <white>" + DF1.format((st.getAvgMspt(60) / 50.0) * 100.0) + "%</white></gray>",
                         "<gray>Макс (1м): " + StatsTracker.msptColor(st.getMaxMspt(60)) + DF1.format((st.getMaxMspt(60) / 50.0) * 100.0) + "%</" + StatsTracker.msptColor(st.getMaxMspt(60)).substring(1) + "</gray>"
                 )));
@@ -231,7 +231,7 @@ public class AdminMenuGUI implements Listener {
         inv.setItem(22, createInfoItem(Material.CLOCK,
                 "<gold>RAM</gold>",
                 Arrays.asList(
-                        StatsTracker.ramColor(ram) + "Текущая: <white>" + DF1.format(ram) + "%</white></" + StatsTracker.ramColor(ram).substring(1),
+                        "<gray>Текущая: </gray>" + StatsTracker.ramColor(ram) + DF1.format(ram) + "%</" + StatsTracker.ramColor(ram).substring(1),
                         "<gray>Средняя (1м): <white>" + DF1.format(st.getAvgRam(60)) + "%</white></gray>",
                         "<gray>Макс (1м): " + StatsTracker.ramColor(st.getMaxRam(60)) + DF1.format(st.getMaxRam(60)) + "%</" + StatsTracker.ramColor(st.getMaxRam(60)).substring(1) + "</gray>"
                 )));
@@ -241,7 +241,7 @@ public class AdminMenuGUI implements Listener {
         inv.setItem(24, createInfoItem(Material.ENDER_PEARL,
                 "<gold>Ping</gold>",
                 Arrays.asList(
-                        StatsTracker.pingColor(ping) + "Текущий: <white>" + DF1.format(ping) + "ms</white></" + StatsTracker.pingColor(ping).substring(1),
+                        "<gray>Текущий: </gray>" + StatsTracker.pingColor(ping) + DF1.format(ping) + "ms</" + StatsTracker.pingColor(ping).substring(1),
                         "<gray>Мин (1м): " + StatsTracker.pingColor(st.getMinPing(60)) + DF1.format(st.getMinPing(60)) + "ms</" + StatsTracker.pingColor(st.getMinPing(60)).substring(1) + "</gray>",
                         "<gray>Макс (1м): " + StatsTracker.pingColor(st.getMaxPing(60)) + DF1.format(st.getMaxPing(60)) + "ms</" + StatsTracker.pingColor(st.getMaxPing(60)).substring(1) + "</gray>"
                 )));
