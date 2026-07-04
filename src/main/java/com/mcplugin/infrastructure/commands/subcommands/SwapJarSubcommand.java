@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
+import org.bukkit.event.HandlerList;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.InvalidPluginException;
 import org.bukkit.plugin.Plugin;
@@ -13,6 +14,7 @@ import org.bukkit.plugin.UnknownDependencyException;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -344,25 +346,102 @@ public final class SwapJarSubcommand {
     // 🔄 REFLECTION: удалить плагин из внутренних списков PluginManager
     // ==========================================================================
 
+    /**
+     * Удаляет плагин из всех внутренних регистров PluginManager.
+     * <p>
+     * В Paper 1.21+ PluginManager — это PaperPluginManagerImpl, который
+     * делегирует хранение плагинов PaperPluginInstanceManager (поле instanceManager).
+     * Старое SimplePluginManager.plugins/lookupNames там отсутствуют.
+     */
     @SuppressWarnings("unchecked")
     private static void removePluginFromManager(PluginManager pm, Plugin plugin) {
         try {
-            Field pluginsField = pm.getClass().getDeclaredField("plugins");
-            pluginsField.setAccessible(true);
-            List<Plugin> plugins = (List<Plugin>) pluginsField.get(pm);
-            plugins.remove(plugin);
+            String pmClassName = pm.getClass().getName();
 
-            try {
-                Field lookupNamesField = pm.getClass().getDeclaredField("lookupNames");
-                lookupNamesField.setAccessible(true);
-                Map<String, Plugin> lookupNames = (Map<String, Plugin>) lookupNamesField.get(pm);
-                lookupNames.remove(plugin.getName());
-            } catch (Exception ignored) {}
+            if (pmClassName.equals("io.papermc.paper.plugin.manager.PaperPluginManagerImpl")) {
+                // Paper 1.21+: плагины хранятся в PaperPluginInstanceManager
+                removeFromPaperPluginManager(pm, plugin);
+            } else {
+                // Legacy Bukkit/Spigot: поля напрямую в SimplePluginManager
+                removeFromSimplePluginManager(pm, plugin);
+            }
+
+            // Дополнительно: HandlerList.unregisterAll (на случай если disablePlugin не дочистил)
+            HandlerList.unregisterAll(plugin);
 
             ConsoleLogger.info("[SwapJar] Plugin removed from Bukkit registration.");
         } catch (Exception e) {
             ConsoleLogger.error("[SwapJar] Failed to remove plugin from Bukkit list: " + e.getMessage());
         }
+    }
+
+    /**
+     * Удаляет плагин из Paper 1.21+ PaperPluginManagerImpl → PaperPluginInstanceManager.
+     */
+    @SuppressWarnings("unchecked")
+    private static void removeFromPaperPluginManager(PluginManager pm, Plugin plugin) throws Exception {
+        // Получаем instanceManager из PaperPluginManagerImpl
+        Field instanceManagerField = pm.getClass().getDeclaredField("instanceManager");
+        instanceManagerField.setAccessible(true);
+        Object instanceManager = instanceManagerField.get(pm);
+
+        Class<?> imClass = instanceManager.getClass();
+
+        // 1. Удаляем из plugins (List<Plugin>)
+        Field pluginsField = imClass.getDeclaredField("plugins");
+        pluginsField.setAccessible(true);
+        List<Plugin> plugins = (List<Plugin>) pluginsField.get(instanceManager);
+        plugins.remove(plugin);
+
+        // 2. Удаляем из lookupNames (Map<String, Plugin>)
+        Field lookupNamesField = imClass.getDeclaredField("lookupNames");
+        lookupNamesField.setAccessible(true);
+        Map<String, Plugin> lookupNames = (Map<String, Plugin>) lookupNamesField.get(instanceManager);
+        lookupNames.remove(plugin.getName());
+
+        // 3. Пытаемся удалить из dependencyTree (MetaDependencyTree)
+        try {
+            Field depTreeField = imClass.getDeclaredField("dependencyTree");
+            depTreeField.setAccessible(true);
+            Object depTree = depTreeField.get(instanceManager);
+
+            // Пробуем разные сигнатуры remove
+            try {
+                // Сначала remove(PluginMeta pluginMeta)
+                Method removeMethod = depTree.getClass().getMethod("remove",
+                    io.papermc.paper.plugin.configuration.PluginMeta.class);
+                removeMethod.invoke(depTree, plugin.getPluginMeta());
+            } catch (NoSuchMethodException e1) {
+                try {
+                    // Потом remove(String name) — может быть по идентификатору
+                    Method removeMethod = depTree.getClass().getMethod("remove", String.class);
+                    removeMethod.invoke(depTree, plugin.getName());
+                } catch (NoSuchMethodException e2) {
+                    // dependencyTree.remove может принимать PluginProvider,
+                    // которого у нас нет — пропускаем, не критично
+                }
+            }
+        } catch (Exception ignored) {
+            // dependencyTree очистка — не критична, если не удалась
+        }
+    }
+
+    /**
+     * Удаляет плагин из старого SimplePluginManager (Bukkit/Spigot).
+     */
+    @SuppressWarnings("unchecked")
+    private static void removeFromSimplePluginManager(PluginManager pm, Plugin plugin) throws Exception {
+        Field pluginsField = pm.getClass().getDeclaredField("plugins");
+        pluginsField.setAccessible(true);
+        List<Plugin> plugins = (List<Plugin>) pluginsField.get(pm);
+        plugins.remove(plugin);
+
+        try {
+            Field lookupNamesField = pm.getClass().getDeclaredField("lookupNames");
+            lookupNamesField.setAccessible(true);
+            Map<String, Plugin> lookupNames = (Map<String, Plugin>) lookupNamesField.get(pm);
+            lookupNames.remove(plugin.getName());
+        } catch (Exception ignored) {}
     }
 
     // ==========================================================================
