@@ -9,10 +9,12 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -28,13 +30,14 @@ import java.util.*;
  * - Список типов предметов для поиска
  * - Список типов сущностей для поиска
  * - Радиус сканирования
- *
+ * <p>
+ * Ввод радиуса и добавление типов — через чат (не Anvil).
  * Все GUI-предметы имеют PDC GUI_PROTECTED (byte=1) — их нельзя забрать.
- * Anvil-меню обрабатывается через InventoryClickEvent, а не через поллинг.
  */
 public class OmniscannerGUI implements Listener {
 
     private static final Map<UUID, GUIState> openMenus = new HashMap<>();
+    private static final Map<UUID, PendingInput> pendingInputs = new HashMap<>();
     private static boolean registered = false;
 
     // Слоты интерфейса (6 строк = 54 слота)
@@ -51,13 +54,14 @@ public class OmniscannerGUI implements Listener {
     private static final int SLOT_RADIUS_UP = 47;
     private static final int SLOT_RADIUS_SET = 48;
 
+    // ========================================================================
+    // STATE CLASSES
+    // ========================================================================
+
     private static class GUIState {
         final Player player;
         ItemStack scanner;
         String currentTab = "BLOCKS"; // BLOCKS, ITEMS, ENTITIES
-        String anvilMode = null; // null=не в анвиле, "ADD"/"RADIUS"
-        String anvilTab = null; // tab for ADD mode
-        int timeoutTicks = 0;
 
         GUIState(Player player, ItemStack scanner) {
             this.player = player;
@@ -65,26 +69,19 @@ public class OmniscannerGUI implements Listener {
         }
     }
 
-    // ========================================================================
-    // PDC HELPERS
-    // ========================================================================
+    /** Ожидание ввода через чат */
+    private static class PendingInput {
+        final Player player;
+        final ItemStack scanner;
+        final String currentTab;
+        final String mode; // "RADIUS" or "ADD"
 
-    /** Пометить предмет как защищённый (нельзя забрать из GUI) */
-    private static void markProtected(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return;
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
+        PendingInput(Player player, ItemStack scanner, String currentTab, String mode) {
+            this.player = player;
+            this.scanner = scanner;
+            this.currentTab = currentTab;
+            this.mode = mode;
         }
-    }
-
-    /** Проверить, защищён ли предмет */
-    private static boolean isProtected(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return false;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return false;
-        return meta.getPersistentDataContainer().has(Keys.GUI_PROTECTED, PersistentDataType.BYTE);
     }
 
     // ========================================================================
@@ -104,9 +101,6 @@ public class OmniscannerGUI implements Listener {
 
     private static void buildConfigGUI(GUIState state) {
         Player player = state.player;
-        state.anvilMode = null;
-        state.anvilTab = null;
-        state.timeoutTicks = 0;
 
         Inventory inv = Bukkit.createInventory(null, 54,
                 MessageUtil.legacy("<!italic><gradient:#FF6B6B:#FFD93D>🔭 Omniscanner Config</gradient>"));
@@ -169,7 +163,7 @@ public class OmniscannerGUI implements Listener {
                 "<gray>Удалить все типы из текущей вкладки</gray>"));
         inv.setItem(SLOT_ADD, createActionItem(Material.ANVIL,
                 "<green>Добавить тип</green>",
-                "<gray>Открыть ввод для добавления нового типа</gray>"));
+                "<gray>Напишите название в чат</gray>"));
         inv.setItem(SLOT_BACK, createActionItem(Material.OAK_DOOR, "<gray>Закрыть</gray>", ""));
 
         player.openInventory(inv);
@@ -238,22 +232,6 @@ public class OmniscannerGUI implements Listener {
         return item;
     }
 
-    private static ItemStack createAnvilHintItem(String text, List<String> lore) {
-        ItemStack item = new ItemStack(Material.PAPER);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.displayName(MessageUtil.parse("<!italic><gray>" + text + "</gray>"));
-            List<Component> loreComp = new ArrayList<>();
-            for (String line : lore) {
-                loreComp.add(MessageUtil.parse("<!italic><gray>" + line + "</gray>"));
-            }
-            meta.lore(loreComp);
-            meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
-        }
-        return item;
-    }
-
     // ========================================================================
     // HELPERS
     // ========================================================================
@@ -272,7 +250,7 @@ public class OmniscannerGUI implements Listener {
     private static int getRadius(ItemStack item) { return OmniscannerManager.getRadius(item); }
 
     // ========================================================================
-    // LISTENER
+    // INVENTORY CLICK LISTENER
     // ========================================================================
 
     @EventHandler
@@ -282,33 +260,13 @@ public class OmniscannerGUI implements Listener {
         GUIState state = openMenus.get(uuid);
         if (state == null) return;
 
-        // Всегда отменяем клик в любом кастомном инвентаре (включая Anvil)
+        // Всегда отменяем клик в верхнем инвентаре (кастомный GUI)
         if (e.getClickedInventory() != null && e.getClickedInventory() == e.getView().getTopInventory()) {
             e.setCancelled(true);
         }
 
         // Нижний инвентарь (свой) — не трогаем
         if (e.getClickedInventory() != e.getView().getTopInventory()) return;
-
-        // ====================================================================
-        // ANVIL MODE — обрабатываем через InventoryClickEvent (не поллинг)
-        // ====================================================================
-        if (state.anvilMode != null && e.getInventory().getType() == InventoryType.ANVIL) {
-            state.timeoutTicks = 0; // сброс таймера при любом клике
-
-            if (!e.isLeftClick()) return; // только ЛКМ
-
-            // Слот 2 = подтверждение
-            if (e.getSlot() == 2) {
-                processAnvilConfirm(player, state);
-            }
-            // Слоты 0 и 1 — игнорируем (защищены PDC)
-            return;
-        }
-
-        // ====================================================================
-        // ОБЫЧНЫЙ РЕЖИМ — конфиг GUI
-        // ====================================================================
 
         ItemStack scanner = findScannerInHand(player);
         if (scanner == null) {
@@ -320,12 +278,7 @@ public class OmniscannerGUI implements Listener {
         state.scanner = scanner;
 
         int slot = e.getSlot();
-
-        // Если клик по защищённому предмету — блокируем ВСЕ не-действия
         ItemStack current = e.getCurrentItem();
-        if (current != null && isProtected(current)) {
-            // Разрешённые действия на защищённых предметах обрабатываем ниже
-        }
 
         // Вкладки (только ЛКМ)
         if (slot == SLOT_BLOCKS_HEADER && e.isLeftClick()) { state.currentTab = "BLOCKS"; buildConfigGUI(state); return; }
@@ -359,7 +312,13 @@ public class OmniscannerGUI implements Listener {
             return;
         }
         if (slot == SLOT_RADIUS_SET && e.isLeftClick()) {
-            openRadiusAnvil(player, state);
+            // Сохраняем состояние, закрываем GUI, ждём ввод в чат
+            openMenus.remove(uuid);
+            pendingInputs.put(uuid, new PendingInput(player, scanner, state.currentTab, "RADIUS"));
+            player.closeInventory();
+            player.sendMessage(MessageUtil.parse(
+                    "<gold>⏵ Введите радиус (1-500) в чат:</gold>\n" +
+                    "<gray>Или напишите <red>отмена</red> чтобы отменить.</gray>"));
             return;
         }
 
@@ -401,7 +360,18 @@ public class OmniscannerGUI implements Listener {
 
         // Добавить тип (только ЛКМ)
         if (slot == SLOT_ADD && e.isLeftClick()) {
-            openAddAnvil(player, state);
+            String categoryName = switch (state.currentTab) {
+                case "ITEMS" -> "предмета";
+                case "ENTITIES" -> "сущности";
+                default -> "блока";
+            };
+            openMenus.remove(uuid);
+            pendingInputs.put(uuid, new PendingInput(player, scanner, state.currentTab, "ADD"));
+            player.closeInventory();
+            player.sendMessage(MessageUtil.parse(
+                    "<gold>⏵ Введите название " + categoryName + " в чат:</gold>\n" +
+                    "<gray>Например: DIAMOND_ORE, CHEST, ZOMBIE</gray>\n" +
+                    "<gray>Или напишите <red>отмена</red> чтобы отменить.</gray>"));
             return;
         }
 
@@ -413,148 +383,114 @@ public class OmniscannerGUI implements Listener {
     }
 
     // ========================================================================
-    // ANVIL LOGIC
+    // CHAT INPUT LISTENER — перехватывает ввод радиуса/типа
     // ========================================================================
 
-    private static void openAddAnvil(Player player, GUIState state) {
-        String categoryName = switch (state.currentTab) {
-            case "ITEMS" -> "предмета";
-            case "ENTITIES" -> "сущности";
-            default -> "блока";
-        };
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onChat(AsyncPlayerChatEvent e) {
+        Player player = e.getPlayer();
+        UUID uuid = player.getUniqueId();
+        PendingInput pending = pendingInputs.get(uuid);
+        if (pending == null) return;
 
-        state.anvilMode = "ADD";
-        state.anvilTab = state.currentTab;
-        state.timeoutTicks = 0;
+        // Отменяем событие — сообщение НЕ попадает в чат
+        e.setCancelled(true);
 
-        var view = org.bukkit.inventory.MenuType.ANVIL.builder()
-                .title(MessageUtil.parse("<dark_gray>Добавить тип " + categoryName + "</dark_gray>"))
-                .build(player);
-        view.open();
+        // Удаляем из pending сразу, чтобы повторный вызов не обработал
+        pendingInputs.remove(uuid);
 
-        Inventory topInv = view.getTopInventory();
-        topInv.setItem(0, createAnvilHintItem("Введите Material name...",
-                List.of("Например: DIAMOND_ORE, CHEST, ZOMBIE")));
-        // Слот 1 и 2 — кликабельные подтверждения
-        topInv.setItem(1, createAnvilSlot2());
-        topInv.setItem(2, createAnvilSlot2());
-    }
+        String msg = e.getMessage().trim();
 
-    private static void openRadiusAnvil(Player player, GUIState state) {
-        state.anvilMode = "RADIUS";
-        state.anvilTab = null;
-        state.timeoutTicks = 0;
-
-        var view = org.bukkit.inventory.MenuType.ANVIL.builder()
-                .title(MessageUtil.parse("<dark_gray>Установить радиус</dark_gray>"))
-                .build(player);
-        view.open();
-
-        Inventory topInv = view.getTopInventory();
-        topInv.setItem(0, createAnvilHintItem("Радиус: " + getRadius(state.scanner),
-                List.of("Введите число (1-500)")));
-        topInv.setItem(1, createAnvilSlot2());
-        topInv.setItem(2, createAnvilSlot2());
-    }
-
-    /** Слот подтверждения Anvil — с PDC защитой */
-    private static ItemStack createAnvilSlot2() {
-        ItemStack item = new ItemStack(Material.NETHER_STAR);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.displayName(MessageUtil.parse("<!italic><green>✔ Подтвердить</green>"));
-            meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
+        // Отмена
+        if (msg.equalsIgnoreCase("отмена") || msg.equalsIgnoreCase("cancel")) {
+            player.sendMessage(MessageUtil.parse("<gray>✖ Ввод отменён.</gray>"));
+            // Возвращаемся в GUI
+            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                openMenus.put(uuid, new GUIState(player, pending.scanner));
+                openMenus.get(uuid).currentTab = pending.currentTab;
+                buildConfigGUI(openMenus.get(uuid));
+            });
+            return;
         }
-        return item;
-    }
 
-    /** Обработать подтверждение Anvil (клик по slot 2) */
-    private static void processAnvilConfirm(Player player, GUIState state) {
-        String text = getAnvilRenameText(player);
-        if (text == null || text.trim().isEmpty()) return;
-
-        if ("RADIUS".equals(state.anvilMode)) {
-            try {
-                int radius = Integer.parseInt(text.trim());
-                if (radius >= 1 && radius <= 500) {
-                    OmniscannerManager.setRadius(state.scanner, radius);
-                    player.sendMessage(MessageUtil.parse("<green>✔ Радиус установлен: " + radius + "</green>"));
-                } else {
-                    player.sendMessage(MessageUtil.parse("<red>❌ Радиус должен быть от 1 до 500!</red>"));
-                }
-            } catch (NumberFormatException ex) {
-                player.sendMessage(MessageUtil.parse("<red>❌ Введите число!</red>"));
-            }
+        if ("RADIUS".equals(pending.mode)) {
+            handleRadiusInput(player, pending, msg);
         } else {
-            String typeName = text.trim().toUpperCase();
-            String tab = state.anvilTab != null ? state.anvilTab : state.currentTab;
-            Set<String> types;
-            switch (tab) {
-                case "ITEMS":
-                    types = OmniscannerManager.getItemTypes(state.scanner);
-                    types.add(typeName);
-                    OmniscannerManager.setItemTypes(state.scanner, types);
-                    break;
-                case "ENTITIES":
-                    types = OmniscannerManager.getEntityTypes(state.scanner);
-                    types.add(typeName);
-                    OmniscannerManager.setEntityTypes(state.scanner, types);
-                    break;
-                default:
-                    types = OmniscannerManager.getBlockTypes(state.scanner);
-                    types.add(typeName);
-                    OmniscannerManager.setBlockTypes(state.scanner, types);
-            }
-            player.sendMessage(MessageUtil.parse("<green>✔ Добавлен тип: </green><white>" + typeName + "</white>"));
+            handleAddTypeInput(player, pending, msg);
         }
-
-        // Переоткрыть конфиг GUI
-        player.closeInventory(); // закроет Anvil и вызовет onInventoryClose
-        openMenus.put(player.getUniqueId(), state);
-        buildConfigGUI(state);
     }
 
-    /** Чтение текста из Anvil rename поля через рефлексию */
-    private static String getAnvilRenameText(Player player) {
+    /** Обработка ввода радиуса */
+    private static void handleRadiusInput(Player player, PendingInput pending, String msg) {
         try {
-            var view = player.getOpenInventory();
-            Object craftView = view;
-            Class<?> craftViewClass = craftView.getClass();
-
-            java.lang.reflect.Method getHandle = craftViewClass.getMethod("getHandle");
-            Object handle = getHandle.invoke(craftView);
-
-            Class<?> anvilClass = handle.getClass();
-            java.lang.reflect.Field itemNameField;
-
-            try {
-                itemNameField = anvilClass.getDeclaredField("itemName");
-            } catch (NoSuchFieldException e) {
-                itemNameField = anvilClass.getSuperclass().getDeclaredField("itemName");
+            int radius = Integer.parseInt(msg);
+            if (radius >= 1 && radius <= 500) {
+                OmniscannerManager.setRadius(pending.scanner, radius);
+                player.sendMessage(MessageUtil.parse("<green>✔ Радиус установлен: " + radius + "</green>"));
+            } else {
+                player.sendMessage(MessageUtil.parse("<red>❌ Радиус должен быть от 1 до 500!</red>"));
             }
-
-            itemNameField.setAccessible(true);
-            String result = (String) itemNameField.get(handle);
-            itemNameField.setAccessible(false);
-            return result;
-        } catch (Exception e) {
-            return null;
+        } catch (NumberFormatException ex) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Введите число (1-500)!</red>"));
         }
+
+        // Возвращаемся в GUI с сохранённым состоянием
+        Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+            openMenus.put(player.getUniqueId(), new GUIState(player, pending.scanner));
+            openMenus.get(player.getUniqueId()).currentTab = pending.currentTab;
+            buildConfigGUI(openMenus.get(player.getUniqueId()));
+        });
+    }
+
+    /** Обработка ввода названия типа (блок/предмет/сущность) */
+    private static void handleAddTypeInput(Player player, PendingInput pending, String msg) {
+        String typeName = msg.toUpperCase();
+        String tab = pending.currentTab;
+
+        Set<String> types;
+        switch (tab) {
+            case "ITEMS":
+                types = OmniscannerManager.getItemTypes(pending.scanner);
+                types.add(typeName);
+                OmniscannerManager.setItemTypes(pending.scanner, types);
+                break;
+            case "ENTITIES":
+                types = OmniscannerManager.getEntityTypes(pending.scanner);
+                types.add(typeName);
+                OmniscannerManager.setEntityTypes(pending.scanner, types);
+                break;
+            default:
+                types = OmniscannerManager.getBlockTypes(pending.scanner);
+                types.add(typeName);
+                OmniscannerManager.setBlockTypes(pending.scanner, types);
+        }
+        player.sendMessage(MessageUtil.parse("<green>✔ Добавлен тип: </green><white>" + typeName + "</white>"));
+
+        // Возвращаемся в GUI с сохранённым состоянием
+        Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+            openMenus.put(player.getUniqueId(), new GUIState(player, pending.scanner));
+            openMenus.get(player.getUniqueId()).currentTab = pending.currentTab;
+            buildConfigGUI(openMenus.get(player.getUniqueId()));
+        });
     }
 
     // ========================================================================
-    // CLOSE / TIMEOUT
+    // CLOSE / CLEANUP
     // ========================================================================
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
         UUID uuid = e.getPlayer().getUniqueId();
-        GUIState state = openMenus.get(uuid);
-        // Если игрок закрыл Anvil (без подтверждения) — чистим
-        if (state != null && state.anvilMode != null) {
+        if (!pendingInputs.containsKey(uuid)) {
             openMenus.remove(uuid);
         }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent e) {
+        UUID uuid = e.getPlayer().getUniqueId();
+        pendingInputs.remove(uuid);
+        openMenus.remove(uuid);
     }
 
     // ========================================================================
