@@ -500,6 +500,7 @@ public class AdminMenuGUI implements Listener {
         String color = active ? "<gold>" : "<gray>";
         meta.displayName(MessageUtil.parse("<!italic>" + color + name + (active ? " <dark_gray>◄</dark_gray>" : "")));
         if (active) meta.setEnchantmentGlintOverride(true);
+        meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);
         return item;
     }
@@ -515,6 +516,7 @@ public class AdminMenuGUI implements Listener {
             lore.add(MessageUtil.parse("<!italic>" + line));
         }
         meta.lore(lore);
+        meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);
         return item;
     }
@@ -528,6 +530,7 @@ public class AdminMenuGUI implements Listener {
         if (!lore.isEmpty()) {
             meta.lore(List.of(MessageUtil.parse("<!italic>" + lore)));
         }
+        meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);
         return item;
     }
@@ -537,6 +540,7 @@ public class AdminMenuGUI implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.displayName(Component.text(" "));
+            meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
             item.setItemMeta(meta);
         }
         return item;
@@ -571,6 +575,13 @@ public class AdminMenuGUI implements Listener {
         }
 
         int slot = e.getSlot();
+        ItemStack clicked = e.getCurrentItem();
+
+        // PDC-защита: если предмет защищён — блокируем взятие,
+        // но разрешаем прописанные ниже действия (табы, навигация)
+        boolean isProtectedItem = clicked != null && clicked.hasItemMeta()
+                && clicked.getItemMeta().getPersistentDataContainer()
+                        .has(Keys.GUI_PROTECTED, PersistentDataType.BYTE);
 
         // Вкладки — только ЛКМ
         if (slot == SLOT_TAB_INFO && e.isLeftClick()) { state.tab = "INFO"; state.page = 0; buildGUI(player, state); return; }
@@ -594,11 +605,9 @@ public class AdminMenuGUI implements Listener {
                 return;
             }
 
-            // Клик по предмету — только ЛКМ, дать игроку
-            if (slot >= CONTENT_START && slot <= CONTENT_END && e.isLeftClick()) {
-                ItemStack clicked = e.getCurrentItem();
+            // Клик по предмету — только ЛКМ и только НЕ защищённый, дать игроку
+            if (slot >= CONTENT_START && slot <= CONTENT_END && e.isLeftClick() && !isProtectedItem) {
                 if (clicked != null && clicked.getType() != Material.BLACK_STAINED_GLASS_PANE) {
-                    // Give item to player
                     HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(clicked.clone());
                     if (!leftover.isEmpty()) {
                         player.getWorld().dropItemNaturally(player.getLocation(), leftover.get(0));

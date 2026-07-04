@@ -40,6 +40,9 @@ public class Keys {
     public static NamespacedKey OMNISCANNER_ENTITIES;
     public static NamespacedKey OMNISCANNER_RADIUS;
 
+    // GUI Protection
+    public static NamespacedKey GUI_PROTECTED;
+
     // Totem Charge
     public static NamespacedKey TOTEM_CHARGE;
 
@@ -75,6 +78,8 @@ public class Keys {
         OMNISCANNER_ITEMS = new NamespacedKey(plugin, "omniscanner_items");
         OMNISCANNER_ENTITIES = new NamespacedKey(plugin, "omniscanner_entities");
         OMNISCANNER_RADIUS = new NamespacedKey(plugin, "omniscanner_radius");
+
+        GUI_PROTECTED = new NamespacedKey(plugin, "gui_protected");
 
         TOTEM_CHARGE = new NamespacedKey(plugin, "totem_charge");
 
