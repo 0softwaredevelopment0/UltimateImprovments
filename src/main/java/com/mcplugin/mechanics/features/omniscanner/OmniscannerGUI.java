@@ -252,7 +252,15 @@ public class OmniscannerGUI implements Listener {
         GUIState state = openMenus.get(uuid);
         if (state == null) return;
 
-        e.setCancelled(true);
+        // Отменяем клик только в верхнем GUI (кастомный инвентарь)
+        if (e.getClickedInventory() == e.getView().getTopInventory()) {
+            e.setCancelled(true);
+        }
+
+        // Клик в нижнем инвентаре (своём) — разрешаем, всё ок
+        if (e.getClickedInventory() != e.getView().getTopInventory()) {
+            return;
+        }
 
         ItemStack scanner = findScannerInHand(player);
         if (scanner == null) {
@@ -265,25 +273,25 @@ public class OmniscannerGUI implements Listener {
 
         int slot = e.getSlot();
 
-        // Вкладки
-        if (slot == SLOT_BLOCKS_HEADER) {
+        // Вкладки (только ЛКМ)
+        if (slot == SLOT_BLOCKS_HEADER && e.isLeftClick()) {
             state.currentTab = "BLOCKS";
             buildGUI(state);
             return;
         }
-        if (slot == SLOT_ITEMS_HEADER) {
+        if (slot == SLOT_ITEMS_HEADER && e.isLeftClick()) {
             state.currentTab = "ITEMS";
             buildGUI(state);
             return;
         }
-        if (slot == SLOT_ENTITIES_HEADER) {
+        if (slot == SLOT_ENTITIES_HEADER && e.isLeftClick()) {
             state.currentTab = "ENTITIES";
             buildGUI(state);
             return;
         }
 
-        // Очистить всё
-        if (slot == SLOT_CLEAR_ALL) {
+        // Очистить всё (только ЛКМ)
+        if (slot == SLOT_CLEAR_ALL && e.isLeftClick()) {
             OmniscannerManager.setBlockTypes(scanner, new HashSet<>());
             OmniscannerManager.setItemTypes(scanner, new HashSet<>());
             OmniscannerManager.setEntityTypes(scanner, new HashSet<>());
@@ -293,30 +301,30 @@ public class OmniscannerGUI implements Listener {
             return;
         }
 
-        // Радиус
-        if (slot == SLOT_RADIUS_DOWN) {
+        // Радиус (только ЛКМ)
+        if (slot == SLOT_RADIUS_DOWN && e.isLeftClick()) {
             int r = Math.max(1, getRadius(scanner) - 10);
             OmniscannerManager.setRadius(scanner, r);
             buildGUI(state);
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.3f, 1.0f);
             return;
         }
-        if (slot == SLOT_RADIUS_UP) {
+        if (slot == SLOT_RADIUS_UP && e.isLeftClick()) {
             int r = Math.min(500, getRadius(scanner) + 10);
             OmniscannerManager.setRadius(scanner, r);
             buildGUI(state);
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.3f, 1.5f);
             return;
         }
-        if (slot == SLOT_RADIUS_SET) {
+        if (slot == SLOT_RADIUS_SET && e.isLeftClick()) {
             player.closeInventory();
             openMenus.remove(uuid);
             openRadiusAnvil(player, scanner);
             return;
         }
 
-        // Список типов — ПКМ удалить
-        if (slot >= SLOT_LIST_START && slot < 45) {
+        // Список типов — ТОЛЬКО ПКМ удалить
+        if (slot >= SLOT_LIST_START && slot < 45 && e.isRightClick()) {
             ItemStack clicked = e.getCurrentItem();
             if (clicked != null && clicked.hasItemMeta() && clicked.getItemMeta().hasDisplayName()) {
                 String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
@@ -346,8 +354,8 @@ public class OmniscannerGUI implements Listener {
             return;
         }
 
-        // Очистить текущий список
-        if (slot == SLOT_CLEAR) {
+        // Очистить текущий список (только ЛКМ)
+        if (slot == SLOT_CLEAR && e.isLeftClick()) {
             switch (state.currentTab) {
                 case "ITEMS":
                     OmniscannerManager.setItemTypes(scanner, new HashSet<>());
@@ -363,16 +371,16 @@ public class OmniscannerGUI implements Listener {
             return;
         }
 
-        // Добавить тип
-        if (slot == SLOT_ADD) {
+        // Добавить тип (только ЛКМ)
+        if (slot == SLOT_ADD && e.isLeftClick()) {
             player.closeInventory();
             openMenus.remove(uuid);
             openAddAnvil(player, scanner, state.currentTab);
             return;
         }
 
-        // Закрыть
-        if (slot == SLOT_BACK) {
+        // Закрыть (только ЛКМ)
+        if (slot == SLOT_BACK && e.isLeftClick()) {
             player.closeInventory();
             openMenus.remove(uuid);
         }

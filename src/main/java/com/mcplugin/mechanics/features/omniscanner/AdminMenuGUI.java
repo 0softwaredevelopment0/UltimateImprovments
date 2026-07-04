@@ -560,32 +560,42 @@ public class AdminMenuGUI implements Listener {
         MenuState state = openMenus.get(uuid);
         if (state == null) return;
 
-        e.setCancelled(true);
+        // Отменяем клик только в верхнем GUI (кастомный инвентарь)
+        if (e.getClickedInventory() == e.getView().getTopInventory()) {
+            e.setCancelled(true);
+        }
+
+        // Клик в нижнем инвентаре (своём) — разрешаем
+        if (e.getClickedInventory() != e.getView().getTopInventory()) {
+            return;
+        }
+
         int slot = e.getSlot();
 
-        // Вкладки
-        if (slot == SLOT_TAB_INFO) { state.tab = "INFO"; state.page = 0; buildGUI(player, state); return; }
-        if (slot == SLOT_TAB_STATS) { state.tab = "STATS"; state.page = 0; buildGUI(player, state); return; }
-        if (slot == SLOT_TAB_ITEMS) { state.tab = "ITEMS"; state.page = 0; buildGUI(player, state); return; }
+        // Вкладки — только ЛКМ
+        if (slot == SLOT_TAB_INFO && e.isLeftClick()) { state.tab = "INFO"; state.page = 0; buildGUI(player, state); return; }
+        if (slot == SLOT_TAB_STATS && e.isLeftClick()) { state.tab = "STATS"; state.page = 0; buildGUI(player, state); return; }
+        if (slot == SLOT_TAB_ITEMS && e.isLeftClick()) { state.tab = "ITEMS"; state.page = 0; buildGUI(player, state); return; }
 
         // Навигация (только для вкладки предметов)
         if (state.tab.equals("ITEMS")) {
             int itemsPerPage = CONTENT_END - CONTENT_START + 1;
             int totalPages = Math.max(1, (int) Math.ceil((double) CUSTOM_ITEMS.size() / itemsPerPage));
 
-            if (slot == SLOT_PREV_PAGE && state.page > 0) {
+            // Навигация — только ЛКМ
+            if (slot == SLOT_PREV_PAGE && e.isLeftClick() && state.page > 0) {
                 state.page--;
                 buildGUI(player, state);
                 return;
             }
-            if (slot == SLOT_NEXT_PAGE && state.page < totalPages - 1) {
+            if (slot == SLOT_NEXT_PAGE && e.isLeftClick() && state.page < totalPages - 1) {
                 state.page++;
                 buildGUI(player, state);
                 return;
             }
 
-            // Клик по предмету — дать игроку
-            if (slot >= CONTENT_START && slot <= CONTENT_END) {
+            // Клик по предмету — только ЛКМ, дать игроку
+            if (slot >= CONTENT_START && slot <= CONTENT_END && e.isLeftClick()) {
                 ItemStack clicked = e.getCurrentItem();
                 if (clicked != null && clicked.getType() != Material.BLACK_STAINED_GLASS_PANE) {
                     // Give item to player
@@ -603,8 +613,8 @@ public class AdminMenuGUI implements Listener {
             }
         }
 
-        // Закрыть
-        if (slot == SLOT_CLOSE) {
+        // Закрыть — только ЛКМ
+        if (slot == SLOT_CLOSE && e.isLeftClick()) {
             player.closeInventory();
             openMenus.remove(uuid);
         }
