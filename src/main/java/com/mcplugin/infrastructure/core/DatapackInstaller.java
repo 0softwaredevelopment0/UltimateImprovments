@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.infrastructure.util.FileLogger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,37 +25,90 @@ public class DatapackInstaller {
     }
 
     // =========================
-    // DATAPACK INSTALL
+    // FIND DATAPACKS FOLDER
     // =========================
-    public void install(Main plugin) throws Exception {
-        // В Paper 1.21.4+ (Minecraft 1.21.4+) миры хранятся в новой структуре:
-        //   <worlddir>/<level-name>/dimensions/<namespace>/<dimension>/
-        // Датапаки должны лежать в корне мира: <level-name>/datapacks/.
-        //
-        // Во время load: STARTUP Bukkit.getWorlds() пуст (миры ещё не загружены),
-        // поэтому читаем level-name напрямую из server.properties.
-        // Bukkit.getWorldContainer() доступен всегда — он из bukkit.yml.
 
-        String levelName = "world"; // значение по умолчанию
+    /**
+     * Автоматически находит папку datapacks в директории мира,
+     * независимо от версии Minecraft и структуры папок.
+     * <p>
+     * Приоритет поиска:
+     * <ol>
+     *   <li>Bukkit.getWorlds() — папка первого загруженного мира (самый надёжный)</li>
+     *   <li>server.properties → level-name → Bukkit.getWorldContainer()</li>
+     *   <li>Папка "world" в Bukkit.getWorldContainer() (значение по умолчанию)</li>
+     * </ol>
+     * Если папка datapacks не найдена — она создаётся.
+     */
+    private static File findDatapacksFolder() {
+        File worldRoot = findWorldRoot();
+
+        File datapacksFolder = new File(worldRoot, "datapacks");
+        FileLogger.ensureDirectory(datapacksFolder, "Datapack");
+        return datapacksFolder;
+    }
+
+    /**
+     * Находит корневую директорию мира, в которую нужно устанавливать датапаки.
+     */
+    private static File findWorldRoot() {
+        // 1. Пытаемся получить папку мира через Bukkit API (самый надёжный способ)
+        World firstWorld = null;
+        try {
+            if (!Bukkit.getWorlds().isEmpty()) {
+                firstWorld = Bukkit.getWorlds().get(0);
+            }
+        } catch (Exception ignored) {
+            // Bukkit.getWorlds() может быть не готов на ранних этапах загрузки
+        }
+
+        if (firstWorld != null) {
+            File worldFolder = firstWorld.getWorldFolder();
+            if (worldFolder != null && worldFolder.isDirectory()) {
+                ConsoleLogger.info("[Datapack] World root found via Bukkit API: " + worldFolder.getAbsolutePath());
+                return worldFolder;
+            }
+        }
+
+        // 2. Fallback: читаем level-name из server.properties
+        String levelName = "world";
         File serverDir = new File("").getAbsoluteFile();
         File serverPropsFile = new File(serverDir, "server.properties");
         if (serverPropsFile.exists()) {
-            Properties props = new Properties();
             try (FileInputStream fis = new FileInputStream(serverPropsFile)) {
+                Properties props = new Properties();
                 props.load(fis);
                 levelName = props.getProperty("level-name", "world");
+            } catch (Exception e) {
+                ConsoleLogger.warn("[Datapack] Failed to read server.properties: " + e.getMessage());
             }
         }
 
         File worldRoot = new File(Bukkit.getWorldContainer(), levelName);
-        File datapacksFolder = new File(worldRoot, "datapacks");
+        ConsoleLogger.info("[Datapack] World root from server.properties: " + worldRoot.getAbsolutePath());
 
-        FileLogger.ensureDirectory(datapacksFolder, "Datapack");
+        // 3. Если папка не найдена, пробуем стандартную "world"
+        if (!worldRoot.isDirectory()) {
+            File defaultWorld = new File(Bukkit.getWorldContainer(), "world");
+            if (defaultWorld.isDirectory()) {
+                worldRoot = defaultWorld;
+                ConsoleLogger.info("[Datapack] Fallback to default world folder: " + worldRoot.getAbsolutePath());
+            }
+        }
+
+        return worldRoot;
+    }
+
+    // =========================
+    // DATAPACK INSTALL
+    // =========================
+
+    public void install(Main plugin) throws Exception {
+        File datapacksFolder = findDatapacksFolder();
 
         File targetFolder = new File(datapacksFolder, "MC-Datapack");
 
         // Always re-extract to ensure datapack is up-to-date with plugin version.
-        // Delete old folder first, then copy fresh from JAR.
         if (targetFolder.exists()) {
             ConsoleLogger.info("[Datapack] Reinstalling existing datapack (folder exists: MC-Datapack)");
             deleteRecursively(targetFolder);
