@@ -5,6 +5,7 @@ website: N/A
 version: ${project.version}
 main: com.mcplugin.infrastructure.core.Main
 author: rizer001
+api-version: 1.21
 load: STARTUP
 softdepend: [PlaceholderAPI, LuckPerms, Vault, DeluxeMenus]
 libraries:
