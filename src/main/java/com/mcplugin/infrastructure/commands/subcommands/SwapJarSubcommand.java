@@ -298,9 +298,41 @@ public final class SwapJarSubcommand {
 
             sender.sendMessage(MessageUtil.parse(
                     "<dark_red>❌</dark_red> <red>Hot-swap failed: </red><white>" + e.getMessage() + "</white>"));
-            sender.sendMessage(MessageUtil.parse(
-                    "<gray>Check console for details. A backup JAR may exist at: </gray><white>"
-                    + new File(oldJar.getParentFile(), oldJar.getName() + ".bak").getAbsolutePath() + "</white>"));
+
+            // Пытаемся восстановить backup
+            try {
+                File backupFile = new File(oldJar.getParentFile(), oldJar.getName() + ".bak");
+                if (backupFile.exists()) {
+                    Files.copy(backupFile.toPath(), oldJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    ConsoleLogger.info("[SwapJar] Backup restored.");
+                    sender.sendMessage(MessageUtil.parse(
+                            "<yellow>⚠</yellow> <gray>Old JAR restored from backup.</gray>"));
+
+                    // Удаляем старый плагин из регистров перед перезагрузкой
+                    removePluginFromManager(pm, plugin);
+
+                    try {
+                        Plugin fallback = pm.loadPlugin(oldJar);
+                        if (fallback != null) {
+                            pm.enablePlugin(fallback);
+                            sender.sendMessage(MessageUtil.parse(
+                                    "<yellow>⚠</yellow> <white>Old plugin reloaded as fallback.</white>"));
+                        }
+                    } catch (Exception fbErr) {
+                        ConsoleLogger.error("[SwapJar] Fallback reload also failed: " + fbErr.getMessage());
+                        sender.sendMessage(MessageUtil.parse(
+                                "<red>❌ Fallback reload also failed! Restart server manually.</red>"));
+                    }
+                } else {
+                    sender.sendMessage(MessageUtil.parse(
+                            "<red>❌ No backup JAR found. Restart server manually.</red>"));
+                }
+            } catch (Exception restoreErr) {
+                ConsoleLogger.error("[SwapJar] Backup restoration failed: " + restoreErr.getMessage());
+                sender.sendMessage(MessageUtil.parse(
+                        "<red>❌ Backup restoration failed! Restart server manually. Backup at: </red><white>"
+                        + new File(oldJar.getParentFile(), oldJar.getName() + ".bak").getAbsolutePath() + "</white>"));
+            }
         }
 
         return true;
