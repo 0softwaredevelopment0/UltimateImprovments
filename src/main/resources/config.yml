@@ -486,7 +486,7 @@ messages:
 auth:
   enabled: true
 
-  min_password_length: 8
+  min_password_length: 1
   max_password_length: 32
 
   session_duration_minutes: 60

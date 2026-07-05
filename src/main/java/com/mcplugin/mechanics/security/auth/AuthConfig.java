@@ -45,7 +45,7 @@ public class AuthConfig {
     }
 
     public static int getMinPasswordLength() {
-        return getInt("auth.min_password_length", 8);
+        return getInt("auth.min_password_length", 1);
     }
 
     public static int getMaxPasswordLength() {

@@ -9,6 +9,7 @@ import com.mcplugin.mechanics.environment.radiation.RadiationManager;
 import com.mcplugin.mechanics.features.player.ElytraBoostManager;
 import com.mcplugin.mechanics.features.items.AutoCraftManager;
 import com.mcplugin.mechanics.features.world.MinecartSpeedManager;
+import com.mcplugin.infrastructure.util.Materials;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -311,7 +312,7 @@ public final class MiscSubcommand {
 
         // Копируем страницы из подписанной книги (List<String>) и создаём книгу с пером
         var pages = oldMeta.getPages();
-        ItemStack newBook = new ItemStack(Material.WRITABLE_BOOK, item.getAmount());
+        ItemStack newBook = new ItemStack(Materials.WRITABLE_BOOK, item.getAmount());
         BookMeta newMeta = (BookMeta) newBook.getItemMeta();
         if (newMeta == null) {
             player.sendMessage(MessageUtil.parse("<red>❌ Failed to create new book!</red>"));

@@ -7,8 +7,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.component.WritableBookContent;
 
+import com.mcplugin.infrastructure.util.Materials;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
@@ -60,7 +60,7 @@ public class NotesGUI {
     // CREATE NOTE BOOK (helper)
     // =========================
     private static ItemStack createNoteBook(UUID uuid, int noteNumber) {
-        ItemStack book = new ItemStack(Material.WRITABLE_BOOK);
+        ItemStack book = new ItemStack(Materials.WRITABLE_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
         if (meta == null) return book;
 
@@ -104,7 +104,7 @@ public class NotesGUI {
         UUID uuid = player.getUniqueId();
         editingSlots.put(uuid, noteNumber);
 
-        ItemStack book = new ItemStack(Material.WRITABLE_BOOK);
+        ItemStack book = new ItemStack(Materials.WRITABLE_BOOK);
 
         // ⚡ В Paper 1.21.4+ BookMeta.setPages() на WRITABLE_BOOK вызывает read-only баг.
         // Используем Data Component API напрямую через NMS: WritableBookContent + DataComponents.

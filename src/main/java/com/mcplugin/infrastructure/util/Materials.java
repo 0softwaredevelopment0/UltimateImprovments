@@ -44,6 +44,12 @@ public final class Materials {
     public static final Material WAXED_COPPER_TRAPDOOR = fromKey("waxed_copper_trapdoor");
 
     // ============================================================
+    // 📝 ITEMS
+    // ============================================================
+    /** Writable book (book and quill) for Notes GUI. */
+    public static final Material WRITABLE_BOOK = fromKey("writable_book");
+
+    // ============================================================
     // HELPER
     // ============================================================
     private static Material fromKey(String key) {

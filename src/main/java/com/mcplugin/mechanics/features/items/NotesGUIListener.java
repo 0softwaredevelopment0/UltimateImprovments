@@ -2,9 +2,9 @@ package com.mcplugin.mechanics.features.items;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.infrastructure.util.Materials;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -100,7 +100,7 @@ public class NotesGUIListener implements Listener {
         event.setCancelled(true);
         player.updateInventory();
 
-        if (event.getCurrentItem() == null || event.getCurrentItem().getType() != Material.WRITABLE_BOOK) return;
+        if (event.getCurrentItem() == null || event.getCurrentItem().getType() != Materials.WRITABLE_BOOK) return;
 
         int slot = event.getSlot();
         if (slot < 0 || slot >= NotesGUI.GUI_SIZE) return;
@@ -199,7 +199,7 @@ public class NotesGUIListener implements Listener {
 
     /** Check if an item is a note book (WRITABLE_BOOK with "Заметка #" display name). */
     private boolean isNoteBook(ItemStack item) {
-        if (item == null || item.getType() != Material.WRITABLE_BOOK) return false;
+        if (item == null || item.getType() != Materials.WRITABLE_BOOK) return false;
         // In Paper 1.21.4+ hasItemMeta() returns false for fresh items;
         // getItemMeta() always returns non-null for WRITABLE_BOOK
         BookMeta meta = (BookMeta) item.getItemMeta();
