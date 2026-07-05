@@ -8,6 +8,7 @@ import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
 
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.Materials;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -32,7 +33,7 @@ public class BlockPlaceListener implements Listener {
         // =========================
         // 🔋 BATTERY MULTIBLOCK (hot expand)
         // =========================
-        if (type == Material.WAXED_COPPER_GRATE) {
+        if (type == Materials.WAXED_COPPER_GRATE) {
             BatteryManager.onBlockPlaced(loc);
         }
 
@@ -63,7 +64,7 @@ public class BlockPlaceListener implements Listener {
         // =========================
         // NODE TYPE
         // =========================
-        if (type == Material.WAXED_COPPER_GRATE) {
+        if (type == Materials.WAXED_COPPER_GRATE) {
 
             node.setType(NodeType.BATTERY);
 

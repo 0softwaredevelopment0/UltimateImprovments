@@ -5,6 +5,7 @@ import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.infrastructure.util.Materials;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
@@ -252,7 +253,7 @@ public class BatteryManager implements Listener {
                 long nk = toKey(nx, ny, nz);
                 if (visited.contains(nk)) continue;
                 if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
-                if (world.getType(nx, ny, nz) == Material.WAXED_COPPER_GRATE) {
+                if (world.getType(nx, ny, nz) == Materials.WAXED_COPPER_GRATE) {
                     visited.add(nk);
                     queue.addLast(new int[]{nx, ny, nz});
                 }
@@ -458,7 +459,7 @@ public class BatteryManager implements Listener {
     public void onModeSwitch(PlayerInteractEvent e) {
         if (e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (!e.getPlayer().isSneaking()) return;
-        if (e.getClickedBlock() == null || e.getClickedBlock().getType() != Material.WAXED_COPPER_GRATE) return;
+        if (e.getClickedBlock() == null || e.getClickedBlock().getType() != Materials.WAXED_COPPER_GRATE) return;
 
         Player player = e.getPlayer();
         ItemStack hand = player.getInventory().getItemInMainHand();
@@ -540,7 +541,7 @@ public class BatteryManager implements Listener {
                 if (!cluster.world.isChunkLoaded(fx >> 4, fz >> 4)) continue;
 
                 // Анти-фантом: проверяем Marker и блок
-                if (cluster.world.getType(fx, fy, fz) != Material.WAXED_COPPER_GRATE) {
+                if (cluster.world.getType(fx, fy, fz) != Materials.WAXED_COPPER_GRATE) {
                     toRemove.add(cluster.id);
                     continue;
                 }

@@ -4,6 +4,7 @@ import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.infrastructure.util.Materials;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.storage.battery.BatteryManager;
@@ -259,7 +260,7 @@ public class LightManager {
                 long nk = toKey(nx, ny, nz);
                 if (visited.contains(nk)) continue;
                 if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
-                if (world.getType(nx, ny, nz) == Material.WAXED_COPPER_BULB) {
+                if (world.getType(nx, ny, nz) == Materials.WAXED_COPPER_BULB) {
                     visited.add(nk);
                     queue.addLast(new int[]{nx, ny, nz});
                 }
@@ -480,7 +481,7 @@ public class LightManager {
                 if (!cluster.world.isChunkLoaded(getX(firstKey) >> 4, getZ(firstKey) >> 4)) continue;
 
                 // Анти-фантом: проверяем, что блок всё ещё WAXED_COPPER_BULB
-                if (cluster.world.getType(getX(firstKey), getY(firstKey), getZ(firstKey)) != Material.WAXED_COPPER_BULB) {
+                if (cluster.world.getType(getX(firstKey), getY(firstKey), getZ(firstKey)) != Materials.WAXED_COPPER_BULB) {
                     toRemove.add(cluster.id);
                     continue;
                 }
@@ -544,7 +545,7 @@ public class LightManager {
     }
 
     private static void setBlockLitState(Block block, boolean lit) {
-        if (block.getType() != Material.WAXED_COPPER_BULB) return;
+        if (block.getType() != Materials.WAXED_COPPER_BULB) return;
         try {
             BlockData data = block.getBlockData();
             if (data instanceof Lightable lightable) {

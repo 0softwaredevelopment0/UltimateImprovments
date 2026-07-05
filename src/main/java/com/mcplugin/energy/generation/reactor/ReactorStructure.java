@@ -1,6 +1,7 @@
 package com.mcplugin.energy.generation.reactor;
 
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.Materials;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -77,11 +78,11 @@ public class ReactorStructure {
         // =========================
         // 1. COPPER BULBS
         // =========================
-        if (!isBlock(base, BULB_COOL,  Material.WAXED_COPPER_BULB)) return false;
-        if (!isBlock(base, BULB_HEAT,  Material.WAXED_COPPER_BULB)) return false;
+        if (!isBlock(base, BULB_COOL,  Materials.WAXED_COPPER_BULB)) return false;
+        if (!isBlock(base, BULB_HEAT,  Materials.WAXED_COPPER_BULB)) return false;
         // Integrity bulbs (required — opposite heat/cool bulbs)
-        if (!isBlock(base, BULB_SH_INT,  Material.WAXED_COPPER_BULB)) return false;
-        if (!isBlock(base, BULB_CASE_INT, Material.WAXED_COPPER_BULB)) return false;
+        if (!isBlock(base, BULB_SH_INT,  Materials.WAXED_COPPER_BULB)) return false;
+        if (!isBlock(base, BULB_CASE_INT, Materials.WAXED_COPPER_BULB)) return false;
 
         // =========================
         // 2. BARRELS (fuel input)
@@ -186,22 +187,22 @@ public class ReactorStructure {
         // =========================
         // 1. COPPER BULBS
         // =========================
-        checkBlockDetailed(errors, base, BULB_COOL, Material.WAXED_COPPER_BULB,
+        checkBlockDetailed(errors, base, BULB_COOL, Materials.WAXED_COPPER_BULB,
                 "§6[1] Cooling bulb §e(1, 0, -2)"
                         + "§7 — must be WAXED_COPPER_BULB at §f"
                         + locStr(base, BULB_COOL));
 
-        checkBlockDetailed(errors, base, BULB_HEAT, Material.WAXED_COPPER_BULB,
+        checkBlockDetailed(errors, base, BULB_HEAT, Materials.WAXED_COPPER_BULB,
                 "§6[2] Heating bulb §e(-1, 0, -2)"
                         + "§7 — must be WAXED_COPPER_BULB at §f"
                         + locStr(base, BULB_HEAT));
 
-        checkBlockDetailed(errors, base, BULB_SH_INT, Material.WAXED_COPPER_BULB,
+        checkBlockDetailed(errors, base, BULB_SH_INT, Materials.WAXED_COPPER_BULB,
                 "§6[3] Shell integrity bulb §e(-1, 0, 2)"
                         + "§7 — must be WAXED_COPPER_BULB at §f"
                         + locStr(base, BULB_SH_INT));
 
-        checkBlockDetailed(errors, base, BULB_CASE_INT, Material.WAXED_COPPER_BULB,
+        checkBlockDetailed(errors, base, BULB_CASE_INT, Materials.WAXED_COPPER_BULB,
                 "§6[4] Case integrity bulb §e(1, 0, 2)"
                         + "§7 — must be WAXED_COPPER_BULB at §f"
                         + locStr(base, BULB_CASE_INT));
@@ -348,7 +349,7 @@ public class ReactorStructure {
                 continue;
             }
             if (isCopperBlock(mat)) continue;
-            if (mat == Material.WAXED_CHISELED_COPPER) continue;
+            if (mat == Materials.WAXED_CHISELED_COPPER) continue;
             if (mat == Material.DIAMOND_BLOCK) continue;
             if (mat == Material.GOLD_BLOCK) continue;
             if (mat == Material.BARREL) continue;
@@ -416,7 +417,7 @@ public class ReactorStructure {
             if (mat == Material.AIR) return false;
             if (isCopperBlock(mat)) continue;
             // Allow waxed chiseled copper, diamond, gold, end rods inside
-            if (mat == Material.WAXED_CHISELED_COPPER) continue;
+            if (mat == Materials.WAXED_CHISELED_COPPER) continue;
             if (mat == Material.DIAMOND_BLOCK) continue;
             if (mat == Material.GOLD_BLOCK) continue;
             if (mat == Material.BARREL) continue;
@@ -482,10 +483,10 @@ public class ReactorStructure {
     // IS COPPER BLOCK
     // =========================
     private static boolean isCopperBlock(Material mat) {
-        return mat == Material.WAXED_CUT_COPPER
-            || mat == Material.WAXED_CHISELED_COPPER
-            || mat == Material.WAXED_COPPER_BLOCK
-            || mat == Material.WAXED_CUT_COPPER_STAIRS;
+        return mat == Materials.WAXED_CUT_COPPER
+            || mat == Materials.WAXED_CHISELED_COPPER
+            || mat == Materials.WAXED_COPPER_BLOCK
+            || mat == Materials.WAXED_CUT_COPPER_STAIRS;
     }
 
     // =========================

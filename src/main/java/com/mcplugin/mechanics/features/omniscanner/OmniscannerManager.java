@@ -251,7 +251,14 @@ public class OmniscannerManager implements Listener {
 
         List<ScanResult> results = new ArrayList<>();
 
-        // 1. Сканирование блоков (пустой список = все блоки)
+        // =========================
+        // 1. Сканирование блоков
+        // Пустой список = ВСЕ блоки (кроме воздуха)
+        // =========================
+        boolean scanAllBlocks = blockTypes.isEmpty();
+        if (scanAllBlocks) {
+            ConsoleLogger.info("[Omniscanner] Scanning ALL blocks (empty type list)");
+        }
         Set<Material> blockMaterials = null;
         if (!blockTypes.isEmpty()) {
             blockMaterials = blockTypes.stream()
@@ -285,7 +292,14 @@ public class OmniscannerManager implements Listener {
             }
         }
 
-        // 2. Сканирование предметов (на полу + в инвентарях; пустой список = все предметы)
+        // =========================
+        // 2. Сканирование предметов (на полу + в инвентарях)
+        // Пустой список = ВСЕ предметы
+        // =========================
+        boolean scanAllItems = itemTypes.isEmpty();
+        if (scanAllItems) {
+            ConsoleLogger.info("[Omniscanner] Scanning ALL items (empty type list)");
+        }
         Set<Material> itemMaterials = null;
         if (!itemTypes.isEmpty()) {
             itemMaterials = itemTypes.stream()
@@ -367,7 +381,14 @@ public class OmniscannerManager implements Listener {
             }
         }
 
-        // 3. Сканирование сущностей (пустой список = все сущности)
+        // =========================
+        // 3. Сканирование сущностей
+        // Пустой список = ВСЕ сущности
+        // =========================
+        boolean scanAllEntities = entityTypes.isEmpty();
+        if (scanAllEntities) {
+            ConsoleLogger.info("[Omniscanner] Scanning ALL entities (empty type list)");
+        }
         Set<String> upperEntityTypes = entityTypes.isEmpty() ? null
                 : entityTypes.stream().map(String::toUpperCase).collect(Collectors.toSet());
 

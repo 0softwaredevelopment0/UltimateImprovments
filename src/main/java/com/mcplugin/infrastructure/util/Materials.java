@@ -36,6 +36,14 @@ public final class Materials {
     public static final Material WAXED_COPPER_BULB = fromKey("waxed_copper_bulb");
 
     // ============================================================
+    // 🧱 COPPER VARIANTS (reactor walls, lightning structure)
+    // ============================================================
+    public static final Material WAXED_COPPER_BLOCK = fromKey("waxed_copper_block");
+    public static final Material WAXED_CUT_COPPER = fromKey("waxed_cut_copper");
+    public static final Material WAXED_CUT_COPPER_STAIRS = fromKey("waxed_cut_copper_stairs");
+    public static final Material WAXED_COPPER_TRAPDOOR = fromKey("waxed_copper_trapdoor");
+
+    // ============================================================
     // HELPER
     // ============================================================
     private static Material fromKey(String key) {

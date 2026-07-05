@@ -75,13 +75,13 @@ public class LightningStructure {
     // IS WAXED COPPER (any variant)
     // =========================
     private static boolean isWaxedCopper(Material mat) {
-        return mat == Material.WAXED_COPPER_BLOCK
-            || mat == Material.WAXED_CUT_COPPER
-            || mat == Material.WAXED_CHISELED_COPPER
-            || mat == Material.WAXED_COPPER_GRATE
-            || mat == Material.WAXED_COPPER_BULB
-            || mat == Material.WAXED_COPPER_TRAPDOOR
-            || mat == Material.WAXED_CUT_COPPER_STAIRS
+        return mat == Materials.WAXED_COPPER_BLOCK
+            || mat == Materials.WAXED_CUT_COPPER
+            || mat == Materials.WAXED_CHISELED_COPPER
+            || mat == Materials.WAXED_COPPER_GRATE
+            || mat == Materials.WAXED_COPPER_BULB
+            || mat == Materials.WAXED_COPPER_TRAPDOOR
+            || mat == Materials.WAXED_CUT_COPPER_STAIRS
             || mat == Materials.WAXED_LIGHTNING_ROD;
     }
 
@@ -131,42 +131,42 @@ public class LightningStructure {
         if (!isBlock(base, ROD, Materials.WAXED_LIGHTNING_ROD)) return false;
 
         // 2. Bulb at Y=-1
-        if (!isBlock(base, BULB, Material.WAXED_COPPER_BULB)) return false;
+        if (!isBlock(base, BULB, Materials.WAXED_COPPER_BULB)) return false;
 
         // 3. Inner trapdoors at Y=-1 (any orientation)
         for (int[] pos : TRAPDOORS_INNER) {
-            if (!isBlock(base, pos, Material.WAXED_COPPER_TRAPDOOR)) return false;
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) return false;
         }
 
         // 4. Grate at Y=-2
-        if (!isBlock(base, GRATE, Material.WAXED_COPPER_GRATE)) return false;
+        if (!isBlock(base, GRATE, Materials.WAXED_COPPER_GRATE)) return false;
 
         // 5. Stairs at Y=-2 (any orientation)
         for (int[] pos : STAIRS) {
-            if (!isBlock(base, pos, Material.WAXED_CUT_COPPER_STAIRS)) return false;
+            if (!isBlock(base, pos, Materials.WAXED_CUT_COPPER_STAIRS)) return false;
         }
 
         // 6. Mid trapdoors at Y=-2 (any orientation)
         for (int[] pos : TRAPDOORS_MID) {
-            if (!isBlock(base, pos, Material.WAXED_COPPER_TRAPDOOR)) return false;
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) return false;
         }
 
         // 7. Chiseled at Y=-3
-        if (!isBlock(base, CHISELED, Material.WAXED_CHISELED_COPPER)) return false;
+        if (!isBlock(base, CHISELED, Materials.WAXED_CHISELED_COPPER)) return false;
 
         // 8. Cut copper cross at Y=-3
         for (int[] pos : CUT_COPPER_CROSS) {
-            if (!isBlock(base, pos, Material.WAXED_CUT_COPPER)) return false;
+            if (!isBlock(base, pos, Materials.WAXED_CUT_COPPER)) return false;
         }
 
         // 9. Copper block corners at Y=-3
         for (int[] pos : COPPER_BLOCK_CORNERS) {
-            if (!isBlock(base, pos, Material.WAXED_COPPER_BLOCK)) return false;
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_BLOCK)) return false;
         }
 
         // 10. Outer trapdoors at Y=-3 (any orientation)
         for (int[] pos : TRAPDOORS_OUTER) {
-            if (!isBlock(base, pos, Material.WAXED_COPPER_TRAPDOOR)) return false;
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) return false;
         }
 
         // 11. Item frame on top of rod
@@ -198,7 +198,7 @@ public class LightningStructure {
                     if (world.getBlockAt(x, y, z).getType() == Materials.WAXED_LIGHTNING_ROD) {
                         // Quick confirm: chiseled copper at (x, y-3, z)
                         if (world.getBlockAt(x, y - 3, z).getType()
-                                == Material.WAXED_CHISELED_COPPER) {
+                                == Materials.WAXED_CHISELED_COPPER) {
                             return new Location(world, x, y, z);
                         }
                     }
@@ -241,7 +241,7 @@ public class LightningStructure {
         }
 
         // 2. Bulb
-        if (!isBlock(base, BULB, Material.WAXED_COPPER_BULB)) {
+        if (!isBlock(base, BULB, Materials.WAXED_COPPER_BULB)) {
             errors.add("§6[2] Медная лампочка §e(0, -1, 0)"
                 + " §7— должна быть WAXED_COPPER_BULB на §f["
                 + (base.getBlockX()) + " " + (base.getBlockY() - 1) + " " + base.getBlockZ() + "]"
@@ -251,7 +251,7 @@ public class LightningStructure {
         // 3. Inner trapdoors
         int innerTrapIssues = 0;
         for (int[] pos : TRAPDOORS_INNER) {
-            if (!isBlock(base, pos, Material.WAXED_COPPER_TRAPDOOR)) innerTrapIssues++;
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) innerTrapIssues++;
         }
         if (innerTrapIssues > 0) {
             errors.add("§6[3] Люки вокруг лампочки §eY=-1"
@@ -259,7 +259,7 @@ public class LightningStructure {
         }
 
         // 4. Grate
-        if (!isBlock(base, GRATE, Material.WAXED_COPPER_GRATE)) {
+        if (!isBlock(base, GRATE, Materials.WAXED_COPPER_GRATE)) {
             errors.add("§6[4] Медная решётка §e(0, -2, 0)"
                 + " §7— должна быть WAXED_COPPER_GRATE на §f["
                 + (base.getBlockX()) + " " + (base.getBlockY() - 2) + " " + base.getBlockZ() + "]"
@@ -269,7 +269,7 @@ public class LightningStructure {
         // 5. Stairs
         int stairIssues = 0;
         for (int[] pos : STAIRS) {
-            if (!isBlock(base, pos, Material.WAXED_CUT_COPPER_STAIRS)) stairIssues++;
+            if (!isBlock(base, pos, Materials.WAXED_CUT_COPPER_STAIRS)) stairIssues++;
         }
         if (stairIssues > 0) {
             errors.add("§6[5] Ступени вокруг решётки §eY=-2"
@@ -279,7 +279,7 @@ public class LightningStructure {
         // 6. Mid trapdoors
         int midTrapIssues = 0;
         for (int[] pos : TRAPDOORS_MID) {
-            if (!isBlock(base, pos, Material.WAXED_COPPER_TRAPDOOR)) midTrapIssues++;
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) midTrapIssues++;
         }
         if (midTrapIssues > 0) {
             errors.add("§6[6] Угловые люки §eY=-2"
@@ -287,7 +287,7 @@ public class LightningStructure {
         }
 
         // 7. Chiseled
-        if (!isBlock(base, CHISELED, Material.WAXED_CHISELED_COPPER)) {
+        if (!isBlock(base, CHISELED, Materials.WAXED_CHISELED_COPPER)) {
             errors.add("§6[7] Резная медь §e(0, -3, 0)"
                 + " §7— должна быть WAXED_CHISELED_COPPER на §f["
                 + (base.getBlockX()) + " " + (base.getBlockY() - 3) + " " + base.getBlockZ() + "]"
@@ -297,7 +297,7 @@ public class LightningStructure {
         // 8. Cut copper cross
         int cutIssues = 0;
         for (int[] pos : CUT_COPPER_CROSS) {
-            if (!isBlock(base, pos, Material.WAXED_CUT_COPPER)) cutIssues++;
+            if (!isBlock(base, pos, Materials.WAXED_CUT_COPPER)) cutIssues++;
         }
         if (cutIssues > 0) {
             errors.add("§6[8] Резной медный крест §eY=-3"
@@ -307,7 +307,7 @@ public class LightningStructure {
         // 9. Copper block corners
         int cornerIssues = 0;
         for (int[] pos : COPPER_BLOCK_CORNERS) {
-            if (!isBlock(base, pos, Material.WAXED_COPPER_BLOCK)) cornerIssues++;
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_BLOCK)) cornerIssues++;
         }
         if (cornerIssues > 0) {
             errors.add("§6[9] Угловые медные блоки §eY=-3"
@@ -317,7 +317,7 @@ public class LightningStructure {
         // 10. Outer trapdoors
         int outerTrapIssues = 0;
         for (int[] pos : TRAPDOORS_OUTER) {
-            if (!isBlock(base, pos, Material.WAXED_COPPER_TRAPDOOR)) outerTrapIssues++;
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) outerTrapIssues++;
         }
         if (outerTrapIssues > 0) {
             errors.add("§6[10] Боковые люки §eY=-3"

@@ -1,5 +1,6 @@
 package com.mcplugin.energy.generation.reactor;
 
+import com.mcplugin.infrastructure.util.Materials;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.type.CopperBulb;
@@ -292,7 +293,7 @@ public class ReactorDisplay {
     // =========================
     public boolean isBulbPowered(Location base, int dx, int dy, int dz) {
         Block block = base.clone().add(dx, dy, dz).getBlock();
-        if (block.getType() != Material.WAXED_COPPER_BULB) return false;
+        if (block.getType() != Materials.WAXED_COPPER_BULB) return false;
         CopperBulb bulbData = (CopperBulb) block.getBlockData();
         return bulbData.isPowered();
     }
@@ -302,7 +303,7 @@ public class ReactorDisplay {
     // =========================
     public void setBulbLit(Location base, int dx, int dy, int dz, boolean lit) {
         Block block = base.clone().add(dx, dy, dz).getBlock();
-        if (block.getType() != Material.WAXED_COPPER_BULB) return;
+        if (block.getType() != Materials.WAXED_COPPER_BULB) return;
         CopperBulb bulbData = (CopperBulb) block.getBlockData();
         if (bulbData.isLit() != lit) {
             bulbData.setLit(lit);

@@ -13,6 +13,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
@@ -256,6 +257,31 @@ public class OmniscannerGUI implements Listener {
     // INVENTORY CLICK LISTENER
     // ========================================================================
 
+    // ========================================================================
+    // 🛡 DRAG HANDLER — не даём перетаскивать предметы в GUI
+    // ========================================================================
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent e) {
+        if (!(e.getWhoClicked() instanceof Player player)) return;
+        UUID uuid = player.getUniqueId();
+        GUIState state = openMenus.get(uuid);
+        if (state == null) return;
+
+        // Блокируем drag, если хотя бы один слот принадлежит нашему GUI (raw slots 0-53)
+        for (int slot : e.getRawSlots()) {
+            if (slot < 54) {
+                e.setCancelled(true);
+                player.setItemOnCursor(null);
+                return;
+            }
+        }
+    }
+
+    // ========================================================================
+    // 🛡 CLICK HANDLER — блокируем все клики, чистим курсор
+    // ========================================================================
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
@@ -263,12 +289,12 @@ public class OmniscannerGUI implements Listener {
         GUIState state = openMenus.get(uuid);
         if (state == null) return;
 
-        // Всегда отменяем клик в верхнем инвентаре (кастомный GUI)
-        if (e.getClickedInventory() != null && e.getClickedInventory() == e.getView().getTopInventory()) {
-            e.setCancelled(true);
-        }
+        // 🛡 Блокируем ВСЕ клики в любом инвентаре, пока открыто наше GUI
+        // Это prevents: shift+click, number key swap, double-click сбор, drop
+        e.setCancelled(true);
+        player.setItemOnCursor(null);
 
-        // Нижний инвентарь (свой) — не трогаем
+        // Обрабатываем только клики в верхнем инвентаре (наше кастомное GUI)
         if (e.getClickedInventory() != e.getView().getTopInventory()) return;
 
         ItemStack scanner = findScannerInHand(player);
