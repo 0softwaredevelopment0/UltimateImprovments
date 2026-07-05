@@ -167,6 +167,9 @@ public class OmniscannerGUI implements Listener {
         inv.setItem(SLOT_BACK, createActionItem(Material.OAK_DOOR, "<gray>Закрыть</gray>", ""));
 
         player.openInventory(inv);
+
+        // Перерегистрируем состояние — InventoryCloseEvent удаляет его при перестройке GUI
+        openMenus.put(player.getUniqueId(), state);
     }
 
     // ========================================================================
