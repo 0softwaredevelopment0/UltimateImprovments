@@ -62,7 +62,10 @@ public class OmniscannerManager implements Listener {
         meta.displayName(MessageUtil.parse("<!italic><gradient:#FF6B6B:#FFD93D>🔭 Omniscanner</gradient>"));
         meta.lore(List.of(
                 MessageUtil.parse("<!italic><gray>Админский сканер</gray>"),
-                MessageUtil.parse("<!italic><red>Не настроено</red>"),
+                MessageUtil.parse("<!italic><gold>Радиус: </gold><white>16</white>"),
+                MessageUtil.parse("<!italic><gray>Блоки: </gray><white>все</white>"),
+                MessageUtil.parse("<!italic><gray>Предметы: </gray><white>все</white>"),
+                MessageUtil.parse("<!italic><gray>Сущности: </gray><white>все</white>"),
                 Component.empty(),
                 MessageUtil.parse("<!italic><gold>ПКМ</gold><gray> — Сканировать</gray>"),
                 MessageUtil.parse("<!italic><gold>Shift+ПКМ</gold><gray> — Настройки</gray>")
@@ -167,28 +170,28 @@ public class OmniscannerManager implements Listener {
         if (meta == null) return;
 
         Set<String> blocks = getSet(item, Keys.OMNISCANNER_BLOCKS);
-        Set<String> items = getSet(item, Keys.OMNISCANNER_ITEMS);
+        Set<String> itemTypes = getSet(item, Keys.OMNISCANNER_ITEMS);
         Set<String> entities = getSet(item, Keys.OMNISCANNER_ENTITIES);
         int radius = getInt(item, Keys.OMNISCANNER_RADIUS, 16);
 
         List<Component> lore = new ArrayList<>();
         lore.add(MessageUtil.parse("<!italic><gray>Админский сканер</gray>"));
+        lore.add(MessageUtil.parse("<!italic><gold>Радиус: </gold><white>" + radius + "</white>"));
 
-        boolean configured = !blocks.isEmpty() || !items.isEmpty() || !entities.isEmpty();
-        if (!configured) {
-            lore.add(MessageUtil.parse("<!italic><red>Не настроено</red>"));
+        if (!blocks.isEmpty()) {
+            lore.add(MessageUtil.parse("<!italic><gray>Блоков: </gray><white>" + blocks.size() + "</white>"));
         } else {
-            lore.add(MessageUtil.parse("<!italic><green>✓ Настроен</green>"));
-            lore.add(MessageUtil.parse("<!italic><gold>Радиус: </gold><white>" + radius + "</white>"));
-            if (!blocks.isEmpty()) {
-                lore.add(MessageUtil.parse("<!italic><gray>Блоков: </gray><white>" + blocks.size() + "</white>"));
-            }
-            if (!items.isEmpty()) {
-                lore.add(MessageUtil.parse("<!italic><gray>Предметов: </gray><white>" + items.size() + "</white>"));
-            }
-            if (!entities.isEmpty()) {
-                lore.add(MessageUtil.parse("<!italic><gray>Сущностей: </gray><white>" + entities.size() + "</white>"));
-            }
+            lore.add(MessageUtil.parse("<!italic><gray>Блоки: </gray><white>все</white>"));
+        }
+        if (!itemTypes.isEmpty()) {
+            lore.add(MessageUtil.parse("<!italic><gray>Предметов: </gray><white>" + itemTypes.size() + "</white>"));
+        } else {
+            lore.add(MessageUtil.parse("<!italic><gray>Предметы: </gray><white>все</white>"));
+        }
+        if (!entities.isEmpty()) {
+            lore.add(MessageUtil.parse("<!italic><gray>Сущностей: </gray><white>" + entities.size() + "</white>"));
+        } else {
+            lore.add(MessageUtil.parse("<!italic><gray>Сущности: </gray><white>все</white>"));
         }
 
         lore.add(Component.empty());
@@ -226,14 +229,7 @@ public class OmniscannerManager implements Listener {
             // Shift+ПКМ — открыть GUI настройки
             OmniscannerGUI.open(player, item);
         } else {
-            // ПКМ — сканировать
-            boolean hasConfig = !getBlockTypes(item).isEmpty()
-                    || !getItemTypes(item).isEmpty()
-                    || !getEntityTypes(item).isEmpty();
-            if (!hasConfig) {
-                player.sendMessage(MessageUtil.parse("<red>❌ Omniscanner не настроен! Shift+ПКМ для настройки.</red>"));
-                return;
-            }
+            // ПКМ — сканировать (пустые списки = всё)
             performScan(player, item);
         }
     }
@@ -255,9 +251,10 @@ public class OmniscannerManager implements Listener {
 
         List<ScanResult> results = new ArrayList<>();
 
-        // 1. Сканирование блоков
+        // 1. Сканирование блоков (пустой список = все блоки)
+        Set<Material> blockMaterials = null;
         if (!blockTypes.isEmpty()) {
-            Set<Material> blockMaterials = blockTypes.stream()
+            blockMaterials = blockTypes.stream()
                     .map(s -> s.toUpperCase())
                     .filter(s -> {
                         try {
@@ -269,27 +266,29 @@ public class OmniscannerManager implements Listener {
                     })
                     .map(Material::valueOf)
                     .collect(Collectors.toSet());
+        }
 
-            int minY = Math.max(player.getWorld().getMinHeight(), cy - radius);
-            int maxY = Math.min(player.getWorld().getMaxHeight(), cy + radius);
+        int minY = Math.max(player.getWorld().getMinHeight(), cy - radius);
+        int maxY = Math.min(player.getWorld().getMaxHeight(), cy + radius);
 
-            for (int x = cx - radius; x <= cx + radius; x++) {
-                for (int y = minY; y <= maxY; y++) {
-                    for (int z = cz - radius; z <= cz + radius; z++) {
-                        if ((cx - x) * (cx - x) + (cy - y) * (cy - y) + (cz - z) * (cz - z) > radius * radius) continue;
-                        Block block = player.getWorld().getBlockAt(x, y, z);
-                        if (blockMaterials.contains(block.getType())) {
-                            results.add(new ScanResult("Блок", block.getType().name(),
-                                    block.getLocation(), center.distance(block.getLocation().add(0.5, 0.5, 0.5))));
-                        }
+        for (int x = cx - radius; x <= cx + radius; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = cz - radius; z <= cz + radius; z++) {
+                    if ((cx - x) * (cx - x) + (cy - y) * (cy - y) + (cz - z) * (cz - z) > radius * radius) continue;
+                    Block block = player.getWorld().getBlockAt(x, y, z);
+                    if (block.getType() == Material.AIR) continue;
+                    if (blockMaterials == null || blockMaterials.contains(block.getType())) {
+                        results.add(new ScanResult("Блок", block.getType().name(),
+                                block.getLocation(), center.distance(block.getLocation().add(0.5, 0.5, 0.5))));
                     }
                 }
             }
         }
 
-        // 2. Сканирование предметов (на полу + в инвентарях)
+        // 2. Сканирование предметов (на полу + в инвентарях; пустой список = все предметы)
+        Set<Material> itemMaterials = null;
         if (!itemTypes.isEmpty()) {
-            Set<Material> itemMaterials = itemTypes.stream()
+            itemMaterials = itemTypes.stream()
                     .map(s -> s.toUpperCase())
                     .filter(s -> {
                         try {
@@ -301,87 +300,84 @@ public class OmniscannerManager implements Listener {
                     })
                     .map(Material::valueOf)
                     .collect(Collectors.toSet());
+        }
 
-            // 2a. Предметы на полу
-            for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-                if (!(entity instanceof Item itemEntity)) continue;
-                ItemStack stack = itemEntity.getItemStack();
-                if (stack != null && itemMaterials.contains(stack.getType())) {
-                    results.add(new ScanResult("Предмет(пол)", stack.getType().name(),
-                            entity.getLocation(), center.distance(entity.getLocation())));
+        // 2a. Предметы на полу
+        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
+            if (!(entity instanceof Item itemEntity)) continue;
+            ItemStack stack = itemEntity.getItemStack();
+            if (stack != null && (itemMaterials == null || itemMaterials.contains(stack.getType()))) {
+                results.add(new ScanResult("Предмет(пол)", stack.getType().name(),
+                        entity.getLocation(), center.distance(entity.getLocation())));
+            }
+        }
+
+        // 2b. Инвентари игроков
+        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
+            if (!(entity instanceof Player target)) continue;
+            if (target.equals(player)) continue;
+            for (ItemStack stack : target.getInventory().getContents()) {
+                if (stack != null && (itemMaterials == null || itemMaterials.contains(stack.getType()))) {
+                    results.add(new ScanResult("Предмет(игрок:" + target.getName() + ")", stack.getType().name(),
+                            target.getLocation(), center.distance(target.getLocation())));
                 }
             }
+        }
 
-            // 2b. Инвентари игроков
-            for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-                if (!(entity instanceof Player target)) continue;
-                if (target.equals(player)) continue;
-                for (ItemStack stack : target.getInventory().getContents()) {
-                    if (stack != null && itemMaterials.contains(stack.getType())) {
-                        results.add(new ScanResult("Предмет(игрок:" + target.getName() + ")", stack.getType().name(),
-                                target.getLocation(), center.distance(target.getLocation())));
-                    }
-                }
-            }
-
-            // 2c. Инвентари мобов (животные с инвентарём)
-            for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-                if (entity instanceof ChestedHorse horse) {
-                    Inventory inv = horse.getInventory();
-                    if (inv != null) {
-                        for (ItemStack stack : inv.getContents()) {
-                            if (stack != null && itemMaterials.contains(stack.getType())) {
-                                results.add(new ScanResult("Предмет(моб:" + getEntityDisplayName(horse) + ")", stack.getType().name(),
-                                        entity.getLocation(), center.distance(entity.getLocation())));
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 2d. Контейнеры (сундуки, бочки, печки и т.д.)
-            int minY2 = Math.max(player.getWorld().getMinHeight(), cy - radius);
-            int maxY2 = Math.min(player.getWorld().getMaxHeight(), cy + radius);
-            for (int x = cx - radius; x <= cx + radius; x++) {
-                for (int y = minY2; y <= maxY2; y++) {
-                    for (int z = cz - radius; z <= cz + radius; z++) {
-                        if ((cx - x) * (cx - x) + (cy - y) * (cy - y) + (cz - z) * (cz - z) > radius * radius) continue;
-                        Block block = player.getWorld().getBlockAt(x, y, z);
-                        if (block.getState() instanceof Container container) {
-                            try {
-                                Inventory inv = container.getInventory();
-                                String containerName = block.getType().name();
-                                // Handle double chests
-                                if (container instanceof Chest chest && chest.getInventory().getHolder() instanceof DoubleChest) {
-                                    containerName = "DOUBLE_CHEST";
-                                }
-                                for (ItemStack stack : inv.getContents()) {
-                                    if (stack != null && itemMaterials.contains(stack.getType())) {
-                                        results.add(new ScanResult("Предмет(" + containerName + ")", stack.getType().name(),
-                                                block.getLocation(), center.distance(block.getLocation().add(0.5, 0.5, 0.5))));
-                                    }
-                                }
-                            } catch (Exception ignored) {}
+        // 2c. Инвентари мобов (животные с инвентарём)
+        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
+            if (entity instanceof ChestedHorse horse) {
+                Inventory inv = horse.getInventory();
+                if (inv != null) {
+                    for (ItemStack stack : inv.getContents()) {
+                        if (stack != null && (itemMaterials == null || itemMaterials.contains(stack.getType()))) {
+                            results.add(new ScanResult("Предмет(моб:" + getEntityDisplayName(horse) + ")", stack.getType().name(),
+                                    entity.getLocation(), center.distance(entity.getLocation())));
                         }
                     }
                 }
             }
         }
 
-        // 3. Сканирование сущностей
-        if (!entityTypes.isEmpty()) {
-            Set<String> upperEntityTypes = entityTypes.stream()
-                    .map(String::toUpperCase)
-                    .collect(Collectors.toSet());
-
-            for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-                if (entity instanceof Player) continue;
-                if (entity instanceof Item) continue;
-                String typeName = entity.getType().name().toUpperCase();
-                if (upperEntityTypes.contains(typeName)) {
-                    results.add(new ScanResult("Сущность", getEntityDisplayName(entity),
-                            entity.getLocation(), center.distance(entity.getLocation())));
+        // 2d. Контейнеры (сундуки, бочки, печки и т.д.)
+        int minY2 = Math.max(player.getWorld().getMinHeight(), cy - radius);
+        int maxY2 = Math.min(player.getWorld().getMaxHeight(), cy + radius);
+        for (int x = cx - radius; x <= cx + radius; x++) {
+            for (int y = minY2; y <= maxY2; y++) {
+                for (int z = cz - radius; z <= cz + radius; z++) {
+                    if ((cx - x) * (cx - x) + (cy - y) * (cy - y) + (cz - z) * (cz - z) > radius * radius) continue;
+                    Block block = player.getWorld().getBlockAt(x, y, z);
+                    if (block.getState() instanceof Container container) {
+                        try {
+                            Inventory inv = container.getInventory();
+                            String containerName = block.getType().name();
+                            // Handle double chests
+                            if (container instanceof Chest chest && chest.getInventory().getHolder() instanceof DoubleChest) {
+                                containerName = "DOUBLE_CHEST";
+                            }
+                            for (ItemStack stack : inv.getContents()) {
+                                if (stack != null && (itemMaterials == null || itemMaterials.contains(stack.getType()))) {
+                                    results.add(new ScanResult("Предмет(" + containerName + ")", stack.getType().name(),
+                                            block.getLocation(), center.distance(block.getLocation().add(0.5, 0.5, 0.5))));
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
                 }
+            }
+        }
+
+        // 3. Сканирование сущностей (пустой список = все сущности)
+        Set<String> upperEntityTypes = entityTypes.isEmpty() ? null
+                : entityTypes.stream().map(String::toUpperCase).collect(Collectors.toSet());
+
+        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
+            if (entity instanceof Player) continue;
+            if (entity instanceof Item) continue;
+            String typeName = entity.getType().name().toUpperCase();
+            if (upperEntityTypes == null || upperEntityTypes.contains(typeName)) {
+                results.add(new ScanResult("Сущность", getEntityDisplayName(entity),
+                        entity.getLocation(), center.distance(entity.getLocation())));
             }
         }
 
