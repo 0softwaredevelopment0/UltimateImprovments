@@ -99,19 +99,13 @@ public class AuthAuthenticator {
         freezePlayer(player);
         timeoutManager.startLoginTimeout(player);
 
-        // Show auth instructions + open GUI with 1-tick delay (handshake must complete)
+        // Show auth instructions in chat with 1-tick delay (handshake must complete)
         new BukkitRunnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
                 if (!playerState.needsAuth(player)) return;
                 sendAuthPrompt(player, isRegistered);
-                // Открываем GUI автоматически, чтобы игрок сразу видел куда вводить пароль
-                if (isRegistered) {
-                    AuthGUI.openLogin(player);
-                } else {
-                    AuthGUI.openRegister(player);
-                }
             }
         }.runTaskLater(Main.getInstance(), 1L);
     }

@@ -265,6 +265,7 @@ public class ChgDimGUI implements Listener {
             if (slot < 3) {
                 e.setCancelled(true);
                 player.setItemOnCursor(null);
+                player.updateInventory();
                 return;
             }
         }
@@ -280,9 +281,10 @@ public class ChgDimGUI implements Listener {
         UUID uuid = player.getUniqueId();
         if (!openMenus.containsKey(uuid)) return;
 
-        // 🛡 Блокируем ВСЕ клики + чистим курсор
+        // 🛡 Блокируем ВСЕ клики + чистим курсор + форсируем синхронизацию
         e.setCancelled(true);
         player.setItemOnCursor(null);
+        player.updateInventory();
 
         int slot = e.getSlot();
 

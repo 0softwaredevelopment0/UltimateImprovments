@@ -80,6 +80,7 @@ public class NotesGUIListener implements Listener {
             if (slot < NotesGUI.GUI_SIZE) {
                 event.setCancelled(true);
                 player.setItemOnCursor(null);
+                player.updateInventory();
                 return;
             }
         }
@@ -97,6 +98,7 @@ public class NotesGUIListener implements Listener {
         if (!NotesGUI.openPlayers.contains(uuid)) return;
 
         event.setCancelled(true);
+        player.updateInventory();
 
         if (event.getCurrentItem() == null || event.getCurrentItem().getType() != Material.WRITABLE_BOOK) return;
 

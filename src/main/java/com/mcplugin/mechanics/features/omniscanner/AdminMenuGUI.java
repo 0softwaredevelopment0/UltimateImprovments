@@ -587,6 +587,7 @@ public class AdminMenuGUI implements Listener {
             if (slot < 54) {
                 e.setCancelled(true);
                 player.setItemOnCursor(null);
+                player.updateInventory();
                 return;
             }
         }
@@ -603,9 +604,10 @@ public class AdminMenuGUI implements Listener {
         MenuState state = openMenus.get(uuid);
         if (state == null) return;
 
-        // 🛡 Блокируем ВСЕ клики + чистим курсор
+        // 🛡 Блокируем ВСЕ клики + чистим курсор + форсируем синхронизацию
         e.setCancelled(true);
         player.setItemOnCursor(null);
+        player.updateInventory();
 
         // Обрабатываем только клики в верхнем инвентаре
         if (e.getClickedInventory() != e.getView().getTopInventory()) return;

@@ -273,6 +273,7 @@ public class OmniscannerGUI implements Listener {
             if (slot < 54) {
                 e.setCancelled(true);
                 player.setItemOnCursor(null);
+                player.updateInventory();
                 return;
             }
         }
@@ -293,6 +294,7 @@ public class OmniscannerGUI implements Listener {
         // Это prevents: shift+click, number key swap, double-click сбор, drop
         e.setCancelled(true);
         player.setItemOnCursor(null);
+        player.updateInventory();
 
         // Обрабатываем только клики в верхнем инвентаре (наше кастомное GUI)
         if (e.getClickedInventory() != e.getView().getTopInventory()) return;
