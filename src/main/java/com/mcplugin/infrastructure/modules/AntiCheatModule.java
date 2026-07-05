@@ -1,5 +1,6 @@
 package com.mcplugin.infrastructure.modules;
 
+import com.mcplugin.infrastructure.config.YamlDuplicateCleaner;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.mechanics.security.anticheat.AntiCheatManager;
 import com.mcplugin.mechanics.security.anticheat.nms.PacketHandler;
@@ -25,6 +26,14 @@ public class AntiCheatModule extends PluginModule {
 
         // Диагностика: проверяем, есть ли в config.yml дубликаты anticheat: секции
         checkForDuplicates(plugin);
+
+        // 🔧 Автоматически чистим дубликаты anticheat: секций
+        File configFile = new File(plugin.getDataFolder(), "config.yml");
+        if (configFile.exists() && YamlDuplicateCleaner.cleanDuplicates(configFile, "config.yml")) {
+            plugin.reloadConfig();
+            enabled = plugin.getConfig().getBoolean("anticheat.enabled", false);
+            ConsoleLogger.info("[AntiCheat] Config cleaned, re-read: anticheat.enabled = " + enabled);
+        }
 
         AntiCheatManager.init();
         AntiCheatManager acm = AntiCheatManager.getInstance();
