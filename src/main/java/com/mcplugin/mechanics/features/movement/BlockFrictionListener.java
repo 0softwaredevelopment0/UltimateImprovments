@@ -76,11 +76,16 @@ public class BlockFrictionListener implements Listener {
             double friction = cfg.getDouble(key, DEFAULT_FRICTION);
             frictionMap.put(mat, friction);
 
-            // Показываем эффект: экспонента за тик
-            double effect = friction * 0.91;
+            // Показываем эффект: экспонента за тик (используем заклэмпленное значение)
+            double clamped = Math.min(friction, 1.0);
+            double effect = clamped * 0.91;
             String direction = effect > 1.0 ? "🔼 ACCEL" : effect < 1.0 ? "🔽 DECEL" : "➡ NEUTRAL";
+            if (friction > 1.0) {
+                ConsoleLogger.warn("[BlockFriction] ⚠ " + mat.name() + " friction=" + friction
+                        + " > 1.0 clamped to 1.0! Values > 1.0 cause exponential acceleration.");
+            }
             ConsoleLogger.info("[BlockFriction] " + mat.name()
-                    + " → friction=" + friction
+                    + " → friction=" + (friction > 1.0 ? "1.0 (clamped, was " + friction + ")" : String.valueOf(friction))
                     + " (vel×" + String.format("%.4f", effect) + "/tick " + direction + ")");
         }
 
@@ -128,7 +133,11 @@ public class BlockFrictionListener implements Listener {
         if (friction == null) return;
 
         // Множитель velocity: customFriction / 0.6
-        double multiplier = friction / DEFAULT_FRICTION;
+        // Клэмпим friction до 1.0 — в ванильном Minecraft скользкость ВСЕГДА ≤ 1.0.
+        // Значение > 1.0 даёт экспоненциальное УСКОРЕНИЕ (скорость растёт каждый тик),
+        // что не соответствует поведению ванильной игры.
+        double clampedFriction = Math.min(friction, 1.0);
+        double multiplier = clampedFriction / DEFAULT_FRICTION;
 
         // Берём текущую velocity и умножаем горизонталь
         Vector vel = player.getVelocity();
