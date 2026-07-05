@@ -295,6 +295,10 @@ permissions:
     description: Allows requesting player coordinates (/mp askcords <nick>)
     default: true
 
+  mcplugin.command.togglebind:
+    description: Allows toggling wireless redstone binding (/mp togglebind)
+    default: true
+
   mcplugin.command.toggleradview:
     description: Allows toggling radiation display on actionbar (/mp toggleradview)
     default: true

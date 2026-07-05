@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.features.world;
 
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.database.DatabaseManager;
+import com.mcplugin.infrastructure.database.PlayerSettingsDB;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -513,6 +514,7 @@ public class WirelessRedstoneManager implements Listener {
         if (e.getHand() != EquipmentSlot.HAND) return;
         Player player = e.getPlayer();
         if (!player.isSneaking()) return;
+        if (!PlayerSettingsDB.isWirelessBindEnabled(player.getUniqueId())) return;
 
         Block clicked = e.getClickedBlock();
         if (clicked == null) return;

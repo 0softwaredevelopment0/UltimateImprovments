@@ -33,16 +33,20 @@ public class PlayerSettingsDB {
             UUID uuid,
             boolean bossbarEnabled,
             boolean scoreboardEnabled,
-            boolean pingEnabled
+            boolean pingEnabled,
+            boolean wirelessBindEnabled
     ) {
         public PlayerSettings withBossbar(boolean val) {
-            return new PlayerSettings(uuid, val, scoreboardEnabled, pingEnabled);
+            return new PlayerSettings(uuid, val, scoreboardEnabled, pingEnabled, wirelessBindEnabled);
         }
         public PlayerSettings withScoreboard(boolean val) {
-            return new PlayerSettings(uuid, bossbarEnabled, val, pingEnabled);
+            return new PlayerSettings(uuid, bossbarEnabled, val, pingEnabled, wirelessBindEnabled);
         }
         public PlayerSettings withPing(boolean val) {
-            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, val);
+            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, val, wirelessBindEnabled);
+        }
+        public PlayerSettings withWirelessBind(boolean val) {
+            return new PlayerSettings(uuid, bossbarEnabled, scoreboardEnabled, pingEnabled, val);
         }
     }
 
@@ -62,7 +66,8 @@ public class PlayerSettingsDB {
                      "uuid TEXT PRIMARY KEY," +
                      "bossbar_enabled INTEGER DEFAULT 1," +
                      "scoreboard_enabled INTEGER DEFAULT 1," +
-                     "ping_enabled INTEGER DEFAULT 1" +
+                     "ping_enabled INTEGER DEFAULT 1," +
+                     "wireless_bind_enabled INTEGER DEFAULT 1" +
                      ")")) {
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -81,7 +86,8 @@ public class PlayerSettingsDB {
                     boolean bb = rs.getInt("bossbar_enabled") == 1;
                     boolean sb = rs.getInt("scoreboard_enabled") == 1;
                     boolean ping = rs.getInt("ping_enabled") == 1;
-                    cache.put(uuid, new PlayerSettings(uuid, bb, sb, ping));
+                    boolean wb = rs.getInt("wireless_bind_enabled") == 1;
+                    cache.put(uuid, new PlayerSettings(uuid, bb, sb, ping, wb));
                 } catch (IllegalArgumentException ignored) {}
             }
             ConsoleLogger.info("[PlayerSettings] Loaded " + cache.size() + " player settings from DB");
@@ -96,7 +102,7 @@ public class PlayerSettingsDB {
 
     public static PlayerSettings get(UUID uuid) {
         return cache.computeIfAbsent(uuid, u ->
-                new PlayerSettings(u, true, true, true));
+                new PlayerSettings(u, true, true, true, true));
     }
 
     public static boolean isBossbarEnabled(UUID uuid) {
@@ -109,6 +115,10 @@ public class PlayerSettingsDB {
 
     public static boolean isPingEnabled(UUID uuid) {
         return get(uuid).pingEnabled();
+    }
+
+    public static boolean isWirelessBindEnabled(UUID uuid) {
+        return get(uuid).wirelessBindEnabled();
     }
 
     /**
@@ -145,6 +155,17 @@ public class PlayerSettingsDB {
     }
 
     /**
+     * Toggle wireless redstone binding. Returns the new state.
+     */
+    public static boolean toggleWirelessBind(UUID uuid) {
+        PlayerSettings cur = get(uuid);
+        boolean newVal = !cur.wirelessBindEnabled();
+        cache.put(uuid, cur.withWirelessBind(newVal));
+        saveSetting(uuid, "wireless_bind_enabled", newVal);
+        return newVal;
+    }
+
+    /**
      * Explicitly set bossbar state.
      */
     public static void setBossbarEnabled(UUID uuid, boolean enabled) {
@@ -169,6 +190,15 @@ public class PlayerSettingsDB {
         PlayerSettings cur = get(uuid);
         cache.put(uuid, cur.withPing(enabled));
         saveSetting(uuid, "ping_enabled", enabled);
+    }
+
+    /**
+     * Explicitly set wireless bind state.
+     */
+    public static void setWirelessBindEnabled(UUID uuid, boolean enabled) {
+        PlayerSettings cur = get(uuid);
+        cache.put(uuid, cur.withWirelessBind(enabled));
+        saveSetting(uuid, "wireless_bind_enabled", enabled);
     }
 
     // =========================

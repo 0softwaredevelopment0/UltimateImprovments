@@ -301,6 +301,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             }
 
             case "cilist" -> { CilistCommand.execute(sender); yield true; }
+            case "togglebind" -> MiscSubcommand.toggleBind(sender);
             case "toggleradview" -> MiscSubcommand.toggleRadView(sender);
             case "unlock" -> {
                 if (!(sender instanceof Player player)) {
@@ -363,7 +364,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         List<String> completions = new ArrayList<>();
 
         if (args.length == 1) {
-            completions.addAll(List.of("help", "checkver", "updatejar", "cilist", "toggleradview",
+            completions.addAll(List.of("help", "checkver", "updatejar", "cilist", "togglebind", "toggleradview",
                     "setrad", "reload", "str", "power", "suicide",
                     "auth", "chgdim", "chgdim_teleport", "chgdim_return", "chgop", "op", "deop", "vanish", "notes",
                     "codepane", "pane_click", "item", "modules", "togglespeed", "togglefly", "toggleautocraft",                    "togglebb", "togglesb", "toggleping", "swapjar", "near", "rtp", "vote",

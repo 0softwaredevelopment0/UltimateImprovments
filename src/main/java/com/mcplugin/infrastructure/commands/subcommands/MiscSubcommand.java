@@ -166,6 +166,28 @@ public final class MiscSubcommand {
     }
 
     // =========================
+    // TOGGLEBIND — вкл/выкл подключение связей редстоуна
+    // =========================
+    public static boolean toggleBind(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return true;
+        }
+        if (!player.hasPermission("mcplugin.command.togglebind")) {
+            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>"));
+            return true;
+        }
+        UUID uuid = player.getUniqueId();
+        boolean enabled = PlayerSettingsDB.toggleWirelessBind(uuid);
+        if (enabled) {
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Wireless redstone binding: </white><green>ON</green>"));
+        } else {
+            player.sendMessage(MessageUtil.parse("<red>❌</red> <white>Wireless redstone binding: </white><red>OFF</red>"));
+        }
+        return true;
+    }
+
+    // =========================
     // HOME (delegates to HomeCommand)
     // =========================
     public static boolean home(CommandSender sender, String[] args) {
