@@ -151,10 +151,7 @@ public class AuthManager {
         org.bukkit.entity.Player player = org.bukkit.Bukkit.getPlayer(uuid);
         if (player != null && player.isOnline()) {
             player.closeInventory();
-            player.setGameMode(org.bukkit.GameMode.SURVIVAL);
-            player.setWalkSpeed(0.2f);
-            player.setFlySpeed(0.1f);
-            player.setInvulnerable(false);
+            authenticator.restorePlayerState(player);
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.force_login_message", "<green>✔</green> <white>You have been force authorized by an administrator!</white>")));
         }
         return true;

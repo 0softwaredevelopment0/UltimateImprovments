@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.security.auth;
 
 import com.mcplugin.infrastructure.core.Keys;
 import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.mechanics.security.auth.AuthConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
@@ -55,7 +56,7 @@ public class AuthGUIItems {
                 MessageUtil.parse("<dark_gray>┃</dark_gray> <gray>Type your password in the</gray>").decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<dark_gray>┃</dark_gray> <gray>item name field above</gray>").decoration(TextDecoration.ITALIC, false),
                 Component.text("").decoration(TextDecoration.ITALIC, false),
-                MessageUtil.parse(isRegister ? "<gray>Minimum </gray><yellow>4</yellow><gray> characters</gray>" : "<gray>Enter your password</gray>").decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse(isRegister ? "<gray>Minimum </gray><yellow>" + AuthConfig.getMinPasswordLength() + "</yellow><gray> characters</gray>" : "<gray>Enter your password</gray>").decoration(TextDecoration.ITALIC, false),
                 Component.text("").decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<gray>Then click </gray><green>✔</green><gray> below</gray>").decoration(TextDecoration.ITALIC, false)
         ));

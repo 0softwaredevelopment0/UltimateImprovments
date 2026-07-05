@@ -10,7 +10,9 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Логика аутентификации: вход, регистрация, смена пароля, выход.
@@ -24,6 +26,14 @@ public class AuthAuthenticator {
     private final AuthPlayerState playerState;
     private final AuthRateLimiter rateLimiter;
     private final AuthTimeoutManager timeoutManager;
+
+    /**
+     * Сохраняет состояние игрока ДО фриза, чтобы восстановить после авторизации.
+     * Без этого операторы теряют CREATIVE и allowFlight при каждом входе.
+     */
+    private final Map<UUID, SavedPlayerState> savedStates = new ConcurrentHashMap<>();
+
+    private record SavedPlayerState(GameMode gameMode, float walkSpeed, float flySpeed, boolean allowFlight, boolean flying) {}
 
     public AuthAuthenticator(AuthPlayerState playerState, AuthRateLimiter rateLimiter, AuthTimeoutManager timeoutManager) {
         this.playerState = playerState;
@@ -89,13 +99,19 @@ public class AuthAuthenticator {
         freezePlayer(player);
         timeoutManager.startLoginTimeout(player);
 
-        // Show auth instructions in chat with 1-tick delay (handshake must complete)
+        // Show auth instructions + open GUI with 1-tick delay (handshake must complete)
         new BukkitRunnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
                 if (!playerState.needsAuth(player)) return;
                 sendAuthPrompt(player, isRegistered);
+                // Открываем GUI автоматически, чтобы игрок сразу видел куда вводить пароль
+                if (isRegistered) {
+                    AuthGUI.openLogin(player);
+                } else {
+                    AuthGUI.openRegister(player);
+                }
             }
         }.runTaskLater(Main.getInstance(), 1L);
     }
@@ -413,6 +429,7 @@ public class AuthAuthenticator {
         timeoutManager.cancelLoginTimeout(uuid);
         playerState.resetWrongAttempts(uuid);
 
+        // unfreezePlayer сам достанет и удалит savedState
         unfreezePlayer(player);
 
         player.sendMessage("");
@@ -521,6 +538,15 @@ public class AuthAuthenticator {
     // FREEZE / UNFREEZE PLAYER
     // =========================
     private void freezePlayer(Player player) {
+        UUID uuid = player.getUniqueId();
+        // Сохраняем состояние ДО фриза
+        savedStates.put(uuid, new SavedPlayerState(
+                player.getGameMode(),
+                player.getWalkSpeed(),
+                player.getFlySpeed(),
+                player.getAllowFlight(),
+                player.isFlying()
+        ));
         player.setGameMode(GameMode.ADVENTURE);
         player.setWalkSpeed(0.0f);
         player.setFlySpeed(0.0f);
@@ -530,10 +556,27 @@ public class AuthAuthenticator {
     }
 
     private void unfreezePlayer(Player player) {
-        player.setGameMode(GameMode.SURVIVAL);
-        player.setWalkSpeed(0.2f);
-        player.setFlySpeed(0.1f);
+        UUID uuid = player.getUniqueId();
+        SavedPlayerState saved = savedStates.remove(uuid);
+        if (saved != null) {
+            player.setGameMode(saved.gameMode);
+            player.setWalkSpeed(saved.walkSpeed);
+            player.setFlySpeed(saved.flySpeed);
+            player.setAllowFlight(saved.allowFlight);
+            player.setFlying(saved.flying);
+        } else {
+            player.setGameMode(GameMode.SURVIVAL);
+            player.setWalkSpeed(0.2f);
+            player.setFlySpeed(0.1f);
+        }
         player.setInvulnerable(false);
+    }
+
+    /**
+     * Восстанавливает сохранённое состояние игрока (используется forceLogin из AuthManager).
+     */
+    public void restorePlayerState(Player player) {
+        unfreezePlayer(player);
     }
 
     // =========================
