@@ -34,6 +34,8 @@ public class CodePanelGUIListener implements Listener {
         if (slot < 0 || slot >= CodePanelGUI.GUI_SIZE) return;
 
         event.setCancelled(true);
+        player.setItemOnCursor(null);
+        player.updateInventory();
 
         for (int s : CodePanelGUI.SCREEN_SLOTS) {
             if (slot == s) return;
@@ -63,10 +65,12 @@ public class CodePanelGUIListener implements Listener {
     // =========================
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        if (event.getWhoClicked() instanceof Player
+        if (event.getWhoClicked() instanceof Player player
                 && isOurGUI(event.getInventory())
                 && isOurTitle(event.getView().getTitle())) {
             event.setCancelled(true);
+            player.setItemOnCursor(null);
+            player.updateInventory();
         }
     }
 

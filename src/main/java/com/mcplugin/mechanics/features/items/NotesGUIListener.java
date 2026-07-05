@@ -98,6 +98,7 @@ public class NotesGUIListener implements Listener {
         if (!NotesGUI.openPlayers.contains(uuid)) return;
 
         event.setCancelled(true);
+        player.setItemOnCursor(null);
         player.updateInventory();
 
         if (event.getCurrentItem() == null || event.getCurrentItem().getType() != Materials.WRITABLE_BOOK) return;
