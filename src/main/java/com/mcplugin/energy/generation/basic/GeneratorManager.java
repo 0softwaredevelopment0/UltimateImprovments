@@ -9,6 +9,7 @@ import com.mcplugin.infrastructure.util.ConsoleLogger;
 
 import java.util.UUID;
 
+import com.mcplugin.infrastructure.util.Materials;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -71,7 +72,7 @@ public class GeneratorManager implements Listener {
                 if (!world.getUID().toString().equals(worldUid)) continue;
                 Location furnaceLoc = LocationUtil.normalize(new Location(world, x, y, z));
                 if (furnaceLoc == null) continue;
-                if (furnaceLoc.getBlock().getType() != Material.BLAST_FURNACE) continue;
+                if (furnaceLoc.getBlock().getType() != Materials.BLAST_FURNACE) continue;
                 if (!GeneratorStructure.isValid(furnaceLoc, false)) continue;
                 if (hasNearbyCable(furnaceLoc)) {
                     activeGenerators.put(furnaceLoc, true);
@@ -110,7 +111,7 @@ public class GeneratorManager implements Listener {
 
         Block clicked = event.getClickedBlock();
         if (clicked == null) return;
-        if (clicked.getType() != Material.BLAST_FURNACE) return;
+        if (clicked.getType() != Materials.BLAST_FURNACE) return;
 
         Location loc = LocationUtil.normalize(clicked.getLocation());
         if (loc == null) return;

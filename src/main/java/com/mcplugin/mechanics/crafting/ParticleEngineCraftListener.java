@@ -3,6 +3,7 @@ package com.mcplugin.mechanics.crafting;
 import com.mcplugin.energy.machines.assembler.AssemblerChecker;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.infrastructure.util.Materials;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -43,7 +44,7 @@ public class ParticleEngineCraftListener implements Listener {
         );
         recipe.setIngredient('I', Material.IRON_BLOCK);
         recipe.setIngredient('R', Material.REDSTONE_BLOCK);
-        recipe.setIngredient('B', Material.BLAST_FURNACE);
+        recipe.setIngredient('B', Materials.BLAST_FURNACE);
 
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);

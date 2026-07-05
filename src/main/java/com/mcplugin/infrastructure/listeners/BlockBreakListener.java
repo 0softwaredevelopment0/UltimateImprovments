@@ -10,6 +10,7 @@ import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.structure.StructureMarker;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.Materials;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -67,7 +68,7 @@ public class BlockBreakListener implements Listener {
         // =========================
         // 🔥 ГЕНЕРАТОР (BLAST_FURNACE) — разобрать при ломании печи
         // =========================
-        if (e.getBlock().getType() == Material.BLAST_FURNACE && GeneratorManager.isAssembled(loc)) {
+        if (e.getBlock().getType() == Materials.BLAST_FURNACE && GeneratorManager.isAssembled(loc)) {
             GeneratorManager.removeGenerator(loc);
             if (breaker != null) {
                 breaker.sendMessage("§e⚡ Генератор разобран!"
@@ -78,7 +79,7 @@ public class BlockBreakListener implements Listener {
         // =========================
         // 🔋 BATTERY MULTIBLOCK (hot shrink + orphaned marker cleanup)
         // =========================
-        if (e.getBlock().getType() == Material.WAXED_COPPER_GRATE) {
+        if (e.getBlock().getType() == Materials.WAXED_COPPER_GRATE) {
             if (BatteryManager.isActive(loc)) {
                 BatteryManager.onBlockBroken(loc, breaker);
             } else if (StructureMarker.existsAt(loc)) {

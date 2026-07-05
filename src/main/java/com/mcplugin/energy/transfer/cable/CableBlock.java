@@ -1,5 +1,6 @@
 package com.mcplugin.energy.transfer.cable;
 
+import com.mcplugin.infrastructure.util.Materials;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 
@@ -12,9 +13,9 @@ public class CableBlock {
         if (block == null) return false;
 
         Material type = block.getType();
-        return type == Material.WAXED_LIGHTNING_ROD
-                || type == Material.WAXED_CHISELED_COPPER
-                || type == Material.WAXED_COPPER_GRATE;
+        return type == Materials.WAXED_LIGHTNING_ROD
+                || type == Materials.WAXED_CHISELED_COPPER
+                || type == Materials.WAXED_COPPER_GRATE;
     }
 
     // =========================
@@ -26,7 +27,7 @@ public class CableBlock {
             return false;
         }
 
-        return block.getType() == Material.WAXED_LIGHTNING_ROD;
+        return block.getType() == Materials.WAXED_LIGHTNING_ROD;
     }
 
     // =========================
@@ -34,7 +35,7 @@ public class CableBlock {
     // =========================
     public static boolean isCorner(Block block) {
         if (block == null) return false;
-        return block.getType() == Material.WAXED_CHISELED_COPPER;
+        return block.getType() == Materials.WAXED_CHISELED_COPPER;
     }
 
     // =========================
@@ -42,6 +43,6 @@ public class CableBlock {
     // =========================
     public static boolean isBattery(Block block) {
         if (block == null) return false;
-        return block.getType() == Material.WAXED_COPPER_GRATE;
+        return block.getType() == Materials.WAXED_COPPER_GRATE;
     }
 }

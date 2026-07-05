@@ -2,8 +2,8 @@ package com.mcplugin.energy.generation.basic;
 
 import com.mcplugin.infrastructure.util.LocationUtil;
 
+import com.mcplugin.infrastructure.util.Materials;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 
 import org.bukkit.entity.Entity;
@@ -33,7 +33,7 @@ public class GeneratorStructure {
         Location base = LocationUtil.normalize(center);
 
         // 1. Blast furnace at center
-        if (base.getBlock().getType() != Material.BLAST_FURNACE) return false;
+        if (base.getBlock().getType() != Materials.BLAST_FURNACE) return false;
 
         // 2. Item frame on top of blast furnace
         if (requireFrame && !hasItemFrameOnTop(base)) return false;
@@ -87,7 +87,7 @@ public class GeneratorStructure {
         for (int x = bx - 2; x <= bx + 2; x++) {
             for (int y = by - 2; y <= by + 2; y++) {
                 for (int z = bz - 2; z <= bz + 2; z++) {
-                    if (world.getBlockAt(x, y, z).getType() == Material.BLAST_FURNACE) {
+                    if (world.getBlockAt(x, y, z).getType() == Materials.BLAST_FURNACE) {
                         Location candidate = new Location(world, x, y, z);
                         if (isValid(candidate)) {
                             return candidate;
@@ -111,7 +111,7 @@ public class GeneratorStructure {
         Location base = LocationUtil.normalize(center);
 
         // 1. Blast furnace
-        if (base.getBlock().getType() != Material.BLAST_FURNACE) {
+        if (base.getBlock().getType() != Materials.BLAST_FURNACE) {
             errors.add("§6[1] Blast furnace §e(0, 0, 0)"
                     + " §7— must be BLAST_FURNACE at §f["
                     + base.getBlockX() + " " + base.getBlockY() + " " + base.getBlockZ() + "]"

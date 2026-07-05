@@ -4,6 +4,7 @@ import com.mcplugin.mechanics.environment.lightning.LightningManager;
 import com.mcplugin.mechanics.environment.lightning.LightningStructure;
 import com.mcplugin.mechanics.environment.magnet.MagnetManager;
 import com.mcplugin.mechanics.environment.magnet.MagnetStructure;
+import com.mcplugin.infrastructure.util.Materials;
 import com.mcplugin.infrastructure.util.StructureTemplate;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.energy.generation.basic.GeneratorManager;
@@ -38,7 +39,7 @@ public class ReactorListener implements Listener {
     // REACTOR BLOCKS (for monitoring)
     // =========================
     private static final Material[] KEY_BLOCKS = {
-            Material.WAXED_COPPER_BULB,
+            Materials.WAXED_COPPER_BULB,
             Material.DIAMOND_BLOCK,
             Material.GOLD_BLOCK,
             Material.OAK_SIGN, Material.OAK_WALL_SIGN,
@@ -310,7 +311,7 @@ public class ReactorListener implements Listener {
                         frame.getFacing().getOppositeFace()
                 ).getLocation()
         );
-        if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Material.WAXED_COPPER_GRATE) {
+        if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Materials.WAXED_COPPER_GRATE) {
             if (BatteryManager.isActive(attachedLoc2)) {
                 player.sendMessage("§eБатарея уже собрана на этом месте!");
                 return;
@@ -339,7 +340,7 @@ public class ReactorListener implements Listener {
                 frame.getLocation().clone().add(0, -1, 0)
         );
         if (generatorLoc != null
-                && generatorLoc.getBlock().getType() == Material.BLAST_FURNACE
+                && generatorLoc.getBlock().getType() == Materials.BLAST_FURNACE
                 && GeneratorStructure.isValid(generatorLoc)) {
             // Проверяем кабель рядом
             if (GeneratorManager.hasNearbyCable(generatorLoc)) {

@@ -6,8 +6,8 @@ import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.infrastructure.util.LocationUtil;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
 
+import com.mcplugin.infrastructure.util.Materials;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Furnace;
@@ -68,13 +68,13 @@ public class GeneratorTask extends BukkitRunnable {
         fuelTimer.entrySet().removeIf(entry -> {
             Location loc = entry.getKey();
             return !GeneratorManager.isAssembled(loc)
-                    || loc.getBlock().getType() != Material.BLAST_FURNACE;
+                    || loc.getBlock().getType() != Materials.BLAST_FURNACE;
         });
 
         energyAccumulator.entrySet().removeIf(entry -> {
             Location loc = entry.getKey();
             return !GeneratorManager.isAssembled(loc)
-                    || loc.getBlock().getType() != Material.BLAST_FURNACE;
+                    || loc.getBlock().getType() != Materials.BLAST_FURNACE;
         });
 
         // =========================
@@ -87,7 +87,7 @@ public class GeneratorTask extends BukkitRunnable {
             if (furnaceLoc == null) continue;
 
             Block block = furnaceLoc.getBlock();
-            if (block.getType() != Material.BLAST_FURNACE) continue;
+            if (block.getType() != Materials.BLAST_FURNACE) continue;
 
             // Find connected cable node
             CableNode node = GeneratorManager.findConnectedNode(furnaceLoc);

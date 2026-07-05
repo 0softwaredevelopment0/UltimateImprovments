@@ -5,6 +5,7 @@ import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.energy.transfer.cable.*;
 import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.infrastructure.util.Materials;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import com.mcplugin.mechanics.features.structure.StructureIntegrityManager;
 import org.bukkit.Location;
@@ -80,7 +81,7 @@ public class MultimeterListener implements Listener {
         // =========================
         // ⚡ ГЕНЕРАТОР (BLAST_FURNACE)
         // =========================
-        if (type == Material.BLAST_FURNACE) {
+        if (type == Materials.BLAST_FURNACE) {
             boolean assembled = GeneratorManager.isAssembled(block.getLocation());
             player.sendMessage(MessageUtil.parse("<aqua>Type: Generator</aqua>"));
             player.sendMessage(MessageUtil.parse("<aqua>Assembled: </aqua><white>" + (assembled ? "yes" : "no") + "</white>"));
@@ -123,7 +124,7 @@ public class MultimeterListener implements Listener {
         // =========================
         // BATTERY
         // =========================
-        if (type == Material.WAXED_COPPER_GRATE) {
+        if (type == Materials.WAXED_COPPER_GRATE) {
 
             player.sendMessage(MessageUtil.parse("<aqua>Type: Battery</aqua>"));
             player.sendMessage(MessageUtil.parse("<aqua>Energy: </aqua><white>" + node.getEnergy() + "</white>"));
@@ -134,7 +135,7 @@ public class MultimeterListener implements Listener {
         // =========================
         // CABLE
         // =========================
-        if (type == Material.WAXED_LIGHTNING_ROD) {
+        if (type == Materials.WAXED_LIGHTNING_ROD) {
 
             player.sendMessage(MessageUtil.parse("<yellow>Type: Cable</yellow>"));
             player.sendMessage(MessageUtil.parse("<yellow>Energy: </yellow><white>" + node.getEnergy() + "</white>"));
@@ -165,7 +166,7 @@ public class MultimeterListener implements Listener {
         // =========================
         // JUNCTION
         // =========================
-        if (type == Material.WAXED_CHISELED_COPPER) {
+        if (type == Materials.WAXED_CHISELED_COPPER) {
 
             player.sendMessage(MessageUtil.parse("<gold>Type: Junction</gold>"));
             player.sendMessage(MessageUtil.parse("<gold>Energy: </gold><white>" + node.getEnergy() + "</white>"));

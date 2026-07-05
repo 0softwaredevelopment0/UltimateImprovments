@@ -1,6 +1,7 @@
 package com.mcplugin.mechanics.features.scanner;
 
 import com.mcplugin.infrastructure.core.Keys;
+import com.mcplugin.infrastructure.util.Materials;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 
@@ -54,7 +55,7 @@ public class MetalDetectorListener implements Listener {
             Material.HOPPER, Material.IRON_DOOR, Material.IRON_TRAPDOOR,
             Material.IRON_BARS, Material.CAULDRON, Material.COPPER_DOOR, Material.COPPER_TRAPDOOR,
             Material.LANTERN, Material.SOUL_LANTERN, Material.LIGHTNING_ROD,
-            Material.GRINDSTONE, Material.BLAST_FURNACE,
+            Material.GRINDSTONE, Materials.BLAST_FURNACE,
             Material.PISTON, Material.STICKY_PISTON,
             Material.OBSERVER, Material.DISPENSER, Material.DROPPER,
             Material.LEVER, Material.TRIPWIRE_HOOK,

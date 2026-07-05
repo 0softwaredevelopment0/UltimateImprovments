@@ -2,6 +2,7 @@ package com.mcplugin.mechanics.environment.lightning;
 
 import com.mcplugin.infrastructure.util.LocationUtil;
 
+import com.mcplugin.infrastructure.util.Materials;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -81,7 +82,7 @@ public class LightningStructure {
             || mat == Material.WAXED_COPPER_BULB
             || mat == Material.WAXED_COPPER_TRAPDOOR
             || mat == Material.WAXED_CUT_COPPER_STAIRS
-            || mat == Material.WAXED_LIGHTNING_ROD;
+            || mat == Materials.WAXED_LIGHTNING_ROD;
     }
 
     // =========================
@@ -127,7 +128,7 @@ public class LightningStructure {
         Location base = LocationUtil.normalize(center);
 
         // 1. Lightning rod at center
-        if (!isBlock(base, ROD, Material.WAXED_LIGHTNING_ROD)) return false;
+        if (!isBlock(base, ROD, Materials.WAXED_LIGHTNING_ROD)) return false;
 
         // 2. Bulb at Y=-1
         if (!isBlock(base, BULB, Material.WAXED_COPPER_BULB)) return false;
@@ -194,7 +195,7 @@ public class LightningStructure {
         for (int x = bx - 3; x <= bx + 3; x++) {
             for (int y = by - 1; y <= by + 3; y++) {
                 for (int z = bz - 3; z <= bz + 3; z++) {
-                    if (world.getBlockAt(x, y, z).getType() == Material.WAXED_LIGHTNING_ROD) {
+                    if (world.getBlockAt(x, y, z).getType() == Materials.WAXED_LIGHTNING_ROD) {
                         // Quick confirm: chiseled copper at (x, y-3, z)
                         if (world.getBlockAt(x, y - 3, z).getType()
                                 == Material.WAXED_CHISELED_COPPER) {
@@ -234,7 +235,7 @@ public class LightningStructure {
         Location base = LocationUtil.normalize(center);
 
         // 1. Lightning rod
-        if (!isBlock(base, ROD, Material.WAXED_LIGHTNING_ROD)) {
+        if (!isBlock(base, ROD, Materials.WAXED_LIGHTNING_ROD)) {
             errors.add("§6[1] Громоотвод §e(0, 0, 0) §7— должен быть WAXED_LIGHTNING_ROD на §f["
                 + (base.getBlockX()) + " " + base.getBlockY() + " " + base.getBlockZ() + "]");
         }

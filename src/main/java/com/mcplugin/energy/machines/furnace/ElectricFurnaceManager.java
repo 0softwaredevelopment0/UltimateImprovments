@@ -1,6 +1,7 @@
 package com.mcplugin.energy.machines.furnace;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.Materials;
 import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
@@ -120,7 +121,7 @@ public class ElectricFurnaceManager implements Listener {
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dz = -1; dz <= 1; dz++) {
                         Location blockLoc = new Location(world, bx + dx, by - 1, bz + dz);
-                        if (blockLoc.getBlock().getType() != Material.BLAST_FURNACE) continue;
+                        if (blockLoc.getBlock().getType() != Materials.BLAST_FURNACE) continue;
 
                         // Check if item is on top of this furnace
                         Location furnaceTop = blockLoc.clone().add(0.5, 1.2, 0.5);
@@ -151,7 +152,7 @@ public class ElectricFurnaceManager implements Listener {
                     for (Location nearby : LocationUtil.getNeighbors(nodeLoc)) {
                         Location blockLoc = LocationUtil.normalize(nearby);
                         if (blockLoc == null) continue;
-                        if (blockLoc.getBlock().getType() != Material.BLAST_FURNACE) continue;
+                        if (blockLoc.getBlock().getType() != Materials.BLAST_FURNACE) continue;
 
                         // Cooldown check (cable-below check is done in tryCookItem)
                         long now = System.currentTimeMillis();
@@ -199,7 +200,7 @@ public class ElectricFurnaceManager implements Listener {
             for (int dz = -1; dz <= 1; dz++) {
                 Location blockLoc = new Location(world, itemLoc.getBlockX() + dx,
                         itemLoc.getBlockY() - 1, itemLoc.getBlockZ() + dz);
-                if (blockLoc.getBlock().getType() != Material.BLAST_FURNACE) continue;
+                if (blockLoc.getBlock().getType() != Materials.BLAST_FURNACE) continue;
 
                 Location furnaceTop = blockLoc.clone().add(0.5, 1.2, 0.5);
                 if (entity.getLocation().distance(furnaceTop) < 2.0) {

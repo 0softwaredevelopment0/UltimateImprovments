@@ -1,8 +1,8 @@
 package com.mcplugin.energy.transfer.cable;
 
 import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.infrastructure.util.Materials;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
@@ -32,7 +32,7 @@ public class CableVisualTask extends BukkitRunnable {
 
             boolean isFlowing = CableNetwork.isFlowing(loc);
             Block block = loc.getBlock();
-            if (block.getType() != Material.WAXED_LIGHTNING_ROD) return;
+            if (block.getType() != Materials.WAXED_LIGHTNING_ROD) return;
             BlockData raw = block.getBlockData();
             if (!(raw instanceof LightningRod data)) return;
 
