@@ -6,8 +6,10 @@ import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.ChunkSnapshot;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
@@ -22,7 +24,7 @@ import org.bukkit.block.Container;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.LivingEntity;
+
 import org.bukkit.entity.ChestedHorse;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -238,6 +240,15 @@ public class OmniscannerManager implements Listener {
     // SCAN LOGIC
     // ========================================================================
 
+    /**
+     * Запускает сканирование.
+     * <p>
+     * ⚡ Для предотвращения фриза сервера (см. TODOs.md):
+     * - ChunkSnapshot собираются на server thread (быстро — O(чанки), не O(блоки))
+     * - Блоки сканируются на async thread через {@link ChunkSnapshot#getBlockType} (thread-safe)
+     * - Сущности собираются на server thread (O(сущности), быстро)
+     * - Результаты возвращаются на server thread для вывода
+     */
     public static void performScan(Player player, ItemStack scanner) {
         Set<String> blockTypes = getBlockTypes(scanner);
         Set<String> itemTypes = getItemTypes(scanner);
@@ -245,165 +256,276 @@ public class OmniscannerManager implements Listener {
         int radius = getRadius(scanner);
 
         Location center = player.getLocation();
+        World world = player.getWorld();
         int cx = center.getBlockX();
         int cy = center.getBlockY();
         int cz = center.getBlockZ();
 
-        List<ScanResult> results = new ArrayList<>();
+        // Сообщение игроку — сканирование может занять время
+        player.sendMessage(Component.empty());
+        player.sendMessage(MessageUtil.parse("<gradient:#FF6B6B:#FFD93D>═══════ 🔭 Omniscanner ═══════</gradient>"));
+        player.sendMessage(MessageUtil.parse("<gold>🔭 Scanning started...</gold> <gray>Radius: " + radius + " blocks. This may take a moment on large scans.</gray>"));
+        player.sendMessage(MessageUtil.parse("<gradient:#FF6B6B:#FFD93D>════════════════════════════</gradient>"));
 
         // =========================
-        // 1. Сканирование блоков
-        // Пустой список = ВСЕ блоки (кроме воздуха)
+        // Pre-resolve Material sets (main thread)
         // =========================
-        boolean scanAllBlocks = blockTypes.isEmpty();
-        if (scanAllBlocks) {
-            ConsoleLogger.info("[Omniscanner] Scanning ALL blocks (empty type list)");
-        }
-        Set<Material> blockMaterials = null;
-        if (!blockTypes.isEmpty()) {
-            blockMaterials = blockTypes.stream()
-                    .map(s -> s.toUpperCase())
-                    .filter(s -> {
-                        try {
-                            Material.valueOf(s);
-                            return true;
-                        } catch (IllegalArgumentException e) {
-                            return false;
-                        }
-                    })
-                    .map(Material::valueOf)
-                    .collect(Collectors.toSet());
-        }
-
-        int minY = Math.max(player.getWorld().getMinHeight(), cy - radius);
-        int maxY = Math.min(player.getWorld().getMaxHeight(), cy + radius);
-
-        for (int x = cx - radius; x <= cx + radius; x++) {
-            for (int y = minY; y <= maxY; y++) {
-                for (int z = cz - radius; z <= cz + radius; z++) {
-                    if ((cx - x) * (cx - x) + (cy - y) * (cy - y) + (cz - z) * (cz - z) > radius * radius) continue;
-                    Block block = player.getWorld().getBlockAt(x, y, z);
-                    if (block.getType() == Material.AIR) continue;
-                    if (blockMaterials == null || blockMaterials.contains(block.getType())) {
-                        results.add(new ScanResult("Блок", block.getType().name(),
-                                block.getLocation(), center.distance(block.getLocation().add(0.5, 0.5, 0.5))));
-                    }
-                }
-            }
-        }
-
-        // =========================
-        // 2. Сканирование предметов (на полу + в инвентарях)
-        // Пустой список = ВСЕ предметы
-        // =========================
-        boolean scanAllItems = itemTypes.isEmpty();
-        if (scanAllItems) {
-            ConsoleLogger.info("[Omniscanner] Scanning ALL items (empty type list)");
-        }
-        Set<Material> itemMaterials = null;
-        if (!itemTypes.isEmpty()) {
-            itemMaterials = itemTypes.stream()
-                    .map(s -> s.toUpperCase())
-                    .filter(s -> {
-                        try {
-                            Material.valueOf(s);
-                            return true;
-                        } catch (IllegalArgumentException e) {
-                            return false;
-                        }
-                    })
-                    .map(Material::valueOf)
-                    .collect(Collectors.toSet());
-        }
-
-        // 2a. Предметы на полу
-        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-            if (!(entity instanceof Item itemEntity)) continue;
-            ItemStack stack = itemEntity.getItemStack();
-            if (stack != null && (itemMaterials == null || itemMaterials.contains(stack.getType()))) {
-                results.add(new ScanResult("Предмет(пол)", stack.getType().name(),
-                        entity.getLocation(), center.distance(entity.getLocation())));
-            }
-        }
-
-        // 2b. Инвентари игроков
-        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-            if (!(entity instanceof Player target)) continue;
-            if (target.equals(player)) continue;
-            for (ItemStack stack : target.getInventory().getContents()) {
-                if (stack != null && (itemMaterials == null || itemMaterials.contains(stack.getType()))) {
-                    results.add(new ScanResult("Предмет(игрок:" + target.getName() + ")", stack.getType().name(),
-                            target.getLocation(), center.distance(target.getLocation())));
-                }
-            }
-        }
-
-        // 2c. Инвентари мобов (животные с инвентарём)
-        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-            if (entity instanceof ChestedHorse horse) {
-                Inventory inv = horse.getInventory();
-                if (inv != null) {
-                    for (ItemStack stack : inv.getContents()) {
-                        if (stack != null && (itemMaterials == null || itemMaterials.contains(stack.getType()))) {
-                            results.add(new ScanResult("Предмет(моб:" + getEntityDisplayName(horse) + ")", stack.getType().name(),
-                                    entity.getLocation(), center.distance(entity.getLocation())));
-                        }
-                    }
-                }
-            }
-        }
-
-        // 2d. Контейнеры (сундуки, бочки, печки и т.д.)
-        int minY2 = Math.max(player.getWorld().getMinHeight(), cy - radius);
-        int maxY2 = Math.min(player.getWorld().getMaxHeight(), cy + radius);
-        for (int x = cx - radius; x <= cx + radius; x++) {
-            for (int y = minY2; y <= maxY2; y++) {
-                for (int z = cz - radius; z <= cz + radius; z++) {
-                    if ((cx - x) * (cx - x) + (cy - y) * (cy - y) + (cz - z) * (cz - z) > radius * radius) continue;
-                    Block block = player.getWorld().getBlockAt(x, y, z);
-                    if (block.getState() instanceof Container container) {
-                        try {
-                            Inventory inv = container.getInventory();
-                            String containerName = block.getType().name();
-                            // Handle double chests
-                            if (container instanceof Chest chest && chest.getInventory().getHolder() instanceof DoubleChest) {
-                                containerName = "DOUBLE_CHEST";
-                            }
-                            for (ItemStack stack : inv.getContents()) {
-                                if (stack != null && (itemMaterials == null || itemMaterials.contains(stack.getType()))) {
-                                    results.add(new ScanResult("Предмет(" + containerName + ")", stack.getType().name(),
-                                            block.getLocation(), center.distance(block.getLocation().add(0.5, 0.5, 0.5))));
-                                }
-                            }
-                        } catch (Exception ignored) {}
-                    }
-                }
-            }
-        }
-
-        // =========================
-        // 3. Сканирование сущностей
-        // Пустой список = ВСЕ сущности
-        // =========================
-        boolean scanAllEntities = entityTypes.isEmpty();
-        if (scanAllEntities) {
-            ConsoleLogger.info("[Omniscanner] Scanning ALL entities (empty type list)");
-        }
+        Set<Material> blockMaterials = resolveMaterials(blockTypes);
+        Set<Material> itemMaterials = resolveMaterials(itemTypes);
         Set<String> upperEntityTypes = entityTypes.isEmpty() ? null
                 : entityTypes.stream().map(String::toUpperCase).collect(Collectors.toSet());
 
-        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
-            if (entity instanceof Player) continue;
-            if (entity instanceof Item) continue;
-            String typeName = entity.getType().name().toUpperCase();
-            if (upperEntityTypes == null || upperEntityTypes.contains(typeName)) {
-                results.add(new ScanResult("Сущность", getEntityDisplayName(entity),
-                        entity.getLocation(), center.distance(entity.getLocation())));
+        boolean scanAllBlocks = blockTypes.isEmpty();
+        boolean scanAllItems = itemTypes.isEmpty();
+        boolean scanAllEntities = entityTypes.isEmpty();
+
+        // =========================
+        // Collect chunk snapshots (main thread, fast — один вызов на чанк)
+        // =========================
+        int minChunkX = (cx - radius) >> 4;
+        int maxChunkX = (cx + radius) >> 4;
+        int minChunkZ = (cz - radius) >> 4;
+        int maxChunkZ = (cz + radius) >> 4;
+
+        Map<Long, ChunkSnapshot> snapshots = new HashMap<>();
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                if (world.isChunkLoaded(chunkX, chunkZ)) {
+                    long key = ((long) chunkX << 32) | (chunkZ & 0xFFFFFFFFL);
+                    snapshots.put(key, world.getChunkAt(chunkX, chunkZ).getChunkSnapshot());
+                }
             }
         }
 
-        // 4. Вывод результатов
-        results.sort(Comparator.comparingDouble(r -> r.distance));
+        // =========================
+        // Collect entity data on main thread (thread-safe для async)
+        // Bukkit Entity/Player объекты НЕ thread-safe, извлекаем всё заранее
+        // =========================
+        List<EntityData> entityDataList = new ArrayList<>();
+        List<PlayerData> playerData = new ArrayList<>();
+        List<MobInventoryData> mobData = new ArrayList<>();
+
+        for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
+            if (entity instanceof Item itemEntity) {
+                ItemStack stack = itemEntity.getItemStack();
+                entityDataList.add(new EntityData(
+                        "ITEM", "Предмет(пол)", stack != null ? stack.getType().name() : "?",
+                        entity.getLocation()));
+            } else if (entity instanceof Player target && !target.equals(player)) {
+                Location loc = target.getLocation();
+                String name = target.getName();
+                ItemStack[] contents = target.getInventory().getContents().clone();
+                playerData.add(new PlayerData(name, loc, contents));
+            } else if (entity instanceof ChestedHorse horse) {
+                Inventory inv = horse.getInventory();
+                if (inv != null) {
+                    String displayName = getEntityDisplayName(horse);
+                    ItemStack[] contents = inv.getContents().clone();
+                    mobData.add(new MobInventoryData(displayName, entity.getLocation(), contents));
+                }
+            } else {
+                // Обычные сущности (мобы, животные, и т.д.)
+                entityDataList.add(new EntityData(
+                        "ENTITY", getEntityDisplayName(entity),
+                        entity.getType().name().toUpperCase(),
+                        entity.getLocation()));
+            }
+        }
+
+        // =========================
+        // Process all data on async thread (ChunkSnapshot thread-safe)
+        // =========================
+        int finalCy = cy;
+        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+            List<ScanResult> results = new ArrayList<>();
+            int minY = Math.max(world.getMinHeight(), finalCy - radius);
+            int maxY = Math.min(world.getMaxHeight(), finalCy + radius);
+
+            // =========================
+            // 1. Сканирование блоков (через ChunkSnapshot — thread-safe)
+            // Пустой список = ВСЕ блоки (кроме воздуха)
+            // =========================
+            if (scanAllBlocks) {
+                ConsoleLogger.info("[Omniscanner] Scanning ALL blocks (empty type list)");
+            }
+
+            for (Map.Entry<Long, ChunkSnapshot> entry : snapshots.entrySet()) {
+                long key = entry.getKey();
+                ChunkSnapshot snapshot = entry.getValue();
+                int chunkX = (int) (key >> 32);
+                int chunkZ = (int) key;
+
+                for (int bx = 0; bx < 16; bx++) {
+                    int wx = (chunkX << 4) + bx;
+                    int dx = Math.abs(wx - cx);
+                    if (dx > radius) continue;
+
+                    for (int bz = 0; bz < 16; bz++) {
+                        int wz = (chunkZ << 4) + bz;
+                        int dz = Math.abs(wz - cz);
+                        if (dz > radius) continue;
+
+                        for (int by = minY; by <= maxY; by++) {
+                            int dy = Math.abs(by - finalCy);
+                            if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
+
+                            Material type = snapshot.getBlockType(bx, by, bz);
+                            if (type == Material.AIR) continue;
+                            if (scanAllBlocks || blockMaterials.contains(type)) {
+                                double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                                results.add(new ScanResult("Блок", type.name(),
+                                        new Location(world, wx, by, wz), dist));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // =========================
+            // 2. Предметы на полу + Сущности (из предварительно собранных данных)
+            // =========================
+            for (EntityData ed : entityDataList) {
+                double dist = center.distance(ed.location);
+                if ("ITEM".equals(ed.type)) {
+                    if (scanAllItems || itemMaterials.contains(Material.valueOf(ed.name))) {
+                        results.add(new ScanResult(ed.category, ed.name, ed.location, dist));
+                    }
+                } else {
+                    // Entity
+                    if (scanAllEntities || (upperEntityTypes != null && upperEntityTypes.contains(ed.name))) {
+                        results.add(new ScanResult(ed.category, ed.displayName, ed.location, dist));
+                    }
+                }
+            }
+
+            // =========================
+            // 3. Инвентари игроков
+            // =========================
+            for (PlayerData pd : playerData) {
+                for (ItemStack stack : pd.contents) {
+                    if (stack != null && (scanAllItems || itemMaterials.contains(stack.getType()))) {
+                        double dist = center.distance(pd.location);
+                        results.add(new ScanResult("Предмет(игрок:" + pd.name + ")",
+                                stack.getType().name(), pd.location, dist));
+                    }
+                }
+            }
+
+            // =========================
+            // 4. Инвентари мобов
+            // =========================
+            for (MobInventoryData md : mobData) {
+                for (ItemStack stack : md.contents) {
+                    if (stack != null && (scanAllItems || itemMaterials.contains(stack.getType()))) {
+                        double dist = center.distance(md.location);
+                        results.add(new ScanResult("Предмет(моб:" + md.name + ")",
+                                stack.getType().name(), md.location, dist));
+                    }
+                }
+            }
+
+            // =========================
+            // 6. Контейнеры (server thread — Bukkit API)
+            // Сканирование инвентарей контейнеров выполняется отдельным проходом
+            // на server thread, чтобы избежать race condition'ов
+            // =========================
+            List<ScanResult> containerResults = new ArrayList<>();
+            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                for (Map.Entry<Long, ChunkSnapshot> entry : snapshots.entrySet()) {
+                    long key = entry.getKey();
+                    ChunkSnapshot snapshot = entry.getValue();
+                    int chunkX = (int) (key >> 32);
+                    int chunkZ = (int) key;
+
+                    for (int bx = 0; bx < 16; bx++) {
+                        int wx = (chunkX << 4) + bx;
+                        int dx = Math.abs(wx - cx);
+                        if (dx > radius) continue;
+
+                        for (int bz = 0; bz < 16; bz++) {
+                            int wz = (chunkZ << 4) + bz;
+                            int dz = Math.abs(wz - cz);
+                            if (dz > radius) continue;
+
+                            for (int by = minY; by <= maxY; by++) {
+                                int dy = Math.abs(by - finalCy);
+                                if (dx * dx + dy * dy + dz * dz > radius * radius) continue;
+
+                                Material type = snapshot.getBlockType(bx, by, bz);
+                                if (isContainerType(type)) {
+                                    Block block = world.getBlockAt(wx, by, wz);
+                                    scanContainer(block, center, itemMaterials, scanAllItems, containerResults);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // =========================
+                // 7. Вывод результатов (server thread)
+                // =========================
+                results.addAll(containerResults);
+                results.sort(Comparator.comparingDouble(r -> r.distance));
+                displayResults(player, results, radius);
+            });
+        });
+    }
+
+    // ========================================================================
+    // CONTAINER SCAN (server thread only — Bukkit API)
+    // ========================================================================
+
+    /** Материалы, которые являются контейнерами с инвентарём */
+    private static final Set<Material> CONTAINER_TYPES = Set.of(
+            Material.CHEST, Material.TRAPPED_CHEST, Material.BARREL,
+            Material.HOPPER, Material.DROPPER, Material.DISPENSER,
+            Material.FURNACE, Material.BLAST_FURNACE, Material.SMOKER,
+            Material.BREWING_STAND, Material.SHULKER_BOX,
+            Material.WHITE_SHULKER_BOX, Material.ORANGE_SHULKER_BOX,
+            Material.MAGENTA_SHULKER_BOX, Material.LIGHT_BLUE_SHULKER_BOX,
+            Material.YELLOW_SHULKER_BOX, Material.LIME_SHULKER_BOX,
+            Material.PINK_SHULKER_BOX, Material.GRAY_SHULKER_BOX,
+            Material.LIGHT_GRAY_SHULKER_BOX, Material.CYAN_SHULKER_BOX,
+            Material.PURPLE_SHULKER_BOX, Material.BLUE_SHULKER_BOX,
+            Material.BROWN_SHULKER_BOX, Material.GREEN_SHULKER_BOX,
+            Material.RED_SHULKER_BOX, Material.BLACK_SHULKER_BOX
+    );
+
+    private static boolean isContainerType(Material type) {
+        return CONTAINER_TYPES.contains(type);
+    }
+
+    /**
+     * Сканирует инвентарь одного контейнера (вызывается с server thread).
+     */
+    private static void scanContainer(Block block, Location center, Set<Material> itemMaterials,
+                                       boolean scanAllItems, List<ScanResult> results) {
+        if (!(block.getState() instanceof Container container)) return;
+        try {
+            Inventory inv = container.getInventory();
+            String containerName = block.getType().name();
+            if (container instanceof Chest chest && chest.getInventory().getHolder() instanceof DoubleChest) {
+                containerName = "DOUBLE_CHEST";
+            }
+            for (ItemStack stack : inv.getContents()) {
+                if (stack != null && (scanAllItems || itemMaterials.contains(stack.getType()))) {
+                    double dist = center.distance(block.getLocation().add(0.5, 0.5, 0.5));
+                    results.add(new ScanResult("Предмет(" + containerName + ")",
+                            stack.getType().name(), block.getLocation(), dist));
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    // ========================================================================
+    // DISPLAY RESULTS
+    // ========================================================================
+
+    /**
+     * Выводит результаты сканирования игроку (вызывается с server thread).
+     */
+    private static void displayResults(Player player, List<ScanResult> results, int radius) {
+        if (!player.isOnline()) return;
 
         player.sendMessage(Component.empty());
         player.sendMessage(MessageUtil.parse("<gradient:#FF6B6B:#FFD93D>═══════ 🔭 Omniscanner ═══════</gradient>"));
@@ -438,6 +560,41 @@ public class OmniscannerManager implements Listener {
 
         // Звук
         player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BIT, 0.5f, 1.5f);
+    }
+
+    // ========================================================================
+    // HELPERS
+    // ========================================================================
+
+    /**
+     * Преобразует список строк Material в набор Material (только валидные).
+     */
+    private static Set<Material> resolveMaterials(Set<String> typeNames) {
+        if (typeNames.isEmpty()) return null;
+        Set<Material> materials = new HashSet<>();
+        for (String s : typeNames) {
+            try {
+                materials.add(Material.valueOf(s.toUpperCase()));
+            } catch (IllegalArgumentException ignored) {}
+        }
+        return materials;
+    }
+
+    // ========================================================================
+    // THREAD-SAFE DATA HOLDERS
+    // ========================================================================
+
+    /** Данные игрока и его инвентаря для async обработки */
+    private record PlayerData(String name, Location location, ItemStack[] contents) {}
+
+    /** Данные животного с инвентарём для async обработки */
+    private record MobInventoryData(String name, Location location, ItemStack[] contents) {}
+
+    /** Данные сущности/предмета для async обработки (все поля thread-safe) */
+    private record EntityData(String type, String category, String name, String displayName, Location location) {
+        EntityData(String type, String category, String name, Location location) {
+            this(type, category, name, name, location);
+        }
     }
 
     private static String getEntityDisplayName(Entity entity) {
