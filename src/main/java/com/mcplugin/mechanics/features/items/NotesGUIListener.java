@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -64,6 +65,24 @@ public class NotesGUIListener implements Listener {
                 NotesGUI.openMainGUI(player);
             }
         }, 1L);
+    }
+
+    // =========================
+    // 🛡 DRAG HANDLER — не даём перетаскивать заметки
+    // =========================
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        UUID uuid = player.getUniqueId();
+        if (!NotesGUI.openPlayers.contains(uuid)) return;
+
+        for (int slot : event.getRawSlots()) {
+            if (slot < NotesGUI.GUI_SIZE) {
+                event.setCancelled(true);
+                player.setItemOnCursor(null);
+                return;
+            }
+        }
     }
 
     // =========================

@@ -18,6 +18,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -572,6 +573,29 @@ public class AdminMenuGUI implements Listener {
     // LISTENER
     // ========================================================================
 
+    // ========================================================================
+    // 🛡 DRAG HANDLER — не даём перетаскивать предметы в GUI
+    // ========================================================================
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent e) {
+        if (!(e.getWhoClicked() instanceof Player player)) return;
+        UUID uuid = player.getUniqueId();
+        if (!openMenus.containsKey(uuid)) return;
+
+        for (int slot : e.getRawSlots()) {
+            if (slot < 54) {
+                e.setCancelled(true);
+                player.setItemOnCursor(null);
+                return;
+            }
+        }
+    }
+
+    // ========================================================================
+    // 🛡 CLICK HANDLER — блокируем все клики, чистим курсор
+    // ========================================================================
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
@@ -579,15 +603,12 @@ public class AdminMenuGUI implements Listener {
         MenuState state = openMenus.get(uuid);
         if (state == null) return;
 
-        // Отменяем клик только в верхнем GUI (кастомный инвентарь)
-        if (e.getClickedInventory() == e.getView().getTopInventory()) {
-            e.setCancelled(true);
-        }
+        // 🛡 Блокируем ВСЕ клики + чистим курсор
+        e.setCancelled(true);
+        player.setItemOnCursor(null);
 
-        // Клик в нижнем инвентаре (своём) — разрешаем
-        if (e.getClickedInventory() != e.getView().getTopInventory()) {
-            return;
-        }
+        // Обрабатываем только клики в верхнем инвентаре
+        if (e.getClickedInventory() != e.getView().getTopInventory()) return;
 
         int slot = e.getSlot();
         ItemStack clicked = e.getCurrentItem();

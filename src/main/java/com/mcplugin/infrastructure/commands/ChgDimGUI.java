@@ -16,6 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ItemSpawnEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
@@ -250,27 +251,42 @@ public class ChgDimGUI implements Listener {
         }
     }
 
+    // ========================================================================
+    // 🛡 DRAG HANDLER — блокируем перетаскивание в Anvil GUI
+    // ========================================================================
+
     @EventHandler
-    public void onInventoryClick(InventoryClickEvent e) {
+    public void onInventoryDrag(InventoryDragEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
         if (!openMenus.containsKey(player.getUniqueId())) return;
 
+        // Блокируем drag, если хотя бы один слот принадлежит anvil (raw slots 0-2)
+        for (int slot : e.getRawSlots()) {
+            if (slot < 3) {
+                e.setCancelled(true);
+                player.setItemOnCursor(null);
+                return;
+            }
+        }
+    }
+
+    // ========================================================================
+    // 🛡 CLICK HANDLER — блокируем все клики + чистим курсор
+    // ========================================================================
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent e) {
+        if (!(e.getWhoClicked() instanceof Player player)) return;
+        UUID uuid = player.getUniqueId();
+        if (!openMenus.containsKey(uuid)) return;
+
+        // 🛡 Блокируем ВСЕ клики + чистим курсор
+        e.setCancelled(true);
+        player.setItemOnCursor(null);
+
         int slot = e.getSlot();
 
-        if (slot < 0) {
-            e.setCancelled(true);
-            return;
-        }
-
-        if (slot >= 3) return;
-
-        if (slot == 0) {
-            e.setCancelled(true);
-            return;
-        }
-
         if (slot == 1) {
-            e.setCancelled(true);
             // Очищаем верхний инвентарь перед закрытием, чтобы предметы не выпали/не вернулись
             e.getView().getTopInventory().clear();
             player.closeInventory();
@@ -278,7 +294,9 @@ public class ChgDimGUI implements Listener {
             return;
         }
 
-        e.setCancelled(true);
+        if (slot == 0) return;
+
+        if (slot != 2) return;
 
         String rawText = getAnvilRenameText(player);
 
