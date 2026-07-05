@@ -138,6 +138,7 @@ public class AuthGUITracker {
                     player.setItemOnCursor(null);
                     openInv.getTopInventory().setItem(2, AuthGUIItems.CONFIRM_STAR);
                     removeAuthItemsFromPlayer(player);
+                    player.updateInventory();
                 } catch (Exception e) {
                     cancel();
                     resetTasks.remove(uuid);
@@ -179,6 +180,7 @@ public class AuthGUITracker {
                     openInv.getTopInventory().setItem(1, AuthGUIItems.CANCEL_BUTTON);
                     openInv.getTopInventory().setItem(2, AuthGUIItems.CHANGE_PASSWORD_CONFIRM_STAR);
                     removeAuthItemsFromPlayer(player);
+                    player.updateInventory();
                 } catch (Exception e) {
                     cancel();
                     resetTasks.remove(uuid);
@@ -216,6 +218,7 @@ public class AuthGUITracker {
                     player.setItemOnCursor(null);
                     openInv.getTopInventory().setItem(2, AuthGUIItems.LOGOUT_CONFIRM_STAR);
                     removeAuthItemsFromPlayer(player);
+                    player.updateInventory();
                 } catch (Exception e) {
                     cancel();
                     resetTasks.remove(uuid);
@@ -254,12 +257,18 @@ public class AuthGUITracker {
     }
 
     /**
-     * Anti-dup: clear cursor + purge auth items from inventory.
+     * Anti-dup: clear cursor + purge auth items from inventory + force client sync.
      * Paper often fails to fully cancel anvil result slot clicks —
      * items can end up in the player's cursor or inventory.
+     * <p>
+     * {@code updateInventory()} отправляет пакет синхронизации клиенту,
+     * чтобы сбросить некорректное состояние курсора на стороне клиента.
+     * Без этого Paper может проигнорировать {@code setCancelled(true)}
+     * для result slot наковальни и предмет останется на курсоре.
      */
     public static void antiDupCleanup(Player player) {
         player.setItemOnCursor(null);
         removeAuthItemsFromPlayer(player);
+        player.updateInventory();
     }
 }
