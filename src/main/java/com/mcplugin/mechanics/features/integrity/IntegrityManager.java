@@ -9,6 +9,7 @@ import com.mcplugin.infrastructure.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -336,9 +337,8 @@ public class IntegrityManager extends BukkitRunnable {
      * <ol>
      *   <li>{@code Damageable.hasMaxDamage()} — for items that already have damage data</li>
      *   <li>{@code Material.getMaxDurability()} — legacy API, may return 0 in 1.21.4+</li>
-     *   <li><b>NMS Fallback via cached reflection</b> — calls {@code CraftItemStack.asNMSCopy()}
-     *       then {@code ItemStack.getMaxDamage()} from the NMS handle.
-     *       Methods are cached in static fields for zero-allocation hot path.</li>
+     *   <li><b>NMS Fallback</b> — {@code CraftItemStack.asNMSCopy(item).getMaxDamage()}
+     *       reads the max_damage data component directly from the NMS item stack.</li>
      * </ol>
      */
     public static int getMaxDurability(ItemStack item) {
@@ -355,8 +355,18 @@ public class IntegrityManager extends BukkitRunnable {
         int matMax = item.getType().getMaxDurability();
         if (matMax > 0) return matMax;
 
-        // 3) No further fallback available in Paper 26.2+.
-        //    The component API (Damageable.hasMaxDamage()) covers all items with durability.
+        // 3) NMS Fallback — CraftItemStack.asNMSCopy().getMaxDamage()
+        //    Paper 1.21.4+ stores max_damage as a data component.
+        //    Damageable.hasMaxDamage() may return false for fresh/undamaged items
+        //    (e.g. Mace, Trident), so we fall back to the NMS API.
+        try {
+            net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(item);
+            int nmsMax = nmsStack.getMaxDamage();
+            if (nmsMax > 0) return nmsMax;
+        } catch (Exception ignored) {
+            // NMS not available or incompatible version — skip
+        }
+
         return 0;
     }
 
