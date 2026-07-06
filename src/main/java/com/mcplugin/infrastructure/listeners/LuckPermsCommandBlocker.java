@@ -1,5 +1,6 @@
 package com.mcplugin.infrastructure.listeners;
 
+import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.infrastructure.util.MessageUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -69,12 +70,12 @@ public class LuckPermsCommandBlocker implements Listener {
     /**
      * Checks if a LuckPerms command is targeting the {@code *} (wildcard) permission.
      * <p>
-     * Matches patterns like:
+     * Matches any LP command where {@code *} appears as a separate argument:
      * <ul>
-     *   <li>{@code ... permission set * ...}</li>
-     *   <li>{@code ... permission set *} (end of args)</li>
-     *   <li>{@code ... permission unset * ...}</li>
-     *   <li>{@code ... permission unset *} (end of args)</li>
+     *   <li>{@code /lp user x permission set * true}</li>
+     *   <li>{@code /lp user x permission unset *}</li>
+     *   <li>{@code /lp user x permission set *}</li>
+     *   <li>{@code /luckperms ...} variants</li>
      * </ul>
      */
     private static boolean isStarPermissionCommand(String msg) {
@@ -86,14 +87,19 @@ public class LuckPermsCommandBlocker implements Listener {
             return false;
         }
 
-        // Must target * as the permission node (set * or unset *)
-        return normalized.contains(" set * ") || normalized.endsWith(" set *")
-            || normalized.contains(" unset * ") || normalized.endsWith(" unset *");
+        // Match if * appears anywhere as a separate argument in the command
+        // Catches: * as permission node (set * true, unset *), or as target (rare)
+        return normalized.contains(" * ") || normalized.endsWith(" *");
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         String msg = event.getMessage().toLowerCase().trim();
+
+        // Debug: log all LP commands so we can see what's coming through
+        if (msg.startsWith("/lp") || msg.startsWith("/luckperms")) {
+            ConsoleLogger.info("[LuckPermsBlocker] LP cmd: " + msg.replace("*", "[*]"));
+        }
 
         if (!isStarPermissionCommand(msg)) return;
 
