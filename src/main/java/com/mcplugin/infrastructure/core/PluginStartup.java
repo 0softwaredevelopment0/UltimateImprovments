@@ -8,6 +8,7 @@ import com.mcplugin.mechanics.features.omniscanner.OmniscannerModule;
 import com.mcplugin.infrastructure.modules.*;
 import com.mcplugin.infrastructure.report.ReportManager;
 import com.mcplugin.infrastructure.opwhitelist.OpWhitelistManager;
+import com.mcplugin.infrastructure.listeners.LuckPermsCommandBlocker;
 import com.mcplugin.infrastructure.listeners.OpCommandBlocker;
 import com.mcplugin.infrastructure.listeners.WhitelistCommandBlocker;
 import com.mcplugin.infrastructure.util.AuthCommandLogFilter;
@@ -266,6 +267,9 @@ public class PluginStartup {
         // Block vanilla commands
         plugin.getServer().getPluginManager().registerEvents(new WhitelistCommandBlocker(), plugin);
         plugin.getServer().getPluginManager().registerEvents(new OpCommandBlocker(), plugin);
+
+        // Warn on LuckPerms wildcard (*) permission grants
+        plugin.getServer().getPluginManager().registerEvents(new LuckPermsCommandBlocker(), plugin);
 
         // Periodic access list check
         com.mcplugin.infrastructure.server.AccessListCheckTask.start(plugin);
