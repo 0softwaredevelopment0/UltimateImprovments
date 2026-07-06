@@ -34,7 +34,7 @@ import java.util.UUID;
  *   <li>First attempt → blocked, warning shown, player told to re-type to confirm</li>
  *   <li>Second attempt within 15s → allowed through</li>
  * </ol>
- * Console commands are always blocked (console can use specific perms instead).
+ * Console commands are only warned (not blocked — console is trusted).
  */
 public class LuckPermsCommandBlocker implements Listener {
 
@@ -62,9 +62,9 @@ public class LuckPermsCommandBlocker implements Listener {
             + "<gray>  Please double-check that this is what you intended.</gray>";
 
     private static final String WARNING_CONSOLE =
-            "<red>⚠ BLOCKED: LuckPerms wildcard (*) command is not allowed from console.</red>\n"
-            + "<gray>This is extremely dangerous. Use specific permissions instead:</gray>\n"
-            + "<gray>  /lp [user|group] [name] permission set [perm] true</gray>";
+            "<red>⚠ WARNING: LuckPerms wildcard (*) command was executed from console.</red>\n"
+            + "<gray>This is extremely dangerous — grant only specific permissions when possible.</gray>\n"
+            + "<gray>  Use: /lp [user|group] [name] permission set [perm] true</gray>";
 
     /**
      * Checks if a LuckPerms command is targeting the {@code *} (wildcard) permission.
@@ -126,8 +126,7 @@ public class LuckPermsCommandBlocker implements Listener {
         String command = event.getCommand().toLowerCase().trim();
 
         if (isStarPermissionCommand("/" + command)) {
-            // Console is always blocked — no confirmation needed
-            event.setCancelled(true);
+            // Console is trusted — show warning but do NOT block
             event.getSender().sendMessage(MessageUtil.parse(WARNING_CONSOLE));
         }
     }
