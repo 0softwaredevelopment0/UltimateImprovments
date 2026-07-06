@@ -14,25 +14,27 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * ⚠ LuckPermsCommandBlocker — warns when someone tries to grant ALL permissions (*)
- * via LuckPerms, and requires re-typing the command within 15 seconds to confirm.
+ * ⚠ LuckPermsCommandBlocker — warns when someone tries to grant or unset
+ * ALL permissions (*) via LuckPerms, and requires re-typing the command
+ * within 15 seconds to confirm.
  * <p>
- * Granting {@code *} is a major security risk — it gives unrestricted access to every
- * command and feature on the server, including sensitive admin tools.
+ * Granting {@code *} is a major security risk — it gives unrestricted access
+ * to every command and feature on the server, including sensitive admin tools.
  * <p>
  * Intercepts commands like:
  * <ul>
  *   <li>{@code /lp user <name> permission set * true}</li>
  *   <li>{@code /lp group <name> permission set * true}</li>
+ *   <li>{@code /lp user <name> permission unset *}</li>
  *   <li>{@code /luckperms:lp ...}, {@code /luckperms ...} variants</li>
  * </ul>
  * <p>
- * Flow:
+ * Flow (player):
  * <ol>
  *   <li>First attempt → blocked, warning shown, player told to re-type to confirm</li>
  *   <li>Second attempt within 15s → allowed through</li>
  * </ol>
- * Console commands are only warned (no confirmation needed — console is trusted).
+ * Console commands are always blocked (console can use specific perms instead).
  */
 public class LuckPermsCommandBlocker implements Listener {
 
@@ -43,15 +45,15 @@ public class LuckPermsCommandBlocker implements Listener {
     private final Map<UUID, Long> pendingConfirmations = new HashMap<>();
 
     private static final String WARNING_MESSAGE_BODY =
-            "<red>⚠ <bold>WARNING:</bold> You are about to grant <bold>ALL PERMISSIONS (*)</bold> via LuckPerms.</red>\n"
+            "<red>⚠ <bold>WARNING:</bold> You are about to modify <bold>ALL PERMISSIONS (*)</bold> via LuckPerms.</red>\n"
             + "<gray>This is <bold>extremely dangerous</bold> — it gives unrestricted access to every</gray>\n"
             + "<gray>command and feature on the server, including sensitive admin tools.</gray>\n"
             + "<gray>Once granted, malicious actors or accidental misuse can </gray><red>cause irreversible damage</red><gray>.</gray>\n"
             + "\n"
             + "<green>💡 <bold>Strongly recommended:</bold> Grant only the specific permissions needed.</green>\n"
-            + "<gray>   Example: <white>/lp user <name> permission set mcplugin.command.reload true</white></gray>\n"
+            + "<gray>   Example: <white>/lp user [name] permission set mcplugin.command.reload true</white></gray>\n"
             + "\n"
-            + "<yellow>⚠ If you are <bold>absolutely sure</bold> you want to grant <bold>*</bold> —</yellow>\n"
+            + "<yellow>⚠ If you are <bold>absolutely sure</bold> you want to modify <bold>*</bold> —</yellow>\n"
             + "<yellow>  <bold>type the same command again</bold> within 15 seconds to confirm.</yellow>\n"
             + "<dark_red>  Otherwise, the command will be cancelled.</dark_red>";
 
@@ -60,14 +62,22 @@ public class LuckPermsCommandBlocker implements Listener {
             + "<gray>  Please double-check that this is what you intended.</gray>";
 
     private static final String WARNING_CONSOLE =
-            "<red>⚠ WARNING: You are about to grant ALL PERMISSIONS (*) via LuckPerms.</red>\n"
-            + "<gray>This is extremely dangerous — grant only specific permissions when possible.</gray>\n"
-            + "<gray>  Use: /lp <user|group> <name> permission set <perm> true</gray>";
+            "<red>⚠ BLOCKED: LuckPerms wildcard (*) command is not allowed from console.</red>\n"
+            + "<gray>This is extremely dangerous. Use specific permissions instead:</gray>\n"
+            + "<gray>  /lp [user|group] [name] permission set [perm] true</gray>";
 
     /**
-     * Checks if a LuckPerms command is attempting to grant {@code *} permission.
+     * Checks if a LuckPerms command is targeting the {@code *} (wildcard) permission.
+     * <p>
+     * Matches patterns like:
+     * <ul>
+     *   <li>{@code ... permission set * ...}</li>
+     *   <li>{@code ... permission set *} (end of args)</li>
+     *   <li>{@code ... permission unset * ...}</li>
+     *   <li>{@code ... permission unset *} (end of args)</li>
+     * </ul>
      */
-    private static boolean isGrantingStarPermission(String msg) {
+    private static boolean isStarPermissionCommand(String msg) {
         // Normalize whitespace: collapse multiple spaces/tabs into single space
         String normalized = msg.toLowerCase().trim().replaceAll("\\s+", " ");
 
@@ -76,16 +86,16 @@ public class LuckPermsCommandBlocker implements Listener {
             return false;
         }
 
-        // Must contain "set *" (granting the wildcard permission)
-        // Check for " set * " or " set *" at the end of args
-        return normalized.contains(" set * ") || normalized.endsWith(" set *");
+        // Must target * as the permission node (set * or unset *)
+        return normalized.contains(" set * ") || normalized.endsWith(" set *")
+            || normalized.contains(" unset * ") || normalized.endsWith(" unset *");
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         String msg = event.getMessage().toLowerCase().trim();
 
-        if (!isGrantingStarPermission(msg)) return;
+        if (!isStarPermissionCommand(msg)) return;
 
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
@@ -115,8 +125,9 @@ public class LuckPermsCommandBlocker implements Listener {
     public void onConsoleCommand(ServerCommandEvent event) {
         String command = event.getCommand().toLowerCase().trim();
 
-        if (isGrantingStarPermission("/" + command)) {
-            // Console is trusted — show warning but do NOT block
+        if (isStarPermissionCommand("/" + command)) {
+            // Console is always blocked — no confirmation needed
+            event.setCancelled(true);
             event.getSender().sendMessage(MessageUtil.parse(WARNING_CONSOLE));
         }
     }
