@@ -1,9 +1,9 @@
 package com.mcplugin.mechanics.environment.radiation;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.database.DatabaseManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Keys;
+import com.mcplugin.core.Main;
+import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;

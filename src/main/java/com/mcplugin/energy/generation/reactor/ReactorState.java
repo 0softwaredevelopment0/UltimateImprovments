@@ -1,6 +1,6 @@
 package com.mcplugin.energy.generation.reactor;
 
-import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.util.LocationUtil;
 import org.bukkit.Location;
 
 /**

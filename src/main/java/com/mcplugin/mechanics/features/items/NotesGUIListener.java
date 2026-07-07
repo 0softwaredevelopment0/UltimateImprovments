@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.features.items;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
-import com.mcplugin.infrastructure.util.Materials;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
+import com.mcplugin.util.Materials;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

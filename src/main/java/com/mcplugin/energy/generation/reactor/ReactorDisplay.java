@@ -1,6 +1,6 @@
 package com.mcplugin.energy.generation.reactor;
 
-import com.mcplugin.infrastructure.util.Materials;
+import com.mcplugin.util.Materials;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.type.CopperBulb;

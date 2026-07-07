@@ -1,7 +1,7 @@
 package com.mcplugin.energy.transfer.cable;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.Materials;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.Materials;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;

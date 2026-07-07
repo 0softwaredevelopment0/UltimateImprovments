@@ -7,7 +7,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.component.WritableBookContent;
 
-import com.mcplugin.infrastructure.util.Materials;
+import com.mcplugin.util.Materials;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;

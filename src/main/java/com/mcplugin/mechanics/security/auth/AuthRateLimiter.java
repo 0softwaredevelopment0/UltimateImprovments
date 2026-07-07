@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 

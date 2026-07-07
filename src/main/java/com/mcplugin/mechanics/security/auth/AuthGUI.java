@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Sound;

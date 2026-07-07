@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.features.world;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Keys;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.Material;

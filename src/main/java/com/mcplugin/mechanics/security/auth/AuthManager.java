@@ -1,9 +1,9 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;

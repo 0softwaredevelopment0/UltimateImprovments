@@ -1,7 +1,7 @@
 package com.mcplugin.energy.machines.assembler;
 
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
-import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.util.LocationUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

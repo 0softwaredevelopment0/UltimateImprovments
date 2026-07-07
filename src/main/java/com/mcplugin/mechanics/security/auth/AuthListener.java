@@ -1,10 +1,10 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.commands.AskCordsManager;
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Keys;
+import com.mcplugin.core.Main;
+import com.mcplugin.command.AskCordsManager;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

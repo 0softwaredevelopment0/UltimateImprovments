@@ -1,9 +1,9 @@
 package com.mcplugin.energy.generation.reactor;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.database.DatabaseManager;
-import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.Location;
 import org.bukkit.World;
 

@@ -1,11 +1,11 @@
 package com.mcplugin.mechanics.features.omniscanner;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.modules.ModuleManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
-import com.mcplugin.infrastructure.util.StatsTracker;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.core.Keys;
+import com.mcplugin.module.ModuleManager;
+import com.mcplugin.util.MessageUtil;
+import com.mcplugin.util.StatsTracker;
+import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.mechanics.features.world.ChunkLoaderItemListener;
 
 import net.kyori.adventure.text.Component;

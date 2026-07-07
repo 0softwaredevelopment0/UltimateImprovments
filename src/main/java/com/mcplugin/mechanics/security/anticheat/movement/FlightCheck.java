@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.security.anticheat.movement;
 
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.mechanics.security.anticheat.AntiCheatManager;
 import com.mcplugin.mechanics.security.anticheat.core.*;
 import org.bukkit.Location;

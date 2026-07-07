@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.anticheat.nms;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.mechanics.security.anticheat.AntiCheatManager;
 import com.mcplugin.mechanics.security.anticheat.core.PlayerData;
 import io.netty.channel.Channel;

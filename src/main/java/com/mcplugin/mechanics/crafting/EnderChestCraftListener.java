@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.crafting;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.MessageUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.MessageUtil;
+import com.mcplugin.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.features.player;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;

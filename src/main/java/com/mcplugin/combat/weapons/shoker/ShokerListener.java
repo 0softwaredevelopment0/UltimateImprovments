@@ -1,7 +1,7 @@
 package com.mcplugin.combat.weapons.shoker;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Keys;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;

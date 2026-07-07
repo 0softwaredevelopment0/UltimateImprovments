@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.environment.magnet;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
 
 /**
  * Конфигурация магнита — все параметры из config.yml (features.magnet).

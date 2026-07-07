@@ -1,10 +1,10 @@
 package com.mcplugin.mechanics.security.botprotect;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.database.DatabaseManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.MessageUtil;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;

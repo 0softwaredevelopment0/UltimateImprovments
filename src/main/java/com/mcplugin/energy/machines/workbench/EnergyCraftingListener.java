@@ -1,10 +1,10 @@
 package com.mcplugin.energy.machines.workbench;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.core.Main;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.LocationUtil;
 import com.mcplugin.mechanics.crafting.RecipeRegistry;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.block.Block;

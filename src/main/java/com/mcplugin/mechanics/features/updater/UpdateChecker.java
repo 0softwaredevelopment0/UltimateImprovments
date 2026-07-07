@@ -1,10 +1,10 @@
 package com.mcplugin.mechanics.features.updater;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.database.DatabaseManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.MessageUtil;
+import com.mcplugin.util.ConsoleLogger;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

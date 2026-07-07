@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.features.blocks;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;

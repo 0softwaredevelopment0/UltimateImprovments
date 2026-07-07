@@ -83,7 +83,7 @@ public class TeleportCheck extends AbstractCheck {
         serverTeleportFlags.add(e.getPlayer().getUniqueId());
         // Auto-clean after bypass window
         org.bukkit.Bukkit.getScheduler().runTaskLater(
-                com.mcplugin.infrastructure.core.Main.getInstance(),
+                com.mcplugin.core.Main.getInstance(),
                 () -> serverTeleportFlags.remove(e.getPlayer().getUniqueId()),
                 teleportBypassTicks);
     }

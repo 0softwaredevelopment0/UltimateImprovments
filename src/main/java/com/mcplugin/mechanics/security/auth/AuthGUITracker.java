@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Keys;
+import com.mcplugin.core.Main;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MenuType;

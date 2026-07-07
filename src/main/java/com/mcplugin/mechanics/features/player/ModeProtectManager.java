@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.features.player;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Main;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

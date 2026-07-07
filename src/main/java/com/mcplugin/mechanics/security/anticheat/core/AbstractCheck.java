@@ -44,26 +44,26 @@ public abstract class AbstractCheck implements Listener {
     // =========================
 
     public void loadConfig() {
-        var cfg = com.mcplugin.infrastructure.core.Main.getInstance().getConfig();
+        var cfg = com.mcplugin.core.Main.getInstance().getConfig();
         enabled = cfg.getBoolean(configPath + ".enabled", true);
         maxVl = cfg.getDouble(configPath + ".max_vl", 10.0);
         vlDecay = cfg.getDouble(configPath + ".vl_decay", 0.5);
     }
 
     protected String getConfigString(String key, String def) {
-        return com.mcplugin.infrastructure.core.Main.getInstance().getConfig().getString(configPath + "." + key, def);
+        return com.mcplugin.core.Main.getInstance().getConfig().getString(configPath + "." + key, def);
     }
 
     protected boolean getConfigBoolean(String key, boolean def) {
-        return com.mcplugin.infrastructure.core.Main.getInstance().getConfig().getBoolean(configPath + "." + key, def);
+        return com.mcplugin.core.Main.getInstance().getConfig().getBoolean(configPath + "." + key, def);
     }
 
     protected double getConfigDouble(String key, double def) {
-        return com.mcplugin.infrastructure.core.Main.getInstance().getConfig().getDouble(configPath + "." + key, def);
+        return com.mcplugin.core.Main.getInstance().getConfig().getDouble(configPath + "." + key, def);
     }
 
     protected int getConfigInt(String key, int def) {
-        return com.mcplugin.infrastructure.core.Main.getInstance().getConfig().getInt(configPath + "." + key, def);
+        return com.mcplugin.core.Main.getInstance().getConfig().getInt(configPath + "." + key, def);
     }
 
     // =========================

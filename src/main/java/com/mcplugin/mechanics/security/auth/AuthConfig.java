@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
+import com.mcplugin.core.Main;
+import com.mcplugin.config.MessagesManager;
 
 /**
  * Чтение конфигурации системы авторизации.

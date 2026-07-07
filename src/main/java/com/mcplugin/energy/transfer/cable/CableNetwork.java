@@ -1,8 +1,8 @@
 package com.mcplugin.energy.transfer.cable;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.structure.StructureMarker;
-import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.core.Main;
+import com.mcplugin.structure.StructureMarker;
+import com.mcplugin.util.LocationUtil;
 
 import org.bukkit.Location;
 import org.bukkit.World;

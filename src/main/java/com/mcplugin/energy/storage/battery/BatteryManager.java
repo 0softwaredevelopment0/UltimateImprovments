@@ -1,11 +1,11 @@
 package com.mcplugin.energy.storage.battery;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.structure.StructureMarker;
-import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.infrastructure.util.MessageUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
-import com.mcplugin.infrastructure.util.Materials;
+import com.mcplugin.core.Main;
+import com.mcplugin.structure.StructureMarker;
+import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.MessageUtil;
+import com.mcplugin.util.ConsoleLogger;
+import com.mcplugin.util.Materials;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;

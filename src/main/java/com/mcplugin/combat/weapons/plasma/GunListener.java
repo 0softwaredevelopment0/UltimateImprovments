@@ -1,6 +1,6 @@
 package com.mcplugin.combat.weapons.plasma;
 
-import com.mcplugin.infrastructure.core.Keys;
+import com.mcplugin.core.Keys;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;

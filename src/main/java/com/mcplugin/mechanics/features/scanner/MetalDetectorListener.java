@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.features.scanner;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.util.Materials;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Keys;
+import com.mcplugin.util.Materials;
+import com.mcplugin.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 
 import org.bukkit.Location;

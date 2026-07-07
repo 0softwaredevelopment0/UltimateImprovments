@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.features.world;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Keys;
+import com.mcplugin.core.Main;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;

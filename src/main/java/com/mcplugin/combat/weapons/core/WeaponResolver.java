@@ -1,6 +1,6 @@
 package com.mcplugin.combat.weapons.core;
 
-import com.mcplugin.infrastructure.core.Keys;
+import com.mcplugin.core.Keys;
 import com.mcplugin.combat.weapons.core.ProjectileType;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;

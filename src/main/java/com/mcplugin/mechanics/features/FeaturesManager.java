@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.features;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 
 /**
  * FeaturesManager — replaced by individual feature modules.

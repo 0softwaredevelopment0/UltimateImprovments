@@ -1,7 +1,7 @@
 package com.mcplugin.energy.generation.reactor;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.mechanics.environment.magnet.MagnetManager;
 
 import org.bukkit.Location;

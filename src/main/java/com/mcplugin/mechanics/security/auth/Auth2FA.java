@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.database.DatabaseManager;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.ConsoleLogger;
 
 import java.io.InputStream;
 import java.io.OutputStream;

@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.security.anticheat.core;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;

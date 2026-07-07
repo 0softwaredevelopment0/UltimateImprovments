@@ -1,6 +1,6 @@
 package com.mcplugin.energy.generation.reactor;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 import org.bukkit.configuration.file.FileConfiguration;
 
 /**

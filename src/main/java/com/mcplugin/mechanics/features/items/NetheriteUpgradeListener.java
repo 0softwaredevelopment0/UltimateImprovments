@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.features.items;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Keys;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;

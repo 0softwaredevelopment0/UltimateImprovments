@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.security.codepanel;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,9 +1,9 @@
 package com.mcplugin.mechanics.features.world;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.database.DatabaseManager;
-import com.mcplugin.infrastructure.database.PlayerSettingsDB;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.database.PlayerSettingsDB;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

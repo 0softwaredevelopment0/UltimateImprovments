@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.environment.magnet;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -23,8 +23,8 @@ import org.bukkit.util.Vector;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.mcplugin.infrastructure.structure.StructureMarker;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.structure.StructureMarker;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.ChunkSnapshot;
 
 public class MagnetManager extends BukkitRunnable {

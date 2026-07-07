@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.features.player;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.database.DatabaseManager;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.ConsoleLogger;
 
 import org.bukkit.Color;
 import org.bukkit.GameMode;

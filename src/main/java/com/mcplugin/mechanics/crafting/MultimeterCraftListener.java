@@ -1,9 +1,9 @@
 package com.mcplugin.mechanics.crafting;
 
 import com.mcplugin.energy.machines.assembler.AssemblerChecker;
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.MessageUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.MessageUtil;
+import com.mcplugin.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

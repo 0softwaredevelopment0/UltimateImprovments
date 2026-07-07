@@ -6,7 +6,7 @@ import org.bukkit.command.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 
 public class CodePanelCommand implements CommandExecutor {
 

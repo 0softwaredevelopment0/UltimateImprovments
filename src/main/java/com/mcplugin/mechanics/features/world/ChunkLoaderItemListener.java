@@ -1,11 +1,11 @@
 package com.mcplugin.mechanics.features.world;
 
-import com.mcplugin.infrastructure.commands.subcommands.ExpSplitSubcommand;
-import com.mcplugin.infrastructure.structure.StructureChunkTracker;
-import com.mcplugin.infrastructure.structure.StructureMarker;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
-import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.command.subcommands.ExpSplitSubcommand;
+import com.mcplugin.structure.StructureChunkTracker;
+import com.mcplugin.structure.StructureMarker;
+import com.mcplugin.util.ConsoleLogger;
+import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.MessageUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -117,7 +117,7 @@ public class ChunkLoaderItemListener implements Listener {
         World world = loc.getWorld();
         int cx = loc.getBlockX() >> 4;
         int cz = loc.getBlockZ() >> 4;
-        world.removePluginChunkTicket(cx, cz, com.mcplugin.infrastructure.core.Main.getInstance());
+        world.removePluginChunkTicket(cx, cz, com.mcplugin.core.Main.getInstance());
 
         e.setDropItems(false);
 

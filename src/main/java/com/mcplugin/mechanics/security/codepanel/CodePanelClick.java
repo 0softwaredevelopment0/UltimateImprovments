@@ -1,10 +1,10 @@
 package com.mcplugin.mechanics.security.codepanel;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
-import com.mcplugin.infrastructure.util.MessageUtil;
-import com.mcplugin.infrastructure.util.SoundUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
+import com.mcplugin.util.SoundUtil;
+import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.mechanics.security.codepanel.CodePanelDatabase;
 import org.bukkit.Sound;
 import org.bukkit.command.*;

@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.codepanel;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;

@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.infrastructure.core.Keys;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Keys;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.mechanics.security.auth.AuthConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;

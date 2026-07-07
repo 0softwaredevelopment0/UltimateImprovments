@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.features.player;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
@@ -19,8 +19,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
-import com.mcplugin.infrastructure.database.DatabaseManager;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.database.DatabaseManager;
+import com.mcplugin.util.ConsoleLogger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

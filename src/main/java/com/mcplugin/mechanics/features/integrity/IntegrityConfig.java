@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.features.integrity;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.config.MessagesManager;
+import com.mcplugin.core.Main;
+import com.mcplugin.config.MessagesManager;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.HashSet;

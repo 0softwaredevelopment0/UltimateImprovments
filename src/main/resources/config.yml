@@ -1431,19 +1431,30 @@ meteor:
     min: 1.0
     max: 3.0
 
-  # Блоки для визуализации сферы
+  # Радиус сферы из блоков (int, 1-5)
+  sphere_radius: 2
+
+  # Блоки для оболочки метеора
   display_blocks:
     - "CRACKED_DEEPSLATE_BRICKS"
     - "CRACKED_DEEPSLATE_TILES"
     - "CHISELED_DEEPSLATE"
     - "MAGMA_BLOCK"
 
-  # Параметры взрыва
-  explosion_radius: 3.0
-  explosion_set_fire: true
+  # Центральные руды с шансами (weighted random)
+  # По умолчанию: все глубинные руды с равными шансами 1.0
+  core_ores:
+    DEEPSLATE_DIAMOND_ORE: 1.0
+    DEEPSLATE_IRON_ORE: 1.0
+    DEEPSLATE_GOLD_ORE: 1.0
+    DEEPSLATE_EMERALD_ORE: 1.0
+    DEEPSLATE_LAPIS_ORE: 1.0
+    DEEPSLATE_REDSTONE_ORE: 1.0
+    DEEPSLATE_COAL_ORE: 1.0
+    DEEPSLATE_COPPER_ORE: 1.0
 
-  # Блок, который остаётся после падения
-  ore_block: "DEEPSLATE_DIAMOND_ORE"
+  # Старые параметры explosion_radius и ore_block больше не используются.
+  # Взрыв: sphere_radius x 10, блоки из display_blocks + core_ores.
 
 particle_accelerator:
   enabled: true

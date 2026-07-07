@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.security.anticheat.movement;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
-import com.mcplugin.infrastructure.util.MessageUtil;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.mechanics.security.anticheat.AntiCheatManager;
 import com.mcplugin.mechanics.security.anticheat.core.*;
 import org.bukkit.Bukkit;

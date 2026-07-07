@@ -1,9 +1,9 @@
 package com.mcplugin.energy.machines.assembler;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.structure.StructureMarker;
-import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.structure.StructureMarker;
+import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 
 import java.util.UUID;

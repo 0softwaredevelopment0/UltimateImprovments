@@ -1,6 +1,6 @@
 package com.mcplugin.economy;
 
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.util.ConsoleLogger;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;

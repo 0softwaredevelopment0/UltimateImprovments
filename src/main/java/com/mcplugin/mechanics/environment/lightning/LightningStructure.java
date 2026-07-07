@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.environment.lightning;
 
-import com.mcplugin.infrastructure.util.LocationUtil;
+import com.mcplugin.util.LocationUtil;
 
-import com.mcplugin.infrastructure.util.Materials;
+import com.mcplugin.util.Materials;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;

@@ -1,6 +1,6 @@
 package com.mcplugin.energy.machines.assembler;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 
 import org.bukkit.Location;
 import org.bukkit.Material;

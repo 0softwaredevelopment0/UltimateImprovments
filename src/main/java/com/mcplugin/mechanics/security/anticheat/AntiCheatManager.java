@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.anticheat;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.mechanics.security.anticheat.action.ActionManager;
 import com.mcplugin.mechanics.security.anticheat.core.AbstractCheck;
 import com.mcplugin.mechanics.security.anticheat.core.CheckCategory;

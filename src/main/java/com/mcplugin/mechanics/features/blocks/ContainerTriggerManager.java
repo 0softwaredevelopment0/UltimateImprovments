@@ -1,8 +1,8 @@
 package com.mcplugin.mechanics.features.blocks;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

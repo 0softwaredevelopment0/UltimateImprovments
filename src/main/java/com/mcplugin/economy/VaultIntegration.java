@@ -1,6 +1,6 @@
 package com.mcplugin.economy;
 
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.util.ConsoleLogger;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;

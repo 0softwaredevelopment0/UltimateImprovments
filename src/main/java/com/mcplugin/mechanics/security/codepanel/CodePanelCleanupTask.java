@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.security.codepanel;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**

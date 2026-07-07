@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.features.integrity;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;

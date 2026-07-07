@@ -1,15 +1,15 @@
 package com.mcplugin.energy.generation.basic;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.structure.StructureMarker;
+import com.mcplugin.core.Main;
+import com.mcplugin.structure.StructureMarker;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
-import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.ConsoleLogger;
 
 import java.util.UUID;
 
-import com.mcplugin.infrastructure.util.Materials;
+import com.mcplugin.util.Materials;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;

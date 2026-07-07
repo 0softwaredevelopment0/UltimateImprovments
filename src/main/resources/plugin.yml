@@ -3,7 +3,7 @@ name: MC-Plugin
 description: A modular Minecraft plugin that adds authentication, advanced mechanics, custom crafting, and server protection.
 website: N/A
 version: ${project.version}
-main: com.mcplugin.infrastructure.core.Main
+main: com.mcplugin.core.Main
 author: rizer001
 load: STARTUP
 softdepend: [PlaceholderAPI, LuckPerms, Vault, DeluxeMenus]

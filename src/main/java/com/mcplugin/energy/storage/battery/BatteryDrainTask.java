@@ -1,11 +1,11 @@
 package com.mcplugin.energy.storage.battery;
 
-import com.mcplugin.infrastructure.core.Main;
+import com.mcplugin.core.Main;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
-import com.mcplugin.infrastructure.util.LocationUtil;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;

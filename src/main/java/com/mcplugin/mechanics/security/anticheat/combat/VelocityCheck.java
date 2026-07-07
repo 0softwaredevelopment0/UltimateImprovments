@@ -56,7 +56,7 @@ public class VelocityCheck extends AbstractCheck {
         if (pending != null && pending.length() > minVelocityThreshold) {
             // Check on next tick if player moved in expected direction
             org.bukkit.Bukkit.getScheduler().runTaskLater(
-                    com.mcplugin.infrastructure.core.Main.getInstance(), () -> {
+                    com.mcplugin.core.Main.getInstance(), () -> {
                         if (!player.isOnline()) return;
                         PlayerData d = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
                         Vector actual = player.getVelocity();

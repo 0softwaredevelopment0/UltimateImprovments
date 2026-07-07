@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.features.omniscanner;
 
-import com.mcplugin.infrastructure.modules.PluginModule;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.module.PluginModule;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**

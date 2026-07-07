@@ -1,7 +1,7 @@
 package com.mcplugin.mechanics.features.items;
 
-import com.mcplugin.infrastructure.core.Main;
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.core.Main;
+import com.mcplugin.util.ConsoleLogger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -43,7 +43,7 @@ public class NotesDatabase {
     // ENSURE TABLE
     // =========================
     static void ensureTable() {
-        try (Connection con = com.mcplugin.infrastructure.database.DatabaseManager.getConnection();
+        try (Connection con = com.mcplugin.database.DatabaseManager.getConnection();
              var st = con.createStatement()) {
             st.execute("""
                 CREATE TABLE IF NOT EXISTS notes (
@@ -70,7 +70,7 @@ public class NotesDatabase {
     // =========================
     static String loadNote(UUID playerUuid, int noteNumber) {
         ensureTable();
-        try (Connection con = com.mcplugin.infrastructure.database.DatabaseManager.getConnection();
+        try (Connection con = com.mcplugin.database.DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "SELECT content FROM notes WHERE player_uuid = ? AND slot_number = ?")) {
             ps.setString(1, playerUuid.toString());
@@ -91,7 +91,7 @@ public class NotesDatabase {
     // =========================
     static void saveNote(UUID playerUuid, int noteNumber, String content) {
         ensureTable();
-        try (Connection con = com.mcplugin.infrastructure.database.DatabaseManager.getConnection();
+        try (Connection con = com.mcplugin.database.DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "INSERT OR REPLACE INTO notes (player_uuid, slot_number, content) VALUES (?, ?, ?)")) {
             ps.setString(1, playerUuid.toString());

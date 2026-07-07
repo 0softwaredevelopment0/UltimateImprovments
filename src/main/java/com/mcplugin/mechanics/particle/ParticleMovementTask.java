@@ -1,6 +1,6 @@
 package com.mcplugin.mechanics.particle;
 
-import com.mcplugin.infrastructure.util.ConsoleLogger;
+import com.mcplugin.util.ConsoleLogger;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
