@@ -1,18 +1,20 @@
 package com.mcplugin.infrastructure.core;
 
-import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.commands.PluginReloadCommand;
 import com.mcplugin.infrastructure.commands.PowerCommand;
 import com.mcplugin.infrastructure.commands.VanishListCommand;
+import com.mcplugin.infrastructure.core.Main;
 import com.mcplugin.infrastructure.util.ConsoleLogger;
 import com.mcplugin.energy.generation.reactor.ReactorCommand;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandMap;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
 
 public class CommandRegistrar {
@@ -32,20 +34,28 @@ public class CommandRegistrar {
     // =========================
     public void registerAll(Main plugin) {
         PluginReloadCommand mpCmd = new PluginReloadCommand();
-        register(plugin, "mp", mpCmd);
-        registerTab(plugin, "mp", mpCmd);
-        register(plugin, "reactor", new ReactorCommand());
+        register(plugin, "mp", mpCmd, mpCmd);
+        register(plugin, "reactor", new ReactorCommand(), null);
         registerOverride(plugin, "list", new VanishListCommand());
         registerOverride(plugin, "stop", new PowerCommand("stop", false));
         registerOverride(plugin, "restart", new PowerCommand("restart", true));
     }
 
-    private void register(Main plugin, String name, CommandExecutor executor) {
-        if (plugin.getCommand(name) == null) {
-            ConsoleLogger.warn("Command /" + name + " not found!");
-            return;
+    /**
+     * Registers a command via CommandMap, so no plugin.yml declaration is needed.
+     */
+    private void register(Main plugin, String name, CommandExecutor executor, TabCompleter completer) {
+        try {
+            Field field = plugin.getServer().getClass().getDeclaredField("commandMap");
+            field.setAccessible(true);
+            CommandMap commandMap = (CommandMap) field.get(plugin.getServer());
+
+            BukkitCommand cmd = new BukkitCommand(name, executor, completer);
+            commandMap.register(plugin.getName().toLowerCase(), cmd);
+            ConsoleLogger.info("[COMMANDS] Registered /" + name);
+        } catch (Exception e) {
+            ConsoleLogger.warn("[COMMANDS] Failed to register /" + name + ": " + e.getMessage());
         }
-        plugin.getCommand(name).setExecutor(executor);
     }
 
     /**
@@ -106,11 +116,33 @@ public class CommandRegistrar {
         return null;
     }
 
-    private void registerTab(Main plugin, String name, TabCompleter completer) {
-        if (plugin.getCommand(name) == null) {
-            ConsoleLogger.warn("Command /" + name + " not found!");
-            return;
+    /**
+     * Wraps a CommandExecutor + optional TabCompleter into a Bukkit Command
+     * for registration via CommandMap (no plugin.yml needed).
+     */
+    private static class BukkitCommand extends Command {
+        private final CommandExecutor executor;
+        private final TabCompleter completer;
+
+        public BukkitCommand(String name, CommandExecutor executor, TabCompleter completer) {
+            super(name);
+            this.executor = executor;
+            this.completer = completer != null ? completer :
+                (executor instanceof TabCompleter tc ? tc : null);
         }
-        plugin.getCommand(name).setTabCompleter(completer);
+
+        @Override
+        public boolean execute(CommandSender sender, String commandLabel, String[] args) {
+            return executor.onCommand(sender, this, commandLabel, args);
+        }
+
+        @Override
+        public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+            if (completer != null) {
+                List<String> result = completer.onTabComplete(sender, this, alias, args);
+                return result != null ? result : super.tabComplete(sender, alias, args);
+            }
+            return super.tabComplete(sender, alias, args);
+        }
     }
 }
