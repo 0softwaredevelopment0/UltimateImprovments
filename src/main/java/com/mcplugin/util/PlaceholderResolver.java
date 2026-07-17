@@ -4,11 +4,15 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Method;
 import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +40,8 @@ public class PlaceholderResolver {
 
     private static final DecimalFormat TPS_FORMAT = new DecimalFormat("0.00");
     private static final DecimalFormat PCT_FORMAT = new DecimalFormat("#.#");
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
     /** Основной паттерн: %name% — только простые имена из BUILTIN. */
     private static final Pattern NAME_PLACEHOLDER = Pattern.compile("%([a-z_][a-z0-9_]*)%");
@@ -97,6 +103,12 @@ public class PlaceholderResolver {
         // ── World ──
         BUILTIN.put("world_name",    (p, s) -> p != null ? p.getWorld().getName() : "?");
         BUILTIN.put("world_players", (p, s) -> p != null ? String.valueOf(p.getWorld().getPlayers().size()) : "0");
+        BUILTIN.put("player_world",  (p, s) -> p != null ? p.getWorld().getName() : "?");
+        BUILTIN.put("player_coords", PlaceholderResolver::resolvePlayerCoords);
+
+        // ── Date / Time (локальная TZ ОС сервера) ──
+        BUILTIN.put("server_time", (p, s) -> LocalTime.now().format(TIME_FORMAT));
+        BUILTIN.put("server_date", (p, s) -> LocalDate.now().format(DATE_FORMAT));
 
         // ── Server (static) ──
         BUILTIN.put("online",        (p, s) -> String.valueOf(Bukkit.getOnlinePlayers().size()));
@@ -495,6 +507,12 @@ public class PlaceholderResolver {
 
     private static String resolveLuckPermsGroup(Player player, String unused) {
         return getLuckPermsMeta(player, lpMetaDataGetPrimaryGroup);
+    }
+
+    private static String resolvePlayerCoords(Player player, String unused) {
+        if (player == null) return "0/0/0";
+        Location loc = player.getLocation();
+        return loc.getBlockX() + "/" + loc.getBlockY() + "/" + loc.getBlockZ();
     }
 
     private static String getLuckPermsMeta(Player player, Method metaMethod) {
