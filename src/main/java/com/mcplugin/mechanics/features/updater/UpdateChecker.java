@@ -58,7 +58,7 @@ public class UpdateChecker {
     // =========================
     // ⚙ КОНФИГУРАЦИЯ
     // =========================
-    private static final String GITHUB_OWNER = "Minecraft337";
+    private static final String GITHUB_OWNER = "rizer001";
     private static final String GITHUB_REPO = "MC-Plugin";
     /** GitHub Contents API — список файлов в папке Jar/ репозитория. */
     private static final String JAR_DIR_API_URL = "https://api.github.com/repos/"

@@ -1,6 +1,6 @@
 ╔══════════════════════════════════════════════════════════════════╗
 ║                      MC-PLUGIN — ПОЛНЫЙ ГАЙД                     ║
-║              https://github.com/Minecraft337/MC-Plugin            ║
+║              https://github.com/rizer001/MC-Plugin            ║
 ╚══════════════════════════════════════════════════════════════════╝
 
 ▸ ЧТО ТАКОЕ MC-PLUGIN?
@@ -2936,5 +2936,5 @@
   Полная перезагрузка сервера НЕ ТРЕБУЕТСЯ (но возможна).
 
   ───── ПОДДЕРЖКА ─────
-  GitHub: https://github.com/Minecraft337/MC-Plugin
+  GitHub: https://github.com/rizer001/MC-Plugin
   Баги и предложения: создавайте Issue на GitHub
