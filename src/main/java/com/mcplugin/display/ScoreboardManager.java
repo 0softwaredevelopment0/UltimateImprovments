@@ -200,6 +200,10 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
         // Title supports Component (Paper API)
         Objective objective = board.registerNewObjective(objName, "dummy", MessageUtil.parse(resolvedTitle));
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+        // Hide the red score numbers on the right of sidebar entries.
+        // Uses reflection because adventure-scoreboard module is not in compile classpath
+        // but IS present on Paper 1.21+ server runtime.
+        setBlankNumberFormat(objective);
 
         // Build lines bottom-to-top (score 0 = bottom)
         int score = config.lines().size();
@@ -221,5 +225,56 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
         }
 
         return board;
+    }
+
+    // ── Cached reflection handles for NumberFormat.blankFormat() ──
+    private static boolean blankFormatResolved = false;
+    private static boolean blankFormatAvailable = false;
+    private static Object blankNumberFormat;   // NumberFormat instance (blank)
+    private static java.lang.reflect.Method setNumberFormatMethod;
+
+    /**
+     * Пытается скрыть цифры-очки справа от строк скорборда через
+     * {@code NumberFormat.blankFormat()} (Adventure 5.x / Paper 1.21+).
+     * Если метод отсутствует (старый сервер), просто игнорирует — цифры
+     * останутся видны, но всё остальное работает.
+     * <p>
+     * Рефлекшн-методы кэшируются в статику при первом вызове,
+     * чтобы не дёргать {@code Class.forName}/{@code getMethod} каждый тик.
+     */
+    private static void setBlankNumberFormat(Objective objective) {
+        if (!blankFormatResolved) {
+            resolveBlankFormat();
+        }
+        if (!blankFormatAvailable) return;
+        try {
+            setNumberFormatMethod.invoke(objective, blankNumberFormat);
+        } catch (Exception ignored) {
+            // Не должно падать после успешного resolve, но защита не помешает
+        }
+    }
+
+    private static void resolveBlankFormat() {
+        blankFormatResolved = true;
+        try {
+            Class<?> nfClass = Class.forName("net.kyori.adventure.scoreboard.NumberFormat");
+            // Adventure 4.x → blankFormat(), Adventure 5.x → blank(), пробуем оба
+            java.lang.reflect.Method factoryMethod = null;
+            try {
+                factoryMethod = nfClass.getMethod("blankFormat");
+            } catch (NoSuchMethodException e1) {
+                try {
+                    factoryMethod = nfClass.getMethod("blank");
+                } catch (NoSuchMethodException e2) {
+                    ConsoleLogger.warn("[Scoreboard] NumberFormat.blank()/blankFormat() not found — scores will be visible");
+                    return;
+                }
+            }
+            blankNumberFormat = factoryMethod.invoke(null);
+            setNumberFormatMethod = Objective.class.getMethod("setNumberFormat", nfClass);
+            blankFormatAvailable = true;
+        } catch (Exception e) {
+            ConsoleLogger.info("[Scoreboard] NumberFormat not available on this server — scores visible");
+        }
     }
 }
