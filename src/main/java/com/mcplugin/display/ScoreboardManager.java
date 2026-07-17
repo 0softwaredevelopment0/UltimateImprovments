@@ -216,9 +216,6 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
             } else {
                 // Конвертируем MiniMessage в §-формат для scoreboard (getScore принимает String)
                 display = MessageUtil.legacy(resolved);
-                if (display.length() > 40) {
-                    display = display.substring(0, 40);
-                }
             }
             objective.getScore(display).setScore(score);
             score--;
