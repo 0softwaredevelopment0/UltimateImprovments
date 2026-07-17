@@ -141,7 +141,7 @@ public class ChgDimCommand {
                 long remaining = cooldownSecs - elapsed;
                 player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.cooldown",
                                 "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>{seconds}</yellow><red> seconds before using this again!</red>")
-                        .replace("{seconds}", String.valueOf(remaining))));
+                        .replace("%seconds}", String.valueOf(remaining))));
                 return true;
             }
         }
@@ -153,7 +153,7 @@ public class ChgDimCommand {
         ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
 
         if (worldsSection == null || !worldsSection.contains(worldName)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.world_not_configured", "<red>❌ World</red> <yellow>{world}</yellow> <red>not configured!</red>").replace("{world}", worldName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.world_not_configured", "<red>❌ World</red> <yellow>{world}</yellow> <red>not configured!</red>").replace("%world}", worldName)));
             return true;
         }
 
@@ -161,7 +161,7 @@ public class ChgDimCommand {
         if (world == null) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.world_not_found",
                             "<dark_red>❌</dark_red> <red>World</red> <yellow>{world}</yellow> <red>not found!</red>")
-                    .replace("{world}", worldName)));
+                    .replace("%world}", worldName)));
             return true;
         }
 
@@ -183,7 +183,7 @@ public class ChgDimCommand {
         cooldowns.put(playerUuid, now);
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.success",
                         "<green>✔</green> <white>Teleportation to</white> <yellow>{world}</yellow> <white>completed!</white>")
-                .replace("{world}", worldName)));
+                .replace("%world}", worldName)));
 
         return true;
     }

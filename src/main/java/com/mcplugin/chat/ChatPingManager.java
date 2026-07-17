@@ -123,7 +123,7 @@ public class ChatPingManager {
         Sound sound = SoundUtil.getSound(pingSoundName, Sound.ENTITY_EXPERIENCE_ORB_PICKUP);
         String notificationMsg = MessagesManager.getString("chat_ping.notification", "");
         Component notification = notificationMsg.isEmpty() ? null
-                : MessageUtil.parse(notificationMsg.replace("{sender}", sender.getName()));
+                : MessageUtil.parse(notificationMsg.replace("%sender}", sender.getName()));
         for (Player p : players) {
             // Respect per-player ping sound toggle
             if (PlayerSettingsDB.isPingEnabled(p.getUniqueId())) {

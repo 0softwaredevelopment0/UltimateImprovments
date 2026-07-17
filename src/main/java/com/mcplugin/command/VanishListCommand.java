@@ -49,15 +49,15 @@ public class VanishListCommand extends Command {
 
         sender.sendMessage(MessageUtil.legacy(MessagesManager.getString("vanish_list.online_players",
                 "<gray>Online: </gray><white>{visible}<gray>/{max}</gray></white><gray> players:</gray>")
-                .replace("{visible}", String.valueOf(visibleCount))
-                .replace("{max}", String.valueOf(Bukkit.getMaxPlayers()))));
+                .replace("%visible}", String.valueOf(visibleCount))
+                .replace("%max}", String.valueOf(Bukkit.getMaxPlayers()))));
         if (!names.isEmpty()) {
             sender.sendMessage(String.join(MessageUtil.legacy("<gray>, </gray>"), names));
         }
         if (vanishedCount > 0 && canSeeVanished) {
             sender.sendMessage(MessageUtil.legacy(MessagesManager.getString("vanish_list.vanished_count",
                     "<gray>({count} vanished)</gray>")
-                    .replace("{count}", String.valueOf(vanishedCount))));
+                    .replace("%count}", String.valueOf(vanishedCount))));
         }
 
         return true;

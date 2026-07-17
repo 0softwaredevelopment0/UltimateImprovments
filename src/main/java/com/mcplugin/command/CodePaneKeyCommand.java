@@ -35,7 +35,7 @@ public class CodePaneKeyCommand {
             case "list" -> handleList(sender);
             case "remove" -> handleRemove(sender, args);
             case "modify" -> handleModify(sender, args);
-            default -> sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_subcommand", "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>").replace("{subcommand}", subCmd)));
+            default -> sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_subcommand", "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>").replace("%subcommand}", subCmd)));
         }
         return true;
     }
@@ -104,7 +104,7 @@ public class CodePaneKeyCommand {
 
             if (flag.startsWith("attempts:")) {
                 if (seenFlags.contains("attempts")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "attempts")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "attempts")));
                     return;
                 }
                 seenFlags.add("attempts");
@@ -115,23 +115,23 @@ public class CodePaneKeyCommand {
                         return;
                     }
                 } catch (NumberFormatException e) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_attempts_format", "<red>❌ Invalid attempts format: {value}</red>").replace("{value}", flag)));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_attempts_format", "<red>❌ Invalid attempts format: {value}</red>").replace("%value}", flag)));
                     return;
                 }
             } else if (flag.startsWith("time:")) {
                 if (seenFlags.contains("time")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "time")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "time")));
                     return;
                 }
                 seenFlags.add("time");
                 expiresAt = parseTimeFlag(flag.substring(5));
                 if (expiresAt == 0) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_time_format", "<red>❌ Invalid time format: </red><gray>{value}</gray><red> (use Ns, Nm, Nh, Nd)</red>").replace("{value}", flag.substring(5))));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_time_format", "<red>❌ Invalid time format: </red><gray>{value}</gray><red> (use Ns, Nm, Nh, Nd)</red>").replace("%value}", flag.substring(5))));
                     return;
                 }
             } else if (flag.startsWith("whitelist:")) {
                 if (seenFlags.contains("whitelist")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "whitelist")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "whitelist")));
                     return;
                 }
                 seenFlags.add("whitelist");
@@ -140,7 +140,7 @@ public class CodePaneKeyCommand {
                 if (consumed > 0) i += consumed;
             } else if (flag.startsWith("blacklist:")) {
                 if (seenFlags.contains("blacklist")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "blacklist")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "blacklist")));
                     return;
                 }
                 seenFlags.add("blacklist");
@@ -149,7 +149,7 @@ public class CodePaneKeyCommand {
                 if (consumed > 0) i += consumed;
             } else if (flag.startsWith("command:")) {
                 if (seenFlags.contains("command")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "command")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "command")));
                     return;
                 }
                 seenFlags.add("command");
@@ -159,13 +159,13 @@ public class CodePaneKeyCommand {
                 int consumed = countCommandFlagArgs(args, i);
                 if (consumed > 0) i += consumed;
             } else {
-                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_flag", "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>{flag}</white>").replace("{flag}", flag)));
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_flag", "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>{flag}</white>").replace("%flag}", flag)));
             }
         }
 
         // Check if key already exists
         if (CodePanelDatabase.keyExists(keyName)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.already_exists", "<red>❌ Key</red> <yellow>{name}</yellow> <red>already exists!</red>").replace("{name}", keyName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.already_exists", "<red>❌ Key</red> <yellow>{name}</yellow> <red>already exists!</red>").replace("%name}", keyName)));
             return;
         }
 
@@ -177,24 +177,24 @@ public class CodePaneKeyCommand {
             return;
         }
 
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.add_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>added to database!</white>").replace("{name}", keyName)));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("{code}", code)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.add_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>added to database!</white>").replace("%name}", keyName)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("%code}", code)));
         if (maxAttempts > 0) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_max_attempts", "<gray>Max attempts:</gray> <white>{max}</white>").replace("{max}", String.valueOf(maxAttempts))));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_max_attempts", "<gray>Max attempts:</gray> <white>{max}</white>").replace("%max}", String.valueOf(maxAttempts))));
         }
         if (expiresAt > 0) {
             String dateStr = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
                     .format(new java.util.Date(expiresAt));
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_at", "<gray>Expires at:</gray> <white>{date}</white>").replace("{date}", dateStr)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_at", "<gray>Expires at:</gray> <white>{date}</white>").replace("%date}", dateStr)));
         }
         if (!whitelistStr.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("{players}", whitelistStr)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("%players}", whitelistStr)));
         }
         if (!blacklistStr.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("{players}", blacklistStr)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("%players}", blacklistStr)));
         }
         if (!commandStr.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("{commands}", commandStr)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("%commands}", commandStr)));
         }
     }
 
@@ -222,28 +222,28 @@ public class CodePaneKeyCommand {
         for (CodePanelDatabase.CodePanelKey key : keys) {
             sender.sendMessage("");
             sender.sendMessage(MessageUtil.parse("<gray>┌─ </gray><yellow>" + key.keyName + "</yellow>"));
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("{code}", key.code)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("%code}", key.code)));
 
             if (key.command != null && !key.command.isEmpty()) {
-                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("{commands}", key.command)));
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("%commands}", key.command)));
             }
 
             if (!key.whitelist.isEmpty()) {
                 String players = String.join("<gray>, </gray><green>", key.whitelist);
-                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("{players}", players)));
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("%players}", players)));
             }
             if (!key.blacklist.isEmpty()) {
                 String players = String.join("<gray>, </gray><red>", key.blacklist);
-                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("{players}", players)));
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("%players}", players)));
             }
 
             if (key.maxAttempts > 0) {
                 int left = key.maxAttempts - key.attemptsUsed;
                 String color = left <= 1 ? "<red>" : left <= 3 ? "<yellow>" : "<green>";
                 sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_attempts", "<gray>Attempts:</gray> {color}{remaining}<gray>/{max}</gray>")
-                        .replace("{color}", color)
-                        .replace("{remaining}", String.valueOf(left))
-                        .replace("{max}", String.valueOf(key.maxAttempts))));
+                        .replace("%color}", color)
+                        .replace("%remaining}", String.valueOf(left))
+                        .replace("%max}", String.valueOf(key.maxAttempts))));
             }
 
             if (key.expiresAt > 0) {
@@ -251,7 +251,7 @@ public class CodePaneKeyCommand {
                 if (remain <= 0) {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expired", "<gray>Expires:</gray> <red>expired</red>")));
                 } else {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_in", "<gray>Expires:</gray> <white>{duration}</white>").replace("{duration}", formatDuration(remain))));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_in", "<gray>Expires:</gray> <white>{duration}</white>").replace("%duration}", formatDuration(remain))));
                 }
             }
         }
@@ -277,12 +277,12 @@ public class CodePaneKeyCommand {
         String keyName = args[3];
 
         if (!CodePanelDatabase.keyExists(keyName)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.key_not_found", "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found!</red>").replace("{name}", keyName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.key_not_found", "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found!</red>").replace("%name}", keyName)));
             return;
         }
 
         CodePanelDatabase.removeKey(keyName);
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.remove_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>removed from database.</white>").replace("{name}", keyName)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.remove_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>removed from database.</white>").replace("%name}", keyName)));
     }
 
     // =========================
@@ -303,7 +303,7 @@ public class CodePaneKeyCommand {
         String commandStrOverride = null;
 
         if (!CodePanelDatabase.keyExists(keyName)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.db_not_found", "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found in database!</red>").replace("{name}", keyName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.db_not_found", "<red>❌ Key</red> <yellow>{name}</yellow> <red>not found in database!</red>").replace("%name}", keyName)));
             return;
         }
 
@@ -322,7 +322,7 @@ public class CodePaneKeyCommand {
 
             if (flag.startsWith("attempts:")) {
                 if (seenFlags.contains("attempts")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "attempts")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "attempts")));
                     return;
                 }
                 seenFlags.add("attempts");
@@ -333,23 +333,23 @@ public class CodePaneKeyCommand {
                         return;
                     }
                 } catch (NumberFormatException e) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_attempts_format", "<red>❌ Invalid attempts format: {value}</red>").replace("{value}", flag)));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_attempts_format", "<red>❌ Invalid attempts format: {value}</red>").replace("%value}", flag)));
                     return;
                 }
             } else if (flag.startsWith("time:")) {
                 if (seenFlags.contains("time")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "time")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "time")));
                     return;
                 }
                 seenFlags.add("time");
                 expiresAt = parseTimeFlag(flag.substring(5));
                 if (expiresAt == 0) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_time_format", "<red>❌ Invalid time format: </red><gray>{value}</gray><red> (use Ns, Nm, Nh, Nd)</red>").replace("{value}", flag.substring(5))));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.invalid_time_format", "<red>❌ Invalid time format: </red><gray>{value}</gray><red> (use Ns, Nm, Nh, Nd)</red>").replace("%value}", flag.substring(5))));
                     return;
                 }
             } else if (flag.startsWith("whitelist:")) {
                 if (seenFlags.contains("whitelist")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "whitelist")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "whitelist")));
                     return;
                 }
                 seenFlags.add("whitelist");
@@ -358,7 +358,7 @@ public class CodePaneKeyCommand {
                 if (consumed > 0) i += consumed;
             } else if (flag.startsWith("blacklist:")) {
                 if (seenFlags.contains("blacklist")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "blacklist")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "blacklist")));
                     return;
                 }
                 seenFlags.add("blacklist");
@@ -367,7 +367,7 @@ public class CodePaneKeyCommand {
                 if (consumed > 0) i += consumed;
             } else if (flag.startsWith("command:")) {
                 if (seenFlags.contains("command")) {
-                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("{flag}", "command")));
+                    sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.duplicate_flag", "<red>❌ Duplicate flag: {flag}! Use each flag only once.</red>").replace("%flag}", "command")));
                     return;
                 }
                 seenFlags.add("command");
@@ -377,7 +377,7 @@ public class CodePaneKeyCommand {
                 int consumed = countCommandFlagArgs(args, i);
                 if (consumed > 0) i += consumed;
             } else {
-                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_flag", "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>{flag}</white>").replace("{flag}", flag)));
+                sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.unknown_flag", "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>{flag}</white>").replace("%flag}", flag)));
             }
         }
 
@@ -400,24 +400,24 @@ public class CodePaneKeyCommand {
         CodePanelDatabase.updateKey(keyName, newCode, commandStr,
                 maxAttempts, expiresAt, whitelistStr, blacklistStr);
 
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.modify_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>modified in database.</white>").replace("{name}", keyName)));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("{code}", newCode)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.modify_success", "<green>✔</green> <white>Key</white> <yellow>{name}</yellow> <white>modified in database.</white>").replace("%name}", keyName)));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_code", "<gray>Code:</gray> <white>{code}</white>").replace("%code}", newCode)));
         if (maxAttempts > 0) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_max_attempts", "<gray>Max attempts:</gray> <white>{max}</white>").replace("{max}", String.valueOf(maxAttempts))));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_max_attempts", "<gray>Max attempts:</gray> <white>{max}</white>").replace("%max}", String.valueOf(maxAttempts))));
         }
         if (expiresAt > 0) {
             String dateStr = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
                     .format(new java.util.Date(expiresAt));
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_at", "<gray>Expires at:</gray> <white>{date}</white>").replace("{date}", dateStr)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_expires_at", "<gray>Expires at:</gray> <white>{date}</white>").replace("%date}", dateStr)));
         }
         if (!whitelistStr.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("{players}", whitelistStr)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_whitelist", "<gray>Whitelist:</gray> <green>{players}</green>").replace("%players}", whitelistStr)));
         }
         if (!blacklistStr.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("{players}", blacklistStr)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_blacklist", "<gray>Blacklist:</gray> <red>{players}</red>").replace("%players}", blacklistStr)));
         }
         if (!commandStr.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("{commands}", commandStr)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.info_commands", "<gray>Commands:</gray> <white>{commands}</white>").replace("%commands}", commandStr)));
         }
     }
 

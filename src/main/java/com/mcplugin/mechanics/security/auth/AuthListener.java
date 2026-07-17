@@ -427,12 +427,12 @@ public class AuthListener implements Listener {
         int minLen = AuthConfig.getMinPasswordLength();
         int maxLen = AuthConfig.getMaxPasswordLength();
         if (newPassword.length() < minLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("{min}", String.valueOf(minLen))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("%min}", String.valueOf(minLen))));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
         if (newPassword.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("{max}", String.valueOf(maxLen))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("%max}", String.valueOf(maxLen))));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
@@ -462,12 +462,12 @@ public class AuthListener implements Listener {
         int minLen = AuthConfig.getMinPasswordLength();
         int maxLen = AuthConfig.getMaxPasswordLength();
         if (password.length() < minLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("{min}", String.valueOf(minLen))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("%min}", String.valueOf(minLen))));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
         if (password.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("{max}", String.valueOf(maxLen))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("%max}", String.valueOf(maxLen))));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }

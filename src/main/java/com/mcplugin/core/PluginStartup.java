@@ -118,6 +118,26 @@ public class PluginStartup {
 
         PlaceholderResolver.init();
 
+        // PlaceholderAPI hook — регистрируем MCPluginPlaceholderExpansion
+        // ТОЛЬКО если PAPI установлен; иначе только внутренний резолвер работает.
+        if (PlaceholderResolver.isPapiAvailable()) {
+            try {
+                com.mcplugin.hook.MCPluginPlaceholderExpansion expansion =
+                        new com.mcplugin.hook.MCPluginPlaceholderExpansion();
+                if (expansion.register()) {
+                    ConsoleLogger.info("[PlaceholderAPI] MC-Plugin expansion registered (" +
+                            expansion.getIdentifier() + " — " +
+                            PlaceholderResolver.getBuiltinNames().size() + " placeholders)");
+                } else {
+                    ConsoleLogger.warn("[PlaceholderAPI] Could not register MC-Plugin expansion");
+                }
+            } catch (Throwable t) {
+                ConsoleLogger.warn("[PlaceholderAPI] Registration failed: " + t.getMessage());
+            }
+        } else {
+            ConsoleLogger.info("[PlaceholderAPI] PlaceholderAPI не обнаружен — плейсхолдеры работают только внутри плагина");
+        }
+
         Keys.init(plugin);
         MaintenanceManager.init();
 

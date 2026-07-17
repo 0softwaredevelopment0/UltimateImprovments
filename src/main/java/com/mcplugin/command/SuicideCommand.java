@@ -49,7 +49,7 @@ public class SuicideCommand {
             if (remaining > 0) {
             String msg = MessagesManager.getString("suicide.messages.cooldown_message",
                     "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>{seconds}</yellow> <red>seconds before using this again!</red>");
-                player.sendMessage(MessageUtil.parse(msg.replace("{seconds}", String.valueOf(remaining))));
+                player.sendMessage(MessageUtil.parse(msg.replace("%seconds}", String.valueOf(remaining))));
                 return true;
             } else {
                 suicideCooldowns.remove(uuid);
@@ -77,7 +77,7 @@ public class SuicideCommand {
             String warningNoCancel = MessagesManager.getString("suicide.messages.warning_no_cancel", "<red>⚠ This cannot be undone after confirmation!</red>");
             String warningConfirmHint = MessagesManager.getString("suicide.messages.warning_confirm_hint", "<yellow>Type</yellow> <white>/mp suicide</white> <yellow>again to confirm and start the countdown.</yellow>");
             String warningCancelHint = MessagesManager.getString("suicide.messages.warning_cancel_hint", "<gray>If you change your mind — just wait</gray> <yellow>{timeout}</yellow><gray> seconds and the request will expire.</gray>")
-                    .replace("{timeout}", String.valueOf(confirmTimeout));
+                    .replace("%timeout}", String.valueOf(confirmTimeout));
 
             player.sendMessage("");
             player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
@@ -153,7 +153,7 @@ public class SuicideCommand {
         target.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
         target.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("suicide.messages.forced_title", "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>")));
         target.sendMessage("§8┃");
-        target.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("suicide.messages.forced_body", "<gray>Player </gray><white>{sender}</white><gray> is force-suiciding you.</gray>").replace("{sender}", sender.getName())));
+        target.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("suicide.messages.forced_body", "<gray>Player </gray><white>{sender}</white><gray> is force-suiciding you.</gray>").replace("%sender}", sender.getName())));
         target.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("suicide.messages.forced_nocancel", "<red>Cannot be cancelled!</red>")));
         target.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
         target.sendMessage("");
@@ -189,7 +189,7 @@ public class SuicideCommand {
         }
 
         BossBar bossBar = Bukkit.createBossBar(
-                MessageUtil.legacy(bossTitle.replace("{seconds}", String.valueOf(countdownDuration))),
+                MessageUtil.legacy(bossTitle.replace("%seconds}", String.valueOf(countdownDuration))),
                 bossColor,
                 bossStyle
         );
@@ -251,12 +251,12 @@ public class SuicideCommand {
                     lastDisplaySecond = currentSecond;
 
                     if (currentSecond <= 5 && currentSecond > 0) {
-                        player.sendMessage(MessageUtil.parse(timerChat.replace("{seconds}", String.valueOf(currentSecond))));
+                        player.sendMessage(MessageUtil.parse(timerChat.replace("%seconds}", String.valueOf(currentSecond))));
                     }
 
-                    player.sendActionBar(MessageUtil.parse(timerActionbar.replace("{seconds}", String.valueOf(currentSecond))));
+                    player.sendActionBar(MessageUtil.parse(timerActionbar.replace("%seconds}", String.valueOf(currentSecond))));
 
-                    bossBar.setTitle(MessageUtil.legacy(bossTitle.replace("{seconds}", String.valueOf(currentSecond))));
+                    bossBar.setTitle(MessageUtil.legacy(bossTitle.replace("%seconds}", String.valueOf(currentSecond))));
                 }
 
                 double progress = (double) (totalTicks - tick) / totalTicks;

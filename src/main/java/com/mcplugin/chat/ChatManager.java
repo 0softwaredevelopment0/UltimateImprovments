@@ -200,7 +200,7 @@ public class ChatManager implements Listener {
             // Parse player message (with ping formatting) as MiniMessage, then embed
             Component msgComp = parseMessageComponentForPing(msgForBroadcast, player);
             String serializedMsg = MM.serialize(msgComp);
-            String finalFormat = resolved.replace("{message}", serializedMsg);
+            String finalFormat = resolved.replace("%message}", serializedMsg);
             broadcast = MessageUtil.parse(finalFormat);
         } else {
             // playerMiniMessage: false — экранируем < и > только в тексте игрока,
@@ -210,11 +210,11 @@ public class ChatManager implements Listener {
             // на экранированное сообщение, чтобы теги пингов не экранировались
             ChatPingManager.PingResult pingResultEscaped = ChatPingManager.processPings(escapedRaw, player);
             String finalMsg = pingResultEscaped.formattedMessage();
-            String finalFormat = resolved.replace("{message}", finalMsg);
+            String finalFormat = resolved.replace("%message}", finalMsg);
             try {
                 broadcast = MessageUtil.parse(finalFormat);
             } catch (Exception e) {
-                String formatWithoutMsg = resolved.replace("{message}", "");
+                String formatWithoutMsg = resolved.replace("%message}", "");
                 broadcast = MessageUtil.parse(formatWithoutMsg).append(Component.text(escapedRaw));
             }
         }

@@ -48,7 +48,7 @@ public final class HealFeedSubcommand {
         if (target == null) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_player_not_found",
                     "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>")
-                    .replace("{player}", args[1])));
+                    .replace("%player}", args[1])));
             return true;
         }
 
@@ -92,7 +92,7 @@ public final class HealFeedSubcommand {
         if (target == null) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_player_not_found",
                     "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>")
-                    .replace("{player}", args[1])));
+                    .replace("%player}", args[1])));
             return true;
         }
 
