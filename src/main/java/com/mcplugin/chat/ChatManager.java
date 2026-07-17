@@ -28,7 +28,7 @@ import java.util.Map;
  * из config.yml. Поддерживает:
  * <ul>
  *   <li>MiniMessage в формате и сообщениях игроков</li>
- *   <li>Встроенные плейсхолдеры {player_name}, {world_name} и т.д.</li>
+ *   <li>Встроенные плейсхолдеры %player_name%, %world_name% и т.д.</li>
  *   <li>PAPI плейсхолдеры %luckperms_prefix%, %player_world% и т.д.</li>
  *   <li>Режим static — единый формат для всех</li>
  *   <li>Режим per-group — свой формат для каждой группы LuckPerms</li>
@@ -99,7 +99,7 @@ public class ChatManager implements Listener {
         }
 
         this.defaultFormat = cfg.getString("chat.format",
-                "<dark_gray>[</dark_gray><white>{player_name}</white><dark_gray>]</dark_gray> <white>{message}</white>");
+                "<dark_gray>[</dark_gray><white>%player_name%</white><dark_gray>]</dark_gray> <white>%message%</white>");
 
         // ===== Per-group (LuckPerms) — загружается всегда для /mp chat reload =====
         this.groupFormats = new HashMap<>();
@@ -176,7 +176,7 @@ public class ChatManager implements Listener {
             rawMessage = PlaceholderResolver.resolve(rawMessage, player);
         }
 
-        // Resolve placeholders in format (except {message})
+        // Resolve placeholders in format (except %message%)
         String resolved = PlaceholderResolver.resolve(format, player);
 
         // =========================
@@ -189,10 +189,10 @@ public class ChatManager implements Listener {
         // Build final broadcast component
         Component broadcast;
         String msgForBroadcast = pingedPlayers.isEmpty() ? rawMessage : pingedMessage;
-        boolean hasMessageToken = resolved.contains("{message}");
+        boolean hasMessageToken = resolved.contains("%message%");
 
         if (!hasMessageToken) {
-            // No {message} in format — append message at end
+            // No %message% in format — append message at end
             broadcast = MessageUtil.parse(resolved)
                     .append(Component.text(" "))
                     .append(parseMessageComponentForPing(msgForBroadcast, player));
@@ -200,7 +200,7 @@ public class ChatManager implements Listener {
             // Parse player message (with ping formatting) as MiniMessage, then embed
             Component msgComp = parseMessageComponentForPing(msgForBroadcast, player);
             String serializedMsg = MM.serialize(msgComp);
-            String finalFormat = resolved.replace("%message}", serializedMsg);
+            String finalFormat = resolved.replace("%message%", serializedMsg);
             broadcast = MessageUtil.parse(finalFormat);
         } else {
             // playerMiniMessage: false — экранируем < и > только в тексте игрока,
@@ -210,11 +210,11 @@ public class ChatManager implements Listener {
             // на экранированное сообщение, чтобы теги пингов не экранировались
             ChatPingManager.PingResult pingResultEscaped = ChatPingManager.processPings(escapedRaw, player);
             String finalMsg = pingResultEscaped.formattedMessage();
-            String finalFormat = resolved.replace("%message}", finalMsg);
+            String finalFormat = resolved.replace("%message%", finalMsg);
             try {
                 broadcast = MessageUtil.parse(finalFormat);
             } catch (Exception e) {
-                String formatWithoutMsg = resolved.replace("%message}", "");
+                String formatWithoutMsg = resolved.replace("%message%", "");
                 broadcast = MessageUtil.parse(formatWithoutMsg).append(Component.text(escapedRaw));
             }
         }
