@@ -16,6 +16,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Team;
 
 import java.util.*;
 
@@ -205,19 +206,24 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
         // but IS present on Paper 1.21+ server runtime.
         setBlankNumberFormat(objective);
 
-        // Build lines bottom-to-top (score 0 = bottom)
+        // Build lines bottom-to-top (score 0 = bottom) using Team prefix/suffix
+        // with Component — preserves MiniMessage gradients, unlike legacy §-format
+        // which only supports 16 basic Minecraft colours.
         int score = config.lines().size();
         for (String line : config.lines()) {
             String resolved = PlaceholderResolver.resolve(line, player);
-            String display;
+            // Unique invisible entry name for this line (just a color code — no visible glyph)
+            String entryName = "§" + (char) ('a' + (score % 26));
+            Team team = board.registerNewTeam("sbln" + score);
             if (resolved.isEmpty()) {
-                // Пустой разделитель — §-код для уникальности + невидимости
-                display = "§" + (char) ('a' + (score % 26));
+                // Empty separator — invisible entry, no prefix
+                team.prefix(Component.empty());
             } else {
-                // Конвертируем MiniMessage в §-формат для scoreboard (getScore принимает String)
-                display = MessageUtil.legacy(resolved);
+                // Component preserves gradients (<gradient:...>, <rainbow>, etc.)
+                team.prefix(MessageUtil.parse(resolved));
             }
-            objective.getScore(display).setScore(score);
+            team.addEntry(entryName);
+            objective.getScore(entryName).setScore(score);
             score--;
         }
 
