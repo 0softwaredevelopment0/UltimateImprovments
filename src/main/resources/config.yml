@@ -744,7 +744,7 @@ tab:
 
   footer:
     - "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"
-    - "<gray>  Online: <white>{online}</white><gray>/{max_players}  •  TPS: <white>{tps}</white></gray>"
+    - "<gray>  Online: <white>%online%</white><gray>/%max_players%  •  TPS: <white>%tps%</white></gray>"
     - "<gray>  Discord: <aqua>discord.gg/mcplugin</aqua></gray>"
 
   player_list:
@@ -755,7 +755,7 @@ tab:
     format: ""
 
     objective_prefix: ""
-    objective_suffix: " <dark_gray>[</dark_gray>{player_ping_color}{player_ping}<dark_gray>ms] </dark_gray>"
+    objective_suffix: " <dark_gray>[</dark_gray>%player_ping_color%%player_ping%<dark_gray>ms] </dark_gray>"
 
   sort:
     mode: none
@@ -777,18 +777,18 @@ scoreboard:
 
       lines:
         - ""
-        - "<gray>Online: <white>{online}</white><gray>/{max_players}</gray>"
-        - "<gray>TPS: <white>{tps}</white></gray>"
+        - "<gray>Online: <white>%online%</white><gray>/%max_players%</gray>"
+        - "<gray>TPS: <white>%tps%</white></gray>"
         - ""
-        - "<gray>Your ping: <white>{player_ping}ms</white></gray>"
-        - "<gray>World: <white>{world_name}</white></gray>"
+        - "<gray>Your ping: <white>%player_ping%ms</white></gray>"
+        - "<gray>World: <white>%world_name%</white></gray>"
         - ""
         - "<dark_gray>discord.gg/mcplugin</dark_gray>"
 
 bossbar:
   enabled: true
 
-  format: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient> <dark_gray>|</dark_gray> <gray>Online: <white>{online}</white></gray>"
+  format: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient> <dark_gray>|</dark_gray> <gray>Online: <white>%online%</white></gray>"
 
   color: YELLOW
 
@@ -807,7 +807,7 @@ bossbar:
 belowname:
   enabled: true
 
-  format: "<red>❤ {player_health}</red> <dark_gray>|</dark_gray> <gold>{player_food}</gold>"
+  format: "<red>❤ %player_health%</red> <dark_gray>|</dark_gray> <gold>%player_food%</gold>"
 
   update_interval_ticks: 20
 
@@ -819,7 +819,7 @@ chat:
 
   mode: "static"
 
-  format: "<green>ᴄʜᴀᴛ <dark_gray>» <white>{player_name}<gray>: <white>{message}"
+  format: "<green>ᴄʜᴀᴛ <dark_gray>» <white>%player_name%<gray>: <white>%message%"
 
   player_minimessage: true
 
@@ -828,18 +828,18 @@ chat:
   bypass_permission: ""
 
   groups:
-    default: "<gray>[<white>{player_name}</white>]</gray> <white>{message}</white>"
+    default: "<gray>[<white>%player_name%</white>]</gray> <white>%message%</white>"
 
     formats:
-      admin: "<red>[Admin]</red> <white>{player_name}</white>: <red>{message}</red>"
-      vip: "<gold>[VIP]</gold> <white>{player_name}</white>: <gold>{message}</gold>"
-      moderator: "<dark_green>[Mod]</dark_green> <white>{player_name}</white>: <green>{message}</green>"
-      default: "<gray>{player_name}</gray>: <white>{message}</white>"
+      admin: "<red>[Admin]</red> <white>%player_name%</white>: <red>%message%</red>"
+      vip: "<gold>[VIP]</gold> <white>%player_name%</white>: <gold>%message%</gold>"
+      moderator: "<dark_green>[Mod]</dark_green> <white>%player_name%</white>: <green>%message%</green>"
+      default: "<gray>%player_name%</gray>: <white>%message%</white>"
 
   worlds:
-    world: "<green>{player_name}</green>: <white>{message}</white>"
-    world_nether: "<red>{player_name}</red>: <white>{message}</white>"
-    world_the_end: "<dark_purple>{player_name}</dark_purple>: <white>{message}</white>"
+    world: "<green>%player_name%</green>: <white>%message%</white>"
+    world_nether: "<red>%player_name%</red>: <white>%message%</white>"
+    world_the_end: "<dark_purple>%player_name%</dark_purple>: <white>%message%</white>"
 
 access_control:
   check_interval_ticks: 20

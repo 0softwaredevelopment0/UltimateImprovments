@@ -891,8 +891,8 @@ public class IntegrityManager extends BukkitRunnable {
             if (warned) {
                 String itemName = getItemName(item);
                 String msg = lowIntegrityWarningMessage
-                        .replace("{item}", itemName)
-                        .replace("{pct}", PCT_FMT.format(pct));
+                        .replace("%item}", itemName)
+                        .replace("%pct}", PCT_FMT.format(pct));
                 player.sendMessage(MessageUtil.parse(msg));
             }
         }
@@ -920,7 +920,7 @@ public class IntegrityManager extends BukkitRunnable {
 
         // Отправляем сообщение
         if (breakSendMessage) {
-            String msg = breakMessage.replace("{item}", itemName);
+            String msg = breakMessage.replace("%item}", itemName);
             owner.sendMessage(MessageUtil.parse(msg));
         }
 

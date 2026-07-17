@@ -65,7 +65,7 @@ public class AskCordsManager {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("askcords.cooldown",
                             "<red>❌ Please wait </red><yellow>{seconds}</yellow><red> seconds before using this again!</red>")
-                            .replace("{seconds}", String.valueOf(remaining))));
+                            .replace("%seconds}", String.valueOf(remaining))));
             return true;
         }
 
@@ -79,7 +79,7 @@ public class AskCordsManager {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("askcords.player_not_found",
                             "<red>❌ Player </red><yellow>{player}</yellow><red> not found!</red>")
-                            .replace("{player}", targetName)));
+                            .replace("%player}", targetName)));
             return true;
         }
 
@@ -101,7 +101,7 @@ public class AskCordsManager {
         sender.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.request_sent",
                         "<green>✔</green> <white>Coordinates request sent to</white> <yellow>{player}</yellow><white>.</white>")
-                        .replace("{player}", target.getName())));
+                        .replace("%player}", target.getName())));
         sender.playSound(sender.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.5f);
 
         // Сообщение цели с кнопками
@@ -127,7 +127,7 @@ public class AskCordsManager {
         target.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.request_body",
                         "<gray>Player </gray><yellow>{player}</yellow><gray> is requesting your coordinates.</gray>")
-                        .replace("{player}", sender.getName())));
+                        .replace("%player}", sender.getName())));
         target.sendMessage("");
 
         // ✔ Accept button
@@ -213,17 +213,17 @@ public class AskCordsManager {
         sender.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.result_player",
                         "<gray>Player: </gray><yellow>{player}</yellow>")
-                        .replace("{player}", target.getName())));
+                        .replace("%player}", target.getName())));
         sender.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.result_world",
                         "<gray>World: </gray><white>{world}</white>")
-                        .replace("{world}", worldName)));
+                        .replace("%world}", worldName)));
         sender.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.result_coords",
                         "<gray>Coordinates: </gray><white>{x} / {y} / {z}</white>")
-                        .replace("{x}", String.valueOf(x))
-                        .replace("{y}", String.valueOf(y))
-                        .replace("{z}", String.valueOf(z))));
+                        .replace("%x}", String.valueOf(x))
+                        .replace("%y}", String.valueOf(y))
+                        .replace("%z}", String.valueOf(z))));
         sender.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.result_header",
                         "<gold>═══════════════════════════════════</gold>")));
@@ -235,7 +235,7 @@ public class AskCordsManager {
         target.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.accepted_notify",
                         "<green>✔</green> <white>You shared your coordinates with</white> <yellow>{player}</yellow><white>.</white>")
-                        .replace("{player}", sender.getName())));
+                        .replace("%player}", sender.getName())));
         target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.2f);
 
         return true;
@@ -261,14 +261,14 @@ public class AskCordsManager {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("askcords.declined_notify_sender",
                             "<red>❌ Player </red><yellow>{player}</yellow><red> declined your coordinates request.</red>")
-                            .replace("{player}", target.getName())));
+                            .replace("%player}", target.getName())));
             sender.playSound(sender.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
         }
 
         target.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("askcords.declined_notify_target",
                         "<yellow>✦</yellow> <white>You declined the coordinates request from</white> <yellow>{player}</yellow><white>.</white>")
-                        .replace("{player}", sender != null ? sender.getName() : senderName)));
+                        .replace("%player}", sender != null ? sender.getName() : senderName)));
         target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
 
         return true;

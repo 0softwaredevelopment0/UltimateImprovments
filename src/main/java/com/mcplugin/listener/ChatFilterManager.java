@@ -313,7 +313,7 @@ public class ChatFilterManager implements Listener {
                 // Player message
                 player.sendMessage(MessageUtil.parse(warningMessage));
                 player.sendMessage("§7→ §f" + highlighted);
-                player.sendMessage(MessageUtil.parse(MessagesManager.getString("chat_filter.violation_match", "<gray>└</gray> <white>Match:</white> {source}").replace("{source}", source)));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("chat_filter.violation_match", "<gray>└</gray> <white>Match:</white> {source}").replace("%source}", source)));
                 return;
             }
         }

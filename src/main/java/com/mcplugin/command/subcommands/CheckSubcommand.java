@@ -39,7 +39,7 @@ public final class CheckSubcommand {
         if (suspect == null || !suspect.isOnline()) {
             inspector.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_not_found",
                     "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>")
-                    .replace("{player}", targetName)));
+                    .replace("%player}", targetName)));
             return true;
         }
 

@@ -14,7 +14,7 @@
 
 ## 📦 Quick Install
 
-1. **Download** `.jar` from [Releases](https://github.com/Minecraft337/MC-Plugin/releases)
+1. **Download** `.jar` from [Releases](https://github.com/rizer001/MC-Plugin/releases)
 2. **Drop** into `plugins/` folder
 3. **Restart** server twice (first load installs datapack, second activates it)
 
@@ -145,7 +145,7 @@ See **[INFO.md](INFO.md)** for the full feature breakdown with all commands, per
 
 ## 👤 Author
 
-**rizer001** — [GitHub](https://github.com/Minecraft337) — Discord: `@error404_user.not.found`
+**rizer001** — [GitHub](https://github.com/rizer001) — Discord: `@error404_user.not.found`
 
 ---
 *Last tested: June 22, 2026 — webhook verification*

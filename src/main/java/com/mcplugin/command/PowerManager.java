@@ -191,8 +191,8 @@ public class PowerManager {
         // --- Initial broadcast ---
         Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.countdown_broadcast",
                 "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>{action} in</red> <white>{seconds}</white> <red>seconds!</red>")
-                .replace("{action}", action)
-                .replace("{seconds}", String.valueOf(duration))));
+                .replace("%action}", action)
+                .replace("%seconds}", String.valueOf(duration))));
         playBeepToAll(calcPitch(0.0));
 
         // --- Repeating countdown task (каждый тик — плавное ускорение) ---
@@ -211,7 +211,7 @@ public class PowerManager {
                     try {
                         Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.executing",
                                 "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action}...</red>")
-                                .replace("{action}", actionMsg)));
+                                .replace("%action}", actionMsg)));
                         playBeepToAll(countdownSoundPitchMax);
 
                         if (type == RequestType.STOP) {
@@ -239,16 +239,16 @@ public class PowerManager {
                         else secWord = "seconds";
                         Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.countdown_seconds",
                                 "<red>Server {action} in</red> <white>{seconds}</white> <red>{unit}...</red>")
-                                .replace("{action}", actionMsg)
-                                .replace("{seconds}", String.valueOf(currentSecond))
-                                .replace("{unit}", secWord)));
+                                .replace("%action}", actionMsg)
+                                .replace("%seconds}", String.valueOf(currentSecond))
+                                .replace("%unit}", secWord)));
                     }
 
                     // ActionBar
                     if (actionbarEnabled) {
                         String barText = actionbarFormat
-                                .replace("{action}", actionMsg)
-                                .replace("{seconds}", String.valueOf(currentSecond));
+                                .replace("%action}", actionMsg)
+                                .replace("%seconds}", String.valueOf(currentSecond));
                         for (Player p : Bukkit.getOnlinePlayers()) {
                             p.sendActionBar(MessageUtil.parse(barText));
                         }
@@ -257,8 +257,8 @@ public class PowerManager {
                     // BossBar title (только при смене секунды — лишние пакеты ни к чему)
                     if (bossBar != null) {
                         String barTitle = bossbarText
-                                .replace("{action}", actionMsg)
-                                .replace("{seconds}", String.valueOf(Math.max(0, currentSecond)));
+                                .replace("%action}", actionMsg)
+                                .replace("%seconds}", String.valueOf(Math.max(0, currentSecond)));
                         bossBar.setTitle(MessageUtil.legacy(barTitle));
                     }
                 }
@@ -336,7 +336,7 @@ public class PowerManager {
         } catch (IllegalArgumentException e) {
             style = BarStyle.SOLID;
         }
-        String text = bossbarText.replace("{action}", actionMsg);
+        String text = bossbarText.replace("%action}", actionMsg);
 
         return Bukkit.createBossBar(MessageUtil.legacy(text), color, style);
     }
@@ -387,8 +387,8 @@ public class PowerManager {
             if (player != null && player.isOnline()) {
                 String msg = MessagesManager.getString("power.cancelled_by_player",
                         "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} was cancelled</red> <white>{by_player}</white><red>.</red>")
-                        .replace("{action}", action)
-                        .replace("{by_player}", cancelerName != null && !cancelerName.equalsIgnoreCase(requester) ? cancelerName : "");
+                        .replace("%action}", action)
+                        .replace("%by_player}", cancelerName != null && !cancelerName.equalsIgnoreCase(requester) ? cancelerName : "");
                 player.sendMessage(MessageUtil.legacy(msg));
             }
         }
@@ -396,9 +396,9 @@ public class PowerManager {
         // Notify console
         String consoleMsg = MessagesManager.getString("power.cancelled_console",
                 "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} cancelled{by}{from}.</red>")
-                .replace("{action}", action)
-                .replace("{by}", cancelerName != null ? " (" + cancelerName + ")" : "")
-                .replace("{from}", requester != null ? ". Request from " + requester : "");
+                .replace("%action}", action)
+                .replace("%by}", cancelerName != null ? " (" + cancelerName + ")" : "")
+                .replace("%from}", requester != null ? ". Request from " + requester : "");
         Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(consoleMsg));
 
         return action;
@@ -433,17 +433,17 @@ public class PowerManager {
             if (player != null && player.isOnline()) {
                 String msg = MessagesManager.getString("power.cancelled_auto",
                         "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} was automatically cancelled: {reason}</red>")
-                        .replace("{action}", action)
-                        .replace("{reason}", reason);
+                        .replace("%action}", action)
+                        .replace("%reason}", reason);
                 player.sendMessage(MessageUtil.legacy(msg));
             }
         }
 
         String consoleMsg = MessagesManager.getString("power.cancelled_console",
                 "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server {action} cancelled{by}{from}.</red>")
-                .replace("{action}", action)
-                .replace("{by}", "")
-                .replace("{from}", requester != null ? " (request from " + requester + ")" : "");
+                .replace("%action}", action)
+                .replace("%by}", "")
+                .replace("%from}", requester != null ? " (request from " + requester + ")" : "");
         Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(consoleMsg));
     }
 

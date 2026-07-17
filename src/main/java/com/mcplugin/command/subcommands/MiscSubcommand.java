@@ -37,16 +37,16 @@ public final class MiscSubcommand {
         @SuppressWarnings("deprecation")
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_player_not_found", "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>").replace("{player}", targetName))); return true;
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_player_not_found", "<red>❌ Player</red> <yellow>{player}</yellow> <red>not found!</red>").replace("%player}", targetName))); return true;
         }
         UUID uuid = target.getUniqueId();
         VanishManager.toggleVanish(target);
         boolean isVanished = VanishManager.isVanished(uuid);
         if (isVanished) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_enabled", "<green>✔</green> <white>Player</white> <yellow>{player}</yellow> <white>is now hidden (vanished).</white>").replace("{player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_enabled", "<green>✔</green> <white>Player</white> <yellow>{player}</yellow> <white>is now hidden (vanished).</white>").replace("%player}", targetName)));
             if (!target.isOnline()) sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_offline_hint", "<gray>Player is offline — vanish will apply on next login.</gray>")));
         } else {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_disabled", "<red>❌</red> <white>Player</white> <yellow>{player}</yellow> <white>is no longer hidden.</white>").replace("{player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_disabled", "<red>❌</red> <white>Player</white> <yellow>{player}</yellow> <white>is no longer hidden.</white>").replace("%player}", targetName)));
         }
         return true;
     }

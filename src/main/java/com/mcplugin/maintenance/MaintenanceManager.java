@@ -323,7 +323,7 @@ public class MaintenanceManager implements Listener {
                 ? "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>{time}</yellow>"
                 : "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>{time}</yellow>";
 
-        String msg = MessagesManager.getString(key, def).replace("{time}", timeStr);
+        String msg = MessagesManager.getString(key, def).replace("%time}", timeStr);
         Bukkit.broadcast(MessageUtil.parse(msg));
     }
 

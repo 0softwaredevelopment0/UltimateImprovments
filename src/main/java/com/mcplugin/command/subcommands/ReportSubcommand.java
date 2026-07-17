@@ -47,7 +47,7 @@ public final class ReportSubcommand {
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.success",
                             "<green>✔</green> <white>Репорт на игрока </white><yellow>{player}</yellow> <white>отправлен!</white>")
-                            .replace("{player}", targetName)));
+                            .replace("%player}", targetName)));
         }
 
         return true;
