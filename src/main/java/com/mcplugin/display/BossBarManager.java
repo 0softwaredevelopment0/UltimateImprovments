@@ -171,8 +171,7 @@ public class BossBarManager extends BukkitRunnable {
             }
 
             try {
-                String resolved = PlaceholderResolver.resolve(format, player);
-                Component component = MessageUtil.parse(resolved);
+                Component component = MessageUtil.parse(format, player);
                 BossBar bar = getOrCreateBar(player);
                 bar.name(component);
                 bar.color(color);

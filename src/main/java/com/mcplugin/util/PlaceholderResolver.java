@@ -223,12 +223,16 @@ public class PlaceholderResolver {
      *   <li>{@code %tps_5m%} / {@code %mspt%} — динамические/цветные</li>
      *   <li>{@code %ping_5m_all%} — пинг</li>
      *   <li>{@code %copy:"x"%} и {@code %link:"url"%} — клики</li>
-     *   <li>PAPI (если есть) — последним шагом</li>
+     *   <li>PlaceholderAPI (если есть) — последним шагом, в т.ч. разрешены сторонние плейсхолдеры ({@code %vault_balance%}, {@code %someplugin_x%} и т.д.)</li>
      * </ol>
      */
     public static String resolve(String text, Player player) {
+        // Fast-path: если в строке нет '%', нечего резолвить.
+        if (text == null || text.isEmpty() || text.indexOf('%') < 0) return text;
         text = resolveInternal(text, player);
-        if (player != null && papiAvailable) {
+        if (papiAvailable) {
+            // PAPI-вызов разрешён и для null player — некоторые Expansion-плагины
+            // поддерживают серверные плейсхолдеры (напр. %server_online%) без игрока.
             text = resolvePapi(text, player);
         }
         return text;
