@@ -94,39 +94,48 @@ public class AuthAuthenticator {
         // Сохраняем финальное состояние registered для использования в Runnable
         final boolean isRegistered = registered;
 
-        // Freeze player and show chat prompt
+        // Freeze player and open Custom Screen (Anvil GUI)
         playerState.setPendingAuth(uuid);
         freezePlayer(player);
         timeoutManager.startLoginTimeout(player);
 
-        // Show auth instructions in chat with 1-tick delay (handshake must complete)
+        // Open GUI after 5-tick delay (Paper 1.21.11: клиент должен полностью
+        // закончить handshake до window packet; 1 тик иногда слишком быстро)
         new BukkitRunnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
                 if (!playerState.needsAuth(player)) return;
-                sendAuthPrompt(player, isRegistered);
+                openAuthScreenPrompt(player, isRegistered);
             }
-        }.runTaskLater(Main.getInstance(), 1L);
+        }.runTaskLater(Main.getInstance(), 5L);
     }
 
     /**
-     * Отправляет в чат инструкцию по авторизации.
+     * Открывает кастомный экран авторизации (Anvil GUI).
+     * <p>
+     * Custom Screen — настоящий GUI-экран через {@link MenuType#ANVIL},
+     * с полем переименования куда игрок вводит пароль и кнопкой Подтвердить.
+     * Также печатает краткий header в чат для визуальной пометки "Custom Screen".
+     *
+     * @param player      игрок, которому показывается экран
+     * @param isRegistered true если зарегистрирован (login), false если регистрация
      */
-    private void sendAuthPrompt(Player player, boolean isRegistered) {
+    private void openAuthScreenPrompt(Player player, boolean isRegistered) {
+        // Header в чат — визуальная пометка «Custom Screen» поверх GUI
         player.sendMessage("");
-        player.sendMessage("§6✦ §fLogin Required");
+        player.sendMessage("§8╔ §6✦ §lCustom Screen§r §8╗");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         player.sendMessage("");
+
         if (isRegistered) {
-            player.sendMessage("§c❌ §fYou are not logged in!");
-            player.sendMessage("§7Type the following command with your password:");
-            player.sendMessage("§e/mp auth login <your password>");
+            AuthGUI.openLogin(player);
         } else {
-            player.sendMessage("§c❌ §fYou need to create an account!");
-            player.sendMessage("§7Type the following command with a new password:");
-            player.sendMessage("§e/mp auth register <your password>");
+            AuthGUI.openRegister(player);
         }
+
+        player.sendMessage("§7▸ §fВведите пароль в поле переименования наверху");
+        player.sendMessage("§7▸ §fЗатем нажмите §a✔ Подтвердить");
         player.sendMessage("");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         player.sendMessage("");
@@ -269,6 +278,17 @@ public class AuthAuthenticator {
     // =========================
     public void start2FAChallenge(Player player) {
         UUID uuid = player.getUniqueId();
+
+        // Закрыть Custom Screen с флагом Transitioning, чтобы
+        // AuthListener.onInventoryClose не пытался заново открыть GUI
+        // (иначе наковальня перекрывает чат с инструкциями по Telegram-2FA).
+        AuthGUITracker.addTransitioningPlayer(uuid);
+        try {
+            player.closeInventory();
+        } finally {
+            AuthGUITracker.removeTransitioningPlayer(uuid);
+        }
+
         String chatId = Auth2FA.getChatId(uuid);
         if (chatId == null || chatId.isEmpty()) {
             // Нет chat_id — отключаем 2FA и пускаем без кода
@@ -407,9 +427,9 @@ public class AuthAuthenticator {
         player.sendMessage("");
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password_remaining", "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>").replace("%remaining%", String.valueOf(remaining))));
         player.sendMessage("");
-        // Resend auth prompt
+        // Re-open Custom Screen (Anvil GUI) so player can try again
         boolean isRegistered = AuthDatabase.isRegistered(uuid);
-        sendAuthPrompt(player, isRegistered);
+        openAuthScreenPrompt(player, isRegistered);
     }
 
     // =========================
@@ -417,11 +437,24 @@ public class AuthAuthenticator {
     // =========================
     private void authenticatePlayer(Player player, String message) {
         UUID uuid = player.getUniqueId();
+
+        // ВАЖНО: setAuthenticated ДО closeInventory (порядок имеет значение!).
+        // closeInventory синхронно вызывает InventoryCloseEvent, и в момент
+        // срабатывания AuthListener.onInventoryClose читает needsAuth(player).
+        // Если до этого мы ещё не установили authenticated, handler решит что
+        // нужно re-open GUI → 5 тиков спустя игрок увидит экран логина
+        // ВМЕСТО обычного геймплея. Исправлено: state first, then close.
         playerState.setAuthenticated(uuid);
         savePlayerIp(player);
 
         timeoutManager.cancelLoginTimeout(uuid);
         playerState.resetWrongAttempts(uuid);
+
+        // Теперь безопасно закрыть Custom Screen — handler уже прочитает
+        // needsAuth=false и выйдет из логики re-open.
+        try {
+            player.closeInventory();
+        } catch (Exception ignored) {}
 
         // unfreezePlayer сам достанет и удалит savedState
         unfreezePlayer(player);
@@ -574,7 +607,7 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // RESEND AUTH PROMPT AFTER DELAY
+    // RESEND CUSTOM SCREEN AFTER DELAY (после неверного пароля, после смены пароля)
     // =========================
     public void reopenAfterDelay(Player player) {
         if (playerState.isAuthenticated(player.getUniqueId())) return;
@@ -584,7 +617,7 @@ public class AuthAuthenticator {
             public void run() {
                 if (!player.isOnline()) return;
                 if (playerState.isAuthenticated(player.getUniqueId())) return;
-                sendAuthPrompt(player, AuthDatabase.isRegistered(player.getUniqueId()));
+                openAuthScreenPrompt(player, AuthDatabase.isRegistered(player.getUniqueId()));
             }
         }.runTaskLater(Main.getInstance(), 5L);
     }

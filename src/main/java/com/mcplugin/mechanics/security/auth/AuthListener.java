@@ -529,6 +529,13 @@ public class AuthListener implements Listener {
         // Login/Register GUI — re-open
         if (!needsAuth(player)) return;
 
+        // 🛡 Don't re-open if player is currently in 2FA Telegram challenge.
+        // The 2FA flow closes the GUI explicitly so the chat with instructions is visible.
+        // Reopening would obscure the chat again.
+        if (Auth2FA.getInstance() != null && Auth2FA.getInstance().hasPendingConfirmation(uuid)) {
+            return;
+        }
+
         AuthGUITracker.cancelResetTask(uuid);
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cannot_close_auth", "<red>❌ You cannot close the authorization window! Please enter your password.</red>")));
         AuthManager manager = AuthManager.getInstance();
