@@ -173,9 +173,9 @@ public class AuthAuthenticator {
                         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                             if (!player.isOnline()) return;
                             if (password.length() < minLen) {
-                                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("%min}", String.valueOf(minLen))));
+                                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>").replace("%min%", String.valueOf(minLen))));
                             } else {
-                                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("%max}", String.valueOf(maxLen))));
+                                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>").replace("%max%", String.valueOf(maxLen))));
                             }
                             reopenAfterDelay(player);
                         });
@@ -189,10 +189,10 @@ public class AuthAuthenticator {
                             int currentCount = AuthDatabase.countAccountsByIp(playerIp);
                             if (currentCount >= maxAccounts) {
                                 String msg = AuthConfig.getMessage("max_accounts_per_ip",
-                                        "<red>\u274c</red> <red>С вашего IP-адреса уже зарегистрировано <yellow>{count}</yellow> аккаунтов!</red>\n" +
-                                        "<white>Максимум: <yellow>{limit}</yellow> аккаунтов на один IP.</white>")
-                                        .replace("%count}", String.valueOf(currentCount))
-                                        .replace("%limit}", String.valueOf(maxAccounts));
+                                        "<red>\u274c</red> <red>С вашего IP-адреса уже зарегистрировано <yellow>%count%</yellow> аккаунтов!</red>\n" +
+                                        "<white>Максимум: <yellow>%limit%</yellow> аккаунтов на один IP.</white>")
+                                        .replace("%count%", String.valueOf(currentCount))
+                                        .replace("%limit%", String.valueOf(maxAccounts));
                                 final String finalMsg = msg;
                                 Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                                     if (!player.isOnline()) return;
@@ -398,14 +398,14 @@ public class AuthAuthenticator {
         if (attempts >= maxWrong) {
             timeoutManager.cancelLoginTimeout(uuid);
             String kickMsg = MessagesManager.getString("auth.admin.kick_too_many_attempts",
-                    "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password {attempts} times.</gray>")
-                    .replace("%attempts}", String.valueOf(attempts));
+                    "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>")
+                    .replace("%attempts%", String.valueOf(attempts));
             player.kickPlayer(MessageUtil.legacy(kickMsg));
             return;
         }
 
         player.sendMessage("");
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password_remaining", "<red>❌ Incorrect password! Remaining attempts: </red><yellow>{remaining}</yellow>").replace("%remaining}", String.valueOf(remaining))));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password_remaining", "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>").replace("%remaining%", String.valueOf(remaining))));
         player.sendMessage("");
         // Resend auth prompt
         boolean isRegistered = AuthDatabase.isRegistered(uuid);
@@ -445,11 +445,11 @@ public class AuthAuthenticator {
         int maxLen = AuthConfig.getMaxPasswordLength();
 
         if (newPassword.length() < minLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("%min}", String.valueOf(minLen))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>").replace("%min%", String.valueOf(minLen))));
             return;
         }
         if (newPassword.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("%max}", String.valueOf(maxLen))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>").replace("%max%", String.valueOf(maxLen))));
             return;
         }
 

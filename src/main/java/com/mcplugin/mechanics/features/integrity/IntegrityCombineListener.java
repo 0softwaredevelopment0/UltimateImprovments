@@ -83,8 +83,8 @@ public class IntegrityCombineListener implements Listener {
                 Player player = getPlayerFromAnvil(event);
                 if (player != null) {
                     String msg = IntegrityManager.getAnvilMaterialCraftMessage()
-                            .replace("%current}", IntegrityManager.formatPercent(pct))
-                            .replace("%bonus}", IntegrityManager.formatPercent(bonusPct));
+                            .replace("%current%", IntegrityManager.formatPercent(pct))
+                            .replace("%bonus%", IntegrityManager.formatPercent(bonusPct));
                     if (canSendAnvilMessage(player)) {
                         player.sendMessage(MessageUtil.parse(msg));
                     }
@@ -109,7 +109,7 @@ public class IntegrityCombineListener implements Listener {
             Player player = getPlayerFromAnvil(event);
             if (player != null) {
                 String msg = IntegrityManager.getAnvilRepairMessage()
-                        .replace("%current}", IntegrityManager.formatPercent(newCurrent));
+                        .replace("%current%", IntegrityManager.formatPercent(newCurrent));
                 if (canSendAnvilMessage(player)) {
                     player.sendMessage(MessageUtil.parse(msg));
                 }
@@ -149,7 +149,7 @@ public class IntegrityCombineListener implements Listener {
             Player player = getPlayerFromAnvil(event);
             if (player != null) {
                 String msg = IntegrityManager.getAnvilCombineMessage()
-                        .replace("%current}", IntegrityManager.formatPercent(newCurrent));
+                        .replace("%current%", IntegrityManager.formatPercent(newCurrent));
                 if (canSendAnvilMessage(player)) {
                     player.sendMessage(MessageUtil.parse(msg));
                 }
@@ -303,7 +303,7 @@ public class IntegrityCombineListener implements Listener {
         if (restored) {
             String msg = IntegrityManager.getMendingMessage();
             if (msg != null && !msg.isEmpty()) {
-                player.sendMessage(MessageUtil.parse(msg.replace("%amount}", String.format("%.3f", restore))));
+                player.sendMessage(MessageUtil.parse(msg.replace("%amount%", String.format("%.3f", restore))));
             }
         }
     }

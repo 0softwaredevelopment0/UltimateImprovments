@@ -94,7 +94,7 @@ public class CodePanelClick implements CommandExecutor {
 
                     player.sendMessage(MessageUtil.parse(
                             msg("codepanel.messages.progress")
-                                    .replace("%progress}", String.valueOf(progress))
+                                    .replace("%progress%", String.valueOf(progress))
                     ));
 
                     play(player, "step");
@@ -105,7 +105,7 @@ public class CodePanelClick implements CommandExecutor {
 
                 player.sendMessage(MessageUtil.parse(
                         msg("codepanel.messages.progress")
-                                .replace("%progress}", "100")
+                                .replace("%progress%", "100")
                 ));
 
                 play(player, "finish");

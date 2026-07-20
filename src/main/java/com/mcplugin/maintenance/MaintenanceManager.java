@@ -320,10 +320,10 @@ public class MaintenanceManager implements Listener {
     private void broadcastScheduled(boolean enable, String timeStr) {
         String key = enable ? "maintenance.messages.scheduled_enable" : "maintenance.messages.scheduled_disable";
         String def = enable
-                ? "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>{time}</yellow>"
-                : "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>{time}</yellow>";
+                ? "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>"
+                : "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>";
 
-        String msg = MessagesManager.getString(key, def).replace("%time}", timeStr);
+        String msg = MessagesManager.getString(key, def).replace("%time%", timeStr);
         Bukkit.broadcast(MessageUtil.parse(msg));
     }
 

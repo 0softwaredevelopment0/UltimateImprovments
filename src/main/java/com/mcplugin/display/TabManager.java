@@ -331,7 +331,7 @@ public class TabManager extends BukkitRunnable implements Listener {
             // Player list name — обновляется по отдельному интервалу
             if (objectiveEnabled && updatePlayerList) {
                 if (!objectiveFormat.isEmpty()) {
-                    // Кастомный формат — полный контроль: %luckperms_prefix%{player_name}...
+                    // Кастомный формат — полный контроль: %luckperms_prefix%%player_name%...
                     String resolved = PlaceholderResolver.resolve(objectiveFormat, player);
                     player.playerListName(MessageUtil.parse(resolved));
                 } else {

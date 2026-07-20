@@ -32,7 +32,7 @@ import org.bukkit.scoreboard.Team;
  * <pre>
  * belowname:
  *   enabled: true
- *   format: "&lt;red&gt;❤ {player_health}&lt;/red&gt; &lt;dark_gray&gt;|&lt;/dark_gray&gt; &lt;white&gt;{player_food}&lt;/white&gt;"
+ *   format: "&lt;red&gt;❤ %player_health%&lt;/red&gt; &lt;dark_gray&gt;|&lt;/dark_gray&gt; &lt;white&gt;%player_food%&lt;/white&gt;"
  *   update_interval_ticks: 10
  * </pre>
  */
@@ -73,7 +73,7 @@ public class BelowNameManager extends BukkitRunnable implements Listener {
         FileConfiguration config = Main.getInstance().getConfig();
 
         this.enabled = config.getBoolean("belowname.enabled", false);
-        this.format = config.getString("belowname.format", "<red>❤ {player_health}</red>");
+        this.format = config.getString("belowname.format", "<red>❤ %player_health%</red>");
         this.intervalTicks = Math.max(5, config.getInt("belowname.update_interval_ticks", 10));
 
         if (enabled) {

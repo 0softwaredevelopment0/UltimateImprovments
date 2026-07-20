@@ -40,7 +40,7 @@ public class IntegrityConfig {
     // Поведение при поломке
     private boolean breakPlaySound = true;
     private boolean breakSendMessage = true;
-    private String breakMessage = "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>";
+    private String breakMessage = "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>%item%</white> <red>сломался!</red>";
     private String breakSoundName = "ENTITY_ITEM_BREAK";
     private float breakSoundVolume = 1.0f;
     private float breakSoundPitch = 1.0f;
@@ -69,9 +69,9 @@ public class IntegrityConfig {
     private double combineLossRate = 0.0;
 
     // Сообщения
-    private String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>";
-    private String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>";
-    private String mendingMessage = "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}</yellow> <white>целостности!</white>";
+    private String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>%current%%</yellow><white>!</white>";
+    private String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>%current%%</yellow><white></white>";
+    private String mendingMessage = "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%</yellow> <white>целостности!</white>";
 
     public void load() {
         var cfg = Main.getInstance().getConfig().getConfigurationSection("features.integrity");
@@ -99,7 +99,7 @@ public class IntegrityConfig {
         if (onBreak != null) {
             breakPlaySound = onBreak.getBoolean("play_sound", true);
             breakSendMessage = onBreak.getBoolean("send_message", true);
-            breakMessage = onBreak.getString("message", "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>");
+            breakMessage = onBreak.getString("message", "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>%item%</white> <red>сломался!</red>");
             breakSoundName = onBreak.getString("sound", "ENTITY_ITEM_BREAK");
             breakSoundVolume = (float) onBreak.getDouble("sound_volume", 1.0);
             breakSoundPitch = (float) onBreak.getDouble("sound_pitch", 1.0);
@@ -121,8 +121,8 @@ public class IntegrityConfig {
             anvilRepairMultiplier = anvil.getDouble("integrity_multiplier", 0.25);
             anvilCombineEnabled = anvil.getBoolean("combine_enabled", true);
             anvilCombineBonus = anvil.getDouble("combine_bonus", 0.1);
-            anvilRepairMessage = MessagesManager.getString("features.integrity.anvil_repair.repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>");
-            anvilCombineMessage = MessagesManager.getString("features.integrity.anvil_repair.combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>");
+            anvilRepairMessage = MessagesManager.getString("features.integrity.anvil_repair.repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>%current%%</yellow><white>!</white>");
+            anvilCombineMessage = MessagesManager.getString("features.integrity.anvil_repair.combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>%current%%</yellow><white></white>");
         }
 
         // ===== XP + MENDING (ПОЧИНКА) =====
@@ -130,14 +130,14 @@ public class IntegrityConfig {
         if (mending != null) {
             mendingXpEnabled = mending.getBoolean("enabled", true);
             mendingXpMultiplier = mending.getDouble("integrity_multiplier", 0.5);
-            mendingMessage = MessagesManager.getString("features.integrity.mending_xp.message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+            mendingMessage = MessagesManager.getString("features.integrity.mending_xp.message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%%</yellow> <white>целостности!</white>");
         } else {
             // Fallback: старый ключ silk_touch_xp (для обратной совместимости)
             var stxp = cfg.getConfigurationSection("silk_touch_xp");
             if (stxp != null) {
                 mendingXpEnabled = stxp.getBoolean("enabled", true);
                 mendingXpMultiplier = stxp.getDouble("integrity_multiplier", 0.5);
-                mendingMessage = MessagesManager.getString("features.integrity.silk_touch_message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+                mendingMessage = MessagesManager.getString("features.integrity.silk_touch_message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%%</yellow> <white>целостности!</white>");
             }
         }
 

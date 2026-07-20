@@ -169,8 +169,8 @@ public class BotProtectionListener implements Listener {
             if (priorityCount > priorityMaxJoinsPerWindow) {
                 int position = priorityCount - priorityMaxJoinsPerWindow;
                 String msg = MessagesManager.getString("bot_protection.queue_full",
-                        "<red>❌ Server overloaded! You are in queue: position {position}. Please wait and try again.</red>")
-                        .replace("%position}", String.valueOf(position));
+                        "<red>❌ Server overloaded! You are in queue: position %position%. Please wait and try again.</red>")
+                        .replace("%position%", String.valueOf(position));
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
                 ConsoleLogger.info("[BotProtect] " + name + " priority queued: position #" + position
                         + " (" + priorityCount + " priority joins in " + windowSeconds + "s window)");
@@ -199,8 +199,8 @@ public class BotProtectionListener implements Listener {
             if (elapsed < cooldownMs) {
                 long remaining = (cooldownMs - elapsed + 999) / 1000; // округление вверх
                 String msg = MessagesManager.getString("bot_protection.rejoin_cooldown",
-                        "<red>❌ You left too recently! Wait</red> <yellow>{seconds}</yellow> <red>sec before reconnecting.</red>")
-                        .replace("%seconds}", String.valueOf(remaining));
+                        "<red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>")
+                        .replace("%seconds%", String.valueOf(remaining));
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
                 ConsoleLogger.info("[BotProtect] " + name + " rejected: rejoin cooldown (" + remaining + "s remaining)");
 
@@ -232,8 +232,8 @@ public class BotProtectionListener implements Listener {
         if (count > maxJoinsPerWindow) {
             int position = count - maxJoinsPerWindow;
             String msg = MessagesManager.getString("bot_protection.queue_full",
-                    "<red>❌ Server overloaded! You are in queue: position {position}. Please wait and try again.</red>")
-                    .replace("%position}", String.valueOf(position));
+                    "<red>❌ Server overloaded! You are in queue: position %position%. Please wait and try again.</red>")
+                    .replace("%position%", String.valueOf(position));
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
 
             // Mark as under attack
@@ -259,9 +259,9 @@ public class BotProtectionListener implements Listener {
         if (now - lastNotify > notifyCooldown) {
             if (lastOpNotify.compareAndSet(lastNotify, now)) {
                 String msg = MessagesManager.getString("bot_protection.queue_notify_op",
-                        "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>{count}</yellow> <red>player(s) tried to connect in</red> <yellow>{seconds}s</yellow><red>. Queue enabled.</red>")
-                        .replace("%count}", String.valueOf(count))
-                        .replace("%seconds}", String.valueOf(windowSeconds));
+                        "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>player(s) tried to connect in</red> <yellow>%seconds%s</yellow><red>. Queue enabled.</red>")
+                        .replace("%count%", String.valueOf(count))
+                        .replace("%seconds%", String.valueOf(windowSeconds));
 
                 // Планируем на главный поток (Bukkit API не thread-safe)
                 Bukkit.getScheduler().runTask(plugin, () -> {

@@ -42,8 +42,8 @@ public class AuthRateLimiter {
         if (lastRequest != null && (now - lastRequest) < cooldownMs) {
             long remaining = ((cooldownMs - (now - lastRequest)) / 1000) + 1;
             player.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("auth.messages.rate_limit", "<red>❌ Please wait </red><yellow>{seconds}</yellow> <red>seconds before the next request!</red>")
-                            .replace("%seconds}", String.valueOf(remaining))));
+                    MessagesManager.getString("auth.messages.rate_limit", "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>")
+                            .replace("%seconds%", String.valueOf(remaining))));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return false;
         }

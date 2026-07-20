@@ -67,7 +67,7 @@ public class IntegrityManager extends BukkitRunnable {
     // Поведение при поломке
     private static boolean breakPlaySound = true;
     private static boolean breakSendMessage = true;
-    private static String breakMessage = "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>";
+    private static String breakMessage = "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>%item%</white> <red>сломался!</red>";
     private static String breakSoundName = "ENTITY_ITEM_BREAK";
     private static float breakSoundVolume = 1.0f;
     private static float breakSoundPitch = 1.0f;
@@ -84,12 +84,12 @@ public class IntegrityManager extends BukkitRunnable {
     // ===== XP → ЦЕЛОСТНОСТЬ (сбор опыта восстанавливает целостность всех предметов) =====
     private static boolean xpIntegrityEnabled = true;
     private static double xpIntegrityPerXp = 0.1;
-    private static String xpIntegrityMessage = "<green>✨</green> <white>Сбор опыта восстановил</white> <yellow>{amount}%</yellow> <white>целостности всех предметов!</white>";
+    private static String xpIntegrityMessage = "<green>✨</green> <white>Сбор опыта восстановил</white> <yellow>%amount%%</yellow> <white>целостности всех предметов!</white>";
 
     // ===== LOW INTEGRITY WARNING — предупреждение при низкой целостности =====
     private static boolean lowIntegrityWarningEnabled = true;
     private static List<Integer> lowIntegrityThresholds = List.of(5, 10, 25, 50, 75);
-    private static String lowIntegrityWarningMessage = "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>{item}</yellow> <white>имеет</white> <red>{pct}%</red> <white>целостности!</white>";
+    private static String lowIntegrityWarningMessage = "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>%item%</yellow> <white>имеет</white> <red>%pct%%</red> <white>целостности!</white>";
 
     // ===== ДОП. НАСТРОЙКИ (износа, ремонта и т.д.) =====
     // Ремонт в наковальне
@@ -101,7 +101,7 @@ public class IntegrityManager extends BukkitRunnable {
     // Крафт материалом в наковальне (+N% целостности за каждую единицу материала)
     private static boolean anvilMaterialCraftEnabled = true;
     private static double anvilMaterialCraftBonus = 10.0;
-    private static String anvilMaterialCraftMessage = "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>{current}%</yellow> <white>(+{bonus}% за материалы)</white>";
+    private static String anvilMaterialCraftMessage = "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>%current%%</yellow> <white>(+%bonus%% за материалы)</white>";
 
     // XP + Mending (Починка)
     private static boolean mendingXpEnabled = true;
@@ -131,9 +131,9 @@ public class IntegrityManager extends BukkitRunnable {
     private static double combineLossRate = 0.0;
 
     // Сообщения
-    private static String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>";
-    private static String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>";
-    private static String mendingMessage = "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>";
+    private static String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>%current%%</yellow><white>!</white>";
+    private static String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>%current%%</yellow><white></white>";
+    private static String mendingMessage = "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%%</yellow> <white>целостности!</white>";
 
     private static final DecimalFormat PCT_FMT = new DecimalFormat("0.000");
 
@@ -198,7 +198,7 @@ public class IntegrityManager extends BukkitRunnable {
         if (onBreak != null) {
             breakPlaySound = onBreak.getBoolean("play_sound", true);
             breakSendMessage = onBreak.getBoolean("send_message", true);
-            breakMessage = MessagesManager.getString("features.integrity.on_break.message", "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>{item}</white> <red>сломался!</red>");
+            breakMessage = MessagesManager.getString("features.integrity.on_break.message", "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>%item%</white> <red>сломался!</red>");
             breakSoundName = onBreak.getString("sound", "ENTITY_ITEM_BREAK");
             breakSoundVolume = (float) onBreak.getDouble("sound_volume", 1.0);
             breakSoundPitch = (float) onBreak.getDouble("sound_pitch", 1.0);
@@ -237,7 +237,7 @@ public class IntegrityManager extends BukkitRunnable {
             if (lowIntegrityThresholds.isEmpty()) {
                 lowIntegrityThresholds = List.of(5, 10, 25, 50, 75);
             }
-            lowIntegrityWarningMessage = MessagesManager.getString("features.integrity.low_integrity_warning.message", "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>{item}</yellow> <white>имеет</white> <red>{pct}%</red> <white>целостности!</white>");
+            lowIntegrityWarningMessage = MessagesManager.getString("features.integrity.low_integrity_warning.message", "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>%item%</yellow> <white>имеет</white> <red>%pct%%</red> <white>целостности!</white>");
         }
 
         // ===== XP → ЦЕЛОСТНОСТЬ =====
@@ -245,7 +245,7 @@ public class IntegrityManager extends BukkitRunnable {
         if (xpInt != null) {
             xpIntegrityEnabled = xpInt.getBoolean("enabled", true);
             xpIntegrityPerXp = xpInt.getDouble("integrity_per_xp", 0.1);
-            xpIntegrityMessage = MessagesManager.getString("features.integrity.xp_integrity.message", "<green>✨</green> <white>Сбор опыта восстановил</white> <yellow>{amount}%</yellow> <white>целостности всех предметов!</white>");
+            xpIntegrityMessage = MessagesManager.getString("features.integrity.xp_integrity.message", "<green>✨</green> <white>Сбор опыта восстановил</white> <yellow>%amount%%</yellow> <white>целостности всех предметов!</white>");
         }
 
         // ===== РЕМОНТ В НАКОВАЛЬНЕ =====
@@ -255,15 +255,15 @@ public class IntegrityManager extends BukkitRunnable {
             anvilRepairMultiplier = anvil.getDouble("integrity_multiplier", 0.25);
             anvilCombineEnabled = anvil.getBoolean("combine_enabled", true);
             anvilCombineBonus = anvil.getDouble("combine_bonus", 0.1);
-            anvilRepairMessage = MessagesManager.getString("features.integrity.anvil_repair.repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>{current}%</yellow><white>!</white>");
-            anvilCombineMessage = MessagesManager.getString("features.integrity.anvil_repair.combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>{current}%</yellow><white></white>");
+            anvilRepairMessage = MessagesManager.getString("features.integrity.anvil_repair.repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>%current%%</yellow><white>!</white>");
+            anvilCombineMessage = MessagesManager.getString("features.integrity.anvil_repair.combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>%current%%</yellow><white></white>");
 
             // ===== КРАФТ МАТЕРИАЛОМ =====
             var matCraft = anvil.getConfigurationSection("material_craft");
             if (matCraft != null) {
                 anvilMaterialCraftEnabled = matCraft.getBoolean("enabled", true);
                 anvilMaterialCraftBonus = matCraft.getDouble("integrity_per_material", 10.0);
-                anvilMaterialCraftMessage = MessagesManager.getString("features.integrity.anvil_repair.material_craft.message", "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>{current}%</yellow> <white>(+{bonus}% за материалы)</white>");
+                anvilMaterialCraftMessage = MessagesManager.getString("features.integrity.anvil_repair.material_craft.message", "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>%current%%</yellow> <white>(+%bonus%% за материалы)</white>");
             }
         }
 
@@ -272,14 +272,14 @@ public class IntegrityManager extends BukkitRunnable {
         if (mending != null) {
             mendingXpEnabled = mending.getBoolean("enabled", true);
             mendingXpMultiplier = mending.getDouble("integrity_multiplier", 0.5);
-            mendingMessage = MessagesManager.getString("features.integrity.mending_xp.message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+            mendingMessage = MessagesManager.getString("features.integrity.mending_xp.message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%%</yellow> <white>целостности!</white>");
         } else {
             // Fallback: старый ключ silk_touch_xp (для обратной совместимости)
             var stxp = cfg.getConfigurationSection("silk_touch_xp");
             if (stxp != null) {
                 mendingXpEnabled = stxp.getBoolean("enabled", true);
                 mendingXpMultiplier = stxp.getDouble("integrity_multiplier", 0.5);
-                mendingMessage = MessagesManager.getString("features.integrity.silk_touch_message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>{amount}%</yellow> <white>целостности!</white>");
+                mendingMessage = MessagesManager.getString("features.integrity.silk_touch_message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%%</yellow> <white>целостности!</white>");
             }
         }
 
@@ -891,8 +891,8 @@ public class IntegrityManager extends BukkitRunnable {
             if (warned) {
                 String itemName = getItemName(item);
                 String msg = lowIntegrityWarningMessage
-                        .replace("%item}", itemName)
-                        .replace("%pct}", PCT_FMT.format(pct));
+                        .replace("%item%", itemName)
+                        .replace("%pct%", PCT_FMT.format(pct));
                 player.sendMessage(MessageUtil.parse(msg));
             }
         }
@@ -920,7 +920,7 @@ public class IntegrityManager extends BukkitRunnable {
 
         // Отправляем сообщение
         if (breakSendMessage) {
-            String msg = breakMessage.replace("%item}", itemName);
+            String msg = breakMessage.replace("%item%", itemName);
             owner.sendMessage(MessageUtil.parse(msg));
         }
 

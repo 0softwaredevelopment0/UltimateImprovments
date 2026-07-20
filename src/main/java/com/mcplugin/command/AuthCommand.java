@@ -43,7 +43,7 @@ public class AuthCommand {
             case "logout" -> handleLogout(sender);
             case "chgpass" -> handleChgPass(sender, args);
             case "2fa" -> handle2FA(sender, args);
-            default -> sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.unknown_subcommand", "<red>❌ Unknown subcommand: </red><white>{subcommand}</white>").replace("%subcommand}", args[1])));
+            default -> sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.unknown_subcommand", "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>").replace("%subcommand%", args[1])));
         }
         return true;
     }
@@ -180,7 +180,7 @@ public class AuthCommand {
         UUID targetUuid = getOfflineUuid(targetName);
 
         if (!AuthDatabase.isRegistered(targetUuid)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.forcelogin_not_registered", "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.forcelogin_not_registered", "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>").replace("%player%", targetName)));
             return;
         }
 
@@ -191,9 +191,9 @@ public class AuthCommand {
         }
 
         if (manager.forceLogin(targetUuid)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.forcelogin_success", "<green>✔</green> <white>Player</white> <yellow>{player}</yellow> <white>force authorized.</white>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.forcelogin_success", "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>").replace("%player%", targetName)));
         } else {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.forcelogin_fail", "<red>❌ Failed to authorize player</red> <yellow>{player}</yellow>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.forcelogin_fail", "<red>❌ Failed to authorize player</red> <yellow>%player%</yellow>").replace("%player%", targetName)));
         }
     }
 
@@ -211,7 +211,7 @@ public class AuthCommand {
         UUID targetUuid = getOfflineUuid(targetName);
 
         if (!AuthDatabase.isRegistered(targetUuid)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.resetauth_not_registered", "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.resetauth_not_registered", "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>").replace("%player%", targetName)));
             return;
         }
 
@@ -222,9 +222,9 @@ public class AuthCommand {
         }
 
         if (manager.resetAuth(targetUuid)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.resetauth_success", "<green>✔</green> <white>Registration of player</white> <yellow>{player}</yellow> <white>completely removed.</white>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.resetauth_success", "<green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</white>").replace("%player%", targetName)));
         } else {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.resetauth_fail", "<red>❌ Failed to delete registration of player</red> <yellow>{player}</yellow>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.resetauth_fail", "<red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>").replace("%player%", targetName)));
         }
     }
 
@@ -242,7 +242,7 @@ public class AuthCommand {
         UUID targetUuid = getOfflineUuid(targetName);
 
         if (!AuthDatabase.isRegistered(targetUuid)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.delsession_not_registered", "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.delsession_not_registered", "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>").replace("%player%", targetName)));
             return;
         }
 
@@ -253,10 +253,10 @@ public class AuthCommand {
         }
 
         if (manager.deleteSession(targetUuid)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.delsession_success", "<green>✔</green> <white>Session of player</white> <yellow>{player}</yellow> <white>reset (logout).</white>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.delsession_success", "<green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>").replace("%player%", targetName)));
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.delsession_info", "<gray>They will need to enter their password again on next login.</gray>")));
         } else {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.delsession_fail", "<red>❌ Failed to reset session of player</red> <yellow>{player}</yellow>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.delsession_fail", "<red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>").replace("%player%", targetName)));
         }
     }
 
@@ -290,18 +290,18 @@ public class AuthCommand {
         int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
         int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
         if (newPassword.length() < minLen) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>{min}</yellow><red> characters!</red>").replace("%min}", String.valueOf(minLen))));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>").replace("%min%", String.valueOf(minLen))));
             return;
         }
         if (newPassword.length() > maxLen) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>{max}</yellow><red> characters!</red>").replace("%max}", String.valueOf(maxLen))));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>").replace("%max%", String.valueOf(maxLen))));
             return;
         }
 
         UUID targetUuid = getOfflineUuid(targetName);
 
         if (!AuthDatabase.isRegistered(targetUuid)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.chgpass_not_registered", "<red>❌ Player</red> <yellow>{player}</yellow> <red>is not registered!</red>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.chgpass_not_registered", "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>").replace("%player%", targetName)));
             return;
         }
 
@@ -312,10 +312,10 @@ public class AuthCommand {
         }
 
         if (manager.changePassword(targetUuid, newPassword)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.chgpass_success", "<green>✔</green> <white>Password of player</white> <yellow>{player}</yellow> <white>changed to</white> <green>{password}</green><white>.</white>").replace("%player}", targetName).replace("%password}", newPassword)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.chgpass_success", "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>").replace("%player%", targetName).replace("%password%", newPassword)));
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.chgpass_session_reset", "<gray>Session reset — player must log in again.</gray>")));
         } else {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.chgpass_fail", "<red>❌ Failed to change password of player</red> <yellow>{player}</yellow>").replace("%player}", targetName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.chgpass_fail", "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>").replace("%player%", targetName)));
         }
     }
 }

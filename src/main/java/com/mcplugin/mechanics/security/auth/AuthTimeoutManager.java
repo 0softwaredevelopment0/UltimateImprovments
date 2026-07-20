@@ -49,8 +49,8 @@ public class AuthTimeoutManager {
                 if (AuthPlayerState.getInstance().isAuthenticated(uuid)) return;
 
                 String kickMsg = MessagesManager.getString("auth.admin.kick_timeout",
-                        "<red>⏱ Login timeout!</red>\n<gray>You did not log in within {seconds} seconds.</gray>")
-                        .replace("%seconds}", String.valueOf(timeoutSec));
+                        "<red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>")
+                        .replace("%seconds%", String.valueOf(timeoutSec));
                 player.kickPlayer(MessageUtil.legacy(kickMsg));
             }
         };
