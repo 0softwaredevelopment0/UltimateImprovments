@@ -76,6 +76,12 @@ public class AuthListener implements Listener {
         if (manager != null) {
             manager.removePlayer(uuid);
         }
+        // Restore pre-freeze state and clear savedStates to prevent stuck-frozen on
+        // reconnect (see AuthAuthenticator.handleQuit javadoc for the full bug chain).
+        AuthAuthenticator auth = AuthAuthenticator.getInstance();
+        if (auth != null) {
+            auth.handleQuit(event.getPlayer());
+        }
         AskCordsManager.cleanup(uuid);
     }
 

@@ -128,30 +128,33 @@ public class AuthAuthenticator {
      * @param isRegistered true если зарегистрирован (login), false если регистрация
      */
     private void sendChatPrompt(Player player, boolean isRegistered) {
+        // All lines go through MessageUtil.parse() so MiniMessage tags render.
+        // Earlier version mixed legacy §-codes with bare <white>/<gold> tags in
+        // player.sendMessage(String), which made the tags render as literal text.
         player.sendMessage("");
-        player.sendMessage("§8╔ §6✦ §lCustom Screen§r §8╗");
-        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage(MessageUtil.parse("<dark_gray>╔ <gold>✦ <bold>Custom Screen</bold> <dark_gray>╗"));
+        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
         player.sendMessage("");
 
         if (isRegistered) {
             player.sendMessage(MessageUtil.parse(AuthConfig.getMessage("login_title",
                     "<gold>✦</gold> <white>Please log in to continue.</white>")));
             player.sendMessage("");
-            player.sendMessage("§7▸ <white>Команда: <gold>/mp auth login <password></gold></white>");
+            player.sendMessage(MessageUtil.parse("<gray>▸ <white>Команда: <gold>/mp auth login <password></gold></white>"));
         } else {
             player.sendMessage(MessageUtil.parse(AuthConfig.getMessage("register_title",
                     "<gold>✦</gold> <white>Choose a password to register.</white>")));
             player.sendMessage("");
-            player.sendMessage("§7▸ <white>Команда: <gold>/mp auth register <password></gold></white>");
-            player.sendMessage("§7   <gray>Min " + AuthConfig.getMinPasswordLength()
-                    + ", max " + AuthConfig.getMaxPasswordLength() + " characters.</gray>");
+            player.sendMessage(MessageUtil.parse("<gray>▸ <white>Команда: <gold>/mp auth register <password></gold></white>"));
+            player.sendMessage(MessageUtil.parse("<gray>   <dark_gray>Min " + AuthConfig.getMinPasswordLength()
+                    + ", max " + AuthConfig.getMaxPasswordLength() + " characters.</dark_gray>"));
         }
 
         player.sendMessage("");
-        player.sendMessage("§7▸ <white>Другие команды недоступны пока вы не авторизованы.</white>");
-        player.sendMessage("§7  <gray>/mp help works only after login.</gray>");
+        player.sendMessage(MessageUtil.parse("<gray>▸ <white>Другие команды недоступны пока вы не авторизованы.</white>"));
+        player.sendMessage(MessageUtil.parse("<gray>  <dark_gray>/mp help works only after login.</dark_gray>"));
         player.sendMessage("");
-        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
         player.sendMessage("");
     }
 
@@ -652,6 +655,25 @@ public class AuthAuthenticator {
     // =========================
     private void freezePlayer(Player player) {
         UUID uuid = player.getUniqueId();
+        // Defensive: discard any leaked savedStates entry from a previous session/disconnect.
+        // If a player disconnected mid-auth, the leaked entry would otherwise be RE-FROZEN on
+        // next join — and on successful auth, unfreezePlayer would restore the frozen state
+        // (GM=ADVENTURE, walkSpeed=0) instead of the real pre-freeze state, leaving the player
+        // unable to move or fly even after authentication.
+        SavedPlayerState leaked = savedStates.remove(uuid);
+        if (leaked != null) {
+            ConsoleLogger.warn("[Auth] Discarding leaked savedStates for " + player.getName()
+                    + " (was " + leaked.gameMode + "/walk=" + leaked.walkSpeed + ")");
+            // Best-effort restore so the live Player object isn't visibly broken either
+            try {
+                player.setGameMode(leaked.gameMode);
+                player.setWalkSpeed(leaked.walkSpeed);
+                player.setFlySpeed(leaked.flySpeed);
+                player.setAllowFlight(leaked.allowFlight);
+                player.setFlying(leaked.flying);
+                player.setInvulnerable(false);
+            } catch (Throwable ignored) {}
+        }
         // Сохраняем состояние ДО фриза
         savedStates.put(uuid, new SavedPlayerState(
                 player.getGameMode(),
@@ -690,6 +712,39 @@ public class AuthAuthenticator {
      */
     public void restorePlayerState(Player player) {
         unfreezePlayer(player);
+    }
+
+    /**
+     * Per-player cleanup on PlayerQuitEvent. Restores the saved pre-freeze state (if any)
+     * and persists it to player.dat so the next login doesn't start from the frozen state
+     * (GM=ADVENTURE, walkSpeed=0, flySpeed=0, invulnerable=true).
+     * <p>
+     * Without this, a player who disconnects mid-auth would:
+     *   1. Have a leaked savedStates entry, AND
+     *   2. Have frozen state stored in player.dat
+     * → on next join, freezePlayer captures the frozen state as "original"
+     * → unfreeze restores frozen state → player stuck (can't move, can't fly).
+     * <p>
+     * playerState + timeout cleanup is handled separately by {@link AuthManager#removePlayer}.
+     */
+    public void handleQuit(Player player) {
+        if (player == null) return;
+        UUID uuid = player.getUniqueId();
+        SavedPlayerState saved = savedStates.remove(uuid);
+        if (saved != null) {
+            try {
+                player.setGameMode(saved.gameMode);
+                player.setWalkSpeed(saved.walkSpeed);
+                player.setFlySpeed(saved.flySpeed);
+                player.setAllowFlight(saved.allowFlight);
+                player.setFlying(saved.flying);
+                player.setInvulnerable(false);
+                player.saveData(); // persist restore to player.dat for next login
+            } catch (Throwable t) {
+                ConsoleLogger.warn("[Auth] handleQuit restore failed for " + player.getName()
+                        + ": " + t.getMessage());
+            }
+        }
     }
 
     // =========================
