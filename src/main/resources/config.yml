@@ -1459,6 +1459,21 @@ meteor:
 particle_accelerator:
   enabled: true
 
+  collision_recipes:
+    # Формат: materialA + materialB at speedMin%-speedMax% speed → result
+    # speedPct = particle.speed / MAX_SPEED * 100 (0..100%)
+    # Материалы указываются по Material.name() (см. Bukkit Material)
+    - material_a: GOLD_INGOT
+      material_b: DIAMOND
+      speed_min_pct: 5.0
+      speed_max_pct: 10.0
+      result: EMERALD
+    - material_a: DIAMOND
+      material_b: EMERALD
+      speed_min_pct: 10.0
+      speed_max_pct: 15.0
+      result: NETHERITE_SCRAP
+
 # =========================
 # 🧊 BLOCK FRICTION — настраиваемое трение блоков
 # =========================

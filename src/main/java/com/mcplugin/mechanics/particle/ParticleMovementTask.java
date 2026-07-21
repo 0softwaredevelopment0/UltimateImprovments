@@ -27,7 +27,7 @@ public class ParticleMovementTask extends BukkitRunnable {
         // Charge engines from cable network
         ParticleAcceleratorManager.chargeEngines();
 
-        // Collision detection (check before moving)
+        // Collision detection — ДО движения (по старым позициям)
         checkCollisions();
 
         // Move all particles
@@ -42,6 +42,11 @@ public class ParticleMovementTask extends BukkitRunnable {
                     }
                     return data.dead;
                 });
+
+        // Collision detection — ПОСЛЕ движения (новые позиции)
+        // Двойная проверка ловит частицы, которые разминулись в процессе перемещения,
+        // а также частицы, прилетевшие в один и тот же блок с разных направлений.
+        checkCollisions();
     }
 
     // =========================
@@ -157,7 +162,7 @@ public class ParticleMovementTask extends BukkitRunnable {
     }
 
     // =========================
-    // COLLISION DETECTION
+    // COLLISION DETECTION — sweep-test
     // =========================
     private void checkCollisions() {
         List<ParticleAcceleratorManager.ParticleData> particles = new ArrayList<>(ParticleAcceleratorManager.getActiveParticles());
@@ -173,9 +178,17 @@ public class ParticleMovementTask extends BukkitRunnable {
                 ParticleAcceleratorManager.ParticleData b = particles.get(j);
                 if (b.dead || toRemove.contains(b.id)) continue;
 
-                // Check distance (center to center)
+                // === SWEEP-TEST ===
+                // Две частицы за один тик могут пролететь друг сквозь друга,
+                // если их относительная скорость > расстояния между ними.
+                // Считаем: если шаг сближения ≥ оставшегося расстояния, то
+                // коллизия гарантированно происходит (или уже произошла).
+                // Это в разы надёжнее простого distance ≤ 1.0.
                 double dist = a.location.distance(b.location);
-                if (dist > 1.0) continue; // too far
+                double relativeSpeed = a.speed + b.speed; // макс. сближение за тик
+
+                // Если порог сближения >= расстояния — коллизия
+                if (dist > 1.0 && dist > relativeSpeed) continue; // разминутся
 
                 // Collision detected!
                 handleCollision(a, b);

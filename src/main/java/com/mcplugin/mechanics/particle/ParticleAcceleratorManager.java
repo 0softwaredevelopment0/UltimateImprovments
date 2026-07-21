@@ -4,6 +4,7 @@ import com.mcplugin.core.Main;
 import com.mcplugin.structure.StructureMarker;
 import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.energy.transfer.cable.NodeType;
@@ -36,12 +37,18 @@ public class ParticleAcceleratorManager implements Listener {
     // =========================
     // BLOCK TYPES
     // =========================
-    public static final Material RING = Material.CHISELED_TUFF;
+    /** Основной материал кольца — прозрачное стекло, чтобы частица была видна сквозь стенки тоннеля. */
+    public static final Material RING = Material.GLASS;
+    /** Старый материал кольца (CHISELED_TUFF) — сохраняем в ALLOWED_RINGS, чтобы
+     *  существующие ускорители не ломались при перезагрузке после обновления. */
+    public static final Material RING_OLD = Material.CHISELED_TUFF;
     public static final Material ENGINE = Material.TUFF_BRICKS;
     public static final Material SENSOR = Material.POLISHED_DIORITE;
     public static final Material INJECTOR = Material.REINFORCED_DEEPSLATE;
 
-    public static final Set<Material> ACCELERATOR_BLOCKS = Set.of(RING, ENGINE, SENSOR, INJECTOR);
+    /** Все блоки, распознаваемые как часть ускорителя.
+     *  Включает RING (GLASS) + RING_OLD (CHISELED_TUFF) для обратной совместимости. */
+    public static final Set<Material> ACCELERATOR_BLOCKS = Set.of(RING, RING_OLD, ENGINE, SENSOR, INJECTOR);
 
     // =========================
     // PDC KEYS
@@ -58,8 +65,11 @@ public class ParticleAcceleratorManager implements Listener {
     public static final double MAX_SPEED = 5.0;
     public static final double INITIAL_SPEED = 0.1;
 
-    // Engine energy buffers: block location → energy amount
-    private static final Map<Location, Integer> engineEnergy = new ConcurrentHashMap<>();
+    /** World+position key для engineEnergy — надёжный immutable ключ вместо мутабельного Location. */
+    public record EnginePos(UUID worldUid, long blockKey) {}
+
+    /** Engine energy buffers: EnginePos → energy amount. */
+    private static final Map<EnginePos, Integer> engineEnergy = new ConcurrentHashMap<>();
 
     // Active particles
     private static final Map<UUID, ParticleData> activeParticles = new ConcurrentHashMap<>();
@@ -72,6 +82,7 @@ public class ParticleAcceleratorManager implements Listener {
     public static void init(Main plugin) {
         enabled = plugin.getConfig().getBoolean("particle_accelerator.enabled", true);
         Bukkit.getPluginManager().registerEvents(new ParticleAcceleratorManager(), plugin);
+        ParticleCollisionHandler.loadConfig(plugin);
         scanExistingAccelerators();
 
         ConsoleLogger.info("[ParticleAccelerator] Manager initialized.");
@@ -89,20 +100,22 @@ public class ParticleAcceleratorManager implements Listener {
             String worldUid = StructureMarker.parseWorldUid(fk);
             int x = StructureMarker.parseX(fk), y = StructureMarker.parseY(fk), z = StructureMarker.parseZ(fk);
 
-            for (World world : Bukkit.getWorlds()) {
-                if (!world.getUID().toString().equals(worldUid)) continue;
-                Location loc = new Location(world, x, y, z);
-                Material mat = loc.getBlock().getType();
-                if (!ACCELERATOR_BLOCKS.contains(mat)) {
-                    // Block was replaced — remove marker
-                    StructureMarker.removeAt(loc);
-                    continue;
-                }
-                // If it's an engine, initialize energy buffer
-                if (mat == ENGINE) {
-                    engineEnergy.putIfAbsent(LocationUtil.normalize(loc), 0);
-                }
-                break;
+            World world = Bukkit.getWorld(UUID.fromString(worldUid));
+            if (world == null) {
+                ConsoleLogger.warn("[ParticleAccelerator] World " + worldUid + " not loaded yet — skipping marker at " + x + " " + y + " " + z);
+                continue;
+            }
+            Location loc = new Location(world, x, y, z);
+            Material mat = loc.getBlock().getType();
+            if (!ACCELERATOR_BLOCKS.contains(mat)) {
+                // Block was replaced — remove marker
+                StructureMarker.removeAt(loc);
+                continue;
+            }
+            // If it's an engine, initialize energy buffer
+            if (mat == ENGINE) {
+                EnginePos pos = new EnginePos(world.getUID(), LocationUtil.toKey(x, y, z));
+                engineEnergy.putIfAbsent(pos, 0);
             }
         }
         ConsoleLogger.info("[ParticleAccelerator] Scanned existing accelerators.");
@@ -147,14 +160,14 @@ public class ParticleAcceleratorManager implements Listener {
         }
     }
 
-    public static Map<Location, Integer> getEngineEnergy() {
+    public static Map<EnginePos, Integer> getEngineEnergy() {
         return engineEnergy;
     }
 
     public static int getEngineEnergy(Location loc) {
-        Location norm = LocationUtil.normalize(loc);
-        if (norm == null) return 0;
-        return engineEnergy.getOrDefault(norm, 0);
+        if (loc == null || loc.getWorld() == null) return 0;
+        EnginePos pos = new EnginePos(loc.getWorld().getUID(), LocationUtil.toKey(loc));
+        return engineEnergy.getOrDefault(pos, 0);
     }
 
     // =========================
@@ -201,6 +214,13 @@ public class ParticleAcceleratorManager implements Listener {
     }
 
     // =========================
+    // FIND PATH — supports closed loops
+    // Когда visited содержит next (замкнутое кольцо), мы НЕ выходим,
+    // а заворачиваем — частица будет циклически бежать по кольцу
+    // до диссипации (по таймауту или команде).
+    // =========================
+
+    // =========================
     // PATH FINDING
     // =========================
     private static List<Location> findPath(Location start) {
@@ -213,7 +233,13 @@ public class ParticleAcceleratorManager implements Listener {
 
         // Scan for first neighbor
         Location next = findNextAcceleratorBlock(current, null);
-        while (next != null && !visited.contains(next)) {
+        while (next != null) {
+            if (visited.contains(next)) {
+                // Замкнутое кольцо! Добавляем next (замыкаем цикл) и выходим.
+                // Частица будет бежать по кольцу, пока не диссипирует.
+                path.add(next);
+                break;
+            }
             path.add(next);
             visited.add(next);
             Location prev = current;
@@ -255,11 +281,16 @@ public class ParticleAcceleratorManager implements Listener {
     // CHARGE ENGINES — called from ParticleMovementTask each tick
     // =========================
     public static void chargeEngines() {
-        for (Map.Entry<Location, Integer> entry : engineEnergy.entrySet()) {
-            Location loc = entry.getKey();
-            if (loc.getWorld() == null) continue; // skip unloaded worlds
+        for (Map.Entry<EnginePos, Integer> entry : engineEnergy.entrySet()) {
+            EnginePos pos = entry.getKey();
+            World world = Bukkit.getWorld(pos.worldUid());
+            if (world == null) continue; // skip unloaded worlds
             int current = entry.getValue();
             if (current >= ENGINE_MAX_ENERGY) continue;
+
+            // Rebuild Location from key + world for pullFromCables
+            Location loc = LocationUtil.toLocation(pos.blockKey(), world);
+            if (loc == null) continue;
 
             // Try to pull energy from adjacent cables
             int pulled = pullFromCables(loc, ENGINE_CHARGE_RATE);
@@ -302,11 +333,11 @@ public class ParticleAcceleratorManager implements Listener {
     // CONSUME ENGINE ENERGY — called when particle passes through engine
     // =========================
     public static boolean consumeEngineEnergy(Location engineLoc) {
-        Location norm = LocationUtil.normalize(engineLoc);
-        if (norm == null) return false;
-        int current = engineEnergy.getOrDefault(norm, 0);
+        if (engineLoc == null || engineLoc.getWorld() == null) return false;
+        EnginePos pos = new EnginePos(engineLoc.getWorld().getUID(), LocationUtil.toKey(engineLoc));
+        int current = engineEnergy.getOrDefault(pos, 0);
         if (current < ENGINE_COST_PER_USE) return false;
-        engineEnergy.put(norm, current - ENGINE_COST_PER_USE);
+        engineEnergy.put(pos, current - ENGINE_COST_PER_USE);
         return true;
     }
 
@@ -327,7 +358,8 @@ public class ParticleAcceleratorManager implements Listener {
 
         // Initialize engine energy buffer
         if (type == ENGINE) {
-            engineEnergy.putIfAbsent(loc, 0);
+            EnginePos pos = new EnginePos(loc.getWorld().getUID(), LocationUtil.toKey(loc));
+            engineEnergy.putIfAbsent(pos, 0);
         }
 
         ConsoleLogger.info("[ParticleAccelerator] Placed " + type.name() + " at "
@@ -351,7 +383,15 @@ public class ParticleAcceleratorManager implements Listener {
 
         // Clean up engine energy buffer
         if (type == ENGINE) {
-            engineEnergy.remove(loc);
+            EnginePos pos = new EnginePos(loc.getWorld().getUID(), LocationUtil.toKey(loc));
+            engineEnergy.remove(pos);
+        }
+
+        // Drop ring item if glass ring was broken (Minecraft drops nothing from glass)
+        if (type == RING) {
+            loc.getWorld().dropItemNaturally(
+                    loc.clone().add(0.5, 0.5, 0.5),
+                    new ItemStack(RING, 1));
         }
 
         // Clean up any particles that are passing through this block
@@ -389,7 +429,7 @@ public class ParticleAcceleratorManager implements Listener {
         Player player = e.getPlayer();
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand == null || hand.getType().isAir()) {
-            player.sendMessage("§7[§b⚠§7] §7Hold an item to inject it as a particle!");
+            player.sendMessage(MessageUtil.parse("<gray>[<blue>⚠</blue>] Hold an item to inject it as a particle!</gray>"));
             return;
         }
 
@@ -400,7 +440,7 @@ public class ParticleAcceleratorManager implements Listener {
         Location normLoc = LocationUtil.normalize(loc);
         List<Location> newPath = findPath(normLoc);
         if (newPath.isEmpty()) {
-            player.sendMessage("§7[§c✗§7] §cNo accelerator path found! Place rings/engines/sensors in a line.");
+            player.sendMessage(MessageUtil.parse("<gray>[<red>✗</red>] <red>No accelerator path found!</red> Place rings/engines/sensors in a line."));
             return;
         }
 
@@ -408,14 +448,14 @@ public class ParticleAcceleratorManager implements Listener {
         boolean alreadyRunning = activeParticles.values().stream()
                 .anyMatch(p -> !p.dead && pathsOverlap(p.path, newPath));
         if (alreadyRunning) {
-            player.sendMessage("§7[§b⚠§7] §7A particle is already running in this accelerator!");
+            player.sendMessage(MessageUtil.parse("<gray>[<blue>⚠</blue>] A particle is already running in this accelerator!</gray>"));
             return;
         }
 
         // Create the particle with pre-computed path
         ParticleData data = createParticleWithPath(normLoc, hand, newPath);
         if (data == null) {
-            player.sendMessage("§7[§c✗§7] §cNo accelerator path found! Place rings/engines/sensors in a line.");
+            player.sendMessage(MessageUtil.parse("<gray>[<red>✗</red>] <red>No accelerator path found!</red> Place rings/engines/sensors in a line."));
             return;
         }
 
@@ -430,9 +470,11 @@ public class ParticleAcceleratorManager implements Listener {
         loc.getWorld().spawnParticle(Particle.END_ROD,
                 loc.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0.01);
 
-        player.sendMessage("§7[§a✓§7] §f" + formatMaterialName(data.sourceMaterial.name())
-                + " §7particle injected! Speed: §b" + String.format("%.1f", data.speed)
-                + " §7(" + String.format("%.3f", data.speed / MAX_SPEED * 100.0) + "% light speed)");
+        String matName = formatMaterialName(data.sourceMaterial.name());
+        double speedPct = data.speed / MAX_SPEED * 100.0;
+        player.sendMessage(MessageUtil.parse("<gray>[<green>✓</green>] <white>" + matName
+                + "</white> particle injected! Speed: <aqua>" + String.format("%.1f", data.speed)
+                + "</aqua> <gray>(" + String.format("%.3f", speedPct) + "% light speed)</gray>"));
     }
 
     // =========================
