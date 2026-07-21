@@ -1,0 +1,406 @@
+package com.mcplugin.command;
+
+import com.mcplugin.core.Main;
+import com.mcplugin.mechanics.security.auth.AuthAuthenticator;
+import com.mcplugin.mechanics.security.auth.AuthDatabase;
+import com.mcplugin.mechanics.security.auth.AuthManager;
+import com.mcplugin.config.MessagesManager;
+import com.mcplugin.util.MessageUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.util.UUID;
+
+/**
+ * Обрабатывает команду /mp auth — управление системой авторизации.
+ * <p>
+ * Chat-based: вся аутентификация, регистрация, logout, change-password
+ * производятся через команды, без GUI.
+ */
+public class AuthCommand {
+
+    @SuppressWarnings("deprecation")
+    private static UUID getOfflineUuid(String playerName) {
+        return Bukkit.getOfflinePlayer(playerName).getUniqueId();
+    }
+
+    public static boolean execute(CommandSender sender, String[] args) {
+        if (!Main.getInstance().getConfig().getBoolean("auth.enabled", true)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.admin.system_disabled",
+                    "<red>❌ Authorization system is disabled in config!</red>")));
+            return true;
+        }
+
+        if (args.length < 2) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/mp auth login|register|logout|chgpass|2fa|changepassword|forcelogin|resetauth|delsession</white>"));
+            return true;
+        }
+
+        String subCmd = args[1].toLowerCase();
+        switch (subCmd) {
+            case "login" -> handlePlayerLogin(sender, args);
+            case "register" -> handlePlayerRegister(sender, args);
+            case "forcelogin" -> handleForceLogin(sender, args);
+            case "resetauth" -> handleResetAuth(sender, args);
+            case "delsession" -> handleDelSession(sender, args);
+            case "logout" -> handleLogout(sender, args);
+            case "chgpass" -> handleChgPass(sender, args);
+            case "changepassword" -> handleSelfChangePassword(sender, args);
+            case "2fa" -> handle2FA(sender, args);
+            default -> sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.unknown_subcommand",
+                    "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>")
+                    .replace("%subcommand%", args[1])));
+        }
+        return true;
+    }
+
+    private static void handle2FA(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return;
+        }
+
+        UUID uuid = player.getUniqueId();
+        AuthManager manager = AuthManager.getInstance();
+
+        // /mp auth 2fa setup <chat_id> — включить 2FA
+        if (args.length >= 3 && args[2].equalsIgnoreCase("setup")) {
+            if (args.length < 4) {
+                player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth 2fa setup <telegram_chat_id></white>"));
+                return;
+            }
+            // Игрок должен быть авторизован
+            if (!manager.isAuthenticated(uuid)) {
+                player.sendMessage(MessageUtil.parse("<red>❌ You must be logged in to set up 2FA!</red>"));
+                return;
+            }
+            String chatId = args[3];
+            manager.setup2FA(uuid, chatId);
+            player.sendMessage("");
+            player.sendMessage("§6✦ §f2FA §8— §7Setup");
+            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            player.sendMessage("§a✔ 2FA enabled!");
+            player.sendMessage("§7Telegram Chat ID: §f" + chatId);
+            player.sendMessage("§7You'll receive a confirmation request in Telegram on next login.");
+            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            player.sendMessage("");
+            return;
+        }
+
+        // /mp auth 2fa disable — отключить 2FA
+        if (args.length >= 3 && args[2].equalsIgnoreCase("disable")) {
+            if (!manager.isAuthenticated(uuid)) {
+                player.sendMessage(MessageUtil.parse("<red>❌ You must be logged in to disable 2FA!</red>"));
+                return;
+            }
+            if (!manager.is2FAEnabled(uuid)) {
+                player.sendMessage(MessageUtil.parse("<red>❌ 2FA is not enabled!</red>"));
+                return;
+            }
+            manager.disable2FA(uuid);
+            player.sendMessage("§c✖ 2FA disabled.");
+            return;
+        }
+
+        // /mp auth 2fa <...other> → status / help
+        if (manager.is2FAEnabled(uuid)) {
+            player.sendMessage("§a✔ 2FA enabled");
+            player.sendMessage("§7Chat ID: §f" + manager.get2FAChatId(uuid));
+            player.sendMessage("§7Click \"Confirm\" in Telegram on next login.");
+            player.sendMessage("§7Disable: §e/mp auth 2fa disable");
+        } else {
+            player.sendMessage("§c✖ 2FA disabled");
+            player.sendMessage("§7Enable: §e/mp auth 2fa setup <telegram_chat_id>");
+        }
+    }
+
+    private static void handlePlayerLogin(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.auth.login")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return;
+        }
+        if (args.length < 3) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth login <password></white>"));
+            return;
+        }
+        String password = args[2];
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Authorization system is not initialized!</red>"));
+            return;
+        }
+        manager.handlePasswordSubmit(player, password);
+    }
+
+    private static void handlePlayerRegister(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.auth.register")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return;
+        }
+        if (args.length < 3) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth register <password></white>"));
+            return;
+        }
+        String password = args[2];
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Authorization system is not initialized!</red>"));
+            return;
+        }
+        manager.handlePasswordSubmit(player, password);
+    }
+
+    private static void handleForceLogin(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.auth.forcelogin")) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.forcelogin_no_permission",
+                    "<red>❌ You don't have permission to force log in!</red>")));
+            return;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.forcelogin_usage",
+                    "<red>❌ Usage: </red><white>/mp auth forcelogin <nick></white>")));
+            return;
+        }
+
+        String targetName = args[2];
+        UUID targetUuid = getOfflineUuid(targetName);
+
+        if (!AuthDatabase.isRegistered(targetUuid)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.forcelogin_not_registered",
+                    "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>")
+                    .replace("%player%", targetName)));
+            return;
+        }
+
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.forcelogin_not_initialized",
+                    "<red>❌ Authorization system is not initialized!</red>")));
+            return;
+        }
+
+        if (manager.forceLogin(targetUuid)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.forcelogin_success",
+                    "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>")
+                    .replace("%player%", targetName)));
+        } else {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.forcelogin_fail",
+                    "<red>❌ Failed to authorize player</red> <yellow>%player%</yellow>")
+                    .replace("%player%", targetName)));
+        }
+    }
+
+    private static void handleResetAuth(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.auth.resetauth")) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.resetauth_no_permission",
+                    "<red>❌ You don't have permission to reset authorization!</red>")));
+            return;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.resetauth_usage",
+                    "<red>❌ Usage: </red><white>/mp auth resetauth <nick></white>")));
+            return;
+        }
+
+        String targetName = args[2];
+        UUID targetUuid = getOfflineUuid(targetName);
+
+        if (!AuthDatabase.isRegistered(targetUuid)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.resetauth_not_registered",
+                    "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>")
+                    .replace("%player%", targetName)));
+            return;
+        }
+
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.resetauth_not_initialized",
+                    "<red>❌ Authorization system is not initialized!</red>")));
+            return;
+        }
+
+        if (manager.resetAuth(targetUuid)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.resetauth_success",
+                    "<green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</white>")
+                    .replace("%player%", targetName)));
+        } else {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.resetauth_fail",
+                    "<red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>")
+                    .replace("%player%", targetName)));
+        }
+    }
+
+    private static void handleDelSession(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.auth.delsession")) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.delsession_no_permission",
+                    "<red>❌ You don't have permission to reset sessions!</red>")));
+            return;
+        }
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.delsession_usage",
+                    "<red>❌ Usage: </red><white>/mp auth delsession <nick></white>")));
+            return;
+        }
+
+        String targetName = args[2];
+        UUID targetUuid = getOfflineUuid(targetName);
+
+        if (!AuthDatabase.isRegistered(targetUuid)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.delsession_not_registered",
+                    "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>")
+                    .replace("%player%", targetName)));
+            return;
+        }
+
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.delsession_not_initialized",
+                    "<red>❌ Authorization system is not initialized!</red>")));
+            return;
+        }
+
+        if (manager.deleteSession(targetUuid)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.delsession_success",
+                    "<green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>")
+                    .replace("%player%", targetName)));
+        } else {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.delsession_fail",
+                    "<red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>")
+                    .replace("%player%", targetName)));
+        }
+    }
+
+    /**
+     * Chat-based logout: /mp auth logout <password>
+     */
+    private static void handleLogout(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.player_only",
+                    "<red>❌ Only players can use this command!</red>")));
+            return;
+        }
+
+        if (args.length < 3) {
+            player.sendMessage("");
+            player.sendMessage("§8╔ §6✦ §lLogout§r §8╗");
+            player.sendMessage("§7Use: §e/mp auth logout <password>");
+            player.sendMessage("§7▸ Введите пароль для подтверждения выхода.");
+            player.sendMessage("");
+            return;
+        }
+
+        AuthManager.getInstance().handleLogout(player, args[2]);
+    }
+
+    private static void handleChgPass(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("mcplugin.command.auth.chgpass")) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_no_permission",
+                    "<red>❌ You don't have permission to change passwords!</red>")));
+            return;
+        }
+        if (args.length < 4) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_usage",
+                    "<red>❌ Usage: </red><white>/mp auth chgpass <nick> <new_password></white>")));
+            return;
+        }
+
+        String targetName = args[2];
+        String newPassword = args[3];
+
+        int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
+        int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
+        if (newPassword.length() < minLen) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.messages.password_too_short",
+                    "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>")
+                    .replace("%min%", String.valueOf(minLen))));
+            return;
+        }
+        if (newPassword.length() > maxLen) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.messages.password_too_long",
+                    "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>")
+                    .replace("%max%", String.valueOf(maxLen))));
+            return;
+        }
+
+        UUID targetUuid = getOfflineUuid(targetName);
+
+        if (!AuthDatabase.isRegistered(targetUuid)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_not_registered",
+                    "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>")
+                    .replace("%player%", targetName)));
+            return;
+        }
+
+        AuthManager manager = AuthManager.getInstance();
+        if (manager == null) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_not_initialized",
+                    "<red>❌ Authorization system is not initialized!</red>")));
+            return;
+        }
+
+        if (manager.changePassword(targetUuid, newPassword)) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_success",
+                    "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow>"
+                    + " <white>changed to</white> <green>%password%</green><white>.</white>")
+                    .replace("%player%", targetName).replace("%password%", newPassword)));
+        } else {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.admin.chgpass_fail",
+                    "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>")
+                    .replace("%player%", targetName)));
+        }
+    }
+
+    /**
+     * Self-service change password from chat: /mp auth changepassword <old_password> <new_password>
+     */
+    private static void handleSelfChangePassword(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            return;
+        }
+        if (args.length < 4) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/mp auth changepassword <old_password> <new_password></white>"));
+            return;
+        }
+        AuthAuthenticator.getInstance().handleSelfChangePassword(player, args[2], args[3]);
+    }
+}

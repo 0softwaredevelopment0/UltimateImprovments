@@ -260,6 +260,7 @@ public class PluginStartup {
         mm.register(new RedstoneGuardModule());
         mm.register(new PacketGuardModule());
         mm.register(new ProxyServerModule());
+        mm.register(new com.mcplugin.mechanics.protection.ProtectionModule());
     }
 
     private void registerUtilityModules(ModuleManager mm) {

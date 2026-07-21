@@ -173,6 +173,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             StructureSubcommand.execute(p, a);
             return true;
         }));
+
+        // ── Protection Block admin ops ──
+        registry.register(LegacySubCommandAdapter.of("protection",
+                (s, a) -> { ProtectionSubcommand.execute(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("chgdim_teleport", (s, a) -> {
             if (!(s instanceof Player p) || a.length < 2) return false;
             ChgDimCommand.teleport(p, a[1]);

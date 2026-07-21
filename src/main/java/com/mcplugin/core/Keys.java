@@ -61,6 +61,14 @@ public class Keys {
     public static NamespacedKey INTEGRITY_VERSION;
     public static NamespacedKey INTEGRITY_UNBREAKABLE;
 
+    // Protection Block (Блок защиты)
+    // PDC tag stored on the placed block (BlockData style) and item.
+    public static NamespacedKey PROTECTION_BLOCK;
+    // PDC tag stored on the protection block's item (placeable).
+    public static NamespacedKey PROTECTION_BLOCK_ITEM;
+    // PDC tag stored on the protection block GUI items for protection against theft.
+    public static NamespacedKey PROTECTION_GUI;
+
     public static void init(Main plugin) {
         PLASMA = new NamespacedKey(plugin, "is_plasma_cannon");
         SHOCKER = new NamespacedKey(plugin, "is_shocker");
@@ -99,5 +107,9 @@ public class Keys {
         INTEGRITY_WARN_FLAGS = new NamespacedKey(plugin, "integrity_warn_flags");
         INTEGRITY_VERSION = new NamespacedKey(plugin, "integrity_version");
         INTEGRITY_UNBREAKABLE = new NamespacedKey(plugin, "integrity_unbreakable");
+
+        PROTECTION_BLOCK = new NamespacedKey(plugin, "protection_block");
+        PROTECTION_BLOCK_ITEM = new NamespacedKey(plugin, "protection_block_item");
+        PROTECTION_GUI = new NamespacedKey(plugin, "protection_gui");
     }
 }

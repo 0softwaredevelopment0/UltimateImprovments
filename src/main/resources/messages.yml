@@ -42,6 +42,51 @@ auth:
     session_active: "<gray>Enjoy your game! Session active for 1 hour.</gray>"
     force_login_message: "<green>✔</green> <white>You have been force authorized by an administrator!</white>"
     rate_limit: "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
+    try_again_hint: "<gray>Try again: </gray><gold>/mp auth login <password></gold>"
+    already_authenticated: "<gold>✦</gold> <white>You are already logged in!</white>"
+    login_title: "<gold>✦</gold> <white>Please log in to continue.</white>"
+    register_title: "<gold>✦</gold> <white>Choose a password to register.</white>"
+    logout_usage: "<gray>Use: </gray><gold>/mp auth logout <password></gold>"
+
+protection:
+  gui:
+    main_title: "<white>Блок защиты — GUI</white>"
+    whitelist_title: "<white>Блок защиты — Whitelist</white>"
+    addplayer_title: "<white>Блок защиты — Добавить игрока</white>"
+
+  hologram:
+    title_enabled: "<white>Блок защиты <green>✔</green></white>"
+    title_disabled: "<white>Блок защиты <red>❌</red></white>"
+    radius: "<gray>Радиус: <white>%radius%</white></gray>"
+    integrity: "<gray>Целостность: <white>%value%%</white></gray>"
+    points: "<gray>Очки: <gold>%value%</gold></gray>"
+
+  item:
+    name: "<white>Блок защиты</white>"
+    lore_line_1: "<gray>Защищает территорию вокруг установки.</gray>"
+    lore_line_2: "<gray>Shift+RMB — открыть GUI.</gray>"
+    lore_line_3: "<gray>RMB с топливом — получить очки.</gray>"
+    lore_line_4: "<dark_gray>Recipe: see crafting menu (crafter only)</dark_gray>"
+
+  placed_message: "<green>✔</green> <white>Блок защиты установлен. Shift+RMB — открыть GUI.</white>"
+
+  block_enabled: "<green>✔</green> <white>Блок защиты ВКЛЮЧЁН!</white>"
+  block_disabled: "<red>❌</red> <white>Блок защиты ВЫКЛЮЧЕН.</white>"
+  not_whitelisted: "<red>Этот Блок защиты вам не принадлежит!</red>"
+  cant_break: "<red>Территория под защитой!</red> <gray>Этот блок принадлежит другому игроку.</gray>"
+  cant_place: "<red>Территория под защитой! Установка блоков запрещена.</red>"
+  cant_interact: "<red>Территория под защитой! Взаимодействие запрещено.</red>"
+  fuel_hint: "<gray>Возьмите в руку топливо, чтобы получить очки.</gray>"
+  fuel_not_burnable: "<red>Этот предмет не переплавляется и не даёт очков!</red>"
+  fuel_acquired: "<green>✔</green> <white>Получено <gold>%points%</gold> очков.</white>"
+  radius_upgraded: "<green>✔</green> <white>Радиус увеличен до </white><aqua>%r%</aqua>"
+  not_enough_points: "<red>Недостаточно очков! Нужно: </red><gold>%cost%</gold>"
+  radius_max: "<yellow>Радиус уже максимальный.</yellow>"
+  integrity_full: "<yellow>Целостность уже максимальная.</yellow>"
+  repaired: "<green>✔</green> <white>Целостность восстановлена.</white>"
+  broken: "<yellow>Блок защиты снят и удалён из БД.</yellow>"
+  whitelist_added: "<green>✔</green> <white>Игрок <yellow>%name%</yellow> добавлен в whitelist.</white>"
+  whitelist_removed: "<yellow>Игрок удалён из whitelist.</yellow>"
 
   admin:
     system_disabled: "<red>❌ Authorization system is disabled in config!</red>"

@@ -17,6 +17,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Логика аутентификации: вход, регистрация, смена пароля, выход.
  * <p>
+ * Все взаимодействие с игроком осуществляется через чат-команды:
+ * <ul>
+ *   <li>{@code /mp auth register <password>}</li>
+ *   <li>{@code /mp auth login <password>}</li>
+ *   <li>{@code /mp auth logout <password>}</li>
+ *   <li>{@code /mp auth chgpass <old_password> <new_password>}</li>
+ * </ul>
+ * <p>
  * Оркестрирует взаимодействие между AuthDatabase, AuthPlayerState,
  * AuthRateLimiter, AuthTimeoutManager и AuthConfig.
  */
@@ -94,55 +102,61 @@ public class AuthAuthenticator {
         // Сохраняем финальное состояние registered для использования в Runnable
         final boolean isRegistered = registered;
 
-        // Freeze player and open Custom Screen (Anvil GUI)
+        // Freeze player (лёгкий фриз: нельзя двигаться/взаимодействовать до логина)
         playerState.setPendingAuth(uuid);
         freezePlayer(player);
         timeoutManager.startLoginTimeout(player);
 
-        // Open GUI after 5-tick delay (Paper 1.21.11: клиент должен полностью
-        // закончить handshake до window packet; 1 тик иногда слишком быстро)
+        // Chat-based prompt с задержкой 5 тиков (Paper 1.21.11: клиент должен
+        // полностью закончить handshake до отправки чат-сообщений)
         new BukkitRunnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
-                if (!playerState.needsAuth(player)) return;
-                openAuthScreenPrompt(player, isRegistered);
+                if (playerState.isAuthenticated(uuid)) return;
+                sendChatPrompt(player, isRegistered);
             }
         }.runTaskLater(Main.getInstance(), 5L);
     }
 
     /**
-     * Открывает кастомный экран авторизации (Anvil GUI).
+     * Отправляет в чат приглашение войти/зарегистрироваться.
      * <p>
-     * Custom Screen — настоящий GUI-экран через {@link MenuType#ANVIL},
-     * с полем переименования куда игрок вводит пароль и кнопкой Подтвердить.
-     * Также печатает краткий header в чат для визуальной пометки "Custom Screen".
+     * MiniMessage header + footer визуально обрамляют инструкцию.
      *
-     * @param player      игрок, которому показывается экран
+     * @param player       игрок
      * @param isRegistered true если зарегистрирован (login), false если регистрация
      */
-    private void openAuthScreenPrompt(Player player, boolean isRegistered) {
-        // Header в чат — визуальная пометка «Custom Screen» поверх GUI
+    private void sendChatPrompt(Player player, boolean isRegistered) {
         player.sendMessage("");
         player.sendMessage("§8╔ §6✦ §lCustom Screen§r §8╗");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         player.sendMessage("");
 
         if (isRegistered) {
-            AuthGUI.openLogin(player);
+            player.sendMessage(MessageUtil.parse(AuthConfig.getMessage("login_title",
+                    "<gold>✦</gold> <white>Please log in to continue.</white>")));
+            player.sendMessage("");
+            player.sendMessage("§7▸ <white>Команда: <gold>/mp auth login <password></gold></white>");
         } else {
-            AuthGUI.openRegister(player);
+            player.sendMessage(MessageUtil.parse(AuthConfig.getMessage("register_title",
+                    "<gold>✦</gold> <white>Choose a password to register.</white>")));
+            player.sendMessage("");
+            player.sendMessage("§7▸ <white>Команда: <gold>/mp auth register <password></gold></white>");
+            player.sendMessage("§7   <gray>Min " + AuthConfig.getMinPasswordLength()
+                    + ", max " + AuthConfig.getMaxPasswordLength() + " characters.</gray>");
         }
 
-        player.sendMessage("§7▸ §fВведите пароль в поле переименования наверху");
-        player.sendMessage("§7▸ §fЗатем нажмите §a✔ Подтвердить");
+        player.sendMessage("");
+        player.sendMessage("§7▸ <white>Другие команды недоступны пока вы не авторизованы.</white>");
+        player.sendMessage("§7  <gray>/mp help works only after login.</gray>");
         player.sendMessage("");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         player.sendMessage("");
     }
 
     // =========================
-    // HANDLE PASSWORD SUBMIT (login/register)
+    // HANDLE PASSWORD SUBMIT (login/register via /mp auth login <pass> | register <pass>)
     //
     // ⚠ Argon2id (32MB memory, 2 итерации) выполняется на async thread,
     // чтобы не фризить сервер на 1-2 секунды при каждом логине.
@@ -151,8 +165,9 @@ public class AuthAuthenticator {
         UUID uuid = player.getUniqueId();
 
         if (playerState.isAuthenticated(uuid)) {
-            player.sendMessage(MessageUtil.parse(
-                    "<gold>✦</gold> <white>You are already logged in!</white>"));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.messages.already_authenticated",
+                    "<gold>✦</gold> <white>You are already logged in!</white>")));
             return;
         }
         if (!rateLimiter.checkCooldown(player)) return;
@@ -182,11 +197,17 @@ public class AuthAuthenticator {
                         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                             if (!player.isOnline()) return;
                             if (password.length() < minLen) {
-                                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>").replace("%min%", String.valueOf(minLen))));
+                                player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                                        "auth.messages.password_too_short",
+                                        "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>")
+                                        .replace("%min%", String.valueOf(minLen))));
                             } else {
-                                player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>").replace("%max%", String.valueOf(maxLen))));
+                                player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                                        "auth.messages.password_too_long",
+                                        "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>")
+                                        .replace("%max%", String.valueOf(maxLen))));
                             }
-                            reopenAfterDelay(player);
+                            sendChatPromptAfterError(player, registered);
                         });
                         return;
                     }
@@ -198,7 +219,7 @@ public class AuthAuthenticator {
                             int currentCount = AuthDatabase.countAccountsByIp(playerIp);
                             if (currentCount >= maxAccounts) {
                                 String msg = AuthConfig.getMessage("max_accounts_per_ip",
-                                        "<red>\u274c</red> <red>С вашего IP-адреса уже зарегистрировано <yellow>%count%</yellow> аккаунтов!</red>\n" +
+                                        "<red>❌</red> <red>С вашего IP-адреса уже зарегистрировано <yellow>%count%</yellow> аккаунтов!</red>\n" +
                                         "<white>Максимум: <yellow>%limit%</yellow> аккаунтов на один IP.</white>")
                                         .replace("%count%", String.valueOf(currentCount))
                                         .replace("%limit%", String.valueOf(maxAccounts));
@@ -209,7 +230,7 @@ public class AuthAuthenticator {
                                     player.sendMessage(MessageUtil.parse(finalMsg));
                                     player.sendMessage("");
                                     player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-                                    reopenAfterDelay(player);
+                                    sendChatPromptAfterError(player, registered);
                                 });
                                 return;
                             }
@@ -222,7 +243,7 @@ public class AuthAuthenticator {
                     Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                         if (!player.isOnline()) return;
                         playerState.resetWrongAttempts(uuid);
-                        authenticatePlayer(player, "<green>\u2705</green> <white>Registration successful!</white>");
+                        authenticatePlayer(player, "<green>✅</green> <white>Registration successful!</white>");
 
                         // Suggest 2FA setup
                         player.sendMessage("");
@@ -240,12 +261,28 @@ public class AuthAuthenticator {
             } catch (Exception e) {
                 Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                     if (player.isOnline()) {
-                        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.auth_check_error", "<red>❌ Error checking password! Please try again.</red>")));
+                        player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                                "auth.messages.auth_check_error",
+                                "<red>❌ Error checking password! Please try again.</red>")));
                     }
                 });
                 Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Async auth error", e);
             }
         });
+    }
+
+    /**
+     * Отправляет игроку repeat-prompt после неверного пароля или иной ошибки.
+     */
+    private void sendChatPromptAfterError(Player player, boolean isRegistered) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!player.isOnline()) return;
+                if (playerState.isAuthenticated(player.getUniqueId())) return;
+                sendChatPrompt(player, isRegistered);
+            }
+        }.runTaskLater(Main.getInstance(), 20L);
     }
 
     // =========================
@@ -270,7 +307,7 @@ public class AuthAuthenticator {
             return;
         }
 
-        authenticatePlayer(player, "<green>\u2705</green> <white>You have successfully logged in!</white>");
+        authenticatePlayer(player, "<green>✅</green> <white>You have successfully logged in!</white>");
     }
 
     // =========================
@@ -279,21 +316,11 @@ public class AuthAuthenticator {
     public void start2FAChallenge(Player player) {
         UUID uuid = player.getUniqueId();
 
-        // Закрыть Custom Screen с флагом Transitioning, чтобы
-        // AuthListener.onInventoryClose не пытался заново открыть GUI
-        // (иначе наковальня перекрывает чат с инструкциями по Telegram-2FA).
-        AuthGUITracker.addTransitioningPlayer(uuid);
-        try {
-            player.closeInventory();
-        } finally {
-            AuthGUITracker.removeTransitioningPlayer(uuid);
-        }
-
         String chatId = Auth2FA.getChatId(uuid);
         if (chatId == null || chatId.isEmpty()) {
             // Нет chat_id — отключаем 2FA и пускаем без кода
             Auth2FA.remove(uuid);
-            authenticatePlayer(player, "<green>\u2705</green> <white>Logged in (2FA reset — no Telegram linked).</white>");
+            authenticatePlayer(player, "<green>✅</green> <white>Logged in (2FA reset — no Telegram linked).</white>");
             return;
         }
 
@@ -359,7 +386,7 @@ public class AuthAuthenticator {
                         switch (status) {
                             case "approved" -> {
                                 Auth2FA.getInstance().clearPending(uuid);
-                                authenticatePlayer(player, "<green>\u2705</green> <white>2FA confirmed! Welcome.</white>");
+                                authenticatePlayer(player, "<green>✅</green> <white>2FA confirmed! Welcome.</white>");
                                 cancel();
                             }
                             case "denied" -> {
@@ -373,7 +400,7 @@ public class AuthAuthenticator {
                                 player.sendMessage("§c⚠ 2FA bot is temporarily unavailable! Skipping 2FA for this login.");
                                 ConsoleLogger.warn(
                                         "[Auth2FA] Bot unreachable — logging in " + player.getName() + " without 2FA");
-                                authenticatePlayer(player, "<green>\u2705</green> <white>Logged in without 2FA (bot unavailable).</white>");
+                                authenticatePlayer(player, "<green>✅</green> <white>Logged in without 2FA (bot unavailable).</white>");
                                 cancel();
                             }
                             case "error" -> {
@@ -403,11 +430,6 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // REGISTER (удалён — логика перенесена в handlePasswordSubmit для async)
-    // =========================
-
-
-    // =========================
     // WRONG PASSWORD
     // =========================
     private void handleWrongPassword(Player player, UUID uuid) {
@@ -425,11 +447,17 @@ public class AuthAuthenticator {
         }
 
         player.sendMessage("");
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password_remaining", "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>").replace("%remaining%", String.valueOf(remaining))));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                "auth.messages.wrong_password_remaining",
+                "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>")
+                .replace("%remaining%", String.valueOf(remaining))));
         player.sendMessage("");
-        // Re-open Custom Screen (Anvil GUI) so player can try again
-        boolean isRegistered = AuthDatabase.isRegistered(uuid);
-        openAuthScreenPrompt(player, isRegistered);
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                "auth.messages.try_again_hint",
+                "<gray>Try again: </gray><gold>/mp auth login <password></gold>")));
+        player.sendMessage("");
+        // Re-send prompt with delay so player has time to read
+        sendChatPromptAfterError(player, true);
     }
 
     // =========================
@@ -438,38 +466,30 @@ public class AuthAuthenticator {
     private void authenticatePlayer(Player player, String message) {
         UUID uuid = player.getUniqueId();
 
-        // ВАЖНО: setAuthenticated ДО closeInventory (порядок имеет значение!).
-        // closeInventory синхронно вызывает InventoryCloseEvent, и в момент
-        // срабатывания AuthListener.onInventoryClose читает needsAuth(player).
-        // Если до этого мы ещё не установили authenticated, handler решит что
-        // нужно re-open GUI → 5 тиков спустя игрок увидит экран логина
-        // ВМЕСТО обычного геймплея. Исправлено: state first, then close.
         playerState.setAuthenticated(uuid);
         savePlayerIp(player);
 
         timeoutManager.cancelLoginTimeout(uuid);
         playerState.resetWrongAttempts(uuid);
 
-        // Теперь безопасно закрыть Custom Screen — handler уже прочитает
-        // needsAuth=false и выйдет из логики re-open.
-        try {
-            player.closeInventory();
-        } catch (Exception ignored) {}
-
-        // unfreezePlayer сам достанет и удалит savedState
         unfreezePlayer(player);
 
         player.sendMessage("");
         player.sendMessage(MessageUtil.parse(message));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.session_active", "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                "auth.messages.session_active",
+                "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
         player.sendMessage("");
 
         ConsoleLogger.info("[Auth] Player " + player.getName() + " authenticated.");
     }
 
     // =========================
-    // SELF CHANGE PASSWORD
+    // SELF CHANGE PASSWORD via /mp auth chgpass <old> <new>
     // hashArgon2 вызывается на async thread
+    //
+    // Note: для chat-интерфейса требуется <old_password>. Если вызывается без аргументов,
+    // вызывающий код должен передать пустую строку или сообщить usage.
     // =========================
     public void handleSelfChangePassword(Player player, String newPassword) {
         UUID uuid = player.getUniqueId();
@@ -478,11 +498,17 @@ public class AuthAuthenticator {
         int maxLen = AuthConfig.getMaxPasswordLength();
 
         if (newPassword.length() < minLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>").replace("%min%", String.valueOf(minLen))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.messages.password_too_short",
+                    "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>")
+                    .replace("%min%", String.valueOf(minLen))));
             return;
         }
         if (newPassword.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>").replace("%max%", String.valueOf(maxLen))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.messages.password_too_long",
+                    "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>")
+                    .replace("%max%", String.valueOf(maxLen))));
             return;
         }
 
@@ -500,8 +526,12 @@ public class AuthAuthenticator {
                     unfreezePlayer(player);
 
                     player.sendMessage("");
-                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_changed", "<green>✔</green> <white>Password successfully changed!</white>")));
-                    player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.session_active", "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                            "auth.messages.password_changed",
+                            "<green>✔</green> <white>Password successfully changed!</white>")));
+                    player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                            "auth.messages.session_active",
+                            "<gray>Enjoy your game! Session active for 1 hour.</gray>")));
                     player.sendMessage("");
 
                     ConsoleLogger.info("[Auth] Player " + player.getName() + " changed password.");
@@ -509,7 +539,9 @@ public class AuthAuthenticator {
             } catch (Exception e) {
                 Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                     if (player.isOnline()) {
-                        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.change_password_error", "<red>❌ Password change error! Please try again.</red>")));
+                        player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                                "auth.messages.change_password_error",
+                                "<red>❌ Password change error! Please try again.</red>")));
                     }
                 });
                 Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Async change password error", e);
@@ -517,8 +549,60 @@ public class AuthAuthenticator {
         });
     }
 
+    /**
+     * Change password via chat command `/mp auth chgpass <old> <new>`.
+     * Verifies old password asynchronously, then re-hashes new password.
+     */
+    public void handleSelfChangePassword(Player player, String oldPassword, String newPassword) {
+        UUID uuid = player.getUniqueId();
+
+        int minLen = AuthConfig.getMinPasswordLength();
+        int maxLen = AuthConfig.getMaxPasswordLength();
+
+        if (newPassword.length() < minLen) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.messages.password_too_short",
+                    "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>")
+                    .replace("%min%", String.valueOf(minLen))));
+            return;
+        }
+        if (newPassword.length() > maxLen) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "auth.messages.password_too_long",
+                    "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>")
+                    .replace("%max%", String.valueOf(maxLen))));
+            return;
+        }
+        if (oldPassword == null || oldPassword.isEmpty()) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp auth chgpass <old> <new></white>"));
+            return;
+        }
+
+        if (!rateLimiter.checkCooldown(player)) return;
+
+        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+            try {
+                boolean validOld = AuthDatabase.checkPassword(uuid, oldPassword);
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    if (!player.isOnline()) return;
+                    if (!validOld) {
+                        player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                                "auth.messages.wrong_password",
+                                "<red>❌ Current password is incorrect!</red>")));
+                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
+                        return;
+                    }
+                    // Re-use the existing async hash+update flow
+                    handleSelfChangePassword(player, newPassword);
+                });
+            } catch (Exception e) {
+                Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE, "[Auth] Async chgpass verify error", e);
+            }
+        });
+    }
+
     // =========================
-    // SELF-LOGOUT
+    // SELF-LOGOUT via /mp auth logout <password>
     // Argon2 verify на async thread
     // =========================
     public boolean handleLogout(Player player, String password) {
@@ -537,7 +621,9 @@ public class AuthAuthenticator {
                     if (!player.isOnline()) return;
 
                     if (!valid) {
-                        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password", "<red>❌ Incorrect password! Try again.</red>")));
+                        player.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                                "auth.messages.wrong_password",
+                                "<red>❌ Incorrect password! Try again.</red>")));
                         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
                         return;
                     }
@@ -604,22 +690,6 @@ public class AuthAuthenticator {
      */
     public void restorePlayerState(Player player) {
         unfreezePlayer(player);
-    }
-
-    // =========================
-    // RESEND CUSTOM SCREEN AFTER DELAY (после неверного пароля, после смены пароля)
-    // =========================
-    public void reopenAfterDelay(Player player) {
-        if (playerState.isAuthenticated(player.getUniqueId())) return;
-
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!player.isOnline()) return;
-                if (playerState.isAuthenticated(player.getUniqueId())) return;
-                openAuthScreenPrompt(player, AuthDatabase.isRegistered(player.getUniqueId()));
-            }
-        }.runTaskLater(Main.getInstance(), 5L);
     }
 
     // =========================

@@ -1,52 +1,27 @@
 package com.mcplugin.mechanics.security.auth;
 
-import com.mcplugin.core.Keys;
 import com.mcplugin.core.Main;
 import com.mcplugin.command.AskCordsManager;
 import com.mcplugin.config.MessagesManager;
 import com.mcplugin.util.MessageUtil;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.*;
-import org.bukkit.event.entity.ItemSpawnEvent;
-import org.bukkit.inventory.MenuType;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.UUID;
 
 /**
- * Слушатель событий для системы авторизации.
+ * Слушатель событий для системы авторизации (chat-based).
  * <p>
- * Блокирует действия неавторизованных игроков, обрабатывает клики по GUI,
- * управляет открытием/закрытием окон авторизации.
+ * Блокирует действия неавторизованных игроков. GUI-handlers удалены —
+ * все взаимодействие теперь происходит через чат-команды:
+ * {@code /mp auth login/register/logout/chgpass/2fa}.
  */
 public class AuthListener implements Listener {
-
-    // =========================
-    // IS THIS OUR AUTH GUI? (anvil)
-    // =========================
-    private boolean isAuthGUI(InventoryClickEvent event) {
-        return event.getView().getMenuType() == MenuType.ANVIL;
-    }
-
-    private boolean isAuthGUI(InventoryCloseEvent event) {
-        return event.getView().getMenuType() == MenuType.ANVIL;
-    }
-
-    private boolean isAuthGUI(InventoryOpenEvent event) {
-        return event.getView().getMenuType() == MenuType.ANVIL;
-    }
 
     // =========================
     // 🔒 PRE-LOGIN — duplicate name check BEFORE Minecraft kicks the original player
@@ -59,6 +34,7 @@ public class AuthListener implements Listener {
         if (!AuthConfig.isDupNameCheckEnabled()) return;
 
         String newPlayerName = event.getName();
+        @SuppressWarnings("unused")
         UUID newPlayerUuid = event.getUniqueId();
 
         for (Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
@@ -78,7 +54,7 @@ public class AuthListener implements Listener {
     }
 
     // =========================
-    // JOIN → open GUI
+    // JOIN → start chat-based auth flow
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -100,7 +76,6 @@ public class AuthListener implements Listener {
         if (manager != null) {
             manager.removePlayer(uuid);
         }
-        AuthGUITracker.cleanupPlayer(uuid);
         AskCordsManager.cleanup(uuid);
     }
 
@@ -184,6 +159,7 @@ public class AuthListener implements Listener {
 
     // =========================
     // BLOCK CHAT / COMMANDS if not authed
+    // Разрешаем только /mp auth (login/register/logout/chgpass/2fa) до входа.
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
@@ -192,8 +168,10 @@ public class AuthListener implements Listener {
 
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
 
-        // Разрешаем /mp auth login, register и 2fa в замороженном состоянии
+        // Разрешаем /mp auth login, register, chgpass, logout и 2fa
         if (msg.startsWith("/mp auth login") || msg.startsWith("/mp auth register")
+                || msg.startsWith("/mp auth logout")
+                || msg.startsWith("/mp auth chgpass")
                 || msg.startsWith("/mp auth 2fa")) {
             return;
         }
@@ -201,7 +179,7 @@ public class AuthListener implements Listener {
         event.setCancelled(true);
         player.sendMessage("");
         player.sendMessage("§c❌ §fПожалуйста, авторизуйтесь!");
-        player.sendMessage("§e/mp auth login §7<§opassword§7> §f| §e/mp auth register §7<§opassword§7>");
+        player.sendMessage("§e/mp auth login <password> §7| §e/mp auth register <password>");
         player.sendMessage("");
     }
 
@@ -216,363 +194,8 @@ public class AuthListener implements Listener {
     }
 
     // =========================
-    // 🛡 ANTI-DUP: cancel item spawn if it has AUTH_GUI PDC tag
+    // ⚠ DEPRECATED GUI HANDLERS УДАЛЕНЫ:
+    // Реальная GUI-логика авторизации удалена (chat-based auth).
+    // Игроки, требующие авторизации, заморожены, и им заблокированы ВСЕ действия.
     // =========================
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onItemSpawn(ItemSpawnEvent event) {
-        if (Keys.AUTH_GUI == null) return;
-        ItemStack item = event.getEntity().getItemStack();
-        if (item == null) return;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-        if (meta.getPersistentDataContainer().has(Keys.AUTH_GUI, PersistentDataType.BOOLEAN)) {
-            event.setCancelled(true);
-        }
-    }
-
-    // =========================
-    // 🛡 БЛОКИРОВКА ПЕРЕТАСКИВАНИЯ ПРЕДМЕТОВ В ANVIL GUI
-    // =========================
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onInventoryDrag(InventoryDragEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (event.getView().getMenuType() != MenuType.ANVIL) return;
-
-        UUID uuid = player.getUniqueId();
-
-        // 🛡 Только для наших auth-GUI, не для ванильной наковальни
-        if (!AuthGUITracker.isChangePasswordPlayer(uuid) &&
-            !AuthGUITracker.isLogoutPlayer(uuid) &&
-            !needsAuth(player)) return;
-
-        // Блокируем drag в любые слоты anvil (raw slots 0-2)
-        for (int slot : event.getRawSlots()) {
-            if (slot < 3) {
-                event.setCancelled(true);
-                AuthGUITracker.antiDupCleanup(player);
-                return;
-            }
-        }
-    }
-
-    // =========================
-    // HANDLE ANVIL CLICK
-    // =========================
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (!isAuthGUI(event)) return;
-
-        UUID uuid = player.getUniqueId();
-
-        // 🛡 Если игрок не в auth-состоянии — не трогаем!
-        // isAuthGUI() проверяет только MenuType.ANVIL, но ванильная наковальня
-        // тоже имеет MenuType.ANVIL. Без этой проверки мы будем чистить курсор
-        // и в обычной наковальне.
-        if (!AuthGUITracker.isChangePasswordPlayer(uuid) &&
-            !AuthGUITracker.isLogoutPlayer(uuid) &&
-            !needsAuth(player)) return;
-
-        // ⚡ Очищаем курсор ДО обработки — Paper может положить предмет на курсор
-        // ДО того, как событие будет отменено (особенно для result slot anvil)
-        player.setItemOnCursor(null);
-
-        // =========================
-        // CHANGE PASSWORD GUI
-        // Slot 0: info, Slot 1: cancel, Slot 2: confirm
-        // =========================
-        if (AuthGUITracker.isChangePasswordPlayer(uuid)) {
-            event.setCancelled(true);
-            if (event.getRawSlot() == 2) {
-                handleChangePasswordConfirm(player);
-            } else if (event.getRawSlot() == 1) {
-                handleChangePasswordCancel(player);
-            }
-            AuthGUITracker.antiDupCleanup(player);
-            return;
-        }
-
-        // =========================
-        // LOGOUT GUI (authenticated player)
-        // =========================
-        if (AuthGUITracker.isLogoutPlayer(uuid)) {
-            event.setCancelled(true);
-            if (event.getRawSlot() == 2) {
-                handleLogout(player);
-            }
-            AuthGUITracker.antiDupCleanup(player);
-            return;
-        }
-
-        // =========================
-        // LOGIN / REGISTER GUI (non-authenticated player)
-        // =========================
-        if (!needsAuth(player)) return;
-
-        event.setCancelled(true);
-
-        if (event.getRawSlot() == 2) {
-            handleEnter(player);
-        } else if (event.getRawSlot() == 1) {
-            // Slot 1 = change password button (only for registered players)
-            handleChangePasswordRequest(player);
-        }
-        AuthGUITracker.antiDupCleanup(player);
-    }
-
-    // =========================
-    // HANDLE LOGOUT CONFIRM
-    // =========================
-    private void handleLogout(Player player) {
-        String password = AuthGUIAnvilReader.getAnvilRenameText(player);
-
-        if (password == null || password.isEmpty()) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.enter_password_field", "<red>❌ Enter your password in the item name field!</red>")));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-
-        AuthManager manager = AuthManager.getInstance();
-        if (manager == null) return;
-
-        if (manager.handleLogout(player, password)) {
-            // handleLogout already kicks the player on success
-        } else {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password", "<red>❌ Incorrect password! Try again.</red>")));
-
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-        }
-    }
-
-    // =========================
-    // HANDLE CHANGE PASSWORD REQUEST
-    // =========================
-    private void handleChangePasswordRequest(Player player) {
-        UUID uuid = player.getUniqueId();
-
-        // Rate limit check
-        if (!AuthManager.getInstance().checkRequestCooldown(player)) return;
-
-        // Only registered players can change password
-        if (!AuthDatabase.isRegistered(uuid)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.not_registered", "<red>❌ You are not registered yet! First, create a password.</red>")));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-
-        String currentPassword = AuthGUIAnvilReader.getAnvilRenameText(player);
-
-        if (currentPassword == null || currentPassword.isEmpty()) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.enter_current_password", "<red>❌ Enter your current password in the item name field!</red>")));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-
-        // Verify current password
-        if (!AuthDatabase.checkPassword(uuid, currentPassword)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.wrong_password_short", "<red>❌ Incorrect password!</red>")));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-
-        // Open change password GUI
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.5f);
-        AuthGUI.openChangePassword(player);
-    }
-
-    // =========================
-    // HANDLE CHANGE PASSWORD CANCEL
-    // =========================
-    private void handleChangePasswordCancel(Player player) {
-        UUID uuid = player.getUniqueId();
-
-        AuthGUITracker.cancelResetTask(uuid);
-        AuthGUITracker.removeChangePasswordPlayer(uuid);
-
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 1.0f);
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_change_cancelled", "<yellow>✦</yellow> <gray>Password change cancelled.</gray>")));
-
-        // Mark as transitioning so InventoryCloseEvent doesn't fire re-open logic
-        AuthGUITracker.addTransitioningPlayer(uuid);
-
-        // Open login GUI directly (not via reopenAfterDelay) to avoid self-loop
-        AuthManager manager = AuthManager.getInstance();
-        if (manager != null && !manager.isAuthenticated(uuid)) {
-            if (AuthDatabase.isRegistered(uuid)) {
-                AuthGUI.openLogin(player);
-            } else {
-                AuthGUI.openRegister(player);
-            }
-        }
-
-        AuthGUITracker.removeTransitioningPlayer(uuid);
-    }
-
-    // =========================
-    // HANDLE CHANGE PASSWORD CONFIRM
-    // =========================
-    private void handleChangePasswordConfirm(Player player) {
-        String newPassword = AuthGUIAnvilReader.getAnvilRenameText(player);
-        UUID uuid = player.getUniqueId();
-
-        // Rate limit check
-        if (!AuthManager.getInstance().checkRequestCooldown(player)) return;
-
-        if (newPassword == null || newPassword.isEmpty()) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.enter_new_password_field", "<red>❌ Enter a new password in the item name field!</red>")));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-
-        int minLen = AuthConfig.getMinPasswordLength();
-        int maxLen = AuthConfig.getMaxPasswordLength();
-        if (newPassword.length() < minLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>").replace("%min%", String.valueOf(minLen))));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-        if (newPassword.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>").replace("%max%", String.valueOf(maxLen))));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.5f);
-
-        AuthManager manager = AuthManager.getInstance();
-        if (manager != null) {
-            AuthGUITracker.cancelResetTask(uuid);
-            AuthGUITracker.removeChangePasswordPlayer(uuid);
-            manager.handleSelfChangePassword(player, newPassword);
-        }
-    }
-
-    // =========================
-    // HANDLE ENTER — read password from anvil via reflection
-    // =========================
-    private void handleEnter(Player player) {
-        String password = AuthGUIAnvilReader.getAnvilRenameText(player);
-
-        if (password == null || password.isEmpty()) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.enter_password_field_generic", "<red>❌ Enter your password in the item name field!</red>")));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-
-        int minLen = AuthConfig.getMinPasswordLength();
-        int maxLen = AuthConfig.getMaxPasswordLength();
-        if (password.length() < minLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_short", "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>").replace("%min%", String.valueOf(minLen))));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-        if (password.length() > maxLen) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.password_too_long", "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>").replace("%max%", String.valueOf(maxLen))));
-            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            return;
-        }
-
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.5f);
-
-        AuthManager manager = AuthManager.getInstance();
-        if (manager != null) {
-            manager.handlePasswordSubmit(player, password);
-        }
-    }
-
-    // =========================
-    // ESCAPE PROTECTION + ANTI-DUP
-    // =========================
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
-        if (!isAuthGUI(event)) return;
-
-        UUID uuid = player.getUniqueId();
-
-        // 🛡 Не трогаем закрытие ванильной наковальни
-        if (!AuthGUITracker.isChangePasswordPlayer(uuid) &&
-            !AuthGUITracker.isLogoutPlayer(uuid) &&
-            !needsAuth(player)) return;
-
-        // Skip if transitioning between GUIs
-        if (AuthGUITracker.isTransitioning(uuid)) {
-            return;
-        }
-
-        // Anti-dup
-        AuthGUITracker.removeAuthItemsFromPlayer(player);
-
-        // Change password GUI — prevent closing by Escape
-        if (AuthGUITracker.isChangePasswordPlayer(uuid)) {
-            AuthGUITracker.cancelResetTask(uuid);
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cannot_close_change_password", "<red>❌ You cannot close the password change window!</red>")));
-            new org.bukkit.scheduler.BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (!player.isOnline()) return;
-                    if (!AuthGUITracker.isChangePasswordPlayer(uuid)) return;
-                    AuthGUI.openChangePassword(player);
-                }
-            }.runTaskLater(Main.getInstance(), 5L);
-            return;
-        }
-
-        // Logout GUI — just clean up
-        if (AuthGUITracker.isLogoutPlayer(uuid)) {
-            AuthGUITracker.cancelResetTask(uuid);
-            AuthGUITracker.removeLogoutPlayer(uuid);
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.logout_cancelled", "<yellow>✦</yellow> <gray>Account logout cancelled.</gray>")));
-            return;
-        }
-
-        // Login/Register GUI — re-open
-        if (!needsAuth(player)) return;
-
-        // 🛡 Don't re-open if player is currently in 2FA Telegram challenge.
-        // The 2FA flow closes the GUI explicitly so the chat with instructions is visible.
-        // Reopening would obscure the chat again.
-        if (Auth2FA.getInstance() != null && Auth2FA.getInstance().hasPendingConfirmation(uuid)) {
-            return;
-        }
-
-        AuthGUITracker.cancelResetTask(uuid);
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("auth.messages.cannot_close_auth", "<red>❌ You cannot close the authorization window! Please enter your password.</red>")));
-        AuthManager manager = AuthManager.getInstance();
-        if (manager != null) {
-            manager.reopenAfterDelay(player);
-        }
-    }
-
-    // =========================
-    // PREVENT OPENING OTHER INVENTORIES
-    // =========================
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onInventoryOpen(InventoryOpenEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
-
-        UUID uuid = player.getUniqueId();
-
-        // Allow if we are currently opening an auth GUI
-        if (AuthGUITracker.isOpeningAuthPlayer(uuid)) return;
-
-        // Allow change password GUI
-        if (AuthGUITracker.isChangePasswordPlayer(uuid)) {
-            if (isAuthGUI(event)) return;
-            event.setCancelled(true);
-            return;
-        }
-
-        // Allow logout GUI for authenticated players
-        if (AuthGUITracker.isLogoutPlayer(uuid)) {
-            if (isAuthGUI(event)) return;
-            event.setCancelled(true);
-            return;
-        }
-
-        if (!needsAuth(player)) return;
-
-        if (isAuthGUI(event)) return;
-        event.setCancelled(true);
-    }
 }
