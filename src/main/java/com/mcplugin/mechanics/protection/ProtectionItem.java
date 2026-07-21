@@ -127,36 +127,29 @@ public class ProtectionItem implements Listener {
 
     // =========================
     // PREPARE ITEM CRAFT — отключает обычный верстак; в Crafter пропускает.
+    // <p>
+    // HIGHEST приоритет чтобы наш блок побеждал любые другие плагины,
+    // которые могли бы попытаться восстановить result-ItemStack.
+    // Рецепт при этом остаётся зарегистрирован глобально (Bukkit.addRecipe),
+    // так что в обычном верстаке игрок видит его в recipe-book, но result-slot
+    // пустой (AIR) — ровно как требует TODOs.md: «верстак только крафт показывает
+    // не даёт крафтить».
     // =========================
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPrepareCraft(PrepareItemCraftEvent e) {
         Recipe r = e.getRecipe();
         if (!(r instanceof ShapedRecipe sr)) return;
         if (!sr.getKey().equals(RECIPE_KEY)) return;
 
-        if (ProtectionConfig.isWorkbenchCraftAllowed() && ProtectionConfig.isCrafterCraftAllowed()) {
-            return; // оба разрешены, ничего не делаем
-        }
-        if (ProtectionConfig.isCrafterCraftAllowed() && !ProtectionConfig.isWorkbenchCraftAllowed()) {
-            // Crafter only: пропускаем если инвентарь — CrafterInventory
-            if (e.getInventory() instanceof org.bukkit.inventory.CrafterInventory) {
-                return;
-            }
-            // Иначе — обычный верстак: убираем result
-            e.getInventory().setResult(new ItemStack(Material.AIR));
-            // Игрок всё ещё видит recipe-book hint — это нормально, конфиг явно говорит, что в верстаке нельзя.
-        }
-        if (!ProtectionConfig.isCrafterCraftAllowed() && ProtectionConfig.isWorkbenchCraftAllowed()) {
-            // Только верстак; crafter запрещён
-            if (!(e.getInventory() instanceof org.bukkit.inventory.CrafterInventory)) {
-                return;
-            }
-            e.getInventory().setResult(new ItemStack(Material.AIR));
-        }
-        // Если оба false — полностью отключено, всегда блокируем
-        if (!ProtectionConfig.isCrafterCraftAllowed() && !ProtectionConfig.isWorkbenchCraftAllowed()) {
-            e.getInventory().setResult(new ItemStack(Material.AIR));
-        }
+        boolean workbench = ProtectionConfig.isWorkbenchCraftAllowed();
+        boolean crafter = ProtectionConfig.isCrafterCraftAllowed();
+        boolean isCrafterInv = e.getInventory() instanceof org.bukkit.inventory.CrafterInventory;
+
+        if (workbench && crafter) return; // оба разрешены
+        if (crafter && isCrafterInv) return; // crafter: разрешаем
+        if (!crafter && !isCrafterInv) return; // workbench: разрешаем
+        // Во всех остальных комбинациях — блокируем крафт
+        e.getInventory().setResult(new ItemStack(Material.AIR));
     }
 
     // =========================
@@ -179,24 +172,33 @@ public class ProtectionItem implements Listener {
     }
 
     // =========================
-    // Защита от перетаскивания предмета в инвентарь (нельзя своровать)
+    // Защита от перетаскивания предмета в инвентарь (нельзя своровать).
+    // <p>
+    // Блокируем ЛЮБОЕ действие, которое перемещает Protection Item
+    // в инвентарь, холдер которого НЕ является самим игроком (т.е. в сундуки,
+    // в GUI других плагинов и т.п.). Это касается:
+    //   - shift-click (было уже)
+    //   - number-key swap (1..9) — было разрешено, чинили
+    //   - прямой click курсором в слот верхнего инвентаря — было разрешено, чинили
+    //   - hotbar-key drop в верхний инвентарь
+    // <p>
+    // LOWEST приоритет: блокируем раньше других плагинов, чтобы они не успели
+    // переместить предмет до нас.
     // =========================
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent e) {
-        if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player)) return;
+        if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player player)) return;
         ItemStack cursor = e.getCursor();
         ItemStack current = e.getCurrentItem();
-        if (isProtectionItem(cursor) || isProtectionItem(current)) {
-            // Разрешаем только определённые слоты (броска в воздух, перемещение внутри
-            // собственного инвентаря для использования). Блокируем:
-            //   - click в верхний инвентарь (сундуки, GUI)
-            //   - shift-click в верхний инвентарь
-            if (e.getClick().isShiftClick()) {
-                ItemStack clicked = e.getCurrentItem();
-                if (isProtectionItem(clicked) && e.getInventory().getHolder() != e.getWhoClicked()) {
-                    e.setCancelled(true);
-                }
-            }
-        }
+        boolean cursorIsProtection = isProtectionItem(cursor);
+        boolean currentIsProtection = isProtectionItem(current);
+        if (!cursorIsProtection && !currentIsProtection) return;
+
+        // Если верхний инвентарь — собственный инвентарь игрока, разрешаем.
+        if (e.getInventory().getHolder() == player) return;
+
+        // Любая попытка поместить/обменять предмет в верхний инвентарь (не игрока) —
+        // блокируем. Это покрывает shift-click, number-key, drag, прямой клик и swap.
+        e.setCancelled(true);
     }
 }

@@ -22,6 +22,7 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -154,10 +155,9 @@ public class ProtectionListener implements Listener {
                 e.setCancelled(true);
                 return;
             }
-            // Сохраняем данные перед удалением (на всякий случай)
-            manager.saveBlockState(pb);
-            manager.saveWhitelistToDb(pb);
-            // Дальше удаление сделает HIGHEST monitor или логика блок уберётся сама; очищаем кэш
+            // Раньше тут был saveBlockState + saveWhitelistToDb + сразу же unregisterBlock,
+            // который делал DELETE — три бесполезных DB-write на каждый снятый блок.
+            // Порядок: сначала unregister (удаление из БД), потом optional confirm-сообщение.
             manager.unregisterBlock(pb.getId(), true);
             if (p != null) {
                 p.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
@@ -282,5 +282,15 @@ public class ProtectionListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkLoad(ChunkLoadEvent e) {
         manager.onChunkLoad(e.getChunk().getX(), e.getChunk().getZ(), e.getWorld());
+    }
+
+    /**
+     * Мир загружен — регистрируем все отложенные блоки защиты, которые
+     * ждали этого мира на старте плагина (см. ProtectionManager.pendingByWorld).
+     * Без этого блоки в кастомных Multiverse-мирах молча терялись.
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onWorldLoad(WorldLoadEvent e) {
+        manager.onWorldLoad(e.getWorld());
     }
 }

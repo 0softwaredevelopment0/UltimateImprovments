@@ -102,8 +102,14 @@ public class ProtectionDatabase {
 
     // =========================
     // SAVE WHITELIST (replace all entries for block)
+    // <p>
+    // Возвращает true при успешной записи; onSuccess/onFailure вызываются для
+    // обновления dirty-set в ProtectionManager (retry при ошибке БД).
     // =========================
-    public static synchronized void saveWhitelist(ProtectionBlock block) {
+    public static synchronized boolean saveWhitelist(
+            ProtectionBlock block,
+            java.util.function.Consumer<UUID> onSuccess,
+            java.util.function.Consumer<UUID> onFailure) {
         try (Connection con = DatabaseManager.getConnection()) {
             // Delete existing
             try (PreparedStatement del = con.prepareStatement(
@@ -121,9 +127,18 @@ public class ProtectionDatabase {
                 }
                 ins.executeBatch();
             }
+            if (onSuccess != null) onSuccess.accept(block.getId());
+            return true;
         } catch (Exception e) {
             ConsoleLogger.error("[ProtectionBlock] Whitelist save failed: " + e.getMessage());
+            if (onFailure != null) onFailure.accept(block.getId());
+            return false;
         }
+    }
+
+    /** Backward-compat overload — старая сигнатура без колбэков. */
+    public static synchronized void saveWhitelist(ProtectionBlock block) {
+        saveWhitelist(block, null, null);
     }
 
     // =========================

@@ -26,6 +26,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * GUI «Блока защиты» (chest-sized, custom title).
@@ -179,8 +180,13 @@ public final class ProtectionGUI {
 
     // =========================
     // ADD PLAYER FORM (chat input)
+    // <p>
+    // Map is ConcurrentHashMap because it is read/written from the
+    // netty thread (AsyncPlayerChatEvent) AND from the main thread
+    // (openAddPlayerMenu / cancelAwaiting) — HashMap would race and
+    // throw ConcurrentModificationException under load.
     // =========================
-    private static final Map<UUID, ProtectionBlock> awaitingPlayerName = new HashMap<>();
+    private static final Map<UUID, ProtectionBlock> awaitingPlayerName = new ConcurrentHashMap<>();
 
     public static void openAddPlayerMenu(Player player, ProtectionBlock block) {
         awaitingPlayerName.put(player.getUniqueId(), block);
@@ -192,11 +198,20 @@ public final class ProtectionGUI {
         player.sendMessage("");
     }
 
-    public static boolean consumeAwaitingPlayerName(Player player) {
-        ProtectionBlock b = awaitingPlayerName.remove(player.getUniqueId());
-        return b != null;
+    /**
+     * Атомарно достаёт и удаляет ожидающий блок. Раньше разделяли на
+     * {@code consumeAwaitingPlayerName} (remove) и {@code getAwaitingBlock} (read) —
+     * но consume удалял запись ДО чтения, из-за чего getAwaitingBlock всегда
+     * возвращал null и whitelist-add через GUI был полностью сломан.
+     * Теперь этот метод возвращает блок (или null, если игрок не в режиме ожидания).
+     */
+    public static ProtectionBlock consumeAwaitingPlayerName(Player player) {
+        return awaitingPlayerName.remove(player.getUniqueId());
     }
 
+    /** @deprecated используйте {@link #consumeAwaitingPlayerName(Player)} — этот метод
+     *  оставлен только для совместимости и всегда возвращает null после consume. */
+    @Deprecated
     public static ProtectionBlock getAwaitingBlock(Player player) {
         return awaitingPlayerName.get(player.getUniqueId());
     }

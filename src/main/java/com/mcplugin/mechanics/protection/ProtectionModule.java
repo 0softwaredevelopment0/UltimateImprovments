@@ -64,26 +64,29 @@ public class ProtectionModule extends PluginModule {
         public void onChat(AsyncPlayerChatEvent e) {
             Player player = e.getPlayer();
             UUID pid = player.getUniqueId();
-            if (!ProtectionGUI.consumeAwaitingPlayerName(player)) return;
+            // consume теперь возвращает блок (раньше разделялся на consume+getAwaitingBlock,
+            // из-за чего getAwaitingBlock всегда возвращал null и фича была сломана).
+            ProtectionBlock block = ProtectionGUI.consumeAwaitingPlayerName(player);
+            if (block == null) return;
 
             // Игрок в режиме ожидания → захватываем сообщение
             e.setCancelled(true);
             String msg = e.getMessage().trim();
-            ProtectionBlock block = ProtectionGUI.getAwaitingBlock(player);
-            // Если вернулся null (racy consume), просто пропускаем
-            if (block == null) return;
             if (msg.equalsIgnoreCase("cancel")) {
                 player.sendMessage(MessageUtil.parse(
                         "<yellow>Добавление игрока отменено.</yellow>"));
                 ProtectionGUI.openWhitelistMenu(player, block);
                 return;
             }
-            // Ищем игрока в БД или в оффлайн
-            @SuppressWarnings("deprecation")
-            org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(msg);
+            // Сначала ищем онлайн (дешёвый lookup), потом — в кеше оффлайн-игроков.
+            // НЕ используем депрекейтнутый Bukkit.getOfflinePlayer(name) — он может
+            // блокировать netty thread на веб-lookup для незнакомых имён.
+            org.bukkit.OfflinePlayer target = Bukkit.getPlayerExact(msg);
+            if (target == null) target = Bukkit.getOfflinePlayerIfCached(msg);
             if (target == null || (target.getName() == null && !target.hasPlayedBefore())) {
                 player.sendMessage(MessageUtil.parse(
-                        "<red>Игрок не найден: </red><white>" + msg + "</white>"));
+                        "<red>Игрок не найден: </red><white>" + msg + "</white>"
+                                + "<gray> (должен быть онлайн или заходить на сервер раньше)</gray>"));
                 ProtectionGUI.openWhitelistMenu(player, block);
                 return;
             }

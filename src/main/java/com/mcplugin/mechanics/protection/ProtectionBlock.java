@@ -3,9 +3,9 @@ package com.mcplugin.mechanics.protection;
 import org.bukkit.Location;
 import org.bukkit.World;
 
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Данные одного размещённого «Блока защиты».
@@ -41,8 +41,12 @@ public class ProtectionBlock {
     private int radiusUpgradeCount;
     private int repairCount;
 
-    /** Whitelist: UUID игроков, имеющих право взаимодействовать с территорией и открывать GUI. */
-    private final Set<UUID> whitelist = new LinkedHashSet<>();
+    /** Whitelist: UUID игроков, имеющих право взаимодействовать с территорией и открывать GUI.
+     *  {@link CopyOnWriteArraySet} — потому что этот список читается с async-потоков
+     *  (dirty-retry таск ProtectionManager.saveWhitelist итерирует его на ретрае)
+     *  и пишется с main-потоков (addToWhitelist из GUI/команды). Обычный LinkedHashSet
+     *  даёт ConcurrentModificationException при таком паттерне. */
+    private final Set<UUID> whitelist = new CopyOnWriteArraySet<>();
 
     public ProtectionBlock(UUID id, Location loc, UUID owner, int radius, double integrity, int points, boolean enabled) {
         if (id == null) throw new IllegalArgumentException("id cannot be null");
@@ -111,31 +115,33 @@ public class ProtectionBlock {
     /**
      * Текущая стоимость в очках за следующее улучшение радиуса.
      * Стоимость = baseCost × 2^(radiusUpgradeCount), clamped.
+     * <p>
+     * O(1) через побитовый сдвиг в long, со сдвигом не более 30 бит,
+     * чтобы избежать переполнения даже при больших baseCost.
      */
     public int getRadiusUpgradeCost() {
         int baseCost = ProtectionConfig.getRadiusUpgradeBaseCost();
         if (baseCost <= 0) return Integer.MAX_VALUE;
-        long cost = baseCost;
-        for (int i = 0; i < radiusUpgradeCount && cost < Integer.MAX_VALUE; i++) {
-            cost <<= 1;
-            if (cost < 0) { cost = Integer.MAX_VALUE; break; }
-        }
-        return (int) Math.min(cost, Integer.MAX_VALUE);
+        int n = Math.min(radiusUpgradeCount, 30);
+        long cost = ((long) baseCost) << n;
+        if (cost < 0 || cost > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        return (int) cost;
     }
 
     /**
      * Текущая стоимость в очках за следующий ремонт целостности.
      * Стоимость = baseCost × 2^(repairCount), clamped.
+     * <p>
+     * O(1) через побитовый сдвиг в long, со сдвигом не более 30 бит,
+     * чтобы избежать переполнения даже при больших baseCost.
      */
     public int getRepairCost() {
         int baseCost = ProtectionConfig.getRepairBaseCost();
         if (baseCost <= 0) return Integer.MAX_VALUE;
-        long cost = baseCost;
-        for (int i = 0; i < repairCount && cost < Integer.MAX_VALUE; i++) {
-            cost <<= 1;
-            if (cost < 0) { cost = Integer.MAX_VALUE; break; }
-        }
-        return (int) Math.min(cost, Integer.MAX_VALUE);
+        int n = Math.min(repairCount, 30);
+        long cost = ((long) baseCost) << n;
+        if (cost < 0 || cost > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+        return (int) cost;
     }
 
     /** True если блок имеет целостность > 0 и enabled. */
