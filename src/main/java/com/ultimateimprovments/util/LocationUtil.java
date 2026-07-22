@@ -52,11 +52,7 @@ public class LocationUtil {
             return null;
         }
 
-        // Если уже нормализован — возвращаем как есть (экономия GC)
-        if (loc.getX() == loc.getBlockX() && loc.getY() == loc.getBlockY() && loc.getZ() == loc.getBlockZ()) {
-            return loc;
-        }
-
+        // Всегда создаём новый Location, чтобы избежать мутации оригинала
         return new Location(
                 loc.getWorld(),
                 loc.getBlockX(),

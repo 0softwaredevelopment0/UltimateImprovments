@@ -91,7 +91,7 @@ public class BlockBreakListener implements Listener {
         // =========================
         // 💡 LIGHT MULTIBLOCK (hot shrink + orphaned marker cleanup)
         // =========================
-        if (e.getBlock().getType() == Material.REDSTONE_LAMP) {
+        if (e.getBlock().getType() == Materials.WAXED_COPPER_BULB) {
             if (LightManager.isActive(loc)) {
                 LightManager.onBlockBroken(loc, breaker);
             } else if (StructureMarker.existsAt(loc)) {

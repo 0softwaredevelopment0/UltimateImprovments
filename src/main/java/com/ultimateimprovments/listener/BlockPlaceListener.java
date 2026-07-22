@@ -9,6 +9,7 @@ import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.energy.transfer.cable.NodeType;
 
+import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.Materials;
 
@@ -20,6 +21,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+
+import java.util.UUID;
 
 public class BlockPlaceListener implements Listener {
 
@@ -48,21 +51,30 @@ public class BlockPlaceListener implements Listener {
         }
 
         // =========================
-        // 🔋 BATTERY MULTIBLOCK (hot expand)
+        // 🔋 BATTERY MULTIBLOCK (hot expand) — НЕ пропускаем через CableNetwork.addNode()
+        // ensureNode уже вызывает autoConnectNode внутри себя
         // =========================
         if (type == Materials.WAXED_COPPER_GRATE) {
             BatteryManager.onBlockPlaced(loc);
+            // Если BatteryManager не добавил узел (изолированный блок) — создаём сами
+            if (!CableNetwork.exists(loc)) {
+                CableNetwork.ensureNode(loc, NodeType.BATTERY);
+                // Создаём Marker с типом "battery", а не "cable"
+                StructureMarker.place(loc, "battery", UUID.randomUUID());
+            }
+            return; // Не идём в CableNetwork.addNode — он создал бы Marker "cable"
         }
 
         // =========================
-        // 💡 LIGHT MULTIBLOCK (hot expand)
+        // 💡 LIGHT MULTIBLOCK (hot expand) — WAXED_COPPER_BULB, а не REDSTONE_LAMP!
         // =========================
-        if (type == Material.REDSTONE_LAMP) {
+        if (type == Materials.WAXED_COPPER_BULB) {
             LightManager.onBlockPlaced(loc);
+            return; // Light не является кабелем
         }
 
         // =========================
-        // ⚡ CABLE / BATTERY
+        // ⚡ CABLE (WAXED_LIGHTNING_ROD / WAXED_CHISELED_COPPER)
         // =========================
         if (!CableBlock.isCable(e.getBlock())) {
             return;
@@ -81,29 +93,12 @@ public class BlockPlaceListener implements Listener {
         // =========================
         // NODE TYPE
         // =========================
-        if (type == Materials.WAXED_COPPER_GRATE) {
-
-            node.setType(NodeType.BATTERY);
-
-        } else {
-
-            node.setType(NodeType.CABLE);
-        }
-
-        // =========================
-        // SQLITE SAVE
-        // =========================
-        CableNetwork.saveNode(node);
+        node.setType(NodeType.CABLE);
 
         // =========================
         // AUTO CONNECT
         // =========================
         autoConnect(loc, node);
-
-        // =========================
-        // SAVE AFTER CONNECTIONS
-        // =========================
-        CableNetwork.saveNode(node);
     }
 
     // =========================
@@ -152,12 +147,6 @@ public class BlockPlaceListener implements Listener {
             node.connect(norm);
 
             neighbor.connect(loc);
-
-            // =========================
-            // SQLITE SAVE
-            // =========================
-            CableNetwork.saveNode(node);
-            CableNetwork.saveNode(neighbor);
         }
     }
 }

@@ -2,6 +2,7 @@ package com.ultimateimprovments.energy.generation.basic;
 
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
+import org.bukkit.block.TileState;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
@@ -91,7 +92,8 @@ public class GeneratorManager implements Listener {
     // =========================
     // SCAN EXISTING — rebuild from Marker entities
     // =========================
-    private static void scanExistingGenerators() {
+    public static void scanExistingGenerators() {
+        activeGenerators.clear();
         int count = 0;
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             if (!"generator".equals(entry.getValue().type())) continue;
@@ -105,6 +107,10 @@ public class GeneratorManager implements Listener {
                 Location furnaceLoc = LocationUtil.normalize(new Location(world, x, y, z));
                 if (furnaceLoc == null) continue;
                 if (furnaceLoc.getBlock().getType() != Materials.BLAST_FURNACE) continue;
+                // Проверяем PDC — убеждаемся, что это именно генератор, а не обычная печь
+                org.bukkit.block.BlockState state = furnaceLoc.getBlock().getState();
+                if (!(state instanceof TileState tileState)) continue;
+                if (!tileState.getPersistentDataContainer().has(Keys.GENERATOR, PersistentDataType.BYTE)) continue;
                 if (hasNearbyCable(furnaceLoc)) {
                     activeGenerators.put(furnaceLoc, true);
                     count++;

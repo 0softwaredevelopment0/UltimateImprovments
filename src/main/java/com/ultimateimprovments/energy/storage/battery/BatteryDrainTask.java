@@ -54,11 +54,15 @@ public class BatteryDrainTask extends BukkitRunnable {
 
                 // BFS to find other batteries - using connection keys for efficiency
                 Set<Long> visited = new HashSet<>();
+                // Parent tracking: nodeKey -> parentKey (для реконструкции пути)
+                Map<Long, Long> parent = new HashMap<>();
                 Queue<CableNode> queue = new LinkedList<>();
                 queue.add(battery);
                 visited.add(battery.getKey());
+                parent.put(battery.getKey(), -1L); // корень
 
                 int remaining = dynamicDischarge;
+                CableNode targetBattery = null;
 
                 while (!queue.isEmpty() && remaining > 0) {
                     CableNode node = queue.poll();
@@ -76,14 +80,7 @@ public class BatteryDrainTask extends BukkitRunnable {
                                 battery.removeEnergy(transfer);
                                 node.addEnergy(transfer);
                                 remaining -= transfer;
-
-                                // Track transfer on cable nodes in the path
-                                for (var entry : visited) {
-                                    CableNode pathNode = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), entry);
-                                    if (pathNode != null && pathNode.getType() == NodeType.CABLE) {
-                                        pathNode.addTransferred(transfer);
-                                    }
-                                }
+                                targetBattery = node;
 
                                 if (log) {
                                     ConsoleLogger.info(
@@ -101,7 +98,27 @@ public class BatteryDrainTask extends BukkitRunnable {
                         CableNode next = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), connKey);
                         if (next != null) {
                             visited.add(connKey);
+                            parent.put(connKey, node.getKey());
                             queue.add(next);
+                        }
+                    }
+                }
+
+                // Track transfer only on the actual BFS path (not all visited nodes)
+                if (targetBattery != null) {
+                    String worldUid = battery.getWorld().getUID().toString();
+                    long current = targetBattery.getKey();
+                    Set<Long> pathKeys = new HashSet<>();
+                    while (parent.containsKey(current) && current != battery.getKey()) {
+                        long p = parent.get(current);
+                        if (p == battery.getKey()) break; // сосед батареи — разрыв
+                        if (p != -1L) pathKeys.add(p);
+                        current = p;
+                    }
+                    for (long pk : pathKeys) {
+                        CableNode pn = CableNetwork.getNodeByKey(worldUid, pk);
+                        if (pn != null && pn.getType() == NodeType.CABLE) {
+                            pn.addTransferred(dynamicDischarge - remaining);
                         }
                     }
                 }

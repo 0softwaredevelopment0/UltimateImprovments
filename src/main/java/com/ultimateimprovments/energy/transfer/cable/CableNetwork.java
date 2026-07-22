@@ -7,6 +7,7 @@ import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +49,8 @@ public class CableNetwork {
             }
             if (world == null) continue;
             if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
-            if (world.getBlockAt(x, y, z).getType() == Material.AIR) continue;
+            Block block = world.getBlockAt(x, y, z);
+            if (!CableBlock.isCable(block)) continue;
 
             long key = LocationUtil.toKey(x, y, z);
             Map<Long, CableNode> worldNodes = nodesByWorld.computeIfAbsent(worldUid, k -> new ConcurrentHashMap<>());
