@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender;
 /**
  * /mp meteor spawn <count> — форсированный спавн метеоров.
  * <p>
- * Требует permission: mcplugin.command.meteor.spawn
+ * Требует permission: ui.command.meteor.spawn
  * Модуль должен быть включён в config.yml (meteor.enabled: true).
  */
 public final class MeteorSubcommand {
@@ -36,7 +36,7 @@ public final class MeteorSubcommand {
     }
 
     private static boolean handleSpawn(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.meteor.spawn")) {
+        if (!sender.hasPermission("ui.command.meteor.spawn")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to spawn meteors!</red>"));
             return true;
         }

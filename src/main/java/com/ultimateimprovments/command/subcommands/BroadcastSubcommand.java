@@ -48,7 +48,7 @@ public final class BroadcastSubcommand {
             return true;
         }
 
-        if (!sender.hasPermission("mcplugin.command.broadcast")) {
+        if (!sender.hasPermission("ui.command.broadcast")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to broadcast!</red>"));
             return true;
         }

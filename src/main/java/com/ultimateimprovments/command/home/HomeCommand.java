@@ -90,7 +90,7 @@ public final class HomeCommand {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.player_only", "<red>❌ Only players can use this command!</red>")));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.sethome")) {
+        if (!player.hasPermission("ui.command.sethome")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_sethome", "<red>❌ You don't have permission to save home points!</red>")));
             return true;
         }
@@ -142,7 +142,7 @@ public final class HomeCommand {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.player_only", "<red>❌ Only players can use this command!</red>")));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.home")) {
+        if (!player.hasPermission("ui.command.home")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_home", "<red>❌ You don't have permission to view home points!</red>")));
             return true;
         }
@@ -196,7 +196,7 @@ public final class HomeCommand {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.player_only", "<red>❌ Only players can use this command!</red>")));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.delhome")) {
+        if (!player.hasPermission("ui.command.delhome")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_delhome", "<red>❌ You don't have permission to delete home points!</red>")));
             return true;
         }
@@ -228,7 +228,7 @@ public final class HomeCommand {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.player_only", "<red>❌ Only players can use this command!</red>")));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.listhomes")) {
+        if (!player.hasPermission("ui.command.listhomes")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_listhomes", "<red>❌ You don't have permission to view the home list!</red>")));
             return true;
         }
@@ -272,7 +272,7 @@ public final class HomeCommand {
     // OPHOMELS — оператор: список домов игрока
     // ============================================================
     private static boolean executeOpHomeLs(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.ophomels")) {
+        if (!sender.hasPermission("ui.command.ophomels")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_ophomels", "<red>❌ You don't have permission to view other players' homes!</red>")));
             return true;
         }
@@ -320,7 +320,7 @@ public final class HomeCommand {
     // OPDELHOME — оператор: удалить дом игрока
     // ============================================================
     private static boolean executeOpDelHome(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.opdelhome")) {
+        if (!sender.hasPermission("ui.command.opdelhome")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_permission_opdelhome", "<red>❌ You don't have permission to delete other players' homes!</red>")));
             return true;
         }

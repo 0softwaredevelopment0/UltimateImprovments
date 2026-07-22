@@ -443,7 +443,7 @@ public class VoteManager {
                     .replace("%name%", voteName)));
             return true;
         }
-        if (!player.getUniqueId().equals(vote.creator) && !player.hasPermission("mcplugin.command.vote.delete.other")) {
+        if (!player.getUniqueId().equals(vote.creator) && !player.hasPermission("ui.command.vote.delete.other")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.delete.not_creator",
                     "<red>❌ Only the vote creator can delete it!</red>")));
             return true;
@@ -544,7 +544,7 @@ public class VoteManager {
                     .replace("%name%", voteName)));
             return true;
         }
-        if (!player.getUniqueId().equals(oldVote.creator) && !player.hasPermission("mcplugin.command.vote.change.other")) {
+        if (!player.getUniqueId().equals(oldVote.creator) && !player.hasPermission("ui.command.vote.change.other")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.not_creator",
                     "<red>❌ Only the vote creator can do this!</red>")));
             return true;
@@ -927,7 +927,7 @@ public class VoteManager {
         /** Сколько человек онлайн (можно голосовать) */
         public int getDisplayTotal() {
             return (int) Bukkit.getOnlinePlayers().stream()
-                    .filter(p -> !p.hasPermission("mcplugin.command.vote.bypass"))
+                    .filter(p -> !p.hasPermission("ui.command.vote.bypass"))
                     .count();
         }
     }

@@ -34,7 +34,7 @@ public final class ChgOpSubcommand {
     // EXECUTE
     // ════════════════════════════════════════
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.chgop")) {
+        if (!sender.hasPermission("ui.command.chgop")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You don't have permission to manage operator status!</red>"
             ));

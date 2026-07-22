@@ -32,7 +32,7 @@ public class ReactorCommand implements CommandExecutor {
         // =========================
         // PERMISSION CHECK
         // =========================
-        if (!player.hasPermission("mcplugin.command.reactor")) {
+        if (!player.hasPermission("ui.command.reactor")) {
             player.sendMessage("§4❌ §cУ вас нет прав на использование этой команды!");
             return true;
         }

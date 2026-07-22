@@ -17,7 +17,7 @@ public final class ReportsSubcommand {
     private ReportsSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.reports")) {
+        if (!sender.hasPermission("ui.command.reports")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
                     "<red>❌ You don't have permission to use this command!</red>")));
             return true;

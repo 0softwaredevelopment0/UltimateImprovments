@@ -28,7 +28,7 @@ public class VanishListCommand extends Command {
 
     @Override
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
-        boolean canSeeVanished = sender.hasPermission("mcplugin.command.vanish");
+        boolean canSeeVanished = sender.hasPermission("ui.command.vanish");
 
         List<String> names = new ArrayList<>();
         int vanishedCount = 0;

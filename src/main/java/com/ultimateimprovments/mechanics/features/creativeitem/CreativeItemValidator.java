@@ -45,7 +45,7 @@ public class CreativeItemValidator implements Listener {
     private static int maxLoreChars = 1000;
     private static int maxNameChars = 200;
     private static int maxEnchantments = 40;
-    private static String bypassPermission = "mcplugin.creative.bypass";
+    private static String bypassPermission = "ui.creative.bypass";
     private static String denyMessage = "<red>Этот предмет содержит слишком много данных!</red>";
 
     private static final long MESSAGE_COOLDOWN_MS = 2000;
@@ -79,7 +79,7 @@ public class CreativeItemValidator implements Listener {
         maxLoreChars = cfg.getInt("max_lore_chars", 1000);
         maxNameChars = cfg.getInt("max_name_chars", 200);
         maxEnchantments = cfg.getInt("max_enchantments", 40);
-        bypassPermission = cfg.getString("bypass_permission", "mcplugin.creative.bypass");
+        bypassPermission = cfg.getString("bypass_permission", "ui.creative.bypass");
         denyMessage = MessagesManager.getString("features.creativeitem.message",
                 "<red>Этот предмет содержит слишком много данных!</red>");
 

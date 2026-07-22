@@ -12,7 +12,7 @@ public final class ItemSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!"); return true; }
-        if (!player.hasPermission("mcplugin.command.item")) { player.sendMessage("§4❌ §cУ вас нет прав на управление предметами!"); return true; }
+        if (!player.hasPermission("ui.command.item")) { player.sendMessage("§4❌ §cУ вас нет прав на управление предметами!"); return true; }
         if (args.length < 2) { player.sendMessage("§4❌ §cИспользование: §f/mp item int <set|add|list> [значение]"); return true; }
 
         if (args[1].equalsIgnoreCase("int")) {

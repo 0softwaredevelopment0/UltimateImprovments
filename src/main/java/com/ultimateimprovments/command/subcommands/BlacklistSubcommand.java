@@ -27,7 +27,7 @@ public final class BlacklistSubcommand {
     private BlacklistSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.blacklist")) {
+        if (!sender.hasPermission("ui.command.blacklist")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You don't have permission to manage the blacklist!</red>"
             ));

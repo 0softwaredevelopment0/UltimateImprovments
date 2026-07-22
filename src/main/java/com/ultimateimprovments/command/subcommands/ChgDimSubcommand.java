@@ -16,7 +16,7 @@ public final class ChgDimSubcommand {
                             "<dark_red>❌</dark_red> <red>Только игрок может использовать эту команду!</red>")));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.chgdim")) {
+        if (!player.hasPermission("ui.command.chgdim")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.no_permission",
                             "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>")));
             return true;

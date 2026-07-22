@@ -88,7 +88,7 @@ public class ChatManager implements Listener {
         this.enabled = cfg.getBoolean("chat.enabled", false);
         this.playerMiniMessage = cfg.getBoolean("chat.player_minimessage", false);
         this.messagePlaceholders = cfg.getBoolean("chat.message_placeholders", true);
-        this.bypassPermission = cfg.getString("chat.bypass_permission", "mcplugin.chat.custom.bypass");
+        this.bypassPermission = cfg.getString("chat.bypass_permission", "ui.chat.custom.bypass");
 
         // Mode: static | per-group | per-world
         String modeStr = cfg.getString("chat.mode", "static").toLowerCase().replace(" ", "_");

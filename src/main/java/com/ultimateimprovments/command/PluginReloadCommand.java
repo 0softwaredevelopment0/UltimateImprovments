@@ -40,7 +40,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── Авто-обнаружение SubCommand-классов через сканирование JAR ──
         com.ultimateimprovments.core.CommandScanner.autoRegister(registry,
                 com.ultimateimprovments.core.Main.getInstance(),
-                "com/mcplugin/command/subcommands");
+                "com/ultimateimprovments/command/subcommands");
 
         // ── SubCommand-имплементации (новее) ──
         // HelpSubCommand регистрируется через авто-сканер (CommandScanner) — не нужно вручную
@@ -159,7 +159,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }));
         registry.register(LegacySubCommandAdapter.of("forcesuicide", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("mcplugin.command.forcesuicide")) return false;
+            if (!p.hasPermission("ui.command.forcesuicide")) return false;
             if (a.length < 2) return false;
             Player target = Bukkit.getPlayerExact(a[1]);
             if (target == null) return false;
@@ -169,7 +169,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }));
         registry.register(LegacySubCommandAdapter.of("str", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("mcplugin.command.structures")) return false;
+            if (!p.hasPermission("ui.command.structures")) return false;
             StructureSubcommand.execute(p, a);
             return true;
         }));
@@ -250,7 +250,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 tc((s, a) -> EnchantSubcommand.tabComplete(s, a))));
         registry.register(LegacySubCommandAdapter.of("vote", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("mcplugin.command.vote")) return false;
+            if (!p.hasPermission("ui.command.vote")) return false;
             if (a.length < 2) {
                 VoteManager.list(p);
                 return true;
@@ -258,7 +258,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             String vs = a[1].toLowerCase();
             return switch (vs) {
                 case "create" -> {
-                    if (!p.hasPermission("mcplugin.command.vote.create")) yield false;
+                    if (!p.hasPermission("ui.command.vote.create")) yield false;
                     if (a.length < 5) yield false;
                     VoteManager.parseCreate(p, a, 2);
                     yield true;
@@ -269,13 +269,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     yield true;
                 }
                 case "change" -> {
-                    if (!p.hasPermission("mcplugin.command.vote.change")) yield false;
+                    if (!p.hasPermission("ui.command.vote.change")) yield false;
                     if (a.length < 4) yield false;
                     VoteManager.change(p, a[2], a, 3);
                     yield true;
                 }
                 case "stats" -> {
-                    if (!p.hasPermission("mcplugin.command.vote.stats")) yield false;
+                    if (!p.hasPermission("ui.command.vote.stats")) yield false;
                     if (a.length < 3) yield false;
                     VoteManager.view(p, a[2]);
                     yield true;

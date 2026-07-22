@@ -109,7 +109,7 @@ public class ActionManager {
                 + "</red> <gray>(VL: " + String.format("%.1f", vl) + ") — " + message + "</gray>";
 
         Bukkit.getOnlinePlayers().stream()
-                .filter(p -> p.hasPermission("mcplugin.anticheat.notify") || p.isOp())
+                .filter(p -> p.hasPermission("ui.anticheat.notify") || p.isOp())
                 .forEach(p -> p.sendMessage(MessageUtil.parse(msg)));
     }
 

@@ -20,10 +20,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 🛡 ProxyServerListener — проверка права mcplugin.proxy.server на уровне пакетов.
+ * 🛡 ProxyServerListener — проверка права ui.proxy.server на уровне пакетов.
  * <p>
  * Перехватывает входящие {@code PacketPlayInCustomPayload} на канале "BungeeCord"
- * (или других прокси-каналах) и проверяет, есть ли у игрока право mcplugin.proxy.server.
+ * (или других прокси-каналах) и проверяет, есть ли у игрока право ui.proxy.server.
  * <p>
  * Зачем: Velocity/BungeeCord не могут нормально работать с правами на backend-сервере.
  * Этот перехватчик блокирует пакеты прокси (Connect, ConnectOther и т.д.) на уровне
@@ -43,8 +43,8 @@ public class ProxyServerListener implements Listener {
     private static String noPermissionMessage = "<red>❌ You don't have permission to switch servers!</red>";
 
     /** Состояние */
-    private static final String HANDLER_NAME = "mcplugin_proxy_server";
-    private static final String PERMISSION = "mcplugin.proxy.server";
+    private static final String HANDLER_NAME = ":ui_proxy_server";
+    private static final String PERMISSION = "ui.proxy.server";
     private final Map<UUID, Boolean> injected = new ConcurrentHashMap<>();
 
     // =========================

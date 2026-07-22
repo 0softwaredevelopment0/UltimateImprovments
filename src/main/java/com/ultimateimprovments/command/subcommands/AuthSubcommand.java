@@ -170,7 +170,7 @@ public final class AuthSubcommand {
     }
 
     private static boolean handleForceLogin(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.forcelogin")) {
+        if (!sender.hasPermission("ui.command.auth.forcelogin")) {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to force login!</red>"));
             return true;
         }
@@ -187,7 +187,7 @@ public final class AuthSubcommand {
     }
 
     private static boolean handleResetAuth(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.resetauth")) {
+        if (!sender.hasPermission("ui.command.auth.resetauth")) {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to reset authentication!</red>"));
             return true;
         }
@@ -204,7 +204,7 @@ public final class AuthSubcommand {
     }
 
     private static boolean handleDelSession(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.delsession")) {
+        if (!sender.hasPermission("ui.command.auth.delsession")) {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to reset a session!</red>"));
             return true;
         }
@@ -278,7 +278,7 @@ public final class AuthSubcommand {
     }
 
     private static boolean handleChgPass(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.chgpass")) {
+        if (!sender.hasPermission("ui.command.auth.chgpass")) {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to change passwords!</red>"));
             return true;
         }

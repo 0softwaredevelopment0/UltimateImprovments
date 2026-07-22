@@ -44,12 +44,12 @@ public class PacketGuard implements Listener {
     private static boolean log = true;
     private static boolean logInject = false;
     private static String kickMessage = "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>";
-    private static String bypassPermission = "mcplugin.packetguard.bypass";
+    private static String bypassPermission = "ui.packetguard.bypass";
 
     // =========================
     // STATE
     // =========================
-    private static final String HANDLER_NAME = "mcplugin_packet_guard";
+    private static final String HANDLER_NAME = ":ui_packet_guard";
     private final Map<UUID, Boolean> injected = new ConcurrentHashMap<>();
 
     // =========================
@@ -77,7 +77,7 @@ public class PacketGuard implements Listener {
         logInject = cfg.getBoolean("log_inject", false);
         kickMessage = MessagesManager.getString("packet_guard.kick_message",
                 "<dark_red>❌</dark_red> <red>Слишком большой пакет данных!</red>\n<gray>Пожалуйста, перезайдите на сервер.</gray>");
-        bypassPermission = cfg.getString("bypass_permission", "mcplugin.packetguard.bypass");
+        bypassPermission = cfg.getString("bypass_permission", "ui.packetguard.bypass");
     }
 
     public static PacketGuard getInstance() {

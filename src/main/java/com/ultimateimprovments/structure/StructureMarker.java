@@ -25,8 +25,8 @@ import java.util.*;
  */
 public class StructureMarker {
 
-    private static final NamespacedKey TYPE_KEY = new NamespacedKey("mcplugin", "structure_type");
-    private static final NamespacedKey ID_KEY = new NamespacedKey("mcplugin", "structure_id");
+    private static final NamespacedKey TYPE_KEY = new NamespacedKey("ui", "structure_type");
+    private static final NamespacedKey ID_KEY = new NamespacedKey("ui", "structure_id");
 
     // ════════════════════════════════════════
     // CACHE: world_uid:x:y:z → {type, uuid, worldUid}

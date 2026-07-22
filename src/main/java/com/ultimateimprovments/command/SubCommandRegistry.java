@@ -66,7 +66,7 @@ public class SubCommandRegistry {
             return true;
         }
 
-        if (sender instanceof Player p && !p.hasPermission("mcplugin")) {
+        if (sender instanceof Player p && !p.hasPermission("ui")) {
             p.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "general.no_permission",
                     "<red>❌ You don't have permission to use UltimateImprovments commands!</red>")));

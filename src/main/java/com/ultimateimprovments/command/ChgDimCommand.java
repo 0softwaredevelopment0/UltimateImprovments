@@ -70,7 +70,7 @@ public class ChgDimCommand {
                 }
 
                 // Разрешение на конкретный мир
-                if (!player.hasPermission("mcplugin.command.chgdim." + msg)) {
+                if (!player.hasPermission("ui.command.chgdim." + msg)) {
                     player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.no_permission",
                             "<dark_red>❌</dark_red> <red>You do not have permission to teleport to this world!</red>")));
                     return;

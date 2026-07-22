@@ -28,7 +28,7 @@ public final class StructureSubcommand {
     }
 
     private static void handleDfc(Player player, String[] args) {
-        if (!player.hasPermission("mcplugin.command.structures")) {
+        if (!player.hasPermission("ui.command.structures")) {
             player.sendMessage("§4❌ §cУ вас нет прав на управление структурами!");
             return;
         }
@@ -84,7 +84,7 @@ public final class StructureSubcommand {
             player.sendMessage("§8│ §7Позиция: §f" + reactorLoc.getBlockX() + " " + reactorLoc.getBlockY() + " " + reactorLoc.getBlockZ());
             player.sendMessage("§8└────────────────────────────────┘");
         } else if (args[2].equalsIgnoreCase("assemble")) {
-            if (!player.hasPermission("mcplugin.command.structures.dfc")) {
+            if (!player.hasPermission("ui.command.structures.dfc")) {
                 player.sendMessage("§4❌ §cУ вас нет прав на сборку реактора!");
                 return;
             }
@@ -100,7 +100,7 @@ public final class StructureSubcommand {
             return;
         }
         if (args[2].equalsIgnoreCase("stats")) {
-            if (!player.hasPermission("mcplugin.command.structures.magnet")) {
+            if (!player.hasPermission("ui.command.structures.magnet")) {
                 player.sendMessage("§4❌ §cУ вас нет прав на просмотр статистики магнита!");
                 return;
             }
@@ -130,7 +130,7 @@ public final class StructureSubcommand {
             player.sendMessage("§8│ §7Дистанция: §f" + String.format("%.1f", nearestDist) + " м");
             player.sendMessage("§8└────────────────────────────────┘");
         } else if (args[2].equalsIgnoreCase("assemble")) {
-            if (!player.hasPermission("mcplugin.command.structures.magnet")) {
+            if (!player.hasPermission("ui.command.structures.magnet")) {
                 player.sendMessage("§4❌ §cУ вас нет прав на сборку магнита!");
                 return;
             }

@@ -53,9 +53,9 @@ public class UIPlaceholderExpansion extends PlaceholderExpansion {
     }
 
     /**
-     * PAPI вызывает этот метод для каждого {@code %mcplugin_<params>%}.
-     * <p>{@code params} = всё, что после {@code mcplugin_}. Например,
-     * {@code %mcplugin_player_ping%} → onRequest(offline, "player_ping").
+     * PAPI вызывает этот метод для каждого {@code %ui_<params>%}.
+     * <p>{@code params} = всё, что после {@code ui_}. Например,
+     * {@code %ui_player_ping%} → onRequest(offline, "player_ping").
      */
     @Override
     public @Nullable String onRequest(OfflinePlayer offline, @NotNull String params) {

@@ -52,7 +52,7 @@ public class LuckPermsCommandBlocker implements Listener {
             + "<gray>Once granted, malicious actors or accidental misuse can </gray><red>cause irreversible damage</red><gray>.</gray>\n"
             + "\n"
             + "<green>💡 <bold>Strongly recommended:</bold> Grant only the specific permissions needed.</green>\n"
-            + "<gray>   Example: <white>/lp user [name] permission set mcplugin.command.reload true</white></gray>\n"
+            + "<gray>   Example: <white>/lp user [name] permission set ui.command.reload true</white></gray>\n"
             + "\n"
             + "<yellow>⚠ If you are <bold>absolutely sure</bold> you want to modify <bold>*</bold> —</yellow>\n"
             + "<yellow>  <bold>type the same command again</bold> within 15 seconds to confirm.</yellow>\n"

@@ -35,7 +35,7 @@ import java.util.UUID;
  */
 public class ChunkLoaderItemListener implements Listener {
 
-    private static final NamespacedKey CHUNK_LOADER_KEY = new NamespacedKey("mcplugin", "is_chunk_loader");
+    private static final NamespacedKey CHUNK_LOADER_KEY = new NamespacedKey("ui", "is_chunk_loader");
 
     // =========================
     // XP BOTTLE USE

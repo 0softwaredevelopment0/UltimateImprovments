@@ -15,7 +15,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
 /**
- * Скрывает/подменяет brand сервера (Leaf) для игроков без права mcplugin.show.brand.
+ * Скрывает/подменяет brand сервера (Leaf) для игроков без права ui.show.brand.
  * <p>
  * Brand отправляется сервером на этапе конфигурации (до PlayerJoinEvent).
  * Отправляем подмену с задержкой в 1 тик, чтобы пакет пришёл ПОСЛЕ того,
@@ -57,7 +57,7 @@ public class ServerBrandListener implements Listener {
         // =========================
         // PERMISSION CHECK — skip if player can see the real brand
         // =========================
-        if (player.hasPermission("mcplugin.show.brand")) {
+        if (player.hasPermission("ui.show.brand")) {
             return;
         }
 

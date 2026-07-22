@@ -14,7 +14,7 @@ import java.util.List;
  * Subcommand: /mp enchant aoe <level>
  * <p>
  * Применяет AoE зачарование к предмету в руке игрока.
- * Требуется permission: mcplugin.command.enchant
+ * Требуется permission: ui.command.enchant
  */
 public class EnchantSubcommand {
 
@@ -29,7 +29,7 @@ public class EnchantSubcommand {
             return true;
         }
 
-        if (!player.hasPermission("mcplugin.command.enchant")) {
+        if (!player.hasPermission("ui.command.enchant")) {
             player.sendMessage(Component.text("❌ У вас нет прав на использование этой команды!", NamedTextColor.RED));
             return true;
         }

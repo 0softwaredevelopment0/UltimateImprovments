@@ -26,7 +26,7 @@ public final class MaintSubcommand {
     private MaintSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.maintenance")) {
+        if (!sender.hasPermission("ui.command.maintenance")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
                     "<red>❌ You don't have permission to use maintenance commands!</red>")));
             return true;

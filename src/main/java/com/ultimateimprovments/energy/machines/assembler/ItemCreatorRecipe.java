@@ -352,7 +352,7 @@ public class ItemCreatorRecipe {
                 meta.lore(List.of(MessageUtil.parse("<!italic>" + lore)));
             }
             // Используем NamespacedKey для particle_block
-            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("mcplugin", "particle_block");
+            org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("ui", "particle_block");
             meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, blockType);
             item.setItemMeta(meta);
         }
@@ -380,7 +380,7 @@ public class ItemCreatorRecipe {
                     MessageUtil.parse("<!italic><gray>Разрушить — получить предмет обратно</gray>")
             ));
             meta.getPersistentDataContainer().set(
-                    new org.bukkit.NamespacedKey("mcplugin", "is_chunk_loader"),
+                    new org.bukkit.NamespacedKey("ui", "is_chunk_loader"),
                     PersistentDataType.BYTE, (byte) 1);
             item.setItemMeta(meta);
         }
@@ -391,13 +391,13 @@ public class ItemCreatorRecipe {
     public static boolean isParticleBlock(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         var pdc = item.getItemMeta().getPersistentDataContainer();
-        return pdc.has(new org.bukkit.NamespacedKey("mcplugin", "particle_block"), PersistentDataType.STRING);
+        return pdc.has(new org.bukkit.NamespacedKey("ui", "particle_block"), PersistentDataType.STRING);
     }
 
     /** Получает тип particle_block из PDC предмета. */
     public static String getParticleBlockType(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         var pdc = item.getItemMeta().getPersistentDataContainer();
-        return pdc.get(new org.bukkit.NamespacedKey("mcplugin", "particle_block"), PersistentDataType.STRING);
+        return pdc.get(new org.bukkit.NamespacedKey("ui", "particle_block"), PersistentDataType.STRING);
     }
 }

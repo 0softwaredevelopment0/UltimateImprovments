@@ -17,7 +17,7 @@ public class ModeProtectManager implements Listener {
 
     private static boolean enabled = true;
     private static Set<String> protectedWorlds = new HashSet<>();
-    private static String bypassPermission = "mcplugin.gmprotect.bypass";
+    private static String bypassPermission = "ui.gmprotect.bypass";
     private static String message = "<red>Вы не можете сменить режим игры в этом мире!</red>";
 
     public static void init(Main plugin) {
@@ -34,7 +34,7 @@ public class ModeProtectManager implements Listener {
         List<String> worlds = cfg.getStringList("worlds");
         protectedWorlds = new HashSet<>(worlds);
 
-        bypassPermission = cfg.getString("bypass_permission", "mcplugin.gmprotect.bypass");
+        bypassPermission = cfg.getString("bypass_permission", "ui.gmprotect.bypass");
         message = MessagesManager.getString("features.modeprotect.message", "<red>Вы не можете сменить режим игры в этом мире!</red>");
     }
 

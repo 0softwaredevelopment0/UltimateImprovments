@@ -18,7 +18,7 @@ public class CodePaneKeyCommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         // Permission check
-        if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key")) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission", "<red>❌ You don't have permission to manage code panel keys!</red>")));
             return true;
         }
@@ -53,11 +53,11 @@ public class CodePaneKeyCommand {
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.modify_desc", "<gray> Modify a key</gray>")));
         sender.sendMessage("");
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.permissions_header", "<gray>Required permissions:</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_base", "<gray>mcplugin.command.codepane.key — base</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_add", "<gray> mcplugin.command.codepane.key.add — add</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_list", "<gray> mcplugin.command.codepane.key.list — list</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_remove", "<gray> mcplugin.command.codepane.key.remove — remove</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_modify", "<gray> mcplugin.command.codepane.key.modify — modify</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_base", "<gray>ui.command.codepane.key — base</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_add", "<gray> ui.command.codepane.key.add — add</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_list", "<gray> ui.command.codepane.key.list — list</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_remove", "<gray> ui.command.codepane.key.remove — remove</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.perm_modify", "<gray> ui.command.codepane.key.modify — modify</gray>")));
         sender.sendMessage("");
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flags_header", "<gray>Flags:</gray>")));
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_attempts", "<gray> attempts:<N>     — delete key after N successful uses</gray>")));
@@ -80,7 +80,7 @@ public class CodePaneKeyCommand {
     // KEY ADD
     // =========================
     private static void handleAdd(CommandSender sender, String[] args) {
-        if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.add")) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.add")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_add", "<red>❌ You don't have permission to add keys!</red>")));
             return;
         }
@@ -202,7 +202,7 @@ public class CodePaneKeyCommand {
     // KEY LIST
     // =========================
     private static void handleList(CommandSender sender) {
-        if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.list")) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.list")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_list", "<red>❌ You don't have permission to list keys!</red>")));
             return;
         }
@@ -265,7 +265,7 @@ public class CodePaneKeyCommand {
     // KEY REMOVE
     // =========================
     private static void handleRemove(CommandSender sender, String[] args) {
-        if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.remove")) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.remove")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_remove", "<red>❌ You don't have permission to remove keys!</red>")));
             return;
         }
@@ -289,7 +289,7 @@ public class CodePaneKeyCommand {
     // KEY MODIFY
     // =========================
     private static void handleModify(CommandSender sender, String[] args) {
-        if (sender instanceof Player p && !p.hasPermission("mcplugin.command.codepane.key.modify")) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.modify")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_modify", "<red>❌ You don't have permission to modify keys!</red>")));
             return;
         }

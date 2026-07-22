@@ -20,7 +20,7 @@ public final class ReportSubcommand {
             return true;
         }
 
-        if (!player.hasPermission("mcplugin.command.report")) {
+        if (!player.hasPermission("ui.command.report")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
                     "<red>❌ You don't have permission to use this command!</red>")));
             return true;

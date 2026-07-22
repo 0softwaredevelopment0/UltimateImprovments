@@ -22,7 +22,7 @@ public final class ReloadSubcommand {
     private static boolean reloadInProgress = false;
 
     public static boolean execute(CommandSender sender) {
-        if (sender instanceof Player player && !player.hasPermission("mcplugin.command.reload")) {
+        if (sender instanceof Player player && !player.hasPermission("ui.command.reload")) {
             player.sendMessage("§4❌ §cError: §7You don't have permission!");
             return true;
         }

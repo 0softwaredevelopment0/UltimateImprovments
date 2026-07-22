@@ -38,7 +38,7 @@ public final class RtpSubcommand {
     /**
      * /mp rtp [player]
      * <p>
-     * Если аргумент передан и у отправителя есть permission {@code mcplugin.command.rtp.other},
+     * Если аргумент передан и у отправителя есть permission {@code ui.command.rtp.other},
      * телепортирует указанного игрока. Иначе — телепортирует отправителя (если он игрок).
      */
     public static boolean execute(CommandSender sender, String[] args) {
@@ -48,7 +48,7 @@ public final class RtpSubcommand {
 
         if (args.length > 1) {
             // /mp rtp <player>
-            if (!sender.hasPermission("mcplugin.command.rtp.other")) {
+            if (!sender.hasPermission("ui.command.rtp.other")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to teleport other players!</red>"));
                 return true;
             }
@@ -87,7 +87,7 @@ public final class RtpSubcommand {
         UUID uuid = target.getUniqueId();
         long now = System.currentTimeMillis();
         int cooldownSeconds = cfg.getInt("rtp.cooldown_seconds", 60);
-        if (cooldownSeconds > 0 && !sender.hasPermission("mcplugin.command.rtp.bypasscooldown")) {
+        if (cooldownSeconds > 0 && !sender.hasPermission("ui.command.rtp.bypasscooldown")) {
             Long nextUse = cooldowns.get(uuid);
             if (nextUse != null && now < nextUse) {
                 long remaining = (nextUse - now + 999) / 1000;
@@ -117,7 +117,7 @@ public final class RtpSubcommand {
         }
 
         // Устанавливаем кулдаун
-        if (cooldownSeconds > 0 && !sender.hasPermission("mcplugin.command.rtp.bypasscooldown")) {
+        if (cooldownSeconds > 0 && !sender.hasPermission("ui.command.rtp.bypasscooldown")) {
             cooldowns.put(uuid, now + cooldownSeconds * 1000L);
         }
 

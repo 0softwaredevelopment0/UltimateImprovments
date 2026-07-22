@@ -13,11 +13,11 @@ import java.text.DecimalFormat;
  * <p>
  * Плейсхолдеры:
  * <ul>
- *   <li>{@code %mcplugin_money%} — баланс в основной валюте</li>
- *   <li>{@code %mcplugin_money_<currency>%} — баланс в указанной валюте</li>
- *   <li>{@code %mcplugin_money_formatted%} — отформатированный баланс (с названием валюты)</li>
- *   <li>{@code %mcplugin_money_<currency>_formatted%} — отформатированный баланс в указанной валюте</li>
- *   <li>{@code %mcplugin_default_balance%} — дефолтная сумма с которой заходит игрок</li>
+ *   <li>{@code %ui_money%} — баланс в основной валюте</li>
+ *   <li>{@code %ui_money_<currency>%} — баланс в указанной валюте</li>
+ *   <li>{@code %ui_money_formatted%} — отформатированный баланс (с названием валюты)</li>
+ *   <li>{@code %ui_money_<currency>_formatted%} — отформатированный баланс в указанной валюте</li>
+ *   <li>{@code %ui_default_balance%} — дефолтная сумма с которой заходит игрок</li>
  * </ul>
  */
 public class EconomyPlaceholderExpansion extends PlaceholderExpansion {
@@ -32,7 +32,7 @@ public class EconomyPlaceholderExpansion extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getIdentifier() {
-        return "mcplugin";
+        return "ui";
     }
 
     @Override
@@ -61,18 +61,18 @@ public class EconomyPlaceholderExpansion extends PlaceholderExpansion {
 
         String lower = params.toLowerCase();
 
-        // %mcplugin_money%
+        // %ui_money%
         if (lower.equals("money")) {
             return FMT.format(manager.getBalance(player.getUniqueId()));
         }
 
-        // %mcplugin_money_formatted%
+        // %ui_money_formatted%
         if (lower.equals("money_formatted")) {
             double bal = manager.getBalance(player.getUniqueId());
             return FMT.format(bal) + " " + (bal == 1 ? manager.getPrimaryCurrency() : manager.getPrimaryCurrency() + "s");
         }
 
-        // %mcplugin_money_<currency>% и %mcplugin_money_<currency>_formatted%
+        // %ui_money_<currency>% и %ui_money_<currency>_formatted%
         if (lower.startsWith("money_")) {
             String rest = lower.substring(6); // после "money_"
 
@@ -98,7 +98,7 @@ public class EconomyPlaceholderExpansion extends PlaceholderExpansion {
             return FMT.format(bal);
         }
 
-        // %mcplugin_default_balance%
+        // %ui_default_balance%
         if (lower.equals("default_balance")) {
             return FMT.format(manager.getDefaultBalance());
         }

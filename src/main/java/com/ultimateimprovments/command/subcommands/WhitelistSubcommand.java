@@ -27,7 +27,7 @@ public final class WhitelistSubcommand {
     private WhitelistSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.whitelist")) {
+        if (!sender.hasPermission("ui.command.whitelist")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You don't have permission to manage the whitelist!</red>"
             ));

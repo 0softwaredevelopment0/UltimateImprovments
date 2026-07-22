@@ -51,7 +51,7 @@ public final class InvseeCommand {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.invsee")) {
+        if (!player.hasPermission("ui.command.invsee")) {
             player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
             return true;
         }
@@ -80,7 +80,7 @@ public final class InvseeCommand {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.endersee")) {
+        if (!player.hasPermission("ui.command.endersee")) {
             player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
             return true;
         }

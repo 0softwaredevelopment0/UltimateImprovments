@@ -43,7 +43,7 @@ public class ItemKillManager extends BukkitRunnable {
 
             if (warnOperators) {
                 Bukkit.getOnlinePlayers().stream()
-                        .filter(p -> p.hasPermission("mcplugin.admin") || p.isOp())
+                        .filter(p -> p.hasPermission("ui.admin") || p.isOp())
                         .forEach(p -> p.sendMessage(MessageUtil.parse("<dark_red>СЕРВЕР</dark_red> <dark_gray>»</dark_gray> <white>Кол-во предметов: <red>" + itemCount + "</red><white> слишком большое, они будут удалены, для предотвращения лагов!</white></white>")));
             }
 

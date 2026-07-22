@@ -41,7 +41,7 @@ public class PacketHandler implements Listener {
 
     private static PacketHandler instance;
 
-    private static final String HANDLER_NAME = "mcplugin_anticheat_packet";
+    private static final String HANDLER_NAME = ":ui_anticheat_packet";
     private static boolean enabled = true;
     private static boolean logInject = false;
     // Injected players

@@ -118,7 +118,7 @@ public class AuthCommand {
     }
 
     private static void handlePlayerLogin(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.login")) {
+        if (!sender.hasPermission("ui.command.auth.login")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
             return;
         }
@@ -140,7 +140,7 @@ public class AuthCommand {
     }
 
     private static void handlePlayerRegister(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.register")) {
+        if (!sender.hasPermission("ui.command.auth.register")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
             return;
         }
@@ -162,7 +162,7 @@ public class AuthCommand {
     }
 
     private static void handleForceLogin(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.forcelogin")) {
+        if (!sender.hasPermission("ui.command.auth.forcelogin")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "auth.admin.forcelogin_no_permission",
                     "<red>❌ You don't have permission to force log in!</red>")));
@@ -208,7 +208,7 @@ public class AuthCommand {
     }
 
     private static void handleResetAuth(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.resetauth")) {
+        if (!sender.hasPermission("ui.command.auth.resetauth")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "auth.admin.resetauth_no_permission",
                     "<red>❌ You don't have permission to reset authorization!</red>")));
@@ -254,7 +254,7 @@ public class AuthCommand {
     }
 
     private static void handleDelSession(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.delsession")) {
+        if (!sender.hasPermission("ui.command.auth.delsession")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "auth.admin.delsession_no_permission",
                     "<red>❌ You don't have permission to reset sessions!</red>")));
@@ -323,7 +323,7 @@ public class AuthCommand {
     }
 
     private static void handleChgPass(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.auth.chgpass")) {
+        if (!sender.hasPermission("ui.command.auth.chgpass")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "auth.admin.chgpass_no_permission",
                     "<red>❌ You don't have permission to change passwords!</red>")));

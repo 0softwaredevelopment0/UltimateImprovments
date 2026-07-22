@@ -25,7 +25,7 @@ public final class ModuleScanner {
      *
      * @param mm     ModuleManager
      * @param plugin экземпляр плагина
-     * @param scanPackage пакет для сканирования (например "com/mcplugin/module")
+com.ultimateimprovments
      */
     public static void autoRegister(ModuleManager mm, Main plugin, String scanPackage) {
         var jarFile = plugin.getPluginFile();

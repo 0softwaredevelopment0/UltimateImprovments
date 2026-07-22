@@ -316,7 +316,7 @@ public class ChgDimGUI implements Listener {
             return;
         }
 
-        if (!player.hasPermission("mcplugin.command.chgdim." + worldName)) {
+        if (!player.hasPermission("ui.command.chgdim." + worldName)) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.no_permission",
                             "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>")));
             player.closeInventory();

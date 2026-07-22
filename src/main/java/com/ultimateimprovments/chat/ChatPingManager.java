@@ -25,8 +25,8 @@ import java.util.regex.Pattern;
  *   <li>{@code @everyone} — все игроки (кроме отправителя)</li>
  *   <li>{@code @<ник>} — конкретный игрок (по нику)</li>
  *   <li>{@code @non-op} — все игроки без OP</li>
- *   <li>{@code @is-admin} — все с правом mcplugin.admin или mcplugin.*</li>
- *   <li>{@code @is-non-admin} — все без права mcplugin.admin/mcplugin.*</li>
+ *   <li>{@code @is-admin} — все с правом ui.admin или ui.*</li>
+ *   <li>{@code @is-non-admin} — все без права ui.admin/ui.*</li>
  * </ul>
  * <p>
  * Пинги обрабатываются в сообщении после разрешения плейсхолдеров:
@@ -158,7 +158,7 @@ public class ChatPingManager {
             case "is-admin" -> {
                 List<Player> result = new ArrayList<>();
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (!p.equals(sender) && (p.hasPermission("mcplugin.admin") || p.hasPermission("mcplugin.*"))) {
+                    if (!p.equals(sender) && (p.hasPermission("ui.admin") || p.hasPermission("ui.*"))) {
                         result.add(p);
                     }
                 }
@@ -167,7 +167,7 @@ public class ChatPingManager {
             case "is-non-admin" -> {
                 List<Player> result = new ArrayList<>();
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (!p.equals(sender) && !p.hasPermission("mcplugin.admin") && !p.hasPermission("mcplugin.*")) {
+                    if (!p.equals(sender) && !p.hasPermission("ui.admin") && !p.hasPermission("ui.*")) {
                         result.add(p);
                     }
                 }

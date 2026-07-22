@@ -29,7 +29,7 @@ public final class MiscSubcommand {
     // VANISH
     // =========================
     public static boolean vanish(CommandSender sender, String[] args) {
-        if (sender instanceof Player p && !p.hasPermission("mcplugin.command.vanish")) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.vanish")) {
             p.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_no_permission", "<red>❌ You don't have permission to use vanish!</red>"))); return true;
         }
         if (args.length < 2) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_usage", "<red>❌ Usage: </red><white>/mp vanish <nick></white>"))); return true; }
@@ -56,7 +56,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean notes(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.notes_player_only", "<red>❌ Only players can use notes!</red>"))); return true; }
-        if (!player.hasPermission("mcplugin.command.notes")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.notes_no_permission", "<red>❌ You don't have permission to use notes!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.notes")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.notes_no_permission", "<red>❌ You don't have permission to use notes!</red>"))); return true; }
         NotesGUI.openMainGUI(player);
         return true;
     }
@@ -66,7 +66,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleSpeed(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("mcplugin")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
         UUID uuid = player.getUniqueId();
         MinecartSpeedManager.toggleSpeedDisplay(uuid);
         if (MinecartSpeedManager.isSpeedDisplayEnabled(uuid)) {
@@ -97,7 +97,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleRadView(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>")); return true; }
-        if (!player.hasPermission("mcplugin.command.toggleradview")) { player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>")); return true; }
+        if (!player.hasPermission("ui.command.toggleradview")) { player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>")); return true; }
         RadiationManager.toggleRadView(player);
         if (RadiationManager.isRadViewEnabled(player)) {
             player.sendMessage(MessageUtil.parse("<green>☢</green> <white>Radiation display: </white><green>ON</green>"));
@@ -112,7 +112,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleAutoCraft(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("mcplugin.autocraft")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.autocraft")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
         AutoCraftManager.toggleAutoCraft(player);
         return true;
     }
@@ -122,7 +122,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleBossBar(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("mcplugin.command.togglebb")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.togglebb")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
         UUID uuid = player.getUniqueId();
         boolean enabled = PlayerSettingsDB.toggleBossbar(uuid);
         if (enabled) {
@@ -138,7 +138,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean togglePing(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("mcplugin.command.toggleping")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.toggleping")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
         UUID uuid = player.getUniqueId();
         boolean enabled = PlayerSettingsDB.togglePing(uuid);
         if (enabled) {
@@ -154,7 +154,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleScoreboard(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("mcplugin.command.togglesb")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.togglesb")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
         UUID uuid = player.getUniqueId();
         boolean enabled = PlayerSettingsDB.toggleScoreboard(uuid);
         if (enabled) {
@@ -173,7 +173,7 @@ public final class MiscSubcommand {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.togglebind")) {
+        if (!player.hasPermission("ui.command.togglebind")) {
             player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>"));
             return true;
         }
@@ -217,7 +217,7 @@ public final class MiscSubcommand {
         Player target;
         if (args.length >= 3) {
             // Применяем к другому игроку
-            if (!sender.hasPermission("mcplugin.command.fly.other")) {
+            if (!sender.hasPermission("ui.command.fly.other")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle flight for other players!</red>"));
                 return true;
             }
@@ -232,7 +232,7 @@ public final class MiscSubcommand {
                 sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command on themselves!</red>"));
                 return true;
             }
-            if (!player.hasPermission("mcplugin.command.fly")) {
+            if (!player.hasPermission("ui.command.fly")) {
                 player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle flight!</red>"));
                 return true;
             }
@@ -274,7 +274,7 @@ public final class MiscSubcommand {
         Player target;
         if (args.length >= 3) {
             // Применяем к другому игроку
-            if (!sender.hasPermission("mcplugin.command.god.other")) {
+            if (!sender.hasPermission("ui.command.god.other")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle god mode for other players!</red>"));
                 return true;
             }
@@ -289,7 +289,7 @@ public final class MiscSubcommand {
                 sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command on themselves!</red>"));
                 return true;
             }
-            if (!player.hasPermission("mcplugin.command.god")) {
+            if (!player.hasPermission("ui.command.god")) {
                 player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle god mode!</red>"));
                 return true;
             }
@@ -315,7 +315,7 @@ public final class MiscSubcommand {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.unlock")) {
+        if (!player.hasPermission("ui.command.unlock")) {
             player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unlock items!</red>"));
             return true;
         }
@@ -356,7 +356,7 @@ public final class MiscSubcommand {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return true;
         }
-        if (!player.hasPermission("mcplugin.command.unlock")) {
+        if (!player.hasPermission("ui.command.unlock")) {
             player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unlock items!</red>"));
             return true;
         }

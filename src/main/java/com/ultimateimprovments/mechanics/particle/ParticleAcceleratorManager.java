@@ -50,11 +50,11 @@ public class ParticleAcceleratorManager implements Listener {
     // =========================
     // PDC KEYS
     // =========================
-    public static final NamespacedKey PARTICLE_ID_KEY = new NamespacedKey("mcplugin", "particle_id");
+    public static final NamespacedKey PARTICLE_ID_KEY = new NamespacedKey("ui", "particle_id");
     /** PDC key на предмете блока ускорителя — хранит строку типа блока ("particle_ring", "particle_engine" и т.д.). */
-    public static final NamespacedKey PARTICLE_BLOCK_KEY = new NamespacedKey("mcplugin", "particle_block");
+    public static final NamespacedKey PARTICLE_BLOCK_KEY = new NamespacedKey("ui", "particle_block");
     /** PDC key на Marker'е датчика — хранит последнюю скорость частицы. */
-    private static final NamespacedKey SENSOR_LAST_SPEED_KEY = new NamespacedKey("mcplugin", "sensor_last_speed");
+    private static final NamespacedKey SENSOR_LAST_SPEED_KEY = new NamespacedKey("ui", "sensor_last_speed");
 
     // =========================
     // ENGINE CONFIG

@@ -26,7 +26,7 @@ public final class ModReportSubcommand {
             return true;
         }
 
-        if (!player.hasPermission("mcplugin.command.reports")) {
+        if (!player.hasPermission("ui.command.reports")) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
                     "<red>❌ You don't have permission to use this command!</red>")));
             return true;

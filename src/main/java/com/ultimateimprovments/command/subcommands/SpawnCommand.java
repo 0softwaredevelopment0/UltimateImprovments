@@ -53,7 +53,7 @@ public final class SpawnCommand {
     // SETSPAWN
     // ============================================================
     private static boolean executeSetSpawn(Player player, String[] args) {
-        if (!player.hasPermission("mcplugin.command.setspawn")) {
+        if (!player.hasPermission("ui.command.setspawn")) {
             player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to set the spawn point!</red>"));
             return true;
         }
@@ -112,7 +112,7 @@ public final class SpawnCommand {
     // SPAWN
     // ============================================================
     private static void executeSpawn(Player player) {
-        if (!player.hasPermission("mcplugin.command.spawn")) {
+        if (!player.hasPermission("ui.command.spawn")) {
             player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use /mp spawn!</red>"));
             return;
         }

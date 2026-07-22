@@ -34,7 +34,7 @@ public final class HealFeedSubcommand {
             sender.sendMessage(MessageUtil.parse("<red>❌ Heal/Feed commands are disabled in config!</red>"));
             return true;
         }
-        if (!sender.hasPermission("mcplugin.command.heal")) {
+        if (!sender.hasPermission("ui.command.heal")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission to use this command!</red>")));
             return true;
         }
@@ -78,7 +78,7 @@ public final class HealFeedSubcommand {
             sender.sendMessage(MessageUtil.parse("<red>❌ Heal/Feed commands are disabled in config!</red>"));
             return true;
         }
-        if (!sender.hasPermission("mcplugin.command.feed")) {
+        if (!sender.hasPermission("ui.command.feed")) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission to use this command!</red>")));
             return true;
         }

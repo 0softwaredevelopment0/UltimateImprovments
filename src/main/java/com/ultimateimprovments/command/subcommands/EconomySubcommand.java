@@ -18,12 +18,12 @@ import java.util.UUID;
  * /mp money &lt;give|list|remove|set&gt; &lt;player&gt; [currency] [amount]
  * <p>
  * Управление балансом игроков.
- * Требуется пермишен: {@code mcplugin.command.money}.
+ * Требуется пермишен: {@code ui.command.money}.
  */
 public final class EconomySubcommand {
 
     private static final DecimalFormat FMT = new DecimalFormat("#,##0.##");
-    private static final String PERMISSION = "mcplugin.command.money";
+    private static final String PERMISSION = "ui.command.money";
 
     private EconomySubcommand() {}
 

@@ -19,7 +19,7 @@ import java.util.List;
  * AoE (Area of Effect) enchantment — реализация через PDC.
  * <p>
  * Уровень зачарования хранится в PersistentDataContainer предмета
- * по ключу {@code mcplugin:aoe_level}.
+ * по ключу {@code ui:aoe_level}.
  * <p>
  * Макс. уровень: 255<br>
  * Работает на: кирка, лопата, топор, мотыга<br>
@@ -27,7 +27,7 @@ import java.util.List;
  */
 public final class AOEEnchantment {
 
-    /** PDC key: {@code mcplugin:aoe_level} */
+    /** PDC key: {@code ui:aoe_level} */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "aoe_level");
 
     /** Display name prefix, e.g. "AoE V" */

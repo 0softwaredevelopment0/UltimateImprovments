@@ -58,7 +58,7 @@ public final class ModulesSubcommand {
     // BUILD TREE FROM MODULE PATHS (no filesystem dependency)
     // ============================================================
     private static TreeNode buildTree(ModuleManager mm) {
-        TreeNode root = new TreeNode("mcplugin");
+        TreeNode root = new TreeNode("ui");
 
         for (PluginModule m : mm.getModules()) {
             String p = m.getModulePath();
@@ -84,7 +84,7 @@ public final class ModulesSubcommand {
         sender.sendMessage("§6══════════════════════════════════");
         sender.sendMessage("§6  ✦ §fАрхитектура модулей UltimateImprovments");
         sender.sendMessage("§6══════════════════════════════════");
-        sender.sendMessage("§3📁 §fmcplugin/");
+        sender.sendMessage("§3📁 §fui/");
 
         List<Map.Entry<String, TreeNode>> entries = new ArrayList<>(root.children.entrySet());
         // Sort: folders first (no module), then by name

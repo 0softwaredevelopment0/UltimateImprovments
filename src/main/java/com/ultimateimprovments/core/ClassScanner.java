@@ -61,7 +61,7 @@ public final class ClassScanner {
                 // Пропускаем внутренние классы
                 if (name.contains("$")) continue;
 
-                // com/mcplugin/command/subcommands/Example.class → com.ultimateimprovments.command.subcommands.Example
+                // com/ultimateimprovments/command/subcommands/Example.class → com.ultimateimprovments.command.subcommands.Example
                 String className = name.replace('/', '.')
                         .substring(0, name.length() - ".class".length());
 

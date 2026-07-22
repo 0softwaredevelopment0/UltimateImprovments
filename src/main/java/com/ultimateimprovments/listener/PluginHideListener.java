@@ -43,7 +43,7 @@ public class PluginHideListener implements Listener {
                         || message.startsWith("/bukkit:plugins ")
         ) {
 
-            if (!event.getPlayer().hasPermission("mcplugin.command.plugins")) {
+            if (!event.getPlayer().hasPermission("ui.command.plugins")) {
 
                 event.setCancelled(true);
 
@@ -78,7 +78,7 @@ public class PluginHideListener implements Listener {
                         || message.startsWith("/?")
         ) {
 
-            if (!event.getPlayer().hasPermission("mcplugin.command.version")) {
+            if (!event.getPlayer().hasPermission("ui.command.version")) {
 
                 event.setCancelled(true);
 

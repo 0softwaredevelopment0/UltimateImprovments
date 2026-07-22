@@ -34,7 +34,7 @@ public final class PlaceholderRegistry {
         return PlaceholderResolver.getBuiltinNames();
     }
 
-    /** Идентификатор, по которому PAPI Expansion цепляется: {@code mcplugin}. */
+    /** Идентификатор, по которому PAPI Expansion цепляется: {@code ui}. */
     public static String getIdentifier() {
         return PlaceholderResolver.getPapiIdentifier();
     }

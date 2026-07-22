@@ -38,7 +38,7 @@ public class PowerInterceptListener implements Listener {
     }
 
     /**
-     * Позволяет обновить настройки при /mcplugin reload без пересоздания слушателя.
+     * Позволяет обновить настройки при /mp reload без пересоздания слушателя.
      */
     public static void reloadConfigStatic() {
         if (instance != null) {

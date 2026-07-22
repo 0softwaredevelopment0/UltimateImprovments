@@ -23,7 +23,7 @@ public final class ProtectionSubcommand {
     private ProtectionSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.protection")) {
+        if (!sender.hasPermission("ui.command.protection")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to manage protection blocks!</red>"));
             return true;
         }

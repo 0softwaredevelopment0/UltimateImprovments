@@ -30,7 +30,7 @@ import java.util.UUID;
  * </ul>
  * <p>
  * Команда: {@code /mp toggleautocraft}
- * Право: {@code mcplugin.autocraft} (default: op)
+ * Право: {@code ui.autocraft} (default: op)
  */
 public class AutoCraftManager implements Listener {
 

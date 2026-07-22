@@ -291,7 +291,7 @@ public class ChatFilterManager implements Listener {
         Player player = event.getPlayer();
 
         // Skip if player has bypass permission
-        if (player.hasPermission("mcplugin.chat.filter.bypass")) return;
+        if (player.hasPermission("ui.chat.filter.bypass")) return;
 
         String message = event.getMessage();
 

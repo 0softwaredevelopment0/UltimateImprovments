@@ -44,20 +44,20 @@ public final class PunishSubcommand {
     // =========================
 
     /**
-     * Отправляет уведомление о наказании всем онлайн-игрокам с правом {@code mcplugin.punish.notify}.
+     * Отправляет уведомление о наказании всем онлайн-игрокам с правом {@code ui.punish.notify}.
      * Консольное логирование уже есть в {@link PunishmentManager#punish}.
      */
     private static void broadcastToModerators(String message) {
         var parsed = MessageUtil.parse(message);
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.hasPermission("mcplugin.punish.notify")) {
+            if (p.hasPermission("ui.punish.notify")) {
                 p.sendMessage(parsed);
             }
         }
     }
 
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish")) {
+        if (!sender.hasPermission("ui.command.punish")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You don't have permission to use punish commands!</red>"
             ));
@@ -92,7 +92,7 @@ public final class PunishSubcommand {
     // BAN
     // =========================
     private static boolean handleBan(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish.ban")) {
+        if (!sender.hasPermission("ui.command.punish.ban")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to ban!</red>"));
             return true;
         }
@@ -194,7 +194,7 @@ public final class PunishSubcommand {
     // MUTE
     // =========================
     private static boolean handleMute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish.mute")) {
+        if (!sender.hasPermission("ui.command.punish.mute")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to mute!</red>"));
             return true;
         }
@@ -287,7 +287,7 @@ public final class PunishSubcommand {
     // KICK
     // =========================
     private static boolean handleKick(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish.kick")) {
+        if (!sender.hasPermission("ui.command.punish.kick")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to kick!</red>"));
             return true;
         }
@@ -356,7 +356,7 @@ public final class PunishSubcommand {
     // WARN
     // =========================
     private static boolean handleWarn(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish.warn")) {
+        if (!sender.hasPermission("ui.command.punish.warn")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to warn!</red>"));
             return true;
         }
@@ -453,7 +453,7 @@ public final class PunishSubcommand {
                 ));
                 return true;
             }
-            if (!sender.hasPermission("mcplugin.command.punish.listwarns.self")) {
+            if (!sender.hasPermission("ui.command.punish.listwarns.self")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>"));
                 return true;
             }
@@ -465,7 +465,7 @@ public final class PunishSubcommand {
 
         // Проверяем, смотрит ли на себя
         if (sender instanceof Player player && player.getName().equalsIgnoreCase(targetName)) {
-            if (!sender.hasPermission("mcplugin.command.punish.listwarns.self")) {
+            if (!sender.hasPermission("ui.command.punish.listwarns.self")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>"));
                 return true;
             }
@@ -474,7 +474,7 @@ public final class PunishSubcommand {
         }
 
         // Смотрит на другого
-        if (!sender.hasPermission("mcplugin.command.punish.listwarns.other")) {
+        if (!sender.hasPermission("ui.command.punish.listwarns.other")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You don't have permission to view other players' warns!</red>"
             ));
@@ -555,7 +555,7 @@ public final class PunishSubcommand {
     // UNBAN / UNMUTE
     // =========================
     private static boolean handleUnban(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish.ban")) {
+        if (!sender.hasPermission("ui.command.punish.ban")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unban!</red>"));
             return true;
         }
@@ -594,7 +594,7 @@ public final class PunishSubcommand {
     }
 
     private static boolean handleUnmute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish.mute")) {
+        if (!sender.hasPermission("ui.command.punish.mute")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unmute!</red>"));
             return true;
         }
@@ -642,7 +642,7 @@ public final class PunishSubcommand {
     // UNWARN
     // =========================
     private static boolean handleUnwarn(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish.warn")) {
+        if (!sender.hasPermission("ui.command.punish.warn")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unwarn!</red>"));
             return true;
         }
@@ -860,7 +860,7 @@ public final class PunishSubcommand {
     // CRASH
     // =========================
     private static boolean handleCrash(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.punish.crash")) {
+        if (!sender.hasPermission("ui.command.punish.crash")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to crash players!</red>"));
             return true;
         }

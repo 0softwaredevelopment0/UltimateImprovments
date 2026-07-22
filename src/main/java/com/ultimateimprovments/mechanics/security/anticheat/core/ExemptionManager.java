@@ -56,7 +56,7 @@ public class ExemptionManager {
         if (gm == GameMode.CREATIVE || gm == GameMode.SPECTATOR) return true;
 
         // Permission bypass
-        if (player.hasPermission("mcplugin.anticheat.bypass")) return true;
+        if (player.hasPermission("ui.anticheat.bypass")) return true;
 
         // Being checked by CheckManager
         if (com.ultimateimprovments.mechanics.security.check.CheckManager.isBeingChecked(player)) return true;
@@ -108,7 +108,7 @@ public class ExemptionManager {
             case "FastBreak", "FastPlace", "Nuker":
                 return player.getGameMode() == GameMode.CREATIVE;
             case "XRay":
-                return player.hasPermission("mcplugin.admin");
+                return player.hasPermission("ui.admin");
             default:
                 return false;
         }

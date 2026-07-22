@@ -15,7 +15,7 @@ public final class RadiationSubcommand {
         String sub = args[0].toLowerCase(Locale.ROOT);
 
         if (sub.equals("setrad")) {
-            if (sender instanceof Player p && !p.hasPermission("mcplugin.command.setrad")) {
+            if (sender instanceof Player p && !p.hasPermission("ui.command.setrad")) {
                 p.sendMessage("§4❌ §cУ вас нет прав на изменение радиации!"); return true;
             }
             if (args.length < 3) { sender.sendMessage("§4❌ §cИспользование: §f/mp setrad §7<ник> <значение>"); return true; }

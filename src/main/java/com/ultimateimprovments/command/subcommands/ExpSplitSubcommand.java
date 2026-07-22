@@ -14,7 +14,7 @@ import java.util.List;
 
 public final class ExpSplitSubcommand {
 
-    private static final NamespacedKey EXP_SPLIT_KEY = new NamespacedKey("mcplugin", "exp_split_amount");
+    private static final NamespacedKey EXP_SPLIT_KEY = new NamespacedKey("ui", "exp_split_amount");
 
     private ExpSplitSubcommand() {}
 

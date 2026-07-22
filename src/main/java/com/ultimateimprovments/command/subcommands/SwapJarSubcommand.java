@@ -32,11 +32,11 @@ import java.util.zip.ZipFile;
  * Hotswap JAR файла плагина: новый JAR копируется поверх текущего,
  * плагин выгружается, загружается новая версия и включается.
  * <p>
- * Требуется пермишен: {@code mcplugin.command.swapjar}.
+ * Требуется пермишен: {@code ui.command.swapjar}.
  */
 public final class SwapJarSubcommand {
 
-    private static final String PERMISSION = "mcplugin.command.swapjar";
+    private static final String PERMISSION = "ui.command.swapjar";
     private static final UUID CONSOLE_UUID = new UUID(0, 0);
     private static final Map<UUID, PendingSwap> pendingSwaps = new ConcurrentHashMap<>();
 

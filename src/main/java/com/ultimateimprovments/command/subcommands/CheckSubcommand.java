@@ -21,7 +21,7 @@ public final class CheckSubcommand {
             return true;
         }
 
-        if (!inspector.hasPermission("mcplugin.command.check")) {
+        if (!inspector.hasPermission("ui.command.check")) {
             inspector.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
                     "<red>❌ You don't have permission to use this command!</red>")));
             return true;
@@ -60,7 +60,7 @@ public final class CheckSubcommand {
             return true;
         }
 
-        if (!inspector.hasPermission("mcplugin.command.check")) {
+        if (!inspector.hasPermission("ui.command.check")) {
             inspector.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
                     "<red>❌ You don't have permission to use this command!</red>")));
             return true;

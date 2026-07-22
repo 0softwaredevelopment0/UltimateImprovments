@@ -409,7 +409,7 @@ public class VanishManager implements Listener {
         if (vanishedPlayers.isEmpty()) return;
 
         // Only filter if the sender doesn't have vanish permission
-        if (event.getSender().hasPermission("mcplugin.command.vanish")) return;
+        if (event.getSender().hasPermission("ui.command.vanish")) return;
 
         // Pre-compute set of vanished player names (lowercased) — O(1) lookup per completion
         Set<String> vanishedNames = new HashSet<>();
@@ -445,7 +445,7 @@ public class VanishManager implements Listener {
         if (!message.equals("/minecraft:list") && !message.startsWith("/minecraft:list ")) return;
 
         Player sender = event.getPlayer();
-        boolean canSeeVanished = sender.hasPermission("mcplugin.command.vanish");
+        boolean canSeeVanished = sender.hasPermission("ui.command.vanish");
 
         List<String> visibleNames = new ArrayList<>();
         int vanishedCount = 0;

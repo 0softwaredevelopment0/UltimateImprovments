@@ -26,14 +26,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code /mp plugin cancel} — отменить ожидающее действие</li>
  * </ul>
  * <p>
- * Требуется пермишен: {@code mcplugin.command.plugin}.
+ * Требуется пермишен: {@code ui.command.plugin}.
  */
 public final class PluginSubcommand {
 
     private PluginSubcommand() {}
 
     /** Permission required to use this command. */
-    private static final String PERMISSION = "mcplugin.command.plugin";
+    private static final String PERMISSION = "ui.command.plugin";
 
     /** Pending actions keyed by player UUID. Console uses a sentinel UUID. */
     private static final UUID CONSOLE_UUID = new UUID(0, 0);

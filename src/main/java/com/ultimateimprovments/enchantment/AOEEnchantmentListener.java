@@ -78,7 +78,7 @@ public class AOEEnchantmentListener implements Listener {
 
             // Check if player can build here (basic permission check)
             // Note: full WorldGuard/GriefPrevention integration would need external hooks
-            if (!player.hasPermission("mcplugin.enchant.aoe.bypass")) {
+            if (!player.hasPermission("ui.enchant.aoe.bypass")) {
                 if (!loc.getBlock().isPreferredTool(tool)) continue;
             }
 

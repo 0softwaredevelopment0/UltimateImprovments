@@ -25,7 +25,7 @@ public final class OpWhitelistSubcommand {
     private OpWhitelistSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("mcplugin.command.opwhitelist")) {
+        if (!sender.hasPermission("ui.command.opwhitelist")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You don't have permission to use the OP whitelist!</red>"
             ));

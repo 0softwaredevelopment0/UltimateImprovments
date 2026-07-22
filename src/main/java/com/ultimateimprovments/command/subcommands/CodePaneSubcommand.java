@@ -15,14 +15,14 @@ public final class CodePaneSubcommand {
             return CodePaneKeyCommand.execute(sender, args);
         }
         if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может открыть кодовую панель."); return true; }
-        if (!player.hasPermission("mcplugin.command.codepane")) { player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!"); return true; }
+        if (!player.hasPermission("ui.command.codepane")) { player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!"); return true; }
         return CodePanelCommand.handleCommand(player);
     }
 
     // pane_click is handled separately
     public static boolean paneClick(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду."); return true; }
-        if (!player.hasPermission("mcplugin.command.codepane")) { player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!"); return true; }
+        if (!player.hasPermission("ui.command.codepane")) { player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!"); return true; }
         if (args.length < 2) return true;
         return CodePanelClick.handleClick(player, args[1]);
     }

@@ -115,6 +115,6 @@ public final class ServiceFacade {
      * Проверяет, есть ли у игрока базовое право на команды плагина.
      */
     public static boolean canUseCommands(Player player) {
-        return player.hasPermission("mcplugin");
+        return player.hasPermission("ui");
     }
 }

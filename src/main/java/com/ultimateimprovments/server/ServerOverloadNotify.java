@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 
 public final class ServerOverloadNotify {
 
-    public static final String PERMISSION = "mcplugin.overload.logs";
+    public static final String PERMISSION = "ui.overload.logs";
 
     private static long cooldownMs = 30_000L;
     private static long lastBroadcastTime = 0;
