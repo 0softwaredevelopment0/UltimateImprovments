@@ -1,6 +1,6 @@
 <div align="center">
 
-# ✦ UltimateImprovments
+# ✦ Ultimate Improvments
 
 **A modular Minecraft plugin that adds authentication, advanced mechanics, custom crafting, and server protection.**
 
