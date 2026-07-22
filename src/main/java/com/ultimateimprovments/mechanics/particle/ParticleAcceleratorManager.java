@@ -6,6 +6,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.energy.machines.assembler.ItemCreatorRecipe;
+import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
 import com.ultimateimprovments.energy.transfer.cable.NodeType;
@@ -123,9 +124,10 @@ public class ParticleAcceleratorManager implements Listener {
     }
 
     // =========================
-    // SCAN EXISTING
+    // SCAN EXISTING — rebuild from Marker entities
     // =========================
-    private static void scanExistingAccelerators() {
+    public static void scanExistingAccelerators() {
+        // 1. Добавляем/обновляем из Marker'ов (НЕ чистим engineEnergy — там данные из БД!)
         for (var entry : StructureMarker.getAllEntries()) {
             String type = entry.getValue().type();
             if (!"accelerator".equals(type)) continue;
@@ -148,7 +150,29 @@ public class ParticleAcceleratorManager implements Listener {
             }
             // Sensor speed is transient — loaded from Marker PDC on first particle pass
         }
-        ConsoleLogger.info("[ParticleAccelerator] Scanned existing accelerators.");
+
+        // 2. Чистим устаревшие engineEnergy записи — только для загруженных миров!
+        // Если мир не загружен (Multiverse etc.) — сохраняем буферы, они восстановятся при загрузке мира
+        engineEnergy.entrySet().removeIf(e -> {
+            EnginePos pos = e.getKey();
+            World w = Bukkit.getWorld(pos.worldUid());
+            if (w == null) return false; // мир не загружен — НЕ удаляем, сохраняем буфер
+            Location loc = LocationUtil.toLocation(pos.blockKey(), w);
+            if (loc == null) return false;
+            if (loc.getBlock().getType() != ENGINE) {
+                ParticleEnergyDatabase.deleteOne(pos.worldUid(), pos.blockKey());
+                return true;
+            }
+            // Проверяем, есть ли Marker на этом блоке (только для загруженных чанков)
+            if (loc.getChunk().isLoaded() && !StructureMarker.existsAt(loc)) {
+                ParticleEnergyDatabase.deleteOne(pos.worldUid(), pos.blockKey());
+                return true;
+            }
+            return false;
+        });
+
+        ConsoleLogger.info("[ParticleAccelerator] Scanned existing accelerators — "
+                + engineEnergy.size() + " engine buffer(s) in cache.");
     }
 
     // =========================
@@ -382,6 +406,11 @@ public class ParticleAcceleratorManager implements Listener {
             // Источник энергии — BATTERY или GENERATOR с энергией
             NodeType type = cur.getType();
             if ((type == NodeType.BATTERY || type == NodeType.GENERATOR) && cur.getEnergy() > 0) {
+                // Уважаем режим батареи: берём только из DISCHARGE/CHARGE_DISCHARGE
+                if (type == NodeType.BATTERY) {
+                    BatteryManager.BatteryCluster bc = BatteryManager.getCluster(cur.getLocation());
+                    if (bc != null && !bc.canDischarge()) continue;
+                }
                 int available = cur.getEnergy();
                 int toTake = Math.min(available, maxAmount - totalPulled);
                 cur.removeEnergy(toTake);

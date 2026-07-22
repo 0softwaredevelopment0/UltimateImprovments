@@ -58,7 +58,8 @@ public class AssemblerManager implements Listener {
     // =========================
     // SCAN EXISTING — rebuild from Marker entities
     // =========================
-    private static void scanExistingAssemblers() {
+    public static void scanExistingAssemblers() {
+        activeAssemblers.clear();
         int count = 0;
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             String type = entry.getValue().type();
