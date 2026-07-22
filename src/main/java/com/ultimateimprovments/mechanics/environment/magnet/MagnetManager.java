@@ -1,0 +1,977 @@
+package com.ultimateimprovments.mechanics.environment.magnet;
+
+import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.LocationUtil;
+import com.ultimateimprovments.util.MessageUtil;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.ultimateimprovments.structure.StructureMarker;
+import com.ultimateimprovments.util.ConsoleLogger;
+import org.bukkit.ChunkSnapshot;
+
+public class MagnetManager extends BukkitRunnable {
+
+    private static MagnetManager instance;
+
+    // =========================
+    // ⚙ УПАКОВКА КООРДИНАТ В long-клюЧ (делегировано в StructureMarker)
+    // =========================
+    public static long toKey(int x, int y, int z) { return StructureMarker.toKey(x, y, z); }
+    public static long toKey(Location loc) { return StructureMarker.toKey(loc); }
+    public static int getX(long key) { return StructureMarker.getX(key); }
+    public static int getZ(long key) { return StructureMarker.getZ(key); }
+    public static int getY(long key) { return StructureMarker.getY(key); }
+
+    // =========================
+    // 🧲 MAGNET CLUSTER
+    // =========================
+    public static class MagnetCluster {
+        public int id;
+        public World world;
+        public Set<Long> blockKeys = new HashSet<>();
+        public Location center;
+        public int power;
+
+        // Running sums для O(1) пересчёта центра
+        private long sumX, sumY, sumZ;
+
+        /**
+         * Добавить блок в кластер с обновлением центра за O(1).
+         */
+        void addBlock(long key) {
+            if (blockKeys.add(key)) {
+                sumX += getX(key);
+                sumY += getY(key);
+                sumZ += getZ(key);
+                power = blockKeys.size();
+                updateCenterFromSums();
+            }
+        }
+
+        /**
+         * Удалить блок из кластера с обновлением центра за O(1).
+         */
+        void removeBlock(long key) {
+            if (blockKeys.remove(key)) {
+                sumX -= getX(key);
+                sumY -= getY(key);
+                sumZ -= getZ(key);
+                power = blockKeys.size();
+                if (!blockKeys.isEmpty()) {
+                    updateCenterFromSums();
+                } else {
+                    center = null;
+                }
+            }
+        }
+
+        /**
+         * Полный пересчёт центра (используется при загрузке из БД).
+         */
+        void recalculateCenter() {
+            if (blockKeys.isEmpty()) return;
+            sumX = 0; sumY = 0; sumZ = 0;
+            for (long key : blockKeys) {
+                sumX += getX(key);
+                sumY += getY(key);
+                sumZ += getZ(key);
+            }
+            updateCenterFromSums();
+        }
+
+        private void updateCenterFromSums() {
+            int size = blockKeys.size();
+            if (size == 0) {
+                center = null;
+                power = 0;
+                return;
+            }
+            center = new Location(world,
+                    (int) Math.round((double) sumX / size),
+                    (int) Math.round((double) sumY / size),
+                    (int) Math.round((double) sumZ / size));
+            power = size;
+        }
+
+        boolean contains(Location loc) {
+            return blockKeys.contains(toKey(loc));
+        }
+    }
+
+    // =========================
+    // DATA
+    // =========================
+    private static final Map<Long, MagnetCluster> locationToCluster = new HashMap<>();
+    private static final Map<Integer, MagnetCluster> clustersById = new HashMap<>();
+    private static int nextId = 1;
+
+    // Игроки, чей металлический статус нужно перепроверить (выбросили предмет)
+    private static final Set<UUID> dirtyPlayers = ConcurrentHashMap.newKeySet();
+
+    /**
+     * Пометить игрока для перепроверки металлического статуса.
+     * Вызывается из MagnetEventListener при выбрасывании предмета.
+     */
+    public static void markPlayerDirty(UUID uuid) {
+        dirtyPlayers.add(uuid);
+    }
+
+    // =========================
+    // INIT — rebuild from Marker entities (no SQLite)
+    // =========================
+    public static void init(Main plugin) {
+        instance = new MagnetManager();
+        MagnetConfig.reloadConfig();
+        rebuildFromMarkers();
+        instance.runTaskTimer(plugin, 20L, MagnetConfig.getIntervalTicks());
+    }
+
+    // =========================
+    // 🔥 БЫСТРЫЙ FLOOD-FILL
+    // =========================
+    private static final int[][] DIR = {
+        {1, 0, 0}, {-1, 0, 0},
+        {0, 1, 0}, {0, -1, 0},
+        {0, 0, 1}, {0, 0, -1}
+    };
+
+    private static Set<Long> floodFillFast(World world, int sx, int sy, int sz) {
+        if (world == null) return new HashSet<>(0);
+        
+        // ════════════════════════════════════════
+        // 🛡 Проверка: чанк начальной точки загружен?
+        // Если нет — не можем сканировать структуру.
+        // ════════════════════════════════════════
+        if (!world.isChunkLoaded(sx >> 4, sz >> 4)) return new HashSet<>(0);
+        
+        Set<Long> visited = new HashSet<>();
+        Deque<int[]> queue = new ArrayDeque<>();
+        long startKey = toKey(sx, sy, sz);
+        visited.add(startKey);
+        queue.add(new int[]{sx, sy, sz});
+        while (!queue.isEmpty()) {
+            int[] pos = queue.pollFirst();
+            int x = pos[0], y = pos[1], z = pos[2];
+            for (int[] d : DIR) {
+                int nx = x + d[0], ny = y + d[1], nz = z + d[2];
+                long nk = toKey(nx, ny, nz);
+                if (visited.contains(nk)) continue;
+                // ════════════════════════════════════════
+                // 🛡 Проверка: чанк соседнего блока загружен?
+                // Если нет — пропускаем (структура может быть
+                // неполной, но это лучше, чем вылет)
+                // ════════════════════════════════════════
+                if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
+                if (world.getType(nx, ny, nz) == Material.LODESTONE) {
+                    visited.add(nk);
+                    queue.addLast(new int[]{nx, ny, nz});
+                }
+            }
+        }
+        return visited;
+    }
+
+    private static Set<Long> floodFillFast(Location start) {
+        if (start == null || start.getWorld() == null) return new HashSet<>(0);
+        return floodFillFast(start.getWorld(), start.getBlockX(), start.getBlockY(), start.getBlockZ());
+    }
+
+    // =========================
+    // REBUILD FROM MARKERS
+    // =========================
+    public static void rebuildFromMarkers() {
+        locationToCluster.clear();
+        clustersById.clear();
+        nextId = 1;
+
+        Map<UUID, Set<Long>> markerGroups = new HashMap<>();
+        Map<UUID, World> foundWorlds = new HashMap<>();
+
+        for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
+            if (!"magnet".equals(entry.getValue().type())) continue;
+
+            UUID uuid = entry.getValue().uuid();
+            String fk = entry.getKey();
+            long posKey = toKey(StructureMarker.parseX(fk), StructureMarker.parseY(fk), StructureMarker.parseZ(fk));
+            markerGroups.computeIfAbsent(uuid, k -> new HashSet<>()).add(posKey);
+
+            if (!foundWorlds.containsKey(uuid)) {
+                String wUid = entry.getValue().worldUid();
+                if (wUid != null) {
+                    for (World w : Bukkit.getWorlds()) {
+                        if (w.getUID().toString().equals(wUid)) {
+                            foundWorlds.put(uuid, w);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        Set<UUID> usedUuids = new HashSet<>();
+        for (Map.Entry<UUID, Set<Long>> group : markerGroups.entrySet()) {
+            if (group.getValue().isEmpty()) continue;
+            World world = foundWorlds.get(group.getKey());
+            if (world == null) continue;
+
+            MagnetCluster cluster = new MagnetCluster();
+            cluster.id = nextId++;
+            cluster.world = world;
+            cluster.blockKeys = new HashSet<>(group.getValue());
+            cluster.recalculateCenter();
+
+            for (long key : group.getValue()) locationToCluster.put(key, cluster);
+            clustersById.put(cluster.id, cluster);
+            usedUuids.add(group.getKey());
+        }
+
+        StructureMarker.purgeOrphaned(usedUuids);
+        // Log suppressed — too spammy on server start
+    }
+
+    // =========================
+    // ACTIVATE (синхронно)
+    // =========================
+    public static void activate(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return;
+        long key = toKey(loc);
+        if (locationToCluster.containsKey(key)) return;
+
+        Set<Long> connected = floodFillFast(loc);
+        if (connected.isEmpty()) return;
+
+        UUID uuid = UUID.randomUUID();
+        MagnetCluster cluster = new MagnetCluster();
+        cluster.id = nextId++;
+        cluster.world = loc.getWorld();
+        cluster.blockKeys = new HashSet<>(connected);
+        cluster.recalculateCenter();
+
+        for (long blockKey : connected) {
+            locationToCluster.put(blockKey, cluster);
+            Location blockLoc = new Location(cluster.world, getX(blockKey), getY(blockKey), getZ(blockKey));
+            StructureMarker.place(blockLoc, "magnet", uuid);
+        }
+        clustersById.put(cluster.id, cluster);
+
+        addParticleEffect(cluster.center, cluster.blockKeys.size());
+
+        ConsoleLogger.info(
+                "[Magnet] Activated cluster #" + cluster.id
+                        + " with " + connected.size() + " blocks"
+                        + " at center " + cluster.center
+        );
+    }
+
+    // =========================
+    // 🔥 БЫСТРЫЙ FLOOD-FILL С ChunkSnapshot (thread-safe для async)
+    // =========================
+    private static Set<Long> floodFillFastSnapshots(World world, int sx, int sy, int sz) {
+        if (world == null) return new HashSet<>(0);
+        if (!world.isChunkLoaded(sx >> 4, sz >> 4)) return new HashSet<>(0);
+
+        Map<Long, ChunkSnapshot> snapshots = new HashMap<>();
+
+        Set<Long> visited = new HashSet<>();
+        Deque<int[]> queue = new ArrayDeque<>();
+        long startKey = toKey(sx, sy, sz);
+        visited.add(startKey);
+        queue.add(new int[]{sx, sy, sz});
+
+        while (!queue.isEmpty()) {
+            int[] pos = queue.pollFirst();
+            int x = pos[0], y = pos[1], z = pos[2];
+            for (int[] d : DIR) {
+                int nx = x + d[0], ny = y + d[1], nz = z + d[2];
+                long nk = toKey(nx, ny, nz);
+                if (visited.contains(nk)) continue;
+                if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
+
+                // Получаем или создаём ChunkSnapshot — thread-safe immutable копию
+                long chunkKey = ((long)(nx >> 4) << 32) | (nz >> 4) & 0xFFFFFFFFL;
+                ChunkSnapshot snap = snapshots.get(chunkKey);
+                if (snap == null) {
+                    snap = world.getChunkAt(nx >> 4, nz >> 4).getChunkSnapshot(true, false, false);
+                    snapshots.put(chunkKey, snap);
+                }
+
+                if (snap.getBlockType(nx & 15, ny, nz & 15) == Material.LODESTONE) {
+                    visited.add(nk);
+                    queue.addLast(new int[]{nx, ny, nz});
+                }
+            }
+        }
+        return visited;
+    }
+
+    // =========================
+    // ACTIVATE ASYNC (для сборки через команду)
+    // Запускает flood-fill асинхронно, чтобы не фризить сервер.
+    // Использует ChunkSnapshot для thread-safe чтения блоков.
+    // Игрок получает уведомление о начале и завершении сборки.
+    // =========================
+    public static void activateAsync(Location loc, Player player) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) {
+            player.sendMessage("§4❌ §cInvalid position!");
+            return;
+        }
+        long key = toKey(loc);
+        if (locationToCluster.containsKey(key)) {
+            player.sendMessage("§eМагнит уже активен на этом месте!");
+            return;
+        }
+
+        player.sendMessage("§8[§bMagnet§8] §7Starting structure scan...");
+        player.sendMessage("§8[§bMagnet§8] §7Please wait. This may take a while");
+        player.sendMessage("§8[§bMagnet§8] §7with a large number of blocks.");
+
+        World world = loc.getWorld();
+        int sx = loc.getBlockX(), sy = loc.getBlockY(), sz = loc.getBlockZ();
+
+        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+            try {
+                Set<Long> connected = floodFillFastSnapshots(world, sx, sy, sz);
+
+                Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                        finishActivation(connected, world, key, player)
+                );
+            } catch (Exception e) {
+                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                    player.sendMessage("§4❌ §cError during async scan!");
+                    player.sendMessage("§7Trying sync mode...");
+
+                    // Fallback: синхронное выполнение
+                    Set<Long> connected = floodFillFast(world, sx, sy, sz);
+                    finishActivation(connected, world, key, player);
+                });
+                ConsoleLogger.error(
+                        "[Magnet] Async activation error: " + e.getMessage()
+                );
+            }
+        });
+    }
+
+    /**
+     * Завершает активацию: создаёт кластер, регистрирует блоки,
+     * сохраняет в БД, показывает частицы и шлёт результат игроку.
+     */
+    private static void finishActivation(Set<Long> connected, World world, long key, Player player) {
+        if (connected.isEmpty()) {
+            player.sendMessage("§4❌ §cMagnet not assembled: LODESTONE structure not found!");
+            return;
+        }
+
+        if (locationToCluster.containsKey(key)) {
+            player.sendMessage("§eМагнит уже активен на этом месте!");
+            return;
+        }
+
+        UUID uuid = UUID.randomUUID();
+        MagnetCluster cluster = new MagnetCluster();
+        cluster.id = nextId++;
+        cluster.world = world;
+        cluster.blockKeys = new HashSet<>(connected);
+        cluster.recalculateCenter();
+
+        for (long blockKey : connected) {
+            locationToCluster.put(blockKey, cluster);
+            Location blockLoc = new Location(cluster.world, getX(blockKey), getY(blockKey), getZ(blockKey));
+            StructureMarker.place(blockLoc, "magnet", uuid);
+        }
+        clustersById.put(cluster.id, cluster);
+
+        addParticleEffect(cluster.center, cluster.blockKeys.size());
+
+        int power = cluster.blockKeys.size();
+        String powerDesc = getMagnetPowerTierStatic(power);
+        int magnetRadius = getClusterRadius(power);
+
+        player.sendMessage("§a✔ §fMagnet assembled!");
+        player.sendMessage("§8┃ §7Blocks in structure: §f" + power + " §7pcs");
+        player.sendMessage("§8┃ §7Attraction force: " + powerDesc);
+        if (cluster.center != null) {
+            player.sendMessage("§8┃ §7Center: §f"
+                    + cluster.center.getBlockX() + " "
+                    + cluster.center.getBlockY() + " "
+                    + cluster.center.getBlockZ());
+        }
+        player.sendMessage("§8┃ §7Radius: §f" + magnetRadius + " §7blocks (min. " + MagnetConfig.getMinRadius() + ")");
+
+        ConsoleLogger.info(
+                "[Magnet] Activated cluster #" + cluster.id
+                        + " with " + connected.size() + " blocks"
+                        + " at center " + cluster.center
+        );
+    }
+
+    /**
+     * Возвращает название тира магнита по мощности.
+     */
+    public static String getMagnetPowerTierStatic(int power) {
+        if (power >= 10000000) return "§k✧ §4✧✧ ABSOLUTE INFINITY ✧✧ §k✧ §8(" + power + ")";
+        if (power >= 5000000) return "§4✧✧ INFINITE ABYSS ✧✧ §8(" + power + ")";
+        if (power >= 2500000) return "§c✦ COSMIC CATASTROPHE ✦ §8(" + power + ")";
+        if (power >= 1000000) return "§d✧ PRIMORDIAL SINGULARITY ✧ §8(" + power + ")";
+        if (power >= 500000) return "§6☠ INCOMPREHENSIBLE ☠ §8(" + power + ")";
+        if (power >= 250000) return "§3✦ GODLIKE ✦ §8(" + power + ")";
+        if (power >= 100000) return "§4✧✧✧ ALL-CRUSHING SINGULARITY ✧✧✧ §8(" + power + ")";
+        if (power >= 50000) return "§c☠ ABSOLUTE SINGULARITY ☠ §8(" + power + ")";
+        if (power >= 25000) return "§6⚡ DIVINE SINGULARITY ⚡ §8(" + power + ")";
+        if (power >= 10000) return "§d✧✧ UNMATCHED ✧✧ §8(" + power + ")";
+        if (power >= 5000) return "§5✦ TRANSCENDENT ✦ §8(" + power + ")";
+        if (power >= 2500) return "§9⚜ SINGULAR ⚜ §8(" + power + ")";
+        if (power >= 1000) return "§3✦ INFINITE ✦ §8(" + power + ")";
+        if (power >= 500) return "§5✧✧ ABSOLUTE ✧✧ §8(" + power + ")";
+        if (power >= 300) return "§5☯ COSMIC ☯ §8(" + power + ")";
+        if (power >= 200) return "§d✦ TITANIC ✦ §8(" + power + ")";
+        if (power >= 150) return "§d◈ LEGENDARY ◈ §8(" + power + ")";
+        if (power >= 100) return "§c☆ INCREDIBLE ☆ §8(" + power + ")";
+        if (power >= 75) return "§c♦ EXTREME ♦ §8(" + power + ")";
+        if (power >= 50) return "§6★ EXCEPTIONAL ★ §8(" + power + ")";
+        if (power >= 30) return "§6⬆ VERY STRONG ⬆ §8(" + power + ")";
+        if (power >= 20) return "§e⬆ STRONG ⬆ §8(" + power + ")";
+        if (power >= 12) return "§e⬆ ABOVE AVERAGE ⬆ §8(" + power + ")";
+        if (power >= 7) return "§a➤ AVERAGE ➤ §8(" + power + ")";
+        if (power >= 4) return "§7➤ BELOW AVERAGE ➤ §8(" + power + ")";
+        if (power >= 2) return "§7▸ WEAK ▸ §8(" + power + ")";
+        return "§7▸ VERY WEAK ▸ §8(" + power + ")";
+    }
+
+    // =========================
+    // DEACTIVATE
+    // =========================
+    public static void deactivate(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return;
+        MagnetCluster cluster = locationToCluster.get(toKey(loc));
+        if (cluster == null) return;
+        deactivateCluster(cluster);
+    }
+
+    private static void deactivateCluster(MagnetCluster cluster) {
+        for (long blockKey : cluster.blockKeys) {
+            locationToCluster.remove(blockKey);
+            Location bl = new Location(cluster.world, getX(blockKey), getY(blockKey), getZ(blockKey));
+            StructureMarker.removeAt(bl);
+        }
+        clustersById.remove(cluster.id);
+        if (cluster.center != null && cluster.center.getWorld() != null) {
+            addParticleEffect(cluster.center, cluster.blockKeys.size());
+        }
+        ConsoleLogger.info(
+                "[Magnet] Deactivated cluster #" + cluster.id
+                        + " (" + cluster.power + " blocks)"
+        );
+    }
+
+    // =========================
+    // БЛОК РАЗРУШЕН
+    // Если кластер маленький — пересчёт синхронно (быстро).
+    // Если большой — асинхронно, чтобы не фризить сервер.
+    // =========================
+    public static boolean onBlockBroken(Location loc, Player breaker) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return false;
+        long key = toKey(loc);
+        MagnetCluster cluster = locationToCluster.get(key);
+        if (cluster == null) return false;
+
+        // Полная деактивация всего кластера при разрушении любого блока
+        deactivateCluster(cluster);
+
+        if (breaker != null) {
+            breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Magnet deactivated (block broken)!</red>"));
+        }
+
+        ConsoleLogger.info("[Magnet] Deactivated cluster #" + cluster.id
+                + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
+        return true;
+    }
+
+    // =========================
+    // БЛОК ПОСТАВЛЕН
+    // Оптимизация: вместо полного flood-fill'а — просто добавляем блок
+    // в соседний кластер (или объединяем кластеры).
+    // Полный пересчёт (flood-fill) делаем только если кластер >= ASYNC_THRESHOLD
+    // и блок может соединить два кластера — но даже тогда просто объединяем их.
+    // =========================
+    public static void onBlockPlaced(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return;
+        long key = toKey(loc);
+        if (locationToCluster.containsKey(key)) return;
+
+        int bx = loc.getBlockX(), by = loc.getBlockY(), bz = loc.getBlockZ();
+        long[] neighborKeys = {
+            toKey(bx + 1, by, bz), toKey(bx - 1, by, bz),
+            toKey(bx, by + 1, bz), toKey(bx, by - 1, bz),
+            toKey(bx, by, bz + 1), toKey(bx, by, bz - 1)
+        };
+
+        // Собираем все уникальные кластеры рядом
+        Set<MagnetCluster> adjacentClusters = new LinkedHashSet<>();
+        for (long nk : neighborKeys) {
+            MagnetCluster c = locationToCluster.get(nk);
+            if (c != null) adjacentClusters.add(c);
+        }
+
+        if (adjacentClusters.isEmpty()) return;
+
+        if (adjacentClusters.size() == 1) {
+            MagnetCluster cluster = adjacentClusters.iterator().next();
+            cluster.addBlock(key);
+            locationToCluster.put(key, cluster);
+            // Marker на новом блоке
+            UUID uuid = findUuidFromNeighbor(loc, neighborKeys);
+            if (uuid != null) StructureMarker.place(loc, "magnet", uuid);
+
+            ConsoleLogger.info(
+                    "[Magnet] Cluster #" + cluster.id + " expanded: "
+                            + cluster.blockKeys.size() + " blocks"
+            );
+        } else {
+            Iterator<MagnetCluster> it = adjacentClusters.iterator();
+            MagnetCluster primary = it.next();
+            UUID primaryUuid = findUuidFromNeighbor(loc, neighborKeys);
+
+            while (it.hasNext()) {
+                MagnetCluster other = it.next();
+                for (long bk : other.blockKeys) {
+                    locationToCluster.put(bk, primary);
+                    primary.addBlock(bk);
+                    // Обновляем Marker на блоке other — меняем UUID на primary
+                    Location bl = new Location(primary.world, getX(bk), getY(bk), getZ(bk));
+                    StructureMarker.removeAt(bl);
+                    if (primaryUuid != null) StructureMarker.place(bl, "magnet", primaryUuid);
+                }
+                clustersById.remove(other.id);
+            }
+
+            primary.addBlock(key);
+            locationToCluster.put(key, primary);
+            if (primaryUuid != null) StructureMarker.place(loc, "magnet", primaryUuid);
+
+            ConsoleLogger.info(
+                    "[Magnet] Clusters merged into #" + primary.id
+                            + ": " + primary.blockKeys.size() + " blocks"
+            );
+        }
+    }
+
+    /** Находит UUID магнита из Marker соседнего блока */
+    private static UUID findUuidFromNeighbor(Location loc, long[] neighborKeys) {
+        for (long nk : neighborKeys) {
+            Location bl = new Location(loc.getWorld(), getX(nk), getY(nk), getZ(nk));
+            StructureMarker.StructureData data = StructureMarker.getAt(bl);
+            if (data != null && "magnet".equals(data.type())) return data.uuid();
+        }
+        return null;
+    }
+
+    // =========================
+    // QUERIES
+    // =========================
+    public static boolean isActive(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        return loc != null && locationToCluster.containsKey(toKey(loc));
+    }
+
+    public static boolean isActiveAt(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return false;
+        int bx = loc.getBlockX(), by = loc.getBlockY(), bz = loc.getBlockZ();
+        if (locationToCluster.containsKey(toKey(bx, by, bz))) return true;
+        return locationToCluster.containsKey(toKey(bx + 1, by, bz))
+            || locationToCluster.containsKey(toKey(bx - 1, by, bz))
+            || locationToCluster.containsKey(toKey(bx, by + 1, bz))
+            || locationToCluster.containsKey(toKey(bx, by - 1, bz))
+            || locationToCluster.containsKey(toKey(bx, by, bz + 1))
+            || locationToCluster.containsKey(toKey(bx, by, bz - 1));
+    }
+
+    public static int getMagnetPower(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return 1;
+        MagnetCluster cluster = locationToCluster.get(toKey(loc));
+        return cluster != null ? cluster.blockKeys.size() : 1;
+    }
+
+    public static Location getMagnetCenter(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return null;
+        MagnetCluster cluster = locationToCluster.get(toKey(loc));
+        return cluster != null ? cluster.center.clone() : null;
+    }
+
+    // =========================
+    // ДИНАМИЧЕСКИЙ РАДИУС
+    // =========================
+    public static int getMagnetRadius(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return MagnetConfig.getMinRadius();
+        MagnetCluster cluster = locationToCluster.get(toKey(loc));
+        return cluster != null ? getClusterRadius(cluster.blockKeys.size()) : MagnetConfig.getMinRadius();
+    }
+
+    public static int getClusterRadiusForPower(int power) {
+        double t = Math.sqrt((double) power / MagnetConfig.getPowerNormalize());
+        return (int) Math.round(MagnetConfig.getMinRadius() + (MagnetConfig.getMaxRadius() - MagnetConfig.getMinRadius()) * t);
+    }
+
+    private static int getClusterRadius(int power) {
+        return getClusterRadiusForPower(power);
+    }
+
+    // =========================
+    // INTERNAL ACCESS (for MagnetDatabase)
+    // =========================
+    public static int getClusterCount() { return clustersById.size(); }
+    public static Collection<MagnetCluster> getClusters() { return clustersById.values(); }
+    static Map<Long, MagnetCluster> getLocationMapInternal() { return locationToCluster; }
+    static Map<Integer, MagnetCluster> getClustersByIdInternal() { return clustersById; }
+    static void setNextId(int id) { nextId = id; }
+
+    public static Set<UUID> getDirtyPlayers() { return dirtyPlayers; }
+
+    // =========================
+    // ПАРТИКЛЫ ПРИ АКТИВАЦИИ
+    // =========================
+    public static void addParticleEffect(Location loc) {
+        addParticleEffect(loc, 30);
+    }
+
+    public static void addParticleEffect(Location loc, int power) {
+        if (loc == null || loc.getWorld() == null) return;
+        World world = loc.getWorld();
+        Location center = loc.clone().add(0.5, 0.5, 0.5);
+
+        int particleCount = Math.min(30 + (int)(Math.sqrt(power) * 1.5), 80);
+        world.spawnParticle(Particle.END_ROD, center, particleCount, 0.5, 0.5, 0.5, 0.1);
+        world.spawnParticle(Particle.ELECTRIC_SPARK, center,
+                Math.max(1, particleCount / 3), 0.5, 0.5, 0.5, 0);
+
+        if (power >= 100) {
+            world.spawnParticle(Particle.CRIT, center,
+                    Math.min(power / 10, MagnetConfig.getParticleCritMax()), 0.3, 0.3, 0.3, 0);
+        }
+        if (power >= 1000) {
+            world.spawnParticle(Particle.PORTAL, center,
+                    Math.min(power / 20, MagnetConfig.getParticlePortalMax()), 0.5, 0.5, 0.5, 0.02);
+        }
+        if (power >= 10000) {
+            world.spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0, Color.WHITE);
+            world.spawnParticle(Particle.SONIC_BOOM, center, 1, 0.5, 0.5, 0.5, 0);
+        }
+        if (power >= 100000) {
+            world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 1, 0, 0, 0, 0);
+        }
+
+        world.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE,
+                Math.min(1.0f + (float)Math.sqrt(power) * 0.05f, 2.0f),
+                Math.min(1.5f + (float)Math.sqrt(power) * 0.01f, 2.0f));
+    }
+
+    // =========================
+    // RUN (каждый тик)
+    // =========================
+    @Override
+    public void run() {
+        if (!MagnetConfig.isEnabled() || clustersById.isEmpty()) return;
+
+        List<Integer> toRemove = new ArrayList<>();
+
+        for (MagnetCluster cluster : clustersById.values()) {
+            try {
+                World world = cluster.world;
+                if (world == null) {
+                    toRemove.add(cluster.id);
+                    continue;
+                }
+
+                if (cluster.blockKeys.isEmpty()) {
+                    toRemove.add(cluster.id);
+                    continue;
+                }
+
+                long firstKey = cluster.blockKeys.iterator().next();
+                int fx = getX(firstKey), fy = getY(firstKey), fz = getZ(firstKey);
+
+                // ════════════════════════════════════════
+                // 🛡 Проверка: чанк загружен?
+                // Если чанк не загружен — пропускаем кластер,
+                // НО НЕ удаляем его (он может загрузиться позже).
+                // ════════════════════════════════════════
+                if (!world.isChunkLoaded(fx >> 4, fz >> 4)) {
+                    continue;
+                }
+
+                if (world.getType(fx, fy, fz) != Material.LODESTONE) {
+                    toRemove.add(cluster.id);
+                    continue;
+                }
+
+                Location center = cluster.center.clone().add(0.5, 0.5, 0.5);
+                int power = cluster.blockKeys.size();
+
+                // ════════════════════════════════════════
+                // ПАРТИКЛЫ — лимиты из конфига
+                // ════════════════════════════════════════
+                int particleCount = Math.min(8 + (int)(Math.sqrt(power) * 1.5), MagnetConfig.getParticleCenterMax());
+                world.spawnParticle(Particle.END_ROD, center, particleCount, 0.5, 0.5, 0.5, 0);
+                world.spawnParticle(Particle.ELECTRIC_SPARK, center,
+                        Math.max(1, particleCount / 2), 0.5, 0.5, 0.5, 0);
+
+                if (power >= 5) {
+                    List<Long> keyList = new ArrayList<>(cluster.blockKeys);
+                    int maxBlock = Math.min(keyList.size(), MagnetConfig.getParticleBlocksMax());
+                    int step = keyList.size() / maxBlock;
+                    if (step == 0) step = 1;
+                    for (int i = 0; i < maxBlock; i++) {
+                        long k = keyList.get(i * step);
+                        Location bp = new Location(world, getX(k) + 0.5, getY(k) + 0.5, getZ(k) + 0.5);
+                        world.spawnParticle(Particle.ELECTRIC_SPARK, bp, 1, 0.2, 0.2, 0.2, 0);
+                    }
+                }
+
+                if (power >= 100) {
+                    world.spawnParticle(Particle.CRIT, center,
+                            Math.min(power / 10, MagnetConfig.getParticleCritMax()), 0.3, 0.3, 0.3, 0);
+                }
+                if (power >= 1000) {
+                    world.spawnParticle(Particle.PORTAL, center,
+                            Math.min(power / 20, MagnetConfig.getParticlePortalMax()), 0.4, 0.4, 0.4, 0.02);
+                }
+                if (power >= 10000) {
+                    world.spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0, Color.WHITE);
+                    world.spawnParticle(Particle.SONIC_BOOM, center, 1, 0.3, 0.3, 0.3, 0);
+                }
+                if (power >= 100000) {
+                    world.spawnParticle(Particle.EXPLOSION_EMITTER, center, 1, 0, 0, 0, 0);
+                }
+
+                // ════════════════════════════════════════
+                // 🛡 Проверка: чанк центра всё ещё загружен?
+                // (между партиклами и getNearbyEntities могло пройти время,
+                // но на главном серверном потоке этого не произойдёт)
+                // ════════════════════════════════════════
+                int cx = center.getBlockX() >> 4, cz = center.getBlockZ() >> 4;
+                if (!world.isChunkLoaded(cx, cz)) continue;
+
+                int clusterRadius = getClusterRadius(power);
+                Collection<Entity> nearby = world.getNearbyEntities(center, clusterRadius, clusterRadius, clusterRadius);
+
+                for (Entity entity : nearby) {
+                    if (!shouldAttract(entity)) {
+                        // Если игрок больше не металлический — сбрасываем скорость
+                        if (entity instanceof Player player && dirtyPlayers.remove(player.getUniqueId())) {
+                            // Игрок только что выбросил последний металлический предмет
+                            // Сбрасываем скорость, чтобы он не продолжал лететь по инерции
+                            player.setVelocity(new Vector(0, 0, 0));
+                        }
+                        // Очистка: если игрок вышел, убираем из dirtyPlayers
+                        // (штатно clean up через PlayerQuitEvent, но подстраховка не помешает)
+                        if (entity instanceof Player && !((Player) entity).isOnline()) {
+                            dirtyPlayers.remove(entity.getUniqueId());
+                        }
+                        continue;
+                    }
+                    applyMagneticForce(entity, center, power, clusterRadius);
+                }
+            } catch (Exception e) {
+                ConsoleLogger.error(
+                        "[Magnet] Error processing cluster #" + cluster.id + ": " + e.getMessage()
+                );
+                e.printStackTrace();
+            }
+        }
+
+        for (int id : toRemove) {
+            MagnetCluster cluster = clustersById.get(id);
+            if (cluster != null) deactivateCluster(cluster);
+        }
+    }
+
+    // =========================
+    // SHOULD ATTRACT
+    // =========================
+    private boolean shouldAttract(Entity entity) {
+        if (entity == null || entity.isDead()) return false;
+        if (entity instanceof Item item) {
+            return isMetallic(item.getItemStack());
+        }
+        if (entity instanceof Player player) {
+            // Не притягиваем офлайн-игроков (могут быть в процессе выгрузки)
+            if (!player.isOnline()) return false;
+            return hasMetallicItem(player);
+        }
+        if (entity instanceof Mob mob) {
+            // Мобы могут быть уже мёртвыми при проверке экипировки
+            try {
+                return hasMetallicEquipment(mob);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasMetallicItem(Player player) {
+        try {
+            if (isMetallic(player.getInventory().getItemInMainHand())) return true;
+            if (isMetallic(player.getInventory().getItemInOffHand())) return true;
+            for (ItemStack armor : player.getInventory().getArmorContents()) {
+                if (isMetallic(armor)) return true;
+            }
+            for (ItemStack item : player.getInventory().getStorageContents()) {
+                if (isMetallic(item)) return true;
+            }
+        } catch (Exception ignored) {
+            // Игрок мог отвалиться во время перебора инвентаря
+        }
+        return false;
+    }
+
+    private boolean hasMetallicEquipment(Mob mob) {
+        EntityEquipment eq = mob.getEquipment();
+        if (eq == null) return false;
+        if (isMetallic(eq.getItemInMainHand())) return true;
+        if (isMetallic(eq.getItemInOffHand())) return true;
+        if (isMetallic(eq.getHelmet())) return true;
+        if (isMetallic(eq.getChestplate())) return true;
+        if (isMetallic(eq.getLeggings())) return true;
+        if (isMetallic(eq.getBoots())) return true;
+        return false;
+    }
+
+    private boolean isMetallic(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return false;
+        Material mat = item.getType();
+        String name = mat.name();
+        if (name.contains("IRON")) return true;
+        if (name.startsWith("GOLD_") || name.equals("GOLDEN_SWORD") || name.equals("GOLDEN_SHOVEL")
+                || name.equals("GOLDEN_PICKAXE") || name.equals("GOLDEN_AXE") || name.equals("GOLDEN_HOE")
+                || name.equals("GOLDEN_HELMET") || name.equals("GOLDEN_CHESTPLATE")
+                || name.equals("GOLDEN_LEGGINGS") || name.equals("GOLDEN_BOOTS")
+                || name.equals("GOLDEN_HORSE_ARMOR") || name.equals("GOLD_BLOCK")
+                || name.equals("GOLD_INGOT") || name.equals("GOLD_NUGGET")
+                || name.equals("RAW_GOLD") || name.equals("RAW_GOLD_BLOCK")) return true;
+        if (name.contains("NETHERITE")) return true;
+        if (name.contains("COPPER")) return true;
+        if (name.contains("CHAINMAIL")) return true;
+        if (mat == Material.BUCKET || mat == Material.WATER_BUCKET || mat == Material.LAVA_BUCKET
+                || mat == Material.MILK_BUCKET || mat == Material.COD_BUCKET
+                || mat == Material.SALMON_BUCKET || mat == Material.PUFFERFISH_BUCKET
+                || mat == Material.TROPICAL_FISH_BUCKET || mat == Material.AXOLOTL_BUCKET
+                || mat == Material.TADPOLE_BUCKET) return true;
+        if (mat == Material.SHEARS) return true;
+        if (mat == Material.COMPASS) return true;
+        if (mat == Material.RECOVERY_COMPASS) return true;
+        if (name.contains("MINECART")) return true;
+        if (name.contains("ANVIL")) return true;
+        if (mat == Material.CAULDRON) return true;
+        if (mat == Material.HOPPER) return true;
+        if (mat == Material.RAIL || mat == Material.POWERED_RAIL || mat == Material.DETECTOR_RAIL
+                || mat == Material.ACTIVATOR_RAIL) return true;
+        if (mat == Material.PISTON || mat == Material.STICKY_PISTON) return true;
+        if (mat == Material.STONECUTTER) return true;
+        if (mat == Material.GRINDSTONE) return true;
+        if (mat == Material.LANTERN || mat == Material.SOUL_LANTERN) return true;
+        if (mat == Material.NAUTILUS_SHELL) return true;
+        if (mat == Material.HEAVY_CORE) return true;
+        return false;
+    }
+
+    // =========================
+    // ПРИМЕНЕНИЕ СИЛЫ — ВСЕ ПАРАМЕТРЫ ИЗ КОНФИГА
+    // =========================
+    private void applyMagneticForce(Entity entity, Location magnetCenter, int power, int clusterRadius) {
+        // ════════════════════════════════════════
+        // 🛡 Защита: энтити мог умереть между shouldAttract и вызовом
+        // ════════════════════════════════════════
+        if (entity == null || entity.isDead()) return;
+
+        Location entityLoc = entity.getLocation();
+        if (entityLoc == null || entityLoc.getWorld() == null) return;
+
+        Vector direction = magnetCenter.toVector().subtract(entityLoc.toVector());
+        double distance = direction.length();
+        if (distance < 0.5) return;
+        direction.normalize();
+
+        // ════════════════════════════════════════
+        // 🌀 КРИВАЯ МОЩНОСТИ: (power / powerNormalize) ^ powerExponent
+        //    0.55 = мягкий старт | 0.5 = sqrt | 1.0 = линейная
+        // ════════════════════════════════════════
+        double t = power / MagnetConfig.getPowerNormalize();
+        double powerMultiplier = Math.pow(t, MagnetConfig.getPowerExponent());
+
+        // ════════════════════════════════════════
+        // 📏 КРИВАЯ ДИСТАНЦИИ: smoothstep (плавно) или linear (старая)
+        // ════════════════════════════════════════
+        double nd = distance / clusterRadius;
+        if (nd > 1.0) nd = 1.0;
+
+        double distanceFactor;
+        if ("linear".equalsIgnoreCase(MagnetConfig.getDistanceCurveType())) {
+            // Линейная: была по умолчанию, с жёстким min_factor
+            distanceFactor = Math.max(MagnetConfig.getDistanceMinFactor(), 1.0 - nd);
+        } else {
+            // Smoothstep (по умолчанию): 3t² - 2t³, производная = 0 на обоих концах
+            double smoothT = nd * nd * (3.0 - 2.0 * nd);
+            distanceFactor = 1.0 - smoothT;
+            // Если min_factor > 0 — не даём упасть ниже
+            if (distanceFactor < MagnetConfig.getDistanceMinFactor()) distanceFactor = MagnetConfig.getDistanceMinFactor();
+        }
+
+        double baseForce = MagnetConfig.getForceBase() * powerMultiplier;
+        double proximityForce = distanceFactor * MagnetConfig.getForceDistanceMultiplier() * powerMultiplier;
+        double force = baseForce + proximityForce;
+
+        if (force > MagnetConfig.getForceMax() * powerMultiplier) {
+            force = MagnetConfig.getForceMax() * powerMultiplier;
+        }
+
+        Vector forceVector = direction.multiply(force);
+
+        if (entity instanceof Item) {
+            forceVector.setY(forceVector.getY() + MagnetConfig.getItemYBoost() * powerMultiplier);
+            double maxSpeed = MagnetConfig.getForceMaxSpeed() * powerMultiplier;
+            if (forceVector.length() > maxSpeed) {
+                forceVector.normalize().multiply(maxSpeed);
+            }
+            entity.setVelocity(forceVector);
+        } else {
+            Vector newVel = entity.getVelocity().add(forceVector);
+            double maxSpeed = MagnetConfig.getForceMaxSpeed() * powerMultiplier;
+            if (newVel.length() > maxSpeed) {
+                newVel.normalize().multiply(maxSpeed);
+            }
+            entity.setVelocity(newVel);
+        }
+    }
+
+    // =========================
+    // 💾 SAVE — no-op: Marker entities persist in world files
+    // =========================
+    public static void saveAll() { /* no-op */ }
+}

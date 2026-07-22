@@ -1,6 +1,6 @@
 <div align="center">
 
-# ✦ UltimateImprovements
+# ✦ UltimateImprovments
 
 **A modular Minecraft plugin that adds authentication, advanced mechanics, custom crafting, and server protection.**
 
@@ -14,7 +14,7 @@
 
 ## 📦 Quick Install
 
-1. **Download** `.jar` from [Releases](https://github.com/rizer001/UltimateImprovements/releases)
+1. **Download** `.jar` from [Releases](https://github.com/rizer001/UltimateImprovments/releases)
 2. **Drop** into `plugins/` folder
 3. **Restart** server twice (first load installs datapack, second activates it)
 
