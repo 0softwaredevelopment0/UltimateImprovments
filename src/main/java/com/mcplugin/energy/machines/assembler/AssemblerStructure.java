@@ -4,19 +4,14 @@ import com.mcplugin.util.LocationUtil;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.BlockFace;
-
-import org.bukkit.entity.ItemFrame;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Assembler multiblock structure validation.
+ * Item Creator structure validation.
  * <p>
- * Structure: CRAFTER + item frame on top face.
- * Center = crafter position.
+ * Structure: CRAFTER block (single block, no item frame required).
  */
 public class AssemblerStructure {
 
@@ -24,52 +19,15 @@ public class AssemblerStructure {
     // IS VALID
     // =========================
     public static boolean isValid(Location center) {
-        return isValid(center, true);
+        return isValid(center, false);
     }
 
-    public static boolean isValid(Location center, boolean requireFrame) {
+    public static boolean isValid(Location center, boolean unused) {
         if (center == null || center.getWorld() == null) return false;
         Location base = LocationUtil.normalize(center);
 
-        // 1. Crafter at center
-        if (base.getBlock().getType() != Material.CRAFTER) return false;
-
-        // 2. Item frame on top of crafter
-        if (requireFrame && !hasItemFrameOnTop(base)) return false;
-
-        return true;
-    }
-
-    // =========================
-    // HAS ITEM FRAME ON TOP
-    // =========================
-    private static boolean hasItemFrameOnTop(Location center) {
-        World world = center.getWorld();
-        if (world == null) return false;
-
-        int cx = center.getBlockX();
-        int cy = center.getBlockY();
-        int cz = center.getBlockZ();
-
-        for (ItemFrame frame : world.getEntitiesByClass(ItemFrame.class)) {
-            // Только рамка, висящая на ВЕРХНЕЙ грани (facing UP)
-            if (frame.getFacing() != BlockFace.UP) continue;
-
-            Location floc = frame.getLocation();
-            int fx = floc.getBlockX();
-            int fz = floc.getBlockZ();
-
-            // Проверяем, что рамка в той же колонке (x,z), что и крафтер
-            if (fx != cx || fz != cz) continue;
-
-            // Рамка на верхней грани: entity находится на y ~ cy+0.9375 или на cy+1
-            // (floored до cy или cy+1). Допускаем оба варианта.
-            int fy = floc.getBlockY();
-            if (fy == cy || fy == cy + 1) {
-                return true;
-            }
-        }
-        return false;
+        // Just check that it's a CRAFTER block
+        return base.getBlock().getType() == Material.CRAFTER;
     }
 
     // =========================
@@ -84,17 +42,14 @@ public class AssemblerStructure {
 
     public static Location locateCenter(Location near) {
         if (near == null || near.getWorld() == null) return null;
-        World world = near.getWorld();
+        var world = near.getWorld();
         int bx = near.getBlockX(), by = near.getBlockY(), bz = near.getBlockZ();
 
-        for (int x = bx - 2; x <= bx + 2; x++) {
-            for (int y = by - 2; y <= by + 2; y++) {
-                for (int z = bz - 2; z <= bz + 2; z++) {
+        for (int x = bx - 1; x <= bx + 1; x++) {
+            for (int y = by - 1; y <= by + 1; y++) {
+                for (int z = bz - 1; z <= bz + 1; z++) {
                     if (world.getBlockAt(x, y, z).getType() == Material.CRAFTER) {
-                        Location candidate = new Location(world, x, y, z);
-                        if (isValid(candidate)) {
-                            return candidate;
-                        }
+                        return new Location(world, x, y, z);
                     }
                 }
             }
@@ -113,19 +68,11 @@ public class AssemblerStructure {
         }
         Location base = LocationUtil.normalize(center);
 
-        // 1. Crafter
         if (base.getBlock().getType() != Material.CRAFTER) {
             errors.add("§6[1] Крафтер §e(0, 0, 0)"
                     + " §7— должен быть CRAFTER на §f["
                     + base.getBlockX() + " " + base.getBlockY() + " " + base.getBlockZ() + "]"
                     + " §7(сейчас: §f" + base.getBlock().getType() + "§7)");
-        }
-
-        // 2. Item frame on top
-        if (!hasItemFrameOnTop(base)) {
-            errors.add("§6[2] Рамка §7— не найдена на верхней грани крафтера §f["
-                    + base.getBlockX() + " " + base.getBlockY() + " " + base.getBlockZ() + "]"
-                    + "§7. Повесьте рамку НА ВЕРХНЮЮ ГРАНЬ крафтера");
         }
 
         return errors;

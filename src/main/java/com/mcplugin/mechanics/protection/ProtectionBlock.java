@@ -144,8 +144,20 @@ public class ProtectionBlock {
         return (int) cost;
     }
 
-    /** True если блок имеет целостность > 0 и enabled. */
+    /**
+     * True если блок имеет целостность > 0 И включён.
+     * <p>
+     * ВАЖНО: семантика — «живой И активный», строго как говорят docstring и callers
+     * (findProtectingBlock, applyExplosionProtection, triggerIntruderEffects внутри).
+     * Раньше здесь был только {@code integrity > 0.0}, что создавало расхождение
+     * с остальным кодом и приводило к phantom-accumulation integrity loss на disabled-копиях.
+     */
     public boolean isAlive() {
+        return integrity > 0.0 && enabled;
+    }
+
+    /** True если блок сохранил целостность > 0 (без учёта enabled). Для HUD/GUI. */
+    public boolean hasIntegrity() {
         return integrity > 0.0;
     }
 }

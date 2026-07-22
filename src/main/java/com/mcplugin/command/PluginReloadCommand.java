@@ -244,6 +244,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             AskCordsManager.decline(p, a[1]);
             return true;
         }));
+
+        // ── AoE Enchant ──
+        registry.register(LegacySubCommandAdapter.of("enchant", EnchantSubcommand::execute,
+                tc((s, a) -> EnchantSubcommand.tabComplete(s, a))));
         registry.register(LegacySubCommandAdapter.of("vote", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("mcplugin.command.vote")) return false;

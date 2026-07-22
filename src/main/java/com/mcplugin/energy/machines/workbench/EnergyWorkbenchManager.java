@@ -41,7 +41,7 @@ public class EnergyWorkbenchManager {
 
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             String type = entry.getValue().type();
-            if (!"workbench".equals(type) && !"assembler".equals(type)) continue;
+            if (!"workbench".equals(type) && !"assembler".equals(type) && !"item_creator".equals(type)) continue;
 
             String fk = entry.getKey();
             String worldUid = StructureMarker.parseWorldUid(fk);
@@ -196,16 +196,11 @@ public class EnergyWorkbenchManager {
         for (Location loc : workbenches) {
             try {
                 if (loc.getBlock().getType() != Material.CRAFTER) continue;
-                if (loc.getBlock().getBlockData() instanceof Crafter crafter) {
-                    if (!crafter.isTriggered()) {
-                        crafter.setTriggered(true);
-                        loc.getBlock().setBlockData(crafter, false);
-                    }
-                }
+                // For item_creator, do NOT force triggered=true — let redstone control it
                 var state = loc.getBlock().getState();
                 if (state instanceof org.bukkit.block.Crafter crafterState) {
                     if (crafterState.customName() == null) {
-                        crafterState.customName(Component.text("Item assembler"));
+                        crafterState.customName(Component.text("Создатель предметов"));
                         crafterState.update();
                     }
                 }
@@ -222,12 +217,7 @@ public class EnergyWorkbenchManager {
             Location loc = LocationUtil.normalize(e.getBlock().getLocation());
             if (!workbenches.contains(loc)) return;
 
-            if (e.getBlock().getBlockData() instanceof Crafter crafter) {
-                if (!crafter.isTriggered()) {
-                    crafter.setTriggered(true);
-                    e.getBlock().setBlockData(crafter, false);
-                }
-            }
+            // For item_creator, don't force triggered state — let redstone pulses control it
         }
     }
 }

@@ -23,6 +23,9 @@ public class CableNode {
     private NodeType type = NodeType.CABLE;
     private int maxEnergy = 0;
 
+    // Transfer tracking (how much energy passed through this node per tick)
+    private final java.util.concurrent.atomic.AtomicInteger energyTransferred = new java.util.concurrent.atomic.AtomicInteger(0);
+
     public CableNode(Location location) {
         Location norm = LocationUtil.normalize(location);
         this.world = norm.getWorld();
@@ -117,6 +120,22 @@ public class CableNode {
             result.add(LocationUtil.toLocation(connKey, world));
         }
         return result;
+    }
+
+    // =========================
+    // ENERGY TRANSFER TRACKING
+    // =========================
+
+    /** Добавляет переданную энергию к счётчику за этот тик. */
+    public void addTransferred(int amount) {
+        if (amount > 0) {
+            energyTransferred.addAndGet(amount);
+        }
+    }
+
+    /** Возвращает и сбрасывает счётчик переданной энергии за тик. */
+    public int getAndResetTransferred() {
+        return energyTransferred.getAndSet(0);
     }
 
     public int getConnectionCount() { return connections.size(); }

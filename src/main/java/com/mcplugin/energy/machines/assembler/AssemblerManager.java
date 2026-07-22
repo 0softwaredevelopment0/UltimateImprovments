@@ -4,6 +4,7 @@ import com.mcplugin.core.Main;
 import com.mcplugin.structure.StructureMarker;
 import com.mcplugin.util.LocationUtil;
 import com.mcplugin.util.ConsoleLogger;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 
 import java.util.UUID;
@@ -29,15 +30,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages assembled auto-crafter structures.
- * Handles assembly/disassembly via shift+RMB on CRAFTER with item frame on top.
- * Only assembled crafters auto-craft items (checked by {@link AssemblerTask}).
+ * Manages assembled Item Creator (Создатель предметов) blocks.
+ * Activated by placing a CRAFTER block — shift+RMB to assemble/disassemble.
+ * Only assembled item creators auto-craft items (checked by {@link AssemblerTask}).
  */
 public class AssemblerManager implements Listener {
 
     private static AssemblerManager instance;
 
-    // Active assemblers: crafter location → enabled flag
+    // Active item creators: crafter location → enabled flag
     private static final Map<Location, Boolean> activeAssemblers = new ConcurrentHashMap<>();
 
     // =========================
@@ -60,7 +61,8 @@ public class AssemblerManager implements Listener {
     private static void scanExistingAssemblers() {
         int count = 0;
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
-            if (!"assembler".equals(entry.getValue().type())) continue;
+            String type = entry.getValue().type();
+            if (!"assembler".equals(type) && !"item_creator".equals(type)) continue;
 
             String fk = entry.getKey();
             String worldUid = StructureMarker.parseWorldUid(fk);
@@ -71,14 +73,13 @@ public class AssemblerManager implements Listener {
                 Location crafterLoc = LocationUtil.normalize(new Location(world, x, y, z));
                 if (crafterLoc == null) continue;
                 if (crafterLoc.getBlock().getType() != Material.CRAFTER) continue;
-                if (!AssemblerStructure.isValid(crafterLoc, false)) continue;
                 activeAssemblers.put(crafterLoc, true);
                 count++;
                 break;
             }
         }
         ConsoleLogger.info(
-                "[Assembler] Auto-detected " + count + " assemblers from Marker entities");
+                "[Assembler] Auto-detected " + count + " item creators from Marker entities");
     }
 
     // =========================
@@ -112,32 +113,21 @@ public class AssemblerManager implements Listener {
         Location loc = LocationUtil.normalize(clicked.getLocation());
         if (loc == null) return;
 
-        // Check structure: crafter + item frame on top
-        if (!AssemblerStructure.isValid(loc)) {
-            List<String> errors = AssemblerStructure.getValidationErrors(loc);
-            if (!errors.isEmpty()) {
-                player.sendMessage("§4❌ §cAssembler structure damaged! §7Errors:");
-                for (String err : errors) {
-                    player.sendMessage("§8 • §f" + err);
-                }
-            }
-            return;
-        }
+        if (loc.getBlock().getType() != Material.CRAFTER) return;
 
         if (activeAssemblers.containsKey(loc)) {
             event.setCancelled(true);
             // DISASSEMBLE
             removeAssembler(loc);
-            player.sendMessage("§e⚡ Assembler disassembled!"
-                    + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
+            player.sendMessage(MessageUtil.parse("<yellow>⚡ Создатель предметов разобран!</yellow>"
+                    + " <dark_gray>[" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "]</dark_gray>"));
             ConsoleLogger.info(
                     "[Assembler] Disassembled at " + loc + " by " + player.getName());
         } else {
             event.setCancelled(true);
             // ASSEMBLE
-            removeFrameOnTop(loc);
             activeAssemblers.put(loc, true);
-            StructureMarker.place(loc, "assembler", UUID.randomUUID());
+            StructureMarker.place(loc, "item_creator", UUID.randomUUID());
             // Регистрируем в EnergyWorkbenchManager, чтобы AssemblerListener мог открыть GUI
             EnergyWorkbenchManager.add(loc);
 
@@ -150,12 +140,13 @@ public class AssemblerManager implements Listener {
                 world.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
             }
 
-            player.sendMessage("§a✔ Assembler assembled!"
-                    + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
-            player.sendMessage("§8┃ §7Place items in the crafter according to the recipe — they will be crafted automatically!");
+            player.sendMessage(MessageUtil.parse("<green>✔ Создатель предметов собран!</green>"
+                    + " <dark_gray>[" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "]</dark_gray>"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ </dark_gray><gray>Разместите предметы в сетке 3x3 по рецепту.</gray>"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ </dark_gray><gray>Подайте <yellow>100⚡</yellow> энергии и редстоун-сигнал для крафта.</gray>"));
 
             ConsoleLogger.info(
-                    "[Assembler] Assembled at " + loc + " by " + player.getName());
+                    "[Assembler] Item Creator assembled at " + loc + " by " + player.getName());
         }
     }
 
@@ -185,28 +176,6 @@ public class AssemblerManager implements Listener {
     // =========================
     // REMOVE FRAME ON TOP
     // =========================
-    private static void removeFrameOnTop(Location crafterLoc) {
-        World world = crafterLoc.getWorld();
-        if (world == null) return;
-
-        double targetX = crafterLoc.getX() + 0.5;
-        double targetY = crafterLoc.getY() + 1.0;
-        double targetZ = crafterLoc.getZ() + 0.5;
-
-        for (ItemFrame frame : world.getEntitiesByClass(ItemFrame.class)) {
-            double dx = Math.abs(frame.getLocation().getX() - targetX);
-            double dz = Math.abs(frame.getLocation().getZ() - targetZ);
-            double dy = Math.abs(frame.getLocation().getY() - targetY);
-
-            if (dx < 0.6 && dz < 0.6 && dy < 0.6) {
-                if (frame.isValid() && !frame.isDead()) {
-                    frame.getWorld().dropItemNaturally(frame.getLocation(), new ItemStack(Material.ITEM_FRAME));
-                    frame.remove();
-                }
-                return;
-            }
-        }
-    }
 
     // =========================
     // SHUTDOWN

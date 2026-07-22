@@ -61,6 +61,9 @@ public class Keys {
     public static NamespacedKey INTEGRITY_VERSION;
     public static NamespacedKey INTEGRITY_UNBREAKABLE;
 
+    // Generator
+    public static NamespacedKey GENERATOR;
+
     // Protection Block (Блок защиты)
     // PDC tag stored on the placed block (BlockData style) and item.
     public static NamespacedKey PROTECTION_BLOCK;
@@ -107,6 +110,8 @@ public class Keys {
         INTEGRITY_WARN_FLAGS = new NamespacedKey(plugin, "integrity_warn_flags");
         INTEGRITY_VERSION = new NamespacedKey(plugin, "integrity_version");
         INTEGRITY_UNBREAKABLE = new NamespacedKey(plugin, "integrity_unbreakable");
+
+        GENERATOR = new NamespacedKey(plugin, "is_generator");
 
         PROTECTION_BLOCK = new NamespacedKey(plugin, "protection_block");
         PROTECTION_BLOCK_ITEM = new NamespacedKey(plugin, "protection_block_item");

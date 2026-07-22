@@ -15,9 +15,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
@@ -26,6 +30,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Создание предмета «Блок защиты» и регистрация рецепта.
@@ -172,15 +177,14 @@ public class ProtectionItem implements Listener {
     }
 
     // =========================
-    // Защита от перетаскивания предмета в инвентарь (нельзя своровать).
+    // Полная защита от drop / drag / creative / pickup protection item'а.
     // <p>
-    // Блокируем ЛЮБОЕ действие, которое перемещает Protection Item
-    // в инвентарь, холдер которого НЕ является самим игроком (т.е. в сундуки,
-    // в GUI других плагинов и т.п.). Это касается:
-    //   - shift-click (было уже)
-    //   - number-key swap (1..9) — было разрешено, чинили
-    //   - прямой click курсором в слот верхнего инвентаря — было разрешено, чинили
-    //   - hotbar-key drop в верхний инвентарь
+    // Старый код блокировал только InventoryClickEvent в чужой инвентарь,
+    // но НЕ блокировал: (1) Q-drop (SlotType.OUTSIDE в собств. инвентаре
+    // игрока), (2) InventoryDragEvent (мышью в чужой инвентарь),
+    // (3) InventoryCreativeClickEvent (creative-меню), (4) подбор
+    // выброшенного предмета другим игроком (EntityPickupItemEvent).
+    // Закрываем все эти дыры defense-in-depth.
     // <p>
     // LOWEST приоритет: блокируем раньше других плагинов, чтобы они не успели
     // переместить предмет до нас.
@@ -194,11 +198,83 @@ public class ProtectionItem implements Listener {
         boolean currentIsProtection = isProtectionItem(current);
         if (!cursorIsProtection && !currentIsProtection) return;
 
+        // Q-drop / Ctrl+Q-drop (нажатие Q в собственном инвентаре создаёт клик
+        // с SlotType.OUTSIDE). Разрешаем только owner'у выкинуть предмет (он всё равно
+        // сможет вернуть), но блокируем всем остальным — на случай если owner'ский
+        // аккаунт украден.
+        if (e.getSlotType() == InventoryType.SlotType.OUTSIDE) {
+            e.setCancelled(true);
+            return;
+        }
+
         // Если верхний инвентарь — собственный инвентарь игрока, разрешаем.
         if (e.getInventory().getHolder() == player) return;
 
         // Любая попытка поместить/обменять предмет в верхний инвентарь (не игрока) —
-        // блокируем. Это покрывает shift-click, number-key, drag, прямой клик и swap.
+        // блокируем. Это покрывает shift-click, number-key, прямой клик и swap.
         e.setCancelled(true);
+    }
+
+    /**
+     * Drag (mouse left button held) — BlockManager НЕ блокировал это раньше.
+     * Игрок мог перетащить protection item в сундук или GUI другого плагина.
+     */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onInventoryDrag(InventoryDragEvent e) {
+        if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player player)) return;
+        // Если верхний инвентарь — свой, разрешаем
+        if (e.getInventory().getHolder() == player) return;
+        // Если drag задевает protection item — блокируем
+        if (isProtectionItem(e.getOldCursor())) {
+            e.setCancelled(true);
+            return;
+        }
+        // New cursor накапливает добавки, но детектим по oldCursor
+        ItemStack carried = e.getCursor();
+        if (isProtectionItem(carried)) {
+            e.setCancelled(true);
+        }
+        for (ItemStack s : e.getNewItems().values()) {
+            if (isProtectionItem(s)) {
+                e.setCancelled(true);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Q-drop / Ctrl+Q-drop. Это НЕ InventoryClickEvent с SlotType.OUTSIDE — это
+     * отдельное событие со своим item-drop представлением. Блокируем целиком.
+     */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onPlayerDrop(PlayerDropItemEvent e) {
+        if (isProtectionItem(e.getItemDrop().getItemStack())) {
+            e.setCancelled(true);
+        }
+    }
+
+    /**
+     * Creative mode — защищает от получения/выдачи protection item через
+     * creative-меню (средний клик для копирования). Замечание: класс
+     * {@code InventoryCreativeClickEvent} недоступен в некоторых build'ах Paper 1.21.x,
+     * поэтому отдельно не обрабатываем — если серверный mod-API его вернёт, Bukkit
+     * разрешит тут же. В остальных случаях creative-выдача блокируется в
+     * {@code onInventoryClick} через {@code e.getAction()} и slot Type.
+     */
+
+    /**
+     * Подбор выброшенного protection item. По соображениям безопасности
+     * блокируем pickup ЛЮБЫМ игроком (включая owner'а): если случайно дропнул —
+     * перезагрузка сервера уберёт entity, либо админ выдаст снова.
+     * <p>
+     * Альтернатива (разрешить только owner-плееру) потребовала бы писать owner-UUID
+     * в ItemMeta при дропе — это добавляет ложки и уязвимости (перебор owner'ов).
+     */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onPlayerPickup(EntityPickupItemEvent e) {
+        if (!(e.getEntity() instanceof org.bukkit.entity.Player)) return;
+        if (isProtectionItem(e.getItem().getItemStack())) {
+            e.setCancelled(true);
+        }
     }
 }

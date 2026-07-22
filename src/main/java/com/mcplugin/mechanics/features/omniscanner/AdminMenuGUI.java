@@ -7,6 +7,7 @@ import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.StatsTracker;
 import com.mcplugin.util.ConsoleLogger;
 import com.mcplugin.mechanics.features.world.ChunkLoaderItemListener;
+import com.mcplugin.mechanics.particle.ParticleAcceleratorManager;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -288,8 +289,13 @@ public class AdminMenuGUI implements Listener {
     // ========================================================================
 
     private static final List<ItemStack> CUSTOM_ITEMS = new ArrayList<>();
+    private static long itemsLastRefresh = 0;
 
-    static {
+    private static void ensureItemsFresh() {
+        long now = System.currentTimeMillis();
+        if (now - itemsLastRefresh < 5000) return; // refresh max every 5s
+        itemsLastRefresh = now;
+        CUSTOM_ITEMS.clear();
         initCustomItems();
     }
 
@@ -386,25 +392,17 @@ public class AdminMenuGUI implements Listener {
                 "<light_purple>Antimatter *</light_purple>",
                 "<gray>Dangerous substance.</gray>"), Keys.ANTIMATTER));
 
-        // 17. Particle Ring (без PDC — блок-плейсер, определение по типу)
-        CUSTOM_ITEMS.add(createNamedItem(Material.CHISELED_TUFF,
-                "<white>Particle Ring *</white>",
-                "<gray>Guides particles along the accelerator path.</gray>"));
+        // 17. Particle Ring (GLASS — с PDC, чтобы детектился как блок ускорителя)
+        CUSTOM_ITEMS.add(ParticleAcceleratorManager.createParticleBlockItem(Material.GLASS));
 
-        // 18. Particle Engine (без PDC — блок-плейсер)
-        CUSTOM_ITEMS.add(createNamedItem(Material.TUFF_BRICKS,
-                "<white>Particle Engine *</white>",
-                "<gray>Accelerates particles. Requires 500⚡ buffer.</gray>"));
+        // 18. Particle Engine (TUFF_BRICKS — с PDC)
+        CUSTOM_ITEMS.add(ParticleAcceleratorManager.createParticleBlockItem(Material.TUFF_BRICKS));
 
-        // 19. Particle Speed Sensor (без PDC — блок-плейсер)
-        CUSTOM_ITEMS.add(createNamedItem(Material.POLISHED_DIORITE,
-                "<white>Particle Speed Sensor *</white>",
-                "<gray>Measures particle speed (0-99.999% light speed).</gray>"));
+        // 19. Particle Speed Sensor (POLISHED_DIORITE — с PDC)
+        CUSTOM_ITEMS.add(ParticleAcceleratorManager.createParticleBlockItem(Material.POLISHED_DIORITE));
 
-        // 20. Particle Injector (без PDC — блок-плейсер)
-        CUSTOM_ITEMS.add(createNamedItem(Material.REINFORCED_DEEPSLATE,
-                "<white>Particle Injector *</white>",
-                "<gray>Right-click with any item to inject it as a particle.</gray>"));
+        // 20. Particle Injector (REINFORCED_DEEPSLATE — с PDC)
+        CUSTOM_ITEMS.add(ParticleAcceleratorManager.createParticleBlockItem(Material.REINFORCED_DEEPSLATE));
 
         // 21. Netherite Upgraded Sword (пример улучшенного незеритового)
         ItemStack netheriteSword = new ItemStack(Material.NETHERITE_SWORD);
@@ -470,6 +468,7 @@ public class AdminMenuGUI implements Listener {
     }
 
     private static void buildItemsContent(Inventory inv, Player player, MenuState state) {
+        ensureItemsFresh();
         int itemsPerPage = CONTENT_END - CONTENT_START + 1;
         int totalPages = Math.max(1, (int) Math.ceil((double) CUSTOM_ITEMS.size() / itemsPerPage));
         state.page = Math.max(0, Math.min(state.page, totalPages - 1));

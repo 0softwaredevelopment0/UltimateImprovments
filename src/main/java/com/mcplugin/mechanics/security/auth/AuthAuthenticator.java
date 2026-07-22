@@ -132,7 +132,7 @@ public class AuthAuthenticator {
         // Earlier version mixed legacy §-codes with bare <white>/<gold> tags in
         // player.sendMessage(String), which made the tags render as literal text.
         player.sendMessage("");
-        player.sendMessage(MessageUtil.parse("<dark_gray>╔ <gold>✦ <bold>Custom Screen</bold> <dark_gray>╗"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>╔ <gold>✦ <bold>Авторизация</bold> <dark_gray>╗"));
         player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
         player.sendMessage("");
 

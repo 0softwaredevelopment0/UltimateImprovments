@@ -108,17 +108,24 @@ public class ParticleMovementTask extends BukkitRunnable {
         Material blockType = blockLoc.getBlock().getType();
 
         if (blockType == ParticleAcceleratorManager.ENGINE) {
-            // Try to consume energy and accelerate
-            boolean success = ParticleAcceleratorManager.consumeEngineEnergy(blockLoc);
-            if (success && data.speed < ParticleAcceleratorManager.MAX_SPEED) {
-                data.speed = Math.min(ParticleAcceleratorManager.MAX_SPEED, data.speed + ParticleAcceleratorManager.SPEED_INCREMENT);
-                // Visual: electric spark
+            // Particles always pass through — never blocked by engine.
+            // Если буфер полон (1000) И есть редстоун-сигнал → ускорить.
+            if (data.speed < ParticleAcceleratorManager.MAX_SPEED
+                    && ParticleAcceleratorManager.canEngineAccelerate(blockLoc)) {
+                // Потребляем весь буфер (1000→0) и делаем скачок скорости
+                ParticleAcceleratorManager.consumeEngineEnergy(blockLoc);
+                data.speed = Math.min(ParticleAcceleratorManager.MAX_SPEED,
+                        data.speed + ParticleAcceleratorManager.SPEED_INCREMENT);
+                // Visual: мощный электрический разряд
                 Location center = blockLoc.clone().add(0.5, 0.5, 0.5);
-                blockLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, center, 5, 0.2, 0.2, 0.2, 0);
+                blockLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, center, 20, 0.5, 0.5, 0.5, 0);
+                blockLoc.getWorld().spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0);
+                blockLoc.getWorld().playSound(center, org.bukkit.Sound.BLOCK_BEACON_POWER_SELECT, 1.0f, 0.5f);
             }
+            // Even if no acceleration, particle passes through normally
         } else if (blockType == ParticleAcceleratorManager.SENSOR) {
-            // Log speed for display — no action needed, just pass through
-            double pct = data.speed / ParticleAcceleratorManager.MAX_SPEED * 100.0;
+            // Запоминаем скорость последней пролетевшей частицы (для мультиметра)
+            ParticleAcceleratorManager.setSensorLastSpeed(blockLoc, data.speed);
             // Visual: spark on sensor
             Location center = blockLoc.clone().add(0.5, 0.5, 0.5);
             blockLoc.getWorld().spawnParticle(Particle.END_ROD, center, 3, 0.1, 0.1, 0.1, 0.01);
@@ -162,39 +169,83 @@ public class ParticleMovementTask extends BukkitRunnable {
     }
 
     // =========================
-    // COLLISION DETECTION — sweep-test
+    // COLLISION DETECTION — proper swept-segment 3D test
     // =========================
+    // Реальный 3D-тест минимального расстояния между двумя отрезками
+    // [a.start, a.end] и [b.start, b.end] за один тик. Исправляет баги
+    // старого скалярного sweep-test'а:
+    //   - ложные коллизии для расходящихся перпендикулярных частиц,
+    //   - ложные коллизии для параллельных частиц, плывущих рядом,
+    //   - пропуски при “пролёте сквозь друга” в один тик.
+    // Алгоритм: Real-Time Collision Detection (Christer Ericke),
+    // clamped s,t ∈ [0,1].
     private void checkCollisions() {
         List<ParticleAcceleratorManager.ParticleData> particles = new ArrayList<>(ParticleAcceleratorManager.getActiveParticles());
         if (particles.size() < 2) return;
+
+        // Pre-compute end-of-tick positions for each particle
+        Map<UUID, EndState> endById = new HashMap<>();
+        for (ParticleAcceleratorManager.ParticleData p : particles) {
+            if (p.dead) {
+                endById.put(p.id, new EndState(p.location, p.location));
+                continue;
+            }
+            Location target = (p.path != null && p.pathIndex < p.path.size())
+                    ? p.path.get(p.pathIndex)
+                    : null;
+            Location endLoc;
+            if (target == null) {
+                endLoc = p.location.clone();
+            } else {
+                double dx = target.getX() + 0.5 - p.location.getX();
+                double dy = target.getY() + 0.5 - p.location.getY();
+                double dz = target.getZ() + 0.5 - p.location.getZ();
+                double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                double moveAmount = Math.min(p.speed, dist);
+                if (dist <= 1e-9 || moveAmount <= 1e-9) {
+                    endLoc = p.location.clone();
+                } else {
+                    double ratio = moveAmount / dist;
+                    endLoc = new Location(p.location.getWorld(),
+                            p.location.getX() + dx * ratio,
+                            p.location.getY() + dy * ratio,
+                            p.location.getZ() + dz * ratio);
+                }
+            }
+            endById.put(p.id, new EndState(p.location, endLoc));
+        }
 
         Set<UUID> toRemove = new HashSet<>();
 
         for (int i = 0; i < particles.size(); i++) {
             ParticleAcceleratorManager.ParticleData a = particles.get(i);
             if (a.dead || toRemove.contains(a.id)) continue;
+            EndState ea = endById.get(a.id);
+            if (ea == null) continue;
 
             for (int j = i + 1; j < particles.size(); j++) {
                 ParticleAcceleratorManager.ParticleData b = particles.get(j);
                 if (b.dead || toRemove.contains(b.id)) continue;
+                EndState eb = endById.get(b.id);
+                if (eb == null) continue;
 
-                // === SWEEP-TEST ===
-                // Две частицы за один тик могут пролететь друг сквозь друга,
-                // если их относительная скорость > расстояния между ними.
-                // Считаем: если шаг сближения ≥ оставшегося расстояния, то
-                // коллизия гарантированно происходит (или уже произошла).
-                // Это в разы надёжнее простого distance ≤ 1.0.
-                double dist = a.location.distance(b.location);
-                double relativeSpeed = a.speed + b.speed; // макс. сближение за тик
+                // Дешёвая предварительная проверка: если оба стационарны и далеко,
+                // нет смысла считать полный тест.
+                if (!ea.moves() && !eb.moves()) {
+                    if (ea.start.distance(eb.start) > REACH_DISTANCE * 2.0) continue;
+                }
 
-                // Если порог сближения >= расстояния — коллизия
-                if (dist > 1.0 && dist > relativeSpeed) continue; // разминутся
-
-                // Collision detected!
-                handleCollision(a, b);
-                toRemove.add(a.id);
-                toRemove.add(b.id);
-                break;
+                double minDist = closestDistanceBetweenSegments(
+                        ea.start.getX(), ea.start.getY(), ea.start.getZ(),
+                        ea.end.getX(),   ea.end.getY(),   ea.end.getZ(),
+                        eb.start.getX(), eb.start.getY(), eb.start.getZ(),
+                        eb.end.getX(),   eb.end.getY(),   eb.end.getZ());
+                if (minDist <= REACH_DISTANCE) {
+                    handleCollision(a, b);
+                    toRemove.add(a.id);
+                    toRemove.add(b.id);
+                    break;
+                }
             }
         }
 
@@ -202,6 +253,78 @@ public class ParticleMovementTask extends BukkitRunnable {
         for (UUID id : toRemove) {
             ParticleAcceleratorManager.removeParticle(id);
         }
+    }
+
+    private record EndState(Location start, Location end) {
+        boolean moves() {
+            double dx = end.getX() - start.getX();
+            double dy = end.getY() - start.getY();
+            double dz = end.getZ() - start.getZ();
+            return (dx * dx + dy * dy + dz * dz) > 1e-12;
+        }
+    }
+
+    /**
+     * Real-Time Collision Detection (Christer Ericke, §5.1.9).
+     * Returns squared minimum distance for performance; caller decides comparison.
+     */
+    private static double closestDistanceBetweenSegments(
+            double p1x, double p1y, double p1z,
+            double q1x, double q1y, double q1z,
+            double p2x, double p2y, double p2z,
+            double q2x, double q2y, double q2z) {
+        double d1x = q1x - p1x, d1y = q1y - p1y, d1z = q1z - p1z;
+        double d2x = q2x - p2x, d2y = q2y - p2y, d2z = q2z - p2z;
+        double rx = p1x - p2x, ry = p1y - p2y, rz = p1z - p2z;
+
+        double a = d1x*d1x + d1y*d1y + d1z*d1z;
+        double e = d2x*d2x + d2y*d2y + d2z*d2z;
+        double f = d2x*rx + d2y*ry + d2z*rz;
+
+        final double EPS = 1e-9;
+        double s, t;
+
+        if (a <= EPS && e <= EPS) {
+            // both degenerate to points
+            return Math.sqrt(rx*rx + ry*ry + rz*rz);
+        }
+        if (a <= EPS) {
+            s = 0.0;
+            t = clamp01(f / e);
+        } else {
+            double c = d1x*rx + d1y*ry + d1z*rz;
+            if (e <= EPS) {
+                t = 0.0;
+                s = clamp01(-c / a);
+            } else {
+                double b = d1x*d2x + d1y*d2y + d1z*d2z;
+                double denom = a * e - b * b;
+                if (denom != 0.0) {
+                    s = clamp01((b*f - c*e) / denom);
+                } else {
+                    s = 0.0; // parallel: any s works
+                }
+                t = (b*s + f) / e;
+                if (t < 0.0) {
+                    t = 0.0;
+                    s = clamp01(-c / a);
+                } else if (t > 1.0) {
+                    t = 1.0;
+                    s = clamp01((b - c) / a);
+                }
+            }
+        }
+
+        double c1x = p1x + d1x * s, c1y = p1y + d1y * s, c1z = p1z + d1z * s;
+        double c2x = p2x + d2x * t, c2y = p2y + d2y * t, c2z = p2z + d2z * t;
+        double dx = c1x - c2x, dy = c1y - c2y, dz = c1z - c2z;
+        return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    }
+
+    private static double clamp01(double v) {
+        if (v < 0.0) return 0.0;
+        if (v > 1.0) return 1.0;
+        return v;
     }
 
     // =========================

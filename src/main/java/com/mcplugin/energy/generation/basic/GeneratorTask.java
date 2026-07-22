@@ -135,6 +135,10 @@ public class GeneratorTask extends BukkitRunnable {
 
                 if (toAdd > 0) {
                     addEnergyToBatteryNetwork(nodeLoc, toAdd);
+                    // Track transfer on the connected cable node
+                    if (node.getType() == NodeType.CABLE) {
+                        node.addTransferred(toAdd);
+                    }
                 }
                 energyAccumulator.put(furnaceLoc, acc);
 
@@ -180,6 +184,10 @@ public class GeneratorTask extends BukkitRunnable {
                     double rem = energyPerTickDouble - firstAdd;
                     if (firstAdd > 0) {
                         addEnergyToBatteryNetwork(nodeLoc, firstAdd);
+                        // Track transfer on the connected cable node
+                        if (node.getType() == NodeType.CABLE) {
+                            node.addTransferred(firstAdd);
+                        }
                     }
                     if (rem > 0) {
                         energyAccumulator.put(furnaceLoc, rem);

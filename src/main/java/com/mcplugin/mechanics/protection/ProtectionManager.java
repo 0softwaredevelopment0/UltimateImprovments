@@ -147,6 +147,21 @@ public class ProtectionManager {
         }
     }
 
+    /**
+     * Полный hot-reload конфигурации Protection: обновляет cachedMaterial (раньше он
+     * кешировался только в init() и не подхватывал изменение protection.block.material
+     * до перезапуска). Вызывается из /mp reload или любого места, где меняется конфиг.
+     * <p>
+     * Также перезапускает dirtyRetryTask (если по какой-то причине остановился).
+     */
+    public void reloadConfig() {
+        cacheMaterial();
+        if (dirtyRetryTask == null) {
+            startDirtyRetryTask();
+        }
+        ConsoleLogger.info("[ProtectionBlock] Config reloaded. Material=" + cachedMaterial.name());
+    }
+
     private void loadFromDb() {
         for (ProtectionDatabase.LoadedBlock lb : ProtectionDatabase.loadAllBlocks()) {
             World world = Bukkit.getWorld(lb.worldName());
@@ -551,22 +566,35 @@ public class ProtectionManager {
     // =========================
     public void applyIntegrityDamage(ProtectionBlock block, double amount) {
         if (block == null) return;
+        UUID id = block.getId();
         // Защита от stale-reference: если блок уже удалён из кэша (например, после destroy),
         // любой оставшийся вызов с старой ссылкой не должен пере-вставлять DB-строку.
-        if (!blocks.containsKey(block.getId())) return;
+        if (!blocks.containsKey(id)) return;
+        // Disabled-блоки не получают damage: иначе фантомно копится integrity loss,
+        // но destroy не происходит (см. protect-gated auditory код в triggerIntruderEffects).
+        if (!block.isEnabled()) return;
         double newVal = block.getIntegrity() - amount;
+        // Если блок сейчас умрёт от этого удара — атомарный guard destroyed.add()
+        // срабатывает ОДИН раз на destroy-событие. Раньше integrity уменьшали ДО guard'а,
+        // поэтому при двух событиях в один тик делался лишний DB-write и integrity мог
+        // уйти в глубокий минус, прежде чем второй вызов блокировался.
+        if (newVal <= 0.0) {
+            if (destroyed.add(id)) {
+                try {
+                    block.setIntegrity(0.0);
+                    saveBlockState(block);
+                    destroyBlock(block, true);
+                } catch (Throwable t) {
+                    // Если destroy упал — разрешаем повторный trigger позже.
+                    destroyed.remove(id);
+                    throw t;
+                }
+            }
+            return;
+        }
+        // Блок пережил удар — просто уменьшаем и пишем, без касания destroyed.
         block.setIntegrity(newVal);
         saveBlockState(block);
-        if (newVal <= 0.0) {
-            // BOOM, и удаление блока — но ровно один раз.
-            // Раньше двойной вызов (например, две TNT в одном тике) приводил к двум
-            // spawnParticle(EXPLOSION) + двум playSound, потому что integrity-чек
-            // проходил независимо. destroyed.add() возвращает true только при первом
-            // вызове — это и есть одноразовый guard.
-            if (destroyed.add(block.getId())) {
-                destroyBlock(block, true);
-            }
-        }
     }
 
     /**

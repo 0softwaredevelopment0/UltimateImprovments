@@ -20,20 +20,17 @@ public class ParticleCollisionHandler {
 
     private static final List<CollisionRecipe> recipes = new ArrayList<>();
 
-    private static boolean loaded = false;
-
     /**
      * Загружает рецепты коллизий из config.yml.
      * Вызывается из {@link ParticleAcceleratorManager#init(Main)}.
      * <p>
      * Если секция отсутствует или пуста, используются хардкодные дефолты
      * (Gold+Di→Em, Di+Em→Netherite Scrap).
+     * <p>
+     * Безопасно вызывать многократно — при повторном вызове сбрасывает и перезагружает.
      */
     public static void loadConfig(Main plugin) {
-        if (loaded) {
-            recipes.clear(); // allow reload
-        }
-        loaded = true;
+        recipes.clear(); // всегда перезагружаем (поддерживает /reload)
 
         List<?> rawList = plugin.getConfig().getList("particle_accelerator.collision_recipes");
         if (rawList == null || rawList.isEmpty()) {

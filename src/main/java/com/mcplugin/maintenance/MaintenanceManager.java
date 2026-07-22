@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
  * <p>
  * Когда техработы включены, только белый список может зайти на сервер.
  * Все настройки и whitelist хранятся в SQLite (maintenance_whitelist + maintenance_meta),
- * кроме kick_message и текстов сообщений — они в messages.yml.
+ * кроме kick_message и текстов сообщений — они в
+ * {@code config.yml#messages.maintenance.*} (или фолбек на {@code #messages_en.*}).
  */
 public class MaintenanceManager implements Listener {
 
@@ -304,7 +305,7 @@ public class MaintenanceManager implements Listener {
     }
 
     // =========================
-    // BROADCASTS — из messages.yml
+    // BROADCASTS — из config.yml:messages.maintenance.* (с фолбеком на messages_en.*)
     // =========================
 
     private void broadcastMaintenance(boolean enabled, String timeStr) {

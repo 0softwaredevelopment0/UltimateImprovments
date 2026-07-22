@@ -17,7 +17,7 @@ import org.bukkit.inventory.InventoryView;
 
 public class AssemblerListener implements Listener {
 
-    private static final Component ASSEMBLER_TITLE = Component.text("Item assembler");
+    private static final Component ASSEMBLER_TITLE = Component.text("Создатель предметов");
 
     @EventHandler
     public void onWorkbenchInteract(PlayerInteractEvent e) {
@@ -34,7 +34,7 @@ public class AssemblerListener implements Listener {
         // Track which CRAFTER this player is using (for energy buffer)
         EnergyWorkbenchManager.setPlayerWorkbench(player, loc);
 
-        // Open custom CRAFTER inventory with "Item assembler" title
+        // Open custom CRAFTER inventory with "Создатель предметов" title
         Inventory inv = Bukkit.createInventory(null, InventoryType.CRAFTER, ASSEMBLER_TITLE);
         player.openInventory(inv);
     }
