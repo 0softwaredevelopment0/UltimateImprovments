@@ -118,12 +118,12 @@ protection:
     chgpass_success: "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
     chgpass_session_reset: "<gray>Session reset — player must log in again.</gray>"
     chgpass_fail: "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
-    kick_resetauth: "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>"
-    kick_delsession: "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
+    kick_resetauth: "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>"
+    kick_delsession: "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
     kick_timeout: "<red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>"
     kick_too_many_attempts: "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>"
     kick_logout: "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>"
-    kick_duplicate_name: "<yellow>✦</yellow> MC-Plugin\n\n%details%\n\n"
+    kick_duplicate_name: "<yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n"
 
 codepanel:
   messages:
@@ -378,7 +378,7 @@ update:
   no_permission_install: "<red>❌ You don't have permission to install updates!</red>"
   checking: "<yellow>⟳</yellow> <gray>Checking for updates on GitHub...</gray>"
   downloading: "<yellow>⟳</yellow> <gray>Downloading update from GitHub...</gray>"
-  header: "<gold>=== <white>MC-Plugin — Update Check</white> ==="
+  header: "<gold>=== <white>UltimateImprovments — Update Check</white> ==="
   plugin_version: "<gray>Plugin version:</gray> <white>%version%</white>"
   latest_commit: "<gray>Latest commit:</gray> <white>%sha%</white>"
   latest_release: "<gray>Latest release:</gray> <white>%tag%</white>"
@@ -427,7 +427,7 @@ maintenance:
 
 general:
   player_only: "<red>❌ Only players can use this command!</red>"
-  no_permission: "<red>❌ You don't have permission to use MC-Plugin commands!</red>"
+  no_permission: "<red>❌ You don't have permission to use UltimateImprovments commands!</red>"
   unknown_command: "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>"
   structure_player_only: "<red>❌ Error: </red><gray>Only players can use this command.</gray>"
   structure_no_permission: "<red>❌ You don't have permission to manage structures!</red>"

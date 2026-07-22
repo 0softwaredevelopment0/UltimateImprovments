@@ -1,10 +1,10 @@
 # Main plugin data
-name: MC-Plugin
+name: UltimateImprovments
 description: A modular Minecraft plugin that adds authentication, advanced mechanics, custom crafting, and server protection.
 website: N/A
 version: ${project.version}
 api-version: "26.2"
-main: com.mcplugin.core.Main
+main: com.ultimateimprovments.core.Main
 author: rizer001
 load: STARTUP
 softdepend: [PlaceholderAPI, LuckPerms, Vault, DeluxeMenus]

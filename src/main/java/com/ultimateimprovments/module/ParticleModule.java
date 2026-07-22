@@ -1,0 +1,52 @@
+package com.ultimateimprovments.module;
+
+import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.mechanics.crafting.*;
+import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
+import com.ultimateimprovments.mechanics.particle.ParticleMovementTask;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
+
+public class ParticleModule extends PluginModule {
+
+    private BukkitTask movementTask;
+
+    public ParticleModule() {
+        super("ParticleAccelerator", "mechanics/particle", false);
+    }
+
+    @Override
+    protected void onInit(JavaPlugin plugin) throws Exception {
+        Main main = (Main) plugin;
+
+        ParticleAcceleratorManager.init(main);
+
+        // Movement task every tick
+        movementTask = new ParticleMovementTask().runTaskTimer(main, 20L, 1L);
+
+        // Register crafting recipes (Item Assembler only)
+        ParticleRingCraftListener.init();
+        main.getServer().getPluginManager().registerEvents(new ParticleRingCraftListener(), main);
+
+        ParticleEngineCraftListener.init();
+        main.getServer().getPluginManager().registerEvents(new ParticleEngineCraftListener(), main);
+
+        ParticleSensorCraftListener.init();
+        main.getServer().getPluginManager().registerEvents(new ParticleSensorCraftListener(), main);
+
+        ParticleInjectorCraftListener.init();
+        main.getServer().getPluginManager().registerEvents(new ParticleInjectorCraftListener(), main);
+
+        ConsoleLogger.info("[ParticleModule] ✔ Particle accelerator system initialized.");
+    }
+
+    @Override
+    protected void onDisable(JavaPlugin plugin) {
+        if (movementTask != null) {
+            movementTask.cancel();
+            movementTask = null;
+        }
+        ParticleAcceleratorManager.shutdown();
+    }
+}
