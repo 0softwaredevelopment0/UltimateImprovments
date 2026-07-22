@@ -1,10 +1,10 @@
 ╔══════════════════════════════════════════════════════════════════╗
 ║                      MC-PLUGIN — ПОЛНЫЙ ГАЙД                     ║
-║              https://github.com/rizer001/MC-Plugin            ║
+║              https://github.com/rizer001/UltimateImprovements            ║
 ╚══════════════════════════════════════════════════════════════════╝
 
 ▸ ЧТО ТАКОЕ MC-PLUGIN?
-  MC-Plugin — многофункциональный плагин для Paper 1.21.4+.
+  UltimateImprovements — многофункциональный плагин для Paper 1.21.4+.
   Добавляет: энергию, реакторы, крафты, наказания, вайтлист, блэклист,
   кастомный чат, таб, скорборд, MOTD, ваниш, авторизацию, радиацию,
   беспроводной редстоун, защиту от ботов, фильтр чата и многое другое.
@@ -14,7 +14,7 @@
 
 ▸ ФАЙЛЫ КОНФИГУРАЦИИ
 
-  plugins/MC-Plugin/config.yml       — ОСНОВНЫЕ НАСТРОЙКИ (все значения)
+  plugins/UltimateImprovements/config.yml       — ОСНОВНЫЕ НАСТРОЙКИ (все значения)
   config.yml (секции messages: + messages_en:) — СООБЩЕНИЯ
   config.yml (раздел plugin-guide в НАЧАЛЕ файла) — документация
 
@@ -2182,7 +2182,7 @@
       default:
         condition:
           type: always
-        title: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient>"
+        title: "<gradient:#00AAFF:#FF55FF>UltimateImprovements</gradient>"
         lines:
           - ""
           - "<gray>Online: <white>{online}</white></gray>"
@@ -2218,8 +2218,8 @@
   bossbar.format
     • Описание: Текст боссбара в формате MiniMessage с плейсхолдерами.
       Поддерживаются все плейсхолдеры (игрока, сервера, PAPI).
-      Пример: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient> | Online: {online}"
-    • По умолчанию: "<gradient:#00AAFF:#FF55FF>MC-Plugin | Online: {online}"
+      Пример: "<gradient:#00AAFF:#FF55FF>UltimateImprovements</gradient> | Online: {online}"
+    • По умолчанию: "<gradient:#00AAFF:#FF55FF>UltimateImprovements | Online: {online}"
 
   bossbar.color
     • Описание: Цвет полосы прогресса.
@@ -2922,7 +2922,7 @@
   Используйте: /mp power off и /mp power reboot
 
   ───── БАЗА ДАННЫХ ─────
-  Все данные хранятся в plugins/MC-Plugin/database.db (SQLite).
+  Все данные хранятся в plugins/UltimateImprovements/database.db (SQLite).
   Рекомендуется регулярное резервное копирование!
 
   ───── ДАТАПАК ─────
@@ -2936,5 +2936,5 @@
   Полная перезагрузка сервера НЕ ТРЕБУЕТСЯ (но возможна).
 
   ───── ПОДДЕРЖКА ─────
-  GitHub: https://github.com/rizer001/MC-Plugin
+  GitHub: https://github.com/rizer001/UltimateImprovements
   Баги и предложения: создавайте Issue на GitHub

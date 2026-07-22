@@ -1,0 +1,77 @@
+package com.ultimateimprovements.mechanics.crafting;
+
+import com.ultimateimprovements.energy.machines.assembler.AssemblerChecker;
+import com.ultimateimprovements.core.Main;
+import com.ultimateimprovements.util.ConsoleLogger;
+import com.ultimateimprovements.util.MessageUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.List;
+
+public class ParticleInjectorCraftListener implements Listener {
+
+    private static NamespacedKey RECIPE_KEY;
+
+    public static void init() {
+        RECIPE_KEY = new NamespacedKey(Main.getInstance(), "particle_injector");
+        registerRecipe();
+    }
+
+    private static void registerRecipe() {
+        Main plugin = Main.getInstance();
+
+        Bukkit.removeRecipe(RECIPE_KEY);
+
+        ItemStack result = createInjectorItem();
+
+        ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, result);
+        recipe.setGroup(RECIPE_KEY.getKey());
+        recipe.shape(
+                "DED",
+                "EIE",
+                "DED"
+        );
+        recipe.setIngredient('D', Material.DEEPSLATE);
+        recipe.setIngredient('E', Material.ENDER_PEARL);
+        recipe.setIngredient('I', Material.IRON_BLOCK);
+
+        plugin.getServer().addRecipe(recipe);
+        RecipeRegistry.registerRecipe(RECIPE_KEY);
+
+        ConsoleLogger.info("[ParticleInjector] Recipe registered (Item Assembler only).");
+    }
+
+    public static ItemStack createInjectorItem() {
+        ItemStack result = new ItemStack(Material.REINFORCED_DEEPSLATE);
+        ItemMeta meta = result.getItemMeta();
+        if (meta == null) return result;
+
+        meta.displayName(MessageUtil.parse("<i:false><white>Particle Injector *</white>"));
+        meta.lore(List.of(
+                MessageUtil.parse("<i:false><gray>Right-click with any item to inject it as a particle.</gray>")
+        ));
+
+        result.setItemMeta(meta);
+        return result;
+    }
+
+    @EventHandler
+    public void onCraft(PrepareItemCraftEvent e) {
+        Recipe recipe = e.getRecipe();
+        if (!(recipe instanceof ShapedRecipe sr)) return;
+        if (!sr.getKey().equals(RECIPE_KEY)) return;
+        if (!AssemblerChecker.isAssemblerCraft(e)) return;
+
+        e.getInventory().setResult(createInjectorItem());
+    }
+}

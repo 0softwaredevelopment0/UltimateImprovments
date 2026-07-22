@@ -1,4 +1,4 @@
-# ✦ MC-Plugin — Full Feature Overview
+# ✦ UltimateImprovements — Full Feature Overview
 
 **Version:** 26.2  
 **Recommended Core:** Leaf (Paper-compatible)  

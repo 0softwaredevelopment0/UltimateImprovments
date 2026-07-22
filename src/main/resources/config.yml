@@ -1,4 +1,4 @@
-# MC-PLUGIN — ЕДИНЫЙ КОНФИГ ПЛАГИНА v26.2+
+# ULTIMATEIMPROVEMENTS — ЕДИНЫЙ КОНФИГ ПЛАГИНА v26.2+
 # =============================================================
 # ВНИМАНИЕ: Этот файл ОЧЕНЬ БОЛЬШОЙ (~6000 строк) — это НОРМАЛЬНО.
 # Здесь четыре секции, расположенные в строгом порядке:
@@ -8,14 +8,14 @@
 #   4. INTEGRITY META    — _meta.guide_hash (НЕ ТРОГАТЬ: авто-управление)
 # =============================================================
 
-# === MC-PLUGIN GUIDE BEGIN (auto-managed by ConfigGuideManager, do not edit between markers) ===
+# === ULTIMATEIMPROVEMENTS GUIDE BEGIN (auto-managed by ConfigGuideManager, do not edit between markers) ===
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║                      MC-PLUGIN — ПОЛНЫЙ ГАЙД                     ║
-# ║              https://github.com/rizer001/MC-Plugin            ║
+# ║                      ULTIMATEIMPROVEMENTS — ПОЛНЫЙ ГАЙД                     ║
+# ║              https://github.com/rizer001/UltimateImprovements            ║
 # ╚══════════════════════════════════════════════════════════════════╝
 #
-# ▸ ЧТО ТАКОЕ MC-PLUGIN?
-#   MC-Plugin — многофункциональный плагин для Paper 1.21.4+.
+# ▸ ЧТО ТАКОЕ ULTIMATEIMPROVEMENTS?
+#   UltimateImprovements — многофункциональный плагин для Paper 1.21.4+.
 #   Добавляет: энергию, реакторы, крафты, наказания, вайтлист, блэклист,
 #   кастомный чат, таб, скорборд, MOTD, ваниш, авторизацию, радиацию,
 #   беспроводной редстоун, защиту от ботов, фильтр чата и многое другое.
@@ -25,7 +25,7 @@
 #
 # ▸ ФАЙЛЫ КОНФИГУРАЦИИ
 #
-#   plugins/MC-Plugin/config.yml       — ОСНОВНЫЕ НАСТРОЙКИ (все значения)
+#   plugins/UltimateImprovements/config.yml       — ОСНОВНЫЕ НАСТРОЙКИ (все значения)
 #   config.yml (секции messages: + messages_en:) — СООБЩЕНИЯ
 #   config.yml (раздел plugin-guide в НАЧАЛЕ файла) — документация
 #
@@ -2193,7 +2193,7 @@
 #       default:
 #         condition:
 #           type: always
-#         title: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient>"
+#         title: "<gradient:#00AAFF:#FF55FF>UltimateImprovements</gradient>"
 #         lines:
 #           - ""
 #           - "<gray>Online: <white>{online}</white></gray>"
@@ -2229,8 +2229,8 @@
 #   bossbar.format
 #     • Описание: Текст боссбара в формате MiniMessage с плейсхолдерами.
 #       Поддерживаются все плейсхолдеры (игрока, сервера, PAPI).
-#       Пример: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient> | Online: {online}"
-#     • По умолчанию: "<gradient:#00AAFF:#FF55FF>MC-Plugin | Online: {online}"
+#       Пример: "<gradient:#00AAFF:#FF55FF>UltimateImprovements</gradient> | Online: {online}"
+#     • По умолчанию: "<gradient:#00AAFF:#FF55FF>UltimateImprovements | Online: {online}"
 #
 #   bossbar.color
 #     • Описание: Цвет полосы прогресса.
@@ -2933,7 +2933,7 @@
 #   Используйте: /mp power off и /mp power reboot
 #
 #   ───── БАЗА ДАННЫХ ─────
-#   Все данные хранятся в plugins/MC-Plugin/database.db (SQLite).
+#   Все данные хранятся в plugins/UltimateImprovements/database.db (SQLite).
 #   Рекомендуется регулярное резервное копирование!
 #
 #   ───── ДАТАПАК ─────
@@ -2947,9 +2947,9 @@
 #   Полная перезагрузка сервера НЕ ТРЕБУЕТСЯ (но возможна).
 #
 #   ───── ПОДДЕРЖКА ─────
-#   GitHub: https://github.com/rizer001/MC-Plugin
+#   GitHub: https://github.com/rizer001/UltimateImprovements
 #   Баги и предложения: создавайте Issue на GitHub
-# === MC-PLUGIN GUIDE END ===
+# === ULTIMATEIMPROVEMENTS GUIDE END ===
 
 energy:
   generator:
@@ -3647,7 +3647,7 @@ changedimmension:
 motd:
   enabled: true
 
-  line1: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient> <dark_gray>•</dark_gray> <white>1.21.4</white>"
+  line1: "<gradient:#00AAFF:#FF55FF>UltimateImprovements</gradient> <dark_gray>•</dark_gray> <white>1.21.4</white>"
 
   line2: "<gray>✧ Welcome to the server! ✧</gray>"
 
@@ -3656,7 +3656,7 @@ motd:
   player_list:
     enabled: false
     lines:
-      - "<gradient:#00AAFF:#FF55FF>✧ MC-Plugin ✧</gradient>"
+      - "<gradient:#00AAFF:#FF55FF>✧ UltimateImprovements ✧</gradient>"
       - "<dark_gray>discord.gg/mcplugin</dark_gray>"
 
   online_counter:
@@ -3689,7 +3689,7 @@ tab:
   hide_spectators: true
 
   header:
-    - "<gradient:#00AAFF:#FF55FF>  ✦ MC-Plugin ✦  </gradient>"
+    - "<gradient:#00AAFF:#FF55FF>  ✦ UltimateImprovements ✦  </gradient>"
     - "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"
 
   footer:
@@ -3723,7 +3723,7 @@ scoreboard:
         worlds: []
         permission: ""
 
-      title: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient>"
+      title: "<gradient:#00AAFF:#FF55FF>UltimateImprovements</gradient>"
 
       lines:
         - ""
@@ -3738,7 +3738,7 @@ scoreboard:
 bossbar:
   enabled: true
 
-  format: "<gradient:#00AAFF:#FF55FF>MC-Plugin</gradient> <dark_gray>|</dark_gray> <gray>Online: <white>%online%</white></gray>"
+  format: "<gradient:#00AAFF:#FF55FF>UltimateImprovements</gradient> <dark_gray>|</dark_gray> <gray>Online: <white>%online%</white></gray>"
 
   color: YELLOW
 
@@ -4623,12 +4623,12 @@ messages:
       chgpass_success: "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
       chgpass_session_reset: "<gray>Session reset — player must log in again.</gray>"
       chgpass_fail: "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
-      kick_resetauth: "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>"
-      kick_delsession: "<yellow>✦</yellow> MC-Plugin\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
+      kick_resetauth: "<yellow>✦</yellow> UltimateImprovements\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>"
+      kick_delsession: "<yellow>✦</yellow> UltimateImprovements\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
       kick_timeout: "<red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>"
       kick_too_many_attempts: "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>"
       kick_logout: "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>"
-      kick_duplicate_name: "<yellow>✦</yellow> MC-Plugin\n\n%details%\n\n"
+      kick_duplicate_name: "<yellow>✦</yellow> UltimateImprovements\n\n%details%\n\n"
   
   codepanel:
     messages:
@@ -4883,7 +4883,7 @@ messages:
     no_permission_install: "<red>❌ You don't have permission to install updates!</red>"
     checking: "<yellow>⟳</yellow> <gray>Checking for updates on GitHub...</gray>"
     downloading: "<yellow>⟳</yellow> <gray>Downloading update from GitHub...</gray>"
-    header: "<gold>=== <white>MC-Plugin — Update Check</white> ==="
+    header: "<gold>=== <white>UltimateImprovements — Update Check</white> ==="
     plugin_version: "<gray>Plugin version:</gray> <white>%version%</white>"
     latest_commit: "<gray>Latest commit:</gray> <white>%sha%</white>"
     latest_release: "<gray>Latest release:</gray> <white>%tag%</white>"
@@ -4932,7 +4932,7 @@ messages:
   
   general:
     player_only: "<red>❌ Only players can use this command!</red>"
-    no_permission: "<red>❌ You don't have permission to use MC-Plugin commands!</red>"
+    no_permission: "<red>❌ You don't have permission to use UltimateImprovements commands!</red>"
     unknown_command: "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>"
     structure_player_only: "<red>❌ Error: </red><gray>Only players can use this command.</gray>"
     structure_no_permission: "<red>❌ You don't have permission to manage structures!</red>"
@@ -5193,12 +5193,12 @@ messages_en:
       chgpass_success: "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
       chgpass_session_reset: "<gray>Session reset — player must log in again.</gray>"
       chgpass_fail: "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
-      kick_resetauth: "<yellow>✦</yellow> MC-Plugin\\n\\n<red>❌ Your registration has been deleted by an administrator!</red>\\n<gray>On next login you will need to register again.</gray>"
-      kick_delsession: "<yellow>✦</yellow> MC-Plugin\\n\\n<red>❌ Your session has been reset by an administrator!</red>\\n<gray>On next login you will need to enter your password again.</gray>"
+      kick_resetauth: "<yellow>✦</yellow> UltimateImprovements\\n\\n<red>❌ Your registration has been deleted by an administrator!</red>\\n<gray>On next login you will need to register again.</gray>"
+      kick_delsession: "<yellow>✦</yellow> UltimateImprovements\\n\\n<red>❌ Your session has been reset by an administrator!</red>\\n<gray>On next login you will need to enter your password again.</gray>"
       kick_timeout: "<red>⏱ Login timeout!</red>\\n<gray>You did not log in within %seconds% seconds.</gray>"
       kick_too_many_attempts: "<red>❌ Too many incorrect attempts!</red>\\n<gray>You entered the wrong password %attempts% times.</gray>"
       kick_logout: "<green>✔</green> You have successfully logged out!\\n<gray>On next login you will need to enter your password again.</gray>"
-      kick_duplicate_name: "<yellow>✦</yellow> MC-Plugin\\n\\n%details%\\n\\n"
+      kick_duplicate_name: "<yellow>✦</yellow> UltimateImprovements\\n\\n%details%\\n\\n"
   
   codepanel:
     messages:
@@ -5457,7 +5457,7 @@ messages_en:
     no_permission_install: "<red>❌ You don't have permission to install updates!</red>"
     checking: "<yellow>⟳</yellow> <gray>Checking for updates on GitHub...</gray>"
     downloading: "<yellow>⟳</yellow> <gray>Downloading update from GitHub...</gray>"
-    header: "<gold>=== <white>MC-Plugin — Update Check</white> ===</gold>"
+    header: "<gold>=== <white>UltimateImprovements — Update Check</white> ===</gold>"
     plugin_version: "<gray>Plugin version:</gray> <white>%version%</white>"
     latest_commit: "<gray>Latest commit:</gray> <white>%sha%</white>"
     latest_release: "<gray>Latest release:</gray> <white>%tag%</white>"
@@ -5506,7 +5506,7 @@ messages_en:
   
   general:
     player_only: "<red>❌ Only players can use this command!</red>"
-    no_permission: "<red>❌ You don't have permission to use MC-Plugin commands!</red>"
+    no_permission: "<red>❌ You don't have permission to use UltimateImprovements commands!</red>"
     unknown_command: "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>"
     structure_player_only: "<red>❌ Error: </red><gray>Only players can use this command.</gray>"
     structure_no_permission: "<red>❌ You don't have permission to manage structures!</red>"

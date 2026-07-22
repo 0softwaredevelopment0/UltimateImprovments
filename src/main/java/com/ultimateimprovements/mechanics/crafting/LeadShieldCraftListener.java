@@ -1,0 +1,184 @@
+package com.ultimateimprovements.mechanics.crafting;
+
+import com.ultimateimprovements.energy.machines.assembler.AssemblerChecker;
+import com.ultimateimprovements.core.Keys;
+import com.ultimateimprovements.core.Main;
+import com.ultimateimprovements.util.MessageUtil;
+import com.ultimateimprovements.util.ConsoleLogger;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
+
+import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+
+import java.util.List;
+
+public class LeadShieldCraftListener implements Listener {
+
+    private static NamespacedKey RECIPE_KEY;
+
+    // =========================
+    // INIT
+    // =========================
+    public static void init() {
+
+        RECIPE_KEY = new NamespacedKey(
+                Main.getInstance(),
+                "lead_shield"
+        );
+
+        // =========================
+        // Удаляем старый датапаковский рецепт (minecraft:lead_shield),
+        // чтобы не было конфликта с нашим плагиновым рецептом.
+        // =========================
+        Bukkit.removeRecipe(NamespacedKey.minecraft("lead_shield"));
+
+        registerRecipe();
+    }
+
+    // =========================
+    // СОЗДАТЬ ITEMSTACK СВИНЦОВОГО СЛИТКА (для ExactChoice)
+    // =========================
+    private static ItemStack createLeadIngotStack() {
+        ItemStack ingot = new ItemStack(Material.NETHERITE_INGOT);
+        ItemMeta ingotMeta = ingot.getItemMeta();
+        if (ingotMeta == null) return ingot;
+        ingotMeta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
+        ingotMeta.lore(List.of(
+                MessageUtil.parse("<i:false><gray>Used to craft a Lead Shield</gray>")
+        ));
+        ingotMeta.getPersistentDataContainer().set(
+                Keys.LEAD_INGOT,
+                PersistentDataType.BYTE,
+                (byte) 1
+        );
+        ingot.setItemMeta(ingotMeta);
+        return ingot;
+    }
+
+    // =========================
+    // REGISTER RECIPE
+    // =========================
+    private static void registerRecipe() {
+
+        Main plugin = Main.getInstance();
+
+        ItemStack result = new ItemStack(Material.SHIELD);
+        ItemMeta meta = result.getItemMeta();
+        if (meta == null) return;
+
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Shield *</white>"));
+
+        meta.lore(List.of(
+                MessageUtil.parse("<i:false><gray>Protects from radiation when held</gray>")
+        ));
+
+        // =========================
+        // PDC via Keys (isLeadShield:1b)
+        // =========================
+        meta.getPersistentDataContainer().set(
+                Keys.LEAD_SHIELD,
+                PersistentDataType.BYTE,
+                (byte) 1
+        );
+
+        result.setItemMeta(meta);
+
+        Bukkit.removeRecipe(RECIPE_KEY);
+
+        ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, result);
+        recipe.setGroup(RECIPE_KEY.getKey());
+
+        recipe.shape(
+                "123",
+                "456",
+                "789"
+        );
+
+        // Используем ExactChoice — матчит по точному ItemStack (с PDC + display name),
+        // поэтому в книге рецептов покажется "Lead Ingot *", а не "Netherite Ingot"
+        RecipeChoice leadIngotChoice = new RecipeChoice.ExactChoice(createLeadIngotStack());
+        recipe.setIngredient('1', leadIngotChoice);
+        recipe.setIngredient('2', leadIngotChoice);
+        recipe.setIngredient('3', leadIngotChoice);
+        recipe.setIngredient('4', leadIngotChoice);
+        recipe.setIngredient('5', Material.SHIELD);
+        recipe.setIngredient('6', leadIngotChoice);
+        recipe.setIngredient('7', leadIngotChoice);
+        recipe.setIngredient('8', leadIngotChoice);
+        recipe.setIngredient('9', leadIngotChoice);
+
+        plugin.getServer().addRecipe(recipe);
+        RecipeRegistry.registerRecipe(RECIPE_KEY);
+
+        ConsoleLogger.info("[LEAD_SHIELD] Recipe registered with Keys system");
+    }
+
+    // =========================
+    // OVERRIDE RESULT — проверяем что ингредиенты — свинцовые слитки, не обычный незерит
+    // =========================
+    @EventHandler
+    public void onCraft(PrepareItemCraftEvent e) {
+
+        Recipe recipe = e.getRecipe();
+
+        if (!(recipe instanceof ShapedRecipe sr)) return;
+
+        if (!sr.getKey().equals(RECIPE_KEY)) return;
+        if (!AssemblerChecker.isAssemblerCraft(e)) return;
+
+        CraftingInventory inv = e.getInventory();
+
+        // Проверяем что все NETHERITE_INGOT ингредиенты — свинцовые слитки (isLeadIngot)
+        ItemStack[] matrix = inv.getMatrix();
+        if (matrix == null) return;
+        int[] ingotSlots = {0, 1, 2, 3, 5, 6, 7, 8};
+        for (int slot : ingotSlots) {
+            ItemStack ing = matrix[slot];
+            if (ing == null || ing.getType() == Material.AIR) {
+                inv.setResult(null);
+                return;
+            }
+            ItemMeta ingMeta = ing.getItemMeta();
+            if (ingMeta == null || !ingMeta.getPersistentDataContainer().has(Keys.LEAD_INGOT, PersistentDataType.BYTE)) {
+                // Не свинцовый слиток — блокируем
+                inv.setResult(null);
+                return;
+            }
+        }
+
+        ItemStack result = new ItemStack(Material.SHIELD);
+        ItemMeta meta = result.getItemMeta();
+        if (meta == null) return;
+
+        meta.displayName(MessageUtil.parse("<i:false><white>Lead Shield *</white>"));
+
+        meta.lore(List.of(
+                MessageUtil.parse("<i:false><gray>Protects from radiation when held</gray>")
+        ));
+
+        // =========================
+        // PDC via Keys (isLeadShield:1b)
+        // =========================
+        meta.getPersistentDataContainer().set(
+                Keys.LEAD_SHIELD,
+                PersistentDataType.BYTE,
+                (byte) 1
+        );
+
+        result.setItemMeta(meta);
+
+        inv.setResult(result);
+    }
+}

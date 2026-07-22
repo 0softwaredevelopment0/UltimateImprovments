@@ -182,7 +182,7 @@
 
 ### Как обновиться
 
-1. Замените `MC-Plugin-1.8.jar` на `MC-Plugin-1.9.jar`
+1. Замените `UltimateImprovements-1.8.jar` на `UltimateImprovements-1.9.jar`
 2. Выполните `/mp reload`
 3. При необходимости обновите `config.yml` — авто-восстановление добавит новые секции
 
