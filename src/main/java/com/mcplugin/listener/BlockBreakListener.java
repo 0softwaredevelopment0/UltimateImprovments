@@ -71,8 +71,8 @@ public class BlockBreakListener implements Listener {
         if (e.getBlock().getType() == Materials.BLAST_FURNACE && GeneratorManager.isAssembled(loc)) {
             GeneratorManager.removeGenerator(loc);
             if (breaker != null) {
-                breaker.sendMessage("§e⚡ Генератор разобран!"
-                        + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
+                breaker.sendMessage(com.mcplugin.util.MessageUtil.parse("<yellow>⚡ Генератор демонтирован!</yellow>"
+                        + " <dark_gray>[" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "]</dark_gray>"));
             }
         }
 
@@ -100,7 +100,7 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // 🛠 СБОРЩИК (CRAFTER) — разобрать при ломании, очистить Marker
+        // 🛠 СОЗДАТЕЛЬ ПРЕДМЕТОВ (CRAFTER) — разобрать при ломании, очистить Marker
         // =========================
         if (e.getBlock().getType() == Material.CRAFTER) {
             if (AssemblerManager.isAssembled(loc)) {

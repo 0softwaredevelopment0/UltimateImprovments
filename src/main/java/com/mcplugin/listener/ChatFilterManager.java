@@ -27,7 +27,7 @@ import java.util.regex.PatternSyntaxException;
  *   - "*badword"    → word ends with "badword"
  *   - "*badword*"   → word contained in message
  *
- * Uses Unicode property (\p{L}) for correct Cyrillic handling.
+ * Uses Unicode property (\p%L%) for correct Cyrillic handling.
  * Case-insensitive matching.
  * On detection: message cancelled, player warned.
  */
@@ -117,13 +117,13 @@ public class ChatFilterManager implements Listener {
     /**
      * Converts a string with optional wildcard (*) into a regex pattern.
      *
-     * Uses Unicode property \p{L} for word boundaries to correctly handle
+     * Uses Unicode property \p%L% for word boundaries to correctly handle
      * Cyrillic (unlike \b which only works with [a-zA-Z0-9_]).
      *
      * Examples:
-     *   "badword"     → (?i).*(?<!\p{L})badword(?!\p{L}).*
-     *   "badword*"    → (?i).*(?<!\p{L})badword.*
-     *   "*badword"    → (?i).*badword(?!\p{L}).*
+     *   "badword"     → (?i).*(?<!\p%L%)badword(?!\p%L%).*
+     *   "badword*"    → (?i).*(?<!\p%L%)badword.*
+     *   "*badword"    → (?i).*badword(?!\p%L%).*
      *   "*badword*"   → (?i).*badword.*
      */
     private Pattern compileWordPattern(String raw) {
@@ -146,12 +146,12 @@ public class ChatFilterManager implements Listener {
 
         if (!startsWithStar) {
             // Word start: no Unicode letter before the word
-            regex.append("(?<!\\p{L})");
+            regex.append("(?<!\\p%L%)");
         }
         regex.append(escaped);
         if (!endsWithStar) {
             // Word end: no Unicode letter after the word
-            regex.append("(?!\\p{L})");
+            regex.append("(?!\\p%L%)");
         }
 
         regex.append(".*");
@@ -313,7 +313,7 @@ public class ChatFilterManager implements Listener {
                 // Player message
                 player.sendMessage(MessageUtil.parse(warningMessage));
                 player.sendMessage("§7→ §f" + highlighted);
-                player.sendMessage(MessageUtil.parse(MessagesManager.getString("chat_filter.violation_match", "<gray>└</gray> <white>Match:</white> {source}").replace("%source}", source)));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("chat_filter.violation_match", "<gray>└</gray> <white>Match:</white> %source%").replace("%source%", source)));
                 return;
             }
         }

@@ -3,7 +3,10 @@ package com.mcplugin.listener;
 import com.mcplugin.energy.generation.basic.GeneratorManager;
 import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 import com.mcplugin.core.Main;
+import com.mcplugin.energy.machines.assembler.AssemblerManager;
 import com.mcplugin.energy.transfer.cable.*;
+import com.mcplugin.mechanics.particle.ParticleAcceleratorManager;
+import com.mcplugin.structure.StructureMarker;
 import com.mcplugin.util.LocationUtil;
 import com.mcplugin.util.Materials;
 import com.mcplugin.util.MessageUtil;
@@ -51,15 +54,20 @@ public class MultimeterListener implements Listener {
         Material type = block.getType();
 
         // =========================
-        // 🛠 ITEM ASSEMBLER (CRAFTER)
+        // 🛠 СОЗДАТЕЛЬ ПРЕДМЕТОВ (CRAFTER)
         // =========================
         if (type == Material.CRAFTER) {
             Location loc = LocationUtil.normalize(block.getLocation());
-            if (EnergyWorkbenchManager.exists(loc)) {
+            if (EnergyWorkbenchManager.exists(loc) || AssemblerManager.isAssembled(loc)) {
                 int buffer = EnergyWorkbenchManager.getBufferEnergy(loc);
+                boolean hasRedstone = block.isBlockPowered() || block.isBlockIndirectlyPowered();
                 player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
-                player.sendMessage(MessageUtil.parse("<aqua>Type: Item Assembler</aqua>"));
-                player.sendMessage(MessageUtil.parse("<aqua>Buffer: </aqua><white>" + buffer + "/100 ⚡</white>"));
+                player.sendMessage(MessageUtil.parse("<aqua>Type: </aqua><white>Создатель предметов</white>"));
+                player.sendMessage(MessageUtil.parse("<aqua>Buffer: </aqua>"
+                        + (buffer >= 100 ? "<green>" : "<yellow>")
+                        + buffer + "/100 ⚡</" + (buffer >= 100 ? "green" : "yellow") + ">"));
+                player.sendMessage(MessageUtil.parse("<aqua>Redstone: </aqua><white>" + (hasRedstone ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
+                player.sendMessage(MessageUtil.parse("<dark_gray>Требуется: 100⚡ + редстоун-сигнал для крафта</dark_gray>"));
                 return;
             }
         }
@@ -79,23 +87,63 @@ public class MultimeterListener implements Listener {
         }
 
         // =========================
+        // ⚡ ДВИГАТЕЛЬ УСКОРИТЕЛЯ (TUFF_BRICKS)
+        // =========================
+        if (type == ParticleAcceleratorManager.ENGINE && StructureMarker.existsAt(LocationUtil.normalize(block.getLocation()))) {
+            Location loc = LocationUtil.normalize(block.getLocation());
+            int energy = ParticleAcceleratorManager.getEngineEnergy(loc);
+            boolean canAccel = ParticleAcceleratorManager.canEngineAccelerate(loc);
+            boolean hasRedstone = block.isBlockPowered() || block.isBlockIndirectlyPowered();
+
+            player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Type: </aqua><white>Двигатель ускорителя</white>"));
+            String energyColor = energy >= 1000 ? "<green>" : "<yellow>";
+            player.sendMessage(MessageUtil.parse("<aqua>Buffer: </aqua>" + energyColor + energy + "/1000 ⚡</" + (energy >= 1000 ? "green" : "yellow") + ">"));
+            player.sendMessage(MessageUtil.parse("<aqua>Redstone: </aqua><white>" + (hasRedstone ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Status: </aqua>" + (canAccel ? "<green>✔ Готов ускорить</green>" : "<yellow>⏳ Не готов (нужно 1000⚡ + редстоун)</yellow>")));
+            return;
+        }
+
+        // =========================
+        // ⚡ ДАТЧИК СКОРОСТИ (POLISHED_DIORITE)
+        // =========================
+        if (type == ParticleAcceleratorManager.SENSOR && StructureMarker.existsAt(LocationUtil.normalize(block.getLocation()))) {
+            Location loc = LocationUtil.normalize(block.getLocation());
+            double lastSpeed = ParticleAcceleratorManager.getSensorLastSpeed(loc);
+            double speedPct = (lastSpeed / ParticleAcceleratorManager.MAX_SPEED) * 100.0;
+
+            player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Type: </aqua><white>Датчик скорости</white>"));
+            if (lastSpeed > 0) {
+                String pctColor = speedPct >= 90 ? "<red>" : speedPct >= 50 ? "<yellow>" : "<green>";
+                player.sendMessage(MessageUtil.parse("<aqua>Last speed: </aqua><white>" + pctColor + String.format("%.3f", speedPct) + "%</white>"));
+                player.sendMessage(MessageUtil.parse("<dark_gray>( " + String.format("%.4f", lastSpeed) + " blocks/tick )</dark_gray>"));
+            } else {
+                player.sendMessage(MessageUtil.parse("<aqua>Last speed: </aqua><gray>No particle has passed yet</gray>"));
+            }
+            return;
+        }
+
+        // =========================
         // ⚡ ГЕНЕРАТОР (BLAST_FURNACE)
         // =========================
         if (type == Materials.BLAST_FURNACE) {
             boolean assembled = GeneratorManager.isAssembled(block.getLocation());
-            player.sendMessage(MessageUtil.parse("<aqua>Type: Generator</aqua>"));
-            player.sendMessage(MessageUtil.parse("<aqua>Assembled: </aqua><white>" + (assembled ? "yes" : "no") + "</white>"));
+
+            player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Type: </aqua><white>Генератор</white>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Registered: </aqua><white>" + (assembled ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
 
             if (block.getState() instanceof Furnace furnace) {
                 ItemStack fuel = furnace.getInventory().getFuel();
                 boolean hasFuel = fuel != null && !fuel.getType().isAir();
-                player.sendMessage(MessageUtil.parse("<aqua>Fuel: </aqua><white>" + (hasFuel ? fuel.getType().name().toLowerCase().replace('_', ' ') + " x" + fuel.getAmount() : "none") + "</white>"));
+                player.sendMessage(MessageUtil.parse("<aqua>Fuel: </aqua><white>" + (hasFuel ? fuel.getType().name().toLowerCase().replace('_', ' ') + " x" + fuel.getAmount() : "<gray>none</gray>") + "</white>"));
 
                 boolean isLit = false;
                 if (block.getBlockData() instanceof org.bukkit.block.data.type.Furnace furnaceData) {
                     isLit = furnaceData.isLit();
                 }
-                player.sendMessage(MessageUtil.parse("<aqua>Burning: </aqua><white>" + (isLit ? "yes" : "no") + "</white>"));
+                player.sendMessage(MessageUtil.parse("<aqua>Burning: </aqua><white>" + (isLit ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
 
                 int cookTime = furnace.getCookTime();
                 int cookTimeTotal = furnace.getCookTimeTotal();
@@ -107,7 +155,7 @@ public class MultimeterListener implements Listener {
 
             // Redstone status
             boolean hasRedstone = block.isBlockPowered() || block.isBlockIndirectlyPowered();
-            player.sendMessage(MessageUtil.parse("<aqua>Redstone: </aqua><white>" + (hasRedstone ? "yes" : "no") + "</white>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Redstone: </aqua><white>" + (hasRedstone ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
 
             return;
         }
@@ -126,8 +174,10 @@ public class MultimeterListener implements Listener {
         // =========================
         if (type == Materials.WAXED_COPPER_GRATE) {
 
+            int transferred = node.getAndResetTransferred();
             player.sendMessage(MessageUtil.parse("<aqua>Type: Battery</aqua>"));
             player.sendMessage(MessageUtil.parse("<aqua>Energy: </aqua><white>" + node.getEnergy() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Transfer rate: </aqua><white>" + transferred + " ⚡/tick</white>"));
             player.sendMessage(MessageUtil.parse("<aqua>Connections: </aqua><white>" + node.getConnections().size() + "</white>"));
             return;
         }
@@ -137,8 +187,12 @@ public class MultimeterListener implements Listener {
         // =========================
         if (type == Materials.WAXED_LIGHTNING_ROD) {
 
+            int transferred = node.getAndResetTransferred();
+            boolean flowing = CableNetwork.isFlowing(LocationUtil.normalize(block.getLocation()));
+
             player.sendMessage(MessageUtil.parse("<yellow>Type: Cable</yellow>"));
-            player.sendMessage(MessageUtil.parse("<yellow>Energy: </yellow><white>" + node.getEnergy() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<yellow>Transfer speed: </yellow><white>" + transferred + " ⚡/tick</white>"));
+            player.sendMessage(MessageUtil.parse("<yellow>Status: </yellow><white>" + (flowing ? "<green>⚡ FLOWING</green>" : "<gray>IDLE</gray>") + "</white>"));
             player.sendMessage(MessageUtil.parse("<yellow>Connections: </yellow><white>" + node.getConnections().size() + "</white>"));
 
             BlockData bd = block.getBlockData();
@@ -168,8 +222,9 @@ public class MultimeterListener implements Listener {
         // =========================
         if (type == Materials.WAXED_CHISELED_COPPER) {
 
+            int transferred = node.getAndResetTransferred();
             player.sendMessage(MessageUtil.parse("<gold>Type: Junction</gold>"));
-            player.sendMessage(MessageUtil.parse("<gold>Energy: </gold><white>" + node.getEnergy() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<gold>Transfer rate: </gold><white>" + transferred + " ⚡/tick</white>"));
             player.sendMessage(MessageUtil.parse("<gold>Connections: </gold><white>" + node.getConnections().size() + "</white>"));
             player.sendMessage(MessageUtil.parse("<gold>Mode: </gold><white>Omni-directional</white>"));
             return;

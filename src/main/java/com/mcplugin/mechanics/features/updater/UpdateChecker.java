@@ -470,35 +470,35 @@ public class UpdateChecker {
                     sender.sendMessage("");
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.plugin_version",
-                            "<gray>Your version:</gray> <white>{version}</white>")
-                            .replace("%version}", finalCurrentVer)));
+                            "<gray>Your version:</gray> <white>%version%</white>")
+                            .replace("%version%", finalCurrentVer)));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.latest_release",
-                            "<gray>GitHub Jar/:</gray> <white>{name}</white>")
-                            .replace("%name}", finalJarName)));
+                            "<gray>GitHub Jar/:</gray> <white>%name%</white>")
+                            .replace("%name%", finalJarName)));
 
                     if (finalHasVer) {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.release_version",
-                                "<gray>Jar version:</gray> <white>{version}</white>")
-                                .replace("%version}", finalJarVer)));
+                                "<gray>Jar version:</gray> <white>%version%</white>")
+                                .replace("%version%", finalJarVer)));
                     }
 
                     if (finalPending && finalIsNew) {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.already_downloaded",
-                                "<yellow>⟳</yellow> <gray>Update already downloaded!</gray> <white>{ver}</white> <gray>— restart server to apply.</gray>")
-                                .replace("%ver}", finalJarVer)));
+                                "<yellow>⟳</yellow> <gray>Update already downloaded!</gray> <white>%ver%</white> <gray>— restart server to apply.</gray>")
+                                .replace("%ver%", finalJarVer)));
                     } else if (finalIsNew) {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.update_available",
-                                "<green>✨</green> <white>Update available!</white> <white>{jar}</white>")
-                                .replace("%jar}", finalJarName)));
+                                "<green>✨</green> <white>Update available!</white> <white>%jar%</white>")
+                                .replace("%jar%", finalJarName)));
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.update_from_to",
-                                "<gray>v{from} → v{to}</gray>")
-                                .replace("%from}", finalCurrentVer)
-                                .replace("%to}", finalJarVer)));
+                                "<gray>v%from% → v%to%</gray>")
+                                .replace("%from%", finalCurrentVer)
+                                .replace("%to%", finalJarVer)));
 
                         if (sender instanceof Player) {
                             TextComponent updateButton = new TextComponent(MessageUtil.legacy(
@@ -535,9 +535,9 @@ public class UpdateChecker {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.up_to_date",
                                 "<green>✔</green> <green>All up to date!</green> "
-                                + "<gray>(v{current} ≥ v{jar})</gray>")
-                                .replace("%current}", finalCurrentVer)
-                                .replace("%jar}", finalJarVer)));
+                                + "<gray>(v%current% ≥ v%jar%)</gray>")
+                                .replace("%current%", finalCurrentVer)
+                                .replace("%jar%", finalJarVer)));
                     }
 
                     sender.sendMessage("");
@@ -569,8 +569,8 @@ public class UpdateChecker {
                             "<red>❌ Connection timeout with GitHub!</red>")));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.timeout_hint",
-                            "<gray>GitHub did not respond within {seconds} seconds.</gray>")
-                            .replace("%seconds}", String.valueOf(TIMEOUT_SECONDS))));
+                            "<gray>GitHub did not respond within %seconds% seconds.</gray>")
+                            .replace("%seconds%", String.valueOf(TIMEOUT_SECONDS))));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.timeout_retry_hint",
                             "<gray>Check internet connection or try again later.</gray>")));
@@ -584,9 +584,9 @@ public class UpdateChecker {
                             "<red>❌ Error checking for updates!</red>")));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.install_error_detail",
-                            "<gray>{type}: {message}</gray>")
-                            .replace("%type}", e.getClass().getSimpleName())
-                            .replace("%message}", e.getMessage() != null ? e.getMessage() : "")));
+                            "<gray>%type%: %message%</gray>")
+                            .replace("%type%", e.getClass().getSimpleName())
+                            .replace("%message%", e.getMessage() != null ? e.getMessage() : "")));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.install_error_console",
                             "<gray>Stack trace in server console.</gray>")));
@@ -666,8 +666,8 @@ public class UpdateChecker {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.already_installed",
                                 "<green>✔</green> <green>This version is already installed! "
-                                + "(</green><white>{ver}</white><green>)</green>")
-                                .replace("%ver}", jarVersion)));
+                                + "(</green><white>%ver%</white><green>)</green>")
+                                .replace("%ver%", jarVersion)));
                     });
                     return;
                 }
@@ -677,8 +677,8 @@ public class UpdateChecker {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.downloading_release",
-                            "<yellow>⟳</yellow> <gray>Downloading update</gray> <white>{name}</white><gray>...</gray>")
-                            .replace("%name}", finalJarName)));
+                            "<yellow>⟳</yellow> <gray>Downloading update</gray> <white>%name%</white><gray>...</gray>")
+                            .replace("%name%", finalJarName)));
                 });
 
                 // Скачивание JAR
@@ -701,8 +701,8 @@ public class UpdateChecker {
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.download_error",
-                                "<red>❌ Download error: HTTP {status}</red>")
-                                .replace("%status}", String.valueOf(downloadResponse.statusCode()))));
+                                "<red>❌ Download error: HTTP %status%</red>")
+                                .replace("%status%", String.valueOf(downloadResponse.statusCode()))));
                     });
                     return;
                 }
@@ -736,12 +736,12 @@ public class UpdateChecker {
                         sender.sendMessage("");
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.install_release",
-                                "<gray>File:</gray> <white>{name}</white>")
-                                .replace("%name}", finalJarName)));
+                                "<gray>File:</gray> <white>%name%</white>")
+                                .replace("%name%", finalJarName)));
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.install_size",
-                                "<gray>Downloaded:</gray> <white>{size} KB</white>")
-                                .replace("%size}", String.valueOf(downloadedKB))));
+                                "<gray>Downloaded:</gray> <white>%size% KB</white>")
+                                .replace("%size%", String.valueOf(downloadedKB))));
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                 "update.install_restart",
                                 "<red>⚠ Restart the server to apply the update!</red>")));
@@ -767,9 +767,9 @@ public class UpdateChecker {
                             "<red>❌ Error downloading update!</red>")));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.install_error_detail",
-                            "<gray>{type}: {message}</gray>")
-                            .replace("%type}", e.getClass().getSimpleName())
-                            .replace("%message}", e.getMessage() != null ? e.getMessage() : "")));
+                            "<gray>%type%: %message%</gray>")
+                            .replace("%type%", e.getClass().getSimpleName())
+                            .replace("%message%", e.getMessage() != null ? e.getMessage() : "")));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                             "update.install_error_console",
                             "<gray>Stack trace in server console.</gray>")));

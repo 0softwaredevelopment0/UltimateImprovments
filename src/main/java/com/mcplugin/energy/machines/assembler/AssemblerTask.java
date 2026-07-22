@@ -1,43 +1,46 @@
 package com.mcplugin.energy.machines.assembler;
 
 import com.mcplugin.core.Main;
+import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.block.data.type.Crafter;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import com.mcplugin.energy.machines.workbench.EnergyWorkbenchManager;
-
-import java.util.Collection;
-
 /**
- * Periodically scans all assembled auto-crafters and attempts to craft items
- * from their 3x3 grid, consuming energy from the internal buffer.
- * The buffer is charged via adjacent cables by {@link EnergyWorkbenchManager#chargeAllBuffers()}.
+ * Periodically scans all Item Creators and attempts to craft items
+ * from their 3x3 grid when:
+ * - Buffer is FULL (100⚡)
+ * - CRAFTER is triggered by redstone pulse
+ * - A matching custom recipe exists
+ * <p>
+ * Буфер заряжается через adjacent cables от {@link EnergyWorkbenchManager#chargeAllBuffers()}.
+ * После крафта буфер обнуляется (0/100), CRAFTER разблокируется.
  */
 public class AssemblerTask extends BukkitRunnable {
 
+    private static final int BUFFER_REQUIRED = 100;
+
     @Override
     public void run() {
-        FileConfiguration cfg = Main.getInstance().getConfig();
-
-        if (!cfg.getBoolean("energy_crafting.enabled", true)) {
-            return;
-        }
-
-        int energyPerCraft = cfg.getInt("energy_crafting.energy_per_craft", 100);
-
-        Collection<Location> assemblers = AssemblerManager.getActiveAssemblers();
-
-        for (Location crafterLoc : assemblers) {
+        for (Location crafterLoc : AssemblerManager.getActiveAssemblers()) {
             if (crafterLoc == null) continue;
 
             Block block = crafterLoc.getBlock();
             if (block.getType() != Material.CRAFTER) continue;
 
-            // Get the crafter's inventory (block state)
+            // === REDSTONE CHECK: only craft if crafter is triggered (by redstone pulse) ===
+            if (!(block.getBlockData() instanceof Crafter crafterData)) continue;
+            if (!crafterData.isTriggered()) continue;
+
+            // === ENERGY CHECK: buffer must be FULL (100) ===
+            int buffer = EnergyWorkbenchManager.getBufferEnergy(crafterLoc);
+            if (buffer < BUFFER_REQUIRED) continue;
+
+            // === INVENTORY CHECK ===
             org.bukkit.block.Crafter crafterState = null;
             try {
                 var state = block.getState();
@@ -52,8 +55,8 @@ public class AssemblerTask extends BukkitRunnable {
             var inventory = crafterState.getInventory();
             if (inventory == null) continue;
 
-            // Build item matrix from the 9 slots (0-8 = 3x3 grid)
-            org.bukkit.inventory.ItemStack[] matrix = new org.bukkit.inventory.ItemStack[9];
+            // Build item matrix from 9 slots (0-8 = 3x3 grid)
+            ItemStack[] matrix = new ItemStack[9];
             boolean hasItems = false;
             for (int i = 0; i < 9; i++) {
                 matrix[i] = inventory.getItem(i);
@@ -63,27 +66,20 @@ public class AssemblerTask extends BukkitRunnable {
             }
             if (!hasItems) continue;
 
-            // Try to find a matching recipe
-            org.bukkit.inventory.Recipe recipe;
-            try {
-                recipe = Main.getInstance().getServer().getCraftingRecipe(matrix, crafterLoc.getWorld());
-            } catch (Exception e) {
-                continue;
-            }
+            // === RECIPE CHECK: match against ItemCreatorRecipe ===
+            ItemCreatorRecipe.Recipe recipe = ItemCreatorRecipe.match(matrix);
             if (recipe == null) continue;
 
-            org.bukkit.inventory.ItemStack result = recipe.getResult();
+            ItemStack result = recipe.result();
             if (result == null || result.getType().isAir()) continue;
 
-            // Check buffer energy (charged via cables by EnergyWorkbenchManager.chargeAllBuffers)
-            if (!EnergyWorkbenchManager.hasBufferEnergy(crafterLoc, energyPerCraft)) continue;
+            // === CRAFT! ===
+            // Consume ALL buffer energy (100⚡)
+            EnergyWorkbenchManager.consumeBufferEnergy(crafterLoc, BUFFER_REQUIRED);
 
-            // Consume energy from buffer
-            EnergyWorkbenchManager.consumeBufferEnergy(crafterLoc, energyPerCraft);
-
-            // Consume ingredients from the grid
+            // Consume ingredients from the grid (1 each)
             for (int i = 0; i < 9; i++) {
-                org.bukkit.inventory.ItemStack item = inventory.getItem(i);
+                ItemStack item = inventory.getItem(i);
                 if (item != null && !item.getType().isAir()) {
                     int newAmount = item.getAmount() - 1;
                     if (newAmount <= 0) {
@@ -95,16 +91,18 @@ public class AssemblerTask extends BukkitRunnable {
                 }
             }
 
-            // Eject result item at the crafter's location (with null-safety)
-            org.bukkit.inventory.ItemStack toDrop = result.clone();
+            // Eject result next to the crafter
+            ItemStack toDrop = result.clone();
             if (crafterLoc.getWorld() != null) {
                 crafterLoc.getWorld().dropItemNaturally(
                         crafterLoc.clone().add(0.5, 1.0, 0.5),
                         toDrop
                 );
             }
+
+            // Reset triggered state — wait for next redstone pulse
+            crafterData.setTriggered(false);
+            block.setBlockData(crafterData, false);
         }
     }
-
-
 }

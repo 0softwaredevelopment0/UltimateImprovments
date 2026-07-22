@@ -1,5 +1,7 @@
 package com.mcplugin.listener;
 
+import com.mcplugin.core.Keys;
+import com.mcplugin.energy.generation.basic.GeneratorManager;
 import com.mcplugin.energy.storage.battery.BatteryManager;
 import com.mcplugin.energy.consumption.light.LightManager;
 import com.mcplugin.energy.transfer.cable.CableBlock;
@@ -16,6 +18,8 @@ import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 
 public class BlockPlaceListener implements Listener {
 
@@ -29,6 +33,19 @@ public class BlockPlaceListener implements Listener {
 
         Material type =
                 e.getBlock().getType();
+
+        ItemStack item = e.getItemInHand();
+
+        // =========================
+        // ⚡ ГЕНЕРАТОР (BLAST_FURNACE с PDC)
+        // =========================
+        if (type == Materials.BLAST_FURNACE
+                && item != null && item.hasItemMeta()
+                && item.getItemMeta().getPersistentDataContainer()
+                        .has(Keys.GENERATOR, PersistentDataType.BYTE)) {
+            GeneratorManager.savePdcToBlock(loc);
+            GeneratorManager.onGeneratorPlaced(loc);
+        }
 
         // =========================
         // 🔋 BATTERY MULTIBLOCK (hot expand)

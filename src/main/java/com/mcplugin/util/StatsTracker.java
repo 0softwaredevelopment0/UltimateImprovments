@@ -13,7 +13,7 @@ import org.bukkit.scheduler.BukkitRunnable;
  * (1s, 5m, 1h, 1d, ss = server session).
  * <p>
  * Используется {@link PlaceholderResolver} для плейсхолдеров
- * {tps_1s}, {mspt_5m}, {online_max_1h}, {ram_avg_ss}, {ping_min_30s_all} и т.д.
+ * %tps_1s%, %mspt_5m%, %online_max_1h%, %ram_avg_ss%, %ping_min_30s_all% и т.д.
  */
 public class StatsTracker extends BukkitRunnable {
 

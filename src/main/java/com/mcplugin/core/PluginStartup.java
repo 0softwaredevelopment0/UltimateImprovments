@@ -254,12 +254,14 @@ public class PluginStartup {
         mm.register(new WirelessRedstoneModule());
         mm.register(new com.mcplugin.module.meteor.MeteorModule());
         mm.register(new EconomyModule());
+        mm.register(new AOEEnchantmentModule());
     }
 
     private void registerProtectionModules(ModuleManager mm) {
         mm.register(new RedstoneGuardModule());
         mm.register(new PacketGuardModule());
         mm.register(new ProxyServerModule());
+        mm.register(new com.mcplugin.mechanics.protection.ProtectionModule());
     }
 
     private void registerUtilityModules(ModuleManager mm) {

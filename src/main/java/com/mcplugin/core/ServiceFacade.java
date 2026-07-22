@@ -53,8 +53,12 @@ public final class ServiceFacade {
     // ========================================================================
 
     /**
-     * Возвращает строку из messages.yml.
-     * <pre>ServiceFacade.message("key", "default");</pre>
+     * Возвращает строку из {@code config.yml#messages.<path>} (с фолбеком на
+     * {@code config.yml#messages_en.<path>}). Префикс секции НЕ нужен в path.
+     * <pre>ServiceFacade.message("auth.gui.register", "Register");</pre>
+     * <p>
+     * С v26.2 отдельный messages.yml/messages-en.yml больше не существует —
+     * все локализованные строки живут внутри единого config.yml.
      */
     public static String message(String path, String def) {
         return MessagesManager.getString(path, def);
@@ -62,7 +66,7 @@ public final class ServiceFacade {
 
     /**
      * Shorthand: {@code ServiceFacade.parsed("key", "default")}
-     * Возвращает распаршенный Component из messages.yml.
+     * Возвращает распарсенный Component из секции messages: в config.yml.
      */
     public static net.kyori.adventure.text.Component parsed(String key, String def) {
         return MessageUtil.parse(MessagesManager.getString(key, def));

@@ -222,11 +222,4 @@ public class AuthManager {
     public boolean handleLogout(Player player, String password) {
         return authenticator.handleLogout(player, password);
     }
-
-    // =========================
-    // RE-OPEN GUI AFTER DELAY
-    // =========================
-    public void reopenAfterDelay(Player player) {
-        authenticator.reopenAfterDelay(player);
-    }
 }

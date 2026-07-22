@@ -141,8 +141,8 @@ public class ReportManager implements Listener {
         String reportedUuid = getUuidByName(reportedName);
         if (reportedUuid == null) {
             return MessagesManager.getString("report.errors.never_joined",
-                    "<red>❌ Игрок <yellow>{player}</yellow> <red>ни разу не заходил на сервер!</red>")
-                    .replace("%player}", reportedName);
+                    "<red>❌ Игрок <yellow>%player%</yellow> <red>ни разу не заходил на сервер!</red>")
+                    .replace("%player%", reportedName);
         }
 
         // Нельзя зарепортить себя
@@ -463,8 +463,8 @@ public class ReportManager implements Listener {
         modSessions.put(moderator.getUniqueId(), session);
 
         String msg = MessagesManager.getString("report.moderation.enter_conclusion",
-                "<green>✔</green> <white>Напишите заключение по репорту </white><yellow>{name}</yellow>");
-        moderator.sendMessage(MessageUtil.parse(msg.replace("%name}", modName)));
+                "<green>✔</green> <white>Напишите заключение по репорту </white><yellow>%name%</yellow>");
+        moderator.sendMessage(MessageUtil.parse(msg.replace("%name%", modName)));
         moderator.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("report.moderation.type_or_cancel",
                         "<gray>Напишите текст или </gray><red>cancel</red><gray> для отмены.</gray>")));
@@ -560,8 +560,8 @@ public class ReportManager implements Listener {
                     Player reporterPlayer = Bukkit.getPlayer(UUID.fromString(reporterUuid));
                     if (reporterPlayer != null && reporterPlayer.isOnline()) {
                         String notifiedMsg = MessagesManager.getString("report.reporter_notified",
-                                "<green>✔</green> <white>Ваш репорт рассмотрен! Вердикт: </white><yellow>{verdict}</yellow>")
-                                .replace("%verdict}", finalVerdictLabel);
+                                "<green>✔</green> <white>Ваш репорт рассмотрен! Вердикт: </white><yellow>%verdict%</yellow>")
+                                .replace("%verdict%", finalVerdictLabel);
                         reporterPlayer.sendMessage(MessageUtil.parse(notifiedMsg));
                     }
                 }
@@ -571,9 +571,9 @@ public class ReportManager implements Listener {
 
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.moderation.verdict_saved",
-                            "<green>✔</green> <white>Вердикт </white><yellow>{verdict}</yellow> <white>сохранён по репорту </white><yellow>{name}</yellow>")
-                            .replace("%verdict}", finalVerdictLabel)
-                            .replace("%name}", session.modName)));
+                            "<green>✔</green> <white>Вердикт </white><yellow>%verdict%</yellow> <white>сохранён по репорту </white><yellow>%name%</yellow>")
+                            .replace("%verdict%", finalVerdictLabel)
+                            .replace("%name%", session.modName)));
         }
     }
 
@@ -585,8 +585,8 @@ public class ReportManager implements Listener {
         removeConfirmations.put(admin.getUniqueId(), reportId);
         admin.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("report.admin.remove_confirm",
-                        "<yellow>⚠</yellow> <white>Удалить </white><yellow>{name}</yellow><white>? Напишите </white><yellow>/mp reports remove confirm</yellow><white> для подтверждения.</white>")
-                        .replace("%name}", modName)));
+                        "<yellow>⚠</yellow> <white>Удалить </white><yellow>%name%</yellow><white>? Напишите </white><yellow>/mp reports remove confirm</yellow><white> для подтверждения.</white>")
+                        .replace("%name%", modName)));
         // Задержка истечения подтверждения (30 сек)
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             removeConfirmations.remove(admin.getUniqueId());

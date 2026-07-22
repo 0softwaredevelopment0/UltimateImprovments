@@ -34,6 +34,20 @@ dependencies {
         exclude group: 'org.bukkit', module: 'bukkit'
     }
     compileOnly 'me.clip:placeholderapi:2.11.6'
+
+    // Unit-tests for pure-logic helpers (no Bukkit needed) — hash round-trip, dedupe, CRLF marker match.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    // JUnit 5 >= 5.4 requires explicit platform-launcher; transitively missing in this setup.
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        showStandardStreams = false
+        exceptionFormat = 'full'
+    }
 }
 
 // =========================

@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
  * <p>
  * Когда техработы включены, только белый список может зайти на сервер.
  * Все настройки и whitelist хранятся в SQLite (maintenance_whitelist + maintenance_meta),
- * кроме kick_message и текстов сообщений — они в messages.yml.
+ * кроме kick_message и текстов сообщений — они в
+ * {@code config.yml#messages.maintenance.*} (или фолбек на {@code #messages_en.*}).
  */
 public class MaintenanceManager implements Listener {
 
@@ -304,7 +305,7 @@ public class MaintenanceManager implements Listener {
     }
 
     // =========================
-    // BROADCASTS — из messages.yml
+    // BROADCASTS — из config.yml:messages.maintenance.* (с фолбеком на messages_en.*)
     // =========================
 
     private void broadcastMaintenance(boolean enabled, String timeStr) {
@@ -320,10 +321,10 @@ public class MaintenanceManager implements Listener {
     private void broadcastScheduled(boolean enable, String timeStr) {
         String key = enable ? "maintenance.messages.scheduled_enable" : "maintenance.messages.scheduled_disable";
         String def = enable
-                ? "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>{time}</yellow>"
-                : "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>{time}</yellow>";
+                ? "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>"
+                : "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>";
 
-        String msg = MessagesManager.getString(key, def).replace("%time}", timeStr);
+        String msg = MessagesManager.getString(key, def).replace("%time%", timeStr);
         Bukkit.broadcast(MessageUtil.parse(msg));
     }
 

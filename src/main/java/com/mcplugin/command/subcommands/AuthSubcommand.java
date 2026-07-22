@@ -1,8 +1,8 @@
 package com.mcplugin.command.subcommands;
 
 import com.mcplugin.core.Main;
+import com.mcplugin.mechanics.security.auth.AuthAuthenticator;
 import com.mcplugin.mechanics.security.auth.AuthDatabase;
-import com.mcplugin.mechanics.security.auth.AuthGUI;
 import com.mcplugin.mechanics.security.auth.AuthManager;
 import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -32,8 +32,9 @@ public final class AuthSubcommand {
             case "forcelogin" -> handleForceLogin(sender, args);
             case "resetauth" -> handleResetAuth(sender, args);
             case "delsession" -> handleDelSession(sender, args);
-            case "logout" -> handleLogout(sender);
+            case "logout" -> handleLogout(sender, args);
             case "chgpass" -> handleChgPass(sender, args);
+            case "changepassword" -> handleSelfChangePassword(sender, args);
             default -> {
                 sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Unknown subcommand: </red><white>" + args[1] + "</white>"));
                 yield true;
@@ -219,10 +220,60 @@ public final class AuthSubcommand {
         return true;
     }
 
-    private static boolean handleLogout(CommandSender sender) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Only players can use this command!</red>")); return true; }
-        if (!AuthManager.getInstance().isAuthenticated(player.getUniqueId())) { player.sendMessage(MessageUtil.parse("<red>❌ You are not authenticated!</red>")); return true; }
-        AuthGUI.openLogout(player);
+    /**
+     * Chat-based logout: /mp auth logout <password>
+     * If invoked without password, prints hint; with password, verifies and kicks.
+     */
+    private static boolean handleLogout(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Only players can use this command!</red>"));
+            return true;
+        }
+        AuthManager mgr = AuthManager.getInstance();
+        if (mgr == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Authentication system is not initialized!</red>"));
+            return true;
+        }
+        if (!mgr.isAuthenticated(player.getUniqueId())) {
+            player.sendMessage(MessageUtil.parse("<red>❌ You are not logged in!</red>"));
+            return true;
+        }
+        if (args.length < 3) {
+            player.sendMessage("");
+            player.sendMessage("§8╔ §6✦ §lLogout§r §8╗");
+            player.sendMessage("§7Use: §e/mp auth logout <password>");
+            player.sendMessage("§7▸ Введите ваш пароль для подтверждения выхода.");
+            player.sendMessage("");
+            return true;
+        }
+        String password = args[2];
+        mgr.handleLogout(player, password);
+        return true;
+    }
+
+    /**
+     * Self-service change password: /mp auth changepassword <old_password> <new_password>
+     * Verifies the old password against the DB (async Argon2id), then re-hashes new.
+     * The admin variant /mp auth chgpass <nick> <new> stays under handleChgPass.
+     */
+    private static boolean handleSelfChangePassword(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Only players can use this command!</red>"));
+            return true;
+        }
+        if (args.length < 4) {
+            player.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/mp auth changepassword <old_password> <new_password></white>"));
+            return true;
+        }
+        String oldPwd = args[2];
+        String newPwd = args[3];
+        AuthAuthenticator auth = AuthAuthenticator.getInstance();
+        if (auth == null) {
+            player.sendMessage(MessageUtil.parse("<red>❌ Authentication system is not initialized!</red>"));
+            return true;
+        }
+        auth.handleSelfChangePassword(player, oldPwd, newPwd);
         return true;
     }
 

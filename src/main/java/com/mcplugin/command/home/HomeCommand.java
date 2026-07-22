@@ -103,8 +103,8 @@ public final class HomeCommand {
         int nameMin = getNameMin();
         int nameMax = getNameMax();
         if (homeName.length() < nameMin || homeName.length() > nameMax) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.name_length_error", "<red>❌ Home name must be between {min} and {max} characters!</red>").replace("%min}", String.valueOf(nameMin)).replace("%max}", String.valueOf(nameMax))));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.name_current_length", "<gray> Current length: </gray><white>{length}</white><gray> characters.</gray>").replace("%length}", String.valueOf(homeName.length()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.name_length_error", "<red>❌ Home name must be between %min% and %max% characters!</red>").replace("%min%", String.valueOf(nameMin)).replace("%max%", String.valueOf(nameMax))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.name_current_length", "<gray> Current length: </gray><white>%length%</white><gray> characters.</gray>").replace("%length%", String.valueOf(homeName.length()))));
             return true;
         }
 
@@ -112,7 +112,7 @@ public final class HomeCommand {
 
         int maxHomes = HomeDatabase.getMaxHomes();
         if (!HomeDatabase.homeExists(uuid, homeName) && HomeDatabase.countHomes(uuid) >= maxHomes) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.limit_reached", "<red>❌ You have reached the limit of</red> <yellow>{max}</yellow> <red>home points!</red>").replace("%max}", String.valueOf(maxHomes))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.limit_reached", "<red>❌ You have reached the limit of</red> <yellow>%max%</yellow> <red>home points!</red>").replace("%max%", String.valueOf(maxHomes))));
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.limit_hint", "<gray> Use </gray><white>/mp delhome <name></white><gray> to remove unwanted ones.</gray>")));
             return true;
         }
@@ -120,14 +120,14 @@ public final class HomeCommand {
         Location loc = player.getLocation();
 
         if (HomeDatabase.saveHome(uuid, homeName, loc)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_success", "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>saved!</white>").replace("%name}", homeName)));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_world", "<gray>World:</gray> <white>{world}</white>").replace("%world}", loc.getWorld().getName())));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_coords", "<gray>Coordinates:</gray> <white>{x} / {y} / {z}</white>")
-                    .replace("%x}", String.format("%.1f", loc.getX()))
-                    .replace("%y}", String.format("%.1f", loc.getY()))
-                    .replace("%z}", String.format("%.1f", loc.getZ()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_success", "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>").replace("%name%", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_world", "<gray>World:</gray> <white>%world%</white>").replace("%world%", loc.getWorld().getName())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_coords", "<gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>")
+                    .replace("%x%", String.format("%.1f", loc.getX()))
+                    .replace("%y%", String.format("%.1f", loc.getY()))
+                    .replace("%z%", String.format("%.1f", loc.getZ()))));
             int used = HomeDatabase.countHomes(uuid);
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_used", "<gray>Used:</gray> <white>{used}<gray>/{max}</gray></white>").replace("%used}", String.valueOf(used)).replace("%max}", String.valueOf(HomeDatabase.getMaxHomes()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_info_used", "<gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>").replace("%used%", String.valueOf(used)).replace("%max%", String.valueOf(HomeDatabase.getMaxHomes()))));
         } else {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.save_error", "<red>❌ Error saving home!</red>")));
         }
@@ -156,8 +156,8 @@ public final class HomeCommand {
         HomeDatabase.HomeData homeEntry = HomeDatabase.getHome(uuid, homeName);
 
         if (homeEntry == null) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found", "<yellow>ℹ</yellow> <white>Home</white> <yellow>{name}</yellow> <white>not found.</white>").replace("%name}", homeName)));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_hint", "<gray> Use </gray><white>/mp sethome {name}</white><gray> to save it.</gray>").replace("%name}", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found", "<yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not found.</white>").replace("%name%", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_hint", "<gray> Use </gray><white>/mp sethome %name%</white><gray> to save it.</gray>").replace("%name%", homeName)));
             return true;
         }
 
@@ -167,21 +167,21 @@ public final class HomeCommand {
             // Teleport to home
             World world = player.getServer().getWorld(homeEntry.world());
             if (world == null) {
-                player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.world_not_found", "<red>❌ World</red> <yellow>{world}</yellow> <red>not found!</red>").replace("%world}", homeEntry.world())));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.world_not_found", "<red>❌ World</red> <yellow>%world%</yellow> <red>not found!</red>").replace("%world%", homeEntry.world())));
                 return true;
             }
             Location homeLoc = new Location(world, homeEntry.x(), homeEntry.y(), homeEntry.z(), homeEntry.yaw(), homeEntry.pitch());
             player.teleport(homeLoc);
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.teleported", "<green>✔</green> <white>Teleported to home</white> <yellow>{name}</yellow><white>!</white>").replace("%name}", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.teleported", "<green>✔</green> <white>Teleported to home</white> <yellow>%name%</yellow><white>!</white>").replace("%name%", homeName)));
         } else {
             // Legit mode — show coordinates
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_name", "<gold>  ✦ </gold><white>Home: </white><yellow>{name}</yellow>").replace("%name}", homeEntry.homeName())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_name", "<gold>  ✦ </gold><white>Home: </white><yellow>%name%</yellow>").replace("%name%", homeEntry.homeName())));
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_world", "<gray>World: </gray><white>{world}</white>").replace("%world}", homeEntry.world())));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_x", "<gray>X: </gray><white>{x}</white>").replace("%x}", String.format("%.1f", homeEntry.x()))));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_y", "<gray>Y: </gray><white>{y}</white>").replace("%y}", String.format("%.1f", homeEntry.y()))));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_z", "<gray>Z: </gray><white>{z}</white>").replace("%z}", String.format("%.1f", homeEntry.z()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_world", "<gray>World: </gray><white>%world%</white>").replace("%world%", homeEntry.world())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_x", "<gray>X: </gray><white>%x%</white>").replace("%x%", String.format("%.1f", homeEntry.x()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_y", "<gray>Y: </gray><white>%y%</white>").replace("%y%", String.format("%.1f", homeEntry.y()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_z", "<gray>Z: </gray><white>%z%</white>").replace("%z%", String.format("%.1f", homeEntry.z()))));
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
             player.sendMessage(MessageUtil.parse("<yellow>⚠</yellow> <gray>Home is in </gray><yellow>legit</yellow> <gray>mode — no teleport. Travel manually.</gray>"));
         }
@@ -208,12 +208,12 @@ public final class HomeCommand {
         String homeName = args[0].trim();
 
         if (!HomeDatabase.homeExists(player.getUniqueId(), homeName)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_del", "<red>❌ Home</red> <yellow>{name}</yellow> <red>not found!</red>").replace("%name}", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_del", "<red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>").replace("%name%", homeName)));
             return true;
         }
 
         if (HomeDatabase.deleteHome(player.getUniqueId(), homeName)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_success", "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>deleted.</white>").replace("%name}", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_success", "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>").replace("%name%", homeName)));
         } else {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_error", "<red>❌ Error deleting home!</red>")));
         }
@@ -244,21 +244,21 @@ public final class HomeCommand {
 
         int used = homes.size();
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
-        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_title", "<gold>  ✦ </gold><white>Your Homes </white><gray>({used}/{max})</gray>")
-                .replace("%used}", String.valueOf(used))
-                .replace("%max}", String.valueOf(HomeDatabase.getMaxHomes()))));
+        player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_title", "<gold>  ✦ </gold><white>Your Homes </white><gray>(%used%/%max%)</gray>")
+                .replace("%used%", String.valueOf(used))
+                .replace("%max%", String.valueOf(HomeDatabase.getMaxHomes()))));
         player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
 
         for (int i = 0; i < homes.size(); i++) {
             HomeDatabase.HomeData h = homes.get(i);
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_name", "<gray>┌─ </gray><yellow>{num}. </yellow><white>{name}</white>")
-                    .replace("%num}", String.valueOf(i + 1))
-                    .replace("%name}", h.homeName())));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_world", "<gray>│ </gray><gray>World: </gray><white>{world}</white>").replace("%world}", h.world())));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_coords", "<gray>│ </gray><gray>X: </gray><white>{x}</white> <gray>Y: </gray><white>{y}</white> <gray>Z: </gray><white>{z}</white>")
-                    .replace("%x}", String.format("%.1f", h.x()))
-                    .replace("%y}", String.format("%.1f", h.y()))
-                    .replace("%z}", String.format("%.1f", h.z()))));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_name", "<gray>┌─ </gray><yellow>%num%. </yellow><white>%name%</white>")
+                    .replace("%num%", String.valueOf(i + 1))
+                    .replace("%name%", h.homeName())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_world", "<gray>│ </gray><gray>World: </gray><white>%world%</white>").replace("%world%", h.world())));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_coords", "<gray>│ </gray><gray>X: </gray><white>%x%</white> <gray>Y: </gray><white>%y%</white> <gray>Z: </gray><white>%z%</white>")
+                    .replace("%x%", String.format("%.1f", h.x()))
+                    .replace("%y%", String.format("%.1f", h.y()))
+                    .replace("%z%", String.format("%.1f", h.z()))));
             if (i < homes.size() - 1) {
                 player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_sep", "<gray>│</gray>")));
             }
@@ -287,26 +287,26 @@ public final class HomeCommand {
         List<HomeDatabase.HomeData> homes = HomeDatabase.listHomes(target.getUniqueId());
 
         if (homes.isEmpty()) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_homes_player", "<yellow>ℹ</yellow> <white>Player</white> <yellow>{player}</yellow> <white>has no saved homes.</white>").replace("%player}", target.getName())));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_homes_player", "<yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow> <white>has no saved homes.</white>").replace("%player%", target.getName())));
             return true;
         }
 
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.op_list_title", "<gold>  ✦ </gold><white>Player's Homes </white><yellow>{player}</yellow> <gray>({count})</gray>")
-                .replace("%player}", target.getName())
-                .replace("%count}", String.valueOf(homes.size()))));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.op_list_title", "<gold>  ✦ </gold><white>Player's Homes </white><yellow>%player%</yellow> <gray>(%count%)</gray>")
+                .replace("%player%", target.getName())
+                .replace("%count%", String.valueOf(homes.size()))));
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.info_header", "<gold>═══════════════════════════════════</gold>")));
 
         for (int i = 0; i < homes.size(); i++) {
             HomeDatabase.HomeData h = homes.get(i);
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_name", "<gray>┌─ </gray><yellow>{num}. </yellow><white>{name}</white>")
-                    .replace("%num}", String.valueOf(i + 1))
-                    .replace("%name}", h.homeName())));
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_world", "<gray>│ </gray><gray>World: </gray><white>{world}</white>").replace("%world}", h.world())));
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_coords", "<gray>│ </gray><gray>X: </gray><white>{x}</white> <gray>Y: </gray><white>{y}</white> <gray>Z: </gray><white>{z}</white>")
-                    .replace("%x}", String.format("%.1f", h.x()))
-                    .replace("%y}", String.format("%.1f", h.y()))
-                    .replace("%z}", String.format("%.1f", h.z()))));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_name", "<gray>┌─ </gray><yellow>%num%. </yellow><white>%name%</white>")
+                    .replace("%num%", String.valueOf(i + 1))
+                    .replace("%name%", h.homeName())));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_world", "<gray>│ </gray><gray>World: </gray><white>%world%</white>").replace("%world%", h.world())));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_coords", "<gray>│ </gray><gray>X: </gray><white>%x%</white> <gray>Y: </gray><white>%y%</white> <gray>Z: </gray><white>%z%</white>")
+                    .replace("%x%", String.format("%.1f", h.x()))
+                    .replace("%y%", String.format("%.1f", h.y()))
+                    .replace("%z%", String.format("%.1f", h.z()))));
             if (i < homes.size() - 1) {
                 sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.list_entry_sep", "<gray>│</gray>")));
             }
@@ -336,16 +336,16 @@ public final class HomeCommand {
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
 
         if (!HomeDatabase.homeExists(target.getUniqueId(), homeName)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_player", "<red>❌ Player</red> <yellow>{player}</yellow><red> has no home</red> <yellow>{name}</yellow><red>!</red>")
-                    .replace("%player}", target.getName())
-                    .replace("%name}", homeName)));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_player", "<red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red> <yellow>%name%</yellow><red>!</red>")
+                    .replace("%player%", target.getName())
+                    .replace("%name%", homeName)));
             return true;
         }
 
         if (HomeDatabase.deleteHome(target.getUniqueId(), homeName)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_op_success", "<green>✔</green> <white>Home</white> <yellow>{name}</yellow> <white>of player</white> <yellow>{player}</yellow> <white>deleted.</white>")
-                    .replace("%name}", homeName)
-                    .replace("%player}", target.getName())));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_op_success", "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>of player</white> <yellow>%player%</yellow> <white>deleted.</white>")
+                    .replace("%name%", homeName)
+                    .replace("%player%", target.getName())));
         } else {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.delete_error", "<red>❌ Error deleting home!</red>")));
         }

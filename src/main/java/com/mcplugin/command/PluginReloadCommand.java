@@ -173,6 +173,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             StructureSubcommand.execute(p, a);
             return true;
         }));
+
+        // ── Protection Block admin ops ──
+        registry.register(LegacySubCommandAdapter.of("protection",
+                (s, a) -> { ProtectionSubcommand.execute(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("chgdim_teleport", (s, a) -> {
             if (!(s instanceof Player p) || a.length < 2) return false;
             ChgDimCommand.teleport(p, a[1]);
@@ -240,6 +244,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             AskCordsManager.decline(p, a[1]);
             return true;
         }));
+
+        // ── AoE Enchant ──
+        registry.register(LegacySubCommandAdapter.of("enchant", EnchantSubcommand::execute,
+                tc((s, a) -> EnchantSubcommand.tabComplete(s, a))));
         registry.register(LegacySubCommandAdapter.of("vote", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("mcplugin.command.vote")) return false;

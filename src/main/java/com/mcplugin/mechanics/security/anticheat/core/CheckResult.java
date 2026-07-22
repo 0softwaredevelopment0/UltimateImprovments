@@ -39,7 +39,7 @@ public class CheckResult {
 
     @Override
     public String toString() {
-        if (!flagged) return "CheckResult{PASSED}";
+        if (!flagged) return "CheckResult%PASSED%";
         return "CheckResult{FLAGGED vl=" + vl + " msg=" + message + "}";
     }
 }

@@ -77,6 +77,14 @@ public class BatteryDrainTask extends BukkitRunnable {
                                 node.addEnergy(transfer);
                                 remaining -= transfer;
 
+                                // Track transfer on cable nodes in the path
+                                for (var entry : visited) {
+                                    CableNode pathNode = CableNetwork.getNodeByKey(node.getWorld().getUID().toString(), entry);
+                                    if (pathNode != null && pathNode.getType() == NodeType.CABLE) {
+                                        pathNode.addTransferred(transfer);
+                                    }
+                                }
+
                                 if (log) {
                                     ConsoleLogger.info(
                                             "[Battery] Discharged " + transfer

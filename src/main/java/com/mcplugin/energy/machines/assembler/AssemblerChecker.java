@@ -10,7 +10,7 @@ import org.bukkit.inventory.InventoryView;
  */
 public class AssemblerChecker {
 
-    private static final Component ASSEMBLER_TITLE = Component.text("Item assembler");
+    private static final Component ASSEMBLER_TITLE = Component.text("Создатель предметов");
 
     private AssemblerChecker() {}
 

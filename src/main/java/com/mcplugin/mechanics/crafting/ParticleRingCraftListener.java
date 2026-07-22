@@ -7,6 +7,7 @@ import com.mcplugin.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import com.mcplugin.mechanics.particle.ParticleAcceleratorManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
@@ -51,7 +52,7 @@ public class ParticleRingCraftListener implements Listener {
     }
 
     public static ItemStack createRingItem() {
-        ItemStack result = new ItemStack(Material.CHISELED_TUFF);
+        ItemStack result = new ItemStack(ParticleAcceleratorManager.RING);
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return result;
 

@@ -91,6 +91,16 @@ public class EnergyBalancerTask extends BukkitRunnable {
                 }
             }
 
+            // Track transfer on all cable nodes in the network
+            for (CableNode n : networkBatteries) {
+                for (long connKey : n.getConnectionKeys()) {
+                    CableNode cable = CableNetwork.getNodeByKey(n.getWorld().getUID().toString(), connKey);
+                    if (cable != null && cable.getType() == NodeType.CABLE) {
+                        cable.addTransferred(collected);
+                    }
+                }
+            }
+
             // Distribute to poor
             for (CableNode b : poor) {
                 if (collected <= 0) break;

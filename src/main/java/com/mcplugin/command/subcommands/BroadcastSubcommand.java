@@ -64,7 +64,7 @@ public final class BroadcastSubcommand {
         // Build final MiniMessage string
         String fullMessage = clean ? message : PREFIX + message;
 
-        // Resolve placeholders ({tps_avg_1s_color}, {online}, etc.)
+        // Resolve placeholders (%tps_avg_1s_color%, %online%, etc.)
         Player senderPlayer = sender instanceof Player ? (Player) sender : null;
         fullMessage = PlaceholderResolver.resolve(fullMessage, senderPlayer);
 

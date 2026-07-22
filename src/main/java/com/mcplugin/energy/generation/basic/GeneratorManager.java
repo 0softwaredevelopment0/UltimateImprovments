@@ -1,10 +1,12 @@
 package com.mcplugin.energy.generation.basic;
 
+import com.mcplugin.core.Keys;
 import com.mcplugin.core.Main;
 import com.mcplugin.structure.StructureMarker;
 import com.mcplugin.energy.transfer.cable.CableNetwork;
 import com.mcplugin.energy.transfer.cable.CableNode;
 import com.mcplugin.util.LocationUtil;
+import com.mcplugin.util.MessageUtil;
 import com.mcplugin.util.ConsoleLogger;
 
 import java.util.UUID;
@@ -17,7 +19,6 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -26,14 +27,16 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages assembled generator structures.
- * Handles assembly/disassembly via shift+RMB on BLAST_FURNACE with item frame on top.
- * Only assembled generators produce energy (checked by GeneratorTask).
+ * Manages generator blocks.
+ * Generators are now single-block (BLAST_FURNACE with PDC tag), crafted in Item Creator.
+ * No more item frame required.
  */
 public class GeneratorManager implements Listener {
 
@@ -57,6 +60,35 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
+    // SAVE PDC TO BLOCK STATE (called from BlockPlaceListener after placement)
+    // =========================
+    public static void savePdcToBlock(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return;
+        org.bukkit.block.BlockState state = loc.getBlock().getState();
+        if (state instanceof org.bukkit.block.TileState tileState) {
+            tileState.getPersistentDataContainer().set(Keys.GENERATOR, PersistentDataType.BYTE, (byte) 1);
+            state.update();
+        }
+    }
+
+    /** Creates a generator item (BLAST_FURNACE with PDC) for the Item Creator recipe. */
+    public static ItemStack createGeneratorItem() {
+        ItemStack item = new ItemStack(Materials.BLAST_FURNACE);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.displayName(MessageUtil.parse("<!italic><gold>✦ Генератор ✦</gold>"));
+            meta.lore(List.of(
+                    MessageUtil.parse("<!italic><gray>Сжигает топливо для выработки энергии</gray>"),
+                    MessageUtil.parse("<!italic><gray>Поставьте и подключите кабель</gray>")
+            ));
+            meta.getPersistentDataContainer().set(Keys.GENERATOR, PersistentDataType.BYTE, (byte) 1);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    // =========================
     // SCAN EXISTING — rebuild from Marker entities
     // =========================
     private static void scanExistingGenerators() {
@@ -73,7 +105,6 @@ public class GeneratorManager implements Listener {
                 Location furnaceLoc = LocationUtil.normalize(new Location(world, x, y, z));
                 if (furnaceLoc == null) continue;
                 if (furnaceLoc.getBlock().getType() != Materials.BLAST_FURNACE) continue;
-                if (!GeneratorStructure.isValid(furnaceLoc, false)) continue;
                 if (hasNearbyCable(furnaceLoc)) {
                     activeGenerators.put(furnaceLoc, true);
                     count++;
@@ -99,7 +130,53 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
-    // SHIFT+RMB → ASSEMBLE / DISASSEMBLE
+    // REGISTER ON PLACE (called from BlockPlaceListener)
+    // =========================
+    public static void onGeneratorPlaced(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return;
+
+        if (activeGenerators.containsKey(loc)) return;
+        if (!hasNearbyCable(loc)) {
+            ConsoleLogger.info("[Generator] Placed at " + loc + " but no cable nearby — not activating.");
+            return;
+        }
+
+        activeGenerators.put(loc, true);
+        StructureMarker.place(loc, "generator", UUID.randomUUID());
+
+        World world = loc.getWorld();
+        if (world != null) {
+            world.spawnParticle(Particle.ELECTRIC_SPARK,
+                    loc.clone().add(0.5, 0.5, 0.5), 15, 0.3, 0.3, 0.3, 0);
+            world.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
+        }
+
+        ConsoleLogger.info("[Generator] Registered at " + loc);
+    }
+
+    // =========================
+    // UNREGISTER ON BREAK (called from BlockBreakListener)
+    // =========================
+    public static boolean removeGenerator(Location loc) {
+        loc = LocationUtil.normalize(loc);
+        if (loc == null) return false;
+        Boolean was = activeGenerators.remove(loc);
+        if (was != null) {
+            StructureMarker.removeAt(loc);
+            World world = loc.getWorld();
+            if (world != null) {
+                world.spawnParticle(Particle.ELECTRIC_SPARK,
+                        loc.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0);
+                world.playSound(loc, Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
+            }
+            ConsoleLogger.info("[Generator] Removed at " + loc);
+        }
+        return was != null;
+    }
+
+    // =========================
+    // SHIFT+RMB → info / status (no more assembly via interact)
     // =========================
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
@@ -116,84 +193,46 @@ public class GeneratorManager implements Listener {
         Location loc = LocationUtil.normalize(clicked.getLocation());
         if (loc == null) return;
 
-        // Check structure: blast furnace + item frame on top
-        if (!GeneratorStructure.isValid(loc)) {
-            List<String> errors = GeneratorStructure.getValidationErrors(loc);
-            if (!errors.isEmpty()) {
-                player.sendMessage("§4❌ §cСтруктура генератора повреждена! §7Ошибки:");
-                for (String err : errors) {
-                    player.sendMessage("§8 • §f" + err);
-                }
-            }
-            return;
-        }
-
-        // Check cable nearby
-        if (!hasNearbyCable(loc)) {
-            player.sendMessage("§4❌ §cНет кабеля рядом с плавильной печью!"
-                    + " §7Подключите кабель к соседнему блоку.");
-            return;
-        }
-
+        // If it's a generator — show info, don't cancel the event (let GUI open)
         if (activeGenerators.containsKey(loc)) {
-            event.setCancelled(true);
-            // DISASSEMBLE
-            removeGenerator(loc);
-            player.sendMessage("§e⚡ Генератор разобран!"
-                    + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
-            ConsoleLogger.info(
-                    "[Generator] Disassembled at " + loc + " by " + player.getName());
-        } else {
-            event.setCancelled(true);
-            // ASSEMBLE
-            removeFrameOnTop(loc);
-            activeGenerators.put(loc, true);
-            // Marker entity для переноса мира
-            StructureMarker.place(loc, "generator", UUID.randomUUID());
-
-            World world = loc.getWorld();
-            if (world != null) {
-                world.strikeLightningEffect(loc.clone().add(0.5, 1.5, 0.5));
-                world.spawnParticle(Particle.ELECTRIC_SPARK,
-                        loc.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5, 0);
-                world.playSound(loc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
-                world.playSound(loc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
-            }
-
-            player.sendMessage("§a✔ Генератор собран!"
-                    + " §8[§7" + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + "§8]");
-            player.sendMessage("§8┃ §7Положите топливо в плавильную печь — энергия пойдёт в сеть!");
-
-            ConsoleLogger.info(
-                    "[Generator] Assembled at " + loc + " by " + player.getName());
+            boolean hasCable = hasNearbyCable(loc);
+            player.sendMessage(MessageUtil.parse("<gold>=== Генератор ===</gold>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Status: </aqua>" + (hasCable ? "<green>✔ Работает</green>" : "<yellow>⚠ Нет кабеля</yellow>")));
+            player.sendMessage(MessageUtil.parse("<dark_gray>Положите топливо в печь — энергия пойдёт в сеть.</dark_gray>"));
+            // Don't cancel — let the furnace GUI open
+            return;
         }
+    }
+
+    // =========================
+    // ASSEMBLE FROM FRAME (called from ReactorListener — сохраняем для совместимости)
+    // =========================
+    public static void assembleFromFrame(Player player, Location furnaceLoc) {
+        furnaceLoc = LocationUtil.normalize(furnaceLoc);
+        if (furnaceLoc == null) return;
+
+        activeGenerators.put(furnaceLoc, true);
+        StructureMarker.place(furnaceLoc, "generator", UUID.randomUUID());
+
+        World world = furnaceLoc.getWorld();
+        if (world != null) {
+            world.strikeLightningEffect(furnaceLoc.clone().add(0.5, 1.5, 0.5));
+            world.spawnParticle(Particle.ELECTRIC_SPARK,
+                    furnaceLoc.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5, 0);
+            world.playSound(furnaceLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
+            world.playSound(furnaceLoc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
+        }
+
+        player.sendMessage(MessageUtil.parse("<green>✔ Генератор собран!</green>"
+                + " <dark_gray>[" + furnaceLoc.getBlockX() + " " + furnaceLoc.getBlockY() + " " + furnaceLoc.getBlockZ() + "]</dark_gray>"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>Положите топливо в плавильную печь — энергия пойдёт в сеть!</dark_gray>"));
+
+        ConsoleLogger.info("[Generator] Assembled via frame at " + furnaceLoc + " by " + player.getName());
     }
 
     // =========================
     // CABLE NEARBY CHECK
     // =========================
-    // =========================
-    // REMOVE GENERATOR (вызывается при ломании BLAST_FURNACE / shift+ПКМ)
-    // =========================
-    public static boolean removeGenerator(Location loc) {
-        loc = LocationUtil.normalize(loc);
-        if (loc == null) return false;
-        Boolean was = activeGenerators.remove(loc);
-        if (was != null) {
-            // Удаляем Marker entity
-            StructureMarker.removeAt(loc);
-            World world = loc.getWorld();
-            if (world != null) {
-                world.spawnParticle(Particle.ELECTRIC_SPARK,
-                        loc.clone().add(0.5, 0.5, 0.5), 20, 0.3, 0.3, 0.3, 0);
-                world.playSound(loc, Sound.BLOCK_BEACON_DEACTIVATE, 1.0f, 1.0f);
-            }
-            ConsoleLogger.info(
-                    "[Generator] Removed at " + loc);
-        }
-        return was != null;
-    }
-
     public static boolean hasNearbyCable(Location generatorLoc) {
         generatorLoc = LocationUtil.normalize(generatorLoc);
         if (generatorLoc == null) return false;
@@ -224,60 +263,6 @@ public class GeneratorManager implements Listener {
             }
         }
         return null;
-    }
-
-    // =========================
-    // REMOVE FRAME ON TOP (ломает рамку над печью и дропает)
-    // =========================
-    private static void removeFrameOnTop(Location furnaceLoc) {
-        World world = furnaceLoc.getWorld();
-        if (world == null) return;
-
-        double targetX = furnaceLoc.getX() + 0.5;
-        double targetY = furnaceLoc.getY() + 1.0;
-        double targetZ = furnaceLoc.getZ() + 0.5;
-
-        for (ItemFrame frame : world.getEntitiesByClass(ItemFrame.class)) {
-            double dx = Math.abs(frame.getLocation().getX() - targetX);
-            double dz = Math.abs(frame.getLocation().getZ() - targetZ);
-            double dy = Math.abs(frame.getLocation().getY() - targetY);
-
-            if (dx < 0.6 && dz < 0.6 && dy < 0.6) {
-                if (frame.isValid() && !frame.isDead()) {
-                    frame.getWorld().dropItemNaturally(frame.getLocation(), new ItemStack(Material.ITEM_FRAME));
-                    frame.remove();
-                }
-                return;
-            }
-        }
-    }
-
-    // =========================
-    // ASSEMBLE FROM FRAME (вызывается из ReactorListener)
-    // =========================
-    public static void assembleFromFrame(Player player, Location furnaceLoc) {
-        furnaceLoc = LocationUtil.normalize(furnaceLoc);
-        if (furnaceLoc == null) return;
-
-        removeFrameOnTop(furnaceLoc);
-        activeGenerators.put(furnaceLoc, true);
-        StructureMarker.place(furnaceLoc, "generator", UUID.randomUUID());
-
-        World world = furnaceLoc.getWorld();
-        if (world != null) {
-            world.strikeLightningEffect(furnaceLoc.clone().add(0.5, 1.5, 0.5));
-            world.spawnParticle(Particle.ELECTRIC_SPARK,
-                    furnaceLoc.clone().add(0.5, 0.5, 0.5), 30, 0.5, 0.5, 0.5, 0);
-            world.playSound(furnaceLoc, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f);
-            world.playSound(furnaceLoc, Sound.BLOCK_BEACON_ACTIVATE, 1.0f, 0.8f);
-        }
-
-        player.sendMessage("§a✔ Генератор собран!"
-                + " §8[§7" + furnaceLoc.getBlockX() + " " + furnaceLoc.getBlockY() + " " + furnaceLoc.getBlockZ() + "§8]");
-        player.sendMessage("§8┃ §7Положите топливо в плавильную печь — энергия пойдёт в сеть!");
-
-        ConsoleLogger.info(
-                "[Generator] Assembled at " + furnaceLoc + " by " + player.getName());
     }
 
     // =========================
