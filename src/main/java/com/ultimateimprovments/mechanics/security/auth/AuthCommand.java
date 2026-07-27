@@ -40,8 +40,10 @@ public class AuthCommand {
 
         String subCmd = args[1].toLowerCase();
         switch (subCmd) {
-            case "login" -> handlePlayerLogin(sender, args);
-            case "register" -> handlePlayerRegister(sender, args);
+            case "login" -> sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Chat login is disabled. Use the Custom Screen dialog that opens automatically on join.</red>"));
+            case "register" -> sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Chat registration is disabled. Use the Custom Screen dialog that opens automatically on join.</red>"));
             case "forcelogin" -> handleForceLogin(sender, args);
             case "resetauth" -> handleResetAuth(sender, args);
             case "delsession" -> handleDelSession(sender, args);
@@ -115,50 +117,6 @@ public class AuthCommand {
             player.sendMessage("§c✖ 2FA disabled");
             player.sendMessage("§7Enable: §e/ui auth 2fa setup <telegram_chat_id>");
         }
-    }
-
-    private static void handlePlayerLogin(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("ui.command.auth.login")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
-            return;
-        }
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
-            return;
-        }
-        if (args.length < 3) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui auth login <password></white>"));
-            return;
-        }
-        String password = args[2];
-        AuthManager manager = AuthManager.getInstance();
-        if (manager == null) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Authorization system is not initialized!</red>"));
-            return;
-        }
-        manager.handlePasswordSubmit(player, password);
-    }
-
-    private static void handlePlayerRegister(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("ui.command.auth.register")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
-            return;
-        }
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
-            return;
-        }
-        if (args.length < 3) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui auth register <password></white>"));
-            return;
-        }
-        String password = args[2];
-        AuthManager manager = AuthManager.getInstance();
-        if (manager == null) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Authorization system is not initialized!</red>"));
-            return;
-        }
-        manager.handlePasswordSubmit(player, password);
     }
 
     private static void handleForceLogin(CommandSender sender, String[] args) {
