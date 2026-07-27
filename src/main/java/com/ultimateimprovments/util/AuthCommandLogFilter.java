@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  * Log4J filter — перехватывает логи команд с паролями и скрывает их.
  * <p>
- * Сервер пишет в консоль "{@code rizer001 issued server command: /mp auth login mypassword}".
+ * Сервер пишет в консоль "{@code rizer001 issued server command: /ui auth login mypassword}".
  * Этот фильтр находит такие строки и маскирует пароль.
  */
 public class AuthCommandLogFilter extends AbstractFilter {
@@ -19,20 +19,20 @@ public class AuthCommandLogFilter extends AbstractFilter {
      * Паттерн для нахождения команд аутентификации с паролем.
      * Маскирует:
      * <ul>
-     *   <li>{@code /mp auth login <password>}</li>
-     *   <li>{@code /mp auth register <password>}</li>
-     *   <li>{@code /mp auth chgpass <nick> <new_password>}</li>
+     *   <li>{@code /ui auth login <password>}</li>
+     *   <li>{@code /ui auth register <password>}</li>
+     *   <li>{@code /ui auth chgpass <nick> <new_password>}</li>
      * </ul>
      */
     private static final Pattern AUTH_PASSWORD_PATTERN = Pattern.compile(
-            "/mp auth (?:login|register|chgpass)(?:\\s+\\S+)?\\s+\\S+",
+            "/ui auth (?:login|register|chgpass)(?:\\s+\\S+)?\\s+\\S+",
             Pattern.CASE_INSENSITIVE
     );
 
     /**
      * Ищет команду с паролем в сообщении и возвращает маскированную копию.
-     * Пример: {@code "rizer001 issued server command: /mp auth login mypassword"}
-     * → {@code "rizer001 issued server command: /mp auth login ***"}
+     * Пример: {@code "rizer001 issued server command: /ui auth login mypassword"}
+     * → {@code "rizer001 issued server command: /ui auth login ***"}
      */
     static String maskPassword(String message) {
         return AUTH_PASSWORD_PATTERN.matcher(message).replaceAll(m -> {

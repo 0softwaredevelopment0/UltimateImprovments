@@ -14,16 +14,14 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import java.util.List;
-
-/**
- * Диспетчер команд /mp.
- * <p>
- * Все субкоманды регистрируются в {@link SubCommandRegistry}.
- * Новые субкоманды: создай класс implements {@link SubCommand} и
- * добавь {@code registry.register(new MyCmd())} в init().
- * Не нужно править dispatch или tabComplete — всё автоматически.
- */
+import java.util.List;/**
+     * Диспетчер команд /ui.
+     * <p>
+     * Все субкоманды регистрируются в {@link SubCommandRegistry}.
+     * Новые субкоманды: создай класс implements {@link SubCommand} и
+     * добавь {@code registry.register(new MyCmd())} в init().
+     * Не нужно править dispatch или tabComplete — всё автоматически.
+     */
 public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
     private static boolean initialized = false;

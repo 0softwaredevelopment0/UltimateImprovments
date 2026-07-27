@@ -23,7 +23,7 @@ import java.util.Locale;
  * Слушатель для блокировки действий игрока, вызванного на проверку читов.
  * <p>
  * Полностью блокирует: движение, взаимодействие, ломание/ставку блоков,
- * команды (кроме /mp uncheck для досрочного завершения), выбрасывание предметов,
+ * команды (кроме /ui uncheck для досрочного завершения), выбрасывание предметов,
  * использование вёдер, нанесение урона, открытие инвентарей.
  * <p>
  * При выходе проверяющего — автоматически завершает проверку.
@@ -118,7 +118,7 @@ public class CheckListener implements Listener {
     }
 
     // =========================
-    // BLOCK COMMANDS (кроме /mp uncheck)
+    // BLOCK COMMANDS (кроме /ui uncheck)
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent e) {
@@ -127,8 +127,8 @@ public class CheckListener implements Listener {
 
         String msg = e.getMessage().toLowerCase(Locale.ROOT).trim();
 
-        // Проверяемый может использовать /mp uncheck чтобы попросить завершить проверку
-        if (msg.startsWith("/mp uncheck") || msg.startsWith("/minecraft:mp uncheck")) {
+        // Проверяемый может использовать /ui uncheck чтобы попросить завершить проверку
+        if (msg.startsWith("/ui uncheck")) {
             return;
         }
 

@@ -331,6 +331,9 @@ public class PluginStartup {
         // Reports
         ReportManager.init();
 
+        // Auth Dialog handler (Custom Screen password input)
+        com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
+
         // Anti-cheat check system
         CheckManager.init();
         plugin.getServer().getPluginManager().registerEvents(new CheckListener(), plugin);
@@ -346,7 +349,7 @@ public class PluginStartup {
 
     /**
      * Сбрасывает флаг startupPerformed. Вызывается из PluginShutdown
-     * чтобы при следующем startup (например после /mp reload) guard не сработал.
+     * чтобы при следующем startup (например после /ui reload) guard не сработал.
      */
     public static void resetStartupFlag() {
         startupPerformed = false;
