@@ -123,6 +123,7 @@ public class AuthDialogScreen {
      */
     public static void close(Player player) {
         if (!(player instanceof CraftPlayer craftPlayer)) return;
+        if (craftPlayer.getHandle().connection == null) return;
         craftPlayer.getHandle().connection.send(
             net.minecraft.network.protocol.common.ClientboundClearDialogPacket.INSTANCE
         );

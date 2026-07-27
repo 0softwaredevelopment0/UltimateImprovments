@@ -119,45 +119,6 @@ public class AuthAuthenticator {
         }.runTaskLater(Main.getInstance(), 5L);
     }
 
-    /**
-     * Отправляет в чат приглашение войти/зарегистрироваться.
-     * <p>
-     * MiniMessage header + footer визуально обрамляют инструкцию.
-     *
-     * @param player       игрок
-     * @param isRegistered true если зарегистрирован (login), false если регистрация
-     */
-    private void sendChatPrompt(Player player, boolean isRegistered) {
-        // All lines go through MessageUtil.parse() so MiniMessage tags render.
-        // Earlier version mixed legacy §-codes with bare <white>/<gold> tags in
-        // player.sendMessage(String), which made the tags render as literal text.
-        player.sendMessage("");
-        player.sendMessage(MessageUtil.parse("<dark_gray>╔ <gold>✦ <bold>Авторизация</bold> <dark_gray>╗"));
-        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        player.sendMessage("");
-
-        if (isRegistered) {
-            player.sendMessage(MessageUtil.parse(AuthConfig.getMessage("login_title",
-                    "<gold>✦</gold> <white>Please log in to continue.</white>")));
-            player.sendMessage("");
-            player.sendMessage(MessageUtil.parse("<gray>▸ <white>Команда: <gold>/ui auth login <password></gold></white>"));
-        } else {
-            player.sendMessage(MessageUtil.parse(AuthConfig.getMessage("register_title",
-                    "<gold>✦</gold> <white>Choose a password to register.</white>")));
-            player.sendMessage("");
-            player.sendMessage(MessageUtil.parse("<gray>▸ <white>Команда: <gold>/ui auth register <password></gold></white>"));
-            player.sendMessage(MessageUtil.parse("<gray>   <dark_gray>Min " + AuthConfig.getMinPasswordLength()
-                    + ", max " + AuthConfig.getMaxPasswordLength() + " characters.</dark_gray>"));
-        }
-
-        player.sendMessage("");
-        player.sendMessage(MessageUtil.parse("<gray>▸ <white>Другие команды недоступны пока вы не авторизованы.</white>"));
-        player.sendMessage(MessageUtil.parse("<gray>  <dark_gray>/ui help works only after login.</dark_gray>"));
-        player.sendMessage("");
-        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-        player.sendMessage("");
-    }
-
     // =========================
     // HANDLE PASSWORD SUBMIT (login/register via /ui auth login <pass> | register <pass>)
     //

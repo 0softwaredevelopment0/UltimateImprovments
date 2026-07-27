@@ -58,6 +58,9 @@ public class PluginStartup {
         // Auth command log filter — hide passwords from server console
         AuthCommandLogFilter.register();
 
+        // Auth Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
+
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("  UltimateImprovments — Starting up...");
@@ -330,9 +333,6 @@ public class PluginStartup {
 
         // Reports
         ReportManager.init();
-
-        // Auth Dialog handler (Custom Screen password input)
-        com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
 
         // Anti-cheat check system
         CheckManager.init();
