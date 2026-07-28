@@ -2,150 +2,517 @@
 
 # ✦ UltimateImprovments
 
-**A modular Minecraft plugin that adds authentication, advanced mechanics, custom crafting, and server protection.**
+**Модульный Minecraft-плагин для Paper 1.21.4+ (Java 26)**
 
-[![License](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
-[![Java](https://img.shields.io/badge/Java-25%2B-orange)](https://www.oracle.com/java/)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-26%2B-orange)](https://www.oracle.com/java/)
 [![Paper](https://img.shields.io/badge/Paper-26.2%2B-green)](https://papermc.io/)
+[![Version](https://img.shields.io/badge/Version-1.9-brightgreen)](https://github.com/rizer001/UltimateImprovments/releases)
+
+**Автор:** [rizer001](https://github.com/rizer001)  
+**Ядро:** Leaf (Paper 26.2+) / Paper  
+**База данных:** SQLite  
+**Сборка:** Gradle (JDK 26)
 
 </div>
 
 ---
 
-## 📦 Quick Install
+## 📦 Быстрый старт
 
-1. **Download** `.jar` from [Releases](https://github.com/rizer001/UltimateImprovments/releases)
-2. **Drop** into `plugins/` folder
-3. **Restart** server twice (first load installs datapack, second activates it)
+1. **Скачайте** `.jar` из [Releases](https://github.com/rizer001/UltimateImprovments/releases)
+2. **Поместите** в папку `plugins/`
+3. **Перезапустите** сервер дважды (первый запуск устанавливает датапак, второй — активирует)
 
-> ⚠ Requires **Paper 26.2+** or fork. Not compatible with Spigot/Bukkit.
-
----
-
-## 🎯 What It Does
-
-| Category | Features |
-|----------|----------|
-| 🔐 **Auth** | Mandatory login/register via Anvil GUI, Argon2id hashing, session management, IP check, account limits |
-| ⚛ **Reactor** | Multi-block Dark Fusion Reactor — generates energy & Ancient Debris |
-| 🔋 **Energy** | Cable network (Waxed Copper blocks) for energy transfer & storage |
-| ☢ **Radiation** | Player radiation with levels, effects, dosimeter, lead shield, antirad |
-| 🧲 **Magnet** | Multi-block structure that attracts metallic items & armored mobs |
-| ⚡ **Lightning** | Multi-block controlled lightning strikes |
-| 🔢 **Code Panel** | Interactive code entry with key flags (attempts, time, whitelist, commands) |
-| 🔧 **Crafting** | Custom items: Plasma Cannon, Shoker, Multimeter, Health Meter, Entity Locator, Dosimeter, Lead Shield |
-| 🔧 **Integrity** | Item durability as 0-100% with repair, combining, mending |
-| 🚂 **Minecarts** | Exponential acceleration, collision damage, speed display |
-| 🏠 **Homes** | Save/teleport home points (SQLite, configurable limits) |
-| 🌍 **Dimensions** | GUI-based world teleportation with return |
-| 🔌 **Power** | Server shutdown/restart with BossBar countdown & confirmation |
-| 👻 **Vanish** | Full player hiding (persists across restarts) |
-| 📝 **Notes** | Personal writable notes per player (54 slots, editable books) |
-| 🗣 **Chat Filter** | Profanity filter with wildcard & regex (bypass permission) |
-| 🛡 **Protection** | RedstoneGuard, PacketGuard, Void Protection, Entity Limits, Brand Hider |
-| 🔄 **Updater** | Auto check & install updates from GitHub Releases |
+> ⚠ Требуется **Paper 26.2+** (или форк Leaf). Несовместимо с Spigot/Bukkit.
 
 ---
 
-## ⌨ Basic Commands
+## 🔌 Модульная архитектура
 
+Плагин построен на **модульной архитектуре** — каждый модуль можно включить/отключить через `/mp modules`. Если один модуль падает, остальные продолжают работу.
+
+### 📌 Обязательные модули
+
+| Модуль | Описание |
+|--------|----------|
+| `Core` | Ядро: команды, задачи, общие слушатели |
+| `Database` | SQLite: управление БД, автосохранение |
+| `Auth` | Авторизация игроков (Anvil GUI, Argon2id) |
+| `Crafting` | Кастомные рецепты предметов |
+| `Cable` | Кабельная сеть (передача энергии) |
+| `Energy` | Энергия: генератор, батарея, балансировщик |
+| `Reactor` | Реактор тёмного синтеза (Dark Fusion Reactor) |
+| `Power` | Управление выключением/перезагрузкой сервера |
+| `Radiation` | Система радиации игроков |
+| `Tasks` | Фоновые задачи |
+
+### 🧩 Опциональные модули
+
+| Модуль | Описание |
+|--------|----------|
+| `Datapack` | Установка датапака |
+| `RedstoneGuard` | Анти-лаг для редстоуна |
+| `PacketGuard` | Защита от краш-пакетов |
+| `VoidProtection` | Спасение от падения в пустоту |
+| `ChatFilter` | Фильтр мата (wildcard + regex) |
+| `UpdateChecker` | Автопроверка обновлений |
+| `VersionCheck` | Проверка совместимости версий |
+| `AutoSave` | Автосохранение в БД (каждые 5 мин) |
+| `Vanish` | Система невидимости игроков |
+| `Notes` | Система заметок игроков |
+| `Magnet` | Структура-магнит |
+| `MinecartSpeed` | Ускорение вагонеток |
+| `Lightning` | Структура-молния |
+| `Integrity` | Система целостности (износа) предметов |
+| `Antimatter` | Предмет-антиматерия |
+| `Attributes` | Кастомные атрибуты предметов |
+| `Beacon` | Улучшенные эффекты маяка |
+| `BlockDmg` | Кастомная твёрдость блоков |
+| `BoostedCobweb` | Усиленная паутина |
+| `ContainerTrigger` | Триггеры открытия контейнеров |
+| `DeathBell` | Кастомный колокол смерти |
+| `DragonEgg` | Кастомное яйцо дракона |
+| `EnderChest` | Расширенный эндер-сундук |
+| `EntityLocator` | Поиск существ (предмет) |
+| `GlassBreak` | Реалистичное разбитие стекла |
+| `HealthMeter` | Отображение здоровья мобов |
+| `ItemKill` | Удаление предметов по условиям |
+| `Leash` | Улучшенное привязывание существ |
+| `ModeProtect` | Защита режима игры по мирам |
+| `ShieldSlowness` | Замедление от щита |
+| `TerracotaSpeed` | Ускорение на терракоте |
+| `UnbreakableBreaker` | Ломание неломаемых блоков |
+| `Waypoint` | Система точек телепортации |
+| `CreativeItemValidator` | Валидация предметов креатива |
+| `WirelessRedstone` | Беспроводной редстоун |
+| `ElytraBoost` | Ускорение элитр |
+| `Furnace` | Электрическая печь |
+| `GeneratorBasic` | Базовый генератор энергии |
+| `Battery` | Батарея энергии |
+| `BatteryMulti` | Мульти-батарея |
+| `Chat` | Кастомный чат |
+| `Tab` | Кастомный таб |
+| `Scoreboard` | Кастомный скорборд |
+| `BossBar` | Кастомная босс-бар |
+| `BelowName` | Отображение под ником |
+| `MOTD` | Кастомное MOTD |
+| `Economy` | Экономика (Vault) |
+| `Punish` | Система наказаний |
+| `ElytraBoost` | Ускорение элитр |
+| `BotProtection` | Защита от ботов |
+| `Light` | Управление освещением |
+| `ProxyServer` | Прокси-сервер |
+| `Assembler` | Сборщик предметов |
+| `Omniscanner` | Сканирование блоков/предметов/сущностей |
+| `AntiCheat` | Античит (заморозка игроков) |
+| `StructureIntegrity` | Целостность структур |
+| `AOEEnchantment` | Заклинание AoE (площадной урон) |
+| `Particle` | Ускоритель частиц |
+| `Meteor` | Метеоритный дождь |
+
+---
+
+## 🎯 Основные возможности
+
+### 🔐 Авторизация (Auth)
+- Регистрация/вход через Anvil GUI
+- Хеширование **Argon2id** (32MB memory, 2 итерации)
+- **Telegram 2FA** через бота `@OakworldSRVbot` (9-значный код, кнопки подтверждения)
+- Проверка IP, лимит аккаунтов на IP (3 по умолчанию)
+- Сессии (60 мин), таймаут входа (60 сек), лимит попыток (5)
+- Смена пароля, принудительный вход, сброс регистрации
+- Скрытие паролей из лога консоли
+
+### ⚛ Реактор тёмного синтеза (Dark Fusion Reactor)
+- **Мультиблочная структура** — Iron Blocks, Lightning Rods, Copper Blocks, Redstone Blocks, Item Frame
+- Симуляция: температура ядра/корпуса, давление, целостность оболочки/корпуса (0-100%)
+- **Износ** — реактор деградирует со временем
+- **Режимы:** нагрев/охлаждение (через редстоун), топливо (алмазные/золотые блоки)
+- **Прогресс рецепта** — крафт Ancient Debris
+- **Состояния:** ✅ Норма, ⚠ Деградация, 💀 Самоуничтожение, 💥 Мелтдаун
+- **Радиация** от реактора (при temp ≥ 1000, при сбросе давления)
+
+### 🔋 Энергосистема (Cable Network)
+- **Кабели** — Waxed Lightning Rod (прямой), Waxed Chiseled Copper (поворот)
+- **Батареи** — Waxed Copper Grate (хранилище)
+- Типы узлов: `CABLE`, `BATTERY`, `GENERATOR`
+- Фоновые задачи: потери энергии (20 сек), тик кабеля (5 сек), разряд батареи, балансировка
+- Персистентность в SQLite
+- Визуализация соединений (CableVisualTask)
+
+### ☢ Радиация
+- **Уровни:** Safe → Mild → Moderate → High → Critical → Deadly → ☠ Lethal
+- **Источники:** Ancient Debris в инвентаре, Basalt Deltas, The End, оружие (Mace/Trident/Elytra), реактор
+- **Защита:** Lead Shield, Antirad (снимает 100 R/h)
+- **Дозиметр** — показывает радиацию в ActionBar
+
+### 🧲 Магнит
+- Мультиблочная структура, притягивает металлические предметы
+- Радиус масштабируется от мощности структуры
+- Система притяжения на кластерах
+
+### ⚡ Молния
+- Мультиблочная структура — контролируемые удары молний
+- Включение/выключение через `/mp str lightning`
+
+### 🔢 Кодовая панель (Code Panel)
+- Интерактивный ввод кода через чат с кнопками
+- **Флаги ключей:** попытки, время, вайтлист, блэклист, команды при успехе
+- Хранение в SQLite (`code_panel_keys`)
+
+### 🔨 Кастомные крафты
+
+| Предмет | Описание |
+|---------|----------|
+| **Multimeter** | Осмотр блока/энергии |
+| **Plasma Cannon** | Дальнее оружие |
+| **Shoker** | Ближнее оружие |
+| **Antimatter** | Спец-предмет (взрывчатка) |
+| **Health Meter** | Отображение здоровья мобов |
+| **Entity Locator** | Поиск существ |
+| **Dosimeter** | Показ радиации |
+| **Lead Shield** | Защита от радиации |
+
+Датапак добавляет ванильные рецепты (книги, цепи, эхо-осколки, тотемы, спаунеры, незерит и др.).
+
+### 🔧 Система целостности (Integrity)
+- Каждый предмет: целостность 0-100%
+- Ремонт в наковальне, объединение предметов, починка через XP
+- Mending (XP) восстанавливает целостность
+- Silk Touch — восстановление при сборе
+- Градиент цвета в лоре предмета
+
+### 🔋 Totem Charge System (Новое в 1.9)
+- **Тотемы с зарядами** — можно зарядить через наковальню (незерит-лом)
+- `totem_charge` в PDC (int)
+- Визуализация в лоре: `Charge: X/X`
+- Если заряд > 0 — тотем спасает и снимает 1 заряд
+- Если 0 — срабатывает как обычный (расходуется)
+
+### 🧲 Particle Accelerator (Новое в 1.9)
+- Разгон частиц с настраиваемыми параметрами
+- Интеграция с физикой блоков и структурами
+
+### 🧊 Block Friction (Новое в 1.9)
+- Кастомное трение блоков через `PlayerMoveEvent`
+- Velocity-мод — изменяется скорость игрока
+- Значения унаследованы от ванильной скользкости
+
+### 🔍 Omniscanner (Новое в 1.9)
+- Административное сканирование блоков, предметов и сущностей
+- Типы: блоки, предметы (на земле), сущности (мобы, игроки), всё сразу
+- **Асинхронное** сканирование чанков через `ChunkSnapshot`
+- GUI-интерфейс с результатами, сортировка по расстоянию
+- PDC-защита предметов в GUI
+
+### 🛠️ Admin Menu (Новое в 1.9)
+- `/mp menu` — GUI для управления плагином
+- Статистика, информация, быстрый доступ к предметам
+- PDC-защита всех предметов
+
+### 🛡️ Анти-чит (Новое в 1.9)
+- `/mp check <player>` — заморозка игрока для проверки
+- `/mp uncheck <player>` — разморозка
+
+### 🧩 Интеграция LuckPerms (Новое в 1.9)
+- Блокировка wildcard (`*`) — требует подтверждение (re-type в течение 15с)
+- Логирование попыток выдать `*`
+
+### 📊 Система скорборда (Новое в 1.9)
+- **Градиенты** в скорборде через Team prefix/suffix (`<gradient>`, `<rainbow>`, `<#FF00FF>`)
+- **Без лимита 40 символов** — строка любой длины
+- **Скрыты красные цифры** справа через `NumberFormat.blankFormat()`
+- **Плейсхолдеры:** `%server_time%`, `%server_date%`, `%player_world%`, `%player_coords%`
+- **PAPI интеграция** — если PlaceholderAPI установлен, все плейсхолдеры через PAPI
+
+### 🛡 Защита сервера
+
+| Система | Описание |
+|---------|----------|
+| **RedstoneGuard** | Лимит редстоун-обновлений в секунду |
+| **PacketGuard** | Защита от краш-пакетов (кик при превышении) |
+| **Void Protection** | Спасение от падения в пустоту |
+| **Emergency Entities Kill** | Удаление избыточных сущностей |
+| **Server Overload Warning** | Предупреждение о высокой нагрузке |
+| **Brand Hider** | Скрытие бренда сервера в F3 |
+| **Op Command Blocker** | Блокировка опасных команд |
+| **Whitelist Command Blocker** | Защита команд вайтлиста |
+
+### 🚂 Скорость вагонеток
+- Экспоненциальное ускорение на `POWERED_RAIL`
+- Урон от столкновения = скорость × 20
+- Отображение скорости в ActionBar (`/mp togglespeed`)
+- Частицы при движении
+
+### 🏠 Дома (Homes)
+- Сохранение/телепортация домов
+- Лимит домов (настраивается, по умолч. 10)
+- SQLite (`player_homes`)
+
+### 🌍 Измерения
+- Телепортация между мирами через GUI
+- `/mp chgdim` — меню выбора мира
+- Возврат в исходную локацию
+
+### 👻 Vanish
+- Полная невидимость игрока
+- Скрытие из `/list`
+- Персистентность (сохраняется в БД)
+
+### 📝 Заметки
+- Личные заметки через GUI (Anvil)
+- 54 слота, редактируемые книги
+- SQLite (`player_notes`)
+
+### 🗣 Фильтр чата
+- Wildcard и regex паттерны
+- Юникод-поддержка (кириллица через `\p{L}`)
+- Подсветка мата в логах (красный)
+- Право обхода: `mcplugin.chat.filter.bypass`
+
+### 🔄 Updater
+- Автопроверка обновлений с GitHub API
+- SHA commit comparison
+- Gate: новые коммиты без релиза → нет обновления
+- Загрузка JAR с GitHub Releases
+- Замена JAR с бекапом
+
+### 🔌 Управление питанием
+- `/mp power off|reboot|confirm|undo`
+- **BossBar** с убывающей полосой
+- **ActionBar** с секундами
+- **Звук** — ускоряется к концу отсчёта
+- Перехват `/stop` и `/restart`
+
+### ☠ Суицид
+- Двухшаговое подтверждение + обратный отсчёт
+- BossBar + ActionBar + звук
+
+### 📦 Целостность структур (Structure Integrity)
+- Блоки структур получают PDC-метку `integrity`
+- При разрушении проверяется связность
+- Команда `/mp str`
+- **Unbreakable Integrity Tag** — блоки структуры нельзя сломать, пока цела структура
+
+---
+
+## ⌨️ Основные команды
+
+### Общие
 ```
-/mp help                  — Command list
-/mp reload                — Reload plugin config
-/mp modules list          — List all modules
-/mp modules enable <name> — Enable a module
-/mp modules disable <name>— Disable a module
-/mp checkver              — Check for updates
-/mp updatejar             — Install update
+/mp help                  — Список команд
+/mp reload                — Перезагрузка плагина
+/mp modules list          — Список модулей
+/mp modules enable <name> — Включить модуль
+/mp modules disable <name>— Отключить модуль
 ```
 
-### 🔐 Auth (Admin)
+### Авторизация (админ)
 ```
-/mp auth forcelogin <nick>    /mp auth resetauth <nick>
-/mp auth chgpass <nick> <pass>/mp auth delsession <nick>
-/mp auth logout
-```
-
-### 🌍 World & Teleport
-```
-/mp chgdim                  — Open world menu
-/mp chgdim_teleport <world> — Teleport to world
-/mp sethome <name>          — Save home
-/mp home <name>             — View home
-/mp listhomes               — List homes
+/mp auth forcelogin <nick>
+/mp auth resetauth <nick>
+/mp auth chgpass <nick> <pass>
+/mp auth delsession <nick>
 ```
 
-### ⚙️ Mechanics
+### Миры и телепортация
 ```
-/mp codepane                      — Code panel
-/mp togglespeed                   — Minecart speed display
-/mp checkrad [nick]               — Check radiation
-/mp setrad <nick> <value>         — Set radiation
-/mp vanish <nick>                 — Toggle vanish
-/mp notes                         — Open notes
-/mp suicide                       — Self-kill
-/mp power off|reboot|confirm|undo — Power management
-/mp item int list|set|add <value> — Item integrity
+/mp chgdim                       — Меню миров
+/mp chgdim_teleport <world>      — Телепорт в мир
+/mp sethome <name>               — Сохранить дом
+/mp home <name>                  — Просмотр дома
+/mp listhomes                    — Список домов
+/mp delhome <name>               — Удалить дом
+/mp spawn                        — На спавн
+/mp setspawn                     — Установить спавн
 ```
 
-### 🏗 Structures
+### Механики
 ```
-/mp str dfc assemble       — Assemble reactor
-/mp str dfc stats          — Reactor stats
-/mp str magnet assemble    — Assemble magnet
-/mp str magnet stats       — Magnet stats
-/mp str lightning enable|disable|stats
+/mp codepane                          — Кодовая панель
+/mp codepane key add/remove/list/list — Управление ключами
+/mp togglespeed                       — Отображение скорости
+/mp checkrad [nick]                   — Проверить радиацию
+/mp setrad <nick> <value>             — Установить радиацию
+/mp vanish <nick>                     — Невидимость
+/mp notes                             — Заметки
+/mp suicide                           — Суицид
+/mp power off|reboot|confirm|undo     — Питание
+/mp item int list|set|add             — Целостность предмета
+/mp check <player>                    — Заморозка (античит)
+/mp uncheck <player>                  — Разморозка
+/mp togglebind                        — Беспроводной редстоун
+```
+
+### Структуры
+```
+/mp str dfc assemble       — Собрать реактор
+/mp str dfc stats          — Статистика реактора
+/mp str magnet assemble    — Собрать магнит
+/mp str magnet stats       — Статистика магнита
+/mp str lightning enable|disable|stats — Молния
+```
+
+### Обновления
+```
+/mp checkver              — Проверить обновления
+/mp updatejar             — Скачать и установить обновление
+```
+
+### Системные (замена ванильных команд)
+```
+/stop          → /mp power off
+/restart       → /mp power reboot
+/list          — Кастомный список игроков (vanish-aware)
+/reactor       — Сборка реактора
 ```
 
 ---
 
-## 🔑 Essential Permissions
+## 🔑 Ключевые права (Permissions)
 
-| Permission | Description |
-|------------|-------------|
-| `mcplugin.admin` or `mcplugin.*` | All permissions |
-| `mcplugin.chat.filter.bypass` | Bypass chat filter |
-| `mcplugin.packetguard.bypass` | Bypass packet size limit |
-| `mcplugin.gmprotect.bypass` | Bypass game mode protection |
-| `mcplugin.creative.bypass` | Bypass creative item validation |
-| `mcplugin.show.brand` | Show server brand in F3 |
-
----
-
-## 📄 Configuration
-
-- **`config.yml`** — all settings (auth, reactor, energy, radiation, features, chat filter, homes, etc.)
-- **`messages.yml`** — all player-facing messages (MiniMessage format, customizable)
+| Право | Описание |
+|-------|----------|
+| `mcplugin.admin` / `mcplugin.*` | Все права |
+| `mcplugin.chat.filter.bypass` | Обход фильтра чата |
+| `mcplugin.packetguard.bypass` | Обход лимита пакетов |
+| `mcplugin.gmprotect.bypass` | Обход защиты режима игры |
+| `mcplugin.creative.bypass` | Обход валидации предметов |
+| `mcplugin.show.brand` | Показывать бренд сервера в F3 |
 
 ---
 
-## 🗄 Database (SQLite)
+## 📄 Конфигурация
 
-Tables: `auth_users`, `auth_sessions`, `cables`, `cable_connections`, `code_panel_keys`, `player_homes`, `player_notes`, `player_radiation`, `updater_state`, `vanished_players`, `magnet_state`, `reactor_state`
-
----
-
-## 🔄 Updating
-
-1. Delete old datapack in `world/datapacks/`
-2. Delete old `config.yml` (regenerated automatically)
-3. Replace `.jar`, restart twice
+- **`config.yml`** — все настройки (~6000 строк): auth, reactor, energy, radiation, features, chat filter, homes, защита и т.д.
+  - **Авто-ремонт** — при InvalidConfigurationException плагин автоматически восстанавливает config.yml
+  - **Встроенный гайд** — в начале config.yml есть полная документация по каждому ключу
+- **`messages.yml`** — все сообщения для игроков (MiniMessage, настраиваемые)
 
 ---
 
-## 📖 Detailed Reference
+## 🗄 База данных (SQLite)
 
-See **[INFO.md](INFO.md)** for the full feature breakdown with all commands, permissions, mechanics, config options, and database structure.
+| Таблица | Назначение |
+|---------|-----------|
+| `auth_users` | Пользователи авторизации |
+| `auth_sessions` | Сессии авторизации |
+| `cables` | Узлы кабельной сети |
+| `cable_connections` | Соединения кабелей |
+| `code_panel_keys` | Ключи кодовой панели |
+| `player_homes` | Точки домов |
+| `player_notes` | Заметки игроков |
+| `player_radiation` | Радиация игроков |
+| `updater_state` | Состояние обновлений |
+| `vanished_players` | Статус ваниша |
+| `magnet_state` | Состояние магнита |
+| `reactor_state` | Состояние реактора |
+| `player_settings` | Настройки игроков |
 
 ---
 
-## 📄 License
+## 🏗️ Сборка из исходников
 
-**GNU AGPL v3** — see [LICENSE](LICENSE)
+```bash
+git clone https://github.com/rizer001/UltimateImprovments.git
+cd UltimateImprovments
+./gradlew build
+```
 
-## 👤 Author
+Готовый JAR появится в `Jar/UltimateImprovments-<version>.jar`
+
+**Требования:**
+- JDK 26+
+- Git
+
+---
+
+## 🔄 Обновление
+
+1. Удалите старый датапак в `world/datapacks/`
+2. Замените `.jar` на новый
+3. Выполните `/mp reload`
+4. Если нужно — обновите `config.yml` (авто-восстановление добавит новые секции)
+
+> ⚠ При использовании плейсхолдеров в конфигах: замените `{...}` на `%...%` (старый формат больше не поддерживается).
+
+---
+
+## 🧪 Для разработчиков
+
+### PlaceholderAPI
+Все плейсхолдеры плагина регистрируются через PAPI (если установлен):
+- `%ui_player_name%`, `%ui_player_world%`, `%ui_player_coords%`
+- `%ui_server_time%`, `%ui_server_date%`
+- `%ui_player_ping%`, `%ui_online%`, `%ui_online_max%`
+
+Также доступны через внутренний fallback-резолвер без PAPI.
+
+### API / Soft-depend
+- **PlaceholderAPI** — плейсхолдеры
+- **LuckPerms** — блокировка wildcard
+- **Vault** — экономика
+- **DeluxeMenus** — кастомные меню
+
+### Структура проекта
+```
+src/main/java/com/ultimateimprovments/
+├── chat/           — Чат и пинги
+├── combat/         — Оружие (Plasma Cannon, Shoker)
+├── command/        — Система команд (/mp)
+├── config/         — Конфиги, авто-ремонт, гайд
+├── core/           — Ядро: Main, сканеры, стартап
+├── database/       — SQLite, автосохранение
+├── display/        — Таб, скорборд, босс-бар
+├── economy/        — Экономика (Vault)
+├── enchantment/    — AoE зачарование
+├── energy/         — Энергосистема
+├── hook/           — Интеграции (PAPI, Vault)
+├── listener/       — Слушатели событий
+├── maintenance/    — Режим обслуживания
+├── mechanics/      — Все механики
+│   ├── crafting/   — Кастомные крафты
+│   ├── environment/— Окружение (молнии, свет)
+│   ├── features/   — Все фичи (integrity, omniscanner и т.д.)
+│   ├── particle/   — Ускоритель частиц
+│   ├── protection/ — Защита
+│   └── security/   — Безопасность (auth, античит, код.панель)
+├── module/         — Менеджер модулей (~80 модулей)
+├── punish/         — Система наказаний
+├── report/         — Система репортов
+├── server/         — Серверные утилиты (RedstoneGuard и т.д.)
+├── structure/      — Структуры (маркеры, чанки)
+├── util/           — Утилиты (логи, сообщения, блоки)
+└── whitelist/      — Вайтлист, блэклист
+```
+
+---
+
+## 📜 История версий
+
+| Версия | Дата | Ключевые изменения |
+|--------|------|--------------------|
+| **1.9** | 2026-07-18 | Java 26, Scoreboard градиенты, Omniscanner, 2FA, Totem Charge, Particle Accelerator, Block Friction, Anti-Cheat, Structure Integrity, LuckPerms интеграция, PAPI, ~112 коммитов |
+| **1.8** | — | Энергосистема, реактор, радиация, кодовая панель, модульная архитектура |
+| **1.7** | — | Кастомные крафты, защита, экономика |
+
+Подробный чейнджлог: [CHANGELOG.md](CHANGELOG.md)
+
+---
+
+## 📄 Лицензия
+
+**GNU AGPL v3** — см. [LICENSE](LICENSE)
+
+Разрешается свободное использование, модификация и распространение. При использовании на публичных серверах необходимо предоставлять доступ к исходному коду модифицированных версий.
+
+---
+
+## 👤 Автор
 
 **rizer001** — [GitHub](https://github.com/rizer001) — Discord: `@error404_user.not.found`
 
 ---
-*Last tested: June 22, 2026 — webhook verification*
+
+*Дата сборки: 2026-07-18 | Актуальная версия: 1.9*
