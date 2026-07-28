@@ -9,12 +9,11 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Реестр субкоманд /mp.
- * <p>
- * Хранит карту имя → SubCommand и предоставляет методы для dispatch и tab-complete.
- * При добавлении новой субкоманды достаточно зарегистрировать её здесь —
- * execute и tabComplete подхватятся автоматически.
+/*** Реестр субкоманд /ui.
+     * <p>
+     * Хранит карту имя → SubCommand и предоставляет методы для dispatch и tab-complete.
+     * При добавлении новой субкоманды достаточно зарегистрировать её здесь —
+     * execute и tabComplete подхватятся автоматически.
  */
 public class SubCommandRegistry {
 
@@ -62,7 +61,7 @@ public class SubCommandRegistry {
         if (args.length == 0) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "general.unknown_command",
-                    "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>")));
+                    "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>")));
             return true;
         }
 
@@ -79,7 +78,7 @@ public class SubCommandRegistry {
         if (cmd == null) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "general.unknown_command",
-                    "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>")));
+                    "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>")));
             return true;
         }
 

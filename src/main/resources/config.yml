@@ -3757,7 +3757,7 @@ bossbar:
 belowname:
   enabled: true
 
-  format: "<red>❤ %player_health%</red> <dark_gray>|</dark_gray> <gold>%player_food%</gold>"
+  format: "<red>❤️ <white>%player_health_rounded%</white> <dark_gray>|</dark_gray> <gold>🔥 <white>%player_food%</white></gold>"
 
   update_interval_ticks: 20
 
@@ -5631,6 +5631,19 @@ messages_en:
       rejected: "Rejected"
       closed: "Closed"
     admin:
+  # ─── Auth Dialog (Custom Screen) messages ─────────────
+  auth:
+    dialog:
+      login_title: "<gold>✦ Login Required</gold>"
+      register_title: "<gold>✦ Registration Required</gold>"
+      body_login: "<white>Please enter your password to log in.</white>"
+      body_register: "<white>Please choose a password to register.</white>"
+      password_label: "<gray>Password</gray>"
+      continue_button: "<green>✔ Continue</green>"
+      exit_button: "<red>✖ Exit Server</red>"
+      wrong_password: "<red>❌ Incorrect password!</red>"
+      kick_cancelled: "§c❌ Authentication cancelled.\n§7You cancelled the authentication process."
+
       remove_confirm: "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/mp reports remove confirm</yellow><white> to confirm.</white>"
 
 # === INTEGRITY META — НЕ РЕДАКТИРОВАТЬ (auto-managed by ConfigGuideManager) ===

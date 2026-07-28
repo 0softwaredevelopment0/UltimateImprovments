@@ -16,12 +16,12 @@ public class PluginHideListener implements Listener {
         String message = rawMessage.toLowerCase().trim();
 
         // =========================
-        // SILENT /mp pane_click — cancel to prevent console spam,
+        // SILENT /ui pane_click — cancel to prevent console spam,
         // then manually dispatch so the command still works.
         // Also check !isCancelled to avoid bypassing AuthListener
         // (which fires at LOWEST priority for unauthenticated players).
         // =========================
-        if (message.startsWith("/mp pane_click") && !event.isCancelled()) {
+        if (message.startsWith("/ui pane_click") && !event.isCancelled()) {
             event.setCancelled(true);
             // Strip leading '/' and dispatch silently
             String command = rawMessage.substring(1);

@@ -58,6 +58,9 @@ public class PluginStartup {
         // Auth command log filter — hide passwords from server console
         AuthCommandLogFilter.register();
 
+        // Auth Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
+
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("  UltimateImprovments — Starting up...");
@@ -346,7 +349,7 @@ public class PluginStartup {
 
     /**
      * Сбрасывает флаг startupPerformed. Вызывается из PluginShutdown
-     * чтобы при следующем startup (например после /mp reload) guard не сработал.
+     * чтобы при следующем startup (например после /ui reload) guard не сработал.
      */
     public static void resetStartupFlag() {
         startupPerformed = false;

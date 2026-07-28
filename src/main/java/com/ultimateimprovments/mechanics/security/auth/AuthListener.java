@@ -19,7 +19,7 @@ import java.util.UUID;
  * <p>
  * Блокирует действия неавторизованных игроков. GUI-handlers удалены —
  * все взаимодействие теперь происходит через чат-команды:
- * {@code /mp auth login/register/logout/chgpass/2fa}.
+ * {@code /ui auth login/register/logout/chgpass/2fa}.
  */
 public class AuthListener implements Listener {
 
@@ -165,7 +165,7 @@ public class AuthListener implements Listener {
 
     // =========================
     // BLOCK CHAT / COMMANDS if not authed
-    // Разрешаем только /mp auth (login/register/logout/chgpass/2fa) до входа.
+    // Разрешаем только /ui auth (login/register/logout/chgpass/2fa) до входа.
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
@@ -174,18 +174,18 @@ public class AuthListener implements Listener {
 
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
 
-        // Разрешаем /mp auth login, register, chgpass, logout и 2fa
-        if (msg.startsWith("/mp auth login") || msg.startsWith("/mp auth register")
-                || msg.startsWith("/mp auth logout")
-                || msg.startsWith("/mp auth chgpass")
-                || msg.startsWith("/mp auth 2fa")) {
+        // Разрешаем /ui auth login, register, chgpass, logout и 2fa
+        if (msg.startsWith("/ui auth login") || msg.startsWith("/ui auth register")
+                || msg.startsWith("/ui auth logout")
+                || msg.startsWith("/ui auth chgpass")
+                || msg.startsWith("/ui auth 2fa")) {
             return;
         }
 
         event.setCancelled(true);
         player.sendMessage("");
         player.sendMessage("§c❌ §fПожалуйста, авторизуйтесь!");
-        player.sendMessage("§e/mp auth login <password> §7| §e/mp auth register <password>");
+        player.sendMessage("§e/ui auth login <password> §7| §e/ui auth register <password>");
         player.sendMessage("");
     }
 
