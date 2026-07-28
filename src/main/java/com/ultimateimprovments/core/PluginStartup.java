@@ -344,7 +344,7 @@ public class PluginStartup {
         // Commands — регистрация Bukkit-команд через CommandMap
         CommandRegistrar.getInstance().registerAll(plugin);
 
-        // SubCommand registry — инициализация диспетчера /mp
+        // SubCommand registry — инициализация диспетчера /ultimateimprovments
         com.ultimateimprovments.command.PluginReloadCommand.init();
 
         ConsoleLogger.info("[Init] Post-module systems ready.");
