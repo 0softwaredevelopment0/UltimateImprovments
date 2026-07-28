@@ -29,7 +29,7 @@ import java.util.UUID;
  *   <li>Shift+клик — крафтит всё, что возможно (как ванильный шифт-клик + авто-цикл)</li>
  * </ul>
  * <p>
- * Команда: {@code /mp toggleautocraft}
+ * Команда: {@code /ui toggleautocraft}
  * Право: {@code ui.autocraft} (default: op)
  */
 public class AutoCraftManager implements Listener {

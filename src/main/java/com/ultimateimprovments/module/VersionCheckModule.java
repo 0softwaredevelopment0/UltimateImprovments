@@ -194,10 +194,10 @@ public class VersionCheckModule extends PluginModule {
         ConsoleLogger.warn("!  This plugin uses LuckPerms for full permission management.    !");
         ConsoleLogger.warn("!  Without LuckPerms, many permission-based features will       !");
         ConsoleLogger.warn("!  NOT work correctly:                                          !");
-        ConsoleLogger.warn("!    - /mp sethome, /mp home, /mp delhome                       !");
-        ConsoleLogger.warn("!    - /mp auth (forcelogin, resetauth, chgpass, delsession)    !");
-        ConsoleLogger.warn("!    - /mp power (off, reboot)                                  !");
-        ConsoleLogger.warn("!    - /mp structures (dfc, magnet)                             !");
+        ConsoleLogger.warn("!    - /ui sethome, /ui home, /ui delhome                       !");
+        ConsoleLogger.warn("!    - /ui auth (forcelogin, resetauth, chgpass, delsession)    !");
+        ConsoleLogger.warn("!    - /ui power (off, reboot)                                  !");
+        ConsoleLogger.warn("!    - /ui structures (dfc, magnet)                             !");
         ConsoleLogger.warn("!    - And many other commands                                  !");
         ConsoleLogger.warn("!                                                                 !");
         ConsoleLogger.warn("!  Download LuckPerms: https://luckperms.net/download           !");

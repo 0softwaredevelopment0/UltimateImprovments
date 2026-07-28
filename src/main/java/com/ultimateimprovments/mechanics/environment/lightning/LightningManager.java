@@ -180,7 +180,7 @@ public class LightningManager implements Listener {
             if (player != null) {
                 player.sendMessage("§a✔ §fLightning structure assembled!");
                 player.sendMessage("§8┃ §7Drop items on the lightning rod — lightning will smelt them!");
-                player.sendMessage("§8┃ §7Commands: §f/mp str lightning enable§7/§cdisable §7/ §fstats");
+                player.sendMessage("§8┃ §7Commands: §f/ui str lightning enable§7/§cdisable §7/ §fstats");
             }
 
             ConsoleLogger.info(

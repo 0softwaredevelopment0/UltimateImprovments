@@ -254,7 +254,7 @@ public class ReactorListener implements Listener {
             if (center != null) {
                 if (LightningManager.isActive(center)) {
                     player.sendMessage("§e⚡ Структура молний уже собрана!");
-                    player.sendMessage("§7Команды: §f/mp str lightning enable§7/§cdisable");
+                    player.sendMessage("§7Команды: §f/ui str lightning enable§7/§cdisable");
                     return;
                 }
                 player.sendMessage("§8[§e⚡ Молнии§8] §7Обнаружена структура молний — сборка...");

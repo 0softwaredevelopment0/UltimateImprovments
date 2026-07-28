@@ -17,12 +17,12 @@ import java.util.UUID;
 
 /**
  * HomeCommand — обрабатывает команды домашних точек:
- * /mp sethome &lt;название&gt;
- * /mp home &lt;название&gt;
- * /mp delhome &lt;название&gt;
- * /mp listhomes
- * /mp ophomels &lt;игрок&gt;
- * /mp opdelhome &lt;игрок&gt; &lt;название&gt;
+ * /ui sethome &lt;название&gt;
+ * /ui home &lt;название&gt;
+ * /ui delhome &lt;название&gt;
+ * /ui listhomes
+ * /ui ophomels &lt;игрок&gt;
+ * /ui opdelhome &lt;игрок&gt; &lt;название&gt;
  */
 public final class HomeCommand {
 
@@ -95,7 +95,7 @@ public final class HomeCommand {
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_sethome", "<red>❌ Usage: </red><white>/mp sethome <name></white>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_sethome", "<red>❌ Usage: </red><white>/ui sethome <name></white>")));
             return true;
         }
 
@@ -113,7 +113,7 @@ public final class HomeCommand {
         int maxHomes = HomeDatabase.getMaxHomes();
         if (!HomeDatabase.homeExists(uuid, homeName) && HomeDatabase.countHomes(uuid) >= maxHomes) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.limit_reached", "<red>❌ You have reached the limit of</red> <yellow>%max%</yellow> <red>home points!</red>").replace("%max%", String.valueOf(maxHomes))));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.limit_hint", "<gray> Use </gray><white>/mp delhome <name></white><gray> to remove unwanted ones.</gray>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.limit_hint", "<gray> Use </gray><white>/ui delhome <name></white><gray> to remove unwanted ones.</gray>")));
             return true;
         }
 
@@ -147,7 +147,7 @@ public final class HomeCommand {
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_home", "<red>❌ Usage: </red><white>/mp home <name></white>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_home", "<red>❌ Usage: </red><white>/ui home <name></white>")));
             return true;
         }
 
@@ -157,7 +157,7 @@ public final class HomeCommand {
 
         if (homeEntry == null) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found", "<yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not found.</white>").replace("%name%", homeName)));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_hint", "<gray> Use </gray><white>/mp sethome %name%</white><gray> to save it.</gray>").replace("%name%", homeName)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.not_found_hint", "<gray> Use </gray><white>/ui sethome %name%</white><gray> to save it.</gray>").replace("%name%", homeName)));
             return true;
         }
 
@@ -201,7 +201,7 @@ public final class HomeCommand {
             return true;
         }
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_delhome", "<red>❌ Usage: </red><white>/mp delhome <name></white>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_delhome", "<red>❌ Usage: </red><white>/ui delhome <name></white>")));
             return true;
         }
 
@@ -238,7 +238,7 @@ public final class HomeCommand {
 
         if (homes.isEmpty()) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_homes", "<yellow>ℹ</yellow> <white>You have no saved home points.</white>")));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_homes_hint", "<gray> Use </gray><white>/mp sethome <name></white><gray> to save one.</gray>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("home.no_homes_hint", "<gray> Use </gray><white>/ui sethome <name></white><gray> to save one.</gray>")));
             return true;
         }
 
@@ -277,7 +277,7 @@ public final class HomeCommand {
             return true;
         }
         if (args.length < 1) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_ophomels", "<red>❌ Usage: </red><white>/mp ophomels <player></white>")));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_ophomels", "<red>❌ Usage: </red><white>/ui ophomels <player></white>")));
             return true;
         }
 
@@ -325,7 +325,7 @@ public final class HomeCommand {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_opdelhome", "<red>❌ Usage: </red><white>/mp opdelhome <player> <home_name></white>")));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("home.usage_opdelhome", "<red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>")));
             return true;
         }
 

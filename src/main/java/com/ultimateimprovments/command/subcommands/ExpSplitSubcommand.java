@@ -19,7 +19,7 @@ public final class ExpSplitSubcommand {
     private ExpSplitSubcommand() {}
 
     /**
-     * /mp expsplit — забирает весь опыт из уровней, отдаёт бутылку с опытом.
+     * /ui expsplit — забирает весь опыт из уровней, отдаёт бутылку с опытом.
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {

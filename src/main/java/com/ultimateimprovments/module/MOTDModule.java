@@ -28,7 +28,7 @@ public class MOTDModule extends PluginModule {
     protected void onDisable(JavaPlugin plugin) {
         if (listener != null) {
             // ⛔ ОБЯЗАТЕЛЬНО отписываемся от Bukkit событий,
-            // иначе при каждом /mp reload будет висеть дубликат listener'а
+            // иначе при каждом /ui reload будет висеть дубликат listener'а
             HandlerList.unregisterAll(listener);
             this.listener = null;
         }

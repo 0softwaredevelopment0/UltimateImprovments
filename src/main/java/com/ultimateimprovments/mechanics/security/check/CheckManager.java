@@ -105,7 +105,7 @@ public class CheckManager {
 
         // Notify inspector
         inspector.sendMessage(MessageUtil.parse("<green>✔</green> <white>Check started for</white> <yellow>" + suspect.getName() + "</yellow><white>.</white>"));
-        inspector.sendMessage(MessageUtil.parse("<gray>Use </gray><white>/mp uncheck " + suspect.getName() + "</white><gray> when finished.</gray>"));
+        inspector.sendMessage(MessageUtil.parse("<gray>Use </gray><white>/ui uncheck " + suspect.getName() + "</white><gray> when finished.</gray>"));
 
         ConsoleLogger.info(
                 "[CheckManager] " + inspector.getName() + " started checking " + suspect.getName());

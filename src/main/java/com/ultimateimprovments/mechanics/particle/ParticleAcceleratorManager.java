@@ -465,7 +465,7 @@ public class ParticleAcceleratorManager implements Listener {
         ItemStack item = e.getItemInHand();
         if (item != null && item.hasItemMeta()) {
             var pdc = item.getItemMeta().getPersistentDataContainer();
-            // Check if it's a legitimate particle block (crafted in Item Creator or from /mp menu)
+            // Check if it's a legitimate particle block (crafted in Item Creator or from /ui menu)
             if (pdc.has(PARTICLE_BLOCK_KEY, PersistentDataType.STRING)) {
                 String blockType = pdc.get(PARTICLE_BLOCK_KEY, PersistentDataType.STRING);
                 ConsoleLogger.info("[ParticleAccelerator] Placed " + blockType + " (" + type.name() + ") at "

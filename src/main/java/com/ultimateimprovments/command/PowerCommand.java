@@ -29,10 +29,10 @@ public class PowerCommand extends Command {
     public boolean execute(CommandSender sender, String commandLabel, String[] args) {
         if (isRestart) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("power.restart_message",
-                    "<dark_gray>[<dark_red>⚠</dark_red>] <red>The /restart command is disabled. Use:</red> <white>/mp power reboot</white>")));
+                    "<dark_gray>[<dark_red>⚠</dark_red>] <red>The /restart command is disabled. Use:</red> <white>/ui power reboot</white>")));
         } else {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("power.stop_message",
-                    "<dark_gray>[<dark_red>⚠</dark_red>] <red>The /stop command is disabled. Use:</red> <white>/mp power off</white>")));
+                    "<dark_gray>[<dark_red>⚠</dark_red>] <red>The /stop command is disabled. Use:</red> <white>/ui power off</white>")));
         }
         return true;
     }

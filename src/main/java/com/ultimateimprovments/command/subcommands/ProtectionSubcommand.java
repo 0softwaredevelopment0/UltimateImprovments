@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * /mp protection &lt;give|list|info|delete&gt; — админ-операции над блоками защиты.
+ * /ui protection &lt;give|list|info|delete&gt; — админ-операции над блоками защиты.
  */
 public final class ProtectionSubcommand {
 
@@ -28,7 +28,7 @@ public final class ProtectionSubcommand {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp protection <give|list|info|delete> [args]</white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui protection <give|list|info|delete> [args]</white>"));
             return true;
         }
         return switch (args[1].toLowerCase()) {
@@ -51,7 +51,7 @@ public final class ProtectionSubcommand {
             return true;
         }
         if (args.length < 3) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp protection give <player> [amount]</white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui protection give <player> [amount]</white>"));
             return true;
         }
         @SuppressWarnings("deprecation")

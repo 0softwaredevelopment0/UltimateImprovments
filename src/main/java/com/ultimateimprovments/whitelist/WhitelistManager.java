@@ -25,7 +25,7 @@ import java.util.logging.Level;
  * Отключает ванильный вайтлист при включении.
  * Работает независимо от OP whitelist.
  * <p>
- * Команды: /mp whitelist on/off/add/list/remove
+ * Команды: /ui whitelist on/off/add/list/remove
  */
 public class WhitelistManager implements Listener {
 

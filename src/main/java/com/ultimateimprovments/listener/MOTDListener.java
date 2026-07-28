@@ -48,7 +48,7 @@ public class MOTDListener implements Listener {
 
     /**
      * Загружает иконку motd.png из папки плагина.
-     * Можно вызвать повторно для перезагрузки (например при /mp reload).
+     * Можно вызвать повторно для перезагрузки (например при /ui reload).
      */
     public void loadIcon() {
         File iconFile = new File(Main.getInstance().getDataFolder(), "motd.png");

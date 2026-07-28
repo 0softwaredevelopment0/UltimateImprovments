@@ -28,7 +28,7 @@ import java.util.UUID;
 /**
  * Слушатель для:
  * <ul>
- *   <li>Использования XP-бутылки (/mp expsplit) — ПКМ забирает опыт</li>
+ *   <li>Использования XP-бутылки (/ui expsplit) — ПКМ забирает опыт</li>
  *   <li>Установки чанклоадера (изумрудный блок с PDC) — создаёт StructureMarker</li>
  *   <li>Ломания чанклоадера — удаляет StructureMarker</li>
  * </ul>

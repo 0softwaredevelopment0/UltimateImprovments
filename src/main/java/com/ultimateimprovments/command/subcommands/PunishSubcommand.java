@@ -15,17 +15,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 🛡 PunishSubcommand — обработчик /mp punish.
+ * 🛡 PunishSubcommand — обработчик /ui punish.
  * <p>
  * Команды:
  * <pre>
- * /mp punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
- * /mp punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
- * /mp punish kick <player> <reason> [-ip] [-hw]
- * /mp punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
- * /mp punish listwarns <player>
- * /mp punish unban <player>
- * /mp punish unmute <player>
+ * /ui punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
+ * /ui punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
+ * /ui punish kick <player> <reason> [-ip] [-hw]
+ * /ui punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
+ * /ui punish listwarns <player>
+ * /ui punish unban <player>
+ * /ui punish unmute <player>
  * </pre>
  * <p>
  * Правила флагов:
@@ -98,7 +98,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
             ));
             return true;
         }
@@ -200,7 +200,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
             ));
             return true;
         }
@@ -293,7 +293,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp punish kick <player> <reason> [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish kick <player> <reason> [-ip] [-hw]</white>"
             ));
             return true;
         }
@@ -362,7 +362,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
+                    "<red>❌ Usage: </red><white>/ui punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>"
             ));
             return true;
         }
@@ -449,7 +449,7 @@ public final class PunishSubcommand {
             // Показываем свои варны
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(MessageUtil.parse(
-                        "<red>❌ Usage: </red><white>/mp punish listwarns <player></white>"
+                        "<red>❌ Usage: </red><white>/ui punish listwarns <player></white>"
                 ));
                 return true;
             }
@@ -561,7 +561,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp punish unban <player></white>"
+                    "<red>❌ Usage: </red><white>/ui punish unban <player></white>"
             ));
             return true;
         }
@@ -600,7 +600,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp punish unmute <player></white>"
+                    "<red>❌ Usage: </red><white>/ui punish unmute <player></white>"
             ));
             return true;
         }
@@ -648,7 +648,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 5) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp punish unwarn <player> <reason> <warnId></white>"
+                    "<red>❌ Usage: </red><white>/ui punish unwarn <player> <reason> <warnId></white>"
             ));
             return true;
         }
@@ -866,7 +866,7 @@ public final class PunishSubcommand {
         }
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp punish crash <player></white>"
+                    "<red>❌ Usage: </red><white>/ui punish crash <player></white>"
             ));
             return true;
         }
@@ -904,14 +904,14 @@ public final class PunishSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n" +
-                "<white>/mp punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
-                "<white>/mp punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
-                "<white>/mp punish kick <player> <reason> [-ip] [-hw]</white>\n" +
-                "<white>/mp punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
-                "<white>/mp punish listwarns [player]</white>\n" +
-                "<white>/mp punish unban <player></white>\n" +
-                "<white>/mp punish unmute <player></white>\n" +
-                "<white>/mp punish unwarn <player> <reason> <warnId></white>\n" +
+                "<white>/ui punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
+                "<white>/ui punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
+                "<white>/ui punish kick <player> <reason> [-ip] [-hw]</white>\n" +
+                "<white>/ui punish warn <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]</white>\n" +
+                "<white>/ui punish listwarns [player]</white>\n" +
+                "<white>/ui punish unban <player></white>\n" +
+                "<white>/ui punish unmute <player></white>\n" +
+                "<white>/ui punish unwarn <player> <reason> <warnId></white>\n" +
                 "<gray>Flags: -time:<N>s|m|h|d, -permanent, -ip, -hw</gray>"
         ));
     }

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Обрабатывает подкоманду /mp codepane key — управление ключами кодовой панели.
+ * Обрабатывает подкоманду /ui codepane key — управление ключами кодовой панели.
  */
 public class CodePaneKeyCommand {
 
@@ -43,13 +43,13 @@ public class CodePaneKeyCommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.header", "<gold>=== <white>Code Panel Key Management</white> ===")));
         sender.sendMessage("");
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.add", "<yellow>/mp codepane key add <gray><name> <code> [flags]</gray></yellow>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.add", "<yellow>/ui codepane key add <gray><name> <code> [flags]</gray></yellow>")));
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.add_desc", "<gray> Add a new key</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.list", "<yellow>/mp codepane key list</yellow>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.list", "<yellow>/ui codepane key list</yellow>")));
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.list_desc", "<gray> List all keys</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.remove", "<yellow>/mp codepane key remove <gray><name></gray></yellow>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.remove", "<yellow>/ui codepane key remove <gray><name></gray></yellow>")));
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.remove_desc", "<gray> Remove a key</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.modify", "<yellow>/mp codepane key modify <gray><name> <new_code> [flags]</gray></yellow>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.modify", "<yellow>/ui codepane key modify <gray><name> <new_code> [flags]</gray></yellow>")));
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.modify_desc", "<gray> Modify a key</gray>")));
         sender.sendMessage("");
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.permissions_header", "<gray>Required permissions:</gray>")));
@@ -70,10 +70,10 @@ public class CodePaneKeyCommand {
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.flag_command_entity", "<gray>  %entity% — replaced with player's nickname</gray>")));
         sender.sendMessage("");
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.examples_header", "<gray>Examples:</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example1", "<gray> /mp codepane key add mydoor 1234 attempts:3 time:1h</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example2", "<gray> /mp codepane key add admin 7777 whitelist:Steve,Alex</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example3", "<gray> /mp codepane key add warp 4321 command:(say %entity% got access)</gray>")));
-        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example4", "<gray> /mp codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example1", "<gray> /ui codepane key add mydoor 1234 attempts:3 time:1h</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example2", "<gray> /ui codepane key add admin 7777 whitelist:Steve,Alex</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example3", "<gray> /ui codepane key add warp 4321 command:(say %entity% got access)</gray>")));
+        sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.help.example4", "<gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>")));
     }
 
     // =========================
@@ -85,7 +85,7 @@ public class CodePaneKeyCommand {
             return;
         }
         if (args.length < 5) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_add", "<red>❌ Usage: </red><white>/mp codepane key add <name> <code> [flags]</white>")));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_add", "<red>❌ Usage: </red><white>/ui codepane key add <name> <code> [flags]</white>")));
             return;
         }
 
@@ -270,7 +270,7 @@ public class CodePaneKeyCommand {
             return;
         }
         if (args.length < 4) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_remove", "<red>❌ Usage: </red><white>/mp codepane key remove <name></white>")));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_remove", "<red>❌ Usage: </red><white>/ui codepane key remove <name></white>")));
             return;
         }
 
@@ -294,7 +294,7 @@ public class CodePaneKeyCommand {
             return;
         }
         if (args.length < 5) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_modify", "<red>❌ Usage: </red><white>/mp codepane key modify <name> <new_code> [flags]</white>")));
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.usage_modify", "<red>❌ Usage: </red><white>/ui codepane key modify <name> <new_code> [flags]</white>")));
             return;
         }
 

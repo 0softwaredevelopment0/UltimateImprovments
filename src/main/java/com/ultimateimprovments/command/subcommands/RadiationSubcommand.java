@@ -18,7 +18,7 @@ public final class RadiationSubcommand {
             if (sender instanceof Player p && !p.hasPermission("ui.command.setrad")) {
                 p.sendMessage("§4❌ §cУ вас нет прав на изменение радиации!"); return true;
             }
-            if (args.length < 3) { sender.sendMessage("§4❌ §cИспользование: §f/mp setrad §7<ник> <значение>"); return true; }
+            if (args.length < 3) { sender.sendMessage("§4❌ §cИспользование: §f/ui setrad §7<ник> <значение>"); return true; }
             @SuppressWarnings("deprecation")
             Player target = Bukkit.getPlayer(args[1]);
             if (target == null) { sender.sendMessage("§4❌ §cИгрок §e" + args[1] + "§c не в сети!"); return true; }

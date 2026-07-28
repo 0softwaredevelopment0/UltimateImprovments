@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 /**
- * Handles /mp reports list|add <id> <name>|remove <id> — admin reports management.
+ * Handles /ui reports list|add <id> <name>|remove <id> — admin reports management.
  */
 public final class ReportsSubcommand {
 
@@ -44,9 +44,9 @@ public final class ReportsSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\\n" +
-                "<white>/mp reports list</white> <gray>— show all reports</gray>\\n" +
-                "<white>/mp reports add <id> <name></white> <gray>— add report to moderation queue</gray>\\n" +
-                "<white>/mp reports remove <id></white> <gray>— remove report from moderation queue</gray>"));
+                "<white>/ui reports list</white> <gray>— show all reports</gray>\\n" +
+                "<white>/ui reports add <id> <name></white> <gray>— add report to moderation queue</gray>\\n" +
+                "<white>/ui reports remove <id></white> <gray>— remove report from moderation queue</gray>"));
     }
 
     private static boolean listReports(CommandSender sender) {
@@ -106,7 +106,7 @@ public final class ReportsSubcommand {
     private static boolean addToModQueue(CommandSender sender, String[] args) {
         if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp reports add <id> <name></white>"));
+                    "<red>❌ Usage: </red><white>/ui reports add <id> <name></white>"));
             return true;
         }
 
@@ -150,7 +150,7 @@ public final class ReportsSubcommand {
     private static boolean removeFromModQueue(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp reports remove <id>|confirm</white>"));
+                    "<red>❌ Usage: </red><white>/ui reports remove <id>|confirm</white>"));
             return true;
         }
 

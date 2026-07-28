@@ -8,7 +8,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import java.lang.reflect.Constructor;
 
 /**
- * CommandScanner — автоматическое обнаружение и регистрация субкоманд /mp.
+ * CommandScanner — автоматическое обнаружение и регистрация субкоманд /ultimateimprovments.
  * <p>
  * Сканирует пакет {@code com.ultimateimprovments.command.subcommands} в JAR плагина,
  * находит все классы, реализующие {@link SubCommand} с публичным

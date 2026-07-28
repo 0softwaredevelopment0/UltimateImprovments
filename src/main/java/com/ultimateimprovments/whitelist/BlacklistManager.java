@@ -24,7 +24,7 @@ import java.util.logging.Level;
  * Может быть включён одновременно с вайтлистом.
  * Игроки из блэклиста не могут зайти на сервер в любом случае.
  * <p>
- * Команды: /mp blacklist on/off/add/list/remove
+ * Команды: /ui blacklist on/off/add/list/remove
  */
 public class BlacklistManager implements Listener {
 

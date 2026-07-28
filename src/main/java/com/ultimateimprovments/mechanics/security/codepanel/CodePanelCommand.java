@@ -17,7 +17,7 @@ public class CodePanelCommand implements CommandExecutor {
     }
 
     /**
-     * Static entry point for /mp codepane subcommand.
+     * Static entry point for /ui codepane subcommand.
      * Opens the GUI instead of sending chat messages.
      */
     public static boolean handleCommand(Player player) {
@@ -154,7 +154,7 @@ public class CodePanelCommand implements CommandExecutor {
 
         tc.setClickEvent(new ClickEvent(
                 ClickEvent.Action.RUN_COMMAND,
-                "/mp pane_click " + value
+                "/ui pane_click " + value
         ));
 
         return tc;

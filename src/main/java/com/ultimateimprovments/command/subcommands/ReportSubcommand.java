@@ -7,7 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * Handles /mp report <player> <reason> — подача жалобы на игрока.
+ * Handles /ui report <player> <reason> — подача жалобы на игрока.
  */
 public final class ReportSubcommand {
 
@@ -28,7 +28,7 @@ public final class ReportSubcommand {
 
         if (args.length < 3) {
             player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp report <player> <reason></white>"));
+                    "<red>❌ Usage: </red><white>/ui report <player> <reason></white>"));
             return true;
         }
 

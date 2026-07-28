@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Subcommand: /mp enchant aoe <level>
+ * Subcommand: /ui enchant aoe <level>
  * <p>
  * Применяет AoE зачарование к предмету в руке игрока.
  * Требуется permission: ui.command.enchant
@@ -21,7 +21,7 @@ public class EnchantSubcommand {
     private EnchantSubcommand() {}
 
     /**
-     * Обрабатывает /mp enchant aoe <level>
+     * Обрабатывает /ui enchant aoe <level>
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
@@ -34,9 +34,9 @@ public class EnchantSubcommand {
             return true;
         }
 
-        // /mp enchant aoe <level>
+        // /ui enchant aoe <level>
         if (args.length < 3) {
-            player.sendMessage(Component.text("Использование: /mp enchant aoe <уровень>", NamedTextColor.YELLOW));
+            player.sendMessage(Component.text("Использование: /ui enchant aoe <уровень>", NamedTextColor.YELLOW));
             return true;
         }
 
@@ -81,7 +81,7 @@ public class EnchantSubcommand {
     }
 
     /**
-     * Tab-complete для /mp enchant aoe <level>
+     * Tab-complete для /ui enchant aoe <level>
      */
     public static List<String> tabComplete(CommandSender sender, String[] args) {
         List<String> result = new ArrayList<>();

@@ -1,6 +1,6 @@
 package com.ultimateimprovments.command.subcommands;
 
-import com.ultimateimprovments.command.ChgDimCommand;
+import com.ultimateimprovments.command.ChgDimDialogScreen;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.command.CommandSender;
@@ -21,7 +21,8 @@ public final class ChgDimSubcommand {
                             "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>")));
             return true;
         }
-        ChgDimCommand.startChatInput(player);
+        // Открываем Custom Screen (Dialog) для ввода названия мира
+        ChgDimDialogScreen.open(player);
         return true;
     }
 }

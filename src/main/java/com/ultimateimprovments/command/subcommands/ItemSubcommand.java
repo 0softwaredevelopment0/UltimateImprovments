@@ -13,10 +13,10 @@ public final class ItemSubcommand {
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!"); return true; }
         if (!player.hasPermission("ui.command.item")) { player.sendMessage("§4❌ §cУ вас нет прав на управление предметами!"); return true; }
-        if (args.length < 2) { player.sendMessage("§4❌ §cИспользование: §f/mp item int <set|add|list> [значение]"); return true; }
+        if (args.length < 2) { player.sendMessage("§4❌ §cИспользование: §f/ui item int <set|add|list> [значение]"); return true; }
 
         if (args[1].equalsIgnoreCase("int")) {
-            if (args.length < 3) { player.sendMessage("§4❌ §cИспользование: §f/mp item int set|add|list"); return true; }
+            if (args.length < 3) { player.sendMessage("§4❌ §cИспользование: §f/ui item int set|add|list"); return true; }
 
             ItemStack held = player.getInventory().getItemInMainHand();
             if (held == null || held.getType() == Material.AIR) { player.sendMessage("§4❌ §cВы должны держать предмет в руке!"); return true; }
@@ -55,7 +55,7 @@ public final class ItemSubcommand {
     }
 
     private static void handleSet(Player player, String[] args, ItemStack held) {
-        if (args.length < 4) { player.sendMessage("§4❌ §cИспользование: §f/mp item int set §7<значение>"); return; }
+        if (args.length < 4) { player.sendMessage("§4❌ §cИспользование: §f/ui item int set §7<значение>"); return; }
         try {
             double value = Double.parseDouble(args[3]);
             if (value < 0 || value > 100) { player.sendMessage("§4❌ §cЗначение должно быть от 0 до 100!"); return; }
@@ -67,7 +67,7 @@ public final class ItemSubcommand {
     }
 
     private static void handleAdd(Player player, String[] args, ItemStack held) {
-        if (args.length < 4) { player.sendMessage("§4❌ §cИспользование: §f/mp item int add §7<значение>"); return; }
+        if (args.length < 4) { player.sendMessage("§4❌ §cИспользование: §f/ui item int add §7<значение>"); return; }
         try {
             double value = Double.parseDouble(args[3]);
             if (value <= 0) { player.sendMessage("§4❌ §cЗначение должно быть больше 0!"); return; }

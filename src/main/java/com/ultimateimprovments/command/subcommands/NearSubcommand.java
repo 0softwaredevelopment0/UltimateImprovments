@@ -16,7 +16,7 @@ public final class NearSubcommand {
     private NearSubcommand() {}
 
     /**
-     * /mp near [radius]
+     * /ui near [radius]
      * <p>
      * Показывает игроков в радиусе {@code radius} блоков от отправителя.
      * Команда выключена по умолчанию (near.enabled: false в config.yml).
@@ -42,7 +42,7 @@ public final class NearSubcommand {
             try {
                 radius = Integer.parseInt(args[1]);
             } catch (NumberFormatException e) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ Invalid radius! Usage: </red><white>/mp near [radius]</white>"));
+                sender.sendMessage(MessageUtil.parse("<red>❌ Invalid radius! Usage: </red><white>/ui near [radius]</white>"));
                 return true;
             }
             if (radius < 1) radius = 1;

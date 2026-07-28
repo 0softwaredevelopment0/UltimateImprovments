@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * /mp money &lt;give|list|remove|set&gt; &lt;player&gt; [currency] [amount]
+ * /ui money &lt;give|list|remove|set&gt; &lt;player&gt; [currency] [amount]
  * <p>
  * Управление балансом игроков.
  * Требуется пермишен: {@code ui.command.money}.
@@ -57,13 +57,13 @@ public final class EconomySubcommand {
     }
 
     // ==========================================================================
-    // GIVE — /mp money give <player> [currency] <amount>
+    // GIVE — /ui money give <player> [currency] <amount>
     // ==========================================================================
 
     private static boolean handleGive(CommandSender sender, String[] args) {
         if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp money give <player> [currency] <amount></white>"));
+                    "<red>❌ Usage: </red><white>/ui money give <player> [currency] <amount></white>"));
             return true;
         }
 
@@ -79,8 +79,8 @@ public final class EconomySubcommand {
         String currency;
 
         // Определяем: currency указан или нет
-        // /mp money give <player> <amount> — currency = coins
-        // /mp money give <player> <currency> <amount>
+        // /ui money give <player> <amount> — currency = coins
+        // /ui money give <player> <currency> <amount>
         try {
             // Пробуем распарсить args[3] как число
             amount = Double.parseDouble(args[3]);
@@ -90,7 +90,7 @@ public final class EconomySubcommand {
             currency = args[3].toLowerCase();
             if (args.length < 5) {
                 sender.sendMessage(MessageUtil.parse(
-                        "<red>❌ Usage: </red><white>/mp money give <player> <currency> <amount></white>"));
+                        "<red>❌ Usage: </red><white>/ui money give <player> <currency> <amount></white>"));
                 return true;
             }
             try {
@@ -124,7 +124,7 @@ public final class EconomySubcommand {
     }
 
     // ==========================================================================
-    // LIST — /mp money list <player>
+    // LIST — /ui money list <player>
     // ==========================================================================
 
     private static boolean handleList(CommandSender sender, String[] args) {
@@ -134,7 +134,7 @@ public final class EconomySubcommand {
                 return showBalances(sender, player.getUniqueId(), player.getName());
             }
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp money list <player></white>"));
+                    "<red>❌ Usage: </red><white>/ui money list <player></white>"));
             return true;
         }
 
@@ -177,13 +177,13 @@ public final class EconomySubcommand {
     }
 
     // ==========================================================================
-    // REMOVE — /mp money remove <player> [currency] <amount>
+    // REMOVE — /ui money remove <player> [currency] <amount>
     // ==========================================================================
 
     private static boolean handleRemove(CommandSender sender, String[] args) {
         if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp money remove <player> [currency] <amount></white>"));
+                    "<red>❌ Usage: </red><white>/ui money remove <player> [currency] <amount></white>"));
             return true;
         }
 
@@ -205,7 +205,7 @@ public final class EconomySubcommand {
             currency = args[3].toLowerCase();
             if (args.length < 5) {
                 sender.sendMessage(MessageUtil.parse(
-                        "<red>❌ Usage: </red><white>/mp money remove <player> <currency> <amount></white>"));
+                        "<red>❌ Usage: </red><white>/ui money remove <player> <currency> <amount></white>"));
                 return true;
             }
             try {
@@ -239,13 +239,13 @@ public final class EconomySubcommand {
     }
 
     // ==========================================================================
-    // SET — /mp money set <player> [currency] <amount>
+    // SET — /ui money set <player> [currency] <amount>
     // ==========================================================================
 
     private static boolean handleSet(CommandSender sender, String[] args) {
         if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp money set <player> [currency] <amount></white>"));
+                    "<red>❌ Usage: </red><white>/ui money set <player> [currency] <amount></white>"));
             return true;
         }
 
@@ -267,7 +267,7 @@ public final class EconomySubcommand {
             currency = args[3].toLowerCase();
             if (args.length < 5) {
                 sender.sendMessage(MessageUtil.parse(
-                        "<red>❌ Usage: </red><white>/mp money set <player> <currency> <amount></white>"));
+                        "<red>❌ Usage: </red><white>/ui money set <player> <currency> <amount></white>"));
                 return true;
             }
             try {
@@ -300,19 +300,19 @@ public final class EconomySubcommand {
 
     private static void usage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
-                "<red>❌ Usage: </red><white>/mp money <give|list|remove|set> <player> [currency] <amount></white>"));
+                "<red>❌ Usage: </red><white>/ui money <give|list|remove|set> <player> [currency] <amount></white>"));
         sender.sendMessage(MessageUtil.parse(
                 "  <gray>Examples:</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp money give Steve 100</white> <gray>— give 100 coins to Steve</gray>"));
+                "  <white>/ui money give Steve 100</white> <gray>— give 100 coins to Steve</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp money give Steve gems 50</white> <gray>— give 50 gems to Steve</gray>"));
+                "  <white>/ui money give Steve gems 50</white> <gray>— give 50 gems to Steve</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp money list Steve</white> <gray>— show all balances of Steve</gray>"));
+                "  <white>/ui money list Steve</white> <gray>— show all balances of Steve</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp money remove Steve 25</white> <gray>— remove 25 coins from Steve</gray>"));
+                "  <white>/ui money remove Steve 25</white> <gray>— remove 25 coins from Steve</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp money set Steve 500</white> <gray>— set Steve's coins to 500</gray>"));
+                "  <white>/ui money set Steve 500</white> <gray>— set Steve's coins to 500</gray>"));
     }
 
     // ==========================================================================

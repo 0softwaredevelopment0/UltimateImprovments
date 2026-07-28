@@ -38,7 +38,7 @@ public class PowerInterceptListener implements Listener {
     }
 
     /**
-     * Позволяет обновить настройки при /mp reload без пересоздания слушателя.
+     * Позволяет обновить настройки при /ui reload без пересоздания слушателя.
      */
     public static void reloadConfigStatic() {
         if (instance != null) {
@@ -53,9 +53,9 @@ public class PowerInterceptListener implements Listener {
         FileConfiguration cfg = Main.getInstance().getConfig();
         interceptEnabled = cfg.getBoolean("power.intercept_commands", true);
         stopMessage = MessagesManager.getString("power.stop_message",
-                "<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /stop отключена. Используйте: <white>/mp power off</white></dark_gray>");
+                "<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /stop отключена. Используйте: <white>/ui power off</white></dark_gray>");
         restartMessage = MessagesManager.getString("power.restart_message",
-                "<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /restart отключена. Используйте: <white>/mp power reboot</white></dark_gray>");
+                "<dark_gray>[<dark_red>⚠</dark_red>] <red>Команда /restart отключена. Используйте: <white>/ui power reboot</white></dark_gray>");
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

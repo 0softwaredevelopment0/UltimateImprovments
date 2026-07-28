@@ -16,9 +16,9 @@ import java.util.UUID;
 /**
  * SpawnCommand — точки спавна.
  * <p>
- * /mp setspawn — установить точку спавна (с подтверждением при перезаписи)
- * /mp spawn — телепорт к спавну (standard) или показать корды (legit)
- * /mp setspawn confirm — подтвердить перезапись
+ * /ui setspawn — установить точку спавна (с подтверждением при перезаписи)
+ * /ui spawn — телепорт к спавну (standard) или показать корды (legit)
+ * /ui setspawn confirm — подтвердить перезапись
  */
 public final class SpawnCommand {
 
@@ -63,7 +63,7 @@ public final class SpawnCommand {
             UUID uuid = player.getUniqueId();
             Long pending = CONFIRM_PENDING.remove(uuid);
             if (pending == null || System.currentTimeMillis() - pending > CONFIRM_TIMEOUT_MS) {
-                player.sendMessage(MessageUtil.parse("<red>❌ Confirmation timed out or no pending request. Use </red><white>/mp setspawn</white><red> first.</red>"));
+                player.sendMessage(MessageUtil.parse("<red>❌ Confirmation timed out or no pending request. Use </red><white>/ui setspawn</white><red> first.</red>"));
                 return true;
             }
             saveSpawn(player, player.getLocation());
@@ -85,7 +85,7 @@ public final class SpawnCommand {
             player.sendMessage(MessageUtil.parse(" <gray>X: </gray><white>" + config.getDouble("spawn.location.x") + "</white> <gray>Y: </gray><white>" + config.getDouble("spawn.location.y") + "</white> <gray>Z: </gray><white>" + config.getDouble("spawn.location.z") + "</white>"));
             player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
             player.sendMessage(MessageUtil.parse("<gold>✦</gold> <white>Are you sure you want to override it?</white>"));
-            player.sendMessage(MessageUtil.parse(" <gray>Type </gray><white>/mp setspawn confirm</white><gray> within 30 seconds.</gray>"));
+            player.sendMessage(MessageUtil.parse(" <gray>Type </gray><white>/ui setspawn confirm</white><gray> within 30 seconds.</gray>"));
             return true;
         }
 
@@ -113,7 +113,7 @@ public final class SpawnCommand {
     // ============================================================
     private static void executeSpawn(Player player) {
         if (!player.hasPermission("ui.command.spawn")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use /mp spawn!</red>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use /ui spawn!</red>"));
             return;
         }
 
@@ -121,7 +121,7 @@ public final class SpawnCommand {
 
         if (!config.contains("spawn.location.world")) {
             player.sendMessage(MessageUtil.parse("<red>❌ Spawn point has not been set yet!</red>"));
-            player.sendMessage(MessageUtil.parse("<gray>  Use </gray><white>/mp setspawn</white><gray> to set it.</gray>"));
+            player.sendMessage(MessageUtil.parse("<gray>  Use </gray><white>/ui setspawn</white><gray> to set it.</gray>"));
             return;
         }
 

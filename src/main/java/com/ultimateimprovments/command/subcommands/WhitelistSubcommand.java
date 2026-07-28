@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 📋 WhitelistSubcommand — обработчик /mp whitelist.
+ * 📋 WhitelistSubcommand — обработчик /ui whitelist.
  * <p>
  * Команды:
  * <pre>
- * /mp whitelist on        — включить вайтлист
- * /mp whitelist off       — выключить вайтлист
- * /mp whitelist add <ник> — добавить игрока
- * /mp whitelist remove <ник> — удалить игрока
- * /mp whitelist list      — показать список
+ * /ui whitelist on        — включить вайтлист
+ * /ui whitelist off       — выключить вайтлист
+ * /ui whitelist add <ник> — добавить игрока
+ * /ui whitelist remove <ник> — удалить игрока
+ * /ui whitelist list      — показать список
  * </pre>
  */
 public final class WhitelistSubcommand {
@@ -60,11 +60,11 @@ public final class WhitelistSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n" +
-                "<white>/mp whitelist on</white> <gray>— enable whitelist</gray>\n" +
-                "<white>/mp whitelist off</white> <gray>— disable whitelist</gray>\n" +
-                "<white>/mp whitelist add <player></white> <gray>— add player</gray>\n" +
-                "<white>/mp whitelist remove <player></white> <gray>— remove player</gray>\n" +
-                "<white>/mp whitelist list</white> <gray>— list whitelisted players</gray>"
+                "<white>/ui whitelist on</white> <gray>— enable whitelist</gray>\n" +
+                "<white>/ui whitelist off</white> <gray>— disable whitelist</gray>\n" +
+                "<white>/ui whitelist add <player></white> <gray>— add player</gray>\n" +
+                "<white>/ui whitelist remove <player></white> <gray>— remove player</gray>\n" +
+                "<white>/ui whitelist list</white> <gray>— list whitelisted players</gray>"
         ));
     }
 
@@ -103,7 +103,7 @@ public final class WhitelistSubcommand {
     private static boolean add(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp whitelist add <player></white>"
+                    "<red>❌ Usage: </red><white>/ui whitelist add <player></white>"
             ));
             return true;
         }
@@ -127,7 +127,7 @@ public final class WhitelistSubcommand {
     private static boolean remove(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp whitelist remove <player></white>"
+                    "<red>❌ Usage: </red><white>/ui whitelist remove <player></white>"
             ));
             return true;
         }

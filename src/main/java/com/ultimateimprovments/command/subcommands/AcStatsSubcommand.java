@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * /mp ac stats — диагностика античита: статус, проверки, VL игроков, PlayerData.
+ * /ui ac stats — диагностика античита: статус, проверки, VL игроков, PlayerData.
  */
 public final class AcStatsSubcommand {
 
@@ -49,13 +49,13 @@ public final class AcStatsSubcommand {
             default -> {
                 sender.sendMessage(MessageUtil.parse(
                         "<red>❌ Неизвестная подкоманда. Используйте:</red>\n"
-                        + "<white>/mp ac overview</white> — общая статистика\n"
-                        + "<white>/mp ac checks</white> — список проверок\n"
-                        + "<white>/mp ac players</white> — VL всех игроков\n"
-                        + "<white>/mp ac player <ник></white> — VL конкретного игрока\n"
-                        + "<white>/mp ac exempt <ник></white> — освободить игрока от античита\n"
-                        + "<white>/mp ac unexempt <ник></white> — снять освобождение\n"
-                        + "<white>/mp ac toggle [on|off]</white> — глобально включить/выключить античит"));
+                        + "<white>/ui ac overview</white> — общая статистика\n"
+                        + "<white>/ui ac checks</white> — список проверок\n"
+                        + "<white>/ui ac players</white> — VL всех игроков\n"
+                        + "<white>/ui ac player <ник></white> — VL конкретного игрока\n"
+                        + "<white>/ui ac exempt <ник></white> — освободить игрока от античита\n"
+                        + "<white>/ui ac unexempt <ник></white> — снять освобождение\n"
+                        + "<white>/ui ac toggle [on|off]</white> — глобально включить/выключить античит"));
                 yield true;
             }
         };
@@ -101,8 +101,8 @@ public final class AcStatsSubcommand {
         sender.sendMessage("§8┃  §7Players:   §f" + trackedPlayers + " §7tracked §8/ §f" + Bukkit.getOnlinePlayers().size() + " online");
         sender.sendMessage("§8┃  §7Active VL: §f" + vlCounts.size() + " §7checks with violations");
         sender.sendMessage("§8┃");
-        sender.sendMessage("§8┃  §7└ <click> §f/mp ac checks §7— список проверок");
-        sender.sendMessage("§8┃  §7└ <click> §f/mp ac players §7— VL игроков");
+        sender.sendMessage("§8┃  §7└ <click> §f/ui ac checks §7— список проверок");
+        sender.sendMessage("§8┃  §7└ <click> §f/ui ac players §7— VL игроков");
 
         // Category breakdown
         for (CheckCategory cat : CheckCategory.values()) {
@@ -204,7 +204,7 @@ public final class AcStatsSubcommand {
         }
 
         sender.sendMessage("§8┃");
-        sender.sendMessage("§8┃  §7<click> §f/mp ac player <ник> §7— детали игрока");
+        sender.sendMessage("§8┃  §7<click> §f/ui ac player <ник> §7— детали игрока");
         sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
         sender.sendMessage("");
 
@@ -217,7 +217,7 @@ public final class AcStatsSubcommand {
 
     private static boolean showPlayer(CommandSender sender, AntiCheatManager acm, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp ac player <ник></white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui ac player <ник></white>"));
             return true;
         }
 
@@ -294,11 +294,11 @@ public final class AcStatsSubcommand {
     // =========================
 
     /**
-     * /mp ac exempt <player> — освободить игрока от всех проверок античита
+     * /ui ac exempt <player> — освободить игрока от всех проверок античита
      */
     private static boolean exemptPlayer(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp ac exempt <ник></white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui ac exempt <ник></white>"));
             return true;
         }
 
@@ -329,11 +329,11 @@ public final class AcStatsSubcommand {
     }
 
     /**
-     * /mp ac unexempt <player> — снять освобождение с игрока
+     * /ui ac unexempt <player> — снять освобождение с игрока
      */
     private static boolean unexemptPlayer(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp ac unexempt <ник></white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui ac unexempt <ник></white>"));
             return true;
         }
 
@@ -363,7 +363,7 @@ public final class AcStatsSubcommand {
     }
 
     /**
-     * /mp ac toggle [on|off] — глобально включить/выключить античит
+     * /ui ac toggle [on|off] — глобально включить/выключить античит
      */
     private static boolean toggleAntiCheat(CommandSender sender, String[] args) {
         AntiCheatManager acm = AntiCheatManager.getInstance();
@@ -380,7 +380,7 @@ public final class AcStatsSubcommand {
                 case "off", "disable", "false", "0" -> newState = false;
                 default -> {
                     sender.sendMessage(MessageUtil.parse(
-                            "<red>❌ Usage: </red><white>/mp ac toggle [on|off]</white>"));
+                            "<red>❌ Usage: </red><white>/ui ac toggle [on|off]</white>"));
                     return true;
                 }
             }

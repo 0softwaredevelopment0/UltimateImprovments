@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 /**
- * Обрабатывает команду /mp suicide — двухэтапное подтверждение с таймером.
+ * Обрабатывает команду /ui suicide — двухэтапное подтверждение с таймером.
  */
 public class SuicideCommand {
 
@@ -75,7 +75,7 @@ public class SuicideCommand {
             String warningTitle = MessagesManager.getString("suicide.messages.warning_title", "<dark_red>☠</dark_red> <red>WARNING!</red>");
             String warningText = MessagesManager.getString("suicide.messages.warning_text", "<white>You are about to commit suicide!</white>");
             String warningNoCancel = MessagesManager.getString("suicide.messages.warning_no_cancel", "<red>⚠ This cannot be undone after confirmation!</red>");
-            String warningConfirmHint = MessagesManager.getString("suicide.messages.warning_confirm_hint", "<yellow>Type</yellow> <white>/mp suicide</white> <yellow>again to confirm and start the countdown.</yellow>");
+            String warningConfirmHint = MessagesManager.getString("suicide.messages.warning_confirm_hint", "<yellow>Type</yellow> <white>/ui suicide</white> <yellow>again to confirm and start the countdown.</yellow>");
             String warningCancelHint = MessagesManager.getString("suicide.messages.warning_cancel_hint", "<gray>If you change your mind — just wait</gray> <yellow>%timeout%</yellow><gray> seconds and the request will expire.</gray>")
                     .replace("%timeout%", String.valueOf(confirmTimeout));
 
@@ -91,7 +91,7 @@ public class SuicideCommand {
             TextComponent confirmButton = new TextComponent("§8┃     §2[§a✔ Подтвердить суицид§2]");
             confirmButton.setClickEvent(new ClickEvent(
                     ClickEvent.Action.RUN_COMMAND,
-                    "/mp suicide"
+                    "/ui suicide"
             ));
             confirmButton.setHoverEvent(new HoverEvent(
                     HoverEvent.Action.SHOW_TEXT,
@@ -101,7 +101,7 @@ public class SuicideCommand {
             ));
             player.spigot().sendMessage(confirmButton);
 
-            player.sendMessage("§8┃   §7или введите §f/mp suicide§7 снова");
+            player.sendMessage("§8┃   §7или введите §f/ui suicide§7 снова");
             player.sendMessage("§8┃");
             player.sendMessage("§8┃ " + MessageUtil.legacy(warningCancelHint));
             player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");

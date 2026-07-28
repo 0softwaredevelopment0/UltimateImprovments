@@ -6,7 +6,7 @@ import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.command.CommandSender;
 
 /**
- * /mp meteor spawn <count> — форсированный спавн метеоров.
+ * /ui meteor spawn <count> — форсированный спавн метеоров.
  * <p>
  * Требует permission: ui.command.meteor.spawn
  * Модуль должен быть включён в config.yml (meteor.enabled: true).
@@ -16,11 +16,11 @@ public final class MeteorSubcommand {
     private MeteorSubcommand() {}
 
     /**
-     * /mp meteor <spawn> [count]
+     * /ui meteor <spawn> [count]
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp meteor spawn [count]</white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui meteor spawn [count]</white>"));
             return true;
         }
 
@@ -29,7 +29,7 @@ public final class MeteorSubcommand {
             case "spawn" -> handleSpawn(sender, args);
             default -> {
                 sender.sendMessage(MessageUtil.parse("<red>❌ Unknown meteor subcommand: </red><white>" + sub + "</white>"));
-                sender.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/mp meteor spawn [count]</white>"));
+                sender.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/ui meteor spawn [count]</white>"));
                 yield true;
             }
         };
@@ -48,7 +48,7 @@ public final class MeteorSubcommand {
                 if (count < 1) count = 1;
                 if (count > 100) count = 100;
             } catch (NumberFormatException e) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ Invalid count! Usage: </red><white>/mp meteor spawn [count]</white>"));
+                sender.sendMessage(MessageUtil.parse("<red>❌ Invalid count! Usage: </red><white>/ui meteor spawn [count]</white>"));
                 return true;
             }
         }

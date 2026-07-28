@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * Handles /mp modreport <name> — moderation of a report.
+ * Handles /ui modreport <name> — moderation of a report.
  * <p>
  * Открывает режим ввода для модератора:
  * 1. Пишет заключение (текст)
@@ -34,7 +34,7 @@ public final class ModReportSubcommand {
 
         if (args.length < 2) {
             player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp modreport <name></white>"));
+                    "<red>❌ Usage: </red><white>/ui modreport <name></white>"));
             return true;
         }
 

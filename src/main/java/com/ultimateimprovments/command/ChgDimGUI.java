@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
- * Anvil GUI for world selection on /mp chgdim.
+ * Anvil GUI for world selection on /ui chgdim.
  */
 public class ChgDimGUI implements Listener {
 

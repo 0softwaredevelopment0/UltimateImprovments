@@ -21,7 +21,7 @@ public final class AuthSubcommand {
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"));
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"));
             return true;
         }
 
@@ -60,10 +60,10 @@ public final class AuthSubcommand {
             return true;
         }
 
-        // /mp auth 2fa setup <chat_id>
+        // /ui auth 2fa setup <chat_id>
         if (args.length >= 3 && args[2].equalsIgnoreCase("setup")) {
             if (args.length < 4) {
-                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth 2fa setup <telegram_chat_id></white>"));
+                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth 2fa setup <telegram_chat_id></white>"));
                 return true;
             }
             if (!mgr.isAuthenticated(uuid)) {
@@ -82,7 +82,7 @@ public final class AuthSubcommand {
             return true;
         }
 
-        // /mp auth 2fa disable
+        // /ui auth 2fa disable
         if (args.length >= 3 && args[2].equalsIgnoreCase("disable")) {
             if (!mgr.isAuthenticated(uuid)) {
                 player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You must be logged in to disable 2FA!</red>"));
@@ -97,28 +97,28 @@ public final class AuthSubcommand {
             return true;
         }
 
-        // /mp auth 2fa — коды больше не используются, показываем статус
+        // /ui auth 2fa — коды больше не используются, показываем статус
         if (args.length >= 3) {
             if (mgr.is2FAEnabled(uuid)) {
                 player.sendMessage("§a✔ 2FA enabled");
                 player.sendMessage("§7Chat ID: §f" + mgr.get2FAChatId(uuid));
                 player.sendMessage("§7Click \"Confirm\" in Telegram when logging in.");
-                player.sendMessage("§7Disable: §e/mp auth 2fa disable");
+                player.sendMessage("§7Disable: §e/ui auth 2fa disable");
             } else {
                 player.sendMessage("§c✖ 2FA disabled");
-                player.sendMessage("§7Enable: §e/mp auth 2fa setup <telegram_chat_id>");
+                player.sendMessage("§7Enable: §e/ui auth 2fa setup <telegram_chat_id>");
             }
             return true;
         }
 
-        // /mp auth 2fa — статус
+        // /ui auth 2fa — статус
         if (mgr.is2FAEnabled(uuid)) {
             player.sendMessage("§a✔ 2FA enabled");
             player.sendMessage("§7Chat ID: §f" + mgr.get2FAChatId(uuid));
-            player.sendMessage("§7Disable: §e/mp auth 2fa disable");
+            player.sendMessage("§7Disable: §e/ui auth 2fa disable");
         } else {
             player.sendMessage("§c✖ 2FA disabled");
-            player.sendMessage("§7Enable: §e/mp auth 2fa setup <telegram_chat_id>");
+            player.sendMessage("§7Enable: §e/ui auth 2fa setup <telegram_chat_id>");
         }
         return true;
     }
@@ -138,7 +138,7 @@ public final class AuthSubcommand {
             return true;
         }
         if (args.length < 3) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth login <password></white>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth login <password></white>"));
             return true;
         }
         String password = args[2];
@@ -161,7 +161,7 @@ public final class AuthSubcommand {
             return true;
         }
         if (args.length < 3) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth register <password></white>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth register <password></white>"));
             return true;
         }
         String password = args[2];
@@ -174,7 +174,7 @@ public final class AuthSubcommand {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to force login!</red>"));
             return true;
         }
-        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth forcelogin </white><gray><nick></gray>")); return true; }
+        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth forcelogin </white><gray><nick></gray>")); return true; }
         String name = args[2];
         UUID uuid = getOfflineUuid(name);
         if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
@@ -191,7 +191,7 @@ public final class AuthSubcommand {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to reset authentication!</red>"));
             return true;
         }
-        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth resetauth </white><gray><nick></gray>")); return true; }
+        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth resetauth </white><gray><nick></gray>")); return true; }
         String name = args[2];
         UUID uuid = getOfflineUuid(name);
         if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
@@ -208,7 +208,7 @@ public final class AuthSubcommand {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to reset a session!</red>"));
             return true;
         }
-        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth delsession </white><gray><nick></gray>")); return true; }
+        if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth delsession </white><gray><nick></gray>")); return true; }
         String name = args[2];
         UUID uuid = getOfflineUuid(name);
         if (!AuthDatabase.isRegistered(uuid)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Player </red><yellow>" + name + "</yellow><red> is not registered!</red>")); return true; }
@@ -221,7 +221,7 @@ public final class AuthSubcommand {
     }
 
     /**
-     * Chat-based logout: /mp auth logout <password>
+     * Chat-based logout: /ui auth logout <password>
      * If invoked without password, prints hint; with password, verifies and kicks.
      */
     private static boolean handleLogout(CommandSender sender, String[] args) {
@@ -241,7 +241,7 @@ public final class AuthSubcommand {
         if (args.length < 3) {
             player.sendMessage("");
             player.sendMessage("§8╔ §6✦ §lLogout§r §8╗");
-            player.sendMessage("§7Use: §e/mp auth logout <password>");
+            player.sendMessage("§7Use: §e/ui auth logout <password>");
             player.sendMessage("§7▸ Введите ваш пароль для подтверждения выхода.");
             player.sendMessage("");
             return true;
@@ -252,9 +252,9 @@ public final class AuthSubcommand {
     }
 
     /**
-     * Self-service change password: /mp auth changepassword <old_password> <new_password>
+     * Self-service change password: /ui auth changepassword <old_password> <new_password>
      * Verifies the old password against the DB (async Argon2id), then re-hashes new.
-     * The admin variant /mp auth chgpass <nick> <new> stays under handleChgPass.
+     * The admin variant /ui auth chgpass <nick> <new> stays under handleChgPass.
      */
     private static boolean handleSelfChangePassword(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
@@ -263,7 +263,7 @@ public final class AuthSubcommand {
         }
         if (args.length < 4) {
             player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp auth changepassword <old_password> <new_password></white>"));
+                    "<red>❌ Usage: </red><white>/ui auth changepassword <old_password> <new_password></white>"));
             return true;
         }
         String oldPwd = args[2];
@@ -282,7 +282,7 @@ public final class AuthSubcommand {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to change passwords!</red>"));
             return true;
         }
-        if (args.length < 4) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp auth chgpass </white><gray><nick> <new_password></gray>")); return true; }
+        if (args.length < 4) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth chgpass </white><gray><nick> <new_password></gray>")); return true; }
         String name = args[2], newPass = args[3];
         int minLen = Main.getInstance().getConfig().getInt("auth.min_password_length", 8);
         int maxLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);

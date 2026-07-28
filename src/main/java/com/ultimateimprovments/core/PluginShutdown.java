@@ -28,7 +28,7 @@ public class PluginShutdown {
     // ==========================================================================
 
     public void shutdownPlugin() {
-        // Guard: предотвращает двойной shutdown (от /mp reload + PlugMan onDisable)
+        // Guard: предотвращает двойной shutdown (от /ui reload + PlugMan onDisable)
         if (shutdownPerformed) {
             ConsoleLogger.info("[Shutdown] Already performed, skipping.");
             return;
@@ -84,7 +84,7 @@ public class PluginShutdown {
     // ==========================================================================
 
     private void cleanupPluginState() {
-        // Unregister ALL event listeners for this plugin — критически важно для /mp reload
+        // Unregister ALL event listeners for this plugin — критически важно для /ui reload
         // иначе при повторном registerEvents() старые листенеры остаются и события срабатывают дважды
         HandlerList.unregisterAll(plugin);
 

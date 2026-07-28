@@ -61,6 +61,9 @@ public class PluginStartup {
         // Auth Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
         com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
 
+        // ChgDim Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        com.ultimateimprovments.command.ChgDimDialogHandler.register();
+
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("  UltimateImprovments — Starting up...");

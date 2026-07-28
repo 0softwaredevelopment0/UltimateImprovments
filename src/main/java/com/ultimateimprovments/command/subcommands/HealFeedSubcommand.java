@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Команды /mp heal и /mp feed — восстанавливают здоровье/голод игроку.
+ * Команды /ui heal и /ui feed — восстанавливают здоровье/голод игроку.
  * <p>
  * Настройки в config.yml → heal_feed:
  * <ul>
@@ -40,7 +40,7 @@ public final class HealFeedSubcommand {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp heal <player></white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui heal <player></white>"));
             return true;
         }
 
@@ -84,7 +84,7 @@ public final class HealFeedSubcommand {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp feed <player></white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui feed <player></white>"));
             return true;
         }
 

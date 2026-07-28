@@ -101,7 +101,7 @@ public class ChatManager implements Listener {
         this.defaultFormat = cfg.getString("chat.format",
                 "<dark_gray>[</dark_gray><white>%player_name%</white><dark_gray>]</dark_gray> <white>%message%</white>");
 
-        // ===== Per-group (LuckPerms) — загружается всегда для /mp chat reload =====
+        // ===== Per-group (LuckPerms) — загружается всегда для /ui chat reload =====
         this.groupFormats = new HashMap<>();
         if (cfg.isConfigurationSection("chat.groups.formats")) {
             for (String key : cfg.getConfigurationSection("chat.groups.formats").getKeys(false)) {

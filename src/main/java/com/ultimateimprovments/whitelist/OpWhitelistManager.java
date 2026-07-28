@@ -24,11 +24,11 @@ import java.util.logging.Level;
  * <p>
  * Поддерживает команды:
  * <ul>
- *   <li>{@code /mp opwhitelist add <ник>}</li>
- *   <li>{@code /mp opwhitelist remove <ник>}</li>
- *   <li>{@code /mp opwhitelist list}</li>
- *   <li>{@code /mp opwhitelist on}</li>
- *   <li>{@code /mp opwhitelist off}</li>
+ *   <li>{@code /ui opwhitelist add <ник>}</li>
+ *   <li>{@code /ui opwhitelist remove <ник>}</li>
+ *   <li>{@code /ui opwhitelist list}</li>
+ *   <li>{@code /ui opwhitelist on}</li>
+ *   <li>{@code /ui opwhitelist off}</li>
  * </ul>
  * <p>
  * Данные хранятся в SQLite (таблица {@code op_whitelist} + {@code op_whitelist_meta}).
