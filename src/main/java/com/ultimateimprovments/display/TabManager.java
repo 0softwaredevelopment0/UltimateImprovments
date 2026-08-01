@@ -225,7 +225,7 @@ public class TabManager extends BukkitRunnable implements Listener {
 
     // ── Listeners ──
     // ВАЖНО: все event handler'ы используют TabManager.getInstance() вместо this,
-    // потому что после /mp reload Bukkit всё ещё держит ссылку на СТАРЫЙ instance
+    // потому что после /ui reload Bukkit всё ещё держит ссылку на СТАРЫЙ instance
     // (listenersRegistered=true → registerEvents() не вызывается заново).
     // Если бы handler'ы использовали this.hideSpectators, они бы читали устаревшие
     // значения из старого объекта, а не из текущего.

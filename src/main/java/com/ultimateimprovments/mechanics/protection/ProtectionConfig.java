@@ -36,7 +36,7 @@ public class ProtectionConfig {
         return getBool("protection.crafting.crafter_allowed", true);
     }
 
-    /** Выдавать ли блок защиты админу-оператору через /mp protection give <player>. */
+    /** Выдавать ли блок защиты админу-оператору через /ui protection give <player>. */
     public static boolean allowAdminGive() {
         return getBool("protection.admin.give_allowed", true);
     }

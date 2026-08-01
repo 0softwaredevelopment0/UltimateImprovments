@@ -12,7 +12,7 @@ public final class PowerSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Error: </red><gray>Usage: /mp power off|reboot|confirm|undo</gray>"));
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Error: </red><gray>Usage: /ui power off|reboot|confirm|undo</gray>"));
             return true;
         }
 
@@ -24,7 +24,7 @@ public final class PowerSubcommand {
             case "confirm" -> handleConfirm(sender, pm);
             case "undo" -> handleUndo(sender, pm);
             default -> {
-                sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Error: </red><gray>Usage: /mp power off|reboot|confirm|undo</gray>"));
+                sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Error: </red><gray>Usage: /ui power off|reboot|confirm|undo</gray>"));
                 yield true;
             }
         };
@@ -39,8 +39,8 @@ public final class PowerSubcommand {
         if (pm.hasPendingRequest()) { sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>There is already an active power management request.</red>")); return true; }
         pm.requestStop(player.getName(), player.getUniqueId());
         player.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Server shutdown initiated, waiting for console confirmation.</yellow>"));
-        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Server shutdown requested by player </yellow><white>" + player.getName() + "</white><yellow>. Confirm with: </yellow><white>/mp power confirm</white>"));
-        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Cancel: </yellow><white>/mp power undo</white>"));
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Server shutdown requested by player </yellow><white>" + player.getName() + "</white><yellow>. Confirm with: </yellow><white>/ui power confirm</white>"));
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Cancel: </yellow><white>/ui power undo</white>"));
         Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Request will be automatically cancelled after </yellow><white>30</white><yellow> seconds.</yellow>"));
         return true;
     }
@@ -54,8 +54,8 @@ public final class PowerSubcommand {
         if (pm.hasPendingRequest()) { sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>There is already an active power management request.</red>")); return true; }
         pm.requestRestart(player.getName(), player.getUniqueId());
         player.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Server restart initiated, waiting for console confirmation.</yellow>"));
-        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Server restart requested by player </yellow><white>" + player.getName() + "</white><yellow>. Confirm with: </yellow><white>/mp power confirm</white>"));
-        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Cancel: </yellow><white>/mp power undo</white>"));
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Server restart requested by player </yellow><white>" + player.getName() + "</white><yellow>. Confirm with: </yellow><white>/ui power confirm</white>"));
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Cancel: </yellow><white>/ui power undo</white>"));
         Bukkit.getConsoleSender().sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <yellow>Request will be automatically cancelled after </yellow><white>30</white><yellow> seconds.</yellow>"));
         return true;
     }

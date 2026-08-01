@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 📋 BlacklistSubcommand — обработчик /mp blacklist.
+ * 📋 BlacklistSubcommand — обработчик /ui blacklist.
  * <p>
  * Команды:
  * <pre>
- * /mp blacklist on        — включить блэклист
- * /mp blacklist off       — выключить блэклист
- * /mp blacklist add <ник> — добавить игрока
- * /mp blacklist remove <ник> — удалить игрока
- * /mp blacklist list      — показать список
+ * /ui blacklist on        — включить блэклист
+ * /ui blacklist off       — выключить блэклист
+ * /ui blacklist add <ник> — добавить игрока
+ * /ui blacklist remove <ник> — удалить игрока
+ * /ui blacklist list      — показать список
  * </pre>
  */
 public final class BlacklistSubcommand {
@@ -60,11 +60,11 @@ public final class BlacklistSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n" +
-                "<white>/mp blacklist on</white> <gray>— enable blacklist</gray>\n" +
-                "<white>/mp blacklist off</white> <gray>— disable blacklist</gray>\n" +
-                "<white>/mp blacklist add <player></white> <gray>— add player</gray>\n" +
-                "<white>/mp blacklist remove <player></white> <gray>— remove player</gray>\n" +
-                "<white>/mp blacklist list</white> <gray>— list blacklisted players</gray>"
+                "<white>/ui blacklist on</white> <gray>— enable blacklist</gray>\n" +
+                "<white>/ui blacklist off</white> <gray>— disable blacklist</gray>\n" +
+                "<white>/ui blacklist add <player></white> <gray>— add player</gray>\n" +
+                "<white>/ui blacklist remove <player></white> <gray>— remove player</gray>\n" +
+                "<white>/ui blacklist list</white> <gray>— list blacklisted players</gray>"
         ));
     }
 
@@ -103,7 +103,7 @@ public final class BlacklistSubcommand {
     private static boolean add(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp blacklist add <player></white>"
+                    "<red>❌ Usage: </red><white>/ui blacklist add <player></white>"
             ));
             return true;
         }
@@ -127,7 +127,7 @@ public final class BlacklistSubcommand {
     private static boolean remove(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp blacklist remove <player></white>"
+                    "<red>❌ Usage: </red><white>/ui blacklist remove <player></white>"
             ));
             return true;
         }

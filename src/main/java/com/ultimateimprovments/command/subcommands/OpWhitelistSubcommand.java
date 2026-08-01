@@ -11,14 +11,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Handles the /mp opwhitelist subcommand — OP whitelist control.
+ * Handles the /ui opwhitelist subcommand — OP whitelist control.
  * <p>
  * Usage:
- *   /mp opwhitelist list            — show whitelisted players
- *   /mp opwhitelist add <player>    — add player to whitelist
- *   /mp opwhitelist remove <player> — remove player from whitelist
- *   /mp opwhitelist on              — enable OP whitelist
- *   /mp opwhitelist off             — disable OP whitelist
+ *   /ui opwhitelist list            — show whitelisted players
+ *   /ui opwhitelist add <player>    — add player to whitelist
+ *   /ui opwhitelist remove <player> — remove player from whitelist
+ *   /ui opwhitelist on              — enable OP whitelist
+ *   /ui opwhitelist off             — disable OP whitelist
  */
 public final class OpWhitelistSubcommand {
 
@@ -58,11 +58,11 @@ public final class OpWhitelistSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n" +
-                "<white>/mp opwhitelist list</white> <gray>— show whitelisted players</gray>\n" +
-                "<white>/mp opwhitelist add <player></white> <gray>— add player to whitelist</gray>\n" +
-                "<white>/mp opwhitelist remove <player></white> <gray>— remove player from whitelist</gray>\n" +
-                "<white>/mp opwhitelist on</white> <gray>— enable OP whitelist</gray>\n" +
-                "<white>/mp opwhitelist off</white> <gray>— disable OP whitelist</gray>"
+                "<white>/ui opwhitelist list</white> <gray>— show whitelisted players</gray>\n" +
+                "<white>/ui opwhitelist add <player></white> <gray>— add player to whitelist</gray>\n" +
+                "<white>/ui opwhitelist remove <player></white> <gray>— remove player from whitelist</gray>\n" +
+                "<white>/ui opwhitelist on</white> <gray>— enable OP whitelist</gray>\n" +
+                "<white>/ui opwhitelist off</white> <gray>— disable OP whitelist</gray>"
         ));
     }
 
@@ -116,7 +116,7 @@ public final class OpWhitelistSubcommand {
     private static boolean addToWhitelist(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp opwhitelist add <player></white>"
+                    "<red>❌ Usage: </red><white>/ui opwhitelist add <player></white>"
             ));
             return true;
         }
@@ -142,7 +142,7 @@ public final class OpWhitelistSubcommand {
     private static boolean removeFromWhitelist(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp opwhitelist remove <player></white>"
+                    "<red>❌ Usage: </red><white>/ui opwhitelist remove <player></white>"
             ));
             return true;
         }

@@ -27,7 +27,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
- * /mp swapjar [path-to-new-jar]
+ * /ui swapjar [path-to-new-jar]
  * <p>
  * Hotswap JAR файла плагина: новый JAR копируется поверх текущего,
  * плагин выгружается, загружается новая версия и включается.
@@ -66,7 +66,7 @@ public final class SwapJarSubcommand {
     }
 
     // ==========================================================================
-    // REQUEST: /mp swapjar [path]
+    // REQUEST: /ui swapjar [path]
     // ==========================================================================
 
     private static boolean handleSwapRequest(CommandSender sender, String[] args) {
@@ -153,9 +153,9 @@ public final class SwapJarSubcommand {
                 "<red>Make sure you have a backup of the original JAR.</red>"));
         sender.sendMessage(MessageUtil.parse(""));
         sender.sendMessage(MessageUtil.parse(
-                "<click:run_command:/mp swapjar confirm><dark_green>[</dark_green><green>✔ Confirm Swap</green><dark_green>]</dark_green></click>"
+                "<click:run_command:/ui swapjar confirm><dark_green>[</dark_green><green>✔ Confirm Swap</green><dark_green>]</dark_green></click>"
                 + " <dark_gray>|</dark_gray> "
-                + "<click:run_command:/mp swapjar cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
+                + "<click:run_command:/ui swapjar cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
         sender.sendMessage(MessageUtil.parse(""));
 
         ConsoleLogger.info("[SwapJar] Pending swap: " + currentJar.getName() + " → " + newJar.getName() + " by " + sender.getName());
@@ -163,7 +163,7 @@ public final class SwapJarSubcommand {
     }
 
     // ==========================================================================
-    // CONFIRM: /mp swapjar confirm
+    // CONFIRM: /ui swapjar confirm
     // ==========================================================================
 
     private static boolean handleConfirm(CommandSender sender) {
@@ -172,7 +172,7 @@ public final class SwapJarSubcommand {
 
         if (pending == null) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>No pending swap. Use </red><white>/mp swapjar <path-to-new-jar></white><red> first.</red>"));
+                    "<dark_red>❌</dark_red> <red>No pending swap. Use </red><white>/ui swapjar <path-to-new-jar></white><red> first.</red>"));
             return true;
         }
 
@@ -527,7 +527,7 @@ public final class SwapJarSubcommand {
     }
 
     // ==========================================================================
-    // CANCEL: /mp swapjar cancel
+    // CANCEL: /ui swapjar cancel
     // ==========================================================================
 
     private static boolean handleCancel(CommandSender sender) {
@@ -552,13 +552,13 @@ public final class SwapJarSubcommand {
 
     private static void usage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
-                "<red>❌ Usage: </red><white>/mp swapjar <path-to-new-jar></white>"));
+                "<red>❌ Usage: </red><white>/ui swapjar <path-to-new-jar></white>"));
         sender.sendMessage(MessageUtil.parse(
                 "  <gray>Examples:</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp swapjar plugins/UltimateImprovments-1.9.jar</white>"));
+                "  <white>/ui swapjar plugins/UltimateImprovments-1.9.jar</white>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp swapjar /home/server/plugins/UltimateImprovments-update.jar</white>"));
+                "  <white>/ui swapjar /home/server/plugins/UltimateImprovments-update.jar</white>"));
     }
 
     // ==========================================================================

@@ -87,7 +87,7 @@ public class UpdateChecker {
     private static volatile String latestJarVersion = "";  // версия из имени последнего jar (напр. "1.7.75")
     private static volatile String errorMessage = "";
 
-    // Кеш для /mp updatejar — чтобы не дёргать API повторно
+    // Кеш для /ui updatejar — чтобы не дёргать API повторно
     private static volatile String cachedDownloadUrl = "";
     private static volatile String cachedJarName = "";     // имя файла (напр. "UltimateImprovments-1.7.75.jar")
     private static volatile String cachedJarVersion = "";  // версия из jar-файла
@@ -186,7 +186,7 @@ public class UpdateChecker {
         ConsoleLogger.warn("  Jar: " + jarVersion);
         ConsoleLogger.warn("  Current: v" + currentVersion);
         ConsoleLogger.warn("");
-        ConsoleLogger.warn("  To install, type: /mp updatejar");
+        ConsoleLogger.warn("  To install, type: /ui updatejar");
         ConsoleLogger.warn("  To ignore this update, do nothing.");
         ConsoleLogger.warn("===========================================");
         ConsoleLogger.warn("");
@@ -288,7 +288,7 @@ public class UpdateChecker {
         }
 
         if (best != null) {
-            // Кешируем для /mp updatejar
+            // Кешируем для /ui updatejar
             cachedDownloadUrl = best.downloadUrl;
             cachedJarName = best.name;
             cachedJarVersion = best.version;
@@ -423,7 +423,7 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 🔍 /mp checkver — РУЧНАЯ ПРОВЕРКА ОБНОВЛЕНИЙ
+    // 🔍 /ui checkver — РУЧНАЯ ПРОВЕРКА ОБНОВЛЕНИЙ
     // =========================
 
     /**
@@ -506,7 +506,7 @@ public class UpdateChecker {
                                             "<dark_green>[<green>✔ Install Update</green><dark_green>]</dark_green>")));
                             updateButton.setClickEvent(new ClickEvent(
                                     ClickEvent.Action.RUN_COMMAND,
-                                    "/mp updatejar"));
+                                    "/ui updatejar"));
                             updateButton.setHoverEvent(new HoverEvent(
                                     HoverEvent.Action.SHOW_TEXT,
                                     new ComponentBuilder("§aClick to download and install update\n")
@@ -517,11 +517,11 @@ public class UpdateChecker {
 
                             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                     "update.install_hint",
-                                    "<gray> or type </gray><white>/mp updatejar</white>")));
+                                    "<gray> or type </gray><white>/ui updatejar</white>")));
                         } else {
                             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                     "update.install_console",
-                                    "<gray>To install, type: </gray><white>/mp updatejar</white>")));
+                                    "<gray>To install, type: </gray><white>/ui updatejar</white>")));
                         }
 
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
@@ -596,7 +596,7 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 📥 /mp updatejar — СКАЧАТЬ И УСТАНОВИТЬ ОБНОВЛЕНИЕ
+    // 📥 /ui updatejar — СКАЧАТЬ И УСТАНОВИТЬ ОБНОВЛЕНИЕ
     // =========================
 
     /**
@@ -606,7 +606,7 @@ public class UpdateChecker {
     public static void downloadAndReplace(CommandSender sender) {
         Main plugin = Main.getInstance();
         String senderName = sender instanceof Player ? ((Player) sender).getName() : "Console";
-        ConsoleLogger.info("[Updater] /mp updatejar requested by " + senderName);
+        ConsoleLogger.info("[Updater] /ui updatejar requested by " + senderName);
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
@@ -758,7 +758,7 @@ public class UpdateChecker {
                 }
 
             } catch (Exception e) {
-                ConsoleLogger.error("[Updater] /mp updatejar failed!");
+                ConsoleLogger.error("[Updater] /ui updatejar failed!");
                 e.printStackTrace();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {

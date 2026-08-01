@@ -395,7 +395,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает только имена из очереди модерации (для таб-комплита /mp modreport).
+     * Получает только имена из очереди модерации (для таб-комплита /ui modreport).
      */
     public static List<String> getModQueueNameList() {
         List<String> names = new ArrayList<>();
@@ -585,7 +585,7 @@ public class ReportManager implements Listener {
         removeConfirmations.put(admin.getUniqueId(), reportId);
         admin.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("report.admin.remove_confirm",
-                        "<yellow>⚠</yellow> <white>Удалить </white><yellow>%name%</yellow><white>? Напишите </white><yellow>/mp reports remove confirm</yellow><white> для подтверждения.</white>")
+                        "<yellow>⚠</yellow> <white>Удалить </white><yellow>%name%</yellow><white>? Напишите </white><yellow>/ui reports remove confirm</yellow><white> для подтверждения.</white>")
                         .replace("%name%", modName)));
         // Задержка истечения подтверждения (30 сек)
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {

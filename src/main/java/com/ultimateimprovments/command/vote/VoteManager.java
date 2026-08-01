@@ -25,10 +25,10 @@ import java.util.stream.Collectors;
  * <p>
  * Команды:
  * <ul>
- *   <li>{@code /mp vote create <name> <title> <desc> -answer_1:t,d -answer_2:t,d ... -time:<N><s|m|h|d>}</li>
- *   <li>{@code /mp vote <name> [<index>|<title>]} — проголосовать или посмотреть результаты</li>
- *   <li>{@code /mp vote delete <name>} — удалить с подтверждением</li>
- *   <li>{@code /mp vote change <name> <params>} — изменить (пересоздать с теми же params)</li>
+ *   <li>{@code /ui vote create <name> <title> <desc> -answer_1:t,d -answer_2:t,d ... -time:<N><s|m|h|d>}</li>
+ *   <li>{@code /ui vote <name> [<index>|<title>]} — проголосовать или посмотреть результаты</li>
+ *   <li>{@code /ui vote delete <name>} — удалить с подтверждением</li>
+ *   <li>{@code /ui vote change <name> <params>} — изменить (пересоздать с теми же params)</li>
  * </ul>
  */
 public class VoteManager {
@@ -129,7 +129,7 @@ public class VoteManager {
     public static boolean parseCreate(Player creator, String[] args, int startIndex) {
         if (args.length < startIndex + 3) {
             creator.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.errors.usage_create",
-                    "<red>❌ Usage:</red> <white>/mp vote create [name] [title] [description] -answer_[N]:[title,desc] ... -time:[N][s|m|h|d]</white>")));
+                    "<red>❌ Usage:</red> <white>/ui vote create [name] [title] [description] -answer_[N]:[title,desc] ... -time:[N][s|m|h|d]</white>")));
             return true;
         }
 
@@ -422,7 +422,7 @@ public class VoteManager {
                     .replace("%answers%", String.valueOf(v.answers.size()))
                     .replace("%votes%", String.valueOf(v.votes.size()))
                     .replace("%status%", status)));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.entry_hint", "<gray>┃   <gray><italic>/mp vote %name%</italic> <gray>— vote</gray></gray></gray>")
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.list.entry_hint", "<gray>┃   <gray><italic>/ui vote %name%</italic> <gray>— vote</gray></gray></gray>")
                     .replace("%name%", v.name)));
             player.sendMessage(MessageUtil.parse(""));
         }
@@ -477,11 +477,11 @@ public class VoteManager {
 
         Component confirmButton = MessageUtil.parse("<dark_gray>┃     <red>[<dark_red>❌ </dark_red></red>"
                 + MessagesManager.getString("vote.delete.confirm_button", "Confirm deletion") + "<red>]</red></dark_gray>")
-                .clickEvent(ClickEvent.runCommand("/mp vote delete " + vote.name))
+                .clickEvent(ClickEvent.runCommand("/ui vote delete " + vote.name))
                 .hoverEvent(HoverEvent.showText(MessageUtil.parse(MessagesManager.getString("vote.delete.confirm_hover", "<red>Click to confirm deletion</red>"))));
         player.sendMessage(confirmButton);
 
-        player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray>" + MessagesManager.getString("vote.delete.confirm_resend", "<gray>or type </gray><white>/mp vote delete %name%</white><gray> again</gray>")
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃   </dark_gray>" + MessagesManager.getString("vote.delete.confirm_resend", "<gray>or type </gray><white>/ui vote delete %name%</white><gray> again</gray>")
                 .replace("%name%", vote.name)));
         player.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</dark_gray>"));
         player.sendMessage(MessageUtil.parse(""));
@@ -679,7 +679,7 @@ public class VoteManager {
                 }
 
                 Component answerBtn = MessageUtil.parse("<dark_gray>┃ </dark_gray><yellow>" + i + ".</yellow> <green>[<dark_green>" + a.title + "</dark_green>]</green>")
-                        .clickEvent(ClickEvent.runCommand("/mp vote " + vote.name + " " + i))
+                        .clickEvent(ClickEvent.runCommand("/ui vote " + vote.name + " " + i))
                         .hoverEvent(HoverEvent.showText(hoverText));
                 player.sendMessage(answerBtn);
 
@@ -690,7 +690,7 @@ public class VoteManager {
 
             player.sendMessage(MessageUtil.parse(""));
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.hint", "<dark_gray>┃ <gray>To vote, click the button above</gray></dark_gray>")));
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.hint2", "<dark_gray>┃ <gray>or type </gray><white>/mp vote %name% \\<number\\></white></dark_gray>").replace("%name%", vote.name)));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.hint2", "<dark_gray>┃ <gray>or type </gray><white>/ui vote %name% \\<number\\></white></dark_gray>").replace("%name%", vote.name)));
             player.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>"));
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("vote.broadcast.time_left", "<dark_gray>┃ <gray>Time left:</gray> <yellow>%duration%</yellow></dark_gray>").replace("%duration%", durationStr)));
             player.sendMessage(MessageUtil.parse(header));

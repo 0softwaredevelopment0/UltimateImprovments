@@ -23,7 +23,7 @@ public class CodePanelClick implements CommandExecutor {
     }
 
     /**
-     * Static entry point for /mp pane_click subcommand.
+     * Static entry point for /ui pane_click subcommand.
      */
     public static boolean handleClick(Player player, String value) {
         CodePanelClick instance = new CodePanelClick();

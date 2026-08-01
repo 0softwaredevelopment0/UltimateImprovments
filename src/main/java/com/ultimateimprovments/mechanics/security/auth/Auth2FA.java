@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 2FA система — подтверждение входа через кнопки в Telegram.
  * <p>
  * Поток работы:
- * 1. Игрок включает 2FA: /mp auth 2fa setup &lt;telegram_chat_id&gt;
+ * 1. Игрок включает 2FA: /ui auth 2fa setup &lt;telegram_chat_id&gt;
  * 2. При входе (после пароля): плагин отправляет HTTP-запрос на бота
  * 3. Бот присылает inline кнопки ✅ Подтвердить / ❌ Отклонить
  * 4. Игрок нажимает кнопку в Telegram

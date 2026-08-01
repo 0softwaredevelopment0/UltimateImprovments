@@ -242,7 +242,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🦅 ELYTRA BOOST DISABLED (persist /mp togglefly state)
+        // 🦅 ELYTRA BOOST DISABLED (persist /ui togglefly state)
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS elytra_boost_disabled (

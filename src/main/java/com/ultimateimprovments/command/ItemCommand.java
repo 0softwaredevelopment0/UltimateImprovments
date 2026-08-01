@@ -10,13 +10,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Handles /mp item command — item integrity management.
+ * Handles /ui item command — item integrity management.
  */
 public class ItemCommand {
 
     public static boolean execute(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp item int <set|add|list> [value]</white>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item int <set|add|list> [value]</white>"));
             return true;
         }
 
@@ -25,13 +25,13 @@ public class ItemCommand {
         }
 
         player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Unknown subcommand: </red><white>" + args[1] + "</white>"));
-        player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/mp item int set|add|list</white>"));
+        player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/ui item int set|add|list</white>"));
         return true;
     }
 
     private static boolean handleIntegrity(Player player, String[] args) {
         if (args.length < 3) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp item int set|add|list</white>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item int set|add|list</white>"));
             return true;
         }
 
@@ -56,7 +56,7 @@ public class ItemCommand {
             case "unbreakable" -> handleUnbreakable(player, heldItem, args);
             default -> {
                 player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Unknown subcommand: </red><white>" + args[2] + "</white>"));
-                player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/mp item int set|add|list</white>"));
+                player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/ui item int set|add|list</white>"));
             }
         }
         return true;
@@ -83,7 +83,7 @@ public class ItemCommand {
 
     private static void handleSet(Player player, ItemStack heldItem, String[] args) {
         if (args.length < 4) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp item int set </white><gray><value></gray>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item int set </white><gray><value></gray>"));
             return;
         }
         try {
@@ -138,7 +138,7 @@ public class ItemCommand {
 
     private static void handleAdd(Player player, ItemStack heldItem, String[] args) {
         if (args.length < 4) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/mp item int add </white><gray><value></gray>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item int add </white><gray><value></gray>"));
             return;
         }
         try {

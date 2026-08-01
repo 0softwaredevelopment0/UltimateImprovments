@@ -12,14 +12,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Handles the /mp maint subcommand — maintenance mode control.
+ * Handles the /ui maint subcommand — maintenance mode control.
  * <p>
  * Usage:
- *   /mp maint list           — show whitelisted players
- *   /mp maint add <player>   — add player to whitelist
- *   /mp maint remove <player> — remove player from whitelist
- *   /mp maint on [-time:<Ns|Nm|Nh|Nd>]   — enable maintenance (optionally with delay)
- *   /mp maint off [-time:<Ns|Nm|Nh|Nd>]  — disable maintenance (optionally scheduled)
+ *   /ui maint list           — show whitelisted players
+ *   /ui maint add <player>   — add player to whitelist
+ *   /ui maint remove <player> — remove player from whitelist
+ *   /ui maint on [-time:<Ns|Nm|Nh|Nd>]   — enable maintenance (optionally with delay)
+ *   /ui maint off [-time:<Ns|Nm|Nh|Nd>]  — disable maintenance (optionally scheduled)
  */
 public final class MaintSubcommand {
 
@@ -66,11 +66,11 @@ public final class MaintSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n" +
-                "<white>/mp maint list</white> <gray>— show whitelisted players</gray>\n" +
-                "<white>/mp maint add <player></white> <gray>— add player to whitelist</gray>\n" +
-                "<white>/mp maint remove <player></white> <gray>— remove player from whitelist</gray>\n" +
-                "<white>/mp maint on [-time:30s|5m|2h|1d]</white> <gray>— enable maintenance mode</gray>\n" +
-                "<white>/mp maint off [-time:30s|5m|2h|1d]</white> <gray>— disable maintenance mode</gray>"
+                "<white>/ui maint list</white> <gray>— show whitelisted players</gray>\n" +
+                "<white>/ui maint add <player></white> <gray>— add player to whitelist</gray>\n" +
+                "<white>/ui maint remove <player></white> <gray>— remove player from whitelist</gray>\n" +
+                "<white>/ui maint on [-time:30s|5m|2h|1d]</white> <gray>— enable maintenance mode</gray>\n" +
+                "<white>/ui maint off [-time:30s|5m|2h|1d]</white> <gray>— disable maintenance mode</gray>"
         ));
     }
 
@@ -128,7 +128,7 @@ public final class MaintSubcommand {
     private static boolean addToWhitelist(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp maint add <player></white>"
+                    "<red>❌ Usage: </red><white>/ui maint add <player></white>"
             ));
             return true;
         }
@@ -156,7 +156,7 @@ public final class MaintSubcommand {
     private static boolean removeFromWhitelist(CommandSender sender, String[] args) {
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp maint remove <player></white>"
+                    "<red>❌ Usage: </red><white>/ui maint remove <player></white>"
             ));
             return true;
         }

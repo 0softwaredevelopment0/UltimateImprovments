@@ -12,7 +12,7 @@ public final class CheckSubcommand {
     private CheckSubcommand() {}
 
     /**
-     * /mp check <player> — вызвать игрока на проверку читов
+     * /ui check <player> — вызвать игрока на проверку читов
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player inspector)) {
@@ -28,7 +28,7 @@ public final class CheckSubcommand {
         }
 
         if (args.length < 2) {
-            inspector.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp check <nick></white>"));
+            inspector.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui check <nick></white>"));
             return true;
         }
 
@@ -48,7 +48,7 @@ public final class CheckSubcommand {
     }
 
     /**
-     * /mp uncheck [player] — завершить проверку читов
+     * /ui uncheck [player] — завершить проверку читов
      * <p>
      * Без аргумента — завершает текущую проверку (force-end, если suspect офлайн).
      * С аргументом — завершает проверку указанного игрока.
@@ -66,7 +66,7 @@ public final class CheckSubcommand {
             return true;
         }
 
-        // /mp uncheck (без аргумента) — force-end текущей проверки
+        // /ui uncheck (без аргумента) — force-end текущей проверки
         if (args.length < 2 || args[1].isEmpty()) {
             CheckManager.forceEndCheck(inspector);
             return true;

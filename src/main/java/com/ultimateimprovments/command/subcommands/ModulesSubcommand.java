@@ -17,9 +17,9 @@ import java.util.*;
  * Каждый листовой модуль: ✔ (включён) / ❌ (выключен) / ? (нет модуля).
  * Команды:
  * <ul>
- *   <li>{@code /mp modules list} — иерархический список</li>
- *   <li>{@code /mp modules enable <путь>} — включить</li>
- *   <li>{@code /mp modules disable <путь>} — выключить</li>
+ *   <li>{@code /ui modules list} — иерархический список</li>
+ *   <li>{@code /ui modules enable <путь>} — включить</li>
+ *   <li>{@code /ui modules disable <путь>} — выключить</li>
  * </ul>
  */
 public final class ModulesSubcommand {
@@ -28,7 +28,7 @@ public final class ModulesSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp modules list|enable|disable §7<путь>");
+            sender.sendMessage("§4❌ §cИспользование: §f/ui modules list|enable|disable §7<путь>");
             return true;
         }
         var mm = ModuleManager.getInstance();
@@ -37,7 +37,7 @@ public final class ModulesSubcommand {
             case "enable" -> handleEnable(sender, args, mm);
             case "disable" -> handleDisable(sender, args, mm);
             default -> {
-                sender.sendMessage("§4❌ §cИспользование: §f/mp modules list|enable|disable §7<путь>");
+                sender.sendMessage("§4❌ §cИспользование: §f/ui modules list|enable|disable §7<путь>");
                 yield true;
             }
         };
@@ -145,14 +145,14 @@ public final class ModulesSubcommand {
             return true;
         }
         if (args.length < 3) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp modules enable §7<путь>");
-            sender.sendMessage("§8  Пример: §7/mp modules enable energy/generation/basic");
+            sender.sendMessage("§4❌ §cИспользование: §f/ui modules enable §7<путь>");
+            sender.sendMessage("§8  Пример: §7/ui modules enable energy/generation/basic");
             return true;
         }
         PluginModule found = findModuleByPath(mm, args[2]);
         if (found == null) {
             sender.sendMessage("§4❌ §cМодуль по пути §e" + args[2] + "§c не найден!");
-            sender.sendMessage("§8  Используйте §7/mp modules list§8 для просмотра.");
+            sender.sendMessage("§8  Используйте §7/ui modules list§8 для просмотра.");
             return true;
         }
         if (found.isEnabled()) {
@@ -181,14 +181,14 @@ public final class ModulesSubcommand {
             return true;
         }
         if (args.length < 3) {
-            sender.sendMessage("§4❌ §cИспользование: §f/mp modules disable §7<путь>");
-            sender.sendMessage("§8  Пример: §7/mp modules disable energy/generation/basic");
+            sender.sendMessage("§4❌ §cИспользование: §f/ui modules disable §7<путь>");
+            sender.sendMessage("§8  Пример: §7/ui modules disable energy/generation/basic");
             return true;
         }
         PluginModule found = findModuleByPath(mm, args[2]);
         if (found == null) {
             sender.sendMessage("§4❌ §cМодуль по пути §e" + args[2] + "§c не найден!");
-            sender.sendMessage("§8  Используйте §7/mp modules list§8 для просмотра.");
+            sender.sendMessage("§8  Используйте §7/ui modules list§8 для просмотра.");
             return true;
         }
         if (!found.isEnabled()) {

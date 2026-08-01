@@ -14,16 +14,16 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * /mp plugin &lt;name&gt; on|off|restart — управление другими плагинами.<br>
+ * /ui plugin &lt;name&gt; on|off|restart — управление другими плагинами.<br>
  * Показывает предупреждение с clickable кнопками подтверждения/отмены.
  * <p>
  * Использование:
  * <ul>
- *   <li>{@code /mp plugin <name> on} — включить плагин</li>
- *   <li>{@code /mp plugin <name> off} — выключить плагин</li>
- *   <li>{@code /mp plugin <name> restart} — перезагрузить плагин (disable + enable)</li>
- *   <li>{@code /mp plugin confirm} — подтвердить ожидающее действие</li>
- *   <li>{@code /mp plugin cancel} — отменить ожидающее действие</li>
+ *   <li>{@code /ui plugin <name> on} — включить плагин</li>
+ *   <li>{@code /ui plugin <name> off} — выключить плагин</li>
+ *   <li>{@code /ui plugin <name> restart} — перезагрузить плагин (disable + enable)</li>
+ *   <li>{@code /ui plugin confirm} — подтвердить ожидающее действие</li>
+ *   <li>{@code /ui plugin cancel} — отменить ожидающее действие</li>
  * </ul>
  * <p>
  * Требуется пермишен: {@code ui.command.plugin}.
@@ -69,7 +69,7 @@ public final class PluginSubcommand {
     }
 
     // ==========================================================================
-    // INITIAL ACTION: /mp plugin <name> <on|off|restart>
+    // INITIAL ACTION: /ui plugin <name> <on|off|restart>
     // ==========================================================================
 
     private static boolean handlePluginAction(CommandSender sender, String[] args) {
@@ -104,7 +104,7 @@ public final class PluginSubcommand {
         // Не даём выключить свой же плагин
         if (target.getName().equals("UltimateImprovments")) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>Cannot manage UltimateImprovments itself. Use </red><white>/mp reload</white><red> instead.</red>"));
+                    "<dark_red>❌</dark_red> <red>Cannot manage UltimateImprovments itself. Use </red><white>/ui reload</white><red> instead.</red>"));
             return true;
         }
 
@@ -153,9 +153,9 @@ public final class PluginSubcommand {
                 "<red>or cause data loss. Only proceed if you know what you are doing.</red>"));
         sender.sendMessage(MessageUtil.parse(""));
         sender.sendMessage(MessageUtil.parse(
-                "<click:run_command:/mp plugin confirm><dark_green>[</dark_green><green>✔ Confirm</green><dark_green>]</dark_green></click>"
+                "<click:run_command:/ui plugin confirm><dark_green>[</dark_green><green>✔ Confirm</green><dark_green>]</dark_green></click>"
                 + " <dark_gray>|</dark_gray> "
-                + "<click:run_command:/mp plugin cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
+                + "<click:run_command:/ui plugin cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
         sender.sendMessage(MessageUtil.parse(""));
 
         ConsoleLogger.info("[PLUGIN] Pending " + action + " for " + pluginName + " by " + sender.getName());
@@ -163,7 +163,7 @@ public final class PluginSubcommand {
     }
 
     // ==========================================================================
-    // INFO: /mp plugin <name> info
+    // INFO: /ui plugin <name> info
     // ==========================================================================
 
     private static boolean handleInfo(CommandSender sender, Plugin target) {
@@ -228,7 +228,7 @@ public final class PluginSubcommand {
     }
 
     // ==========================================================================
-    // CONFIRM: /mp plugin confirm
+    // CONFIRM: /ui plugin confirm
     // ==========================================================================
 
     private static boolean handleConfirm(CommandSender sender) {
@@ -237,14 +237,14 @@ public final class PluginSubcommand {
 
         if (pending == null) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>No pending plugin action. Use </red><white>/mp plugin <name> <on|off|restart></white><red> first.</red>"));
+                    "<dark_red>❌</dark_red> <red>No pending plugin action. Use </red><white>/ui plugin <name> <on|off|restart></white><red> first.</red>"));
             return true;
         }
 
         // Проверяем, не истекло ли время ожидания
         if (System.currentTimeMillis() - pending.createdAt > TIMEOUT_MS) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>Confirmation timeout expired (30s). Use </red><white>/mp plugin <name> <on|off|restart></white><red> again.</red>"));
+                    "<dark_red>❌</dark_red> <red>Confirmation timeout expired (30s). Use </red><white>/ui plugin <name> <on|off|restart></white><red> again.</red>"));
             return true;
         }
 
@@ -303,7 +303,7 @@ public final class PluginSubcommand {
     }
 
     // ==========================================================================
-    // CANCEL: /mp plugin cancel
+    // CANCEL: /ui plugin cancel
     // ==========================================================================
 
     private static boolean handleCancel(CommandSender sender) {
@@ -329,17 +329,17 @@ public final class PluginSubcommand {
 
     private static void usage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
-                "<dark_red>❌</dark_red> <red>Usage: </red><white>/mp plugin <name> <on|off|restart|info></white>"));
+                "<dark_red>❌</dark_red> <red>Usage: </red><white>/ui plugin <name> <on|off|restart|info></white>"));
         sender.sendMessage(MessageUtil.parse(
                 "  <gray>Examples:</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp plugin WorldEdit on</white> <gray>— enable WorldEdit</gray>"));
+                "  <white>/ui plugin WorldEdit on</white> <gray>— enable WorldEdit</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp plugin LuckPerms off</white> <gray>— disable LuckPerms</gray>"));
+                "  <white>/ui plugin LuckPerms off</white> <gray>— disable LuckPerms</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp plugin Essentials restart</white> <gray>— restart Essentials</gray>"));
+                "  <white>/ui plugin Essentials restart</white> <gray>— restart Essentials</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/mp plugin Essentials info</white> <gray>— show plugin info</gray>"));
+                "  <white>/ui plugin Essentials info</white> <gray>— show plugin info</gray>"));
     }
 
     /**

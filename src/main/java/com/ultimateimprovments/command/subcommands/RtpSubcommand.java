@@ -21,7 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * /mp rtp — случайная телепортация с гибкой настройкой.
+ * /ui rtp — случайная телепортация с гибкой настройкой.
  * <p>
  * Выключено по умолчанию ({@code rtp.enabled: false}).
  * Конфиг позволяет задать радиус, форму области (квадрат/круг),
@@ -36,7 +36,7 @@ public final class RtpSubcommand {
     private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
 
     /**
-     * /mp rtp [player]
+     * /ui rtp [player]
      * <p>
      * Если аргумент передан и у отправителя есть permission {@code ui.command.rtp.other},
      * телепортирует указанного игрока. Иначе — телепортирует отправителя (если он игрок).
@@ -47,7 +47,7 @@ public final class RtpSubcommand {
         boolean isSelf;
 
         if (args.length > 1) {
-            // /mp rtp <player>
+            // /ui rtp <player>
             if (!sender.hasPermission("ui.command.rtp.other")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to teleport other players!</red>"));
                 return true;
@@ -59,7 +59,7 @@ public final class RtpSubcommand {
             }
             isSelf = sender.equals(target);
         } else {
-            // /mp rtp
+            // /ui rtp
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
                 return true;

@@ -14,7 +14,7 @@ public final class StructureSubcommand {
 
     public static boolean execute(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage("§4❌ §cUsage: /mp structures <dfc|magnet|lightning> <stats|assemble|enable|disable>");
+            player.sendMessage("§4❌ §cUsage: /ui structures <dfc|magnet|lightning> <stats|assemble|enable|disable>");
             return true;
         }
 
@@ -33,7 +33,7 @@ public final class StructureSubcommand {
             return;
         }
         if (args.length < 3) {
-            player.sendMessage("§4❌ §cUsage: /mp structures dfc <stats|assemble>");
+            player.sendMessage("§4❌ §cUsage: /ui structures dfc <stats|assemble>");
             return;
         }
         if (args[2].equalsIgnoreCase("stats")) {
@@ -90,13 +90,13 @@ public final class StructureSubcommand {
             }
             ReactorCommand.assembleDarkSynthesis(player);
         } else {
-            player.sendMessage("§4❌ §cUsage: /mp structures dfc <stats|assemble>");
+            player.sendMessage("§4❌ §cUsage: /ui structures dfc <stats|assemble>");
         }
     }
 
     private static void handleMagnet(Player player, String[] args) {
         if (args.length < 3) {
-            player.sendMessage("§4❌ §cUsage: /mp str magnet <stats|assemble>");
+            player.sendMessage("§4❌ §cUsage: /ui str magnet <stats|assemble>");
             return;
         }
         if (args[2].equalsIgnoreCase("stats")) {
@@ -136,13 +136,13 @@ public final class StructureSubcommand {
             }
             ReactorCommand.assembleMagnet(player);
         } else {
-            player.sendMessage("§4❌ §cUsage: /mp str magnet <stats|assemble>");
+            player.sendMessage("§4❌ §cUsage: /ui str magnet <stats|assemble>");
         }
     }
 
     private static void handleLightning(Player player, String[] args) {
         if (args.length < 3) {
-            player.sendMessage("§4❌ §cUsage: /mp str lightning <enable|disable|stats>");
+            player.sendMessage("§4❌ §cUsage: /ui str lightning <enable|disable|stats>");
             return;
         }
         Location playerLoc = player.getLocation();
@@ -181,7 +181,7 @@ public final class StructureSubcommand {
                 LightningManager.setEnabled(nearest, false);
                 player.sendMessage("§c❌ §fСтруктура молний выключена!");
             }
-            default -> player.sendMessage("§4❌ §cUsage: /mp str lightning <enable|disable|stats>");
+            default -> player.sendMessage("§4❌ §cUsage: /ui str lightning <enable|disable|stats>");
         }
     }
 }

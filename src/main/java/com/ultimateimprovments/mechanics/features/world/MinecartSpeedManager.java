@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Экспоненциальный разгон на активных POWERED_RAIL (×N за тик)</li>
  *   <li>Экспоненциальное замедление вне рельсов</li>
  *   <li>Коллизия: при ударе об entity наносит урон = скорость × 20 (блоки/сек ↔ урон)</li>
- *   <li>Отображение скорости в actionbar (блоки/тик) через /mp togglespeed</li>
+ *   <li>Отображение скорости в actionbar (блоки/тик) через /ui togglespeed</li>
  *   <li>Ускорение применяется напрямую в каждом тике (без двойного шедулинга)</li>
  *   <li>Очистка мёртвых вагонеток через VehicleDestroyEvent (без сканирования)</li>
  *   <li>Очистка speedDisplayPlayers при выходе игрока</li>
@@ -101,7 +101,7 @@ public class MinecartSpeedManager implements Listener {
 
         // 🛡 Гасим существующие задачи перед созданием новых.
         // Это защита от дублирования при повторном init (например, при
-        // /mp modules disable Core → enable Core, или если CoreModule
+        // /ui modules disable Core → enable Core, или если CoreModule
         // упал на другой фиче и был перевключён).
         cancelTasks();
 
@@ -681,7 +681,7 @@ public class MinecartSpeedManager implements Listener {
     }
 
     // =========================
-    // PUBLIC ACCESSORS (for /mp togglespeed command)
+    // PUBLIC ACCESSORS (for /ui togglespeed command)
     // =========================
     /** @return карта скоростей (блоки/тик). */
     public static Map<UUID, Double> getCartSpeeds() {

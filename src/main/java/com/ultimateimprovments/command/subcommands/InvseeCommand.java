@@ -56,7 +56,7 @@ public final class InvseeCommand {
             return true;
         }
         if (args.length < 2) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp invsee <player></white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui invsee <player></white>"));
             return true;
         }
 
@@ -85,7 +85,7 @@ public final class InvseeCommand {
             return true;
         }
         if (args.length < 2) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp endersee <player></white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui endersee <player></white>"));
             return true;
         }
 

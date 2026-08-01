@@ -61,6 +61,9 @@ public class PluginStartup {
         // Auth Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
         com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
 
+        // ChgDim Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        com.ultimateimprovments.command.ChgDimDialogHandler.register();
+
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("  UltimateImprovments — Starting up...");
@@ -341,7 +344,7 @@ public class PluginStartup {
         // Commands — регистрация Bukkit-команд через CommandMap
         CommandRegistrar.getInstance().registerAll(plugin);
 
-        // SubCommand registry — инициализация диспетчера /mp
+        // SubCommand registry — инициализация диспетчера /ultimateimprovments
         com.ultimateimprovments.command.PluginReloadCommand.init();
 
         ConsoleLogger.info("[Init] Post-module systems ready.");

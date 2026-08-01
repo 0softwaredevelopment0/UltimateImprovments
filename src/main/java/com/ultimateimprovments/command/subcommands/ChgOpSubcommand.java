@@ -13,15 +13,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 🛡 ChgOpSubcommand — обработчик /mp chgop.
+ * 🛡 ChgOpSubcommand — обработчик /ui chgop.
  * <p>
  * Показывает список онлайн-игроков с их OP-статусом.
  * Каждый игрок кликабелен — можно выдать или снять OP с подтверждением.
  * <p>
  * Использование:
- *   /mp chgop                  — показать список игроков
- *   /mp chgop toggle <player>  — показать подтверждение для смены OP
- *   /mp chgop confirm <player> — подтвердить и выполнить смену OP
+ *   /ui chgop                  — показать список игроков
+ *   /ui chgop toggle <player>  — показать подтверждение для смены OP
+ *   /ui chgop confirm <player> — подтвердить и выполнить смену OP
  */
 public final class ChgOpSubcommand {
 
@@ -48,7 +48,7 @@ public final class ChgOpSubcommand {
             return true;
         }
 
-        // /mp chgop → показать список
+        // /ui chgop → показать список
         if (args.length < 2) {
             showPlayerList(player);
             return true;
@@ -125,7 +125,7 @@ public final class ChgOpSubcommand {
             String mmString = "  <dark_gray>┃</dark_gray> " + dot + " " + nameOpen + target.getName() + nameClose + opTag + youTag;
 
             Component line = MessageUtil.parse(mmString)
-                    .clickEvent(ClickEvent.runCommand("/mp chgop toggle " + target.getName()));
+                    .clickEvent(ClickEvent.runCommand("/ui chgop toggle " + target.getName()));
 
             Component hover;
             if (isSelf) {
@@ -160,7 +160,7 @@ public final class ChgOpSubcommand {
     private static boolean showConfirmation(Player player, String[] args) {
         if (args.length < 3) {
             player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/mp chgop toggle <player></white>"
+                    "<red>❌ Usage: </red><white>/ui chgop toggle <player></white>"
             ));
             return true;
         }
@@ -226,7 +226,7 @@ public final class ChgOpSubcommand {
         // Кнопка подтверждения — кликабельная
         Component confirmBtn = MessageUtil.parse(
                 "<dark_gray>┃     <dark_green>[</dark_green><green>✔ Confirm " + (currentlyOp ? "Revoke" : "Grant") + "</green><dark_green>]</dark_green>"
-        ).clickEvent(ClickEvent.runCommand("/mp chgop confirm " + target.getName()))
+        ).clickEvent(ClickEvent.runCommand("/ui chgop confirm " + target.getName()))
          .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
                  MessageUtil.parse("<green>Click to confirm</green>\n<red>This action cannot be undone!</red>")));
         player.sendMessage(confirmBtn);
@@ -234,7 +234,7 @@ public final class ChgOpSubcommand {
         // Кнопка отмены — кликабельная
         Component cancelBtn = MessageUtil.parse(
                 "<dark_gray>┃     <dark_red>[</dark_red><red>✕ Cancel</red><dark_red>]</dark_red>"
-        ).clickEvent(ClickEvent.runCommand("/mp chgop"))
+        ).clickEvent(ClickEvent.runCommand("/ui chgop"))
          .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
                  MessageUtil.parse("<gray>Click to cancel and return to player list</gray>")));
         player.sendMessage(cancelBtn);
@@ -243,7 +243,7 @@ public final class ChgOpSubcommand {
                 "<dark_gray>┃</dark_gray>"
         ));
         player.sendMessage(MessageUtil.parse(
-                "<dark_gray>┃</dark_gray> <gray>Or type again:</gray> <white>/mp chgop toggle " + target.getName() + "</white>"
+                "<dark_gray>┃</dark_gray> <gray>Or type again:</gray> <white>/ui chgop toggle " + target.getName() + "</white>"
         ));
         player.sendMessage(MessageUtil.parse(
                 "<dark_gray>┃</dark_gray> <gray>to confirm and " + actionRu + " OP rights.</gray>"
@@ -262,7 +262,7 @@ public final class ChgOpSubcommand {
     private static boolean executeToggle(Player player, String[] args) {
         if (args.length < 3) {
             player.sendMessage(MessageUtil.parse(
-                    "<red>❌ Invalid confirmation. Use </red><white>/mp chgop</white><red> to see the player list.</red>"
+                    "<red>❌ Invalid confirmation. Use </red><white>/ui chgop</white><red> to see the player list.</red>"
             ));
             return true;
         }
@@ -275,7 +275,7 @@ public final class ChgOpSubcommand {
         if (pending == null || !pending.equalsIgnoreCase(targetName)) {
             player.sendMessage(MessageUtil.parse(
                     "<red>❌ No pending confirmation for</red> <yellow>" + targetName + "</yellow><red>.</red> " +
-                            "<gray>Use </gray><white>/mp chgop</white><gray> first.</gray>"
+                            "<gray>Use </gray><white>/ui chgop</white><gray> first.</gray>"
             ));
             return true;
         }

@@ -32,7 +32,7 @@ public final class MiscSubcommand {
         if (sender instanceof Player p && !p.hasPermission("ui.command.vanish")) {
             p.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_no_permission", "<red>❌ You don't have permission to use vanish!</red>"))); return true;
         }
-        if (args.length < 2) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_usage", "<red>❌ Usage: </red><white>/mp vanish <nick></white>"))); return true; }
+        if (args.length < 2) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_usage", "<red>❌ Usage: </red><white>/ui vanish <nick></white>"))); return true; }
         String targetName = args[1];
         @SuppressWarnings("deprecation")
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
@@ -196,11 +196,11 @@ public final class MiscSubcommand {
 
     // =========================
     // FLY — включает/выключает полёт (даже в выживании)
-    // /mp fly on|off [player]
+    // /ui fly on|off [player]
     // =========================
     public static boolean fly(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp fly <on|off> [player]</white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui fly <on|off> [player]</white>"));
             return true;
         }
 
@@ -209,7 +209,7 @@ public final class MiscSubcommand {
             case "on" -> enable = true;
             case "off" -> enable = false;
             default -> {
-                sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp fly <on|off> [player]</white>"));
+                sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui fly <on|off> [player]</white>"));
                 return true;
             }
         }
@@ -253,11 +253,11 @@ public final class MiscSubcommand {
 
     // =========================
     // GOD — включает/выключает неуязвимость
-    // /mp god on|off [player]
+    // /ui god on|off [player]
     // =========================
     public static boolean god(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp god <on|off> [player]</white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui god <on|off> [player]</white>"));
             return true;
         }
 
@@ -266,7 +266,7 @@ public final class MiscSubcommand {
             case "on" -> enable = true;
             case "off" -> enable = false;
             default -> {
-                sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/mp god <on|off> [player]</white>"));
+                sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui god <on|off> [player]</white>"));
                 return true;
             }
         }

@@ -52,7 +52,7 @@ public class MaintenanceManager implements Listener {
 
     /**
      * Проверяет, включена ли фича техработ в config.yml.
-     * Отключает всю систему: /mp maint будет недоступен, вход не блокируется.
+     * Отключает всю систему: /ui maint будет недоступен, вход не блокируется.
      */
     public boolean isFeatureEnabled() {
         return Main.getInstance().getConfig().getBoolean("maintenance.enabled", true);

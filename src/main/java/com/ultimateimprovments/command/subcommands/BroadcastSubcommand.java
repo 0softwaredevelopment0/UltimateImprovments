@@ -44,7 +44,7 @@ public final class BroadcastSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/mp bc \"<message>\" [-clean]</white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/ui bc \"<message>\" [-clean]</white>"));
             return true;
         }
 

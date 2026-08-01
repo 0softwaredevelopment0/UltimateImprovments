@@ -55,7 +55,7 @@ public class ElytraBoostManager implements Listener {
     /** Время последнего буста для каждого игрока. */
     private static final Map<UUID, Long> lastBoostTime = new HashMap<>();
 
-    /** Игроки, отключившие автоматический буст при прыжке (/mp togglefly). */
+    /** Игроки, отключившие автоматический буст при прыжке (/ui togglefly). */
     private static final Set<UUID> flyDisabled = ConcurrentHashMap.newKeySet();
 
     // =========================

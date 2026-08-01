@@ -9,7 +9,7 @@ import org.bukkit.event.server.ServerCommandEvent;
 
 /**
  * 🚫 WhitelistCommandBlocker — блокирует ванильную команду /whitelist,
- * так как UltimateImprovments использует свой собственный вайтлист (/mp whitelist).
+ * так как UltimateImprovments использует свой собственный вайтлист (/ui whitelist).
  * <p>
  * Перехватывает:
  * <ul>
@@ -19,7 +19,7 @@ import org.bukkit.event.server.ServerCommandEvent;
  */
 public class WhitelistCommandBlocker implements Listener {
 
-    private static final String BLOCK_MESSAGE = "<red>❌ Vanilla /whitelist is disabled.</red> <gray>Use:</gray> <white>/mp whitelist</white>";
+    private static final String BLOCK_MESSAGE = "<red>❌ Vanilla /whitelist is disabled.</red> <gray>Use:</gray> <white>/ui whitelist</white>";
 
     /**
      * Проверяет, является ли команда вариантом /whitelist (с учётом неймспейсов и аргументов).

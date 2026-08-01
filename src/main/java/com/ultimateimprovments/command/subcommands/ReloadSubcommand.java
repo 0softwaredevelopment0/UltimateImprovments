@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * /mp reload — асинхронная перезагрузка плагина.
+ * /ui reload — асинхронная перезагрузка плагина.
  * <p>
  * Фаза 1 (async): сохранение данных.
  * Фаза 2 (sync): shutdown + reloadConfig + startup.

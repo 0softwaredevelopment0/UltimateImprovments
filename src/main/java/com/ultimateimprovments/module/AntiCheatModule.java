@@ -38,7 +38,7 @@ public class AntiCheatModule extends PluginModule {
         AntiCheatManager.init();
         AntiCheatManager acm = AntiCheatManager.getInstance();
 
-        // Устанавливаем enabled из конфига (чтобы /mp ac toggle on мог включить)
+        // Устанавливаем enabled из конфига (чтобы /ui ac toggle on мог включить)
         acm.setGlobalEnabled(enabled);
 
         // Register all checks
@@ -66,7 +66,7 @@ public class AntiCheatModule extends PluginModule {
         if (enabled) {
             ConsoleLogger.info("[AntiCheat] All checks registered and active. Packet interception: ACTIVE.");
         } else {
-            ConsoleLogger.info("[AntiCheat] Initialized but DISABLED (config). Use /mp ac toggle on to enable.");
+            ConsoleLogger.info("[AntiCheat] Initialized but DISABLED (config). Use /ui ac toggle on to enable.");
         }
     }
 

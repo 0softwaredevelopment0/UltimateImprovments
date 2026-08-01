@@ -22,11 +22,11 @@ import java.util.UUID;
 /**
  * AskCordsManager — отправляет запрос игроку на показ координат.
  * <p>
- * Команда: {@code /mp askcords <nick>}
+ * Команда: {@code /ui askcords <nick>}
  * <p>
  * Механика:
  * <ol>
- *   <li>Игрок A вводит {@code /mp askcords ИгрокБ}</li>
+ *   <li>Игрок A вводит {@code /ui askcords ИгрокБ}</li>
  *   <li>Игроку Б приходит clickable-сообщение с кнопками ✔ Принять / ❌ Отклонить</li>
  *   <li>Если принял — игрок A получает мир и координаты игрока Б</li>
  *   <li>Если отклонил — игрок A получает сообщение об отказе</li>
@@ -43,13 +43,13 @@ public class AskCordsManager {
     private AskCordsManager() {}
 
     /**
-     * Выполняет команду /mp askcords <nick> от имени игрока.
+     * Выполняет команду /ui askcords <nick> от имени игрока.
      */
     public static boolean execute(Player sender, String[] args) {
         if (args.length < 2) {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("askcords.usage",
-                            "<red>❌ Usage: </red><white>/mp askcords <nick></white>")));
+                            "<red>❌ Usage: </red><white>/ui askcords <nick></white>")));
             return true;
         }
 
@@ -135,7 +135,7 @@ public class AskCordsManager {
                 MessagesManager.getString("askcords.accept_button", "     §a[§2✔ Accept§a]"));
         acceptBtn.setClickEvent(new ClickEvent(
                 ClickEvent.Action.RUN_COMMAND,
-                "/mp askcords_accept " + sender.getName()
+                "/ui askcords_accept " + sender.getName()
         ));
         acceptBtn.setHoverEvent(new HoverEvent(
                 HoverEvent.Action.SHOW_TEXT,
@@ -149,7 +149,7 @@ public class AskCordsManager {
                 MessagesManager.getString("askcords.decline_button", " §c[§4❌ Decline§c]"));
         declineBtn.setClickEvent(new ClickEvent(
                 ClickEvent.Action.RUN_COMMAND,
-                "/mp askcords_decline " + sender.getName()
+                "/ui askcords_decline " + sender.getName()
         ));
         declineBtn.setHoverEvent(new HoverEvent(
                 HoverEvent.Action.SHOW_TEXT,
@@ -171,7 +171,7 @@ public class AskCordsManager {
 
     /**
      * Обрабатывает подтверждение запроса от цели.
-     * Вызывается через /mp askcords_accept <nick>
+     * Вызывается через /ui askcords_accept <nick>
      */
     public static boolean accept(Player target, String senderName) {
         UUID targetUuid = target.getUniqueId();
@@ -243,7 +243,7 @@ public class AskCordsManager {
 
     /**
      * Обрабатывает отказ запроса от цели.
-     * Вызывается через /mp askcords_decline <nick>
+     * Вызывается через /ui askcords_decline <nick>
      */
     public static boolean decline(Player target, String senderName) {
         UUID targetUuid = target.getUniqueId();
