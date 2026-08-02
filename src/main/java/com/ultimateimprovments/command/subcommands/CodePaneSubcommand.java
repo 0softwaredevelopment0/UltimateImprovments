@@ -1,8 +1,8 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.CodePaneKeyCommand;
-import com.ultimateimprovments.mechanics.security.codepanel.CodePanelClick;
-import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCommand;
+import com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogScreen;
+import com.ultimateimprovments.mechanics.security.codepanel.CodePanelSession;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -16,14 +16,10 @@ public final class CodePaneSubcommand {
         }
         if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может открыть кодовую панель."); return true; }
         if (!player.hasPermission("ui.command.codepane")) { player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!"); return true; }
-        return CodePanelCommand.handleCommand(player);
-    }
 
-    // pane_click is handled separately
-    public static boolean paneClick(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду."); return true; }
-        if (!player.hasPermission("ui.command.codepane")) { player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!"); return true; }
-        if (args.length < 2) return true;
-        return CodePanelClick.handleClick(player, args[1]);
+        // Открываем диалог с чистым вводом
+        CodePanelSession.reset(player.getUniqueId());
+        CodePanelDialogScreen.open(player);
+        return true;
     }
 }

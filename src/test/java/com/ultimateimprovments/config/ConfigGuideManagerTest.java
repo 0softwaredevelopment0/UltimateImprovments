@@ -30,7 +30,7 @@ class ConfigGuideManagerTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        tempDir = Files.createTempDirectory("mcplugin-config-guide-test").toFile();
+        tempDir = Files.createTempDirectory("ui-config-guide-test").toFile();
         configFile = new File(tempDir, "config.yml");
     }
 

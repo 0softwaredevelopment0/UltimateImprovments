@@ -106,18 +106,18 @@ public class DatapackInstaller {
     public void install(Main plugin) throws Exception {
         File datapacksFolder = findDatapacksFolder();
 
-        File targetFolder = new File(datapacksFolder, "MC-Datapack");
+        File targetFolder = new File(datapacksFolder, "UI-Datapack");
 
         // Always re-extract to ensure datapack is up-to-date with plugin version.
         if (targetFolder.exists()) {
-            ConsoleLogger.info("[Datapack] Reinstalling existing datapack (folder exists: MC-Datapack)");
+            ConsoleLogger.info("[Datapack] Reinstalling existing datapack (folder exists: UI-Datapack)");
             deleteRecursively(targetFolder);
         } else {
             ConsoleLogger.info("[Datapack] Installing new datapack...");
         }
 
         targetFolder.mkdirs();
-        copyFromJar(plugin, "datapacks/MC-Datapack/", targetFolder);
+        copyFromJar(plugin, "datapacks/UI-Datapack/", targetFolder);
 
         ConsoleLogger.success("[Datapack] Installed to " + targetFolder.getAbsolutePath());
     }

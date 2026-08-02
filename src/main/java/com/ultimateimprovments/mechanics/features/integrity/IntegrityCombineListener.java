@@ -74,7 +74,7 @@ public class IntegrityCombineListener implements Listener {
                 double newIntegrity = Math.min(100.0, currentIntegrity + totalBonus);
 
                 ItemStack result = slot0.clone();
-                IntegrityManager.setCurrentIntegrity(result, newIntegrity);
+                ItemIntegrityAPI.setItemIntegrity(result, newIntegrity);
                 IntegrityManager.updateItemLore(result);
 
                 double pct = newIntegrity;
@@ -101,7 +101,7 @@ public class IntegrityCombineListener implements Listener {
             double restoreAmount = 100.0 * IntegrityManager.getAnvilRepairMultiplier();
 
             ItemStack result = slot0.clone();
-            IntegrityManager.increaseIntegrity(result, restoreAmount);
+            ItemIntegrityAPI.increaseItemIntegrityPercent(result, restoreAmount);
             IntegrityManager.updateItemLore(result);
 
             double newCurrent = IntegrityManager.getCurrentIntegrity(result);
@@ -143,7 +143,7 @@ public class IntegrityCombineListener implements Listener {
             double newCurrent = Math.min(100.0, combined);
 
             ItemStack result = slot0.clone();
-            IntegrityManager.setCurrentIntegrity(result, newCurrent);
+            ItemIntegrityAPI.setItemIntegrity(result, newCurrent);
             IntegrityManager.updateItemLore(result);
 
             Player player = getPlayerFromAnvil(event);
@@ -204,7 +204,7 @@ public class IntegrityCombineListener implements Listener {
             result.setItemMeta(resultMeta);
         }
 
-        IntegrityManager.setCurrentIntegrity(result, newCurrent);
+        ItemIntegrityAPI.setItemIntegrity(result, newCurrent);
         IntegrityManager.updateItemLore(result);
 
         event.setResult(result);
@@ -260,7 +260,7 @@ public class IntegrityCombineListener implements Listener {
         double newCurrent = Math.min(100.0, combined);
 
         ItemStack result = item1.clone();
-        IntegrityManager.setCurrentIntegrity(result, newCurrent);
+        ItemIntegrityAPI.setItemIntegrity(result, newCurrent);
         IntegrityManager.updateItemLore(result);
 
         event.getInventory().setResult(result);
@@ -295,7 +295,7 @@ public class IntegrityCombineListener implements Listener {
             double before = IntegrityManager.getCurrentIntegrity(item);
             if (before >= 100.0) continue;
 
-            IntegrityManager.increaseIntegrity(item, restore);
+            ItemIntegrityAPI.increaseItemIntegrityPercent(item, restore);
             restored = true;
         }
 

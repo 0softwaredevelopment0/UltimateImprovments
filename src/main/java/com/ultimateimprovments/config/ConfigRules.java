@@ -118,25 +118,10 @@ final class ConfigRules {
             bool("energy.balancer.log"),
 
             integer("codepanel.max_length", 1, 256, "Макс. длина пароля кодовой панели"),
-            notBlank("codepanel.empty_char", 10),
-            integer("codepanel.keyboard_offset", 0, 10),
             integer("codepanel.enter_cooldown", 0, 3600),
-            integer("codepanel.loading.step_ticks", 1, 200),
-            integer("codepanel.loading.step", 1, 1000),
-            integer("codepanel.loading.delay_after", 0, 2000),
-
-            notBlank("codepanel.colors.brackets", 32),
-            notBlank("codepanel.colors.code", 32),
-            notBlank("codepanel.buttons.normal", 32),
-            notBlank("codepanel.buttons.reset", 32),
-            notBlank("codepanel.buttons.enter", 32),
             notBlank("codepanel.sounds.digit", 64),
             notBlank("codepanel.sounds.backspace", 64),
-            notBlank("codepanel.sounds.reset", 64),
             notBlank("codepanel.sounds.enter", 64),
-            notBlank("codepanel.sounds.click", 64),
-            notBlank("codepanel.sounds.step", 64),
-            notBlank("codepanel.sounds.finish", 64),
             notBlank("codepanel.sounds.success", 64),
             notBlank("codepanel.sounds.fail", 64),
 
@@ -225,11 +210,6 @@ final class ConfigRules {
             integer("features.entitylocator.interval_ticks", 1, 72000),
             bool("features.glassbreak.enabled"),
             integer("features.glassbreak.damage", 0, Integer.MAX_VALUE),
-            bool("features.itemskill.enabled"),
-            integer("features.itemskill.item_limit", 1, Integer.MAX_VALUE),
-            integer("features.itemskill.interval_ticks", 1, 72000),
-            bool("features.itemskill.warn_operators"),
-
             bool("features.magnet.enabled"),
             integer("features.magnet.radius.min", 1, 1000),
             integer("features.magnet.radius.max", 1, 1000),
@@ -260,7 +240,11 @@ final class ConfigRules {
             integer("features.terracotaspeed.interval_ticks", 1, 72000),
 
             bool("features.unbreakable_breaker.enabled"),
-            integer("features.unbreakable_breaker.hit_interval_ticks", 1, 200),
+
+            bool("features.sudo.enabled"),
+            integer("features.sudo.session_minutes", 1, 1440, "Длительность sudo-сессии (мин)"),
+            integer("features.sudo.attempt_cooldown_seconds", 1, 3600, "Кулдаун между попытками пароля (сек)"),
+            stringList("features.sudo.dangerous_commands"),
 
             bool("features.integrity.enabled"),
             integer("features.integrity.interval_ticks", 1, 72000),
@@ -385,19 +369,11 @@ final class ConfigRules {
 
             bool("redstone_guard.enabled"),
             dbl("redstone_guard.mspt_threshold", 0, 10000),
-            integer("redstone_guard.global_iterations_limit", 0, Integer.MAX_VALUE),
-            integer("redstone_guard.chunk_iterations_limit", 0, Integer.MAX_VALUE),
-            integer("redstone_guard.block_duration_seconds", 1, 3600),
-            integer("redstone_guard.chunks_per_tick", 0, 1000),
+            integer("redstone_guard.chunk_iterations_limit", 1, Integer.MAX_VALUE),
 
             bool("emergency_entity_kill.enabled"),
             integer("emergency_entity_kill.entity_limit", 1, Integer.MAX_VALUE),
-            dbl("emergency_entity_kill.instant_kill_mspt", 0, 10000),
-            dbl("emergency_entity_kill.overload_mspt_threshold", 0, 10000),
-            integer("emergency_entity_kill.max_overload_accumulation", 1, Integer.MAX_VALUE),
-            integer("emergency_entity_kill.overload_increment_per_tick", 1, Integer.MAX_VALUE),
-            bool("emergency_entity_kill.remove_plasma_on_overload"),
-            dbl("emergency_entity_kill.plasma_removal_mspt", 0, 10000),
+            dbl("emergency_entity_kill.mspt_threshold", 0, 10000),
             stringList("emergency_entity_kill.kill_worlds"),
             bool("emergency_entity_kill.log"),
 

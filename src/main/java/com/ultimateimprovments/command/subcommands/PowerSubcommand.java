@@ -1,6 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.PowerManager;
+import com.ultimateimprovments.util.Broadcast;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -67,7 +68,7 @@ public final class PowerSubcommand {
         String requester = pm.getRequesterName();
         if (pm.confirmRequest()) {
             sender.sendMessage(MessageUtil.parse("<dark_gray>[<green>✔</green>]</dark_gray> <green>" + action + " confirmed (request from " + requester + ").</green>"));
-            Bukkit.broadcast(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>" + action + " confirmed by console.</red>"));
+            Broadcast.send("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>" + action + " confirmed by console.</red>");
         } else sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Error during confirmation.</red>"));
         return true;
     }

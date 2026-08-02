@@ -500,13 +500,17 @@ public class IntegrityManager extends BukkitRunnable {
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
                 var pdc = meta.getPersistentDataContainer();
+                boolean alreadyTagged = pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE);
                 pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
                 pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
                 pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
                 pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
                 syncVanillaDamage(item, meta, 100.0);
-                updateLore(meta);
-                item.setItemMeta(meta);
+                // Оптимизация: переписываем meta только если лор реально изменился
+                // (или предмет ещё не был инициализирован), а не каждый тик.
+                if (updateLore(meta) || !alreadyTagged) {
+                    item.setItemMeta(meta);
+                }
             }
             return;
         }
@@ -597,6 +601,12 @@ public class IntegrityManager extends BukkitRunnable {
 
         // Unbreakable — показываем "◆ Unbreakable" вместо процента
         if (meta.isUnbreakable() || pdc.has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE)) {
+            // Оптимизация: лор уже показывает "◆ Unbreakable" — переписывать не нужно
+            if (pdc.getOrDefault(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, -1.0) == 100.0
+                    && loreHasUnbreakableLine(meta)) {
+                return false;
+            }
+
             List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
             if (lore == null) lore = new ArrayList<>();
             // Удаляем старые строки целостности
@@ -613,12 +623,12 @@ public class IntegrityManager extends BukkitRunnable {
 
         if (maxIntegrity <= 0) return false;
 
-        // Оптимизация: проверяем, изменилась ли целостность с прошлого раза
-        if (pdc.has(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE)) {
-            double lastSeen = pdc.get(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE);
-            if (lastSeen == currentIntegrity) {
-                return false; // Целостность не изменилась — пропускаем обновление
-            }
+        // Оптимизация: целостность не изменилась И лор уже показывает процент —
+        // пропускаем. Проверка содержимого лора нужна, чтобы после снятия
+        // "Unbreakable" при 100% сразу восстановить процентную строку.
+        if (pdc.getOrDefault(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, -1.0) == currentIntegrity
+                && loreHasPercentLine(meta)) {
+            return false; // Отображаемые данные актуальны — обновление не требуется
         }
 
         // Вычисляем процент (0.0 — 100.0, с дробной частью)
@@ -670,6 +680,35 @@ public class IntegrityManager extends BukkitRunnable {
      */
     private static String stripColor(String input) {
         return input.replaceAll("§.", "");
+    }
+
+    /**
+     * true, если в лоре уже есть строка целостности с процентом (не "◆ Unbreakable").
+     * Используется, чтобы не переписывать meta, когда отображаемые данные актуальны.
+     */
+    private static boolean loreHasPercentLine(ItemMeta meta) {
+        if (!meta.hasLore()) return false;
+        for (String line : meta.getLore()) {
+            String clean = stripColor(line);
+            if (clean.contains(bareLorePrefix) && clean.contains("%") && !clean.contains("◆")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * true, если в лоре уже есть строка "◆ Unbreakable" (вместо процента).
+     */
+    private static boolean loreHasUnbreakableLine(ItemMeta meta) {
+        if (!meta.hasLore()) return false;
+        for (String line : meta.getLore()) {
+            String clean = stripColor(line);
+            if (clean.contains(bareLorePrefix) && clean.contains("◆")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // =========================
@@ -742,6 +781,10 @@ public class IntegrityManager extends BukkitRunnable {
 
         double maxIntegrity = 100.0;
         double clamped = Math.max(0, Math.min(maxIntegrity, value));
+
+        // Оптимизация: значение не изменилось — не переписываем meta
+        double current = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
+        if (current == clamped) return;
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, clamped);
         syncVanillaDamage(item, meta, clamped);
@@ -831,6 +874,49 @@ public class IntegrityManager extends BukkitRunnable {
             breakItem(item, owner);
         } else {
             // Иначе проверяем пороги для предупреждения
+            checkLowIntegrityWarning(item, owner);
+        }
+    }
+
+    // =========================
+    // DECREASE INTEGRITY BY PERCENT — уменьшение ровно на N% целостности
+    // (без нормировки по прочности: прямой процент, без Unbreaking)
+    // =========================
+    public static void decreaseIntegrityPercent(ItemStack item, double percent, Player owner) {
+        if (item == null || item.getType() == Material.AIR) return;
+        if (percent <= 0) return;
+        if (isUnbreakable(item)) return;
+
+        String matName = item.getType().name();
+        if (!whitelist.isEmpty() && !whitelist.contains(matName)) return;
+        if (blacklist.contains(matName)) return;
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+
+        var pdc = meta.getPersistentDataContainer();
+
+        // Если предмет ещё не инициализирован — инициализируем с 100% целостности
+        if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
+            pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
+            pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
+            pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
+            pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
+        }
+
+        double current = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
+        if (current <= 0) return;
+
+        double newVal = Math.max(0, current - percent);
+
+        pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, newVal);
+        syncVanillaDamage(item, meta, newVal);
+        item.setItemMeta(meta);
+
+        // Если целостность закончилась — ломаем предмет
+        if (newVal <= 0) {
+            breakItem(item, owner);
+        } else {
             checkLowIntegrityWarning(item, owner);
         }
     }

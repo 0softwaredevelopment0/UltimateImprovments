@@ -30,13 +30,13 @@
 19. [Chat Filter](#-chat-filter)
 20. [Server Protection](#-server-protection)
 21. [Other Mechanics](#-other-mechanics)
-22. [Commands (/mp)](#-commands-mp)
+22. [Commands (/ui)](#-commands-ui)
 
 ---
 
 ## 🔌 Module System
 
-The plugin is built on a modular architecture. **Each module = one feature**. If one module fails, the rest continue working. Modules can be toggled on/off at runtime via `/mp modules`.
+The plugin is built on a modular architecture. **Each module = one feature**. If one module fails, the rest continue working. Modules can be toggled on/off at runtime via `/ui modules`.
 
 **Essential modules (always on):**
 | Module | Function |
@@ -81,7 +81,6 @@ The plugin is built on a modular architecture. **Each module = one feature**. If
 | `EntityLocator` | Entity finding item |
 | `GlassBreak` | Realistic glass breaking |
 | `HealthMeter` | Mob health display |
-| `ItemKill` | Conditional item removal |
 | `Leash` | Enhanced entity leashing |
 | `ModeProtect` | GameMode protection per world |
 | `ShieldSlowness` | Shield movement penalty |
@@ -92,9 +91,9 @@ The plugin is built on a modular architecture. **Each module = one feature**. If
 
 **Module management commands:**
 ```
-/mp modules list              — list all modules and their status
-/mp modules enable <name>     — enable a module
-/mp modules disable <name>    — disable a module
+/ui modules list              — list all modules and their status
+/ui modules enable <name>     — enable a module
+/ui modules disable <name>    — disable a module
 ```
 
 **Note:** The old monolithic modules (`Mechanics`, `Protection`, `Listeners`) have been split into individual feature modules for better debugging and flexibility.
@@ -123,11 +122,11 @@ Mandatory player authentication system for server entry.
 
 **Admin commands:**
 ```
-/mp auth forcelogin <nick>   — force authorize a player
-/mp auth resetauth <nick>    — delete registration (kicks player)
-/mp auth chgpass <nick> <pass> — change player's password
-/mp auth delsession <nick>   — reset session (kicks player)
-/mp auth logout              — log out of your account
+/ui auth forcelogin <nick>   — force authorize a player
+/ui auth resetauth <nick>    — delete registration (kicks player)
+/ui auth chgpass <nick> <pass> — change player's password
+/ui auth delsession <nick>   — reset session (kicks player)
+/ui auth logout              — log out of your account
 ```
 
 **Configuration (config.yml → auth.*):**
@@ -146,7 +145,7 @@ Mandatory player authentication system for server entry.
 
 A multi-block structure for energy generation and Ancient Debris synthesis.
 
-**Assembly:** `/mp str dfc assemble` — multi-block using Iron Blocks, Lightning Rods, Copper Blocks, Redstone Blocks and an Item Frame.
+**Assembly:** `/ui str dfc assemble` — multi-block using Iron Blocks, Lightning Rods, Copper Blocks, Redstone Blocks and an Item Frame.
 
 **Simulation parameters (configurable in config.yml → reactor.*):**
 - Core and Case temperature
@@ -174,7 +173,7 @@ A multi-block structure for energy generation and Ancient Debris synthesis.
 - Inside the reactor chamber (when core temp ≥ 1000)
 - High pressure releases radiation into surroundings (CAMPFIRE_SIGNAL_SMOKE particles)
 
-**Statistics:** `/mp str dfc stats` — temperature, pressure, integrity, progress, wear, energy output
+**Statistics:** `/ui str dfc stats` — temperature, pressure, integrity, progress, wear, energy output
 
 ---
 
@@ -238,8 +237,8 @@ Player radiation accumulation system with effects and dosimeter.
 
 **Commands:**
 ```
-/mp checkrad [nick]  — check radiation level
-/mp setrad <nick> <value> — set player radiation
+/ui checkrad [nick]  — check radiation level
+/ui setrad <nick> <value> — set player radiation
 ```
 
 ---
@@ -248,7 +247,7 @@ Player radiation accumulation system with effects and dosimeter.
 
 A multi-block structure that attracts metallic items.
 
-**Assembly:** `/mp str magnet assemble` — multi-block using Iron Blocks, Lightning Rods, Iron Bars and an Item Frame.
+**Assembly:** `/ui str magnet assemble` — multi-block using Iron Blocks, Lightning Rods, Iron Bars and an Item Frame.
 
 **Features:**
 - Attracts: metallic items (weapons, armor, tools), mobs in metallic armor, minecarts
@@ -257,7 +256,7 @@ A multi-block structure that attracts metallic items.
 - Cluster-based attraction system
 - Attraction force depends on magnet power
 
-**Stat check:** `/mp str magnet stats` — blocks, strength, radius, center, distance
+**Stat check:** `/ui str magnet stats` — blocks, strength, radius, center, distance
 
 ---
 
@@ -267,9 +266,9 @@ A multi-block structure that generates controlled lightning strikes.
 
 **Commands:**
 ```
-/mp str lightning enable   — enable the lightning structure
-/mp str lightning disable  — disable it
-/mp str lightning stats    — view statistics
+/ui str lightning enable   — enable the lightning structure
+/ui str lightning disable  — disable it
+/ui str lightning stats    — view statistics
 ```
 
 **Features:**
@@ -285,15 +284,15 @@ Interactive chat-based code entry panel with clickable buttons.
 
 **Commands:**
 ```
-/mp codepane — open the code entry panel
+/ui codepane — open the code entry panel
 ```
 
 **Key management:**
 ```
-/mp codepane key add <name> <code> [flags]
-/mp codepane key list
-/mp codepane key remove <name>
-/mp codepane key modify <name> <new_code> [flags]
+/ui codepane key add <name> <code> [flags]
+/ui codepane key list
+/ui codepane key remove <name>
+/ui codepane key modify <name> <new_code> [flags]
 ```
 
 **Key flags:**
@@ -343,9 +342,9 @@ Every item has integrity (0-100%) that decreases with use.
 
 **Commands:**
 ```
-/mp item int list               — check item integrity info
-/mp item int set <value>        — set item integrity
-/mp item int add <value>        — add to item integrity
+/ui item int list               — check item integrity info
+/ui item int set <value>        — set item integrity
+/ui item int add <value>        — add to item integrity
 ```
 
 ---
@@ -358,12 +357,12 @@ Minecart acceleration system with exponential speed-up.
 - Exponential acceleration on active POWERED_RAIL (×N per tick)
 - Exponential deceleration off-rails
 - Collision damage = speed × 20 (blocks/sec ↔ damage)
-- Speed display in actionbar via `/mp togglespeed`
+- Speed display in actionbar via `/ui togglespeed`
 - Particles during movement
 
 **Commands:**
 ```
-/mp togglespeed — toggle speed display in ActionBar
+/ui togglespeed — toggle speed display in ActionBar
 ```
 
 ---
@@ -374,12 +373,12 @@ Save and teleport to home points.
 
 **Commands:**
 ```
-/mp sethome <name>             — save a home point
-/mp home <name>                — view home coordinates
-/mp delhome <name>             — delete a home
-/mp listhomes                  — list all homes
-/mp ophomels <player>          — list a player's homes (operator)
-/mp opdelhome <player> <name>  — delete a player's home (operator)
+/ui sethome <name>             — save a home point
+/ui home <name>                — view home coordinates
+/ui delhome <name>             — delete a home
+/ui listhomes                  — list all homes
+/ui ophomels <player>          — list a player's homes (operator)
+/ui opdelhome <player> <name>  — delete a player's home (operator)
 ```
 
 **Storage:** SQLite (`player_homes` table)
@@ -394,7 +393,7 @@ Teleportation between configured worlds via GUI.
 
 **Commands:**
 ```
-/mp chgdim — open world selection menu
+/ui chgdim — open world selection menu
 ```
 
 **GUI interface:**
@@ -404,8 +403,8 @@ Teleportation between configured worlds via GUI.
 
 **Subcommands:**
 ```
-/mp chgdim_teleport <world> — teleport to a world
-/mp chgdim_return           — return to original location
+/ui chgdim_teleport <world> — teleport to a world
+/ui chgdim_return           — return to original location
 ```
 
 ---
@@ -416,20 +415,20 @@ Server shutdown/restart system with countdown.
 
 **Commands:**
 ```
-/mp power off           — request server shutdown
-/mp power reboot        — request server restart
-/mp power confirm       — confirm the request
-/mp power undo          — cancel the request
+/ui power off           — request server shutdown
+/ui power reboot        — request server restart
+/ui power confirm       — confirm the request
+/ui power undo          — cancel the request
 ```
 
 **Features:**
-- Request confirmation via `/mp power confirm`
+- Request confirmation via `/ui power confirm`
 - **BossBar** — depleting bar with remaining time
 - **ActionBar** — seconds display
 - **Sound** — beeping that accelerates towards the end
 - Request timeout (default: 30 sec)
 - Countdown duration (default: 10 sec)
-- Intercepts `/stop` and `/restart` — redirects to `/mp power`
+- Intercepts `/stop` and `/restart` — redirects to `/ui power`
 
 ---
 
@@ -437,7 +436,7 @@ Server shutdown/restart system with countdown.
 
 Self-kill mechanic with confirmation and countdown.
 
-**Command:** `/mp suicide`
+**Command:** `/ui suicide`
 
 **Mechanics:**
 1. First input — warning message
@@ -452,7 +451,7 @@ Self-kill mechanic with confirmation and countdown.
 
 Full player hiding system.
 
-**Command:** `/mp vanish <nick>`
+**Command:** `/ui vanish <nick>`
 
 **Features:**
 - Player is completely invisible to others
@@ -466,7 +465,7 @@ Full player hiding system.
 
 Personal note system per player via GUI.
 
-**Command:** `/mp notes`
+**Command:** `/ui notes`
 
 **Interface:**
 - Anvil GUI for creating/editing notes
@@ -482,8 +481,8 @@ Automatic update checking and installation from GitHub.
 
 **Commands:**
 ```
-/mp checkver (or /mp checkupdates) — check for updates
-/mp updatejar                       — download and install
+/ui checkver (or /ui checkupdates) — check for updates
+/ui updatejar                       — download and install
 ```
 
 **Mechanics:**
@@ -505,7 +504,7 @@ Profanity filter with wildcard and regex support.
 - Full Java regex support
 - Unicode-aware (correct Cyrillic handling via `\p{L}`)
 - Highlighted bad words in logs (red color)
-- Bypass permission: `mcplugin.chat.filter.bypass`
+- Bypass permission: `ui.chat.filter.bypass`
 
 **Pattern sources (config.yml):**
 - `chat_filter.words` — simple words with wildcard
@@ -524,7 +523,7 @@ Profanity filter with wildcard and regex support.
 ### PacketGuard
 - Protection against crash packets (oversized packets)
 - Kicks player when packet size limit is exceeded
-- Bypass permission: `mcplugin.packetguard.bypass`
+- Bypass permission: `ui.packetguard.bypass`
 
 ### Void Protection
 - Saves players from falling into the void
@@ -585,10 +584,6 @@ Profanity filter with wildcard and regex support.
 - Mob health display
 - Percentage/health bar
 
-### Item Kill Manager
-- Item removal under certain conditions
-- Configurable filters
-
 ### Leash
 - Leash any entity (mob→mob, mob→fence)
 - Disable leash break
@@ -601,12 +596,12 @@ Profanity filter with wildcard and regex support.
 
 ### Mode Protect
 - Prevents game mode changes in specific worlds
-- Bypass permission: `mcplugin.gmprotect.bypass`
+- Bypass permission: `ui.gmprotect.bypass`
 
 ### Saved Hotbar (Creative Item Validator)
 - Validates items from saved hotbars
 - Checks for oversized items (NBT)
-- Bypass permission: `mcplugin.creative.bypass`
+- Bypass permission: `ui.creative.bypass`
 
 ### Shield Slowness
 - Slowdown when using shields
@@ -626,101 +621,101 @@ Profanity filter with wildcard and regex support.
 
 ---
 
-## ⌨ Commands (/mp)
+## ⌨ Commands (/ui)
 
 Full command list:
 
 ### General
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp help` | Command list | mcplugin |
-| `/mp reload` | Reload plugin | mcplugin.command.reload |
+| `/ui help` | Command list | ui |
+| `/ui reload` | Reload plugin | ui.command.reload |
 
 ### Update Check
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp checkver` / `/mp checkupdates` | Check for updates | mcplugin.command.checkver |
-| `/mp updatejar` | Install update | mcplugin.command.checkver |
+| `/ui checkver` / `/ui checkupdates` | Check for updates | ui.command.checkver |
+| `/ui updatejar` | Install update | ui.command.checkver |
 
 ### Authentication (admin)
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp auth forcelogin <nick>` | Force authorize | mcplugin.command.auth.forcelogin |
-| `/mp auth resetauth <nick>` | Delete registration | mcplugin.command.auth.resetauth |
-| `/mp auth chgpass <nick> <pass>` | Change password | mcplugin.command.auth.chgpass |
-| `/mp auth delsession <nick>` | Reset session | mcplugin.command.auth.delsession |
-| `/mp auth logout` | Log out | — |
+| `/ui auth forcelogin <nick>` | Force authorize | ui.command.auth.forcelogin |
+| `/ui auth resetauth <nick>` | Delete registration | ui.command.auth.resetauth |
+| `/ui auth chgpass <nick> <pass>` | Change password | ui.command.auth.chgpass |
+| `/ui auth delsession <nick>` | Reset session | ui.command.auth.delsession |
+| `/ui auth logout` | Log out | — |
 
 ### Dimensions
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp chgdim` | Open world menu | mcplugin.command.chgdim |
-| `/mp chgdim_teleport <world>` | Teleport to world | mcplugin.command.chgdim |
-| `/mp chgdim_return` | Return back | mcplugin.command.chgdim |
+| `/ui chgdim` | Open world menu | ui.command.chgdim |
+| `/ui chgdim_teleport <world>` | Teleport to world | ui.command.chgdim |
+| `/ui chgdim_return` | Return back | ui.command.chgdim |
 
 ### Structures
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp structures dfc stats` | Reactor stats | mcplugin.command.structures |
-| `/mp structures dfc assemble` | Assemble reactor | mcplugin.command.structures.dfc |
-| `/mp structures magnet assemble` | Assemble magnet | mcplugin.command.structures.magnet |
-| `/mp structures magnet stats` | Magnet stats | mcplugin.command.structures.magnet |
-| `/mp structures lightning enable` | Enable lightning | mcplugin.command.structures |
-| `/mp structures lightning disable` | Disable lightning | mcplugin.command.structures |
-| `/mp structures lightning stats` | Lightning stats | mcplugin.command.structures |
+| `/ui structures dfc stats` | Reactor stats | ui.command.structures |
+| `/ui structures dfc assemble` | Assemble reactor | ui.command.structures.dfc |
+| `/ui structures magnet assemble` | Assemble magnet | ui.command.structures.magnet |
+| `/ui structures magnet stats` | Magnet stats | ui.command.structures.magnet |
+| `/ui structures lightning enable` | Enable lightning | ui.command.structures |
+| `/ui structures lightning disable` | Disable lightning | ui.command.structures |
+| `/ui structures lightning stats` | Lightning stats | ui.command.structures |
 
 ### Code Panel
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp codepane` | Open panel | mcplugin.command.codepane |
-| `/mp codepane key add <name> <code>` | Add key | mcplugin.command.codepane.key.add |
-| `/mp codepane key list` | List keys | mcplugin.command.codepane.key.list |
-| `/mp codepane key remove <name>` | Remove key | mcplugin.command.codepane.key.remove |
-| `/mp codepane key modify <name> <new_code>` | Modify key | mcplugin.command.codepane.key.modify |
+| `/ui codepane` | Open panel | ui.command.codepane |
+| `/ui codepane key add <name> <code>` | Add key | ui.command.codepane.key.add |
+| `/ui codepane key list` | List keys | ui.command.codepane.key.list |
+| `/ui codepane key remove <name>` | Remove key | ui.command.codepane.key.remove |
+| `/ui codepane key modify <name> <new_code>` | Modify key | ui.command.codepane.key.modify |
 
 ### Items
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp item int list` | Integrity info | mcplugin.command.item |
-| `/mp item int set <value>` | Set integrity | mcplugin.command.item |
-| `/mp item int add <value>` | Add integrity | mcplugin.command.item |
+| `/ui item int list` | Integrity info | ui.command.item |
+| `/ui item int set <value>` | Set integrity | ui.command.item |
+| `/ui item int add <value>` | Add integrity | ui.command.item |
 
 ### Homes
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp sethome <name>` | Save home | mcplugin.command.sethome |
-| `/mp home <name>` | View home | mcplugin.command.home |
-| `/mp delhome <name>` | Delete home | mcplugin.command.delhome |
-| `/mp listhomes` | List homes | mcplugin.command.listhomes |
-| `/mp ophomels <player>` | Player's homes | mcplugin.command.ophomels |
-| `/mp opdelhome <player> <name>` | Delete player's home | mcplugin.command.opdelhome |
+| `/ui sethome <name>` | Save home | ui.command.sethome |
+| `/ui home <name>` | View home | ui.command.home |
+| `/ui delhome <name>` | Delete home | ui.command.delhome |
+| `/ui listhomes` | List homes | ui.command.listhomes |
+| `/ui ophomels <player>` | Player's homes | ui.command.ophomels |
+| `/ui opdelhome <player> <name>` | Delete player's home | ui.command.opdelhome |
 
 ### Power
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp power off` | Shutdown server | mcplugin.command.power.off |
-| `/mp power reboot` | Restart server | mcplugin.command.power.reboot |
-| `/mp power confirm` | Confirm request | mcplugin.command.power |
-| `/mp power undo` | Cancel request | mcplugin.command.power.undo |
+| `/ui power off` | Shutdown server | ui.command.power.off |
+| `/ui power reboot` | Restart server | ui.command.power.reboot |
+| `/ui power confirm` | Confirm request | ui.command.power |
+| `/ui power undo` | Cancel request | ui.command.power.undo |
 
 ### Other
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/mp suicide` | Suicide | mcplugin |
-| `/mp vanish <nick>` | Vanish player | mcplugin.command.vanish |
-| `/mp notes` | Notes GUI | mcplugin.command.notes |
-| `/mp checkrad [nick]` | Check radiation | mcplugin.command.checkrad |
-| `/mp setrad <nick> <value>` | Set radiation | mcplugin.command.setrad |
-| `/mp togglespeed` | Speed display toggle | mcplugin |
-| `/mp modules list` | List modules | * (op) |
-| `/mp modules enable <module>` | Enable module | * (op) |
-| `/mp modules disable <module>` | Disable module | * (op) |
+| `/ui suicide` | Suicide | ui |
+| `/ui vanish <nick>` | Vanish player | ui.command.vanish |
+| `/ui notes` | Notes GUI | ui.command.notes |
+| `/ui checkrad [nick]` | Check radiation | ui.command.checkrad |
+| `/ui setrad <nick> <value>` | Set radiation | ui.command.setrad |
+| `/ui togglespeed` | Speed display toggle | ui |
+| `/ui modules list` | List modules | * (op) |
+| `/ui modules enable <module>` | Enable module | * (op) |
+| `/ui modules disable <module>` | Disable module | * (op) |
 
 ### System (built-in command replacements)
 | Command | Description |
 |---------|-------------|
-| `/stop` | Redirects to `/mp power off` |
-| `/restart` | Redirects to `/mp power reboot` |
+| `/stop` | Redirects to `/ui power off` |
+| `/restart` | Redirects to `/ui power reboot` |
 | `/list` | Custom player list (vanish-aware) |
 | `/reactor` | Reactor structure assembly |
 

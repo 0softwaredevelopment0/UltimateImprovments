@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "description": {
+      "text": "UI Plugin datapack.",
+      "color": "white"
+    },
+    "pack_format": 99,
+    "supported_formats": [98, 99]
+  }
+}

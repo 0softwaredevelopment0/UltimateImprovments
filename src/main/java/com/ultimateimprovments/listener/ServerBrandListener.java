@@ -91,7 +91,7 @@ public class ServerBrandListener implements Listener {
 
         } catch (Exception e) {
             Main.getInstance().getLogger().log(java.util.logging.Level.WARNING,
-                    "[MCPLUGIN] Failed to spoof brand for " + player.getName(), e);
+                    "[ULTIMATEIMPROVMENTS] Failed to spoof brand for " + player.getName(), e);
         }
     }
 }

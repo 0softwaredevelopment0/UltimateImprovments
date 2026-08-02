@@ -35,6 +35,18 @@ public class MessageUtil {
         if (!text.isEmpty() && text.indexOf('%') >= 0) {
             text = PlaceholderResolver.resolve(text, player);
         }
+        return deserialize(text);
+    }
+
+    /**
+     * Безопасный десериализатор: MiniMessage не понимает legacy §-коды и бросает
+     * ParsingExceptionImpl (что роняет Bukkit-таски). Если строка содержит § —
+     * конвертируем через LegacyComponentSerializer вместо краша.
+     */
+    private static Component deserialize(String text) {
+        if (text != null && text.indexOf('\u00A7') >= 0) {
+            return LEGACY_SERIALIZER.deserialize(text);
+        }
         return MINI_MESSAGE.deserialize(text);
     }
 
@@ -48,7 +60,7 @@ public class MessageUtil {
 
     public static List<Component> parse(List<String> miniMessages) {
         return miniMessages.stream()
-                .map(MINI_MESSAGE::deserialize)
+                .map(MessageUtil::deserialize)
                 .collect(Collectors.toList());
     }
 
@@ -57,7 +69,7 @@ public class MessageUtil {
      * Useful for APIs that still require legacy format (e.g. kickPlayer).
      */
     public static String legacy(String miniMessage) {
-        return LEGACY_SERIALIZER.serialize(MINI_MESSAGE.deserialize(miniMessage));
+        return LEGACY_SERIALIZER.serialize(deserialize(miniMessage));
     }
 
     /**
@@ -65,7 +77,7 @@ public class MessageUtil {
      * Useful for APIs that require plain strings (e.g. player sample names).
      */
     public static String toPlainText(String miniMessage) {
-        Component component = MINI_MESSAGE.deserialize(miniMessage);
+        Component component = deserialize(miniMessage);
         return PLAIN_SERIALIZER.serialize(component);
     }
 }

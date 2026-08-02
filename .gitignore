@@ -29,5 +29,4 @@ build/
 __pycache__/
 nul
 .claude/
-agent.md
 node_modules/

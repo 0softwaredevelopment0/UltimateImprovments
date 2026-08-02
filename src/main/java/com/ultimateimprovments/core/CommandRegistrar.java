@@ -34,8 +34,8 @@ public class CommandRegistrar {
     // =========================
     public void registerAll(Main plugin) {
         PluginReloadCommand uiCmd = new PluginReloadCommand();
-        register(plugin, "ultimateimprovments", uiCmd, uiCmd);
-        register(plugin, "ui", uiCmd, uiCmd); // alias
+        register(plugin, "ui", uiCmd, uiCmd); // main command
+        register(plugin, "ultimateimprovments", uiCmd, uiCmd); // alias
         register(plugin, "reactor", new ReactorCommand(), null);
         registerOverride(plugin, "list", new VanishListCommand());
         registerOverride(plugin, "stop", new PowerCommand("stop", false));

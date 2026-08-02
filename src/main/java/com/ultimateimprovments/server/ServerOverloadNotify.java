@@ -1,12 +1,8 @@
 package com.ultimateimprovments.server;
 
-import com.ultimateimprovments.util.MessageUtil;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import com.ultimateimprovments.util.AlertBroadcast;
 
 public final class ServerOverloadNotify {
-
-    public static final String PERMISSION = "ui.overload.logs";
 
     private static long cooldownMs = 30_000L;
     private static long lastBroadcastTime = 0;
@@ -29,18 +25,10 @@ public final class ServerOverloadNotify {
         }
         lastBroadcastTime = now;
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.hasPermission(PERMISSION)) {
-                player.sendMessage(MessageUtil.parse(message));
-            }
-        }
+        AlertBroadcast.send(message);
     }
 
     public static void broadcastForce(String message) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.hasPermission(PERMISSION)) {
-                player.sendMessage(MessageUtil.parse(message));
-            }
-        }
+        AlertBroadcast.send(message);
     }
 }

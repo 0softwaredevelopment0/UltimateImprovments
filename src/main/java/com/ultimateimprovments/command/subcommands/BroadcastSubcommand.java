@@ -1,8 +1,8 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.util.Broadcast;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlaceholderResolver;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -68,15 +68,11 @@ public final class BroadcastSubcommand {
         Player senderPlayer = sender instanceof Player ? (Player) sender : null;
         fullMessage = PlaceholderResolver.resolve(fullMessage, senderPlayer);
 
-        Component component = MessageUtil.parse(fullMessage);
-
         // Broadcast to all players
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.sendMessage(component);
-        }
+        Broadcast.send(fullMessage);
 
         // Log to console
-        Bukkit.getConsoleSender().sendMessage(component);
+        Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(fullMessage));
 
         return true;
     }

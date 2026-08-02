@@ -40,6 +40,6 @@ public class IntegrityListener implements Listener {
         // Применяем урон через систему целостности
         Player player = event.getPlayer();
         int vanillaDamage = event.getDamage();
-        IntegrityManager.decreaseIntegrity(item, vanillaDamage, player);
+        ItemIntegrityAPI.decreaseItemIntegrity(item, vanillaDamage, player);
     }
 }

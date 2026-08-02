@@ -19,9 +19,9 @@ import java.util.List;
  * С v26.2 plugin-guide.txt больше не хранится как отдельный файл. Его содержимое лежит
  * В НАЧАЛЕ config.yml в виде YAML-комментариев между маркерами:
  * <pre>
- * # === MC-PLUGIN GUIDE BEGIN (auto-managed, don't edit between markers) ===
+ * # === ULTIMATEIMPROVMENTS GUIDE BEGIN (auto-managed, don't edit between markers) ===
  * [несколько сотен строк содежимого плагин-гайда в виде комментов с префиксом "# "]
- * # === MC-PLUGIN GUIDE END ===
+ * # === ULTIMATEIMPROVMENTS GUIDE END ===
  * </pre>
  * <p>
  * Хеш целостности эмбедженного гайда хранится в config.yml под ключом
@@ -40,8 +40,8 @@ import java.util.List;
  */
 public class ConfigGuideManager {
 
-    public static final String GUIDE_BEGIN_MARKER = "# === MC-PLUGIN GUIDE BEGIN (auto-managed by ConfigGuideManager, do not edit between markers) ===";
-    public static final String GUIDE_END_MARKER = "# === MC-PLUGIN GUIDE END ===";
+    public static final String GUIDE_BEGIN_MARKER = "# === ULTIMATEIMPROVMENTS GUIDE BEGIN (auto-managed by ConfigGuideManager, do not edit between markers) ===";
+    public static final String GUIDE_END_MARKER = "# === ULTIMATEIMPROVMENTS GUIDE END ===";
     /** Баннер «не редактировать» над блоком _meta (в самом низу config.yml). */
     public static final String META_BANNER = "# === INTEGRITY META — НЕ РЕДАКТИРОВАТЬ (auto-managed by ConfigGuideManager) ===";
     public static final String META_KEY = "_meta";

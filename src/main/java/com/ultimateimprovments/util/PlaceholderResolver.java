@@ -154,7 +154,7 @@ public class PlaceholderResolver {
         return BUILTIN.keySet();
     }
 
-    /** Резолвит одно имя (вызывается из MCPluginPlaceholderExpansion). */
+    /** Резолвит одно имя (вызывается из UIPlaceholderExpansion). */
     public static String resolveBuiltin(Player player, String name) {
         BiFunction<Player, String, String> fn = BUILTIN.get(name);
         return fn != null ? String.valueOf(fn.apply(player, "")) : null;
@@ -251,7 +251,7 @@ public class PlaceholderResolver {
     }
 
     /**
-     * Внутренний резолв без шага PAPI — чтобы MCPluginPlaceholderExpansion мог
+     * Внутренний резолв без шага PAPI — чтобы UIPlaceholderExpansion мог
      * безопасно делегировать сюда, не вызывая рекурсию PAPI → resolve → PAPI.
      */
     public static String resolveInternal(String text, Player player) {
