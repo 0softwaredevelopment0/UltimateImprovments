@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Единый интерфейс для всех субкоманд /mp.
+ * Единый интерфейс для всех субкоманд /ui.
  *
  * <p>Каждая субкоманда — отдельный класс с execute() и tabComplete().
  * Регистрируется в {@link SubCommandRegistry} и автоматически подхватывается

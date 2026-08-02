@@ -4,6 +4,7 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.SoundUtil;
+import com.ultimateimprovments.util.Broadcast;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -189,10 +190,10 @@ public class PowerManager {
         }
 
         // --- Initial broadcast ---
-        Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.countdown_broadcast",
+        Broadcast.send(MessagesManager.getString("power.countdown_broadcast",
                 "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>%action% in</red> <white>%seconds%</white> <red>seconds!</red>")
                 .replace("%action%", action)
-                .replace("%seconds%", String.valueOf(duration))));
+                .replace("%seconds%", String.valueOf(duration)));
         playBeepToAll(calcPitch(0.0));
 
         // --- Repeating countdown task (каждый тик — плавное ускорение) ---
@@ -209,9 +210,9 @@ public class PowerManager {
                 // --- Последний тик — выполнить ---
                 if (currentSecond < 0) {
                     try {
-                        Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.executing",
+                        Broadcast.send(MessagesManager.getString("power.executing",
                                 "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action%...</red>")
-                                .replace("%action%", actionMsg)));
+                                .replace("%action%", actionMsg));
                         playBeepToAll(countdownSoundPitchMax);
 
                         if (type == RequestType.STOP) {
@@ -237,11 +238,11 @@ public class PowerManager {
                         String secWord;
                         if (currentSecond == 1) secWord = "second";
                         else secWord = "seconds";
-                        Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.countdown_seconds",
+                        Broadcast.send(MessagesManager.getString("power.countdown_seconds",
                                 "<red>Server %action% in</red> <white>%seconds%</white> <red>%unit%...</red>")
                                 .replace("%action%", actionMsg)
                                 .replace("%seconds%", String.valueOf(currentSecond))
-                                .replace("%unit%", secWord)));
+                                .replace("%unit%", secWord));
                     }
 
                     // ActionBar
@@ -452,14 +453,14 @@ public class PowerManager {
      */
     public void executeDirect(boolean isRestart) {
         if (isRestart) {
-            Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.direct_restart",
-                    "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>")));
+            Broadcast.send(MessagesManager.getString("power.direct_restart",
+                    "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>"));
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 Bukkit.getServer().restart();
             }, 20);
         } else {
-            Bukkit.broadcastMessage(MessageUtil.legacy(MessagesManager.getString("power.direct_stop",
-                    "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>")));
+            Broadcast.send(MessagesManager.getString("power.direct_stop",
+                    "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>"));
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 Bukkit.getServer().shutdown();
             }, 20);

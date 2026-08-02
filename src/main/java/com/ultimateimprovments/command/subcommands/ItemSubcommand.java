@@ -1,6 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
+import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -21,9 +22,9 @@ public final class ItemSubcommand {
             ItemStack held = player.getInventory().getItemInMainHand();
             if (held == null || held.getType() == Material.AIR) { player.sendMessage("§4❌ §cВы должны держать предмет в руке!"); return true; }
 
-            if (!IntegrityManager.hasIntegrity(held)) {
-                IntegrityManager.ensureInitialized(held);
-                if (!IntegrityManager.hasIntegrity(held)) { player.sendMessage("§4❌ §cЭтот предмет не имеет системы целостности!"); return true; }
+            if (!ItemIntegrityAPI.hasItemIntegrity(held)) {
+                ItemIntegrityAPI.initializeItemIntegrity(held);
+                if (!ItemIntegrityAPI.hasItemIntegrity(held)) { player.sendMessage("§4❌ §cЭтот предмет не имеет системы целостности!"); return true; }
             }
 
             switch (args[2].toLowerCase()) {
@@ -39,9 +40,9 @@ public final class ItemSubcommand {
     }
 
     private static void handleList(Player player, ItemStack held) {
-        double current = IntegrityManager.getCurrentIntegrity(held);
-        double max = IntegrityManager.getMaxIntegrity(held);
-        double pct = (current / max) * 100.0;
+        // getItemIntegrityPercent уже возвращает % (0.0–100.0) — источник истины
+        double current = ItemIntegrityAPI.getItemIntegrityPercent(held);
+        double pct = Math.max(0.0, current);
         String name = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
                 ? held.getItemMeta().getDisplayName()
                 : capitalize(held.getType().name().toLowerCase().replace("_", " "));
@@ -50,7 +51,7 @@ public final class ItemSubcommand {
         player.sendMessage("§6═══════════════════════");
         player.sendMessage("§7Предмет: §f" + name);
         player.sendMessage("§7Текущая: §a" + IntegrityManager.formatPercent(pct) + "%");
-        player.sendMessage("§7Макс:    §a100.000%");
+        player.sendMessage("§7Макс:    §a" + IntegrityManager.formatPercent(Math.max(0.0, ItemIntegrityAPI.getItemMaxIntegrityPercent(held))) + "%");
         player.sendMessage("§6═══════════════════════");
     }
 
@@ -59,8 +60,8 @@ public final class ItemSubcommand {
         try {
             double value = Double.parseDouble(args[3]);
             if (value < 0 || value > 100) { player.sendMessage("§4❌ §cЗначение должно быть от 0 до 100!"); return; }
-            IntegrityManager.setCurrentIntegrity(held, value);
-            player.sendMessage("§a✔ §fЦелостность установлена на §e" + IntegrityManager.formatPercent(value) + "%");
+            double actual = Math.max(0.0, ItemIntegrityAPI.setItemIntegrity(held, value));
+            player.sendMessage("§a✔ §fЦелостность установлена на §e" + IntegrityManager.formatPercent(actual) + "%");
         } catch (NumberFormatException e) {
             player.sendMessage("§4❌ §cНеверный формат числа!");
         }
@@ -71,9 +72,8 @@ public final class ItemSubcommand {
         try {
             double value = Double.parseDouble(args[3]);
             if (value <= 0) { player.sendMessage("§4❌ §cЗначение должно быть больше 0!"); return; }
-            double current = IntegrityManager.getCurrentIntegrity(held);
-            double newVal = Math.min(100.0, current + value);
-            IntegrityManager.setCurrentIntegrity(held, newVal);
+            // Фактическое значение возвращает сам API — не пересчитываем локально
+            double newVal = Math.max(0.0, ItemIntegrityAPI.increaseItemIntegrityPercent(held, value));
             player.sendMessage("§a✔ §fДобавлено §e" + IntegrityManager.formatPercent(value) + "%§f. Текущая: §e" + IntegrityManager.formatPercent(newVal) + "%");
         } catch (NumberFormatException e) {
             player.sendMessage("§4❌ §cНеверный формат числа!");

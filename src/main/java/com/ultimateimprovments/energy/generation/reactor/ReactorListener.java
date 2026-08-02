@@ -425,7 +425,7 @@ public class ReactorListener implements Listener {
         e.setCancelled(true);
 
         // Open reactor stats
-        player.performCommand("mp str dfc stats");
+        player.performCommand("ui str dfc stats");
     }
 
     // =========================

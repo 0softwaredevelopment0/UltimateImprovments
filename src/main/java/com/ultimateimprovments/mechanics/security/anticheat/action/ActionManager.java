@@ -1,8 +1,8 @@
 package com.ultimateimprovments.mechanics.security.anticheat.action;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.AlertBroadcast;
 import com.ultimateimprovments.util.ConsoleLogger;
-import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.mechanics.security.anticheat.AntiCheatManager;
 import com.ultimateimprovments.mechanics.security.anticheat.core.CheckCategory;
 import com.ultimateimprovments.mechanics.security.anticheat.core.PlayerData;
@@ -104,13 +104,12 @@ public class ActionManager {
         }
     }
 
-    private void executeNotify(Player player, String checkName, double vl, String message) {            String msg = "<gray>[<white>Server<dark_gray>/<yellow>Warning<gray>] <yellow>" + player.getName()
+    private void executeNotify(Player player, String checkName, double vl, String message) {
+        String msg = "<gray>[<white>Server<dark_gray>/<yellow>Warning<gray>] <yellow>" + player.getName()
                 + "</yellow> <gray>flagged</gray> <red>" + checkName
                 + "</red> <gray>(VL: " + String.format("%.1f", vl) + ") — " + message + "</gray>";
 
-        Bukkit.getOnlinePlayers().stream()
-                .filter(p -> p.hasPermission("ui.anticheat.notify") || p.isOp())
-                .forEach(p -> p.sendMessage(MessageUtil.parse(msg)));
+        AlertBroadcast.send(msg);
     }
 
     // =========================

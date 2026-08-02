@@ -58,17 +58,17 @@ public class SubCommandRegistry {
      * @return true если команда обработана
      */
     public boolean dispatch(CommandSender sender, String[] args) {
-        if (args.length == 0) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "general.unknown_command",
-                    "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>")));
-            return true;
-        }
-
         if (sender instanceof Player p && !p.hasPermission("ui")) {
             p.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "general.no_permission",
                     "<red>❌ You don't have permission to use UltimateImprovments commands!</red>")));
+            return true;
+        }
+
+        if (args.length == 0) {
+            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
+                    "general.unknown_command",
+                    "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>")));
             return true;
         }
 

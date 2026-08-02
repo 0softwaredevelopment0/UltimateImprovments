@@ -26,6 +26,11 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
     private static boolean initialized = false;
 
+    /** Сбрасывает флаг инициализации для корректной работы /ui reload. */
+    public static void reset() {
+        initialized = false;
+    }
+
     /**
      * Инициализирует реестр субкоманд. Вызывается один раз при старте.
      */
@@ -41,7 +46,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 "com/ultimateimprovments/command/subcommands");
 
         // ── SubCommand-имплементации (новее) ──
-        // HelpSubCommand регистрируется через авто-сканер (CommandScanner) — не нужно вручную
+        registry.register(new HelpSubCommand());
         registry.register(LegacySubCommandAdapter.of("reload",
                 (s, a) -> ReloadSubcommand.execute(s)));
 
@@ -66,7 +71,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── Legacy адаптеры (простые статические вызовы) ──
         registry.register(LegacySubCommandAdapter.of("chgdim", ChgDimSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("codepane", CodePaneSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("pane_click", CodePaneSubcommand::paneClick));
         registry.register(LegacySubCommandAdapter.of("item", ItemSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("auth", AuthSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("power", PowerSubcommand::execute));
@@ -99,6 +103,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("plugin", PluginSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("report", ReportSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("reports", ReportsSubcommand::execute));
+        registry.register(LegacySubCommandAdapter.of("redstone", RedstoneSubcommand::execute,
+                tc((s, a) -> RedstoneSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("modreport", ModReportSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("repstatus",
                 (s, a) -> { RepStatusSubcommand.execute(s); return true; }));
@@ -118,6 +124,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 (s, a) -> { MiscSubcommand.toggleRadView(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("fly",
                 (s, a) -> { MiscSubcommand.fly(s, a); return true; }));
+        registry.register(LegacySubCommandAdapter.of("flyspeed", FlySpeedSubcommand::execute,
+                tc((s, a) -> FlySpeedSubcommand.tabComplete(a))));
+        registry.register(LegacySubCommandAdapter.of("sudo", SudoSubcommand::execute,
+                tc((s, a) -> SudoSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("god",
                 (s, a) -> { MiscSubcommand.god(s, a); return true; }));
 

@@ -61,8 +61,14 @@ public class PluginStartup {
         // Auth Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
         com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
 
+        // Sudo Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler.register();
+
         // ChgDim Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
         com.ultimateimprovments.command.ChgDimDialogHandler.register();
+
+        // Code Panel Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register();
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
@@ -181,24 +187,21 @@ public class PluginStartup {
         ModuleManager.init(plugin);
         var mm = ModuleManager.getInstance();
 
-        // Пытаемся авто-обнаружить модули через сканирование JAR
-        ConsoleLogger.info("[Init] Scanning for modules...");
-        ModuleScanner.autoRegister(mm, plugin, "com/ultimateimprovements/module");
-
-        // Если авто-сканирование не нашло модулей — используем ручную регистрацию
-        if (mm.getModules().isEmpty()) {
-            ConsoleLogger.info("[Init] Auto-scan found no modules, using manual registration.");
-            registerSystemModules(mm);
-            registerEnergyModules(mm);
-            registerMechanicsModules(mm);
-            registerFeatureModules(mm);
-            registerProtectionModules(mm);
-            registerUtilityModules(mm);
-            registerDisplayModules(mm);
-            registerBackgroundModules(mm);
-            registerAdminModules(mm);
-            registerSecurityModules(mm);
-        }
+        // Регистрируем модули вручную — это полный и упорядоченный список.
+        // Авто-сканирование (ModuleScanner) не используется: раньше его путь был
+        // написан со старой орфографией и никогда не находил модули; а если бы
+        // работал — пропустил бы модули вне пакета com/ultimateimprovments/module
+        // (OmniscannerModule, ProtectionModule).
+        registerSystemModules(mm);
+        registerEnergyModules(mm);
+        registerMechanicsModules(mm);
+        registerFeatureModules(mm);
+        registerProtectionModules(mm);
+        registerUtilityModules(mm);
+        registerDisplayModules(mm);
+        registerBackgroundModules(mm);
+        registerAdminModules(mm);
+        registerSecurityModules(mm);
 
         // Init all modules (each in try-catch, failures don't break others)
         mm.initAll();
@@ -231,6 +234,7 @@ public class PluginStartup {
         mm.register(new LightningModule());
         mm.register(new CraftingModule());
         mm.register(new AuthModule());
+        mm.register(new SudoModule());
     }
 
     private void registerFeatureModules(ModuleManager mm) {
@@ -240,7 +244,6 @@ public class PluginStartup {
         mm.register(new BoostedCobwebModule());
         mm.register(new DragonEggModule());
         mm.register(new EntityLocatorModule());
-        mm.register(new ItemKillModule());
         mm.register(new MagnetModule());
         mm.register(new ModeProtectModule());
         mm.register(new TerracotaSpeedModule());
@@ -374,12 +377,11 @@ public class PluginStartup {
 
     private void printBanner() {
         ConsoleLogger.info("");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF> __  __  _____      _____  _     _    _  _____ _____ _   _ </gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>|  \\/  |/ ____|    |  __ \\| |   | |  | |/ ____|_   _| \\ | |</gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| \\  / | |   ______| |__) | |   | |  | | |  __  | | |  \\| |</gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| |\\/| | |  |______|  ___/| |   | |  | | | |_ | | | | . ` |</gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| |  | | |____     | |    | |___| |__| | |__| |_| |_| |\\  |</gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>|_|  |_|\\_____|    |_|    |______\\____/ \\_____|_____|_| \\_|</gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF> _   _  ___ </gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| | | |/ _ \\\\</gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| | | | (_) |</gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| |_| |\\\\__, |</gradient>");
+        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF> \\\\___/  /_/ </gradient>");
         ConsoleLogger.info("");
         ConsoleLogger.raw("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>");
         ConsoleLogger.raw("<gray>  Version: <white>" + plugin.getDescription().getVersion() + "</white>  |  Server: <white>" + plugin.getServer().getName() + " " + plugin.getServer().getVersion() + "</white></gray>");

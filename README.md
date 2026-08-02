@@ -30,7 +30,7 @@
 
 ## 🔌 Modular Architecture
 
-The plugin is built on a **modular architecture** — each module can be toggled on/off via `/mp modules`. If one module fails, the rest keep running.
+The plugin is built on a **modular architecture** — each module can be toggled on/off via `/ui modules`. If one module fails, the rest keep running.
 
 ### 📌 Essential Modules (always on)
 
@@ -77,7 +77,6 @@ The plugin is built on a **modular architecture** — each module can be toggled
 | `EntityLocator` | Entity finding item |
 | `GlassBreak` | Realistic glass breaking |
 | `HealthMeter` | Mob health display |
-| `ItemKill` | Conditional item removal |
 | `Leash` | Enhanced entity leashing |
 | `ModeProtect` | GameMode protection per world |
 | `ShieldSlowness` | Shield movement penalty |
@@ -153,7 +152,7 @@ The plugin is built on a **modular architecture** — each module can be toggled
 
 ### ⚡ Lightning
 - Multi-block structure for controlled lightning strikes
-- Toggle via `/mp str lightning`
+- Toggle via `/ui str lightning`
 
 ### 🔢 Code Panel
 - Interactive chat-based code entry with clickable buttons
@@ -206,13 +205,13 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 - PDC item protection in GUI
 
 ### 🛠️ Admin Menu (New in 1.9)
-- `/mp menu` — GUI for plugin management
+- `/ui menu` — GUI for plugin management
 - Statistics, info, quick item access
 - PDC protection on all items
 
 ### 🛡️ Anti-Cheat (New in 1.9)
-- `/mp check <player>` — freeze player for inspection
-- `/mp uncheck <player>` — unfreeze
+- `/ui check <player>` — freeze player for inspection
+- `/ui uncheck <player>` — unfreeze
 
 ### 🧩 LuckPerms Integration (New in 1.9)
 - Blocks wildcard (`*`) — requires confirmation (re-type within 15s)
@@ -241,7 +240,7 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 ### 🚂 Minecart Speed
 - Exponential acceleration on `POWERED_RAIL`
 - Collision damage = speed × 20
-- Speed display in ActionBar (`/mp togglespeed`)
+- Speed display in ActionBar (`/ui togglespeed`)
 - Movement particles
 
 ### 🏠 Homes
@@ -251,7 +250,7 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 
 ### 🌍 Dimension Change
 - GUI-based world teleportation
-- `/mp chgdim` — world selection menu
+- `/ui chgdim` — world selection menu
 - Return to original location
 
 ### 👻 Vanish
@@ -268,7 +267,7 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 - Wildcard and regex patterns
 - Unicode-aware (Cyrillic via `\p{L}`)
 - Highlighted profanity in logs (red)
-- Bypass permission: `mcplugin.chat.filter.bypass`
+- Bypass permission: `ui.chat.filter.bypass`
 
 ### 🔄 Updater
 - Auto-check updates via GitHub API
@@ -278,7 +277,7 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 - JAR replacement with backup
 
 ### 🔌 Power Management
-- `/mp power off|reboot|confirm|undo`
+- `/ui power off|reboot|confirm|undo`
 - **BossBar** with depleting bar
 - **ActionBar** with seconds remaining
 - **Sound** — accelerates towards the end
@@ -291,7 +290,7 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 ### 📦 Structure Integrity
 - Structure blocks get PDC `integrity` tag
 - Connectivity checked on destruction
-- `/mp str` command
+- `/ui str` command
 - **Unbreakable Integrity Tag** — structure blocks can't be broken while structure is intact
 
 ---
@@ -300,69 +299,69 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 
 ### General
 ```
-/mp help                  — Command list
-/mp reload                — Reload plugin
-/mp modules list          — List all modules
-/mp modules enable <name> — Enable a module
-/mp modules disable <name>— Disable a module
+/ui help                  — Command list
+/ui reload                — Reload plugin
+/ui modules list          — List all modules
+/ui modules enable <name> — Enable a module
+/ui modules disable <name>— Disable a module
 ```
 
 ### Auth (Admin)
 ```
-/mp auth forcelogin <nick>
-/mp auth resetauth <nick>
-/mp auth chgpass <nick> <pass>
-/mp auth delsession <nick>
+/ui auth forcelogin <nick>
+/ui auth resetauth <nick>
+/ui auth chgpass <nick> <pass>
+/ui auth delsession <nick>
 ```
 
 ### Worlds & Teleport
 ```
-/mp chgdim                       — World menu
-/mp chgdim_teleport <world>      — Teleport to world
-/mp sethome <name>               — Save home
-/mp home <name>                  — View home
-/mp listhomes                    — List homes
-/mp delhome <name>               — Delete home
-/mp spawn                        — Go to spawn
-/mp setspawn                     — Set spawn
+/ui chgdim                       — World menu
+/ui chgdim_teleport <world>      — Teleport to world
+/ui sethome <name>               — Save home
+/ui home <name>                  — View home
+/ui listhomes                    — List homes
+/ui delhome <name>               — Delete home
+/ui spawn                        — Go to spawn
+/ui setspawn                     — Set spawn
 ```
 
 ### Mechanics
 ```
-/mp codepane                          — Code panel
-/mp codepane key add/remove/list/list — Key management
-/mp togglespeed                       — Speed display toggle
-/mp checkrad [nick]                   — Check radiation
-/mp setrad <nick> <value>             — Set radiation
-/mp vanish <nick>                     — Toggle vanish
-/mp notes                             — Open notes
-/mp suicide                           — Suicide
-/mp power off|reboot|confirm|undo     — Power management
-/mp item int list|set|add             — Item integrity
-/mp check <player>                    — Freeze (anti-cheat)
-/mp uncheck <player>                  — Unfreeze
-/mp togglebind                        — Wireless redstone toggle
+/ui codepane                          — Code panel
+/ui codepane key add/remove/list/list — Key management
+/ui togglespeed                       — Speed display toggle
+/ui checkrad [nick]                   — Check radiation
+/ui setrad <nick> <value>             — Set radiation
+/ui vanish <nick>                     — Toggle vanish
+/ui notes                             — Open notes
+/ui suicide                           — Suicide
+/ui power off|reboot|confirm|undo     — Power management
+/ui item int list|set|add             — Item integrity
+/ui check <player>                    — Freeze (anti-cheat)
+/ui uncheck <player>                  — Unfreeze
+/ui togglebind                        — Wireless redstone toggle
 ```
 
 ### Structures
 ```
-/mp str dfc assemble       — Assemble reactor
-/mp str dfc stats          — Reactor stats
-/mp str magnet assemble    — Assemble magnet
-/mp str magnet stats       — Magnet stats
-/mp str lightning enable|disable|stats — Lightning
+/ui str dfc assemble       — Assemble reactor
+/ui str dfc stats          — Reactor stats
+/ui str magnet assemble    — Assemble magnet
+/ui str magnet stats       — Magnet stats
+/ui str lightning enable|disable|stats — Lightning
 ```
 
 ### Updates
 ```
-/mp checkver              — Check for updates
-/mp updatejar             — Download and install update
+/ui checkver              — Check for updates
+/ui updatejar             — Download and install update
 ```
 
 ### System (vanilla command overrides)
 ```
-/stop          → /mp power off
-/restart       → /mp power reboot
+/stop          → /ui power off
+/restart       → /ui power reboot
 /list          — Custom player list (vanish-aware)
 /reactor       — Reactor assembly
 ```
@@ -373,12 +372,12 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 
 | Permission | Description |
 |------------|-------------|
-| `mcplugin.admin` / `mcplugin.*` | All permissions |
-| `mcplugin.chat.filter.bypass` | Bypass chat filter |
-| `mcplugin.packetguard.bypass` | Bypass packet size limit |
-| `mcplugin.gmprotect.bypass` | Bypass game mode protection |
-| `mcplugin.creative.bypass` | Bypass creative item validation |
-| `mcplugin.show.brand` | Show server brand in F3 |
+| `ui.admin` / `ui.*` | All permissions |
+| `ui.chat.filter.bypass` | Bypass chat filter |
+| `ui.packetguard.bypass` | Bypass packet size limit |
+| `ui.gmprotect.bypass` | Bypass game mode protection |
+| `ui.creative.bypass` | Bypass creative item validation |
+| `ui.show.brand` | Show server brand in F3 |
 
 ---
 
@@ -431,7 +430,7 @@ The built JAR will be in `Jar/UltimateImprovments-<version>.jar`
 
 1. Delete the old datapack in `world/datapacks/`
 2. Replace the `.jar` with the new one
-3. Run `/mp reload`
+3. Run `/ui reload`
 4. If needed, update `config.yml` — auto-repair will add new sections
 
 > ⚠ If using placeholders in configs: replace `{...}` with `%...%` (the old format is no longer supported).

@@ -3,6 +3,7 @@ package com.ultimateimprovments.maintenance;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.DatabaseManager;
+import com.ultimateimprovments.util.Broadcast;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
@@ -315,7 +316,7 @@ public class MaintenanceManager implements Listener {
                 : "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>";
 
         String msg = MessagesManager.getString(key, def);
-        Bukkit.broadcast(MessageUtil.parse(msg));
+        Broadcast.send(msg);
     }
 
     private void broadcastScheduled(boolean enable, String timeStr) {
@@ -325,7 +326,7 @@ public class MaintenanceManager implements Listener {
                 : "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>";
 
         String msg = MessagesManager.getString(key, def).replace("%time%", timeStr);
-        Bukkit.broadcast(MessageUtil.parse(msg));
+        Broadcast.send(msg);
     }
 
     // =========================

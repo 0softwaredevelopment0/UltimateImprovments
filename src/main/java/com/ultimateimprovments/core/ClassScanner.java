@@ -15,7 +15,7 @@ import java.util.jar.JarFile;
  * <p>
  * Используется для авто-обнаружения:
  * <ul>
- *   <li>{@link SubCommandInfo} — субкоманды {@code /mp}</li>
+ *   <li>{@link SubCommandInfo} — субкоманды {@code /ui}</li>
  *   <li>{@link ModuleInfo} — модули плагина</li>
  * </ul>
  * <p>

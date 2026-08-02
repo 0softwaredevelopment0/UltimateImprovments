@@ -1,5 +1,7 @@
 package com.ultimateimprovments.core;
 
+import com.ultimateimprovments.command.PluginReloadCommand;
+import com.ultimateimprovments.command.SubCommandRegistry;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.whitelist.OpWhitelistManager;
 import com.ultimateimprovments.display.TabManager;
@@ -94,6 +96,10 @@ public class PluginShutdown {
 
         // Сбрасываем флаг startup, чтобы при следующем старте guard не сработал ложно
         PluginStartup.resetStartupFlag();
+
+        // Сбрасываем реестр субкоманд и флаг инициализации для корректного /ui reload
+        SubCommandRegistry.reset();
+        PluginReloadCommand.reset();
 
         ConsoleLogger.info("[Shutdown] Plugin state cleaned up.");
     }

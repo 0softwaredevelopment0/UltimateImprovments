@@ -1,7 +1,7 @@
 # Main plugin data
 name: UltimateImprovments
-description: A modular Minecraft plugin that adds authentication, advanced mechanics, custom crafting, and server protection.
-website: N/A
+description: UltimateImprovments
+website: https://github.com/rizer001
 version: ${project.version}
 api-version: "26.2"
 main: com.ultimateimprovments.core.Main

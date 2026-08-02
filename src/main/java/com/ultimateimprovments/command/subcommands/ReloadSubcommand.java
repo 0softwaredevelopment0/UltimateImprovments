@@ -64,10 +64,10 @@ public final class ReloadSubcommand {
                             long time = System.currentTimeMillis() - start;
                             sender.sendMessage("§2✔ §aSuccess: §7Reload complete.");
                             sender.sendMessage("§2✔ §aSuccess: §7Reload time: §e" + time + "ms");
-                            ConsoleLogger.info("[MCPLUGIN] Reload complete in " + time + "ms");
+                            ConsoleLogger.info("[ULTIMATEIMPROVMENTS] Reload complete in " + time + "ms");
                         } catch (Exception e) {
                             sender.sendMessage("§4❌ §cError: §7Reload failed! Check console.");
-                            ConsoleLogger.error("[MCPLUGIN] Reload failed: " + e.getMessage());
+                            ConsoleLogger.error("[ULTIMATEIMPROVMENTS] Reload failed: " + e.getMessage());
                             e.printStackTrace();
                         } finally {
                             reloadInProgress = false;

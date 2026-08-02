@@ -3,6 +3,7 @@ package com.ultimateimprovments.command.subcommands;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.punish.PunishJoinListener;
+import com.ultimateimprovments.util.AlertBroadcast;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -11,7 +12,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -40,20 +44,27 @@ public final class PunishSubcommand {
     private PunishSubcommand() {}
 
     // =========================
+    // CRASH CONFIRMATION — ожидающие подтверждения краши
+    // =========================
+
+    /** Игроки, ожидающие подтверждения краша (sender UUID → данные). */
+    private static final Map<UUID, PendingCrash> pendingCrashes = new HashMap<>();
+    /** Время ожидания подтверждения краша (мс). */
+    private static final long CONFIRM_TIMEOUT_MS = 30_000L;
+
+    private record PendingCrash(String targetName, long createdAt) {}
+
+    // =========================
     // BROADCAST TO MODERATORS — рассылка уведомлений о наказаниях
     // =========================
 
     /**
-     * Отправляет уведомление о наказании всем онлайн-игрокам с правом {@code ui.punish.notify}.
+     * Отправляет уведомление о наказании через {@link AlertBroadcast}
+     * всем игрокам с правом {@code ui.alerts} (или legacy {@code ui.punish.notify}).
      * Консольное логирование уже есть в {@link PunishmentManager#punish}.
      */
     private static void broadcastToModerators(String message) {
-        var parsed = MessageUtil.parse(message);
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p.hasPermission("ui.punish.notify")) {
-                p.sendMessage(parsed);
-            }
-        }
+        AlertBroadcast.send(message);
     }
 
     public static boolean execute(CommandSender sender, String[] args) {
@@ -857,13 +868,25 @@ public final class PunishSubcommand {
     }
 
     // =========================
-    // CRASH
+    // CRASH (с подтверждением)
     // =========================
     private static boolean handleCrash(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.crash")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to crash players!</red>"));
             return true;
         }
+
+        // Подтверждение/отмена
+        if (args.length >= 3) {
+            String sub = args[2].toLowerCase();
+            if (sub.equals("confirm")) {
+                return confirmCrash(sender);
+            }
+            if (sub.equals("cancel")) {
+                return cancelCrash(sender);
+            }
+        }
+
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ Usage: </red><white>/ui punish crash <player></white>"
@@ -877,6 +900,65 @@ public final class PunishSubcommand {
         if (target == null) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ Player</red> <yellow>" + targetName + "</yellow> <red>not found or not online!</red>"
+            ));
+            return true;
+        }
+
+        // 🛡 Failsafe: нельзя крашить самого себя
+        if (sender instanceof Player p && p.getUniqueId().equals(target.getUniqueId())) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ You cannot crash yourself!</red>"
+            ));
+            return true;
+        }
+
+        // Ленивая очистка истёкших подтверждений (без отдельного таска — карта ограничена)
+        long now = System.currentTimeMillis();
+        pendingCrashes.values().removeIf(p -> now - p.createdAt() > CONFIRM_TIMEOUT_MS);
+
+        // Сохраняем ожидающее подтверждение
+        pendingCrashes.put(getSenderId(sender), new PendingCrash(target.getName(), now));
+
+        sender.sendMessage(MessageUtil.parse(
+                "<red>⚠</red> <white>Are you sure you want to crash</white> <yellow>" + target.getName() + "</yellow><red>?</red>"
+        ));
+        sender.sendMessage(MessageUtil.parse(
+                "<red>This will overwhelm the player's client with a massive particle overload</red>"
+        ));
+        sender.sendMessage(MessageUtil.parse(
+                "<red>and may crash their game.</red>"
+        ));
+        sender.sendMessage(MessageUtil.parse(
+                "<click:run_command:/ui punish crash confirm><dark_green>[</dark_green><green>✔ Confirm</green><dark_green>]</dark_green></click>"
+                + " <dark_gray>|</dark_gray> "
+                + "<click:run_command:/ui punish crash cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"
+        ));
+        return true;
+    }
+
+    /** Выполняет подтверждённый краш. */
+    private static boolean confirmCrash(CommandSender sender) {
+        PendingCrash pending = pendingCrashes.remove(getSenderId(sender));
+
+        if (pending == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ No pending crash confirmation. Use </red><white>/ui punish crash <player></white><red> first.</red>"
+            ));
+            return true;
+        }
+
+        if (System.currentTimeMillis() - pending.createdAt() > CONFIRM_TIMEOUT_MS) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Confirmation expired (30s). Use </red><white>/ui punish crash <player></white><red> again.</red>"
+            ));
+            return true;
+        }
+
+        @SuppressWarnings("deprecation")
+        Player target = Bukkit.getPlayerExact(pending.targetName());
+        if (target == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Player</red> <yellow>" + pending.targetName() + "</yellow> <red>is no longer online!</red>"
             ));
             return true;
         }
@@ -898,6 +980,31 @@ public final class PunishSubcommand {
         return true;
     }
 
+    /** Отменяет ожидающий краш. */
+    private static boolean cancelCrash(CommandSender sender) {
+        PendingCrash removed = pendingCrashes.remove(getSenderId(sender));
+
+        if (removed == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ No pending crash confirmation to cancel.</red>"
+            ));
+            return true;
+        }
+
+        sender.sendMessage(MessageUtil.parse(
+                "<green>✔</green> <gray>Crash of</gray> <yellow>" + removed.targetName() + "</yellow> <gray>cancelled.</gray>"
+        ));
+        return true;
+    }
+
+    /** UUID отправителя (игрок или sentinel для консоли). */
+    private static UUID getSenderId(CommandSender sender) {
+        if (sender instanceof Player p) {
+            return p.getUniqueId();
+        }
+        return UUID.nameUUIDFromBytes(("console:" + sender.getName()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
     // =========================
     // USAGE
     // =========================
@@ -912,6 +1019,7 @@ public final class PunishSubcommand {
                 "<white>/ui punish unban <player></white>\n" +
                 "<white>/ui punish unmute <player></white>\n" +
                 "<white>/ui punish unwarn <player> <reason> <warnId></white>\n" +
+                "<white>/ui punish crash <player></white> <gray>(requires confirm)</gray>\n" +
                 "<gray>Flags: -time:<N>s|m|h|d, -permanent, -ip, -hw</gray>"
         ));
     }
@@ -931,7 +1039,14 @@ public final class PunishSubcommand {
             }
         } else if (args.length == 3) {
             String action = args[1].toLowerCase();
-            if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "unwarn", "listwarns", "crash").contains(action)) {
+            if (action.equals("crash")) {
+                // confirm/cancel + имена игроков
+                completions.add("confirm");
+                completions.add("cancel");
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    completions.add(p.getName());
+                }
+            } else if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "unwarn", "listwarns").contains(action)) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     completions.add(p.getName());
                 }

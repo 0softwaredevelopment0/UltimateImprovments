@@ -1,5 +1,6 @@
 package com.ultimateimprovments.enchantment;
 
+import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -11,8 +12,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -85,31 +84,16 @@ public class AOEEnchantmentListener implements Listener {
             // Break naturally with tool (respects Silk Touch, Fortune)
             block.breakNaturally(tool, true);
 
-            // Consume 1 durability for each AoE-broken block
-            damageTool(tool, 1);
+            // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
+            // which IntegrityListener redirects to decreaseItemIntegrity(item, 1, player))
+            ItemIntegrityAPI.decreaseItemIntegrity(tool, 1, player);
 
             brokenCount++;
 
-            if (brokenCount >= MAX_BLOCKS_PER_EVENT) break;
-        }
-    }
+            // Tool broke from integrity loss — stop, as vanilla would
+            if (tool.getAmount() <= 0) break;
 
-    /**
-     * Damages the tool item by the given amount.
-     */
-    private void damageTool(@NotNull ItemStack tool, int amount) {
-        ItemMeta meta = tool.getItemMeta();
-        if (meta instanceof Damageable damageable) {
-            int newDamage = damageable.getDamage() + amount;
-            int maxDamage = tool.getType().getMaxDurability();
-            if (newDamage >= maxDamage) {
-                // Tool breaks — remove it
-                tool.setAmount(0);
-                // Play break sound at player's location (handled by server)
-            } else {
-                damageable.setDamage(newDamage);
-                tool.setItemMeta(meta);
-            }
+            if (brokenCount >= MAX_BLOCKS_PER_EVENT) break;
         }
     }
 

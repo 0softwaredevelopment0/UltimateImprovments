@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Аннотация для авто-обнаружения субкоманд /mp.
+ * Аннотация для авто-обнаружения субкоманд /ui.
  * <p>
  * Класс должен implements {@link com.ultimateimprovments.command.SubCommand}.
  * После добавления аннотации команда автоматически регистрируется — не нужно

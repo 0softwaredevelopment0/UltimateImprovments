@@ -381,6 +381,20 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🔴 REDSTONE BLOCKS — вечно заблокированные редстоун-чанки (persist)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS redstone_blocks (
+                block_number INTEGER PRIMARY KEY,
+                world TEXT NOT NULL,
+                chunk_x INTEGER NOT NULL,
+                chunk_z INTEGER NOT NULL,
+                blocked_at INTEGER NOT NULL,
+                iterations INTEGER NOT NULL DEFAULT 0
+            );
+        """);
+
+        // =========================
         // 🔄 UPDATER STATE (последний SHA коммита / тег релиза)
         // =========================
         st.execute("""

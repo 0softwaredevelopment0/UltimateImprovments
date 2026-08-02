@@ -67,12 +67,15 @@ public class HelpSubCommand implements SubCommand {
         addCmd(sender, "/ui rtp [player]", "Random teleport");
         sender.sendMessage("");
 
+        addCmd(sender, "/ui redstone list|unlock", "Blocked redstone chunks");
         addCmd(sender, "/ui togglebb|togglesb|toggleping", "Toggle bossbar/scoreboard/ping");
         addCmd(sender, "/ui togglespeed|togglefly|toggleautocraft", "Toggle features");
         addCmd(sender, "/ui togglebind|toggleradview", "Toggle bind/radview");
         addCmd(sender, "/ui unlock book|sign", "Unlock book or sign");
         addCmd(sender, "/ui fly|god on|off", "Flight/God mode");
+        addCmd(sender, "/ui flyspeed <player> <0x-10x|-reset>", "Set fly speed");
         addCmd(sender, "/ui heal|feed [player]", "Heal/Feed");
+        addCmd(sender, "/ui sudo status|on|off|reset", "Sudo mode (dangerous actions)");
         sender.sendMessage("");
 
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));

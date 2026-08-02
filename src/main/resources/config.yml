@@ -20,8 +20,8 @@
 #   кастомный чат, таб, скорборд, MOTD, ваниш, авторизацию, радиацию,
 #   беспроводной редстоун, защиту от ботов, фильтр чата и многое другое.
 #
-#   Все команды: /mp <подкоманда>
-#   Справка:      /mp help
+#   Все команды: /ui <подкоманда>
+#   Справка:      /ui help
 #
 # ▸ ФАЙЛЫ КОНФИГУРАЦИИ
 #
@@ -274,72 +274,26 @@
 # ║                                                                  ║
 # ╚══════════════════════════════════════════════════════════════════╝
 #
-#   Кодовая панель — графический интерфейс для ввода кода/пароля.
-#   Используется в системе авторизации и других механиках.
+#   Кодовая панель — диалоговое окно (Custom Screen) для ввода кода/пароля.
+#   Открывается по /ui codepane. Цифровая клавиатура, экран ввода,
+#   кнопки «←», «✔ Подтвердить» и «✖ Отмена».
 #
 #   codepanel.max_length
 #     • Описание: Максимальная длина вводимого кода (в символах).
-#       10 — можно ввести до 10 символов. Больше 10 — может не влезть в GUI.
 #     • Значения: любое целое число от 1 до 20
 #     • По умолчанию: 10
 #
-#   codepanel.empty_char
-#     • Описание: Символ, отображаемый на пустых позициях ввода.
-#       Обычно дефис "-" или подчёркивание "_".
-#     • Значения: любой ОДИН символ
-#     • По умолчанию: "-"
-#
-#   codepanel.keyboard_offset
-#     • Описание: Сдвиг клавиатуры относительно центра экрана (в слотах).
-#       2 — стандартный отступ. Если панель выглядит съехавшей — меняйте.
-#     • Значения: любое целое число ≥ 0
-#     • По умолчанию: 2
-#
-#   codepanel.loading.step_ticks
-#     • Описание: Длительность одного шага анимации загрузки (в тиках).
-#       5 тиков = 0.25 сек. Меньше = быстрее анимация.
-#     • Значения: любое целое число ≥ 1
-#     • По умолчанию: 5
-#
-#   codepanel.loading.step
-#     • Описание: Количество шагов анимации загрузки перед открытием панели.
-#       10 шагов = около 2.5 секунд.
-#     • Значения: любое целое число ≥ 1
-#     • По умолчанию: 10
-#
-#   codepanel.loading.delay_after
-#     • Описание: Задержка ПОСЛЕ анимации загрузки (в тиках) перед
-#       фактическим открытием панели. 20 тиков = 1 секунда.
-#     • Значения: любое целое число ≥ 0
-#     • По умолчанию: 20
-#
 #   codepanel.enter_cooldown
-#     • Описание: Кулдаун между нажатиями кнопки Enter (в секундах).
+#     • Описание: Кулдаун между нажатиями кнопки Подтвердить (в секундах).
 #       Защита от спама попытками ввода кода.
 #     • Значения: любое целое число ≥ 0
 #     • По умолчанию: 3
-#
-#   codepanel.colors
-#     • Описание: Цвета элементов панели.
-#     • brackets:   цвет скобок вокруг поля ввода (DARK_RED)
-#     • code:       цвет вводимых символов (WHITE)
-#     • Значения: любой Bukkit Color (ChatColor) — RED, GREEN, DARK_RED, WHITE и т.д.
-#
-#   codepanel.buttons
-#     • Описание: Цвета кнопок панели.
-#     • normal:     цвет обычных цифр/букв (WHITE)
-#     • reset:      цвет кнопки сброса (DARK_RED)
-#     • enter:      цвет кнопки подтверждения (DARK_GREEN)
 #
 #   codepanel.sounds
 #     • Описание: Звуки для разных действий на панели.
 #     • digit:      звук нажатия цифры
 #     • backspace:  звук удаления символа
-#     • reset:      звук сброса всего кода
-#     • enter:      звук нажатия Enter
-#     • click:      звук клика по любой кнопке
-#     • step:       звук шага анимации загрузки
-#     • finish:     звук окончания анимации
+#     • enter:      звук нажатия Подтвердить
 #     • success:    звук успешного ввода кода
 #     • fail:       звук неверного кода
 #     • Значения: названия звуков Minecraft (см https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html)
@@ -844,32 +798,6 @@
 #     • По умолчанию: 4
 #
 #   ────────────────────────────────────────────────────────────────
-#   4.11. features.itemskill — АНТИЛАГ-ОЧИСТКА ПРЕДМЕТОВ
-#   ────────────────────────────────────────────────────────────────
-#
-#   features.itemskill.enabled
-#     • Описание: Автоматически удаляет скопления >6400 предметов на земле.
-#       Защита от лаг-машин и дюп-машин, создающих тысячи предметов.
-#     • Значения: true / false
-#     • По умолчанию: true
-#
-#   features.itemskill.item_limit
-#     • Описание: Лимит предметов в одной стаке на земле.
-#       6400 — если на одном блоке >6400 предметов, они удаляются.
-#     • Значения: любое целое число ≥ 1
-#     • По умолчанию: 6400
-#
-#   features.itemskill.interval_ticks
-#     • Описание: Интервал проверки (в тиках).
-#     • Значения: любое целое число ≥ 1
-#     • По умолчанию: 20
-#
-#   features.itemskill.warn_operators
-#     • Описание: Предупреждать ли операторов в чат при удалении предметов.
-#     • Значения: true / false
-#     • По умолчанию: true
-#
-#   ────────────────────────────────────────────────────────────────
 #   4.12. features.magnet — МАГНИТ
 #   ────────────────────────────────────────────────────────────────
 #
@@ -969,7 +897,7 @@
 #   features.modeprotect.bypass_permission
 #     • Описание: Право для обхода защиты.
 #       Игроки с этим правом могут менять режим в любых мирах.
-#     • По умолчанию: "mcplugin.gmprotect.bypass"
+#     • По умолчанию: "ui.gmprotect.bypass"
 #
 #   ────────────────────────────────────────────────────────────────
 #   4.14. features.shieldslowness — ЗАМЕДЛЕНИЕ ЩИТОМ
@@ -1086,14 +1014,10 @@
 #   features.unbreakable_breaker.enabled
 #     • Описание: Позволяет ломать неразрушимые блоки (бедрок, барьер)
 #       специальными инструментами. Требует правильную кирку.
+#       МЕХАНИКА: ломание ТОЛЬКО по кликам ЛКМ — 1 клик = 1 удар,
+#       % разрушения показывается в акшенбаре после каждого клика.
 #     • Значения: true / false
 #     • По умолчанию: true
-#
-#   features.unbreakable_breaker.hit_interval_ticks
-#     • Описание: Интервал между "ударами" по блоку (в тиках).
-#       4 — 5 ударов в секунду.
-#     • Значения: любое целое число ≥ 1
-#     • По умолчанию: 4
 #
 #   features.unbreakable_breaker.blocks.<МАТЕРИАЛ>:
 #     • Каждый тип блока (BEDROCK, BARRIER) настраивается отдельно.
@@ -1218,7 +1142,7 @@
 #
 #   creative_item_validator.bypass_permission
 #     • Право для обхода проверки.
-#     • По умолчанию: "mcplugin.creative.bypass"
+#     • По умолчанию: "ui.creative.bypass"
 #
 #   creative_item_validator.max_item_bytes
 #     • Описание: Максимальный размер предмета в байтах (10KB).
@@ -1320,6 +1244,53 @@
 #     • Значения: любое целое число ≥ 1
 #     • По умолчанию: 200
 #
+#   ────────────────────────────────────────────────────────────────
+#   4.24. features.sudo — SUDO MODE (ЗАЩИТА ОПАСНЫХ КОМАНД)
+#   ────────────────────────────────────────────────────────────────
+#
+#   Sudo-режим как на GitHub: игроки с правом ui.sudo при вводе опасных
+#   команд должны подтвердить sudo-паролем. После успешного ввода пароля
+#   включается sudo-сессия (по умолчанию 15 минут), во время которой
+#   опасные команды проходят без подтверждения.
+#
+#   features.sudo.enabled
+#     • Описание: Включает sudo-режим.
+#     • Значения: true / false
+#     • По умолчанию: true
+#
+#   features.sudo.session_minutes
+#     • Описание: Длительность sudo-сессии после ввода пароля (в минутах).
+#     • Значения: целое число ≥ 1
+#     • По умолчанию: 15
+#
+#   features.sudo.attempt_cooldown_seconds
+#     • Описание: Кулдаун между попытками ввода sudo-пароля (в секундах).
+#       Количество попыток не ограничено.
+#     • Значения: целое число ≥ 1
+#     • По умолчанию: 10
+#
+#   features.sudo.dangerous_commands
+#     • Описание: Список опасных команд (префиксы). Любая команда,
+#       начинающаяся с одного из этих префиксов, требует sudo.
+#       Примеры: ui punish crash, lp (и все подкоманды /lp),
+#       ui power off, ui power reboot (выключение/перезагрузка сервера).
+#     • Значения: список строк
+#     • По умолчанию: ui punish crash, lp, luckperms, ui power off,
+#       ui power reboot, mp power off, mp power reboot
+#
+#   Команды:
+#     /ui sudo status              — статус sudo-сессии
+#     /ui sudo on                  — открыть диалог ввода sudo-пароля
+#     /ui sudo off                 — выйти из sudo-режима
+#     /ui sudo reset               — запросить сброс пароля (подтверждает консоль)
+#     /ui sudo confirmreset <ник>  — консоль подтверждает сброс пароля
+#
+#   Право: ui.sudo — кто попадает под sudo-режим.
+#
+#   Сброс пароля: если игрок забыл sudo-пароль, он вводит /ui sudo reset,
+#   в консоль уходит запрос, консоль подтверждает через
+#   /ui sudo confirmreset <ник> — после этого игрок задаёт новый пароль.
+#
 #
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║                                                                  ║
@@ -1340,7 +1311,7 @@
 #     • Значения: любая строка
 #     • По умолчанию: "Paper"
 #
-#   Право для просмотра реального brand: mcplugin.show.brand
+#   Право для просмотра реального brand: ui.show.brand
 #
 #
 # ╔══════════════════════════════════════════════════════════════════╗
@@ -1351,11 +1322,11 @@
 #
 #   vanish.vanished_players
 #     • Описание: Список UUID игроков, которые находятся в ванише.
-#       Заполняется АВТОМАТИЧЕСКИ через /mp vanish <ник>.
+#       Заполняется АВТОМАТИЧЕСКИ через /ui vanish <ник>.
 #       НЕ РЕДАКТИРУЙТЕ вручную — испортите систему.
 #     • Значения: список UUID
 #
-#   Команда: /mp vanish <ник>
+#   Команда: /ui vanish <ник>
 #
 #
 # ╔══════════════════════════════════════════════════════════════════╗
@@ -1577,7 +1548,7 @@
 #
 #   power.intercept_commands
 #     • Описание: Перехватывать ванильные /stop и /restart.
-#       Если true — команды выводят подтверждение через /mp power.
+#       Если true — команды выводят подтверждение через /ui power.
 #       Если false — команды работают как обычно.
 #     • Значения: true / false
 #     • По умолчанию: true
@@ -1704,7 +1675,7 @@
 #
 #   packet_guard.bypass_permission
 #     • Описание: Право для обхода защиты.
-#     • По умолчанию: "mcplugin.packetguard.bypass"
+#     • По умолчанию: "ui.packetguard.bypass"
 #
 #   packet_guard.max_packet_size
 #     • Описание: Максимальный размер пакета в байтах.
@@ -1731,40 +1702,31 @@
 # ╚══════════════════════════════════════════════════════════════════╝
 #
 #   redstone_guard.enabled
-#     • Описание: Защита от перегрузки редстоуном. Ограничивает количество
-#       обновлений редстоуна за тик. Предотвращает лаг-машины.
+#     • Описание: Защита от перегрузки редстоуном. Если тик редстоуна
+#       нагружает сервер больше чем mspt_threshold — плагин блокирует чанк
+#       с наибольшим числом итераций НАВСЕГДА (до ручной разблокировки),
+#       затем пересчитывает нагрузку и повторяет, пока она не упадёт ниже.
 #     • Значения: true / false
 #     • По умолчанию: true
 #
 #   redstone_guard.mspt_threshold
 #     • Описание: Порог MSPT, после которого включается защита.
-#       50.0 — при MSPT > 50 защита начинает ограничивать редстоун.
+#       50.0 — при MSPT > 50 блокируются самые нагруженные редстоун-чанки.
 #     • Значения: дробное число ≥ 0
 #     • По умолчанию: 50.0
 #
-#   redstone_guard.global_iterations_limit
-#     • Описание: Глобальный лимит итераций редстоуна за тик.
-#       1024 — после 1024 обновлений редстоун отключается до следующего тика.
-#     • Значения: любое целое число ≥ 1
-#     • По умолчанию: 1024
-#
 #   redstone_guard.chunk_iterations_limit
-#     • Описание: Лимит итераций на один чанк за тик.
-#       10 — не больше 10 обновлений редстоуна в одном чанке за тик.
+#     • Описание: Минимальное число итераций редстоуна в чанке за тик, чтобы
+#       чанк считался кандидатом на блокировку.
+#       10 — чанки с >10 обновлениями редстоуна за тик блокируются.
 #     • Значения: любое целое число ≥ 1
 #     • По умолчанию: 10
 #
-#   redstone_guard.block_duration_seconds
-#     • Описание: Длительность блокировки редстоуна после превышения лимита
-#       (в секундах). 32 — на 32 секунды редстоун блокируется.
-#     • Значения: любое целое число ≥ 0
-#     • По умолчанию: 32
-#
-#   redstone_guard.chunks_per_tick
-#     • Описание: Сколько чанков обрабатывать за тик.
-#       1 — по одному чанку за тик (медленно, но стабильно).
-#     • Значения: любое целое число ≥ 1
-#     • По умолчанию: 1
+#   Управление заблокированными чанками (право: ui.command.redstone.list):
+#     /ui redstone list [страница] — список (5 чанков на страницу, кликабельные
+#       [<] [>] для листания, координаты центра чанка кликабельны — выполняют
+#       /tp @s, кнопка «Unlock» разблокирует чанк).
+#     /ui redstone unlock <номер>  — разблокировать чанк по номеру.
 #
 #
 # ╔══════════════════════════════════════════════════════════════════╗
@@ -1774,48 +1736,23 @@
 # ╚══════════════════════════════════════════════════════════════════╝
 #
 #   emergency_entity_kill.enabled
-#     • Описание: Автоматически убивает лишних сущностей при перегрузке
+#     • Описание: Автоматически удаляет лишних сущностей при перегрузке
 #       сервера. Защита от лаг-машин, спавнящих тысячи мобов.
 #     • Значения: true / false
 #     • По умолчанию: true
 #
 #   emergency_entity_kill.entity_limit
-#     • Описание: Лимит сущностей в мире. При превышении начинается отчистка.
-#       1000 — если в мире >1000 сущностей, лишние удаляются.
+#     • Описание: Минимальное количество сущностей, при котором начинается
+#       очистка (защита от ложных срабатываний на пустом сервере).
+#       1000 — очистка работает только если сущностей больше 1000.
 #     • Значения: любое целое число ≥ 1
 #     • По умолчанию: 1000
 #
-#   emergency_entity_kill.instant_kill_mspt
-#     • Описание: MSPT, при котором происходит МГНОВЕННОЕ убийство всех
-#       лишних сущностей (без накопления). 600.0 — очень сильный лаг.
-#     • Значения: дробное число ≥ 0
-#     • По умолчанию: 600.0
-#
-#   emergency_entity_kill.overload_mspt_threshold
-#     • Описание: Порог MSPT для начала накопления перегрузки.
-#       60.0 — если MSPT > 60, счётчик перегрузки растёт.
-#     • Значения: дробное число ≥ 0
-#     • По умолчанию: 60.0
-#
-#   emergency_entity_kill.max_overload_accumulation
-#     • Описание: Максимальное накопление перегрузки (когда начинается
-#       убийство сущностей). 200 — после 200 ед перегрузки сущности убиваются.
-#     • Значения: любое целое число ≥ 0
-#     • По умолчанию: 200
-#
-#   emergency_entity_kill.overload_increment_per_tick
-#     • Описание: Сколько единиц перегрузки добавляется за тик при
-#       превышении MSPT. 20 — каждую секунду лага +20.
-#     • Значения: любое целое число ≥ 0
-#     • По умолчанию: 20
-#
-#   emergency_entity_kill.remove_plasma_on_overload
-#     • Описание: Удалять ли плазменные шары (из плазма-пушки) при перегрузке.
-#     • Значения: true / false
-#     • По умолчанию: true
-#
-#   emergency_entity_kill.plasma_removal_mspt
-#     • Описание: MSPT, при котором плазма удаляется.
+#   emergency_entity_kill.mspt_threshold
+#     • Описание: Порог MSPT для начала очистки.
+#       50.0 — при MSPT > 50 удаляется тип сущностей с самой высокой
+#       нагрузкой; затем нагрузка пересчитывается и при необходимости
+#       удаляется следующий тип — пока MSPT не упадёт ниже порога.
 #     • Значения: дробное число ≥ 0
 #     • По умолчанию: 50.0
 #
@@ -1826,7 +1763,7 @@
 #     • По умолчанию: []
 #
 #   emergency_entity_kill.log
-#     • Описание: Логировать убийства сущностей.
+#     • Описание: Логировать удаления сущностей.
 #     • Значения: true / false
 #     • По умолчанию: true
 #
@@ -1892,7 +1829,7 @@
 #       regex могут содержать \p{L} — это НОРМАЛЬНО, эти pattern'ы
 #       встроены в код плагина и не зависят от config.yml.
 #
-#   Право байпасса: mcplugin.chat.filter.bypass
+#   Право байпасса: ui.chat.filter.bypass
 #
 #
 # ╔══════════════════════════════════════════════════════════════════╗
@@ -2003,7 +1940,7 @@
 #
 #   changedimmension.default_world
 #     • Описание: Мир, куда телепортируются игроки при входе без
-#       указания конкретного мира в /mp chgdim.
+#       указания конкретного мира в /ui chgdim.
 #     • Значения: название мира (папка)
 #     • По умолчанию: "pocketworld"
 #
@@ -2222,7 +2159,7 @@
 #     • Описание: Кастомный боссбар вверху экрана.
 #       Отображает информацию (онлайн, TPS, и т.д.) с анимированным
 #       прогрессом. Можно выключить если не нужен.
-#       Персональное вкл/выкл: /mp togglebb
+#       Персональное вкл/выкл: /ui togglebb
 #     • Значения: true / false
 #     • По умолчанию: true
 #
@@ -2317,8 +2254,8 @@
 #     • Описание: Включает систему технических работ.
 #       При включении режима техработ обычные игроки не могут зайти,
 #       только те, кто в вайтлисте техработ.
-#       Команды: /mp maint on|off
-#       Вайтлист: /mp maint whitelist add|remove|list
+#       Команды: /ui maint on|off
+#       Вайтлист: /ui maint whitelist add|remove|list
 #     • Значения: true / false
 #     • По умолчанию: true
 #
@@ -2498,39 +2435,39 @@
 # ║                                                                  ║
 # ╚══════════════════════════════════════════════════════════════════╝
 #
-#   Все команды: /mp <подкоманда> [аргументы]
+#   Все команды: /ui <подкоманда> [аргументы]
 #
 #   ───── ОСНОВНЫЕ ─────
-#   /mp reload              — перезагрузить плагин (конфиги + модули)
-#   /mp help                — справка по командам
+#   /ui reload              — перезагрузить плагин (конфиги + модули)
+#   /ui help                — справка по командам
 #
 #   ───── ЭНЕРГИЯ ─────
-#   /mp power off           — выключить сервер (с подтверждением)
-#   /mp power reboot        — перезагрузить сервер
-#   /mp power undo          — отменить запрос на выкл/перезагрузку
-#   /mp power cancel        — отменить (синоним undo)
+#   /ui power off           — выключить сервер (с подтверждением)
+#   /ui power reboot        — перезагрузить сервер
+#   /ui power undo          — отменить запрос на выкл/перезагрузку
+#   /ui power cancel        — отменить (синоним undo)
 #
 #   ───── ТЕЛЕПОРТАЦИЯ ─────
-#   /mp chgdim [мир]        — сменить измерение
-#   /mp askcords <ник>      — запросить координаты игрока
+#   /ui chgdim [мир]        — сменить измерение
+#   /ui askcords <ник>      — запросить координаты игрока
 #
 #   ───── ДОМА ─────
-#   /mp sethome <название>  — установить домашнюю точку
-#   /mp home <название>     — телепортироваться домой
-#   /mp delhome <название>  — удалить дом
-#   /mp listhomes           — список своих домов
-#   /mp ophomels <ник>      — посмотреть дома игрока (только OP)
-#   /mp opdelhome <ник> <название> — удалить дом игрока (только OP)
+#   /ui sethome <название>  — установить домашнюю точку
+#   /ui home <название>     — телепортироваться домой
+#   /ui delhome <название>  — удалить дом
+#   /ui listhomes           — список своих домов
+#   /ui ophomels <ник>      — посмотреть дома игрока (только OP)
+#   /ui opdelhome <ник> <название> — удалить дом игрока (только OP)
 #
 #   ───── НАКАЗАНИЯ ─────
-#   /mp punish ban <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
-#   /mp punish mute <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
-#   /mp punish kick <ник> <причина> [-ip] [-hw]
-#   /mp punish warn <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
-#   /mp punish unban <ник>
-#   /mp punish unmute <ник>
-#   /mp punish listwarns [ник]
-#   /mp punish unwarn <ник> <warnId>
+#   /ui punish ban <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
+#   /ui punish mute <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
+#   /ui punish kick <ник> <причина> [-ip] [-hw]
+#   /ui punish warn <ник> <причина> [-time:N] [-permanent] [-ip] [-hw]
+#   /ui punish unban <ник>
+#   /ui punish unmute <ник>
+#   /ui punish listwarns [ник]
+#   /ui punish unwarn <ник> <warnId>
 #
 #   Флаги наказаний:
 #     -time:<N>s|m|h|d  — временное (напр -time:30m, -time:7d)
@@ -2539,61 +2476,61 @@
 #     -hw                — наказание по железу (HWID)
 #
 #   ───── РЕПОРТЫ ─────
-#   /mp reports list                          — список репортов
-#   /mp reports add <id> <name>               — добавить в очередь модерации
-#   /mp reports remove <id>                   — удалить из очереди
-#   /mp modreport <name>                      — открыть модерацию репорта
+#   /ui reports list                          — список репортов
+#   /ui reports add <id> <name>               — добавить в очередь модерации
+#   /ui reports remove <id>                   — удалить из очереди
+#   /ui modreport <name>                      — открыть модерацию репорта
 #
 #   ───── ВАЙТЛИСТ / БЛЭКЛИСТ ─────
-#   /mp whitelist on|off|add <ник>|remove <ник>|list
-#   /mp blacklist on|off|add <ник>|remove <ник>|list
+#   /ui whitelist on|off|add <ник>|remove <ник>|list
+#   /ui blacklist on|off|add <ник>|remove <ник>|list
 #
 #   ───── OP ВАЙТЛИСТ ─────
-#   /mp opwhitelist on|off|add <ник>|remove <ник>|list
+#   /ui opwhitelist on|off|add <ник>|remove <ник>|list
 #
 #   ───── УПРАВЛЕНИЕ OP ─────
-#   /mp chgop [toggle|confirm <ник>]  — управление операторами
-#     • /mp chgop — показать список игроков с OP-статусом
-#     • /mp chgop toggle <ник> — показать подтверждение смены OP
-#     • /mp chgop confirm <ник> — подтвердить и выполнить
+#   /ui chgop [toggle|confirm <ник>]  — управление операторами
+#     • /ui chgop — показать список игроков с OP-статусом
+#     • /ui chgop toggle <ник> — показать подтверждение смены OP
+#     • /ui chgop confirm <ник> — подтвердить и выполнить
 #     • Свой ник в списке подсвечивается голубым ★ YOU
 #     • Нельзя снять OP у самого себя (failsafe)
 #
 #   ───── ТЕХРАБОТЫ ─────
-#   /mp maint on|off|whitelist add <ник>|whitelist remove <ник>|whitelist list
+#   /ui maint on|off|whitelist add <ник>|whitelist remove <ник>|whitelist list
 #
 #   ───── ПРОЧЕЕ ─────
-#   /mp vanish <ник>        — включить/выключить ваниш
-#   /mp suicide             — суицид (с подтверждением)
-#   /mp togglebb            — вкл/выкл персональный боссбар
-#   /mp togglesb            — вкл/выкл персональный скорборд
-#   /mp togglefly           — вкл/выкл полёт
-#   /mp checkrad [ник]      — проверить радиацию
-#   /mp setrad <ник> <N>    — установить радиацию
-#   /mp toggleradview       — вкл/выкл дозиметр в actionbar
-#   /mp codepane [название] — открыть кодовую панель
-#   /mp notes               — открыть заметки
-#   /mp checkver            — проверить обновления плагина
-#   /mp bc <сообщение>      —广播 (broadcast) сообщение
-#   /mp item int set|add|list <ник> <предмет> [кол-во]  — управление предметами
+#   /ui vanish <ник>        — включить/выключить ваниш
+#   /ui suicide             — суицид (с подтверждением)
+#   /ui togglebb            — вкл/выкл персональный боссбар
+#   /ui togglesb            — вкл/выкл персональный скорборд
+#   /ui togglefly           — вкл/выкл полёт
+#   /ui checkrad [ник]      — проверить радиацию
+#   /ui setrad <ник> <N>    — установить радиацию
+#   /ui toggleradview       — вкл/выкл дозиметр в actionbar
+#   /ui codepane [название] — открыть кодовую панель
+#   /ui notes               — открыть заметки
+#   /ui checkver            — проверить обновления плагина
+#   /ui bc <сообщение>      —广播 (broadcast) сообщение
+#   /ui item int set|add|list <ник> <предмет> [кол-во]  — управление предметами
 #
 #   ───── ИНВЕНТАРЬ ─────
-#   /mp invsee <игрок>      — просмотр и редактирование инвентаря игрока
-#   /mp endersee <игрок>    — просмотр чужого эндер-сундука (без урона)
+#   /ui invsee <игрок>      — просмотр и редактирование инвентаря игрока
+#   /ui endersee <игрок>    — просмотр чужого эндер-сундука (без урона)
 #
 #   ───── СТРУКТУРЫ ─────
-#   /mp str dfc stats               — статистика реактора
-#   /mp str dfc assemble            — собрать реактор
-#   /mp str magnet stats            — статистика магнита
-#   /mp str magnet assemble         — собрать магнит
-#   /mp str lightning stats         — статистика молнии
-#   /mp str lightning enable        — включить молнию
-#   /mp str lightning disable       — выключить молнию
+#   /ui str dfc stats               — статистика реактора
+#   /ui str dfc assemble            — собрать реактор
+#   /ui str magnet stats            — статистика магнита
+#   /ui str magnet assemble         — собрать магнит
+#   /ui str lightning stats         — статистика молнии
+#   /ui str lightning enable        — включить молнию
+#   /ui str lightning disable       — выключить молнию
 #
 #   ───── МОДУЛИ ─────
-#   /mp modules list        — список модулей
-#   /mp modules enable <имя>  — включить модуль
-#   /mp modules disable <имя> — отключить модуль
+#   /ui modules list        — список модулей
+#   /ui modules enable <имя>  — включить модуль
+#   /ui modules disable <имя> — отключить модуль
 #
 #
 # ╔══════════════════════════════════════════════════════════════════╗
@@ -2602,31 +2539,31 @@
 # ║                                                                  ║
 # ╚══════════════════════════════════════════════════════════════════╝
 #
-#   mcplugin.admin               — все права (по умолчанию у OP)
-#   mcplugin.command.punish      — наказания
-#   mcplugin.command.punish.ban — баны
-#   mcplugin.command.punish.mute — муты
-#   mcplugin.command.punish.kick — кики
-#   mcplugin.command.punish.warn — варны
-#   mcplugin.command.punish.listwarns.self   — свои варны
-#   mcplugin.command.punish.listwarns.other  — чужие варны
-#   mcplugin.command.reports     — управление репортами
-#   mcplugin.command.whitelist   — управление вайтлистом
-#   mcplugin.command.blacklist   — управление блэклистом
-#   mcplugin.command.opwhitelist — управление OP вайтлистом
-#   mcplugin.command.maintenance — техработы
-#   mcplugin.command.vanish      — ваниш
-#   mcplugin.command.reload      — перезагрузка плагина
-#   mcplugin.command.plugins     — /pl, /plugins (если скрыты)
-#   mcplugin.command.version     — /ver, /version (если скрыты)
-#   mcplugin.command.chgop       — управление OP (/mp chgop)
-#   mcplugin.chat.filter.bypass  — байпас фильтра чата
-#   mcplugin.chat.custom.bypass  — байпас кастомного чата
-#   mcplugin.packetguard.bypass  — байпас PacketGuard
-#   mcplugin.creative.bypass     — байпас валидатора предметов
-#   mcplugin.gmprotect.bypass    — байпас защиты режима игры
-#   mcplugin.show.brand          — видеть реальный brand сервера
-#   mcplugin.punish.notify       — получать уведомления о наказаниях
+#   ui.admin               — все права (по умолчанию у OP)
+#   ui.command.punish      — наказания
+#   ui.command.punish.ban — баны
+#   ui.command.punish.mute — муты
+#   ui.command.punish.kick — кики
+#   ui.command.punish.warn — варны
+#   ui.command.punish.listwarns.self   — свои варны
+#   ui.command.punish.listwarns.other  — чужие варны
+#   ui.command.reports     — управление репортами
+#   ui.command.whitelist   — управление вайтлистом
+#   ui.command.blacklist   — управление блэклистом
+#   ui.command.opwhitelist — управление OP вайтлистом
+#   ui.command.maintenance — техработы
+#   ui.command.vanish      — ваниш
+#   ui.command.reload      — перезагрузка плагина
+#   ui.command.plugins     — /pl, /plugins (если скрыты)
+#   ui.command.version     — /ver, /version (если скрыты)
+#   ui.command.chgop       — управление OP (/ui chgop)
+#   ui.chat.filter.bypass  — байпас фильтра чата
+#   ui.chat.custom.bypass  — байпас кастомного чата
+#   ui.packetguard.bypass  — байпас PacketGuard
+#   ui.creative.bypass     — байпас валидатора предметов
+#   ui.gmprotect.bypass    — байпас защиты режима игры
+#   ui.show.brand          — видеть реальный brand сервера
+#   ui.punish.notify       — получать уведомления о наказаниях
 #
 #
 # ╔══════════════════════════════════════════════════════════════════╗
@@ -2785,7 +2722,7 @@
 #   @everyone       — пинг всех онлайн (кроме себя)
 #   @<ник>          — пинг конкретного игрока (напр @Steve)
 #   @non-op         — пинг всех без OP
-#   @is-admin       — пинг всех с правом mcplugin.admin/mcplugin.*
+#   @is-admin       — пинг всех с правом ui.admin/ui.*
 #   @is-non-admin   — пинг всех без админ-прав
 #
 #   Пропингованные игроки слышат звук и получают уведомление.
@@ -2922,27 +2859,27 @@
 #
 #   ───── ВАНИЛЬНЫЙ /whitelist ─────
 #   Ванильная команда /whitelist ЗАБЛОКИРОВАНА.
-#   Используйте: /mp whitelist on|off|add|remove|list
+#   Используйте: /ui whitelist on|off|add|remove|list
 #
 #   ───── ВАНИЛЬНЫЙ /op и /deop ─────
 #   Ванильные /op и /deop ЗАБЛОКИРОВАНЫ.
-#   Используйте: /mp chgop (графический интерфейс)
+#   Используйте: /ui chgop (графический интерфейс)
 #
 #   ───── ВАНИЛЬНЫЙ /stop и /restart ─────
 #   Перехвачены плагином (с подтверждением).
-#   Используйте: /mp power off и /mp power reboot
+#   Используйте: /ui power off и /ui power reboot
 #
 #   ───── БАЗА ДАННЫХ ─────
 #   Все данные хранятся в plugins/UltimateImprovments/database.db (SQLite).
 #   Рекомендуется регулярное резервное копирование!
 #
 #   ───── ДАТАПАК ─────
-#   Плагин автоматически устанавливает датапак MC-Datapack
+#   Плагин автоматически устанавливает датапак UI-Datapack
 #   в папку world/datapacks/ при первом запуске.
 #   Датапак содержит кастомные рецепты, функции и структуры.
 #
 #   ───── ПЕРЕЗАГРУЗКА ─────
-#   После изменения config.yml используйте /mp reload.
+#   После изменения config.yml используйте /ui reload.
 #   Это перезагрузит конфиги и переинициализирует модули.
 #   Полная перезагрузка сервера НЕ ТРЕБУЕТСЯ (но возможна).
 #
@@ -2998,28 +2935,11 @@ energy:
 
 codepanel:
   max_length: 10
-  empty_char: "-"
-  keyboard_offset: 2
-  loading:
-    step_ticks: 5
-    step: 10
-    delay_after: 20
   enter_cooldown: 3
-  colors:
-    brackets: DARK_RED
-    code: WHITE
-  buttons:
-    normal: WHITE
-    reset: DARK_RED
-    enter: DARK_GREEN
   sounds:
     digit: UI_BUTTON_CLICK
     backspace: BLOCK_DISPENSER_FAIL
-    reset: BLOCK_LEVER_CLICK
     enter: ENTITY_EXPERIENCE_ORB_PICKUP
-    click: UI_BUTTON_CLICK
-    step: BLOCK_NOTE_BLOCK_HAT
-    finish: BLOCK_NOTE_BLOCK_PLING
     success: ENTITY_PLAYER_LEVELUP
     fail: BLOCK_ANVIL_LAND
 
@@ -3143,12 +3063,6 @@ features:
     enabled: true
     damage: 4
 
-  itemskill:
-    enabled: true
-    item_limit: 6400
-    interval_ticks: 20
-    warn_operators: true
-
   magnet:
     enabled: true
 
@@ -3188,7 +3102,7 @@ features:
       - "world_nether"
       - "world_the_end"
 
-    bypass_permission: "mcplugin.gmprotect.bypass"
+    bypass_permission: "ui.gmprotect.bypass"
 
   shieldslowness:
     enabled: true
@@ -3223,8 +3137,6 @@ features:
 
   unbreakable_breaker:
     enabled: true
-
-    hit_interval_ticks: 4
 
     blocks:
 
@@ -3359,7 +3271,7 @@ features:
 
   creative_item_validator:
     enabled: true
-    bypass_permission: "mcplugin.creative.bypass"
+    bypass_permission: "ui.creative.bypass"
     max_item_bytes: 10240
     max_pdc_keys: 30
     max_lore_lines: 50
@@ -3388,6 +3300,22 @@ features:
   waypoint:
     enabled: true
     interval_ticks: 200
+
+  sudo:
+    enabled: true
+
+    session_minutes: 15
+
+    attempt_cooldown_seconds: 10
+
+    dangerous_commands:
+      - "ui punish crash"
+      - "lp"
+      - "luckperms"
+      - "ui power off"
+      - "ui power reboot"
+      - "mp power off"
+      - "mp power reboot"
 
 brand_spoof:
   enabled: true
@@ -3516,7 +3444,7 @@ suicide:
 packet_guard:
   enabled: true
 
-  bypass_permission: "mcplugin.packetguard.bypass"
+  bypass_permission: "ui.packetguard.bypass"
 
   max_packet_size: 7000000
 
@@ -3530,37 +3458,19 @@ proxy_server:
   # Логировать блокированные команды прокси
   log_commands: true
 
-  # Сообщение при отсутствии права mcplugin.proxy.server
+  # Сообщение при отсутствии права ui.proxy.server
   no_permission_message: "<red>❌ You don't have permission to switch servers!</red>"
 
 redstone_guard:
   enabled: true
   mspt_threshold: 50.0
-
-  global_iterations_limit: 1024
   chunk_iterations_limit: 10
-  block_duration_seconds: 32
-  chunks_per_tick: 1
 
 emergency_entity_kill:
   enabled: true
-
   entity_limit: 1000
-
-  instant_kill_mspt: 600.0
-
-  overload_mspt_threshold: 60.0
-
-  max_overload_accumulation: 200
-
-  overload_increment_per_tick: 20
-
-  remove_plasma_on_overload: true
-
-  plasma_removal_mspt: 50.0
-
+  mspt_threshold: 50.0
   kill_worlds: []
-
   log: true
 
 server_overload_warning:
@@ -3657,7 +3567,7 @@ motd:
     enabled: false
     lines:
       - "<gradient:#00AAFF:#FF55FF>✧ UltimateImprovments ✧</gradient>"
-      - "<dark_gray>discord.gg/mcplugin</dark_gray>"
+      - "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"
 
   online_counter:
     current_online:
@@ -3695,7 +3605,7 @@ tab:
   footer:
     - "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"
     - "<gray>  Online: <white>%online%</white><gray>/%max_players%  •  TPS: <white>%tps%</white></gray>"
-    - "<gray>  Discord: <aqua>discord.gg/mcplugin</aqua></gray>"
+    - "<gray>  Discord: <aqua>discord.gg/ultimateimprovments</aqua></gray>"
 
   player_list:
     objective_enabled: true
@@ -3733,7 +3643,7 @@ scoreboard:
         - "<gray>Your ping: <white>%player_ping%ms</white></gray>"
         - "<gray>World: <white>%world_name%</white></gray>"
         - ""
-        - "<dark_gray>discord.gg/mcplugin</dark_gray>"
+        - "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"
 
 bossbar:
   enabled: true
@@ -3863,7 +3773,7 @@ economy:
 # =========================
 # ❤️ HEAL / FEED — восстановление здоровья и голода
 # =========================
-# Команды: /mp heal <player>, /mp feed <player>
+# Команды: /ui heal <player>, /ui feed <player>
 # heal_amount = 0 → всё хп, feed_amount = 0 → вся сытость
 heal_feed:
   enabled: true
@@ -3872,7 +3782,7 @@ heal_feed:
 
 spawn:
   mode: legit
-  # location будет заполнена через /mp setspawn
+  # location будет заполнена через /ui setspawn
 
 # =========================
 # 🛡 ANTICHEAT — модульная система обнаружения читов
@@ -3883,14 +3793,14 @@ spawn:
 #
 # Античит НЕ банит и НЕ кикает — только:
 #   log     — запись в консоль
-#   notify  — уведомление админам (perm: mcplugin.anticheat.notify)
+#   notify  — уведомление админам (perm: ui.anticheat.notify)
 #   setback — телепорт на последнюю безопасную позицию
 # =========================
 anticheat:
   enabled: true
 
   # Игроки с этим пермишеном полностью пропускают все проверки
-  bypass_permission: "mcplugin.anticheat.bypass"
+  bypass_permission: "ui.anticheat.bypass"
 
   # Кулдаун между действиями для одного игрока (мс)
   action_cooldown_ms: 100
@@ -4446,7 +4356,7 @@ block_friction:
 # 🛡 PROTECTION BLOCK (Блок защиты) — физический блок,
 # который защищает территорию вокруг установки.
 # Крафт регистрируется через data-pack + datapack-рецепт.
-# В админке выдаётся через /mp protection give <player>.
+# В админке выдаётся через /ui protection give <player>.
 # =========================
 protection:
   # Включён ли весь модуль защитных блоков
@@ -4495,7 +4405,7 @@ protection:
 
   # Админские команды
   admin:
-    # Разрешить ли /mp protection give <player>
+    # Разрешить ли /ui protection give <player>
     give_allowed: true
 
 plugin_version: "1.8.128"
@@ -4547,11 +4457,11 @@ messages:
       session_active: "<gray>Enjoy your game! Session active for 1 hour.</gray>"
       force_login_message: "<green>✔</green> <white>You have been force authorized by an administrator!</white>"
       rate_limit: "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
-      try_again_hint: "<gray>Try again: </gray><gold>/mp auth login <password></gold>"
+      try_again_hint: "<gray>Try again: </gray><gold>/ui auth login <password></gold>"
       already_authenticated: "<gold>✦</gold> <white>You are already logged in!</white>"
       login_title: "<gold>✦</gold> <white>Please log in to continue.</white>"
       register_title: "<gold>✦</gold> <white>Choose a password to register.</white>"
-      logout_usage: "<gray>Use: </gray><gold>/mp auth logout <password></gold>"
+      logout_usage: "<gray>Use: </gray><gold>/ui auth logout <password></gold>"
   
   protection:
     gui:
@@ -4595,31 +4505,31 @@ messages:
   
     admin:
       system_disabled: "<red>❌ Authorization system is disabled in config!</red>"
-      usage: "<red>❌ Usage: </red><white>/mp auth forcelogin|resetauth|chgpass|delsession|logout <nick></white>"
+      usage: "<red>❌ Usage: </red><white>/ui auth forcelogin|resetauth|chgpass|delsession|logout <nick></white>"
       unknown_subcommand: "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
       player_only: "<red>❌ Only players can use this command!</red>"
       not_authenticated: "<red>❌ You are not logged in!</red>"
       forcelogin_no_permission: "<red>❌ You don't have permission to force log in!</red>"
-      forcelogin_usage: "<red>❌ Usage: </red><white>/mp auth forcelogin <nick></white>"
+      forcelogin_usage: "<red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>"
       forcelogin_not_registered: "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
       forcelogin_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
       forcelogin_success: "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>"
       forcelogin_fail: "<red>❌ Failed to authorize player</red> <yellow>%player%</yellow>"
       resetauth_no_permission: "<red>❌ You don't have permission to reset authorization!</red>"
-      resetauth_usage: "<red>❌ Usage: </red><white>/mp auth resetauth <nick></white>"
+      resetauth_usage: "<red>❌ Usage: </red><white>/ui auth resetauth <nick></white>"
       resetauth_not_registered: "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
       resetauth_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
       resetauth_success: "<green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</white>"
       resetauth_fail: "<red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>"
       delsession_no_permission: "<red>❌ You don't have permission to reset sessions!</red>"
-      delsession_usage: "<red>❌ Usage: </red><white>/mp auth delsession <nick></white>"
+      delsession_usage: "<red>❌ Usage: </red><white>/ui auth delsession <nick></white>"
       delsession_not_registered: "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
       delsession_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
       delsession_success: "<green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>"
       delsession_info: "<gray>They will need to enter their password again on next login.</gray>"
       delsession_fail: "<red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>"
       chgpass_no_permission: "<red>❌ You don't have permission to change passwords!</red>"
-      chgpass_usage: "<red>❌ Usage: </red><white>/mp auth chgpass <nick> <new_password></white>"
+      chgpass_usage: "<red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>"
       chgpass_success: "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
       chgpass_session_reset: "<gray>Session reset — player must log in again.</gray>"
       chgpass_fail: "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
@@ -4632,7 +4542,6 @@ messages:
   
   codepanel:
     messages:
-      progress: "<white>Verifying code: <gray>%progress%%</gray></white>"
       success: "<dark_green>✔</dark_green> <green>Success:</green> <gray>Correct code!</gray>"
       error: "<dark_red>❌</dark_red> <red>Error:</red> <gray>Incorrect code!</gray>"
       no_config: "<dark_red>❌</dark_red> <red>Error:</red> <gray>No keys found in the database!</gray>"
@@ -4640,6 +4549,7 @@ messages:
       cooldown: "<red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before entering again!</red>"
       no_access: "<red>❌ You don't have access to this code!</red>"
       wrong_code: "<red>❌ Incorrect code!</red>"
+      cancelled: "<gray>✖ Code entry cancelled.</gray>"
   
     key:
       no_permission: "<red>❌ You don't have permission to manage code panel keys!</red>"
@@ -4648,9 +4558,9 @@ messages:
       no_permission_list: "<red>❌ You don't have permission to list keys!</red>"
       no_permission_remove: "<red>❌ You don't have permission to remove keys!</red>"
       no_permission_modify: "<red>❌ You don't have permission to modify keys!</red>"
-      usage_add: "<red>❌ Usage: </red><white>/mp codepane key add <name> <code> [flags]</white>"
-      usage_remove: "<red>❌ Usage: </red><white>/mp codepane key remove <name></white>"
-      usage_modify: "<red>❌ Usage: </red><white>/mp codepane key modify <name> <new_code> [flags]</white>"
+      usage_add: "<red>❌ Usage: </red><white>/ui codepane key add <name> <code> [flags]</white>"
+      usage_remove: "<red>❌ Usage: </red><white>/ui codepane key remove <name></white>"
+      usage_modify: "<red>❌ Usage: </red><white>/ui codepane key modify <name> <new_code> [flags]</white>"
       duplicate_flag: "<red>❌ Duplicate flag: %flag%! Use each flag only once.</red>"
       invalid_attempts: "<red>❌ attempts must be >= 1</red>"
       invalid_attempts_format: "<red>❌ Invalid attempts format: %value%</red>"
@@ -4676,20 +4586,20 @@ messages:
   
     help:
       header: "<gold>=== <white>Code Panel Key Management</white> ==="
-      add: "<yellow>/mp codepane key add <gray><name> <code> [flags]</gray></yellow>"
+      add: "<yellow>/ui codepane key add <gray><name> <code> [flags]</gray></yellow>"
       add_desc: "<gray> Add a new key</gray>"
-      list: "<yellow>/mp codepane key list</yellow>"
+      list: "<yellow>/ui codepane key list</yellow>"
       list_desc: "<gray> List all keys</gray>"
-      remove: "<yellow>/mp codepane key remove <gray><name></gray></yellow>"
+      remove: "<yellow>/ui codepane key remove <gray><name></gray></yellow>"
       remove_desc: "<gray> Remove a key</gray>"
-      modify: "<yellow>/mp codepane key modify <gray><name> <new_code> [flags]</gray></yellow>"
+      modify: "<yellow>/ui codepane key modify <gray><name> <new_code> [flags]</gray></yellow>"
       modify_desc: "<gray> Modify a key</gray>"
       permissions_header: "<gray>Required permissions:</gray>"
-      perm_base: "<gray>mcplugin.command.codepane.key — base</gray>"
-      perm_add: "<gray> mcplugin.command.codepane.key.add — add</gray>"
-      perm_list: "<gray> mcplugin.command.codepane.key.list — list</gray>"
-      perm_remove: "<gray> mcplugin.command.codepane.key.remove — remove</gray>"
-      perm_modify: "<gray> mcplugin.command.codepane.key.modify — modify</gray>"
+      perm_base: "<gray>ui.command.codepane.key — base</gray>"
+      perm_add: "<gray> ui.command.codepane.key.add — add</gray>"
+      perm_list: "<gray> ui.command.codepane.key.list — list</gray>"
+      perm_remove: "<gray> ui.command.codepane.key.remove — remove</gray>"
+      perm_modify: "<gray> ui.command.codepane.key.modify — modify</gray>"
       flags_header: "<gray>Flags:</gray>"
       flag_attempts: "<gray> attempts:<N>     — delete key after N successful uses</gray>"
       flag_time: "<gray> time:<N>s|m|h|d  — delete key after N seconds/minutes/hours/days</gray>"
@@ -4700,10 +4610,10 @@ messages:
       flag_command: "<gray>command:(<cmd with spaces>),(<cmd 2>)  — commands separated by commas</gray>"
       flag_command_entity: "<gray>  %entity% — replaced with player's nickname</gray>"
       examples_header: "<gray>Examples:</gray>"
-      example1: "<gray> /mp codepane key add mydoor 1234 attempts:3 time:1h</gray>"
-      example2: "<gray> /mp codepane key add admin 7777 whitelist:Steve,Alex</gray>"
-      example3: "<gray> /mp codepane key add warp 4321 command:(say %entity% got access)</gray>"
-      example4: "<gray> /mp codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
+      example1: "<gray> /ui codepane key add mydoor 1234 attempts:3 time:1h</gray>"
+      example2: "<gray> /ui codepane key add admin 7777 whitelist:Steve,Alex</gray>"
+      example3: "<gray> /ui codepane key add warp 4321 command:(say %entity% got access)</gray>"
+      example4: "<gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
   
   suicide:
     messages:
@@ -4712,7 +4622,7 @@ messages:
       warning_title: "<dark_red>☠</dark_red> <red>WARNING!</red>"
       warning_text: "<white>You are about to commit suicide!</white>"
       warning_no_cancel: "<red>⚠ This cannot be undone after confirmation!</red>"
-      warning_confirm_hint: "<yellow>Type</yellow> <white>/mp suicide</white> <yellow>again to confirm and start the countdown.</yellow>"
+      warning_confirm_hint: "<yellow>Type</yellow> <white>/ui suicide</white> <yellow>again to confirm and start the countdown.</yellow>"
       warning_cancel_hint: "<gray>If you change your mind — just wait</gray> <yellow>%timeout%</yellow> <gray>seconds and the request will expire.</gray>"
       timeout_message: "<yellow>ℹ</yellow> <white>Suicide request cancelled (timed out).</white>"
       confirmed_title: "<dark_red>☠</dark_red> <red>Countdown started!</red>"
@@ -4726,7 +4636,7 @@ messages:
   changedimmension:
     messages:
       success: "<green>✔</green> <white>Teleportation to</white> <yellow>%world%</yellow> <white>completed!</white>"
-      return_info: "<yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/mcplugin changedimmension</white> <gray>again.</gray>"
+      return_info: "<yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/ui chgdim</white> <gray>again.</gray>"
       return_success: "<green>✔</green> <white>You have returned to your starting point!</white>"
       return_error: "<dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>"
       no_permission: "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>"
@@ -4749,27 +4659,27 @@ messages:
     no_permission_listhomes: "<red>❌ You don't have permission to view the home list!</red>"
     no_permission_ophomels: "<red>❌ You don't have permission to view other players' homes!</red>"
     no_permission_opdelhome: "<red>❌ You don't have permission to delete other players' homes!</red>"
-    usage_sethome: "<red>❌ Usage: </red><white>/mp sethome <name></white>"
-    usage_home: "<red>❌ Usage: </red><white>/mp home <name></white>"
-    usage_delhome: "<red>❌ Usage: </red><white>/mp delhome <name></white>"
-    usage_ophomels: "<red>❌ Usage: </red><white>/mp ophomels <player></white>"
-    usage_opdelhome: "<red>❌ Usage: </red><white>/mp opdelhome <player> <home_name></white>"
+    usage_sethome: "<red>❌ Usage: </red><white>/ui sethome <name></white>"
+    usage_home: "<red>❌ Usage: </red><white>/ui home <name></white>"
+    usage_delhome: "<red>❌ Usage: </red><white>/ui delhome <name></white>"
+    usage_ophomels: "<red>❌ Usage: </red><white>/ui ophomels <player></white>"
+    usage_opdelhome: "<red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>"
     name_length_error: "<red>❌ Home name must be between %min% and %max% characters!</red>"
     name_current_length: "<gray> Current length: </gray><white>%length%</white><gray> characters.</gray>"
     limit_reached: "<red>❌ You have reached the limit of</red> <yellow>%max%</yellow> <red>home points!</red>"
-    limit_hint: "<gray> Use </gray><white>/mp delhome <name></white><gray> to remove unwanted ones.</gray>"
+    limit_hint: "<gray> Use </gray><white>/ui delhome <name></white><gray> to remove unwanted ones.</gray>"
     save_success: "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>"
     save_info_world: "<gray>World:</gray> <white>%world%</white>"
     save_info_coords: "<gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>"
     save_info_used: "<gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>"
     save_error: "<red>❌ Error saving home!</red>"
     not_found: "<yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not found.</white>"
-    not_found_hint: "<gray> Use </gray><white>/mp sethome %name%</white><gray> to save it.</gray>"
+    not_found_hint: "<gray> Use </gray><white>/ui sethome %name%</white><gray> to save it.</gray>"
     delete_success: "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>"
     delete_error: "<red>❌ Error deleting home!</red>"
     not_found_del: "<red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>"
     no_homes: "<yellow>ℹ</yellow> <white>You have no saved home points.</white>"
-    no_homes_hint: "<gray> Use </gray><white>/mp sethome <name></white><gray> to save one.</gray>"
+    no_homes_hint: "<gray> Use </gray><white>/ui sethome <name></white><gray> to save one.</gray>"
     no_homes_player: "<yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow> <white>has no saved homes.</white>"
     not_found_player: "<red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red> <yellow>%name%</yellow><red>!</red>"
     delete_op_success: "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>of player</white> <yellow>%player%</yellow> <white>deleted.</white>"
@@ -4791,8 +4701,8 @@ messages:
       no_energy: "<dark_red>❌</dark_red> <red>Not enough energy!</red> <gray>Need</gray> <yellow>%amount%</yellow> <gray>energy.</gray>"
   
   power:
-    stop_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/mp power off</white>"
-    restart_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/mp power reboot</white>"
+    stop_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/ui power off</white>"
+    restart_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/ui power reboot</white>"
     actionbar:
       format: "<red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</yellow> <white>seconds</white>"
     bossbar:
@@ -4849,7 +4759,7 @@ messages:
   
   misc:
     vanish_no_permission: "<red>❌ You don't have permission to use vanish!</red>"
-    vanish_usage: "<red>❌ Usage: </red><white>/mp vanish <nick></white>"
+    vanish_usage: "<red>❌ Usage: </red><white>/ui vanish <nick></white>"
     vanish_player_not_found: "<red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>"
     vanish_enabled: "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>is now hidden (vanished).</white>"
     vanish_offline_hint: "<gray>Player is offline — vanish will apply on next login.</gray>"
@@ -4895,8 +4805,8 @@ messages:
     wait_for_release: "<gray>Wait for the next release.</gray>"
     up_to_date: "<green>✔</green> <green>All up to date! Latest commit already installed.</green>"
     install_button: "<dark_green>[<green>✔ Install Update</green><dark_green>]</dark_green>"
-    install_hint: "<gray> or type </gray><white>/mp updatejar</white>"
-    install_console: "<gray>To install, type: </gray><white>/mp updatejar</white>"
+    install_hint: "<gray> or type </gray><white>/ui updatejar</white>"
+    install_console: "<gray>To install, type: </gray><white>/ui updatejar</white>"
     ignore_hint: "<gray>To ignore, do nothing.</gray>"
     cant_find_jar: "<red>❌ Cannot find current plugin JAR file!</red>"
     no_release_info: "<red>❌ Could not get latest release info!</red>"
@@ -4933,7 +4843,7 @@ messages:
   general:
     player_only: "<red>❌ Only players can use this command!</red>"
     no_permission: "<red>❌ You don't have permission to use UltimateImprovments commands!</red>"
-    unknown_command: "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>"
+    unknown_command: "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>"
     structure_player_only: "<red>❌ Error: </red><gray>Only players can use this command.</gray>"
     structure_no_permission: "<red>❌ You don't have permission to manage structures!</red>"
     unknown_subcommand: "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
@@ -4945,10 +4855,10 @@ messages:
       no_permission_create: "<red>❌ You don't have permission to create votes!</red>"
       no_permission_change: "<red>❌ You don't have permission to change votes!</red>"
       no_permission_stats: "<red>❌ You don't have permission to view vote statistics!</red>"
-      usage_create: "<red>❌ Usage:</red> <white>/mp vote create [name] [title] [description] -answer_[N]:[title,desc] ... -time:[N][s|m|h|d]</white>"
-      usage_delete: "<red>❌ Usage:</red> <white>/mp vote delete [name]</white>"
-      usage_change: "<red>❌ Usage:</red> <white>/mp vote change [name] [params...]</white>"
-      usage_stats: "<red>❌ Usage:</red> <white>/mp vote stats [name]</white>"
+      usage_create: "<red>❌ Usage:</red> <white>/ui vote create [name] [title] [description] -answer_[N]:[title,desc] ... -time:[N][s|m|h|d]</white>"
+      usage_delete: "<red>❌ Usage:</red> <white>/ui vote delete [name]</white>"
+      usage_change: "<red>❌ Usage:</red> <white>/ui vote change [name] [params...]</white>"
+      usage_stats: "<red>❌ Usage:</red> <white>/ui vote stats [name]</white>"
       invalid_name: "<red>❌ Vote name must contain only letters, numbers, hyphens and underscores (1-32 characters).</red>"
       already_exists: "<red>❌ A vote with that name already exists!</red>"
       not_found: "<red>❌ Vote </red><yellow>%name%</yellow><red> not found!</red>"
@@ -4990,7 +4900,7 @@ messages:
       title: "<gold>  ✦ </gold><white>Votes </white><gray>(%count%)</gray>"
       entry: "<gray>┃ </gray><gold>%name%</gold> <gray>— </gray><white>%title%</white>"
       entry_info: "<gray>┃   </gray><gray>Options: </gray><gold>%answers%</gold><gray> | Votes: </gray><gold>%votes%</gold><gray> | </gray>%status%"
-      entry_hint: "<gray>┃   </gray><gray><italic>/mp vote %name%</italic></gray><gray> — vote</gray>"
+      entry_hint: "<gray>┃   </gray><gray><italic>/ui vote %name%</italic></gray><gray> — vote</gray>"
       status_ended: "<red>❌ Ended</red>"
       status_expiring: "<red>Expiring...</red>"
   
@@ -5002,7 +4912,7 @@ messages:
       confirm_irreversible: "<gray>This action cannot be undone!</gray>"
       confirm_button: "<dark_red>[<red>❌ Confirm deletion</red><dark_red>]</dark_red>"
       confirm_hover: "<red>Click to confirm deletion</red>"
-      confirm_resend: "<gray>or type </gray><white>/mp vote delete %name%</white><gray> again</gray>"
+      confirm_resend: "<gray>or type </gray><white>/ui vote delete %name%</white><gray> again</gray>"
       confirm_expired: "<yellow>✦</yellow> <white>Vote deletion request for </white><yellow>%name%</yellow><white> expired.</white>"
       success: "<green>✔</green> <white>Vote </white><yellow>%name%</yellow><white> deleted.</white>"
       broadcast: "<dark_red>✦</dark_red> <red>Vote </red><yellow>%name%</yellow><red> has been deleted.</red>"
@@ -5033,7 +4943,7 @@ messages:
       button_hover: "<green>Click to vote for </green><white>%title%</white>"
       desc: "<gray>┃   </gray><gray>%desc%</gray>"
       hint: "<gray>┃ </gray><gray>To vote, click the button above</gray>"
-      hint2: "<gray>┃ </gray><gray>or type </gray><white>/mp vote %name% [number]</white>"
+      hint2: "<gray>┃ </gray><gray>or type </gray><white>/ui vote %name% [number]</white>"
       time_left: "<gray>┃ </gray><gray>Time left: </gray><gold>%duration%</gold>"
   
     forced_message: ""
@@ -5051,12 +4961,12 @@ messages:
     success: "<green>✔</green> <white>Random teleport complete!</white>"
     success_coords: "<green>✔</green> <white>You have been randomly teleported to:</white> <yellow>%coords%</yellow>"
     teleported_other: "<gray>Teleported </gray><yellow>%player%</yellow> <gray>→</gray> <white>%coords%</white>"
-    usage: "<red>❌ Usage: </red><white>/mp rtp [player]</white>"
+    usage: "<red>❌ Usage: </red><white>/ui rtp [player]</white>"
   
   near:
     player_only: "<red>❌ Only players can use this command!</red>"
     disabled: "<red>❌ This command is disabled on this server.</red>"
-    invalid_radius: "<red>❌ Invalid radius! Usage: </red><white>/mp near [radius]</white>"
+    invalid_radius: "<red>❌ Invalid radius! Usage: </red><white>/ui near [radius]</white>"
     no_players: "<gray>No players found within </gray><yellow>%radius%</yellow><gray> blocks.</gray>"
     header: "<gray>Players within </gray><yellow>%radius%</yellow><gray> blocks (</gray><yellow>%count%</yellow><gray>):</gray>"
     entry: "  <gray>%num%.</gray> <white>%player%</white> <gray>—</gray> <yellow>%distance%</yellow>"
@@ -5064,7 +4974,7 @@ messages:
     blocks: "%distance% blocks"
   
   meteor:
-    usage: "<red>❌ Usage: </red><white>/mp meteor spawn [count]</white>"
+    usage: "<red>❌ Usage: </red><white>/ui meteor spawn [count]</white>"
     unknown_sub: "<red>❌ Unknown meteor subcommand: </red><white>%sub%</white>"
     no_permission: "<red>❌ You don't have permission to spawn meteors!</red>"
     invalid_count: "<red>❌ Invalid count!</red>"
@@ -5108,7 +5018,7 @@ messages:
       rejected: "Rejected"
       closed: "Closed"
     admin:
-      remove_confirm: "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/mp reports remove confirm</yellow><white> to confirm.</white>"
+      remove_confirm: "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/ui reports remove confirm</yellow><white> to confirm.</white>"
   
   suicide:
     messages:
@@ -5165,31 +5075,31 @@ messages_en:
   
     admin:
       system_disabled: "<red>❌ Authorization system is disabled in config!</red>"
-      usage: "<red>❌ Usage: </red><white>/mp auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"
+      usage: "<red>❌ Usage: </red><white>/ui auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"
       unknown_subcommand: "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
       player_only: "<red>❌ Only players can use this command!</red>"
       not_authenticated: "<red>❌ You are not logged in!</red>"
       forcelogin_no_permission: "<red>❌ You don't have permission to force log in!</red>"
-      forcelogin_usage: "<red>❌ Usage: </red><white>/mp auth forcelogin <nick></white>"
+      forcelogin_usage: "<red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>"
       forcelogin_not_registered: "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
       forcelogin_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
       forcelogin_success: "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>"
       forcelogin_fail: "<red>❌ Failed to authorize player</red> <yellow>%player%</yellow>"
       resetauth_no_permission: "<red>❌ You don't have permission to reset authorization!</red>"
-      resetauth_usage: "<red>❌ Usage: </red><white>/mp auth resetauth <nick></white>"
+      resetauth_usage: "<red>❌ Usage: </red><white>/ui auth resetauth <nick></white>"
       resetauth_not_registered: "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
       resetauth_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
       resetauth_success: "<green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</white>"
       resetauth_fail: "<red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>"
       delsession_no_permission: "<red>❌ You don't have permission to reset sessions!</red>"
-      delsession_usage: "<red>❌ Usage: </red><white>/mp auth delsession <nick></white>"
+      delsession_usage: "<red>❌ Usage: </red><white>/ui auth delsession <nick></white>"
       delsession_not_registered: "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
       delsession_not_initialized: "<red>❌ Authorization system is not initialized!</red>"
       delsession_success: "<green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>"
       delsession_info: "<gray>They will need to enter their password again on next login.</gray>"
       delsession_fail: "<red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>"
       chgpass_no_permission: "<red>❌ You don't have permission to change passwords!</red>"
-      chgpass_usage: "<red>❌ Usage: </red><white>/mp auth chgpass <nick> <new_password></white>"
+      chgpass_usage: "<red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>"
       chgpass_success: "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
       chgpass_session_reset: "<gray>Session reset — player must log in again.</gray>"
       chgpass_fail: "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
@@ -5202,7 +5112,6 @@ messages_en:
   
   codepanel:
     messages:
-      progress: "<white>Verifying code: <gray>%progress%%</gray></white>"
       success: "<dark_green>✔</dark_green> <green>Success:</green> <gray>Correct code!</gray>"
       error: "<dark_red>❌</dark_red> <red>Error:</red> <gray>Incorrect code!</gray>"
       no_config: "<dark_red>❌</dark_red> <red>Error:</red> <gray>No keys found in the database!</gray>"
@@ -5210,6 +5119,7 @@ messages_en:
       cooldown: "<red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before entering again!</red>"
       no_access: "<red>❌ You don't have access to this code!</red>"
       wrong_code: "<red>❌ Incorrect code!</red>"
+      cancelled: "<gray>✖ Code entry cancelled.</gray>"
   
     key:
       no_permission: "<red>❌ You don't have permission to manage code panel keys!</red>"
@@ -5218,9 +5128,9 @@ messages_en:
       no_permission_list: "<red>❌ You don't have permission to list keys!</red>"
       no_permission_remove: "<red>❌ You don't have permission to remove keys!</red>"
       no_permission_modify: "<red>❌ You don't have permission to modify keys!</red>"
-      usage_add: "<red>❌ Usage: </red><white>/mp codepane key add <name> <code> [flags]</white>"
-      usage_remove: "<red>❌ Usage: </red><white>/mp codepane key remove <name></white>"
-      usage_modify: "<red>❌ Usage: </red><white>/mp codepane key modify <name> <new_code> [flags]</white>"
+      usage_add: "<red>❌ Usage: </red><white>/ui codepane key add <name> <code> [flags]</white>"
+      usage_remove: "<red>❌ Usage: </red><white>/ui codepane key remove <name></white>"
+      usage_modify: "<red>❌ Usage: </red><white>/ui codepane key modify <name> <new_code> [flags]</white>"
       duplicate_flag: "<red>❌ Duplicate flag: %flag%! Use each flag only once.</red>"
       invalid_attempts: "<red>❌ attempts must be >= 1</red>"
       invalid_attempts_format: "<red>❌ Invalid attempts format: %value%</red>"
@@ -5246,20 +5156,20 @@ messages_en:
   
     help:
       header: "<gold>=== <white>Code Panel Key Management</white> ===</gold>"
-      add: "<yellow>/mp codepane key add <gray><name> <code> [flags]</gray></yellow>"
+      add: "<yellow>/ui codepane key add <gray><name> <code> [flags]</gray></yellow>"
       add_desc: "<gray> Add a new key</gray>"
-      list: "<yellow>/mp codepane key list</yellow>"
+      list: "<yellow>/ui codepane key list</yellow>"
       list_desc: "<gray> List all keys</gray>"
-      remove: "<yellow>/mp codepane key remove <gray><name></gray></yellow>"
+      remove: "<yellow>/ui codepane key remove <gray><name></gray></yellow>"
       remove_desc: "<gray> Remove a key</gray>"
-      modify: "<yellow>/mp codepane key modify <gray><name> <new_code> [flags]</gray></yellow>"
+      modify: "<yellow>/ui codepane key modify <gray><name> <new_code> [flags]</gray></yellow>"
       modify_desc: "<gray> Modify a key</gray>"
       permissions_header: "<gray>Required permissions:</gray>"
-      perm_base: "<gray>mcplugin.command.codepane.key — base</gray>"
-      perm_add: "<gray> mcplugin.command.codepane.key.add — add</gray>"
-      perm_list: "<gray> mcplugin.command.codepane.key.list — list</gray>"
-      perm_remove: "<gray> mcplugin.command.codepane.key.remove — remove</gray>"
-      perm_modify: "<gray> mcplugin.command.codepane.key.modify — modify</gray>"
+      perm_base: "<gray>ui.command.codepane.key — base</gray>"
+      perm_add: "<gray> ui.command.codepane.key.add — add</gray>"
+      perm_list: "<gray> ui.command.codepane.key.list — list</gray>"
+      perm_remove: "<gray> ui.command.codepane.key.remove — remove</gray>"
+      perm_modify: "<gray> ui.command.codepane.key.modify — modify</gray>"
       flags_header: "<gray>Flags:</gray>"
       flag_attempts: "<gray> attempts:<N>     — delete key after N successful uses</gray>"
       flag_time: "<gray> time:<N>s|m|h|d  — delete key after N seconds/minutes/hours/days</gray>"
@@ -5270,10 +5180,10 @@ messages_en:
       flag_command: "<gray>command:(<cmd with spaces>),(<cmd 2>)  — commands separated by commas</gray>"
       flag_command_entity: "<gray>  %entity% — replaced with player's nickname</gray>"
       examples_header: "<gray>Examples:</gray>"
-      example1: "<gray> /mp codepane key add mydoor 1234 attempts:3 time:1h</gray>"
-      example2: "<gray> /mp codepane key add admin 7777 whitelist:Steve,Alex</gray>"
-      example3: "<gray> /mp codepane key add warp 4321 command:(say %entity% got access)</gray>"
-      example4: "<gray> /mp codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
+      example1: "<gray> /ui codepane key add mydoor 1234 attempts:3 time:1h</gray>"
+      example2: "<gray> /ui codepane key add admin 7777 whitelist:Steve,Alex</gray>"
+      example3: "<gray> /ui codepane key add warp 4321 command:(say %entity% got access)</gray>"
+      example4: "<gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
   
   suicide:
     messages:
@@ -5282,7 +5192,7 @@ messages_en:
       warning_title: "<dark_red>☠</dark_red> <red>WARNING!</red>"
       warning_text: "<white>You are about to commit suicide!</white>"
       warning_no_cancel: "<red>⚠ This cannot be undone after confirmation!</red>"
-      warning_confirm_hint: "<yellow>Type</yellow> <white>/mp suicide</white> <yellow>again to confirm and start the countdown.</yellow>"
+      warning_confirm_hint: "<yellow>Type</yellow> <white>/ui suicide</white> <yellow>again to confirm and start the countdown.</yellow>"
       warning_cancel_hint: "<gray>If you change your mind — just wait</gray> <yellow>%timeout%</yellow> <gray>seconds and the request will expire.</gray>"
       timeout_message: "<yellow>ℹ</yellow> <white>Suicide request cancelled (timed out).</white>"
       confirmed_title: "<dark_red>☠</dark_red> <red>Countdown started!</red>"
@@ -5300,7 +5210,7 @@ messages_en:
   changedimmension:
     messages:
       success: "<green>✔</green> <white>Teleportation to</white> <yellow>%world%</yellow> <white>completed!</white>"
-      return_info: "<yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/mp chgdim</white> <gray>again.</gray>"
+      return_info: "<yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/ui chgdim</white> <gray>again.</gray>"
       return_success: "<green>✔</green> <white>You have returned to your starting point!</white>"
       return_error: "<dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>"
       no_permission: "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>"
@@ -5323,27 +5233,27 @@ messages_en:
     no_permission_listhomes: "<red>❌ You don't have permission to view the home list!</red>"
     no_permission_ophomels: "<red>❌ You don't have permission to view other players' homes!</red>"
     no_permission_opdelhome: "<red>❌ You don't have permission to delete other players' homes!</red>"
-    usage_sethome: "<red>❌ Usage: </red><white>/mp sethome <name></white>"
-    usage_home: "<red>❌ Usage: </red><white>/mp home <name></white>"
-    usage_delhome: "<red>❌ Usage: </red><white>/mp delhome <name></white>"
-    usage_ophomels: "<red>❌ Usage: </red><white>/mp ophomels <player></white>"
-    usage_opdelhome: "<red>❌ Usage: </red><white>/mp opdelhome <player> <home_name></white>"
+    usage_sethome: "<red>❌ Usage: </red><white>/ui sethome <name></white>"
+    usage_home: "<red>❌ Usage: </red><white>/ui home <name></white>"
+    usage_delhome: "<red>❌ Usage: </red><white>/ui delhome <name></white>"
+    usage_ophomels: "<red>❌ Usage: </red><white>/ui ophomels <player></white>"
+    usage_opdelhome: "<red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>"
     name_length_error: "<red>❌ Home name must be between %min% and %max% characters!</red>"
     name_current_length: "<gray> Current length: </gray><white>%length%</white><gray> characters.</gray>"
     limit_reached: "<red>❌ You have reached the limit of</red> <yellow>%max%</yellow> <red>home points!</red>"
-    limit_hint: "<gray> Use </gray><white>/mp delhome <name></white><gray> to remove unwanted ones.</gray>"
+    limit_hint: "<gray> Use </gray><white>/ui delhome <name></white><gray> to remove unwanted ones.</gray>"
     save_success: "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>"
     save_info_world: "<gray>World:</gray> <white>%world%</white>"
     save_info_coords: "<gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>"
     save_info_used: "<gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>"
     save_error: "<red>❌ Error saving home!</red>"
     not_found: "<yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not found.</white>"
-    not_found_hint: "<gray> Use </gray><white>/mp sethome %name%</white><gray> to save it.</gray>"
+    not_found_hint: "<gray> Use </gray><white>/ui sethome %name%</white><gray> to save it.</gray>"
     delete_success: "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>"
     delete_error: "<red>❌ Error deleting home!</red>"
     not_found_del: "<red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>"
     no_homes: "<yellow>ℹ</yellow> <white>You have no saved home points.</white>"
-    no_homes_hint: "<gray> Use </gray><white>/mp sethome <name></white><gray> to save one.</gray>"
+    no_homes_hint: "<gray> Use </gray><white>/ui sethome <name></white><gray> to save one.</gray>"
     no_homes_player: "<yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow> <white>has no saved homes.</white>"
     not_found_player: "<red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red> <yellow>%name%</yellow><red>!</red>"
     delete_op_success: "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>of player</white> <yellow>%player%</yellow> <white>deleted.</white>"
@@ -5365,8 +5275,8 @@ messages_en:
       no_energy: "<dark_red>❌</dark_red> <red>Not enough energy!</red> <gray>Need</gray> <yellow>%amount%</yellow> <gray>energy.</gray>"
   
   power:
-    stop_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/mp power off</white>"
-    restart_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/mp power reboot</white>"
+    stop_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/ui power off</white>"
+    restart_message: "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/ui power reboot</white>"
     actionbar:
       format: "<red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</yellow> <white>seconds</white>"
     bossbar:
@@ -5423,7 +5333,7 @@ messages_en:
   
   misc:
     vanish_no_permission: "<red>❌ You don't have permission to use vanish!</red>"
-    vanish_usage: "<red>❌ Usage: </red><white>/mp vanish <nick></white>"
+    vanish_usage: "<red>❌ Usage: </red><white>/ui vanish <nick></white>"
     vanish_player_not_found: "<red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>"
     vanish_enabled: "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>is now hidden (vanished).</white>"
     vanish_offline_hint: "<gray>Player is offline — vanish will apply on next login.</gray>"
@@ -5469,8 +5379,8 @@ messages_en:
     wait_for_release: "<gray>Wait for the next release.</gray>"
     up_to_date: "<green>✔</green> <green>All up to date! Latest commit already installed.</green>"
     install_button: "<dark_green>[<green>✔ Install Update</green><dark_green>]</dark_green>"
-    install_hint: "<gray> or type </gray><white>/mp updatejar</white>"
-    install_console: "<gray>To install, type: </gray><white>/mp updatejar</white>"
+    install_hint: "<gray> or type </gray><white>/ui updatejar</white>"
+    install_console: "<gray>To install, type: </gray><white>/ui updatejar</white>"
     ignore_hint: "<gray>To ignore, do nothing.</gray>"
     cant_find_jar: "<red>❌ Cannot find current plugin JAR file!</red>"
     no_release_info: "<red>❌ Could not get latest release info!</red>"
@@ -5507,7 +5417,7 @@ messages_en:
   general:
     player_only: "<red>❌ Only players can use this command!</red>"
     no_permission: "<red>❌ You don't have permission to use UltimateImprovments commands!</red>"
-    unknown_command: "<red>❌ Unknown command! </red><gray>Use </gray><white>/mp help</white><gray> for the command list.</gray>"
+    unknown_command: "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>"
     structure_player_only: "<red>❌ Error: </red><gray>Only players can use this command.</gray>"
     structure_no_permission: "<red>❌ You don't have permission to manage structures!</red>"
     unknown_subcommand: "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
@@ -5519,10 +5429,10 @@ messages_en:
       no_permission_create: "<red>❌ You don't have permission to create votes!</red>"
       no_permission_change: "<red>❌ You don't have permission to change votes!</red>"
       no_permission_stats: "<red>❌ You don't have permission to view vote statistics!</red>"
-      usage_create: "<red>❌ Usage:</red> <white>/mp vote create [name] [title] [description] -answer_[N]:[title,desc] ... -time:[N][s|m|h|d]</white>"
-      usage_delete: "<red>❌ Usage:</red> <white>/mp vote delete [name]</white>"
-      usage_change: "<red>❌ Usage:</red> <white>/mp vote change [name] [params...]</white>"
-      usage_stats: "<red>❌ Usage:</red> <white>/mp vote stats [name]</white>"
+      usage_create: "<red>❌ Usage:</red> <white>/ui vote create [name] [title] [description] -answer_[N]:[title,desc] ... -time:[N][s|m|h|d]</white>"
+      usage_delete: "<red>❌ Usage:</red> <white>/ui vote delete [name]</white>"
+      usage_change: "<red>❌ Usage:</red> <white>/ui vote change [name] [params...]</white>"
+      usage_stats: "<red>❌ Usage:</red> <white>/ui vote stats [name]</white>"
       invalid_name: "<red>❌ Vote name must contain only letters, numbers, hyphens and underscores (1-32 characters).</red>"
       already_exists: "<red>❌ A vote with that name already exists!</red>"
       not_found: "<red>❌ Vote </red><yellow>%name%</yellow><red> not found!</red>"
@@ -5564,7 +5474,7 @@ messages_en:
       title: "<gold>  ✦ </gold><white>Votes </white><gray>(%count%)</gray>"
       entry: "<gray>┃ </gray><gold>%name%</gold> <gray>— </gray><white>%title%</white>"
       entry_info: "<gray>┃   </gray><gray>Options: </gray><gold>%answers%</gold><gray> | Votes: </gray><gold>%votes%</gold><gray> | </gray>%status%"
-      entry_hint: "<gray>┃   </gray><gray><italic>/mp vote %name%</italic></gray><gray> — vote</gray>"
+      entry_hint: "<gray>┃   </gray><gray><italic>/ui vote %name%</italic></gray><gray> — vote</gray>"
       status_ended: "<red>❌ Ended</red>"
       status_expiring: "<red>Expiring...</red>"
   
@@ -5576,7 +5486,7 @@ messages_en:
       confirm_irreversible: "<gray>This action cannot be undone!</gray>"
       confirm_button: "<dark_red>[<red>❌ Confirm deletion</red><dark_red>]</dark_red>"
       confirm_hover: "<red>Click to confirm deletion</red>"
-      confirm_resend: "<gray>or type </gray><white>/mp vote delete %name%</white><gray> again</gray>"
+      confirm_resend: "<gray>or type </gray><white>/ui vote delete %name%</white><gray> again</gray>"
       confirm_expired: "<yellow>✦</yellow> <white>Vote deletion request for </white><yellow>%name%</yellow><white> expired.</white>"
       success: "<green>✔</green> <white>Vote </white><yellow>%name%</yellow><white> deleted.</white>"
       broadcast: "<dark_red>✦</dark_red> <red>Vote </red><yellow>%name%</yellow><red> has been deleted.</red>"
@@ -5607,7 +5517,7 @@ messages_en:
       button_hover: "<green>Click to vote for </green><white>%title%</white>"
       desc: "<gray>┃   </gray><gray>%desc%</gray>"
       hint: "<gray>┃ </gray><gray>To vote, click the button above</gray>"
-      hint2: "<gray>┃ </gray><gray>or type </gray><white>/mp vote %name% [number]</white>"
+      hint2: "<gray>┃ </gray><gray>or type </gray><white>/ui vote %name% [number]</white>"
       time_left: "<gray>┃ </gray><gray>Time left: </gray><gold>%duration%</gold>"
   
   report:
@@ -5644,7 +5554,7 @@ messages_en:
       wrong_password: "<red>❌ Incorrect password!</red>"
       kick_cancelled: "§c❌ Authentication cancelled.\n§7You cancelled the authentication process."
 
-      remove_confirm: "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/mp reports remove confirm</yellow><white> to confirm.</white>"
+      remove_confirm: "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/ui reports remove confirm</yellow><white> to confirm.</white>"
 
 # === INTEGRITY META — НЕ РЕДАКТИРОВАТЬ (auto-managed by ConfigGuideManager) ===
 _meta:

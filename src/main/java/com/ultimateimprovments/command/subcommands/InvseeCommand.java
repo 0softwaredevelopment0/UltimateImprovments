@@ -3,7 +3,6 @@ package com.ultimateimprovments.command.subcommands;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.mechanics.features.blocks.EnderChestManager;
-import com.ultimateimprovments.util.ConsoleLogger;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -13,25 +12,57 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitTask;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-import java.util.*;
-
+/**
+ * Инвентарь-редактор: /ui invsee &lt;player&gt; и /ui endersee &lt;player&gt;.
+ *
+ * <p>GUI идентифицируется по трекингу сессий ({@link #INVSEE_SESSIONS}), а НЕ по
+ * {@code InventoryView.getTitle()} — в Paper 1.21.x getTitle() возвращает Component
+ * и сравнение со String всегда ложно (см. NotesGUIListener), из-за чего стеклянные
+ * панели было можно забирать и синк не происходил.
+ *
+ * <p>Анти-дюп: GUI — живое зеркало, а не снимок. Пока окно открыто, периодический
+ * таск тянет реальное состояние инвентаря цели в GUI (если админ не взаимодействует),
+ * а каждый клик/драг мгновенно пушит изменения цели. Так предметы, которые цель
+ * выкинула/подобрала во время редактирования, не «воскресают» при закрытии.
+ */
 public final class InvseeCommand {
 
     private static final NamespacedKey PLACEHOLDER_KEY = new NamespacedKey(Main.getInstance(), "invsee_placeholder");
-    private static final Map<UUID, UUID> INVSEE_OPENERS = new HashMap<>();
+    private static final Map<UUID, InvseeSession> INVSEE_SESSIONS = new HashMap<>();
     private static boolean registered = false;
 
     private InvseeCommand() {}
+
+    /** Одна открытая сессия invsee: кто смотрит → чей GUI и кто цель. */
+    private static final class InvseeSession {
+        final UUID viewerId;
+        final UUID targetId;
+        final Inventory gui;
+        BukkitTask refreshTask;
+        /** Тик сервера последнего действия админа — защита от гонки pull/push. */
+        volatile long lastAdminTick;
+
+        InvseeSession(UUID viewerId, UUID targetId, Inventory gui) {
+            this.viewerId = viewerId;
+            this.targetId = targetId;
+            this.gui = gui;
+        }
+    }
 
     // =========================
     // REGISTER LISTENER
@@ -44,7 +75,7 @@ public final class InvseeCommand {
     }
 
     // =========================
-    // /MP INVSEE <PLAYER>
+    // /UI INVSEE <PLAYER>
     // =========================
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
@@ -73,7 +104,7 @@ public final class InvseeCommand {
     }
 
     // =========================
-    // /MP ENDERSEE <PLAYER>
+    // /UI ENDERSEE <PLAYER>
     // =========================
     public static boolean executeEnder(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
@@ -139,8 +170,13 @@ public final class InvseeCommand {
             gui.setItem(45 + i, storage[i] != null ? storage[i].clone() : null);
         }
 
-        INVSEE_OPENERS.put(viewer.getUniqueId(), target.getUniqueId());
+        // Заменяем устаревшую сессию (если админ уже редактировал кого-то)
+        endSession(viewer.getUniqueId());
+
+        InvseeSession session = new InvseeSession(viewer.getUniqueId(), target.getUniqueId(), gui);
+        INVSEE_SESSIONS.put(viewer.getUniqueId(), session);
         viewer.openInventory(gui);
+        startRefresh(viewer, session);
     }
 
     // =========================
@@ -161,38 +197,130 @@ public final class InvseeCommand {
     }
 
     // =========================
-    // SYNC METHODS
+    // LIVE REFRESH (target → GUI)
     // =========================
+    /**
+     * Пока GUI открыт, периодически тянем реальное состояние инвентаря цели в GUI.
+     * Пропускаем обновление, если админ прямо сейчас тащит предмет (курсор занят)
+     * или только что кликнул (последние 2 тика) — чтобы не конфликтовать с push'ем.
+     * Это делает GUI живым зеркалом и исключает дюп из-за устаревшего снимка.
+     */
+    private static void startRefresh(Player viewer, InvseeSession session) {
+        session.refreshTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
+            if (INVSEE_SESSIONS.get(viewer.getUniqueId()) != session) return; // закрыта/заменена
+            if (!viewer.isOnline()) {
+                endSession(viewer.getUniqueId());
+                return;
+            }
+            Player target = Bukkit.getPlayer(session.targetId);
+            if (target == null || !target.isOnline()) return;
+
+            maybePull(session, viewer, target);
+        }, 10L, 10L);
+    }
+
+    /**
+     * Безопасный pull target → GUI. Скипается, пока админ тащит предмет на курсоре
+     * (иначе можно «воскресить» в GUI предмет, который уже взят в курсор) и в первые
+     * 2 тика после клика админа (чтобы не конфликтовать с push'ем).
+     */
+    private static void maybePull(InvseeSession session, Player viewer, Player target) {
+        ItemStack cursor = viewer.getItemOnCursor();
+        if (cursor != null && cursor.getType() != Material.AIR) return; // админ тащит
+        if (Bukkit.getCurrentTick() - session.lastAdminTick < 2) return; // свежий клик — дадим push'у приземлиться
+        pullTargetToGui(session, target);
+    }
+
+    private static void pullTargetToGui(InvseeSession session, Player target) {
+        PlayerInventory inv = target.getInventory();
+        Inventory gui = session.gui;
+
+        pullEquipped(gui, 0, inv.getHelmet(), Material.CHAINMAIL_HELMET, "Helmet");
+        pullEquipped(gui, 1, inv.getLeggings(), Material.CHAINMAIL_LEGGINGS, "Leggings");
+        pullEquipped(gui, 2, inv.getItemInMainHand(), Material.STONE_SWORD, "Main Hand");
+        pullEquipped(gui, 9, inv.getChestplate(), Material.CHAINMAIL_CHESTPLATE, "Chestplate");
+        pullEquipped(gui, 10, inv.getBoots(), Material.CHAINMAIL_BOOTS, "Boots");
+        pullEquipped(gui, 11, inv.getItemInOffHand(), Material.SHIELD, "Off Hand");
+
+        ItemStack[] storage = inv.getStorageContents();
+        for (int i = 0; i < 27; i++) {
+            int guiSlot = 18 + i;
+            ItemStack real = storage[9 + i];
+            if (!itemEquals(gui.getItem(guiSlot), real)) {
+                gui.setItem(guiSlot, real == null || real.getType() == Material.AIR ? null : real.clone());
+            }
+        }
+        for (int i = 0; i < 9; i++) {
+            int guiSlot = 45 + i;
+            ItemStack real = storage[i];
+            if (!itemEquals(gui.getItem(guiSlot), real)) {
+                gui.setItem(guiSlot, real == null || real.getType() == Material.AIR ? null : real.clone());
+            }
+        }
+    }
+
+    private static void pullEquipped(Inventory gui, int guiSlot, ItemStack real, Material placeholderType, String placeholderName) {
+        ItemStack shown = (real == null || real.getType() == Material.AIR)
+                ? createPlaceholder(placeholderType, placeholderName)
+                : real.clone();
+        if (!itemEquals(gui.getItem(guiSlot), shown)) {
+            gui.setItem(guiSlot, shown);
+        }
+    }
+
+    // =========================
+    // SYNC METHODS (GUI → target)
+    // =========================
+    private static void scheduleSync(Player viewer, Inventory top, InvseeSession session) {
+        session.lastAdminTick = Bukkit.getCurrentTick();
+        UUID viewerId = viewer.getUniqueId();
+        Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+            // Guard: сессия могла закрыться/смениться до запуска таска
+            if (INVSEE_SESSIONS.get(viewerId) != session) return;
+            Player target = Bukkit.getPlayer(session.targetId);
+            syncInvsee(top, target);
+        });
+    }
+
     private static void syncInvsee(Inventory gui, Player target) {
         if (target == null || !target.isOnline()) return;
         PlayerInventory inv = target.getInventory();
 
-        // Sync armor + hands
-        inv.setHelmet(unwrapPlaceholder(gui.getItem(0)));
-        inv.setLeggings(unwrapPlaceholder(gui.getItem(1)));
-        inv.setChestplate(unwrapPlaceholder(gui.getItem(9)));
-        inv.setBoots(unwrapPlaceholder(gui.getItem(10)));
-        inv.setItemInMainHand(unwrapPlaceholder(gui.getItem(2)));
-        inv.setItemInOffHand(unwrapPlaceholder(gui.getItem(11)));
+        // Sync armor + hands (клонируем, чтобы не шарить ссылки с GUI)
+        inv.setHelmet(cloneOrNull(unwrapPlaceholder(gui.getItem(0))));
+        inv.setLeggings(cloneOrNull(unwrapPlaceholder(gui.getItem(1))));
+        inv.setChestplate(cloneOrNull(unwrapPlaceholder(gui.getItem(9))));
+        inv.setBoots(cloneOrNull(unwrapPlaceholder(gui.getItem(10))));
+        inv.setItemInMainHand(cloneOrNull(unwrapPlaceholder(gui.getItem(2))));
+        inv.setItemInOffHand(cloneOrNull(unwrapPlaceholder(gui.getItem(11))));
 
-        // Cursor slot — drop item at target's feet if something is there
+        // Cursor slot — если админ каким-то образом что-то туда положил, выбрасываем у ног цели
         ItemStack cursorItem = unwrapPlaceholder(gui.getItem(3));
         if (cursorItem != null && cursorItem.getType() != Material.AIR) {
             target.getWorld().dropItemNaturally(target.getLocation(), cursorItem);
+            gui.setItem(3, createPlaceholder(Material.SPECTRAL_ARROW, "Cursor"));
         }
 
         // Sync storage
         ItemStack[] storage = inv.getStorageContents(); // 36 slots
         for (int i = 0; i < 27; i++) {
-            storage[9 + i] = gui.getItem(18 + i);
+            storage[9 + i] = cloneOrNull(gui.getItem(18 + i));
         }
         for (int i = 0; i < 9; i++) {
-            storage[i] = gui.getItem(45 + i);
+            storage[i] = cloneOrNull(gui.getItem(45 + i));
         }
         inv.setStorageContents(storage);
     }
 
-
+    // =========================
+    // SESSION LIFECYCLE
+    // =========================
+    private static void endSession(UUID viewerId) {
+        InvseeSession session = INVSEE_SESSIONS.remove(viewerId);
+        if (session != null && session.refreshTask != null) {
+            session.refreshTask.cancel();
+        }
+    }
 
     // =========================
     // ITEM HELPERS
@@ -210,10 +338,28 @@ public final class InvseeCommand {
         return item;
     }
 
+    private static ItemStack cloneOrNull(ItemStack item) {
+        if (item == null) return null;
+        return item.clone();
+    }
+
     private static boolean isPlaceholder(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
         if (!item.hasItemMeta()) return false;
         return item.getItemMeta().getPersistentDataContainer().has(PLACEHOLDER_KEY);
+    }
+
+    /** Сравнение двух слотов: пустое = пустое, плейсхолдер = плейсхолдер, иначе ItemStack.equals. */
+    private static boolean itemEquals(ItemStack a, ItemStack b) {
+        boolean aEmpty = a == null || a.getType() == Material.AIR;
+        boolean bEmpty = b == null || b.getType() == Material.AIR;
+        if (aEmpty && bEmpty) return true;
+        if (aEmpty || bEmpty) return false;
+        boolean aPh = isPlaceholder(a);
+        boolean bPh = isPlaceholder(b);
+        if (aPh && bPh) return true;
+        if (aPh || bPh) return false;
+        return a.equals(b);
     }
 
     private static ItemStack createGlassPane() {
@@ -221,6 +367,8 @@ public final class InvseeCommand {
         ItemMeta meta = glass.getItemMeta();
         meta.displayName(MessageUtil.parse("<reset>").decoration(TextDecoration.ITALIC, false));
         meta.setHideTooltip(true);
+        // Маркируем как плейсхолдер: isPlaceholder() блокирует взятие ЛЮБЫМ способом
+        meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BOOLEAN, true);
         glass.setItemMeta(meta);
         return glass;
     }
@@ -230,7 +378,7 @@ public final class InvseeCommand {
         ItemMeta meta = item.getItemMeta();
         meta.displayName(MessageUtil.parse("<gray>" + displayName + "</gray>")
                 .decoration(TextDecoration.ITALIC, false));
-        meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);
+        meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BOOLEAN, true);
         meta.setHideTooltip(true);
         item.setItemMeta(meta);
         return item;
@@ -252,7 +400,7 @@ public final class InvseeCommand {
 
         meta.displayName(MessageUtil.parse("<gold>✦ Player Info</gold>")
                 .decoration(TextDecoration.ITALIC, false));
-        meta.lore(List.of(
+        meta.lore(java.util.List.of(
                 MessageUtil.parse("<gray>UUID: <white>" + target.getUniqueId() + "</white></gray>"),
                 MessageUtil.parse("<gray>Nick: <white>" + target.getName() + "</white></gray>"),
                 MessageUtil.parse("<gray>IP: <white>" + ip + "</white></gray>"),
@@ -264,18 +412,11 @@ public final class InvseeCommand {
                 MessageUtil.parse("<gray>XP Progress: <white>" + String.format("%.1f%%", target.getExp() * 100) + "</white></gray>"),
                 MessageUtil.parse("<gray>Gamemode: <white>" + target.getGameMode().name() + "</white></gray>")
         ));
+        // Блокируем взятие книги любым способом
+        meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BOOLEAN, true);
         book.setItemMeta(meta);
         return book;
     }
-
-    // =========================
-    // CHECK IF GUI TITLE MATCHES
-    // =========================
-    private static boolean isInvseeTitle(String title) {
-        return title != null && title.contains("'s inventory overview");
-    }
-
-
 
     // =========================
     // LISTENER
@@ -285,112 +426,97 @@ public final class InvseeCommand {
         @EventHandler(priority = EventPriority.HIGH)
         public void onInventoryClick(InventoryClickEvent event) {
             if (!(event.getWhoClicked() instanceof Player player)) return;
+            InvseeSession session = INVSEE_SESSIONS.get(player.getUniqueId());
+            if (session == null) return;
             Inventory top = event.getView().getTopInventory();
-            if (top == null) return;
+            if (session.gui != top) return; // не наш GUI (например, реальный эндер-сундук в endersee)
 
-            String title = event.getView().getTitle();
-
-            if (isInvseeTitle(title)) {
-                handleInvseeClick(event, player, top);
-            }
-        }
-
-        @EventHandler(priority = EventPriority.HIGH)
-        public void onInventoryDrag(InventoryDragEvent event) {
-            if (!(event.getWhoClicked() instanceof Player player)) return;
-            String title = event.getView().getTitle();
-
-            if (isInvseeTitle(title)) {
-                Inventory top = event.getView().getTopInventory();
-
-                // Cancel if drag involves bottom inventory (GUI ↔ player inv)
-                for (int slot : event.getRawSlots()) {
-                    if (slot >= top.getSize()) {
-                        event.setCancelled(true);
-                        return;
-                    }
-                }
-
-                // Cancel if drag touches glass/book/placeholder slots
-                for (int slot : event.getRawSlots()) {
-                    if (slot < top.getSize()) {
-                        if ((slot >= 4 && slot <= 8) || (slot >= 13 && slot <= 17) || slot == 12) {
-                            event.setCancelled(true);
-                            return;
-                        }
-                        ItemStack current = top.getItem(slot);
-                        if (isPlaceholder(current)) {
-                            event.setCancelled(true);
-                            return;
-                        }
-                    }
-                }
-
-                // Allow drag within allowed slots — sync immediately
-                UUID targetId = INVSEE_OPENERS.get(player.getUniqueId());
-                if (targetId != null) {
-                    Player target = Bukkit.getPlayer(targetId);
-                    if (target != null) {
-                        Inventory finalTop = top;
-                        Bukkit.getScheduler().runTask(Main.getInstance(), () -> syncInvsee(finalTop, target));
-                    }
-                }
-            }
-        }
-
-        @EventHandler(priority = EventPriority.HIGH)
-        public void onInventoryClose(InventoryCloseEvent event) {
-            if (!(event.getPlayer() instanceof Player player)) return;
-            Inventory top = event.getInventory();
-            String title = event.getView().getTitle();
-
-            UUID viewerId = player.getUniqueId();
-
-            if (isInvseeTitle(title)) {
-                UUID targetId = INVSEE_OPENERS.remove(viewerId);
-                if (targetId != null) {
-                    Player target = Bukkit.getPlayer(targetId);
-                    syncInvsee(top, target);
-                }
-            }
-        }
-
-        private void handleInvseeClick(InventoryClickEvent event, Player player, Inventory top) {
             int slot = event.getRawSlot();
 
-            // Bottom inventory (player's own inventory) — allow freely
-            if (slot >= top.getSize()) return;
+            // Нижний инвентарь (свой инвентарь админа) — разрешаем свободно,
+            // но всё равно пушим (сдвиг-клик из своего инвентаря в GUI = передача предмета цели)
+            if (slot >= top.getSize()) {
+                scheduleSync(player, top, session);
+                return;
+            }
 
-            // Glass panes (slots 4-8, 13-17)
+            // Стеклянные панели (4-8, 13-17) — декоратив, брать нельзя
             if ((slot >= 4 && slot <= 8) || (slot >= 13 && slot <= 17)) {
                 event.setCancelled(true);
                 return;
             }
 
-            // Book slot (12) — no interaction
+            // Книга (12) — без взаимодействия
             if (slot == 12) {
                 event.setCancelled(true);
                 return;
             }
 
-            // Placeholder items — can't be taken
-            ItemStack current = event.getCurrentItem();
-            if (isPlaceholder(current)) {
+            // Плейсхолдеры (броня/курсор/стекло) — нельзя брать ни кликом, ни сдвигом
+            if (isPlaceholder(event.getCurrentItem())) {
                 event.setCancelled(true);
                 return;
             }
 
-            // Allow interaction — sync immediately after event processes
-            UUID targetId = INVSEE_OPENERS.get(player.getUniqueId());
-            if (targetId != null) {
-                Player target = Bukkit.getPlayer(targetId);
-                if (target != null) {
-                    Inventory finalTop = top;
-                    Bukkit.getScheduler().runTask(Main.getInstance(), () -> syncInvsee(finalTop, target));
-                }
-            }
+            // Разрешаем взаимодействие — мгновенный синк после обработки события
+            scheduleSync(player, top, session);
         }
 
+        @EventHandler(priority = EventPriority.HIGH)
+        public void onInventoryDrag(InventoryDragEvent event) {
+            if (!(event.getWhoClicked() instanceof Player player)) return;
+            InvseeSession session = INVSEE_SESSIONS.get(player.getUniqueId());
+            if (session == null) return;
+            Inventory top = event.getView().getTopInventory();
+            if (session.gui != top) return;
 
+            // Драг с участием нижнего инвентаря (GUI ↔ инвентарь админа) — отменяем (анти-дюп)
+            for (int slot : event.getRawSlots()) {
+                if (slot >= top.getSize()) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+
+            // Драг через стекло/книгу/плейсхолдер — отменяем
+            for (int slot : event.getRawSlots()) {
+                if (slot < top.getSize()) {
+                    if ((slot >= 4 && slot <= 8) || (slot >= 13 && slot <= 17) || slot == 12) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                    if (isPlaceholder(top.getItem(slot))) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
+            }
+
+            // Разрешённый драг внутри GUI — мгновенный синк
+            scheduleSync(player, top, session);
+        }
+
+        @EventHandler(priority = EventPriority.MONITOR)
+        public void onInventoryClose(InventoryCloseEvent event) {
+            if (!(event.getPlayer() instanceof Player player)) return;
+            UUID viewerId = player.getUniqueId();
+            InvseeSession session = INVSEE_SESSIONS.get(viewerId);
+            if (session == null) return;
+            if (session.gui != event.getInventory()) return;
+
+            endSession(viewerId);
+            Player target = Bukkit.getPlayer(session.targetId);
+            if (target != null && target.isOnline()) {
+                // Подтягиваем живое состояние цели, чтобы финальный синк не затёр
+                // свежие изменения цели, сделанные за время редактирования.
+                maybePull(session, player, target);
+            }
+            syncInvsee(session.gui, target);
+        }
+
+        @EventHandler(priority = EventPriority.MONITOR)
+        public void onPlayerQuit(PlayerQuitEvent event) {
+            endSession(event.getPlayer().getUniqueId());
+        }
     }
 }

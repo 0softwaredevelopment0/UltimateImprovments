@@ -3,6 +3,7 @@ package com.ultimateimprovments.command.vote;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.database.DatabaseManager;
+import com.ultimateimprovments.util.Broadcast;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
@@ -528,9 +529,9 @@ public class VoteManager {
             ConsoleLogger.error("[VOTE] Failed to delete vote from DB: " + e.getMessage());
         }
 
-        Bukkit.broadcast(MessageUtil.parse(MessagesManager.getString("vote.delete.broadcast",
+        Broadcast.send(MessagesManager.getString("vote.delete.broadcast",
                 "<dark_red>✦</dark_red> <red>Vote </red><yellow>%name%</yellow><red> has been deleted.</red>")
-                .replace("%name%", vote.name)));
+                .replace("%name%", vote.name));
     }
 
     // =========================
@@ -739,34 +740,34 @@ public class VoteManager {
         String winner = MessagesManager.getString("vote.close.winner", "<gray>┃ <green>Winner:</green> <yellow>%title%</yellow> <gray>(</gray><yellow>%count%</yellow><gray>/%total% —</gray> <yellow>%pct%%</yellow><gray>)</gray></gray>");
         String totalStr = MessagesManager.getString("vote.close.total", "<gray>┃ <gray>Total votes cast:</gray> <yellow>%total%</yellow></gray>");
 
-        Bukkit.broadcast(MessageUtil.parse(""));
-        Bukkit.broadcast(MessageUtil.parse(header + "\n" + closeTitle.replace("%name%", vote.name) + "\n" + header));
+        Broadcast.send("");
+        Broadcast.send(header + "\n" + closeTitle.replace("%name%", vote.name) + "\n" + header);
 
         if (total == 0) {
-            Bukkit.broadcast(MessageUtil.parse(noVotes));
+            Broadcast.send(noVotes);
         } else if (isTie) {
-            Bukkit.broadcast(MessageUtil.parse(tieStr));
+            Broadcast.send(tieStr);
             for (int i = 0; i < vote.answers.size(); i++) {
                 int c = counts.getOrDefault(i, 0);
                 if (c == maxCount) {
-                    Bukkit.broadcast(MessageUtil.parse(tieEntry
+                    Broadcast.send(tieEntry
                             .replace("%title%", vote.answers.get(i).title)
-                            .replace("%count%", String.valueOf(c))));
+                            .replace("%count%", String.valueOf(c)));
                 }
             }
         } else if (winnerIdx >= 0) {
             Answer win = vote.answers.get(winnerIdx);
             int pct = (maxCount * 100 / total);
-            Bukkit.broadcast(MessageUtil.parse(winner
+            Broadcast.send(winner
                     .replace("%title%", win.title)
                     .replace("%count%", String.valueOf(maxCount))
                     .replace("%total%", String.valueOf(total))
-                    .replace("%pct%", String.valueOf(pct))));
+                    .replace("%pct%", String.valueOf(pct)));
         }
 
-        Bukkit.broadcast(MessageUtil.parse(totalStr.replace("%total%", String.valueOf(total))));
-        Bukkit.broadcast(MessageUtil.parse(header));
-        Bukkit.broadcast(MessageUtil.parse(""));
+        Broadcast.send(totalStr.replace("%total%", String.valueOf(total)));
+        Broadcast.send(header);
+        Broadcast.send("");
 
         updateVoteEndedInDb(vote.name, true);
     }

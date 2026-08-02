@@ -12,7 +12,6 @@ import com.ultimateimprovments.listener.ServerBrandListener;
 import com.ultimateimprovments.listener.ShulkerBulletListener;
 import com.ultimateimprovments.mechanics.features.items.AutoCraftManager;
 import com.ultimateimprovments.mechanics.features.movement.BlockFrictionListener;
-import com.ultimateimprovments.mechanics.security.codepanel.CodePanelGUIListener;
 import com.ultimateimprovments.combat.weapons.plasma.GunListener;
 import com.ultimateimprovments.combat.weapons.shoker.ShokerListener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -50,7 +49,6 @@ public class CoreModule extends PluginModule {
         pm.registerEvents(new GunListener(), main);
         pm.registerEvents(new ShulkerBulletListener(), main);
         pm.registerEvents(FishingListener.getInstance(), main);
-        pm.registerEvents(new CodePanelGUIListener(), main);
 
         BlockFrictionListener.init();
         pm.registerEvents(new BlockFrictionListener(), main);
