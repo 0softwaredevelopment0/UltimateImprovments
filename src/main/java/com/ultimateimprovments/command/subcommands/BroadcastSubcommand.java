@@ -12,13 +12,12 @@ import java.util.List;
 
 public final class BroadcastSubcommand {
 
-    private static final String PREFIX = "<gray>[<white>Server</white><dark_gray>/</dark_gray><white>Info</white>]</gray> ";
-
     private BroadcastSubcommand() {}
 
     /**
      * Joins all args starting from startIndex into one string,
-     * excluding the -clean flag.
+     * excluding the -clean flag. Strips surrounding quotes so that
+     * {@code /ui broadcast "<red>test"} doesn't show the quotes in chat.
      */
     private static String parseMessage(String[] args, int startIndex) {
         StringBuilder sb = new StringBuilder();
@@ -27,7 +26,14 @@ public final class BroadcastSubcommand {
             if (sb.length() > 0) sb.append(" ");
             sb.append(args[i]);
         }
-        return sb.toString();
+        String message = sb.toString().trim();
+        // Strip surrounding quotes if present: "<red>test" → <red>test
+        if (message.length() >= 2
+                && ((message.startsWith("\"") && message.endsWith("\""))
+                    || (message.startsWith("'") && message.endsWith("'")))) {
+            message = message.substring(1, message.length() - 1).trim();
+        }
+        return message;
     }
 
     /**
@@ -44,7 +50,7 @@ public final class BroadcastSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/ui bc \"<message>\" [-clean]</white>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Usage:</red> <white>/ui broadcast \"<message>\" [-clean]</white>"));
             return true;
         }
 
@@ -61,17 +67,19 @@ public final class BroadcastSubcommand {
             return true;
         }
 
-        // Build final MiniMessage string
-        String fullMessage = clean ? message : PREFIX + message;
-
         // Resolve placeholders (%tps_avg_1s_color%, %online%, etc.)
         Player senderPlayer = sender instanceof Player ? (Player) sender : null;
-        fullMessage = PlaceholderResolver.resolve(fullMessage, senderPlayer);
+        String resolved = PlaceholderResolver.resolve(message, senderPlayer);
 
-        // Broadcast to all players
-        Broadcast.send(fullMessage);
+        // Broadcast: -clean → embedded without prefix, otherwise the "sᴇʀᴠᴇʀ » " prefix
+        if (clean) {
+            Broadcast.sendEmbedded(resolved);
+        } else {
+            Broadcast.sendServer(resolved);
+        }
 
         // Log to console
+        String fullMessage = (clean ? "" : Broadcast.SERVER_PREFIX) + resolved;
         Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(fullMessage));
 
         return true;

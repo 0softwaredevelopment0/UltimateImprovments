@@ -22,6 +22,7 @@ import org.bukkit.event.Listener;
  * Два режима:
  * <ul>
  *   <li>{@code ultimateimprovments:chgdim_submit} — телепортация в указанный мир</li>
+ *   <li>{@code ultimateimprovments:chgdim_return} — return to the starting point (formerly /ui chgdim_return)</li>
  *   <li>{@code ultimateimprovments:chgdim_cancel} — отмена телепортации</li>
  * </ul>
  * <p>
@@ -31,6 +32,7 @@ import org.bukkit.event.Listener;
 public class ChgDimDialogHandler implements Listener {
 
     private static final Key CHGDIM_SUBMIT_KEY = Key.key("ultimateimprovments", "chgdim_submit");
+    private static final Key CHGDIM_RETURN_KEY = Key.key("ultimateimprovments", "chgdim_return");
     private static final Key CHGDIM_CANCEL_KEY = Key.key("ultimateimprovments", "chgdim_cancel");
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -40,6 +42,18 @@ public class ChgDimDialogHandler implements Listener {
         // Получаем игрока через PlayerGameConnection
         Player player = getPlayerFromConnection(event);
         if (player == null) return;
+
+        // ─── Return — go back to the starting point (formerly /ui chgdim_return) ───
+        if (identifier.equals(CHGDIM_RETURN_KEY)) {
+            ChgDimDialogScreen.close(player);
+            Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                if (player.isOnline()) {
+                    ChgDimCommand.teleportBack(player);
+                }
+            });
+            ConsoleLogger.info("[ChgDimDialog] Player " + player.getName() + " used Return back.");
+            return;
+        }
 
         // ─── Cancel ───
         if (identifier.equals(CHGDIM_CANCEL_KEY)) {

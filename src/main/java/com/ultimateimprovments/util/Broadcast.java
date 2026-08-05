@@ -16,6 +16,9 @@ import org.bukkit.entity.Player;
  */
 public final class Broadcast {
 
+    /** Server message prefix: "sᴇʀᴠᴇʀ » ". */
+    public static final String SERVER_PREFIX = "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset> ";
+
     private Broadcast() {}
 
     /**
@@ -29,5 +32,24 @@ public final class Broadcast {
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.sendMessage(parsed);
         }
+    }
+
+    /**
+     * Sends a message to all players with the server prefix {@code "sᴇʀᴠᴇʀ » "}.
+     *
+     * @param miniMessage the message text (MiniMessage)
+     */
+    public static void sendServer(String miniMessage) {
+        if (miniMessage == null) return;
+        send(SERVER_PREFIX + miniMessage);
+    }
+
+    /**
+     * Sends a message to all players WITHOUT a prefix (embedded/clean — as-is).
+     *
+     * @param miniMessage the message text (MiniMessage)
+     */
+    public static void sendEmbedded(String miniMessage) {
+        send(miniMessage);
     }
 }

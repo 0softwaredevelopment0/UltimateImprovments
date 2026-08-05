@@ -159,7 +159,7 @@ class ConfigGuideManagerTest {
                 "_meta:",
                 "  guide_hash: \"oldmidhash\"",
                 "another_key: bar",
-                "# === INTEGRITY META — НЕ РЕДАКТИРОВАТЬ (auto-managed by ConfigGuideManager) ===",
+                ConfigGuideManager.META_BANNER,
                 "",
                 "_meta:",
                 "  guide_hash: \"latestbottomhash\""

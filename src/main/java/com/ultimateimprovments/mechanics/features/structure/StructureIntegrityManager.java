@@ -44,6 +44,10 @@ public class StructureIntegrityManager {
     private boolean initialized = false;
     private boolean dataDirty = false; // true если были изменения с上次 сохранения
 
+    // Таски тикера и авто-сейва — храним, чтобы корректно отменять при shutdown/reload
+    private org.bukkit.scheduler.BukkitTask tickerTask;
+    private org.bukkit.scheduler.BukkitTask autoSaveTask;
+
     // Цвета для градиентов (HEX без #)
     private static final String COLOR_GREEN = "00AA00";
     private static final String COLOR_RED = "FF0000";
@@ -109,7 +113,12 @@ public class StructureIntegrityManager {
     }
 
     public static void init(Main plugin) {
-        if (instance != null) return;
+        // /ui reload: старый инстанс мог пережить shutdown без отмены тасков.
+        // Гасим его полностью, иначе после глобального cancelTasks() таски
+        // не перезапустятся (guard ниже не пропустит повторный init).
+        if (instance != null) {
+            instance.shutdown();
+        }
         instance = new StructureIntegrityManager(plugin);
     }
 
@@ -362,7 +371,7 @@ public class StructureIntegrityManager {
     // TICKER (1 раз в секунду = 20 тиков)
     // =========================
     private void startTicker() {
-        new BukkitRunnable() {
+        tickerTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (!enabled) return;
@@ -540,7 +549,7 @@ public class StructureIntegrityManager {
      * Предотвращает потерю данных при краше сервера.
      */
     private void startAutoSave() {
-        new BukkitRunnable() {
+        autoSaveTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (!enabled || dataMap.isEmpty()) return;
@@ -670,7 +679,18 @@ public class StructureIntegrityManager {
 
     public void shutdown() {
         saveData();
+        if (tickerTask != null) {
+            tickerTask.cancel();
+            tickerTask = null;
+        }
+        if (autoSaveTask != null) {
+            autoSaveTask.cancel();
+            autoSaveTask = null;
+        }
         initialized = false;
+        // Сброс синглтона — исключает двойной saveData() при reload
+        // (onDisable → shutdown() → null, затем init() создаёт новый инстанс).
+        instance = null;
     }
 
     public boolean isEnabled() {

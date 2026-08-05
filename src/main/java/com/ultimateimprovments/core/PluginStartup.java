@@ -19,6 +19,7 @@ import com.ultimateimprovments.mechanics.security.check.CheckListener;
 import com.ultimateimprovments.mechanics.security.check.CheckManager;
 import com.ultimateimprovments.structure.StructureChunkListener;
 import com.ultimateimprovments.structure.StructureChunkTracker;
+import com.ultimateimprovments.structure.StructureMarker;
 
 /**
  * PluginStartup — матрёшка инициализации UltimateImprovments.
@@ -66,6 +67,9 @@ public class PluginStartup {
 
         // ChgDim Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
         com.ultimateimprovments.command.ChgDimDialogHandler.register();
+
+        // AskPos Dialog handler — диалоги запроса координат (/ui askpos)
+        com.ultimateimprovments.command.AskPosDialogHandler.register();
 
         // Code Panel Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
         com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register();
@@ -241,6 +245,7 @@ public class PluginStartup {
         mm.register(new AttributesModule());
         mm.register(new BeaconModule());
         mm.register(new BlockDmgModule());
+        mm.register(new BlockCollapseModule());
         mm.register(new BoostedCobwebModule());
         mm.register(new DragonEggModule());
         mm.register(new EntityLocatorModule());
@@ -284,7 +289,6 @@ public class PluginStartup {
         mm.register(new MOTDModule());
         mm.register(new TabModule());
         mm.register(new ScoreboardModule());
-        mm.register(new BelowNameModule());
         mm.register(new BossBarModule());
     }
 
@@ -314,9 +318,14 @@ public class PluginStartup {
     private void initPostModuleSystems() {
         // Structure chunk listener & tracker (after DB init from modules)
         plugin.getServer().getPluginManager().registerEvents(new StructureChunkListener(), plugin);
-        StructureChunkListener.scanAll();
+        // Structure markers: the source of truth is SQLite (instead of in-world Marker entities).
+        // 1) load all structure data from the DB into the cache
+        StructureMarker.loadFromDatabase();
+        // 2) read the chunks holding structures and force-load them
         StructureChunkTracker.load();
         StructureChunkTracker.loadTrackedChunks();
+        // 3) one-time migration of legacy Marker entities into the DB (first run after update)
+        StructureMarker.migrateLegacyMarkers();
 
         // OP whitelist
         OpWhitelistManager.init(plugin);

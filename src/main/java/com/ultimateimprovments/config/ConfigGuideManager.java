@@ -16,34 +16,30 @@ import java.util.List;
 /**
  * ConfigGuideManager — управляет ЭМБЕДЖЕННЫМ в config.yml руководством пользователя.
  * <p>
- * С v26.2 plugin-guide.txt больше не хранится как отдельный файл. Его содержимое лежит
- * В НАЧАЛЕ config.yml в виде YAML-комментариев между маркерами:
+ * С v26.2 plugin-guide.txt больше не хранится как отдельный файл и НЕ поставляется
+ * как JAR-ресурс. Его содержимое лежит В НАЧАЛЕ config.yml в виде YAML-комментариев
+ * между маркерами и поддерживается вручную (перевод/правки делаются прямо в файле):
  * <pre>
  * # === ULTIMATEIMPROVMENTS GUIDE BEGIN (auto-managed, don't edit between markers) ===
- * [несколько сотен строк содежимого плагин-гайда в виде комментов с префиксом "# "]
+ * [несколько сотен строк содержимого плагин-гайда в виде комментов с префиксом "# "]
  * # === ULTIMATEIMPROVMENTS GUIDE END ===
  * </pre>
  * <p>
- * Хеш целостности эмбедженного гайда хранится в config.yml под ключом
- * {@code _meta.guide_hash} (самая нижняя секция файла). Раз в запуск плагин:
- * <ol>
- *   <li>Извлекает из config.yml текст между маркерами;</li>
- *   <li>Сравнивает его SHA-256 с {@code _meta.guide_hash};</li>
- *   <li>Если есть новая версия в JAR-ресурсе {@code plugin-guide.txt} — заменяет диапазон
- *       между маркерами и пересчитывает хеш.</li>
- *   <li>Если в dataFolder остался старый файл {@code plugin-guide.txt} (от предыдущей версии
- *       плагина) — мигрирует его содержимое в config.yml, после чего удаляет файл и хеш-файл.</li>
- * </ol>
+ * На старте плагин вызывает {@link #init(Main)}, который лишь удаляет устаревшие
+ * файлы из dataFolder ({@code plugin-guide.txt}/{@code plugin-guide.hash}) от старых
+ * версий. Авто-эмбед/обновление гайда из JAR-ресурса больше НЕ выполняется — гайд
+ * редактируется непосредственно в config.yml.
  * <p>
- * Размер эмбедженного гайда ~180 KB — обновляется крайне редко (при апдейте плагина), trade-off
- * между размером config.yml и удобством «один файл — всё» принят.
+ * В классе сохранены вспомогательные методы (sha256, reconstructRawGuideText,
+ * dedupeMetaBlocks, indexOfLine), используемые unit-тестами {@code ConfigGuideManagerTest}.
+ * Производственный вход — только {@link #init(Main)}.
  */
 public class ConfigGuideManager {
 
     public static final String GUIDE_BEGIN_MARKER = "# === ULTIMATEIMPROVMENTS GUIDE BEGIN (auto-managed by ConfigGuideManager, do not edit between markers) ===";
     public static final String GUIDE_END_MARKER = "# === ULTIMATEIMPROVMENTS GUIDE END ===";
     /** Баннер «не редактировать» над блоком _meta (в самом низу config.yml). */
-    public static final String META_BANNER = "# === INTEGRITY META — НЕ РЕДАКТИРОВАТЬ (auto-managed by ConfigGuideManager) ===";
+    public static final String META_BANNER = "# === INTEGRITY META — DO NOT EDIT (auto-managed) ===";
     public static final String META_KEY = "_meta";
     public static final String META_HASH_KEY = "guide_hash";
     /** Имя JAR-ресурса, откуда берётся актуальный гайд для эмбеда. */
@@ -55,21 +51,15 @@ public class ConfigGuideManager {
     private ConfigGuideManager() {}
 
     /**
-     * Инициализирует гайд: мигрирует старые plugin-guide.txt/plugin-guide.hash в config.yml
-     * (если остались в dataFolder), затем встраивает/обновляет эмбедженный диапазон.
+     * Инициализирует гайд: мигрирует старые plugin-guide.txt/plugin-guide.hash из dataFolder.
+     * <p>
+     * С v26.2 JAR-ресурс {@code plugin-guide.txt} НЕ поставляется — гайд живёт прямо в
+     * config.yml (между маркерами) и поддерживается вручную, поэтому авто-эмбед/обновление
+     * из JAR-ресурса больше не выполняется.
      */
     public static void init(Main plugin) {
-        // 1. Миграция устаревших файлов из dataFolder (если остались)
+        // Миграция устаревших файлов из dataFolder (если остались от старых версий)
         migrateLegacyFiles(plugin);
-
-        // 2. Если в config.yml нет маркеров гайда → встроить из JAR-ресурса
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        if (!configFile.exists()) {
-            ConsoleLogger.warn("[Guide] config.yml отсутствует — гайд не будет встроен до первого saveDefaultConfig.");
-            return;
-        }
-
-        ensureEmbeddedGuide(plugin, configFile);
     }
 
     /**

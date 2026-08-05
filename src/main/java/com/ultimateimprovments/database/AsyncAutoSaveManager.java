@@ -6,13 +6,16 @@ import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.generation.reactor.ReactorManager;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
+import com.ultimateimprovments.structure.StructureMarker;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * AutoSaveManager — автоматическое сохранение всех систем в БД каждые 5 минут.
  * <p>
  * Запускается синхронно на главном серверном потоке.
- * Сохраняет: CableNetwork, ReactorManager, MagnetManager, RadiationManager.
+ * Saves: CableNetwork, ReactorManager, MagnetManager, RadiationManager,
+ * and structures (StructureMarker — full re-save of the structure_markers table;
+ * the «every 10 minutes» requirement is covered with a margin).
  */
 public class AsyncAutoSaveManager extends BukkitRunnable {
 
@@ -75,6 +78,13 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
         } catch (Exception e) {
             ConsoleLogger.warn("[AutoSave] Magnet save error: " + e.getMessage());
         }
+
+        try {
+            StructureMarker.saveAll();
+            Main.getInstance().getLogger().finer("[AutoSave] Structure markers saved.");
+        } catch (Exception e) {
+            ConsoleLogger.warn("[AutoSave] Structure markers save error: " + e.getMessage());
+        }
     }
 
     @Override
@@ -101,6 +111,10 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
 
         try { MagnetManager.saveAll(); } catch (Exception e) {
             ConsoleLogger.warn("[AutoSave] Magnet error: " + e.getMessage());
+        }
+
+        try { StructureMarker.saveAll(); } catch (Exception e) {
+            ConsoleLogger.warn("[AutoSave] Structure markers error: " + e.getMessage());
         }
 
         plugin.getLogger().fine("[AutoSave] Auto-save complete.");

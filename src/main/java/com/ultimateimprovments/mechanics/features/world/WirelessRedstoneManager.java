@@ -53,6 +53,9 @@ public class WirelessRedstoneManager implements Listener {
     private static WirelessRedstoneManager instance;
     private static boolean enabled = true;
 
+    /** Таск-наблюдатель — храним, чтобы корректно отменять при shutdown/reload. */
+    private org.bukkit.scheduler.BukkitTask observerTask;
+
     private final Map<UUID, BlockPos> bindingPlayers = new ConcurrentHashMap<>();
 
     /** One-to-many: BlockPos → Set<BlockPos> (двусторонние связи) */
@@ -91,12 +94,31 @@ public class WirelessRedstoneManager implements Listener {
     // INIT
     // ════════════════════════════════════════
     public static void init(Main plugin) {
-        if (instance != null) return;
+        // /ui reload: старый инстанс мог пережить onDisable (модуль не звал shutdown),
+        // а его таск отменяется глобальным cancelTasks(). Без этого guard'а init()
+        // вернулся бы раньше времени и наблюдатель никогда бы не перезапустился.
+        if (instance != null) {
+            shutdown();
+        }
         instance = new WirelessRedstoneManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         instance.loadFromDatabase();
         instance.startObserverTask();
         ConsoleLogger.info("[WirelessRedstone] Initialized with " + countLinks() + " active links");
+    }
+
+    /**
+     * Останавливает наблюдатель и сбрасывает синглтон. Вызывается при
+     * отключении модуля и перед повторным init (например, /ui reload).
+     */
+    public static void shutdown() {
+        if (instance == null) return;
+        if (instance.observerTask != null) {
+            instance.observerTask.cancel();
+            instance.observerTask = null;
+        }
+        instance.observerPrevPowered.clear();
+        instance = null;
     }
 
     private static int countLinks() {
@@ -167,7 +189,7 @@ public class WirelessRedstoneManager implements Listener {
     // OBSERVER TASK
     // ════════════════════════════════════════
     private void startObserverTask() {
-        new org.bukkit.scheduler.BukkitRunnable() {
+        observerTask = new org.bukkit.scheduler.BukkitRunnable() {
             @Override
             public void run() {
                 for (Map.Entry<BlockPos, Set<BlockPos>> entry : links.entrySet()) {

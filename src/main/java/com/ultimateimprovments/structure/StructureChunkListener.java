@@ -20,105 +20,61 @@ import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 
 /**
- * Слушатель загрузки чанков и миров — сканирует чанк на Marker'ы структур
- * и восстанавливает in-memory кэш StructureMarker.
+ * World-load listener — rebuilds managers from the {@link StructureMarker} cache.
  * <p>
- * Регистрируется при старте плагина, слушает все загруженные чанки.
- * <p>
- * Проблема: при старте сервера загружены только спавн-чанки.
- * Решение: множественные отложенные rebuild (5с, 30с, 120с) +
- * WorldLoadEvent + debounced rebuild из ChunkLoadEvent.
+ * Previously chunks were scanned for Marker entities to restore the cache — that
+ * mechanism is FULLY replaced by storing structure data in SQLite
+ * ({@link StructureMarker#loadFromDatabase()} at startup). Now the cache is always
+ * complete, and ChunkLoadEvent is not needed: manager rebuilds happen from the cache.
  */
 public class StructureChunkListener implements Listener {
 
     // ════════════════════════════════════════
-    // WORLD LOAD — при загрузке нового мира сканируем его чанки
+    // WORLD LOAD — when a new world loads, rebuild the managers
+    // (and clean up that world's legacy Markers if any remain)
     // ════════════════════════════════════════
     @EventHandler
     public void onWorldLoad(WorldLoadEvent e) {
-        World world = e.getWorld();
-        for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
-            StructureMarker.scanChunk(chunk);
-        }
-        // Перестраиваем менеджеры с учётом нового мира
+        // Remove outdated Marker entities (idempotent; writes nothing to the DB
+        // if data already exists — only removes entities)
+        StructureMarker.migrateLegacyMarkers();
         rebuildAllManagers();
     }
 
     // ════════════════════════════════════════
-    // CHUNK LOAD — при загрузке чанка сканируем Marker'ы
-    // Если найдены новые — планируем debounced rebuild
+    // CHUNK LOAD — nothing is scanned anymore: structure data lives in the DB,
+    // the cache is complete from the moment the plugin loads.
     // ════════════════════════════════════════
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent e) {
-        boolean foundNew = StructureMarker.scanChunk(e.getChunk());
-        if (foundNew) {
-            scheduleDebouncedChunkRebuild();
-        }
-    }
-
-    // ════════════════════════════════════════
-    // SCAN ALL — сканировать все загруженные чанки на всех мирах
-    // ════════════════════════════════════════
-    public static void scanAll() {
-        for (org.bukkit.World world : Main.getInstance().getServer().getWorlds()) {
-            for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
-                StructureMarker.scanChunk(chunk);
-            }
-        }
-    }
-
-    // ════════════════════════════════════════
-    // DEBOUNCED CHUNK REBUILD
-    // Если чанки загружаются пачками — не дёргаем rebuild каждый раз,
-    // а ждём 2 секунды без новых чанков с Marker'ами.
-    // ════════════════════════════════════════
-    private static int chunkRebuildTaskId = -1;
-
-    private static synchronized void scheduleDebouncedChunkRebuild() {
-        if (chunkRebuildTaskId != -1) {
-            Bukkit.getScheduler().cancelTask(chunkRebuildTaskId);
-        }
-        chunkRebuildTaskId = Bukkit.getScheduler().runTaskLater(
-            Main.getInstance(),
-            () -> {
-                synchronized (StructureChunkListener.class) {
-                    chunkRebuildTaskId = -1;
-                }
-                rebuildAllManagers();
-            },
-            40L // 2 секунды debounce
-        ).getTaskId();
+        // no-op: Marker scanning was removed in favor of SQLite persistence
     }
 
     // ════════════════════════════════════════
     // SCHEDULE DELAYED REBUILDS
-    // При старте сервера загружены только спавн-чанки. scanAll() находит почти ничего.
-    // Множественные отложенные перестройки покрывают разные стадии загрузки:
-    //   5 сек — большинство чанков рядом со спавном
-    //  30 сек — чанки дальше от спавна, мультимиры
-    // 120 сек — чанки на краю загрузки, поздние миры (Multiverse etc.)
+    // At server startup only the spawn chunks are loaded. Managers are rebuilt
+    // from the cache (already loaded from the DB), but the delayed passes cover
+    // late worlds (Multiverse etc.):
+    //    5 sec — most worlds
+    //   30 sec — chunks farther from spawn, multi-worlds
+    //  120 sec — very late worlds (Multiverse etc.)
     // ════════════════════════════════════════
     public static void scheduleDelayedRebuild(Plugin plugin) {
-        // 5 секунд
+        // 5 seconds
         Bukkit.getScheduler().runTaskLater(plugin, () -> rebuildAllManagers(), 100L);
 
-        // 30 секунд
+        // 30 seconds
         Bukkit.getScheduler().runTaskLater(plugin, () -> rebuildAllManagers(), 600L);
 
-        // 120 секунд
+        // 120 seconds
         Bukkit.getScheduler().runTaskLater(plugin, () -> rebuildAllManagers(), 2400L);
     }
 
     // ════════════════════════════════════════
     // REBUILD ALL MANAGERS
-    // Перестраивает все менеджеры из кэша StructureMarker.
-    // Сначала сканирует все загруженные чанки, затем перезапускает rebuild каждого менеджера.
+    // Rebuilds all managers from the StructureMarker cache (populated from the DB).
     // ════════════════════════════════════════
     private static void rebuildAllManagers() {
-        // 1. Сканируем все загруженные чанки (кэш пополняется новыми Marker'ами)
-        scanAll();
-
-        // 2. Перестраиваем каждый менеджер из маркеров
         CableNetwork.rebuildFromMarkers();
         BatteryManager.rebuildFromMarkers();
         LightManager.rebuildFromMarkers();

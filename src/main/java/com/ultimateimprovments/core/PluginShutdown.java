@@ -2,12 +2,16 @@ package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.command.PluginReloadCommand;
 import com.ultimateimprovments.command.SubCommandRegistry;
+import com.ultimateimprovments.core.TaskManager;
+import com.ultimateimprovments.listener.FishingListener;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.whitelist.OpWhitelistManager;
 import com.ultimateimprovments.display.TabManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.mechanics.security.check.CheckManager;
 import com.ultimateimprovments.structure.StructureChunkTracker;
+import com.ultimateimprovments.structure.StructureMarker;
+import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
 
 /**
@@ -69,6 +73,8 @@ public class PluginShutdown {
 
     private void savePersistentData() {
         StructureChunkTracker.save();
+        // Save all structure data to the DB on shutdown (the DB is the source of truth)
+        StructureMarker.saveAll();
         ConsoleLogger.info("[Shutdown] Persistent data saved.");
     }
 
@@ -78,6 +84,19 @@ public class PluginShutdown {
 
     private void stopBackgroundTasks() {
         com.ultimateimprovments.server.AccessListCheckTask.stop();
+
+        // ⛔ Сбрасываем ВСЕ задачи плагина (синхронные и асинхронные).
+        // Критично для /ui reload: часть модулей запускает repeating-таски
+        // с пустым onDisable (или без отмены старого таска в init()), из-за
+        // чего после каждого reload таски ДУБЛИРУЮТСЯ. cancelTasks() гасит
+        // всё разом, а на старте модули создают свежие таски заново.
+        Bukkit.getScheduler().cancelTasks(plugin);
+
+        // cancelTasks() не очищает внутреннее поле task у BukkitRunnable,
+        // поэтому у singleton'ов (FishingListener) повторный runTaskTimer()
+        // упал бы с "Already scheduled" → модуль бы не запустился.
+        // Сбрасываем явно, независимо от порядка отключения модулей.
+        TaskManager.resetBukkitRunnableTask(FishingListener.getInstance());
         ConsoleLogger.info("[Shutdown] Background tasks stopped.");
     }
 

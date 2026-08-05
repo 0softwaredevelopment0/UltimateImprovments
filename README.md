@@ -458,7 +458,7 @@ Also available via internal fallback resolver without PAPI.
 src/main/java/com/ultimateimprovments/
 ├── chat/           — Chat and pings
 ├── combat/         — Weapons (Plasma Cannon, Shoker)
-├── command/        — Command system (/mp)
+├── command/        — Command system (/ui)
 ├── config/         — Configs, auto-repair, guide
 ├── core/           — Core: Main, scanners, startup
 ├── database/       — SQLite, auto-save

@@ -59,8 +59,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 tc((s, a) -> WhitelistSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("chgop", ChgOpSubcommand::execute,
                 tc((s, a) -> ChgOpSubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("bc", BroadcastSubcommand::execute,
-                tc((s, a) -> BroadcastSubcommand.tabComplete(a))));
+        registry.register(LegacySubCommandAdapter.of("broadcast", BroadcastSubcommand::execute,
+                tc((s, a) -> BroadcastSubcommand.tabComplete(a)),
+                List.of("bc"))); // /ui bc — алиас для совместимости
         registry.register(LegacySubCommandAdapter.of("blacklist", BlacklistSubcommand::execute,
                 tc((s, a) -> BlacklistSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("maint", MaintSubcommand::execute,
@@ -126,6 +127,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 (s, a) -> { MiscSubcommand.fly(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("flyspeed", FlySpeedSubcommand::execute,
                 tc((s, a) -> FlySpeedSubcommand.tabComplete(a))));
+        registry.register(LegacySubCommandAdapter.of("uuid", UuidSubcommand::execute,
+                tc((s, a) -> UuidSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("sudo", SudoSubcommand::execute,
                 tc((s, a) -> SudoSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("god",
@@ -185,16 +188,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── Protection Block admin ops ──
         registry.register(LegacySubCommandAdapter.of("protection",
                 (s, a) -> { ProtectionSubcommand.execute(s, a); return true; }));
-        registry.register(LegacySubCommandAdapter.of("chgdim_teleport", (s, a) -> {
-            if (!(s instanceof Player p) || a.length < 2) return false;
-            ChgDimCommand.teleport(p, a[1]);
-            return true;
-        }));
-        registry.register(LegacySubCommandAdapter.of("chgdim_return", (s, a) -> {
-            if (!(s instanceof Player p)) return false;
-            ChgDimCommand.teleportBack(p);
-            return true;
-        }));
         registry.register(LegacySubCommandAdapter.of("op", (s, a) -> {
             if (!(s instanceof ConsoleCommandSender)) return false;
             if (a.length < 2) return false;
@@ -237,19 +230,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 default -> false;
             };
         }));
-        registry.register(LegacySubCommandAdapter.of("askcords", (s, a) -> {
+        // ── AskPos: dialog-based coordinate request (formerly askcords; accept/decline removed — all in dialogs) ──
+        registry.register(LegacySubCommandAdapter.of("askpos", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            AskCordsManager.execute(p, a);
-            return true;
-        }));
-        registry.register(LegacySubCommandAdapter.of("askcords_accept", (s, a) -> {
-            if (!(s instanceof Player p) || a.length < 2) return false;
-            AskCordsManager.accept(p, a[1]);
-            return true;
-        }));
-        registry.register(LegacySubCommandAdapter.of("askcords_decline", (s, a) -> {
-            if (!(s instanceof Player p) || a.length < 2) return false;
-            AskCordsManager.decline(p, a[1]);
+            AskCordsManager.execute(p);
             return true;
         }));
 

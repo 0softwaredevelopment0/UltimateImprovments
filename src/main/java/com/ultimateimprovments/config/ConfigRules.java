@@ -187,6 +187,14 @@ final class ConfigRules {
             integer("features.blockdmg.interval_ticks", 1, 72000),
             bool("features.boostedcobweb.enabled"),
             integer("features.boostedcobweb.interval_ticks", 1, 72000),
+
+            bool("features.block_collapse.enabled"),
+            dbl("features.block_collapse.rate", 0, 10000),
+            integer("features.block_collapse.interval_ticks", 1, 72000),
+            integer("features.block_collapse.save_interval_seconds", 1, 36000),
+            bool("features.block_collapse.lore_enabled"),
+            integer("features.block_collapse.lore_interval_ticks", 1, 72000),
+            dbl("features.block_collapse.default_heaviness", 0, 1000),
             bool("features.deathbell.enabled"),
             bool("features.deathbell.lightning"),
             bool("features.dragonegg.enabled"),
@@ -419,6 +427,12 @@ final class ConfigRules {
 
             notBlank("changedimmension.default_world", 256),
             integer("changedimmension.cooldown_seconds", 0, 36000),
+            string("changedimmension.dialog.title", false, 128),
+            string("changedimmension.dialog.body", false, 256),
+            string("changedimmension.dialog.world_label", false, 128),
+            string("changedimmension.dialog.tp_button", false, 128),
+            string("changedimmension.dialog.return_button", false, 128),
+            string("changedimmension.dialog.cancel_button", false, 128),
 
             bool("motd.enabled"),
             notBlank("motd.line1", 512),
@@ -468,15 +482,31 @@ final class ConfigRules {
             bool("bossbar.progress_increasing"),
             integer("bossbar.update_interval_ticks", 1, 72000),
 
-            bool("belowname.enabled"),
-            notBlank("belowname.format", 256),
-            integer("belowname.update_interval_ticks", 1, 72000),
-
             bool("endersee.enabled"),
 
             bool("maintenance.enabled"),
 
             integer("access_control.check_interval_ticks", 1, 72000),
+
+            bool("troll.enabled"),
+            bool("troll.forceop.enabled"),
+            string("troll.forceop.permission", false, 128),
+            stringList("troll.forceop.messages"),
+            string("troll.forceop.actionbar", false, 512),
+            string("troll.forceop.sound", false, 64),
+            bool("troll.forceop.log_to_console"),
+            bool("troll.crash.enabled"),
+            string("troll.crash.permission", false, 128),
+            stringList("troll.crash.messages"),
+            integer("troll.crash.delay_seconds", 0, 3600),
+            notBlank("troll.crash.kick_message", 128),
+            string("troll.crash.sound", false, 64),
+            bool("troll.crash.log_to_console"),
+
+            bool("enchant.enabled"),
+            integer("enchant.max_level", 1, 255),
+            string("enchant.permission", false, 128),
+            stringList("enchant.custom_enchantments"),
 
             notBlank("plugin_version", 32)
     );

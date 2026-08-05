@@ -31,6 +31,8 @@ public class ChgDimDialogScreen {
 
     /** Идентификатор CustomAll действия для телепортации. */
     public static final Identifier CHGDIM_SUBMIT_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "chgdim_submit");
+    /** CustomAll action identifier for returning to the starting point. */
+    public static final Identifier CHGDIM_RETURN_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "chgdim_return");
     /** Идентификатор CustomAll действия для отмены. */
     public static final Identifier CHGDIM_CANCEL_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "chgdim_cancel");
 
@@ -98,6 +100,16 @@ public class ChgDimDialogScreen {
             new CommonButtonData(tpLabel, 150),
             Optional.of(new CustomAll(CHGDIM_SUBMIT_ID, Optional.empty()))
         );
+        // Return → CustomAll action (back to the starting point, formerly /ui chgdim_return)
+        net.minecraft.network.chat.Component returnLabel = toNative(
+            MM.deserialize(Main.getInstance().getConfig().getString(
+                "changedimmension.dialog.return_button",
+                "<aqua>↩ Return back</aqua>"))
+        );
+        ActionButton returnBtn = new ActionButton(
+            new CommonButtonData(returnLabel, 150),
+            Optional.of(new CustomAll(CHGDIM_RETURN_ID, Optional.empty()))
+        );
         // Cancel → CustomAll action (закрывает диалог без телепортации)
         ActionButton cancelBtn = new ActionButton(
             new CommonButtonData(cancelLabel, 150),
@@ -117,9 +129,9 @@ public class ChgDimDialogScreen {
 
         MultiActionDialog dialog = new MultiActionDialog(
             data,
-            List.of(tpBtn),     // mainActions
-            Optional.of(cancelBtn), // exitAction
-            1                       // columns
+            List.of(tpBtn, returnBtn), // mainActions
+            Optional.of(cancelBtn),    // exitAction
+            1                          // columns
         );
 
         serverPlayer.openDialog(Holder.direct(dialog));

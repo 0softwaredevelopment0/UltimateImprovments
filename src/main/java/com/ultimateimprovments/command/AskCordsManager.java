@@ -4,33 +4,27 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
-
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * AskCordsManager — отправляет запрос игроку на показ координат.
+ * AskCordsManager — coordinate request via dialogs (/ui askpos).
  * <p>
- * Команда: {@code /ui askcords <nick>}
- * <p>
- * Механика:
+ * Mechanics:
  * <ol>
- *   <li>Игрок A вводит {@code /ui askcords ИгрокБ}</li>
- *   <li>Игроку Б приходит clickable-сообщение с кнопками ✔ Принять / ❌ Отклонить</li>
- *   <li>Если принял — игрок A получает мир и координаты игрока Б</li>
- *   <li>Если отклонил — игрок A получает сообщение об отказе</li>
- *   <li>Кулдаун на команду: 10 секунд</li>
+ *   <li>Player A runs {@code /ui askpos} — a dialog opens with an input field for the
+ *       nickname of the player to send the request to (the nickname must be online).</li>
+ *   <li>After «✔ Confirm», recipient B gets a dialog «Player A requested your coordinates
+ *       and world» with ✔ Confirm / ✖ Cancel buttons.</li>
+ *   <li>If B confirms — A receives the world and coordinates of player B; if cancelled —
+ *       A gets a refusal message.</li>
+ *   <li>Command cooldown: 30 seconds (against dialog spam).</li>
  * </ol>
  */
 public class AskCordsManager {
@@ -38,202 +32,150 @@ public class AskCordsManager {
     private static final Map<UUID, Long> cooldowns = new HashMap<>();
     private static final Map<UUID, UUID> pendingRequests = new HashMap<>(); // target -> sender
 
-    private static final long COOLDOWN_MS = 10_000L; // 10 секунд
+    private static final long COOLDOWN_MS = 30_000L; // 30 seconds
 
     private AskCordsManager() {}
 
     /**
-     * Выполняет команду /ui askcords <nick> от имени игрока.
+     * Executes /ui askpos: checks the cooldown and opens the request dialog.
      */
-    public static boolean execute(Player sender, String[] args) {
-        if (args.length < 2) {
-            sender.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("askcords.usage",
-                            "<red>❌ Usage: </red><white>/ui askcords <nick></white>")));
-            return true;
-        }
-
+    public static boolean execute(Player sender) {
         UUID senderUuid = sender.getUniqueId();
 
         // =========================
-        // COOLDOWN CHECK
+        // COOLDOWN CHECK (set immediately — against dialog spam)
         // =========================
         long now = System.currentTimeMillis();
         Long lastUse = cooldowns.get(senderUuid);
         if (lastUse != null && (now - lastUse) < COOLDOWN_MS) {
             long remaining = ((COOLDOWN_MS - (now - lastUse)) / 1000) + 1;
             sender.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("askcords.cooldown",
+                    MessagesManager.getString("askpos.cooldown",
                             "<red>❌ Please wait </red><yellow>%seconds%</yellow><red> seconds before using this again!</red>")
                             .replace("%seconds%", String.valueOf(remaining))));
+            sender.playSound(sender.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return true;
         }
 
+        cooldowns.put(senderUuid, now);
+        AskPosDialogScreen.openRequest(sender);
+        return true;
+    }
+
+    /**
+     * Sends the request after the nickname is confirmed in the dialog.
+     */
+    public static void handleSubmit(Player sender, String targetName) {
         // =========================
-        // FIND TARGET
+        // FIND TARGET (must be online)
         // =========================
-        String targetName = args[1];
         @SuppressWarnings("deprecation")
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
-            sender.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("askcords.player_not_found",
-                            "<red>❌ Player </red><yellow>%player%</yellow><red> not found!</red>")
-                            .replace("%player%", targetName)));
-            return true;
+            reopenRequest(sender, "Player \"" + targetName + "\" is not online!");
+            return;
         }
 
-        // Нельзя отправить запрос самому себе
+        // Cannot send a request to yourself
         if (sender.equals(target)) {
-            sender.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("askcords.cannot_self",
-                            "<red>❌ You cannot send a coordinates request to yourself!</red>")));
-            return true;
+            reopenRequest(sender, "You cannot request your own coordinates!");
+            return;
         }
 
         // =========================
         // SEND REQUEST
         // =========================
-        cooldowns.put(senderUuid, now);
-        pendingRequests.put(target.getUniqueId(), senderUuid);
+        pendingRequests.put(target.getUniqueId(), sender.getUniqueId());
 
-        // Сообщение отправителю
+        // Message to the sender
         sender.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.request_sent",
-                        "<green>✔</green> <white>Coordinates request sent to</white> <yellow>%player%</yellow><white>.</white>")
+                MessagesManager.getString("askpos.request_sent",
+                        "<green>✔</green> <white>Position request sent to</white> <yellow>%player%</yellow><white>.</white>")
                         .replace("%player%", target.getName())));
         sender.playSound(sender.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.5f);
 
-        // Сообщение цели с кнопками
-        sendRequestToTarget(sender, target);
-
-        return true;
-    }
-
-    /**
-     * Отправляет получателю clickable-сообщение с кнопками принятия/отказа.
-     */
-    private static void sendRequestToTarget(Player sender, Player target) {
-        target.sendMessage("");
-        target.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.request_header",
-                        "<gold>═══════════════════════════════════</gold>")));
-        target.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.request_title",
-                        "<gold>  ✦ </gold><white>Coordinates Request</white>")));
-        target.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.request_header",
-                        "<gold>═══════════════════════════════════</gold>")));
-        target.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.request_body",
-                        "<gray>Player </gray><yellow>%player%</yellow><gray> is requesting your coordinates.</gray>")
-                        .replace("%player%", sender.getName())));
-        target.sendMessage("");
-
-        // ✔ Accept button
-        TextComponent acceptBtn = new TextComponent(
-                MessagesManager.getString("askcords.accept_button", "     §a[§2✔ Accept§a]"));
-        acceptBtn.setClickEvent(new ClickEvent(
-                ClickEvent.Action.RUN_COMMAND,
-                "/ui askcords_accept " + sender.getName()
-        ));
-        acceptBtn.setHoverEvent(new HoverEvent(
-                HoverEvent.Action.SHOW_TEXT,
-                new ComponentBuilder(
-                        MessagesManager.getString("askcords.accept_hover", "§aClick to accept and share your coordinates")
-                ).create()
-        ));
-
-        // ❌ Decline button
-        TextComponent declineBtn = new TextComponent(
-                MessagesManager.getString("askcords.decline_button", " §c[§4❌ Decline§c]"));
-        declineBtn.setClickEvent(new ClickEvent(
-                ClickEvent.Action.RUN_COMMAND,
-                "/ui askcords_decline " + sender.getName()
-        ));
-        declineBtn.setHoverEvent(new HoverEvent(
-                HoverEvent.Action.SHOW_TEXT,
-                new ComponentBuilder(
-                        MessagesManager.getString("askcords.decline_hover", "§cClick to decline the request")
-                ).create()
-        ));
-
-        target.spigot().sendMessage(acceptBtn, declineBtn);
-        target.sendMessage("");
-
-        target.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.request_footer",
-                        "<gold>═══════════════════════════════════</gold>")));
-        target.sendMessage("");
-
+        // Close the sender's dialog and open the response dialog for the recipient
+        AskPosDialogScreen.close(sender);
+        AskPosDialogScreen.openResponse(target, sender.getName());
         target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 1.0f);
     }
 
     /**
-     * Обрабатывает подтверждение запроса от цели.
-     * Вызывается через /ui askcords_accept <nick>
+     * Closes and reopens the request dialog with an error message.
      */
-    public static boolean accept(Player target, String senderName) {
+    public static void reopenRequest(Player player, String errorMessage) {
+        AskPosDialogScreen.close(player);
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            if (player.isOnline()) {
+                AskPosDialogScreen.openRequest(player, errorMessage);
+            }
+        }, 10L);
+    }
+
+    /**
+     * Handles the recipient accepting the request (button in the response dialog).
+     */
+    public static boolean accept(Player target) {
         UUID targetUuid = target.getUniqueId();
         UUID senderUuid = pendingRequests.remove(targetUuid);
 
         if (senderUuid == null) {
             target.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("askcords.no_pending_request",
-                            "<red>❌ You have no pending coordinates request!</red>")));
+                    MessagesManager.getString("askpos.no_pending_request",
+                            "<red>❌ You have no pending position request!</red>")));
             return true;
         }
 
         Player sender = Bukkit.getPlayer(senderUuid);
         if (sender == null || !sender.isOnline()) {
             target.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("askcords.sender_offline",
+                    MessagesManager.getString("askpos.sender_offline",
                             "<red>❌ The player who requested the coordinates is no longer online!</red>")));
             return true;
         }
 
-        // Получаем мир и координаты цели
+        // Get the world and coordinates of the target
         Location targetLoc = target.getLocation();
         String worldName = targetLoc.getWorld().getName();
         int x = targetLoc.getBlockX();
         int y = targetLoc.getBlockY();
         int z = targetLoc.getBlockZ();
 
-        // Сообщение отправителю с координатами
+        // Message to the sender with the coordinates
         sender.sendMessage("");
         sender.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.result_header",
+                MessagesManager.getString("askpos.result_header",
                         "<gold>═══════════════════════════════════</gold>")));
         sender.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.result_title",
+                MessagesManager.getString("askpos.result_title",
                         "<gold>  ✦ </gold><green>Coordinates received!</green>")));
         sender.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.result_header",
+                MessagesManager.getString("askpos.result_header",
                         "<gold>═══════════════════════════════════</gold>")));
         sender.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.result_player",
+                MessagesManager.getString("askpos.result_player",
                         "<gray>Player: </gray><yellow>%player%</yellow>")
                         .replace("%player%", target.getName())));
         sender.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.result_world",
+                MessagesManager.getString("askpos.result_world",
                         "<gray>World: </gray><white>%world%</white>")
                         .replace("%world%", worldName)));
         sender.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.result_coords",
+                MessagesManager.getString("askpos.result_coords",
                         "<gray>Coordinates: </gray><white>%x% / %y% / %z%</white>")
                         .replace("%x%", String.valueOf(x))
                         .replace("%y%", String.valueOf(y))
                         .replace("%z%", String.valueOf(z))));
         sender.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.result_header",
+                MessagesManager.getString("askpos.result_header",
                         "<gold>═══════════════════════════════════</gold>")));
         sender.sendMessage("");
 
         sender.playSound(sender.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.5f);
 
-        // Сообщение цели
+        // Message to the target
         target.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.accepted_notify",
+                MessagesManager.getString("askpos.accepted_notify",
                         "<green>✔</green> <white>You shared your coordinates with</white> <yellow>%player%</yellow><white>.</white>")
                         .replace("%player%", sender.getName())));
         target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.3f, 1.2f);
@@ -242,45 +184,43 @@ public class AskCordsManager {
     }
 
     /**
-     * Обрабатывает отказ запроса от цели.
-     * Вызывается через /ui askcords_decline <nick>
+     * Handles the recipient declining the request (button in the response dialog).
      */
-    public static boolean decline(Player target, String senderName) {
+    public static boolean decline(Player target) {
         UUID targetUuid = target.getUniqueId();
         UUID senderUuid = pendingRequests.remove(targetUuid);
 
         if (senderUuid == null) {
             target.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("askcords.no_pending_request",
-                            "<red>❌ You have no pending coordinates request!</red>")));
+                    MessagesManager.getString("askpos.no_pending_request",
+                            "<red>❌ You have no pending position request!</red>")));
             return true;
         }
 
         Player sender = Bukkit.getPlayer(senderUuid);
         if (sender != null && sender.isOnline()) {
             sender.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("askcords.declined_notify_sender",
-                            "<red>❌ Player </red><yellow>%player%</yellow><red> declined your coordinates request.</red>")
+                    MessagesManager.getString("askpos.declined_notify_sender",
+                            "<red>❌ Player </red><yellow>%player%</yellow><red> declined your position request.</red>")
                             .replace("%player%", target.getName())));
             sender.playSound(sender.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
         }
 
         target.sendMessage(MessageUtil.parse(
-                MessagesManager.getString("askcords.declined_notify_target",
-                        "<yellow>✦</yellow> <white>You declined the coordinates request from</white> <yellow>%player%</yellow><white>.</white>")
-                        .replace("%player%", sender != null ? sender.getName() : senderName)));
+                MessagesManager.getString("askpos.declined_notify_target",
+                        "<yellow>✦</yellow> <white>You declined the position request.</white>")));
         target.playSound(target.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
 
         return true;
     }
 
     /**
-     * Очищает данные игрока (при выходе).
+     * Clears the player's data (on quit).
      */
     public static void cleanup(UUID uuid) {
         cooldowns.remove(uuid);
         pendingRequests.remove(uuid);
-        // Также удаляем из waiting-запросов, где этот игрок отправитель
+        // Also remove waiting requests where this player is the sender
         pendingRequests.values().removeIf(v -> v.equals(uuid));
     }
 }

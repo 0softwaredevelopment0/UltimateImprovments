@@ -381,6 +381,35 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🏷 STRUCTURE MARKERS — FULL structure data (replaced Marker entities)
+        // Source of truth: world + exact block coordinates → type + UUID of the structure.
+        // All work happens from the RAM cache, but every entry is mirrored in the DB:
+        // place/remove write immediately, plus a full re-save every 10 minutes
+        // and on server shutdown.
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS structure_markers (
+                world TEXT NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                z INTEGER NOT NULL,
+                type TEXT NOT NULL,
+                structure_uuid TEXT NOT NULL,
+                PRIMARY KEY(world, x, y, z)
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_structure_markers_uuid
+            ON structure_markers(structure_uuid);
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_structure_markers_world
+            ON structure_markers(world);
+        """);
+
+        // =========================
         // 🔴 REDSTONE BLOCKS — вечно заблокированные редстоун-чанки (persist)
         // =========================
         st.execute("""
@@ -392,6 +421,25 @@ public class DatabaseInit {
                 blocked_at INTEGER NOT NULL,
                 iterations INTEGER NOT NULL DEFAULT 0
             );
+        """);
+
+        // =========================
+        // 🏗 BLOCK COLLAPSE — липкость/тяжесть поставленных блоков (persist)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS block_collapse (
+                world TEXT NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                z INTEGER NOT NULL,
+                stickiness REAL NOT NULL DEFAULT 100,
+                PRIMARY KEY(world, x, y, z)
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_block_collapse_world
+            ON block_collapse(world);
         """);
 
         // =========================

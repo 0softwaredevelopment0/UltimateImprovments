@@ -15,8 +15,8 @@ import java.util.List;
  * /ui sudo — управление sudo-режимом (GitHub-style).
  * <ul>
  *   <li>{@code /ui sudo status} — статус сессии</li>
- *   <li>{@code /ui sudo on} — открыть диалог ввода sudo-пароля</li>
- *   <li>{@code /ui sudo off} — выйти из sudo-режима</li>
+ *   <li>{@code /ui sudo reenter} — re-enter sudo mode (open the password dialog)</li>
+ *   <li>{@code /ui sudo clearsession} — exit sudo mode (clear the session)</li>
  *   <li>{@code /ui sudo reset} — запросить сброс sudo-пароля (подтверждает консоль)</li>
  *   <li>{@code /ui sudo confirmreset <nick>} — консоль подтверждает сброс</li>
  * </ul>
@@ -34,20 +34,20 @@ public final class SudoSubcommand {
 
         if (args.length < 2) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>Usage: </red><white>/ui sudo status|on|off|reset</white>"));
+                    "<dark_red>❌</dark_red> <red>Usage: </red><white>/ui sudo status|reenter|clearsession|reset</white>"));
             return true;
         }
 
         return switch (args[1].toLowerCase()) {
             case "status" -> handleStatus(sender);
-            case "on" -> handleOn(sender);
-            case "off" -> handleOff(sender);
+            case "reenter" -> handleReenter(sender);
+            case "clearsession" -> handleClearSession(sender);
             case "reset" -> handleReset(sender);
             case "confirmreset" -> handleConfirmReset(sender, args);
             default -> {
                 sender.sendMessage(MessageUtil.parse(
                         "<dark_red>❌</dark_red> <red>Unknown: </red><white>" + args[1]
-                                + "</white><red>. Usage: </red><white>/ui sudo status|on|off|reset</white>"));
+                                + "</white><red>. Usage: </red><white>/ui sudo status|reenter|clearsession|reset</white>"));
                 yield true;
             }
         };
@@ -71,14 +71,14 @@ public final class SudoSubcommand {
         player.sendMessage(MessageUtil.parse(hasPassword
                 ? "<gray>Password: </gray><green>✔ set</green>"
                 : "<gray>Password: </gray><red>✖ not set</red>"));
-        player.sendMessage(MessageUtil.parse("<gray>Commands: </gray><white>/ui sudo on|off|reset</white>"));
+        player.sendMessage(MessageUtil.parse("<gray>Commands: </gray><white>/ui sudo reenter|clearsession|reset</white>"));
         player.sendMessage("");
         return true;
     }
 
-    private static boolean handleOn(CommandSender sender) {
+    private static boolean handleReenter(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can enter sudo mode.</red>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can re-enter sudo mode.</red>"));
             return true;
         }
         SudoManager manager = SudoManager.getInstance();
@@ -91,16 +91,16 @@ public final class SudoSubcommand {
         return true;
     }
 
-    private static boolean handleOff(CommandSender sender) {
+    private static boolean handleClearSession(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can exit sudo mode.</red>"));
+            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can clear a sudo session.</red>"));
             return true;
         }
         SudoManager manager = SudoManager.getInstance();
         if (manager != null) {
             manager.endSudoSession(player.getUniqueId());
         }
-        player.sendMessage(MessageUtil.parse("<gray>✖ Sudo mode deactivated.</gray>"));
+        player.sendMessage(MessageUtil.parse("<gray>✖ Sudo session cleared.</gray>"));
         return true;
     }
 
@@ -137,8 +137,8 @@ public final class SudoSubcommand {
         List<String> result = new ArrayList<>();
         if (args.length == 2) {
             result.add("status");
-            result.add("on");
-            result.add("off");
+            result.add("reenter");
+            result.add("clearsession");
             result.add("reset");
             result.add("confirmreset");
         } else if (args.length == 3 && args[1].equalsIgnoreCase("confirmreset")) {

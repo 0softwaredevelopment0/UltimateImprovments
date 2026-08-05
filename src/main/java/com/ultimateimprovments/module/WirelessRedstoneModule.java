@@ -18,6 +18,10 @@ public class WirelessRedstoneModule extends PluginModule {
     @Override
     protected void onDisable(JavaPlugin plugin) {
         WirelessRedstoneManager.restoreAllPowerBlocks();
+        // Сбрасываем синглтон + отменяем таск-наблюдатель, иначе после
+        // /ui reload старый наблюдатель либо останется висеть (дубликат),
+        // либо init() с guard'ом не перезапустит его вовсе.
+        WirelessRedstoneManager.shutdown();
     }
 
     @Override

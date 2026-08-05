@@ -158,8 +158,12 @@ public class TaskManager {
      * Сбрасывает внутреннее поле task BukkitRunnable через рефлексию.
      * BukkitRunnable.checkNotYetScheduled() падает если task != null даже после cancel().
      * Это фикс для singleton'ов (например FishingListener) при /ui reload.
+     * <p>
+     * Публичный — вызывается также из PluginShutdown после глобального cancelTasks(),
+     * чтобы повторный runTaskTimer() гарантированно не упал с "Already scheduled".
      */
-    private static void resetBukkitRunnableTask(BukkitRunnable runnable) {
+    public static void resetBukkitRunnableTask(BukkitRunnable runnable) {
+        if (runnable == null) return;
         try {
             java.lang.reflect.Field taskField = BukkitRunnable.class.getDeclaredField("task");
             taskField.setAccessible(true);

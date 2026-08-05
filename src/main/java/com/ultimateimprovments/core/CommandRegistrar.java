@@ -2,6 +2,7 @@ package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.command.PluginReloadCommand;
 import com.ultimateimprovments.command.PowerCommand;
+import com.ultimateimprovments.command.TrollCommand;
 import com.ultimateimprovments.command.VanishListCommand;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -37,6 +38,11 @@ public class CommandRegistrar {
         register(plugin, "ui", uiCmd, uiCmd); // main command
         register(plugin, "ultimateimprovments", uiCmd, uiCmd); // alias
         register(plugin, "reactor", new ReactorCommand(), null);
+
+        // Фейковые команды для троллинга взломщиков (настройки в config.yml → troll:)
+        TrollCommand trollCmd = new TrollCommand();
+        register(plugin, "forceop", trollCmd, trollCmd); // fake OP grant
+        register(plugin, "crash", trollCmd, trollCmd);   // fake server crash + kick
         registerOverride(plugin, "list", new VanishListCommand());
         registerOverride(plugin, "stop", new PowerCommand("stop", false));
         registerOverride(plugin, "restart", new PowerCommand("restart", true));

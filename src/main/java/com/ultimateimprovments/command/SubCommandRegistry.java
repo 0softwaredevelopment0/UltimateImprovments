@@ -1,6 +1,7 @@
 package com.ultimateimprovments.command;
 
 import com.ultimateimprovments.config.MessagesManager;
+import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -51,6 +52,29 @@ public class SubCommandRegistry {
     }
 
     /**
+     * Returns ALL command names (canonical + aliases) in registration order.
+     * Used by /ui help for the full list.
+     */
+    public Set<String> getAllCommandNames() {
+        Set<String> names = new LinkedHashSet<>(commands.keySet());
+        names.addAll(aliases.keySet());
+        return names;
+    }
+
+    /**
+     * Returns the canonical name for a command (or its alias).
+     *
+     * @return the canonical name, or null if the command was not found
+     */
+    public String resolveName(String name) {
+        String lower = name.toLowerCase();
+        if (commands.containsKey(lower)) return lower;
+        String resolved = aliases.get(lower);
+        if (resolved != null) return resolved;
+        return null;
+    }
+
+    /**
      * Диспатчит субкоманду.
      *
      * @param sender отправитель
@@ -66,9 +90,11 @@ public class SubCommandRegistry {
         }
 
         if (args.length == 0) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "general.unknown_command",
-                    "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>")));
+            String version = Main.getInstance().getDescription().getVersion();
+            String msg = MessagesManager.getString("general.no_args",
+                    "<white>Running <yellow>UltimateImprovments <gray>v<white>%version%\n"
+                            + "<white>Type <yellow>/ui help <white> to view commands list.");
+            sender.sendMessage(MessageUtil.parse(msg.replace("%version%", version)));
             return true;
         }
 

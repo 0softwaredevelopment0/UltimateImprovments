@@ -140,14 +140,14 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
 
         if (logEnabled) {
             ConsoleLogger.warn(
-                    "[Server/Warning] Removed " + removed + " " + topType
+                    "Server » Removed " + removed + " " + topType
                             + " (MSPT=" + String.format("%.1f", mspt)
                             + ", total entities: " + counts.values().stream().mapToInt(Integer::intValue).sum() + ")"
             );
         }
 
         ServerOverloadNotify.broadcast(
-                "<gray>[<white>Server</white><dark_gray>/</dark_gray><yellow>Warning</yellow>] <white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
+                "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset><white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
                         + " <gray>(MSPT </gray><red>" + String.format("%.1f", mspt) + "</red><gray>)</gray>"
         );
     }
