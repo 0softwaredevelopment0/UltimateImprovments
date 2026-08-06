@@ -2,7 +2,7 @@
 
 # ✦ Ultimate Improvments
 
-**A modular Minecraft plugin for Paper 1.21.4+ (Java 26)**
+**A modular, feature-packed Minecraft plugin for Paper 26.2+ (Java 26)**
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-26%2B-orange)](https://www.oracle.com/java/)
@@ -11,11 +11,15 @@
 [![Development status](https://img.shields.io/badge/status-Stable-brightgreen)](https://github.com/rizer001/UltimateImprovments)
 
 **Author:** [rizer001](https://github.com/rizer001)  
-**Core:** Leaf (Paper 26.2+) / Paper  
+**Core:** Paper 26.2+ (Leaf-compatible)  
 **Database:** SQLite  
 **Build:** Gradle (JDK 26)
 
 </div>
+
+---
+
+> **Ultimate Improvments** is a monolithic plugin that turns your server into a full-featured gameplay experience: authentication with 2FA, a Dark Fusion Reactor, an energy cable network, radiation, custom crafting, multi-block structures, item integrity, chat filter, server protection, custom chat/tab/scoreboard/MOTD, and 70+ toggleable modules.
 
 ---
 
@@ -182,43 +186,42 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 - Silk Touch restores on harvest
 - Color gradient in item lore
 
-### 🔋 Totem Charge System (New in 1.9)
+### 🔋 Totem Charge System
 - **Charged totems** — charge via anvil (netherite scrap)
 - `totem_charge` in PDC (int)
 - Lore display: `Charge: X/X`
 - If charge > 0 — totem saves life and consumes 1 charge
-- If charge = 0 — behaves as a normal totem (consumed)
 
-### 🧲 Particle Accelerator (New in 1.9)
+### 🧲 Particle Accelerator
 - Particle acceleration with configurable parameters
 - Integration with block physics and structures
 
-### 🧊 Block Friction (New in 1.9)
+### 🧊 Block Friction
 - Custom block friction via `PlayerMoveEvent`
 - Velocity mode — modifies player speed, not walk speed
 - Values inherited from vanilla slipperiness
 
-### 🔍 Omniscanner (New in 1.9)
+### 🔍 Omniscanner
 - Administrative scanning of blocks, items, and entities
 - Scan types: blocks, items (on ground), entities (mobs, players), everything
 - **Async** chunk scanning via `ChunkSnapshot` — no server freeze
 - GUI with results, sorted by distance
 - PDC item protection in GUI
 
-### 🛠️ Admin Menu (New in 1.9)
+### 🛠️ Admin Menu
 - `/ui menu` — GUI for plugin management
 - Statistics, info, quick item access
 - PDC protection on all items
 
-### 🛡️ Anti-Cheat (New in 1.9)
+### 🛡️ Anti-Cheat
 - `/ui check <player>` — freeze player for inspection
 - `/ui uncheck <player>` — unfreeze
 
-### 🧩 LuckPerms Integration (New in 1.9)
+### 🧩 LuckPerms Integration
 - Blocks wildcard (`*`) — requires confirmation (re-type within 15s)
 - Logs all wildcard grant attempts
 
-### 📊 Scoreboard System (New in 1.9)
+### 📊 Scoreboard System
 - **Gradients** via Team prefix/suffix (`<gradient>`, `<rainbow>`, `<#FF00FF>`)
 - **No 40-char limit** — any line length supported
 - **Hidden red numbers** via `NumberFormat.blankFormat()`
@@ -293,6 +296,10 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 - Connectivity checked on destruction
 - `/ui str` command
 - **Unbreakable Integrity Tag** — structure blocks can't be broken while structure is intact
+
+### ⏰ World Clock (Timelines)
+- World clock (`default_clock`) restored in **all dimensions** — `/time` works everywhere
+- Correct `timelines` tags for Overworld, The End and The Nether
 
 ---
 
@@ -496,8 +503,6 @@ src/main/java/com/ultimateimprovments/
 | **1.8** | — | Energy system, reactor, radiation, code panel, modular architecture |
 | **1.7** | — | Custom crafting, protection, economy |
 
-Full changelog: [CHANGELOG.md](CHANGELOG.md)
-
 ---
 
 ## 📄 License
@@ -514,4 +519,4 @@ Free use, modification, and distribution allowed. When used on public servers, y
 
 ---
 
-*Build date: 2026-07-18 | Latest version: 1.9*
+*Build date: 2026-08-07 | Latest version: 1.9*
