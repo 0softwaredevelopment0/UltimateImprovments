@@ -7,6 +7,6 @@ api-version: "26.2"
 main: com.ultimateimprovments.core.Main
 author: rizer001
 load: STARTUP
-softdepend: [PlaceholderAPI, LuckPerms, Vault, DeluxeMenus]
+softdepend: [PlaceholderAPI, LuckPerms, Vault]
 libraries:
   - de.mkammerer:argon2-jvm:2.12
