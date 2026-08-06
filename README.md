@@ -123,7 +123,7 @@ The plugin is built on a **modular architecture** — each module can be toggled
 - Password change, force login, registration reset
 - Password hiding from console logs
 
-### ⚛ Dark Fusion Reactor (R.T.S)
+### ⚛ Dark Fusion Reactor
 - **Multi-block structure** — Iron Blocks, Lightning Rods, Copper Blocks, Redstone Blocks, Item Frame
 - Simulation: core/case temperature, pressure, shell/case integrity (0-100%)
 - **Wear system** — reactor degrades over time
