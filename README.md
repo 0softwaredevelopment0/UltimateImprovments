@@ -510,7 +510,7 @@ Free use, modification, and distribution allowed. When used on public servers, y
 
 ## 👤 Author
 
-**rizer001** — [GitHub](https://github.com/rizer001) — Discord: `@error404_user.not.found`
+**rizer001** — [GitHub](https://github.com/rizer001) — Discord: `@rizer001_dm`
 
 ---
 
