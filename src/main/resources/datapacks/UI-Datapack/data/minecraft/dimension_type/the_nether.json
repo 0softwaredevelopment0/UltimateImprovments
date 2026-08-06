@@ -34,5 +34,6 @@
   "monster_spawn_block_light_limit": 15,
   "monster_spawn_light_level": 7,
   "skybox": "none",
-  "timelines": "#minecraft:in_overworld"
+  "default_clock": "minecraft:overworld",
+  "timelines": "#minecraft:in_nether"
 }

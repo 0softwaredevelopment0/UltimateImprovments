@@ -797,6 +797,118 @@
 #     • Default: 4
 #
 #   ────────────────────────────────────────────────────────────────
+#   4.11. features.block_collapse — BLOCK COLLAPSE (GRAVITY)
+#   ────────────────────────────────────────────────────────────────
+#
+#   DISABLED BY DEFAULT. A "gravity"-like system for world structures:
+#   every solid block around a player's block action gets two attributes:
+#     • Stickiness (0–100%) — every block starts at 100. While the block
+#       has vertical support (a solid block directly below it), stickiness
+#       is NOT consumed. Without vertical support the block "spreads":
+#       stickiness drains by heaviness × rate percent per second
+#       (e.g. heaviness 5 → -5% per second).
+#     • Heaviness — the block's weight (from the material table + overrides).
+#   When stickiness reaches 0% the block COLLAPSES: it breaks and drops as if
+#   mined with a netherite tool. The cascade goes UPWARD and stops at the first
+#   block with stickiness > 0 (those still hold) or at an untracked block.
+#   State is stored in RAM and periodically flushed to the plugin DB
+#   (table block_collapse) so nothing is lost on restart.
+#
+#   🔭 ASYNC CHUNK SCANNING (operation queue):
+#   EVERY player block action (place/break) is logged and queued as an
+#   operation. Operations run in a DEDICATED THREAD via thread-safe
+#   ChunkSnapshot and are processed LAZILY in FIFO order:
+#     • maximum 1 operation per interval_seconds (default 1 per second);
+#     • all queued operations (new + old) wait their turn in order;
+#     • if the server is lagging (MSPT above max_mspt) the queue pauses
+#       until MSPT drops below the threshold;
+#     • duplicate operations for the same chunk are coalesced into one.
+#   Each operation scans the 16×16×16 chunk area around the action, so even
+#   NATURAL structures (overhangs, floating islands) get discovered and can
+#   collapse.
+#
+#   features.block_collapse.enabled
+#     • Description: Enables/disables the whole block collapse system.
+#     • Values: true / false
+#     • Default: false
+#
+#   features.block_collapse.rate
+#     • Description: Stickiness drain multiplier.
+#       Stickiness decreases by heaviness × rate percent per second
+#       (rate 1.0 → a heaviness-5 block drains 5% stickiness per second
+#       while it has no vertical support below).
+#     • Values: any decimal ≥ 0
+#     • Default: 1.0
+#
+#   features.block_collapse.interval_ticks
+#     • Description: How often blocks are checked (in ticks).
+#       20 ticks = 1 second. Lower = smoother but more load.
+#     • Values: any integer ≥ 1
+#     • Default: 20
+#
+#   features.block_collapse.save_interval_seconds
+#     • Description: How often tracked state is flushed to the DB (seconds).
+#       600 = every 10 minutes.
+#     • Values: any integer ≥ 1
+#     • Default: 600
+#
+#   features.block_collapse.lore_enabled
+#     • Description: Show «Heaviness» in the lore of block items (stickiness
+#       is always 100 when placed, so only heaviness is displayed).
+#     • Values: true / false
+#     • Default: true
+#
+#   features.block_collapse.log_block_actions
+#     • Description: Log EVERY player block action (place/break) to the
+#       console as it is queued for scanning.
+#     • Values: true / false
+#     • Default: false
+#
+#   features.block_collapse.lore_interval_ticks
+#     • Description: How often inventories are scanned for lore (in ticks).
+#     • Values: any integer ≥ 1
+#     • Default: 100
+#
+#   features.block_collapse.default_heaviness
+#     • Description: Default heaviness for materials not listed in the
+#       built-in table and not overridden below.
+#     • Values: any decimal ≥ 0
+#     • Default: 5.0
+#
+#   features.block_collapse.heaviness_overrides
+#     • Description: Per-material heaviness overrides (MATERIAL_NAME: value).
+#       Example: OBSIDIAN: 12.0 makes obsidian collapse 2.4× faster than
+#       its default table value.
+#     • Values: map of MATERIAL: decimal
+#
+#   features.block_collapse.scan.enabled
+#     • Description: Enable async chunk scanning (16×16×16 around actions).
+#     • Values: true / false
+#     • Default: true
+#
+#   features.block_collapse.scan.delay_seconds
+#     • Description: Delay before the first scan starts (seconds).
+#     • Values: any integer ≥ 0
+#     • Default: 1
+#
+#   features.block_collapse.scan.interval_seconds
+#     • Description: One scan operation per N seconds (lazy mode).
+#       If several chunks are queued they are processed one per second.
+#     • Values: any integer ≥ 1
+#     • Default: 1
+#
+#   features.block_collapse.scan.area
+#     • Description: Scan area side length in blocks (16 = 16×16×16).
+#     • Values: any integer from 1 to 64
+#     • Default: 16
+#
+#   features.block_collapse.scan.max_mspt
+#     • Description: Pause scanning while server MSPT is above this value.
+#       Scanning resumes once MSPT drops below it.
+#     • Values: any decimal ≥ 1
+#     • Default: 50.0
+#
+#   ────────────────────────────────────────────────────────────────
 #   4.12. features.magnet — MAGNET
 #   ────────────────────────────────────────────────────────────────
 #
@@ -2989,24 +3101,70 @@ features:
   boostedcobweb:
     enabled: true
 
+  # ────────────────────────────────────────────────────────────────
+  # BLOCK COLLAPSE (GRAVITY) — DISABLED BY DEFAULT
+  # ────────────────────────────────────────────────────────────────
+  # Player-placed solid blocks get Stickiness (0-100%) and Heaviness.
+  # Stickiness drains only while the block has NO solid support below it
+  # (drain = heaviness × rate per second). At 0% the block collapses and
+  # drops as if mined with a netherite tool; blocks above fall too.
+  # State is persisted to the DB every save_interval_seconds.
   block_collapse:
-    enabled: true
-    # Stickiness drain speed: stickiness -= heaviness × rate (per second)
+    # Master switch — enable to turn the system on
+    enabled: false
+    # ── Stickiness formula ────────────────────────────────────────────
+    # Every block starts with 100% stickiness. While the block has a solid
+    # block directly BELOW it (vertical support), stickiness is NOT consumed.
+    # Without vertical support, stickiness drains by:
+    #     heaviness × rate  (percent per second)
+    # Example: a block with heaviness 5 drains 5% stickiness per second.
+    # When stickiness reaches 0% the block collapses (drops as if mined with
+    # a netherite tool) and takes the blocks above it that ALSO have 0% —
+    # the cascade STOPS at any block with stickiness > 0 (still holding).
     rate: 1.0
     # How often blocks are checked (ticks)
     interval_ticks: 20
-    # How often state is flushed to the DB (seconds)
-    save_interval_seconds: 60
-    # Show «Stickiness/Heaviness» in the lore of block items
+    # How often state is flushed to the DB (seconds) — 600 = every 10 minutes
+    save_interval_seconds: 600
+    # Show «Heaviness» in the lore of block items (stickiness is always 100)
     lore_enabled: true
     # How often inventories are scanned for lore (ticks)
     lore_interval_ticks: 100
+    # Log EVERY player block action (place/break) to console as it is queued
+    log_block_actions: false
     # Default heaviness (for unknown materials)
     default_heaviness: 5.0
     # Per-material heaviness overrides (NAME: value)
     heaviness_overrides:
       # OBSIDIAN: 12.0
       # BEDROCK: 100.0
+
+    # ────────────────────────────────────────────────────────────
+    # ASYNC CHUNK SCANNING (16x16x16 around player block actions)
+    # ────────────────────────────────────────────────────────────
+    # EVERY player block action (place/break) is logged and queued as an
+    # operation. Operations are processed LAZILY in a FIFO queue:
+    #   • maximum 1 operation per interval_seconds (default: 1 per second);
+    #   • all queued operations (new + old) wait their turn in order;
+    #   • if the server is lagging (MSPT above max_mspt), the queue pauses
+    #     until MSPT drops below the threshold;
+    #   • scanning itself runs in a dedicated executor thread via
+    #     thread-safe ChunkSnapshot (no main-thread lag).
+    # Each operation scans the 16x16x16 chunk area around the action and
+    # adds unsupported solid blocks to tracking — so even NATURAL structures
+    # (overhangs, floating islands) are discovered and can collapse.
+    # Duplicate operations for the same chunk are coalesced into one.
+    scan:
+      # Enable async chunk scanning
+      enabled: true
+      # Delay before the first scan starts (seconds)
+      delay_seconds: 1
+      # One scan operation per N seconds (lazy mode, queued if several)
+      interval_seconds: 1
+      # Scan area side length (blocks) — 16 = 16x16x16 around the action
+      area: 16
+      # Pause scanning while server MSPT is above this value
+      max_mspt: 50.0
 
   deathbell:
     enabled: true
@@ -5626,4 +5784,3 @@ messages_en:
 # === INTEGRITY META — DO NOT EDIT (auto-managed) ===
 _meta:
   guide_hash: "pending-on-first-run"
-

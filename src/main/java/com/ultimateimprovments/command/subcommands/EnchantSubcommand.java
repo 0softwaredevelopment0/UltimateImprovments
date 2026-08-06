@@ -486,13 +486,14 @@ public final class EnchantSubcommand {
 
             List<String> enchants = new ArrayList<>();
 
-            // Vanilla enchantments
+            // Vanilla enchantments (skip the real minecraft:aoe — it's listed as the custom AoE below)
             Map<Enchantment, Integer> vanilla = item.getEnchantments();
             for (Map.Entry<Enchantment, Integer> e : vanilla.entrySet()) {
+                if (e.getKey().equals(AOEEnchantment.ENCHANTMENT_KEY)) continue;
                 enchants.add("§a" + e.getKey().getKey() + " " + e.getValue());
             }
 
-            // Custom (AoE)
+            // Custom (AoE) — real enchantment or legacy PDC
             int aoe = AOEEnchantment.getLevel(item);
             if (aoe > 0) {
                 enchants.add("§bAoe " + aoe);

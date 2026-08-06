@@ -101,7 +101,9 @@ public class NotesGUIListener implements Listener {
         player.setItemOnCursor(null);
         player.updateInventory();
 
-        if (event.getCurrentItem() == null || event.getCurrentItem().getType() != Materials.WRITABLE_BOOK) return;
+        if (event.getCurrentItem() == null
+                || (event.getCurrentItem().getType() != Materials.WRITABLE_BOOK
+                    && event.getCurrentItem().getType() != Materials.WRITTEN_BOOK)) return;
 
         int slot = event.getSlot();
         if (slot < 0 || slot >= NotesGUI.GUI_SIZE) return;
@@ -198,9 +200,10 @@ public class NotesGUIListener implements Listener {
         }
     }
 
-    /** Check if an item is a note book (WRITABLE_BOOK with "Заметка #" display name). */
+    /** Check if an item is a note book (WRITABLE/WRITTEN_BOOK with "Заметка #" display name). */
     private boolean isNoteBook(ItemStack item) {
-        if (item == null || item.getType() != Materials.WRITABLE_BOOK) return false;
+        if (item == null
+                || (item.getType() != Materials.WRITABLE_BOOK && item.getType() != Materials.WRITTEN_BOOK)) return false;
         // In Paper 1.21.4+ hasItemMeta() returns false for fresh items;
         // getItemMeta() always returns non-null for WRITABLE_BOOK
         BookMeta meta = (BookMeta) item.getItemMeta();

@@ -48,6 +48,8 @@ public final class Materials {
     // ============================================================
     /** Writable book (book and quill) for Notes GUI. */
     public static final Material WRITABLE_BOOK = fromKey("writable_book");
+    /** Written (signed) book — used in the Notes GUI to show a note that has content. */
+    public static final Material WRITTEN_BOOK = fromKey("written_book");
 
     // ============================================================
     // HELPER

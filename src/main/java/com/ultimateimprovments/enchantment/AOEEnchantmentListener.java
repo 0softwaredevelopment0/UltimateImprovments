@@ -43,7 +43,7 @@ public class AOEEnchantmentListener implements Listener {
         ItemStack tool = player.getInventory().getItemInMainHand();
         if (tool == null || tool.getType() == Material.AIR) return;
 
-        // Get AoE level from PDC
+        // Get AoE level (real enchantment, with PDC failsafe fallback)
         int level = AOEEnchantment.getLevel(tool);
         if (level <= 0) return;
 

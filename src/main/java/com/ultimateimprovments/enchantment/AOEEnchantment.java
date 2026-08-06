@@ -1,60 +1,96 @@
 package com.ultimateimprovments.enchantment;
 
 import com.ultimateimprovments.core.Main;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * AoE (Area of Effect) enchantment — реализация через PDC.
+ * AoE (Area of Effect) enchantment — real datapack enchantment with a PDC failsafe.
  * <p>
- * Уровень зачарования хранится в PersistentDataContainer предмета
- * по ключу {@code ui:aoe_level}.
+ * Since Minecraft 1.21 enchantments are data-driven: the plugin ships a datapack
+ * ({@code UI-Datapack}, file {@code data/minecraft/enchantment/aoe.json}) that
+ * registers {@code minecraft:aoe} as a REAL enchantment (glint, description with
+ * level, anvil &amp; book compatibility, {@code /enchant} support).
  * <p>
- * Макс. уровень: 255<br>
- * Работает на: кирка, лопата, топор, мотыга<br>
- * Радиус = уровень зачарования (1 → 3×3, 2 → 5×5, ...)
+ * <b>Failsafe design:</b> every item that carries the enchantment ALSO stores the
+ * level in the {@code ui:aoe_level} PDC key — a mirror used as a backup:
+ * <ul>
+ *   <li><b>Datapack alive:</b> the real enchantment is the source of truth. Whenever
+ *       an item with it is detected, its level is mirrored into PDC.</li>
+ *   <li><b>Datapack crashed:</b> {@link #getLevel} falls back to PDC, so enchanted
+ *       items keep working; PDC-only legacy items work too.</li>
+ *   <li><b>Datapack restored:</b> if an item has PDC but lost the real enchantment
+ *       (it disappeared while the datapack was down), the enchantment is re-applied
+ *       from PDC automatically — the PDC is kept, the charm is just added back.</li>
+ * </ul>
+ * No lore is written or managed anymore — the real enchantment renders its own
+ * description, and PDC is purely internal.
+ * <p>
+ * Max level: 255<br>
+ * Works on: pickaxe, shovel, axe, hoe<br>
+ * Radius = enchantment level (1 → 3×3, 2 → 5×5, ...)
  */
 public final class AOEEnchantment {
 
-    /** PDC key: {@code ui:aoe_level} */
-    public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "aoe_level");
+    /** The real enchantment key registered by the datapack. */
+    public static final NamespacedKey ENCHANTMENT_KEY = NamespacedKey.minecraft("aoe");
 
-    /** Display name prefix, e.g. "AoE V" */
-    private static final String DISPLAY_PREFIX = "AoE ";
+    /** PDC mirror key: {@code ui:aoe_level} (backup copy of the enchantment level). */
+    public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "aoe_level");
 
     private AOEEnchantment() {}
 
     // ─────────────────────────────────────────────────────────────
-    //  PDC API — GET / SET / HAS / REMOVE LEVEL
+    //  REAL ENCHANTMENT LOOKUP
     // ─────────────────────────────────────────────────────────────
 
     /**
-     * Returns the AoE enchantment level on the given item (via PDC).
+     * The real {@link Enchantment} registered by the datapack, or {@code null}
+     * if the datapack is not loaded (crashed / not yet installed).
+     */
+    public static @Nullable Enchantment getRegisteredEnchantment() {
+        try {
+            return Registry.ENCHANTMENT.get(ENCHANTMENT_KEY);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  GET / SET / HAS / REMOVE LEVEL
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Returns the AoE enchantment level on the given item.
+     * <p>
+     * Real enchantment first; falls back to the PDC mirror when the datapack
+     * is unavailable, so items keep working even if the datapack dies.
      *
      * @param item the item to check
      * @return enchantment level (1-255), or 0 if not present
      */
     public static int getLevel(@NotNull ItemStack item) {
-        if (!item.hasItemMeta()) return 0;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return 0;
-        Integer level = meta.getPersistentDataContainer().get(LEVEL_KEY, PersistentDataType.INTEGER);
-        return level != null ? Math.max(1, Math.min(255, level)) : 0;
+        Enchantment real = getRegisteredEnchantment();
+        if (real != null) {
+            int lvl = item.getEnchantmentLevel(real);
+            if (lvl > 0) return Math.max(1, Math.min(255, lvl));
+        }
+        // Datapack down or enchantment missing → PDC mirror
+        return getPdcLevel(item);
     }
 
     /**
-     * Sets the AoE enchantment level on the given item (via PDC + lore).
+     * Sets the AoE enchantment level on the given item.
+     * <p>
+     * Applies the REAL enchantment when the datapack is loaded and always writes
+     * the PDC mirror. No lore is touched.
      *
      * @param item  the item to modify
      * @param level enchantment level (1-255)
@@ -63,43 +99,24 @@ public final class AOEEnchantment {
         if (level < 1 || level > 255) return;
         if (!isValidTool(item)) return;
 
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-
-        // Store in PDC
-        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, level);
-
-        // Update lore
-        List<Component> lore = meta.lore();
-        if (lore == null) lore = new ArrayList<>();
-        lore = removeOldAoeLore(lore);
-        lore.add(0, buildAoeLoreLine(level));
-        meta.lore(lore);
-
-        item.setItemMeta(meta);
+        Enchantment real = getRegisteredEnchantment();
+        if (real != null) {
+            item.addUnsafeEnchantment(real, level);
+        }
+        setPdcLevel(item, level);
     }
 
     /**
-     * Removes the AoE enchantment from the given item.
+     * Removes the AoE enchantment from the given item (real enchantment and PDC mirror).
      *
      * @param item the item to modify
      */
     public static void removeLevel(@NotNull ItemStack item) {
-        if (!item.hasItemMeta()) return;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-
-        // Remove from PDC
-        meta.getPersistentDataContainer().remove(LEVEL_KEY);
-
-        // Update lore
-        List<Component> lore = meta.lore();
-        if (lore != null) {
-            lore = removeOldAoeLore(lore);
-            meta.lore(lore.isEmpty() ? null : lore);
+        Enchantment real = getRegisteredEnchantment();
+        if (real != null && item.containsEnchantment(real)) {
+            item.removeEnchantment(real);
         }
-
-        item.setItemMeta(meta);
+        clearPdcLevel(item);
     }
 
     /**
@@ -107,6 +124,80 @@ public final class AOEEnchantment {
      */
     public static boolean hasAoe(@NotNull ItemStack item) {
         return getLevel(item) > 0;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  FAILSAFE SYNC
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Synchronizes an item between the real enchantment and the PDC mirror
+     * (both directions — used by pickups, the join sweep and the periodic scan).
+     * <p>
+     * Idempotent and cheap when nothing changed:
+     * <ul>
+     *   <li>real enchantment present → mirror its level into PDC;</li>
+     *   <li>PDC present but real enchantment missing (datapack was down) →
+     *       re-apply the real enchantment from PDC, keeping the PDC;</li>
+     *   <li>neither present → nothing to do.</li>
+     * </ul>
+     *
+     * @param item the item to sync
+     */
+    public static void syncItem(@NotNull ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return;
+        if (!isValidTool(item)) return;
+
+        Enchantment real = getRegisteredEnchantment();
+        int pdcLevel = getPdcLevel(item);
+
+        if (real != null) {
+            int realLevel = item.getEnchantmentLevel(real);
+            if (realLevel > 0) {
+                // Datapack alive: mirror the real level into PDC (backup).
+                if (realLevel != pdcLevel) setPdcLevel(item, realLevel);
+            } else if (pdcLevel > 0) {
+                // Datapack restored after a crash: re-apply the charm from PDC.
+                item.addUnsafeEnchantment(real, pdcLevel);
+            }
+        }
+        // Datapack down: leave the item as-is — PDC is the source until it returns.
+    }
+
+    /**
+     * Mirrors the REAL enchantment level into PDC, but NEVER re-applies the charm
+     * from PDC. Used on hot inventory events (click/drag) where mutating stacks is
+     * risky — the re-apply direction is left to pickups, the join sweep and the
+     * periodic scan. This also protects the grindstone flow: after a legitimate
+     * disenchantment the PDC mirror is cleared separately, so the charm isn't
+     * silently put back.
+     *
+     * @param item the item to mirror
+     */
+    public static void mirrorItem(@NotNull ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return;
+        if (!isValidTool(item)) return;
+
+        Enchantment real = getRegisteredEnchantment();
+        if (real == null) return; // datapack down — nothing to mirror from
+
+        int realLevel = item.getEnchantmentLevel(real);
+        if (realLevel > 0) {
+            int pdcLevel = getPdcLevel(item);
+            if (realLevel != pdcLevel) setPdcLevel(item, realLevel);
+        }
+    }
+
+    /**
+     * Clears ONLY the PDC mirror, leaving the real enchantment untouched.
+     * Used when the charm is legitimately removed (e.g. grindstone disenchantment),
+     * so the failsafe doesn't re-apply it later.
+     *
+     * @param item the item to clear
+     */
+    public static void clearPdcMirror(@NotNull ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return;
+        clearPdcLevel(item);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -133,69 +224,32 @@ public final class AOEEnchantment {
     }
 
     // ─────────────────────────────────────────────────────────────
-    //  LORE HELPERS
+    //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Roman numerals for display */
-    private static final String[] ROMAN = {
-            "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
-            "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"
-    };
-
-    /**
-     * Builds the AoE lore line component (aqua colored, no italic).
-     */
-    static @NotNull Component buildAoeLoreLine(int level) {
-        String roman = toRoman(level);
-        return Component.text(DISPLAY_PREFIX + roman)
-                .color(TextColor.color(0x55FFFF))
-                .decoration(TextDecoration.ITALIC, false);
+    /** Reads the PDC mirror level (1-255) or 0 if absent. */
+    private static int getPdcLevel(@NotNull ItemStack item) {
+        if (!item.hasItemMeta()) return 0;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return 0;
+        Integer level = meta.getPersistentDataContainer().get(LEVEL_KEY, PersistentDataType.INTEGER);
+        return level != null ? Math.max(1, Math.min(255, level)) : 0;
     }
 
-    /**
-     * Removes any existing AoE lore lines from the list.
-     */
-    static @NotNull List<Component> removeOldAoeLore(@NotNull List<Component> lore) {
-        List<Component> result = new ArrayList<>(lore.size());
-        for (Component c : lore) {
-            String plain = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
-                    .plainText().serialize(c);
-            if (!plain.startsWith(DISPLAY_PREFIX)) {
-                result.add(c);
-            }
-        }
-        return result;
+    /** Writes the PDC mirror level. */
+    private static void setPdcLevel(@NotNull ItemStack item, int level) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(255, level)));
+        item.setItemMeta(meta);
     }
 
-    /**
-     * Converts an integer to Roman numerals (supports 1-255).
-     */
-    static @NotNull String toRoman(int num) {
-        if (num <= 0) return "0";
-        if (num <= 20) return ROMAN[num - 1];
-
-        StringBuilder sb = new StringBuilder();
-        int remaining = num;
-
-        // Hundreds
-        if (remaining >= 200) { sb.append("CC"); remaining -= 200; }
-        else if (remaining >= 100) { sb.append("C"); remaining -= 100; }
-
-        // Tens
-        if (remaining >= 90) { sb.append("XC"); remaining -= 90; }
-        else if (remaining >= 80) { sb.append("LXXX"); remaining -= 80; }
-        else if (remaining >= 70) { sb.append("LXX"); remaining -= 70; }
-        else if (remaining >= 60) { sb.append("LX"); remaining -= 60; }
-        else if (remaining >= 50) { sb.append("L"); remaining -= 50; }
-        else if (remaining >= 40) { sb.append("XL"); remaining -= 40; }
-        else if (remaining >= 10) { sb.append("X"); remaining -= 10; }
-        // remaining is now < 10 for the next part
-
-        // Units 1-9
-        if (remaining >= 1 && remaining <= 20) {
-            sb.append(ROMAN[remaining - 1]);
-        }
-
-        return sb.toString();
+    /** Removes the PDC mirror key. */
+    private static void clearPdcLevel(@NotNull ItemStack item) {
+        if (!item.hasItemMeta()) return;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        meta.getPersistentDataContainer().remove(LEVEL_KEY);
+        item.setItemMeta(meta);
     }
 }

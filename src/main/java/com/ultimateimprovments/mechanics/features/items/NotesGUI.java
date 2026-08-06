@@ -7,6 +7,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.component.WritableBookContent;
 
+import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.Materials;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -16,6 +17,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -60,14 +62,18 @@ public class NotesGUI {
     // CREATE NOTE BOOK (helper)
     // =========================
     private static ItemStack createNoteBook(UUID uuid, int noteNumber) {
-        ItemStack book = new ItemStack(Materials.WRITABLE_BOOK);
+        String content = NotesDatabase.loadNote(uuid, noteNumber);
+        boolean hasText = content != null && !content.isEmpty();
+
+        // Текстура: заметка с текстом — обычная книга (written_book), пустая — книга с пером.
+        // Клик по любой всё равно открывает редактор (writable_book).
+        ItemStack book = new ItemStack(hasText ? Materials.WRITTEN_BOOK : Materials.WRITABLE_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
         if (meta == null) return book;
 
         meta.setDisplayName("§fЗаметка #" + noteNumber);
 
-        String content = NotesDatabase.loadNote(uuid, noteNumber);
-        if (content != null && !content.isEmpty()) {
+        if (hasText) {
             String preview = content.length() > 30 ? content.substring(0, 30) + "..." : content;
             List<String> lore = new ArrayList<>();
             lore.add("§7" + preview.replace("\n", " "));
@@ -75,11 +81,6 @@ public class NotesGUI {
                 meta.setLore(lore);
             } catch (Exception ignored) {
                 // Paper 1.21.x may restrict lore on WRITABLE_BOOK
-            }
-            try {
-                meta.setPages(splitPages(content));
-            } catch (Exception ignored) {
-                // Page content may not be settable on WRITABLE_BOOK in newer Paper
             }
         } else {
             List<String> lore = new ArrayList<>();
@@ -124,8 +125,13 @@ public class NotesGUI {
 
             WritableBookContent bookContent = new WritableBookContent(pagesList);
             nms.set(DataComponents.WRITABLE_BOOK_CONTENT, bookContent);
-            book = CraftItemStack.asBukkitCopy(nms);
-        } catch (Exception e) {
+            ItemStack bukkitCopy = nmsToBukkit(nms);
+            if (bukkitCopy != null) {
+                book = bukkitCopy;
+            } else {
+                ConsoleLogger.warn("[Notes] NMS→Bukkit conversion failed — opening empty editor for note #" + noteNumber);
+            }
+        } catch (Throwable e) {
             // Fallback: если Data Component API не сработал — открываем пустую книгу
             // (контент сохранится в БД при Done и будет виден в главном GUI через lore)
         }
@@ -183,6 +189,22 @@ public class NotesGUI {
             try {
                 player.openBook(book);
             } catch (Exception ignored) {}
+        }
+    }
+
+    /**
+     * NMS → Bukkit конвертация. {@code CraftItemStack.asBukkitCopy} стал private
+     * в Leaf 26.2, поэтому вызываем его через reflection (паттерн используется
+     * во всём плагине). Возвращает null при любой ошибке.
+     */
+    private static ItemStack nmsToBukkit(net.minecraft.world.item.ItemStack nms) {
+        try {
+            Method m = CraftItemStack.class.getDeclaredMethod("asBukkitCopy",
+                    net.minecraft.world.item.ItemStack.class);
+            m.setAccessible(true);
+            return (ItemStack) m.invoke(null, nms);
+        } catch (Throwable e) {
+            return null;
         }
     }
 
