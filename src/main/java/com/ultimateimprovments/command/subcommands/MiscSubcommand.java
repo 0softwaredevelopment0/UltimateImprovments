@@ -66,7 +66,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleSpeed(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.togglespeed")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
         UUID uuid = player.getUniqueId();
         MinecartSpeedManager.toggleSpeedDisplay(uuid);
         if (MinecartSpeedManager.isSpeedDisplayEnabled(uuid)) {
@@ -82,6 +82,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleFly(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.togglefly")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
         UUID uuid = player.getUniqueId();
         ElytraBoostManager.toggleFlyEnabled(uuid);
         if (ElytraBoostManager.isFlyEnabled(uuid)) {

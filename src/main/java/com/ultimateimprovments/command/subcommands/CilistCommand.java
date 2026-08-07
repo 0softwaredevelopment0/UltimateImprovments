@@ -3,12 +3,17 @@ package com.ultimateimprovments.command.subcommands;
 import com.ultimateimprovments.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 public final class CilistCommand {
 
     private CilistCommand() {}
 
     public static void execute(CommandSender sender) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.cilist")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            return;
+        }
         sender.sendMessage(Component.empty());
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════════════════════</gold>"));
         sender.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Custom Items</white> <gray>(craft only in Item Assembler)</gray>"));

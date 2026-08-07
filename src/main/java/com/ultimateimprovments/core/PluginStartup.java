@@ -298,6 +298,7 @@ public class PluginStartup {
         mm.register(new UpdateModule());
         mm.register(new LeashModule());
         mm.register(new ElytraBoostModule());
+        mm.register(new AutoBroadcastModule());
     }
 
     private void registerAdminModules(ModuleManager mm) {

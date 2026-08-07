@@ -22,6 +22,10 @@ public final class ExpSplitSubcommand {
      * /ui expsplit — забирает весь опыт из уровней, отдаёт бутылку с опытом.
      */
     public static boolean execute(CommandSender sender, String[] args) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.expsplit")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            return true;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only",
                     "<red>❌ Only players can use this command!</red>")));

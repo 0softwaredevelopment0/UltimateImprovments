@@ -1,0 +1,22 @@
+feat: auto-broadcast system + permissions fixes
+
+Auto Broadcast (auto_broadcast in config.yml):
+- Unlimited sections: enabled, cooldown_ticks, conditions, miniMessage messages (rotated)
+- Condition string "name=value, name=value": same name + different values = OR,
+  different names = AND, duplicate name=value warned in console and ignored
+- Conditions: is-op, is-gamemode, height-*/health-*/hunger-*/xp-lvl-* (is/above/below),
+  is-alert (ui.alerts), is-group (LuckPerms, primary + inherited), online-* (server-wide)
+- Per-player placeholder resolution (internal + PlaceholderAPI)
+- AutoBroadcastModule (non-essential) registered in PluginStartup; safe on /ui reload
+- 21 unit tests for condition parsing/dedupe
+
+Permissions (from previous session, ui.* only):
+- Full permissions section in plugin.yml (~120 ui.* nodes), ui.admin inherits ui.*
+- Removed global hasPermission("ui") gate; each subcommand checks its own ui.command.*
+- Missing checks added (sudo, near, cilist, expsplit, repstatus, menu, suicide, askpos,
+  togglefly), toggleSpeed fixed, maint->maintenance, updatejar->ui.command.updatejar
+
+Rebuilt Jar/UltimateImprovments-1.9.jar; README updated.
+
+🤖 Generated with Codebuff
+Co-Authored-By: Codebuff <noreply@codebuff.com>

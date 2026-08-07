@@ -10,3 +10,386 @@ load: STARTUP
 softdepend: [PlaceholderAPI, LuckPerms, Vault]
 libraries:
   - de.mkammerer:argon2-jvm:2.12
+
+# =====================================================================
+# PERMISSIONS
+# Все права плагина построены на префиксе "ui.".
+# - ui.*         — все права (wildcard)
+# - ui.admin     — полный доступ (выдаётся OP по умолчанию)
+# - ui.command.* — все права на команды /ui
+# - ui.command.<name> — право на конкретную команду
+# =====================================================================
+permissions:
+  ui:
+    description: Base access to UltimateImprovments commands
+    default: false
+  ui.*:
+    description: All UltimateImprovments permissions
+    default: false
+  ui.admin:
+    description: Full access to all UltimateImprovments features
+    default: op
+    children:
+      ui: true
+      ui.*: true
+  ui.command.*:
+    description: All /ui command permissions
+    default: false
+
+  # ---- Команды: утилиты ----
+  ui.command.reload:
+    description: Reload plugin configuration
+    default: false
+  ui.command.version:
+    description: Show plugin version
+    default: false
+  ui.command.checkver:
+    description: Check for plugin updates
+    default: false
+  ui.command.updatejar:
+    description: Download and install plugin updates
+    default: false
+  ui.command.swapjar:
+    description: Swap plugin jar
+    default: false
+  ui.command.plugin:
+    description: Manage other plugins
+    default: false
+  ui.command.plugins:
+    description: List plugins
+    default: false
+  ui.command.help:
+    description: Show command help
+    default: false
+
+  # ---- Команды: игрок ----
+  ui.command.home:
+    description: Teleport to your home
+    default: false
+  ui.command.sethome:
+    description: Set your home
+    default: false
+  ui.command.delhome:
+    description: Delete your home
+    default: false
+  ui.command.listhomes:
+    description: List your homes
+    default: false
+  ui.command.ophomels:
+    description: List other players' homes
+    default: false
+  ui.command.opdelhome:
+    description: Delete other players' homes
+    default: false
+  ui.command.spawn:
+    description: Teleport to spawn
+    default: false
+  ui.command.setspawn:
+    description: Set the spawn point
+    default: false
+  ui.command.fly:
+    description: Toggle flight for yourself
+    default: false
+  ui.command.fly.other:
+    description: Toggle flight for other players
+    default: false
+  ui.command.flyspeed:
+    description: Set fly speed
+    default: false
+  ui.command.god:
+    description: Toggle god mode for yourself
+    default: false
+  ui.command.god.other:
+    description: Toggle god mode for other players
+    default: false
+  ui.command.heal:
+    description: Heal yourself
+    default: false
+  ui.command.feed:
+    description: Feed yourself
+    default: false
+  ui.command.togglespeed:
+    description: Toggle speed display
+    default: false
+  ui.command.togglefly:
+    description: Toggle elytra boost on jump
+    default: false
+  ui.command.togglebb:
+    description: Toggle per-player boss bar
+    default: false
+  ui.command.togglesb:
+    description: Toggle per-player scoreboard
+    default: false
+  ui.command.toggleping:
+    description: Toggle ping sound
+    default: false
+  ui.command.togglebind:
+    description: Toggle wireless redstone binding
+    default: false
+  ui.command.toggleradview:
+    description: Toggle radiation display
+    default: false
+  ui.command.vanish:
+    description: Vanish players
+    default: false
+  ui.command.notes:
+    description: Open notes GUI
+    default: false
+  ui.command.unlock:
+    description: Unlock books and signs
+    default: false
+  ui.command.suicide:
+    description: Kill yourself (with confirmation)
+    default: false
+  ui.command.forcesuicide:
+    description: Force another player to suicide
+    default: false
+  ui.command.expsplit:
+    description: Split your XP into an XP bottle
+    default: false
+  ui.command.near:
+    description: List players nearby
+    default: false
+  ui.command.rtp:
+    description: Random teleport
+    default: false
+  ui.command.rtp.other:
+    description: Random teleport another player
+    default: false
+  ui.command.rtp.bypasscooldown:
+    description: Bypass random teleport cooldown
+    default: false
+  ui.command.askpos:
+    description: Request player coordinates
+    default: false
+
+  # ---- Команды: модерация ----
+  ui.command.punish:
+    description: Use punish commands
+    default: false
+  ui.command.punish.kick:
+    description: Kick players
+    default: false
+  ui.command.punish.ban:
+    description: Ban players
+    default: false
+  ui.command.punish.mute:
+    description: Mute players
+    default: false
+  ui.command.punish.warn:
+    description: Warn players
+    default: false
+  ui.command.punish.crash:
+    description: Crash a player's client
+    default: false
+  ui.command.punish.listwarns.self:
+    description: View your own warnings
+    default: false
+  ui.command.punish.listwarns.other:
+    description: View other players' warnings
+    default: false
+  ui.command.invsee:
+    description: View player inventories
+    default: false
+  ui.command.endersee:
+    description: View player ender chests
+    default: false
+  ui.command.chgop:
+    description: Grant or revoke operator status
+    default: false
+  ui.command.broadcast:
+    description: Broadcast a message to the server
+    default: false
+  ui.command.blacklist:
+    description: Manage the blacklist
+    default: false
+  ui.command.opwhitelist:
+    description: Manage the operator whitelist
+    default: false
+  ui.command.whitelist:
+    description: Manage the whitelist
+    default: false
+  ui.command.maintenance:
+    description: Toggle maintenance mode
+    default: false
+  ui.command.check:
+    description: Check players
+    default: false
+  ui.command.ac:
+    description: View anti-cheat statistics
+    default: false
+  ui.command.protection:
+    description: Manage protection blocks
+    default: false
+  ui.command.structures:
+    description: Manage structures
+    default: false
+  ui.command.structures.dfc:
+    description: Manage DFC structures
+    default: false
+  ui.command.structures.magnet:
+    description: Manage magnet structures
+    default: false
+  ui.command.menu:
+    description: Open the admin menu
+    default: false
+  ui.command.report:
+    description: Report a player
+    default: false
+  ui.command.reports:
+    description: View reports
+    default: false
+  ui.command.repstatus:
+    description: Check your report status
+    default: false
+  ui.command.modreport:
+    description: File a mod report
+    default: false
+
+  # ---- Команды: экономика и система ----
+  ui.command.money:
+    description: Manage player balances
+    default: false
+  ui.command.auth:
+    description: Authentication commands
+    default: false
+  ui.command.auth.forcelogin:
+    description: Force a player to log in
+    default: false
+  ui.command.auth.resetauth:
+    description: Reset a player's authentication
+    default: false
+  ui.command.auth.delsession:
+    description: Delete a player's session
+    default: false
+  ui.command.auth.chgpass:
+    description: Change a player's password
+    default: false
+  ui.command.codepane:
+    description: Use the code panel
+    default: false
+  ui.command.codepane.key:
+    description: Manage code panel keys
+    default: false
+  ui.command.codepane.key.add:
+    description: Add code panel keys
+    default: false
+  ui.command.codepane.key.list:
+    description: List code panel keys
+    default: false
+  ui.command.codepane.key.remove:
+    description: Remove code panel keys
+    default: false
+  ui.command.codepane.key.modify:
+    description: Modify code panel keys
+    default: false
+  ui.command.chgdim:
+    description: Teleport between dimensions
+    default: false
+  ui.command.chgdim.*:
+    description: Teleport to any dimension world
+    default: false
+  ui.command.item:
+    description: Manage items
+    default: false
+  ui.command.enchant:
+    description: Enchant items
+    default: false
+  ui.command.reactor:
+    description: Manage the reactor
+    default: false
+  ui.command.setrad:
+    description: Set radiation levels
+    default: false
+  ui.command.meteor.spawn:
+    description: Spawn meteors
+    default: false
+  ui.command.redstone.list:
+    description: List blocked redstone chunks
+    default: false
+  ui.command.power.off:
+    description: Request server shutdown
+    default: false
+  ui.command.power.reboot:
+    description: Request server restart
+    default: false
+  ui.command.power.undo:
+    description: Cancel a pending shutdown or restart
+    default: false
+  ui.command.sudo:
+    description: Use sudo mode commands
+    default: false
+  ui.command.uuid:
+    description: Look up player UUIDs
+    default: false
+  ui.command.cilist:
+    description: List custom items
+    default: false
+  ui.command.vote:
+    description: Use vote commands
+    default: false
+  ui.command.vote.create:
+    description: Create votes
+    default: false
+  ui.command.vote.change:
+    description: Change votes
+    default: false
+  ui.command.vote.change.other:
+    description: Change other players' votes
+    default: false
+  ui.command.vote.delete.other:
+    description: Delete other players' votes
+    default: false
+  ui.command.vote.stats:
+    description: View vote statistics
+    default: false
+  ui.command.vote.bypass:
+    description: Bypass vote restrictions
+    default: false
+
+  # ---- Фичи и модификаторы ----
+  ui.alerts:
+    description: Receive server alerts
+    default: false
+  ui.autocraft:
+    description: Use auto-crafting
+    default: false
+  ui.show.brand:
+    description: Show the server brand
+    default: false
+  ui.sudo:
+    description: Protected by sudo mode (dangerous commands require sudo)
+    default: false
+  ui.anticheat.bypass:
+    description: Bypass anti-cheat checks
+    default: false
+  ui.anticheat.notify:
+    description: Receive anti-cheat notifications
+    default: false
+  ui.chat.custom.bypass:
+    description: Bypass custom chat formatting
+    default: false
+  ui.chat.filter.bypass:
+    description: Bypass the chat filter
+    default: false
+  ui.gmprotect.bypass:
+    description: Bypass game-mode protection
+    default: false
+  ui.creative.bypass:
+    description: Bypass creative item validation
+    default: false
+  ui.packetguard.bypass:
+    description: Bypass packet guard
+    default: false
+  ui.enchant.aoe.bypass:
+    description: Bypass AOE enchantment restrictions
+    default: false
+  ui.overload.logs:
+    description: Receive overload logs
+    default: false
+  ui.punish.notify:
+    description: Receive punish notifications
+    default: false
+  ui.proxy.server:
+    description: Access proxy server features
+    default: false

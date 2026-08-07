@@ -23,6 +23,10 @@ public final class NearSubcommand {
      * Максимальный радиус задаётся в конфиге (near.max_radius, по умолчанию 128).
      */
     public static boolean execute(CommandSender sender, String[] args) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.near")) {
+            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            return true;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return true;

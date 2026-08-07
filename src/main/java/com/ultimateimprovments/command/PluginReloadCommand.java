@@ -5,6 +5,7 @@ import com.ultimateimprovments.command.subcommands.*;
 import com.ultimateimprovments.command.home.HomeCommand;
 import com.ultimateimprovments.command.vote.VoteManager;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import static com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.tc;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -160,11 +161,19 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── Субкоманды с дополнительной логикой ──
         registry.register(LegacySubCommandAdapter.of("menu", (s, a) -> {
             if (!(s instanceof Player p)) return false;
+            if (!p.hasPermission("ui.command.menu")) {
+                p.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+                return true;
+            }
             com.ultimateimprovments.mechanics.features.omniscanner.AdminMenuGUI.open(p);
             return true;
         }));
         registry.register(LegacySubCommandAdapter.of("suicide", (s, a) -> {
             if (!(s instanceof Player p)) return false;
+            if (!p.hasPermission("ui.command.suicide")) {
+                p.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+                return true;
+            }
             SuicideCommand.execute(p);
             return true;
         }));
@@ -233,6 +242,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── AskPos: dialog-based coordinate request (formerly askcords; accept/decline removed — all in dialogs) ──
         registry.register(LegacySubCommandAdapter.of("askpos", (s, a) -> {
             if (!(s instanceof Player p)) return false;
+            if (!p.hasPermission("ui.command.askpos")) {
+                p.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+                return true;
+            }
             AskCordsManager.execute(p);
             return true;
         }));

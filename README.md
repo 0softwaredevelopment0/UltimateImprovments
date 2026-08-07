@@ -113,6 +113,7 @@ The plugin is built on a **modular architecture** — each module can be toggled
 | `AOEEnchantment` | AoE enchantment (area damage) |
 | `Particle` | Particle accelerator |
 | `Meteor` | Meteor shower |
+| `AutoBroadcast` | Automated periodic broadcasts (MiniMessage + conditions) |
 
 ---
 
@@ -301,6 +302,13 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 - World clock (`default_clock`) restored in **all dimensions** — `/time` works everywhere
 - Correct `timelines` tags for Overworld, The End and The Nether
 
+### 📢 Auto Broadcast
+- Config-driven automated messages — `config.yml` → section `auto_broadcast`
+- Unlimited **sections**, each with its own interval (`cooldown_ticks`), MiniMessage **messages** (sent in rotation) and a **condition string**
+- Conditions: `is-op`, `is-gamemode`, `height-*`, `health-*`, `hunger-*`, `is-alert` (`ui.alerts`), `is-group` (LuckPerms), `online-*` (server-wide), `xp-lvl-*`
+- Same condition with different values = **OR**, different conditions = **AND**; duplicate `name=value` entries are warned in console and ignored
+- Placeholders resolved per receiver (internal placeholders + PlaceholderAPI)
+
 ---
 
 ## ⌨️ Commands
@@ -392,6 +400,7 @@ The datapack also adds vanilla recipes (books, chains, echo shards, totems, spaw
 ## 📄 Configuration
 
 - **`config.yml`** — all settings (~6000 lines): auth, reactor, energy, radiation, features, chat filter, homes, protection, etc.
+  - **Auto Broadcast** — `auto_broadcast` section with a full guide: sections, cooldowns, conditions reference, examples
   - **Auto-repair** — on InvalidConfigurationException, the plugin automatically restores config.yml
   - **Built-in guide** — the beginning of config.yml contains full documentation for every key
 - **`messages.yml`** — all player-facing messages (MiniMessage format, customizable)

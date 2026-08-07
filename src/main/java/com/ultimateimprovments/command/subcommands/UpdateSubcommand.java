@@ -20,7 +20,7 @@ public final class UpdateSubcommand {
     }
 
     public static boolean downloadAndReplace(CommandSender sender) {
-        if (sender instanceof Player p && !p.hasPermission("ui.command.checkver")) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.updatejar")) {
             p.sendMessage(MessageUtil.parse(MessagesManager.getString("update.no_permission_install", "<red>❌ You don't have permission to install updates!</red>"))); return true;
         }
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.downloading", "<yellow>⟳</yellow> <gray>Downloading update from GitHub...</gray>")));

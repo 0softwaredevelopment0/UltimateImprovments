@@ -26,6 +26,10 @@ public final class SudoSubcommand {
     private SudoSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
+        if (sender instanceof Player p && !p.hasPermission("ui.command.sudo")) {
+            p.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use sudo commands!</red>"));
+            return true;
+        }
         if (!SudoManager.isEnabled()) {
             sender.sendMessage(MessageUtil.parse(
                     "<dark_red>❌</dark_red> <red>Sudo mode is disabled in config.</red>"));

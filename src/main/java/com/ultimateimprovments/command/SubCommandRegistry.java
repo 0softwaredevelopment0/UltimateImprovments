@@ -82,13 +82,8 @@ public class SubCommandRegistry {
      * @return true если команда обработана
      */
     public boolean dispatch(CommandSender sender, String[] args) {
-        if (sender instanceof Player p && !p.hasPermission("ui")) {
-            p.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "general.no_permission",
-                    "<red>❌ You don't have permission to use UltimateImprovments commands!</red>")));
-            return true;
-        }
-
+        // Каждая субкоманда проверяет своё право ui.command.<name> самостоятельно.
+        // Глобального гейта на ui больше нет — иначе выданные игрокам точечные права не работали бы.
         if (args.length == 0) {
             String version = Main.getInstance().getDescription().getVersion();
             String msg = MessagesManager.getString("general.no_args",
