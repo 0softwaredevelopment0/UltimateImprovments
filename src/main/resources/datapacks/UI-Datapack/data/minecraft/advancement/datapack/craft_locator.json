@@ -6,7 +6,7 @@
       "count": 1
     },
     "title": {
-      "text": "Сквозь текстуры",
+      "text": "Through the Textures",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -16,7 +16,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте локатор существ.",
+      "text": "Create a creature radar",
       "type": "text",
       "color": "gray",
       "bold": false,

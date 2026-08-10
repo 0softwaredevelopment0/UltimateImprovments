@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Небольшие нестабильности",
+      "text": "Increasing instability...",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Доведите РТС до деградации сдерж. поля.",
+      "text": "Bring the DFC to containment field degradation",
       "type": "text",
       "color": "gray",
       "bold": false,

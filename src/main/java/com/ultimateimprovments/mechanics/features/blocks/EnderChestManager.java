@@ -62,13 +62,7 @@ public class EnderChestManager implements Listener {
 
         // Deal 1 damage on every open (configurable via features.enderchest.damage)
         if (damage > 0) {
-            double before = player.getHealth();
             player.damage(damage);
-            double after = player.getHealth();
-            ConsoleLogger.info("[EnderChest] " + player.getName()
-                    + " health: " + String.format("%.1f", before)
-                    + " → " + String.format("%.1f", after)
-                    + " (damage=" + damage + ")");
         }
 
         // Structure Integrity — add stress
@@ -99,7 +93,7 @@ public class EnderChestManager implements Listener {
             return;
         }
 
-        // Deal 1 damage on close too
+        // Deal 1 damage on close too (configurable via features.enderchest.damage)
         if (damage > 0) {
             player.damage(damage);
         }

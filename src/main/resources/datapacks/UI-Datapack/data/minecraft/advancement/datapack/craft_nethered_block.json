@@ -6,7 +6,7 @@
       "count": 1
     },
     "title": {
-      "text": "Высокотехнологичные сплавы",
+      "text": "High-Tech Alloys",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -16,7 +16,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте Незередовый блок",
+      "text": "Create a Nethered Block",
       "type": "text",
       "color": "gray",
       "bold": false,

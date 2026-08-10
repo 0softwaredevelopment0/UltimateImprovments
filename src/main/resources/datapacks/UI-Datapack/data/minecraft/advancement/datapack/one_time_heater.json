@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Одноразовый подогрев",
+      "text": "One-time heating",
       "type": "text",
       "color": "dark_red",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Взорвитесь вместе с РТС, стоя внутри него.",
+      "text": "Climb into the DFC core while it's exploding.",
       "type": "text",
       "color": "gray",
       "bold": false,

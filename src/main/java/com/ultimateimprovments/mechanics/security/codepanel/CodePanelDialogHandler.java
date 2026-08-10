@@ -127,11 +127,12 @@ public class CodePanelDialogHandler implements Listener {
     }
 
     private void reopen(Player player, String errorMessage) {
+        // 1 тик — клиент уже закрыл окно сам (DialogAction.CLOSE), Show открывает его заново
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             if (player.isOnline()) {
                 CodePanelDialogScreen.open(player, errorMessage);
             }
-        }, 2L);
+        }, 1L);
     }
 
     // =========================

@@ -4,6 +4,8 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Sound;
@@ -213,10 +215,9 @@ public class AuthAuthenticator {
                         player.sendMessage("");
                         player.sendMessage("§6✦ §fTwo-Factor Authentication (2FA)");
                         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-                        player.sendMessage("§eWant to secure your account via Telegram?");
-                        player.sendMessage("§f1. Send §e/start §fto §e@OakworldSRVbot §fto get your Chat ID");
-                        player.sendMessage("§f2. Enter: §e/ui auth 2fa setup <your_chat_id>");
-                        player.sendMessage("§7You'll receive a confirmation request when logging into the server.");
+                        player.sendMessage("§eWant to secure your account via GitHub?");
+                        player.sendMessage("§f1. Enter: §e/ui auth 2fa setup <github_username>");
+                        player.sendMessage("§f2. On next login you'll receive a clickable GitHub authorization link.");
                         player.sendMessage("§7You can set up 2FA later with the same command.");
                         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
                         player.sendMessage("");
@@ -267,7 +268,7 @@ public class AuthAuthenticator {
         playerState.resetWrongAttempts(uuid);
 
         // Если 2FA включена — запускаем challenge вместо полной аутентификации
-        if (Auth2FA.isEnabled(uuid)) {
+        if (Auth2FA.isEnabled(uuid) && AuthConfig.isGithub2FAEnabled()) {
             start2FAChallenge(player);
             return;
         }
@@ -276,47 +277,66 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // 2FA CHALLENGE — подтверждение через кнопки в Telegram
+    // 2FA CHALLENGE — подтверждение через GitHub OAuth
     // =========================
     public void start2FAChallenge(Player player) {
         UUID uuid = player.getUniqueId();
 
-        String chatId = Auth2FA.getChatId(uuid);
-        if (chatId == null || chatId.isEmpty()) {
-            // Нет chat_id — отключаем 2FA и пускаем без кода
+        if (!AuthConfig.isGithub2FAEnabled()) {
+            authenticatePlayer(player, "<green>✅</green> <white>Logged in (GitHub 2FA is disabled in config).</white>");
+            return;
+        }
+
+        String githubUsername = Auth2FA.getGithubUsername(uuid);
+        if (githubUsername == null || githubUsername.isEmpty()) {
+            // Нет привязанного GitHub — отключаем 2FA и пускаем без подтверждения
             Auth2FA.remove(uuid);
-            authenticatePlayer(player, "<green>✅</green> <white>Logged in (2FA reset — no Telegram linked).</white>");
+            authenticatePlayer(player, "<green>✅</green> <white>Logged in (2FA reset — no GitHub account linked).</white>");
             return;
         }
 
         String playerName = player.getName();
-        String playerIp = getPlayerIp(player);
 
-        // Отправляем запрос подтверждения боту
-        String requestId = Auth2FA.getInstance().sendConfirmation(uuid, playerName, playerIp);
-        if (requestId == null) {
-            player.sendMessage("§c❌ Failed to send 2FA request! Try again later.");
-            unfreezePlayer(player);
+        // Снимаем общий таймаут логина — у 2FA-челленджа свой лимит (5 минут),
+        // иначе игрока выкинуло бы через auth.login_timeout_seconds посреди ожидания.
+        timeoutManager.cancelLoginTimeout(uuid);
+
+        // Запускаем челлендж — одноразовый state-токен, 5 минут
+        String requestId = Auth2FA.getInstance().sendConfirmation(uuid, playerName);
+        String authUrl = Auth2FA.getInstance().getAuthUrl(uuid);
+        if (requestId == null || authUrl == null) {
+            player.sendMessage("§c❌ GitHub 2FA is not configured! Contact an administrator.");
+            // Не размораживаем игрока — он остаётся pendingAuth (все действия заблокированы),
+            // и пере-армим таймаут, чтобы игрока выкинуло через login_timeout_seconds.
+            timeoutManager.startLoginTimeout(player);
             return;
         }
 
         player.sendMessage("");
-        player.sendMessage("§6✦ §f2FA §8— §7Two-Factor Authentication");
+        player.sendMessage("§6✦ §fGitHub 2FA §8— §7Two-Factor Authentication");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        player.sendMessage("§eRequest sent via Telegram!");
-        player.sendMessage("§7Bot: §f@OakworldSRVbot");
-        player.sendMessage("§7Open Telegram and confirm the login");
+        player.sendMessage("§eAuthorize your GitHub account to enter the server!");
+        player.sendMessage("§7Click the link to open GitHub:");
+        try {
+            player.sendMessage(Component.text("§9§n" + authUrl)
+                    .clickEvent(ClickEvent.openUrl(new java.net.URL(authUrl))));
+        } catch (Exception e) {
+            player.sendMessage("§9§n" + authUrl);
+        }
+        player.sendMessage("§7Account: §f" + githubUsername + "§7. The link is valid for 5 minutes.");
         player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        player.sendMessage("§7Awaiting confirmation...");
+        player.sendMessage("§7Awaiting authorization...");
         player.sendMessage("");
 
-        ConsoleLogger.info("[Auth2FA] Challenge started for " + playerName
-                + " (chat: " + chatId + ", request: " + requestId + ")");
+        ConsoleLogger.info("[Auth2FA] GitHub challenge started for " + playerName
+                + " (github: " + githubUsername + ", state: " + requestId + ")");
 
         // Запускаем polling — проверяем статус каждые 20 тиков (1 секунда)
+        // Обычно игрок аутентифицируется раньше через callback (completeGithubAuth),
+        // polling — запасной путь (например, если игрок закрыл страницу и открыл заново).
         new BukkitRunnable() {
             int ticks = 0;
-            final int maxTicks = 20 * 60; // 60 секунд максимум
+            final int maxTicks = 20 * 300; // 5 минут максимум
 
             @Override
             public void run() {
@@ -333,9 +353,11 @@ public class AuthAuthenticator {
 
                 ticks += 20;
                 if (ticks > maxTicks) {
-                    // Таймаут
+                    // Таймаут: снимаем челлендж и пере-армим общий таймаут логина,
+                    // чтобы игрок не завис замороженным навсегда (его выкинет).
                     Auth2FA.getInstance().clearPending(uuid);
                     player.sendMessage("§c❌ 2FA timeout! Use /ui auth login again.");
+                    timeoutManager.startLoginTimeout(player);
                     cancel();
                     return;
                 }
@@ -348,41 +370,35 @@ public class AuthAuthenticator {
                         if (!player.isOnline()) return;
                         if (playerState.isAuthenticated(uuid)) return;
 
-                        switch (status) {
-                            case "approved" -> {
-                                Auth2FA.getInstance().clearPending(uuid);
-                                authenticatePlayer(player, "<green>✅</green> <white>2FA confirmed! Welcome.</white>");
-                                cancel();
-                            }
-                            case "denied" -> {
-                                Auth2FA.getInstance().clearPending(uuid);
-                                player.kickPlayer("§c❌ Login rejected via Telegram 2FA.");
-                                cancel();
-                            }
-                            case "bot_down" -> {
-                                // 2FA bot down — log the player in with a warning
-                                Auth2FA.getInstance().clearPending(uuid);
-                                player.sendMessage("§c⚠ 2FA bot is temporarily unavailable! Skipping 2FA for this login.");
-                                ConsoleLogger.warn(
-                                        "[Auth2FA] Bot unreachable — logging in " + player.getName() + " without 2FA");
-                                authenticatePlayer(player, "<green>✅</green> <white>Logged in without 2FA (bot unavailable).</white>");
-                                cancel();
-                            }
-                            case "error" -> {
-                                Auth2FA.getInstance().clearPending(uuid);
-                                player.sendMessage("§c❌ 2FA error! Use /ui auth login again.");
-                                cancel();
-                            }
-                            case "timeout", "not_found" -> {
-                                Auth2FA.getInstance().clearPending(uuid);
-                                player.sendMessage("§c❌ 2FA error! Use /ui auth login again.");
-                                cancel();
-                            }
+                        if ("approved".equals(status)) {
+                            Auth2FA.getInstance().clearPending(uuid);
+                            authenticatePlayer(player, "<green>✅</green> <white>GitHub authorization confirmed! Welcome.</white>");
+                            cancel();
+                        } else if ("timeout".equals(status) || "not_found".equals(status)) {
+                            Auth2FA.getInstance().clearPending(uuid);
+                            player.sendMessage("§c❌ 2FA error! Use /ui auth login again.");
+                            cancel();
                         }
                     });
                 });
             }
         }.runTaskTimer(Main.getInstance(), 20L, 20L); // первый через 1 сек, потом каждую секунду
+    }
+
+    /**
+     * Завершает GitHub-аутентификацию игрока (вызывается с main thread из HTTP callback).
+     * Если игрок онлайн и ждёт 2FA — аутентифицируем и обновляем сессию (1 час).
+     */
+    public void completeGithubAuth(UUID uuid) {
+        Player player = Bukkit.getPlayer(uuid);
+        if (player == null || !player.isOnline()) return;
+        if (playerState.isAuthenticated(uuid)) return;
+        if (Auth2FA.getInstance() == null || !Auth2FA.getInstance().hasPendingConfirmation(uuid)) return;
+
+        Auth2FA.getInstance().clearPending(uuid);
+        AuthDatabase.updateLastLogin(uuid); // сессия 1 час с момента подтверждения
+
+        authenticatePlayer(player, "<green>✅</green> <white>GitHub authorization successful! Welcome.</white>");
     }
 
     /**

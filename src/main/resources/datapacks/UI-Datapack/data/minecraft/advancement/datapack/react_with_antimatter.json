@@ -10,7 +10,7 @@
       "count": 1
     },
     "title": {
-      "text": "Сила распада",
+      "text": "The force of decay",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -20,7 +20,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Прореагируйте с антматерией.",
+      "text": "React with antimatter",
       "type": "text",
       "color": "gray",
       "bold": false,

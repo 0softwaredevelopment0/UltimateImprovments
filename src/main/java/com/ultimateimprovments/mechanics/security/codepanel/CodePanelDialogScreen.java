@@ -26,6 +26,12 @@ import java.util.Optional;
  * <p>
  * Клики обрабатываются в {@link CodePanelDialogHandler} через
  * {@link io.papermc.paper.event.player.PlayerCustomClickEvent}.
+ * <p>
+ * Диалог использует {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на экран «Waiting for server…»
+ * и игнорирует {@code ClientboundClearDialogPacket}, поэтому окно висело бы ~4 секунды
+ * (например, на подтверждении/отмене). С {@code CLOSE} клиент закрывает окно СРАЗУ после
+ * клика, а сервер переоткрывает его с обновлённым кодом (Handler#reopen).
  */
 public class CodePanelDialogScreen {
 
@@ -113,7 +119,7 @@ public class CodePanelDialogScreen {
                 Optional.of(externalTitle),
                 true,                           // canCloseWithEscape
                 true,                           // pause
-                DialogAction.WAIT_FOR_RESPONSE,  // ждём ответа после каждого клика
+                DialogAction.CLOSE,               // клиент закрывает окно сам, мгновенно (без «Waiting for server»)
                 List.of(new PlainMessage(bodyText, 310)),
                 List.of()                        // без текстовых инпутов — только кнопки
         );

@@ -138,6 +138,7 @@ Mandatory player authentication system for server entry.
 - `auth.max_accounts_per_ip`
 - `auth.check_ip.enabled`
 - `auth.check_duplicate_name.enabled`
+- `auth.2fa.github.*` — GitHub 2FA (enabled, client_id, client_secret, port, public_url, session_minutes)
 
 ---
 

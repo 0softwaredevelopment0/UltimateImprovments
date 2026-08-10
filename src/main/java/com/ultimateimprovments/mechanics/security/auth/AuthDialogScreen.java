@@ -23,6 +23,12 @@ import java.util.Optional;
  * <p>
  * Использует Minecraft 26.2 Dialog API для показа экрана с полем пароля
  * и кнопками «Continue» / «Exit» (kick).
+ * <p>
+ * Диалог использует {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на экран «Waiting for server…»
+ * и игнорирует {@code ClientboundClearDialogPacket}, поэтому окно висело бы ~4 секунды.
+ * С {@code CLOSE} клиент закрывает окно СРАЗУ после клика сам; игрок всё равно заморожен
+ * (freezePlayer) до успешного входа, а при ошибке диалог переоткрывается сервером.
  */
 public class AuthDialogScreen {
 
@@ -101,7 +107,7 @@ public class AuthDialogScreen {
             Optional.of(externalTitle),
             false,                          // canCloseWithEscape — запрещаем закрытие ESC
             true,                           // pause
-            DialogAction.WAIT_FOR_RESPONSE,  // afterAction — ждём ввод пароля
+            DialogAction.CLOSE,               // afterAction — клиент закрывает окно сам, мгновенно (без «Waiting for server»)
             List.of(new PlainMessage(bodyText, 310)),
             List.of(new Input("password", passwordInput))
         );

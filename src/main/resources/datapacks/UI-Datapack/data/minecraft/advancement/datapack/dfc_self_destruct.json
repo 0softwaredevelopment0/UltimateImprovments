@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Угасающие сигналы",
+      "text": "Fading signals",
       "type": "text",
       "color": "dark_blue",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Некоторые вещи могут быть необратимы...",
+      "text": "Some things may be irreversible...",
       "type": "text",
       "color": "gray",
       "bold": false,

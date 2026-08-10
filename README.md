@@ -122,7 +122,7 @@ The plugin is built on a **modular architecture** — each module can be toggled
 ### 🔐 Authentication (Auth)
 - Registration/login via Anvil GUI
 - **Argon2id** password hashing (32MB memory, 2 iterations)
-- **Telegram 2FA** via `@OakworldSRVbot` (9-digit code, confirmation buttons)
+- **GitHub 2FA** (OAuth): clickable link in chat → authorize via GitHub → the server lets you in
 - IP check, account limit per IP (3 by default)
 - Sessions (60 min), login timeout (60 sec), max attempts (5)
 - Password change, force login, registration reset

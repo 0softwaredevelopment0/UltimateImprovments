@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Набор данных сервера",
+      "text": "UltimateImprovments",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Спасибо, что используйте наш набор данных!",
+      "text": "Thanks for using this plugin!",
       "type": "text",
       "color": "gray",
       "bold": false,

@@ -26,6 +26,12 @@ import java.util.Optional;
  *   <li>{@code registered=true} — игрок уже задавал sudo-пароль → ввод пароля;</li>
  *   <li>{@code registered=false} — пароля нет → просьба задать пароль и не забывать его.</li>
  * </ul>
+ * <p>
+ * Диалог использует {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на экран «Waiting for server…»
+ * и игнорирует {@code ClientboundClearDialogPacket}, поэтому окно висело бы ~4 секунды.
+ * С {@code CLOSE} клиент закрывает окно СРАЗУ после клика сам, а сервер переоткрывает
+ * его или выполняет действие (sudo-команды всё равно перехватываются, пока сессия не активна).
  */
 public class SudoDialogScreen {
 
@@ -102,7 +108,7 @@ public class SudoDialogScreen {
             Optional.of(externalTitle),
             false,                          // canCloseWithEscape
             true,                           // pause
-            DialogAction.WAIT_FOR_RESPONSE,
+            DialogAction.CLOSE,               // клиент закрывает окно сам, мгновенно (без «Waiting for server»)
             List.of(new PlainMessage(bodyText, 310)),
             List.of(new Input("password", passwordInput))
         );

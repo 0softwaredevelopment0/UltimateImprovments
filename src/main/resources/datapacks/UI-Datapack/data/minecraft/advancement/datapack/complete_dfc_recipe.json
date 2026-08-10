@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Мы сделали это!",
+      "text": "We did it!",
       "type": "text",
       "color": "dark_green",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Приготовьте рецепт РТС, это стоило потраченных 8-и минут?",
+      "text": "Finish the DFC recipe—was it worth the 8 minutes it took?",
       "type": "text",
       "color": "gray",
       "bold": false,

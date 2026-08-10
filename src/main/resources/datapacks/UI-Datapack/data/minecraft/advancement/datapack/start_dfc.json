@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Высшая наука",
+      "text": "Advanced Science",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Запустите РТС, что может пойти не так?",
+      "text": "Start the DFC, what could go wrong?",
       "type": "text",
       "color": "gray",
       "bold": false,

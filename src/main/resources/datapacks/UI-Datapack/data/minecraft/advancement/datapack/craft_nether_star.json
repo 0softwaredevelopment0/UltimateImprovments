@@ -6,7 +6,7 @@
       "count": 1
     },
     "title": {
-      "text": "Победа без боя",
+      "text": "Victory Without a Fight",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -16,7 +16,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте звезду незера.",
+      "text": "Create a Nether Star",
       "type": "text",
       "color": "gray",
       "bold": false,

@@ -26,6 +26,12 @@ import java.util.Optional;
  * <p>
  * При ошибке (мир не найден, нет прав, кулдаун) вызывается повторно с текстом ошибки,
  * который отображается прямо в диалоговом окне.
+ * <p>
+ * Диалог использует {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на экран «Waiting for server…»
+ * и игнорирует {@code ClientboundClearDialogPacket}, поэтому окно висело бы ~4 секунды.
+ * С {@code CLOSE} клиент закрывает окно СРАЗУ после клика сам, а сервер переоткрывает
+ * его (при ошибке) или выполняет действие.
  */
 public class ChgDimDialogScreen {
 
@@ -122,7 +128,7 @@ public class ChgDimDialogScreen {
             Optional.of(externalTitle),
             true,                           // canCloseWithEscape — можно закрыть ESC
             true,                           // pause
-            DialogAction.WAIT_FOR_RESPONSE,  // afterAction — ждём ввод
+            DialogAction.CLOSE,               // afterAction — клиент закрывает окно сам, мгновенно (без «Waiting for server»)
             List.of(new PlainMessage(bodyText, 310)),
             List.of(new Input("world_name", worldInput))
         );

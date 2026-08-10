@@ -6,7 +6,7 @@
       "count": 1
     },
     "title": {
-      "text": "Разряд!",
+      "text": "Discharge!",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -16,7 +16,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте электрошокер",
+      "text": "Create a stun gun",
       "type": "text",
       "color": "gray",
       "bold": false,

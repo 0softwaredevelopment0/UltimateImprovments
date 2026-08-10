@@ -97,18 +97,19 @@ public class AuthManager {
     }
 
     // =========================
-    // 2FA
+    // GITHUB 2FA
     // =========================
     public boolean is2FAEnabled(UUID uuid) {
         return Auth2FA.isEnabled(uuid);
     }
 
-    public String get2FAChatId(UUID uuid) {
-        return Auth2FA.getChatId(uuid);
+    /** Привязанный GitHub username игрока (или null). */
+    public String getGithubUsername(UUID uuid) {
+        return Auth2FA.getGithubUsername(uuid);
     }
 
-    public void setup2FA(UUID uuid, String chatId) {
-        Auth2FA.setEnabled(uuid, chatId, true);
+    public void setupGithub2FA(UUID uuid, String githubUsername) {
+        Auth2FA.setEnabled(uuid, githubUsername, true);
     }
 
     public void disable2FA(UUID uuid) {

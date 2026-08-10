@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Большая микроволновка",
+      "text": "Large Microwave",
       "type": "text",
       "color": "gold",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Получите смертельную дозу радиации в ядре РТС.",
+      "text": "Receive a lethal dose of radiation in the DFC core",
       "type": "text",
       "color": "gray",
       "bold": false,

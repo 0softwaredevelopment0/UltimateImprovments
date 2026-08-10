@@ -10,7 +10,7 @@
       "count": 1
     },
     "title": {
-      "text": "Магические вещества",
+      "text": "Magical Substances",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -20,7 +20,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте колбу антиматерии.",
+      "text": "Create a flask of antimatter",
       "type": "text",
       "color": "gray",
       "bold": false,

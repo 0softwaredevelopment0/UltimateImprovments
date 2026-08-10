@@ -1,0 +1,21 @@
+{
+	"description": {
+		"text": "Magnet"
+	},
+	"supported_items": "#minecraft:magnet_enchantable",
+	"weight": 5,
+	"max_level": 1,
+	"min_cost": {
+	  "base": 1,
+	  "per_level_above_first": 1
+	},
+	"max_cost": {
+	  "base": 25,
+	  "per_level_above_first": 25
+	},
+	"anvil_cost": 1,
+	"slots": [
+	  "mainhand"
+	],
+	"effects": {}
+}

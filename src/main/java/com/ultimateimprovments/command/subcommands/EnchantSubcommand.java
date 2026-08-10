@@ -2,7 +2,7 @@ package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.enchantment.AOEEnchantment;
+
 import com.ultimateimprovments.util.MessageUtil;
 
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -347,16 +347,93 @@ public final class EnchantSubcommand {
             if (item == null || item.getType().isAir()) continue;
 
             if (ench.isCustom()) {
-                if (AOEEnchantment.isValidTool(item)) {
-                    if (isGive) {
-                        AOEEnchantment.setLevel(item, level);
-                        count++;
-                    } else if (AOEEnchantment.hasAoe(item)) {
-                        AOEEnchantment.removeLevel(item);
-                        count++;
+                switch (ench.customName()) {
+                    case "aoe" -> {
+                        if (com.ultimateimprovments.enchantment.aoe.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.aoe.Enchantment.setLevel(item, level);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.aoe.Enchantment.hasAoe(item)) {
+                                com.ultimateimprovments.enchantment.aoe.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // AoE cannot go on a non-tool — skip silently
                     }
+                    case "autosmelt" -> {
+                        if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.autosmelt.Enchantment.setLevel(item, 1);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.hasAutoSmelt(item)) {
+                                com.ultimateimprovments.enchantment.autosmelt.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // AutoSmelt cannot go on a non-tool — skip silently
+                    }
+                    case "veinminer" -> {
+                        if (com.ultimateimprovments.enchantment.veinminer.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.veinminer.Enchantment.setLevel(item, 1);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.veinminer.Enchantment.hasVeinMiner(item)) {
+                                com.ultimateimprovments.enchantment.veinminer.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // VeinMiner requires a pickaxe — skip silently
+                    }
+                    case "treecapitator" -> {
+                        if (com.ultimateimprovments.enchantment.treecapitator.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.treecapitator.Enchantment.setLevel(item, 1);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.treecapitator.Enchantment.hasTreeCapitator(item)) {
+                                com.ultimateimprovments.enchantment.treecapitator.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // TreeCapitator requires an axe — skip silently
+                    }
+                    case "flight" -> {
+                        if (com.ultimateimprovments.enchantment.flight.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.flight.Enchantment.setLevel(item, 1);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.flight.Enchantment.hasFlight(item)) {
+                                com.ultimateimprovments.enchantment.flight.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Flight requires a chestplate — skip silently
+                    }
+                    case "magnet" -> {
+                        if (com.ultimateimprovments.enchantment.magnet.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.magnet.Enchantment.setLevel(item, 1);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.magnet.Enchantment.hasMagnet(item)) {
+                                com.ultimateimprovments.enchantment.magnet.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Magnet requires a tool — skip silently
+                    }
+                    case "igniting" -> {
+                        if (com.ultimateimprovments.enchantment.igniting.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.igniting.Enchantment.setLevel(item, level);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.igniting.Enchantment.hasIgniting(item)) {
+                                com.ultimateimprovments.enchantment.igniting.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Igniting requires an armor piece — skip silently
+                    }
+                    default -> { /* unknown custom enchant — skip */ }
                 }
-                // AoE cannot go on a non-tool — skip silently
             } else {
                 if (isGive) {
                     item.addUnsafeEnchantment(ench.vanilla(), level);
@@ -486,17 +563,45 @@ public final class EnchantSubcommand {
 
             List<String> enchants = new ArrayList<>();
 
-            // Vanilla enchantments (skip the real minecraft:aoe — it's listed as the custom AoE below)
+            // Vanilla enchantments (skip the real minecraft:aoe / minecraft:autosmelt —
+            // they are listed as the custom enchants below)
             Map<Enchantment, Integer> vanilla = item.getEnchantments();
             for (Map.Entry<Enchantment, Integer> e : vanilla.entrySet()) {
-                if (e.getKey().equals(AOEEnchantment.ENCHANTMENT_KEY)) continue;
+                if (e.getKey().equals(com.ultimateimprovments.enchantment.aoe.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.autosmelt.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.veinminer.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.treecapitator.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.flight.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.magnet.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.igniting.Enchantment.ENCHANTMENT_KEY)) {
+                    continue;
+                }
                 enchants.add("§a" + e.getKey().getKey() + " " + e.getValue());
             }
 
-            // Custom (AoE) — real enchantment or legacy PDC
-            int aoe = AOEEnchantment.getLevel(item);
+            // Custom enchants — real enchantment or legacy PDC
+            int aoe = com.ultimateimprovments.enchantment.aoe.Enchantment.getLevel(item);
             if (aoe > 0) {
                 enchants.add("§bAoe " + aoe);
+            }
+            if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.getLevel(item) > 0) {
+                enchants.add("§bAutoSmelt");
+            }
+            if (com.ultimateimprovments.enchantment.veinminer.Enchantment.getLevel(item) > 0) {
+                enchants.add("§bVeinMiner");
+            }
+            if (com.ultimateimprovments.enchantment.treecapitator.Enchantment.getLevel(item) > 0) {
+                enchants.add("§bTreeCapitator");
+            }
+            if (com.ultimateimprovments.enchantment.flight.Enchantment.getLevel(item) > 0) {
+                enchants.add("§bFlight");
+            }
+            if (com.ultimateimprovments.enchantment.magnet.Enchantment.getLevel(item) > 0) {
+                enchants.add("§bMagnet");
+            }
+            int igniting = com.ultimateimprovments.enchantment.igniting.Enchantment.getLevel(item);
+            if (igniting > 0) {
+                enchants.add("§bIgniting " + igniting);
             }
 
             if (enchants.isEmpty()) continue;

@@ -52,7 +52,20 @@ public class PluginShutdown {
         stopBackgroundTasks();
         cleanupPluginState();
 
+        printBanner();
         ConsoleLogger.info("[PLUGIN] Disabled");
+    }
+
+    /**
+     * Печатает текстовый баннер со статусом DISABLED при выключении плагина.
+     */
+    private void printBanner() {
+        ConsoleLogger.info("");
+        ConsoleLogger.info("==================================================");
+        ConsoleLogger.info("  UltimateImprovments v" + plugin.getDescription().getVersion());
+        ConsoleLogger.raw("<white>  Status: </white><red>DISABLED</red>");
+        ConsoleLogger.info("==================================================");
+        ConsoleLogger.info("");
     }
 
     // ==========================================================================
@@ -112,6 +125,9 @@ public class PluginShutdown {
         OpWhitelistManager.shutdown();
         TabManager.resetListenerState();
         CheckManager.shutdown();
+
+        // GitHub 2FA HTTP server — закрываем порт при выключении/reload
+        com.ultimateimprovments.mechanics.security.auth.GithubAuthServer.shutdown();
 
         // Сбрасываем флаг startup, чтобы при следующем старте guard не сработал ложно
         PluginStartup.resetStartupFlag();

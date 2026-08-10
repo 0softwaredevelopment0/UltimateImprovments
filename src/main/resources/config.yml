@@ -722,10 +722,10 @@
 #   features.enderchest.damage
 #     • Description: Damage to the player when opening AND closing an ender chest (in hearts).
 #       Applied EVERY time the player opens or closes the chest.
-#       8192 — lethal (kills anyone).
+#       1 — small damage (half a heart).
 #       0 — no damage.
 #     • Values: any integer ≥ 0
-#     • Default: 8192
+#     • Default: 1
 #
 #   features.enderchest.rate_limit.enabled
 #     • Description: Open-spam protection.
@@ -1613,18 +1613,40 @@
 #     • Values: true / false
 #     • Default: true
 #
-#   auth.2fa.bot_token
-#     • Description: Telegram bot token for 2FA (two-factor authentication).
-#       If filled — players can connect Telegram and confirm login
-#       via the bot. Leave empty if you don't use 2FA.
-#     • WARNING: The repo contains a TEST token. Create YOUR OWN bot
-#       via @BotFather in Telegram and paste its token here.
-#     • Default: filled with a test token
+#   auth.2fa.github.enabled
+#     • Description: Enables GitHub 2FA (two-factor authentication).
+#       If enabled — players who linked a GitHub account must authorize
+#       via GitHub on login: a clickable link is sent to them in chat,
+#       the server lets them in only after GitHub authorization.
+#     • Values: true / false
+#     • Default: false
 #
-#   auth.2fa.bot_url
-#     • Description: URL for the Telegram bot web server (local or remote).
-#       "http://localhost:3000" — if the bot runs on the same server.
-#     • Default: "http://localhost:3000"
+#   auth.2fa.github.client_id
+#     • Description: Client ID of your GitHub OAuth App.
+#       Create the app at https://github.com/settings/developers → OAuth Apps.
+#       Callback URL of the app must be: <public_url>/callback
+#     • Default: ""
+#
+#   auth.2fa.github.client_secret
+#     • Description: Client Secret (the "token") of your GitHub OAuth App.
+#       Used to exchange the authorization code. Never share it!
+#     • Default: ""
+#
+#   auth.2fa.github.port
+#     • Description: Port of the built-in HTTP server that handles the
+#       GitHub OAuth callback. Must be open (port-forwarded) for players.
+#     • Values: any integer 1-65535
+#     • Default: 8080
+#
+#   auth.2fa.github.public_url
+#     • Description: Public base URL that players will open,
+#       e.g. "http://123.45.67.89:8080". Must match the callback URL
+#       registered in your GitHub OAuth App.
+#       If empty — built from server-ip + port (may not work on most hosts).
+#     • Default: ""
+#
+#   Note: the auth session (1 hour by default) is controlled by
+#   auth.session_duration_minutes — the player re-logs in after it expires.
 #
 #
 # ╔══════════════════════════════════════════════════════════════════╗
@@ -3536,8 +3558,12 @@ auth:
     enabled: true
 
   2fa:
-    bot_token: "8770086137:AAHHv6ASBEeqHE2IxOmiq-HdC6xTD9R7D6g"
-    bot_url: "http://localhost:3000"
+    github:
+      enabled: false
+      client_id: ""
+      client_secret: ""
+      port: 8080
+      public_url: ""
 
 void_protection:
   enabled: true
@@ -3954,6 +3980,12 @@ enchant:
   # Custom enchantments (non-vanilla) recognized by the command
   custom_enchantments:
     - "aoe"
+    - "autosmelt"
+    - "veinminer"
+    - "treecapitator"
+    - "flight"
+    - "magnet"
+    - "igniting"
 
 spawn:
   mode: legit

@@ -6,7 +6,7 @@
       "count": 1
     },
     "title": {
-      "text": "Отголоски в печи",
+      "text": "Echoes in the Furnace",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -16,7 +16,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте осколок эха.",
+      "text": "Create an Echo Fragment",
       "type": "text",
       "color": "gray",
       "bold": false,

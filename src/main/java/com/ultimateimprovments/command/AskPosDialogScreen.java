@@ -27,6 +27,15 @@ import java.util.Optional;
  *   <li>{@link #openResponse(Player, String)} — the recipient sees «Player X requested
  *       your coordinates and world» with ✔ Confirm / ✖ Cancel buttons.</li>
  * </ul>
+ * <p>
+ * Оба диалога используют {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на отдельный экран
+ * {@code WaitingForResponseScreen} («Waiting for server…») и игнорирует
+ * {@code ClientboundClearDialogPacket} (клиентский {@code clearDialog()} закрывает только
+ * {@code DialogScreen}), поэтому окно висело бы ~4 секунды. С {@code CLOSE} клиент закрывает
+ * окно СРАЗУ после клика сам (пакет клика с вводом при этом всё равно отправляется),
+ * а сервер лишь выполняет действие. {@code close()} отправляет Clear-пакет как страховку —
+ * на игровом экране он безвреден.
  */
 public class AskPosDialogScreen {
 
@@ -108,7 +117,7 @@ public class AskPosDialogScreen {
             Optional.of(externalTitle),
             true,                            // canCloseWithEscape
             true,                            // pause
-            DialogAction.WAIT_FOR_RESPONSE,
+            DialogAction.CLOSE,               // клиент закрывает окно сам, мгновенно (без «Waiting for server»)
             List.of(new PlainMessage(bodyText, 310)),
             List.of(new Input("target_name", nickInput))
         );
@@ -185,7 +194,7 @@ public class AskPosDialogScreen {
             Optional.of(externalTitle),
             true,                            // canCloseWithEscape
             true,                            // pause
-            DialogAction.WAIT_FOR_RESPONSE,
+            DialogAction.CLOSE,               // клиент закрывает окно сам, мгновенно (без «Waiting for server»)
             List.of(new PlainMessage(bodyText, 310)),
             List.of()                        // no input fields
         );
@@ -203,7 +212,10 @@ public class AskPosDialogScreen {
     }
 
     /**
-     * Closes the currently open dialog of a player.
+     * Closes the currently open dialog of a player (safety net). The primary closing
+     * mechanism is {@link DialogAction#CLOSE}: the client closes the dialog by itself
+     * right after the click, so no «Waiting for server…» screen appears. This packet is
+     * sent for state sync in case the client is still on a dialog screen.
      */
     public static void close(Player player) {
         if (!(player instanceof CraftPlayer craftPlayer)) return;

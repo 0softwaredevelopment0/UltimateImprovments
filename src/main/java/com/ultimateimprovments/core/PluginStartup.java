@@ -215,101 +215,90 @@ public class PluginStartup {
 
     private void registerSystemModules(ModuleManager mm) {
         mm.register(new VersionCheckModule());
-        mm.register(new DatabaseModule());
-        mm.register(new DatapackModule());
-        mm.register(new CoreModule());
-        mm.register(new PowerModule());
+        // Database, Core
+        SimpleModules.registerCoreModules(mm);
+        // Datapack, Power
+        SimpleModules.registerSystem(mm);
     }
 
     private void registerEnergyModules(ModuleManager mm) {
-        mm.register(new CableModule());
-        mm.register(new GeneratorBasicModule());
-        mm.register(new ReactorModule());
-        mm.register(new FurnaceModule());
-        mm.register(new AssemblerModule());
-        mm.register(new WorkbenchModule());
-        mm.register(new BatteryModule());
-        mm.register(new BatteryMultiModule());
-        mm.register(new LightModule());
+        // Cable, Basic Generator, Reactor, Electric Furnace, Battery Drain, Battery Multi, Light Multi
+        SimpleModules.registerEnergy(mm);
+        // Assembler, Workbench
+        SimpleModules.registerEnergyMachines(mm);
     }
 
     private void registerMechanicsModules(ModuleManager mm) {
-        mm.register(new RadiationModule());
-        mm.register(new LightningModule());
-        mm.register(new CraftingModule());
-        mm.register(new AuthModule());
-        mm.register(new SudoModule());
+        // Radiation, Lightning, Auth
+        SimpleModules.registerMechanics(mm);
+        // Crafting
+        SimpleModules.registerCrafting(mm);
+        // Sudo
+        SimpleModules.registerSudo(mm);
     }
 
     private void registerFeatureModules(ModuleManager mm) {
-        mm.register(new AttributesModule());
-        mm.register(new BeaconModule());
-        mm.register(new BlockDmgModule());
-        mm.register(new BlockCollapseModule());
-        mm.register(new BoostedCobwebModule());
-        mm.register(new DragonEggModule());
-        mm.register(new EntityLocatorModule());
-        mm.register(new MagnetModule());
-        mm.register(new ModeProtectModule());
-        mm.register(new TerracotaSpeedModule());
-        mm.register(new WaypointModule());
-        mm.register(new IntegrityModule());
-        mm.register(new AntimatterModule());
-        mm.register(new UnbreakableBreakerModule());
-        mm.register(new DeathBellModule());
-        mm.register(new EnderChestModule());
-        mm.register(new GlassBreakModule());
-        mm.register(new ShieldSlownessModule());
-        mm.register(new CreativeItemValidatorModule());
-        mm.register(new ContainerTriggerModule());
-        mm.register(new VanishModule());
-        mm.register(new NotesModule());
-        mm.register(new MinecartSpeedModule());
-        mm.register(new WirelessRedstoneModule());
+        // Attributes, Beacon, BlockDmg, BlockCollapse, BoostedCobweb, DragonEgg, EntityLocator,
+        // Magnet, ModeProtect, TerracotaSpeed, Waypoint, Integrity, Antimatter, UnbreakableBreaker,
+        // DeathBell, EnderChest, GlassBreak, ShieldSlowness, CreativeItemValidator,
+        // ContainerTrigger, Vanish, Notes, MinecartSpeed, WirelessRedstone
+        SimpleModules.registerFeatures(mm);
         mm.register(new com.ultimateimprovments.module.meteor.MeteorModule());
-        mm.register(new EconomyModule());
-        mm.register(new AOEEnchantmentModule());
+        // Economy
+        SimpleModules.registerEconomy(mm);
+        // AOEEnchantment
+        SimpleModules.registerAOEEnchantment(mm);
+        // AutoSmeltEnchantment
+        SimpleModules.registerAutoSmeltEnchantment(mm);
+        // VeinMinerEnchantment
+        SimpleModules.registerVeinMinerEnchantment(mm);
+        // TreeCapitatorEnchantment
+        SimpleModules.registerTreeCapitatorEnchantment(mm);
+        // FlightEnchantment
+        SimpleModules.registerFlightEnchantment(mm);
+        // MagnetEnchantment
+        SimpleModules.registerMagnetEnchantment(mm);
+        // IgnitingEnchantment
+        SimpleModules.registerIgnitingEnchantment(mm);
     }
 
     private void registerProtectionModules(ModuleManager mm) {
-        mm.register(new RedstoneGuardModule());
-        mm.register(new PacketGuardModule());
-        mm.register(new ProxyServerModule());
+        // RedstoneGuard, PacketGuard, ProxyServer
+        SimpleModules.registerProtection(mm);
         mm.register(new com.ultimateimprovments.mechanics.protection.ProtectionModule());
     }
 
     private void registerUtilityModules(ModuleManager mm) {
-        mm.register(new ChatFilterModule());
-        mm.register(new ChatModule());
-        mm.register(new VoidProtectionModule());
-        mm.register(new BotProtectionModule());
+        // ChatFilter, Chat, VoidProtection
+        SimpleModules.registerUtility(mm);
+        // BotProtection
+        SimpleModules.registerBotProtection(mm);
     }
 
     private void registerDisplayModules(ModuleManager mm) {
-        mm.register(new MOTDModule());
-        mm.register(new TabModule());
-        mm.register(new ScoreboardModule());
-        mm.register(new BossBarModule());
+        // Tab, Scoreboard, BossBar
+        SimpleModules.registerDisplay(mm);
+        // MOTD
+        SimpleModules.registerMOTD(mm);
     }
 
     private void registerBackgroundModules(ModuleManager mm) {
-        mm.register(new TasksModule());
-        mm.register(new AutoSaveModule());
-        mm.register(new UpdateModule());
-        mm.register(new LeashModule());
-        mm.register(new ElytraBoostModule());
-        mm.register(new AutoBroadcastModule());
+        // Tasks, AutoSave, UpdateChecker, Leash, ElytraBoost, AutoBroadcast
+        SimpleModules.registerBackground(mm);
     }
 
     private void registerAdminModules(ModuleManager mm) {
-        mm.register(new ParticleModule());
+        // ParticleAccelerator
+        SimpleModules.registerParticle(mm);
         mm.register(new OmniscannerModule());
     }
 
     private void registerSecurityModules(ModuleManager mm) {
-        mm.register(new PunishModule());
+        // Punish
+        SimpleModules.registerPunish(mm);
         mm.register(new AntiCheatModule());
-        mm.register(new StructureIntegrityModule());
+        // StructureIntegrity
+        SimpleModules.registerStructureIntegrity(mm);
     }
 
     // ==========================================================================
@@ -387,16 +376,12 @@ public class PluginStartup {
 
     private void printBanner() {
         ConsoleLogger.info("");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF> _   _  ___ </gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| | | |/ _ \\\\</gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| | | | (_) |</gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF>| |_| |\\\\__, |</gradient>");
-        ConsoleLogger.raw("<gradient:#00AAFF:#FF55FF> \\\\___/  /_/ </gradient>");
-        ConsoleLogger.info("");
-        ConsoleLogger.raw("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>");
-        ConsoleLogger.raw("<gray>  Version: <white>" + plugin.getDescription().getVersion() + "</white>  |  Server: <white>" + plugin.getServer().getName() + " " + plugin.getServer().getVersion() + "</white></gray>");
-        ConsoleLogger.raw("<gray>  Authors: <white>" + String.join(", ", plugin.getDescription().getAuthors()) + "</white></gray>");
-        ConsoleLogger.raw("<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>");
+        ConsoleLogger.info("==================================================");
+        ConsoleLogger.info("  UltimateImprovments v" + plugin.getDescription().getVersion());
+        ConsoleLogger.info("  Server: " + plugin.getServer().getName() + " " + plugin.getServer().getVersion());
+        ConsoleLogger.info("  Authors: " + String.join(", ", plugin.getDescription().getAuthors()));
+        ConsoleLogger.raw("<white>  Status: </white><green>ENABLED</green>");
+        ConsoleLogger.info("==================================================");
         ConsoleLogger.info("");
     }
 }

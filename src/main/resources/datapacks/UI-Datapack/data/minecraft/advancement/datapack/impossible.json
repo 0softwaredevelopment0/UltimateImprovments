@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Невозможное достижение",
+      "text": "Unachievable Achievement",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Вы не можете получить это достижение.",
+      "text": "You cannot earn this achievement",
       "type": "text",
       "color": "gray",
       "bold": false,

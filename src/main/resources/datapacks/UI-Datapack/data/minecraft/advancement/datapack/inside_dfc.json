@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "В недрах ада",
+      "text": "In the Depths of Hell",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Залезьте в РТС, во время его работы... Зачем!?",
+      "text": "Climb into the DFC core while it's running.",
       "type": "text",
       "color": "gray",
       "bold": false,

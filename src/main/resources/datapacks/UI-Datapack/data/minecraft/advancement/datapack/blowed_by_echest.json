@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Неожиданные последствия",
+      "text": "Unforeseen Consequences",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Подумайте, прежде чем сделать что-то.",
+      "text": "Think before you do anything...",
       "type": "text",
       "color": "gray",
       "bold": false,

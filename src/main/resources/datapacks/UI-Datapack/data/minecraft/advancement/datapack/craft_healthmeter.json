@@ -6,7 +6,7 @@
       "count": 1
     },
     "title": {
-      "text": "Доктор для мобов",
+      "text": "Doctor for Creatures",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -16,7 +16,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте измеритель здоровья.",
+      "text": "Create an HP Meter",
       "type": "text",
       "color": "gray",
       "bold": false,

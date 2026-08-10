@@ -346,6 +346,11 @@ final class ConfigRules {
             integer("auth.request_cooldown_seconds", 0, 3600),
             integer("auth.max_accounts_per_ip", 0, 1000),
             bool("auth.check_duplicate_name.enabled"),
+            bool("auth.2fa.github.enabled"),
+            string("auth.2fa.github.client_id", false, 128),
+            string("auth.2fa.github.client_secret", false, 256),
+            integer("auth.2fa.github.port", 1, 65535, "Порт HTTP-сервера GitHub 2FA"),
+            string("auth.2fa.github.public_url", false, 256),
 
             bool("void_protection.enabled"),
             stringList("void_protection.worlds"),

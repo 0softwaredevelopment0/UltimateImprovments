@@ -6,7 +6,7 @@
       "count": 1
     },
     "title": {
-      "text": "Дозиметрические измерения",
+      "text": "Dosimetry Measurements",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -16,7 +16,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте дозиметр.",
+      "text": "Create a dosimeter",
       "type": "text",
       "color": "gray",
       "bold": false,

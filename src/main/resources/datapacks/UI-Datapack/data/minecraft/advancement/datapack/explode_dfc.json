@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Деструктивные последствия",
+      "text": "Destructive Consequences",
       "type": "text",
       "color": "dark_red",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Взорвите РТС, возможно это будет стоить вам жизни...",
+      "text": "Blow Up the DFC",
       "type": "text",
       "color": "gray",
       "bold": false,

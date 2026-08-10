@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Высокие температуры",
+      "text": "High Temperatures",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Переплавьте яйцо дракона в незерит, вы теперь богаты?",
+      "text": "Melt the Dragon Egg",
       "type": "text",
       "color": "gray",
       "bold": false,

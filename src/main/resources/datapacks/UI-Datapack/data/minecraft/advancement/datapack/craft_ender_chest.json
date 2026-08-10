@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "Большие вместимости",
+      "text": "Large capacities",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Скрафтите эндер сундук, не советую ломать его.",
+      "text": "Create an Ender Chest",
       "type": "text",
       "color": "gray",
       "bold": false,

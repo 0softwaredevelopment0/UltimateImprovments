@@ -6,7 +6,7 @@
       "count": 1
     },
     "title": {
-      "text": "Слабые становятся сильными",
+      "text": "Light Attack",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -16,7 +16,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Создайте фотонную пушку.",
+      "text": "Create a Photon Cannon",
       "type": "text",
       "color": "gray",
       "bold": false,
