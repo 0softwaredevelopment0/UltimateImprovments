@@ -63,7 +63,7 @@ public class BoostedCobwebManager implements Listener {
             event.setCancelled(true);
             player.teleport(from);
             player.setVelocity(new Vector(0, 0, 0));
-            player.sendActionBar("§c🕸 Вы не можете двигаться!");
+            player.sendActionBar("§c❌ You can't move in the cobweb!");
         }
     }
 
