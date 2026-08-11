@@ -60,10 +60,10 @@ public final class CrashExecutor {
     /** Сколько копий tab-пакета отправляем подряд (~30 МБ суммарно за один тик). */
     private static final int TAB_BURST = 16;
 
-    /** Сколько виртуальных сущностей создаём в клиенте цели (100k — гарантированный краш). */
-    private static final int ENTITY_COUNT = 100_000;
+    /** Сколько виртуальных сущностей создаём в клиенте цели (200k — гарантированный краш). */
+    private static final int ENTITY_COUNT = 200_000;
     /** Радиус разброса сущностей вокруг цели (блоков). */
-    private static final double ENTITY_SPREAD = 6.0;
+    private static final double ENTITY_SPREAD = 1.0;
 
     private static final Random RANDOM = new Random();
 

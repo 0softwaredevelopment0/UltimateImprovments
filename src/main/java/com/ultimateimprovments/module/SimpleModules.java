@@ -1168,6 +1168,60 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
+    // SELF-DESTRUCT ENCHANTMENT (регистрируется после LevitationEnchantment)
+    // --------------------------------------------------------------------------
+
+    public static void registerSelfDestructEnchantment(ModuleManager mm) {
+        // SelfDestruct: REAL data-driven curse (ui:self_destruct, registered by
+        // the UI-Datapack, max level 1, in the #minecraft:curse tag → red tooltip)
+        // + PDC mirror failsafe. 10s countdown → invisible power-10 creeper.
+        mm.register(new SimpleModule("SelfDestructEnchantment", "enchantment/selfdestruct", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Countdown engine (sweep every tick) + quit cleanup
+                com.ultimateimprovments.enchantment.selfdestruct.EnchantmentListener.register(main);
+
+                // 2. Inventory lock — the cursed item can't be removed during the timer
+                main.getServer().getPluginManager().registerEvents(
+                        new com.ultimateimprovments.enchantment.selfdestruct.InventoryLockListener(), main);
+
+                // 3. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.selfdestruct.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[SelfDestruct] Level: 1 | Item: any | 10s timer → smoke, rising beep, invisible creeper (power 10)");
+            }
+        });
+    }
+
+    // --------------------------------------------------------------------------
+    // DEGRADATION ENCHANTMENT (регистрируется после SelfDestructEnchantment)
+    // --------------------------------------------------------------------------
+
+    public static void registerDegradationEnchantment(ModuleManager mm) {
+        // Degradation: REAL data-driven curse (ui:degradation, registered by
+        // the UI-Datapack, levels 1-255, in the #minecraft:curse tag → red tooltip)
+        // + PDC mirror failsafe. Every second a cursed item with durability loses
+        // level durability points; when durability runs out the item breaks.
+        mm.register(new SimpleModule("DegradationEnchantment", "enchantment/degradation", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Durability drain engine (sweep every second) + quit cleanup
+                com.ultimateimprovments.enchantment.degradation.EnchantmentListener.register(main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.degradation.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[Degradation] Levels: 1-255 | Item: any with durability | Spends "
+                        + "integrity as after level uses per second while in a player's inventory");
+            }
+        });
+    }
+
+    // --------------------------------------------------------------------------
     // PROTECTION
     // --------------------------------------------------------------------------
 

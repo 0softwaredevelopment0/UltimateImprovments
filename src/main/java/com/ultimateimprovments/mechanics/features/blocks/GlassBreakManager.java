@@ -73,6 +73,6 @@ public class GlassBreakManager implements Listener {
         if (hand.getType() != Material.AIR) return;
 
         e.getPlayer().damage(damage);
-        e.getPlayer().sendActionBar("§cНе ломайте стекло рукой!");
+        e.getPlayer().sendActionBar("§c❌ Do not break the glass with your hand!");
     }
 }

@@ -4035,6 +4035,8 @@ enchant:
     - "magnet"
     - "igniting"
     - "levitation"
+    - "self_destruct"
+    - "degradation"
 
 spawn:
   mode: legit

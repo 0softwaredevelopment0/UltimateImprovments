@@ -266,6 +266,10 @@ public class PluginStartup {
         SimpleModules.registerIgnitingEnchantment(mm);
         // LevitationEnchantment
         SimpleModules.registerLevitationEnchantment(mm);
+        // SelfDestructEnchantment
+        SimpleModules.registerSelfDestructEnchantment(mm);
+        // DegradationEnchantment
+        SimpleModules.registerDegradationEnchantment(mm);
     }
 
     private void registerProtectionModules(ModuleManager mm) {

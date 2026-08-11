@@ -456,6 +456,29 @@ public final class EnchantSubcommand {
                         }
                         // Levitation requires a chestplate — skip silently
                     }
+                    case "self_destruct" -> {
+                        // The curse goes on ANY item.
+                        if (isGive) {
+                            com.ultimateimprovments.enchantment.selfdestruct.Enchantment.setLevel(item, 1);
+                            count++;
+                        } else if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.hasSelfDestruct(item)) {
+                            com.ultimateimprovments.enchantment.selfdestruct.Enchantment.removeLevel(item);
+                            count++;
+                        }
+                    }
+                    case "degradation" -> {
+                        // The curse goes on ANY item with durability.
+                        if (com.ultimateimprovments.enchantment.degradation.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.degradation.Enchantment.setLevel(item, level);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.degradation.Enchantment.hasDegradation(item)) {
+                                com.ultimateimprovments.enchantment.degradation.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Degradation requires an item with durability — skip silently
+                    }
                     default -> { /* unknown custom enchant — skip */ }
                 }
             } else {
@@ -598,7 +621,9 @@ public final class EnchantSubcommand {
                         || e.getKey().equals(com.ultimateimprovments.enchantment.flight.Enchantment.ENCHANTMENT_KEY)
                         || e.getKey().equals(com.ultimateimprovments.enchantment.magnet.Enchantment.ENCHANTMENT_KEY)
                         || e.getKey().equals(com.ultimateimprovments.enchantment.igniting.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.levitation.Enchantment.ENCHANTMENT_KEY)) {
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.levitation.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.selfdestruct.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.degradation.Enchantment.ENCHANTMENT_KEY)) {
                     continue;
                 }
                 enchants.add("§a" + e.getKey().getKey() + " " + e.getValue());
@@ -630,6 +655,14 @@ public final class EnchantSubcommand {
             }
             if (com.ultimateimprovments.enchantment.levitation.Enchantment.getLevel(item) > 0) {
                 enchants.add("§bLevitation");
+            }
+            // Curse — shown in red
+            if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.getLevel(item) > 0) {
+                enchants.add("§cCurse of Self-Destruct");
+            }
+            int degradation = com.ultimateimprovments.enchantment.degradation.Enchantment.getLevel(item);
+            if (degradation > 0) {
+                enchants.add("§cCurse of Degradation " + degradation);
             }
 
             if (enchants.isEmpty()) continue;
