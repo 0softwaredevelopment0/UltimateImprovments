@@ -57,7 +57,6 @@ public class ElectricFurnaceManager implements Listener {
         cacheCookingRecipes();
         loadConfig();
         startPeriodicItemScan();
-        ConsoleLogger.info("[ElectricFurnace] Manager initialized.");
     }
 
     public static ElectricFurnaceManager getInstance() {

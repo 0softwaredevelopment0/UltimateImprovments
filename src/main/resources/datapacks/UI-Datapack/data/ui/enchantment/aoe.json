@@ -1,8 +1,8 @@
 {
 	"description": {
-		"text": "Igniting"
+		"text": "AoE"
 	},
-	"supported_items": "#minecraft:igniting_enchantable",
+	"supported_items": "#ui:aoe_enchantable",
 	"weight": 5,
 	"max_level": 255,
 	"min_cost": {
@@ -15,7 +15,7 @@
 	},
 	"anvil_cost": 1,
 	"slots": [
-	  "armor"
+	  "mainhand"
 	],
 	"effects": {}
 }

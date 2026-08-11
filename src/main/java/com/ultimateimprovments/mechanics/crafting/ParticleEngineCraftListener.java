@@ -2,7 +2,6 @@ package com.ultimateimprovments.mechanics.crafting;
 
 import com.ultimateimprovments.energy.machines.assembler.AssemblerChecker;
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -49,7 +48,6 @@ public class ParticleEngineCraftListener implements Listener {
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
 
-        ConsoleLogger.info("[ParticleEngine] Recipe registered (Item Assembler only).");
     }
 
     public static ItemStack createEngineItem() {

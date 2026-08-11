@@ -58,7 +58,6 @@ public abstract class PluginModule {
             onInit(plugin);
             enabled = true;
             disableReason = null;
-            ConsoleLogger.info("[Module:" + name + "] \u2713 Enabled");
             return true;
         } catch (Throwable t) {
             enabled = false;
@@ -83,9 +82,10 @@ public abstract class PluginModule {
         if (!enabled) return true;
         try {
             onDisable(plugin);
-            ConsoleLogger.info("[Module:" + name + "] \u2713 Disabled");
         } catch (Throwable t) {
             ConsoleLogger.warn("[Module:" + name + "] Shutdown error: " + t.getMessage());
+            enabled = false;
+            return false;
         }
         enabled = false;
         return true;

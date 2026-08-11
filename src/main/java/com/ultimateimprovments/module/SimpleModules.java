@@ -87,6 +87,7 @@ import com.ultimateimprovments.mechanics.features.integrity.IntegrityListener;
 import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
 import com.ultimateimprovments.mechanics.features.items.AutoCraftManager;
 import com.ultimateimprovments.mechanics.features.items.ChestplateFlightListener;
+import com.ultimateimprovments.mechanics.features.items.ExpBottleUpgradeListener;
 import com.ultimateimprovments.mechanics.features.items.NetheriteUpgradeListener;
 import com.ultimateimprovments.mechanics.features.items.NotesManager;
 import com.ultimateimprovments.mechanics.features.items.TotemChargeListener;
@@ -730,6 +731,21 @@ public final class SimpleModules {
             }
         });
 
+        // ExpBottleUpgrade — заряженные пузырьки опыта (наковальня x1+x1→x2 и т.д.)
+        mm.register(new SimpleModule("ExpBottleUpgrade", "mechanics/features/exp_bottle", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+                ExpBottleUpgradeListener.loadConfig(main);
+                main.getServer().getPluginManager().registerEvents(new ExpBottleUpgradeListener(), main);
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                ExpBottleUpgradeListener.loadConfig((Main) plugin);
+            }
+        });
+
         // Integrity
         mm.register(new SimpleModule("Integrity", "mechanics/features/integrity", false) {
             @Override
@@ -955,7 +971,6 @@ public final class SimpleModules {
                     ConsoleLogger.info("[Economy] PlaceholderAPI not found — placeholders disabled.");
                 }
 
-                ConsoleLogger.info("[Economy] Module initialized.");
             }
         });
     }
@@ -966,7 +981,7 @@ public final class SimpleModules {
 
     public static void registerAOEEnchantment(ModuleManager mm) {
         // AoE (Area of Effect) Enchantment: REAL data-driven enchantment
-        // (minecraft:aoe, registered by the UI-Datapack) + PDC mirror failsafe.
+        // (ui:aoe, registered by the UI-Datapack) + PDC mirror failsafe.
         mm.register(new SimpleModule("AOEEnchantment", "enchantment/aoe", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -978,7 +993,6 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[AoE] Enchantment module initialized.");
                 ConsoleLogger.info("[AoE] Max level: 255 | Radius = level | Tools: pickaxe, shovel, axe, hoe");
                 ConsoleLogger.info("[AoE] Sneak to disable AoE for precise mining");
             }
@@ -990,7 +1004,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerAutoSmeltEnchantment(ModuleManager mm) {
-        // AutoSmelt: REAL data-driven enchantment (minecraft:autosmelt, registered by
+        // AutoSmelt: REAL data-driven enchantment (ui:autosmelt, registered by
         // the UI-Datapack, max level 1) + PDC mirror failsafe. Smelts block drops.
         mm.register(new SimpleModule("AutoSmeltEnchantment", "enchantment/autosmelt", false) {
             @Override
@@ -1003,7 +1017,6 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.autosmelt.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[AutoSmelt] Enchantment module initialized.");
                 ConsoleLogger.info("[AutoSmelt] Level: 1 | Tools: pickaxe, shovel, axe, hoe");
             }
         });
@@ -1014,7 +1027,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerVeinMinerEnchantment(ModuleManager mm) {
-        // VeinMiner: REAL data-driven enchantment (minecraft:veinminer, registered by
+        // VeinMiner: REAL data-driven enchantment (ui:veinminer, registered by
         // the UI-Datapack, max level 1) + PDC mirror failsafe. Breaks whole ore veins.
         mm.register(new SimpleModule("VeinMinerEnchantment", "enchantment/veinminer", false) {
             @Override
@@ -1027,7 +1040,6 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.veinminer.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[VeinMiner] Enchantment module initialized.");
                 ConsoleLogger.info("[VeinMiner] Level: 1 | Tool: pickaxe | Mines whole ore veins");
                 ConsoleLogger.info("[VeinMiner] Sneak to disable VeinMiner for precise mining");
             }
@@ -1039,7 +1051,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerTreeCapitatorEnchantment(ModuleManager mm) {
-        // TreeCapitator: REAL data-driven enchantment (minecraft:treecapitator, registered
+        // TreeCapitator: REAL data-driven enchantment (ui:treecapitator, registered
         // by the UI-Datapack, max level 1) + PDC mirror failsafe. Fells whole trees.
         mm.register(new SimpleModule("TreeCapitatorEnchantment", "enchantment/treecapitator", false) {
             @Override
@@ -1052,7 +1064,6 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.treecapitator.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[TreeCapitator] Enchantment module initialized.");
                 ConsoleLogger.info("[TreeCapitator] Level: 1 | Tool: axe | Fells whole trees");
                 ConsoleLogger.info("[TreeCapitator] Sneak to disable TreeCapitator for precise cutting");
             }
@@ -1064,7 +1075,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerFlightEnchantment(ModuleManager mm) {
-        // Flight: REAL data-driven enchantment (minecraft:flight, registered by
+        // Flight: REAL data-driven enchantment (ui:flight, registered by
         // the UI-Datapack, max level 1) + PDC mirror failsafe. Fly like Creative
         // while the enchanted chestplate is worn.
         mm.register(new SimpleModule("FlightEnchantment", "enchantment/flight", false) {
@@ -1078,7 +1089,6 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.flight.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Flight] Enchantment module initialized.");
                 ConsoleLogger.info("[Flight] Level: 1 | Item: chestplate | Fly like Creative while worn");
             }
         });
@@ -1089,7 +1099,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerMagnetEnchantment(ModuleManager mm) {
-        // Magnet: REAL data-driven enchantment (minecraft:magnet, registered by
+        // Magnet: REAL data-driven enchantment (ui:magnet, registered by
         // the UI-Datapack, max level 1) + PDC mirror failsafe. Attracts freshly
         // dropped items to the player (works with AoE/VeinMiner/TreeCapitator drops).
         mm.register(new SimpleModule("MagnetEnchantment", "enchantment/magnet", false) {
@@ -1103,7 +1113,6 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.magnet.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Magnet] Enchantment module initialized.");
                 ConsoleLogger.info("[Magnet] Level: 1 | Tools: pickaxe, shovel, axe, hoe | Pull: 0.5 blk/s");
             }
         });
@@ -1114,7 +1123,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerIgnitingEnchantment(ModuleManager mm) {
-        // Igniting: REAL data-driven enchantment (minecraft:igniting, registered by
+        // Igniting: REAL data-driven enchantment (ui:igniting, registered by
         // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Armor ignites the
         // attacker for level seconds when the wearer is hit.
         mm.register(new SimpleModule("IgnitingEnchantment", "enchantment/igniting", false) {
@@ -1128,9 +1137,32 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.igniting.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Igniting] Enchantment module initialized.");
                 ConsoleLogger.info("[Igniting] Levels: 1-255 | Armor: helmet, chestplate, leggings, boots");
                 ConsoleLogger.info("[Igniting] Attackers of the wearer are set on fire for level seconds");
+            }
+        });
+    }
+
+    // --------------------------------------------------------------------------
+    // LEVITATION ENCHANTMENT (регистрируется после IgnitingEnchantment)
+    // --------------------------------------------------------------------------
+
+    public static void registerLevitationEnchantment(ModuleManager mm) {
+        // Levitation: REAL data-driven enchantment (ui:levitation, registered by
+        // the UI-Datapack, max level 1) + PDC mirror failsafe. Holding the jump
+        // key while the enchanted chestplate is worn gently lifts the player up.
+        mm.register(new SimpleModule("LevitationEnchantment", "enchantment/levitation", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Jetpack listener (periodic jump-key sweep)
+                com.ultimateimprovments.enchantment.levitation.EnchantmentListener.register(main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.levitation.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[Levitation] Level: 1 | Item: chestplate | Jump key = gentle jetpack while worn");
             }
         });
     }

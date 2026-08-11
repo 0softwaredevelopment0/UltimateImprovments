@@ -3,7 +3,6 @@ package com.ultimateimprovments.mechanics.crafting;
 import com.ultimateimprovments.energy.machines.assembler.AssemblerChecker;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -88,7 +87,6 @@ public class MultimeterCraftListener implements Listener {
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
 
-        ConsoleLogger.info("[MULTIMETER] Recipe registered with ITEM MODEL");
     }
 
     // =========================

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * VeinMiner enchantment — real datapack enchantment with a PDC failsafe.
  * <p>
- * Registers {@code minecraft:veinminer} (file {@code data/minecraft/enchantment/veinminer.json})
+ * Registers {@code ui:veinminer} (file {@code data/ui/enchantment/veinminer.json})
  * as a REAL data-driven enchantment: glint, description, anvil &amp; book compatibility,
  * {@code /enchant} support. Has exactly ONE level.
  * <p>
@@ -35,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Enchantment {
 
     /** The real enchantment key registered by the datapack. */
-    public static final NamespacedKey ENCHANTMENT_KEY = NamespacedKey.minecraft("veinminer");
+    public static final NamespacedKey ENCHANTMENT_KEY = new NamespacedKey("ui", "veinminer");
 
     /** PDC mirror key: {@code ui:veinminer_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "veinminer_level");

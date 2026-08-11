@@ -34,24 +34,37 @@ public class CommandRegistrar {
     // REGISTER COMMANDS
     // =========================
     public void registerAll(Main plugin) {
+        ConsoleLogger.info("[Commands] Registering commands...");
+        int registered = 0;
+        int total = 0;
+
         PluginReloadCommand uiCmd = new PluginReloadCommand();
-        register(plugin, "ui", uiCmd, uiCmd); // main command
-        register(plugin, "ultimateimprovments", uiCmd, uiCmd); // alias
-        register(plugin, "reactor", new ReactorCommand(), null);
+        total++; registered += register(plugin, "ui", uiCmd, uiCmd) ? 1 : 0; // main command
+        total++; registered += register(plugin, "ultimateimprovments", uiCmd, uiCmd) ? 1 : 0; // alias
+        total++; registered += register(plugin, "reactor", new ReactorCommand(), null) ? 1 : 0;
 
         // Фейковые команды для троллинга взломщиков (настройки в config.yml → troll:)
         TrollCommand trollCmd = new TrollCommand();
-        register(plugin, "forceop", trollCmd, trollCmd); // fake OP grant
-        register(plugin, "crash", trollCmd, trollCmd);   // fake server crash + kick
-        registerOverride(plugin, "list", new VanishListCommand());
-        registerOverride(plugin, "stop", new PowerCommand("stop", false));
-        registerOverride(plugin, "restart", new PowerCommand("restart", true));
+        total++; registered += register(plugin, "forceop", trollCmd, trollCmd) ? 1 : 0; // fake OP grant
+        total++; registered += register(plugin, "crash", trollCmd, trollCmd) ? 1 : 0;   // fake server crash + kick
+        total++; registered += registerOverride(plugin, "list", new VanishListCommand()) ? 1 : 0;
+        total++; registered += registerOverride(plugin, "stop", new PowerCommand("stop", false)) ? 1 : 0;
+        total++; registered += registerOverride(plugin, "restart", new PowerCommand("restart", true)) ? 1 : 0;
+
+        int failed = total - registered;
+        if (failed > 0) {
+            ConsoleLogger.warn("[Commands] Registered " + registered + "/" + total + " commands, " + failed + " failed.");
+        } else {
+            ConsoleLogger.info("[Commands] Registered " + registered + " commands.");
+        }
     }
 
     /**
      * Registers a command via CommandMap, so no plugin.yml declaration is needed.
+     *
+     * @return true if the command was registered successfully
      */
-    private void register(Main plugin, String name, CommandExecutor executor, TabCompleter completer) {
+    private boolean register(Main plugin, String name, CommandExecutor executor, TabCompleter completer) {
         try {
             Field field = plugin.getServer().getClass().getDeclaredField("commandMap");
             field.setAccessible(true);
@@ -59,9 +72,10 @@ public class CommandRegistrar {
 
             BukkitCommand cmd = new BukkitCommand(name, executor, completer);
             commandMap.register(plugin.getName().toLowerCase(), cmd);
-            ConsoleLogger.info("[COMMANDS] Registered /" + name);
+            return true;
         } catch (Exception e) {
-            ConsoleLogger.warn("[COMMANDS] Failed to register /" + name + ": " + e.getMessage());
+            ConsoleLogger.warn("[Commands] Failed to register /" + name + ": " + e.getMessage());
+            return false;
         }
     }
 
@@ -69,8 +83,10 @@ public class CommandRegistrar {
      * Registers a command by overriding it through the server's CommandMap.
      * Required for built-in server commands like /stop and /restart
      * which cannot be overridden via the standard plugin.yml mechanism.
+     *
+     * @return true if the command was registered successfully
      */
-    private void registerOverride(Main plugin, String name, Command command) {
+    private boolean registerOverride(Main plugin, String name, Command command) {
         try {
             Field field = plugin.getServer().getClass().getDeclaredField("commandMap");
             field.setAccessible(true);
@@ -94,15 +110,16 @@ public class CommandRegistrar {
                     knownCommands.remove("minecraft:" + name);
                 }
             } catch (Exception e) {
-                ConsoleLogger.info("[COMMANDS] KnownCommands not available (Paper 1.21+): " + e.getMessage());
+                ConsoleLogger.info("[Commands] KnownCommands not available (Paper 1.21+): " + e.getMessage());
             }
 
             // Register our command
             commandMap.register(name, plugin.getName().toLowerCase(), command);
-            ConsoleLogger.info("[COMMANDS] Registered /" + name + " (overridden via CommandMap)");
+            return true;
         } catch (Exception e) {
-            ConsoleLogger.warn("[COMMANDS] Failed to override /" + name + ": " + e.getMessage());
+            ConsoleLogger.warn("[Commands] Failed to override /" + name + ": " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
     }
 

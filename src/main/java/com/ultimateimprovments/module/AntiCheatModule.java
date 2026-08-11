@@ -41,8 +41,11 @@ public class AntiCheatModule extends PluginModule {
         // Устанавливаем enabled из конфига (чтобы /ui ac toggle on мог включить)
         acm.setGlobalEnabled(enabled);
 
-        // Register all checks
+        // Register all checks (grouped log: one line for the whole anti-cheat)
+        ConsoleLogger.info("[AntiCheat] Enabling anti-cheat checks...");
         registerAllChecks(acm);
+        int total = acm.getAllChecks().size();
+        int active = (int) acm.getAllChecks().stream().filter(c -> c.isEnabled()).count();
 
         // Start VL decay task
         acm.startDecayTask();
@@ -64,9 +67,9 @@ public class AntiCheatModule extends PluginModule {
         }
 
         if (enabled) {
-            ConsoleLogger.info("[AntiCheat] All checks registered and active. Packet interception: ACTIVE.");
+            ConsoleLogger.info("[AntiCheat] Enabled " + total + " checks (" + active + " active). Packet interception: ACTIVE.");
         } else {
-            ConsoleLogger.info("[AntiCheat] Initialized but DISABLED (config). Use /ui ac toggle on to enable.");
+            ConsoleLogger.info("[AntiCheat] Disabled " + total + " checks (config). Use /ui ac toggle on to enable.");
         }
     }
 
@@ -130,7 +133,9 @@ public class AntiCheatModule extends PluginModule {
 
     @Override
     protected void onDisable(JavaPlugin plugin) {
+        ConsoleLogger.info("[AntiCheat] Disabling anti-cheat checks...");
         PacketHandler.shutdown();
         AntiCheatManager.shutdown();
+        ConsoleLogger.info("[AntiCheat] Anti-cheat disabled.");
     }
 }

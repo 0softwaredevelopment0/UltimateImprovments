@@ -13,18 +13,17 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Listener: TreeCapitator block breaking.
  * <p>
- * When a player breaks a log with a TreeCapitator axe, the whole tree is felled:
- * every connected log/stem/branch of ANY wood type is broken at once
- * (6-direction flood fill). Stripped logs are NOT part of a living tree and are
- * left alone (prevents accidentally felling player-built log structures).
+ * When a player breaks a log with a TreeCapitator axe, the TRUNK COLUMN is felled:
+ * logs directly above and below the broken block (same X/Z column), up to the
+ * first non-log block in each direction. Branches and horizontal connections are
+ * NOT broken — only the column. Stripped logs are NOT part of a living tree and
+ * are left alone (prevents accidentally felling player-built log structures).
  * <p>
  * Every extra log consumed:
  * <ul>
@@ -35,16 +34,6 @@ import java.util.Set;
  * Sneaking disables TreeCapitator for precise single-block cutting (same as AoE).
  */
 public class EnchantmentListener implements Listener {
-
-    /** Maximum blocks to break in one event to prevent server lag. */
-    private static final int MAX_BLOCKS_PER_EVENT = 500;
-
-    /** 6-direction offsets (axis-aligned neighbours). */
-    private static final int[][] DIRS = {
-            {1, 0, 0}, {-1, 0, 0},
-            {0, 1, 0}, {0, -1, 0},
-            {0, 0, 1}, {0, 0, -1}
-    };
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
@@ -66,11 +55,10 @@ public class EnchantmentListener implements Listener {
         World world = origin.getWorld();
         if (world == null) return;
 
-        // Collect the whole connected tree (logs of any wood type, incl. branches).
+        // Collect the trunk column (logs straight up/down from the broken block).
         Set<Block> tree = collectTree(world, origin);
         if (tree.isEmpty()) return;
 
-        int brokenCount = 0;
         for (Block block : tree) {
             // Skip the original block (the event already handles it — including the
             // vanilla tool-damage event chain for that one block).
@@ -90,49 +78,42 @@ public class EnchantmentListener implements Listener {
             // which IntegrityListener redirects to decreaseItemIntegrity(item, 1, player))
             ItemIntegrityAPI.decreaseItemIntegrity(tool, 1, player);
 
-            brokenCount++;
-
             // Tool broke from integrity loss — stop, as vanilla would
             if (tool.getAmount() <= 0) break;
-
-            if (brokenCount >= MAX_BLOCKS_PER_EVENT) break;
         }
     }
 
     /**
-     * Flood-fills from {@code origin} collecting every connected log/stem block
-     * (any wood type, non-stripped). Stops early once the limit is reached.
+     * Collects the trunk column of the tree: logs straight up and down from
+     * {@code origin} in the same X/Z column, up to the first non-log block in
+     * each direction. 🛡 Сохраняет failsafe куба 16×16×16 вокруг origin:
+     * скан идёт только по колонне (X/Z = origin), по Y ограничен origin−7..origin+8.
      */
     private @NotNull Set<Block> collectTree(World world, Block origin) {
         Set<Block> tree = new HashSet<>();
-        Deque<Block> queue = new ArrayDeque<>();
 
-        queue.add(origin);
+        // 🛡 Failsafe 16×16×16: колонна по Y ограничена origin−7..origin+8
+        // (по X/Z скан не выходит из колонны origin, так что куб не нарушается).
+        int x = origin.getX();
+        int y = origin.getY();
+        int z = origin.getZ();
+        int minY = Math.max(world.getMinHeight(), y - 7);
+        int maxY = Math.min(world.getMaxHeight() - 1, y + 8);
+
         tree.add(origin);
 
-        while (!queue.isEmpty() && tree.size() < MAX_BLOCKS_PER_EVENT) {
-            Block current = queue.poll();
-            int x = current.getX();
-            int y = current.getY();
-            int z = current.getZ();
+        // Вверх по колонне — до первого не-бревна (крона/ветки не трогаем)
+        for (int ny = y + 1; ny <= maxY; ny++) {
+            Block block = world.getBlockAt(x, ny, z);
+            if (!isLog(block.getType())) break;
+            tree.add(block);
+        }
 
-            for (int[] dir : DIRS) {
-                int nx = x + dir[0];
-                int ny = y + dir[1];
-                int nz = z + dir[2];
-
-                if (ny < world.getMinHeight() || ny >= world.getMaxHeight()) continue;
-                if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
-
-                Block neighbor = world.getBlockAt(nx, ny, nz);
-                if (!isLog(neighbor.getType())) continue;
-                if (tree.contains(neighbor)) continue;
-
-                tree.add(neighbor);
-                queue.add(neighbor);
-
-                if (tree.size() >= MAX_BLOCKS_PER_EVENT) break;
-            }
+        // Вниз по колонне — до первого не-бревна
+        for (int ny = y - 1; ny >= minY; ny--) {
+            Block block = world.getBlockAt(x, ny, z);
+            if (!isLog(block.getType())) break;
+            tree.add(block);
         }
 
         return tree;

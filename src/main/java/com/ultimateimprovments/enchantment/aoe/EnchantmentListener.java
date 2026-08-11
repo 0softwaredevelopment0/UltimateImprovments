@@ -1,5 +1,6 @@
 package com.ultimateimprovments.enchantment.aoe;
 
+import com.ultimateimprovments.listener.BlockBreakListener;
 import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Location;
@@ -27,11 +28,6 @@ import java.util.List;
  * Sneaking disables AoE for precise single-block mining.
  */
 public class EnchantmentListener implements Listener {
-
-    /**
-     * Maximum blocks to break in one event to prevent server lag.
-     */
-    private static final int MAX_BLOCKS_PER_EVENT = 500;
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
@@ -64,7 +60,6 @@ public class EnchantmentListener implements Listener {
         if (targets.isEmpty()) return;
 
         // Break all matching blocks (the original one is handled by the event)
-        int brokenCount = 0;
         for (Location loc : targets) {
             // Skip the original block
             if (loc.equals(origin)) continue;
@@ -82,27 +77,28 @@ public class EnchantmentListener implements Listener {
             }
 
             // Break naturally with tool (respects Silk Touch, Fortune)
+            // Запоминаем тип ДО ломки — после breakNaturally() блок уже AIR
+            Material brokenType = block.getType();
             block.breakNaturally(tool, true);
+
+            // Механика «руда → камень»: оставляем камень вместо руды, как для
+            // блока из BlockBreakEvent (иначе остаются дыры в жилах)
+            BlockBreakListener.scheduleStoneReplacement(block, brokenType);
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
             // which IntegrityListener redirects to decreaseItemIntegrity(item, 1, player))
             ItemIntegrityAPI.decreaseItemIntegrity(tool, 1, player);
 
-            brokenCount++;
-
             // Tool broke from integrity loss — stop, as vanilla would
             if (tool.getAmount() <= 0) break;
-
-            if (brokenCount >= MAX_BLOCKS_PER_EVENT) break;
         }
     }
 
     /**
-     * Scans a cubic area around {@code origin} for blocks matching {@code targetType},
-     * iterating by Chebyshev distance layers (closest blocks first).
-     * <p>
-     * Each layer is the shell of the cube where max(|dx|,|dy|,|dz|) == layer.
-     * Only scans already-loaded chunks. Stops early once the limit is reached.
+     * Scans a cubic area around {@code origin} for blocks matching {@code targetType}.
+     * 🛡 Ограничено кубом 16×16×16 по радиусу вокруг origin (не по чанкам):
+     * offset −7..+8 по каждой оси; при уровне < 8 радиус меньше (±level).
+     * Сканируются только загруженные чанки.
      */
     private @NotNull List<Location> scanBlocks(World world, Location origin,
                                                 Material targetType, int radius) {
@@ -112,77 +108,21 @@ public class EnchantmentListener implements Listener {
         int oy = origin.getBlockY();
         int oz = origin.getBlockZ();
 
-        int minY = Math.max(world.getMinHeight(), oy - radius);
-        int maxY = Math.min(world.getMaxHeight() - 1, oy + radius);
+        // 🛡 Лимит 16×16×16: радиус не больше куба origin−7..origin+8 по каждой оси.
+        int r = Math.min(radius, 8);
+        int minX = Math.max(ox - r, ox - 7);
+        int maxX = Math.min(ox + r, ox + 8);
+        int minZ = Math.max(oz - r, oz - 7);
+        int maxZ = Math.min(oz + r, oz + 8);
+        int minY = Math.max(world.getMinHeight(), Math.max(oy - r, oy - 7));
+        int maxY = Math.min(world.getMaxHeight() - 1, Math.min(oy + r, oy + 8));
 
-        // Scan each Chebyshev layer (cube shell) from nearest to farthest
-        outer:
-        for (int layer = 1; layer <= radius; layer++) {
-            // ── Top & bottom faces: y = ±layer ──
-            for (int dx = -layer; dx <= layer; dx++) {
-                int x = ox + dx;
-                for (int dz = -layer; dz <= layer; dz++) {
-                    int z = oz + dz;
-
-                    // Top face: y = +layer
-                    int yTop = oy + layer;
-                    if (yTop <= maxY && world.isChunkLoaded(x >> 4, z >> 4)
-                            && world.getBlockAt(x, yTop, z).getType() == targetType) {
-                        found.add(new Location(world, x, yTop, z));
-                        if (found.size() >= MAX_BLOCKS_PER_EVENT) break outer;
-                    }
-
-                    // Bottom face: y = -layer
-                    int yBot = oy - layer;
-                    if (yBot >= minY && world.isChunkLoaded(x >> 4, z >> 4)
-                            && world.getBlockAt(x, yBot, z).getType() == targetType) {
-                        found.add(new Location(world, x, yBot, z));
-                        if (found.size() >= MAX_BLOCKS_PER_EVENT) break outer;
-                    }
-                }
-            }
-
-            // ── Side faces: x = ±layer AND z = ±layer (excluding y = ±layer edges) ──
-            for (int dy = -(layer - 1); dy <= (layer - 1); dy++) {
-                int y = oy + dy;
-                if (y < minY || y > maxY) continue;
-
-                for (int dz = -layer; dz <= layer; dz++) {
-                    int z = oz + dz;
-
-                    // x = +layer face
-                    int xPos = ox + layer;
-                    if (world.isChunkLoaded(xPos >> 4, z >> 4)
-                            && world.getBlockAt(xPos, y, z).getType() == targetType) {
-                        found.add(new Location(world, xPos, y, z));
-                        if (found.size() >= MAX_BLOCKS_PER_EVENT) break outer;
-                    }
-
-                    // x = -layer face
-                    int xNeg = ox - layer;
-                    if (world.isChunkLoaded(xNeg >> 4, z >> 4)
-                            && world.getBlockAt(xNeg, y, z).getType() == targetType) {
-                        found.add(new Location(world, xNeg, y, z));
-                        if (found.size() >= MAX_BLOCKS_PER_EVENT) break outer;
-                    }
-                }
-
-                // z = +layer face (only for |dx| < layer, i.e. excluding x = ±layer edges)
-                for (int dx = -(layer - 1); dx <= (layer - 1); dx++) {
-                    int x = ox + dx;
-                    int zPos = oz + layer;
-                    if (world.isChunkLoaded(x >> 4, zPos >> 4)
-                            && world.getBlockAt(x, y, zPos).getType() == targetType) {
-                        found.add(new Location(world, x, y, zPos));
-                        if (found.size() >= MAX_BLOCKS_PER_EVENT) break outer;
-                    }
-
-                    // z = -layer face
-                    int zNeg = oz - layer;
-                    if (world.isChunkLoaded(x >> 4, zNeg >> 4)
-                            && world.getBlockAt(x, y, zNeg).getType() == targetType) {
-                        found.add(new Location(world, x, y, zNeg));
-                        if (found.size() >= MAX_BLOCKS_PER_EVENT) break outer;
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+                for (int y = minY; y <= maxY; y++) {
+                    if (world.getBlockAt(x, y, z).getType() == targetType) {
+                        found.add(new Location(world, x, y, z));
                     }
                 }
             }

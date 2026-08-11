@@ -53,7 +53,6 @@ public class GeneratorManager implements Listener {
         instance = new GeneratorManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
         scanExistingGenerators();
-        ConsoleLogger.info("[Generator] Manager initialized.");
     }
 
     public static GeneratorManager getInstance() {

@@ -1,13 +1,12 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.punish.CrashExecutor;
 import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.punish.PunishJoinListener;
 import com.ultimateimprovments.util.AlertBroadcast;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Particle;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -52,7 +51,7 @@ public final class PunishSubcommand {
     /** Время ожидания подтверждения краша (мс). */
     private static final long CONFIRM_TIMEOUT_MS = 30_000L;
 
-    private record PendingCrash(String targetName, long createdAt) {}
+    private record PendingCrash(String method, String targetName, long createdAt) {}
 
     // =========================
     // BROADCAST TO MODERATORS — рассылка уведомлений о наказаниях
@@ -876,7 +875,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Подтверждение/отмена
+        // Подтверждение/отмена (legacy: /ui punish crash confirm|cancel)
         if (args.length >= 3) {
             String sub = args[2].toLowerCase();
             if (sub.equals("confirm")) {
@@ -887,14 +886,23 @@ public final class PunishSubcommand {
             }
         }
 
-        if (args.length < 3) {
+        if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui punish crash <player></white>"
+                    "<red>❌ Usage: </red><white>/ui punish crash <particle|packet|entity> <player></white>"
             ));
             return true;
         }
 
-        String targetName = args[2];
+        String method = args[2].toLowerCase();
+        if (!method.equals("particle") && !method.equals("packet") && !method.equals("entity")) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Unknown crash method: </red><yellow>" + args[2] + "</yellow>\n" +
+                    "<gray>Available: </gray><white>particle</white><gray>, </gray><white>packet</white><gray>, </gray><white>entity</white>"
+            ));
+            return true;
+        }
+
+        String targetName = args[3];
         @SuppressWarnings("deprecation")
         Player target = Bukkit.getPlayerExact(targetName);
         if (target == null) {
@@ -916,14 +924,15 @@ public final class PunishSubcommand {
         long now = System.currentTimeMillis();
         pendingCrashes.values().removeIf(p -> now - p.createdAt() > CONFIRM_TIMEOUT_MS);
 
-        // Сохраняем ожидающее подтверждение
-        pendingCrashes.put(getSenderId(sender), new PendingCrash(target.getName(), now));
+        // Сохраняем ожидающее подтверждение (вместе с выбранным методом)
+        pendingCrashes.put(getSenderId(sender), new PendingCrash(method, target.getName(), now));
 
         sender.sendMessage(MessageUtil.parse(
-                "<red>⚠</red> <white>Are you sure you want to crash</white> <yellow>" + target.getName() + "</yellow><red>?</red>"
+                "<red>⚠</red> <white>Are you sure you want to crash</white> <yellow>" + target.getName() + "</yellow>" +
+                " <dark_gray>via</dark_gray> <gold>" + method + "</gold><red>?</red>"
         ));
         sender.sendMessage(MessageUtil.parse(
-                "<red>This will overwhelm the player's client with a massive particle overload</red>"
+                "<red>This will overload the player's client with " + describeMethod(method) + "</red>"
         ));
         sender.sendMessage(MessageUtil.parse(
                 "<red>and may crash their game.</red>"
@@ -936,20 +945,30 @@ public final class PunishSubcommand {
         return true;
     }
 
+    /** Короткое описание метода для сообщения подтверждения. */
+    private static String describeMethod(String method) {
+        return switch (method) {
+            case "particle" -> "a massive particle overload";
+            case "packet" -> "16 near-limit tab-flood packets (~30MB)";
+            case "entity" -> "thousands of virtual entities";
+            default -> "a client overload";
+        };
+    }
+
     /** Выполняет подтверждённый краш. */
     private static boolean confirmCrash(CommandSender sender) {
         PendingCrash pending = pendingCrashes.remove(getSenderId(sender));
 
         if (pending == null) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ No pending crash confirmation. Use </red><white>/ui punish crash <player></white><red> first.</red>"
+                    "<red>❌ No pending crash confirmation. Use </red><white>/ui punish crash <particle|packet|entity> <player></white><red> first.</red>"
             ));
             return true;
         }
 
         if (System.currentTimeMillis() - pending.createdAt() > CONFIRM_TIMEOUT_MS) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Confirmation expired (30s). Use </red><white>/ui punish crash <player></white><red> again.</red>"
+                    "<red>❌ Confirmation expired (30s). Use </red><white>/ui punish crash <particle|packet|entity> <player></white><red> again.</red>"
             ));
             return true;
         }
@@ -963,18 +982,28 @@ public final class PunishSubcommand {
             return true;
         }
 
-        Location loc = target.getLocation();
-
-        // Спавним 999,999,999 campfire_signal_smoke particles только для цели, с force-рендером
-        target.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, 999999999, 0, 0, 0, 0);
+        // Выполняем выбранный метод краша (все пакеты идут ТОЛЬКО клиенту цели)
+        switch (pending.method()) {
+            case "particle" -> CrashExecutor.crashWithParticles(target);
+            case "packet" -> CrashExecutor.crashWithPacket(target);
+            case "entity" -> CrashExecutor.crashWithEntities(target);
+            default -> {
+                sender.sendMessage(MessageUtil.parse(
+                        "<red>❌ Unknown crash method: </red><yellow>" + pending.method() + "</yellow>"
+                ));
+                return true;
+            }
+        }
 
         sender.sendMessage(MessageUtil.parse(
-                "<green>✔</green> <white>Player</white> <yellow>" + target.getName() + "</yellow> <white>has been crashed with particles.</white>"
+                "<green>✔</green> <white>Player</white> <yellow>" + target.getName() + "</yellow>" +
+                " <white>has been crashed via</white> <gold>" + pending.method() + "</gold><white>.</white>"
         ));
 
         // Уведомление операторам
         broadcastToModerators(
-                "<red>💥</red> <yellow>" + target.getName() + "</yellow> <gray>crashed by</gray> <white>" + sender.getName() + "</white>"
+                "<red>💥</red> <yellow>" + target.getName() + "</yellow> <gray>crashed by</gray> <white>" + sender.getName() + "</white>" +
+                " <gray>| Method:</gray> <gold>" + pending.method() + "</gold>"
         );
 
         return true;
@@ -1019,7 +1048,7 @@ public final class PunishSubcommand {
                 "<white>/ui punish unban <player></white>\n" +
                 "<white>/ui punish unmute <player></white>\n" +
                 "<white>/ui punish unwarn <player> <reason> <warnId></white>\n" +
-                "<white>/ui punish crash <player></white> <gray>(requires confirm)</gray>\n" +
+                "<white>/ui punish crash <particle|packet|entity> <player></white> <gray>(requires confirm)</gray>\n" +
                 "<gray>Flags: -time:<N>s|m|h|d, -permanent, -ip, -hw</gray>"
         ));
     }
@@ -1040,48 +1069,76 @@ public final class PunishSubcommand {
         } else if (args.length == 3) {
             String action = args[1].toLowerCase();
             if (action.equals("crash")) {
-                // confirm/cancel + имена игроков
+                // способы краша + confirm/cancel
+                completions.add("particle");
+                completions.add("packet");
+                completions.add("entity");
                 completions.add("confirm");
                 completions.add("cancel");
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    completions.add(p.getName());
-                }
             } else if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "unwarn", "listwarns").contains(action)) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     completions.add(p.getName());
                 }
             }
-        } else if (args.length >= 4) {
-        // Флаги
-        String action = args[1].toLowerCase();
-        if (action.equals("crash")) {
-            // crash не имеет флагов
-        } else if (List.of("ban", "mute", "warn").contains(action)) {
-                boolean hasTime = false, hasPerm = false, hasIp = false, hasHw = false;
-                for (int i = 3; i < args.length; i++) {
-                    String a = args[i].toLowerCase();
-                    if (a.startsWith("-time:")) hasTime = true;
-                    else if (a.equals("-permanent")) hasPerm = true;
-                    else if (a.equals("-ip")) hasIp = true;
-                    else if (a.equals("-hw")) hasHw = true;
+        } else if (args.length == 4) {
+            String action = args[1].toLowerCase();
+            if (action.equals("crash")) {
+                String method = args[2].toLowerCase();
+                if (method.equals("particle") || method.equals("packet") || method.equals("entity")) {
+                    // /ui punish crash <method> <tab> → имена игроков
+                    for (Player p : Bukkit.getOnlinePlayers()) {
+                        completions.add(p.getName());
+                    }
+                } else if (!method.equals("confirm") && !method.equals("cancel")) {
+                    // ещё не выбран способ → подсказываем методы
+                    completions.add("particle");
+                    completions.add("packet");
+                    completions.add("entity");
                 }
-                if (!hasTime) completions.add("-time:");
-                if (!hasPerm) completions.add("-permanent");
-                if (!hasIp) completions.add("-ip");
-                if (!hasHw) completions.add("-hw");
-            } else if (action.equals("kick")) {
-                boolean hasIp = false, hasHw = false;
-                for (int i = 3; i < args.length; i++) {
-                    String a = args[i].toLowerCase();
-                    if (a.equals("-ip")) hasIp = true;
-                    else if (a.equals("-hw")) hasHw = true;
-                }
-                if (!hasIp) completions.add("-ip");
-                if (!hasHw) completions.add("-hw");
+            } else {
+                // после имени игрока → флаги наказания
+                addFlagCompletions(action, args, completions);
             }
+        } else if (args.length >= 5) {
+            // Флаги
+            String action = args[1].toLowerCase();
+            addFlagCompletions(action, args, completions);
         }
 
         String last = args[args.length - 1].toLowerCase();
         return completions.stream().filter(s -> s.toLowerCase().startsWith(last)).collect(Collectors.toList());
+    }
+
+    /**
+     * Подсказывает флаги для ban/mute/warn/kick (crash флагов не имеет).
+     * Уже использованные флаги не дублируются.
+     */
+    private static void addFlagCompletions(String action, String[] args, List<String> completions) {
+        if (action.equals("crash")) {
+            return;
+        }
+        if (List.of("ban", "mute", "warn").contains(action)) {
+            boolean hasTime = false, hasPerm = false, hasIp = false, hasHw = false;
+            for (int i = 3; i < args.length; i++) {
+                String a = args[i].toLowerCase();
+                if (a.startsWith("-time:")) hasTime = true;
+                else if (a.equals("-permanent")) hasPerm = true;
+                else if (a.equals("-ip")) hasIp = true;
+                else if (a.equals("-hw")) hasHw = true;
+            }
+            if (!hasTime) completions.add("-time:");
+            if (!hasPerm) completions.add("-permanent");
+            if (!hasIp) completions.add("-ip");
+            if (!hasHw) completions.add("-hw");
+        } else if (action.equals("kick")) {
+            boolean hasIp = false, hasHw = false;
+            for (int i = 3; i < args.length; i++) {
+                String a = args[i].toLowerCase();
+                if (a.equals("-ip")) hasIp = true;
+                else if (a.equals("-hw")) hasHw = true;
+            }
+            if (!hasIp) completions.add("-ip");
+            if (!hasHw) completions.add("-hw");
+        }
     }
 }

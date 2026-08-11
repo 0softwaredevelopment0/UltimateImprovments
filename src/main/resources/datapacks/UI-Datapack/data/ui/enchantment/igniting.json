@@ -1,10 +1,10 @@
 {
 	"description": {
-		"text": "TreeCapitator"
+		"text": "Igniting"
 	},
-	"supported_items": "#minecraft:treecapitator_enchantable",
+	"supported_items": "#ui:igniting_enchantable",
 	"weight": 5,
-	"max_level": 1,
+	"max_level": 255,
 	"min_cost": {
 	  "base": 1,
 	  "per_level_above_first": 1
@@ -15,7 +15,7 @@
 	},
 	"anvil_cost": 1,
 	"slots": [
-	  "mainhand"
+	  "armor"
 	],
 	"effects": {}
 }

@@ -89,19 +89,28 @@ public final class EnchantSubcommand {
         if (input == null) return null;
         String norm = input.trim().toLowerCase(java.util.Locale.ROOT).replace(' ', '_');
 
-        // Custom enchantments
-        if (isCustomEnchant(norm)) {
-            return new ResolvedEnchant(norm, null);
-        }
-
-        // Vanilla: "sharpness", "minecraft:sharpness", plus enchantments from other plugins
+        // Custom enchantments — bare "aoe" и "ui:aoe" ведут на модульный путь
+        // (setLevel с PDC-зеркалом, проверкой инструмента и ограничением уровня)
         String key = norm;
         int colon = norm.indexOf(':');
         if (colon >= 0) {
             key = norm.substring(colon + 1);
         }
+        if (isCustomEnchant(norm) || isCustomEnchant(key)) {
+            return new ResolvedEnchant(key, null);
+        }
+
+        // Vanilla: "sharpness", "minecraft:sharpness", "ui:aoe" (custom UI-Datapack),
+        // plus enchantments from other plugins
         try {
             Enchantment ench = Registry.ENCHANTMENT.get(NamespacedKey.minecraft(key));
+            if (ench != null) return new ResolvedEnchant(null, ench);
+        } catch (IllegalArgumentException ignored) {
+            // invalid NamespacedKey
+        }
+        // Custom UI-Datapack enchantments live in the ui: namespace (ui:aoe, ui:autosmelt, ...)
+        try {
+            Enchantment ench = Registry.ENCHANTMENT.get(new NamespacedKey("ui", key));
             if (ench != null) return new ResolvedEnchant(null, ench);
         } catch (IllegalArgumentException ignored) {
             // invalid NamespacedKey
@@ -119,7 +128,10 @@ public final class EnchantSubcommand {
     private static List<String> allEnchantNames() {
         List<String> names = new ArrayList<>();
         for (Enchantment ench : Registry.ENCHANTMENT) {
-            names.add(ench.getKey().getKey());
+            NamespacedKey key = ench.getKey();
+            // Показываем полный ключ для кастомных неймспейсов (ui:aoe),
+            // ванильные minecraft — коротко (sharpness).
+            names.add(key.getNamespace().equals("minecraft") ? key.getKey() : key.toString());
         }
         List<String> customs = Main.getInstance().getConfig().getStringList("enchant.custom_enchantments");
         for (String c : customs) {
@@ -432,6 +444,18 @@ public final class EnchantSubcommand {
                         }
                         // Igniting requires an armor piece — skip silently
                     }
+                    case "levitation" -> {
+                        if (com.ultimateimprovments.enchantment.levitation.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.levitation.Enchantment.setLevel(item, 1);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.levitation.Enchantment.hasLevitation(item)) {
+                                com.ultimateimprovments.enchantment.levitation.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Levitation requires a chestplate — skip silently
+                    }
                     default -> { /* unknown custom enchant — skip */ }
                 }
             } else {
@@ -563,7 +587,7 @@ public final class EnchantSubcommand {
 
             List<String> enchants = new ArrayList<>();
 
-            // Vanilla enchantments (skip the real minecraft:aoe / minecraft:autosmelt —
+            // Vanilla enchantments (skip the real ui:aoe / ui:autosmelt —
             // they are listed as the custom enchants below)
             Map<Enchantment, Integer> vanilla = item.getEnchantments();
             for (Map.Entry<Enchantment, Integer> e : vanilla.entrySet()) {
@@ -573,7 +597,8 @@ public final class EnchantSubcommand {
                         || e.getKey().equals(com.ultimateimprovments.enchantment.treecapitator.Enchantment.ENCHANTMENT_KEY)
                         || e.getKey().equals(com.ultimateimprovments.enchantment.flight.Enchantment.ENCHANTMENT_KEY)
                         || e.getKey().equals(com.ultimateimprovments.enchantment.magnet.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.igniting.Enchantment.ENCHANTMENT_KEY)) {
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.igniting.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.levitation.Enchantment.ENCHANTMENT_KEY)) {
                     continue;
                 }
                 enchants.add("§a" + e.getKey().getKey() + " " + e.getValue());
@@ -602,6 +627,9 @@ public final class EnchantSubcommand {
             int igniting = com.ultimateimprovments.enchantment.igniting.Enchantment.getLevel(item);
             if (igniting > 0) {
                 enchants.add("§bIgniting " + igniting);
+            }
+            if (com.ultimateimprovments.enchantment.levitation.Enchantment.getLevel(item) > 0) {
+                enchants.add("§bLevitation");
             }
 
             if (enchants.isEmpty()) continue;

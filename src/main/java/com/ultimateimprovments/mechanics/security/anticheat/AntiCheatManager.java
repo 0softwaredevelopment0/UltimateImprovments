@@ -52,7 +52,6 @@ public class AntiCheatManager {
         ExemptionManager.init();
         ActionManager.init();
 
-        ConsoleLogger.info("[AntiCheat] Manager initialized.");
     }
 
     public static AntiCheatManager getInstance() {
@@ -73,8 +72,6 @@ public class AntiCheatManager {
         }
 
         check.onInit();
-        ConsoleLogger.info("[AntiCheat] Registered: " + check.getCategory() + "/" + check.getName()
-                + (check.isEnabled() ? " (enabled)" : " (disabled)"));
     }
 
     public AbstractCheck getCheck(String name) {
@@ -185,6 +182,5 @@ public class AntiCheatManager {
         ActionManager.shutdown();
         ExemptionManager.shutdown();
         instance = null;
-        ConsoleLogger.info("[AntiCheat] Manager shut down.");
     }
 }

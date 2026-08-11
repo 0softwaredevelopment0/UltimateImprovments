@@ -1,5 +1,6 @@
 package com.ultimateimprovments.enchantment.veinminer;
 
+import com.ultimateimprovments.listener.BlockBreakListener;
 import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -34,9 +35,6 @@ import java.util.Set;
  */
 public class EnchantmentListener implements Listener {
 
-    /** Maximum blocks to break in one event to prevent server lag. */
-    private static final int MAX_BLOCKS_PER_EVENT = 500;
-
     /** 6-direction offsets (axis-aligned neighbours). */
     private static final int[][] DIRS = {
             {1, 0, 0}, {-1, 0, 0},
@@ -68,7 +66,6 @@ public class EnchantmentListener implements Listener {
         Set<Block> vein = collectVein(world, origin, oreType);
         if (vein.isEmpty()) return;
 
-        int brokenCount = 0;
         for (Block block : vein) {
             // Skip the original block (the event already handles it — including the
             // vanilla tool-damage event chain for that one block).
@@ -82,33 +79,43 @@ public class EnchantmentListener implements Listener {
             if (!world.isChunkLoaded(block.getX() >> 4, block.getZ() >> 4)) continue;
 
             // Break naturally with the tool (respects Silk Touch, Fortune)
+            // Запоминаем тип ДО ломки — после breakNaturally() блок уже AIR
+            Material brokenType = block.getType();
             block.breakNaturally(tool, true);
+
+            // Механика «руда → камень»: оставляем камень вместо руды, как для
+            // блока из BlockBreakEvent (иначе остаются дыры в жилах)
+            BlockBreakListener.scheduleStoneReplacement(block, brokenType);
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
             // which IntegrityListener redirects to decreaseItemIntegrity(item, 1, player))
             ItemIntegrityAPI.decreaseItemIntegrity(tool, 1, player);
 
-            brokenCount++;
-
             // Tool broke from integrity loss — stop, as vanilla would
             if (tool.getAmount() <= 0) break;
-
-            if (brokenCount >= MAX_BLOCKS_PER_EVENT) break;
         }
     }
 
     /**
      * Flood-fills from {@code origin} collecting all blocks of {@code oreType}
-     * reachable through 6-axis adjacency. Stops early once the limit is reached.
+     * reachable through 6-axis adjacency. Ограничено кубом 16×16×16
+     * по радиусу вокруг origin (offset −7..+8 по каждой оси).
      */
     private @NotNull Set<Block> collectVein(World world, Block origin, Material oreType) {
         Set<Block> vein = new HashSet<>();
         Deque<Block> queue = new ArrayDeque<>();
 
+        // 🛡 Failsafe: VeinMiner не выходит за пределы куба 16×16×16 вокруг origin
+        // (не по чанкам — по радиусу): offset −7..+8 по каждой оси.
+        int ox = origin.getX(), oy = origin.getY(), oz = origin.getZ();
+        int minX = ox - 7, maxX = ox + 8;
+        int minY = oy - 7, maxY = oy + 8;
+        int minZ = oz - 7, maxZ = oz + 8;
+
         queue.add(origin);
         vein.add(origin);
 
-        while (!queue.isEmpty() && vein.size() < MAX_BLOCKS_PER_EVENT) {
+        while (!queue.isEmpty()) {
             Block current = queue.poll();
             int x = current.getX();
             int y = current.getY();
@@ -120,6 +127,8 @@ public class EnchantmentListener implements Listener {
                 int nz = z + dir[2];
 
                 if (ny < world.getMinHeight() || ny >= world.getMaxHeight()) continue;
+                // 🛡 Failsafe: куб 16×16×16 по радиусу вокруг origin
+                if (nx < minX || nx > maxX || ny < minY || ny > maxY || nz < minZ || nz > maxZ) continue;
                 if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
 
                 Block neighbor = world.getBlockAt(nx, ny, nz);
@@ -128,8 +137,6 @@ public class EnchantmentListener implements Listener {
 
                 vein.add(neighbor);
                 queue.add(neighbor);
-
-                if (vein.size() >= MAX_BLOCKS_PER_EVENT) break;
             }
         }
 

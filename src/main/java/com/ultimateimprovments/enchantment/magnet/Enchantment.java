@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Magnet enchantment — real datapack enchantment with a PDC failsafe.
  * <p>
- * Registers {@code minecraft:magnet} (file {@code data/minecraft/enchantment/magnet.json})
+ * Registers {@code ui:magnet} (file {@code data/ui/enchantment/magnet.json})
  * as a REAL data-driven enchantment: glint, description, anvil &amp; book compatibility,
  * {@code /enchant} support. Has exactly ONE level.
  * <p>
@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Enchantment {
 
     /** The real enchantment key registered by the datapack. */
-    public static final NamespacedKey ENCHANTMENT_KEY = NamespacedKey.minecraft("magnet");
+    public static final NamespacedKey ENCHANTMENT_KEY = new NamespacedKey("ui", "magnet");
 
     /** PDC mirror key: {@code ui:magnet_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "magnet_level");

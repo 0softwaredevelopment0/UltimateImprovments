@@ -17,7 +17,6 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.util.ConsoleLogger;
 
 import java.util.List;
 
@@ -91,7 +90,6 @@ public class PlasmaCannonCraftListener implements Listener {
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
 
-        ConsoleLogger.info("[PHOTONCANNON] Recipe registered (Keys system)");
     }
 
     // =========================

@@ -1402,6 +1402,37 @@
 #   a request goes to console, the console confirms via
 #   /ui sudo confirmreset <nick> — after that the player sets a new password.
 #
+#   ────────────────────────────────────────────────────────────────
+#   4.25. features.exp_bottle_upgrade — XP BOTTLE UPGRADE (НАКОВАЛЬНЯ)
+#   ────────────────────────────────────────────────────────────────
+#
+#   Позволяет скрафтить на наковальне «заряженный» пузырёк опыта:
+#   обычный + обычный = x2, x2 + x2 = x3, x3 + x3 = x4 и так далее.
+#   Такой пузырёк даёт в X раз больше опыта при броске (стандартные 3–11 XP × множитель).
+#
+#   features.exp_bottle_upgrade.enabled
+#     • Description: Enables/disables the whole mechanic.
+#     • Values: true / false
+#     • Default: true
+#
+#   features.exp_bottle_upgrade.max_multiplier
+#     • Description: Maximum achievable multiplier (x2 ... x{max_multiplier}).
+#     • Values: any integer ≥ 1
+#     • Default: 100
+#
+#   features.exp_bottle_upgrade.anvil_cost_amount
+#     • Description: XP levels the anvil consumes for the craft (0 = free).
+#     • Values: any integer ≥ 0
+#     • Default: 1
+#
+#   features.exp_bottle_upgrade.item_name
+#     • Description: Bottle display name (MiniMessage). {level} = multiplier.
+#     • Default: "<yellow>Пузырёк опыта <gold>x{level}</gold></yellow>"
+#
+#   features.exp_bottle_upgrade.item_lore
+#     • Description: Lore lines (MiniMessage). {level} = multiplier, {next} = next level.
+#     • Default: two lines (XP info + anvil combine hint)
+#
 #
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║                                                                  ║
@@ -3222,6 +3253,23 @@ features:
     scan_radius: 12
     interval_ticks: 20
 
+  exp_bottle_upgrade:
+    enabled: true
+
+    # Максимальный множитель пузырька (x2 ... x{max_multiplier}). Выше — не скрафтить.
+    max_multiplier: 100
+
+    # Сколько уровней опыта забирает наковальня за крафт (0 — бесплатно).
+    anvil_cost_amount: 1
+
+    # Название пузырька (MiniMessage). {level} — множитель.
+    item_name: "<yellow>Пузырёк опыта <gold>x{level}</gold></yellow>"
+
+    # Строки лора (MiniMessage). {level} — множитель, {next} — следующий уровень.
+    item_lore:
+      - "<gray>Даёт в <aqua>{level}</aqua> раз больше опыта</gray>"
+      - "<dark_gray>{level} + {level} = <aqua>x{next}</aqua> на наковальне</dark_gray>"
+
   glassbreak:
     enabled: true
     damage: 4
@@ -3986,6 +4034,7 @@ enchant:
     - "flight"
     - "magnet"
     - "igniting"
+    - "levitation"
 
 spawn:
   mode: legit

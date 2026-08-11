@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * AutoSmelt enchantment — real datapack enchantment with a PDC failsafe.
  * <p>
- * Registers {@code minecraft:autosmelt} (file {@code data/minecraft/enchantment/autosmelt.json})
+ * Registers {@code ui:autosmelt} (file {@code data/ui/enchantment/autosmelt.json})
  * as a REAL data-driven enchantment: glint, description, anvil &amp; book compatibility,
  * {@code /enchant} support. Has exactly ONE level.
  * <p>
@@ -35,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Enchantment {
 
     /** The real enchantment key registered by the datapack. */
-    public static final NamespacedKey ENCHANTMENT_KEY = NamespacedKey.minecraft("autosmelt");
+    public static final NamespacedKey ENCHANTMENT_KEY = new NamespacedKey("ui", "autosmelt");
 
     /** PDC mirror key: {@code ui:autosmelt_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "autosmelt_level");

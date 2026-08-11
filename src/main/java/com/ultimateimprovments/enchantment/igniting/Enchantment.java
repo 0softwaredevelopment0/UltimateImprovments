@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Igniting enchantment — real datapack enchantment with a PDC failsafe.
  * <p>
- * Registers {@code minecraft:igniting} (file {@code data/minecraft/enchantment/igniting.json})
+ * Registers {@code ui:igniting} (file {@code data/ui/enchantment/igniting.json})
  * as a REAL data-driven enchantment: glint, description with level, anvil &amp; book
  * compatibility, {@code /enchant} support. Levels 1-255.
  * <p>
@@ -39,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Enchantment {
 
     /** The real enchantment key registered by the datapack. */
-    public static final NamespacedKey ENCHANTMENT_KEY = NamespacedKey.minecraft("igniting");
+    public static final NamespacedKey ENCHANTMENT_KEY = new NamespacedKey("ui", "igniting");
 
     /** PDC mirror key: {@code ui:igniting_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "igniting_level");

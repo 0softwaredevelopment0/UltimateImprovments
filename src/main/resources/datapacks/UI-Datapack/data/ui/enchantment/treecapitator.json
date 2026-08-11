@@ -1,8 +1,8 @@
 {
 	"description": {
-		"text": "Magnet"
+		"text": "TreeCapitator"
 	},
-	"supported_items": "#minecraft:magnet_enchantable",
+	"supported_items": "#ui:treecapitator_enchantable",
 	"weight": 5,
 	"max_level": 1,
 	"min_cost": {

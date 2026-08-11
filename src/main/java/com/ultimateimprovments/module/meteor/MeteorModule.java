@@ -49,7 +49,6 @@ public class MeteorModule extends PluginModule {
 
         rescheduleNext(plugin);
 
-        ConsoleLogger.info("[Meteor] Module initialized.");
     }
 
     @Override

@@ -14,8 +14,8 @@ import org.jetbrains.annotations.Nullable;
  * AoE (Area of Effect) enchantment — real datapack enchantment with a PDC failsafe.
  * <p>
  * Since Minecraft 1.21 enchantments are data-driven: the plugin ships a datapack
- * ({@code UI-Datapack}, file {@code data/minecraft/enchantment/aoe.json}) that
- * registers {@code minecraft:aoe} as a REAL enchantment (glint, description with
+ * ({@code UI-Datapack}, file {@code data/ui/enchantment/aoe.json}) that
+ * registers {@code ui:aoe} as a REAL enchantment (glint, description with
  * level, anvil &amp; book compatibility, {@code /enchant} support).
  * <p>
  * <b>Failsafe design:</b> every item that carries the enchantment ALSO stores the
@@ -39,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Enchantment {
 
     /** The real enchantment key registered by the datapack. */
-    public static final NamespacedKey ENCHANTMENT_KEY = NamespacedKey.minecraft("aoe");
+    public static final NamespacedKey ENCHANTMENT_KEY = new NamespacedKey("ui", "aoe");
 
     /** PDC mirror key: {@code ui:aoe_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "aoe_level");

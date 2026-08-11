@@ -4,7 +4,6 @@ import com.ultimateimprovments.energy.machines.assembler.AssemblerChecker;
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -72,7 +71,6 @@ public class LeadIngotCraftListener implements Listener {
 
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
-        ConsoleLogger.info("[LEAD_INGOT] Recipe registered with Keys system");
     }
 
     // =========================

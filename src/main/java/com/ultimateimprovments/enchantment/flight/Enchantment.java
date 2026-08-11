@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Flight enchantment — real datapack enchantment with a PDC failsafe.
  * <p>
- * Registers {@code minecraft:flight} (file {@code data/minecraft/enchantment/flight.json})
+ * Registers {@code ui:flight} (file {@code data/ui/enchantment/flight.json})
  * as a REAL data-driven enchantment: glint, description, anvil &amp; book compatibility,
  * {@code /enchant} support. Has exactly ONE level.
  * <p>
@@ -35,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
 public final class Enchantment {
 
     /** The real enchantment key registered by the datapack. */
-    public static final NamespacedKey ENCHANTMENT_KEY = NamespacedKey.minecraft("flight");
+    public static final NamespacedKey ENCHANTMENT_KEY = new NamespacedKey("ui", "flight");
 
     /** PDC mirror key: {@code ui:flight_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "flight_level");

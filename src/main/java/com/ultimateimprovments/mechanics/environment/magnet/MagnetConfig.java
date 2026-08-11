@@ -1,7 +1,6 @@
 package com.ultimateimprovments.mechanics.environment.magnet;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.util.ConsoleLogger;
 
 /**
  * Конфигурация магнита — все параметры из config.yml (features.magnet).
@@ -74,7 +73,6 @@ public final class MagnetConfig {
             particlePortalMax = pc.getInt("portal_max", 15);
         }
 
-        ConsoleLogger.info("[Magnet] Config reloaded.");
     }
 
     // =========================

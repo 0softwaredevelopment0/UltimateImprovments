@@ -1,7 +1,6 @@
 package com.ultimateimprovments.enchantment.treecapitator;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -124,7 +123,5 @@ public class EnchantmentSyncListener implements Listener {
         Bukkit.getPluginManager().registerEvents(new EnchantmentSyncListener(), plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentSyncListener::sweepAllPlayers,
                 SCAN_INTERVAL_TICKS, SCAN_INTERVAL_TICKS);
-        ConsoleLogger.info("[TreeCapitator] Sync listener registered (PDC failsafe, scan every "
-                + (SCAN_INTERVAL_TICKS / 20 / 60) + " min).");
     }
 }

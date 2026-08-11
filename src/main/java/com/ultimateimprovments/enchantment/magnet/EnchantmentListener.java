@@ -45,9 +45,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EnchantmentListener implements Listener {
 
     /** Pull speed in blocks/second. */
-    static final double PULL_SPEED = 0.5;
+    static final double PULL_SPEED = 1.0;
 
-    /** Pull speed per tick (20 ticks/second): 0.5 / 20 = 0.025 blocks/tick. */
+    /** Pull speed per tick (20 ticks/second): 1.0 / 20 = 0.05 blocks/tick. */
     private static final double PULL_PER_TICK = PULL_SPEED / 20.0;
 
     /** Radius (blocks) around the player in which drops are attracted. */

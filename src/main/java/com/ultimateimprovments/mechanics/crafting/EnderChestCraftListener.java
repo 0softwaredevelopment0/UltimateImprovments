@@ -2,7 +2,6 @@ package com.ultimateimprovments.mechanics.crafting;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -57,7 +56,6 @@ public class EnderChestCraftListener implements Listener {
         recipe.setIngredient('2', Material.NETHER_STAR);
 
         plugin.getServer().addRecipe(recipe);
-        ConsoleLogger.info("[ENDERCHEST] Ender chest recipe registered (replaced vanilla).");
     }
 
     /**

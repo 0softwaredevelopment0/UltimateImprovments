@@ -52,6 +52,9 @@ public class Keys {
     // Totem Charge
     public static NamespacedKey TOTEM_CHARGE;
 
+    // XP Bottle Upgrade (Пузырёк опыта x2/x3/...)
+    public static NamespacedKey EXP_BOTTLE_MULTIPLIER;
+
     // Block Collapse
     public static NamespacedKey BLOCK_COLLAPSE_TAG;
 
@@ -105,6 +108,8 @@ public class Keys {
         CHUNK_LOADER = new NamespacedKey(plugin, "is_chunk_loader");
 
         TOTEM_CHARGE = new NamespacedKey(plugin, "totem_charge");
+
+        EXP_BOTTLE_MULTIPLIER = new NamespacedKey(plugin, "exp_bottle_multiplier");
 
         BLOCK_COLLAPSE_TAG = new NamespacedKey(plugin, "block_collapse_tag");
 

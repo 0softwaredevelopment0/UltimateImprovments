@@ -1,8 +1,8 @@
 {
 	"description": {
-		"text": "AutoSmelt"
+		"text": "VeinMiner"
 	},
-	"supported_items": "#minecraft:autosmelt_enchantable",
+	"supported_items": "#ui:veinminer_enchantable",
 	"weight": 5,
 	"max_level": 1,
 	"min_cost": {

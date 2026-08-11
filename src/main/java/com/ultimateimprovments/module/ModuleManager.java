@@ -47,13 +47,11 @@ public class ModuleManager {
 
     public void initAll() {
         ConsoleLogger.info("");
-        ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  Initializing modules...");
-        ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("");
+        ConsoleLogger.info("[Modules] Enabling " + modules.size() + " modules...");
 
         int succeeded = 0;
         int failed = 0;
+        StringBuilder failedNames = new StringBuilder();
 
         for (PluginModule module : modules) {
             boolean ok = module.initialize(plugin);
@@ -61,6 +59,8 @@ public class ModuleManager {
                 succeeded++;
             } else {
                 failed++;
+                if (failedNames.length() > 0) failedNames.append(", ");
+                failedNames.append(module.getName());
                 if (module.isEssential()) {
                     ConsoleLogger.error("");
                     ConsoleLogger.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -73,11 +73,12 @@ public class ModuleManager {
             }
         }
 
-        ConsoleLogger.info("");
-        ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  Modules: " + succeeded + " OK, " + failed + " failed"
-                + (failed > 0 ? " \u26A0" : ""));
-        ConsoleLogger.info("===========================================");
+        if (failed > 0) {
+            ConsoleLogger.warn("[Modules] Enabled " + succeeded + "/" + modules.size()
+                    + ", failed: " + failedNames + " \u26A0");
+        } else {
+            ConsoleLogger.info("[Modules] All " + modules.size() + " modules enabled.");
+        }
         ConsoleLogger.info("");
     }
 
@@ -86,9 +87,16 @@ public class ModuleManager {
     // =========================
 
     public void shutdownAll() {
-        ConsoleLogger.info("[ModuleManager] Shutting down all modules...");
+        ConsoleLogger.info("[Modules] Disabling " + modules.size() + " modules...");
+        int failed = 0;
         for (int i = modules.size() - 1; i >= 0; i--) {
-            modules.get(i).disable(plugin);
+            if (!modules.get(i).disable(plugin)) failed++;
+        }
+        if (failed > 0) {
+            ConsoleLogger.warn("[Modules] Disabled " + (modules.size() - failed) + "/" + modules.size()
+                    + ", " + failed + " module(s) errored. \u26A0");
+        } else {
+            ConsoleLogger.info("[Modules] All modules disabled.");
         }
     }
 

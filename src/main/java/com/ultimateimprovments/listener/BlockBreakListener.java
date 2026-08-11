@@ -124,18 +124,7 @@ public class BlockBreakListener implements Listener {
         // =========================
         // ⛏ ORE -> STONE / DEEPSLATE / NETHERRACK
         // =========================
-        Material replacement = ORE_TO_STONE.get(block.getType());
-        if (replacement != null) {
-            Material finalReplacement = replacement;
-            Bukkit.getScheduler().runTask(
-                Main.getInstance(),
-                () -> {
-                    if (block.getType() == Material.AIR) {
-                        block.setType(finalReplacement, false);
-                    }
-                }
-            );
-        }
+        scheduleStoneReplacement(block, block.getType());
 
         // =========================
         // ⚡ ONLY IF NODE EXISTS
@@ -167,5 +156,36 @@ public class BlockBreakListener implements Listener {
         // REMOVE NODE (MEMORY + DB)
         // =========================
         CableNetwork.removeNode(loc);
+    }
+
+    /**
+     * Механика «изменения поведения руды»: после добычи руды на её месте
+     * остаётся камень (STONE / DEEPSLATE / NETHERRACK — по типу руды).
+     * <p>
+     * Работает отложенно (на следующий тик) и только если блок всё ещё AIR —
+     * так механика не мешает другим слушателям, ожидающим пустой блок,
+     * и не затирает блок, поставленный игроком за этот тик.
+     * <p>
+     * {@code oreType} передаётся явно: для блоков, сломанных чарами AoE/VeinMiner
+     * через {@code breakNaturally()}, после ломки блок уже AIR, и тип нужно
+     * запомнить ДО разрушения.
+     *
+     * @param block   сломанный блок (на момент вызова может быть уже AIR)
+     * @param oreType тип руды, которой блок был до ломки
+     */
+    public static void scheduleStoneReplacement(Block block, Material oreType) {
+        if (block == null || oreType == null) return;
+        Material replacement = ORE_TO_STONE.get(oreType);
+        if (replacement == null) return;
+
+        Material finalReplacement = replacement;
+        Bukkit.getScheduler().runTask(
+            Main.getInstance(),
+            () -> {
+                if (block.getType() == Material.AIR) {
+                    block.setType(finalReplacement, false);
+                }
+            }
+        );
     }
 }

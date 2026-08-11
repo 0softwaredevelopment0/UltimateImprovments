@@ -48,7 +48,6 @@ public class AssemblerManager implements Listener {
         instance = new AssemblerManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
         scanExistingAssemblers();
-        ConsoleLogger.info("[Assembler] Manager initialized.");
     }
 
     public static AssemblerManager getInstance() {

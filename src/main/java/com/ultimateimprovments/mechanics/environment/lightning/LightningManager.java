@@ -64,7 +64,6 @@ public class LightningManager implements Listener {
         rebuildFromMarkers();
         cacheCookingRecipes();
         startPeriodicItemScan();
-        ConsoleLogger.info("[Lightning] Manager initialized.");
     }
 
     public static void rebuildFromMarkers() {
@@ -259,7 +258,6 @@ public class LightningManager implements Listener {
                 cookingRecipes.add(cr);
             }
         }
-        ConsoleLogger.info("[Lightning] Cached " + cookingRecipes.size() + " cooking recipes.");
     }
 
     private static Recipe findCookingRecipe(ItemStack input) {

@@ -124,6 +124,10 @@ public class PluginStartup {
     // ==========================================================================
 
     private void initInfrastructure() {
+        // Права плагина (канонический список в Permissions) — регистрируются раньше
+        // всех модулей, чтобы любой код мог на них полагаться.
+        Permissions.registerAll();
+
         FileLogger.ensureDirectory(plugin.getDataFolder(), "DataFolder");
         loadConfigFile();
 
@@ -260,6 +264,8 @@ public class PluginStartup {
         SimpleModules.registerMagnetEnchantment(mm);
         // IgnitingEnchantment
         SimpleModules.registerIgnitingEnchantment(mm);
+        // LevitationEnchantment
+        SimpleModules.registerLevitationEnchantment(mm);
     }
 
     private void registerProtectionModules(ModuleManager mm) {

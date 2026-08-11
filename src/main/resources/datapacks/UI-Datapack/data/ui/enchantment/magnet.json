@@ -1,8 +1,8 @@
 {
 	"description": {
-		"text": "Flight"
+		"text": "Magnet"
 	},
-	"supported_items": "#minecraft:flight_enchantable",
+	"supported_items": "#ui:magnet_enchantable",
 	"weight": 5,
 	"max_level": 1,
 	"min_cost": {
@@ -15,7 +15,7 @@
 	},
 	"anvil_cost": 1,
 	"slots": [
-	  "armor"
+	  "mainhand"
 	],
 	"effects": {}
 }

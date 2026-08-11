@@ -1,7 +1,6 @@
 package com.ultimateimprovments.mechanics.crafting;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.mechanics.features.world.ChunkLoaderItemListener;
 import org.bukkit.Bukkit;
@@ -62,7 +61,6 @@ public class ChunkLoaderCraftListener implements Listener {
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
 
-        ConsoleLogger.info("[CHUNK-LOADER] Recipe registered: 4 Netherite Block + 4 Diamond Block + 1 Emerald Block");
     }
 
     @EventHandler
