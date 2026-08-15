@@ -9,18 +9,18 @@ public class PlasmaConstants {
 
     public static final double INSTABILITY = 0.01;
 
-    /** Шум направления при рикошете от блока (меньше — стабильнее). */
+    /** Direction noise on block ricochet (lower — more stable). */
     public static final double BLOCK_RICOCHET_NOISE = 0.04;
 
     public static final double RICOCHET_SPEED_MULTIPLIER = 1.1;
 
-    /** Минимальная составляющая скорости «от стены» после рикошета. */
+    /** Minimum "away from the wall" velocity component after a ricochet. */
     public static final double MIN_OUTWARD_DOT = 0.15;
 
-    /** Тиков без дрейфа после удара о блок. */
+    /** Ticks without drift after hitting a block. */
     public static final int POST_BLOCK_HIT_STABILITY_TICKS = 5;
 
-    /** Шаг выталкивания (запасная защита). */
+    /** Push-out step (fallback safeguard). */
     public static final double ESCAPE_STEP = 0.5;
 
     public static final double MAX_ESCAPE_DISTANCE = 2.0;

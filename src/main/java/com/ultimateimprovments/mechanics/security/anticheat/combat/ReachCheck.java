@@ -11,14 +11,14 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.util.Vector;
 
 /**
- * Reach — увеличенная дистанция атаки.
+ * Reach — increased attack distance.
  * <p>
- * Детекция: вычисляет 3D дистанцию от глаз игрока до БЛИЖАЙШЕЙ ТОЧКИ
- * bounding box цели. Ванильный лимит (survival): 3.0 блока.
+ * Detection: computes the 3D distance from the player's eyes to the CLOSEST POINT
+ * of the target's bounding box. Vanilla limit (survival): 3.0 blocks.
  * <p>
- * Использует {@link Entity#getBoundingBox()} для точного расчёта
- * дистанции до хитбокса, а не до центра сущности — это критически важно
- * для больших сущностей (зомби, лошади), где центр на 1+ блок дальше края.
+ * Uses {@link Entity#getBoundingBox()} for an accurate distance to the hitbox,
+ * not to the entity's center — this is critical for large entities
+ * (zombies, horses) where the center is 1+ blocks further than the edge.
  */
 public class ReachCheck extends AbstractCheck {
 
@@ -54,8 +54,8 @@ public class ReachCheck extends AbstractCheck {
         Entity target = e.getEntity();
         PlayerData data = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
 
-        // ── Точный расчёт дистанции до bounding box ──
-        // Берём ближайшую точку на хитбоксе цели к глазу игрока
+        // ── Accurate distance to the bounding box ──
+        // Take the closest point on the target's hitbox to the player's eye
         Vector eyePos = player.getEyeLocation().toVector();
         var box = target.getBoundingBox();
         double closestX = clamp(eyePos.getX(), box.getMinX(), box.getMaxX());

@@ -18,9 +18,9 @@ public final class NearSubcommand {
     /**
      * /ui near [radius]
      * <p>
-     * Показывает игроков в радиусе {@code radius} блоков от отправителя.
-     * Команда выключена по умолчанию (near.enabled: false в config.yml).
-     * Максимальный радиус задаётся в конфиге (near.max_radius, по умолчанию 128).
+     * Shows players within {@code radius} blocks of the sender.
+     * Disabled by default (near.enabled: false in config.yml).
+     * The maximum radius is set in the config (near.max_radius, default 128).
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.near")) {
@@ -32,7 +32,7 @@ public final class NearSubcommand {
             return true;
         }
 
-        // Проверяем, включена ли команда в конфиге
+        // Check whether the command is enabled in the config
         if (!Main.getInstance().getConfig().getBoolean("near.enabled", false)) {
             sender.sendMessage(MessageUtil.parse("<red>❌ This command is disabled on this server.</red>"));
             return true;
@@ -40,7 +40,7 @@ public final class NearSubcommand {
 
         int maxRadius = Main.getInstance().getConfig().getInt("near.max_radius", 128);
 
-        // Парсим радиус
+        // Parse the radius
         int radius = maxRadius;
         if (args.length > 1) {
             try {
@@ -53,7 +53,7 @@ public final class NearSubcommand {
             if (radius > maxRadius) radius = maxRadius;
         }
 
-        // Ищем игроков поблизости
+        // Find nearby players
         Location loc = player.getLocation();
         List<NearbyPlayer> nearby = new ArrayList<>();
 
@@ -67,10 +67,10 @@ public final class NearSubcommand {
             }
         }
 
-        // Сортируем по расстоянию
+        // Sort by distance
         nearby.sort(Comparator.comparingDouble(NearbyPlayer::distance));
 
-        // Выводим результат
+        // Output the result
         if (nearby.isEmpty()) {
             sender.sendMessage(MessageUtil.parse(
                     "<gray>No players found within </gray><yellow>" + radius + "</yellow><gray> blocks.</gray>"

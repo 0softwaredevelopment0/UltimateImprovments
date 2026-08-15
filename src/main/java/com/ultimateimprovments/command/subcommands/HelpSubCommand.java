@@ -69,6 +69,7 @@ public class HelpSubCommand implements SubCommand {
         put("setspawn", "Set server spawn");
         put("spawn", "Teleport to spawn");
         put("broadcast", "Broadcast a message (-clean = no prefix)");
+        put("clearchat", "Clear the chat (player or all)");
         put("report", "Report a player");
         put("reports", "List reports");
         put("modreport", "Moderate reports");
@@ -85,6 +86,7 @@ public class HelpSubCommand implements SubCommand {
         put("unlock", "Unlock book or sign");
         put("askpos", "Request player's coordinates (dialog)");
         put("enchant", "Enchant manager (give/take/check, custom AoE)");
+        put("pdc", "PDC manager (add/modify/remove/list/clear/container)");
         put("str", "Structures (dfc/magnet/lightning/...)");
         put("protection", "Protection block admin ops");
         put("menu", "Open admin menu");
@@ -97,6 +99,7 @@ public class HelpSubCommand implements SubCommand {
         put("fly", "Toggle fly for player");
         put("flyspeed", "Set fly speed");
         put("uuid", "Get player UUID");
+        put("getpos", "Get a player's coordinates");
         put("near", "Find nearby players");
         put("rtp", "Random teleport");
         put("meteor", "Meteor module");

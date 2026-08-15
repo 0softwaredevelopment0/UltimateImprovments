@@ -12,10 +12,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Ядро валютной системы.
+ * Core of the currency system.
  * <p>
- * Поддерживает несколько валют (coins, gems, tokens и т.д.).
- * Vault-интеграция использует валюту "coins" как основную.
+ * Supports multiple currencies (coins, gems, tokens, etc.).
+ * Vault integration uses the "coins" currency as the primary one.
  */
 public final class EconomyManager {
 
@@ -70,8 +70,8 @@ public final class EconomyManager {
     // ==========================================================================
 
     /**
-     * Получить баланс игрока в указанной валюте.
-     * Если записи нет — возвращает 0 (и создаёт запись с дефолтной суммой? Нет — только по ивенту).
+     * Gets the player's balance in the specified currency.
+     * If there is no record — returns 0 (and creates a record with the default amount? No — only on event).
      */
     public double getBalance(UUID uuid, String currency) {
         try (Connection con = DatabaseManager.getConnection();
@@ -89,13 +89,13 @@ public final class EconomyManager {
         return 0.0;
     }
 
-    /** Получить баланс в основной валюте (coins). */
+    /** Get the balance in the primary currency (coins). */
     public double getBalance(UUID uuid) {
         return getBalance(uuid, PRIMARY_CURRENCY);
     }
 
     /**
-     * Установить баланс игрока в указанной валюте.
+     * Sets the player's balance in the specified currency.
      */
     public void setBalance(UUID uuid, String currency, double amount) {
         if (amount < 0) amount = 0;
@@ -112,13 +112,13 @@ public final class EconomyManager {
         }
     }
 
-    /** Установить баланс в основной валюте. */
+    /** Set the balance in the primary currency. */
     public void setBalance(UUID uuid, double amount) {
         setBalance(uuid, PRIMARY_CURRENCY, amount);
     }
 
     /**
-     * Добавить сумму к балансу.
+     * Adds an amount to the balance.
      */
     public void addBalance(UUID uuid, String currency, double amount) {
         if (amount <= 0) return;
@@ -126,15 +126,15 @@ public final class EconomyManager {
         setBalance(uuid, currency, current + amount);
     }
 
-    /** Добавить в основной валюте. */
+    /** Add in the primary currency. */
     public void addBalance(UUID uuid, double amount) {
         addBalance(uuid, PRIMARY_CURRENCY, amount);
     }
 
     /**
-     * Снять сумму с баланса.
+     * Withdraws an amount from the balance.
      *
-     * @return true если снятие успешно (достаточно средств)
+     * @return true if the withdrawal succeeded (enough funds)
      */
     public boolean removeBalance(UUID uuid, String currency, double amount) {
         if (amount <= 0) return true;
@@ -144,13 +144,13 @@ public final class EconomyManager {
         return true;
     }
 
-    /** Снять с основной валюты. */
+    /** Withdraw from the primary currency. */
     public boolean removeBalance(UUID uuid, double amount) {
         return removeBalance(uuid, PRIMARY_CURRENCY, amount);
     }
 
     /**
-     * Проверить, есть ли у игрока достаточно средств.
+     * Checks whether the player has enough funds.
      */
     public boolean has(UUID uuid, String currency, double amount) {
         return getBalance(uuid, currency) >= amount;
@@ -165,9 +165,9 @@ public final class EconomyManager {
     // ==========================================================================
 
     /**
-     * Выдаёт дефолтную сумму при первом входе. Вызывается из PlayerJoinListener.
+     * Grants the default amount on first join. Called from PlayerJoinListener.
      *
-     * @return true если баланс был только что создан (первый вход)
+     * @return true if the balance was just created (first join)
      */
     public boolean ensureDefaultBalance(UUID uuid) {
         try (Connection con = DatabaseManager.getConnection();
@@ -177,13 +177,13 @@ public final class EconomyManager {
             ps.setString(2, PRIMARY_CURRENCY);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return false; // уже есть запись
+                return false; // record already exists
             }
         } catch (Exception e) {
             ConsoleLogger.error("[Economy] ensureDefaultBalance check error: " + e.getMessage());
         }
 
-        // Создаём запись с дефолтной суммой
+        // Create a record with the default amount
         setBalance(uuid, PRIMARY_CURRENCY, DEFAULT_BALANCE);
         ConsoleLogger.info("[Economy] Created default balance (" + DEFAULT_BALANCE + ") for " + uuid);
         return true;
@@ -194,7 +194,7 @@ public final class EconomyManager {
     // ==========================================================================
 
     /**
-     * Получить балансы игрока по всем валютам.
+     * Gets the player's balances across all currencies.
      */
     public Map<String, Double> getAllBalances(UUID uuid) {
         Map<String, Double> result = new LinkedHashMap<>();
@@ -221,7 +221,7 @@ public final class EconomyManager {
     }
 
     /**
-     * Сбрасывает баланс игрока в указанной валюте до 0.
+     * Resets the player's balance in the specified currency to 0.
      */
     public void resetBalance(UUID uuid, String currency) {
         setBalance(uuid, currency, 0.0);

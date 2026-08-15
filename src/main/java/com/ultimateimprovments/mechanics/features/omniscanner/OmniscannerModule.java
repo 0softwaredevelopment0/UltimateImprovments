@@ -7,10 +7,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 /**
  * 🎛 Omniscanner Module
  * <p>
- * Регистрирует:
- * - {@link OmniscannerManager} — слушатель взаимодействия, создание предмета, сканирование
- * - {@link OmniscannerGUI} — конфигурационное GUI
- * - {@link AdminMenuGUI} — /ui menu GUI (информация, статистика, предметы)
+ * Registers:
+ * - {@link OmniscannerManager} — interaction listener, item creation, scanning
+ * - {@link OmniscannerGUI} — configuration GUI
+ * - {@link AdminMenuGUI} — /ui menu GUI (info, stats, items)
  */
 public class OmniscannerModule extends PluginModule {
 
@@ -25,7 +25,7 @@ public class OmniscannerModule extends PluginModule {
         // Omniscanner item listener
         pm.registerEvents(new OmniscannerManager(), plugin);
 
-        // Omniscanner config GUI (регистрируется через статический register)
+        // Omniscanner config GUI (registered via the static register)
         OmniscannerGUI.register();
 
         // Admin menu GUI (/ui menu)

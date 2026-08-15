@@ -44,7 +44,7 @@ public class LocationUtil {
     }
 
     // =========================
-    // NORMALIZE (SAFE) — теперь возвращает тот же объект, если уже нормализован
+    // NORMALIZE (SAFE) — now returns the same object if already normalized
     // =========================
     public static Location normalize(Location loc) {
 
@@ -52,7 +52,7 @@ public class LocationUtil {
             return null;
         }
 
-        // Всегда создаём новый Location, чтобы избежать мутации оригинала
+        // Always create a new Location to avoid mutating the original
         return new Location(
                 loc.getWorld(),
                 loc.getBlockX(),

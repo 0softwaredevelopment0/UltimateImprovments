@@ -11,8 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AutoLoot — автоматический лут контейнеров (мгновенный перенос предметов).
- * Детекция: слишком быстрый перенос предметов из сундука в инвентарь.
+ * AutoLoot — automatic container looting (instant item transfer).
+ * Detection: transferring items from a chest to the inventory too fast.
  */
 public class AutoLootCheck extends AbstractCheck {
 

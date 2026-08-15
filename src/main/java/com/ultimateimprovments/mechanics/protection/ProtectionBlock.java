@@ -8,20 +8,20 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * Данные одного размещённого «Блока защиты».
+ * Data of one placed «Protection Block».
  * <p>
- * Хранит:
+ * Stores:
  * <ul>
- *   <li>{@code id} — уникальный UUID (используется как PK в БД)</li>
- *   <li>{@code location} — мировые координаты центра</li>
- *   <li>{@code owner} — UUID игрока, поставившего блок</li>
- *   <li>{@code radius} — текущий радиус защиты (блоки)</li>
- *   <li>{@code integrity} — текущая целостность 0..100</li>
- *   <li>{@code points} — очки для прокачки</li>
- *   <li>{@code enabled} — включён ли блок (защищает территорию)</li>
- *   <li>{@code radiusUpgradeCount} — сколько раз радиус уже прокачан (cost *= 2^(n))</li>
- *   <li>{@code repairCount} — сколько раз целостность уже починена (cost *= 2^(n))</li>
- *   <li>{@code whitelist} — UUID игроков, имеющих доступ к территории и GUI</li>
+ *   <li>{@code id} — unique UUID (used as PK in the DB)</li>
+ *   <li>{@code location} — world coordinates of the center</li>
+ *   <li>{@code owner} — UUID of the player who placed the block</li>
+ *   <li>{@code radius} — current protection radius (blocks)</li>
+ *   <li>{@code integrity} — current integrity 0..100</li>
+ *   <li>{@code points} — points for upgrades</li>
+ *   <li>{@code enabled} — whether the block is enabled (protects the area)</li>
+ *   <li>{@code radiusUpgradeCount} — how many times the radius was already upgraded (cost *= 2^(n))</li>
+ *   <li>{@code repairCount} — how many times integrity was already repaired (cost *= 2^(n))</li>
+ *   <li>{@code whitelist} — UUIDs of players with access to the area and GUI</li>
  * </ul>
  */
 public class ProtectionBlock {
@@ -41,11 +41,11 @@ public class ProtectionBlock {
     private int radiusUpgradeCount;
     private int repairCount;
 
-    /** Whitelist: UUID игроков, имеющих право взаимодействовать с территорией и открывать GUI.
-     *  {@link CopyOnWriteArraySet} — потому что этот список читается с async-потоков
-     *  (dirty-retry таск ProtectionManager.saveWhitelist итерирует его на ретрае)
-     *  и пишется с main-потоков (addToWhitelist из GUI/команды). Обычный LinkedHashSet
-     *  даёт ConcurrentModificationException при таком паттерне. */
+    /** Whitelist: UUIDs of players allowed to interact with the area and open the GUI.
+     *  {@link CopyOnWriteArraySet} — because this list is read from async threads
+     *  (the dirty-retry task ProtectionManager.saveWhitelist iterates it on retry)
+     *  and written from main threads (addToWhitelist from GUI/command). A plain LinkedHashSet
+     *  would throw ConcurrentModificationException with this pattern. */
     private final Set<UUID> whitelist = new CopyOnWriteArraySet<>();
 
     public ProtectionBlock(UUID id, Location loc, UUID owner, int radius, double integrity, int points, boolean enabled) {
@@ -113,11 +113,11 @@ public class ProtectionBlock {
     }
 
     /**
-     * Текущая стоимость в очках за следующее улучшение радиуса.
-     * Стоимость = baseCost × 2^(radiusUpgradeCount), clamped.
+     * Current point cost for the next radius upgrade.
+     * Cost = baseCost × 2^(radiusUpgradeCount), clamped.
      * <p>
-     * O(1) через побитовый сдвиг в long, со сдвигом не более 30 бит,
-     * чтобы избежать переполнения даже при больших baseCost.
+     * O(1) via a bit shift into long, with a shift of at most 30 bits,
+     * to avoid overflow even for large baseCost.
      */
     public int getRadiusUpgradeCost() {
         int baseCost = ProtectionConfig.getRadiusUpgradeBaseCost();
@@ -129,11 +129,11 @@ public class ProtectionBlock {
     }
 
     /**
-     * Текущая стоимость в очках за следующий ремонт целостности.
-     * Стоимость = baseCost × 2^(repairCount), clamped.
+     * Current point cost for the next integrity repair.
+     * Cost = baseCost × 2^(repairCount), clamped.
      * <p>
-     * O(1) через побитовый сдвиг в long, со сдвигом не более 30 бит,
-     * чтобы избежать переполнения даже при больших baseCost.
+     * O(1) via a bit shift into long, with a shift of at most 30 bits,
+     * to avoid overflow even for large baseCost.
      */
     public int getRepairCost() {
         int baseCost = ProtectionConfig.getRepairBaseCost();
@@ -145,18 +145,18 @@ public class ProtectionBlock {
     }
 
     /**
-     * True если блок имеет целостность > 0 И включён.
+     * True if the block has integrity > 0 AND is enabled.
      * <p>
-     * ВАЖНО: семантика — «живой И активный», строго как говорят docstring и callers
-     * (findProtectingBlock, applyExplosionProtection, triggerIntruderEffects внутри).
-     * Раньше здесь был только {@code integrity > 0.0}, что создавало расхождение
-     * с остальным кодом и приводило к phantom-accumulation integrity loss на disabled-копиях.
+     * IMPORTANT: the semantics are — «alive AND active», strictly as the docstring and callers
+     * (findProtectingBlock, applyExplosionProtection, triggerIntruderEffects inside) say.
+     * Previously this was only {@code integrity > 0.0}, which created a discrepancy
+     * with the rest of the code and led to phantom-accumulation integrity loss on disabled copies.
      */
     public boolean isAlive() {
         return integrity > 0.0 && enabled;
     }
 
-    /** True если блок сохранил целостность > 0 (без учёта enabled). Для HUD/GUI. */
+    /** True if the block kept integrity > 0 (regardless of enabled). For HUD/GUI. */
     public boolean hasIntegrity() {
         return integrity > 0.0;
     }

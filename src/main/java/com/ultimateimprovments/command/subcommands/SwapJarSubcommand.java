@@ -29,10 +29,10 @@ import java.util.zip.ZipFile;
 /**
  * /ui swapjar [path-to-new-jar]
  * <p>
- * Hotswap JAR файла плагина: новый JAR копируется поверх текущего,
- * плагин выгружается, загружается новая версия и включается.
+ * Hotswap of the plugin JAR: the new JAR is copied over the current one,
+ * the plugin is unloaded, the new version is loaded and enabled.
  * <p>
- * Требуется пермишен: {@code ui.command.swapjar}.
+ * Requires the permission: {@code ui.command.swapjar}.
  */
 public final class SwapJarSubcommand {
 
@@ -70,7 +70,7 @@ public final class SwapJarSubcommand {
     // ==========================================================================
 
     private static boolean handleSwapRequest(CommandSender sender, String[] args) {
-        // Собираем путь из оставшихся аргументов
+        // Build the path from the remaining arguments
         StringBuilder pathBuilder = new StringBuilder();
         for (int i = 1; i < args.length; i++) {
             if (pathBuilder.length() > 0) pathBuilder.append(" ");
@@ -105,7 +105,7 @@ public final class SwapJarSubcommand {
             return true;
         }
 
-        // Проверяем — не тот же ли это файл?
+        // Check — isn't it the same file?
         try {
             if (currentJar.getCanonicalPath().equals(newJar.getCanonicalPath())) {
                 sender.sendMessage(MessageUtil.parse(
@@ -116,7 +116,7 @@ public final class SwapJarSubcommand {
 
         UUID uuid = sender instanceof Player p ? p.getUniqueId() : CONSOLE_UUID;
 
-        // Валидируем новый JAR ПЕРЕД сохранением pending
+        // Validate the new JAR BEFORE saving pending
         String validationError = validateJarFile(newJar);
         if (validationError != null) {
             sender.sendMessage(MessageUtil.parse(
@@ -124,10 +124,10 @@ public final class SwapJarSubcommand {
             return true;
         }
 
-        // Сохраняем pending
+        // Save pending
         pendingSwaps.put(uuid, new PendingSwap(newJar.getAbsolutePath(), currentJar.getAbsolutePath()));
 
-        // Показываем предупреждение
+        // Show a warning
         long newSize = newJar.length() / 1024;
         long currentSize = currentJar.length() / 1024;
 
@@ -176,7 +176,7 @@ public final class SwapJarSubcommand {
             return true;
         }
 
-        // Проверяем, существует ли новый JAR
+        // Check whether the new JAR exists
         File newJar = new File(pending.newJarPath);
         if (!newJar.exists() || !newJar.isFile()) {
             sender.sendMessage(MessageUtil.parse(
@@ -197,21 +197,21 @@ public final class SwapJarSubcommand {
         try {
             String pluginName = plugin.getDescription().getName();
 
-            // ШАГ 1: Отключаем плагин ПЕРВЫМ — освобождаем classloader и file lock
+            // STEP 1: Disable the plugin FIRST — frees the classloader and file lock
             ConsoleLogger.info("[SwapJar] Disabling plugin: " + pluginName);
             pm.disablePlugin(plugin);
             ConsoleLogger.info("[SwapJar] Plugin disabled.");
 
-            // ШАГ 2: Переименовываем старый JAR в .bak
+            // STEP 2: Rename the old JAR to .bak
             File backupFile = new File(oldJar.getParentFile(), oldJar.getName() + ".bak");
             Files.move(oldJar.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             ConsoleLogger.info("[SwapJar] Moved old JAR to " + backupFile.getName());
 
-            // ШАГ 3: Копируем новый JAR на освободившееся место
+            // STEP 3: Copy the new JAR into the freed spot
             Files.copy(newJar.toPath(), oldJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
             ConsoleLogger.info("[SwapJar] Copied new JAR: " + newJar.getName());
 
-            // ШАГ 4: Валидируем установленный JAR (битая копия из-за I/O ошибок)
+            // STEP 4: Validate the installed JAR (broken copy due to I/O errors)
             String postCopyError = validateJarFile(oldJar);
             if (postCopyError != null) {
                 forceReplaceFile(backupFile, oldJar);
@@ -219,7 +219,7 @@ public final class SwapJarSubcommand {
                         "<dark_red>❌</dark_red> <red>Copied JAR is corrupted! Backup restored.</red>"));
                 ConsoleLogger.error("[SwapJar] Post-copy validation failed: " + postCopyError);
 
-                // Удаляем старый плагин из списка (иначе loadPlugin упадёт с дубликатом имени)
+                // Remove the old plugin from the list (otherwise loadPlugin fails on a duplicate name)
                 removePluginFromManager(pm, plugin);
                 Plugin oldReloaded = pm.loadPlugin(oldJar);
                 if (oldReloaded != null) {
@@ -230,18 +230,18 @@ public final class SwapJarSubcommand {
                 return true;
             }
 
-            // ШАГ 5: Удаляем старый плагин из внутреннего списка Bukkit (рефлексия)
+            // STEP 5: Remove the old plugin from Bukkit's internal list (reflection)
             ConsoleLogger.info("[SwapJar] Removing old plugin from Bukkit plugin list...");
             removePluginFromManager(pm, plugin);
 
-            // ШАГ 6: Загружаем новый плагин
+            // STEP 6: Load the new plugin
             ConsoleLogger.info("[SwapJar] Loading new plugin from: " + oldJar.getName());
             Plugin loaded = pm.loadPlugin(oldJar);
             if (loaded == null) {
                 throw new InvalidPluginException("loadPlugin() returned null");
             }
 
-            // ШАГ 7: Включаем новый плагин
+            // STEP 7: Enable the new plugin
             ConsoleLogger.info("[SwapJar] Enabling new plugin: " + loaded.getName()
                     + " v" + loaded.getDescription().getVersion());
             pm.enablePlugin(loaded);
@@ -259,7 +259,7 @@ public final class SwapJarSubcommand {
                     + " → v" + loaded.getDescription().getVersion());
 
         } catch (InvalidPluginException | UnknownDependencyException e) {
-            // Плагин не загрузился — восстанавливаем backup
+            // Plugin failed to load — restore the backup
             ConsoleLogger.error("[SwapJar] Plugin load failed: " + e.getMessage());
             e.printStackTrace();
 
@@ -293,14 +293,14 @@ public final class SwapJarSubcommand {
             }
 
         } catch (Exception e) {
-            // Все остальные ошибки (I/O, reflection, etc.)
+            // All other errors (I/O, reflection, etc.)
             ConsoleLogger.error("[SwapJar] Hot-swap failed: " + e.getMessage());
             e.printStackTrace();
 
             sender.sendMessage(MessageUtil.parse(
                     "<dark_red>❌</dark_red> <red>Hot-swap failed: </red><white>" + e.getMessage() + "</white>"));
 
-            // Пытаемся восстановить backup
+            // Try to restore the backup
             try {
                 File backupFile = new File(oldJar.getParentFile(), oldJar.getName() + ".bak");
                 if (backupFile.exists()) {
@@ -309,7 +309,7 @@ public final class SwapJarSubcommand {
                     sender.sendMessage(MessageUtil.parse(
                             "<yellow>⚠</yellow> <gray>Old JAR restored from backup.</gray>"));
 
-                    // Удаляем старый плагин из регистров перед перезагрузкой
+                    // Remove the old plugin from the registries before reloading
                     removePluginFromManager(pm, plugin);
 
                     try {
@@ -344,14 +344,14 @@ public final class SwapJarSubcommand {
     // ==========================================================================
 
     /**
-     * Проверяет JAR-файл на валидность:
+     * Validates a JAR file:
      * <ul>
-     *   <li>Открывается как ZIP (конструктор {@link ZipFile} выбросит {@link ZipException} если нет)</li>
-     *   <li>Содержит plugin.yml</li>
-     *   <li>plugin.yml содержит обязательные поля main, name, version</li>
+     *   <li>Opens as a ZIP (the {@link ZipFile} constructor throws {@link ZipException} otherwise)</li>
+     *   <li>Contains plugin.yml</li>
+     *   <li>plugin.yml has the required main, name, version fields</li>
      * </ul>
      *
-     * @return null если всё ок, или строку с описанием ошибки
+     * @return null if all good, or a string describing the error
      */
     private static String validateJarFile(File jarFile) {
         try (ZipFile zip = new ZipFile(jarFile)) {
@@ -376,61 +376,61 @@ public final class SwapJarSubcommand {
     }
 
     // ==========================================================================
-    // 💾 FORCE REPLACE: обход Windows file lock
+    // 💾 FORCE REPLACE: bypassing the Windows file lock
     // ==========================================================================
 
     /**
-     * Заменяет файл, даже если он заблокирован (Windows).
-     * Сначала пытается удалить, потом rename (если удаление не удалось),
-     * затем копирует источник на место цели.
+     * Replaces a file even if it's locked (Windows).
+     * First tries delete, then rename (if delete failed),
+     * then copies the source over the target.
      *
-     * @param source файл-источник (что копируем)
-     * @param target файл-цель (что заменяем, может быть locked)
+     * @param source the source file (what we copy)
+     * @param target the target file (what we replace, may be locked)
      */
     private static void forceReplaceFile(File source, File target) throws Exception {
-        // Попытка 1: обычное копирование с заменой
+        // Attempt 1: normal copy with replace
         try {
             Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return;
         } catch (Exception e) {
-            // Возможно файл locked (Windows) — пробуем другие методы
+            // Possibly the file is locked (Windows) — try other methods
         }
 
-        // Попытка 2: удалить locked файл, потом скопировать
+        // Attempt 2: delete the locked file, then copy
         try {
             Files.deleteIfExists(target.toPath());
             Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return;
         } catch (Exception e) {
-            // Удаление тоже не сработало
+            // Delete also failed
         }
 
-        // Попытка 3: переименовать locked файл, потом скопировать
+        // Attempt 3: rename the locked file, then copy
         File tmpFile = new File(target.getParentFile(), target.getName() + ".deleted." + System.currentTimeMillis());
         try {
             target.renameTo(tmpFile);
             Files.copy(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            // Пытаемся удалить временный файл в фоне
+            // Try to delete the temp file in the background
             tmpFile.deleteOnExit();
             return;
         } catch (Exception e) {
-            // Переименование тоже не сработало
+            // Rename also failed
         }
 
-        // Всё failed — бросаем исключение
+        // All failed — throw an exception
         throw new Exception("Cannot replace file " + target.getName() + " after multiple attempts (locked on Windows?)");
     }
 
     // ==========================================================================
-    // 🔄 REFLECTION: удалить плагин из внутренних списков PluginManager
+    // 🔄 REFLECTION: remove the plugin from PluginManager's internal lists
     // ==========================================================================
 
     /**
-     * Удаляет плагин из всех внутренних регистров PluginManager.
+     * Removes the plugin from all of PluginManager's internal registries.
      * <p>
-     * В Paper 1.21+ PluginManager — это PaperPluginManagerImpl, который
-     * делегирует хранение плагинов PaperPluginInstanceManager (поле instanceManager).
-     * Старое SimplePluginManager.plugins/lookupNames там отсутствуют.
+     * In Paper 1.21+ PluginManager is PaperPluginManagerImpl, which
+     * delegates plugin storage to PaperPluginInstanceManager (instanceManager field).
+     * The old SimplePluginManager.plugins/lookupNames don't exist there.
      */
     @SuppressWarnings("unchecked")
     private static void removePluginFromManager(PluginManager pm, Plugin plugin) {
@@ -438,14 +438,14 @@ public final class SwapJarSubcommand {
             String pmClassName = pm.getClass().getName();
 
             if (pmClassName.equals("io.papermc.paper.plugin.manager.PaperPluginManagerImpl")) {
-                // Paper 1.21+: плагины хранятся в PaperPluginInstanceManager
+                // Paper 1.21+: plugins are stored in PaperPluginInstanceManager
                 removeFromPaperPluginManager(pm, plugin);
             } else {
-                // Legacy Bukkit/Spigot: поля напрямую в SimplePluginManager
+                // Legacy Bukkit/Spigot: fields directly in SimplePluginManager
                 removeFromSimplePluginManager(pm, plugin);
             }
 
-            // Дополнительно: HandlerList.unregisterAll (на случай если disablePlugin не дочистил)
+            // Additionally: HandlerList.unregisterAll (in case disablePlugin didn't fully clean up)
             HandlerList.unregisterAll(plugin);
 
             ConsoleLogger.info("[SwapJar] Plugin removed from Bukkit registration.");
@@ -455,37 +455,37 @@ public final class SwapJarSubcommand {
     }
 
     /**
-     * Удаляет плагин из Paper 1.21+ PaperPluginManagerImpl → PaperPluginInstanceManager.
+     * Removes the plugin from Paper 1.21+ PaperPluginManagerImpl → PaperPluginInstanceManager.
      */
     @SuppressWarnings("unchecked")
     private static void removeFromPaperPluginManager(PluginManager pm, Plugin plugin) throws Exception {
-        // Получаем instanceManager из PaperPluginManagerImpl
+        // Get instanceManager from PaperPluginManagerImpl
         Field instanceManagerField = pm.getClass().getDeclaredField("instanceManager");
         instanceManagerField.setAccessible(true);
         Object instanceManager = instanceManagerField.get(pm);
 
         Class<?> imClass = instanceManager.getClass();
 
-        // 1. Удаляем из plugins (List<Plugin>)
+        // 1. Remove from plugins (List<Plugin>)
         Field pluginsField = imClass.getDeclaredField("plugins");
         pluginsField.setAccessible(true);
         List<Plugin> plugins = (List<Plugin>) pluginsField.get(instanceManager);
         plugins.remove(plugin);
 
-        // 2. Удаляем из lookupNames (Map<String, Plugin>)
+        // 2. Remove from lookupNames (Map<String, Plugin>)
         Field lookupNamesField = imClass.getDeclaredField("lookupNames");
         lookupNamesField.setAccessible(true);
         Map<String, Plugin> lookupNames = (Map<String, Plugin>) lookupNamesField.get(instanceManager);
         lookupNames.remove(plugin.getName());
 
-        // 3. Удаляем из dependencyTree: SimpleMetaDependencyTree хранит MutableGraph<String>,
-        //    remove() принимает PluginProvider, которого у нас нет — лезем напрямую в граф.
+        // 3. Remove from dependencyTree: SimpleMetaDependencyTree stores a MutableGraph<String>,
+        //    remove() takes a PluginProvider which we don't have — go directly into the graph.
         try {
             Field depTreeField = imClass.getDeclaredField("dependencyTree");
             depTreeField.setAccessible(true);
             Object depTree = depTreeField.get(instanceManager);
 
-            // Ищем поле типа MutableGraph через всю иерархию классов
+            // Look for a MutableGraph-typed field across the whole class hierarchy
             Field graphField = null;
             for (Class<?> c = depTree.getClass(); c != null && graphField == null; c = c.getSuperclass()) {
                 for (Field f : c.getDeclaredFields()) {
@@ -498,18 +498,18 @@ public final class SwapJarSubcommand {
             if (graphField != null) {
                 graphField.setAccessible(true);
                 Object graph = graphField.get(depTree);
-                // MutableGraph.removeNode(Object) удаляет узел из графа
+                // MutableGraph.removeNode(Object) removes a node from the graph
                 Method removeNode = graph.getClass().getMethod("removeNode", Object.class);
                 removeNode.invoke(graph, plugin.getName());
                 ConsoleLogger.info("[SwapJar] Removed plugin from dependency graph.");
             }
         } catch (Exception ignored) {
-            // dependencyTree очистка — не критична, если не удалась
+            // dependencyTree cleanup — not critical if it fails
         }
     }
 
     /**
-     * Удаляет плагин из старого SimplePluginManager (Bukkit/Spigot).
+     * Removes the plugin from the old SimplePluginManager (Bukkit/Spigot).
      */
     @SuppressWarnings("unchecked")
     private static void removeFromSimplePluginManager(PluginManager pm, Plugin plugin) throws Exception {

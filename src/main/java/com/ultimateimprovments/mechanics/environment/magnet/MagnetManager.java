@@ -32,7 +32,7 @@ public class MagnetManager extends BukkitRunnable {
     private static MagnetManager instance;
 
     // =========================
-    // ⚙ УПАКОВКА КООРДИНАТ В long-клюЧ (делегировано в StructureMarker)
+    // ⚙ COORDINATE PACKING INTO long KEYS (delegated to StructureMarker)
     // =========================
     public static long toKey(int x, int y, int z) { return StructureMarker.toKey(x, y, z); }
     public static long toKey(Location loc) { return StructureMarker.toKey(loc); }
@@ -50,11 +50,11 @@ public class MagnetManager extends BukkitRunnable {
         public Location center;
         public int power;
 
-        // Running sums для O(1) пересчёта центра
+        // Running sums for O(1) center recomputation
         private long sumX, sumY, sumZ;
 
         /**
-         * Добавить блок в кластер с обновлением центра за O(1).
+         * Adds a block to the cluster, updating the center in O(1).
          */
         void addBlock(long key) {
             if (blockKeys.add(key)) {
@@ -67,7 +67,7 @@ public class MagnetManager extends BukkitRunnable {
         }
 
         /**
-         * Удалить блок из кластера с обновлением центра за O(1).
+         * Removes a block from the cluster, updating the center in O(1).
          */
         void removeBlock(long key) {
             if (blockKeys.remove(key)) {
@@ -84,7 +84,7 @@ public class MagnetManager extends BukkitRunnable {
         }
 
         /**
-         * Полный пересчёт центра (используется при загрузке из БД).
+         * Full center recomputation (used when loading from the DB).
          */
         void recalculateCenter() {
             if (blockKeys.isEmpty()) return;
@@ -123,12 +123,12 @@ public class MagnetManager extends BukkitRunnable {
     private static final Map<Integer, MagnetCluster> clustersById = new HashMap<>();
     private static int nextId = 1;
 
-    // Игроки, чей металлический статус нужно перепроверить (выбросили предмет)
+    // Players whose metallic status needs rechecking (dropped an item)
     private static final Set<UUID> dirtyPlayers = ConcurrentHashMap.newKeySet();
 
     /**
-     * Пометить игрока для перепроверки металлического статуса.
-     * Вызывается из MagnetEventListener при выбрасывании предмета.
+     * Marks a player for metallic status recheck.
+     * Called from MagnetEventListener when an item is dropped.
      */
     public static void markPlayerDirty(UUID uuid) {
         dirtyPlayers.add(uuid);
@@ -145,7 +145,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // 🔥 БЫСТРЫЙ FLOOD-FILL
+    // 🔥 FAST FLOOD-FILL
     // =========================
     private static final int[][] DIR = {
         {1, 0, 0}, {-1, 0, 0},
@@ -157,8 +157,8 @@ public class MagnetManager extends BukkitRunnable {
         if (world == null) return new HashSet<>(0);
         
         // ════════════════════════════════════════
-        // 🛡 Проверка: чанк начальной точки загружен?
-        // Если нет — не можем сканировать структуру.
+        // 🛡 Check: is the chunk of the starting point loaded?
+        // If not — we can't scan the structure.
         // ════════════════════════════════════════
         if (!world.isChunkLoaded(sx >> 4, sz >> 4)) return new HashSet<>(0);
         
@@ -175,9 +175,9 @@ public class MagnetManager extends BukkitRunnable {
                 long nk = toKey(nx, ny, nz);
                 if (visited.contains(nk)) continue;
                 // ════════════════════════════════════════
-                // 🛡 Проверка: чанк соседнего блока загружен?
-                // Если нет — пропускаем (структура может быть
-                // неполной, но это лучше, чем вылет)
+                // 🛡 Check: is the neighbor block's chunk loaded?
+                // If not — skip (the structure may be
+                // incomplete, but that's better than a crash)
                 // ════════════════════════════════════════
                 if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
                 if (world.getType(nx, ny, nz) == Material.LODESTONE) {
@@ -248,7 +248,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // ACTIVATE (синхронно)
+    // ACTIVATE (synchronous)
     // =========================
     public static void activate(Location loc) {
         loc = LocationUtil.normalize(loc);
@@ -283,7 +283,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // 🔥 БЫСТРЫЙ FLOOD-FILL С ChunkSnapshot (thread-safe для async)
+    // 🔥 FAST FLOOD-FILL WITH ChunkSnapshot (thread-safe for async)
     // =========================
     private static Set<Long> floodFillFastSnapshots(World world, int sx, int sy, int sz) {
         if (world == null) return new HashSet<>(0);
@@ -306,7 +306,7 @@ public class MagnetManager extends BukkitRunnable {
                 if (visited.contains(nk)) continue;
                 if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
 
-                // Получаем или создаём ChunkSnapshot — thread-safe immutable копию
+                // Get or create a ChunkSnapshot — a thread-safe immutable copy
                 long chunkKey = ((long)(nx >> 4) << 32) | (nz >> 4) & 0xFFFFFFFFL;
                 ChunkSnapshot snap = snapshots.get(chunkKey);
                 if (snap == null) {
@@ -324,10 +324,10 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // ACTIVATE ASYNC (для сборки через команду)
-    // Запускает flood-fill асинхронно, чтобы не фризить сервер.
-    // Использует ChunkSnapshot для thread-safe чтения блоков.
-    // Игрок получает уведомление о начале и завершении сборки.
+    // ACTIVATE ASYNC (for command-driven assembly)
+    // Runs the flood-fill asynchronously to avoid freezing the server.
+    // Uses ChunkSnapshot for thread-safe block reads.
+    // The player gets notified about the start and end of the assembly.
     // =========================
     public static void activateAsync(Location loc, Player player) {
         loc = LocationUtil.normalize(loc);
@@ -360,7 +360,7 @@ public class MagnetManager extends BukkitRunnable {
                     player.sendMessage("§4❌ §cError during async scan!");
                     player.sendMessage("§7Trying sync mode...");
 
-                    // Fallback: синхронное выполнение
+                    // Fallback: synchronous execution
                     Set<Long> connected = floodFillFast(world, sx, sy, sz);
                     finishActivation(connected, world, key, player);
                 });
@@ -372,8 +372,8 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     /**
-     * Завершает активацию: создаёт кластер, регистрирует блоки,
-     * сохраняет в БД, показывает частицы и шлёт результат игроку.
+     * Completes activation: creates the cluster, registers blocks,
+     * saves to the DB, shows particles and sends the result to the player.
      */
     private static void finishActivation(Set<Long> connected, World world, long key, Player player) {
         if (connected.isEmpty()) {
@@ -425,7 +425,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     /**
-     * Возвращает название тира магнита по мощности.
+     * Returns the magnet tier name by power.
      */
     public static String getMagnetPowerTierStatic(int power) {
         if (power >= 10000000) return "§k✧ §4✧✧ ABSOLUTE INFINITY ✧✧ §k✧ §8(" + power + ")";
@@ -485,9 +485,9 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // БЛОК РАЗРУШЕН
-    // Если кластер маленький — пересчёт синхронно (быстро).
-    // Если большой — асинхронно, чтобы не фризить сервер.
+    // BLOCK DESTROYED
+    // If the cluster is small — recompute synchronously (fast).
+    // If large — asynchronously to avoid freezing the server.
     // =========================
     public static boolean onBlockBroken(Location loc, Player breaker) {
         loc = LocationUtil.normalize(loc);
@@ -496,7 +496,7 @@ public class MagnetManager extends BukkitRunnable {
         MagnetCluster cluster = locationToCluster.get(key);
         if (cluster == null) return false;
 
-        // Полная деактивация всего кластера при разрушении любого блока
+        // Full deactivation of the whole cluster when any block is destroyed
         deactivateCluster(cluster);
 
         if (breaker != null) {
@@ -509,11 +509,11 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // БЛОК ПОСТАВЛЕН
-    // Оптимизация: вместо полного flood-fill'а — просто добавляем блок
-    // в соседний кластер (или объединяем кластеры).
-    // Полный пересчёт (flood-fill) делаем только если кластер >= ASYNC_THRESHOLD
-    // и блок может соединить два кластера — но даже тогда просто объединяем их.
+    // BLOCK PLACED
+    // Optimization: instead of a full flood-fill — just add the block
+    // to a neighboring cluster (or merge clusters).
+    // A full recompute (flood-fill) only runs if the cluster >= ASYNC_THRESHOLD
+    // and the block could join two clusters — but even then we just merge them.
     // =========================
     public static void onBlockPlaced(Location loc) {
         loc = LocationUtil.normalize(loc);
@@ -528,7 +528,7 @@ public class MagnetManager extends BukkitRunnable {
             toKey(bx, by, bz + 1), toKey(bx, by, bz - 1)
         };
 
-        // Собираем все уникальные кластеры рядом
+        // Collect all unique neighboring clusters
         Set<MagnetCluster> adjacentClusters = new LinkedHashSet<>();
         for (long nk : neighborKeys) {
             MagnetCluster c = locationToCluster.get(nk);
@@ -541,7 +541,7 @@ public class MagnetManager extends BukkitRunnable {
             MagnetCluster cluster = adjacentClusters.iterator().next();
             cluster.addBlock(key);
             locationToCluster.put(key, cluster);
-            // Marker на новом блоке
+            // Marker on the new block
             UUID uuid = findUuidFromNeighbor(loc, neighborKeys);
             if (uuid != null) StructureMarker.place(loc, "magnet", uuid);
 
@@ -559,7 +559,7 @@ public class MagnetManager extends BukkitRunnable {
                 for (long bk : other.blockKeys) {
                     locationToCluster.put(bk, primary);
                     primary.addBlock(bk);
-                    // Обновляем Marker на блоке other — меняем UUID на primary
+                    // Update the Marker on the other block — switch its UUID to primary
                     Location bl = new Location(primary.world, getX(bk), getY(bk), getZ(bk));
                     StructureMarker.removeAt(bl);
                     if (primaryUuid != null) StructureMarker.place(bl, "magnet", primaryUuid);
@@ -578,7 +578,7 @@ public class MagnetManager extends BukkitRunnable {
         }
     }
 
-    /** Находит UUID магнита из Marker соседнего блока */
+    /** Finds the magnet UUID from a neighbor block's Marker */
     private static UUID findUuidFromNeighbor(Location loc, long[] neighborKeys) {
         for (long nk : neighborKeys) {
             Location bl = new Location(loc.getWorld(), getX(nk), getY(nk), getZ(nk));
@@ -624,7 +624,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // ДИНАМИЧЕСКИЙ РАДИУС
+    // DYNAMIC RADIUS
     // =========================
     public static int getMagnetRadius(Location loc) {
         loc = LocationUtil.normalize(loc);
@@ -654,7 +654,7 @@ public class MagnetManager extends BukkitRunnable {
     public static Set<UUID> getDirtyPlayers() { return dirtyPlayers; }
 
     // =========================
-    // ПАРТИКЛЫ ПРИ АКТИВАЦИИ
+    // ACTIVATION PARTICLES
     // =========================
     public static void addParticleEffect(Location loc) {
         addParticleEffect(loc, 30);
@@ -692,7 +692,7 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // RUN (каждый тик)
+    // RUN (every tick)
     // =========================
     @Override
     public void run() {
@@ -717,9 +717,9 @@ public class MagnetManager extends BukkitRunnable {
                 int fx = getX(firstKey), fy = getY(firstKey), fz = getZ(firstKey);
 
                 // ════════════════════════════════════════
-                // 🛡 Проверка: чанк загружен?
-                // Если чанк не загружен — пропускаем кластер,
-                // НО НЕ удаляем его (он может загрузиться позже).
+                // 🛡 Check: is the chunk loaded?
+                // If the chunk isn't loaded — skip the cluster,
+                // BUT do NOT delete it (it may load later).
                 // ════════════════════════════════════════
                 if (!world.isChunkLoaded(fx >> 4, fz >> 4)) {
                     continue;
@@ -734,7 +734,7 @@ public class MagnetManager extends BukkitRunnable {
                 int power = cluster.blockKeys.size();
 
                 // ════════════════════════════════════════
-                // ПАРТИКЛЫ — лимиты из конфига
+                // PARTICLES — config limits
                 // ════════════════════════════════════════
                 int particleCount = Math.min(8 + (int)(Math.sqrt(power) * 1.5), MagnetConfig.getParticleCenterMax());
                 world.spawnParticle(Particle.END_ROD, center, particleCount, 0.5, 0.5, 0.5, 0);
@@ -770,9 +770,9 @@ public class MagnetManager extends BukkitRunnable {
                 }
 
                 // ════════════════════════════════════════
-                // 🛡 Проверка: чанк центра всё ещё загружен?
-                // (между партиклами и getNearbyEntities могло пройти время,
-                // но на главном серверном потоке этого не произойдёт)
+                // 🛡 Check: is the center's chunk still loaded?
+                // (time may pass between particles and getNearbyEntities,
+                // but this can't happen on the main server thread)
                 // ════════════════════════════════════════
                 int cx = center.getBlockX() >> 4, cz = center.getBlockZ() >> 4;
                 if (!world.isChunkLoaded(cx, cz)) continue;
@@ -782,14 +782,14 @@ public class MagnetManager extends BukkitRunnable {
 
                 for (Entity entity : nearby) {
                     if (!shouldAttract(entity)) {
-                        // Если игрок больше не металлический — сбрасываем скорость
+                        // If the player is no longer metallic — reset the speed
                         if (entity instanceof Player player && dirtyPlayers.remove(player.getUniqueId())) {
-                            // Игрок только что выбросил последний металлический предмет
-                            // Сбрасываем скорость, чтобы он не продолжал лететь по инерции
+                            // The player just dropped their last metallic item
+                            // Reset the speed so they don't keep flying by inertia
                             player.setVelocity(new Vector(0, 0, 0));
                         }
-                        // Очистка: если игрок вышел, убираем из dirtyPlayers
-                        // (штатно clean up через PlayerQuitEvent, но подстраховка не помешает)
+                        // Cleanup: if the player left, remove from dirtyPlayers
+                        // (normally cleaned via PlayerQuitEvent, but a safety net doesn't hurt)
                         if (entity instanceof Player && !((Player) entity).isOnline()) {
                             dirtyPlayers.remove(entity.getUniqueId());
                         }
@@ -820,12 +820,12 @@ public class MagnetManager extends BukkitRunnable {
             return isMetallic(item.getItemStack());
         }
         if (entity instanceof Player player) {
-            // Не притягиваем офлайн-игроков (могут быть в процессе выгрузки)
+            // Don't attract offline players (they may be unloading)
             if (!player.isOnline()) return false;
             return hasMetallicItem(player);
         }
         if (entity instanceof Mob mob) {
-            // Мобы могут быть уже мёртвыми при проверке экипировки
+            // Mobs may already be dead when checking equipment
             try {
                 return hasMetallicEquipment(mob);
             } catch (Exception e) {
@@ -846,7 +846,7 @@ public class MagnetManager extends BukkitRunnable {
                 if (isMetallic(item)) return true;
             }
         } catch (Exception ignored) {
-            // Игрок мог отвалиться во время перебора инвентаря
+            // The player may have disconnected during the inventory scan
         }
         return false;
     }
@@ -902,11 +902,11 @@ public class MagnetManager extends BukkitRunnable {
     }
 
     // =========================
-    // ПРИМЕНЕНИЕ СИЛЫ — ВСЕ ПАРАМЕТРЫ ИЗ КОНФИГА
+    // FORCE APPLICATION — ALL PARAMETERS FROM CONFIG
     // =========================
     private void applyMagneticForce(Entity entity, Location magnetCenter, int power, int clusterRadius) {
         // ════════════════════════════════════════
-        // 🛡 Защита: энтити мог умереть между shouldAttract и вызовом
+        // 🛡 Guard: the entity could die between shouldAttract and the call
         // ════════════════════════════════════════
         if (entity == null || entity.isDead()) return;
 
@@ -919,27 +919,27 @@ public class MagnetManager extends BukkitRunnable {
         direction.normalize();
 
         // ════════════════════════════════════════
-        // 🌀 КРИВАЯ МОЩНОСТИ: (power / powerNormalize) ^ powerExponent
-        //    0.55 = мягкий старт | 0.5 = sqrt | 1.0 = линейная
+        // 🌀 POWER CURVE: (power / powerNormalize) ^ powerExponent
+        //    0.55 = soft start | 0.5 = sqrt | 1.0 = linear
         // ════════════════════════════════════════
         double t = power / MagnetConfig.getPowerNormalize();
         double powerMultiplier = Math.pow(t, MagnetConfig.getPowerExponent());
 
         // ════════════════════════════════════════
-        // 📏 КРИВАЯ ДИСТАНЦИИ: smoothstep (плавно) или linear (старая)
+        // 📏 DISTANCE CURVE: smoothstep (smooth) or linear (old)
         // ════════════════════════════════════════
         double nd = distance / clusterRadius;
         if (nd > 1.0) nd = 1.0;
 
         double distanceFactor;
         if ("linear".equalsIgnoreCase(MagnetConfig.getDistanceCurveType())) {
-            // Линейная: была по умолчанию, с жёстким min_factor
+            // Linear: was the default, with a hard min_factor
             distanceFactor = Math.max(MagnetConfig.getDistanceMinFactor(), 1.0 - nd);
         } else {
-            // Smoothstep (по умолчанию): 3t² - 2t³, производная = 0 на обоих концах
+            // Smoothstep (default): 3t² - 2t³, derivative = 0 at both ends
             double smoothT = nd * nd * (3.0 - 2.0 * nd);
             distanceFactor = 1.0 - smoothT;
-            // Если min_factor > 0 — не даём упасть ниже
+            // If min_factor > 0 — don't let it drop below
             if (distanceFactor < MagnetConfig.getDistanceMinFactor()) distanceFactor = MagnetConfig.getDistanceMinFactor();
         }
 

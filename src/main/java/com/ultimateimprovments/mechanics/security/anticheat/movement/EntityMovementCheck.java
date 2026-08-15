@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * EntityMovement — базовая проверка движения на entity (лошадь, лодка, вагонетка).
- * Детекция: скорость передвижения на entity превышает максимальную для данного типа.
+ * EntityMovement — basic movement check on an entity (horse, boat, minecart).
+ * Detection: movement speed on an entity exceeds the maximum for that type.
  */
 public class EntityMovementCheck extends AbstractCheck {
 

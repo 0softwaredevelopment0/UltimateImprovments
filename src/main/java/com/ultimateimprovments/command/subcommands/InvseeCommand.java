@@ -28,17 +28,17 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Инвентарь-редактор: /ui invsee &lt;player&gt; и /ui endersee &lt;player&gt;.
+ * Inventory editor: /ui invsee &lt;player&gt; and /ui endersee &lt;player&gt;.
  *
- * <p>GUI идентифицируется по трекингу сессий ({@link #INVSEE_SESSIONS}), а НЕ по
- * {@code InventoryView.getTitle()} — в Paper 1.21.x getTitle() возвращает Component
- * и сравнение со String всегда ложно (см. NotesGUIListener), из-за чего стеклянные
- * панели было можно забирать и синк не происходил.
+ * <p>The GUI is identified by session tracking ({@link #INVSEE_SESSIONS}), NOT by
+ * {@code InventoryView.getTitle()} — in Paper 1.21.x getTitle() returns a Component
+ * and comparing it to a String is always false (see NotesGUIListener), which let
+ * players take the glass panels and broke sync.
  *
- * <p>Анти-дюп: GUI — живое зеркало, а не снимок. Пока окно открыто, периодический
- * таск тянет реальное состояние инвентаря цели в GUI (если админ не взаимодействует),
- * а каждый клик/драг мгновенно пушит изменения цели. Так предметы, которые цель
- * выкинула/подобрала во время редактирования, не «воскресают» при закрытии.
+ * <p>Anti-dupe: the GUI is a live mirror, not a snapshot. While the window is open, a
+ * periodic task pulls the target's real inventory state into the GUI (when the admin
+ * isn't interacting), and every click/drag instantly pushes changes to the target.
+ * This way items the target dropped/picked up during editing don't "resurrect" on close.
  */
 public final class InvseeCommand {
 
@@ -48,13 +48,13 @@ public final class InvseeCommand {
 
     private InvseeCommand() {}
 
-    /** Одна открытая сессия invsee: кто смотрит → чей GUI и кто цель. */
+    /** One open invsee session: who is viewing → whose GUI and who is the target. */
     private static final class InvseeSession {
         final UUID viewerId;
         final UUID targetId;
         final Inventory gui;
         BukkitTask refreshTask;
-        /** Тик сервера последнего действия админа — защита от гонки pull/push. */
+        /** Server tick of the admin's last action — protection against a pull/push race. */
         volatile long lastAdminTick;
 
         InvseeSession(UUID viewerId, UUID targetId, Inventory gui) {
@@ -170,7 +170,7 @@ public final class InvseeCommand {
             gui.setItem(45 + i, storage[i] != null ? storage[i].clone() : null);
         }
 
-        // Заменяем устаревшую сессию (если админ уже редактировал кого-то)
+        // Replace the stale session (if the admin was already editing someone)
         endSession(viewer.getUniqueId());
 
         InvseeSession session = new InvseeSession(viewer.getUniqueId(), target.getUniqueId(), gui);
@@ -190,8 +190,8 @@ public final class InvseeCommand {
             return;
         }
 
-        // Открываем НАСТОЯЩИЙ эндер-сундук цели — Paper сам синхронизирует все изменения
-        // Помечаем зрителя, чтобы EnderChestManager не нанёс ему урон при закрытии
+        // Open the target's REAL ender chest — Paper syncs all changes itself
+        // Mark the viewer so EnderChestManager doesn't damage them on close
         EnderChestManager.addEnderseeViewer(viewer.getUniqueId());
         viewer.openInventory(target.getEnderChest());
     }
@@ -200,14 +200,14 @@ public final class InvseeCommand {
     // LIVE REFRESH (target → GUI)
     // =========================
     /**
-     * Пока GUI открыт, периодически тянем реальное состояние инвентаря цели в GUI.
-     * Пропускаем обновление, если админ прямо сейчас тащит предмет (курсор занят)
-     * или только что кликнул (последние 2 тика) — чтобы не конфликтовать с push'ем.
-     * Это делает GUI живым зеркалом и исключает дюп из-за устаревшего снимка.
+     * While the GUI is open, periodically pull the target's real inventory state into it.
+     * Skip the update if the admin is currently dragging an item (cursor busy)
+     * or just clicked (last 2 ticks) — to not conflict with the push.
+     * This makes the GUI a live mirror and eliminates dupes from a stale snapshot.
      */
     private static void startRefresh(Player viewer, InvseeSession session) {
         session.refreshTask = Bukkit.getScheduler().runTaskTimer(Main.getInstance(), () -> {
-            if (INVSEE_SESSIONS.get(viewer.getUniqueId()) != session) return; // закрыта/заменена
+            if (INVSEE_SESSIONS.get(viewer.getUniqueId()) != session) return; // closed/replaced
             if (!viewer.isOnline()) {
                 endSession(viewer.getUniqueId());
                 return;
@@ -220,14 +220,14 @@ public final class InvseeCommand {
     }
 
     /**
-     * Безопасный pull target → GUI. Скипается, пока админ тащит предмет на курсоре
-     * (иначе можно «воскресить» в GUI предмет, который уже взят в курсор) и в первые
-     * 2 тика после клика админа (чтобы не конфликтовать с push'ем).
+     * Safe pull target → GUI. Skipped while the admin is dragging an item on the cursor
+     * (otherwise you could "resurrect" in the GUI an item already taken to the cursor) and
+     * for the first 2 ticks after the admin's click (to not conflict with the push).
      */
     private static void maybePull(InvseeSession session, Player viewer, Player target) {
         ItemStack cursor = viewer.getItemOnCursor();
-        if (cursor != null && cursor.getType() != Material.AIR) return; // админ тащит
-        if (Bukkit.getCurrentTick() - session.lastAdminTick < 2) return; // свежий клик — дадим push'у приземлиться
+        if (cursor != null && cursor.getType() != Material.AIR) return; // admin is dragging
+        if (Bukkit.getCurrentTick() - session.lastAdminTick < 2) return; // fresh click — let the push land
         pullTargetToGui(session, target);
     }
 
@@ -275,7 +275,7 @@ public final class InvseeCommand {
         session.lastAdminTick = Bukkit.getCurrentTick();
         UUID viewerId = viewer.getUniqueId();
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-            // Guard: сессия могла закрыться/смениться до запуска таска
+            // Guard: the session could have closed/changed before the task ran
             if (INVSEE_SESSIONS.get(viewerId) != session) return;
             Player target = Bukkit.getPlayer(session.targetId);
             syncInvsee(top, target);
@@ -286,7 +286,7 @@ public final class InvseeCommand {
         if (target == null || !target.isOnline()) return;
         PlayerInventory inv = target.getInventory();
 
-        // Sync armor + hands (клонируем, чтобы не шарить ссылки с GUI)
+        // Sync armor + hands (clone to not share references with the GUI)
         inv.setHelmet(cloneOrNull(unwrapPlaceholder(gui.getItem(0))));
         inv.setLeggings(cloneOrNull(unwrapPlaceholder(gui.getItem(1))));
         inv.setChestplate(cloneOrNull(unwrapPlaceholder(gui.getItem(9))));
@@ -294,7 +294,7 @@ public final class InvseeCommand {
         inv.setItemInMainHand(cloneOrNull(unwrapPlaceholder(gui.getItem(2))));
         inv.setItemInOffHand(cloneOrNull(unwrapPlaceholder(gui.getItem(11))));
 
-        // Cursor slot — если админ каким-то образом что-то туда положил, выбрасываем у ног цели
+        // Cursor slot — if the admin somehow put something there, drop it at the target's feet
         ItemStack cursorItem = unwrapPlaceholder(gui.getItem(3));
         if (cursorItem != null && cursorItem.getType() != Material.AIR) {
             target.getWorld().dropItemNaturally(target.getLocation(), cursorItem);
@@ -349,7 +349,7 @@ public final class InvseeCommand {
         return item.getItemMeta().getPersistentDataContainer().has(PLACEHOLDER_KEY);
     }
 
-    /** Сравнение двух слотов: пустое = пустое, плейсхолдер = плейсхолдер, иначе ItemStack.equals. */
+    /** Slot comparison: empty = empty, placeholder = placeholder, otherwise ItemStack.equals. */
     private static boolean itemEquals(ItemStack a, ItemStack b) {
         boolean aEmpty = a == null || a.getType() == Material.AIR;
         boolean bEmpty = b == null || b.getType() == Material.AIR;
@@ -367,7 +367,7 @@ public final class InvseeCommand {
         ItemMeta meta = glass.getItemMeta();
         meta.displayName(MessageUtil.parse("<reset>").decoration(TextDecoration.ITALIC, false));
         meta.setHideTooltip(true);
-        // Маркируем как плейсхолдер: isPlaceholder() блокирует взятие ЛЮБЫМ способом
+        // Mark as a placeholder: isPlaceholder() blocks taking it ANY way
         meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BOOLEAN, true);
         glass.setItemMeta(meta);
         return glass;
@@ -412,7 +412,7 @@ public final class InvseeCommand {
                 MessageUtil.parse("<gray>XP Progress: <white>" + String.format("%.1f%%", target.getExp() * 100) + "</white></gray>"),
                 MessageUtil.parse("<gray>Gamemode: <white>" + target.getGameMode().name() + "</white></gray>")
         ));
-        // Блокируем взятие книги любым способом
+        // Block taking the book any way
         meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BOOLEAN, true);
         book.setItemMeta(meta);
         return book;
@@ -429,36 +429,36 @@ public final class InvseeCommand {
             InvseeSession session = INVSEE_SESSIONS.get(player.getUniqueId());
             if (session == null) return;
             Inventory top = event.getView().getTopInventory();
-            if (session.gui != top) return; // не наш GUI (например, реальный эндер-сундук в endersee)
+            if (session.gui != top) return; // not our GUI (e.g. the real ender chest in endersee)
 
             int slot = event.getRawSlot();
 
-            // Нижний инвентарь (свой инвентарь админа) — разрешаем свободно,
-            // но всё равно пушим (сдвиг-клик из своего инвентаря в GUI = передача предмета цели)
+            // Bottom inventory (the admin's own) — allow freely,
+            // but still push (a shift-click from own inventory into the GUI = giving the item to the target)
             if (slot >= top.getSize()) {
                 scheduleSync(player, top, session);
                 return;
             }
 
-            // Стеклянные панели (4-8, 13-17) — декоратив, брать нельзя
+            // Glass panels (4-8, 13-17) — decoration, can't be taken
             if ((slot >= 4 && slot <= 8) || (slot >= 13 && slot <= 17)) {
                 event.setCancelled(true);
                 return;
             }
 
-            // Книга (12) — без взаимодействия
+            // Book (12) — no interaction
             if (slot == 12) {
                 event.setCancelled(true);
                 return;
             }
 
-            // Плейсхолдеры (броня/курсор/стекло) — нельзя брать ни кликом, ни сдвигом
+            // Placeholders (armor/cursor/glass) — can't be taken by click or shift
             if (isPlaceholder(event.getCurrentItem())) {
                 event.setCancelled(true);
                 return;
             }
 
-            // Разрешаем взаимодействие — мгновенный синк после обработки события
+            // Allow the interaction — instant sync after the event is handled
             scheduleSync(player, top, session);
         }
 
@@ -470,7 +470,7 @@ public final class InvseeCommand {
             Inventory top = event.getView().getTopInventory();
             if (session.gui != top) return;
 
-            // Драг с участием нижнего инвентаря (GUI ↔ инвентарь админа) — отменяем (анти-дюп)
+            // Drag involving the bottom inventory (GUI ↔ admin inventory) — cancel (anti-dupe)
             for (int slot : event.getRawSlots()) {
                 if (slot >= top.getSize()) {
                     event.setCancelled(true);
@@ -478,7 +478,7 @@ public final class InvseeCommand {
                 }
             }
 
-            // Драг через стекло/книгу/плейсхолдер — отменяем
+            // Drag through glass/book/placeholder — cancel
             for (int slot : event.getRawSlots()) {
                 if (slot < top.getSize()) {
                     if ((slot >= 4 && slot <= 8) || (slot >= 13 && slot <= 17) || slot == 12) {
@@ -492,7 +492,7 @@ public final class InvseeCommand {
                 }
             }
 
-            // Разрешённый драг внутри GUI — мгновенный синк
+            // Allowed drag inside the GUI — instant sync
             scheduleSync(player, top, session);
         }
 
@@ -507,8 +507,8 @@ public final class InvseeCommand {
             endSession(viewerId);
             Player target = Bukkit.getPlayer(session.targetId);
             if (target != null && target.isOnline()) {
-                // Подтягиваем живое состояние цели, чтобы финальный синк не затёр
-                // свежие изменения цели, сделанные за время редактирования.
+                // Pull the target's live state so the final sync doesn't overwrite
+                // fresh target changes made during the editing.
                 maybePull(session, player, target);
             }
             syncInvsee(session.gui, target);

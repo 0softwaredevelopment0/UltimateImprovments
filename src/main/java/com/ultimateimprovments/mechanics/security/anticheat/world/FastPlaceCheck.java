@@ -11,8 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * FastPlace — установка блоков быстрее ванильного лимита.
- * Детекция: количество блоков, установленных за секунду, превышает максимум.
+ * FastPlace — placing blocks faster than the vanilla limit.
+ * Detection: number of blocks placed per second exceeds the maximum.
  */
 public class FastPlaceCheck extends AbstractCheck {
 

@@ -5,72 +5,72 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * 🧰 ItemIntegrityAPI — единый фасад для работы с целостностью предметов.
+ * 🧰 ItemIntegrityAPI — a single facade for working with item integrity.
  * <p>
- * Единицы измерения зашиты прямо в имена методов, чтобы исключить путаницу
- * и случайное редактирование не той системы (ванильная прочность vs целостность):
+ * Units are baked into the method names to avoid confusion and accidental
+ * editing of the wrong system (vanilla durability vs integrity):
  * <ul>
- *   <li>{@code setItemIntegrity} — установка точного % целостности (0.0–100.0)</li>
- *   <li>{@code decreaseItemIntegrity / increaseItemIntegrity} — изменение
- *       на «X использований» (int): столько целостности, сколько потратилось бы
- *       за X действий, расходующих прочность (ломка блока, удар и т.п.)</li>
+ *   <li>{@code setItemIntegrity} — sets an exact integrity % (0.0–100.0)</li>
+ *   <li>{@code decreaseItemIntegrity / increaseItemIntegrity} — changes by
+ *       «X uses» (int): as much integrity as would be spent over X actions
+ *       that consume durability (block mining, attack, etc.)</li>
  *   <li>{@code decreaseItemIntegrityPercent / increaseItemIntegrityPercent} —
- *       изменение ровно на X% (double)</li>
+ *       changes by exactly X% (double)</li>
  * </ul>
  * <p>
- * <b>Важно для корректного вывода и синхронизации:</b>
+ * <b>Important for correct output and synchronization:</b>
  * <ul>
- *   <li>Все write-методы возвращают <b>фактическую</b> целостность предмета
- *       (0.0–100.0) <i>после</i> операции — источник истины для сообщений,
- *       не нужно пересчитывать значение на стороне команды.</li>
- *   <li>Все write-методы сразу обновляют лор предмета, чтобы тултип
- *       показывал актуальное значение без ожидания следующего тика.</li>
+ *   <li>All write methods return the <b>actual</b> item integrity
+ *       (0.0–100.0) <i>after</i> the operation — the source of truth for messages,
+ *       no need to recompute the value on the command side.</li>
+ *   <li>All write methods update the item lore immediately so the tooltip
+ *       shows the up-to-date value without waiting for the next tick.</li>
  * </ul>
- * Вся низкоуровневая работа с PDC и ванильной прочностью остаётся в
- * {@link IntegrityManager} — здесь только понятные операции.
+ * All low-level PDC and vanilla durability work stays in
+ * {@link IntegrityManager} — here only high-level operations.
  */
 public final class ItemIntegrityAPI {
 
     private ItemIntegrityAPI() {}
 
     // =========================
-    // ЧТЕНИЕ
+    // READ
     // =========================
 
-    /** Зарегистрирован ли предмет в системе целостности. */
+    /** Whether the item is registered in the integrity system. */
     public static boolean hasItemIntegrity(ItemStack item) {
         return IntegrityManager.hasIntegrity(item);
     }
 
     /**
-     * Текущая целостность предмета в % (0.0–100.0),
-     * или -1, если предмет не в системе целостности.
+     * The item's current integrity in % (0.0–100.0),
+     * or -1 if the item isn't in the integrity system.
      */
     public static double getItemIntegrityPercent(ItemStack item) {
         return IntegrityManager.getCurrentIntegrity(item);
     }
 
     /**
-     * Максимальная целостность предмета в % (всегда 100.0),
-     * или -1, если предмет не в системе целостности.
+     * The item's max integrity in % (always 100.0),
+     * or -1 if the item isn't in the integrity system.
      */
     public static double getItemMaxIntegrityPercent(ItemStack item) {
         return IntegrityManager.getMaxIntegrity(item);
     }
 
-    /** Гарантирует инициализацию предмета в системе (100%) и сразу обновляет лор. */
+    /** Guarantees the item is initialized in the system (100%) and updates the lore right away. */
     public static void initializeItemIntegrity(ItemStack item) {
         IntegrityManager.ensureInitialized(item);
         refreshLore(item);
     }
 
     // =========================
-    // ЗАПИСЬ
+    // WRITE
     // =========================
 
     /**
-     * Устанавливает целостность предмета на указанный процент (0.0 – 100.0).
-     * Возвращает фактическую целостность после установки.
+     * Sets the item's integrity to the given percentage (0.0 – 100.0).
+     * Returns the actual integrity after setting.
      */
     public static double setItemIntegrity(ItemStack item, double percent) {
         IntegrityManager.setCurrentIntegrity(item, percent);
@@ -79,15 +79,15 @@ public final class ItemIntegrityAPI {
     }
 
     /**
-     * Уменьшает целостность так, как если бы предметом сделали {@code iterations}
-     * действий, расходующих прочность (1 итерация = 1 использование).
-     * Если предмет сломался раньше — остальные итерации пропускаются.
-     * Возвращает фактическую целостность после списания.
+     * Decreases integrity as if the item was used {@code iterations} times
+     * with actions consuming durability (1 iteration = 1 use).
+     * If the item broke earlier — the remaining iterations are skipped.
+     * Returns the actual integrity after the deduction.
      */
     public static double decreaseItemIntegrity(ItemStack item, int iterations, Player owner) {
         if (item == null || iterations <= 0) return IntegrityManager.getCurrentIntegrity(item);
         for (int i = 0; i < iterations; i++) {
-            if (item.getAmount() <= 0) break; // предмет сломался — дальше нечего тратить
+            if (item.getAmount() <= 0) break; // the item broke — nothing left to spend
             IntegrityManager.decreaseIntegrity(item, 1, owner);
         }
         refreshLore(item);
@@ -95,9 +95,9 @@ public final class ItemIntegrityAPI {
     }
 
     /**
-     * Увеличивает целостность на столько, сколько потратилось бы за {@code iterations}
-     * действий, расходующих прочность (зеркально {@link #decreaseItemIntegrity}).
-     * Результат не может превысить 100%. Возвращает фактическую целостность после ремонта.
+     * Increases integrity by as much as {@code iterations} durability-consuming
+     * actions would have spent (mirror of {@link #decreaseItemIntegrity}).
+     * The result can't exceed 100%. Returns the actual integrity after repair.
      */
     public static double increaseItemIntegrity(ItemStack item, int iterations) {
         if (item == null || iterations <= 0) return IntegrityManager.getCurrentIntegrity(item);
@@ -110,9 +110,9 @@ public final class ItemIntegrityAPI {
     }
 
     /**
-     * Уменьшает целостность ровно на указанный процент (double, 0.0 – 100.0).
-     * При достижении 0 предмет ломается как обычно.
-     * Возвращает фактическую целостность после списания (0, если сломался).
+     * Decreases integrity by exactly the given percentage (double, 0.0 – 100.0).
+     * At 0 the item breaks as usual.
+     * Returns the actual integrity after the deduction (0 if it broke).
      */
     public static double decreaseItemIntegrityPercent(ItemStack item, double percent, Player owner) {
         IntegrityManager.decreaseIntegrityPercent(item, percent, owner);
@@ -121,8 +121,8 @@ public final class ItemIntegrityAPI {
     }
 
     /**
-     * Увеличивает целостность ровно на указанный процент (double, 0.0 – 100.0).
-     * Результат не может превысить 100%. Возвращает фактическую целостность после ремонта.
+     * Increases integrity by exactly the given percentage (double, 0.0 – 100.0).
+     * The result can't exceed 100%. Returns the actual integrity after repair.
      */
     public static double increaseItemIntegrityPercent(ItemStack item, double percent) {
         IntegrityManager.increaseIntegrity(item, percent);
@@ -135,17 +135,17 @@ public final class ItemIntegrityAPI {
     // =========================
 
     /**
-     * Обновляет лор целостности сразу после изменения (не дожидаясь тика).
+     * Updates the integrity lore right after a change (without waiting for a tick).
      * <p>
-     * Само обновление — контент-осознанное: {@link IntegrityManager#updateItemLore}
-     * переписывает meta предмета только если лор реально отличается (сверка значения
-     * + содержимого лора), поэтому при неизменных данных записи не происходит.
-     * В тиковом сканере {@code IntegrityManager.run()} meta переписывается только
-     * при фактическом изменении лора.
+     * The update itself is content-aware: {@link IntegrityManager#updateItemLore}
+     * rewrites the item meta only if the lore actually differs (value + lore
+     * content comparison), so unchanged data causes no writes.
+     * In the tick scanner {@code IntegrityManager.run()} meta is rewritten only
+     * on an actual lore change.
      */
     private static void refreshLore(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return;
-        if (item.getAmount() <= 0) return; // сломанный предмет — лор не нужен
+        if (item.getAmount() <= 0) return; // broken item — no lore needed
         IntegrityManager.updateItemLore(item);
     }
 }

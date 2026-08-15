@@ -9,17 +9,17 @@ import org.bukkit.entity.Player;
 import java.util.UUID;
 
 /**
- * Фасад для системы авторизации.
+ * Facade for the authentication system.
  * <p>
- * Все вызовы делегируются специализированным классам:
+ * All calls are delegated to specialized classes:
  * <ul>
- *   <li>{@link AuthPlayerState} — отслеживание состояния игроков</li>
- *   <li>{@link AuthAuthenticator} — логика логина/регистрации/смены пароля</li>
- *   <li>{@link AuthRateLimiter} — ограничение частоты запросов</li>
- *   <li>{@link AuthTimeoutManager} — таймаут на авторизацию</li>
- *   <li>{@link AuthConfig} — чтение конфига</li>
- *   <li>{@link AuthGUI} — открытие GUI</li>
- *   <li>{@link AuthGUITracker} — трекинг GUI состояний</li>
+ *   <li>{@link AuthPlayerState} — tracks player states</li>
+ *   <li>{@link AuthAuthenticator} — login/register/change-password logic</li>
+ *   <li>{@link AuthRateLimiter} — request rate limiting</li>
+ *   <li>{@link AuthTimeoutManager} — authentication timeout</li>
+ *   <li>{@link AuthConfig} — config reading</li>
+ *   <li>{@link AuthGUI} — GUI opening</li>
+ *   <li>{@link AuthGUITracker} — GUI state tracking</li>
  * </ul>
  */
 public class AuthManager {
@@ -103,7 +103,7 @@ public class AuthManager {
         return Auth2FA.isEnabled(uuid);
     }
 
-    /** Привязанный GitHub username игрока (или null). */
+    /** The player's linked GitHub username (or null). */
     public String getGithubUsername(UUID uuid) {
         return Auth2FA.getGithubUsername(uuid);
     }

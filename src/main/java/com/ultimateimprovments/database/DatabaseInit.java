@@ -163,21 +163,21 @@ public class DatabaseInit {
             """);
 
             // =========================
-            // ⚛ REACTOR WEAR COLUMN MIGRATION (для старых БД)
+            // ⚛ REACTOR WEAR COLUMN MIGRATION (for old DBs)
             // =========================
             try {
                 st.execute("ALTER TABLE reactors ADD COLUMN reactor_wear INTEGER DEFAULT 0");
             } catch (Exception ignored) {
-                // Column already exists — это нормально
+                // Column already exists — this is fine
             }
 
             // =========================
-            // ⚛ ENERGY GENERATED COLUMN MIGRATION (для старых БД)
+            // ⚛ ENERGY GENERATED COLUMN MIGRATION (for old DBs)
             // =========================
             try {
                 st.execute("ALTER TABLE reactors ADD COLUMN energy_generated INTEGER DEFAULT 0");
             } catch (Exception ignored) {
-                // Column already exists — это нормально
+                // Column already exists — this is fine
             }
 
         // =========================
@@ -267,7 +267,7 @@ public class DatabaseInit {
             """);
 
             // =========================
-            // 🔐 AUTH (регистрация/логин)
+            // 🔐 AUTH (register/login)
             // =========================
             st.execute("""
                 CREATE TABLE IF NOT EXISTS auth (
@@ -338,7 +338,7 @@ public class DatabaseInit {
             """);
 
         // =========================
-        // 👻 VANISHED PLAYERS (таблица, а не config.yml)
+        // 👻 VANISHED PLAYERS (table, not config.yml)
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS vanished_players (
@@ -347,7 +347,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🛡 OP WHITELIST — белый список операторов
+        // 🛡 OP WHITELIST — operator whitelist
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS op_whitelist (
@@ -356,7 +356,7 @@ public class DatabaseInit {
             );
         """);
 
-        // Служебная таблица для хранения enabled-флага
+        // Helper table for storing the enabled flag
         st.execute("""
             CREATE TABLE IF NOT EXISTS op_whitelist_meta (
                 key TEXT PRIMARY KEY,
@@ -369,7 +369,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🗺 STRUCTURE CHUNKS — чанки, в которых есть Marker'ы структур
+        // 🗺 STRUCTURE CHUNKS — chunks containing structure Markers
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS structure_chunks (
@@ -410,7 +410,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🔴 REDSTONE BLOCKS — вечно заблокированные редстоун-чанки (persist)
+        // 🔴 REDSTONE BLOCKS — permanently blocked redstone chunks (persist)
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS redstone_blocks (
@@ -424,7 +424,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🏗 BLOCK COLLAPSE — липкость/тяжесть поставленных блоков (persist)
+        // 🏗 BLOCK COLLAPSE — stickiness/weight of placed blocks (persist)
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS block_collapse (
@@ -443,7 +443,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🔄 UPDATER STATE (последний SHA коммита / тег релиза)
+        // 🔄 UPDATER STATE (last commit SHA / release tag)
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS updater_state (
@@ -453,7 +453,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🛠 MAINTENANCE WHITELIST — белый список для режима техработ
+        // 🛠 MAINTENANCE WHITELIST — whitelist for the maintenance mode
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS maintenance_whitelist (
@@ -462,9 +462,9 @@ public class DatabaseInit {
             );
         """);
 
-        // Служебная таблица для хранения enabled/maintenance_meta
-        // БЕЗ INSERT OR IGNORE — миграция из config.yml происходит в
-        // MaintenanceManager.loadFromDb() при первом запуске.
+        // Helper table for storing enabled/maintenance_meta
+        // WITHOUT INSERT OR IGNORE — the migration from config.yml happens in
+        // MaintenanceManager.loadFromDb() on the first run.
         st.execute("""
             CREATE TABLE IF NOT EXISTS maintenance_meta (
                 key TEXT PRIMARY KEY,
@@ -474,7 +474,7 @@ public class DatabaseInit {
 
         // =========================
         // =========================
-        // 📋 PLAYER VISITS — отслеживание первого входа
+        // 📋 PLAYER VISITS — first join tracking
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS player_visits (
@@ -486,7 +486,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 📋 REPORTS — жалобы на игроков
+        // 📋 REPORTS — player reports
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS reports (
@@ -520,7 +520,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 📋 MOD REPORTS — список репортов для модерации
+        // 📋 MOD REPORTS — report list for moderation
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS mod_reports (
@@ -532,7 +532,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🛡 PUNISHMENTS — баны, муты, кики
+        // 🛡 PUNISHMENTS — bans, mutes, kicks
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS punishments (
@@ -571,7 +571,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // ⚠ WARNS — предупреждения
+        // ⚠ WARNS — warnings
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS warns (
@@ -593,7 +593,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 📋 CUSTOM WHITELIST (UltimateImprovments, не ванильный)
+        // 📋 CUSTOM WHITELIST (UltimateImprovments, not vanilla)
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS whitelist (
@@ -615,7 +615,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 🏗 STRUCTURE INTEGRITY — stress/integrity данных эндер-сундуков
+        // 🏗 STRUCTURE INTEGRITY — stress/integrity of ender-chest data
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS structure_integrity (
@@ -631,7 +631,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 📋 BLACKLIST — чёрный список
+        // 📋 BLACKLIST — blacklist
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS blacklist (
@@ -704,7 +704,7 @@ public class DatabaseInit {
         """);
 
         // =========================
-        // 📡 WIRELESS REDSTONE — связанные лампы
+        // 📡 WIRELESS REDSTONE — linked lamps
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS wireless_links (
@@ -724,7 +724,7 @@ public class DatabaseInit {
             ON wireless_links(world);
         """);
 
-        // Инициализация строк latest_commit_sha и installed_tag, если их нет
+        // Initialize the latest_commit_sha and installed_tag rows if missing
         st.execute("""
             INSERT OR IGNORE INTO updater_state (key, value)
             VALUES ('latest_commit_sha', '');
@@ -734,7 +734,7 @@ public class DatabaseInit {
             VALUES ('installed_tag', '');
         """);
 
-        // Миграция: если был старый latest_tag (c предыдущих версий) — переносим в installed_tag
+        // Migration: if there was an old latest_tag (from previous versions) — move it to installed_tag
         st.execute("""
             UPDATE updater_state SET value = (
                 SELECT value FROM updater_state WHERE key = 'latest_tag' AND value != ''

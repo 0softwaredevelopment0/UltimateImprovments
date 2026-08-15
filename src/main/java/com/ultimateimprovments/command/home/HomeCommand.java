@@ -16,13 +16,13 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * HomeCommand — обрабатывает команды домашних точек:
- * /ui sethome &lt;название&gt;
- * /ui home &lt;название&gt;
- * /ui delhome &lt;название&gt;
+ * HomeCommand — handles home point commands:
+ * /ui sethome &lt;name&gt;
+ * /ui home &lt;name&gt;
+ * /ui delhome &lt;name&gt;
  * /ui listhomes
- * /ui ophomels &lt;игрок&gt;
- * /ui opdelhome &lt;игрок&gt; &lt;название&gt;
+ * /ui ophomels &lt;player&gt;
+ * /ui opdelhome &lt;player&gt; &lt;name&gt;
  */
 public final class HomeCommand {
 
@@ -269,7 +269,7 @@ public final class HomeCommand {
     }
 
     // ============================================================
-    // OPHOMELS — оператор: список домов игрока
+    // OPHOMELS — operator: list of a player's homes
     // ============================================================
     private static boolean executeOpHomeLs(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.ophomels")) {
@@ -317,7 +317,7 @@ public final class HomeCommand {
     }
 
     // ============================================================
-    // OPDELHOME — оператор: удалить дом игрока
+    // OPDELHOME — operator: delete a player's home
     // ============================================================
     private static boolean executeOpDelHome(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.opdelhome")) {

@@ -36,14 +36,14 @@ import java.util.List;
 /**
  * ⚡ Totem Charge System
  * <p>
- * <b>Механика:</b>
+ * <b>Mechanics:</b>
  * <ul>
- *   <li>Тотем + незеритовый скрап на наковальне → +1 заряд (Charge)</li>
- *   <li>При использовании тотема тратится 1 заряд вместо предмета</li>
- *   <li>Если заряд = 0 — тотем не работает</li>
- *   <li>Без PDC {@code TOTEM_CHARGE} — ванильное поведение (предмет потребляется)</li>
- *   <li>При фатальном уроне тотем срабатывает ДО смерти (через EntityDamageEvent)</li>
- *   <li>Лор тотема авто-добавляется при любом способе получения (пикап, клик, вход, открытие инвентаря + таск каждые 5с)</li>
+ *   <li>Totem + netherite scrap on an anvil → +1 charge</li>
+ *   <li>Using the totem spends 1 charge instead of the item</li>
+ *   <li>If charge = 0 — the totem does not work</li>
+ *   <li>Without PDC {@code TOTEM_CHARGE} — vanilla behavior (item is consumed)</li>
+ *   <li>On fatal damage the totem triggers BEFORE death (via EntityDamageEvent)</li>
+ *   <li>Totem lore is auto-added on any acquisition path (pickup, click, join, inventory open + a 5s task)</li>
  * </ul>
  */
 public class TotemChargeListener implements Listener {
@@ -51,7 +51,7 @@ public class TotemChargeListener implements Listener {
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
 
     // =========================
-    // НАКОВАЛЬНЯ: тотем + незеритовый скрап → +1 заряд
+    // ANVIL: totem + netherite scrap → +1 charge
     // =========================
     @EventHandler(priority = EventPriority.NORMAL)
     public void onPrepareAnvil(PrepareAnvilEvent event) {
@@ -84,7 +84,7 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // ⚡ ФАТАЛЬНЫЙ УРОН: перехватываем ДО смерти
+    // ⚡ FATAL DAMAGE: intercept BEFORE death
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFatalDamage(EntityDamageEvent event) {
@@ -129,7 +129,7 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // ИСПОЛЬЗОВАНИЕ ТОТЕМА: тратим заряд вместо предмета
+    // TOTEM USE: spend a charge instead of the item
     // =========================
     @EventHandler(priority = EventPriority.NORMAL)
     public void onEntityResurrect(EntityResurrectEvent event) {
@@ -170,7 +170,7 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // АКТИВАЦИЯ ТОТЕМА: списать заряд + эффекты
+    // TOTEM ACTIVATION: consume a charge + effects
     // =========================
     private static void activateTotem(Player player, ItemStack totem) {
         ItemMeta meta = totem.getItemMeta();
@@ -197,7 +197,7 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // ЭФФЕКТЫ ТОТЕМА
+    // TOTEM EFFECTS
     // =========================
     private static void applyTotemEffects(Player player) {
         player.setHealth(1.0);
@@ -233,7 +233,7 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // ПОДНЯТИЕ ПРЕДМЕТА
+    // ITEM PICKUP
     // =========================
     @EventHandler(priority = EventPriority.MONITOR)
     public void onItemPickup(EntityPickupItemEvent event) {
@@ -247,17 +247,17 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // ОТКРЫТИЕ ИНВЕНТАРЯ
+    // INVENTORY OPEN
     // =========================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
-        // При открытии любого инвентаря проверяем тотемы в инвентаре игрока
+        // When any inventory opens, check totems in the player's inventory
         ensureTotemLore(player);
     }
 
     // =========================
-    // КЛИК В ИНВЕНТАРЕ
+    // INVENTORY CLICK
     // =========================
     @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryClick(InventoryClickEvent event) {
@@ -284,7 +284,7 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // ВХОД В ИГРУ
+    // PLAYER JOIN
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -292,7 +292,7 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // УТИЛИТЫ
+    // UTILITIES
     // =========================
 
     private static boolean fixSingleTotemLore(ItemStack item) {
@@ -334,7 +334,7 @@ public class TotemChargeListener implements Listener {
     }
 
     // =========================
-    // ПЕРИОДИЧЕСКИЙ ТАСК (каждые 5 сек — defence-in-depth)
+    // PERIODIC TASK (every 5s — defence-in-depth)
     // =========================
     public static void startPeriodicLoreCheck() {
         new BukkitRunnable() {
@@ -344,11 +344,11 @@ public class TotemChargeListener implements Listener {
                     ensureTotemLore(player);
                 }
             }
-        }.runTaskTimer(Main.getInstance(), 100L, 100L); // каждые 5 секунд
+        }.runTaskTimer(Main.getInstance(), 100L, 100L); // every 5 seconds
     }
 
     // =========================
-    // СТОИМОСТЬ НАКОВАЛЬНИ
+    // ANVIL COST
     // =========================
     private static void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
         try {

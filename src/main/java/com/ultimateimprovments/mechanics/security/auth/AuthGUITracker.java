@@ -15,14 +15,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Трекинг состояний GUI авторизации и задачи сброса слотов.
+ * Tracks auth GUI states and slot-reset tasks.
  * <p>
- * Отслеживает:
- * - Какие игроки в меню выхода (logout)
- * - Какие игроки в меню смены пароля
- * - Какие игроки переключаются между GUI
- * - Какие игроки открывают auth GUI прямо сейчас
- * - Repeating-задачи для удержания звёздочки в слоте результата
+ * Tracks:
+ * - Which players are in the logout menu
+ * - Which players are in the change-password menu
+ * - Which players are switching between GUIs
+ * - Which players are opening the auth GUI right now
+ * - Repeating tasks that keep the star in the result slot
  */
 public class AuthGUITracker {
 
@@ -134,7 +134,7 @@ public class AuthGUITracker {
                         resetTasks.remove(uuid);
                         return;
                     }
-                    // Очищаем курсор — если предмет из anvil попал на курсор, убираем его
+                    // Clear the cursor — if an anvil item landed on the cursor, remove it
                     player.setItemOnCursor(null);
                     openInv.getTopInventory().setItem(2, AuthGUIItems.CONFIRM_STAR);
                     removeAuthItemsFromPlayer(player);
@@ -172,7 +172,7 @@ public class AuthGUITracker {
                         resetTasks.remove(uuid);
                         return;
                     }
-                    // Очищаем курсор — если предмет из anvil попал на курсор, убираем его
+                    // Clear the cursor — if an anvil item landed on the cursor, remove it
                     player.setItemOnCursor(null);
                     // Slot 1 (Barrier) must be set BEFORE slot 2 (Nether Star)
                     // because setItem in slot 1 triggers anvil result recalculation
@@ -214,7 +214,7 @@ public class AuthGUITracker {
                         resetTasks.remove(uuid);
                         return;
                     }
-                    // Очищаем курсор — если предмет из anvil попал на курсор, убираем его
+                    // Clear the cursor — if an anvil item landed on the cursor, remove it
                     player.setItemOnCursor(null);
                     openInv.getTopInventory().setItem(2, AuthGUIItems.LOGOUT_CONFIRM_STAR);
                     removeAuthItemsFromPlayer(player);
@@ -261,10 +261,10 @@ public class AuthGUITracker {
      * Paper often fails to fully cancel anvil result slot clicks —
      * items can end up in the player's cursor or inventory.
      * <p>
-     * {@code updateInventory()} отправляет пакет синхронизации клиенту,
-     * чтобы сбросить некорректное состояние курсора на стороне клиента.
-     * Без этого Paper может проигнорировать {@code setCancelled(true)}
-     * для result slot наковальни и предмет останется на курсоре.
+     * {@code updateInventory()} sends a sync packet to the client
+     * to reset an invalid cursor state on the client side.
+     * Without this, Paper may ignore {@code setCancelled(true)}
+     * for the anvil result slot and the item stays on the cursor.
      */
     public static void antiDupCleanup(Player player) {
         player.setItemOnCursor(null);

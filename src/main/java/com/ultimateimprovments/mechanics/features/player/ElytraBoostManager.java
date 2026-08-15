@@ -29,33 +29,33 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ElytraBoost — нажатие пробела во время полёта на элитрах даёт
- * МАКСИМАЛЬНЫЙ буст скорости (без расхода фейерверков).
+ * ElytraBoost — pressing SPACE while gliding on an elytra gives a
+ * MAXIMUM speed boost (without consuming fireworks).
  * <p>
- * В Paper 1.21.4 нажатие пробела в полёте НЕ триггерит PlayerToggleFlightEvent.
- * Вместо этого сервер вызывает {@code jumpFromElytra()}, который резко меняет
- * Y-скорость игрока с отрицательной (падение) на положительную (подъём).
+ * In Paper 1.21.4 pressing SPACE while gliding does NOT trigger PlayerToggleFlightEvent.
+ * Instead the server calls {@code jumpFromElytra()}, which abruptly changes the
+ * player's Y-velocity from negative (falling) to positive (rising).
  * <p>
- * Детектим это через {@link PlayerMoveEvent}: если игрок резко перестал падать
- * и начал подниматься — значит был нажат пробел.
+ * We detect this via {@link PlayerMoveEvent}: if the player abruptly stopped falling
+ * and started rising — SPACE was pressed.
  * <p>
- * Дополнительно обрабатываем {@link PlayerToggleFlightEvent} на случай,
- * если в будущих версиях Paper он снова начнёт срабатывать.
+ * We also handle {@link PlayerToggleFlightEvent} in case future Paper
+ * versions start firing it again.
  */
 public class ElytraBoostManager implements Listener {
 
     private static ElytraBoostManager instance;
 
-    /** Предыдущая Y-дельта для каждого игрока (для детекции рывка). */
+    /** Previous Y-delta for each player (for burst detection). */
     private static final Map<UUID, Double> lastYDelta = new HashMap<>();
 
-    /** Кулдаун буста (мс) — небольшой, чтобы не спамить тики. */
+    /** Boost cooldown (ms) — small, so ticks aren't spammed. */
     private static final long BOOST_COOLDOWN_MS = 200;
 
-    /** Время последнего буста для каждого игрока. */
+    /** Last boost time for each player. */
     private static final Map<UUID, Long> lastBoostTime = new HashMap<>();
 
-    /** Игроки, отключившие автоматический буст при прыжке (/ui togglefly). */
+    /** Players who disabled the automatic boost on jump (/ui togglefly). */
     private static final Set<UUID> flyDisabled = ConcurrentHashMap.newKeySet();
 
     // =========================
@@ -90,7 +90,7 @@ public class ElytraBoostManager implements Listener {
     }
 
     // =========================
-    // DETECT SPACE VIA Y-DELTA (работает в Paper 1.21.4)
+    // DETECT SPACE VIA Y-DELTA (works in Paper 1.21.4)
     // =========================
 
     @EventHandler
@@ -98,16 +98,16 @@ public class ElytraBoostManager implements Listener {
         Player player = event.getPlayer();
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
 
-        // Проверка toggle: если игрок отключил буст — пропускаем
+        // Toggle check: if the player disabled the boost — skip
         if (flyDisabled.contains(player.getUniqueId())) return;
 
-        // Должен быть нагрудник/элитра с glider-компонентом
+        // Must have a chestplate/elytra with the glider component
         ItemStack chest = player.getInventory().getChestplate();
         if (chest == null) return;
         ItemMeta meta = chest.getItemMeta();
         if (meta == null || !meta.isGlider()) return;
 
-        // Должны быть в воздухе
+        // Must be in the air
         if (player.isOnGround()) return;
 
         double yDelta = event.getTo().getY() - event.getFrom().getY();
@@ -116,20 +116,20 @@ public class ElytraBoostManager implements Listener {
 
         if (prevDelta == null) return;
 
-        // Кулдаун
+        // Cooldown
         long now = System.currentTimeMillis();
         if (now - lastBoostTime.getOrDefault(player.getUniqueId(), 0L) < BOOST_COOLDOWN_MS) return;
 
-        // Детекция: резкая смена с падения на подъём
-        // jumpFromElytra() даёт Y-скорость ~0.4
-        // Используем разницу prevDelta - yDelta, чтобы не зависеть от тикрейта
+        // Detection: abrupt change from falling to rising
+        // jumpFromElytra() gives a Y-velocity of ~0.4
+        // Use the prevDelta - yDelta difference to be independent of the tickrate
         if (prevDelta < -0.1 && yDelta - prevDelta > 0.4) {
             applyBoost(player, now);
         }
     }
 
     // =========================
-    // FALLBACK: PlayerToggleFlightEvent (на случай если сработает)
+    // FALLBACK: PlayerToggleFlightEvent (in case it fires)
     // =========================
 
     @EventHandler(ignoreCancelled = true)
@@ -138,23 +138,23 @@ public class ElytraBoostManager implements Listener {
         Player player = event.getPlayer();
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return;
 
-        // Проверка toggle: если игрок отключил буст — пропускаем
+        // Toggle check: if the player disabled the boost — skip
         if (flyDisabled.contains(player.getUniqueId())) return;
 
-        // Проверяем нагрудник/элитры с glider-компонентом
+        // Check the chestplate/elytra with the glider component
         ItemStack chest = player.getInventory().getChestplate();
         if (chest == null) return;
         ItemMeta meta = chest.getItemMeta();
         if (meta == null || !meta.isGlider()) return;
 
-        // Защита: если игрок НЕ летел до этого — пропускаем (начало полёта)
+        // Protection: if the player was NOT gliding before — skip (flight start)
         if (!player.isGliding() && !lastYDelta.containsKey(player.getUniqueId())) return;
 
-        // Кулдаун
+        // Cooldown
         long now = System.currentTimeMillis();
         if (now - lastBoostTime.getOrDefault(player.getUniqueId(), 0L) < BOOST_COOLDOWN_MS) return;
 
-        // Отменяем событие и возвращаем полёт
+        // Cancel the event and restore gliding
         event.setCancelled(true);
         player.setGliding(true);
         applyBoost(player, now);
@@ -167,15 +167,15 @@ public class ElytraBoostManager implements Listener {
     private static void applyBoost(Player player, long now) {
         lastBoostTime.put(player.getUniqueId(), now);
 
-        // МАКСИМАЛЬНЫЙ буст: сильный разгон вперёд + вверх
+        // MAXIMUM boost: strong acceleration forward + up
         Vector direction = player.getLocation().getDirection();
         Vector boost = direction.clone().multiply(5.0).setY(Math.max(direction.getY() * 0.5 + 1.2, 0.8));
         player.setVelocity(player.getVelocity().add(boost));
 
-        // Убеждаемся что полёт продолжается
+        // Make sure gliding continues
         player.setGliding(true);
 
-        // Эффекты
+        // Effects
         var loc = player.getLocation();
         player.getWorld().spawnParticle(Particle.FIREWORK, loc, 40, 1.0, 1.0, 1.0, 0.1);
         player.getWorld().spawnParticle(Particle.FLASH, loc, 1, 0, 0, 0, 0, Color.WHITE);
@@ -249,8 +249,8 @@ public class ElytraBoostManager implements Listener {
     // =========================
 
     /**
-     * Проверяет, был ли игрок забущен плагином в последние windowMs миллисекунд.
-     * Используется античит-проверкой ElytraCheck, чтобы не флагать легитимные бусты.
+     * Checks whether the player was boosted by the plugin in the last windowMs milliseconds.
+     * Used by the ElytraCheck anti-cheat check so legitimate boosts are not flagged.
      */
     public static boolean isRecentlyBoosted(UUID uuid, long windowMs) {
         Long lastTime = lastBoostTime.get(uuid);

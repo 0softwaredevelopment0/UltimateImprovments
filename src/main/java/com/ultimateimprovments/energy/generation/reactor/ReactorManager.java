@@ -20,12 +20,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Оркестратор реактора тёмного синтеза (Dark Fusion Core / Р.Т.С).
+ * Orchestrator of the Dark Fusion Core reactor (D.F.C).
  * <p>
- * Управляет состоянием, симуляцией, сохранением и тиками реактора.
- * Визуальные эффекты, звуки и обновление табличек делегированы {@link ReactorDisplay}.<br>
- * Сохранение/загрузка — {@link ReactorPersistence}+{@link ReactorState}.<br>
- * Конфигурация — {@link ReactorConfig}.
+ * Manages the reactor's state, simulation, saving and ticks.
+ * Visual effects, sounds and sign updates are delegated to {@link ReactorDisplay}.<br>
+ * Save/load — {@link ReactorPersistence}+{@link ReactorState}.<br>
+ * Configuration — {@link ReactorConfig}.
  */
 public class ReactorManager {
 
@@ -333,14 +333,14 @@ public class ReactorManager {
             this.reactorId = "REACTOR-" + normalized.getBlockX()
                     + "-" + normalized.getBlockY()
                     + "-" + normalized.getBlockZ();
-            // Marker entity для идентификации реактора
+            // Marker entity for reactor identification
             StructureMarker.place(normalized, "reactor", UUID.randomUUID());
             saveToDb();
         } else {
             if (reactorLocation != null) {
                 StructureMarker.removeAt(reactorLocation);
 
-                // Удаляем кабельный узел, созданный реактором для выдачи энергии
+                // Remove the cable node created by the reactor for energy output
                 Location coreLoc = reactorLocation.clone().add(0, -1, 0);
                 if (CableNetwork.exists(coreLoc)) {
                     CableNetwork.removeNode(coreLoc);
@@ -386,7 +386,7 @@ public class ReactorManager {
             broadcast(heating ? "§6🔥 §eНагрев включён" : "§7🔥 §fНагрев выключен");
             display.setHeating(heating);
 
-            // 🏆 Достижение: start_dfc — реактор запущен
+            // 🏆 Advancement: start_dfc — reactor started
             if (heating && !advStartDfcGranted) {
                 advStartDfcGranted = true;
                 Bukkit.getScheduler().runTask(Main.getInstance(), () ->
@@ -406,7 +406,7 @@ public class ReactorManager {
                 coreTemp += heatRate;
                 noFuelWarnTick = 0;
 
-                // 🏆 Достижение: start_dfc — реактор запущен (если ещё не выдано)
+                // 🏆 Advancement: start_dfc — reactor started (if not granted yet)
                 if (!advStartDfcGranted) {
                     advStartDfcGranted = true;
                     Bukkit.getScheduler().runTask(Main.getInstance(), () ->
@@ -475,13 +475,13 @@ public class ReactorManager {
                         && pz >= bz - 2 && pz <= bz + 2) {
                     RadiationManager.addRadiation(player, radiationAmount);
 
-                    // 🏆 Достижение: inside_dfc — игрок внутри реактора
+                    // 🏆 Advancement: inside_dfc — player inside the reactor
                     if (advInsideDfcGranted.add(player.getUniqueId())) {
                         Bukkit.getScheduler().runTask(Main.getInstance(), () ->
                             grantAdvancement(player, "datapack/inside_dfc"));
                     }
 
-                    // 🏆 Достижение: burn_inside_dfc — смертельная доза внутри реактора
+                    // 🏆 Advancement: burn_inside_dfc — lethal dose inside the reactor
                     if (RadiationManager.getRadiation(player) >= 6400) {
                         if (advBurnInsideDfcGranted.add(player.getUniqueId())) {
                             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
@@ -657,7 +657,7 @@ public class ReactorManager {
             coreCaseInt = Math.max(0, coreCaseInt - caseIntDecayTempRate);
         }
 
-        // 🏆 Достижение: dfc_unstable — первая деградация целостности
+        // 🏆 Advancement: dfc_unstable — first integrity degradation
         Bukkit.getScheduler().runTask(Main.getInstance(), this::checkDfcUnstable);
     }
 
@@ -794,7 +794,7 @@ public class ReactorManager {
         broadcast("§4☠ §cКритический износ реактора! §f" + wearChatCountdown + "§c сек до детонации...");
         broadcast("§4☠ §cПротокол самоуничтожения инициирован.");
 
-        // 🏆 Достижение: dfc_self_destruct — самоуничтожение
+        // 🏆 Advancement: dfc_self_destruct — self-destruction
         if (!advDfcSelfDestructGranted) {
             advDfcSelfDestructGranted = true;
             grantAdvancementAll("datapack/dfc_self_destruct");
@@ -876,7 +876,7 @@ public class ReactorManager {
         saveToDb();
         broadcast("§4☢ §cРецепт слияния готов! Древний обломок выброшен в центре реактора.");
 
-        // 🏆 Достижение: complete_dfc_recipe — рецепт завершён
+        // 🏆 Advancement: complete_dfc_recipe — recipe completed
         if (!advCompletedRecipeGranted) {
             advCompletedRecipeGranted = true;
             grantAdvancementAll("datapack/complete_dfc_recipe");
@@ -914,13 +914,13 @@ public class ReactorManager {
 
         broadcast("§4☠ §cРасплавление! Ядро реактора разрушено!");
 
-        // 🏆 Достижение: explode_dfc — взрыв реактора
+        // 🏆 Advancement: explode_dfc — reactor explosion
         if (!advExplodeDfcGranted) {
             advExplodeDfcGranted = true;
             grantAdvancementAll("datapack/explode_dfc");
         }
 
-        // 🏆 Достижение: one_time_heater — игрок внутри реактора во время взрыва
+        // 🏆 Advancement: one_time_heater — player inside the reactor during the explosion
         if (reactorLocation != null) {
             int bx = reactorLocation.getBlockX(), by = reactorLocation.getBlockY(), bz = reactorLocation.getBlockZ();
             Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);

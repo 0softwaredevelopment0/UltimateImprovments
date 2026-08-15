@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 📋 BlacklistSubcommand — обработчик /ui blacklist.
+ * 📋 BlacklistSubcommand — handler for /ui blacklist.
  * <p>
- * Команды:
+ * Commands:
  * <pre>
- * /ui blacklist on        — включить блэклист
- * /ui blacklist off       — выключить блэклист
- * /ui blacklist add <ник> — добавить игрока
- * /ui blacklist remove <ник> — удалить игрока
- * /ui blacklist list      — показать список
+ * /ui blacklist on        — enable the blacklist
+ * /ui blacklist off       — disable the blacklist
+ * /ui blacklist add <name> — add a player
+ * /ui blacklist remove <name> — remove a player
+ * /ui blacklist list      — show the list
  * </pre>
  */
 public final class BlacklistSubcommand {

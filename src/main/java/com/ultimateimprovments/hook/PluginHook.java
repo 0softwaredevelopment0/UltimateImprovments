@@ -4,16 +4,16 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 
 /**
- * Утилита для безопасных хуков к softdepend-плагинам.
+ * Utility for safe hooks to softdepend plugins.
  * <p>
- * Позволяет проверить наличие плагина {@code Bukkit.getPluginManager().getPlugin()}
- * ДО того, как загружаются классы с зависимостью от этого плагина.
- * Это предотвращает {@link NoClassDefFoundError} при отсутствии softdepend-плагина.
+ * Lets you check whether a plugin is present via {@code Bukkit.getPluginManager().getPlugin()}
+ * BEFORE classes depending on that plugin are loaded.
+ * This prevents {@link NoClassDefFoundError} when a softdepend plugin is missing.
  * <p>
- * Пример:
+ * Example:
  * <pre>{@code
  * if (PluginHook.check("Vault", "Economy")) {
- *     new VaultIntegration(plugin);  // безопасно — Vault есть
+ *     new VaultIntegration(plugin);  // safe — Vault is present
  * }
  * }</pre>
  */
@@ -22,14 +22,14 @@ public final class PluginHook {
     private PluginHook() {}
 
     /**
-     * Проверяет, загружен ли плагин с указанным именем.
+     * Checks whether the plugin with the given name is loaded.
      * <p>
-     * Если плагин не найден — логирует чистое сообщение без stack trace
-     * и возвращает {@code false}. Хук следует пропустить.
+     * If the plugin is not found — logs a clean message without a stack trace
+     * and returns {@code false}. The hook should be skipped.
      *
-     * @param pluginName  имя плагина (из plugin.yml, например "Vault")
-     * @param featureName название фичи/хука для сообщения в консоль
-     * @return {@code true} если плагин загружен, {@code false} если нет
+     * @param pluginName  the plugin name (from plugin.yml, e.g. "Vault")
+     * @param featureName the feature/hook name for the console message
+     * @return {@code true} if the plugin is loaded, {@code false} otherwise
      */
     public static boolean check(String pluginName, String featureName) {
         if (Bukkit.getPluginManager().getPlugin(pluginName) == null) {
@@ -41,8 +41,8 @@ public final class PluginHook {
     }
 
     /**
-     * Проверяет, загружен ли плагин, и возвращает {@code false} если нет.
-     * Упрощённая версия без кастомного имени фичи — использует имя плагина.
+     * Checks whether the plugin is loaded and returns {@code false} if not.
+     * Simplified version without a custom feature name — uses the plugin name.
      */
     public static boolean check(String pluginName) {
         return check(pluginName, pluginName);

@@ -12,11 +12,11 @@ import java.sql.ResultSet;
 import java.util.UUID;
 
 /**
- * SudoDatabase — хранение sudo-паролей администраторов.
+ * SudoDatabase — stores admin sudo passwords.
  * <p>
- * Отдельная таблица {@code sudo_auth} (не зависит от системы auth — sudo работает
- * даже если авторизация отключена или заменена другим плагином).
- * Хэширование — Argon2id, идентично {@code AuthDatabase}.
+ * A separate {@code sudo_auth} table (independent of the auth system — sudo works
+ * even if authentication is disabled or replaced by another plugin).
+ * Hashing — Argon2id, identical to {@code AuthDatabase}.
  */
 public class SudoDatabase {
 
@@ -129,7 +129,7 @@ public class SudoDatabase {
     }
 
     // =========================
-    // DELETE (сброс пароля)
+    // DELETE (password reset)
     // =========================
     public static boolean deleteRegistration(UUID uuid) {
         try (Connection con = DatabaseManager.getConnection();

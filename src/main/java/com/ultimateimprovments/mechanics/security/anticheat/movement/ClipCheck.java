@@ -11,8 +11,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * Clip — прохождение сквозь блоки (noclip/phase).
- * Детекция: телепортация через сплошные блоки за один тик.
+ * Clip — passing through blocks (noclip/phase).
+ * Detection: teleporting through solid blocks within one tick.
  */
 public class ClipCheck extends AbstractCheck {
 

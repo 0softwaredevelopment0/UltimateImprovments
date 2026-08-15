@@ -28,10 +28,10 @@ public class WaypointManager extends BukkitRunnable {
         if (!enabled) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            // Waypoint color dark_red — это клиентская фича
-            // В Paper API нет прямого управления waypoints,
-            // но мы можем отправить packet или использовать scoreboard
-            // Пока просто заглушка — функционал остаётся в датапаке
+            // Waypoint color dark_red — this is a client-side feature
+            // The Paper API has no direct waypoint management,
+            // but we can send a packet or use the scoreboard
+            // For now just a stub — the functionality stays in the datapack
         }
     }
 }

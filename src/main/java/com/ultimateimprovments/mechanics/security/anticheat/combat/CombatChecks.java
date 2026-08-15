@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Factory — создаёт все combat-проверки.
+ * Factory — creates all combat checks.
  */
 public class CombatChecks {
 

@@ -22,27 +22,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Кастомная система чата.
+ * Custom chat system.
  * <p>
- * Перехватывает AsyncPlayerChatEvent и форматирует сообщение по шаблону
- * из config.yml. Поддерживает:
+ * Intercepts AsyncPlayerChatEvent and formats the message by the template
+ * from config.yml. Supports:
  * <ul>
- *   <li>MiniMessage в формате и сообщениях игроков</li>
- *   <li>Встроенные плейсхолдеры %player_name%, %world_name% и т.д.</li>
- *   <li>PAPI плейсхолдеры %luckperms_prefix%, %player_world% и т.д.</li>
- *   <li>Режим static — единый формат для всех</li>
- *   <li>Режим per-group — свой формат для каждой группы LuckPerms</li>
- *   <li>Режим per-world — свой формат для каждого мира</li>
- *   <li>Пинги (@everyone, @ник, @non-op, @is-admin, @is-non-admin)</li>
+ *   <li>MiniMessage in the format and player messages</li>
+ *   <li>Built-in placeholders %player_name%, %world_name% etc.</li>
+ *   <li>PAPI placeholders %luckperms_prefix%, %player_world% etc.</li>
+ *   <li>Static mode — a single format for everyone</li>
+ *   <li>Per-group mode — a format for each LuckPerms group</li>
+ *   <li>Per-world mode — a format for each world</li>
+ *   <li>Pings (@everyone, @nick, @non-op, @is-admin, @is-non-admin)</li>
  * </ul>
- * По умолчанию система ОТКЛЮЧЕНА (chat.enabled: false).
+ * By default the system is DISABLED (chat.enabled: false).
  */
 public class ChatManager implements Listener {
 
     private static ChatManager instance;
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
-    /** Режим чата. */
+    /** Chat mode. */
     enum Mode { STATIC, PER_GROUP, PER_WORLD }
 
     private boolean enabled;
@@ -101,7 +101,7 @@ public class ChatManager implements Listener {
         this.defaultFormat = cfg.getString("chat.format",
                 "<dark_gray>[</dark_gray><white>%player_name%</white><dark_gray>]</dark_gray> <white>%message%</white>");
 
-        // ===== Per-group (LuckPerms) — загружается всегда для /ui chat reload =====
+        // ===== Per-group (LuckPerms) — always loaded for /ui chat reload =====
         this.groupFormats = new HashMap<>();
         if (cfg.isConfigurationSection("chat.groups.formats")) {
             for (String key : cfg.getConfigurationSection("chat.groups.formats").getKeys(false)) {
@@ -113,7 +113,7 @@ public class ChatManager implements Listener {
         }
         this.defaultGroupFormat = cfg.getString("chat.groups.default", defaultFormat);
 
-        // ===== Per-world — загружается всегда =====
+        // ===== Per-world — always loaded =====
         this.worldFormats = new HashMap<>();
         if (cfg.isConfigurationSection("chat.worlds")) {
             for (String key : cfg.getConfigurationSection("chat.worlds").getKeys(false)) {
@@ -136,16 +136,16 @@ public class ChatManager implements Listener {
         Player player = event.getPlayer();
 
         // =========================
-        // 🛡 MODERATION SESSION — не отправляем в чат сообщения модератора.
-        // НЕ отменяем ивент — ReportManager (тоже LOWEST priority) сам отменит
-        // и обработает сообщение (заключение/вердикт).
+        // 🛡 MODERATION SESSION — don't send the moderator's messages to chat.
+        // Do NOT cancel the event — ReportManager (also LOWEST priority) will cancel
+        // it itself and process the message (conclusion/verdict).
         // =========================
         if (ReportManager.isInModeration(player)) {
             return;
         }
 
         // =========================
-        // 🛡 MUTE CHECK — проверяем, не замучен ли игрок
+        // 🛡 MUTE CHECK — check whether the player is muted
         // =========================
         if (com.ultimateimprovments.punish.PunishJoinListener.isMuted(player)) {
             event.setCancelled(true);
@@ -180,7 +180,7 @@ public class ChatManager implements Listener {
         String resolved = PlaceholderResolver.resolve(format, player);
 
         // =========================
-        // 🔔 PING PROCESSING — обработка @everyone, @ник, @non-op, @is-admin
+        // 🔔 PING PROCESSING — handle @everyone, @nick, @non-op, @is-admin
         // =========================
         ChatPingManager.PingResult pingResult = ChatPingManager.processPings(rawMessage, player);
         String pingedMessage = pingResult.formattedMessage();
@@ -203,11 +203,11 @@ public class ChatManager implements Listener {
             String finalFormat = resolved.replace("%message%", serializedMsg);
             broadcast = MessageUtil.parse(finalFormat);
         } else {
-            // playerMiniMessage: false — экранируем < и > только в тексте игрока,
-            // MiniMessage-теги от пингов (server-generated) вставляем уже в формат
+            // playerMiniMessage: false — escape < and > only in the player's text,
+            // ping MiniMessage tags (server-generated) are inserted into the format already built
             String escapedRaw = rawMessage.replace("<", "\\<").replace(">", "\\>");
-            // Если есть пинги — применяем замену @меток на уже готовые MiniMessage-теги
-            // на экранированное сообщение, чтобы теги пингов не экранировались
+            // If there are pings — apply the @tag replacement with already-built MiniMessage tags
+            // onto the escaped message, so the ping tags don't get escaped
             ChatPingManager.PingResult pingResultEscaped = ChatPingManager.processPings(escapedRaw, player);
             String finalMsg = pingResultEscaped.formattedMessage();
             String finalFormat = resolved.replace("%message%", finalMsg);
@@ -222,8 +222,8 @@ public class ChatManager implements Listener {
         // Cancel original event and broadcast manually
         event.setCancelled(true);
 
-        // ⚠ Paper 1.21.4 может не заполнять recipients
-        // Если recipients пуст — шлём всем онлайн
+        // ⚠ Paper 1.21.4 may not fill recipients
+        // If recipients is empty — send to all online players
         java.util.Set<Player> recipients = event.getRecipients();
         if (recipients == null || recipients.isEmpty()) {
             for (Player online : Bukkit.getOnlinePlayers()) {
@@ -249,7 +249,7 @@ public class ChatManager implements Listener {
     }
 
     /**
-     * Парсит сообщение игрока в Component (с учётом пингов и MiniMessage).
+     * Parses the player's message into a Component (taking pings and MiniMessage into account).
      */
     private Component parseMessageComponentForPing(String msg, Player player) {
         if (messagePlaceholders) {

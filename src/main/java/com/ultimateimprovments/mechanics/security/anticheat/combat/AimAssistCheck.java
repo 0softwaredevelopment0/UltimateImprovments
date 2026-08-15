@@ -10,8 +10,8 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import java.util.Deque;
 
 /**
- * AimAssist — плавная помощь прицеливания.
- * Детекция: аномально ровные микро-изменения yaw перед атакой.
+ * AimAssist — smooth aim assistance.
+ * Detection: abnormally even micro yaw changes right before an attack.
  */
 public class AimAssistCheck extends AbstractCheck {
 

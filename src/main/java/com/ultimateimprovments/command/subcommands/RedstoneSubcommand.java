@@ -17,15 +17,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * /ui redstone — управление вечно заблокированными редстоун-чанками.
+ * /ui redstone — manage permanently redstone-blocked chunks.
  * <p>
- *   /ui redstone list [страница]  — список заблокированных чанков (5 на страницу).
- *       Координаты центра чанка кликабельны (выполняют /tp @s).
- *       Кнопка «Разблокировать» кликабельна (выполняет /ui redstone unlock <номер>).
- *       Кнопки [<] и [>] листают страницы.
- *   /ui redstone unlock <номер>   — разблокировать чанк.
+ *   /ui redstone list [page]  — list of blocked chunks (5 per page).
+ *       Chunk center coordinates are clickable (run /tp @s).
+ *       The "Unlock" button is clickable (runs /ui redstone unlock <number>).
+ *       The [<] and [>] buttons flip pages.
+ *   /ui redstone unlock <number>   — unblock a chunk.
  * <p>
- * Право: ui.command.redstone.list
+ * Permission: ui.command.redstone.list
  */
 public final class RedstoneSubcommand {
 
@@ -64,7 +64,7 @@ public final class RedstoneSubcommand {
                     try {
                         page = Math.max(1, Integer.parseInt(args[2]));
                     } catch (NumberFormatException ignored) {
-                        // невалидная страница — покажем первую
+                        // Invalid page — show the first one
                     }
                 }
                 showList(sender, guard, page);
@@ -110,14 +110,14 @@ public final class RedstoneSubcommand {
                 BlockedChunk bc = chunks.get(i);
                 ChunkKey key = bc.key();
 
-                // Координаты центра чанка — кликабельны (/tp @s)
+                // Chunk center coordinates — clickable (/tp @s)
                 Component coords = MessageUtil.parse(
                         "<aqua>" + key.centerX() + "</aqua><gray>,</gray> <aqua>" + key.centerZ() + "</aqua>"
                 ).clickEvent(ClickEvent.runCommand("/tp @s " + key.centerX() + " " + safeY(key) + " " + key.centerZ()))
                  .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
                          MessageUtil.parse("<green>Click to teleport</green>\n<gray>/tp @s " + key.centerX() + " " + safeY(key) + " " + key.centerZ() + "</gray>")));
 
-                // Кнопка разблокировки — кликабельна
+                // Unlock button — clickable
                 Component unlockBtn = MessageUtil.parse(
                         "<dark_green>[</dark_green><green>✔ Unlock</green><dark_green>]</dark_green>"
                 ).clickEvent(ClickEvent.runCommand("/ui redstone unlock " + bc.number()))
@@ -133,7 +133,7 @@ public final class RedstoneSubcommand {
             }
         }
 
-        // Пагинация: [<] страница [>]
+        // Pagination: [<] page [>]
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>┃</dark_gray>"
         ));
@@ -164,8 +164,8 @@ public final class RedstoneSubcommand {
     }
 
     /**
-     * Безопасная Y-координата для телепортации: высшая точка мира над центром чанка,
-     * fallback на 320 если мир не найден.
+     * Safe Y coordinate for teleportation: the highest world point above the chunk center,
+     * falls back to 320 if the world is not found.
      */
     private static int safeY(ChunkKey key) {
         World world = Bukkit.getWorld(key.world());

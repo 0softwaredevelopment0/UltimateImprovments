@@ -54,8 +54,8 @@ public class AntimatterManager implements Listener {
     }
 
     // =========================
-    // RIGHT CLICK — МГНОВЕННЫЙ ВЗРЫВ
-    // Срабатывает СРАЗУ при ПКМ, удаляет колбу из руки
+    // RIGHT CLICK — INSTANT EXPLOSION
+    // Fires IMMEDIATELY on right click, removes the flask from the hand
     // =========================
     @EventHandler(ignoreCancelled = true)
     public void onAntimatterInteract(PlayerInteractEvent e) {
@@ -75,7 +75,7 @@ public class AntimatterManager implements Listener {
         Location loc = player.getLocation();
 
         // =========================
-        // 1. УДАЛЯЕМ КОЛБУ ИЗ РУКИ (1 шт.)
+        // 1. REMOVE THE FLASK FROM THE HAND (1 piece)
         // =========================
         if (inMainHand) {
             ItemStack mainHand = player.getInventory().getItemInMainHand();
@@ -88,7 +88,7 @@ public class AntimatterManager implements Listener {
         }
 
         // =========================
-        // 2. ВЗРЫВ (визуальный крипер + настоящий взрыв)
+        // 2. EXPLOSION (visual creeper + real explosion)
         // =========================
         loc.getWorld().spawn(loc, Creeper.class, c -> {
             c.setMaxFuseTicks(1);
@@ -101,10 +101,10 @@ public class AntimatterManager implements Listener {
         loc.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, 64, 0, 0, 0, 0.1);
 
         // =========================
-        // 3. РАДИАЦИЯ ПО ДИСТАНЦИИ
-        //    В эпицентре: смертельная доза (6400+)
-        //    На краю взрыва: 0
-        //    Линейная интерполяция
+        // 3. RADIATION BY DISTANCE
+        //    At the epicenter: lethal dose (6400+)
+        //    At the edge of the blast: 0
+        //    Linear interpolation
         // =========================
         int maxRad = 6400;
         double radius = explosionRadius;
@@ -119,13 +119,13 @@ public class AntimatterManager implements Listener {
         }
 
         // =========================
-        // 4. ДОСТИЖЕНИЕ: react_with_antimatter
+        // 4. ADVANCEMENT: react_with_antimatter
         // =========================
         grantAdvancement(player, ADVANCEMENT_KEY);
     }
 
     // =========================
-    // DROP — защита от выпадения (старая логика)
+    // DROP — protection from dropping (old logic)
     // =========================
     @EventHandler(ignoreCancelled = true)
     public void onAntimatterDrop(PlayerDropItemEvent e) {
@@ -137,7 +137,7 @@ public class AntimatterManager implements Listener {
         Location loc = e.getItemDrop().getLocation();
         e.getItemDrop().remove();
 
-        // Визуальный крипер + взрыв
+        // Visual creeper + explosion
         loc.getWorld().spawn(loc, Creeper.class, c -> {
             c.setMaxFuseTicks(1);
             c.setFuseTicks(1);
@@ -147,7 +147,7 @@ public class AntimatterManager implements Listener {
         loc.getWorld().createExplosion(loc, explosionRadius, setFire, breakBlocks);
         loc.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, 64, 0, 0, 0, 0.1);
 
-        // Радиация по дистанции
+        // Radiation by distance
         int maxRad = 6400;
         double radius = explosionRadius;
         for (Player nearby : Bukkit.getOnlinePlayers()) {
@@ -160,7 +160,7 @@ public class AntimatterManager implements Listener {
             }
         }
 
-        // Достижение для ближайшего игрока
+        // Advancement for the nearest player
         Player nearest = null;
         double nearestDist = Double.MAX_VALUE;
         for (Player nearby : Bukkit.getOnlinePlayers()) {

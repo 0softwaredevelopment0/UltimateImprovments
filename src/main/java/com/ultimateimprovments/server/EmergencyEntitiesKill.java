@@ -17,23 +17,23 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * EmergencyEntitiesKill — единая механика очистки сущностей при перегрузке.
+ * EmergencyEntitiesKill — unified entity cleanup mechanic on overload.
  * <p>
- * Если MSPT выше порога (по умолчанию 50ms) — плагин удаляет тип сущностей
- * с самой высокой нагрузкой (самый частый не-игрок тип). На следующей проверке
- * (раз в секунду) нагрузка пересчитывается: если она всё ещё выше порога —
- * удаляется следующий по нагрузке тип, и так до стабилизации ниже порога.
+ * If MSPT is above the threshold (default 50ms) — the plugin removes the entity type
+ * with the highest load (the most common non-player type). On the next check
+ * (once per second) the load is recalculated: if it is still above the threshold —
+ * the next highest-load type is removed, and so on until it stabilizes below the threshold.
  */
 public class EmergencyEntitiesKill extends BukkitRunnable {
 
-    // ===== НАСТРОЙКИ (загружаются из config.yml) =====
+    // ===== SETTINGS (loaded from config.yml) =====
     private boolean enabled = true;
     private double msptThreshold = 50.0;
     private int entityLimit = 1000;
     private List<String> killWorlds = new ArrayList<>();
     private boolean logEnabled = true;
 
-    // ===== СОСТОЯНИЕ =====
+    // ===== STATE =====
     private static EmergencyEntitiesKill instance;
 
     public EmergencyEntitiesKill() {
@@ -72,15 +72,15 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         }
         if (totalEntities < entityLimit) return;
 
-        // Единая механика: удаляем тип с самой высокой нагрузкой.
-        // Следующий вызов (через 1 сек) пересчитает MSPT — если он всё ещё выше
-        // порога, удалится следующий по нагрузке тип. Так повторяется до спада.
+        // Unified mechanic: remove the type with the highest load.
+        // The next call (after 1s) recalculates MSPT — if it is still above
+        // the threshold, the next highest-load type is removed. This repeats until it drops.
         removeMostCommonEntities(worlds, mspt);
     }
 
     /**
-     * Возвращает список миров, в которых разрешено удаление сущностей.
-     * Если killWorlds пуст — возвращает все миры.
+     * Returns the list of worlds where entity removal is allowed.
+     * If killWorlds is empty — returns all worlds.
      */
     private List<World> getRelevantWorlds() {
         List<World> allWorlds = Bukkit.getWorlds();
@@ -96,14 +96,14 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
     }
 
     /**
-     * Двухпроходное удаление самого частого не-игрок-типа сущностей:
-     * 1-й проход: подсчёт + поиск самого частого типа (один цикл)
-     * 2-й проход: удаление всех сущностей этого типа
+     * Two-pass removal of the most common non-player entity type:
+     * pass 1: count + find the most common type (single loop)
+     * pass 2: remove all entities of that type
      */
     private void removeMostCommonEntities(List<World> worlds, double mspt) {
         Map<String, Integer> counts = new HashMap<>();
 
-        // Проход 1: подсчёт + поиск максимума за один проход
+        // Pass 1: count + find the maximum in one pass
         String topType = null;
         int maxCount = 0;
 
@@ -125,7 +125,7 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
 
         if (topType == null || maxCount == 0) return;
 
-        // Проход 2: удаление
+        // Pass 2: removal
         int removed = 0;
         for (World world : worlds) {
             for (Entity entity : world.getEntities()) {

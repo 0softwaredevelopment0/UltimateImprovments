@@ -9,10 +9,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.*;
 
 /**
- * AntiCheatModule — модульная система античита.
+ * AntiCheatModule — the modular anti-cheat system.
  * <p>
- * Инициализирует AntiCheatManager и регистрирует все проверки.
- * Проверки разделены на 4 категории: COMBAT, MOVEMENT, WORLD, MISC.
+ * Initializes AntiCheatManager and registers all checks.
+ * Checks are split into 4 categories: COMBAT, MOVEMENT, WORLD, MISC.
  */
 public class AntiCheatModule extends PluginModule {
 
@@ -24,10 +24,10 @@ public class AntiCheatModule extends PluginModule {
     protected void onInit(JavaPlugin plugin) throws Exception {
         boolean enabled = plugin.getConfig().getBoolean("anticheat.enabled", false);
 
-        // Диагностика: проверяем, есть ли в config.yml дубликаты anticheat: секции
+        // Diagnostics: check whether config.yml has duplicate anticheat: sections
         checkForDuplicates(plugin);
 
-        // 🔧 Автоматически чистим дубликаты anticheat: секций
+        // 🔧 Automatically clean up duplicate anticheat: sections
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         if (configFile.exists() && YamlDuplicateCleaner.cleanDuplicates(configFile, "config.yml")) {
             plugin.reloadConfig();
@@ -38,7 +38,7 @@ public class AntiCheatModule extends PluginModule {
         AntiCheatManager.init();
         AntiCheatManager acm = AntiCheatManager.getInstance();
 
-        // Устанавливаем enabled из конфига (чтобы /ui ac toggle on мог включить)
+        // Set enabled from config (so /ui ac toggle on can enable it)
         acm.setGlobalEnabled(enabled);
 
         // Register all checks (grouped log: one line for the whole anti-cheat)
@@ -55,7 +55,7 @@ public class AntiCheatModule extends PluginModule {
                 new com.ultimateimprovments.mechanics.security.anticheat.AntiCheatListener(), plugin);
 
         // Initialize NMS packet interception (injects ChannelDuplexHandler into Netty pipeline)
-        // MUST succeed — античит работает ТОЛЬКО с NMS перехватом
+        // MUST succeed — the anti-cheat works ONLY with NMS interception
         try {
             PacketHandler.init();
             if (PacketHandler.getInstance() == null) {
@@ -74,9 +74,9 @@ public class AntiCheatModule extends PluginModule {
     }
 
     /**
-     * Проверяет config.yml на дубликаты root-секции "anticheat:".
-     * Старый ConfigRepairManager (до фикса) мог насоздавать дубликатов,
-     * из-за чего SnakeYAML берёт последнее вхождение, игнорируя правки пользователя.
+     * Checks config.yml for duplicate "anticheat:" root sections.
+     * The old ConfigRepairManager (before the fix) could create duplicates,
+     * causing SnakeYAML to take the last occurrence, ignoring the user's edits.
      */
     private void checkForDuplicates(JavaPlugin plugin) {
         File configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -86,7 +86,7 @@ public class AntiCheatModule extends PluginModule {
         try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                // Считаем строки, где "anticheat:" в начале строки (возможно с отступом)
+                // Count lines where "anticheat:" is at the start of the line (possibly indented)
                 if (line.matches("^\\s*anticheat:\\s*$")) {
                     count++;
                 }

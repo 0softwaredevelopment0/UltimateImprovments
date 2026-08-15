@@ -35,7 +35,7 @@ public final class EnchantmentListener {
     static final long SWEEP_INTERVAL_TICKS = 2L;
 
     /** Target upward velocity while the jump key is held (blocks/tick).
-     *  ~0.15 б/т каждые 2 тика при гравитации 0.08/тик ≈ 2.2 блока/сек — плавно. */
+     *  ~0.15 blocks/tick every 2 ticks with 0.08/tick gravity ≈ 2.2 blocks/sec — smooth. */
     private static final double JETPACK_Y = 0.15;
 
     private EnchantmentListener() {}

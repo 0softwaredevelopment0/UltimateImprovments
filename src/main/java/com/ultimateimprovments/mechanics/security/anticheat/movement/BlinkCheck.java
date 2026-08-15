@@ -11,8 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Blink — игрок задерживает пакеты движения, затем отправляет их все разом.
- * Детекция: длительная пауза в пакетах движения, затем резкий скачок.
+ * Blink — the player delays movement packets, then sends them all at once.
+ * Detection: a long pause in movement packets followed by a sudden jump.
  */
 public class BlinkCheck extends AbstractCheck {
 

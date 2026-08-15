@@ -252,7 +252,7 @@ public class ChgDimGUI implements Listener {
     }
 
     // ========================================================================
-    // 🛡 DRAG HANDLER — блокируем перетаскивание в Anvil GUI
+    // 🛡 DRAG HANDLER — block dragging in the Anvil GUI
     // ========================================================================
 
     @EventHandler
@@ -260,7 +260,7 @@ public class ChgDimGUI implements Listener {
         if (!(e.getWhoClicked() instanceof Player player)) return;
         if (!openMenus.containsKey(player.getUniqueId())) return;
 
-        // Блокируем drag, если хотя бы один слот принадлежит anvil (raw slots 0-2)
+        // Block the drag if at least one slot belongs to the anvil (raw slots 0-2)
         for (int slot : e.getRawSlots()) {
             if (slot < 3) {
                 e.setCancelled(true);
@@ -272,7 +272,7 @@ public class ChgDimGUI implements Listener {
     }
 
     // ========================================================================
-    // 🛡 CLICK HANDLER — блокируем все клики + чистим курсор
+    // 🛡 CLICK HANDLER — block all clicks + clear the cursor
     // ========================================================================
 
     @EventHandler
@@ -281,7 +281,7 @@ public class ChgDimGUI implements Listener {
         UUID uuid = player.getUniqueId();
         if (!openMenus.containsKey(uuid)) return;
 
-        // 🛡 Блокируем ВСЕ клики + чистим курсор + форсируем синхронизацию
+        // 🛡 Block ALL clicks + clear the cursor + force sync
         e.setCancelled(true);
         player.setItemOnCursor(null);
         player.updateInventory();
@@ -289,7 +289,7 @@ public class ChgDimGUI implements Listener {
         int slot = e.getSlot();
 
         if (slot == 1) {
-            // Очищаем верхний инвентарь перед закрытием, чтобы предметы не выпали/не вернулись
+            // Clear the top inventory before closing so items don't drop/get returned
             e.getView().getTopInventory().clear();
             player.closeInventory();
             ChgDimCommand.teleportBack(player);
@@ -324,7 +324,7 @@ public class ChgDimGUI implements Listener {
         }
 
         ChgDimCommand.teleport(player, worldName);
-        // Очищаем верхний инвентарь перед закрытием, чтобы предметы не выпали/не вернулись
+        // Clear the top inventory before closing so items don't drop/get returned
         e.getView().getTopInventory().clear();
         player.closeInventory();
     }
@@ -335,7 +335,7 @@ public class ChgDimGUI implements Listener {
         openMenus.remove(uuid);
         cancelResetTask(uuid);
 
-        // Очищаем CHGDIM-предметы из верхнего инвентаря (чтобы не вернулись игроку)
+        // Clear CHGDIM items from the top inventory (so they don't return to the player)
         Inventory topInv = e.getView().getTopInventory();
         if (topInv != null) {
             for (int i = 0; i < topInv.getSize(); i++) {

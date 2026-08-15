@@ -23,21 +23,21 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Встроенный HTTP-сервер GitHub 2FA.
+ * Built-in HTTP server for GitHub 2FA.
  * <p>
- * Поток работы:
+ * Workflow:
  * <ol>
- *   <li>Игрок кликает ссылку в чате → {@code GET <public_url>/auth?state=...}</li>
- *   <li>Сервер редиректит на {@code github.com/login/oauth/authorize} (OAuth App).</li>
- *   <li>GitHub редиректит обратно: {@code GET <public_url>/callback?code=...&state=...}</li>
- *   <li>Сервер обменивает code на access token, получает логин GitHub-аккаунта
- *       и сверяет его с привязанным к UUID игрока ({@link Auth2FA#getGithubUsername}).</li>
- *   <li>При совпадении — сессия помечается одобренной и игрок аутентифицируется.</li>
+ *   <li>The player clicks a link in chat → {@code GET <public_url>/auth?state=...}</li>
+ *   <li>The server redirects to {@code github.com/login/oauth/authorize} (OAuth App).</li>
+ *   <li>GitHub redirects back: {@code GET <public_url>/callback?code=...&state=...}</li>
+ *   <li>The server exchanges the code for an access token, fetches the GitHub login
+ *       and verifies it against the one linked to the player's UUID ({@link Auth2FA#getGithubUsername}).</li>
+ *   <li>On match — the session is marked approved and the player is authenticated.</li>
  * </ol>
  * <p>
- * Реализован на чистом {@link ServerSocket} (без jdk.httpserver), чтобы не зависеть
- * от наличия модуля {@code jdk.httpserver} в рантайме сервера. Обрабатывает только
- * GET-запросы; всё остальное — 404.
+ * Implemented on plain {@link ServerSocket} (no jdk.httpserver), so it does not depend
+ * on the {@code jdk.httpserver} module being present in the server runtime. Handles only
+ * GET requests; everything else — 404.
  */
 public class GithubAuthServer {
 
@@ -71,7 +71,7 @@ public class GithubAuthServer {
         }
     }
 
-    /** true если HTTP-сервер реально слушает порт (позволяет не выдавать мёртвые ссылки). */
+    /** true if the HTTP server is actually listening on the port (avoids giving out dead links). */
     public static boolean isRunning() {
         return instance != null && instance.running.get();
     }
@@ -131,7 +131,7 @@ public class GithubAuthServer {
 
     private void handleConnection(Socket socket) {
         try {
-            // Защита от slow-loris: читаем заголовки не дольше 10 секунд.
+            // Slow-loris protection: read headers for no longer than 10 seconds.
             socket.setSoTimeout(10_000);
         } catch (Exception ignored) {}
         try (Socket s = socket;
@@ -148,7 +148,7 @@ public class GithubAuthServer {
             }
             String rawPath = parts[1];
 
-            // Читаем заголовки (до пустой строки)
+            // Read headers (until an empty line)
             String line;
             while ((line = in.readLine()) != null && !line.isEmpty()) {}
 
@@ -176,7 +176,7 @@ public class GithubAuthServer {
     // ENDPOINTS
     // =========================
 
-    /** GET /auth?state=... → 302 redirect на GitHub authorize. */
+    /** GET /auth?state=... → 302 redirect to GitHub authorize. */
     private void handleAuth(OutputStream out, Map<String, String> params) throws Exception {
         String state = params.get("state");
         UUID uuid = state == null ? null : Auth2FA.resolveState(state);
@@ -198,7 +198,7 @@ public class GithubAuthServer {
         sendRedirect(out, authorizeUrl);
     }
 
-    /** GET /callback?code=...&state=... → обмен кода, проверка аккаунта, одобрение. */
+    /** GET /callback?code=...&state=... → code exchange, account verification, approval. */
     private void handleCallback(OutputStream out, Map<String, String> params) throws Exception {
         String code = params.get("code");
         String state = params.get("state");
@@ -235,7 +235,7 @@ public class GithubAuthServer {
             return;
         }
 
-        // ✅ Одобряем и аутентифицируем игрока на main thread
+        // ✅ Approve and authenticate the player on the main thread
         Auth2FA.markApproved(uuid, githubLogin);
         ConsoleLogger.info("[Auth2FA] GitHub account '" + githubLogin + "' authorized player " + uuid);
 
@@ -323,7 +323,7 @@ public class GithubAuthServer {
         return sb.toString();
     }
 
-    /** Достаёт значение строкового JSON-поля (без JSON-библиотек). */
+    /** Extracts a string JSON field value (without JSON libraries). */
     private String extractJsonValue(String json, String key) {
         if (json == null) return null;
         Matcher m = JSON_STRING_PATTERN.matcher(json);
@@ -337,7 +337,7 @@ public class GithubAuthServer {
     // HTTP HELPERS
     // =========================
 
-    /** Базовый публичный URL: public_url из конфига, иначе server-ip:port. */
+    /** Base public URL: public_url from config, otherwise server-ip:port. */
     public static String getPublicBase() {
         String pub = AuthConfig.getGithubPublicUrl();
         if (pub != null && !pub.isBlank()) {

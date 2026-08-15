@@ -9,12 +9,12 @@ import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * 🛡 Integrity Listener — перехватывает ванильный урон предметам
- * и перенаправляет его в систему целостности.
+ * 🛡 Integrity Listener — intercepts vanilla item damage
+ * and redirects it into the integrity system.
  * <p>
- * При каждой попытке нанести урон предмету (ломка блоков, атака,
- * получение урона в броне и т.д.) событие {@link PlayerItemDamageEvent}
- * отменяется, а вместо него уменьшается кастомная целостность предмета.
+ * On every attempt to damage an item (mining blocks, attacking,
+ * taking damage in armor, etc.) the {@link PlayerItemDamageEvent}
+ * is cancelled and the item's custom integrity is decreased instead.
  */
 public class IntegrityListener implements Listener {
 
@@ -25,19 +25,19 @@ public class IntegrityListener implements Listener {
         ItemStack item = event.getItem();
         if (item == null || item.getType() == Material.AIR) return;
 
-        // Unbreakable предметы не получают урон вообще
+        // Unbreakable items take no damage at all
         if (IntegrityManager.isUnbreakable(item)) {
             event.setCancelled(true);
             return;
         }
 
-        // Проверяем, есть ли у предмета прочность
+        // Check whether the item has durability
         if (IntegrityManager.getMaxDurability(item) <= 0) return;
 
-        // Отменяем ванильный урон
+        // Cancel vanilla damage
         event.setCancelled(true);
 
-        // Применяем урон через систему целостности
+        // Apply damage through the integrity system
         Player player = event.getPlayer();
         int vanillaDamage = event.getDamage();
         ItemIntegrityAPI.decreaseItemIntegrity(item, vanillaDamage, player);

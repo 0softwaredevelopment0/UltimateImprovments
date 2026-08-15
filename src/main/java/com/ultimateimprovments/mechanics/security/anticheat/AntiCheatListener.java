@@ -7,7 +7,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
- * Listener для управления жизненным циклом PlayerData.
+ * Listener that manages the PlayerData lifecycle.
  */
 public class AntiCheatListener implements Listener {
 

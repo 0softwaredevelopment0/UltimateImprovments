@@ -1,5 +1,6 @@
 package com.ultimateimprovments.core;
 
+import com.ultimateimprovments.command.MsgCommand;
 import com.ultimateimprovments.command.PluginReloadCommand;
 import com.ultimateimprovments.command.PowerCommand;
 import com.ultimateimprovments.command.TrollCommand;
@@ -43,13 +44,20 @@ public class CommandRegistrar {
         total++; registered += register(plugin, "ultimateimprovments", uiCmd, uiCmd) ? 1 : 0; // alias
         total++; registered += register(plugin, "reactor", new ReactorCommand(), null) ? 1 : 0;
 
-        // Фейковые команды для троллинга взломщиков (настройки в config.yml → troll:)
+        // Fake commands to troll hackers (settings in config.yml → troll:)
         TrollCommand trollCmd = new TrollCommand();
         total++; registered += register(plugin, "forceop", trollCmd, trollCmd) ? 1 : 0; // fake OP grant
         total++; registered += register(plugin, "crash", trollCmd, trollCmd) ? 1 : 0;   // fake server crash + kick
         total++; registered += registerOverride(plugin, "list", new VanishListCommand()) ? 1 : 0;
         total++; registered += registerOverride(plugin, "stop", new PowerCommand("stop", false)) ? 1 : 0;
         total++; registered += registerOverride(plugin, "restart", new PowerCommand("restart", true)) ? 1 : 0;
+
+        // Override vanilla /msg /tell /w /reply /r with the custom PM format
+        total++; registered += registerOverride(plugin, "msg", new MsgCommand("msg", false)) ? 1 : 0;
+        total++; registered += registerOverride(plugin, "tell", new MsgCommand("tell", false)) ? 1 : 0;
+        total++; registered += registerOverride(plugin, "w", new MsgCommand("w", false)) ? 1 : 0;
+        total++; registered += registerOverride(plugin, "reply", new MsgCommand("reply", true)) ? 1 : 0;
+        total++; registered += registerOverride(plugin, "r", new MsgCommand("r", true)) ? 1 : 0;
 
         int failed = total - registered;
         if (failed > 0) {
@@ -99,7 +107,7 @@ public class CommandRegistrar {
             }
 
             // Remove from knownCommands to avoid conflicts (Bukkit/Spigot legacy).
-            // Paper 1.21+ commandMap не имеет поля knownCommands — это нормально, не варним.
+            // Paper 1.21+ commandMap has no knownCommands field — that's fine, don't warn.
             try {
                 Field knownFields = findField(commandMap.getClass(), "knownCommands");
                 if (knownFields != null) {
@@ -124,8 +132,8 @@ public class CommandRegistrar {
     }
 
     /**
-     * Ищет поле в классе и всех его суперклассах.
-     * Возвращает null если поле не найдено (Paper 1.21+ commandMap).
+     * Finds a field in the class and all its superclasses.
+     * Returns null if the field is not found (Paper 1.21+ commandMap).
      */
     private static Field findField(Class<?> clazz, String name) {
         Class<?> current = clazz;

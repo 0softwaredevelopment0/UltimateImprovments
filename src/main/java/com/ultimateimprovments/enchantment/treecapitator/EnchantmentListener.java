@@ -86,14 +86,14 @@ public class EnchantmentListener implements Listener {
     /**
      * Collects the trunk column of the tree: logs straight up and down from
      * {@code origin} in the same X/Z column, up to the first non-log block in
-     * each direction. 🛡 Сохраняет failsafe куба 16×16×16 вокруг origin:
-     * скан идёт только по колонне (X/Z = origin), по Y ограничен origin−7..origin+8.
+     * each direction. 🛡 Keeps the 16×16×16 cube failsafe around the origin:
+     * the scan only follows the column (X/Z = origin), Y limited to origin−7..origin+8.
      */
     private @NotNull Set<Block> collectTree(World world, Block origin) {
         Set<Block> tree = new HashSet<>();
 
-        // 🛡 Failsafe 16×16×16: колонна по Y ограничена origin−7..origin+8
-        // (по X/Z скан не выходит из колонны origin, так что куб не нарушается).
+        // 🛡 16×16×16 failsafe: the column is limited in Y to origin−7..origin+8
+        // (in X/Z the scan stays in the origin column, so the cube is not violated).
         int x = origin.getX();
         int y = origin.getY();
         int z = origin.getZ();
@@ -102,14 +102,14 @@ public class EnchantmentListener implements Listener {
 
         tree.add(origin);
 
-        // Вверх по колонне — до первого не-бревна (крона/ветки не трогаем)
+        // Up the column — until the first non-log block (canopy/branches untouched)
         for (int ny = y + 1; ny <= maxY; ny++) {
             Block block = world.getBlockAt(x, ny, z);
             if (!isLog(block.getType())) break;
             tree.add(block);
         }
 
-        // Вниз по колонне — до первого не-бревна
+        // Down the column — until the first non-log block
         for (int ny = y - 1; ny >= minY; ny--) {
             Block block = world.getBlockAt(x, ny, z);
             if (!isLog(block.getType())) break;

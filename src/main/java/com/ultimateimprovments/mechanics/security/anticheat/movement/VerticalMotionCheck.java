@@ -16,27 +16,27 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * VerticalMotion — детекция подъёма без валидной причины (jetpack/fly).
+ * VerticalMotion — detection of ascent without a valid reason (jetpack/fly).
  * <p>
- * Проверяет: если игрок поднимается (yDelta > maxAscentSpeed) но при этом
- * отсутствуют какие-либо легитимные причины для подъёма — флаг.
+ * Checks: if the player ascends (yDelta > maxAscentSpeed) but no legitimate
+ * reason for the ascent exists — flag.
  * <p>
- * Легитимные причины подъёма (все проверяются):
+ * Legitimate ascent reasons (all checked):
  * <ul>
- *   <li>Прыжок (yDelta ≈ 0.42, зависит от Jump Boost)</li>
- *   <li>Рывок трезубцем (Riptide / isRiptiding)</li>
- *   <li>Полёт на элитрах (isGliding)</li>
- *   <li>Эффект LEVITATION</li>
- *   <li>Эффект SLOW_FALLING</li>
- *   <li>Вода/лава (плавание вверх)</li>
- *   <li>Лифт из пузырей (bubble column)</li>
- *   <li>Плеть (vine) / лестница (ladder)</li>
- *   <li>Липкий блок (slime, honey block — отскок)</li>
- *   <li>Батут из кровати (bed bounce)</li>
- *   <li>Взрыв (TNT, крипер, фейерверк)</li>
- *   <li>Портал (end gateway)</li>
- *   <li>Верховая езда (лодка, лошадь)</li>
- *   <li>Удар молнии</li>
+ *   <li>Jump (yDelta ≈ 0.42, depends on Jump Boost)</li>
+ *   <li>Trident riptide (Riptide / isRiptiding)</li>
+ *   <li>Elytra gliding (isGliding)</li>
+ *   <li>LEVITATION effect</li>
+ *   <li>SLOW_FALLING effect</li>
+ *   <li>Water/lava (swimming up)</li>
+ *   <li>Bubble column elevator</li>
+ *   <li>Vine / ladder</li>
+ *   <li>Sticky block (slime, honey block — bounce)</li>
+ *   <li>Bed bounce</li>
+ *   <li>Explosion (TNT, creeper, firework)</li>
+ *   <li>Portal (end gateway)</li>
+ *   <li>Riding (boat, horse)</li>
+ *   <li>Lightning strike</li>
  *   <li>Piston push</li>
  *   <li>Plugin ElytraBoost (ElytraBoostManager)</li>
  * </ul>
@@ -49,9 +49,9 @@ public class VerticalMotionCheck extends AbstractCheck {
     private double ladderClimbSpeed;
     private double riptideAscentSpeed;
 
-    // Счётчик тиков в воздухе без причины
+    // Tick counter of being airborne without a reason
     private final ConcurrentHashMap<UUID, Integer> suspiciousAirTicks = new ConcurrentHashMap<>();
-    // Предыдущая Y-позиция для детекции рывков
+    // Previous Y position for burst detection
     private final ConcurrentHashMap<UUID, Double> lastY = new ConcurrentHashMap<>();
 
     public VerticalMotionCheck() {
@@ -100,15 +100,15 @@ public class VerticalMotionCheck extends AbstractCheck {
             return;
         }
 
-        // 2. Riptide (trident spin attack) — не просто пропускаем, а проверяем
-        //    что подъём не превышает разумного лимита для riptide
+        // 2. Riptide (trident spin attack) — not just skipped, but verified
+        //    that the ascent doesn't exceed a reasonable riptide limit
         if (player.isRiptiding()) {
             if (yDelta <= riptideAscentSpeed) {
                 suspiciousAirTicks.put(player.getUniqueId(), 0);
                 lastY.put(player.getUniqueId(), e.getTo().getY());
                 return;
             }
-            // yDelta > riptideAscentSpeed — выше любого возможного riptide → флаг
+            // yDelta > riptideAscentSpeed — above any possible riptide → flag
         }
 
         // 3. Elytra gliding

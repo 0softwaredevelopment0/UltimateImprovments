@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * Step — подъём по блокам выше 0.6 без прыжка (step hack).
- * Детекция: вертикальное перемещение вверх > лимита за один тик, без прыжка.
+ * Step — climbing blocks higher than 0.6 without a jump (step hack).
+ * Detection: vertical upward movement > the limit in one tick, without a jump.
  */
 public class StepCheck extends AbstractCheck {
 

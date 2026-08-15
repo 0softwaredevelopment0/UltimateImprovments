@@ -13,8 +13,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * FastEat — мгновенное поедание еды (быстрее ванильных 32 тиков).
- * Детекция: время между началом и окончанием поедания меньше минимума.
+ * FastEat — instant food eating (faster than the vanilla 32 ticks).
+ * Detection: time between the start and end of eating is below the minimum.
  */
 public class FastEatCheck extends AbstractCheck {
 

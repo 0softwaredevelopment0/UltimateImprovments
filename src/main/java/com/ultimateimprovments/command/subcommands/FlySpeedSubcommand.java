@@ -10,21 +10,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * /ui flyspeed <игрок> <скорость 0x–10x> — устанавливает скорость полёта игроку.
+ * /ui flyspeed <player> <speed 0x–10x> — sets the flight speed for a player.
  * <p>
- *   /ui flyspeed <игрок> 5x      — 5x скорость полёта
- *   /ui flyspeed <игрок> 0x      — полёт заблокирован (нулевая скорость)
- *   /ui flyspeed <игрок> -reset  — сброс на дефолт (1x)
+ *   /ui flyspeed <player> 5x      — 5x flight speed
+ *   /ui flyspeed <player> 0x      — flight blocked (zero speed)
+ *   /ui flyspeed <player> -reset  — reset to default (1x)
  * <p>
- * Масштаб: 1x = ванильный дефолт (flySpeed 0.1), 10x = 1.0 (максимум Bukkit).
- * Право: ui.command.flyspeed
+ * Scale: 1x = vanilla default (flySpeed 0.1), 10x = 1.0 (Bukkit maximum).
+ * Permission: ui.command.flyspeed
  */
 public final class FlySpeedSubcommand {
 
     private FlySpeedSubcommand() {}
 
     private static final String PERMISSION = "ui.command.flyspeed";
-    /** Ванильная скорость полёта по умолчанию (Bukkit default). */
+    /** Vanilla default flight speed (Bukkit default). */
     private static final float DEFAULT_FLY_SPEED = 0.1f;
     private static final int MAX_MULTIPLIER = 10;
 
@@ -53,7 +53,7 @@ public final class FlySpeedSubcommand {
 
         String speedArg = args[2].toLowerCase();
 
-        // ─── -reset → дефолт (1x) ───
+        // ─── -reset → default (1x) ───
         if (speedArg.equals("-reset")) {
             target.setFlySpeed(DEFAULT_FLY_SPEED);
             sender.sendMessage(MessageUtil.parse(
@@ -69,7 +69,7 @@ public final class FlySpeedSubcommand {
             return true;
         }
 
-        // ─── Парсим множитель "Nx" (0x..10x) ───
+        // ─── Parse the "Nx" multiplier (0x..10x) ───
         if (!speedArg.endsWith("x")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ Invalid speed: </red><yellow>" + args[2]
@@ -96,7 +96,7 @@ public final class FlySpeedSubcommand {
             return true;
         }
 
-        float flySpeed = DEFAULT_FLY_SPEED * multiplier; // 10x → 1.0 (максимум Bukkit)
+        float flySpeed = DEFAULT_FLY_SPEED * multiplier; // 10x → 1.0 (Bukkit maximum)
         target.setFlySpeed(Math.min(1.0f, Math.max(0.0f, flySpeed)));
 
         sender.sendMessage(MessageUtil.parse(

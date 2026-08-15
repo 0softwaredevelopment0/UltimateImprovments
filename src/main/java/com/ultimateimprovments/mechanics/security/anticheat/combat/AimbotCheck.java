@@ -15,13 +15,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Aimbot — автоматическое прицеливание на цель.
+ * Aimbot — automatic aim at a target.
  * <p>
- * Три метода детекции:
- * 1. <b>Perfect aim</b> — угол до цели < 3° (слишком идеально)
- * 2. <b>Fast rotation</b> — скорость поворота камеры выше человеческого лимита (> 30°/тик)
- * 3. <b>Movement tracking</b> — если цель ДВИГАЕТСЯ и игрок ДВИГАЕТСЯ, а угол прицела
- *    статистически слишком стабилен (std dev < 0.5°) — это аимбот, человек так не может.
+ * Three detection methods:
+ * 1. <b>Perfect aim</b> — angle to the target < 3° (too perfect)
+ * 2. <b>Fast rotation</b> — camera rotation speed above the human limit (> 30°/tick)
+ * 3. <b>Movement tracking</b> — if the target MOVES and the player MOVES, but the aim
+ *    angle is statistically too stable (std dev < 0.5°) — that's an aimbot, a human can't do that.
  */
 public class AimbotCheck extends AbstractCheck {
 
@@ -92,7 +92,7 @@ public class AimbotCheck extends AbstractCheck {
             AntiCheatManager.getInstance().handleResult(player, this, result);
         }
 
-        // ── 2. Fast rotation check (yaw only — pitch history отсутствует) ──
+        // ── 2. Fast rotation check (yaw only — no pitch history) ──
         Deque<Float> yawHistory = data.getYawHistory();
         if (yawHistory.size() >= 2) {
             var it = yawHistory.descendingIterator();
@@ -130,7 +130,7 @@ public class AimbotCheck extends AbstractCheck {
     }
 
     /**
-     * Угол между направлением взгляда игрока и вектором до цели.
+     * Angle between the player's look direction and the vector to the target.
      */
     private double getAngleToEntity(Player player, LivingEntity target) {
         Location eye = player.getEyeLocation();
@@ -140,7 +140,7 @@ public class AimbotCheck extends AbstractCheck {
     }
 
     /**
-     * Разница углов с учётом перехода через 360°/0°.
+     * Angle difference accounting for the 360°/0° wrap.
      */
     private static double angleDiff(float a, float b) {
         float diff = Math.abs(a - b) % 360;
@@ -149,7 +149,7 @@ public class AimbotCheck extends AbstractCheck {
     }
 
     /**
-     * Стандартное отклонение углов в истории атак.
+     * Standard deviation of angles in the attack history.
      */
     private static double computeStdDev(Deque<AttackSample> samples) {
         if (samples.isEmpty()) return 0;
@@ -166,7 +166,7 @@ public class AimbotCheck extends AbstractCheck {
     }
 
     /**
-     * Снимок атаки: угол до цели + время.
+     * Attack snapshot: angle to the target + time.
      */
     private static record AttackSample(double angle, long timestamp) {}
 }

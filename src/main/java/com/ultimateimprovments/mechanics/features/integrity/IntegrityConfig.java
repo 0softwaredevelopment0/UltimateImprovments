@@ -8,25 +8,25 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Загружает и предоставляет конфигурацию системы целостности из config.yml.
+ * Loads and provides the integrity system configuration from config.yml.
  * <p>
- * Выделена из IntegrityManager для уменьшения размера класса.
+ * Extracted from IntegrityManager to reduce the class size.
  */
 public class IntegrityConfig {
 
     // =========================
-    // Версия системы целостности (для детекта миграции PDC)
+    // Integrity system version (for PDC migration detection)
     // =========================
     public static final int INTEGRITY_VERSION = 3;
 
     // =========================
-    // НАСТРОЙКИ
+    // SETTINGS
     // =========================
     private boolean enabled = true;
     private int intervalTicks = 10;
     private double costMultiplier = 1.0;
 
-    // HEX градиент
+    // HEX gradient
     private int gradientRedHigh = 0x00;
     private int gradientGreenHigh = 0x66;
     private int gradientBlueHigh = 0x00;
@@ -37,7 +37,7 @@ public class IntegrityConfig {
     private String loreText = "§fЦелостность:";
     private String bareLorePrefix = "Целостность:";
 
-    // Поведение при поломке
+    // Behavior on break
     private boolean breakPlaySound = true;
     private boolean breakSendMessage = true;
     private String breakMessage = "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>%item%</white> <red>сломался!</red>";
@@ -45,30 +45,30 @@ public class IntegrityConfig {
     private float breakSoundVolume = 1.0f;
     private float breakSoundPitch = 1.0f;
 
-    // Логирование
+    // Logging
     private boolean logInit = false;
     private boolean logBreak = true;
     private boolean logErrors = false;
 
-    // Фильтры
+    // Filters
     private Set<String> blacklist = new HashSet<>();
     private Set<String> whitelist = new HashSet<>();
 
-    // Ремонт
+    // Repair
     private boolean anvilRepairEnabled = true;
     private double anvilRepairMultiplier = 0.25;
     private boolean anvilCombineEnabled = true;
     private double anvilCombineBonus = 0.1;
 
-    // XP + Mending (Починка)
+    // XP + Mending
     private boolean mendingXpEnabled = true;
     private double mendingXpMultiplier = 0.5;
 
-    // Крафт / объединение
+    // Crafting / combining
     private boolean combineEnabled = true;
     private double combineLossRate = 0.0;
 
-    // Сообщения
+    // Messages
     private String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>%current%%</yellow><white>!</white>";
     private String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>%current%%</yellow><white></white>";
     private String mendingMessage = "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%</yellow> <white>целостности!</white>";
@@ -125,14 +125,14 @@ public class IntegrityConfig {
             anvilCombineMessage = MessagesManager.getString("features.integrity.anvil_repair.combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>%current%%</yellow><white></white>");
         }
 
-        // ===== XP + MENDING (ПОЧИНКА) =====
+        // ===== XP + MENDING =====
         var mending = cfg.getConfigurationSection("mending_xp");
         if (mending != null) {
             mendingXpEnabled = mending.getBoolean("enabled", true);
             mendingXpMultiplier = mending.getDouble("integrity_multiplier", 0.5);
             mendingMessage = MessagesManager.getString("features.integrity.mending_xp.message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%%</yellow> <white>целостности!</white>");
         } else {
-            // Fallback: старый ключ silk_touch_xp (для обратной совместимости)
+            // Fallback: old silk_touch_xp key (for backward compatibility)
             var stxp = cfg.getConfigurationSection("silk_touch_xp");
             if (stxp != null) {
                 mendingXpEnabled = stxp.getBoolean("enabled", true);
@@ -187,7 +187,7 @@ public class IntegrityConfig {
     public int getGradientBlueLow() { return gradientBlueLow; }
 
     // =========================
-    // УТИЛИТЫ
+    // UTILITIES
     // =========================
     public static int[] parseHexColor(String hex) {
         try {

@@ -8,13 +8,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
 /**
- * 🚨 SudoCommandInterceptor — GitHub-style sudo-режим.
+ * 🚨 SudoCommandInterceptor — GitHub-style sudo mode.
  * <p>
- * Перехватывает опасные команды у игроков с правом {@code ui.sudo}:
- * {@code /ui punish crash ...}, любые {@code /lp ...} и подкоманды,
- * {@code /ui power off|reboot} и т.п. (список в config.yml).
- * Если sudo-сессия не активна — команда блокируется, игроку открывается
- * диалог ввода sudo-пароля.
+ * Intercepts dangerous commands from players with the {@code ui.sudo} permission:
+ * {@code /ui punish crash ...}, any {@code /lp ...} and subcommands,
+ * {@code /ui power off|reboot} etc. (list in config.yml).
+ * If the sudo session is not active — the command is blocked and the player gets
+ * the sudo password dialog.
  */
 public class SudoCommandInterceptor implements Listener {
 
@@ -24,7 +24,7 @@ public class SudoCommandInterceptor implements Listener {
 
         Player player = event.getPlayer();
 
-        // Только игроки с правом ui.sudo попадают под sudo-режим
+        // Only players with the ui.sudo permission are subject to sudo mode
         if (!player.hasPermission("ui.sudo")) return;
 
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
@@ -33,7 +33,7 @@ public class SudoCommandInterceptor implements Listener {
 
         if (!manager.isDangerous(msg)) return;
 
-        // Активная sudo-сессия — пропускаем без вопросов
+        // Active sudo session — pass through without asking
         if (manager.isSudoActive(player.getUniqueId())) return;
 
         if (manager.intercept(player, event.getMessage())) {

@@ -6,17 +6,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Модуль проверки — проверяет тип ядра (рекомендуется Leaf),
- * наличие LuckPerms и совместимость API-версии с сервером.
+ * Check module — checks the core type (Leaf recommended),
+ * LuckPerms presence and API-version compatibility with the server.
  * <p>
- * Версия плагина теперь универсальный идентификатор (формат: major.minor.commits),
- * не привязанный к Paper/Leaf версии. Используется чекером обновлений.
+ * The plugin version is now a universal identifier (format: major.minor.commits),
+ * not tied to a Paper/Leaf version. Used by the update checker.
  * <p>
- * Неessential — если проверка не удалась, плагин всё равно работает.
+ * Non-essential — if the check fails, the plugin still works.
  */
 public class VersionCheckModule extends PluginModule {
 
-    /** Ожидаемое имя серверного ядра. */
+    /** Expected server core name. */
     private static final String EXPECTED_SERVER_NAME = "Leaf";
 
     public VersionCheckModule() {
@@ -32,7 +32,7 @@ public class VersionCheckModule extends PluginModule {
         String serverName = Bukkit.getServer().getName();
 
         // =========================
-        // ВЫВОД ИНФОРМАЦИИ О ВЕРСИЯХ
+        // PRINT VERSION INFORMATION
         // =========================
         ConsoleLogger.info("");
         ConsoleLogger.info("╔═══════════════════════════════════════╗");
@@ -49,17 +49,17 @@ public class VersionCheckModule extends PluginModule {
         ConsoleLogger.info("");
 
         // =========================
-        // ПРОВЕРКА ТИПА ЯДРА (Leaf или нет)
+        // CHECK THE CORE TYPE (Leaf or not)
         // =========================
         checkServerSoftware(plugin, serverName, serverVersion);
 
         // =========================
-        // ПРОВЕРКА СОВМЕСТИМОСТИ API-ВЕРСИИ С СЕРВЕРОМ
+        // CHECK API-VERSION COMPATIBILITY WITH THE SERVER
         // =========================
         checkApiCompatibility(plugin, apiVersion, serverVersion, bukkitVersion);
 
         // =========================
-        // ПРОВЕРКА НАЛИЧИЯ LUCKPERMS
+        // CHECK LUCKPERMS PRESENCE
         // =========================
         checkLuckPerms(plugin);
     }
@@ -70,7 +70,7 @@ public class VersionCheckModule extends PluginModule {
     }
 
     // =========================
-    // ПРОВЕРКА ЯДРА
+    // CORE CHECK
     // =========================
 
     private void checkServerSoftware(JavaPlugin plugin, String serverName, String serverVersion) {
@@ -79,7 +79,7 @@ public class VersionCheckModule extends PluginModule {
             return;
         }
 
-        // Определяем, является ли сервер Paper-совместимым
+        // Determine whether the server is Paper-compatible
         boolean isPaper = false;
         try {
             Class.forName("io.papermc.paper.configuration.Configuration");
@@ -113,25 +113,25 @@ public class VersionCheckModule extends PluginModule {
     }
 
     // =========================
-    // ПРОВЕРКА СОВМЕСТИМОСТИ API-ВЕРСИИ
+    // API-VERSION COMPATIBILITY CHECK
     // =========================
 
     /**
-     * Сравнивает api-version из plugin.yml с версией сервера.
+     * Compares the api-version from plugin.yml with the server version.
      * api-version = "26.2" — Paper internal version (26.x = MC 1.21.x).
      * <p>
-     * Версия плагина (plugin_version) теперь универсальный идентификатор
-     * формата major.minor.commits и НЕ используется для проверки совместимости.
+     * The plugin version (plugin_version) is now a universal identifier
+     * of the major.minor.commits format and is NOT used for compatibility checks.
      */
     private void checkApiCompatibility(JavaPlugin plugin, String apiVersion,
                                         String serverVersion, String bukkitVersion) {
         if (apiVersion == null) return;
 
-        // Извлекаем Paper-версию сервера из Bukkit.getVersion()
+        // Extract the server's Paper version from Bukkit.getVersion()
         // "git-Paper-26.2 (MC: 1.21.5)" → "26.2"
         String serverPaperVer = extractServerVersionNumber(serverVersion);
 
-        // Guard: если версия сервера не парсится как число.число — не можем сравнить, пропускаем
+        // Guard: if the server version does not parse as number.number — cannot compare, skip
         if (!isNumericVersion(serverPaperVer)) {
             ConsoleLogger.info("[VersionCheck] Cannot parse server version ("
                     + serverPaperVer + ") — skipping API compatibility check.");
@@ -147,7 +147,7 @@ public class VersionCheckModule extends PluginModule {
             return;
         }
 
-        // Проверяем BukkitVersion как fallback
+        // Check BukkitVersion as a fallback
         String bukkitMajorMinor = getMajorMinor(bukkitVersion.split("-")[0]);
         if (bukkitMajorMinor.equals(apiMajorMinor)) {
             ConsoleLogger.info("[VersionCheck] \u2713 API version " + apiVersion
@@ -155,7 +155,7 @@ public class VersionCheckModule extends PluginModule {
             return;
         }
 
-        // Несовпадение API-версии
+        // API-version mismatch
         String mcVersion = extractMcVersion(serverVersion);
 
         ConsoleLogger.warn("");
@@ -177,7 +177,7 @@ public class VersionCheckModule extends PluginModule {
     }
 
     // =========================
-    // ПРОВЕРКА LUCKPERMS
+    // LUCKPERMS CHECK
     // =========================
 
     private void checkLuckPerms(JavaPlugin plugin) {
@@ -219,7 +219,7 @@ public class VersionCheckModule extends PluginModule {
         return sb.toString();
     }
 
-    /** Извлекает major.minor из версии (1.21.4 → 1.21, 26.2 → 26.2). */
+    /** Extracts major.minor from a version (1.21.4 → 1.21, 26.2 → 26.2). */
     private String getMajorMinor(String version) {
         if (version == null) return "";
         String[] parts = version.split("\\.");
@@ -229,14 +229,14 @@ public class VersionCheckModule extends PluginModule {
         return parts[0];
     }
 
-    /** Проверяет, выглядит ли строка как числовая версия (например "26.2"). */
+    /** Checks whether a string looks like a numeric version (e.g. "26.2"). */
     private boolean isNumericVersion(String version) {
         if (version == null || version.isEmpty()) return false;
-        // Должна начинаться с цифры и содержать точку
+        // Must start with a digit and contain a dot
         return version.matches("\\d+\\.\\d+.*");
     }
 
-    /** Извлекает MC-версию из строки Bukkit.getVersion() вида "git-Paper-26.2 (MC: 1.21.5)". */
+    /** Extracts the MC version from a Bukkit.getVersion() string like "git-Paper-26.2 (MC: 1.21.5)". */
     private String extractMcVersion(String version) {
         if (version == null) return null;
         int start = version.indexOf("(MC:");
@@ -247,12 +247,12 @@ public class VersionCheckModule extends PluginModule {
         return mcPart.isEmpty() ? null : mcPart;
     }
 
-    /** Извлекает Paper/Leaf-версию из полной строки Bukkit.getVersion() ("git-Paper-26.2.build.+..." → "26.2.build.+"). */
+    /** Extracts the Paper/Leaf version from the full Bukkit.getVersion() string ("git-Paper-26.2.build.+..." → "26.2.build.+"). */
     private String extractServerVersionNumber(String version) {
         if (version == null) return "?";
-        // "git-Paper-26.2.build.+ (MC: 1.21.5)" → берём часть до пробела
+        // "git-Paper-26.2.build.+ (MC: 1.21.5)" → take the part before the space
         String firstPart = version.split(" ")[0]; // "git-Paper-26.2.build.+"
-        // Последний сегмент после последнего '-' — это версия
+        // The last segment after the last '-' is the version
         int lastDash = firstPart.lastIndexOf("-");
         if (lastDash >= 0 && lastDash < firstPart.length() - 1) {
             return firstPart.substring(lastDash + 1);
@@ -260,7 +260,7 @@ public class VersionCheckModule extends PluginModule {
         return firstPart;
     }
 
-    /** Извлекает короткую версию из полной строки Bukkit.getVersion(). */
+    /** Extracts a short version from the full Bukkit.getVersion() string. */
     private String getServerShortVersion(String version) {
         // "git-Leaf-123 (MC: 1.21.4)" → "MC: 1.21.4"
         if (version.contains("(MC:") || version.contains("(MC: ")) {
@@ -270,7 +270,7 @@ public class VersionCheckModule extends PluginModule {
                 return version.substring(start + 1, end).trim();
             }
         }
-        // Fallback: просто берём последние 10 символов
+        // Fallback: just take the last 10 characters
         if (version.length() > 20) {
             return "..." + version.substring(version.length() - 15);
         }

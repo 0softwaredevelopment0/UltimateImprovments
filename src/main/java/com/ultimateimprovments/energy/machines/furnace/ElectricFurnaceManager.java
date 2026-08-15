@@ -330,7 +330,7 @@ public class ElectricFurnaceManager implements Listener {
 
             // Consume from batteries only
             if (node.getType() == NodeType.BATTERY) {
-                // Проверяем режим: берём энергию только из DISCHARGE/CHARGE_DISCHARGE
+                // Check the mode: take energy only from DISCHARGE/CHARGE_DISCHARGE
                 BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
                 if (bc != null && !bc.canDischarge()) continue;
                 int energy = node.getEnergy();

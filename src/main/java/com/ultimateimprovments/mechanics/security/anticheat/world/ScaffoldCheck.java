@@ -11,9 +11,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 /**
- * Scaffold — авто-установка блоков под собой при движении/падении.
- * Детекция: блок ставится под игроком, при этом игрок смотрит вверх или в сторону,
- * и скорость установки слишком высокая.
+ * Scaffold — auto-placing blocks under the player while moving/falling.
+ * Detection: a block is placed under the player while the player looks up or sideways,
+ * and the placement speed is too high.
  */
 public class ScaffoldCheck extends AbstractCheck {
 

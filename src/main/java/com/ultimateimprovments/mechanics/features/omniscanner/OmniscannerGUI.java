@@ -26,14 +26,14 @@ import java.util.*;
 /**
  * 🔧 Omniscanner Configuration GUI
  * <p>
- * Позволяет настроить:
- * - Список типов блоков для поиска
- * - Список типов предметов для поиска
- * - Список типов сущностей для поиска
- * - Радиус сканирования
+ * Allows configuring:
+ * - List of block types to search for
+ * - List of item types to search for
+ * - List of entity types to search for
+ * - Scan radius
  * <p>
- * Ввод радиуса и добавление типов — через чат (не Anvil).
- * Все GUI-предметы имеют PDC GUI_PROTECTED (byte=1) — их нельзя забрать.
+ * Radius input and type addition happen via chat (not Anvil).
+ * All GUI items have PDC GUI_PROTECTED (byte=1) — they cannot be taken.
  */
 public class OmniscannerGUI implements Listener {
 
@@ -41,7 +41,7 @@ public class OmniscannerGUI implements Listener {
     private static final Map<UUID, PendingInput> pendingInputs = new HashMap<>();
     private static boolean registered = false;
 
-    // Слоты интерфейса (6 строк = 54 слота)
+    // GUI slots (6 rows = 54 slots)
     private static final int SLOT_BLOCKS_HEADER = 0;
     private static final int SLOT_ITEMS_HEADER = 1;
     private static final int SLOT_ENTITIES_HEADER = 2;
@@ -70,7 +70,7 @@ public class OmniscannerGUI implements Listener {
         }
     }
 
-    /** Ожидание ввода через чат */
+    /** Waiting for chat input */
     private static class PendingInput {
         final Player player;
         final ItemStack scanner;
@@ -114,7 +114,7 @@ public class OmniscannerGUI implements Listener {
         }
         state.scanner = scanner;
 
-        // Верхняя панель: переключатели вкладок
+        // Top panel: tab switches
         inv.setItem(SLOT_BLOCKS_HEADER, createTabItem(Material.STONE, "Блоки", state.currentTab.equals("BLOCKS"),
                 getBlockTypes(scanner).size() + " типов"));
         inv.setItem(SLOT_ITEMS_HEADER, createTabItem(Material.DIAMOND, "Предметы", state.currentTab.equals("ITEMS"),
@@ -169,7 +169,7 @@ public class OmniscannerGUI implements Listener {
 
         player.openInventory(inv);
 
-        // Перерегистрируем состояние — InventoryCloseEvent удаляет его при перестройке GUI
+        // Re-register the state — InventoryCloseEvent removes it when the GUI is rebuilt
         openMenus.put(player.getUniqueId(), state);
     }
 
@@ -258,7 +258,7 @@ public class OmniscannerGUI implements Listener {
     // ========================================================================
 
     // ========================================================================
-    // 🛡 DRAG HANDLER — не даём перетаскивать предметы в GUI
+    // 🛡 DRAG HANDLER — prevents dragging items into the GUI
     // ========================================================================
 
     @EventHandler
@@ -268,7 +268,7 @@ public class OmniscannerGUI implements Listener {
         GUIState state = openMenus.get(uuid);
         if (state == null) return;
 
-        // Блокируем drag, если хотя бы один слот принадлежит нашему GUI (raw slots 0-53)
+        // Block the drag if at least one slot belongs to our GUI (raw slots 0-53)
         for (int slot : e.getRawSlots()) {
             if (slot < 54) {
                 e.setCancelled(true);
@@ -280,7 +280,7 @@ public class OmniscannerGUI implements Listener {
     }
 
     // ========================================================================
-    // 🛡 CLICK HANDLER — блокируем все клики, чистим курсор
+    // 🛡 CLICK HANDLER — blocks all clicks, clears the cursor
     // ========================================================================
 
     @EventHandler
@@ -290,13 +290,13 @@ public class OmniscannerGUI implements Listener {
         GUIState state = openMenus.get(uuid);
         if (state == null) return;
 
-        // 🛡 Блокируем ВСЕ клики в любом инвентаре, пока открыто наше GUI
-        // Это prevents: shift+click, number key swap, double-click сбор, drop
+        // 🛡 Block ALL clicks in any inventory while our GUI is open
+        // This prevents: shift+click, number key swap, double-click pickup, drop
         e.setCancelled(true);
         player.setItemOnCursor(null);
         player.updateInventory();
 
-        // Обрабатываем только клики в верхнем инвентаре (наше кастомное GUI)
+        // Only process clicks in the top inventory (our custom GUI)
         if (e.getClickedInventory() != e.getView().getTopInventory()) return;
 
         ItemStack scanner = findScannerInHand(player);
@@ -311,12 +311,12 @@ public class OmniscannerGUI implements Listener {
         int slot = e.getSlot();
         ItemStack current = e.getCurrentItem();
 
-        // Вкладки (только ЛКМ)
+        // Tabs (left click only)
         if (slot == SLOT_BLOCKS_HEADER && e.isLeftClick()) { state.currentTab = "BLOCKS"; buildConfigGUI(state); return; }
         if (slot == SLOT_ITEMS_HEADER && e.isLeftClick()) { state.currentTab = "ITEMS"; buildConfigGUI(state); return; }
         if (slot == SLOT_ENTITIES_HEADER && e.isLeftClick()) { state.currentTab = "ENTITIES"; buildConfigGUI(state); return; }
 
-        // Очистить всё (только ЛКМ)
+        // Clear all (left click only)
         if (slot == SLOT_CLEAR_ALL && e.isLeftClick()) {
             OmniscannerManager.setBlockTypes(scanner, new HashSet<>());
             OmniscannerManager.setItemTypes(scanner, new HashSet<>());
@@ -327,7 +327,7 @@ public class OmniscannerGUI implements Listener {
             return;
         }
 
-        // Радиус (только ЛКМ)
+        // Radius (left click only)
         if (slot == SLOT_RADIUS_DOWN && e.isLeftClick()) {
             int r = Math.max(1, getRadius(scanner) - 10);
             OmniscannerManager.setRadius(scanner, r);
@@ -345,7 +345,7 @@ public class OmniscannerGUI implements Listener {
         if (slot == SLOT_RADIUS_SET && e.isLeftClick()) {
             openMenus.remove(uuid);
             pendingInputs.put(uuid, new PendingInput(player, scanner, state.currentTab, "RADIUS"));
-            player.setItemOnCursor(null); // очищаем курсор — предметы не попадут в инвентарь
+            player.setItemOnCursor(null); // clear the cursor — items won't end up in the inventory
             player.closeInventory();
             player.sendMessage(
                     MessageUtil.parse("<gold>⏵ Введите радиус (1-500)</gold>")
@@ -356,7 +356,7 @@ public class OmniscannerGUI implements Listener {
             return;
         }
 
-        // Список типов — ТОЛЬКО ПКМ удалить
+        // Type list — REMOVE only with right click
         if (slot >= SLOT_LIST_START && slot < 45 && e.isRightClick()) {
             if (current != null && current.hasItemMeta() && current.getItemMeta().hasDisplayName()) {
                 String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
@@ -380,7 +380,7 @@ public class OmniscannerGUI implements Listener {
             return;
         }
 
-        // Очистить текущий список (только ЛКМ)
+        // Clear the current list (left click only)
         if (slot == SLOT_CLEAR && e.isLeftClick()) {
             switch (state.currentTab) {
                 case "ITEMS": OmniscannerManager.setItemTypes(scanner, new HashSet<>()); break;
@@ -392,7 +392,7 @@ public class OmniscannerGUI implements Listener {
             return;
         }
 
-        // Добавить тип (только ЛКМ)
+        // Add type (left click only)
         if (slot == SLOT_ADD && e.isLeftClick()) {
             String categoryName = switch (state.currentTab) {
                 case "ITEMS" -> "предмета";
@@ -401,7 +401,7 @@ public class OmniscannerGUI implements Listener {
             };
             openMenus.remove(uuid);
             pendingInputs.put(uuid, new PendingInput(player, scanner, state.currentTab, "ADD"));
-            player.setItemOnCursor(null); // очищаем курсор — предметы не попадут в инвентарь
+            player.setItemOnCursor(null); // clear the cursor — items won't end up in the inventory
             player.closeInventory();
             player.sendMessage(
                     MessageUtil.parse("<gold>⏵ Введите название " + categoryName + "</gold>")
@@ -414,7 +414,7 @@ public class OmniscannerGUI implements Listener {
             return;
         }
 
-        // Закрыть (только ЛКМ)
+        // Close (left click only)
         if (slot == SLOT_BACK && e.isLeftClick()) {
             player.closeInventory();
             openMenus.remove(uuid);
@@ -422,7 +422,7 @@ public class OmniscannerGUI implements Listener {
     }
 
     // ========================================================================
-    // CHAT INPUT LISTENER — перехватывает ввод радиуса/типа
+    // CHAT INPUT LISTENER — intercepts radius/type input
     // ========================================================================
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -432,18 +432,18 @@ public class OmniscannerGUI implements Listener {
         PendingInput pending = pendingInputs.get(uuid);
         if (pending == null) return;
 
-        // Отменяем событие — сообщение НЕ попадает в чат
+        // Cancel the event — the message does NOT reach chat
         e.setCancelled(true);
 
-        // Удаляем из pending сразу, чтобы повторный вызов не обработал
+        // Remove from pending immediately so a repeated call can't process it again
         pendingInputs.remove(uuid);
 
         String msg = e.getMessage().trim();
 
-        // Отмена
+        // Cancel
         if (msg.equalsIgnoreCase("отмена") || msg.equalsIgnoreCase("cancel")) {
             player.sendMessage(MessageUtil.parse("<gray>✖ Ввод отменён.</gray>"));
-            // Возвращаемся в GUI
+            // Return to the GUI
             Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                 openMenus.put(uuid, new GUIState(player, pending.scanner));
                 openMenus.get(uuid).currentTab = pending.currentTab;
@@ -459,7 +459,7 @@ public class OmniscannerGUI implements Listener {
         }
     }
 
-    /** Обработка ввода радиуса */
+    /** Handles radius input */
     private static void handleRadiusInput(Player player, PendingInput pending, String msg) {
         try {
             int radius = Integer.parseInt(msg);
@@ -473,7 +473,7 @@ public class OmniscannerGUI implements Listener {
             player.sendMessage(MessageUtil.parse("<red>❌ Введите число (1-500)!</red>"));
         }
 
-        // Возвращаемся в GUI с сохранённым состоянием
+        // Return to the GUI with the saved state
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
             openMenus.put(player.getUniqueId(), new GUIState(player, pending.scanner));
             openMenus.get(player.getUniqueId()).currentTab = pending.currentTab;
@@ -481,7 +481,7 @@ public class OmniscannerGUI implements Listener {
         });
     }
 
-    /** Обработка ввода названия типа (блок/предмет/сущность) */
+    /** Handles type name input (block/item/entity) */
     private static void handleAddTypeInput(Player player, PendingInput pending, String msg) {
         String typeName = msg.toUpperCase();
         String tab = pending.currentTab;
@@ -505,7 +505,7 @@ public class OmniscannerGUI implements Listener {
         }
         player.sendMessage(MessageUtil.parse("<green>✔ Добавлен тип: </green><white>" + typeName + "</white>"));
 
-        // Возвращаемся в GUI с сохранённым состоянием
+        // Return to the GUI with the saved state
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
             openMenus.put(player.getUniqueId(), new GUIState(player, pending.scanner));
             openMenus.get(player.getUniqueId()).currentTab = pending.currentTab;

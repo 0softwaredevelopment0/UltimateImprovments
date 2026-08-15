@@ -14,12 +14,12 @@ import java.util.UUID;
 /**
  * SQLite persistence for {@link ParticleAcceleratorManager#engineEnergy}.
  * <p>
- * Без этой таблицы буферы энергии двигателей жили только в памяти и при
- * рестарте сервера всегда сбрасывались в 0 (через {@code putIfAbsent(pos, 0)} в
- * {@link ParticleAcceleratorManager#scanExistingAccelerators()}). Это приводило
- * к долгим re-charge после каждого /reload, краша или планового рестарта.
+ * Without this table the engine energy buffers lived only in memory and were
+ * always reset to 0 on server restart (via {@code putIfAbsent(pos, 0)} in
+ * {@link ParticleAcceleratorManager#scanExistingAccelerators()}). This led
+ * to long re-charges after every /reload, crash or planned restart.
  * <p>
- * Ключ — пара (world_uid, block_key), совпадает со структурой {@code EnginePos}.
+ * The key is a pair (world_uid, block_key), matching the {@code EnginePos} structure.
  */
 public class ParticleEnergyDatabase {
 
@@ -46,7 +46,7 @@ public class ParticleEnergyDatabase {
     }
 
     /**
-     * Загружает ВСЕ записи энергии. Возвращает Map<UUID worldUid, Map<blockKey, energy>>.
+     * Loads ALL energy records. Returns Map<UUID worldUid, Map<blockKey, energy>>.
      */
     public static synchronized Map<UUID, Map<Long, Integer>> loadAll() {
         Map<UUID, Map<Long, Integer>> result = new HashMap<>();
@@ -72,8 +72,8 @@ public class ParticleEnergyDatabase {
     }
 
     /**
-     * Полная перезапись таблицы. Используется редко, проще делать upsert'ами.
-     * Вызывается из shutdown() и из async flush-таска.
+     * Full table overwrite. Used rarely — upserts are simpler.
+     * Called from shutdown() and from the async flush task.
      */
     public static synchronized void saveAll(Map<UUID, Map<Long, Integer>> snapshot) {
         if (snapshot == null || snapshot.isEmpty()) return;
@@ -99,8 +99,8 @@ public class ParticleEnergyDatabase {
     }
 
     /**
-     * Upsert одной записи. Делается синхронно (некоторые методы, типа
-     * {@code consumeEngineEnergy}, вызывают это часто).
+     * Upsert of a single record. Done synchronously (some methods, like
+     * {@code consumeEngineEnergy}, call it often).
      */
     public static synchronized void upsertOne(UUID worldUid, long blockKey, int energy) {
         if (!ready) initTables();

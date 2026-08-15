@@ -16,8 +16,8 @@ public class DragonEggManager extends BukkitRunnable {
     private static int eggX = 0;
     private static int eggY = 142;
     private static int eggZ = 0;
-    private static int intervalTicks = 1728000; // 24h по умолчанию
-    private static double spawnChance = 1.0;    // 100% по умолчанию
+    private static int intervalTicks = 1728000; // 24h by default
+    private static double spawnChance = 1.0;    // 100% by default
 
     public static void init(Main plugin) {
         instance = new DragonEggManager();
@@ -41,7 +41,7 @@ public class DragonEggManager extends BukkitRunnable {
     public void run() {
         if (!enabled) return;
 
-        // Проверка шанса спавна
+        // Check the spawn chance
         if (spawnChance < 1.0 && ThreadLocalRandom.current().nextDouble() > spawnChance) {
             return;
         }

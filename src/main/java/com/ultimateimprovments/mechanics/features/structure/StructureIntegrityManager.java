@@ -21,19 +21,19 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * StructureIntegrityManager — отслеживает напряжение (stress), деградацию (degradation)
- * и целостность (integrity) структур (пока только эндер-сундуков).
+ * StructureIntegrityManager — tracks stress, degradation and integrity of
+ * structures (currently only ender chests).
  *
- * <h3>Механика:</h3>
+ * <h3>Mechanics:</h3>
  * <ul>
- *   <li><b>Stress</b> (0–1000%): растёт на +1% при каждом открытии/закрытии эндер-сундука.
- *       Естественный спад: 1%/30 сек.</li>
- *   <li><b>Degradation</b>: когда stress &gt; 100%, integrity падает.
+ *   <li><b>Stress</b> (0–1000%): grows by +1% on each ender chest open/close.
+ *       Natural decay: 1%/30 sec.</li>
+ *   <li><b>Degradation</b>: when stress &gt; 100%, integrity drops.
  *       degradation = baseRate × (stress / 100)^exponent × exp(degTicks × timeExponent / 20).
- *       Скорость растёт от стресса (экспоненциально) И от времени деградации (экспоненциально).</li>
- *   <li><b>Integrity</b> (0–100%): падает со скоростью degradation, когда stress &gt; 100%.
- *       Восстанавливается 1%/мин, когда stress &lt; 100%.
- *       При 0% — взрыв.</li>
+ *       The rate grows with stress (exponentially) AND with degradation time (exponentially).</li>
+ *   <li><b>Integrity</b> (0–100%): drops at the degradation rate when stress &gt; 100%.
+ *       Recovers 1%/min when stress &lt; 100%.
+ *       At 0% — explosion.</li>
  * </ul>
  */
 public class StructureIntegrityManager {
@@ -42,27 +42,27 @@ public class StructureIntegrityManager {
     private final Map<String, StructureData> dataMap = new ConcurrentHashMap<>();
     private final Main plugin;
     private boolean initialized = false;
-    private boolean dataDirty = false; // true если были изменения с上次 сохранения
+    private boolean dataDirty = false; // true if there were changes since the last save
 
-    // Таски тикера и авто-сейва — храним, чтобы корректно отменять при shutdown/reload
+    // Ticker and auto-save tasks — kept to cancel them properly on shutdown/reload
     private org.bukkit.scheduler.BukkitTask tickerTask;
     private org.bukkit.scheduler.BukkitTask autoSaveTask;
 
-    // Цвета для градиентов (HEX без #)
+    // Colors for gradients (HEX without #)
     private static final String COLOR_GREEN = "00AA00";
     private static final String COLOR_RED = "FF0000";
     private static final String COLOR_YELLOW = "FFAA00";
     private static final String COLOR_DARK_GREEN = "006600";
 
     // =========================
-    // КОНФИГУРИРУЕМЫЕ ПАРАМЕТРЫ (из config.yml)
+    // CONFIGURABLE PARAMETERS (from config.yml)
     // =========================
     private boolean enabled = true;
     private double stressPerOpenClose = 1.0;
     private double stressDecayPerSecond = 1.0 / 30.0;
     private double baseDegradationRate = 0.1; // 0.1%/sec initial rate
     private double degradationExponent = 2.0;
-    private double degradationTimeExponent = 0.01;  // экспонента времени деградации
+    private double degradationTimeExponent = 0.01;  // degradation time exponent
     private double stressMax = 1000.0;
     private double stressThreshold = 100.0;
     private double explosionPower = 10.0;
@@ -75,7 +75,7 @@ public class StructureIntegrityManager {
         private final Location location;
         private double stress;            // 0–1000
         private double integrity;         // 0–100
-        private int degradationTicks;     // сколько тиков stress > 100% (для time-экспоненты)
+        private int degradationTicks;     // how many ticks stress > 100% (for the time exponent)
 
         public StructureData(Location location) {
             this.location = location;
@@ -113,9 +113,9 @@ public class StructureIntegrityManager {
     }
 
     public static void init(Main plugin) {
-        // /ui reload: старый инстанс мог пережить shutdown без отмены тасков.
-        // Гасим его полностью, иначе после глобального cancelTasks() таски
-        // не перезапустятся (guard ниже не пропустит повторный init).
+        // /ui reload: the old instance could survive shutdown without cancelling tasks.
+        // Shut it down fully, otherwise after the global cancelTasks() the tasks
+        // won't restart (the guard below won't allow a repeated init).
         if (instance != null) {
             instance.shutdown();
         }
@@ -155,7 +155,7 @@ public class StructureIntegrityManager {
     // PUBLIC API
     // =========================
 
-    /** Вызывается при открытии или закрытии эндер-сундука — добавляет stress */
+    /** Called when an ender chest is opened or closed — adds stress */
     public void onEnderChestInteract(Location chestLocation) {
         if (!enabled) return;
         String key = locationToKey(chestLocation);
@@ -164,19 +164,19 @@ public class StructureIntegrityManager {
         dataDirty = true;
     }
 
-    /** Получить данные структуры по локации блока */
+    /** Gets the structure data at a block location */
     public StructureData getData(Location location) {
         return dataMap.get(locationToKey(location));
     }
 
-    /** Проверяет, деградирует ли структура (stress > 100% и integrity < 100%) */
+    /** Checks whether the structure is degrading (stress > 100% and integrity < 100%) */
     public boolean isDegrading(Location location) {
         StructureData data = getData(location);
         if (data == null) return false;
         return data.stress > stressThreshold || data.integrity < 100.0;
     }
 
-    /** Вычисляет degradation rate для данных структуры */
+    /** Computes the degradation rate for the structure data */
     private double computeDegradation(StructureData data) {
         if (data.stress <= stressThreshold) return 0.0;
         double ratio = data.stress / stressThreshold;
@@ -187,9 +187,9 @@ public class StructureIntegrityManager {
     }
 
     /**
-     * Оценивает время до взрыва (сек) при текущем stress и degradationTicks.
-     * Учитывает экспоненциальное ускорение деградации от времени.
-     * @return секунд до integrity = 0%, или -1 если деградация не идёт
+     * Estimates the time until explosion (sec) at the current stress and degradationTicks.
+     * Accounts for the exponential acceleration of degradation over time.
+     * @return seconds until integrity = 0%, or -1 if no degradation is happening
      */
     private double estimateDetonationTime(StructureData data) {
         if (data.stress <= stressThreshold || data.integrity <= 0) return -1;
@@ -198,16 +198,16 @@ public class StructureIntegrityManager {
         double curTicks = data.degradationTicks;
 
         if (degradationTimeExponent <= 0) {
-            // Без time-экспоненты — линейная оценка
+            // Without the time exponent — linear estimate
             double deg = computeDegradation(data);
             if (deg <= 0) return -1;
             return data.integrity / deg;
         }
 
-        // Интегральная оценка с учётом экспоненты времени:
-        // integrity = base * factor * integral(exp((curTicks + t) * timeExp) dt) от 0 до T
+        // Integral estimate accounting for the time exponent:
+        // integrity = base * factor * integral(exp((curTicks + t) * timeExp) dt) from 0 to T
         // integrity = base * factor * (exp((curTicks+T)*timeExp) - exp(curTicks*timeExp)) / timeExp
-        // Решаем относительно T:
+        // Solve for T:
         double factor = baseDegradationRate * stressFactor;
         if (factor <= 0) return -1;
         double expCur = Math.exp(curTicks * degradationTimeExponent);
@@ -220,26 +220,26 @@ public class StructureIntegrityManager {
     // =========================
     // GRADIENT COLORS
     // =========================
-    /** Возвращает HEX цвет (#RRGGBB) для stress (0-100%, зелёный→жёлтый→красный, выше 100% — красный) */
+    /** Returns the HEX color (#RRGGBB) for stress (0-100%, green→yellow→red, above 100% — red) */
     private static String gradientStress(double stress) {
         double t = Math.max(0, Math.min(1, stress / 100.0));
         return gradientHex(t, COLOR_GREEN, COLOR_YELLOW, COLOR_RED);
     }
 
-    /** Возвращает HEX цвет (#RRGGBB) для degradation (0-10, зелёный→жёлтый→красный) */
+    /** Returns the HEX color (#RRGGBB) for degradation (0-10, green→yellow→red) */
     private static String gradientDegradation(double deg) {
         double t = Math.max(0, Math.min(1, deg / 10.0));
         return gradientHex(t, COLOR_GREEN, COLOR_YELLOW, COLOR_RED);
     }
 
-    /** Возвращает HEX цвет (#RRGGBB) для integrity (100→0, зелёный→жёлтый→красный) */
+    /** Returns the HEX color (#RRGGBB) for integrity (100→0, green→yellow→red) */
     private static String gradientIntegrity(double integrity) {
         double t = 1.0 - Math.max(0, Math.min(1, integrity / 100.0));
         return gradientHex(t, COLOR_GREEN, COLOR_YELLOW, COLOR_RED);
     }
 
     /**
-     * Вычисляет HEX цвет по 3-точечному градиенту.
+     * Computes a HEX color via a 3-point gradient.
      * t=0 → color1, t=0.5 → color2, t=1 → color3
      */
     private static String gradientHex(double t, String c1, String c2, String c3) {
@@ -270,12 +270,12 @@ public class StructureIntegrityManager {
         return Math.max(0, Math.min(255, v));
     }
 
-    /** Рисует ASCII-бар с градиентным цветом для числа */
+    /** Draws an ASCII bar with a gradient color for a number */
     private static String coloredValue(String prefix, double value, String unit, String hexColor) {
         return "<gray>" + prefix + "</gray><color:" + hexColor + ">" + String.format("%.2f", value) + unit + "</color>";
     }
 
-    /** Рисует ASCII-бар с градиентным цветом */
+    /** Draws an ASCII bar with a gradient color */
     private String drawBar(double current, double max, int segments, String hexColor) {
         int filled = (int) Math.round((current / max) * segments);
         filled = Math.max(0, Math.min(segments, filled));
@@ -314,10 +314,10 @@ public class StructureIntegrityManager {
         // Status
         player.sendMessage(MessageUtil.parse(" <gray>Status: </gray>" + parseMiniMessageStatus(data)));
 
-        // Stress bar (0–100%, gradient от 0-100%, выше 100% — красный/полный бар)
+        // Stress bar (0–100%, gradient from 0-100%, above 100% — red/full bar)
         double stress = Math.max(0, Math.min(stressMax, data.getStress()));
         String stressHex = gradientStress(stress);
-        double barVal = Math.min(stressThreshold, stress); // бар не выше threshold
+        double barVal = Math.min(stressThreshold, stress); // bar no higher than the threshold
         player.sendMessage(MessageUtil.parse(coloredValue("Structure Stress: ", stress, "%", stressHex)));
         player.sendMessage(MessageUtil.parse(drawBar(barVal, 100.0, 20, stressHex)));
         if (stress > stressThreshold) {
@@ -327,7 +327,7 @@ public class StructureIntegrityManager {
         // Degradation rate (0-inf, gradient green→yellow→red, capped at 10 for bar/color)
         double deg = computeDegradation(data);
         String degHex = gradientDegradation(deg);
-        double degBarVal = Math.min(10.0, deg); // бар до 10%/с (не лимит, только шкала)
+        double degBarVal = Math.min(10.0, deg); // bar up to 10%/s (not a limit, just the scale)
         player.sendMessage(MessageUtil.parse(coloredValue("Degradation: ", deg, "%/s", degHex)));
         player.sendMessage(MessageUtil.parse(drawBar(degBarVal, 10.0, 20, degHex)));
 
@@ -361,14 +361,14 @@ public class StructureIntegrityManager {
             }
         }
         if (data.degradationTicks > 0 && data.degradationTicks % 20 == 0) {
-            // Показываем acceleration warning каждые 20 тиков (20 сек)
+            // Show the acceleration warning every 20 ticks (20 sec)
             if (data.degradationTicks >= 40) {                    player.sendMessage(MessageUtil.parse("<yellow>⚠ Degradation accelerating! (" + data.degradationTicks + "s)</yellow>"));
             }
         }
     }
 
     // =========================
-    // TICKER (1 раз в секунду = 20 тиков)
+    // TICKER (once per second = 20 ticks)
     // =========================
     private void startTicker() {
         tickerTask = new BukkitRunnable() {
@@ -377,7 +377,7 @@ public class StructureIntegrityManager {
                 if (!enabled) return;
                 tickAll();
             }
-        }.runTaskTimer(plugin, 20L, 20L); // каждую секунду
+        }.runTaskTimer(plugin, 20L, 20L); // every second
     }
 
     private void tickAll() {
@@ -388,20 +388,20 @@ public class StructureIntegrityManager {
             StructureData data = entry.getValue();
             Location loc = data.getLocation();
 
-            // Проверяем, существует ли ещё блок
+            // Check whether the block still exists
             Block block = loc.getBlock();
             if (block.getType() != Material.ENDER_CHEST) {
                 toRemove.add(key);
                 continue;
             }
 
-            // Stress decay (всегда, если stress > 0)
+            // Stress decay (always, if stress > 0)
             if (data.stress > 0) {
                 data.stress = Math.max(0, data.stress - stressDecayPerSecond);
             }
 
             if (data.stress > stressThreshold) {
-                // Stress > threshold — деградация
+                // Stress > threshold — degradation
                 data.degradationTicks++;
 
                 double ratio = data.stress / stressThreshold;
@@ -412,13 +412,13 @@ public class StructureIntegrityManager {
 
                 data.integrity = Math.max(0, data.integrity - degradation);
 
-                // Взрыв при 0%
+                // Explosion at 0%
                 if (data.integrity <= 0) {
                     explodeStructure(loc);
                     toRemove.add(key);
                 }
             } else {
-                // Stress ≤ threshold — восстановление, сброс счётчика деградации
+                // Stress ≤ threshold — recovery, reset the degradation counter
                 if (data.degradationTicks > 0) {
                     data.degradationTicks = 0;
                 }
@@ -428,12 +428,12 @@ public class StructureIntegrityManager {
             }
 
             // =========================
-            // VISUAL: портал-частицы — пропорционально повреждению целостности
+            // VISUAL: portal particles — proportional to the integrity damage
             // =========================
             spawnIntegrityParticles(loc, data.getIntegrity());
         }
 
-        // Очищаем удалённые блоки
+        // Clean up removed blocks
         for (String key : toRemove) {
             dataMap.remove(key);
         }
@@ -470,11 +470,11 @@ public class StructureIntegrityManager {
             world = fallbackWorld;
         }
         if (world == null) {
-            // fallbackWorld может быть null если Bukkit.getWorlds() пуст
+            // fallbackWorld can be null if Bukkit.getWorlds() is empty
             if (!Bukkit.getWorlds().isEmpty()) {
                 world = Bukkit.getWorlds().get(0);
             } else {
-                return null; // нет миров вообще — не можем создать Location
+                return null; // no worlds at all — can't create a Location
             }
         }
         return new Location(world,
@@ -484,8 +484,8 @@ public class StructureIntegrityManager {
     }
 
     /**
-     * Мигрирует данные из старого structure_integrity.dat (Java serialization)
-     * в SQLite. Запускается один раз при старте после loadData().
+     * Migrates data from the old structure_integrity.dat (Java serialization)
+     * into SQLite. Runs once at startup after loadData().
      */
     private void migrateOldDat() {
         File oldDat = new File(plugin.getDataFolder(), "structure_integrity.dat");
@@ -535,7 +535,7 @@ public class StructureIntegrityManager {
                 ps.executeBatch();
             }
 
-            // Удаляем старый файл после успешной миграции
+            // Delete the old file after a successful migration
             oldDat.delete();
             ConsoleLogger.info("[StructureIntegrity] Migrated " + migrated + " entry(ies) from legacy .dat to DB.");
 
@@ -545,15 +545,15 @@ public class StructureIntegrityManager {
     }
 
     /**
-     * Авто-сохранение в БД раз в 30 секунд (600 тиков).
-     * Предотвращает потерю данных при краше сервера.
+     * Auto-save to the DB every 30 seconds (600 ticks).
+     * Prevents data loss on a server crash.
      */
     private void startAutoSave() {
         autoSaveTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (!enabled || dataMap.isEmpty()) return;
-                saveData(true); // тихий авто-сейв (без лога)
+                saveData(true); // quiet auto-save (no log)
             }
         }.runTaskTimer(plugin, 600L, 600L);
     }
@@ -568,7 +568,7 @@ public class StructureIntegrityManager {
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            if (!dataDirty && isAutoSave) return; // нет изменений — пропускаем
+            if (!dataDirty && isAutoSave) return; // no changes — skip
 
             for (Map.Entry<String, StructureData> entry : dataMap.entrySet()) {
                 StructureData d = entry.getValue();
@@ -634,7 +634,7 @@ public class StructureIntegrityManager {
     }
 
     // =========================
-    // VISUAL: портал-частицы на эндер-сундуке
+    // VISUAL: portal particles on the ender chest
     // =========================
     private void spawnIntegrityParticles(Location loc, double integrity) {
         if (integrity >= 100.0) return;
@@ -642,25 +642,25 @@ public class StructureIntegrityManager {
         World world = loc.getWorld();
         if (world == null) return;
 
-        // Количество частиц: от 0 при 100% до ~50 при 0%
-        // Степень 1.5 для более резкого нарастания при критических значениях
+        // Particle count: from 0 at 100% to ~50 at 0%
+        // Power 1.5 for a sharper rise at critical values
         double damage = (100.0 - Math.max(0, integrity)) / 100.0;
         int count = (int) Math.round(Math.pow(damage, 1.5) * 50);
         if (count <= 0) return;
 
-        // Центр блока, откуда летят частицы
+        // Block center from which particles fly
         Location center = loc.clone().add(0.5, 0.5, 0.5);
 
-        // Портал-частицы в объёме блока — чем ниже integrity, тем больше
+        // Portal particles in the block volume — the lower the integrity, the more
         world.spawnParticle(Particle.PORTAL, center, count, 0.4, 0.4, 0.4, 0.05);
 
-        // При integrity ниже 25% — дополнительные частицы вылетают ИЗ блока наружу
+        // Below 25% integrity — extra particles fly OUT of the block
         if (integrity < 25.0) {
             int burstCount = (int) Math.round((25.0 - integrity) / 25.0 * 20) + 1;
             world.spawnParticle(Particle.PORTAL, center, burstCount, 1.5, 1.5, 1.5, 0.1);
         }
 
-        // При integrity ниже 10% — редкие багровые искры (критические частицы)
+        // Below 10% integrity — rare crimson sparks (critical particles)
         if (integrity < 10.0 && integrity > 0) {
             int sparkCount = (int) Math.round((10.0 - integrity) / 10.0 * 5) + 1;
             world.spawnParticle(Particle.END_ROD, center, sparkCount, 1.0, 1.0, 1.0, 0.05);
@@ -688,8 +688,8 @@ public class StructureIntegrityManager {
             autoSaveTask = null;
         }
         initialized = false;
-        // Сброс синглтона — исключает двойной saveData() при reload
-        // (onDisable → shutdown() → null, затем init() создаёт новый инстанс).
+        // Singleton reset — prevents double saveData() on reload
+        // (onDisable → shutdown() → null, then init() creates a new instance).
         instance = null;
     }
 

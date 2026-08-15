@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 📋 WhitelistSubcommand — обработчик /ui whitelist.
+ * 📋 WhitelistSubcommand — handler for /ui whitelist.
  * <p>
- * Команды:
+ * Commands:
  * <pre>
- * /ui whitelist on        — включить вайтлист
- * /ui whitelist off       — выключить вайтлист
- * /ui whitelist add <ник> — добавить игрока
- * /ui whitelist remove <ник> — удалить игрока
- * /ui whitelist list      — показать список
+ * /ui whitelist on        — enable the whitelist
+ * /ui whitelist off       — disable the whitelist
+ * /ui whitelist add <name> — add a player
+ * /ui whitelist remove <name> — remove a player
+ * /ui whitelist list      — show the list
  * </pre>
  */
 public final class WhitelistSubcommand {

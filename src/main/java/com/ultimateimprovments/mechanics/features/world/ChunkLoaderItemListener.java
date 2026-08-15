@@ -26,11 +26,11 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.UUID;
 
 /**
- * Слушатель для:
+ * Listener for:
  * <ul>
- *   <li>Использования XP-бутылки (/ui expsplit) — ПКМ забирает опыт</li>
- *   <li>Установки чанклоадера (изумрудный блок с PDC) — создаёт StructureMarker</li>
- *   <li>Ломания чанклоадера — удаляет StructureMarker</li>
+ *   <li>Using the XP bottle (/ui expsplit) — RMB collects the experience</li>
+ *   <li>Placing a chunk loader (emerald block with PDC) — creates a StructureMarker</li>
+ *   <li>Breaking a chunk loader — removes the StructureMarker</li>
  * </ul>
  */
 public class ChunkLoaderItemListener implements Listener {
@@ -139,7 +139,7 @@ public class ChunkLoaderItemListener implements Listener {
     // =========================
 
     /**
-     * Проверяет, является ли предмет чанклоадером (изумрудный блок с PDC).
+     * Checks whether the item is a chunk loader (emerald block with PDC).
      */
     public static boolean isChunkLoaderItem(ItemStack item) {
         if (item == null || item.getType() != Material.EMERALD_BLOCK) return false;
@@ -149,7 +149,7 @@ public class ChunkLoaderItemListener implements Listener {
     }
 
     /**
-     * Создаёт предмет чанклоадера.
+     * Creates the chunk loader item.
      */
     public static ItemStack createChunkLoaderItem() {
         ItemStack item = new ItemStack(Material.EMERALD_BLOCK);

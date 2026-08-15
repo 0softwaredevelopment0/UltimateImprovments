@@ -13,8 +13,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * BedBreaker (BedF@cker) — массовое разрушение кроватей в Незере/Энде (взрывы).
- * Детекция: игрок ломает кровати в не-overworld измерениях слишком быстро.
+ * BedBreaker (BedF@cker) — mass bed breaking in the Nether/End (explosions).
+ * Detection: the player breaks beds in non-overworld dimensions too fast.
  */
 public class BedBreakerCheck extends AbstractCheck {
 

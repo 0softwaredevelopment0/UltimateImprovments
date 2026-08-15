@@ -38,8 +38,8 @@ public class LeadShieldCraftListener implements Listener {
         );
 
         // =========================
-        // Удаляем старый датапаковский рецепт (minecraft:lead_shield),
-        // чтобы не было конфликта с нашим плагиновым рецептом.
+        // Remove the old datapack recipe (minecraft:lead_shield),
+        // to avoid a conflict with our plugin recipe.
         // =========================
         Bukkit.removeRecipe(NamespacedKey.minecraft("lead_shield"));
 
@@ -47,7 +47,7 @@ public class LeadShieldCraftListener implements Listener {
     }
 
     // =========================
-    // СОЗДАТЬ ITEMSTACK СВИНЦОВОГО СЛИТКА (для ExactChoice)
+    // CREATE LEAD INGOT ITEMSTACK (for ExactChoice)
     // =========================
     private static ItemStack createLeadIngotStack() {
         ItemStack ingot = new ItemStack(Material.NETHERITE_INGOT);
@@ -105,8 +105,8 @@ public class LeadShieldCraftListener implements Listener {
                 "789"
         );
 
-        // Используем ExactChoice — матчит по точному ItemStack (с PDC + display name),
-        // поэтому в книге рецептов покажется "Lead Ingot *", а не "Netherite Ingot"
+        // Use ExactChoice — matches by exact ItemStack (with PDC + display name),
+        // so the recipe book shows "Lead Ingot *" instead of "Netherite Ingot"
         RecipeChoice leadIngotChoice = new RecipeChoice.ExactChoice(createLeadIngotStack());
         recipe.setIngredient('1', leadIngotChoice);
         recipe.setIngredient('2', leadIngotChoice);
@@ -124,7 +124,7 @@ public class LeadShieldCraftListener implements Listener {
     }
 
     // =========================
-    // OVERRIDE RESULT — проверяем что ингредиенты — свинцовые слитки, не обычный незерит
+    // OVERRIDE RESULT — verify the ingredients are lead ingots, not regular netherite
     // =========================
     @EventHandler
     public void onCraft(PrepareItemCraftEvent e) {
@@ -138,7 +138,7 @@ public class LeadShieldCraftListener implements Listener {
 
         CraftingInventory inv = e.getInventory();
 
-        // Проверяем что все NETHERITE_INGOT ингредиенты — свинцовые слитки (isLeadIngot)
+        // Verify all NETHERITE_INGOT ingredients are lead ingots (isLeadIngot)
         ItemStack[] matrix = inv.getMatrix();
         if (matrix == null) return;
         int[] ingotSlots = {0, 1, 2, 3, 5, 6, 7, 8};
@@ -150,7 +150,7 @@ public class LeadShieldCraftListener implements Listener {
             }
             ItemMeta ingMeta = ing.getItemMeta();
             if (ingMeta == null || !ingMeta.getPersistentDataContainer().has(Keys.LEAD_INGOT, PersistentDataType.BYTE)) {
-                // Не свинцовый слиток — блокируем
+                // Not a lead ingot — block it
                 inv.setResult(null);
                 return;
             }

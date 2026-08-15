@@ -28,20 +28,20 @@ import java.text.DecimalFormat;
 import java.util.*;
 
 /**
- * ⚔ Незеритовое улучшение — прокачка незеритовых предметов в наковальне скрапом.
+ * ⚔ Netherite upgrade — upgrading netherite items in an anvil with scrap.
  * <p>
- * <b>Механика:</b>
+ * <b>Mechanics:</b>
  * <ul>
- *   <li>Слот 1: незеритовый предмет (меч, инструмент, броня)</li>
- *   <li>Слот 2: незеритовый скрап (НЕ слиток — слиток конфликтует с починкой)</li>
- *   <li>Оружие: +0.1 к урону атаки ({@link Attribute#ATTACK_DAMAGE}) за скрап</li>
- *   <li>Инструменты: +0.1 к скорости копания ({@link Attribute#BLOCK_BREAK_SPEED}) за скрап</li>
- *   <li>Броня: +0.1 к защите ({@link Attribute#ARMOR}) +0.05 к прочности ({@link Attribute#ARMOR_TOUGHNESS}) +0.1 к сопротивлению отбрасыванию ({@link Attribute#KNOCKBACK_RESISTANCE}) за скрап</li>
- *   <li>Все предметы: +1 к макс. прочности за скрап</li>
- *   <li>Улучшение бесконечно — стоимость всегда 0 уровней</li>
+ *   <li>Slot 1: a netherite item (sword, tool, armor)</li>
+ *   <li>Slot 2: netherite scrap (NOT an ingot — the ingot conflicts with repairing)</li>
+ *   <li>Weapons: +0.1 attack damage ({@link Attribute#ATTACK_DAMAGE}) per scrap</li>
+ *   <li>Tools: +0.1 mining speed ({@link Attribute#BLOCK_BREAK_SPEED}) per scrap</li>
+ *   <li>Armor: +0.1 armor ({@link Attribute#ARMOR}) +0.05 toughness ({@link Attribute#ARMOR_TOUGHNESS}) +0.1 knockback resistance ({@link Attribute#KNOCKBACK_RESISTANCE}) per scrap</li>
+ *   <li>All items: +1 max durability per scrap</li>
+ *   <li>The upgrade is infinite — the cost is always 0 levels</li>
  * </ul>
  * <p>
- * Количество улучшений хранится в PDC как {@code Keys.NETHERITE_UPGRADE} (Integer).
+ * The upgrade count is stored in PDC as {@code Keys.NETHERITE_UPGRADE} (Integer).
  */
 public class NetheriteUpgradeListener implements Listener {
 
@@ -73,7 +73,7 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
-    /** +0.1 flat за каждый скрап (ADD_NUMBER) */
+    /** +0.1 flat per scrap (ADD_NUMBER) */
     private static final double PER_SCRAP_BONUS = 0.1;
     private static final DecimalFormat DF = new DecimalFormat("0.0");
 
@@ -85,8 +85,8 @@ public class NetheriteUpgradeListener implements Listener {
 
         if (slot0 == null || slot0.getType() == Material.AIR) return;
         if (slot1 == null || slot1.getType() == Material.AIR) return;
-        // Только незеритовый скрап. Слиток НЕ поддерживается — он конфликтует
-        // с ванильной починкой в наковальне (Minecraft сам чинит предмет слитком).
+        // Only netherite scrap. The ingot is NOT supported — it conflicts
+        // with vanilla anvil repairing (Minecraft repairs items with ingots itself).
         if (slot1.getType() != Material.NETHERITE_SCRAP) return;
         if (!ALL_NETHERITE.contains(slot0.getType())) return;
 
@@ -107,26 +107,26 @@ public class NetheriteUpgradeListener implements Listener {
         var resultPdc = meta.getPersistentDataContainer();
         resultPdc.set(Keys.NETHERITE_UPGRADE, PersistentDataType.INTEGER, newUpgrades);
 
-        // ⚠ Paper/Leaf НЕ заменяет модификатор с тем же key — кидает исключение.
-        // Сначала удаляем старый модификатор по ключу, не трогая базовые атрибуты.
+        // ⚠ Paper/Leaf does NOT replace a modifier with the same key — it throws.
+        // First remove the old modifier by key without touching the base attributes.
         NamespacedKey modKey = new NamespacedKey(Main.getInstance(), "netherite_upgrade");
         double upgradeAmount = newUpgrades * PER_SCRAP_BONUS;
 
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
-            // Меч: +0.1 урона атаки за скрап
+            // Sword: +0.1 attack damage per scrap
             removeOurModifier(meta, Attribute.ATTACK_DAMAGE, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, new AttributeModifier(
                 modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_TOOLS.contains(slot0.getType())) {
-            // Инструменты: +0.1 скорости копания за скрап
+            // Tools: +0.1 mining speed per scrap
             removeOurModifier(meta, Attribute.BLOCK_BREAK_SPEED, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(
                 modKey, upgradeAmount, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND
             ));
         } else if (NETHERITE_ARMOR.contains(slot0.getType())) {
-            // Броня: +0.1 к защите и +0.05 к прочности брони за скрап
-            // Важно: НЕ EquipmentSlotGroup.ANY — иначе броня даёт защиту даже в руке!
+            // Armor: +0.1 armor and +0.05 toughness per scrap
+            // Important: NOT EquipmentSlotGroup.ANY — otherwise armor gives protection even in hand!
             EquipmentSlotGroup armorSlot = getArmorSlotGroup(slot0.getType());
             removeOurModifier(meta, Attribute.ARMOR, modKey, slot0.getType());
             meta.addAttributeModifier(Attribute.ARMOR, new AttributeModifier(
@@ -142,28 +142,28 @@ public class NetheriteUpgradeListener implements Listener {
             ));
         }
 
-        // +1 к макс. прочности за каждый скрап (для всех незеритовых предметов)
+        // +1 max durability per scrap (for all netherite items)
         if (meta instanceof Damageable damageable && damageable.hasMaxDamage()) {
             damageable.setMaxDamage(damageable.getMaxDamage() + itemCount);
         }
 
-        // Build lore: сохраняем существующие строки, заменяем строку улучшения
+        // Build lore: keep existing lines, replace the upgrade line
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
         if (lore == null) lore = new ArrayList<>();
 
         List<Component> filteredLore = new ArrayList<>();
         for (Component c : lore) {
-            // Используем PlainText — вытаскивает ТОЛЬКО видимый текст, без форматирования.
-            // В отличие от MM.serialize(), PlainText работает с ЛЮБЫМИ компонентами:
-            // будь то MiniMessage, NBT-десериализованные, или Legacy.
+            // Use PlainText — extracts ONLY the visible text, without formatting.
+            // Unlike MM.serialize(), PlainText works with ANY components:
+            // be it MiniMessage, NBT-deserialized, or Legacy.
             String text = PLAIN.serialize(c);
-            // Удаляем старые строки незеритового улучшения
+            // Remove old netherite upgrade lines
             if (!text.contains("✦ Незерит") && !text.contains("Незеритовое улучшение")) {
                 filteredLore.add(c);
             }
         }
 
-        // Формируем строку с ИТОГОВЫМ значением атрибута (база + все улучшения)
+        // Build the line with the FINAL attribute value (base + all upgrades)
         String upgradeLine;
         if (NETHERITE_WEAPONS.contains(slot0.getType())) {
             double total = getTotalAttribute(meta, Attribute.ATTACK_DAMAGE, slot0.getType());
@@ -183,13 +183,13 @@ public class NetheriteUpgradeListener implements Listener {
         result.setItemMeta(meta);
 
         event.setResult(result);
-        // Стоимость: 0 уровней опыта (бесконечные улучшения), потребляется itemCount скрапа
+        // Cost: 0 experience levels (infinite upgrades), consumes itemCount of scrap
         setAnvilCost(inv, 0, itemCount);
     }
 
     /**
-     * Возвращает базовое значение атрибута из config.yml.
-     * Используется для расчёта итогового значения в лоре.
+     * Returns the base attribute value from config.yml.
+     * Used to compute the final value shown in the lore.
      */
     private static double getBaseValue(Material material) {
         var config = Main.getInstance().getConfig();
@@ -213,13 +213,13 @@ public class NetheriteUpgradeListener implements Listener {
         if (name.endsWith("_BOOTS")) {
             return config.getDouble("netherite_upgrade.base_values.armor.boots", 3);
         }
-        // Инструменты: block_break_speed
+        // Tools: block_break_speed
         return config.getDouble("netherite_upgrade.base_values.block_break_speed", 1);
     }
 
     /**
-     * Определяет EquipmentSlot по материалу (броня → HEAD/CHEST/LEGS/FEET, всё остальное → HAND).
-     * Нужен для получения дефолтных модификаторов материала.
+     * Determines the EquipmentSlot by material (armor → HEAD/CHEST/LEGS/FEET, everything else → HAND).
+     * Needed to fetch the material's default modifiers.
      */
     private static EquipmentSlot getDefaultSlot(Material material) {
         String name = material.name();
@@ -231,8 +231,8 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     /**
-     * Определяет EquipmentSlotGroup для брони (HEAD/CHEST/LEGS/FEET).
-     * Используется вместо ANY, чтобы броня давала защиту ТОЛЬКО когда надета.
+     * Determines the EquipmentSlotGroup for armor (HEAD/CHEST/LEGS/FEET).
+     * Used instead of ANY so armor only grants protection when equipped.
      */
     private static EquipmentSlotGroup getArmorSlotGroup(Material material) {
         String name = material.name();
@@ -244,19 +244,19 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     /**
-     * Удаляет модификатор с указанным ключом из атрибута, если он есть.
-     * Используется перед addAttributeModifier, так как Paper/Leaf не заменяет
-     * модификатор с тем же key, а кидает IllegalArgumentException.
+     * Removes the modifier with the given key from the attribute, if present.
+     * Used before addAttributeModifier because Paper/Leaf does not replace
+     * a modifier with the same key — it throws IllegalArgumentException.
      * <p>
-     * Важно: после setAttributeModifiers() Paper чистит internalCustomAttributes,
-     * поэтому явно добавляем дефолтные модификаторы материала обратно.
+     * Important: after setAttributeModifiers() Paper clears internalCustomAttributes,
+     * so we explicitly add the material's default modifiers back.
      */
     private static void removeOurModifier(ItemMeta meta, Attribute attribute, NamespacedKey key, Material material) {
         var allMods = meta.getAttributeModifiers();
 
         Multimap<Attribute, AttributeModifier> newMods = ArrayListMultimap.create();
 
-        // 1) Копируем все существующие кастомные модификаторы, КРОМЕ нашего
+        // 1) Copy all existing custom modifiers EXCEPT ours
         if (allMods != null && !allMods.isEmpty()) {
             for (var entry : allMods.entries()) {
                 AttributeModifier mod = entry.getValue();
@@ -267,9 +267,9 @@ public class NetheriteUpgradeListener implements Listener {
             }
         }
 
-        // 2) Добавляем дефолтные модификаторы материала, если их ещё нет в newMods
-        //    (Paper/Leaf при setAttributeModifiers() чистит internalCustomAttributes,
-        //     в которых могут храниться базовые атрибуты материала)
+        // 2) Add the material's default modifiers if they're not in newMods yet
+        //    (Paper/Leaf clears internalCustomAttributes on setAttributeModifiers(),
+        //     which may hold the material's base attributes)
         EquipmentSlot slot = getDefaultSlot(material);
         var defaults = material.getDefaultAttributeModifiers(slot);
         if (defaults != null) {
@@ -285,14 +285,14 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     /**
-     * Суммирует базовое значение атрибута из config.yml
-     * (3 для шлема, 8 для меча и т.д.) + все ADD_NUMBER модификаторы
-     * от улучшений незеритом.
+     * Sums the base attribute value from config.yml
+     * (3 for a helmet, 8 for a sword, etc.) + all ADD_NUMBER modifiers
+     * from the netherite upgrades.
      */
     private static double getTotalAttribute(ItemMeta meta, Attribute attribute, Material material) {
         double total = getBaseValue(material);
 
-        // Кастомные модификаторы от улучшений незеритом
+        // Custom modifiers from the netherite upgrades
         var mods = meta.getAttributeModifiers(attribute);
         if (mods != null) {
             for (AttributeModifier mod : mods) {
@@ -306,9 +306,9 @@ public class NetheriteUpgradeListener implements Listener {
     }
 
     /**
-     * Устанавливает стоимость наковальни.
-     * repairCost = 0 → бесплатно, никогда не становится "Too Expensive".
-     * repairCostAmount = сколько скрапа потребляется.
+     * Sets the anvil cost.
+     * repairCost = 0 → free, never becomes "Too Expensive".
+     * repairCostAmount = how much scrap is consumed.
      */
     private void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
         try {

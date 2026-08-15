@@ -78,7 +78,7 @@ public class ConcreteBucketCraftListener implements Listener {
     }
 
     // =========================
-    // OVERRIDE RESULT — ставим PDC на результат крафта
+    // OVERRIDE RESULT — put PDC on the craft result
     // =========================
     @EventHandler
     public void onCraft(PrepareItemCraftEvent e) {
@@ -105,7 +105,7 @@ public class ConcreteBucketCraftListener implements Listener {
     }
 
     // =========================
-    // ЗАЩИТА ОТ ИСПОЛЬЗОВАНИЯ В ДРУГИХ РЕЦЕПТАХ
+    // PROTECTION FROM USE IN OTHER RECIPES
     // =========================
     @EventHandler
     public void onUncraftProtection(PrepareItemCraftEvent e) {

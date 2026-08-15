@@ -26,11 +26,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 💡 Мультиблочная лампочка (REDSTONE_LAMP)
+ * 💡 Multiblock lamp (REDSTONE_LAMP)
  * <p>
- * Хранение — Marker entities (не SQLite).
- * Каждый блок получает Marker с PDC: structure_type="light", structure_id=UUID.
- * При разрушении любого блока — весь кластер разбирается.
+ * Storage — Marker entities (not SQLite).
+ * Every block gets a Marker with PDC: structure_type="light", structure_id=UUID.
+ * When any block is destroyed — the whole cluster is dismantled.
  */
 public class LightManager {
 
@@ -40,7 +40,7 @@ public class LightManager {
     private static int nextId = 1;
 
     // ════════════════════════════════════════
-    // КООРДИНАТНЫЙ КЛЮЧ
+    // COORDINATE KEY
     // ════════════════════════════════════════
     public static long toKey(int x, int y, int z) { return StructureMarker.toKey(x, y, z); }
     public static long toKey(Location loc) { return StructureMarker.toKey(loc); }
@@ -156,7 +156,7 @@ public class LightManager {
     public static void init() {
         instance = new LightManager();
 
-        // Восстанавливаем кластеры из Marker'ов
+        // Rebuild clusters from Markers
         rebuildFromMarkers();
 
         ConsoleLogger.info("[LightMulti] Manager initialized with " + clustersById.size() + " clusters (Marker-based)");
@@ -404,7 +404,7 @@ public class LightManager {
     private static void chargeClusterBuffer(LightCluster cluster) {
         if (cluster == null || cluster.buffer >= cluster.getBufferCapacity()) return;
 
-        // Ищем первый блок кластера, рядом с которым есть кабель
+        // Find the first cluster block with a cable nearby
         for (long key : cluster.blockKeys) {
             Location blockLoc = new Location(cluster.world, getX(key), getY(key), getZ(key));
             CableNode start = findAdjacentCableNode(blockLoc);
@@ -415,7 +415,7 @@ public class LightManager {
             if (pulled > 0) {
                 cluster.buffer += pulled;
             }
-            break; // Одна точка входа за тик
+            break; // One entry point per tick
         }
     }
 
@@ -442,7 +442,7 @@ public class LightManager {
             CableNode node = queue.poll();
             if (node == null) continue;
 
-            // Уважаем режим батареи: берём только из DISCHARGE/CHARGE_DISCHARGE
+            // Respect the battery mode: take only from DISCHARGE/CHARGE_DISCHARGE
             BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
             if (bc != null && !bc.canDischarge()) continue;
 
@@ -480,7 +480,7 @@ public class LightManager {
                 long firstKey = cluster.blockKeys.iterator().next();
                 if (!cluster.world.isChunkLoaded(getX(firstKey) >> 4, getZ(firstKey) >> 4)) continue;
 
-                // Анти-фантом: проверяем, что блок всё ещё WAXED_COPPER_BULB
+                // Anti-phantom: check that the block is still WAXED_COPPER_BULB
                 if (cluster.world.getType(getX(firstKey), getY(firstKey), getZ(firstKey)) != Materials.WAXED_COPPER_BULB) {
                     toRemove.add(cluster.id);
                     continue;
@@ -488,12 +488,12 @@ public class LightManager {
 
                 boolean hasRedstone = cluster.isAnyBlockPowered();
 
-                // Если есть редстоун и буфер не полон — заряжаем от сети
+                // If there is redstone and the buffer is not full — charge from the network
                 if (hasRedstone && !cluster.isBufferFull()) {
                     chargeClusterBuffer(cluster);
                 }
 
-                // Лампочка горит ТОЛЬКО если редстоун И буфер полон
+                // The lamp is lit ONLY if there is redstone AND the buffer is full
                 boolean shouldBeLit = hasRedstone && cluster.isBufferFull();
 
                 if (shouldBeLit != cluster.lit) {
@@ -504,7 +504,7 @@ public class LightManager {
                     });
                 }
 
-                // Если горим — потребляем энергию из буфера
+                // If lit — consume energy from the buffer
                 if (cluster.lit) {
                     cluster.buffer = Math.max(0, cluster.buffer - cluster.power);
                 }
@@ -513,7 +513,7 @@ public class LightManager {
             }
         }
 
-        // Очищаем фантомные кластеры
+        // Clean up phantom clusters
         for (int id : toRemove) {
             LightCluster cluster = clustersById.get(id);
             if (cluster != null) {
@@ -583,7 +583,7 @@ public class LightManager {
     public static int getClusterCount() { return clustersById.size(); }
 
     // ════════════════════════════════════════
-    // SAVE — no-op (Marker'ы сами сохраняются)
+    // SAVE — no-op (Markers save themselves)
     // ════════════════════════════════════════
     public static void saveAll() { /* no-op */ }
 

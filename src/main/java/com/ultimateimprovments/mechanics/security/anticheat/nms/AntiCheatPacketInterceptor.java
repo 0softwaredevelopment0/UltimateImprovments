@@ -12,13 +12,13 @@ import java.lang.reflect.Method;
 import java.util.UUID;
 
 /**
- * AntiCheatPacketInterceptor — кастомный ChannelDuplexHandler.
+ * AntiCheatPacketInterceptor — custom ChannelDuplexHandler.
  * <p>
- * Перехватывает входящие пакеты от клиента ДО обработки их игровой логикой.
- * Извлекает данные движения, атак и взаимодействий, записывая их в PlayerData.
+ * Intercepts inbound packets from the client BEFORE they are processed by game logic.
+ * Extracts movement, attack and interaction data, writing it to PlayerData.
  * <p>
- * Работает через рефлексию — не требует compile-time зависимостей от NMS.
- * Поддерживает Paper 1.21.4 (Mojang mappings).
+ * Works via reflection — no compile-time NMS dependencies required.
+ * Supports Paper 1.21.4 (Mojang mappings).
  */
 public class AntiCheatPacketInterceptor extends ChannelDuplexHandler {
 
@@ -86,11 +86,11 @@ public class AntiCheatPacketInterceptor extends ChannelDuplexHandler {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        // Process packet BEFORE the server sees it — это и есть "перехват СРАЗУ"
+        // Process packet BEFORE the server sees it — this is the "catch it instantly" part
         if (msg != null) {
             processPacket(msg);
         }
-        // Always pass through — мы только ЧИТАЕМ пакеты, никогда не блокируем
+        // Always pass through — we only READ packets, never block them
         super.channelRead(ctx, msg);
     }
 

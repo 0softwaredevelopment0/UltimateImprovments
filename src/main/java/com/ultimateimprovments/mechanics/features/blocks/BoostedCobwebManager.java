@@ -7,15 +7,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
 
 /**
- * Полная остановка движения в паутине (cobweb).
+ * Full movement stop in cobweb.
  * <p>
- * Использует PlayerMoveEvent вместо BukkitRunnable — ловит КАЖДОЕ движение
- * и отменяет его, если игрок находится в cobweb или пытается в него зайти.
- * Проверяет как блок у ног, так и блок на уровне глаз (Y+1).
+ * Uses PlayerMoveEvent instead of a BukkitRunnable — catches EVERY movement
+ * and cancels it if the player is in a cobweb or tries to enter one.
+ * Checks both the block at the feet and the block at eye level (Y+1).
  */
 public class BoostedCobwebManager implements Listener {
 
@@ -43,7 +44,7 @@ public class BoostedCobwebManager implements Listener {
         Location to = event.getTo();
         if (to == null) return;
 
-        // Пропускаем только поворот (изменение yaw/pitch без движения)
+        // Skip pure rotation (yaw/pitch change without movement)
         if (to.getX() == from.getX() && to.getY() == from.getY() && to.getZ() == from.getZ()) {
             return;
         }
@@ -52,14 +53,14 @@ public class BoostedCobwebManager implements Listener {
         boolean inCobwebTo = isInCobweb(to);
 
         if (inCobwebFrom || inCobwebTo) {
-            // ── Разрешаем падение вниз (гравитация):
-            //    - падение в паутину сверху
-            //    - падение внутри/сквозь паутину
+            // ── Allow falling down (gravity):
+            //    - falling into a cobweb from above
+            //    - falling inside/through a cobweb
             if (to.getY() < from.getY()) {
                 return;
             }
 
-            // Блокируем всё остальное (ходьба, прыжки, горизонтальное движение)
+            // Block everything else (walking, jumping, horizontal movement)
             event.setCancelled(true);
             player.teleport(from);
             player.setVelocity(new Vector(0, 0, 0));
@@ -67,8 +68,28 @@ public class BoostedCobwebManager implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (!enabled) return;
+
+        Player player = event.getPlayer();
+        if (isInCobweb(player)) {
+            event.setCancelled(true);
+            player.sendActionBar("§c❌ You can't break blocks in the cobweb!");
+        }
+    }
+
     /**
-     * Проверяет, находится ли игрок в cobweb ровно в ~ ~ ~ (блок в ногах).
+     * Checks whether the player is inside a cobweb — the block at their feet
+     * or at eye level (Y+1).
+     */
+    private boolean isInCobweb(Player player) {
+        Location loc = player.getLocation();
+        return isInCobweb(loc) || isInCobweb(loc.clone().add(0, 1, 0));
+    }
+
+    /**
+     * Checks whether the player is in a cobweb exactly at ~ ~ ~ (the block at their feet).
      */
     private boolean isInCobweb(Location loc) {
         return loc.getBlock().getType() == Material.COBWEB;

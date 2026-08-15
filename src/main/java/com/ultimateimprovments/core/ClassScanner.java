@@ -11,28 +11,28 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
- * ClassScanner — сканирует JAR плагина и находит классы с указанной аннотацией.
+ * ClassScanner — scans the plugin JAR and finds classes with the given annotation.
  * <p>
- * Используется для авто-обнаружения:
+ * Used for auto-discovery:
  * <ul>
- *   <li>{@link SubCommandInfo} — субкоманды {@code /ui}</li>
- *   <li>{@link ModuleInfo} — модули плагина</li>
+ *   <li>{@link SubCommandInfo} — {@code /ui} subcommands</li>
+ *   <li>{@link ModuleInfo} — plugin modules</li>
  * </ul>
  * <p>
- * Не требует внешних библиотек (сканирует JAR-entries через {@link JarFile}).
+ * Requires no external libraries (scans JAR entries via {@link JarFile}).
  */
 public final class ClassScanner {
 
     private ClassScanner() {}
 
     /**
-     * Сканирует JAR-файл плагина и находит все классы с указанной аннотацией.
+     * Scans the plugin JAR file and finds all classes with the given annotation.
      *
-     * @param jarFile       JAR-файл плагина (из {@link Main#getPluginFile()})
-     * @param annotation    класс аннотации для поиска
-     * @param packagePrefix фильтр пакета (например "com.ultimateimprovments")
-     * @param <A>           тип аннотации
-     * @return список классов, имеющих аннотацию
+     * @param jarFile       the plugin JAR file (from {@link Main#getPluginFile()})
+     * @param annotation    the annotation class to search for
+     * @param packagePrefix package filter (e.g. "com.ultimateimprovments")
+     * @param <A>           the annotation type
+     * @return list of classes bearing the annotation
      */
     @SuppressWarnings("unchecked")
     public static <A extends Annotation> List<Class<?>> findAnnotatedClasses(
@@ -53,12 +53,12 @@ public final class ClassScanner {
                 JarEntry entry = entries.nextElement();
                 String name = entry.getName();
 
-                // Только .class файлы в нужном пакете
+                // Only .class files in the target package
                 if (!name.endsWith(".class") || !name.startsWith(prefix)) {
                     continue;
                 }
 
-                // Пропускаем внутренние классы
+                // Skip inner classes
                 if (name.contains("$")) continue;
 
                 // com/ultimateimprovments/command/subcommands/Example.class → com.ultimateimprovments.command.subcommands.Example
@@ -69,17 +69,17 @@ public final class ClassScanner {
                     Class<?> clazz = Class.forName(className, false, ClassScanner.class.getClassLoader());
 
                     if (clazz.isAnnotationPresent(annotation)) {
-                        // Проверяем, что это не абстрактный класс и не интерфейс
+                        // Check that it is not an abstract class and not an interface
                         if (!clazz.isInterface() && !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {
                             result.add(clazz);
                         }
                     }
                 } catch (ClassNotFoundException | NoClassDefFoundError e) {
-                    // Класс может зависеть от Bukkit API — пропускаем
+                    // The class may depend on the Bukkit API — skip it
                 }
             }
         } catch (Exception e) {
-            // В dev-среде (IDE) JAR может не существовать — сканируем classpath
+            // In a dev environment (IDE) the JAR may not exist — scan the classpath
             return findAnnotatedClassesClasspath(annotation, packagePrefix);
         }
 
@@ -87,7 +87,7 @@ public final class ClassScanner {
     }
 
     /**
-     * Fallback: сканирует classpath для dev-среды без JAR.
+     * Fallback: scans the classpath for a dev environment without a JAR.
      */
     private static <A extends Annotation> List<Class<?>> findAnnotatedClassesClasspath(
             Class<A> annotation, String packagePrefix) {
@@ -119,7 +119,7 @@ public final class ClassScanner {
             if (file.isDirectory()) {
                 scanDirectory(root, file, packagePath, annotation, result);
             } else if (file.getName().endsWith(".class") && !file.getName().contains("$")) {
-                // Вычисляем полное имя класса из пути
+                // Compute the full class name from the path
                 String relativePath = file.getAbsolutePath()
                         .substring(root.getAbsolutePath().length() + 1)
                         .replace(File.separatorChar, '.');

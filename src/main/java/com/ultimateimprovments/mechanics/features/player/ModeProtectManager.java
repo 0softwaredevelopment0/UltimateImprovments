@@ -44,23 +44,23 @@ public class ModeProtectManager implements Listener {
 
         Player player = event.getPlayer();
 
-        // Пропускаем, если у игрока есть право на байпасс
+        // Skip if the player has the bypass permission
         if (player.hasPermission(bypassPermission)) return;
 
-        // Пропускаем, если мир не в списке защищённых
-        // Если список пуст — защита действует во всех мирах
+        // Skip if the world is not in the protected list
+        // If the list is empty — protection applies in all worlds
         String worldName = player.getWorld().getName();
         if (!protectedWorlds.isEmpty() && !protectedWorlds.contains(worldName)) return;
 
-        // Отменяем смену режима
+        // Cancel the gamemode change
         event.setCancelled(true);
 
-        // Принудительно переключаем обратно в выживание
+        // Forcefully switch back to survival
         if (player.getGameMode() != GameMode.SURVIVAL) {
             player.setGameMode(GameMode.SURVIVAL);
         }
 
-        // Сообщение игроку
+        // Message to the player
         player.sendMessage(MessageUtil.parse(message));
     }
 }

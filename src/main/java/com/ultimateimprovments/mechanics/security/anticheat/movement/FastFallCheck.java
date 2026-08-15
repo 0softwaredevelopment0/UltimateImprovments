@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * FastFall — ускоренное падение (быстрее гравитации).
- * Детекция: Y-скорость падения превышает максимальную (-0.4 за тик без модификаторов).
+ * FastFall — accelerated falling (faster than gravity).
+ * Detection: falling Y velocity exceeds the maximum (-0.4 per tick without modifiers).
  */
 public class FastFallCheck extends AbstractCheck {
 

@@ -21,31 +21,31 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.*;
 
 /**
- * Фича: Прогрессивное ломание неразрушимых блоков ПО КЛИКАМ.
+ * Feature: Progressive breaking of unbreakable blocks PER CLICK.
  *
- * Позволяет ломать блоки, которые в ванилле нельзя сломать (бедрок, барьер и т.д.),
- * через накопление "урона" инструментом с анимацией трещин.
+ * Allows breaking blocks that vanilla can't break (bedrock, barrier, etc.)
+ * by accumulating "damage" with a tool, with crack animation.
  *
- * Каждый блок настраивается отдельно в config.yml → features.unbreakable_breaker.blocks.
+ * Each block is configured separately in config.yml → features.unbreakable_breaker.blocks.
  *
- * Как работает:
- * 1. Каждый клик ЛКМ по блоку (PlayerInteractEvent LEFT_CLICK_BLOCK) = ОДИН удар.
- *    Событие отменяется — клиент сбрасывает анимацию, и чтобы нанести следующий
- *    удар, игрок обязан кликнуть снова.
- * 2. За каждый клик в акшенбаре показывается % ломания блока.
- * 3. Урон копится между кликами, пока игрок смотрит на тот же блок с подходящим
- *    инструментом. Отвёл взгляд / сменил инструмент / вышел — сессия сбрасывается.
- * 4. При достижении max_damage блок разрушается с эффектами.
+ * How it works:
+ * 1. Every left-click on the block (PlayerInteractEvent LEFT_CLICK_BLOCK) = ONE hit.
+ *    The event is cancelled — the client resets the animation, and to land the next
+ *    hit the player must click again.
+ * 2. Each click shows the block's breaking % in the action bar.
+ * 3. Damage accumulates between clicks while the player looks at the same block with a
+ *    suitable tool. Looking away / switching tools / leaving — the session resets.
+ * 4. When max_damage is reached, the block breaks with effects.
  */
 public class UnbreakableBreakerManager extends BukkitRunnable implements Listener {
 
     private static UnbreakableBreakerManager instance;
 
-    // ========== НАСТРОЙКИ БЛОКА (из конфига) ==========
+    // ========== BLOCK SETTINGS (from config) ==========
 
     /**
-     * Параметры для каждого настраиваемого блока.
-     * Загружаются из features.unbreakable_breaker.blocks.<MATERIAL>
+     * Parameters for each configurable block.
+     * Loaded from features.unbreakable_breaker.blocks.<MATERIAL>
      */
     private record BlockConfig(
             boolean enabled,
@@ -61,19 +61,19 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
             double hasteMultiplier
     ) {}
 
-    // Загруженные конфиги блоков: Material → BlockConfig
+    // Loaded block configs: Material → BlockConfig
     private Map<Material, BlockConfig> blockConfigs = new HashMap<>();
 
-    // ========== ОБЩИЕ НАСТРОЙКИ ==========
+    // ========== GENERAL SETTINGS ==========
     private static boolean featureEnabled = true;
 
-    // ========== СЕССИЯ ЛОМАНИЯ ==========
+    // ========== BREAKING SESSION ==========
 
     private static class ActiveBreak {
-        Location blockLoc;          // нормализованная локация блока
-        double currentDamage;       // накопленный урон
-        BlockConfig config;         // конфиг конкретного блока
-        int lastDamageTick;         // тик последнего принятого удара (анти-автокликер)
+        Location blockLoc;          // normalized block location
+        double currentDamage;       // accumulated damage
+        BlockConfig config;         // config of the specific block
+        int lastDamageTick;         // tick of the last accepted hit (anti-autoclicker)
 
         ActiveBreak(Location blockLoc, BlockConfig config) {
             this.blockLoc = blockLoc;
@@ -83,22 +83,22 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         }
     }
 
-    /** Минимальный интервал между ударами (в тиках) — защита от автокликеров. */
+    /** Minimum interval between hits (in ticks) — protection against autoclickers. */
     private static final int MIN_CLICK_INTERVAL_TICKS = 3;
 
-    // UUID игрока → активная сессия
+    // Player UUID → active session
     private final Map<UUID, ActiveBreak> activeBreaks = new HashMap<>();
 
-    // Обратная карта: Location → UUID для O(1) доступа в getProgress()
+    // Reverse map: Location → UUID for O(1) access in getProgress()
     private final Map<Location, UUID> locationToPlayer = new HashMap<>();
 
-    // ========== ЖИЗНЕННЫЙ ЦИКЛ ==========
+    // ========== LIFECYCLE ==========
 
     public static void init(Main plugin) {
         instance = new UnbreakableBreakerManager();
         reloadConfig();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
-        instance.runTaskTimer(plugin, 20L, 1L); // каждый тик — для плавной анимации трещин
+        instance.runTaskTimer(plugin, 20L, 1L); // every tick — for smooth crack animation
     }
 
     public static void reloadConfig() {
@@ -111,7 +111,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
 
         featureEnabled    = cfg.getBoolean("enabled", true);
 
-        // Загружаем конфиги блоков
+        // Load the block configs
         Map<Material, BlockConfig> newConfigs = new HashMap<>();
         ConfigurationSection blocksSection = cfg.getConfigurationSection("blocks");
         if (blocksSection != null) {
@@ -127,7 +127,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
                     continue;
                 }
 
-                // Загружаем урон по инструментам
+                // Load per-tool damage
                 Map<String, Double> toolDmg = new HashMap<>();
                 ConfigurationSection dmgSec = bc.getConfigurationSection("damage");
                 if (dmgSec != null) {
@@ -159,7 +159,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         ConsoleLogger.info("[UnbreakableBreaker] Loaded " + newConfigs.size() + " breakable block(s)");
     }
 
-    // ========== ПОДДЕРЖАНИЕ ТРЕЩИН + ОЧИСТКА СЕССИЙ (каждый тик) ==========
+    // ========== CRACK MAINTENANCE + SESSION CLEANUP (every tick) ==========
 
     @Override
     public void run() {
@@ -177,7 +177,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
                 continue;
             }
 
-            // Смотрит ли игрок на тот же блок?
+            // Is the player looking at the same block?
             Block target = player.getTargetBlockExact(5);
             if (target == null || !isBreakable(target.getType())) {
                 sendCrackProgress(player, brk.blockLoc, 0.0f);
@@ -190,7 +190,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
                 continue;
             }
 
-            // Держит ли игрок подходящий инструмент?
+            // Is the player holding a suitable tool?
             ItemStack tool = player.getInventory().getItemInMainHand();
             if (!isValidTool(tool, brk.config)) {
                 sendCrackProgress(player, brk.blockLoc, 0.0f);
@@ -198,14 +198,14 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
                 continue;
             }
 
-            // ─── ПОДДЕРЖИВАЕМ ТРЕЩИНЫ НА ТЕКУЩЕМ ПРОЦЕНТЕ КАЖДЫЙ ТИК ───
-            // Урон наносится ТОЛЬКО по кликам (см. onBlockInteract).
+            // ─── KEEP CRACKS AT THE CURRENT PERCENTAGE EVERY TICK ───
+            // Damage is applied ONLY on clicks (see onBlockInteract).
             float progress = (float) Math.min(1.0, brk.currentDamage / brk.config.maxDamage());
             sendCrackProgress(player, brk.blockLoc, progress);
         }
     }
 
-    // ========== ОБРАБОТЧИК КЛИКА ==========
+    // ========== CLICK HANDLER ==========
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onBlockInteract(PlayerInteractEvent e) {
@@ -215,7 +215,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         Block block = e.getClickedBlock();
         if (block == null) return;
 
-        // Проверяем, есть ли конфиг для этого блока
+        // Check whether a config exists for this block
         BlockConfig config = blockConfigs.get(block.getType());
         if (config == null || !config.enabled()) return;
 
@@ -241,23 +241,23 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
 
         Location loc = normalizeLoc(block.getLocation());
 
-        // Обновляем обратную карту (старая запись будет перезаписана)
+        // Update the reverse map (the old entry gets overwritten)
         locationToPlayer.put(loc, player.getUniqueId());
 
-        // Создаём или обновляем сессию
+        // Create or update the session
         ActiveBreak brk = activeBreaks.computeIfAbsent(
                 player.getUniqueId(), k -> new ActiveBreak(loc, config));
         if (!brk.blockLoc.equals(loc)) {
             sendCrackProgress(player, brk.blockLoc, 0.0f);
-            locationToPlayer.remove(brk.blockLoc); // убираем старую локацию
+            locationToPlayer.remove(brk.blockLoc); // remove the old location
             brk.blockLoc = loc;
             brk.config = config;
             brk.currentDamage = 0.0;
-            locationToPlayer.put(loc, player.getUniqueId()); // обновляем на новую
+            locationToPlayer.put(loc, player.getUniqueId()); // update to the new one
         }
 
-        // ─── ОДИН КЛИК = ОДИН УДАР ───
-        // Анти-автокликер: клики чаще чем MIN_CLICK_INTERVAL_TICKS игнорируются.
+        // ─── ONE CLICK = ONE HIT ───
+        // Anti-autoclicker: clicks faster than MIN_CLICK_INTERVAL_TICKS are ignored.
         if (Bukkit.getCurrentTick() - brk.lastDamageTick < MIN_CLICK_INTERVAL_TICKS) {
             e.setCancelled(true);
             return;
@@ -272,7 +272,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         float progress = (float) Math.min(1.0, brk.currentDamage / config.maxDamage());
         sendCrackProgress(player, loc, progress);
 
-        // 📊 Процент ломания в акшенбаре за каждый клик
+        // 📊 Breaking % in the action bar for each click
         int percent = (int) Math.round(progress * 100);
         player.sendActionBar(MessageUtil.parse(
                 "<yellow>🔨</yellow> <white>Ломание:</white> <aqua>" + percent + "%</aqua>"
@@ -291,7 +291,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         }
     }
 
-    // ========== ОЧИСТКА ==========
+    // ========== CLEANUP ==========
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
@@ -305,14 +305,14 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         }
     }
 
-    // ========== РАЗРУШЕНИЕ БЛОКА ==========
+    // ========== BLOCK DESTRUCTION ==========
 
     private void finishBreaking(Player player, Block block, ItemStack tool, Location loc, BlockConfig config) {
         sendCrackProgress(player, loc, 0.0f);
 
         Location center = loc.clone().add(0.5, 0.5, 0.5);
 
-        // Сохраняем тип блока ДО его изменения, чтобы dropBlock работал корректно
+        // Save the block type BEFORE changing it so dropBlock works correctly
         Material blockType = block.getType();
 
         if (config.playEffects()) {
@@ -326,14 +326,14 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
             block.getWorld().spawnParticle(Particle.CRIT, center, 30, 0.5, 0.5, 0.5, 0.1);
         }
 
-        // Ванильный дроп (если включено)
+        // Vanilla drop (if enabled)
         if (config.breakNaturally()) {
             block.breakNaturally(tool);
         } else {
             block.setType(Material.AIR);
         }
 
-        // Дропаем сам блок (только если он не выпал через breakNaturally)
+        // Drop the block itself (only if it didn't drop via breakNaturally)
         if (config.dropBlock()) {
             block.getWorld().dropItemNaturally(center, new ItemStack(blockType));
         }
@@ -341,13 +341,13 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         player.sendActionBar(MessageUtil.parse("<green>✔</green> <white>Блок разрушен!</white>"));
     }
 
-    // ========== АНИМАЦИЯ ТРЕЩИН ==========
+    // ========== CRACK ANIMATION ==========
 
     private void sendCrackProgress(Player player, Location loc, float progress) {
         player.sendBlockDamage(loc, Math.min(1.0f, Math.max(0.0f, progress)));
     }
 
-    // ========== ИНСТРУМЕНТЫ ==========
+    // ========== TOOLS ==========
 
     private boolean isBreakable(Material type) {
         BlockConfig config = blockConfigs.get(type);
@@ -376,13 +376,13 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         if (tool == null) return config.defaultDamage();
         String name = tool.getType().name();
 
-        // Ищем точное совпадение для инструмента
+        // Look for an exact tool match
         for (var entry : config.toolDamage().entrySet()) {
             if (name.startsWith(entry.getKey())) {
                 return entry.getValue();
             }
         }
-        // Пробуем без _PICKAXE
+        // Try without _PICKAXE
         for (var entry : config.toolDamage().entrySet()) {
             String key = entry.getKey().replace("_PICKAXE", "");
             if (name.startsWith(key)) {
@@ -422,7 +422,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         return 0;
     }
 
-    // ========== УТИЛИТЫ ==========
+    // ========== UTILITIES ==========
 
     private static Location normalizeLoc(Location loc) {
         return new Location(
@@ -433,7 +433,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         );
     }
 
-    // ========== API ДЛЯ ВНЕШНИХ ВЫЗОВОВ ==========
+    // ========== API FOR EXTERNAL CALLS ==========
 
     public static UnbreakableBreakerManager getInstance() {
         return instance;

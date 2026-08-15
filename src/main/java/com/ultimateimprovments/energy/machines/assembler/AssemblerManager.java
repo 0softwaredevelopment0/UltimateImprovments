@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages assembled Item Creator (Создатель предметов) blocks.
+ * Manages assembled Item Creator blocks.
  * Activated by placing a CRAFTER block — shift+RMB to assemble/disassemble.
  * Only assembled item creators auto-craft items (checked by {@link AssemblerTask}).
  */
@@ -128,7 +128,7 @@ public class AssemblerManager implements Listener {
             // ASSEMBLE
             activeAssemblers.put(loc, true);
             StructureMarker.place(loc, "item_creator", UUID.randomUUID());
-            // Регистрируем в EnergyWorkbenchManager, чтобы AssemblerListener мог открыть GUI
+            // Register in EnergyWorkbenchManager so AssemblerListener can open the GUI
             EnergyWorkbenchManager.add(loc);
 
             World world = loc.getWorld();
@@ -157,7 +157,7 @@ public class AssemblerManager implements Listener {
         loc = LocationUtil.normalize(loc);
         if (loc == null) return false;
         Boolean was = activeAssemblers.remove(loc);
-        // Удаляем из EnergyWorkbenchManager, чтобы не пытаться открыть GUI для разобранного CRAFTER
+        // Remove from EnergyWorkbenchManager so the GUI is not opened for a disassembled CRAFTER
         EnergyWorkbenchManager.remove(loc);
         if (was != null) {
             StructureMarker.removeAt(loc);

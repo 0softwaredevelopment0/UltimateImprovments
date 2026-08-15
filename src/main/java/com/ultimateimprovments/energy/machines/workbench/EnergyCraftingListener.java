@@ -66,9 +66,9 @@ public class EnergyCraftingListener implements Listener {
     }
 
     // =========================
-    // БЛОКИРОВКА КАСТОМНЫХ РЕЦЕПТОВ ВНЕ ITEM ASSEMBLER
-    // Блокирует PrepareItemCraftEvent для кастомных рецептов
-    // в обычном верстаке (WORKBENCH), ванильном Crafter и 2x2 крафте.
+    // BLOCK CUSTOM RECIPES OUTSIDE THE ITEM ASSEMBLER
+    // Blocks PrepareItemCraftEvent for custom recipes
+    // in the regular workbench (WORKBENCH), vanilla Crafter and 2x2 crafting.
     // =========================
     @EventHandler(priority = EventPriority.LOW)
     public void onPrepareCraftBlockOutside(PrepareItemCraftEvent e) {
@@ -78,7 +78,7 @@ public class EnergyCraftingListener implements Listener {
         NamespacedKey recipeKey = keyed.getKey();
         if (!RecipeRegistry.getCustomRecipes().contains(recipeKey)) return;
 
-        // Разрешаем только в Item Assembler GUI (CRAFTER + "Item assembler" title)
+        // Allow only in the Item Assembler GUI (CRAFTER + "Item assembler" title)
         boolean isAssembler = (e.getInventory().getType() == InventoryType.CRAFTER)
                 && ASSEMBLER_TITLE.equals(e.getView().title());
 
@@ -128,7 +128,7 @@ public class EnergyCraftingListener implements Listener {
             EnergyWorkbenchManager.consumeBufferEnergy(workbench, cost);
         } else {
             // =========================
-            // Не в Assembler — блокируем кастомные рецепты
+            // Not in the Assembler — block custom recipes
             // =========================
             Recipe recipe = e.getRecipe();
             if (recipe instanceof Keyed keyed) {

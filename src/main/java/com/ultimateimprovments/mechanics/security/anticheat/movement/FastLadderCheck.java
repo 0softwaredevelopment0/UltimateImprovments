@@ -10,8 +10,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * FastLadder / FastClimb — ускоренный подъём по лестницам/лианам.
- * Детекция: скорость подъёма по climbable блокам превышает ванильный лимит.
+ * FastLadder / FastClimb — accelerated climbing of ladders/vines.
+ * Detection: climbing speed on climbable blocks exceeds the vanilla limit.
  */
 public class FastLadderCheck extends AbstractCheck {
 

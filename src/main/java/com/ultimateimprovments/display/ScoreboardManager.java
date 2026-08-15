@@ -21,14 +21,14 @@ import org.bukkit.scoreboard.Team;
 import java.util.*;
 
 /**
- * Менеджер кастомных скорбордов.
+ * Manager of custom scoreboards.
  * <p>
- * Поддерживает:
+ * Supports:
  * <ul>
- *   <li>Несколько конфигураций скорбордов (boards)</li>
- *   <li>Условия отображения: always, world, world_blacklist, permission</li>
- *   <li>MiniMessage + плейсхолдеры в каждой строке</li>
- *   <li>Настраиваемый интервал обновления</li>
+ *   <li>Multiple scoreboard configurations (boards)</li>
+ *   <li>Display conditions: always, world, world_blacklist, permission</li>
+ *   <li>MiniMessage + placeholders in every line</li>
+ *   <li>Configurable update interval</li>
  * </ul>
  */
 public class ScoreboardManager extends BukkitRunnable implements Listener {
@@ -112,7 +112,7 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
             String title = sec.getString("title", "");
             List<String> lines = sec.getStringList("lines");
 
-            // Ограничение: макс 15 строк для sidebar
+            // Limit: max 15 lines for the sidebar
             if (lines.size() > 15) {
                 ConsoleLogger.warn("[Scoreboard] Board '" + key + "' has " + lines.size()
                         + " lines, max is 15. Extra lines will be ignored.");
@@ -138,7 +138,7 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player == null || !player.isOnline()) continue;
 
-            // Per-player toggle: если скорборд отключён — прячем
+            // Per-player toggle: if the scoreboard is disabled — hide it
             if (!PlayerSettingsDB.isScoreboardEnabled(player.getUniqueId())) {
                 org.bukkit.scoreboard.Scoreboard old = playerBoards.remove(player.getUniqueId());
                 if (old != null) {
@@ -237,13 +237,13 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
     private static java.lang.reflect.Method setNumberFormatMethod;
 
     /**
-     * Пытается скрыть цифры-очки справа от строк скорборда через
+     * Tries to hide the score numbers on the right of the scoreboard lines via
      * {@code NumberFormat.blankFormat()} (Adventure 5.x / Paper 1.21+).
-     * Если метод отсутствует (старый сервер), просто игнорирует — цифры
-     * останутся видны, но всё остальное работает.
+     * If the method is missing (old server), it is simply ignored — the numbers
+     * stay visible, but everything else works.
      * <p>
-     * Рефлекшн-методы кэшируются в статику при первом вызове,
-     * чтобы не дёргать {@code Class.forName}/{@code getMethod} каждый тик.
+     * Reflection methods are cached in static fields on first call,
+     * so {@code Class.forName}/{@code getMethod} are not invoked every tick.
      */
     private static void setBlankNumberFormat(Objective objective) {
         if (!blankFormatResolved) {
@@ -253,7 +253,7 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
         try {
             setNumberFormatMethod.invoke(objective, blankNumberFormat);
         } catch (Exception ignored) {
-            // Не должно падать после успешного resolve, но защита не помешает
+            // Should not fail after a successful resolve, but protection does not hurt
         }
     }
 
@@ -261,7 +261,7 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
         blankFormatResolved = true;
         try {
             Class<?> nfClass = Class.forName("net.kyori.adventure.scoreboard.NumberFormat");
-            // Adventure 4.x → blankFormat(), Adventure 5.x → blank(), пробуем оба
+            // Adventure 4.x → blankFormat(), Adventure 5.x → blank(), try both
             java.lang.reflect.Method factoryMethod = null;
             try {
                 factoryMethod = nfClass.getMethod("blankFormat");

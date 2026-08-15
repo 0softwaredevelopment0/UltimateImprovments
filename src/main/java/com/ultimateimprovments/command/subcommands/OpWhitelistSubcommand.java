@@ -87,7 +87,7 @@ public final class OpWhitelistSubcommand {
         if (names.isEmpty()) {
             sender.sendMessage(MessageUtil.parse("  <dark_gray>(empty)</dark_gray>"));
         } else {
-            // Собираем онлайн-игроки для быстрого поиска (lowercase → Player)
+            // Collect online players for a fast lookup (lowercase → Player)
             java.util.Map<String, Player> onlineByLower = new java.util.HashMap<>();
             for (Player p : Bukkit.getOnlinePlayers()) {
                 onlineByLower.put(p.getName().toLowerCase(), p);
@@ -99,7 +99,7 @@ public final class OpWhitelistSubcommand {
                         ? "<green>●</green>"
                         : "<dark_gray>●</dark_gray>";
                 String opStatus = (online != null && online.isOp()) ? " <gold>[OP]</gold>" : "";
-                // Показываем оригинальное имя из вайтлиста (но если игрок онлайн — его реальное)
+                // Show the original name from the whitelist (but if the player is online — their real one)
                 String displayName = online != null ? online.getName() : name;
                 sender.sendMessage(MessageUtil.parse(
                         "  " + statusStr + " <white>" + displayName + "</white>" + opStatus

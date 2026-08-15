@@ -28,14 +28,14 @@ import java.util.Optional;
  *       your coordinates and world» with ✔ Confirm / ✖ Cancel buttons.</li>
  * </ul>
  * <p>
- * Оба диалога используют {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
- * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на отдельный экран
- * {@code WaitingForResponseScreen} («Waiting for server…») и игнорирует
- * {@code ClientboundClearDialogPacket} (клиентский {@code clearDialog()} закрывает только
- * {@code DialogScreen}), поэтому окно висело бы ~4 секунды. С {@code CLOSE} клиент закрывает
- * окно СРАЗУ после клика сам (пакет клика с вводом при этом всё равно отправляется),
- * а сервер лишь выполняет действие. {@code close()} отправляет Clear-пакет как страховку —
- * на игровом экране он безвреден.
+ * Both dialogs use {@link DialogAction#CLOSE} (NOT {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * with {@code WAIT_FOR_RESPONSE} the client switches to a separate screen after the click
+ * {@code WaitingForResponseScreen} ("Waiting for server…") and ignores
+ * {@code ClientboundClearDialogPacket} (the client-side {@code clearDialog()} only closes
+ * {@code DialogScreen}), so the window would hang ~4 seconds. With {@code CLOSE} the client closes
+ * the window immediately after the click itself (the click-with-input packet is still sent),
+ * while the server only performs the action. {@code close()} sends the Clear packet as a safety net —
+ * it is harmless on the gameplay screen.
  */
 public class AskPosDialogScreen {
 
@@ -117,7 +117,7 @@ public class AskPosDialogScreen {
             Optional.of(externalTitle),
             true,                            // canCloseWithEscape
             true,                            // pause
-            DialogAction.CLOSE,               // клиент закрывает окно сам, мгновенно (без «Waiting for server»)
+            DialogAction.CLOSE,               // the client closes the window itself, instantly (without "Waiting for server")
             List.of(new PlainMessage(bodyText, 310)),
             List.of(new Input("target_name", nickInput))
         );
@@ -194,7 +194,7 @@ public class AskPosDialogScreen {
             Optional.of(externalTitle),
             true,                            // canCloseWithEscape
             true,                            // pause
-            DialogAction.CLOSE,               // клиент закрывает окно сам, мгновенно (без «Waiting for server»)
+            DialogAction.CLOSE,               // the client closes the window itself, instantly (without "Waiting for server")
             List.of(new PlainMessage(bodyText, 310)),
             List.of()                        // no input fields
         );

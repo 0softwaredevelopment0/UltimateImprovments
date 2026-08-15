@@ -39,13 +39,13 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Беспроводной редстоун: связывает редстоун-устройства (one-to-many).
+ * Wireless redstone: links redstone devices together (one-to-many).
  * <p>
- * Один блок может быть связан с НЕСКОЛЬКИМИ другими. Когда он активируется,
- * ВСЕ связанные устройства активируются. Связь двусторонняя: если A↔B,
- * то активация B также активирует A (с loop protection).
+ * One block can be linked to SEVERAL others. When it activates,
+ * ALL linked devices activate. The link is bidirectional: if A↔B,
+ * activating B also activates A (with loop protection).
  * <p>
- * Поддерживаемые блоки: REDSTONE_LAMP, OBSERVER, PISTON/STICKY_PISTON,
+ * Supported blocks: REDSTONE_LAMP, OBSERVER, PISTON/STICKY_PISTON,
  * DISPENSER/DROPPER, REDSTONE_WIRE.
  */
 public class WirelessRedstoneManager implements Listener {
@@ -53,12 +53,12 @@ public class WirelessRedstoneManager implements Listener {
     private static WirelessRedstoneManager instance;
     private static boolean enabled = true;
 
-    /** Таск-наблюдатель — храним, чтобы корректно отменять при shutdown/reload. */
+    /** Watcher task — stored so it can be cancelled properly on shutdown/reload. */
     private org.bukkit.scheduler.BukkitTask observerTask;
 
     private final Map<UUID, BlockPos> bindingPlayers = new ConcurrentHashMap<>();
 
-    /** One-to-many: BlockPos → Set<BlockPos> (двусторонние связи) */
+    /** One-to-many: BlockPos → Set<BlockPos> (bidirectional links) */
     private final Map<BlockPos, Set<BlockPos>> links = new ConcurrentHashMap<>();
 
     private final Map<BlockPos, Integer> skipUntilTick = new ConcurrentHashMap<>();
@@ -94,9 +94,9 @@ public class WirelessRedstoneManager implements Listener {
     // INIT
     // ════════════════════════════════════════
     public static void init(Main plugin) {
-        // /ui reload: старый инстанс мог пережить onDisable (модуль не звал shutdown),
-        // а его таск отменяется глобальным cancelTasks(). Без этого guard'а init()
-        // вернулся бы раньше времени и наблюдатель никогда бы не перезапустился.
+        // /ui reload: the old instance could have survived onDisable (the module didn't call
+        // shutdown), and its task is cancelled by the global cancelTasks(). Without this
+        // guard, init() would return early and the watcher would never restart.
         if (instance != null) {
             shutdown();
         }
@@ -108,8 +108,8 @@ public class WirelessRedstoneManager implements Listener {
     }
 
     /**
-     * Останавливает наблюдатель и сбрасывает синглтон. Вызывается при
-     * отключении модуля и перед повторным init (например, /ui reload).
+     * Stops the watcher and resets the singleton. Called when the module is
+     * disabled and before a repeated init (e.g. /ui reload).
      */
     public static void shutdown() {
         if (instance == null) return;
@@ -137,13 +137,13 @@ public class WirelessRedstoneManager implements Listener {
         return links.getOrDefault(pos, Collections.emptySet());
     }
 
-    /** Добавить двустороннюю связь A↔B */
+    /** Add a bidirectional link A↔B */
     private void addLink(BlockPos a, BlockPos b) {
         links.computeIfAbsent(a, k -> ConcurrentHashMap.newKeySet()).add(b);
         links.computeIfAbsent(b, k -> ConcurrentHashMap.newKeySet()).add(a);
     }
 
-    /** Удалить двустороннюю связь A↔B (только из памяти) */
+    /** Remove a bidirectional link A↔B (memory only) */
     private void removeLink(BlockPos a, BlockPos b) {
         Set<BlockPos> setA = links.get(a);
         if (setA != null) {
@@ -157,7 +157,7 @@ public class WirelessRedstoneManager implements Listener {
         }
     }
 
-    /** Разорвать ВСЕ связи блока */
+    /** Break ALL links of a block */
     private void breakAllLinks(BlockPos pos) {
         Set<BlockPos> partners = links.remove(pos);
         if (partners == null || partners.isEmpty()) return;
@@ -308,7 +308,7 @@ public class WirelessRedstoneManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // ACTIVATE ALL PARTNERS — активировать ВСЕ связанные устройства
+    // ACTIVATE ALL PARTNERS — activate ALL linked devices
     // ════════════════════════════════════════
     private void activateAllPartners(BlockPos sourcePos, boolean powered) {
         Set<BlockPos> partners = getPartners(sourcePos);
@@ -347,12 +347,12 @@ public class WirelessRedstoneManager implements Listener {
         if (lightable.isLit() == lit) return;
 
         lightable.setLit(lit);
-        // ⚠ applyPhysics=false — критично! Лампа не имеет реального редстоун-сигнала
-        // (беспроводное питание), поэтому applyPhysics=true заставит сервер перепроверить
-        // сигнал и погасить лампу обратно.
+        // ⚠ applyPhysics=false — critical! The lamp has no real redstone signal
+        // (wireless power), so applyPhysics=true would make the server re-check
+        // the signal and turn the lamp back off.
         block.setBlockData(lightable, false);
 
-        // Обновляем компараторы и повторители вручную
+        // Update comparators and repeaters manually
         forceComparatorUpdate(block);
 
         Location loc = block.getLocation().clone();
@@ -373,8 +373,8 @@ public class WirelessRedstoneManager implements Listener {
     }
 
     /**
-     * Обновить состояние всех компараторов и повторителей,
-     * которые находятся в радиусе 1 блок от указанного блока.
+     * Updates the state of all comparators and repeaters
+     * within a 1-block radius of the given block.
      */
     private static void forceComparatorUpdate(Block block) {
         for (BlockFace face : List.of(BlockFace.UP, BlockFace.DOWN,
@@ -383,7 +383,7 @@ public class WirelessRedstoneManager implements Listener {
             Block adj = block.getRelative(face);
             Material type = adj.getType();
             if (type == Material.COMPARATOR || type == Material.REPEATER) {
-                // Повторно применяем блок-дату с физикой — компаратор пересчитает сигнал
+                // Re-apply the block data with physics — the comparator recalculates the signal
                 adj.getState().update(true);
             }
         }
@@ -463,16 +463,16 @@ public class WirelessRedstoneManager implements Listener {
         if (wire.getPower() == target) return;
         wire.setPower(target);
         block.setBlockData(wire, true);
-        // Cascade: активировать партнёров этой пыли
+        // Cascade: activate the partners of this dust
         BlockPos pos = BlockPos.fromLocation(block.getLocation());
         activateAllPartners(pos, powered);
     }
 
     // ════════════════════════════════════════
-    // MOVE LINKED BLOCKS — поршень двигает блоки со связями
+    // MOVE LINKED BLOCKS — piston moves blocks with links
     // ════════════════════════════════════════
     private void moveLinkedBlocks(List<Block> blocks, BlockFace direction) {
-        // Первый проход: oldPos → newPos для всех сдвигаемых блоков
+        // First pass: oldPos → newPos for all moved blocks
         Map<BlockPos, BlockPos> movedPositions = new HashMap<>();
         for (Block b : blocks) {
             BlockPos oldP = BlockPos.fromLocation(b.getLocation());
@@ -483,7 +483,7 @@ public class WirelessRedstoneManager implements Listener {
             movedPositions.put(oldP, newP);
         }
 
-        // Второй проход: для каждого сдвигаемого блока со связями — обновить все связи
+        // Second pass: for each moved block with links — update all its links
         Set<BlockPos> processed = new HashSet<>();
         for (Block b : blocks) {
             BlockPos oldPos = BlockPos.fromLocation(b.getLocation());
@@ -495,10 +495,10 @@ public class WirelessRedstoneManager implements Listener {
             BlockPos newPos = movedPositions.get(oldPos);
             if (newPos == null) continue;
 
-            // Собираем всех партнёров (некоторые могут тоже сдвигаться)
+            // Collect all partners (some may also be moving)
             List<BlockPos> allPartners = new ArrayList<>(partners);
 
-            // Удаляем старые связи (все сразу)
+            // Remove the old links (all at once)
             removeChunkTicket(oldPos);
             for (BlockPos p : allPartners) {
                 removeLink(oldPos, p);
@@ -507,7 +507,7 @@ public class WirelessRedstoneManager implements Listener {
             observerPrevPowered.remove(oldPos);
             skipUntilTick.remove(oldPos);
 
-            // Создаём новые на новых позициях
+            // Create new ones at the new positions
             for (BlockPos p : allPartners) {
                 BlockPos actualPartner = movedPositions.getOrDefault(p, p);
                 addLink(newPos, actualPartner);
@@ -516,7 +516,7 @@ public class WirelessRedstoneManager implements Listener {
             addChunkTicket(newPos);
         }
 
-        // Третий проход: chunk tickets для обработанных блоков и их партнёров
+        // Third pass: chunk tickets for the processed blocks and their partners
         for (BlockPos oldPos : processed) {
             BlockPos newPos = movedPositions.get(oldPos);
             if (newPos == null) continue;
@@ -528,7 +528,7 @@ public class WirelessRedstoneManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // EVENT: SHIFT+RMB — привязка (one-to-many)
+    // EVENT: SHIFT+RMB — binding (one-to-many)
     // ════════════════════════════════════════
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent e) {
@@ -563,7 +563,7 @@ public class WirelessRedstoneManager implements Listener {
                 return;
             }
 
-            // Добавляем связь к существующим (one-to-many)
+            // Add the link to existing ones (one-to-many)
             BlockPos second = clickedPos;
             addLink(first, second);
             addChunkTicket(first);
@@ -578,11 +578,11 @@ public class WirelessRedstoneManager implements Listener {
             return;
         }
 
-        // Новая привязка или просмотр существующих
+        // New binding or view existing ones
         Set<BlockPos> existing = getPartners(clickedPos);
         if (!existing.isEmpty()) {
             int count = existing.size();
-            // Показываем первого партнёра для примера
+            // Show the first partner as an example
             BlockPos firstPartner = existing.iterator().next();
             Location ploc = firstPartner.toLocation();
             String firstInfo = "";
@@ -655,7 +655,7 @@ public class WirelessRedstoneManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // EVENT: BLOCK BREAK — разорвать ВСЕ связи
+    // EVENT: BLOCK BREAK — break ALL links
     // ════════════════════════════════════════
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {

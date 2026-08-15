@@ -13,8 +13,8 @@ import org.bukkit.util.Vector;
 import java.util.Random;
 
 /**
- * Оркестратор: тик, состояние, применение коллизий.
- * Физика блоков — рикошет / пробитие; escape — только запасная защита.
+ * Orchestrator: ticking, state, applying collisions.
+ * Block physics — ricochet / piercing; escape is only a fallback safeguard.
  */
 public class PlasmaProjectile implements BaseProjectile {
 
@@ -75,7 +75,7 @@ public class PlasmaProjectile implements BaseProjectile {
             return;
         }
 
-        // Запасная защита: только если реально внутри блока
+        // Fallback safeguard: only if really inside a block
         if (!PlasmaPhysics.isAir(loc)) {
             loc = PlasmaPhysics.escapeToAir(loc, PlasmaPhysics.incomingFaceNormal(dir));
         }
@@ -89,7 +89,7 @@ public class PlasmaProjectile implements BaseProjectile {
             return;
         }
 
-        // Дрейф только в свободном полёте (не сразу после удара о стену)
+        // Drift only in free flight (not right after hitting a wall)
         if (stabilityTicks > 0) {
             stabilityTicks--;
         } else {
@@ -209,7 +209,7 @@ public class PlasmaProjectile implements BaseProjectile {
         stuckBlockTicks = 0;
     }
 
-    /** Запасной откат, если основная физика не вывела из цикла у одного блока. */
+    /** Fallback step-back if the main physics did not escape the loop within one block. */
     private boolean tryUnstuckFromWall() {
         if (stuckBlockTicks < PlasmaConstants.STUCK_BLOCK_TICKS || lastAirLoc == null) {
             return false;

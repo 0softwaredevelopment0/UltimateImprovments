@@ -9,13 +9,13 @@ import java.util.function.BiFunction;
 import java.util.function.BiConsumer;
 
 /**
- * Адаптер для перехода от статических субкоманд к интерфейсу {@link SubCommand}.
+ * Adapter for migrating from static subcommands to the {@link SubCommand} interface.
  *
- * <p>Позволяет регистрировать существующие субкоманды в {@code SubCommandRegistry}
- * без немедленного рефакторинга каждого класса. Для новых команд используй
- * {@code class MyCmd implements SubCommand} напрямую.</p>
+ * <p>Allows registering existing subcommands in {@code SubCommandRegistry}
+ * without immediately refactoring each class. For new commands use
+ * {@code class MyCmd implements SubCommand} directly.</p>
  *
- * <p>Tab-complete: используй {@link #tc(BiFunction)} для создания таб-комплита:
+ * <p>Tab-complete: use {@link #tc(BiFunction)} to build tab completion:
  * <pre>{@code
  * LegacySubCommandAdapter.of("check", CheckSubcommand::execute,
  *     LegacySubCommandAdapter.tc((s, a) -> {
@@ -43,20 +43,20 @@ public class LegacySubCommandAdapter implements SubCommand {
 
     // ── Factory methods ──
 
-    /** Без таб-комплита и алиасов. */
+    /** Without tab completion or aliases. */
     public static LegacySubCommandAdapter of(String name,
                                               BiFunction<CommandSender, String[], Boolean> executor) {
         return new LegacySubCommandAdapter(name, executor, (s, a) -> List.of(), List.of());
     }
 
-    /** С таб-комплитом, без алиасов. */
+    /** With tab completion, no aliases. */
     public static LegacySubCommandAdapter of(String name,
                                               BiFunction<CommandSender, String[], Boolean> executor,
                                               BiFunction<CommandSender, String[], List<String>> tabCompleter) {
         return new LegacySubCommandAdapter(name, executor, tabCompleter, List.of());
     }
 
-    /** С таб-комплитом и алиасами. */
+    /** With tab completion and aliases. */
     public static LegacySubCommandAdapter of(String name,
                                               BiFunction<CommandSender, String[], Boolean> executor,
                                               BiFunction<CommandSender, String[], List<String>> tabCompleter,
@@ -65,7 +65,7 @@ public class LegacySubCommandAdapter implements SubCommand {
     }
 
     /**
-     * Хелпер для создания таб-комплит функции.
+     * Helper for creating a tab-complete function.
      * <pre>{@code
      * LegacySubCommandAdapter.tc((s, a) -> {
      *     if (a.length == 2) return List.of("opt1", "opt2");

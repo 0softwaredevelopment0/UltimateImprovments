@@ -12,7 +12,7 @@ public final class CheckSubcommand {
     private CheckSubcommand() {}
 
     /**
-     * /ui check <player> — вызвать игрока на проверку читов
+     * /ui check <player> — call a player in for a cheat check
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player inspector)) {
@@ -48,10 +48,10 @@ public final class CheckSubcommand {
     }
 
     /**
-     * /ui uncheck [player] — завершить проверку читов
+     * /ui uncheck [player] — finish the cheat check
      * <p>
-     * Без аргумента — завершает текущую проверку (force-end, если suspect офлайн).
-     * С аргументом — завершает проверку указанного игрока.
+     * Without arguments — ends the current check (force-end if the suspect is offline).
+     * With an argument — ends the check of the specified player.
      */
     public static boolean uncheck(CommandSender sender, String[] args) {
         if (!(sender instanceof Player inspector)) {
@@ -66,7 +66,7 @@ public final class CheckSubcommand {
             return true;
         }
 
-        // /ui uncheck (без аргумента) — force-end текущей проверки
+        // /ui uncheck (no argument) — force-end the current check
         if (args.length < 2 || args[1].isEmpty()) {
             CheckManager.forceEndCheck(inspector);
             return true;
@@ -76,13 +76,13 @@ public final class CheckSubcommand {
         @SuppressWarnings("deprecation")
         Player suspect = Bukkit.getPlayerExact(targetName);
 
-        // Если suspect найден и онлайн — normal end
+        // If the suspect is found and online — normal end
         if (suspect != null && suspect.isOnline()) {
             CheckManager.endCheck(inspector, suspect);
             return true;
         }
 
-        // Если suspect офлайн — force-end
+        // If the suspect is offline — force-end
         inspector.sendMessage(MessageUtil.parse(
                 "<yellow>⚠</yellow> <white>Player</white> <yellow>" + targetName +
                 "</yellow> <white>is offline. Forcing check end...</white>"));

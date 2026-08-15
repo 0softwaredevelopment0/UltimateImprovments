@@ -27,10 +27,10 @@ import java.util.stream.Collectors;
 /**
  * Maintenance mode manager.
  * <p>
- * Когда техработы включены, только белый список может зайти на сервер.
- * Все настройки и whitelist хранятся в SQLite (maintenance_whitelist + maintenance_meta),
- * кроме kick_message и текстов сообщений — они в
- * {@code config.yml#messages.maintenance.*} (или фолбек на {@code #messages_en.*}).
+ * When maintenance is enabled, only the whitelist can join the server.
+ * All settings and the whitelist are stored in SQLite (maintenance_whitelist + maintenance_meta),
+ * except the kick_message and message texts — those live in
+ * {@code config.yml#messages.maintenance.*} (or fall back to {@code #messages_en.*}).
  */
 public class MaintenanceManager implements Listener {
 
@@ -52,8 +52,8 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Проверяет, включена ли фича техработ в config.yml.
-     * Отключает всю систему: /ui maint будет недоступен, вход не блокируется.
+     * Checks whether the maintenance feature is enabled in config.yml.
+     * Disables the whole system: /ui maint will be unavailable, joins are not blocked.
      */
     public boolean isFeatureEnabled() {
         return Main.getInstance().getConfig().getBoolean("maintenance.enabled", true);
@@ -64,10 +64,10 @@ public class MaintenanceManager implements Listener {
     // =========================
 
     /**
-     * Загружает enabled-флаг из БД.
-     * При первом запуске (нет записи в БД) — статус = false (техработы выключены).
-     * Флаг config.yml "maintenance.enabled" теперь НЕ влияет на статус —
-     * он только включает/выключает саму фичу (проверяется в isFeatureEnabled()).
+     * Loads the enabled flag from the DB.
+     * On the first run (no DB record) — status = false (maintenance off).
+     * The config.yml "maintenance.enabled" flag now does NOT affect the status —
+     * it only enables/disables the feature itself (checked in isFeatureEnabled()).
      */
     public void loadFromDb() {
         try (Connection con = DatabaseManager.getConnection()) {
@@ -78,9 +78,9 @@ public class MaintenanceManager implements Listener {
                     if (rs.next()) {
                         maintenanceMode = Boolean.parseBoolean(rs.getString("value"));
                     } else {
-                        // Первый запуск — начинаем с выключенным статусом.
-                        // Раньше тут мигрировалось из config.yml, теперь
-                        // config.yml управляет только вкл/выкл фичи, а статус = false.
+                        // First run — start with the status off.
+                        // Previously this migrated from config.yml; now
+                        // config.yml only toggles the feature on/off, and the status = false.
                         maintenanceMode = false;
                         try (PreparedStatement ins = con.prepareStatement(
                                 "INSERT OR REPLACE INTO maintenance_meta (key, value) VALUES (?, ?)")) {
@@ -97,7 +97,7 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Сохраняет enabled-флаг в БД.
+     * Saves the enabled flag to the DB.
      */
     private void saveStateToDb() {
         try (Connection con = DatabaseManager.getConnection();
@@ -120,7 +120,7 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Включает режим техработ немедленно.
+     * Enables maintenance mode immediately.
      */
     public void enable() {
         cancelScheduled();
@@ -131,7 +131,7 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Включает режим техработ через задержку.
+     * Enables maintenance mode after a delay.
      */
     public void enableLater(long delayTicks) {
         cancelScheduled();
@@ -147,7 +147,7 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Выключает режим техработ немедленно.
+     * Disables maintenance mode immediately.
      */
     public void disable() {
         cancelScheduled();
@@ -157,7 +157,7 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Выключает режим техработ через задержку.
+     * Disables maintenance mode after a delay.
      */
     public void disableLater(long delayTicks) {
         cancelScheduled();
@@ -203,7 +203,7 @@ public class MaintenanceManager implements Listener {
     }
 
     public boolean isWhitelisted(UUID uuid) {
-        // Проверяем по имени игрока
+        // Check by the player's name
         String name = Bukkit.getOfflinePlayer(uuid).getName();
         if (name == null) return false;
         return isWhitelisted(name);
@@ -225,7 +225,7 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Добавляет игрока в whitelist.
+     * Adds a player to the whitelist.
      */
     public boolean addWhitelist(String playerName) {
         if (playerName == null || playerName.isBlank()) return false;
@@ -240,7 +240,7 @@ public class MaintenanceManager implements Listener {
                 ConsoleLogger.info("[Maintenance] Added to whitelist: " + lower);
                 return true;
             }
-            return false; // уже есть
+            return false; // already present
         } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[Maintenance] Failed to add: " + lower, e);
             return false;
@@ -248,7 +248,7 @@ public class MaintenanceManager implements Listener {
     }
 
     /**
-     * Удаляет игрока из whitelist.
+     * Removes a player from the whitelist.
      */
     public boolean removeWhitelist(String playerName) {
         if (playerName == null || playerName.isBlank()) return false;
@@ -263,7 +263,7 @@ public class MaintenanceManager implements Listener {
                 ConsoleLogger.info("[Maintenance] Removed from whitelist: " + lower);
                 return true;
             }
-            return false; // не найден
+            return false; // not found
         } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[Maintenance] Failed to remove: " + lower, e);
             return false;
@@ -292,7 +292,7 @@ public class MaintenanceManager implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerLogin(PlayerLoginEvent event) {
-        // Проверка: включена ли фича техработ в config.yml
+        // Check: is the maintenance feature enabled in config.yml
         if (!isFeatureEnabled() || !maintenanceMode) return;
 
         Player player = event.getPlayer();
@@ -306,7 +306,7 @@ public class MaintenanceManager implements Listener {
     }
 
     // =========================
-    // BROADCASTS — из config.yml:messages.maintenance.* (с фолбеком на messages_en.*)
+    // BROADCASTS — from config.yml:messages.maintenance.* (with a messages_en.* fallback)
     // =========================
 
     private void broadcastMaintenance(boolean enabled, String timeStr) {

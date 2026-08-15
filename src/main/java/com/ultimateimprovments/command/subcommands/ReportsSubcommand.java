@@ -62,7 +62,7 @@ public final class ReportsSubcommand {
             return true;
         }
 
-        // Показываем очередь модерации
+        // Show the moderation queue
         List<String> modQueue = ReportManager.getModQueueNames();
         if (!modQueue.isEmpty()) {
             sender.sendMessage(MessageUtil.parse(
@@ -74,7 +74,7 @@ public final class ReportsSubcommand {
             sender.sendMessage(MessageUtil.parse(""));
         }
 
-        // Показываем последние репорты
+        // Show the latest reports
         for (ReportData r : reports) {
             String statusColor = switch (r.status) {
                 case "pending" -> "<yellow>";
@@ -121,7 +121,7 @@ public final class ReportsSubcommand {
 
         String modName = args[3];
 
-        // Проверяем, что репорт существует
+        // Check that the report exists
         ReportData report = ReportManager.getReportById(reportId);
         if (report == null) {
             sender.sendMessage(MessageUtil.parse(
@@ -129,7 +129,7 @@ public final class ReportsSubcommand {
             return true;
         }
 
-        // Проверяем, что имя не занято
+        // Check that the name is not taken
         if (ReportManager.isModNameExists(modName)) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ Name </red><yellow>" + modName + "</yellow> <red>already in use!</red>"));
@@ -156,7 +156,7 @@ public final class ReportsSubcommand {
 
         String target = args[2].toLowerCase();
 
-        // Обработка подтверждения
+        // Handle the confirmation
         if (target.equals("confirm")) {
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(MessageUtil.parse(
@@ -182,7 +182,7 @@ public final class ReportsSubcommand {
             return true;
         }
 
-        // Удаление по ID
+        // Delete by ID
         int reportId;
         try {
             reportId = Integer.parseInt(target);
@@ -204,7 +204,7 @@ public final class ReportsSubcommand {
 
             ReportManager.requestRemoveConfirmation(player, reportId, modName);
         } else {
-            // Консоль — без подтверждения
+            // Console — no confirmation needed
             if (ReportManager.removeFromModQueue(reportId)) {
                 sender.sendMessage(MessageUtil.parse(
                         "<green>✔</green> <white>Report #" + reportId + " removed from moderation queue.</white>"));

@@ -11,8 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Regen / FastHeal — ускоренная регенерация здоровья.
- * Детекция: игрок восстанавливает здоровье быстрее ванильного лимита.
+ * Regen / FastHeal — accelerated health regeneration.
+ * Detection: the player regains health faster than the vanilla limit.
  */
 public class RegenCheck extends AbstractCheck {
 

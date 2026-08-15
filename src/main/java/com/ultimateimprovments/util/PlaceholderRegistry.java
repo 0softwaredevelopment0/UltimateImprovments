@@ -6,35 +6,35 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 /**
- * Тонкий фасад над {@link PlaceholderResolver} — единая точка входа для кода,
- * которому нужен общий реестр встроенных плейсхолдеров UltimateImprovments.
+ * Thin facade over {@link PlaceholderResolver} — a single entry point for code
+ * that needs the shared registry of UltimateImprovments built-in placeholders.
  *
- * <p>Все имена и значения определяются в {@link PlaceholderResolver}.
- * Этот класс просто прокидывает вызовы, чтобы код, использующий реестр,
- * оставался единообразным внутри плагина и снаружи через PAPI.
+ * <p>All names and values are defined in {@link PlaceholderResolver}.
+ * This class just proxies the calls, so code using the registry
+ * stays consistent both inside the plugin and externally via PAPI.
  *
- * <p><b>Формат:</b> {@code %<name>%} (например {@code %player_ping%}, {@code %online%}).
+ * <p><b>Format:</b> {@code %<name>%} (e.g. {@code %player_ping%}, {@code %online%}).
  */
 public final class PlaceholderRegistry {
 
     private PlaceholderRegistry() {}
 
-    /** Резолвер для имени плейсхолдера без обрамляющих {@code %}. */
+    /** Resolver for a placeholder name without the surrounding {@code %}. */
     public static BiFunction<Player, String, String> get(String name) {
         return PlaceholderResolver.getBuiltin(name);
     }
 
-    /** true, если имя известно реестру. */
+    /** true if the name is known to the registry. */
     public static boolean contains(String name) {
         return PlaceholderResolver.getBuiltin(name) != null;
     }
 
-    /** Все поддерживаемые имена статических плейсхолдеров. */
+    /** All supported static placeholder names. */
     public static Set<String> names() {
         return PlaceholderResolver.getBuiltinNames();
     }
 
-    /** Идентификатор, по которому PAPI Expansion цепляется: {@code ui}. */
+    /** The identifier PAPI Expansion attaches to: {@code ui}. */
     public static String getIdentifier() {
         return PlaceholderResolver.getPapiIdentifier();
     }

@@ -9,17 +9,17 @@ import org.bukkit.command.CommandSender;
 import java.util.*;
 
 /**
- * ModulesSubcommand — показывает архитектуру плагина в виде иерархии модулей.
+ * ModulesSubcommand — shows the plugin architecture as a module hierarchy.
  * <p>
- * Дерево строится из путей зарегистрированных модулей (modulePath).
- * Работает идентично в dev и production (не зависит от файловой системы).
+ * The tree is built from the registered modules' paths (modulePath).
+ * Works identically in dev and production (independent of the filesystem).
  * <p>
- * Каждый листовой модуль: ✔ (включён) / ❌ (выключен) / ? (нет модуля).
- * Команды:
+ * Each leaf module: ✔ (enabled) / ❌ (disabled) / ? (no module).
+ * Commands:
  * <ul>
- *   <li>{@code /ui modules list} — иерархический список</li>
- *   <li>{@code /ui modules enable <путь>} — включить</li>
- *   <li>{@code /ui modules disable <путь>} — выключить</li>
+ *   <li>{@code /ui modules list} — hierarchical list</li>
+ *   <li>{@code /ui modules enable <path>} — enable</li>
+ *   <li>{@code /ui modules disable <path>} — disable</li>
  * </ul>
  */
 public final class ModulesSubcommand {
@@ -48,7 +48,7 @@ public final class ModulesSubcommand {
     // ============================================================
     private static class TreeNode {
         String name;
-        PluginModule module; // null = промежуточная папка
+        PluginModule module; // null = intermediate folder
         Map<String, TreeNode> children = new LinkedHashMap<>();
 
         TreeNode(String name) { this.name = name; }

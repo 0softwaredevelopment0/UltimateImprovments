@@ -18,11 +18,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Spider / WallClimb — подъём по стенам без лестницы/лианы.
+ * Spider / WallClimb — climbing walls without a ladder/vine.
  * <p>
- * Детекция: вертикальное движение вверх у сплошной стены без climbable блока.
- * Использует block-based верификацию onGround (спуф-защита) и проверяет
- * стены на двух уровнях (ноги + голова) без требования isOccluding().
+ * Detection: upward vertical movement next to a solid wall without a climbable block.
+ * Uses block-based onGround verification (spoof protection) and checks
+ * walls at two levels (feet + head) without requiring isOccluding().
  */
 public class SpiderCheck extends AbstractCheck {
 
@@ -49,8 +49,8 @@ public class SpiderCheck extends AbstractCheck {
     }
 
     /**
-     * Проверяет, есть ли твёрдый блок под игроком (спуф-защита).
-     * Если сервер говорит на земле, но блока нет — это спуф.
+     * Checks whether there is a solid block below the player (spoof protection).
+     * If the server says on the ground but there is no block — that's a spoof.
      */
     private boolean hasBlockBelow(Location loc, int blocksDown) {
         Block feetBlock = loc.getBlock();
@@ -72,9 +72,9 @@ public class SpiderCheck extends AbstractCheck {
     }
 
     /**
-     * Находит стену рядом с игроком на двух уровнях (ноги + голова).
-     * Возвращает блок стены, если найден, или null.
-     * Использует ТОЛЬКО isSolid() — не требует isOccluding().
+     * Finds a wall next to the player at two levels (feet + head).
+     * Returns the wall block if found, or null.
+     * Uses ONLY isSolid() — does not require isOccluding().
      */
     private Block findAdjacentWall(Location loc) {
         for (double yOff = 0; yOff <= 1.0; yOff += 1.0) {
@@ -96,10 +96,12 @@ public class SpiderCheck extends AbstractCheck {
         if (e.getTo() == null) return;
         Player player = e.getPlayer();
         if (!isEnabled() || isExempted(player)) return;
+        // Fully off when the anti-cheat is disabled globally (anticheat.enabled: false)
+        if (!AntiCheatManager.getInstance().isGlobalEnabled()) return;
 
         double yDelta = e.getTo().getY() - e.getFrom().getY();
 
-        // ── Double verification: server isOnGround + block check (спуф-защита) ──
+        // ── Double verification: server isOnGround + block check (spoof protection) ──
         boolean serverOnGround = player.isOnGround();
         boolean blockBelow = hasBlockBelow(player.getLocation(), 3);
         boolean actuallyOnGround = serverOnGround && blockBelow;
@@ -130,15 +132,15 @@ public class SpiderCheck extends AbstractCheck {
             climbTickCount++;
             climbTickCounters.put(player.getUniqueId(), climbTickCount);
             if (climbTickCount >= minClimbTicks) {
-                // Флаг + VL
+                // Flag + VL
                 CheckResult result = flag(player, 3.0,
                         "WallClimb: " + wallName + " YΔ=" + String.format("%.3f", yDelta)
                         + " ticks=" + climbTickCount
                         + (groundSpoof ? " ON_GROUND_SPOOF" : ""));
                 AntiCheatManager.getInstance().handleResult(player, this, result);
 
-                // ── НЕМЕДЛЕННЫЙ SETBACK ──
-                // Телепортируем на последнюю землю + обнуляем скорость
+                // ── IMMEDIATE SETBACK ──
+                // Teleport to the last ground position + zero out the velocity
                 PlayerData data = AntiCheatManager.getInstance().getPlayerData(player);
                 if (data != null) {
                     Location safe = data.getLastGroundLocation();
@@ -162,11 +164,12 @@ public class SpiderCheck extends AbstractCheck {
 
         // Debug log (1% chance or on spoof)
         if (groundSpoof || Math.random() < 0.01) {
-            ConsoleLogger.info("[SpiderCheck-DEBUG] " + player.getName()
+            ConsoleLogger.raw("<white>[SpiderCheck-DEBUG] " + player.getName()
                     + " | yΔ=" + String.format("%.3f", yDelta)
                     + " | serverOG=" + serverOnGround + " blockOG=" + blockBelow
                     + " | wall=" + wallName + " climb=" + climbTickCount
-                    + (groundSpoof ? " | §cGROUND SPOOF!" : ""));
+                    + (groundSpoof ? " | <red>GROUND SPOOF!</red>" : "")
+                    + "</white>");
         }
 
         PlayerData pd = AntiCheatManager.getInstance().getOrCreatePlayerData(player);

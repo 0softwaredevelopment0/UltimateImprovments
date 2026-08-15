@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * /ui protection &lt;give|list|info|delete&gt; — админ-операции над блоками защиты.
+ * /ui protection &lt;give|list|info|delete&gt; — admin operations on protection blocks.
  */
 public final class ProtectionSubcommand {
 

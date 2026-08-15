@@ -17,11 +17,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.UUID;
 
 /**
- * Модуль «Блок защиты» — комплексная защита территории через размещаемый
- * физический блок с GUI, очками прокачки и голограммой.
+ * «Protection Block» module — comprehensive territory protection via a placeable
+ * physical block with a GUI, upgrade points and a hologram.
  * <p>
  * Module path: {@code mechanics/protection}.
- * Essential: false (можно отключить).
+ * Essential: false (can be disabled).
  */
 public class ProtectionModule extends PluginModule {
 
@@ -41,7 +41,7 @@ public class ProtectionModule extends PluginModule {
         new ProtectionListener(manager);
         new GUIListener(manager);
 
-        // Обработчик ввода имени игрока в чат для whitelist-меню
+        // Handler for player-name chat input for the whitelist menu
         Bukkit.getPluginManager().registerEvents(new ChatInputListener(), main);
 
         ConsoleLogger.info("[ProtectionBlock] ✔ Initialized.");
@@ -55,8 +55,8 @@ public class ProtectionModule extends PluginModule {
 
     // =========================
     // CHAT INPUT LISTENER
-    // Принимает ник игрока после команды openAddPlayerMenu.
-    // Срабатывает только если игрок сейчас в режиме ожидания.
+    // Accepts the player's nickname after the openAddPlayerMenu command.
+    // Fires only if the player is currently in the waiting state.
     // =========================
     private static class ChatInputListener implements Listener {
 
@@ -64,12 +64,12 @@ public class ProtectionModule extends PluginModule {
         public void onChat(AsyncPlayerChatEvent e) {
             Player player = e.getPlayer();
             UUID pid = player.getUniqueId();
-            // consume теперь возвращает блок (раньше разделялся на consume+getAwaitingBlock,
-            // из-за чего getAwaitingBlock всегда возвращал null и фича была сломана).
+            // consume now returns the block (previously split into consume+getAwaitingBlock,
+            // which made getAwaitingBlock always return null and broke the feature).
             ProtectionBlock block = ProtectionGUI.consumeAwaitingPlayerName(player);
             if (block == null) return;
 
-            // Игрок в режиме ожидания → захватываем сообщение
+            // Player is in the waiting state → capture the message
             e.setCancelled(true);
             String msg = e.getMessage().trim();
             if (msg.equalsIgnoreCase("cancel")) {
@@ -78,9 +78,9 @@ public class ProtectionModule extends PluginModule {
                 ProtectionGUI.openWhitelistMenu(player, block);
                 return;
             }
-            // Сначала ищем онлайн (дешёвый lookup), потом — в кеше оффлайн-игроков.
-            // НЕ используем депрекейтнутый Bukkit.getOfflinePlayer(name) — он может
-            // блокировать netty thread на веб-lookup для незнакомых имён.
+            // First look online (cheap lookup), then in the offline player cache.
+            // Do NOT use the deprecated Bukkit.getOfflinePlayer(name) — it may
+            // block the netty thread on a web lookup for unknown names.
             org.bukkit.OfflinePlayer target = Bukkit.getPlayerExact(msg);
             if (target == null) target = Bukkit.getOfflinePlayerIfCached(msg);
             if (target == null || (target.getName() == null && !target.hasPlayedBefore())) {

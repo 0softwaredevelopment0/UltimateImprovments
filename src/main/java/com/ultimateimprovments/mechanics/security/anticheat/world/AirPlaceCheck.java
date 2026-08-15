@@ -10,13 +10,13 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 /**
- * AirPlace — установка блока без наведения на существующий блок.
+ * AirPlace — placing a block without targeting an existing block.
  * <p>
- * В ванильном Minecraft блок можно поставить ТОЛЬКО наводясь на грань другого блока.
- * AirPlace хак позволяет ставить блоки в воздухе, не глядя на блок.
+ * In vanilla Minecraft a block can only be placed while aiming at the face of
+ * another block. The AirPlace hack places blocks in the air without looking at one.
  * <p>
- * Детекция: ray-trace от глаз игрока — если в прицеле нет блока в пределах
- * ванильной дистанции взаимодействия (5 блоков) — это AirPlace.
+ * Detection: ray-trace from the player's eyes — if no block is in the crosshair
+ * within the vanilla interaction distance (5 blocks) — it's AirPlace.
  */
 public class AirPlaceCheck extends AbstractCheck {
 

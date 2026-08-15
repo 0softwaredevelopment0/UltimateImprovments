@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Обрабатывает подкоманду /ui codepane key — управление ключами кодовой панели.
+ * Handles the /ui codepane key subcommand — manages code panel keys.
  */
 public class CodePaneKeyCommand {
 

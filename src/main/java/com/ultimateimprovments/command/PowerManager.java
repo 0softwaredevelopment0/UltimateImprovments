@@ -153,11 +153,11 @@ public class PowerManager {
     }
 
     /**
-     * Подтверждает запрос и запускает обратный отсчёт с:
-     * - BossBar (убывающая полоса)
-     * - ActionBar (оставшиеся секунды)
-     * - Плавное ускорение пиканья (частота + питч растут непрерывно)
-     * - Сообщения в чат
+     * Confirms the request and starts the countdown with:
+     * - BossBar (decreasing bar)
+     * - ActionBar (remaining seconds)
+     * - Smooth beep acceleration (rate + pitch grow continuously)
+     * - Chat messages
      */
     public boolean confirmRequest() {
         if (currentRequest == null) return false;
@@ -196,18 +196,18 @@ public class PowerManager {
                 .replace("%seconds%", String.valueOf(duration)));
         playBeepToAll(calcPitch(0.0));
 
-        // --- Repeating countdown task (каждый тик — плавное ускорение) ---
+        // --- Repeating countdown task (every tick — smooth acceleration) ---
         new BukkitRunnable() {
-            int tick = 0;                  // сколько тиков прошло (0..totalTicks)
-            int beepCounter = 1;           // счётчик для интервала между пиками
-            int lastDisplaySecond = -1;     // последняя секунда, когда обновили дисплей
+            int tick = 0;                  // how many ticks passed (0..totalTicks)
+            int beepCounter = 1;           // counter for the interval between beeps
+            int lastDisplaySecond = -1;     // last second when the display was updated
 
             @Override
             public void run() {
-                // Сколько секунд осталось
+                // How many seconds remain
                 int currentSecond = duration - (tick / 20);
 
-                // --- Последний тик — выполнить ---
+                // --- Last tick — execute ---
                 if (currentSecond < 0) {
                     try {
                         Broadcast.send(MessagesManager.getString("power.executing",
@@ -229,11 +229,11 @@ public class PowerManager {
                     return;
                 }
 
-                // --- Обновления раз в секунду (чат + actionbar + bossbar title) ---
+                // --- Updates once per second (chat + actionbar + bossbar title) ---
                 if (currentSecond != lastDisplaySecond) {
                     lastDisplaySecond = currentSecond;
 
-                    // Chat (последние 5 секунд)
+                    // Chat (last 5 seconds)
                     if (currentSecond <= 5 && currentSecond > 0) {
                         String secWord;
                         if (currentSecond == 1) secWord = "second";
@@ -255,7 +255,7 @@ public class PowerManager {
                         }
                     }
 
-                    // BossBar title (только при смене секунды — лишние пакеты ни к чему)
+                    // BossBar title (only on second change — no need for extra packets)
                     if (bossBar != null) {
                         String barTitle = bossbarText
                                 .replace("%action%", actionMsg)
@@ -264,13 +264,13 @@ public class PowerManager {
                     }
                 }
 
-                // --- BossBar progress: плавное обновление КАЖДЫЙ ТИК ---
+                // --- BossBar progress: smooth update EVERY TICK ---
                 if (bossBar != null) {
-                    // Плавный прогресс: от 1.0 до 0.0
+                    // Smooth progress: from 1.0 to 0.0
                     double bossProgress = (double) (totalTicks - tick) / totalTicks;
                     bossBar.setProgress(Math.max(0.0, Math.min(1.0, bossProgress)));
 
-                    // Добавляем новых игроков (например, зашедших во время отсчёта)
+                    // Add new players (e.g. those who joined during the countdown)
                     for (Player p : Bukkit.getOnlinePlayers()) {
                         if (!bossBar.getPlayers().contains(p)) {
                             bossBar.addPlayer(p);
@@ -278,12 +278,12 @@ public class PowerManager {
                     }
                 }
 
-                // --- Плавное ускорение пиканья ---
+                // --- Smooth beep acceleration ---
                 if (countdownSoundEnabled) {
-                    // Прогресс от 0.0 до 1.0 на уровне тиков (непрерывно)
+                    // Progress from 0.0 to 1.0 at the tick level (continuous)
                     double progress = (double) tick / totalTicks;
 
-                    // Текущий интервал между пиками (плавно от 20 до minInterval)
+                    // Current interval between beeps (smoothly from 20 to minInterval)
                     int interval;
                     if (beepSpeedupEnabled) {
                         int maxInterval = 20;
@@ -294,7 +294,7 @@ public class PowerManager {
                         interval = 20;
                     }
 
-                    // Пик, когда счётчик дорос до интервала
+                    // Beep when the counter reaches the interval
                     if (beepCounter >= interval) {
                         playBeepToAll(calcPitch(progress));
                         beepCounter = 0;
@@ -304,13 +304,13 @@ public class PowerManager {
 
                 tick++;
             }
-        }.runTaskTimer(Main.getInstance(), 0L, 1L); // каждый тик!
+        }.runTaskTimer(Main.getInstance(), 0L, 1L); // every tick!
 
         return true;
     }
 
     /**
-     * Вычисляет питч для плавного ускорения по прогрессу 0.0..1.0.
+     * Computes the pitch for smooth acceleration by progress 0.0..1.0.
      */
     private float calcPitch(double progress) {
         progress = Math.max(0.0, Math.min(1.0, progress));
@@ -319,7 +319,7 @@ public class PowerManager {
     }
 
     /**
-     * Создаёт и возвращает BossBar для обратного отсчёта.
+     * Creates and returns the BossBar for the countdown.
      */
     private BossBar createBossBar(String actionMsg) {
         if (!bossbarEnabled) return null;
@@ -343,7 +343,7 @@ public class PowerManager {
     }
 
     /**
-     * Проигрывает звук «пиканья» всем игрокам с указанным питчем.
+     * Plays the "beep" sound to all players with the given pitch.
      */
     private void playBeepToAll(float pitch) {
         if (!countdownSoundEnabled) return;
@@ -360,7 +360,7 @@ public class PowerManager {
     }
 
     /**
-     * Отменяет активный запрос (по команде игрока или консоли).
+     * Cancels the active request (by a player command or the console).
      */
     public String undoRequest(String cancelerName) {
         if (currentRequest == null) return null;
@@ -406,7 +406,7 @@ public class PowerManager {
     }
 
     /**
-     * Автоматическая отмена запроса (по таймауту).
+     * Automatic request cancellation (by timeout).
      */
     public void cancelRequest(String reason) {
         if (currentRequest == null) return;
@@ -449,7 +449,7 @@ public class PowerManager {
     }
 
     /**
-     * Немедленное выполнение (без подтверждения, для консоли).
+     * Immediate execution (without confirmation, for the console).
      */
     public void executeDirect(boolean isRestart) {
         if (isRestart) {

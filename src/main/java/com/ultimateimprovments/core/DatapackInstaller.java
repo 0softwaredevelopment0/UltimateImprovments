@@ -29,16 +29,16 @@ public class DatapackInstaller {
     // =========================
 
     /**
-     * Автоматически находит папку datapacks в директории мира,
-     * независимо от версии Minecraft и структуры папок.
+     * Automatically finds the datapacks folder in the world directory,
+     * regardless of the Minecraft version and folder structure.
      * <p>
-     * Приоритет поиска:
+     * Search priority:
      * <ol>
-     *   <li>Bukkit.getWorlds() — папка первого загруженного мира (самый надёжный)</li>
+     *   <li>Bukkit.getWorlds() — the first loaded world's folder (most reliable)</li>
      *   <li>server.properties → level-name → Bukkit.getWorldContainer()</li>
-     *   <li>Папка "world" в Bukkit.getWorldContainer() (значение по умолчанию)</li>
+     *   <li>The "world" folder in Bukkit.getWorldContainer() (default)</li>
      * </ol>
-     * Если папка datapacks не найдена — она создаётся.
+     * If the datapacks folder is not found — it is created.
      */
     private static File findDatapacksFolder() {
         File worldRoot = findWorldRoot();
@@ -49,17 +49,17 @@ public class DatapackInstaller {
     }
 
     /**
-     * Находит корневую директорию мира, в которую нужно устанавливать датапаки.
+     * Finds the world root directory where datapacks should be installed.
      */
     private static File findWorldRoot() {
-        // 1. Пытаемся получить папку мира через Bukkit API (самый надёжный способ)
+        // 1. Try to get the world folder via the Bukkit API (the most reliable way)
         World firstWorld = null;
         try {
             if (!Bukkit.getWorlds().isEmpty()) {
                 firstWorld = Bukkit.getWorlds().get(0);
             }
         } catch (Exception ignored) {
-            // Bukkit.getWorlds() может быть не готов на ранних этапах загрузки
+            // Bukkit.getWorlds() may not be ready in the early loading stages
         }
 
         if (firstWorld != null) {
@@ -70,7 +70,7 @@ public class DatapackInstaller {
             }
         }
 
-        // 2. Fallback: читаем level-name из server.properties
+        // 2. Fallback: read level-name from server.properties
         String levelName = "world";
         File serverDir = new File("").getAbsoluteFile();
         File serverPropsFile = new File(serverDir, "server.properties");
@@ -87,7 +87,7 @@ public class DatapackInstaller {
         File worldRoot = new File(Bukkit.getWorldContainer(), levelName);
         ConsoleLogger.info("[Datapack] World root from server.properties: " + worldRoot.getAbsolutePath());
 
-        // 3. Если папка не найдена, пробуем стандартную "world"
+        // 3. If the folder is not found, try the standard "world"
         if (!worldRoot.isDirectory()) {
             File defaultWorld = new File(Bukkit.getWorldContainer(), "world");
             if (defaultWorld.isDirectory()) {

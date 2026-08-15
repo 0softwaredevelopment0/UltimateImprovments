@@ -17,8 +17,8 @@ import org.bukkit.scheduler.BukkitRunnable;
  * - CRAFTER is triggered by redstone pulse
  * - A matching custom recipe exists
  * <p>
- * Буфер заряжается через adjacent cables от {@link EnergyWorkbenchManager#chargeAllBuffers()}.
- * После крафта буфер обнуляется (0/100), CRAFTER разблокируется.
+ * The buffer charges via adjacent cables from {@link EnergyWorkbenchManager#chargeAllBuffers()}.
+ * After crafting the buffer resets (0/100) and the CRAFTER unlocks.
  */
 public class AssemblerTask extends BukkitRunnable {
 

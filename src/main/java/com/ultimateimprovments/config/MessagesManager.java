@@ -9,22 +9,22 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.io.File;
 
 /**
- * Управляет сообщениями плагина. С v26.2 все сообщения хранятся ВНУТРИ config.yml
- * под ключом {@code messages:} (русский) и {@code messages_en:} (английский).
+ * Manages the plugin's messages. Since v26.2 all messages live INSIDE config.yml
+ * under the {@code messages:} key (Russian) and {@code messages_en:} (English).
  * <p>
- * Старые отдельные файлы (messages.yml/messages-en.yml) консолидированы в config.yml
- * по запросу пользователя. Метод {@link #init(Main)} автоматически мигрирует
- * устаревшие standalone-файлы из dataFolder в config.yml (один раз при первом запуске).
+ * The old standalone files (messages.yml/messages-en.yml) were consolidated into
+ * config.yml at the user's request. The {@link #init(Main)} method automatically
+ * migrates the legacy standalone files from dataFolder into config.yml (once on first run).
  * <p>
- * Публичный API ({@link #getString(String, String)}) НЕ ИЗМЕНЁН — call-сайты вызывают
- * {@code MessagesManager.getString("auth.gui.register", default)} и получают
- * строку из {@code config.yml: messages.auth.gui.register} (без префикса в пути).
+ * The public API ({@link #getString(String, String)}) is UNCHANGED — call sites call
+ * {@code MessagesManager.getString("auth.gui.register", default)} and get the
+ * string from {@code config.yml: messages.auth.gui.register} (no prefix in the path).
  */
 public class MessagesManager {
 
-    /** Ключ основной (русский) секции сообщений в config.yml. */
+    /** Key of the main (Russian) messages section in config.yml. */
     public static final String MESSAGES_KEY = "messages";
-    /** Ключ английской секции сообщений в config.yml. */
+    /** Key of the English messages section in config.yml. */
     public static final String MESSAGES_EN_KEY = "messages_en";
 
     private static Main plugin;
@@ -32,10 +32,10 @@ public class MessagesManager {
     private MessagesManager() {}
 
     /**
-     * Инициализирует MessagesManager. Сообщения читаются из config.yml — отдельные файлы
-     * messages.yml/messages-en.yml НЕ нужны. Обратная совместимость: если в dataFolder
-     * остались старые файлы от предыдущих версий плагина — мигрируем их содержимое
-     * в config.yml под {@code messages:} и {@code messages_en:} и удаляем файлы.
+     * Initializes MessagesManager. Messages are read from config.yml — the standalone
+     * messages.yml/messages-en.yml files are NOT needed. Backward compatibility: if old
+     * files from previous plugin versions remain in dataFolder — migrate their content
+     * into config.yml under {@code messages:} and {@code messages_en:} and delete the files.
      */
     public static void init(Main plugin) {
         MessagesManager.plugin = plugin;
@@ -45,29 +45,29 @@ public class MessagesManager {
     }
 
     /**
-     * Возвращает строку из секции {@code messages:} ({@code messages_en:} отсутствует
-     * в БД — обычно fallback на messages). Принимает путь БЕЗ префикса секции:
-     * Если у существующего класса call-сайт вызывает
-     * {@code getString("auth.gui.register", default)}, метод внутренне читает
+     * Returns a string from the {@code messages:} section ({@code messages_en:} is absent
+     * from the DB — usually falls back to messages). Accepts a path WITHOUT the section
+     * prefix: if an existing class call site invokes
+     * {@code getString("auth.gui.register", default)}, the method internally reads
      * {@code config.getString("messages.auth.gui.register")}.
      * <p>
-     * Если в конфиге отсутствует русский вариант — пытается взять английский fallback.
+     * If the Russian variant is missing in the config — tries the English fallback.
      */
     public static String getString(String path, String def) {
         if (plugin == null) return def;
         FileConfiguration config = plugin.getConfig();
-        // 1. Русский (основной)
+        // 1. Russian (primary)
         String value = config.getString(MESSAGES_KEY + "." + path, null);
         if (value != null) return value;
-        // 2. Английский fallback
+        // 2. English fallback
         value = config.getString(MESSAGES_EN_KEY + "." + path, null);
         if (value != null) return value;
         return def;
     }
 
     /**
-     * Возвращает строку из английской секции напрямую (минуя fallback в русскую).
-     * Используется редко — в основном для тестов или логирования.
+     * Returns a string from the English section directly (bypassing the fallback to Russian).
+     * Used rarely — mostly for tests or logging.
      */
     public static String getStringEn(String path, String def) {
         if (plugin == null) return def;
@@ -75,8 +75,8 @@ public class MessagesManager {
     }
 
     /**
-     * Записывает значение в messages-секцию и сохраняет config.yml.
-     * Используется ядром плагина, например при динамической локализации в GUI.
+     * Writes a value into the messages section and saves config.yml.
+     * Used by the plugin core, e.g. for dynamic localization in GUIs.
      */
     public static void setString(String path, String value) {
         if (plugin == null) return;
@@ -90,27 +90,27 @@ public class MessagesManager {
     }
 
     /**
-     * Всегда возвращает {@code true}, т.к. сообщения теперь живут в config.yml
-     * (отдельный файл messages.yml больше не существует). Оставлено для совместимости.
+     * Always returns {@code true}, because messages now live in config.yml
+     * (the standalone messages.yml file no longer exists). Left for compatibility.
      */
     public static boolean isLoaded() {
         return plugin != null && plugin.getConfig().isSet(MESSAGES_KEY);
     }
 
-    /** Для обратной совместимости. Возвращает всегда {@code "config.yml#messages"}. */
+    /** For backward compatibility. Always returns {@code "config.yml#messages"}. */
     public static String getMessagesFileName() {
         return "config.yml#" + MESSAGES_KEY;
     }
 
     // ============================================================
-    // Миграция устаревших standalone messages-файлов
+    // Migration of legacy standalone messages files
     // ============================================================
 
     /**
-     * Если в dataFolder остались отдельные messages.yml/messages-en.yml от старых версий
-     * плагина — копируем их содержимое в config.yml под соответствующими ключами и удаляем.
+     * If standalone messages.yml/messages-en.yml from old plugin versions remain in
+     * dataFolder — copy their content into config.yml under the corresponding keys and delete them.
      * <p>
-     * Для безопасности: никогда не перезаписывает существующие ключи пользователя.
+     * For safety: never overwrites existing user keys.
      */
     private static void migrateFromStandaloneFiles() {
         if (plugin == null) return;
@@ -136,9 +136,9 @@ public class MessagesManager {
     }
 
     /**
-     * Копирует ключи из YAML-файла в указанную секцию config.yml; существующие ключи
-     * НЕ перезаписываются. После успешного мерджа удаляет исходный файл.
-     * @return true если что-то было перенесено или файл обработан
+     * Copies keys from a YAML file into the given config.yml section; existing keys
+     * are NOT overwritten. After a successful merge deletes the source file.
+     * @return true if something was migrated or the file was processed
      */
     private static boolean migrateFile(File source, String targetKey, FileConfiguration config) {
         try {
@@ -161,7 +161,7 @@ public class MessagesManager {
         }
     }
 
-    /** Рекурсивно копирует все leaf-ключи из {@code source} в {@code target.getConfigurationSection(targetKey)}. */
+    /** Recursively copies all leaf keys from {@code source} into {@code target.getConfigurationSection(targetKey)}. */
     private static int copySectionKeys(ConfigurationSection source, FileConfiguration target, String targetKey) {
         int count = 0;
         for (String key : source.getKeys(false)) {

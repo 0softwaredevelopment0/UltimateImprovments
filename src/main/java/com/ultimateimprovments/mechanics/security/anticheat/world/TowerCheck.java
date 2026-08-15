@@ -13,8 +13,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Tower — быстрое строительство вверх (установка блоков под собой).
- * Детекция: последовательная установка блоков на одной XZ с увеличением Y.
+ * Tower — fast upward building (placing blocks under yourself).
+ * Detection: sequential block placement at the same XZ with increasing Y.
  */
 public class TowerCheck extends AbstractCheck {
 

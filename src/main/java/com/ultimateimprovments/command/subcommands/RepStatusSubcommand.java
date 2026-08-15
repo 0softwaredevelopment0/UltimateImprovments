@@ -8,7 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * Handles /ui repstatus — проверка статуса своего репорта.
+ * Handles /ui repstatus — checks the status of your own report.
  */
 public final class RepStatusSubcommand {
 

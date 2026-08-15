@@ -4,51 +4,48 @@ import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Location;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.entity.ExperienceOrb;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityRemoveEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.entity.ExpBottleEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 🧪 XP Bottle Upgrade — «заряженные» пузырьки опыта.
+ * 🧪 XP Bottle Upgrade — "charged" experience bottles.
  * <p>
- * <b>Механика:</b>
+ * <b>Mechanics:</b>
  * <ul>
- *   <li>Наковальня: 2 одинаковых пузырька опыта (обычный или xN) → 1 пузырёк x(N+1).
- *       Обычный + обычный = x2, x2 + x2 = x3, x3 + x3 = x4 и т.д.</li>
- *   <li>Множитель хранится в PDC {@code EXP_BOTTLE_MULTIPLIER} (int). Обычный пузырёк — без тега (= x1).</li>
- *   <li>При броске x-пузырёк даёт в N раз больше опыта: стандартные 3–11 XP умножаются на N.</li>
- *   <li>Так как {@code ExpBottleEvent} удалён в 1.21.2+, перехват идёт через
- *       {@link ProjectileLaunchEvent} (запоминаем полёт) + {@link ProjectileHitEvent}
- *       (отменяем ванильное разбитие, спавним свои орбы опыта ×N).</li>
+ *   <li>Anvil: any amount of identical experience bottles (regular or xN) combines into
+ *       half as many bottles of the next tier: 2 × x1 → 1 × x2, 64 + 64 × x1 → 64 × x2,
+ *       any other quantity works too (odd leftovers stay in the anvil).</li>
+ *   <li>The multiplier is stored in PDC {@code EXP_BOTTLE_MULTIPLIER} (int). A regular bottle has no tag (= x1).</li>
+ *   <li>When thrown, an x-bottle gives N times more experience. The server still fires
+ *       {@link ExpBottleEvent} (via {@code CraftEventFactory.callExpBottleEvent}) even on
+ *       1.21.2+, so the multiplier is applied there directly — no manual orb spawning.</li>
+ *   <li>Taking the anvil result is intercepted so that arbitrary stack sizes are consumed
+ *       from both slots (vanilla only eats 1+1).</li>
  * </ul>
  */
 public class ExpBottleUpgradeListener implements Listener {
 
     // =========================
-    // КОНФИГ (features.exp_bottle_upgrade)
+    // CONFIG (features.exp_bottle_upgrade)
     // =========================
     private static boolean enabled = true;
     private static int maxMultiplier = 100;
@@ -60,28 +57,12 @@ public class ExpBottleUpgradeListener implements Listener {
     );
 
     // =========================
-    // ОТСЛЕЖИВАНИЕ ПОЛЁТА: entityId → множитель
-    // =========================
-    private static final Map<UUID, Tracked> TRACKED = new ConcurrentHashMap<>();
-    private static final long TRACK_TTL_MS = 5 * 60 * 1000L; // 5 минут — максимум жизни снаряда
-
-    private static final class Tracked {
-        final int multiplier;
-        final long expiresAt;
-
-        Tracked(int multiplier, long expiresAt) {
-            this.multiplier = multiplier;
-            this.expiresAt = expiresAt;
-        }
-    }
-
-    // =========================
     // CONFIG
     // =========================
     public static void loadConfig(Main plugin) {
         var cfg = plugin.getConfig().getConfigurationSection("features.exp_bottle_upgrade");
         if (cfg == null) {
-            // Секция отсутствует — используем дефолты
+            // Section missing — use defaults
             enabled = true;
             maxMultiplier = 100;
             anvilCostAmount = 1;
@@ -108,7 +89,8 @@ public class ExpBottleUpgradeListener implements Listener {
     }
 
     // =========================
-    // НАКОВАЛЬНЯ: пузырёк + такой же пузырёк → пузырёк x(N+1)
+    // ANVIL: bottles of the same level → half as many bottles of the next level
+    // (2 × x1 → 1 × x2, 64 + 64 × x1 → 64 × x2, any amount works)
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPrepareAnvil(PrepareAnvilEvent event) {
@@ -121,19 +103,20 @@ public class ExpBottleUpgradeListener implements Listener {
         if (slot0 == null || slot0.getType() != Material.EXPERIENCE_BOTTLE) return;
         if (slot1 == null || slot1.getType() != Material.EXPERIENCE_BOTTLE) return;
 
-        // Рецепт строго из 2 единиц (не стаки)
-        if (slot0.getAmount() != 1 || slot1.getAmount() != 1) return;
-
         int level0 = getMultiplier(slot0);
         int level1 = getMultiplier(slot1);
 
-        // Комбинируются только пузырьки ОДНОГО уровня: x1+x1→x2, x2+x2→x3, ...
+        // Only bottles of the SAME level combine: x1+x1→x2, x2+x2→x3, ...
         if (level0 != level1) return;
-        if (level0 >= maxMultiplier) return; // достигнут потолок
+        if (level0 >= maxMultiplier) return; // ceiling reached
+
+        int total = slot0.getAmount() + slot1.getAmount();
+        int resultAmount = total / 2;
+        if (resultAmount < 1) return;
 
         int newLevel = level0 + 1;
 
-        ItemStack result = new ItemStack(Material.EXPERIENCE_BOTTLE, 1);
+        ItemStack result = new ItemStack(Material.EXPERIENCE_BOTTLE, resultAmount);
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
 
@@ -147,7 +130,7 @@ public class ExpBottleUpgradeListener implements Listener {
         List<Component> lore = new ArrayList<>();
         boolean canUpgradeFurther = newLevel < maxMultiplier;
         for (String line : itemLoreFormats) {
-            // Строку-подсказку про крафт показываем только если апгрейд ещё возможен
+            // Show the crafting hint line only if a further upgrade is still possible
             if (line.contains("{next}") && !canUpgradeFurther) continue;
             lore.add(MessageUtil.parse(line
                     .replace("{level}", String.valueOf(newLevel))
@@ -157,66 +140,142 @@ public class ExpBottleUpgradeListener implements Listener {
         result.setItemMeta(meta);
 
         event.setResult(result);
-        setAnvilCost(inv, 0, anvilCostAmount);
+        // XP cost shown by the anvil (clamped below the "Too Expensive" limit of 40 —
+        // the full amount is charged manually in onTakeResult); item consumption is
+        // handled there too.
+        setAnvilCost(inv, Math.min(anvilCostAmount, 39), 0);
     }
 
     // =========================
-    // БРОСОК: запоминаем x-пузырёк в полёте
+    // TAKE RESULT: vanilla consumes only 1+1, so intercept the click and consume
+    // exactly 2 × resultAmount bottles from both slots (odd leftovers stay).
     // =========================
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onTakeResult(InventoryClickEvent event) {
+        if (!enabled) return;
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        if (!(event.getInventory() instanceof AnvilInventory inv)) return;
+        if (event.getRawSlot() != 2) return; // result slot
+
+        ItemStack result = inv.getItem(2);
+        if (result == null || result.getType() != Material.EXPERIENCE_BOTTLE) return;
+        int resultLevel = getMultiplier(result);
+        if (resultLevel <= 1) return; // not our recipe
+
+        ItemStack slot0 = inv.getItem(0);
+        ItemStack slot1 = inv.getItem(1);
+        if (slot0 == null || slot1 == null) return;
+        // Sanity: inputs must be bottles of the exact previous level
+        if (getMultiplier(slot0) != resultLevel - 1) return;
+        if (getMultiplier(slot1) != resultLevel - 1) return;
+
+        ClickType click = event.getClick();
+        boolean shift = click == ClickType.SHIFT_LEFT || click == ClickType.SHIFT_RIGHT;
+        boolean hotbar = click == ClickType.NUMBER_KEY;
+        boolean pickup = click == ClickType.LEFT || click == ClickType.RIGHT || click == ClickType.MIDDLE;
+        boolean cursorFree = event.getCursor() == null || event.getCursor().getType().isAir();
+
+        // Only support clean "take the whole result" interactions. Any other click
+        // (drag, number key without our support, etc.) is fully cancelled so vanilla
+        // cannot consume 1+1 and hand out a whole stack (dupe protection).
+        if (!shift && !hotbar && !pickup) {
+            event.setCancelled(true);
+            return;
+        }
+        if (!shift && !hotbar && !cursorFree) {
+            event.setCancelled(true);
+            return;
+        }
+
+        // Destination check before anything is consumed
+        if (hotbar) {
+            int button = event.getHotbarButton();
+            ItemStack target = player.getInventory().getItem(button);
+            boolean fits = target == null || target.getType().isAir()
+                    || (target.isSimilar(result) && target.getAmount() + result.getAmount() <= target.getMaxStackSize());
+            if (!fits) {
+                event.setCancelled(true);
+                return;
+            }
+        } else if (shift) {
+            if (freeSpaceFor(player.getInventory(), result) < result.getAmount()) {
+                event.setCancelled(true);
+                return; // not enough space — deny
+            }
+        }
+
+        // Charge XP levels first (vanilla's own cost handling is cancelled)
+        if (anvilCostAmount > 0 && player.getGameMode() != GameMode.CREATIVE) {
+            if (player.getLevel() < anvilCostAmount) {
+                event.setCancelled(true);
+                return; // not enough levels — deny
+            }
+            player.giveExpLevels(-anvilCostAmount);
+        }
+
+        event.setCancelled(true);
+
+        // Consume exactly 2 × resultAmount bottles: from slot 0 first, then slot 1
+        int need = result.getAmount() * 2;
+        int take0 = Math.min(slot0.getAmount(), need);
+        int take1 = need - take0;
+
+        slot0.setAmount(slot0.getAmount() - take0);
+        slot1.setAmount(slot1.getAmount() - take1);
+        inv.setItem(0, slot0.getAmount() > 0 ? slot0 : null);
+        inv.setItem(1, slot1.getAmount() > 0 ? slot1 : null);
+
+        // Give the result to the player
+        if (hotbar) {
+            ItemStack target = player.getInventory().getItem(event.getHotbarButton());
+            if (target == null || target.getType().isAir()) {
+                player.getInventory().setItem(event.getHotbarButton(), result);
+            } else {
+                target.setAmount(target.getAmount() + result.getAmount());
+            }
+        } else if (shift) {
+            player.getInventory().addItem(result);
+        } else {
+            event.setCursor(result);
+        }
+    }
+
+    // =========================
+    // THROW: remember the multiplier on the projectile's own PDC as a safety net,
+    // so ExpBottleEvent always knows the tier even if item data is lost in flight.
+    // =========================
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onProjectileLaunch(ProjectileLaunchEvent event) {
         if (!enabled) return;
         if (!(event.getEntity() instanceof ThrownExpBottle bottle)) return;
 
-        purgeExpired();
-
         int multiplier = getMultiplier(bottle.getItem());
         if (multiplier > 1) {
-            TRACKED.put(bottle.getUniqueId(),
-                    new Tracked(multiplier, System.currentTimeMillis() + TRACK_TTL_MS));
+            bottle.getPersistentDataContainer().set(
+                    Keys.EXP_BOTTLE_MULTIPLIER, PersistentDataType.INTEGER, multiplier
+            );
         }
     }
 
     // =========================
-    // РАЗБИТИЕ: отменяем ванильное, спавним орбы опыта ×N
+    // BREAK: the server fires ExpBottleEvent and spawns the XP orb with
+    // event.getExperience() — just multiply it there.
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onProjectileHit(ProjectileHitEvent event) {
+    public void onExpBottle(ExpBottleEvent event) {
+        if (!enabled) return;
         if (!(event.getEntity() instanceof ThrownExpBottle bottle)) return;
 
-        Tracked tracked = TRACKED.remove(bottle.getUniqueId());
-        if (tracked == null) return;
-
-        event.setCancelled(true);
-        bottle.remove();
-
-        Location loc = bottle.getLocation();
-
-        // Ванильная формула: 3 + random(5) + random(5) = 3..11 XP
-        int base = 3 + ThreadLocalRandom.current().nextInt(5) + ThreadLocalRandom.current().nextInt(5);
-        long xpLong = (long) base * tracked.multiplier;
-        int xp = (int) Math.min(Integer.MAX_VALUE, Math.max(1, xpLong));
-
-        bottle.getWorld().spawn(loc, ExperienceOrb.class, orb -> orb.setExperience(xp));
-
-        // Эффект разбития стекла (1.21.4: ITEM_BREAK переименован в ITEM)
-        bottle.getWorld().spawnParticle(
-                Particle.ITEM,
-                loc.clone().add(0, 0.2, 0),
-                12, 0.2, 0.2, 0.2, 0.05,
-                new ItemStack(Material.EXPERIENCE_BOTTLE)
-        );
-        bottle.getWorld().playSound(loc, Sound.BLOCK_GLASS_BREAK, 0.8f, 1.0f);
-    }
-
-    // =========================
-    // УДАЛЕНИЕ СНАРЯДА: сразу чистим карту (защита от утечек)
-    // =========================
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onEntityRemove(EntityRemoveEvent event) {
-        if (event.getEntity() instanceof ThrownExpBottle) {
-            TRACKED.remove(event.getEntity().getUniqueId());
+        int multiplier = getMultiplier(bottle.getItem());
+        if (multiplier <= 1) {
+            // Safety net: fall back to the projectile PDC written at launch
+            multiplier = bottle.getPersistentDataContainer()
+                    .getOrDefault(Keys.EXP_BOTTLE_MULTIPLIER, PersistentDataType.INTEGER, 1);
         }
+        if (multiplier <= 1) return;
+
+        long multiplied = (long) event.getExperience() * multiplier;
+        event.setExperience((int) Math.min(Integer.MAX_VALUE, Math.max(1, multiplied)));
     }
 
     // =========================
@@ -224,7 +283,7 @@ public class ExpBottleUpgradeListener implements Listener {
     // =========================
 
     /**
-     * Возвращает множитель пузырька: 1 для обычного, N для xN.
+     * Returns the bottle multiplier: 1 for a regular one, N for xN.
      */
     public static int getMultiplier(ItemStack item) {
         if (item == null || item.getType() != Material.EXPERIENCE_BOTTLE) return 1;
@@ -233,20 +292,26 @@ public class ExpBottleUpgradeListener implements Listener {
         return Math.max(1, pdc.getOrDefault(Keys.EXP_BOTTLE_MULTIPLIER, PersistentDataType.INTEGER, 1));
     }
 
-    /** Вычищает протухшие записи полёта (защита от утечек памяти). */
-    private static void purgeExpired() {
-        long now = System.currentTimeMillis();
-        Iterator<Map.Entry<UUID, Tracked>> it = TRACKED.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<UUID, Tracked> e = it.next();
-            if (e.getValue().expiresAt < now) {
-                it.remove();
+    /**
+     * Counts how many more of {@code stack} would fit into the player inventory
+     * (sums empty slots and space in matching stacks).
+     */
+    private static int freeSpaceFor(PlayerInventory inv, ItemStack stack) {
+        int space = 0;
+        int max = stack.getMaxStackSize();
+        for (ItemStack slot : inv.getStorageContents()) {
+            if (slot == null || slot.getType().isAir()) {
+                space += max;
+            } else if (slot.isSimilar(stack)) {
+                space += max - slot.getAmount();
             }
+            if (space >= stack.getAmount()) return space;
         }
+        return space;
     }
 
     /**
-     * Устанавливает стоимость наковальни через API (с fallback на reflection).
+     * Sets the anvil cost via the API (with a reflection fallback).
      */
     private static void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
         try {

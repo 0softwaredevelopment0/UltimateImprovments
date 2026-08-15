@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * Утилита для логирования создания файлов и директорий плагина при старте.
+ * Utility for logging the creation of plugin files and directories at startup.
  * <p>
- * Используется на этапе инициализации, чтобы администратор сервера видел в консоли,
- * какие файлы были созданы, какие уже существовали, и если создание не удалось — полный стектрейс.
+ * Used during initialization so the server admin sees in the console which files
+ * were created, which already existed, and — if creation failed — a full stacktrace.
  */
 public final class FileLogger {
 
@@ -19,12 +19,12 @@ public final class FileLogger {
     // =========================
 
     /**
-     * Проверяет существование файла и логирует результат.
-     * Если файла нет — пытается создать.
+     * Checks whether a file exists and logs the result.
+     * If the file does not exist — tries to create it.
      *
-     * @param file        файл для проверки/создания
-     * @param description человекочитаемое описание (например "Config", "Database")
-     * @param logger      логгер плагина
+     * @param file        the file to check/create
+     * @param description human-readable description (e.g. "Config", "Database")
+     * @param logger      the plugin logger
      */
     public static void ensureFile(File file, String description, Logger logger) {
         if (file.exists()) {
@@ -32,7 +32,7 @@ public final class FileLogger {
             return;
         }
 
-        // Создаём родительскую директорию, если нужно
+        // Create the parent directory if needed
         File parent = file.getParentFile();
         if (parent != null && !parent.exists()) {
             try {
@@ -57,10 +57,10 @@ public final class FileLogger {
     }
 
     /**
-     * Проверяет существование файла и логирует результат (через ConsoleLogger).
+     * Checks whether a file exists and logs the result (via ConsoleLogger).
      *
-     * @param file        файл для проверки/создания
-     * @param description человекочитаемое описание (например "Config", "Database")
+     * @param file        the file to check/create
+     * @param description human-readable description (e.g. "Config", "Database")
      */
     public static void ensureFile(File file, String description) {
         ensureFile(file, description, null);
@@ -71,12 +71,12 @@ public final class FileLogger {
     // =========================
 
     /**
-     * Проверяет существование директории и логирует результат.
-     * Если директории нет — пытается создать.
+     * Checks whether a directory exists and logs the result.
+     * If the directory does not exist — tries to create it.
      *
-     * @param dir         директория для проверки/создания
-     * @param description человекочитаемое описание
-     * @param logger      логгер плагина
+     * @param dir         the directory to check/create
+     * @param description human-readable description
+     * @param logger      the plugin logger
      */
     public static void ensureDirectory(File dir, String description, Logger logger) {
         if (dir.exists()) {
@@ -100,10 +100,10 @@ public final class FileLogger {
     }
 
     /**
-     * Проверяет существование директории и логирует результат (через ConsoleLogger).
+     * Checks whether a directory exists and logs the result (via ConsoleLogger).
      *
-     * @param dir         директория для проверки/создания
-     * @param description человекочитаемое описание
+     * @param dir         the directory to check/create
+     * @param description human-readable description
      */
     public static void ensureDirectory(File dir, String description) {
         ensureDirectory(dir, description, null);
@@ -114,12 +114,12 @@ public final class FileLogger {
     // =========================
 
     /**
-     * Логирует результат saveResource из JavaPlugin.
+     * Logs the result of saveResource from JavaPlugin.
      *
-     * @param success      true если saveResource вернул true / не выбросил исключение
-     * @param resourceName имя ресурса (например "messages.yml")
-     * @param description  человекочитаемое описание
-     * @param logger       логгер плагина
+     * @param success      true if saveResource returned true / did not throw
+     * @param resourceName the resource name (e.g. "messages.yml")
+     * @param description  human-readable description
+     * @param logger       the plugin logger
      */
     public static void logResourceSave(boolean success, String resourceName, String description, Logger logger) {
         if (success) {
@@ -130,19 +130,19 @@ public final class FileLogger {
     }
 
     /**
-     * Логирует результат saveResource (через ConsoleLogger).
+     * Logs the result of saveResource (via ConsoleLogger).
      */
     public static void logResourceSave(boolean success, String resourceName, String description) {
         logResourceSave(success, resourceName, description, null);
     }
 
     /**
-     * Логирует ошибку с исключением.
+     * Logs an error with an exception.
      *
-     * @param description человекочитаемое описание
-     * @param message     сообщение об ошибке
-     * @param logger      логгер плагина
-     * @param thrown      исключение (может быть null)
+     * @param description human-readable description
+     * @param message     the error message
+     * @param logger      the plugin logger
+     * @param thrown      the exception (may be null)
      */
     public static void logError(String description, String message, Logger logger, Throwable thrown) {
         ConsoleLogger.error("[" + description + "] ERROR: " + message);
@@ -152,7 +152,7 @@ public final class FileLogger {
     }
 
     /**
-     * Логирует ошибку (через ConsoleLogger).
+     * Logs an error (via ConsoleLogger).
      */
     public static void logError(String description, String message) {
         logError(description, message, null, null);

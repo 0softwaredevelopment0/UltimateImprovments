@@ -7,7 +7,7 @@ public class BlockUtil {
 
     // =========================
     // ⚡ IS ENERGY CABLE
-    // Делегирует проверку в CableBlock
+    // Delegates the check to CableBlock
     // =========================
     public static boolean isCable(Block block) {
         return CableBlock.isCable(block);

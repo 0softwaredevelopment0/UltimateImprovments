@@ -20,15 +20,15 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.Locale;
 
 /**
- * Слушатель для блокировки действий игрока, вызванного на проверку читов.
+ * Listener that blocks the actions of a player summoned for an anti-cheat check.
  * <p>
- * Полностью блокирует: движение, взаимодействие, ломание/ставку блоков,
- * команды (кроме /ui uncheck для досрочного завершения), выбрасывание предметов,
- * использование вёдер, нанесение урона, открытие инвентарей.
+ * Fully blocks: movement, interaction, block breaking/placing,
+ * commands (except /ui uncheck for early completion), item drops,
+ * bucket use, dealing damage, opening inventories.
  * <p>
- * При выходе проверяющего — автоматически завершает проверку.
- * При выходе проверяемого — проверка ставится на паузу.
- * При реконнекте проверяемого — проверка восстанавливается автоматически.
+ * When the inspector leaves — automatically finishes the check.
+ * When the suspect leaves — the check is paused.
+ * When the suspect reconnects — the check resumes automatically.
  */
 public class CheckListener implements Listener {
 
@@ -38,7 +38,7 @@ public class CheckListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();
-        // Если игрок был на проверке до выхода — восстанавливаем
+        // If the player was under check before leaving — restore it
         if (CheckManager.isBeingChecked(player)) {
             CheckManager.rejoinCheck(player);
         }
@@ -51,13 +51,13 @@ public class CheckListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player player = e.getPlayer();
 
-        // Если проверяющий вышел — завершаем проверку для suspect
+        // If the inspector left — finish the check for the suspect
         if (CheckManager.isInspector(player)) {
             CheckManager.cleanupByInspector(player.getUniqueId());
             return;
         }
 
-        // Если проверяемый вышел — ставим на паузу (данные сохраняются)
+        // If the suspect left — pause the check (data is kept)
         if (CheckManager.isBeingChecked(player)) {
             CheckManager.cleanupBySuspect(player.getUniqueId());
         }
@@ -118,7 +118,7 @@ public class CheckListener implements Listener {
     }
 
     // =========================
-    // BLOCK COMMANDS (кроме /ui uncheck)
+    // BLOCK COMMANDS (except /ui uncheck)
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent e) {
@@ -127,7 +127,7 @@ public class CheckListener implements Listener {
 
         String msg = e.getMessage().toLowerCase(Locale.ROOT).trim();
 
-        // Проверяемый может использовать /ui uncheck чтобы попросить завершить проверку
+        // The suspect may use /ui uncheck to ask for the check to be finished
         if (msg.startsWith("/ui uncheck")) {
             return;
         }

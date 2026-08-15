@@ -12,13 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * /ui sudo — управление sudo-режимом (GitHub-style).
+ * /ui sudo — manage the sudo mode (GitHub-style).
  * <ul>
- *   <li>{@code /ui sudo status} — статус сессии</li>
+ *   <li>{@code /ui sudo status} — session status</li>
  *   <li>{@code /ui sudo reenter} — re-enter sudo mode (open the password dialog)</li>
  *   <li>{@code /ui sudo clearsession} — exit sudo mode (clear the session)</li>
- *   <li>{@code /ui sudo reset} — запросить сброс sudo-пароля (подтверждает консоль)</li>
- *   <li>{@code /ui sudo confirmreset <nick>} — консоль подтверждает сброс</li>
+ *   <li>{@code /ui sudo reset} — request a sudo password reset (console confirms)</li>
+ *   <li>{@code /ui sudo confirmreset <nick>} — the console confirms the reset</li>
  * </ul>
  */
 public final class SudoSubcommand {

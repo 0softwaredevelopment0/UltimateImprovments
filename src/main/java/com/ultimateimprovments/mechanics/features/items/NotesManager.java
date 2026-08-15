@@ -5,8 +5,8 @@ import com.ultimateimprovments.core.Main;
 import org.bukkit.Bukkit;
 
 /**
- * Точка входа для системы заметок.
- * Инициализирует БД и регистрирует слушатели событий.
+ * Entry point for the notes system.
+ * Initializes the DB and registers event listeners.
  */
 public class NotesManager {
 

@@ -9,17 +9,17 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 
 /**
- * Заработок с блоков и мобов.
+ * Income from blocks and mobs.
  * <p>
- * По умолчанию ВЫКЛЮЧЕН — доходы не настроены (empty maps).
- * Администратор может добавить конкретные типы блоков/мобов с суммами в config.yml.
+ * DISABLED by default — no income configured (empty maps).
+ * An admin can add specific block/mob types with amounts in config.yml.
  */
 public final class IncomeListener implements Listener {
 
     private static boolean enabled = false;
 
     /**
-     * Устанавливает, активен ли доход с блоков/мобов.
+     * Sets whether income from blocks/mobs is active.
      */
     public static void setEnabled(boolean value) {
         enabled = value;
@@ -36,7 +36,7 @@ public final class IncomeListener implements Listener {
         var player = e.getPlayer();
         if (player == null) return;
 
-        // Доход настраивается в config.yml:
+        // Income is configured in config.yml:
         // economy:
         //   income:
         //     blocks:
@@ -45,7 +45,7 @@ public final class IncomeListener implements Listener {
         //     mobs:
         //       ZOMBIE: 1.0
         //       SKELETON: 1.0
-        // Пока enabled = false, дохода нет.
+        // While enabled = false, there is no income.
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -55,6 +55,6 @@ public final class IncomeListener implements Listener {
         var killer = e.getEntity().getKiller();
         if (killer == null) return;
 
-        // Аналогично блокам — ждёт настройки в config.yml
+        // Same as blocks — awaits configuration in config.yml
     }
 }

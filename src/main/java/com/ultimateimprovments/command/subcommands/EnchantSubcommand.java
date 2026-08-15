@@ -89,8 +89,8 @@ public final class EnchantSubcommand {
         if (input == null) return null;
         String norm = input.trim().toLowerCase(java.util.Locale.ROOT).replace(' ', '_');
 
-        // Custom enchantments — bare "aoe" и "ui:aoe" ведут на модульный путь
-        // (setLevel с PDC-зеркалом, проверкой инструмента и ограничением уровня)
+        // Custom enchantments — bare "aoe" and "ui:aoe" lead to the modular path
+        // (setLevel with the PDC mirror, tool check and level cap)
         String key = norm;
         int colon = norm.indexOf(':');
         if (colon >= 0) {
@@ -129,8 +129,8 @@ public final class EnchantSubcommand {
         List<String> names = new ArrayList<>();
         for (Enchantment ench : Registry.ENCHANTMENT) {
             NamespacedKey key = ench.getKey();
-            // Показываем полный ключ для кастомных неймспейсов (ui:aoe),
-            // ванильные minecraft — коротко (sharpness).
+            // Show the full key for custom namespaces (ui:aoe),
+            // vanilla minecraft ones — short (sharpness).
             names.add(key.getNamespace().equals("minecraft") ? key.getKey() : key.toString());
         }
         List<String> customs = Main.getInstance().getConfig().getStringList("enchant.custom_enchantments");
@@ -479,6 +479,30 @@ public final class EnchantSubcommand {
                         }
                         // Degradation requires an item with durability — skip silently
                     }
+                    case "attack_aoe" -> {
+                        if (com.ultimateimprovments.enchantment.attackaoe.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.attackaoe.Enchantment.setLevel(item, level);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.attackaoe.Enchantment.hasAttackAoe(item)) {
+                                com.ultimateimprovments.enchantment.attackaoe.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Attack AoE requires a sword or an axe — skip silently
+                    }
+                    case "item_stealing" -> {
+                        if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.itemstealing.Enchantment.setLevel(item, 1);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.hasItemStealing(item)) {
+                                com.ultimateimprovments.enchantment.itemstealing.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Item Stealing requires a fishing rod — skip silently
+                    }
                     default -> { /* unknown custom enchant — skip */ }
                 }
             } else {
@@ -623,7 +647,9 @@ public final class EnchantSubcommand {
                         || e.getKey().equals(com.ultimateimprovments.enchantment.igniting.Enchantment.ENCHANTMENT_KEY)
                         || e.getKey().equals(com.ultimateimprovments.enchantment.levitation.Enchantment.ENCHANTMENT_KEY)
                         || e.getKey().equals(com.ultimateimprovments.enchantment.selfdestruct.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.degradation.Enchantment.ENCHANTMENT_KEY)) {
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.degradation.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.attackaoe.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.itemstealing.Enchantment.ENCHANTMENT_KEY)) {
                     continue;
                 }
                 enchants.add("§a" + e.getKey().getKey() + " " + e.getValue());
@@ -663,6 +689,13 @@ public final class EnchantSubcommand {
             int degradation = com.ultimateimprovments.enchantment.degradation.Enchantment.getLevel(item);
             if (degradation > 0) {
                 enchants.add("§cCurse of Degradation " + degradation);
+            }
+            int attackAoe = com.ultimateimprovments.enchantment.attackaoe.Enchantment.getLevel(item);
+            if (attackAoe > 0) {
+                enchants.add("§bAttack AoE " + attackAoe);
+            }
+            if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.getLevel(item) > 0) {
+                enchants.add("§bItem Stealing");
             }
 
             if (enchants.isEmpty()) continue;

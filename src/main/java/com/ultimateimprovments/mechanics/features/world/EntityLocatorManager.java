@@ -43,7 +43,7 @@ public class EntityLocatorManager extends BukkitRunnable {
         if (!enabled) return;
 
         for (Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
-            // Проверяем и основную, и дополнительную руку
+            // Check both the main and the off hand
             ItemStack mainHand = player.getInventory().getItemInMainHand();
             ItemStack offHand = player.getInventory().getItemInOffHand();
             boolean hasLocator = isLocatorItem(mainHand) || isLocatorItem(offHand);

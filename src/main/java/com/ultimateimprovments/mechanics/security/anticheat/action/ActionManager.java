@@ -14,14 +14,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ActionManager — обрабатывает действия при достижении порога нарушений.
+ * ActionManager — handles actions when a violation threshold is reached.
  * <p>
- * Действия (по возрастанию строгости):
- * 1. LOG — запись в консоль/лог
- * 2. NOTIFY — уведомление администраторам
- * 3. SETBACK — откат игрока на последнюю валидную позицию
+ * Actions (in increasing severity):
+ * 1. LOG — write to console/log
+ * 2. NOTIFY — notify administrators
+ * 3. SETBACK — teleport the player back to the last valid position
  * <p>
- * Kick и Ban НЕ используются — античит только флагает и откатывает.
+ * Kick and Ban are NOT used — the anti-cheat only flags and sets back.
  */
 public class ActionManager {
 
@@ -45,13 +45,13 @@ public class ActionManager {
     }
 
     /**
-     * Обрабатывает нарушение и выполняет соответствующее действие.
+     * Handles a violation and executes the corresponding action.
      *
-     * @param player    игрок
-     * @param checkName имя проверки
-     * @param category  категория
+     * @param player    the player
+     * @param checkName the check name
+     * @param category  the category
      * @param vl        violation level
-     * @param message   сообщение
+     * @param message   the message
      */
     public void handleViolation(Player player, String checkName, CheckCategory category, double vl, String message) {
         if (player == null || !player.isOnline()) return;
@@ -74,7 +74,7 @@ public class ActionManager {
         }
 
         // Determine action based on VL thresholds
-        // Дефолты: notify и setback при 1 VL — любой флаг сразу setback'ает
+        // Defaults: notify and setback at 1 VL — any flag immediately sets back
         double notifyVl = cfg.getDouble(basePath + ".notify.vl_threshold", 1.0);
         double setbackVl = cfg.getDouble(basePath + ".setback.vl_threshold", 1.0);
 

@@ -10,8 +10,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 /**
- * Liquids — размещение жидких блоков в impossiblе местах (bucket dumps through walls etc).
- * Детекция: игрок размещает жидкий блок на расстоянии, превышающем нормальный reach.
+ * Liquids — placing liquid blocks in impossible places (bucket dumps through walls etc).
+ * Detection: the player places a liquid block beyond the normal reach.
  */
 public class LiquidsCheck extends AbstractCheck {
 

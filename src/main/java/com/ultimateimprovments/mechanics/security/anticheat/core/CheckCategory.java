@@ -1,7 +1,7 @@
 package com.ultimateimprovments.mechanics.security.anticheat.core;
 
 /**
- * Категория проверки античита.
+ * Anticheat check category.
  */
 public enum CheckCategory {
     COMBAT,

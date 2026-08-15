@@ -66,7 +66,7 @@ public class BlockBreakListener implements Listener {
         Player breaker = e.getPlayer();
 
         // =========================
-        // 🔥 ГЕНЕРАТОР (BLAST_FURNACE) — разобрать при ломании печи
+        // 🔥 GENERATOR (BLAST_FURNACE) — dismantle when the furnace is broken
         // =========================
         if (e.getBlock().getType() == Materials.BLAST_FURNACE && GeneratorManager.isAssembled(loc)) {
             GeneratorManager.removeGenerator(loc);
@@ -83,7 +83,7 @@ public class BlockBreakListener implements Listener {
             if (BatteryManager.isActive(loc)) {
                 BatteryManager.onBlockBroken(loc, breaker);
             } else if (StructureMarker.existsAt(loc)) {
-                // Orphaned Marker — кластер был потерян, но Marker остался в мире
+                // Orphaned Marker — the cluster was lost, but the Marker remained in the world
                 StructureMarker.removeAt(loc);
             }
         }
@@ -100,7 +100,7 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // 🛠 СОЗДАТЕЛЬ ПРЕДМЕТОВ (CRAFTER) — разобрать при ломании, очистить Marker
+        // 🛠 ITEM CREATOR (CRAFTER) — dismantle when broken, clean up Marker
         // =========================
         if (e.getBlock().getType() == Material.CRAFTER) {
             if (AssemblerManager.isAssembled(loc)) {
@@ -112,8 +112,8 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // 🧲 МАГНИТ (LODESTONE) — очистка orphaned Marker'ов
-        // Активные магниты обрабатываются в ReactorListener.onBlockBreak
+        // 🧲 MAGNET (LODESTONE) — cleanup of orphaned Markers
+        // Active magnets are handled in ReactorListener.onBlockBreak
         // =========================
         if (e.getBlock().getType() == Material.LODESTONE) {
             if (StructureMarker.existsAt(loc)) {
@@ -159,19 +159,19 @@ public class BlockBreakListener implements Listener {
     }
 
     /**
-     * Механика «изменения поведения руды»: после добычи руды на её месте
-     * остаётся камень (STONE / DEEPSLATE / NETHERRACK — по типу руды).
+     * «Ore behavior change» mechanic: after mining an ore, its place
+     * becomes stone (STONE / DEEPSLATE / NETHERRACK — depending on the ore type).
      * <p>
-     * Работает отложенно (на следующий тик) и только если блок всё ещё AIR —
-     * так механика не мешает другим слушателям, ожидающим пустой блок,
-     * и не затирает блок, поставленный игроком за этот тик.
+     * Works deferred (next tick) and only if the block is still AIR —
+     * so the mechanic does not interfere with other listeners waiting for an empty block,
+     * and does not overwrite a block placed by the player during that tick.
      * <p>
-     * {@code oreType} передаётся явно: для блоков, сломанных чарами AoE/VeinMiner
-     * через {@code breakNaturally()}, после ломки блок уже AIR, и тип нужно
-     * запомнить ДО разрушения.
+     * {@code oreType} is passed explicitly: for blocks broken by the AoE/VeinMiner
+     * enchants via {@code breakNaturally()}, the block is already AIR after breaking,
+     * so the type must be remembered BEFORE destruction.
      *
-     * @param block   сломанный блок (на момент вызова может быть уже AIR)
-     * @param oreType тип руды, которой блок был до ломки
+     * @param block   the broken block (may already be AIR at call time)
+     * @param oreType the ore type the block was before breaking
      */
     public static void scheduleStoneReplacement(Block block, Material oreType) {
         if (block == null || oreType == null) return;

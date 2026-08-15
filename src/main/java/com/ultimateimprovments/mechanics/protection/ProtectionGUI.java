@@ -29,17 +29,17 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * GUI «Блока защиты» (chest-sized, custom title).
+ * «Protection Block» GUI (chest-sized, custom title).
  * <p>
- * Мини-сценарии:
+ * Mini scenarios:
  * <ol>
- *   <li>{@link #openMainMenu} — главное меню</li>
- *   <li>{@link #openWhitelistMenu} — управление whitelist</li>
- *   <li>{@link #openAddPlayerMenu} — добавить игрока</li>
+ *   <li>{@link #openMainMenu} — the main menu</li>
+ *   <li>{@link #openWhitelistMenu} — whitelist management</li>
+ *   <li>{@link #openAddPlayerMenu} — add a player</li>
  * </ol>
  * <p>
- * Все предметы-маркеры GUI имеют PDC tag {@link Keys#PROTECTION_GUI},
- * поэтому их нельзя украсть через inventory-move (см. ниже).
+ * All GUI marker items carry the PDC tag {@link Keys#PROTECTION_GUI},
+ * so they can't be stolen via inventory-move (see below).
  */
 public final class ProtectionGUI {
 
@@ -58,7 +58,7 @@ public final class ProtectionGUI {
     private ProtectionGUI() {}
 
     // =========================
-    // HOLDER — хранит ProtectionBlock + тип меню
+    // HOLDER — stores ProtectionBlock + menu type
     // =========================
     public static class MenuHolder implements InventoryHolder {
         private final ProtectionBlock block;
@@ -171,7 +171,7 @@ public final class ProtectionGUI {
             }
             inv.setItem(slot, head);
             slot++;
-            if (slot % 9 == 8) slot += 2; // пропускаем границу
+            if (slot % 9 == 8) slot += 2; // skip the border
         }
 
         fillEmpty(inv, Material.BLACK_STAINED_GLASS_PANE);
@@ -199,18 +199,18 @@ public final class ProtectionGUI {
     }
 
     /**
-     * Атомарно достаёт и удаляет ожидающий блок. Раньше разделяли на
-     * {@code consumeAwaitingPlayerName} (remove) и {@code getAwaitingBlock} (read) —
-     * но consume удалял запись ДО чтения, из-за чего getAwaitingBlock всегда
-     * возвращал null и whitelist-add через GUI был полностью сломан.
-     * Теперь этот метод возвращает блок (или null, если игрок не в режиме ожидания).
+     * Atomically fetches and removes the awaiting block. Previously split into
+     * {@code consumeAwaitingPlayerName} (remove) and {@code getAwaitingBlock} (read) —
+     * but consume removed the entry BEFORE the read, so getAwaitingBlock always
+     * returned null and GUI whitelist-add was completely broken.
+     * Now this method returns the block (or null if the player isn't awaiting).
      */
     public static ProtectionBlock consumeAwaitingPlayerName(Player player) {
         return awaitingPlayerName.remove(player.getUniqueId());
     }
 
-    /** @deprecated используйте {@link #consumeAwaitingPlayerName(Player)} — этот метод
-     *  оставлен только для совместимости и всегда возвращает null после consume. */
+    /** @deprecated use {@link #consumeAwaitingPlayerName(Player)} — this method is
+     *  kept only for compatibility and always returns null after consume. */
     @Deprecated
     public static ProtectionBlock getAwaitingBlock(Player player) {
         return awaitingPlayerName.get(player.getUniqueId());
@@ -279,7 +279,7 @@ public final class ProtectionGUI {
             if (!(e.getWhoClicked() instanceof Player player)) return;
             if (!(e.getInventory().getHolder() instanceof MenuHolder holder)) return;
 
-            // Защита от кражи предметов GUI
+            // Protect GUI items from being stolen
             ItemStack cursor = e.getCursor();
             ItemStack current = e.getCurrentItem();
             if ((cursor != null && cursor.hasItemMeta()

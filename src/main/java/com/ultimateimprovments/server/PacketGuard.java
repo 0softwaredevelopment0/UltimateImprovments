@@ -21,17 +21,17 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 🛡 PacketGuard — защита от пакетов, превышающих допустимый размер.
+ * 🛡 PacketGuard — protection against packets exceeding the allowed size.
  * <p>
- * Перехватывает {@code PacketEncoder$PacketTooLargeException}, которая возникает,
- * когда сервер пытается отправить клиенту пакет размером больше лимита протокола (8 МБ).
+ * Catches {@code PacketEncoder$PacketTooLargeException}, which occurs
+ * when the server tries to send the client a packet larger than the protocol limit (8 MB).
  * <p>
- * Вместо стандартного сообщения "Internal Exception: PacketEncoder$PacketTooLargeException"
- * игрок получает читаемый кик с понятной причиной.
+ * Instead of the standard message "Internal Exception: PacketEncoder$PacketTooLargeException"
+ * the player gets a readable kick with a clear reason.
  * <p>
- * Причина возникновения: игрок создал/получил предмет с огромным объёмом NBT-данных
- * (например, книгу с миллионами страниц, сундук с краш-предметами), и при
- * отправке этого предмета в контейнере пакет превышает лимит.
+ * Cause: the player created/received an item with a huge amount of NBT data
+ * (e.g. a book with millions of pages, a chest with crash items), and when
+ * sending that item in a container the packet exceeds the limit.
  */
 public class PacketGuard implements Listener {
 
@@ -216,10 +216,10 @@ public class PacketGuard implements Listener {
             );
         }
 
-        // НЕ закрываем канал здесь — это бы вызвало дефолтный дисконнект
-        // с сообщением "Connection closed". Вместо этого потребляем исключение
-        // (не вызываем fireExceptionCaught) и кикаем игрока на главном потоке.
-        // player.kickPlayer() сам закроет канал с нашим кастомным сообщением.
+        // Do NOT close the channel here — that would cause a default disconnect
+        // with the "Connection closed" message. Instead, consume the exception
+        // (do not call fireExceptionCaught) and kick the player on the main thread.
+        // player.kickPlayer() closes the channel itself with our custom message.
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
             if (player.isOnline()) {
                 player.kickPlayer(MessageUtil.legacy(kickMessage));

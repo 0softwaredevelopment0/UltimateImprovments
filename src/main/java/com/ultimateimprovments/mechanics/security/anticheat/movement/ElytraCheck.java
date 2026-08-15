@@ -10,11 +10,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * Elytra — проверка полёта на элитрах.
+ * Elytra — elytra flight check.
  * <p>
- * Детекция: игрок поднимается на элитрах без фейерверка в руке
- * и без буста от ElytraBoostManager → флаг (анти-флай без фейерверков).
- * Также детектит аномальную скорость полёта.
+ * Detection: the player ascends on elytra without a firework in hand
+ * and without a boost from ElytraBoostManager → flag (anti-fly without fireworks).
+ * Also detects abnormal flight speed.
  */
 public class ElytraCheck extends AbstractCheck {
 
@@ -65,7 +65,7 @@ public class ElytraCheck extends AbstractCheck {
         // Has potion effects that affect speed?
         boolean hasSpeedEffect = player.hasPotionEffect(org.bukkit.potion.PotionEffectType.SPEED);
 
-        // Abnormal speed (с учётом эффекта SPEED и riptide)
+        // Abnormal speed (accounting for the SPEED effect and riptide)
         double speedLimit = maxElytraSpeed;
         if (isRiptiding) speedLimit = Math.max(speedLimit, riptideMaxSpeed);
         if (hasSpeedEffect) {
@@ -79,7 +79,7 @@ public class ElytraCheck extends AbstractCheck {
         }
 
         // Going up without fireworks or plugin boost → flag
-        // Riptide: лимит подъёма выше (~1.5 blk/tick), но не бесконечный
+        // Riptide: higher climb limit (~1.5 blk/tick), but not infinite
         double climbLimit = maxGlideUpSpeed;
         if (isRiptiding) climbLimit = riptideClimbLimit;
         if (yDelta > climbLimit) {

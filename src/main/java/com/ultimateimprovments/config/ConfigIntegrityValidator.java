@@ -8,18 +8,18 @@ import java.io.*;
 import java.nio.file.Files;
 
 /**
- * Проверяет целостность config.yml при старте плагина.
+ * Validates the integrity of config.yml at plugin startup.
  * <p>
- * С v26.2 всѐ живет в config.yml (сообщения + гайд + настройки + meta-хеш).
- * Поэтому отдельный файл messages.yml больше не валидируется здесь —
- * миграция устаревших файлов делается в {@link MessagesManager#init(Main)} и
- * {@link ConfigGuideManager#init(Main)}, а валидация значений — только по config.yml.
+ * Since v26.2 everything lives in config.yml (messages + guide + settings + meta-hash).
+ * Therefore the standalone messages.yml file is no longer validated here —
+ * the migration of legacy files is done in {@link MessagesManager#init(Main)} and
+ * {@link ConfigGuideManager#init(Main)}, and value validation only for config.yml.
  * <p>
- * Использует {@link ConfigRepairManager} для умного ремонта:
- * недостающие ключи ДОБАВЛЯЮТСЯ в конец файла, существующие значения НЕ ТРОГАЮТСЯ.
+ * Uses {@link ConfigRepairManager} for smart repair:
+ * missing keys are ADDED to the end of the file, existing values are NOT touched.
  * <p>
- * Дополнительно выполняет валидацию значений config.yml через
- * {@link ConfigValueValidator} (типы, диапазоны, пустые строки, символы).
+ * Additionally performs config.yml value validation via
+ * {@link ConfigValueValidator} (types, ranges, empty strings, characters).
  */
 public class ConfigIntegrityValidator {
 
@@ -31,7 +31,7 @@ public class ConfigIntegrityValidator {
     public static void validate(Main plugin) {
         File configFile = new File(plugin.getDataFolder(), "config.yml");
 
-        // 🧹 Шаг 1: удаляем дубликаты root-level ключей (оставляем ПЕРВЫЕ вхождения)
+        // 🧹 Step 1: remove duplicate root-level keys (keep the FIRST occurrences)
         boolean cleaned = YamlDuplicateCleaner.cleanDuplicates(configFile, "config.yml");
         if (cleaned) {
             plugin.reloadConfig();
@@ -39,7 +39,7 @@ public class ConfigIntegrityValidator {
 
         FileConfiguration config = plugin.getConfig();
 
-        // Умный ремонт: недостающие ключи добавляются в конец файла
+        // Smart repair: missing keys are added to the end of the file
         boolean repaired = ConfigRepairManager.repair(plugin, "config.yml", config, configFile);
 
         if (repaired) {
@@ -47,11 +47,11 @@ public class ConfigIntegrityValidator {
             config = plugin.getConfig();
         }
 
-        // 🧹 Одноразовая чистка: если repair НЕ выполнялся (не было ни Group A, ни Group B),
-        // но в файле остались маркеры от старых repair-запусков — пересохраняем конфиг
-        // через config.save(). Это убирает YAML-дубликаты root-секций.
+        // 🧹 One-time cleanup: if repair did NOT run (neither Group A nor Group B),
+        // but the file still has markers from old repair runs — re-save the config
+        // via config.save(). This removes YAML duplicates of root sections.
         //
-        // ⚠ ВАЖНО: Не запускать, если repair уже сработал.
+        // ⚠ IMPORTANT: Do not run if repair already worked.
         if (!repaired && fileContainsMarker(configFile)) {
             try {
                 config.save(configFile);
@@ -64,14 +64,14 @@ public class ConfigIntegrityValidator {
             }
         }
 
-        // Валидация значений (делегировано в ConfigValueValidator)
+        // Value validation (delegated to ConfigValueValidator)
         ConfigValueValidator.validateValues(plugin, config);
     }
 
     /**
-     * Проверяет, содержит ли файл маркер старых repair-добавлений (от прошлых версий,
-     * когда сообщения хранились в отдельном файле). Если да — значит есть YAML-дубликаты,
-     * которые нужно вычистить при следующем сохранении config.yml.
+     * Checks whether the file contains a marker of old repair additions (from previous
+     * versions, when messages were stored in a separate file). If so — there are YAML
+     * duplicates that need to be cleaned up on the next config.yml save.
      */
     private static boolean fileContainsMarker(File file) {
         if (!file.exists()) return false;
@@ -84,16 +84,16 @@ public class ConfigIntegrityValidator {
                 }
             }
         } catch (IOException e) {
-            // Если файл не читается — пропускаем чистку
+            // If the file cannot be read — skip the cleanup
         }
         return false;
     }
 
     /**
-     * Удаляет устаревшие файлы из dataFolder. Вызывается после успешной валидации.
+     * Removes legacy files from dataFolder. Called after a successful validation.
      * <p>
-     * С v26.2 эти файлы не нужны — всё внутри config.yml. Если они остались — тихо
-     * удаляем, чтобы пользовательский каталог оставался чистым.
+     * Since v26.2 these files are not needed — everything is inside config.yml.
+     * If they remain — quietly delete them so the user's directory stays clean.
      */
     public static void cleanupLegacyFiles(Main plugin) {
         File data = plugin.getDataFolder();

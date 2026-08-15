@@ -19,22 +19,23 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * AuthDialogScreen — создаёт и открывает Custom Screen (Dialog) для авторизации.
+ * AuthDialogScreen — creates and opens the Custom Screen (Dialog) for authentication.
  * <p>
- * Использует Minecraft 26.2 Dialog API для показа экрана с полем пароля
- * и кнопками «Continue» / «Exit» (kick).
+ * Uses the Minecraft 26.2 Dialog API to show a screen with a password field
+ * and «Continue» / «Exit» (kick) buttons.
  * <p>
- * Диалог использует {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
- * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на экран «Waiting for server…»
- * и игнорирует {@code ClientboundClearDialogPacket}, поэтому окно висело бы ~4 секунды.
- * С {@code CLOSE} клиент закрывает окно СРАЗУ после клика сам; игрок всё равно заморожен
- * (freezePlayer) до успешного входа, а при ошибке диалог переоткрывается сервером.
+ * The dialog uses {@link DialogAction#CLOSE} (NOT {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * with {@code WAIT_FOR_RESPONSE} the client moves to the «Waiting for server…» screen after
+ * clicking and ignores {@code ClientboundClearDialogPacket}, so the window would linger ~4s.
+ * With {@code CLOSE} the client closes the window immediately after clicking; the player
+ * stays frozen (freezePlayer) until a successful login, and on error the dialog is
+ * re-opened by the server.
  */
 public class AuthDialogScreen {
 
-    /** Идентификатор CustomAll действия для отправки формы (логин/регистрация). */
+    /** Identifier of the CustomAll action that submits the form (login/register). */
     public static final Identifier AUTH_SUBMIT_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "auth_submit");
-    /** Идентификатор CustomAll действия для отмены (выход с сервера). */
+    /** Identifier of the CustomAll action for cancellation (leave the server). */
     public static final Identifier AUTH_CANCEL_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "auth_cancel");
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
@@ -42,7 +43,7 @@ public class AuthDialogScreen {
     private AuthDialogScreen() {}
 
     /**
-     * Открывает экран авторизации для игрока.
+     * Opens the authentication screen for the player.
      */
     public static void open(Player player, boolean isRegistered) {
         if (!(player instanceof CraftPlayer craftPlayer)) {
@@ -51,7 +52,7 @@ public class AuthDialogScreen {
         }
         ServerPlayer serverPlayer = craftPlayer.getHandle();
 
-        // ─── Заголовки ───
+        // ─── Titles ───
         net.minecraft.network.chat.Component title = toNative(
             MM.deserialize(isRegistered
                 ? Main.getInstance().getConfig().getString("messages.auth.dialog.login_title",
@@ -63,7 +64,7 @@ public class AuthDialogScreen {
             MM.deserialize("<gray>Server Authentication</gray>")
         );
 
-        // ─── Текст тела ───
+        // ─── Body text ───
         net.minecraft.network.chat.Component bodyText = toNative(
             MM.deserialize(isRegistered
                 ? Main.getInstance().getConfig().getString("messages.auth.dialog.body_login",
@@ -72,7 +73,7 @@ public class AuthDialogScreen {
                     "<white>Please choose a password to register.</white>"))
         );
 
-        // ─── Поле ввода пароля ───
+        // ─── Password input field ───
         net.minecraft.network.chat.Component pwLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString("messages.auth.dialog.password_label",
                 "<gray>Password</gray>"))
@@ -80,7 +81,7 @@ public class AuthDialogScreen {
         int maxPwLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
         TextInput passwordInput = new TextInput(200, pwLabel, true, "", maxPwLen, Optional.empty());
 
-        // ─── Кнопки ───
+        // ─── Buttons ───
         net.minecraft.network.chat.Component continueLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString("messages.auth.dialog.continue_button",
                 "<green>✔ Continue</green>"))
@@ -90,24 +91,24 @@ public class AuthDialogScreen {
                 "<red>✖ Exit Server</red>"))
         );
 
-        // Continue → CustomAll action (отправляет форму с паролем)
+        // Continue → CustomAll action (submits the form with the password)
         ActionButton continueBtn = new ActionButton(
             new CommonButtonData(continueLabel, 150),
             Optional.of(new CustomAll(AUTH_SUBMIT_ID, Optional.empty()))
         );
-        // Exit → CustomAll action (отправляет сигнал на отмену → сервер кикает игрока)
+        // Exit → CustomAll action (sends a cancel signal → server kicks the player)
         ActionButton exitBtn = new ActionButton(
             new CommonButtonData(exitLabel, 150),
             Optional.of(new CustomAll(AUTH_CANCEL_ID, Optional.empty()))
         );
 
-        // ─── Сборка диалога ───
+        // ─── Dialog assembly ───
         CommonDialogData data = new CommonDialogData(
             title,
             Optional.of(externalTitle),
-            false,                          // canCloseWithEscape — запрещаем закрытие ESC
+            false,                          // canCloseWithEscape — block ESC from closing
             true,                           // pause
-            DialogAction.CLOSE,               // afterAction — клиент закрывает окно сам, мгновенно (без «Waiting for server»)
+            DialogAction.CLOSE,               // afterAction — client closes the window itself instantly (no «Waiting for server»)
             List.of(new PlainMessage(bodyText, 310)),
             List.of(new Input("password", passwordInput))
         );
@@ -115,7 +116,7 @@ public class AuthDialogScreen {
         MultiActionDialog dialog = new MultiActionDialog(
             data,
             List.of(continueBtn),   // mainActions
-            Optional.of(exitBtn),   // exitAction (нажатие кнопки выхода)
+            Optional.of(exitBtn),   // exitAction (exit button press)
             1                       // columns
         );
 
@@ -125,7 +126,7 @@ public class AuthDialogScreen {
     }
 
     /**
-     * Закрывает открытый диалог у игрока (после успешной/провальной авторизации).
+     * Closes the open dialog for the player (after successful/failed login).
      */
     public static void close(Player player) {
         if (!(player instanceof CraftPlayer craftPlayer)) return;
@@ -136,7 +137,7 @@ public class AuthDialogScreen {
     }
 
     /**
-     * Парсит SNBT строку в CompoundTag.
+     * Parses an SNBT string into a CompoundTag.
      */
     public static CompoundTag parseTag(String snbt) {
         try {
@@ -148,8 +149,8 @@ public class AuthDialogScreen {
     }
 
     /**
-     * Преобразует Adventure Component → Minecraft Component.
-     * Сериализует через legacy section-коды, затем создаёт Minecraft Component.
+     * Converts an Adventure Component → Minecraft Component.
+     * Serializes through legacy section codes, then creates a Minecraft Component.
      */
     private static net.minecraft.network.chat.Component toNative(Component adv) {
         String legacy = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer

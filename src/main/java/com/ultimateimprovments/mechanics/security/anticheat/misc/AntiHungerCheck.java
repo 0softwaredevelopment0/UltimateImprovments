@@ -12,17 +12,17 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AntiHunger — детекция чита, который модифицирует пакеты движения
- * чтобы тратить меньше голода (anti-hunger hack).
+ * AntiHunger — detection of a hack that modifies movement packets
+ * to spend less hunger (anti-hunger hack).
  * <p>
- * Принцип: хак отправляет onGround=true в move-пакетах даже когда игрок
- * прыгает/спринтит, чтобы сервер не начислял exhaustion.
+ * Principle: the hack sends onGround=true in move packets even when the player
+ * jumps/sprints, so the server doesn't add exhaustion.
  * <p>
- * Детекция:
- * 1. Если игрок спринтит + прыгает (yDelta > 0.4) но пакет говорит onGround=true — флаг.
- * 2. Если игрок долго спринтит без изменения уровня еды — флаг.
- * 3. Если игрок прыгает много раз подряд (расходует 0.8 exhaustion per jump)
- *    но уровень еды не меняется — флаг.
+ * Detection:
+ * 1. If the player sprints + jumps (yDelta > 0.4) but the packet says onGround=true — flag.
+ * 2. If the player sprints for a long time without the food level changing — flag.
+ * 3. If the player jumps many times in a row (spends 0.8 exhaustion per jump)
+ *    but the food level doesn't change — flag.
  */
 public class AntiHungerCheck extends AbstractCheck {
 
@@ -30,9 +30,9 @@ public class AntiHungerCheck extends AbstractCheck {
     private int maxJumpsWithoutHungerLoss;
     private double minJumpHeightForExhaustion;
 
-    // Сколько тиков игрок спринтит без изменения еды
+    // How many ticks the player sprints without a food change
     private final ConcurrentHashMap<UUID, SprintData> sprintData = new ConcurrentHashMap<>();
-    // Сколько прыжков без изменения еды
+    // How many jumps without a food change
     private final ConcurrentHashMap<UUID, JumpData> jumpData = new ConcurrentHashMap<>();
 
     public AntiHungerCheck() {
@@ -60,8 +60,8 @@ public class AntiHungerCheck extends AbstractCheck {
         boolean onGround = player.isOnGround();
 
         // ── Detection 1: Sprint-jump with onGround=true ──
-        // Если игрок прыгает (yDelta > 0.4) НО пакет говорит onGround=true
-        // → это anti-hunger хак
+        // If the player jumps (yDelta > 0.4) BUT the packet says onGround=true
+        // → that's an anti-hunger hack
         if (player.isSprinting() && yDelta > minJumpHeightForExhaustion && onGround) {
             CheckResult result = flag(player, 3.0,
                     "Sprint-jump with onGround=true (YΔ=" + String.format("%.2f", yDelta) + ")");
@@ -74,7 +74,7 @@ public class AntiHungerCheck extends AbstractCheck {
             SprintData sd = sprintData.computeIfAbsent(player.getUniqueId(), k -> new SprintData(player.getFoodLevel()));
             sd.sprintTicks++;
 
-            // Если уровень еды изменился — сбрасываем счётчик
+            // If the food level changed — reset the counter
             int currentFood = player.getFoodLevel();
             if (currentFood != sd.initialFoodLevel) {
                 sd.initialFoodLevel = currentFood;
@@ -103,7 +103,7 @@ public class AntiHungerCheck extends AbstractCheck {
 
             int currentFood = player.getFoodLevel();
             if (currentFood != jd.initialFoodLevel) {
-                // Еда изменилась — нормально, сбрасываем
+                // Food changed — that's fine, reset
                 jd.initialFoodLevel = currentFood;
                 jd.jumpCount = 0;
                 return;

@@ -23,22 +23,22 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 🛡 Integrity Combine Listener — обрабатывает события, связанные
- * с восстановлением и объединением целостности предметов:
+ * 🛡 Integrity Combine Listener — handles events related to
+ * restoring and combining item integrity:
  * <p>
- * - Наковальня: ремонт материалом повышает целостность, объединение двух предметов суммирует
- * - Точило: объединение двух предметов суммирует целостность
- * - Верстак / инвентарь: объединение двух одинаковых предметов суммирует целостность
- * - Получение опыта: предмет с Починкой (Mending) восстанавливает целостность
+ * - Anvil: repairing with material raises integrity, combining two items sums it
+ * - Grindstone: combining two items sums the integrity
+ * - Crafting table / inventory: combining two identical items sums the integrity
+ * - Experience gain: an item with Mending restores integrity
  */
 public class IntegrityCombineListener implements Listener {
 
-    // Кулдаун сообщений в наковальне (чтобы не спамить)
+    // Anvil message cooldown (to avoid spamming)
     private final Map<UUID, Long> anvilMessageCooldowns = new HashMap<>();
-    private static final long ANVIL_MSG_COOLDOWN_MS = 2000; // 2 секунды
+    private static final long ANVIL_MSG_COOLDOWN_MS = 2000; // 2 seconds
 
     // =========================
-    // НАКОВАЛЬНЯ — ремонт и объединение
+    // ANVIL — repair and combine
     // =========================
     @EventHandler(priority = EventPriority.HIGH)
     public void onPrepareAnvil(PrepareAnvilEvent event) {
@@ -51,22 +51,22 @@ public class IntegrityCombineListener implements Listener {
         if (slot0 == null || slot0.getType() == Material.AIR) return;
         if (slot1 == null || slot1.getType() == Material.AIR) return;
 
-        // Проверяем, есть ли у предмета в слоте 0 прочность
+        // Check whether the item in slot 0 has durability
         if (IntegrityManager.getMaxDurability(slot0) <= 0) return;
 
         // =========================
-        // СЦЕНАРИЙ 1: Крафт материалом (предмет + материал, например алмазная кирка + алмаз)
+        // SCENARIO 1: Crafting with material (item + material, e.g. diamond pickaxe + diamond)
         // =========================
         if (isRepairMaterial(slot0.getType(), slot1.getType())) {
             if (!IntegrityManager.isAnvilRepairEnabled()) return;
 
-            // Убеждаемся, что предмет инициализирован
+            // Make sure the item is initialized
             IntegrityManager.ensureInitialized(slot0);
 
             double currentIntegrity = IntegrityManager.getCurrentIntegrity(slot0);
             if (currentIntegrity <= 0) return;
 
-            // ===== НОВАЯ МЕХАНИКА: крафт материалом =====
+            // ===== NEW MECHANIC: crafting with material =====
             if (IntegrityManager.isAnvilMaterialCraftEnabled()) {
                 int materialCount = 1;
                 double bonusPerMaterial = IntegrityManager.getAnvilMaterialCraftBonus();
@@ -95,7 +95,7 @@ public class IntegrityCombineListener implements Listener {
                 return;
             }
 
-            // ===== СТАРАЯ МЕХАНИКА (fallback): ремонт фиксированным процентом =====
+            // ===== OLD MECHANIC (fallback): repair with a fixed percentage =====
             if (currentIntegrity >= 100.0) return;
 
             double restoreAmount = 100.0 * IntegrityManager.getAnvilRepairMultiplier();
@@ -121,7 +121,7 @@ public class IntegrityCombineListener implements Listener {
         }
 
         // =========================
-        // СЦЕНАРИЙ 2: Объединение двух одинаковых предметов (кирка + кирка)
+        // SCENARIO 2: Combining two identical items (pickaxe + pickaxe)
         // =========================
         if (slot0.getType() == slot1.getType() && IntegrityManager.getMaxDurability(slot1) > 0) {
             if (!IntegrityManager.isAnvilCombineEnabled()) return;
@@ -135,7 +135,7 @@ public class IntegrityCombineListener implements Listener {
 
             if (cur0 < 0 || cur1 < 0) return;
 
-            // Суммируем целостность + бонус, кап — 100.0%
+            // Sum the integrity + bonus, cap — 100.0%
             double combined = cur0 + cur1;
             double bonus = 100.0 * IntegrityManager.getAnvilCombineBonus();
             combined += bonus;
@@ -161,7 +161,7 @@ public class IntegrityCombineListener implements Listener {
     }
 
     // =========================
-    // ТОЧИЛО — объединение двух предметов (снимает зачарования)
+    // GRINDSTONE — combining two items (removes enchantments)
     // =========================
     @EventHandler(priority = EventPriority.HIGH)
     public void onPrepareGrindstone(PrepareGrindstoneEvent event) {
@@ -211,7 +211,7 @@ public class IntegrityCombineListener implements Listener {
     }
 
     // =========================
-    // ВЕРСТАК / ИНВЕНТАРЬ — объединение при крафте (ровно 2 предмета)
+    // CRAFTING TABLE / INVENTORY — combining on craft (exactly 2 items)
     // =========================
     @EventHandler(priority = EventPriority.HIGH)
     public void onPrepareCraft(PrepareItemCraftEvent event) {
@@ -267,7 +267,7 @@ public class IntegrityCombineListener implements Listener {
     }
 
     // =========================
-    // MENDING (ПОЧИНКА) — восстановление целостности при сборе опыта
+    // MENDING — restoring integrity on experience pickup
     // =========================
     @EventHandler(priority = EventPriority.NORMAL)
     public void onMendingRestore(PlayerExpChangeEvent event) {
@@ -289,7 +289,7 @@ public class IntegrityCombineListener implements Listener {
             if (item == null || item.getType() == Material.AIR) continue;
             if (IntegrityManager.getMaxDurability(item) <= 0) continue;
 
-            // Только предметы с зачарованием Mending (Починка)
+            // Only items with the Mending enchantment
             if (!item.containsEnchantment(Enchantment.MENDING)) continue;
 
             double before = IntegrityManager.getCurrentIntegrity(item);
@@ -299,7 +299,7 @@ public class IntegrityCombineListener implements Listener {
             restored = true;
         }
 
-        // Сообщение игроку — только если хотя бы 1 предмет реально восстановился
+        // Message to the player — only if at least 1 item was actually restored
         if (restored) {
             String msg = IntegrityManager.getMendingMessage();
             if (msg != null && !msg.isEmpty()) {
@@ -313,8 +313,8 @@ public class IntegrityCombineListener implements Listener {
     // =========================
 
     /**
-     * Устанавливает repair cost на AnvilInventory через API или reflection.
-     * Без этого игрок не может забрать результат из наковальни.
+     * Sets the repair cost on the AnvilInventory via the API or reflection.
+     * Without this the player cannot take the result out of the anvil.
      */
     private void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
         try {
@@ -330,7 +330,7 @@ public class IntegrityCombineListener implements Listener {
     }
 
     /**
-     * Кулдаун сообщений в наковальне (чтобы не спамить при перемещении предметов).
+     * Anvil message cooldown (to avoid spamming when moving items).
      */
     private boolean canSendAnvilMessage(Player player) {
         UUID uuid = player.getUniqueId();
@@ -344,7 +344,7 @@ public class IntegrityCombineListener implements Listener {
     }
 
     /**
-     * Проверяет, является ли предмет ремонтным материалом для данного инструмента.
+     * Checks whether the item is a repair material for the given tool.
      */
     private boolean isRepairMaterial(Material tool, Material material) {
         String toolName = tool.name();
@@ -376,7 +376,7 @@ public class IntegrityCombineListener implements Listener {
     }
 
     /**
-     * Пытается получить игрока из события наковальни через инвентарь.
+     * Tries to get the player from the anvil event via the inventory.
      */
     private Player getPlayerFromAnvil(PrepareAnvilEvent event) {
         var view = event.getView();

@@ -11,8 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * FastBreak / Nuker — быстрое разрушение блоков или массовое ломание.
- * Детекция: количество сломанных блоков за секунду превышает лимит.
+ * FastBreak / Nuker — fast block breaking or mass breaking.
+ * Detection: number of blocks broken per second exceeds the limit.
  */
 public class FastBreakCheck extends AbstractCheck {
 

@@ -16,24 +16,24 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.List;/**
-     * Диспетчер команд /ui.
+     * Dispatcher of /ui commands.
      * <p>
-     * Все субкоманды регистрируются в {@link SubCommandRegistry}.
-     * Новые субкоманды: создай класс implements {@link SubCommand} и
-     * добавь {@code registry.register(new MyCmd())} в init().
-     * Не нужно править dispatch или tabComplete — всё автоматически.
+     * All subcommands are registered in {@link SubCommandRegistry}.
+     * New subcommands: create a class implementing {@link SubCommand} and
+     * add {@code registry.register(new MyCmd())} in init().
+     * No need to edit dispatch or tabComplete — everything is automatic.
      */
 public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
     private static boolean initialized = false;
 
-    /** Сбрасывает флаг инициализации для корректной работы /ui reload. */
+    /** Resets the initialization flag for a correct /ui reload. */
     public static void reset() {
         initialized = false;
     }
 
     /**
-     * Инициализирует реестр субкоманд. Вызывается один раз при старте.
+     * Initializes the subcommand registry. Called once on startup.
      */
     public static void init() {
         if (initialized) return;
@@ -41,17 +41,20 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
         SubCommandRegistry registry = SubCommandRegistry.getInstance();
 
-        // ── Авто-обнаружение SubCommand-классов через сканирование JAR ──
+        // ── Auto-discovery of SubCommand classes via JAR scanning ──
         com.ultimateimprovments.core.CommandScanner.autoRegister(registry,
                 com.ultimateimprovments.core.Main.getInstance(),
                 "com/ultimateimprovments/command/subcommands");
 
-        // ── SubCommand-имплементации (новее) ──
+        // ── SubCommand implementations (newer) ──
         registry.register(new HelpSubCommand());
+        registry.register(new PdcSubcommand());
+        registry.register(new GetPosSubcommand());
+        registry.register(new ClearChatSubcommand());
         registry.register(LegacySubCommandAdapter.of("reload",
                 (s, a) -> ReloadSubcommand.execute(s)));
 
-        // ── Legacy адаптеры с tab-complete ──
+        // ── Legacy adapters with tab-complete ──
         registry.register(LegacySubCommandAdapter.of("punish", PunishSubcommand::execute,
                 tc((s, a) -> PunishSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("money", EconomySubcommand::execute,
@@ -62,7 +65,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 tc((s, a) -> ChgOpSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("broadcast", BroadcastSubcommand::execute,
                 tc((s, a) -> BroadcastSubcommand.tabComplete(a)),
-                List.of("bc"))); // /ui bc — алиас для совместимости
+                List.of("bc"))); // /ui bc — compatibility alias
         registry.register(LegacySubCommandAdapter.of("blacklist", BlacklistSubcommand::execute,
                 tc((s, a) -> BlacklistSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("maint", MaintSubcommand::execute,
@@ -70,7 +73,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("opwhitelist", OpWhitelistSubcommand::execute,
                 tc((s, a) -> OpWhitelistSubcommand.tabComplete(a))));
 
-        // ── Legacy адаптеры (простые статические вызовы) ──
+        // ── Legacy adapters (simple static calls) ──
         registry.register(LegacySubCommandAdapter.of("chgdim", ChgDimSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("codepane", CodePaneSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("item", ItemSubcommand::execute));
@@ -137,14 +140,14 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("god",
                 (s, a) -> { MiscSubcommand.god(s, a); return true; }));
 
-        // ── Heal/Feed с tab-complete ──
+        // ── Heal/Feed with tab-complete ──
         var healTc = tc((s, a) -> HealFeedSubcommand.tabComplete(a));
         registry.register(LegacySubCommandAdapter.of("heal",
                 (s, a) -> { HealFeedSubcommand.heal(s, a); return true; }, healTc));
         registry.register(LegacySubCommandAdapter.of("feed",
                 (s, a) -> { HealFeedSubcommand.feed(s, a); return true; }, healTc));
 
-        // ── Home — консолидирован (1 команда, 6 алиасов) ──
+        // ── Home — consolidated (1 command, 6 aliases) ──
         registry.register(LegacySubCommandAdapter.of("home",
                 (s, a) -> { HomeCommand.dispatch(s, a); return true; },
                 tc((s, a) -> HomeCommand.tabComplete(s, a)),
@@ -160,7 +163,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             return true;
         }));
 
-        // ── Субкоманды с дополнительной логикой ──
+        // ── Subcommands with additional logic ──
         registry.register(LegacySubCommandAdapter.of("menu", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.menu")) {

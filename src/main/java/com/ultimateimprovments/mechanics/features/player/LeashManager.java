@@ -27,46 +27,46 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Позволяет привязать ЛЮБУЮ сущность к ЛЮБОЙ сущности через Lead (поводок).
+ * Allows tying ANY entity to ANY entity with a Lead.
  * <p>
- * — Обычный ПКМ с Lead: привязывает сущность к игроку (toggle)
- * — SHIFT+ПКМ с Lead: двухшаговая привязка сущность → сущность
- * — SHIFT+ПКМ с Lead по забору: привязка к блоку (якорь)
- * — Жёсткий стоп: сущность НЕ может уйти дальше max_distance —
- *   не растягивается, а мгновенно останавливается
- * — Поводки НЕ рвутся по дистанции — вместо разрыва жёсткий стоп
- * — Бесконечное количество поводков от одной сущности к разным холдерам
- * — Поддержка любых Entity: стрелы, лодки, предметы, мобы, игроки и т.д.
+ * — Normal right-click with a Lead: ties an entity to a player (toggle)
+ * — SHIFT+right-click with a Lead: two-step entity → entity tie
+ * — SHIFT+right-click with a Lead on a fence: tie to a block (anchor)
+ * — Hard stop: the entity can NOT go further than max_distance —
+ *   it doesn't stretch, it stops instantly
+ * — Leads NEVER break by distance — instead of breaking, a hard stop
+ * — Infinite leads from one entity to different holders
+ * — Supports any Entity: arrows, boats, items, mobs, players, etc.
  */
 public class LeashManager implements Listener {
 
     private static boolean enabled = true;
-    private static int maxLeashDistance = 10;   // блоков
-    private static int pullBackInterval = 2;    // тиков (2 = почти мгновенно)
+    private static int maxLeashDistance = 10;   // blocks
+    private static int pullBackInterval = 2;    // ticks (2 = almost instant)
     private static boolean preventBreak = true;
-    private static boolean hardStop = true;     // жёсткий телепорт вместо подтягивания
+    private static boolean hardStop = true;     // hard teleport instead of pulling
 
     // =========================
-    // PENDING LINK: игрок → выбранная сущность (для SHIFT+ПКМ)
+    // PENDING LINK: player → selected entity (for SHIFT+right-click)
     // =========================
     private static final Map<UUID, Entity> pendingLink = new HashMap<>();
 
     // =========================
     // CUSTOM LEASH TRACKING
-    // leashedUUID → Set<holderUUID>  (один leashed может быть привязан к нескольким holders)
+    // leashedUUID → Set<holderUUID>  (one leashed entity can be tied to multiple holders)
     // =========================
     private static final Map<UUID, Set<UUID>> customLeashMap = new ConcurrentHashMap<>();
-    // holderUUID → Set<leashedUUID>  (один holder может держать бесконечно много сущностей)
+    // holderUUID → Set<leashedUUID>  (one holder can hold infinitely many entities)
     private static final Map<UUID, Set<UUID>> customLeashReverse = new ConcurrentHashMap<>();
 
     // =========================
-    // PROXY ARMY-STAND ДЛЯ СУЩНОСТЕЙ БЕЗ ВАНИЛЬНОЙ ВЕРЁВКИ
-    // Для Player и не-LivingEntity создаём ArmorStand-прокси.
-    // ⚠ БЕЗ setMarker(true) — иначе верёвка не рендерится в Paper 1.21.4+.
+    // PROXY ARMOR-STAND FOR ENTITIES WITHOUT A VANILLA LEASH
+    // For Player and non-LivingEntity we create an ArmorStand proxy.
+    // ⚠ WITHOUT setMarker(true) — otherwise the leash doesn't render on Paper 1.21.4+.
     // leashedUUID → holderUUID → proxy ArmorStand
     // =========================
     private static final Map<UUID, Map<UUID, ArmorStand>> leashProxies = new ConcurrentHashMap<>();
-    // UUID'ы прокси для O(1) проверки в checkLeashDistances
+    // Proxy UUIDs for O(1) checks in checkLeashDistances
     private static final Set<UUID> proxyUuids = ConcurrentHashMap.newKeySet();
 
     // =========================
@@ -192,7 +192,7 @@ public class LeashManager implements Listener {
     }
 
     // =========================
-    // ОБНОВЛЕНИЕ ПОЗИЦИЙ ПРОКСИ (1 тик)
+    // PROXY POSITION UPDATE (1 tick)
     // =========================
     private static void updateProxyPositions() {
         for (UUID entityUuid : Set.copyOf(leashProxies.keySet())) {
@@ -248,7 +248,7 @@ public class LeashManager implements Listener {
     }
 
     // =========================
-    // ПРОВЕРКА ДИСТАНЦИИ — ЖЁСТКИЙ СТОП
+    // DISTANCE CHECK — HARD STOP
     // =========================
     private static void checkLeashDistances() {
         List<Entity[]> pairs = new ArrayList<>();
@@ -318,28 +318,28 @@ public class LeashManager implements Listener {
     }
 
     // =========================
-    // EVENT: Отмена обрыва поводка — ЛЮБОЙ обрыв отменяется
+    // EVENT: Leash-break cancellation — ANY break is cancelled
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onLeashBreak(EntityUnleashEvent event) {
         if (!enabled || !preventBreak) return;
         Entity unleashed = event.getEntity();
 
-        // Проверяем прокси — обрыв прокси не должен ломать связь
+        // Check the proxy — a proxy break must not break the link
         for (Map.Entry<UUID, Map<UUID, ArmorStand>> outer : leashProxies.entrySet()) {
             for (Map.Entry<UUID, ArmorStand> inner : outer.getValue().entrySet()) {
                 if (inner.getValue().equals(unleashed)) {
                     UUID ownerUuid = outer.getKey();
                     UUID holderUuid = inner.getKey();
                     Entity owner = Bukkit.getEntity(ownerUuid);
-                    // Удаляем только этот прокси (связь с этим холдером)
+                    // Remove only this proxy (the link with this holder)
                     proxyUuids.remove(unleashed.getUniqueId());
                     unleashed.remove();
                     outer.getValue().remove(holderUuid);
                     if (outer.getValue().isEmpty()) leashProxies.remove(ownerUuid);
                     if (owner != null) {
                         removeCustomLeash(owner, Bukkit.getEntity(holderUuid));
-                        // Если больше нет прокси — снимаем обездвиживание
+                        // If no more proxies — remove the immobility
                         if (!leashProxies.containsKey(ownerUuid)) {
                             immobilizedPlayers.remove(ownerUuid);
                             Float origSpeed = originalWalkSpeeds.remove(ownerUuid);
@@ -353,12 +353,12 @@ public class LeashManager implements Listener {
             }
         }
 
-        // Отменяем ВСЕ обрывы — поводки не рвутся, только жёсткий стоп
+        // Cancel ALL breaks — leads don't break, only a hard stop
         event.setCancelled(true);
     }
 
     // =========================
-    // EVENT: SHIFT+ПКМ по блоку (забор/стена/ограда) — привязка к якорю
+    // EVENT: SHIFT+right-click on a block (fence/wall/fence-gate) — tie to an anchor
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockInteract(PlayerInteractEvent event) {
@@ -399,7 +399,7 @@ public class LeashManager implements Listener {
     }
 
     // =========================
-    // EVENT: ПКМ по сущности с Lead
+    // EVENT: right-click on an entity with a Lead
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityInteract(PlayerInteractEntityEvent event) {
@@ -415,10 +415,10 @@ public class LeashManager implements Listener {
     }
 
     // =========================
-    // ПРИВЯЗКА СУЩНОСТИ К ИГРОКУ
+    // TYING AN ENTITY TO A PLAYER
     // =========================
     private void handleLeashToPlayer(Player player, Entity target, ItemStack heldItem) {
-        // Toggle: если уже привязан к этому игроку — отвязать
+        // Toggle: if already tied to this player — untie
         Set<UUID> holders = getCustomLeashHolders(target);
         if (holders.contains(player.getUniqueId())) {
             unleashEntityFrom(target, player);
@@ -431,7 +431,7 @@ public class LeashManager implements Listener {
     }
 
     // =========================
-    // SHIFT+ПКМ: сущность → сущность
+    // SHIFT+right-click: entity → entity
     // =========================
     private void handleEntityToEntity(Player player, Entity target) {
         Entity pending = pendingLink.get(player.getUniqueId());
@@ -448,7 +448,7 @@ public class LeashManager implements Listener {
         }
         if (pending.equals(target)) { player.sendMessage("§c❌ Нельзя привязать сущность к самой себе!"); return; }
 
-        // НЕ отвязываем существующие связи — добавляем новую параллельно
+        // Don't untie existing links — add a new one in parallel
         leashEntityTo(pending, target);
         pendingLink.remove(player.getUniqueId());
         if (player.getGameMode() != org.bukkit.GameMode.CREATIVE) {
@@ -460,14 +460,14 @@ public class LeashManager implements Listener {
     }
 
     // =========================
-    // УНИВЕРСАЛЬНАЯ ПРИВЯЗКА (leashEntityTo)
+    // UNIVERSAL TYING (leashEntityTo)
     // =========================
     private static void leashEntityTo(Entity leashed, Entity holder) {
         UUID lUuid = leashed.getUniqueId();
         UUID hUuid = holder.getUniqueId();
 
         if (!(leashed instanceof LivingEntity) || leashed instanceof Player) {
-            // Создаём прокси для не-LivingEntity и Player
+            // Create a proxy for non-LivingEntity and Player
             double yOff = (leashed instanceof Player) ? 1.0 : 0.5;
             Location proxyLoc = leashed.getLocation().add(0, yOff, 0);
             ArmorStand proxy = leashed.getWorld().spawn(proxyLoc, ArmorStand.class, stand -> {
@@ -481,7 +481,7 @@ public class LeashManager implements Listener {
             addCustomLeash(leashed, holder);
             if (leashed instanceof Player player) {
                 immobilizedPlayers.add(player.getUniqueId());
-                // Не сохраняем 0.0f (например, от заморозки авторизацией) — используем дефолт 0.2f
+                // Don't save 0.0f (e.g. from auth freezing) — use the 0.2f default
                 float currentSpeed = player.getWalkSpeed();
                 originalWalkSpeeds.putIfAbsent(player.getUniqueId(), currentSpeed > 0.01f ? currentSpeed : 0.2f);
                 player.setWalkSpeed(0);
@@ -489,7 +489,7 @@ public class LeashManager implements Listener {
             return;
         }
 
-        // Для LivingEntity (мобы) — ванильный setLeashHolder
+        // For LivingEntity (mobs) — vanilla setLeashHolder
         if (leashed instanceof LivingEntity living) {
             if (living.isLeashed()) living.setLeashHolder(null);
             living.setLeashHolder(holder);
@@ -498,13 +498,13 @@ public class LeashManager implements Listener {
     }
 
     // =========================
-    // ОТВЯЗКА ОТ КОНКРЕТНОГО ХОЛДЕРА
+    // UNTYING FROM A SPECIFIC HOLDER
     // =========================
     private static void unleashEntityFrom(Entity leashed, Entity holder) {
         UUID lUuid = leashed.getUniqueId();
         UUID hUuid = holder.getUniqueId();
 
-        // Удаляем прокси для этой пары
+        // Remove the proxy for this pair
         Map<UUID, ArmorStand> subMap = leashProxies.get(lUuid);
         if (subMap != null) {
             ArmorStand proxy = subMap.remove(hUuid);
@@ -535,11 +535,11 @@ public class LeashManager implements Listener {
         Float origSpeed = originalWalkSpeeds.remove(uuid);
         if (origSpeed != null) event.getPlayer().setWalkSpeed(origSpeed);
 
-        // Удаляем все прокси этого игрока (когда он был привязан)
+        // Remove all proxies of this player (when they were leashed)
         Map<UUID, ArmorStand> subMap = leashProxies.remove(uuid);
         if (subMap != null) for (ArmorStand p : subMap.values()) { proxyUuids.remove(p.getUniqueId()); p.setLeashHolder(null); p.remove(); }
 
-        // Освобождаем все сущности, привязанные к этому игроку
+        // Release all entities tied to this player
         Set<UUID> leashedUuids = customLeashReverse.remove(uuid);
         if (leashedUuids != null) {
             for (UUID lUuid : leashedUuids) {

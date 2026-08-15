@@ -31,7 +31,7 @@ import org.bukkit.inventory.ItemStack;
 public class ReactorListener implements Listener {
 
     // =========================
-    // TEMPLATE LOADING FLAG (предотвращает повторные попытки при ошибке загрузки)
+    // TEMPLATE LOADING FLAG (prevents repeated attempts on load errors)
     // =========================
     private static boolean templatesLoaded = false;
 
@@ -70,7 +70,7 @@ public class ReactorListener implements Listener {
         Player player = e.getPlayer();
 
         // =========================
-        // SHIFT+ПКМ — авто-определение и сборка (без меню)
+        // SHIFT+right-click — auto-detect and assemble (no menu)
         // =========================
         if (player.isSneaking()) {
             e.setCancelled(true);
@@ -79,12 +79,12 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // Обычный ПКМ — показать информацию
+        // Normal right-click — show info
         // =========================
         ReactorManager reactor = ReactorManager.getInstance();
         if (reactor == null) return;
 
-        // Проверка: часть реактора?
+        // Check: part of a reactor?
         Location reactorCenter = ReactorStructure.findCenter(clicked.getLocation());
         if (reactorCenter != null && reactor.getReactorLocation() != null) {
             player.sendMessage(
@@ -96,13 +96,13 @@ public class ReactorListener implements Listener {
             return;
         }
 
-        // Проверка: активный магнит?
+        // Check: an active magnet?
         if (MagnetStructure.isActive(clicked.getLocation())) {
             player.sendMessage("§8[§bМагнит§8] §7Уже активен");
             return;
         }
 
-        // Проверка: активная структура молний?
+        // Check: an active lightning structure?
         Location lightningCenter = LightningStructure.findCenter(clicked.getLocation());
         if (lightningCenter != null && LightningManager.isActive(lightningCenter)) {
             player.sendMessage("§8[§e⚡ Молнии§8] §7Активна §8| §f"
@@ -113,7 +113,7 @@ public class ReactorListener implements Listener {
     }
 
     // =========================
-    // BLOCK BREAK — МАГНИТ (динамический пересчёт)
+    // BLOCK BREAK — MAGNET (dynamic recompute)
     // =========================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
@@ -123,7 +123,7 @@ public class ReactorListener implements Listener {
         Player player = e.getPlayer();
 
         // =========================
-        // 🧲 МАГНИТ: LODESTONE в активном кластере → пересчёт
+        // 🧲 MAGNET: LODESTONE in an active cluster → recompute
         // =========================
         if (block.getType() == Material.LODESTONE && MagnetManager.isActive(loc)) {
             MagnetManager.onBlockBroken(loc, player);
@@ -131,7 +131,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // ⚡ МОЛНИИ: любой блок активной структуры → disassemble
+        // ⚡ LIGHTNING: any block of an active structure → disassemble
         // =========================
         Location lightningCenter = LightningManager.getCenterForBlock(loc);
         if (lightningCenter != null) {
@@ -144,7 +144,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // ⚛ РЕАКТОР: проверка блоков реактора
+        // ⚛ REACTOR: check reactor blocks
         // =========================
         if (!isReactorBlock(block.getType())) {
             return;
@@ -171,7 +171,7 @@ public class ReactorListener implements Listener {
     }
 
     // =========================
-    // BLOCK PLACE — МАГНИТ (динамическое расширение)
+    // BLOCK PLACE — MAGNET (dynamic expansion)
     // =========================
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMagnetBlockPlace(BlockPlaceEvent e) {
@@ -204,14 +204,14 @@ public class ReactorListener implements Listener {
             reactor.validateStructure();
         }
         // Note: Reactor is no longer auto-activated on block place.
-        // Player must use SHIFT+ПКМ on item frame to open assembly menu.
+        // Player must use SHIFT+RMB on the item frame to open the assembly menu.
     }
 
 
 
     // =========================
     // AUTO-DETECT STRUCTURE TYPE & ASSEMBLE
-    // Сканирует радиус 5 блоков от рамки и сравнивает с NBT-шаблонами.
+    // Scans a 5-block radius from the frame and compares against NBT templates.
     // =========================
     private void autoDetectAndAssemble(Player player, ItemFrame frame) {
 
@@ -222,15 +222,15 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 1. СКАНИРОВАНИЕ ПО NBT-ШАБЛОНАМ
-        // Загружаем шаблоны при первом вызове (однократно)
+        // 1. SCANNING BY NBT TEMPLATES
+        // Load the templates on the first call (once)
         // =========================
         if (!templatesLoaded) {
             StructureTemplate.initAll();
             templatesLoaded = true;
         }
 
-        // Проверка: были ли ошибки загрузки шаблонов
+        // Check: were there template loading errors
         StructureTemplate lightningTmpl = StructureTemplate.get("lightning");
         StructureTemplate reactorTmpl = StructureTemplate.get("reactor");
 
@@ -247,7 +247,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 1a. Шаблон молний (lightning)
+        // 1a. Lightning template
         // =========================
         if (lightningTmpl != null) {
             Location center = lightningTmpl.findMatch(frameLoc, 5);
@@ -264,7 +264,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 1b. Шаблон реактора (reactor)
+        // 1b. Reactor template
         // =========================
         if (reactorTmpl != null) {
             Location center = reactorTmpl.findMatch(frameLoc, 5);
@@ -285,7 +285,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 2. ПРОВЕРКА: МАГНИТ (LODESTONE — не NBT, а мульти-блочный)
+        // 2. CHECK: MAGNET (LODESTONE — not NBT, but multi-block)
         // =========================
         Location attachedLoc = LocationUtil.normalize(
                 frame.getLocation().getBlock().getRelative(
@@ -304,7 +304,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 3. ПРОВЕРКА: БАТАРЕЯ (WAXED_COPPER_GRATE + рамка)
+        // 3. CHECK: BATTERY (WAXED_COPPER_GRATE + frame)
         // =========================
         Location attachedLoc2 = LocationUtil.normalize(
                 frame.getLocation().getBlock().getRelative(
@@ -321,7 +321,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 4. ПРОВЕРКА: ЛАМПОЧКА (REDSTONE_LAMP + рамка)
+        // 4. CHECK: LAMP (REDSTONE_LAMP + frame)
         // =========================
         if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Material.REDSTONE_LAMP) {
             if (LightManager.isActive(attachedLoc2)) {
@@ -333,16 +333,16 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 5. ПРОВЕРКА: ГЕНЕРАТОР (BLAST_FURNACE + рамка сверху)
+        // 5. CHECK: GENERATOR (BLAST_FURNACE + frame on top)
         // =========================
-        // Блок под рамкой
+        // The block under the frame
         Location generatorLoc = LocationUtil.normalize(
                 frame.getLocation().clone().add(0, -1, 0)
         );
         if (generatorLoc != null
                 && generatorLoc.getBlock().getType() == Materials.BLAST_FURNACE
                 && GeneratorStructure.isValid(generatorLoc)) {
-            // Проверяем кабель рядом
+            // Check for a cable nearby
             if (GeneratorManager.hasNearbyCable(generatorLoc)) {
                 if (GeneratorManager.isAssembled(generatorLoc)) {
                     player.sendMessage("§eГенератор уже собран на этом месте!");
@@ -357,7 +357,7 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 4. НИЧЕГО НЕ НАЙДЕНО
+        // 4. NOTHING FOUND
         // =========================
         player.sendMessage("§c❌ Структура не распознана!");
         player.sendMessage("§7Убедитесь, что все блоки структуры соответствуют NBT-шаблону.");

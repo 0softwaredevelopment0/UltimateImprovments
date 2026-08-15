@@ -18,55 +18,56 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * CodePanelDialogScreen — кодовый панель как Custom Screen (Dialog).
+ * CodePanelDialogScreen — the code panel as a Custom Screen (Dialog).
  * <p>
- * Вместо двойного сундука/чат-клавиатуры — нативное диалоговое окно
- * Minecraft 26.2 Dialog API с кнопками цифр 0-9, экраном введённого кода,
- * кнопками «←», «✔ Подтвердить» и «✖ Отмена».
+ * Instead of a double chest / chat keyboard — a native dialog window
+ * from the Minecraft 26.2 Dialog API with digit buttons 0-9, an entered-code screen,
+ * «←», «✔ Confirm» and «✖ Cancel» buttons.
  * <p>
- * Клики обрабатываются в {@link CodePanelDialogHandler} через
+ * Clicks are handled in {@link CodePanelDialogHandler} via
  * {@link io.papermc.paper.event.player.PlayerCustomClickEvent}.
  * <p>
- * Диалог использует {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
- * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на экран «Waiting for server…»
- * и игнорирует {@code ClientboundClearDialogPacket}, поэтому окно висело бы ~4 секунды
- * (например, на подтверждении/отмене). С {@code CLOSE} клиент закрывает окно СРАЗУ после
- * клика, а сервер переоткрывает его с обновлённым кодом (Handler#reopen).
+ * The dialog uses {@link DialogAction#CLOSE} (NOT {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * with {@code WAIT_FOR_RESPONSE} the client goes to the «Waiting for server…» screen
+ * after a click and ignores {@code ClientboundClearDialogPacket}, so the window would
+ * hang for ~4 seconds (e.g. on confirm/cancel). With {@code CLOSE} the client closes
+ * the window IMMEDIATELY after the click, and the server reopens it with the updated
+ * code (Handler#reopen).
  */
 public class CodePanelDialogScreen {
 
-    /** Префикс идентификаторов цифровых кнопок: ultimateimprovments:codepanel_digit_N. */
+    /** Prefix of the digit-button identifiers: ultimateimprovments:codepanel_digit_N. */
     public static final String DIGIT_PREFIX = "codepanel_digit_";
-    /** Идентификатор кнопки «←» (удалить последнюю цифру). */
+    /** Identifier of the «←» button (delete the last digit). */
     public static final Identifier BACKSPACE_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "codepanel_backspace");
-    /** Идентификатор кнопки «✔ Подтвердить». */
+    /** Identifier of the «✔ Confirm» button. */
     public static final Identifier CONFIRM_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "codepanel_confirm");
-    /** Идентификатор кнопки «✖ Отмена». */
+    /** Identifier of the «✖ Cancel» button. */
     public static final Identifier CANCEL_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "codepanel_cancel");
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private CodePanelDialogScreen() {}
 
-    /** Идентификатор CustomAll для цифровой кнопки N. */
+    /** CustomAll identifier for the digit button N. */
     public static Identifier digitId(int digit) {
         return Identifier.fromNamespaceAndPath("ultimateimprovments", DIGIT_PREFIX + digit);
     }
 
     /**
-     * Открывает диалог кодовой панели с текущим состоянием ввода из {@link CodePanelSession}.
+     * Opens the code panel dialog with the current input state from {@link CodePanelSession}.
      *
-     * @param player игрок
+     * @param player the player
      */
     public static void open(Player player) {
         open(player, null);
     }
 
     /**
-     * Открывает диалог кодовой панели с текущим состоянием ввода из {@link CodePanelSession}.
+     * Opens the code panel dialog with the current input state from {@link CodePanelSession}.
      *
-     * @param player       игрок
-     * @param errorMessage опциональный текст ошибки, показываемый прямо в диалоге (null если ошибки нет)
+     * @param player       the player
+     * @param errorMessage optional error text shown right in the dialog (null if there is no error)
      */
     public static void open(Player player, String errorMessage) {
         if (!(player instanceof CraftPlayer craftPlayer)) {
@@ -79,7 +80,7 @@ public class CodePanelDialogScreen {
         String code = CodePanelSession.getCode(player.getUniqueId());
         if (code.length() > max) code = code.substring(0, max);
 
-        // ─── Заголовки ───
+        // ─── Titles ───
         net.minecraft.network.chat.Component title = toNative(
                 MM.deserialize("<gold>✦ Code Panel</gold>")
         );
@@ -87,17 +88,17 @@ public class CodePanelDialogScreen {
                 MM.deserialize("<gray>Enter Code</gray>")
         );
 
-        // ─── Экран: введённый код (+ ошибка если есть) ───
+        // ─── Screen: entered code (+ error if any) ───
         String display = buildCodeDisplay(code, max);
         if (errorMessage != null && !errorMessage.isEmpty()) {
-            // errorMessage — уже готовая MiniMessage-строка, оборачивать её повторно нельзя
+            // errorMessage is already a ready MiniMessage string — must not wrap it again
             display = errorMessage + "\n\n" + display;
         }
         net.minecraft.network.chat.Component bodyText = toNative(
                 MM.deserialize(display)
         );
 
-        // ─── Кнопки: 1-9 ───
+        // ─── Buttons: 1-9 ───
         List<ActionButton> actions = new ArrayList<>();
         for (int d = 1; d <= 9; d++) {
             actions.add(digitButton(d));
@@ -107,26 +108,26 @@ public class CodePanelDialogScreen {
         actions.add(backspaceButton());
         actions.add(confirmButton());
 
-        // ─── ✖ Отмена (exitAction) ───
+        // ─── ✖ Cancel (exitAction) ───
         ActionButton cancelBtn = new ActionButton(
                 new CommonButtonData(toNative(MM.deserialize("<red>✖ Cancel</red>")), 150),
                 Optional.of(new CustomAll(CANCEL_ID, Optional.empty()))
         );
 
-        // ─── Сборка диалога ───
+        // ─── Build the dialog ───
         CommonDialogData data = new CommonDialogData(
                 title,
                 Optional.of(externalTitle),
                 true,                           // canCloseWithEscape
                 true,                           // pause
-                DialogAction.CLOSE,               // клиент закрывает окно сам, мгновенно (без «Waiting for server»)
+                DialogAction.CLOSE,               // the client closes the window itself, instantly (no «Waiting for server»)
                 List.of(new PlainMessage(bodyText, 310)),
-                List.of()                        // без текстовых инпутов — только кнопки
+                List.of()                        // no text inputs — buttons only
         );
 
         MultiActionDialog dialog = new MultiActionDialog(
                 data,
-                actions,                        // mainActions (3 колонки × 4 ряда)
+                actions,                        // mainActions (3 columns × 4 rows)
                 Optional.of(cancelBtn),         // exitAction
                 3                               // columns
         );
@@ -136,7 +137,7 @@ public class CodePanelDialogScreen {
     }
 
     /**
-     * Закрывает открытый диалог у игрока.
+     * Closes the open dialog of the player.
      */
     public static void close(Player player) {
         if (!(player instanceof CraftPlayer craftPlayer)) return;
@@ -151,7 +152,7 @@ public class CodePanelDialogScreen {
     // =========================
 
     /**
-     * Строит строку отображения кода, например: {@code <gray>[1][2][-][-]</gray>}.
+     * Builds the code display string, e.g.: {@code <gray>[1][2][-][-]</gray>}.
      */
     private static String buildCodeDisplay(String code, int max) {
         StringBuilder sb = new StringBuilder("<white>Code: </white>");
@@ -200,7 +201,7 @@ public class CodePanelDialogScreen {
     // =========================
 
     /**
-     * Преобразует Adventure Component → Minecraft Component.
+     * Converts an Adventure Component → Minecraft Component.
      */
     private static net.minecraft.network.chat.Component toNative(Component adv) {
         String legacy = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer

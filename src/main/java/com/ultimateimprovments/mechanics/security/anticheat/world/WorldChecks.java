@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Factory — создаёт все world-проверки.
+ * Factory — creates all world checks.
  */
 public class WorldChecks {
 

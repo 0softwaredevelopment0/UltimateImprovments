@@ -14,18 +14,18 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * SpawnCommand — точки спавна.
+ * SpawnCommand — spawn points.
  * <p>
- * /ui setspawn — установить точку спавна (с подтверждением при перезаписи)
- * /ui spawn — телепорт к спавну (standard) или показать корды (legit)
- * /ui setspawn confirm — подтвердить перезапись
+ * /ui setspawn — set the spawn point (with confirmation on overwrite)
+ * /ui spawn — teleport to spawn (standard) or show coords (legit)
+ * /ui setspawn confirm — confirm the overwrite
  */
 public final class SpawnCommand {
 
     private SpawnCommand() {}
 
     private static final Map<UUID, Long> CONFIRM_PENDING = new HashMap<>();
-    private static final long CONFIRM_TIMEOUT_MS = 30_000; // 30 секунд
+    private static final long CONFIRM_TIMEOUT_MS = 30_000; // 30 seconds
 
     // ============================================================
     // DISPATCH
@@ -58,7 +58,7 @@ public final class SpawnCommand {
             return true;
         }
 
-        // Подтверждение перезаписи
+        // Overwrite confirmation
         if (args.length >= 2 && args[1].equalsIgnoreCase("confirm")) {
             UUID uuid = player.getUniqueId();
             Long pending = CONFIRM_PENDING.remove(uuid);
@@ -74,9 +74,9 @@ public final class SpawnCommand {
         Location loc = player.getLocation();
         FileConfiguration config = Main.getInstance().getConfig();
 
-        // Проверяем, существует ли уже спавн
+        // Check whether a spawn already exists
         if (config.contains("spawn.location.world")) {
-            // Спрашиваем подтверждение
+            // Ask for confirmation
             CONFIRM_PENDING.put(player.getUniqueId(), System.currentTimeMillis());
             player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
             player.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><yellow>Spawn point already exists!</yellow>"));
@@ -89,7 +89,7 @@ public final class SpawnCommand {
             return true;
         }
 
-        // Спавна нет — просто сохраняем
+        // No spawn yet — just save it
         saveSpawn(player, loc);
         player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Spawn point set at your current location.</white>"));
         showSpawnCoords(player, loc);
@@ -135,7 +135,7 @@ public final class SpawnCommand {
         String mode = config.getString("spawn.mode", "legit");
 
         if (mode.equalsIgnoreCase("standard")) {
-            // Телепорт
+            // Teleport
             World world = player.getServer().getWorld(worldName);
             if (world == null) {
                 player.sendMessage(MessageUtil.parse("<red>❌ Spawn world</red> <yellow>" + worldName + "</yellow> <red>not found!</red>"));
@@ -146,7 +146,7 @@ public final class SpawnCommand {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Teleported to spawn!</white>"));
             showSpawnCoords(player, spawnLoc);
         } else {
-            // Legit — только показываем корды
+            // Legit — only show the coords
             player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
             player.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Spawn Point</white>"));
             player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));

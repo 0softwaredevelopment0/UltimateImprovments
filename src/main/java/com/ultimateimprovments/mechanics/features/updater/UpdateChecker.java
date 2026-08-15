@@ -38,42 +38,42 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Auto-updater: сравнивает номер версии из имени JAR-файла в папке {@code Jar/}
- * на GitHub с текущей версией плагина.
+ * Auto-updater: compares the version from the JAR filename in the {@code Jar/}
+ * folder on GitHub with the plugin's current version.
  * <p>
- * Логика:
+ * Logic:
  * <ol>
- *   <li>Читаем текущую версию плагина (например "1.7.54");</li>
- *   <li>Запрашиваем GitHub API {@code /contents/Jar/} — получаем список файлов;</li>
- *   <li>Находим все {@code .jar} файлы, извлекаем версию из имени;</li>
- *   <li>Выбираем JAR с самой новой версией;</li>
- *   <li>Сравниваем по компонентам (major.minor.commits):</li>
- *   <li>Если jar-версия > текущей → UPDATE_AVAILABLE;</li>
- *   <li>Если jar-версия <= текущей → UP_TO_DATE;</li>
- *   <li>После успешной загрузки сохраняем в БД версию (чтобы не перекачивать).</li>
+ *   <li>Read the plugin's current version (e.g. "1.7.54");</li>
+ *   <li>Query the GitHub API {@code /contents/Jar/} — get the file list;</li>
+ *   <li>Find all {@code .jar} files, extract the version from the name;</li>
+ *   <li>Pick the JAR with the newest version;</li>
+ *   <li>Compare by components (major.minor.commits):</li>
+ *   <li>If jar-version > current → UPDATE_AVAILABLE;</li>
+ *   <li>If jar-version <= current → UP_TO_DATE;</li>
+ *   <li>After a successful download, store the version in the DB (to avoid re-downloading).</li>
  * </ol>
  */
 public class UpdateChecker {
 
     // =========================
-    // ⚙ КОНФИГУРАЦИЯ
+    // ⚙ CONFIGURATION
     // =========================
     private static final String GITHUB_OWNER = "rizer001";
     private static final String GITHUB_REPO = "UltimateImprovments";
-    /** GitHub Contents API — список файлов в папке Jar/ репозитория. */
+    /** GitHub Contents API — file list in the repository's Jar/ folder. */
     private static final String JAR_DIR_API_URL = "https://api.github.com/repos/"
             + GITHUB_OWNER + "/" + GITHUB_REPO + "/contents/Jar/";
     private static final String USER_AGENT = "UltimateImprovments-Updater";
     private static final int TIMEOUT_SECONDS = 15;
 
-    /** Regex для извлечения major.minor.commits из имени jar-файла. */
+    /** Regex for extracting major.minor.commits from a jar filename. */
     private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
-    /** Regex для jar-файла вида "UltimateImprovments-1.7.54.jar". */
+    /** Regex for a jar file like "UltimateImprovments-1.7.54.jar". */
     private static final Pattern JAR_FILE_PATTERN = Pattern.compile(
             Pattern.quote(GITHUB_REPO) + "-(\\d+\\.\\d+(?:\\.\\d+)?)\\.jar", Pattern.CASE_INSENSITIVE);
 
     // =========================
-    // СТАТУС (volatile — пишется из async, читается с main)
+    // STATUS (volatile — written from async, read from main)
     // =========================
     public enum UpdateStatus {
         UP_TO_DATE,
@@ -84,20 +84,20 @@ public class UpdateChecker {
     }
 
     private static volatile UpdateStatus status = UpdateStatus.UP_TO_DATE;
-    private static volatile String latestJarVersion = "";  // версия из имени последнего jar (напр. "1.7.75")
+    private static volatile String latestJarVersion = "";  // version from the latest jar filename (e.g. "1.7.75")
     private static volatile String errorMessage = "";
 
-    // Кеш для /ui updatejar — чтобы не дёргать API повторно
+    // Cache for /ui updatejar — to avoid hitting the API repeatedly
     private static volatile String cachedDownloadUrl = "";
-    private static volatile String cachedJarName = "";     // имя файла (напр. "UltimateImprovments-1.7.75.jar")
-    private static volatile String cachedJarVersion = "";  // версия из jar-файла
+    private static volatile String cachedJarName = "";     // filename (e.g. "UltimateImprovments-1.7.75.jar")
+    private static volatile String cachedJarVersion = "";  // version from the jar file
 
     public static UpdateStatus getStatus() { return status; }
     public static String getLatestTag() { return latestJarVersion; }
     public static String getErrorMessage() { return errorMessage; }
 
     // =========================
-    // ЗАПУСК ПРОВЕРКИ (вызывается из Main.onEnable)
+    // CHECK START (called from Main.onEnable)
     // =========================
     public static void checkAsync() {
         Main plugin = Main.getInstance();
@@ -116,28 +116,28 @@ public class UpdateChecker {
     }
 
     // =========================
-    // ОСНОВНАЯ ЛОГИКА (старт сервера — только проверка, без авто-загрузки)
+    // MAIN LOGIC (server start — check only, no auto-download)
     // =========================
     private static void performCheck(Main plugin) throws Exception {
         File pluginDir = plugin.getDataFolder().getParentFile();
         File currentJar = plugin.getPluginFile();
 
         // ════════════════════════════════════════
-        // 0. Очистка orphaned файлов от предыдущих запусков
+        // 0. Clean up orphaned files from previous runs
         // ════════════════════════════════════════
         cleanupOrphanedFiles(pluginDir, currentJar);
 
         // ════════════════════════════════════════
-        // 1. Текущая версия плагина (из plugin.yml)
+        // 1. Plugin's current version (from plugin.yml)
         // ════════════════════════════════════════
         String currentVersion = plugin.getDescription().getVersion();
-        String storedVersion = getStoredTag();  // хранит версию последнего установленного jar
+        String storedVersion = getStoredTag();  // stores the version of the last installed jar
         ConsoleLogger.info("[Updater] Current version: " + currentVersion);
         ConsoleLogger.info("[Updater] Last installed jar: "
                 + (storedVersion.isEmpty() ? "<none>" : storedVersion));
 
         // ════════════════════════════════════════
-        // 2. HTTP-запрос к GitHub Contents API — список файлов в Jar/
+        // 2. HTTP request to the GitHub Contents API — file list in Jar/
         // ════════════════════════════════════════
         JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
         if (latestJar == null) {
@@ -151,10 +151,10 @@ public class UpdateChecker {
                 + " (version: " + jarVersion + ")");
 
         // ════════════════════════════════════════
-        // 3. Сравниваем версии
+        // 3. Compare versions
         // ════════════════════════════════════════
         if (!isNewer(jarVersion, currentVersion)) {
-            // Текущая >= jar-версии → мы не старше
+            // Current >= jar-version → we are not behind
             ConsoleLogger.info("[Updater] Up to date (current: "
                     + currentVersion + " >= jar: " + jarVersion + ")");
             latestJarVersion = jarVersion;
@@ -163,10 +163,10 @@ public class UpdateChecker {
         }
 
         // ════════════════════════════════════════
-        // 4. Jar новее → проверяем, не установлен ли уже
+        // 4. Jar is newer → check whether it's already installed
         // ════════════════════════════════════════
         if (jarVersion.equals(storedVersion)) {
-            // Уже скачан, ждёт рестарта
+            // Already downloaded, waiting for a restart
             ConsoleLogger.info("[Updater] Update " + jarVersion
                     + " already downloaded — restart required.");
             latestJarVersion = jarVersion;
@@ -175,7 +175,7 @@ public class UpdateChecker {
         }
 
         // ════════════════════════════════════════
-        // 5. Обновление доступно!
+        // 5. Update available!
         // ════════════════════════════════════════
         latestJarVersion = jarVersion;
         status = UpdateStatus.UPDATE_AVAILABLE;
@@ -197,7 +197,7 @@ public class UpdateChecker {
     // =========================
 
     /**
-     * Данные о jar-файле из папки Jar/ на GitHub.
+     * Data about a jar file from the Jar/ folder on GitHub.
      */
     private static class JarFileInfo {
         final String name;          // "UltimateImprovments-1.7.75.jar"
@@ -212,10 +212,10 @@ public class UpdateChecker {
     }
 
     /**
-     * Запрашивает GitHub Contents API для папки {@code Jar/} и возвращает
-     * информацию о самом новом jar-файле (с наибольшей версией).
+     * Queries the GitHub Contents API for the {@code Jar/} folder and returns
+     * info about the newest jar file (with the highest version).
      *
-     * @return JarFileInfo или null если jar-файлов нет
+     * @return JarFileInfo or null if there are no jar files
      */
     private static JarFileInfo fetchLatestJarFromRepo(Main plugin) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
@@ -244,12 +244,12 @@ public class UpdateChecker {
             return null;
         }
 
-        // Парсим JSON-массив
+        // Parse the JSON array
         JsonArray items;
         try {
             items = JsonParser.parseString(response.body()).getAsJsonArray();
         } catch (Exception e) {
-            // Если ответ не массив — значит это объект с ошибкой или это не директория
+            // If the response is not an array — it's an error object or not a directory
             ConsoleLogger.warn("[Updater] Unexpected API response format");
             e.printStackTrace();
             return null;
@@ -259,7 +259,7 @@ public class UpdateChecker {
             return null;
         }
 
-        // Ищем jar-файлы и выбираем самый новый по версии
+        // Look for jar files and pick the newest by version
         JarFileInfo best = null;
         int[] bestVersion = null;
 
@@ -271,7 +271,7 @@ public class UpdateChecker {
             String name = item.get("name").getAsString();
             if (!name.endsWith(".jar")) continue;
 
-            // Извлекаем версию из имени "UltimateImprovments-1.7.75.jar"
+            // Extract the version from the name "UltimateImprovments-1.7.75.jar"
             Matcher m = JAR_FILE_PATTERN.matcher(name);
             if (!m.find()) continue;
 
@@ -279,7 +279,7 @@ public class UpdateChecker {
             int[] versionInts = parseVersionToInts(versionStr);
             if (versionInts == null) continue;
 
-            // Сравниваем с текущим лучшим
+            // Compare with the current best
             if (best == null || compareVersions(versionInts, bestVersion) > 0) {
                 String downloadUrl = item.get("download_url").getAsString();
                 best = new JarFileInfo(name, versionStr, downloadUrl);
@@ -288,7 +288,7 @@ public class UpdateChecker {
         }
 
         if (best != null) {
-            // Кешируем для /ui updatejar
+            // Cache for /ui updatejar
             cachedDownloadUrl = best.downloadUrl;
             cachedJarName = best.name;
             cachedJarVersion = best.version;
@@ -301,8 +301,8 @@ public class UpdateChecker {
     }
 
     /**
-     * Сравнивает два версионных массива.
-     * @return положительное число если a > b, 0 если равны, отрицательное если a < b
+     * Compares two version arrays.
+     * @return a positive number if a > b, 0 if equal, negative if a < b
      */
     private static int compareVersions(int[] a, int[] b) {
         for (int i = 0; i < 3; i++) {
@@ -312,15 +312,15 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 🔢 ПАРСИНГ И СРАВНЕНИЕ ВЕРСИЙ
+    // 🔢 VERSION PARSING AND COMPARISON
     // =========================
 
     /**
-     * Извлекает номер версии из строки.
-     * Примеры: "1.8.23" → "1.8.23", "1.7" → "1.7.0", "v1.8.23" → "1.8.23".
+     * Extracts a version number from a string.
+     * Examples: "1.8.23" → "1.8.23", "1.7" → "1.7.0", "v1.8.23" → "1.8.23".
      *
-     * @param input строка, содержащая номер версии
-     * @return строка версии "major.minor.patch" или null если не удалось распарсить
+     * @param input the string containing a version number
+     * @return the version string "major.minor.patch" or null if it couldn't be parsed
      */
     private static String parseVersion(String input) {
         if (input == null || input.isEmpty()) return null;
@@ -333,11 +333,11 @@ public class UpdateChecker {
     }
 
     /**
-     * Сравнивает две версии по компонентам (major.minor.patch).
+     * Compares two versions by components (major.minor.patch).
      *
-     * @param jarVersion версия из jar-файла (например "1.8.23")
-     * @param currentVersion текущая версия плагина (например "1.7.54")
-     * @return true если jar новее current (т.е. есть обновление)
+     * @param jarVersion the version from the jar file (e.g. "1.8.23")
+     * @param currentVersion the plugin's current version (e.g. "1.7.54")
+     * @return true if the jar is newer than current (i.e. an update exists)
      */
     private static boolean isNewer(String jarVersion, String currentVersion) {
         int[] jar = parseVersionToInts(jarVersion);
@@ -349,7 +349,7 @@ public class UpdateChecker {
         return jar[2] > cur[2];
     }
 
-    /** Парсит "1.7.54" в int[]{1, 7, 54}. */
+    /** Parses "1.7.54" into int[]{1, 7, 54}. */
     private static int[] parseVersionToInts(String versionString) {
         Matcher m = VERSION_PATTERN.matcher(versionString);
         if (!m.find()) return null;
@@ -360,10 +360,10 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 💾 РАБОТА С БД
+    // 💾 DB WORK
     // =========================
 
-    /** Читает последнюю установленную версию jar из таблицы updater_state. */
+    /** Reads the last installed jar version from the updater_state table. */
     private static String getStoredTag() {
         Connection con = DatabaseManager.getConnection();
         if (con == null) return "";
@@ -381,13 +381,13 @@ public class UpdateChecker {
         return "";
     }
 
-    /** Сохраняет версию jar в таблицу updater_state. */
+    /** Saves the jar version into the updater_state table. */
     private static void saveStoredTag(String version) {
         Connection con = DatabaseManager.getConnection();
         if (con == null) return;
 
         try {
-            // Очищаем старый ключ от предыдущей системы (релизы)
+            // Clear the old key from the previous system (releases)
             try (PreparedStatement clean = con.prepareStatement(
                     "DELETE FROM updater_state WHERE key = 'installed_tag'")) {
                 clean.executeUpdate();
@@ -412,7 +412,7 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 🗑 ОЧИСТКА ORPHANED ФАЙЛОВ
+    // 🗑 ORPHANED FILE CLEANUP
     // =========================
     private static void cleanupOrphanedFiles(File pluginDir, File currentJar) {
         File updateFile = new File(pluginDir, currentJar.getName() + ".update");
@@ -423,12 +423,12 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 🔍 /ui checkver — РУЧНАЯ ПРОВЕРКА ОБНОВЛЕНИЙ
+    // 🔍 /ui checkver — MANUAL UPDATE CHECK
     // =========================
 
     /**
-     * Выполняет асинхронную проверку GitHub (папка Jar/) на наличие новых версий
-     * и отправляет результат отправителю команды.
+     * Runs an async GitHub check (Jar/ folder) for new versions
+     * and sends the result to the command sender.
      */
     public static void checkOnly(CommandSender sender) {
         Main plugin = Main.getInstance();
@@ -440,7 +440,7 @@ public class UpdateChecker {
                 String currentVersion = plugin.getDescription().getVersion();
                 String storedVersion = getStoredTag();
 
-                // Шаг 1: получаем последний jar из Jar/
+                // Step 1: get the latest jar from Jar/
                 JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
                 if (latestJar == null) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
@@ -455,7 +455,7 @@ public class UpdateChecker {
                 boolean isNewRelease = hasVersion && isNewer(jarVersion, currentVersion);
                 boolean isPendingRestart = jarVersion != null && jarVersion.equals(storedVersion);
 
-                // Отправляем результат на главном потоке
+                // Send the result on the main thread
                 final String finalJarName = latestJar.name;
                 final String finalJarVer = jarVersion != null ? jarVersion : "<unparseable>";
                 final String finalCurrentVer = currentVersion;
@@ -596,12 +596,12 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 📥 /ui updatejar — СКАЧАТЬ И УСТАНОВИТЬ ОБНОВЛЕНИЕ
+    // 📥 /ui updatejar — DOWNLOAD AND INSTALL THE UPDATE
     // =========================
 
     /**
-     * Скачивает последний JAR из папки {@code Jar/} на GitHub, заменяет текущий.
-     * После успешной замены сохраняет в БД версию jar.
+     * Downloads the latest JAR from the {@code Jar/} folder on GitHub and replaces the current one.
+     * After a successful replacement, saves the jar version to the DB.
      */
     public static void downloadAndReplace(CommandSender sender) {
         Main plugin = Main.getInstance();
@@ -624,7 +624,7 @@ public class UpdateChecker {
 
                 cleanupOrphanedFiles(pluginDir, currentJar);
 
-                // Используем кеш если есть, иначе фетчим API
+                // Use the cache if available, otherwise fetch the API
                 String downloadUrl;
                 String jarName;
                 String jarVersion;
@@ -635,7 +635,7 @@ public class UpdateChecker {
                     jarVersion = cachedJarVersion;
                     ConsoleLogger.info("[Updater] Using cached jar info: " + jarName);
                 } else {
-                    // Фетчим свежие данные с GitHub
+                    // Fetch fresh data from GitHub
                     JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
                     if (latestJar == null) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -659,7 +659,7 @@ public class UpdateChecker {
                     return;
                 }
 
-                // Проверяем — не тот ли самый jar уже установлен?
+                // Check — isn't the same jar already installed?
                 String storedVersion = getStoredTag();
                 if (jarVersion != null && jarVersion.equals(storedVersion)) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
@@ -672,7 +672,7 @@ public class UpdateChecker {
                     return;
                 }
 
-                // Статус: загрузка
+                // Status: downloading
                 final String finalJarName = jarName;
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
@@ -681,7 +681,7 @@ public class UpdateChecker {
                             .replace("%name%", finalJarName)));
                 });
 
-                // Скачивание JAR
+                // Downloading the JAR
                 File tempFile = new File(pluginDir,
                         plugin.getDescription().getName() + ".jar.update");
 
@@ -720,11 +720,11 @@ public class UpdateChecker {
 
                 final long downloadedKB = totalBytes / 1024;
 
-                // Замена JAR
+                // Replacing the JAR
                 boolean replaced = replaceJar(plugin, currentJar, tempFile, jarName);
 
                 if (replaced) {
-                    // Сохраняем версию jar (чтобы не перекачивать при следующей проверке)
+                    // Save the jar version (to avoid re-downloading on the next check)
                     if (jarVersion != null) {
                         saveStoredTag(jarVersion);
                     }
@@ -778,7 +778,7 @@ public class UpdateChecker {
         });
     }
 
-    /** @return true если замена прошла успешно (включая fallback) */
+    /** @return true if the replacement succeeded (including fallback) */
     private static boolean replaceJar(Main plugin, File currentJar, File updateFile, String jarName) {
         if (currentJar == null || !currentJar.exists()) {
             ConsoleLogger.warn("[Updater] Cannot find current JAR file");
@@ -791,7 +791,7 @@ public class UpdateChecker {
         Path backupPath = new File(currentJar.getParentFile(),
                 currentJar.getName() + ".bak").toPath();
 
-        // ШАГ 1: Backup
+        // STEP 1: Backup
         boolean backupDone = false;
         try {
             Files.move(targetPath, backupPath, StandardCopyOption.REPLACE_EXISTING);
@@ -802,7 +802,7 @@ public class UpdateChecker {
             e.printStackTrace();
         }
 
-        // ШАГ 2: Перемещаем новый JAR на место текущего
+        // STEP 2: Move the new JAR into the current one's place
         try {
             Files.move(updatePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
@@ -853,7 +853,7 @@ public class UpdateChecker {
     }
 
     // =========================
-    // 🔄 FALLBACK: поместить JAR в папку plugins когда replace не удался
+    // 🔄 FALLBACK: put the JAR into the plugins folder when replace fails
     // =========================
 
     private static boolean placeUpdateInPluginsFolder(Main plugin, File updateFile,

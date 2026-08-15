@@ -7,7 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * Handles /ui report <player> <reason> — подача жалобы на игрока.
+ * Handles /ui report <player> <reason> — submitting a report about a player.
  */
 public final class ReportSubcommand {
 
@@ -33,7 +33,7 @@ public final class ReportSubcommand {
         }
 
         String targetName = args[1];
-        // Собираем причину из оставшихся аргументов
+        // Collect the reason from the remaining arguments
         StringBuilder reason = new StringBuilder();
         for (int i = 2; i < args.length; i++) {
             if (reason.length() > 0) reason.append(" ");

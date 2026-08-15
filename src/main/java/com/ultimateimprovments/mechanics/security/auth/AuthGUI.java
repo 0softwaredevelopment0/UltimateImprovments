@@ -13,14 +13,14 @@ import org.bukkit.inventory.MenuType;
 import java.util.UUID;
 
 /**
- * Фасад для открытия GUI авторизации.
+ * Facade for opening the authentication GUI.
  * <p>
- * Делегирует создание предметов → {@link AuthGUIItems},
- * трекинг состояний → {@link AuthGUITracker},
- * чтение ввода → {@link AuthGUIAnvilReader}.
+ * Delegates item creation → {@link AuthGUIItems},
+ * state tracking → {@link AuthGUITracker},
+ * input reading → {@link AuthGUIAnvilReader}.
  * <p>
- * Использует {@link MenuType#ANVIL} для создания настоящей наковальни
- * с полем переименования (rename field), куда игрок вводит пароль.
+ * Uses {@link MenuType#ANVIL} to create a real anvil
+ * with a rename field, where the player enters the password.
  */
 public class AuthGUI {
 
@@ -57,7 +57,7 @@ public class AuthGUI {
             topInv.setItem(1, AuthGUIItems.CHANGE_PASSWORD_BUTTON);
         }
 
-        // Slot 2: Confirm button — Nether Star with "Подтвердить"
+        // Slot 2: Confirm button — Nether Star with "Confirm"
         topInv.setItem(2, AuthGUIItems.CONFIRM_STAR);
 
         // Mark as opening so onInventoryOpen allows this GUI even on forks

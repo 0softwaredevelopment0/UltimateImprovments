@@ -9,15 +9,15 @@ import org.jetbrains.annotations.Nullable;
 import java.text.DecimalFormat;
 
 /**
- * PlaceholderAPI-расширение для валютной системы.
+ * PlaceholderAPI expansion for the currency system.
  * <p>
- * Плейсхолдеры:
+ * Placeholders:
  * <ul>
- *   <li>{@code %ui_money%} — баланс в основной валюте</li>
- *   <li>{@code %ui_money_<currency>%} — баланс в указанной валюте</li>
- *   <li>{@code %ui_money_formatted%} — отформатированный баланс (с названием валюты)</li>
- *   <li>{@code %ui_money_<currency>_formatted%} — отформатированный баланс в указанной валюте</li>
- *   <li>{@code %ui_default_balance%} — дефолтная сумма с которой заходит игрок</li>
+ *   <li>{@code %ui_money%} — balance in the main currency</li>
+ *   <li>{@code %ui_money_<currency>%} — balance in the given currency</li>
+ *   <li>{@code %ui_money_formatted%} — formatted balance (with currency name)</li>
+ *   <li>{@code %ui_money_<currency>_formatted%} — formatted balance in the given currency</li>
+ *   <li>{@code %ui_default_balance%} — default amount a player joins with</li>
  * </ul>
  */
 public class EconomyPlaceholderExpansion extends PlaceholderExpansion {
@@ -47,7 +47,7 @@ public class EconomyPlaceholderExpansion extends PlaceholderExpansion {
 
     @Override
     public boolean persist() {
-        return true; // не выгружать при /reload
+        return true; // don't unload on /reload
     }
 
     @Override
@@ -72,16 +72,16 @@ public class EconomyPlaceholderExpansion extends PlaceholderExpansion {
             return FMT.format(bal) + " " + (bal == 1 ? manager.getPrimaryCurrency() : manager.getPrimaryCurrency() + "s");
         }
 
-        // %ui_money_<currency>% и %ui_money_<currency>_formatted%
+        // %ui_money_<currency>% and %ui_money_<currency>_formatted%
         if (lower.startsWith("money_")) {
-            String rest = lower.substring(6); // после "money_"
+            String rest = lower.substring(6); // after "money_"
 
             boolean formatted = false;
             String currency;
 
             if (rest.endsWith("_formatted")) {
                 formatted = true;
-                currency = rest.substring(0, rest.length() - 10); // убираем "_formatted"
+                currency = rest.substring(0, rest.length() - 10); // remove "_formatted"
             } else if (rest.equals("formatted")) {
                 formatted = true;
                 currency = "";

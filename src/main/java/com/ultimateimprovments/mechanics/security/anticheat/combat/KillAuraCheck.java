@@ -12,12 +12,12 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import java.util.Deque;
 
 /**
- * KillAura — автоматически атакует ближайших entities.
+ * KillAura — automatically attacks nearby entities.
  * <p>
- * Детекция:
- * - Резкие повороты головы (snap) перед атакой
- * - Атака нескольких целей одновременно
- * - Угол атаки вне поля зрения игрока
+ * Detection:
+ * - Sharp head turns (snap) right before an attack
+ * - Attacking multiple targets at once
+ * - Attack angle outside the player's field of view
  */
 public class KillAuraCheck extends AbstractCheck {
 

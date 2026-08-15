@@ -24,37 +24,37 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Мгновенный клёв рыбы с проверкой объёма воды.
+ * Instant fish bite with water volume checking.
  *
- * Сканирование блоков WATER в радиусе 5 от поплавка:
- *   ≥ 128 → мгновенный клёв
- *   < 128 → "Полное отсутствие рыбы", поплавок удаляется
+ * Scans WATER blocks within a radius of 5 from the hook:
+ *   ≥ 128 → instant bite
+ *   < 128 → "No fish at all", the hook is removed
  *
- * Результат сканирования кэшируется по координатам блока.
- * Кэш сбрасывается при изменении любого блока в радиусе 5 от кэшированной позиции
+ * The scan result is cached by block coordinates.
+ * The cache is invalidated when any block changes within a radius of 5 from the cached position
  * (BlockBreak, BlockPlace, BlockFromTo).
  */
 public class FishingListener extends BukkitRunnable implements Listener {
 
     private static FishingListener instance;
 
-    /** Активные поплавки (entityId -> hook) */
+    /** Active hooks (entityId -> hook) */
     private final Map<Integer, FishHook> activeHooks = new HashMap<>();
 
     /**
-     * Кэш результатов сканирования: "мир,x,y,z" -> true (есть рыба, ≥128 воды) / false (нет рыбы)
+     * Scan result cache: "world,x,y,z" -> true (has fish, ≥128 water) / false (no fish)
      */
     private final Map<String, Boolean> waterCache = new HashMap<>();
     private static final int MAX_CACHE_SIZE = 500;
 
     // =========================
-    // ПАРАМЕТРЫ ПРОВЕРКИ ВОДЫ
+    // WATER CHECK PARAMETERS
     // =========================
     private static final int WATER_CHECK_RADIUS = 5;
     private static final int MIN_WATER_BLOCKS = 128;
 
     // =========================
-    // NMS REFLECTION (кэш)
+    // NMS REFLECTION (cache)
     // =========================
     private static Method craftGetHandle;
     private static Field timeUntilLuredField;
@@ -70,7 +70,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     }
 
     // =========================
-    // КЛЮЧ ДЛЯ КЭША
+    // CACHE KEY
     // =========================
     private static String cacheKey(World world, int x, int y, int z) {
         return world.getName() + "," + x + "," + y + "," + z;
@@ -81,7 +81,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     }
 
     // =========================
-    // EVENT: ЗАБРОС УДОЧКИ
+    // EVENT: ROD CAST
     // =========================
     @EventHandler(ignoreCancelled = true)
     public void onFish(PlayerFishEvent e) {
@@ -90,7 +90,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
         FishHook hook = e.getHook();
         if (hook == null) return;
 
-        // Обнуляем таймеры ДО попадания поплавка в воду
+        // Zero the timers BEFORE the hook hits the water
         hook.setWaitTime(0);
         hook.setMinWaitTime(0);
         hook.setMaxWaitTime(0);
@@ -99,7 +99,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     }
 
     // =========================
-    // TASK: ПРОВЕРКА КАЖДЫЙ ТИК
+    // TASK: CHECK EVERY TICK
     // =========================
     @Override
     public void run() {
@@ -110,7 +110,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
         while (it.hasNext()) {
             FishHook hook = it.next().getValue();
 
-            // Поплавок мёртв — убираем
+            // Hook is dead — remove it
             if (hook.isDead() || !hook.isValid()) {
                 it.remove();
                 continue;
@@ -118,10 +118,10 @@ public class FishingListener extends BukkitRunnable implements Listener {
 
             Location loc = hook.getLocation();
 
-            // Ещё не в воде — ждём
+            // Not in water yet — wait
             if (!loc.getBlock().isLiquid()) continue;
 
-            // Игрок, которому принадлежит поплавок
+            // The player who owns the hook
             Player player = (Player) hook.getShooter();
             if (player == null) {
                 it.remove();
@@ -129,18 +129,18 @@ public class FishingListener extends BukkitRunnable implements Listener {
             }
 
             // =========================
-            // ПРОВЕРКА КЭША / СКАНИРОВАНИЕ ВОДЫ
+            // CACHE CHECK / WATER SCAN
             // =========================
             String key = cacheKey(loc);
 
             Boolean cached = waterCache.get(key);
 
             if (cached == null) {
-                // Нет в кэше — сканируем блоки воды
+                // Not in cache — scan the water blocks
                 int waterCount = countWaterBlocks(loc);
                 cached = (waterCount >= MIN_WATER_BLOCKS);
 
-                // Добавляем в кэш (с очисткой при переполнении)
+                // Add to cache (clear on overflow)
                 if (waterCache.size() >= MAX_CACHE_SIZE) {
                     waterCache.clear();
                 }
@@ -148,7 +148,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
             }
 
             if (!cached) {
-                // Недостаточно воды — "полное отсутствие рыбы"
+                // Not enough water — "no fish at all"
                 hook.remove();
                 it.remove();
                 player.sendMessage(MessageUtil.parse(MessagesManager.getString("fishing.no_fish", "<dark_gray>[<red>⛔</red>] <red>No fish at all!</red></dark_gray>")));
@@ -156,26 +156,26 @@ public class FishingListener extends BukkitRunnable implements Listener {
             }
 
             // =========================
-            // ДОСТАТОЧНО ВОДЫ — МГНОВЕННЫЙ КЛЁВ
+            // ENOUGH WATER — INSTANT BITE
             // =========================
             hook.setWaitTime(0);
             hook.setMinWaitTime(0);
             hook.setMaxWaitTime(0);
 
-            // NMS-рефлексия (best-effort)
+            // NMS reflection (best-effort)
             forceInstantBiteNMS(hook);
 
-            // Убираем из трекинга
+            // Remove from tracking
             it.remove();
         }
     }
 
     // =========================
-    // ИНВАЛИДАЦИЯ КЭША ПРИ ИЗМЕНЕНИИ БЛОКОВ
+    // CACHE INVALIDATION ON BLOCK CHANGES
     // =========================
 
     /**
-     * Блок сломан — инвалидируем кэш поблизости.
+     * Block broken — invalidate the nearby cache.
      */
     @EventHandler(ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent e) {
@@ -183,7 +183,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Блок поставлен — инвалидируем кэш поблизости.
+     * Block placed — invalidate the nearby cache.
      */
     @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent e) {
@@ -191,7 +191,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Жидкость (вода/лава) потекла — инвалидируем кэш у источника и у цели.
+     * Liquid (water/lava) flowed — invalidate the cache at the source and the destination.
      */
     @EventHandler(ignoreCancelled = true)
     public void onBlockFromTo(BlockFromToEvent e) {
@@ -200,8 +200,8 @@ public class FishingListener extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Удаляет из кэша все записи, находящиеся в радиусе WATER_CHECK_RADIUS
-     * от изменившегося блока.
+     * Removes from the cache all entries within WATER_CHECK_RADIUS
+     * of the changed block.
      */
     private void invalidateCacheNear(Block changed) {
         if (waterCache.isEmpty()) return;
@@ -217,7 +217,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
             Map.Entry<String, Boolean> entry = it.next();
             String key = entry.getKey();
 
-            // Парсим ключ "мир,x,y,z"
+            // Parse the "world,x,y,z" key
             int firstComma = key.indexOf(',');
             if (firstComma == -1) { it.remove(); continue; }
 
@@ -250,7 +250,7 @@ public class FishingListener extends BukkitRunnable implements Listener {
     }
 
     // =========================
-    // ПОДСЧЁТ ВОДНЫХ БЛОКОВ
+    // COUNT WATER BLOCKS
     // =========================
     private int countWaterBlocks(Location center) {
         int count = 0;

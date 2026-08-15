@@ -13,8 +13,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * InventoryMove — движение с открытым инвентарём (невозможно в survival).
- * Детекция: игрок перемещается, при этом его инвентарь открыт.
+ * InventoryMove — moving with an open inventory (impossible in survival).
+ * Detection: the player moves while their inventory is open.
  */
 public class InventoryMoveCheck extends AbstractCheck {
 

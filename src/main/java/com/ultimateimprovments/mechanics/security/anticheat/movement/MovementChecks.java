@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Factory — создаёт все movement-проверки.
+ * Factory — creates all movement checks.
  */
 public class MovementChecks {
 

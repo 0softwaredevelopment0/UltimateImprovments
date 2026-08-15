@@ -39,10 +39,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 🔭 Omniscanner — админский предмет для сканирования блоков, предметов и сущностей.
+ * 🔭 Omniscanner — an admin item for scanning blocks, items and entities.
  * <p>
- * ПКМ — запустить сканирование по настроенным параметрам.
- * Shift+ПКМ — открыть GUI настройки (типы блоков, предметов, сущностей, радиус).
+ * Right-click — run a scan with the configured parameters.
+ * Shift+right-click — open the settings GUI (block, item, entity types, radius).
  */
 public class OmniscannerManager implements Listener {
 
@@ -54,7 +54,7 @@ public class OmniscannerManager implements Listener {
     // ========================================================================
 
     /**
-     * Создаёт предмет Omniscanner.
+     * Creates the Omniscanner item.
      */
     public static ItemStack createItem() {
         ItemStack item = new ItemStack(Material.NETHER_STAR);
@@ -228,10 +228,10 @@ public class OmniscannerManager implements Listener {
         cooldowns.put(uid, now);
 
         if (player.isSneaking()) {
-            // Shift+ПКМ — открыть GUI настройки
+            // Shift+right-click — open the settings GUI
             OmniscannerGUI.open(player, item);
         } else {
-            // ПКМ — сканировать (пустые списки = всё)
+            // Right-click — scan (empty lists = everything)
             performScan(player, item);
         }
     }
@@ -241,13 +241,13 @@ public class OmniscannerManager implements Listener {
     // ========================================================================
 
     /**
-     * Запускает сканирование.
+     * Runs the scan.
      * <p>
-     * ⚡ Для предотвращения фриза сервера (см. TODOs.md):
-     * - ChunkSnapshot собираются на server thread (быстро — O(чанки), не O(блоки))
-     * - Блоки сканируются на async thread через {@link ChunkSnapshot#getBlockType} (thread-safe)
-     * - Сущности собираются на server thread (O(сущности), быстро)
-     * - Результаты возвращаются на server thread для вывода
+     * ⚡ To prevent server freezes (see TODOs.md):
+     * - ChunkSnapshots are collected on the server thread (fast — O(chunks), not O(blocks))
+     * - Blocks are scanned on an async thread via {@link ChunkSnapshot#getBlockType} (thread-safe)
+     * - Entities are collected on the server thread (O(entities), fast)
+     * - Results are returned to the server thread for output
      */
     public static void performScan(Player player, ItemStack scanner) {
         Set<String> blockTypes = getBlockTypes(scanner);
@@ -261,7 +261,7 @@ public class OmniscannerManager implements Listener {
         int cy = center.getBlockY();
         int cz = center.getBlockZ();
 
-        // Сообщение игроку — сканирование может занять время
+        // Message to the player — the scan may take a while
         player.sendMessage(Component.empty());
         player.sendMessage(MessageUtil.parse("<gradient:#FF6B6B:#FFD93D>═══════ 🔭 Omniscanner ═══════</gradient>"));
         player.sendMessage(MessageUtil.parse("<gold>🔭 Scanning started...</gold> <gray>Radius: " + radius + " blocks. This may take a moment on large scans.</gray>"));
@@ -280,7 +280,7 @@ public class OmniscannerManager implements Listener {
         boolean scanAllEntities = entityTypes.isEmpty();
 
         // =========================
-        // Collect chunk snapshots (main thread, fast — один вызов на чанк)
+        // Collect chunk snapshots (main thread, fast — one call per chunk)
         // =========================
         int minChunkX = (cx - radius) >> 4;
         int maxChunkX = (cx + radius) >> 4;
@@ -298,8 +298,8 @@ public class OmniscannerManager implements Listener {
         }
 
         // =========================
-        // Collect entity data on main thread (thread-safe для async)
-        // Bukkit Entity/Player объекты НЕ thread-safe, извлекаем всё заранее
+        // Collect entity data on the main thread (thread-safe for async)
+        // Bukkit Entity/Player objects are NOT thread-safe, extract everything in advance
         // =========================
         List<EntityData> entityDataList = new ArrayList<>();
         List<PlayerData> playerData = new ArrayList<>();
@@ -324,7 +324,7 @@ public class OmniscannerManager implements Listener {
                     mobData.add(new MobInventoryData(displayName, entity.getLocation(), contents));
                 }
             } else {
-                // Обычные сущности (мобы, животные, и т.д.)
+                // Regular entities (mobs, animals, etc.)
                 entityDataList.add(new EntityData(
                         "ENTITY", getEntityDisplayName(entity),
                         entity.getType().name().toUpperCase(),
@@ -342,8 +342,8 @@ public class OmniscannerManager implements Listener {
             int maxY = Math.min(world.getMaxHeight(), finalCy + radius);
 
             // =========================
-            // 1. Сканирование блоков (через ChunkSnapshot — thread-safe)
-            // Пустой список = ВСЕ блоки (кроме воздуха)
+            // 1. Block scanning (via ChunkSnapshot — thread-safe)
+            // Empty list = ALL blocks (except air)
             // =========================
             if (scanAllBlocks) {
                 ConsoleLogger.info("[Omniscanner] Scanning ALL blocks (empty type list)");
@@ -382,7 +382,7 @@ public class OmniscannerManager implements Listener {
             }
 
             // =========================
-            // 2. Предметы на полу + Сущности (из предварительно собранных данных)
+            // 2. Items on the floor + Entities (from the pre-collected data)
             // =========================
             for (EntityData ed : entityDataList) {
                 double dist = center.distance(ed.location);
@@ -399,7 +399,7 @@ public class OmniscannerManager implements Listener {
             }
 
             // =========================
-            // 3. Инвентари игроков
+            // 3. Player inventories
             // =========================
             for (PlayerData pd : playerData) {
                 for (ItemStack stack : pd.contents) {
@@ -412,7 +412,7 @@ public class OmniscannerManager implements Listener {
             }
 
             // =========================
-            // 4. Инвентари мобов
+            // 4. Mob inventories
             // =========================
             for (MobInventoryData md : mobData) {
                 for (ItemStack stack : md.contents) {
@@ -425,9 +425,9 @@ public class OmniscannerManager implements Listener {
             }
 
             // =========================
-            // 6. Контейнеры (server thread — Bukkit API)
-            // Сканирование инвентарей контейнеров выполняется отдельным проходом
-            // на server thread, чтобы избежать race condition'ов
+            // 6. Containers (server thread — Bukkit API)
+            // Container inventory scanning is done in a separate pass
+            // on the server thread to avoid race conditions
             // =========================
             List<ScanResult> containerResults = new ArrayList<>();
             Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
@@ -462,7 +462,7 @@ public class OmniscannerManager implements Listener {
                 }
 
                 // =========================
-                // 7. Вывод результатов (server thread)
+                // 7. Result output (server thread)
                 // =========================
                 results.addAll(containerResults);
                 results.sort(Comparator.comparingDouble(r -> r.distance));
@@ -475,7 +475,7 @@ public class OmniscannerManager implements Listener {
     // CONTAINER SCAN (server thread only — Bukkit API)
     // ========================================================================
 
-    /** Материалы, которые являются контейнерами с инвентарём */
+    /** Materials that are containers with an inventory */
     private static final Set<Material> CONTAINER_TYPES = Set.of(
             Material.CHEST, Material.TRAPPED_CHEST, Material.BARREL,
             Material.HOPPER, Material.DROPPER, Material.DISPENSER,
@@ -496,7 +496,7 @@ public class OmniscannerManager implements Listener {
     }
 
     /**
-     * Сканирует инвентарь одного контейнера (вызывается с server thread).
+     * Scans a single container's inventory (called from the server thread).
      */
     private static void scanContainer(Block block, Location center, Set<Material> itemMaterials,
                                        boolean scanAllItems, List<ScanResult> results) {
@@ -522,7 +522,7 @@ public class OmniscannerManager implements Listener {
     // ========================================================================
 
     /**
-     * Выводит результаты сканирования игроку (вызывается с server thread).
+     * Prints the scan results to the player (called from the server thread).
      */
     private static void displayResults(Player player, List<ScanResult> results, int radius) {
         if (!player.isOnline()) return;
@@ -558,7 +558,7 @@ public class OmniscannerManager implements Listener {
 
         player.sendMessage(MessageUtil.parse("<gradient:#FF6B6B:#FFD93D>════════════════════════════</gradient>"));
 
-        // Звук
+        // Sound
         player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_NOTE_BLOCK_BIT, 0.5f, 1.5f);
     }
 
@@ -567,7 +567,7 @@ public class OmniscannerManager implements Listener {
     // ========================================================================
 
     /**
-     * Преобразует список строк Material в набор Material (только валидные).
+     * Converts a list of Material strings into a Material set (only valid ones).
      */
     private static Set<Material> resolveMaterials(Set<String> typeNames) {
         if (typeNames.isEmpty()) return null;
@@ -584,13 +584,13 @@ public class OmniscannerManager implements Listener {
     // THREAD-SAFE DATA HOLDERS
     // ========================================================================
 
-    /** Данные игрока и его инвентаря для async обработки */
+    /** Player and inventory data for async processing */
     private record PlayerData(String name, Location location, ItemStack[] contents) {}
 
-    /** Данные животного с инвентарём для async обработки */
+    /** Animal with inventory data for async processing */
     private record MobInventoryData(String name, Location location, ItemStack[] contents) {}
 
-    /** Данные сущности/предмета для async обработки (все поля thread-safe) */
+    /** Entity/item data for async processing (all fields thread-safe) */
     private record EntityData(String type, String category, String name, String displayName, Location location) {
         EntityData(String type, String category, String name, Location location) {
             this(type, category, name, name, location);

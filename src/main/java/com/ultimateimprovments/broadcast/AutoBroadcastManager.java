@@ -13,30 +13,30 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 🕐 AutoBroadcastManager — система автоматических броадкастов.
+ * 🕐 AutoBroadcastManager — automatic broadcast system.
  * <p>
- * Читает секцию {@code auto_broadcast} из config.yml и раз в секунду
- * (20 тиков) проверяет готовность секций. Когда секция «созревает»
- * (накоплено {@code cooldown_ticks}), сообщение отправляется всем
- * онлайн-игрокам, прошедшим условия секции.
+ * Reads the {@code auto_broadcast} section from config.yml and every second
+ * (20 ticks) checks the readiness of sections. When a section "ripens"
+ * ({@code cooldown_ticks} accumulated), the message is sent to all
+ * online players who pass the section's conditions.
  * <p>
- * Особенности:
+ * Features:
  * <ul>
- *   <li>Глобальные условия ({@code online-*}) проверяются один раз за цикл;</li>
- *   <li>Игровые условия проверяются отдельно для каждого игрока;</li>
- *   <li>Плейсхолдеры в сообщениях резолвятся ПЕРСОНАЛЬНО для каждого игрока
- *       ({@code %player_name%}, {@code %online%}, любые PlaceholderAPI);</li>
- *   <li>Секций может быть сколько угодно, у каждой своя очередь сообщений.</li>
+ *   <li>Global conditions ({@code online-*}) are checked once per cycle;</li>
+ *   <li>Game conditions are checked separately for each player;</li>
+ *   <li>Placeholders in messages are resolved PERSONALLY for each player
+ *       ({@code %player_name%}, {@code %online%}, any PlaceholderAPI);</li>
+ *   <li>There can be any number of sections, each with its own message queue.</li>
  * </ul>
  * <p>
- * Жизненный цикл: {@link #start(Main)} при старте/перезагрузке,
- * {@link #stop()} при остановке плагина. {@link #start} идемпотентен
- * (сначала останавливает предыдущую задачу), поэтому безопасно звать
- * повторно при {@code /ui reload}.
+ * Lifecycle: {@link #start(Main)} on startup/reload,
+ * {@link #stop()} on plugin shutdown. {@link #start} is idempotent
+ * (stops the previous task first), so it is safe to call
+ * again on {@code /ui reload}.
  */
 public final class AutoBroadcastManager {
 
-    /** Период основного тикера в тиках (1 сек). */
+    /** Main ticker period in ticks (1 sec). */
     private static final int TICK_PERIOD = 20;
 
     private static AutoBroadcastManager instance;
@@ -55,8 +55,8 @@ public final class AutoBroadcastManager {
     }
 
     /**
-     * Запускает систему авто-броадкастов: читает конфиг, разбирает секции,
-     * планирует тикер. Идемпотентен — повторный вызов безопасен.
+     * Starts the auto-broadcast system: reads the config, parses the sections,
+     * schedules the ticker. Idempotent — repeated calls are safe.
      */
     public synchronized void start(Main plugin) {
         this.plugin = plugin;
@@ -100,7 +100,7 @@ public final class AutoBroadcastManager {
         ConsoleLogger.info("[AutoBroadcast] Enabled with " + sections.size() + " section(s): " + names);
     }
 
-    /** Останавливает систему и сбрасывает все секции. */
+    /** Stops the system and resets all sections. */
     public synchronized void stop() {
         if (task != null) {
             task.cancel();
@@ -110,13 +110,13 @@ public final class AutoBroadcastManager {
         plugin = null;
     }
 
-    /** Перезапуск после перезагрузки конфигурации. */
+    /** Restart after a configuration reload. */
     public synchronized void reload() {
         if (plugin == null) return;
         start(plugin);
     }
 
-    /** Тикер: раз в секунду накапливаем тики секций и отправляем созревшие. */
+    /** Ticker: every second accumulate section ticks and send the ripened ones. */
     private void tick() {
         for (BroadcastSection section : sections) {
             section.accumulate(TICK_PERIOD);
@@ -126,9 +126,9 @@ public final class AutoBroadcastManager {
         }
     }
 
-    /** Отправляет следующее сообщение секции игрокам, прошедшим условия. */
+    /** Sends the section's next message to players who pass the conditions. */
     private void fire(BroadcastSection section) {
-        // Глобальные условия (online-*) — если не выполнены, цикл пропускается целиком
+        // Global conditions (online-*) — if not met, the whole cycle is skipped
         if (!section.matchesGlobal()) return;
 
         List<Player> targets = new ArrayList<>();
@@ -138,11 +138,11 @@ public final class AutoBroadcastManager {
             }
         }
 
-        // Ротация сообщения продвигается ТОЛЬКО при реальной отправке
+        // Message rotation advances ONLY on an actual send
         if (targets.isEmpty()) return;
         String message = section.nextMessage();
 
-        // Плейсхолдеры резолвим персонально для каждого игрока
+        // Resolve placeholders personally for each player
         for (Player player : targets) {
             player.sendMessage(MessageUtil.parse(message, player));
         }

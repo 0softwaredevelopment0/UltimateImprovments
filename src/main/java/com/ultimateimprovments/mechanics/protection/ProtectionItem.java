@@ -33,12 +33,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Создание предмета «Блок защиты» и регистрация рецепта.
+ * Creates the «Protection Block» item and registers its recipe.
  * <p>
- * Рецепт представляется как сложный 9-grid ShapedRecipe. По умолчанию
- * крафт в обычном верстаке отключён через {@link PrepareItemCraftEvent}
- * — рецепт виден в книге, но в result устанавливается AIR. В Crafter
- * (Paper 1.21+) можно крафтить, если включено в конфиге.
+ * The recipe is a complex 9-grid ShapedRecipe. By default crafting in a
+ * regular workbench is disabled via {@link PrepareItemCraftEvent} — the
+ * recipe shows in the recipe book but the result is set to AIR. In Crafter
+ * (Paper 1.21+) it can be crafted if enabled in the config.
  */
 public class ProtectionItem implements Listener {
 
@@ -87,7 +87,7 @@ public class ProtectionItem implements Listener {
         return stack;
     }
 
-    /** PDC tag на item. */
+    /** PDC tag on the item. */
     public static boolean isProtectionItem(ItemStack stack) {
         if (stack == null || !stack.hasItemMeta()) return false;
         return stack.getItemMeta().getPersistentDataContainer()
@@ -107,8 +107,8 @@ public class ProtectionItem implements Listener {
         ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, result);
         recipe.setGroup(RECIPE_KEY.getKey());
 
-        // Сложный 9-grid рецепт (см. TODOs.md: «придумай сам но сложный чтоб был»)
-        // Один из предложенных вариантов: алмазный крест + незерит + редстоун + опытная бутылка.
+        // Complex 9-grid recipe (see TODOs.md: «invent one yourself, but make it complex»)
+        // One proposed option: diamond cross + netherite + redstone + experience bottle.
         recipe.shape(
                 "DRD",
                 "NCN",
@@ -131,14 +131,14 @@ public class ProtectionItem implements Listener {
     }
 
     // =========================
-    // PREPARE ITEM CRAFT — отключает обычный верстак; в Crafter пропускает.
+    // PREPARE ITEM CRAFT — disables the regular workbench; allows Crafter.
     // <p>
-    // HIGHEST приоритет чтобы наш блок побеждал любые другие плагины,
-    // которые могли бы попытаться восстановить result-ItemStack.
-    // Рецепт при этом остаётся зарегистрирован глобально (Bukkit.addRecipe),
-    // так что в обычном верстаке игрок видит его в recipe-book, но result-slot
-    // пустой (AIR) — ровно как требует TODOs.md: «верстак только крафт показывает
-    // не даёт крафтить».
+    // HIGHEST priority so our block beats any other plugins that might
+    // try to restore the result ItemStack.
+    // The recipe stays registered globally (Bukkit.addRecipe),
+    // so in a regular workbench the player sees it in the recipe book but the
+    // result slot is empty (AIR) — exactly as TODOs.md demands: «the workbench
+    // only shows the recipe, doesn't let you craft it».
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPrepareCraft(PrepareItemCraftEvent e) {
@@ -150,10 +150,10 @@ public class ProtectionItem implements Listener {
         boolean crafter = ProtectionConfig.isCrafterCraftAllowed();
         boolean isCrafterInv = e.getInventory() instanceof org.bukkit.inventory.CrafterInventory;
 
-        if (workbench && crafter) return; // оба разрешены
-        if (crafter && isCrafterInv) return; // crafter: разрешаем
-        if (!crafter && !isCrafterInv) return; // workbench: разрешаем
-        // Во всех остальных комбинациях — блокируем крафт
+        if (workbench && crafter) return; // both allowed
+        if (crafter && isCrafterInv) return; // crafter: allow
+        if (!crafter && !isCrafterInv) return; // workbench: allow
+        // In all other combinations — block the craft
         e.getInventory().setResult(new ItemStack(Material.AIR));
     }
 
@@ -168,7 +168,7 @@ public class ProtectionItem implements Listener {
         if (placed == null) return;
         ProtectionBlock created = ProtectionManager.getInstance()
                 .createBlock(placed.getLocation(), e.getPlayer().getUniqueId());
-        // Сообщение игроку
+        // Message to the player
         e.getPlayer().sendMessage("");
         e.getPlayer().sendMessage("§a✔ §fБлок защиты установлен!");
         e.getPlayer().sendMessage("§7▸ <gold>Он сейчас ВЫКЛЮЧЕН. Откройте GUI (Shift+RMB) и включите.");
@@ -177,17 +177,16 @@ public class ProtectionItem implements Listener {
     }
 
     // =========================
-    // Полная защита от drop / drag / creative / pickup protection item'а.
+    // Full protection against drop / drag / creative / pickup of the protection item.
     // <p>
-    // Старый код блокировал только InventoryClickEvent в чужой инвентарь,
-    // но НЕ блокировал: (1) Q-drop (SlotType.OUTSIDE в собств. инвентаре
-    // игрока), (2) InventoryDragEvent (мышью в чужой инвентарь),
-    // (3) InventoryCreativeClickEvent (creative-меню), (4) подбор
-    // выброшенного предмета другим игроком (EntityPickupItemEvent).
-    // Закрываем все эти дыры defense-in-depth.
+    // The old code only blocked InventoryClickEvent into a foreign inventory,
+    // but NOT: (1) Q-drop (SlotType.OUTSIDE in the player's own inventory),
+    // (2) InventoryDragEvent (dragging with the mouse into a foreign inventory),
+    // (3) InventoryCreativeClickEvent (creative menu), (4) pickup of the
+    // dropped item by another player (EntityPickupItemEvent).
+    // We close all these holes defense-in-depth.
     // <p>
-    // LOWEST приоритет: блокируем раньше других плагинов, чтобы они не успели
-    // переместить предмет до нас.
+    // LOWEST priority: block before other plugins so they can't move the item first.
     // =========================
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent e) {
@@ -198,38 +197,38 @@ public class ProtectionItem implements Listener {
         boolean currentIsProtection = isProtectionItem(current);
         if (!cursorIsProtection && !currentIsProtection) return;
 
-        // Q-drop / Ctrl+Q-drop (нажатие Q в собственном инвентаре создаёт клик
-        // с SlotType.OUTSIDE). Разрешаем только owner'у выкинуть предмет (он всё равно
-        // сможет вернуть), но блокируем всем остальным — на случай если owner'ский
-        // аккаунт украден.
+        // Q-drop / Ctrl+Q-drop (pressing Q in the own inventory creates a click
+        // with SlotType.OUTSIDE). Only allow the owner to drop the item (they can
+        // always pick it back up), but block everyone else — in case the owner's
+        // account is stolen.
         if (e.getSlotType() == InventoryType.SlotType.OUTSIDE) {
             e.setCancelled(true);
             return;
         }
 
-        // Если верхний инвентарь — собственный инвентарь игрока, разрешаем.
+        // If the top inventory is the player's own inventory, allow.
         if (e.getInventory().getHolder() == player) return;
 
-        // Любая попытка поместить/обменять предмет в верхний инвентарь (не игрока) —
-        // блокируем. Это покрывает shift-click, number-key, прямой клик и swap.
+        // Any attempt to put/swap the item into the top inventory (not the player's) —
+        // block. This covers shift-click, number-key, direct click and swap.
         e.setCancelled(true);
     }
 
     /**
-     * Drag (mouse left button held) — BlockManager НЕ блокировал это раньше.
-     * Игрок мог перетащить protection item в сундук или GUI другого плагина.
+     * Drag (mouse left button held) — BlockManager did NOT block this before.
+     * A player could drag the protection item into a chest or another plugin's GUI.
      */
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInventoryDrag(InventoryDragEvent e) {
         if (!(e.getWhoClicked() instanceof org.bukkit.entity.Player player)) return;
-        // Если верхний инвентарь — свой, разрешаем
+        // If the top inventory is our own, allow
         if (e.getInventory().getHolder() == player) return;
-        // Если drag задевает protection item — блокируем
+        // If the drag touches a protection item — block
         if (isProtectionItem(e.getOldCursor())) {
             e.setCancelled(true);
             return;
         }
-        // New cursor накапливает добавки, но детектим по oldCursor
+        // The new cursor accumulates additions, but we detect via oldCursor
         ItemStack carried = e.getCursor();
         if (isProtectionItem(carried)) {
             e.setCancelled(true);
@@ -243,8 +242,8 @@ public class ProtectionItem implements Listener {
     }
 
     /**
-     * Q-drop / Ctrl+Q-drop. Это НЕ InventoryClickEvent с SlotType.OUTSIDE — это
-     * отдельное событие со своим item-drop представлением. Блокируем целиком.
+     * Q-drop / Ctrl+Q-drop. This is NOT an InventoryClickEvent with SlotType.OUTSIDE —
+     * it's a separate event with its own item-drop representation. Block it entirely.
      */
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerDrop(PlayerDropItemEvent e) {
@@ -254,21 +253,21 @@ public class ProtectionItem implements Listener {
     }
 
     /**
-     * Creative mode — защищает от получения/выдачи protection item через
-     * creative-меню (средний клик для копирования). Замечание: класс
-     * {@code InventoryCreativeClickEvent} недоступен в некоторых build'ах Paper 1.21.x,
-     * поэтому отдельно не обрабатываем — если серверный mod-API его вернёт, Bukkit
-     * разрешит тут же. В остальных случаях creative-выдача блокируется в
-     * {@code onInventoryClick} через {@code e.getAction()} и slot Type.
+     * Creative mode — protects against obtaining/giving the protection item via
+     * the creative menu (middle click to copy). Note: the class
+     * {@code InventoryCreativeClickEvent} is unavailable in some Paper 1.21.x builds,
+     * so we don't handle it separately — if the server mod-API returns it, Bukkit
+     * will allow it right there. In all other cases creative-giving is blocked in
+     * {@code onInventoryClick} via {@code e.getAction()} and slot Type.
      */
 
     /**
-     * Подбор выброшенного protection item. По соображениям безопасности
-     * блокируем pickup ЛЮБЫМ игроком (включая owner'а): если случайно дропнул —
-     * перезагрузка сервера уберёт entity, либо админ выдаст снова.
+     * Pickup of a dropped protection item. For security reasons we block pickup
+     * by ANY player (including the owner): if dropped accidentally — a server
+     * restart removes the entity, or an admin can give it again.
      * <p>
-     * Альтернатива (разрешить только owner-плееру) потребовала бы писать owner-UUID
-     * в ItemMeta при дропе — это добавляет ложки и уязвимости (перебор owner'ов).
+     * The alternative (allow only the owner player) would require writing the owner-UUID
+     * into ItemMeta on drop — that adds spoons and vulnerabilities (owner brute-force).
      */
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerPickup(EntityPickupItemEvent e) {

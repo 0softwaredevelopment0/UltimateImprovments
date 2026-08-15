@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 
 /**
- * FoodSprint — спринт во время поедания еды (невозможно в ванилле).
- * Детекция: игрок спринтит в момент поедания.
+ * FoodSprint — sprinting while eating food (impossible in vanilla).
+ * Detection: the player sprints while eating.
  */
 public class FoodSprintCheck extends AbstractCheck {
 

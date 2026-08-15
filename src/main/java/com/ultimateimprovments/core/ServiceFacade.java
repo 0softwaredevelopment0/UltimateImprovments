@@ -8,12 +8,12 @@ import com.ultimateimprovments.mechanics.security.check.CheckManager;
 import org.bukkit.entity.Player;
 
 /**
- * ServiceFacade — централизованная точка доступа к сервисам плагина.
+ * ServiceFacade — centralized access point to plugin services.
  * <p>
- * Заменяет разрозненные статические импорты единым фасадом.
- * Упрощает рефакторинг: все зависимости в одном месте.
+ * Replaces scattered static imports with a single facade.
+ * Simplifies refactoring: all dependencies in one place.
  * <p>
- * Пример:
+ * Example:
  * <pre>{@code
  * ServiceFacade.info("Hello");
  * ServiceFacade.mm().getModule("name");
@@ -53,12 +53,12 @@ public final class ServiceFacade {
     // ========================================================================
 
     /**
-     * Возвращает строку из {@code config.yml#messages.<path>} (с фолбеком на
-     * {@code config.yml#messages_en.<path>}). Префикс секции НЕ нужен в path.
+     * Returns a string from {@code config.yml#messages.<path>} (with a fallback to
+     * {@code config.yml#messages_en.<path>}). The section prefix is NOT required in path.
      * <pre>ServiceFacade.message("auth.gui.register", "Register");</pre>
      * <p>
-     * С v26.2 отдельный messages.yml/messages-en.yml больше не существует —
-     * все локализованные строки живут внутри единого config.yml.
+     * Since v26.2 a separate messages.yml/messages-en.yml no longer exists —
+     * all localized strings live inside the single config.yml.
      */
     public static String message(String path, String def) {
         return MessagesManager.getString(path, def);
@@ -66,7 +66,7 @@ public final class ServiceFacade {
 
     /**
      * Shorthand: {@code ServiceFacade.parsed("key", "default")}
-     * Возвращает распарсенный Component из секции messages: в config.yml.
+     * Returns a parsed Component from the messages: section in config.yml.
      */
     public static net.kyori.adventure.text.Component parsed(String key, String def) {
         return MessageUtil.parse(MessagesManager.getString(key, def));
@@ -77,7 +77,7 @@ public final class ServiceFacade {
     // ========================================================================
 
     /**
-     * Централизованный доступ к {@link ModuleManager}.
+     * Centralized access to {@link ModuleManager}.
      * <pre>ServiceFacade.mm().getModule("MyModule");</pre>
      */
     public static ModuleManager mm() {
@@ -89,7 +89,7 @@ public final class ServiceFacade {
     // ========================================================================
 
     /**
-     * Централизованный доступ к экземпляру плагина.
+     * Centralized access to the plugin instance.
      * <pre>ServiceFacade.plugin().getConfig();</pre>
      */
     public static Main plugin() {
@@ -101,18 +101,18 @@ public final class ServiceFacade {
     // ========================================================================
 
     /**
-     * Централизованный доступ к {@link CheckManager}.
+     * Centralized access to {@link CheckManager}.
      */
     public static CheckManager checks() {
         return CheckManager.getInstance();
     }
 
     // ========================================================================
-    // PERMISSIONS — удобные хелперы
+    // PERMISSIONS — convenience helpers
     // ========================================================================
 
     /**
-     * Проверяет, есть ли у игрока базовое право на команды плагина.
+     * Checks whether the player has the base permission for the plugin's commands.
      */
     public static boolean canUseCommands(Player player) {
         return player.hasPermission("ui");

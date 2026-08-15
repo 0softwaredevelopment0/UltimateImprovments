@@ -17,16 +17,16 @@ import org.bukkit.inventory.ShapedRecipe;
 import java.util.List;
 
 /**
- * Рецепт чанклоадера — очень сложный крафт.
+ * Chunk loader recipe — a very complex craft.
  * <pre>
  *   ╔═══════════╗
  *   ║ N ◆ D ◆ N ║
  *   ║ ◆ E ◆ E ◆ ║
  *   ║ N ◆ D ◆ N ║
  *   ╚═══════════╝
- *   N = Незеритовый блок
- *   D = Алмазный блок
- *   E = Изумрудный блок
+ *   N = Netherite block
+ *   D = Diamond block
+ *   E = Emerald block
  * </pre>
  */
 public class ChunkLoaderCraftListener implements Listener {

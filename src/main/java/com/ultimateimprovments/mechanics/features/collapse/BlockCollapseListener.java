@@ -8,10 +8,10 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 
 /**
- * Слушатель событий блоков для системы обрушения.
+ * Block event listener for the collapse system.
  * <p>
- * Обрабатывает постановку (отслеживание блока + правило 0% липкости),
- * ломание и взрывы (очистка отслеживания).
+ * Handles placement (block tracking + 0% stickiness rule),
+ * breaking and explosions (tracking cleanup).
  */
 public class BlockCollapseListener implements Listener {
 

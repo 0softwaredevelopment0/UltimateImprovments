@@ -21,7 +21,7 @@ public final class ChgDimSubcommand {
                             "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>")));
             return true;
         }
-        // Открываем Custom Screen (Dialog) для ввода названия мира
+        // Open a Custom Screen (Dialog) to enter the world name
         ChgDimDialogScreen.open(player);
         return true;
     }

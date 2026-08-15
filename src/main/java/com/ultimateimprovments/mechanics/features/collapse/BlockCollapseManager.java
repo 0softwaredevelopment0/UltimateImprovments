@@ -80,9 +80,9 @@ public class BlockCollapseManager extends BukkitRunnable {
 
     private final Main plugin;
 
-    // ===== КОНФИГ =====
+    // ===== CONFIG =====
     private boolean enabled = false;
-    /** Множитель формулы: липкость -= heaviness × rate (в секунду). rate=1 → heaviness% в сек. */
+    /** Formula multiplier: stickiness -= heaviness × rate (per second). rate=1 → heaviness% per sec. */
     private double rate = 1.0;
     private int intervalTicks = 20;
     private int saveIntervalSeconds = 600; // 10 min
@@ -91,27 +91,27 @@ public class BlockCollapseManager extends BukkitRunnable {
     private double defaultHeaviness = 5.0;
     private final Map<String, Double> overrides = new HashMap<>();
 
-    // ===== СКАН-КОНФИГ =====
+    // ===== SCAN CONFIG =====
     private boolean scanEnabled = true;
-    private int scanDelaySeconds = 1;        // задержка перед первым сканом
-    private int scanIntervalSeconds = 1;     // одна операция в N секунд (lazy)
-    private int scanArea = 16;               // сторона куба 16x16x16
-    private double scanMaxMspt = 50.0;       // ждать, пока MSPT не упадёт ниже
-    private boolean logBlockActions = false; // логировать каждое действие игрока с блоками
+    private int scanDelaySeconds = 1;        // delay before the first scan
+    private int scanIntervalSeconds = 1;     // one operation every N seconds (lazy)
+    private int scanArea = 16;               // cube side 16x16x16
+    private double scanMaxMspt = 50.0;       // wait until MSPT drops below this
+    private boolean logBlockActions = false; // log every player block action
 
-    // ===== СОСТОЯНИЕ (ОЗУ) =====
-    /** world name → (block key → текущая липкость 0..100). Все отслеживаемые твёрдые блоки. */
+    // ===== STATE (RAM) =====
+    /** world name → (block key → current stickiness 0..100). All tracked solid blocks. */
     private final Map<String, Map<Long, Double>> tracked = new ConcurrentHashMap<>();
-    /** ключи, изменившиеся с прошлого сохранения в БД. */
+    /** keys that changed since the last DB save. */
     private final Set<DirtyKey> dirtyKeys = ConcurrentHashMap.newKeySet();
 
-    /** Очередь сканирований чанков (lazy — одна операция в секунду). */
+    /** Chunk scan queue (lazy — one operation per second). */
     private final ConcurrentLinkedQueue<ScanJob> scanQueue = new ConcurrentLinkedQueue<>();
-    /** Дедупликация: chunk key, уже стоящий в очереди (world|cx|cz). */
+    /** Deduplication: chunk key already queued (world|cx|cz). */
     private final Set<String> queuedChunks = ConcurrentHashMap.newKeySet();
-    /** Поток-исполнитель асинхронного сканирования. */
+    /** Thread executing the async scanning. */
     private ExecutorService scanExecutor;
-    /** Таск, обрабатывающий очередь раз в секунду (main thread). */
+    /** Task processing the queue once per second (main thread). */
     private BukkitTask scanTask;
 
     private int tickCounter = 0;
@@ -193,12 +193,12 @@ public class BlockCollapseManager extends BukkitRunnable {
                 try {
                     overrides.put(key.toUpperCase(Locale.ROOT), ov.getDouble(key));
                 } catch (Exception ignored) {
-                    // невалидное значение — пропускаем
+                    // invalid value — skip
                 }
             }
         }
 
-        // ── Scan-настройки ──
+        // ── Scan settings ──
         logBlockActions = sec.getBoolean("log_block_actions", false);
         ConfigurationSection sc = sec.getConfigurationSection("scan");
         if (sc != null) {
@@ -234,15 +234,15 @@ public class BlockCollapseManager extends BukkitRunnable {
     }
 
     // =========================
-    // СВОЙСТВА БЛОКОВ
+    // BLOCK PROPERTIES
     // =========================
 
-    /** Участвует ли блок в механике: твёрдый блок (цветы и т.п. — нет). */
+    /** Whether a block participates: must be solid (flowers etc. — no). */
     public static boolean isStructural(Material mat) {
         return mat != null && mat != Material.AIR && mat.isBlock() && mat.isSolid();
     }
 
-    /** Тяжесть блока: override из конфига или таблица по названию материала. */
+    /** Block heaviness: config override or a table keyed by material name. */
     public double heaviness(Material mat) {
         Double ov = overrides.get(mat.name());
         if (ov != null) {
@@ -252,8 +252,8 @@ public class BlockCollapseManager extends BukkitRunnable {
     }
 
     /**
-     * Таблица тяжести по названию материала (чем «тяжелее» блок — тем быстрее
-     * тратится липкость). Самое специфичное — раньше.
+     * Heaviness table by material name (the «heavier» the block — the faster
+     * stickiness is spent). Most specific entries come first.
      */
     private double defaultHeaviness(Material mat) {
         String n = mat.name();
@@ -268,8 +268,8 @@ public class BlockCollapseManager extends BukkitRunnable {
         if (n.contains("OBSIDIAN")) return 12;
         if (n.contains("CONCRETE")) return 10;
         if (n.contains("BRICK")) return 9;
-        // Важно: SANDSTONE / END_STONE / REDSTONE содержат подстроку «STONE»,
-        // поэтому 7-группа проверяется ДО правила STONE (8).
+        // Important: SANDSTONE / END_STONE / REDSTONE contain the substring «STONE»,
+        // so group 7 is checked BEFORE the STONE rule (8).
         if (n.contains("SANDSTONE") || n.contains("QUARTZ") || n.contains("TUFF")
                 || n.contains("BASALT") || n.contains("BLACKSTONE") || n.contains("PRISMARINE")
                 || n.contains("PURPUR") || n.contains("END_STONE") || n.contains("GRANITE")
@@ -293,15 +293,15 @@ public class BlockCollapseManager extends BukkitRunnable {
     }
 
     // =========================
-    // СОБЫТИЯ (вызываются из BlockCollapseListener)
+    // EVENTS (called from BlockCollapseListener)
     // =========================
 
-    /** Блок поставлен игроком. */
+    /** A block was placed by a player. */
     public void onBlockPlaced(Block block) {
         if (!enabled || block == null) return;
         if (!isStructural(block.getType())) return;
-        // Функциональные блоки (сундуки, печи, маяки...) не участвуют —
-        // их обрушение потеряло бы инвентарь/данные тил-эннити.
+        // Functional blocks (chests, furnaces, beacons...) don't participate —
+        // collapsing them would lose inventory/tile-entity data.
         if (block.getState() instanceof TileState) return;
 
         String worldName = block.getWorld().getName();
@@ -309,17 +309,17 @@ public class BlockCollapseManager extends BukkitRunnable {
         tracked.computeIfAbsent(worldName, k -> new ConcurrentHashMap<>()).put(key, 100.0);
         dirtyKeys.add(new DirtyKey(worldName, key));
 
-        // Логируем операцию игрока с блоком (если включено в конфиге)
+        // Log the player's block operation (if enabled in config)
         if (logBlockActions) {
             ConsoleLogger.info("[BLOCK_COLLAPSE] PLACE " + worldName
                     + " " + block.getX() + " " + block.getY() + " " + block.getZ()
                     + " " + block.getType().name() + " (queued)");
         }
 
-        // Сканируем область вокруг действия (лениво, в фоне)
+        // Scan the area around the action (lazily, in the background)
         scheduleScan(block.getWorld(), block.getX(), block.getY(), block.getZ());
 
-        // Правило: постановка на грань блока с липкостью 0% → обрушение.
+        // Rule: placing on the edge of a block with 0% stickiness → collapse.
         Block below = block.getWorld().getBlockAt(block.getX(), block.getY() - 1, block.getZ());
         long belowKey = LocationUtil.toKey(below.getLocation());
         Map<Long, Double> map = tracked.get(worldName);
@@ -331,23 +331,23 @@ public class BlockCollapseManager extends BukkitRunnable {
         }
     }
 
-    /** Блок сломан (игроком, взрывом, поршнем и т.п.). */
+    /** A block was broken (by player, explosion, piston, etc.). */
     public void onBlockBroken(Block block) {
         if (!enabled || block == null) return;
         removeTracked(block.getWorld().getName(), LocationUtil.toKey(block.getLocation()));
 
-        // Логируем операцию игрока с блоком (если включено в конфиге)
+        // Log the player's block operation (if enabled in config)
         if (logBlockActions) {
             ConsoleLogger.info("[BLOCK_COLLAPSE] BREAK " + block.getWorld().getName()
                     + " " + block.getX() + " " + block.getY() + " " + block.getZ()
                     + " " + block.getType().name() + " (queued)");
         }
 
-        // Сканируем область вокруг действия (лениво, в фоне)
+        // Scan the area around the action (lazily, in the background)
         scheduleScan(block.getWorld(), block.getX(), block.getY(), block.getZ());
     }
 
-    /** Пакет блоков уничтожен взрывом. */
+    /** A batch of blocks was destroyed by an explosion. */
     public void onBlocksDestroyed(List<Block> blocks) {
         if (!enabled || blocks == null) return;
         for (Block b : blocks) {
@@ -364,23 +364,23 @@ public class BlockCollapseManager extends BukkitRunnable {
     }
 
     // =========================
-    // 🔭 АСИНХРОННОЕ СКАНИРОВАНИЕ ЧАНКОВ (16x16x16 вокруг действия)
+    // 🔭 ASYNC CHUNK SCANNING (16x16x16 around the action)
     // =========================
 
     /**
-     * Ставит чанк в очередь сканирования (дедупликация по world|cx|cz).
-     * Сам скан выполняется в отдельном потоке, лениво — одна операция в секунду.
+     * Queues a chunk for scanning (deduplicated by world|cx|cz).
+     * The scan itself runs on a separate thread, lazily — one operation per second.
      */
     private void scheduleScan(World world, int x, int y, int z) {
         if (!enabled || !scanEnabled || world == null) return;
         int cx = x >> 4;
         int cz = z >> 4;
         String key = world.getName() + "|" + cx + "|" + cz;
-        if (!queuedChunks.add(key)) return; // уже в очереди
+        if (!queuedChunks.add(key)) return; // already queued
         scanQueue.add(new ScanJob(world.getName(), cx, cz, y));
     }
 
-    /** Запускает (или перезапускает) lazy-таск обработки очереди. */
+    /** Starts (or restarts) the lazy queue-processing task. */
     private void startScanTask() {
         stopScanTask();
         if (!enabled || !scanEnabled) return;
@@ -408,11 +408,11 @@ public class BlockCollapseManager extends BukkitRunnable {
         }
     }
 
-    /** Берёт ОДИН чанк из очереди и запускает его async-скан (main thread, дёшево). */
+    /** Takes ONE chunk from the queue and starts its async scan (main thread, cheap). */
     private void processOneScanJob() {
         if (!enabled || !scanEnabled) return;
         if (Bukkit.getAverageTickTime() > scanMaxMspt) {
-            return; // сервер нагружен — ждём, пока MSPT не упадёт ниже порога
+            return; // server is loaded — wait until MSPT drops below the threshold
         }
         ScanJob job = scanQueue.poll();
         if (job == null) return;
@@ -421,15 +421,15 @@ public class BlockCollapseManager extends BukkitRunnable {
         World world = Bukkit.getWorld(job.world());
         if (world == null) return;
 
-        // Не загружаем чанки ради механики: если чанк уже выгрузился (игрок
-        // телепортнулся за 1 сек), скан дропаем — поставленный блок уже
-        // отслеживается напрямую в onBlockPlaced, а при новом действии в этом
-        // чанке скан встанет в очередь заново.
+        // Don't load chunks for the mechanic: if the chunk unloaded (the player
+        // teleported within 1 sec), drop the scan — the placed block is already
+        // tracked directly in onBlockPlaced, and a new action in this chunk
+        // will re-queue the scan.
         if (!world.isChunkLoaded(job.cx(), job.cz())) return;
 
         Chunk chunk = world.getChunkAt(job.cx(), job.cz());
-        // ChunkSnapshot — immutable и thread-safe: собираем на main thread (O(чанк)),
-        // читаем блоки на async thread.
+        // ChunkSnapshot is immutable and thread-safe: build it on the main thread (O(chunk)),
+        // read blocks on the async thread.
         ChunkSnapshot snap = chunk.getChunkSnapshot(true, false, false);
         int cx = job.cx();
         int cz = job.cz();
@@ -439,8 +439,8 @@ public class BlockCollapseManager extends BukkitRunnable {
     }
 
     /**
-     * Async-скан: читает {@link ChunkSnapshot} в отдельном потоке, находит твёрдые
-     * блоки в кубе 16×16×16 вокруг действия и добавляет их в {@code tracked}.
+     * Async scan: reads a {@link ChunkSnapshot} on a separate thread, finds solid
+     * blocks in the 16×16×16 cube around the action and adds them to {@code tracked}.
      */
     private void scanChunkAsync(String worldName, int cx, int cz, int baseY, ChunkSnapshot snap) {
         try {
@@ -459,12 +459,12 @@ public class BlockCollapseManager extends BukkitRunnable {
                     for (int lz = 0; lz < 16; lz++) {
                         Material type = snap.getBlockType(lx, dy, lz);
                         if (!isStructural(type)) continue;
-                        // Пропускаем функциональные блоки (сундуки и т.п.) по типу
+                        // Skip functional blocks (chests etc.) by type
                         if (isFunctionalType(type)) continue;
-                        // Оптимизация: отслеживаем ТОЛЬКО блоки без опоры снизу —
-                        // именно они могут тратить липкость и обрушиться. Блоки с
-                        // опорой (натуральный грунт) в tick всё равно пропускаются
-                        // (below.isSolid()), поэтому в память их не берём.
+                        // Optimization: track ONLY blocks without support below —
+                        // only they can spend stickiness and collapse. Blocks with
+                        // support (natural ground) are skipped in tick anyway
+                        // (below.isSolid()), so we don't keep them in memory.
                         if (dy > world.getMinHeight()) {
                             Material below = snap.getBlockType(lx, dy - 1, lz);
                             if (below.isSolid()) continue;
@@ -476,26 +476,26 @@ public class BlockCollapseManager extends BukkitRunnable {
 
             if (found.isEmpty()) return;
 
-            // Возвращаем результат на main thread
+            // Return the result to the main thread
             Bukkit.getScheduler().runTask(plugin, () -> applyScanResults(worldName, found));
         } catch (Throwable t) {
             ConsoleLogger.warn("[BLOCK_COLLAPSE] Async scan error: " + t.getMessage());
         }
     }
 
-    /** Применяет результаты скана на main thread: добавляет новые блоки в tracked. */
+    /** Applies scan results on the main thread: adds new blocks to tracked. */
     private void applyScanResults(String worldName, List<long[]> found) {
         if (!enabled) return;
         Map<Long, Double> map = tracked.computeIfAbsent(worldName, k -> new ConcurrentHashMap<>());
         for (long[] pos : found) {
             long key = LocationUtil.toKey((int) pos[0], (int) pos[1], (int) pos[2]);
-            if (map.containsKey(key)) continue; // уже отслеживается
+            if (map.containsKey(key)) continue; // already tracked
             map.put(key, 100.0);
             dirtyKeys.add(new DirtyKey(worldName, key));
         }
     }
 
-    /** Функциональные материалы, которые нельзя обрушивать (инвентарь/тил-эннити). */
+    /** Functional materials that must not collapse (inventory/tile-entities). */
     private static boolean isFunctionalType(Material mat) {
         String n = mat.name();
         return n.contains("CHEST") || n.contains("SHULKER_BOX") || n.contains("BARREL")
@@ -512,7 +512,7 @@ public class BlockCollapseManager extends BukkitRunnable {
     }
 
     // =========================
-    // TICK — трата липкости + обрушения
+    // TICK — stickiness drain + collapses
     // =========================
 
     @Override
@@ -533,31 +533,31 @@ public class BlockCollapseManager extends BukkitRunnable {
                 int y = LocationUtil.getY(key);
                 int z = LocationUtil.getZ(key);
 
-                // Не загружаем чанки ради механики — пропускаем выгруженные
+                // Don't load chunks for the mechanic — skip unloaded ones
                 if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
 
                 Block block = world.getBlockAt(x, y, z);
                 Material type = block.getType();
                 if (type == Material.AIR || !type.isSolid()) {
-                    // блок исчез без BlockBreakEvent (взрыв и т.п.) — самоочистка
+                    // block disappeared without BlockBreakEvent (explosion etc.) — self-cleanup
                     we.getValue().remove(key);
                     deleteFromDb(worldName, key);
                     dirtyKeys.remove(new DirtyKey(worldName, key));
                     continue;
                 }
 
-                // Опора: твёрдый блок прямо снизу (вертикальная, как у подмостков)
+                // Support: a solid block directly below (vertical, like scaffolding)
                 Block below = world.getBlockAt(x, y - 1, z);
                 if (below.getType().isSolid()) {
-                    continue; // есть опора — липкость не тратится
+                    continue; // has support — stickiness is not spent
                 }
 
                 double heavy = heaviness(type);
                 double drain = heavy * rate * (intervalTicks / 20.0);
                 double next = e.getValue() - drain;
                 if (next <= 0) {
-                    // Фиксируем 0 в карте, чтобы collapseColumn корректно определял
-                    // границу каскада (лом только блоки с липкостью == 0).
+                    // Pin 0 in the map so collapseColumn correctly determines
+                    // the cascade boundary (only breaks blocks with stickiness == 0).
                     e.setValue(0.0);
                     dirtyKeys.add(new DirtyKey(worldName, key));
                     collapseWorlds.add(worldName);
@@ -569,7 +569,7 @@ public class BlockCollapseManager extends BukkitRunnable {
             }
         }
 
-        // Обрабатываем обрушения ПОСЛЕ итерации (избегаем ConcurrentModification)
+        // Process collapses AFTER the iteration (avoids ConcurrentModification)
         for (int i = 0; i < collapsePos.size(); i++) {
             World world = Bukkit.getWorld(collapseWorlds.get(i));
             if (world == null) continue;
@@ -577,14 +577,14 @@ public class BlockCollapseManager extends BukkitRunnable {
             collapseColumn(world, (int) c[0], (int) c[1], (int) c[2]);
         }
 
-        // Периодический лор-скан инвентарей (контент-осознанный: только когда надо)
+        // Periodic lore scan of inventories (content-aware: only when needed)
         tickCounter++;
         int loreEvery = Math.max(1, loreIntervalTicks / Math.max(1, intervalTicks));
         if (loreEnabled && tickCounter % loreEvery == 0) {
             scanLore();
         }
 
-        // Периодическое сохранение в БД (по умолчанию — раз в 10 минут)
+        // Periodic DB save (default: every 10 minutes)
         int saveEvery = Math.max(1, (saveIntervalSeconds * 20) / Math.max(1, intervalTicks));
         if (tickCounter % saveEvery == 0) {
             saveDirty();
@@ -592,10 +592,10 @@ public class BlockCollapseManager extends BukkitRunnable {
     }
 
     /**
-     * Обрушение вертикальной колонны вверх: блок и все блоки с липкостью 0%
-     * над ним падают предметами (как будто добыты незеритовым инструментом).
-     * <p>Каскад останавливается на первом блоке с липкостью &gt; 0 (он ещё
-     * держится и не ломается) или на неотслеживаемом блоке (натуральный камень).
+     * Collapses a vertical column upward: the block and all blocks with 0%
+     * stickiness above it drop as items (as if mined with a netherite tool).
+     * <p>The cascade stops at the first block with stickiness &gt; 0 (it still
+     * holds and doesn't break) or at an untracked block (natural stone).
      */
     private void collapseColumn(World world, int x, int y, int z) {
         String worldName = world.getName();
@@ -606,9 +606,9 @@ public class BlockCollapseManager extends BukkitRunnable {
         while (map != null && guard++ < 512) {
             long key = LocationUtil.toKey(x, cy, z);
             Double stick = map.get(key);
-            // Стоп-условия каскада:
-            //  • блок не отслеживается (натуральный камень/опора) — не трогаем;
-            //  • липкость > 0 — блок ещё держится, ломаем только блоки с 0%.
+            // Cascade stop conditions:
+            //  • block not tracked (natural stone/support) — don't touch it;
+            //  • stickiness > 0 — block still holds, only break blocks at 0%.
             if (stick == null || stick > 0) {
                 break;
             }
@@ -634,7 +634,7 @@ public class BlockCollapseManager extends BukkitRunnable {
         }
     }
 
-    /** Дропы при обрушении: как будто блок добыли незеритовым инструментом. */
+    /** Drops on collapse: as if the block was mined with a netherite tool. */
     private List<ItemStack> collapseDrops(Block block) {
         Material type = block.getType();
         try {
@@ -643,10 +643,10 @@ public class BlockCollapseManager extends BukkitRunnable {
                 return new ArrayList<>(drops);
             }
         } catch (Throwable ignored) {
-            // API недоступен — fallback ниже
+            // API unavailable — fallback below
         }
-        // Если блок ничего не дропает без шёлкового касания (стекло и т.п.) —
-        // отдаём сам блок.
+        // If the block drops nothing without silk touch (glass etc.) —
+        // give the block itself.
         return List.of(new ItemStack(type, 1));
     }
 
@@ -668,7 +668,7 @@ public class BlockCollapseManager extends BukkitRunnable {
     }
 
     // =========================
-    // LORE — «Stickiness/Heaviness» в описании блочного предмета
+    // LORE — «Stickiness/Heaviness» in the block item's description
     // =========================
 
     private void scanLore() {
@@ -684,8 +684,8 @@ public class BlockCollapseManager extends BukkitRunnable {
                 if (meta == null) continue;
 
                 var pdc = meta.getPersistentDataContainer();
-                // Миграция старых предметов: убираем устаревшую строку «Stickiness»
-                // из лора даже если PDC-тег уже проставлен (раньше показывались обе).
+                // Migration of old items: remove the outdated «Stickiness» line
+                // from the lore even if the PDC tag is already set (both used to show).
                 List<Component> lore = meta.hasLore() ? new ArrayList<>(meta.lore()) : new ArrayList<>();
                 boolean cleaned = lore.removeIf(c -> plainText(c).contains("Stickiness:"));
 
@@ -696,12 +696,12 @@ public class BlockCollapseManager extends BukkitRunnable {
                     }
                     continue;
                 }
-                // Не трогаем кастомные предметы плагина (у них есть PDC-теги)
+                // Don't touch the plugin's custom items (they have PDC tags)
                 if (!pdc.isEmpty()) continue;
 
                 double heavy = heaviness(type);
-                // В лоре показываем только тяжесть — липкость у всех блоков всегда 100
-                // (тратится по формуле heaviness% в секунду при отсутствии опоры).
+                // Only show heaviness in the lore — all blocks always have stickiness 100
+                // (spent as heaviness% per second when unsupported).
                 lore.add(MessageUtil.parse("<gray>Heaviness: <yellow>" + formatHeaviness(heavy) + "</yellow></gray>"));
                 meta.lore(lore);
                 pdc.set(Keys.BLOCK_COLLAPSE_TAG, PersistentDataType.DOUBLE, heavy);
@@ -717,13 +717,13 @@ public class BlockCollapseManager extends BukkitRunnable {
         return String.format(Locale.ROOT, "%.1f", h);
     }
 
-    /** Простой текст Adventure-компонента (для поиска устаревших строк лора). */
+    /** Plain text of an Adventure component (for finding outdated lore lines). */
     private static String plainText(Component c) {
         return c == null ? "" : PlainTextComponentSerializer.plainText().serialize(c);
     }
 
     // =========================
-    // 💾 БД (периодический сброс + при шатдауне)
+    // 💾 DB (periodic flush + on shutdown)
     // =========================
 
     private void loadFromDb() {
@@ -761,7 +761,7 @@ public class BlockCollapseManager extends BukkitRunnable {
                 Map<Long, Double> map = tracked.get(dk.world());
                 if (map == null) continue;
                 Double stick = map.get(dk.key());
-                if (stick == null) continue; // блок удалён за это время
+                if (stick == null) continue; // block removed in the meantime
 
                 st.setString(1, dk.world());
                 st.setInt(2, LocationUtil.getX(dk.key()));
@@ -793,9 +793,9 @@ public class BlockCollapseManager extends BukkitRunnable {
         }
     }
 
-    /** Ключ «изменился с прошлого сохранения»: мир + координаты блока. */
+    /** «Changed since last save» key: world + block coordinates. */
     private record DirtyKey(String world, long key) {}
 
-    /** Задача сканирования чанка: мир + координаты чанка + Y действия игрока. */
+    /** Chunk scan task: world + chunk coordinates + Y of the player's action. */
     private record ScanJob(String world, int cx, int cz, int baseY) {}
 }

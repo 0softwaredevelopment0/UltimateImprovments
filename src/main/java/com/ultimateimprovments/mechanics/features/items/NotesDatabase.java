@@ -11,8 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Работа с таблицей notes в SQLite.
- * Хранит заметки игроков: player_uuid + slot_number → content.
+ * Works with the notes table in SQLite.
+ * Stores player notes: player_uuid + slot_number → content.
  */
 public class NotesDatabase {
 
@@ -25,9 +25,9 @@ public class NotesDatabase {
     private static final Map<UUID, Long> lastSaveTimes = new ConcurrentHashMap<>();
 
     /**
-     * Проверяет, прошло ли 5 секунд с последнего сохранения для игрока.
-     * Если прошло — обновляет время и возвращает true (можно сохранять).
-     * Если нет — возвращает false (сохранение отклонено).
+     * Checks whether 5 seconds passed since the player's last save.
+     * If so — updates the time and returns true (save allowed).
+     * Otherwise — returns false (save rejected).
      */
     static boolean checkSaveCooldown(UUID playerUuid) {
         long now = System.currentTimeMillis();

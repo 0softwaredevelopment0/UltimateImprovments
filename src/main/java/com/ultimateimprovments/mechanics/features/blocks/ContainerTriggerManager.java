@@ -18,18 +18,18 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * Конфигурируемая система: если в контейнере (сундук, бочка и т.д.) на заданных
- * координатах есть предметы — указанные блоки начинают моргать заданным
- * BlockState-свойством с настраиваемой скоростью.
+ * Configurable system: if a container (chest, barrel, etc.) at the given
+ * coordinates has items — the specified blocks start blinking the given
+ * BlockState property at a configurable speed.
  * <p>
- * Когда контейнер пуст — блоки возвращаются в off-value состояние.
+ * When the container is empty — the blocks return to the off-value state.
  */
 public class ContainerTriggerManager extends BukkitRunnable {
 
     private static ContainerTriggerManager instance;
 
     // =========================
-    // ⚙ КОНФИГУРАЦИЯ
+    // ⚙ CONFIGURATION
     // =========================
     private static boolean enabled = true;
     private static int intervalTicks = 1;
@@ -172,7 +172,7 @@ public class ContainerTriggerManager extends BukkitRunnable {
     }
 
     // =========================
-    // RUN (периодическая задача)
+    // RUN (periodic task)
     // =========================
     @Override
     public void run() {
@@ -189,7 +189,7 @@ public class ContainerTriggerManager extends BukkitRunnable {
                         new Location(sourceWorld, trigger.sourceX, trigger.sourceY, trigger.sourceZ));
                 if (sourceLoc == null) continue;
 
-                // Проверка загрузки чанка
+                // Check chunk load
                 if (!sourceWorld.isChunkLoaded(sourceLoc.getBlockX() >> 4, sourceLoc.getBlockZ() >> 4)) continue;
 
                 Block sourceBlock = sourceLoc.getBlock();
@@ -262,9 +262,9 @@ public class ContainerTriggerManager extends BukkitRunnable {
         BlockData data = block.getBlockData();
         String dataStr = data.getAsString();
 
-        // Формат: "minecraft:block_type[prop1=val1,prop2=val2]"
-        // Ищем "property=currentValue" и заменяем на "property=newValue"
-        // property уже приведён к lowercase при загрузке конфига
+        // Format: "minecraft:block_type[prop1=val1,prop2=val2]"
+        // Find "property=currentValue" and replace with "property=newValue"
+        // property is already lowercased when loading the config
         String searchPattern = property + "=";
         int propStart = dataStr.indexOf(searchPattern);
         if (propStart == -1) {
@@ -290,7 +290,7 @@ public class ContainerTriggerManager extends BukkitRunnable {
 
         try {
             BlockData newData = Bukkit.createBlockData(newDataStr);
-            block.setBlockData(newData, false); // false = без физического обновления
+            block.setBlockData(newData, false); // false = no physics update
         } catch (Exception e) {
             // Invalid block data string — block type may not support this property/value
         }

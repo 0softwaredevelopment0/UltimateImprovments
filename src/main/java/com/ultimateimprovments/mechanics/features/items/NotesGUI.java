@@ -22,27 +22,27 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * GUI заметок: двойной сундук (54 слота) с книгами-заметками.
- * Каждая книга = одна заметка, хранится в БД через NotesDatabase.
+ * Notes GUI: a double chest (54 slots) with note books.
+ * Each book = one note, stored in the DB via NotesDatabase.
  */
 public class NotesGUI {
 
     public static final String GUI_TITLE = "Ваши заметки";
     public static final int GUI_SIZE = 54;
 
-    // Игроки, у которых открыт GUI заметок
+    // Players with the notes GUI open
     static final Set<UUID> openPlayers = ConcurrentHashMap.newKeySet();
-    // Игроки, которые сейчас редактируют книгу (UUID → номер заметки)
+    // Players currently editing a book (UUID → note number)
     static final Map<UUID, Integer> editingSlots = new ConcurrentHashMap<>();
-    // Игроки в процессе перехода из главного GUI в редактор книги
+    // Players transitioning from the main GUI into the book editor
     static final Set<UUID> transitioningToBook = ConcurrentHashMap.newKeySet();
-    // Предметы, которые были в руке до открытия редактора — восстанавливаем после Done/Quit
+    // Items held before opening the editor — restored after Done/Quit
     static final Map<UUID, ItemStack> pendingRestores = new ConcurrentHashMap<>();
 
     private NotesGUI() {}
 
     // =========================
-    // OPEN MAIN GUI (54 слота)
+    // OPEN MAIN GUI (54 slots)
     // =========================
     public static void openMainGUI(Player player) {
         UUID uuid = player.getUniqueId();
@@ -65,8 +65,8 @@ public class NotesGUI {
         String content = NotesDatabase.loadNote(uuid, noteNumber);
         boolean hasText = content != null && !content.isEmpty();
 
-        // Текстура: заметка с текстом — обычная книга (written_book), пустая — книга с пером.
-        // Клик по любой всё равно открывает редактор (writable_book).
+        // Texture: a note with text — a written book, empty — a book and quill.
+        // Clicking either still opens the editor (writable_book).
         ItemStack book = new ItemStack(hasText ? Materials.WRITTEN_BOOK : Materials.WRITABLE_BOOK);
         BookMeta meta = (BookMeta) book.getItemMeta();
         if (meta == null) return book;
@@ -95,11 +95,11 @@ public class NotesGUI {
     }
 
     // =========================
-    // OPEN BOOK EDITOR — через ClientboundOpenBookPacket (1.21.4+)
+    // OPEN BOOK EDITOR — via ClientboundOpenBookPacket (1.21.4+)
     //
-    // ⚠ В Paper 1.21.x установка страниц через BookMeta.setPages() на WRITABLE_BOOK
-    //    может привести к открытию книги как read-only (completed book).
-    //    Используем NBT напрямую, чтобы обойти это поведение.
+    // ⚠ In Paper 1.21.x setting pages via BookMeta.setPages() on a WRITABLE_BOOK
+    //    can open the book as read-only (completed book).
+    //    We use NBT directly to bypass this behavior.
     // =========================
     public static void openBookEditor(Player player, int noteNumber) {
         UUID uuid = player.getUniqueId();
@@ -107,8 +107,8 @@ public class NotesGUI {
 
         ItemStack book = new ItemStack(Materials.WRITABLE_BOOK);
 
-        // ⚡ В Paper 1.21.4+ BookMeta.setPages() на WRITABLE_BOOK вызывает read-only баг.
-        // Используем Data Component API напрямую через NMS: WritableBookContent + DataComponents.
+        // ⚡ In Paper 1.21.4+ BookMeta.setPages() on WRITABLE_BOOK triggers a read-only bug.
+        // We use the Data Component API directly via NMS: WritableBookContent + DataComponents.
         String content = NotesDatabase.loadNote(uuid, noteNumber);
         try {
             net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(book);
@@ -119,7 +119,7 @@ public class NotesGUI {
                     pagesList.add(Filterable.passThrough(page));
                 }
             } else {
-                // Пустая заметка: одна пустая страница, чтобы книга открылась для редактирования
+                // Empty note: one empty page so the book opens for editing
                 pagesList.add(Filterable.passThrough(""));
             }
 
@@ -132,27 +132,27 @@ public class NotesGUI {
                 ConsoleLogger.warn("[Notes] NMS→Bukkit conversion failed — opening empty editor for note #" + noteNumber);
             }
         } catch (Throwable e) {
-            // Fallback: если Data Component API не сработал — открываем пустую книгу
-            // (контент сохранится в БД при Done и будет виден в главном GUI через lore)
+            // Fallback: if the Data Component API failed — open an empty book
+            // (content saves to the DB on Done and shows in the main GUI lore)
         }
 
-        // В Paper 26.x (1.21.4+):
-        // - player.openBook() требует WRITTEN_BOOK, не работает для WRITABLE_BOOK
-        // - NMS методы openItemGui/openBook могли измениться
-        // - Правильный способ: временно поместить книгу в руку игроку
-        //   и отправить ClientboundOpenBookPacket на плеер
+        // In Paper 26.x (1.21.4+):
+        // - player.openBook() requires WRITTEN_BOOK, doesn't work for WRITABLE_BOOK
+        // - NMS methods openItemGui/openBook may have changed
+        // - The correct way: temporarily put the book in the player's hand
+        //   and send ClientboundOpenBookPacket to the player
 
-        // ⚠ НЕ восстанавливаем старый предмет сразу — он нужен в руке,
-        // чтобы когда игрок нажмёт "Done", сервер нашёл книгу в слоте main hand
-        // и вызвал PlayerEditBookEvent. Иначе сервер не найдёт книгу и
-        // заметка не сохранится (ServerboundEditBookPacket будет проигнорирован).
-        // Старый предмет восстановится в onBookEdit (или onPlayerQuit для очистки).
+        // ⚠ Do NOT restore the old item right away — it must stay in hand so that
+        // when the player clicks "Done", the server finds the book in the main hand
+        // slot and fires PlayerEditBookEvent. Otherwise the server won't find the book
+        // and the note won't save (ServerboundEditBookPacket gets ignored).
+        // The old item gets restored in onBookEdit (or onPlayerQuit for cleanup).
 
-        // Если был предыдущий pending (игрок вышел из книги через Escape
-        // без Done), восстанавливаем его прежде чем перезаписать — иначе
-        // оригинальный предмет будет безвозвратно потерян.
-        // ВНИМАНИЕ: не вызываем restorePending() — он чистит editingSlots
-        // и transitioningToBook, которые уже установлены для текущего открытия!
+        // If there was a previous pending (the player left the book via Escape
+        // without Done), restore it before overwriting — otherwise the
+        // original item is lost forever.
+        // WARNING: don't call restorePending() — it clears editingSlots
+        // and transitioningToBook, which are already set for the current opening!
         ItemStack oldPending = pendingRestores.remove(uuid);
         if (oldPending != null && player.isOnline()) {
             player.getInventory().setItemInMainHand(oldPending);
@@ -162,29 +162,29 @@ public class NotesGUI {
         pendingRestores.put(uuid, oldMainHand);
 
         try {
-            // Кладём книгу в main hand
+            // Put the book in the main hand
             player.getInventory().setItemInMainHand(book);
 
-            // Способ 1: ClientboundOpenBookPacket (Paper 26.x / 1.21.4+)
+            // Method 1: ClientboundOpenBookPacket (Paper 26.x / 1.21.4+)
             if (openBookViaPacket(player)) {
                 return;
             }
 
-            // Способ 2: NMS openItemGui/openBook через reflection (старые версии)
+            // Method 2: NMS openItemGui/openBook via reflection (older versions)
             if (openBookViaNmsReflection(player, book)) {
                 return;
             }
 
-            // Способ 3: Paper API fallback (совсем старые версии, где это работало)
+            // Method 3: Paper API fallback (very old versions where this worked)
             try {
                 player.openBook(book);
             } catch (Exception ignored) {
-                // Ни один способ не сработал — чистим состояние
+                // No method worked — clean up the state
                 restorePending(player, uuid);
             }
 
         } catch (Exception e) {
-            // При любой ошибке чистим состояние
+            // On any error clean up the state
             restorePending(player, uuid);
             try {
                 player.openBook(book);
@@ -193,9 +193,9 @@ public class NotesGUI {
     }
 
     /**
-     * NMS → Bukkit конвертация. {@code CraftItemStack.asBukkitCopy} стал private
-     * в Leaf 26.2, поэтому вызываем его через reflection (паттерн используется
-     * во всём плагине). Возвращает null при любой ошибке.
+     * NMS → Bukkit conversion. {@code CraftItemStack.asBukkitCopy} became private
+     * in Leaf 26.2, so we call it via reflection (a pattern used across the
+     * whole plugin). Returns null on any error.
      */
     private static ItemStack nmsToBukkit(net.minecraft.world.item.ItemStack nms) {
         try {
@@ -209,7 +209,7 @@ public class NotesGUI {
     }
 
     /**
-     * Восстанавливает старый предмет в руку и чистит pending-состояние.
+     * Restores the old item to hand and clears the pending state.
      */
     static void restorePending(Player player, UUID uuid) {
         ItemStack old = pendingRestores.remove(uuid);
@@ -221,8 +221,8 @@ public class NotesGUI {
     }
 
     /**
-     * Способ 1: ClientboundOpenBookPacket (Paper 26.x / 1.21.4+).
-     * Книга уже должна быть в руке игрока.
+     * Method 1: ClientboundOpenBookPacket (Paper 26.x / 1.21.4+).
+     * The book must already be in the player's hand.
      */
     private static boolean openBookViaPacket(Player player) {
         try {
@@ -235,7 +235,7 @@ public class NotesGUI {
     }
 
     /**
-     * Способ 2: NMS openItemGui / openBook через reflection.
+     * Method 2: NMS openItemGui / openBook via reflection.
      */
     private static boolean openBookViaNmsReflection(Player player, ItemStack book) {
         try {

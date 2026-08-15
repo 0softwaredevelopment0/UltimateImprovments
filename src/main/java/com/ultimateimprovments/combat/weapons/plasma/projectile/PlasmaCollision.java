@@ -8,7 +8,7 @@ public class PlasmaCollision {
     private PlasmaCollision() {}
 
     /**
-     * Проверяет, защищен ли владелец от собственного снаряда
+     * Checks whether the owner is protected from their own projectile
      */
     public static boolean isOwnerProtected(
             Entity entity,

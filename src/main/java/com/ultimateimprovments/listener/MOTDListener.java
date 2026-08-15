@@ -18,15 +18,15 @@ import java.util.Random;
 import java.util.UUID;
 
 /**
- * Обработчик ServerListPingEvent — кастомный MOTD, иконка, список игроков и счётчик онлайна.
+ * ServerListPingEvent handler — custom MOTD, icon, player list and online counter.
  * <p>
- * Конфигурация в config.yml → секция motd:
+ * Configured in config.yml → the motd section:
  * <ul>
- *   <li>enabled — вкл/выкл MOTD</li>
- *   <li>line1 / line2 — текст MOTD (MiniMessage)</li>
- *   <li>icon_enabled — показывать ли motd.png</li>
- *   <li>player_list — кастомные строки вместо списка игроков</li>
- *   <li>online_counter — управление счётчиком X/Y (normal/hide/fixed/percent/add/random)</li>
+ *   <li>enabled — toggle the MOTD on/off</li>
+ *   <li>line1 / line2 — MOTD text (MiniMessage)</li>
+ *   <li>icon_enabled — whether to show motd.png</li>
+ *   <li>player_list — custom lines instead of the player list</li>
+ *   <li>online_counter — controlling the X/Y counter (normal/hide/fixed/percent/add/random)</li>
  * </ul>
  */
 public class MOTDListener implements Listener {
@@ -36,7 +36,7 @@ public class MOTDListener implements Listener {
     private CachedServerIcon cachedIcon;
     private boolean iconLoaded = false;
 
-    // ── Random counter caching (независимо для online и max) ──
+    // ── Random counter caching (independent for online and max) ──
     private long lastRandomUpdateOnline = 0;
     private long lastRandomUpdateMax = 0;
     private int cachedRandomOnline = 0;
@@ -47,8 +47,8 @@ public class MOTDListener implements Listener {
     }
 
     /**
-     * Загружает иконку motd.png из папки плагина.
-     * Можно вызвать повторно для перезагрузки (например при /ui reload).
+     * Loads the motd.png icon from the plugin folder.
+     * Can be called again to reload (e.g. on /ui reload).
      */
     public void loadIcon() {
         File iconFile = new File(Main.getInstance().getDataFolder(), "motd.png");
@@ -124,7 +124,7 @@ public class MOTDListener implements Listener {
     }
 
     // =========================================================
-    //  CUSTOM PLAYER LIST  (кастомные строки вместо ников)
+    //  CUSTOM PLAYER LIST  (custom lines instead of nicknames)
     // =========================================================
 
     private void applyPlayerList(PaperServerListPingEvent event, FileConfiguration config) {
@@ -136,9 +136,9 @@ public class MOTDListener implements Listener {
         List<PaperServerListPingEvent.ListedPlayerInfo> sample = event.getListedPlayers();
         sample.clear();
         for (String line : lines) {
-            // Конвертируем MiniMessage в plain text (без цветовых кодов)
+            // Convert MiniMessage to plain text (without color codes)
             String plain = MessageUtil.toPlainText(line);
-            // Обрезаем до 16 символов (лимит Minecraft на длину ника)
+            // Trim to 16 characters (Minecraft's nick length limit)
             if (plain.length() > 16) {
                 plain = plain.substring(0, 16);
             }
@@ -147,14 +147,14 @@ public class MOTDListener implements Listener {
     }
 
     // =========================================================
-    //  ONLINE COUNTER (режимы: normal, hide, fixed, percent, add, random)
+    //  ONLINE COUNTER (modes: normal, hide, fixed, percent, add, random)
     // =========================================================
 
     private void applyOnlineCounter(PaperServerListPingEvent event, FileConfiguration config) {
         int realOnline = Bukkit.getOnlinePlayers().size();
 
         // ═════════════════════════════════════════════════════
-        //  CURRENT ONLINE  (X в "X/Y")
+        //  CURRENT ONLINE  (X in "X/Y")
         // ═════════════════════════════════════════════════════
         int count = applyCounterSection(
                 config,
@@ -163,7 +163,7 @@ public class MOTDListener implements Listener {
         );
 
         // ═════════════════════════════════════════════════════
-        //  MAX ONLINE  (Y в "X/Y")
+        //  MAX ONLINE  (Y in "X/Y")
         // ═════════════════════════════════════════════════════
         int max = applyCounterSection(
                 config,
@@ -176,12 +176,12 @@ public class MOTDListener implements Listener {
     }
 
     /**
-     * Универсальный метод для применения режима счётчика к одному значению.
+     * Universal method for applying a counter mode to a single value.
      *
-     * @param config     конфиг
-     * @param basePath   путь в конфиге (например "motd.online_counter.current_online")
-     * @param realValue  реальное значение (онлайн или макс)
-     * @return вычисленное значение
+     * @param config     the config
+     * @param basePath   the config path (e.g. "motd.online_counter.current_online")
+     * @param realValue  the real value (online or max)
+     * @return the computed value
      */
     private int applyCounterSection(FileConfiguration config, String basePath, int realValue) {
         String mode = config.getString(basePath + ".mode", "normal");
@@ -198,15 +198,15 @@ public class MOTDListener implements Listener {
     }
 
     /**
-     * Кэшированное рандомное значение для секции счётчика.
-     * Каждая секция (current_online / max_online) имеет свой таймер и кэш.
+     * Cached random value for a counter section.
+     * Each section (current_online / max_online) has its own timer and cache.
      */
     private int getCachedRandom(FileConfiguration config, String basePath) {
         long now = System.currentTimeMillis();
         int intervalTicks = Math.max(1, config.getInt(basePath + ".update_interval_ticks", 100));
         long intervalMs = intervalTicks * 50L;
 
-        // Определяем, какая это секция по пути, чтобы использовать свой кэш
+        // Determine which section this is by path, to use its own cache
         boolean isMax = basePath.contains("max_online");
         long lastUpdate = isMax ? lastRandomUpdateMax : lastRandomUpdateOnline;
         int cachedValue = isMax ? cachedRandomMax : cachedRandomOnline;

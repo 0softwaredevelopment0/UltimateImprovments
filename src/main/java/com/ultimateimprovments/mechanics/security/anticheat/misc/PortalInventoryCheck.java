@@ -9,8 +9,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
 /**
- * PortalInventory — взаимодействие с инвентарём в портале (невозможно в ванилле).
- * Детекция: клик в инвентаре, находясь в незерском портале.
+ * PortalInventory — interacting with the inventory inside a portal (impossible in vanilla).
+ * Detection: clicking the inventory while standing in a nether portal.
  */
 public class PortalInventoryCheck extends AbstractCheck {
 

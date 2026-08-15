@@ -18,20 +18,20 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * 🛡 PunishmentManager — система наказаний (бан/мут/кик/варн).
+ * 🛡 PunishmentManager — punishment system (ban/mute/kick/warn).
  * <p>
- * Поддерживает флаги:
+ * Supported flags:
  * <ul>
- *   <li>{@code -time:<N>s|m|h|d} — временное наказание</li>
- *   <li>{@code -permanent} — перманентное наказание</li>
- *   <li>{@code -ip} — наказание по IP</li>
- *   <li>{@code -hw} — наказание по железу (IP + хост)</li>
+ *   <li>{@code -time:<N>s|m|h|d} — temporary punishment</li>
+ *   <li>{@code -permanent} — permanent punishment</li>
+ *   <li>{@code -ip} — punishment by IP</li>
+ *   <li>{@code -hw} — punishment by hardware (IP + host)</li>
  * </ul>
  * <p>
- * -ip и -hw несовместимы. -time и -permanent несовместимы.
+ * -ip and -hw are incompatible. -time and -permanent are incompatible.
  * <p>
- * HW ID = SHA256(IP + имя_игрока), что позволяет банить "железо"
- * независимо от аккаунта.
+ * HW ID = SHA256(IP + player_name), which allows banning "hardware"
+ * regardless of the account.
  */
 public class PunishmentManager {
 
@@ -46,7 +46,7 @@ public class PunishmentManager {
     // =========================
 
     /**
-     * Вычисляет HW ID для игрока: SHA256(IP + имя + соль).
+     * Computes a player's HW ID: SHA256(IP + name + salt).
      */
     public static String computeHwId(String ip, String playerName) {
         try {
@@ -71,10 +71,10 @@ public class PunishmentManager {
     // =========================
 
     /**
-     * Парсит флаг времени. Возвращает unix timestamp истечения (millis) или 0 если permanent.
+     * Parses the time flag. Returns the expiration unix timestamp (millis) or 0 if permanent.
      *
-     * @param timeStr строка вида "30s", "5m", "2h", "7d"
-     * @return unixMillis истечения, 0 если ошибка
+     * @param timeStr a string like "30s", "5m", "2h", "7d"
+     * @return the expiration unixMillis, 0 on error
      */
     public static long parseTimeFlag(String timeStr) {
         if (timeStr == null || timeStr.isEmpty()) return 0;
@@ -111,21 +111,21 @@ public class PunishmentManager {
     }
 
     // =========================
-    // PUNISH — общий метод
+    // PUNISH — common method
     // =========================
 
     /**
-     * Применяет наказание к игроку.
+     * Applies a punishment to a player.
      *
-     * @param type      тип наказания
-     * @param targetUuid  UUID цели
-     * @param targetName  имя цели
-     * @param reason      причина
-     * @param punisher    кто наказывает
-     * @param expiresAt   unixMillis истечения (0 = permanent)
-     * @param ip          IP для IP-бана (null если не IP)
-     * @param hwId        HW ID для HW-бана (null если не HW)
-     * @return true если успешно
+     * @param type      punishment type
+     * @param targetUuid  target UUID
+     * @param targetName  target name
+     * @param reason      the reason
+     * @param punisher    who punishes
+     * @param expiresAt   expiration unixMillis (0 = permanent)
+     * @param ip          the IP for an IP-ban (null if not IP)
+     * @param hwId        the HW ID for an HW-ban (null if not HW)
+     * @return true on success
      */
     public static boolean punish(PunishType type, String targetUuid, String targetName,
                                   String reason, String punisher, long expiresAt,
@@ -163,14 +163,14 @@ public class PunishmentManager {
     // =========================
 
     /**
-     * Проверяет, есть ли активное наказание данного типа для игрока.
-     * Проверяет по UUID, а если указан IP/HW — то и по ним.
+     * Checks whether the player has an active punishment of the given type.
+     * Checks by UUID, and if IP/HW are given — by those as well.
      *
-     * @param type     тип наказания
-     * @param uuid     UUID игрока
-     * @param ip       IP игрока (может быть null)
-     * @param hwId     HW ID игрока (может быть null)
-     * @return запись о наказании или null
+     * @param type     the punishment type
+     * @param uuid     the player UUID
+     * @param ip       the player IP (may be null)
+     * @param hwId     the player HW ID (may be null)
+     * @return the punishment record or null
      */
     public static PunishmentRecord getActivePunishment(PunishType type, String uuid,
                                                         String ip, String hwId) {
@@ -218,14 +218,14 @@ public class PunishmentManager {
     }
 
     // =========================
-    // UNPUNISH (снять наказание)
+    // UNPUNISH (remove a punishment)
     // =========================
 
     /**
-     * Деактивирует все активные наказания данного типа для UUID/IP/HW.
-     * Если uuid начинается с "offline:" — также ищет по имени игрока.
+     * Deactivates all active punishments of the given type for UUID/IP/HW.
+     * If uuid starts with "offline:" — also searches by player name.
      *
-     * @param playerName имя игрока (используется для поиска если uuid начинается с "offline:")
+     * @param playerName the player name (used for the search if uuid starts with "offline:")
      */
     public static boolean unpunish(PunishType type, String uuid, String ip, String hwId, String playerName) {
         boolean isOffline = uuid != null && uuid.startsWith("offline:");
@@ -236,7 +236,7 @@ public class PunishmentManager {
                 AND (player_uuid = ?
                 """);
 
-        // Для офлайн-игроков добавляем поиск по имени (т.к. при бане мог быть реальный UUID)
+        // For offline players add a name search (a real UUID may have been used at ban time)
         if (isOffline && playerName != null && !playerName.isEmpty()) {
             sql.append(" OR LOWER(player_name) = ?");
         }
@@ -274,7 +274,7 @@ public class PunishmentManager {
     }
 
     /**
-     * Деактивирует наказание по ID.
+     * Deactivates a punishment by ID.
      */
     public static boolean unpunishById(int id) {
         try (Connection con = DatabaseManager.getConnection();
@@ -289,11 +289,106 @@ public class PunishmentManager {
     }
 
     // =========================
+    // ALL ACTIVE PUNISHMENTS (for /ui punish actionlist)
+    // =========================
+
+    /**
+     * Returns ALL active punishments of every player, unified into one list:
+     * bans/mutes/kicks from the {@code punishments} table and warns from the
+     * {@code warns} table (warns live in a separate table).
+     * Expired records are excluded. Newest first.
+     */
+    public static List<PunishmentRecord> getAllActivePunishments() {
+        List<PunishmentRecord> result = new ArrayList<>();
+        long now = System.currentTimeMillis();
+
+        // bans / mutes / kicks
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement("""
+                     SELECT * FROM punishments
+                     WHERE active = 1 AND (expires_at = 0 OR expires_at > ?)
+                     ORDER BY punished_at DESC
+                     """)) {
+            st.setLong(1, now);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRecord(rs));
+                }
+            }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.FINE, "[Punish] Failed to list active punishments", e);
+        }
+
+        // warns (separate table)
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement("""
+                     SELECT * FROM warns
+                     WHERE (expires_at = 0 OR expires_at > ?)
+                     ORDER BY warned_at DESC
+                     """)) {
+            st.setLong(1, now);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    result.add(new PunishmentRecord(
+                            rs.getInt("id"),
+                            PunishType.WARN,
+                            rs.getString("player_uuid"),
+                            rs.getString("player_name"),
+                            rs.getString("reason"),
+                            "",   // ipAddress — warns have no IP/HW scope
+                            "",   // hwId
+                            rs.getString("warned_by"),
+                            rs.getLong("warned_at"),
+                            rs.getLong("expires_at"),
+                            true
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.FINE, "[Punish] Failed to list active warns", e);
+        }
+
+        result.sort((a, b) -> Long.compare(b.punishedAt, a.punishedAt));
+        return result;
+    }
+
+    // =========================
+    // KICK CLEANUP
+    // =========================
+
+    /** Kicks older than this are purged from the database (milliseconds). */
+    public static final long KICK_RETENTION_MS = 24L * 60 * 60 * 1000;
+
+    /**
+     * Deletes kick records older than {@link #KICK_RETENTION_MS} (24 hours) from the
+     * database. Kicks are logged with {@code active=1} and never expire on their own,
+     * so without this cleanup they would accumulate forever. Returns the number of
+     * deleted rows (0 if nothing to clean).
+     */
+    public static int deleteOldKicks() {
+        long cutoff = System.currentTimeMillis() - KICK_RETENTION_MS;
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "DELETE FROM punishments WHERE type = ? AND punished_at < ?")) {
+            st.setString(1, PunishType.KICK.name().toLowerCase());
+            st.setLong(2, cutoff);
+            int rows = st.executeUpdate();
+            if (rows > 0) {
+                ConsoleLogger.info("[Punish] Purged " + rows + " kick record(s) older than 24h.");
+            }
+            return rows;
+        } catch (SQLException e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[Punish] Failed to purge old kicks", e);
+            return 0;
+        }
+    }
+
+    // =========================
     // WARNS
     // =========================
 
     /**
-     * Выдаёт предупреждение игроку.
+     * Issues a warning to a player.
      */
     public static boolean warn(String targetUuid, String targetName, String reason,
                                 String warner, long expiresAt) {
@@ -319,11 +414,11 @@ public class PunishmentManager {
     }
 
     /**
-     * Деактивирует предупреждение по его ID.
-     * Устанавливает expires_at = 1 (прошлое время), чтобы warn перестал быть активным.
+     * Deactivates a warning by its ID.
+     * Sets expires_at = 1 (a past time) so the warn is no longer active.
      *
-     * @param id ID предупреждения из таблицы warns
-     * @return true если успешно
+     * @param id the warning ID from the warns table
+     * @return true on success
      */
     public static boolean removeWarnById(int id) {
         try (Connection con = DatabaseManager.getConnection();
@@ -343,7 +438,7 @@ public class PunishmentManager {
     }
 
     /**
-     * Возвращает список активных предупреждений игрока.
+     * Returns the player's list of active warnings.
      */
     public static List<WarnRecord> getActiveWarns(String uuid) {
         List<WarnRecord> result = new ArrayList<>();
@@ -382,7 +477,7 @@ public class PunishmentManager {
     // =========================
 
     /**
-     * Кикает игрока с сервера.
+     * Kicks a player from the server.
      */
     public static void kickPlayer(Player player, String reason, String kicker) {
         String message = MessageUtil.legacy(
@@ -392,7 +487,7 @@ public class PunishmentManager {
         );
         player.kickPlayer(message);
 
-        // Логируем кик в БД
+        // Log the kick to the DB
         punish(PunishType.KICK, player.getUniqueId().toString(), player.getName(),
                 reason, kicker, 0, null, null);
     }
@@ -402,25 +497,25 @@ public class PunishmentManager {
     // =========================
 
     /**
-     * Проверяет, забанен ли игрок, и возвращает запись бана если да.
+     * Checks whether the player is banned and returns the ban record if so.
      */
     public static PunishmentRecord getActiveBan(String uuid, String ip, String hwId) {
         return getActivePunishment(PunishType.BAN, uuid, ip, hwId);
     }
 
     /**
-     * Проверяет, замучен ли игрок, и возвращает запись мута если да.
+     * Checks whether the player is muted and returns the mute record if so.
      */
     public static PunishmentRecord getActiveMute(String uuid, String ip, String hwId) {
         return getActivePunishment(PunishType.MUTE, uuid, ip, hwId);
     }
 
     // =========================
-    // FIND & KICK PLAYERS BY IP/HW (для punish с флагами -ip/-hw)
+    // FIND & KICK PLAYERS BY IP/HW (for punish with -ip/-hw flags)
     // =========================
 
     /**
-     * Находит всех онлайн-игроков, подходящих под IP/HW критерии.
+     * Finds all online players matching the IP/HW criteria.
      */
     public static List<Player> findPlayersByIpOrHw(String ip, String hwId) {
         List<Player> result = new ArrayList<>();
@@ -442,8 +537,8 @@ public class PunishmentManager {
     // =========================
 
     /**
-     * Проверяет, есть ли у игрока активный мут.
-     * Удобно вызывать из чат-листенера.
+     * Checks whether the player has an active mute.
+     * Convenient to call from a chat listener.
      */
     public static boolean isMuted(String uuid, String ip, String hwId) {
         return getActiveMute(uuid, ip, hwId) != null;
@@ -548,14 +643,22 @@ public class PunishmentManager {
             if (isPermanent()) return "permanent";
             long remaining = expiresAt - System.currentTimeMillis();
             if (remaining <= 0) return "expired";
-            long secs = remaining / 1000;
-            if (secs < 60) return secs + "s";
-            long mins = secs / 60;
-            if (mins < 60) return mins + "m " + (secs % 60) + "s";
-            long hours = mins / 60;
-            if (hours < 24) return hours + "h " + (mins % 60) + "m";
-            long days = hours / 24;
-            return days + "d " + (hours % 24) + "h";
+            return PunishmentManager.formatRemaining(remaining);
         }
+    }
+
+    /**
+     * Formats a remaining duration as a compact string: 45s / 2m 30s / 5h 10m / 3d 4h.
+     * Shared by {@link WarnRecord#formatRemaining()} and the actionlist view.
+     */
+    public static String formatRemaining(long remainingMs) {
+        long secs = remainingMs / 1000;
+        if (secs < 60) return secs + "s";
+        long mins = secs / 60;
+        if (mins < 60) return mins + "m " + (secs % 60) + "s";
+        long hours = mins / 60;
+        if (hours < 24) return hours + "h " + (mins % 60) + "m";
+        long days = hours / 24;
+        return days + "d " + (hours % 24) + "h";
     }
 }

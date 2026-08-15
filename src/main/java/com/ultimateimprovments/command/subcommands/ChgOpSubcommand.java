@@ -13,19 +13,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 🛡 ChgOpSubcommand — обработчик /ui chgop.
+ * 🛡 ChgOpSubcommand — handler for /ui chgop.
  * <p>
- * Показывает список онлайн-игроков с их OP-статусом.
- * Каждый игрок кликабелен — можно выдать или снять OP с подтверждением.
+ * Shows the list of online players with their OP status.
+ * Each player is clickable — OP can be granted or revoked with confirmation.
  * <p>
- * Использование:
- *   /ui chgop                  — показать список игроков
- *   /ui chgop toggle <player>  — показать подтверждение для смены OP
- *   /ui chgop confirm <player> — подтвердить и выполнить смену OP
+ * Usage:
+ *   /ui chgop                  — show the player list
+ *   /ui chgop toggle <player>  — show confirmation for changing OP
+ *   /ui chgop confirm <player> — confirm and perform the OP change
  */
 public final class ChgOpSubcommand {
 
-    // Игроки, ожидающие подтверждения на смену OP (player → target)
+    // Players awaiting confirmation for an OP change (player → target)
     private static final Map<UUID, String> pendingConfirmations = new HashMap<>();
 
     private ChgOpSubcommand() {}
@@ -48,7 +48,7 @@ public final class ChgOpSubcommand {
             return true;
         }
 
-        // /ui chgop → показать список
+        // /ui chgop → show the list
         if (args.length < 2) {
             showPlayerList(player);
             return true;
@@ -67,13 +67,13 @@ public final class ChgOpSubcommand {
     }
 
     // ════════════════════════════════════════
-    // SHOW PLAYER LIST (кликабельные имена)
+    // SHOW PLAYER LIST (clickable names)
     // ════════════════════════════════════════
     private static void showPlayerList(Player player) {
         Collection<? extends Player> onlinePlayers = Bukkit.getOnlinePlayers();
         int opCount = 0;
 
-        // Сортируем: сначала OP, потом обычные, внутри — по алфавиту
+        // Sort: OP first, then regular, alphabetically within each group
         List<Player> sorted = onlinePlayers.stream()
                 .sorted(Comparator.comparing(Player::isOp).reversed()
                         .thenComparing(Player::getName, String.CASE_INSENSITIVE_ORDER))
@@ -83,7 +83,7 @@ public final class ChgOpSubcommand {
             if (p.isOp()) opCount++;
         }
 
-        // Верхняя граница
+        // Top border
         player.sendMessage(MessageUtil.parse(
                 "<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
         ));
@@ -98,7 +98,7 @@ public final class ChgOpSubcommand {
                 "<dark_gray>┃</dark_gray>"
         ));
 
-        // Каждый игрок — кликабельная строка
+        // Each player — a clickable row
         for (Player target : sorted) {
             boolean isSelf = target.equals(player);
             String dot;
@@ -108,7 +108,7 @@ public final class ChgOpSubcommand {
             String youTag;
 
             if (isSelf) {
-                // Свой ник — ярко-голубым с пометкой ★ YOU
+                // Own nick — bright cyan with the ★ YOU tag
                 dot = target.isOp() ? "<aqua>●</aqua>" : "<dark_aqua>●</dark_aqua>";
                 nameOpen = "<aqua><bold>";
                 nameClose = "</bold></aqua>";
@@ -142,7 +142,7 @@ public final class ChgOpSubcommand {
             player.sendMessage(line);
         }
 
-        // Нижняя граница с подсказкой
+        // Bottom border with a hint
         player.sendMessage(MessageUtil.parse(
                 "<dark_gray>┃</dark_gray>"
         ));
@@ -176,7 +176,7 @@ public final class ChgOpSubcommand {
             return true;
         }
 
-        // 🚫 Failsafe: нельзя снять OP у самого себя
+        // 🚫 Failsafe: you cannot remove OP from yourself
         if (target.equals(player) && target.isOp()) {
             player.sendMessage(MessageUtil.parse(
                     "<red>❌ You cannot remove operator status from yourself!</red>"
@@ -187,10 +187,10 @@ public final class ChgOpSubcommand {
         boolean currentlyOp = target.isOp();
         String actionRu = currentlyOp ? "снять" : "выдать";
 
-        // Сохраняем подтверждение
+        // Save the confirmation
         pendingConfirmations.put(player.getUniqueId(), target.getName());
 
-        // Показываем диалог подтверждения
+        // Show the confirmation dialog
         player.sendMessage("");
         player.sendMessage(MessageUtil.parse(
                 "<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</dark_gray>"
@@ -223,7 +223,7 @@ public final class ChgOpSubcommand {
                 "<dark_gray>┃</dark_gray>"
         ));
 
-        // Кнопка подтверждения — кликабельная
+        // Confirm button — clickable
         Component confirmBtn = MessageUtil.parse(
                 "<dark_gray>┃     <dark_green>[</dark_green><green>✔ Confirm " + (currentlyOp ? "Revoke" : "Grant") + "</green><dark_green>]</dark_green>"
         ).clickEvent(ClickEvent.runCommand("/ui chgop confirm " + target.getName()))
@@ -231,7 +231,7 @@ public final class ChgOpSubcommand {
                  MessageUtil.parse("<green>Click to confirm</green>\n<red>This action cannot be undone!</red>")));
         player.sendMessage(confirmBtn);
 
-        // Кнопка отмены — кликабельная
+        // Cancel button — clickable
         Component cancelBtn = MessageUtil.parse(
                 "<dark_gray>┃     <dark_red>[</dark_red><red>✕ Cancel</red><dark_red>]</dark_red>"
         ).clickEvent(ClickEvent.runCommand("/ui chgop"))
@@ -270,7 +270,7 @@ public final class ChgOpSubcommand {
         String targetName = args[2];
         UUID uuid = player.getUniqueId();
 
-        // Проверяем, есть ли ожидающее подтверждение
+        // Check whether there is a pending confirmation
         String pending = pendingConfirmations.get(uuid);
         if (pending == null || !pending.equalsIgnoreCase(targetName)) {
             player.sendMessage(MessageUtil.parse(
@@ -280,7 +280,7 @@ public final class ChgOpSubcommand {
             return true;
         }
 
-        // Удаляем подтверждение
+        // Remove the confirmation
         pendingConfirmations.remove(uuid);
 
         @SuppressWarnings("deprecation")
@@ -293,7 +293,7 @@ public final class ChgOpSubcommand {
             return true;
         }
 
-        // 🚫 Failsafe: двойная защита от снятия OP у себя
+        // 🚫 Failsafe: double protection against removing your own OP
         if (target.equals(player) && target.isOp()) {
             player.sendMessage(MessageUtil.parse(
                     "<red>❌ You cannot remove operator status from yourself!</red>"
@@ -301,12 +301,12 @@ public final class ChgOpSubcommand {
             return true;
         }
 
-        // Выполняем смену OP
+        // Perform the OP change
         boolean newOp = !target.isOp();
         target.setOp(newOp);
 
         if (newOp) {
-            // Выдали OP
+            // OP granted
             player.sendMessage(MessageUtil.parse(
                     "<green>✔</green> <gold>Operator</gold> <white>status granted to</white> <yellow>" + target.getName() + "</yellow><white>.</white>"
             ));
@@ -315,7 +315,7 @@ public final class ChgOpSubcommand {
             ));
             ConsoleLogger.info("[OpManager] " + player.getName() + " granted OP to " + target.getName());
         } else {
-            // Сняли OP
+            // OP revoked
             player.sendMessage(MessageUtil.parse(
                     "<green>✔</green> <gold>Operator</gold> <white>status revoked from</white> <yellow>" + target.getName() + "</yellow><white>.</white>"
             ));

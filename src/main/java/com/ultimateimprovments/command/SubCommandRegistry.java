@@ -10,11 +10,11 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/*** Реестр субкоманд /ui.
+/*** Registry of /ui subcommands.
      * <p>
-     * Хранит карту имя → SubCommand и предоставляет методы для dispatch и tab-complete.
-     * При добавлении новой субкоманды достаточно зарегистрировать её здесь —
-     * execute и tabComplete подхватятся автоматически.
+     * Stores a name → SubCommand map and provides methods for dispatch and tab-complete.
+     * When adding a new subcommand it is enough to register it here —
+     * execute and tabComplete are picked up automatically.
  */
 public class SubCommandRegistry {
 
@@ -34,7 +34,7 @@ public class SubCommandRegistry {
     }
 
     /**
-     * Регистрирует субкоманду.
+     * Registers a subcommand.
      */
     public void register(SubCommand cmd) {
         String name = cmd.getName().toLowerCase();
@@ -45,7 +45,7 @@ public class SubCommandRegistry {
     }
 
     /**
-     * Возвращает true если хотя бы одна команда зарегистрирована.
+     * Returns true if at least one command is registered.
      */
     public boolean isEmpty() {
         return commands.isEmpty();
@@ -75,15 +75,15 @@ public class SubCommandRegistry {
     }
 
     /**
-     * Диспатчит субкоманду.
+     * Dispatches a subcommand.
      *
-     * @param sender отправитель
-     * @param args   аргументы (args[0] — имя субкоманды)
-     * @return true если команда обработана
+     * @param sender the sender
+     * @param args   the arguments (args[0] — the subcommand name)
+     * @return true if the command was handled
      */
     public boolean dispatch(CommandSender sender, String[] args) {
-        // Каждая субкоманда проверяет своё право ui.command.<name> самостоятельно.
-        // Глобального гейта на ui больше нет — иначе выданные игрокам точечные права не работали бы.
+        // Each subcommand checks its own ui.command.<name> permission itself.
+        // There is no global ui gate anymore — otherwise player-granted point permissions would not work.
         if (args.length == 0) {
             String version = Main.getInstance().getDescription().getVersion();
             String msg = MessagesManager.getString("general.no_args",
@@ -107,21 +107,21 @@ public class SubCommandRegistry {
     }
 
     /**
-     * Возвращает tab-complete подсказки.
+     * Returns tab-complete suggestions.
      * <p>
-     * Сначала пробует кастомный tabComplete() от субкоманды.
-     * Если субкоманда ничего не предложила — fallback на имена онлайн-игроков.
+     * First tries the subcommand's custom tabComplete().
+     * If the subcommand suggested nothing — falls back to online player names.
      */
     public List<String> tabComplete(CommandSender sender, String[] args) {
         if (args.length <= 1) {
-            // На первом уровне — имена всех зарегистрированных команд
+            // First level — names of all registered commands
             String partial = args.length == 0 ? "" : args[0].toLowerCase();
             return commands.keySet().stream()
                     .filter(s -> s.startsWith(partial))
                     .collect(Collectors.toList());
         }
 
-        // Дальше — делегируем конкретной субкоманде
+        // Then — delegate to the specific subcommand
         String sub = args[0].toLowerCase();
         SubCommand cmd = findCommand(sub);
         if (cmd != null) {
@@ -134,7 +134,7 @@ public class SubCommandRegistry {
             }
         }
 
-        // Fallback: имена онлайн-игроков (покрывает 80% старых кейсов)
+        // Fallback: online player names (covers 80% of old cases)
         String last = args[args.length - 1].toLowerCase();
         return Bukkit.getOnlinePlayers().stream()
                 .map(Player::getName)

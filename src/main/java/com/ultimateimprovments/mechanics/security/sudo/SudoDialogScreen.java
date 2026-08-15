@@ -18,26 +18,26 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * SudoDialogScreen — «второе диалоговое окно авторизации»: Custom Screen
- * с полем для sudo-пароля (по образцу {@code AuthDialogScreen}).
+ * SudoDialogScreen — «second authentication dialog»: a Custom Screen
+ * with a field for the sudo password (modeled after {@code AuthDialogScreen}).
  * <p>
- * Два режима:
+ * Two modes:
  * <ul>
- *   <li>{@code registered=true} — игрок уже задавал sudo-пароль → ввод пароля;</li>
- *   <li>{@code registered=false} — пароля нет → просьба задать пароль и не забывать его.</li>
+ *   <li>{@code registered=true} — the player has already set a sudo password → enter it;</li>
+ *   <li>{@code registered=false} — no password yet → ask to set one and not forget it.</li>
  * </ul>
  * <p>
- * Диалог использует {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
- * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на экран «Waiting for server…»
- * и игнорирует {@code ClientboundClearDialogPacket}, поэтому окно висело бы ~4 секунды.
- * С {@code CLOSE} клиент закрывает окно СРАЗУ после клика сам, а сервер переоткрывает
- * его или выполняет действие (sudo-команды всё равно перехватываются, пока сессия не активна).
+ * The dialog uses {@link DialogAction#CLOSE} (NOT {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * with {@code WAIT_FOR_RESPONSE} the client moves to the «Waiting for server…» screen after
+ * clicking and ignores {@code ClientboundClearDialogPacket}, so the window would linger ~4s.
+ * With {@code CLOSE} the client closes the window immediately after clicking, and the server
+ * re-opens it or performs the action (sudo commands are still intercepted while the session is inactive).
  */
 public class SudoDialogScreen {
 
-    /** Идентификатор CustomAll действия для отправки sudo-пароля. */
+    /** Identifier of the CustomAll action that submits the sudo password. */
     public static final Identifier SUDO_SUBMIT_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "sudo_submit");
-    /** Идентификатор CustomAll действия для отмены (закрыть диалог). */
+    /** Identifier of the CustomAll action for cancellation (close the dialog). */
     public static final Identifier SUDO_CANCEL_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "sudo_cancel");
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
@@ -45,10 +45,10 @@ public class SudoDialogScreen {
     private SudoDialogScreen() {}
 
     /**
-     * Открывает диалог sudo-пароля.
+     * Opens the sudo password dialog.
      *
-     * @param player     игрок
-     * @param registered есть ли уже sudo-пароль (true → вход, false → создание)
+     * @param player     the player
+     * @param registered whether a sudo password already exists (true → login, false → creation)
      */
     public static void open(Player player, boolean registered) {
         if (!(player instanceof CraftPlayer craftPlayer)) {
@@ -57,7 +57,7 @@ public class SudoDialogScreen {
         }
         ServerPlayer serverPlayer = craftPlayer.getHandle();
 
-        // ─── Заголовки ───
+        // ─── Titles ───
         net.minecraft.network.chat.Component title = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString("messages.sudo.dialog.title",
                 "<gold>✦ Sudo Mode Required</gold>"))
@@ -66,7 +66,7 @@ public class SudoDialogScreen {
             MM.deserialize("<gray>Server Sudo</gray>")
         );
 
-        // ─── Текст тела ───
+        // ─── Body text ───
         net.minecraft.network.chat.Component bodyText = toNative(
             MM.deserialize(registered
                 ? Main.getInstance().getConfig().getString("messages.sudo.dialog.body_login",
@@ -75,7 +75,7 @@ public class SudoDialogScreen {
                     "<white>Set a sudo password. <yellow>Do not forget it!</yellow></white>"))
         );
 
-        // ─── Поле ввода пароля ───
+        // ─── Password input field ───
         net.minecraft.network.chat.Component pwLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString("messages.sudo.dialog.password_label",
                 "<gray>Sudo Password</gray>"))
@@ -83,7 +83,7 @@ public class SudoDialogScreen {
         int maxPwLen = Main.getInstance().getConfig().getInt("auth.max_password_length", 32);
         TextInput passwordInput = new TextInput(200, pwLabel, true, "", maxPwLen, Optional.empty());
 
-        // ─── Кнопки ───
+        // ─── Buttons ───
         net.minecraft.network.chat.Component continueLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString("messages.sudo.dialog.continue_button",
                 "<green>✔ Continue</green>"))
@@ -102,13 +102,13 @@ public class SudoDialogScreen {
             Optional.of(new CustomAll(SUDO_CANCEL_ID, Optional.empty()))
         );
 
-        // ─── Сборка диалога ───
+        // ─── Dialog assembly ───
         CommonDialogData data = new CommonDialogData(
             title,
             Optional.of(externalTitle),
             false,                          // canCloseWithEscape
             true,                           // pause
-            DialogAction.CLOSE,               // клиент закрывает окно сам, мгновенно (без «Waiting for server»)
+            DialogAction.CLOSE,               // client closes the window itself instantly (no «Waiting for server»)
             List.of(new PlainMessage(bodyText, 310)),
             List.of(new Input("password", passwordInput))
         );
@@ -126,7 +126,7 @@ public class SudoDialogScreen {
     }
 
     /**
-     * Закрывает открытый диалог у игрока.
+     * Closes the open dialog for the player.
      */
     public static void close(Player player) {
         if (!(player instanceof CraftPlayer craftPlayer)) return;
@@ -137,7 +137,7 @@ public class SudoDialogScreen {
     }
 
     /**
-     * Преобразует Adventure Component → Minecraft Component.
+     * Converts an Adventure Component → Minecraft Component.
      */
     private static net.minecraft.network.chat.Component toNative(Component adv) {
         String legacy = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer

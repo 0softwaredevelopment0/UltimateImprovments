@@ -14,13 +14,13 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * 🗺 Отслеживает координаты чанков, в которых есть Marker'ы структур.
+ * 🗺 Tracks the coordinates of chunks that contain structure Markers.
  * <p>
- * Хранит данные в SQLite (таблица {@code structure_chunks}) — при старте сервера
- * эти чанки принудительно загружаются, а Marker'ы в них сканируются.
+ * Stores the data in SQLite (table {@code structure_chunks}) — on server startup
+ * these chunks are force-loaded and their Markers are scanned.
  * <p>
- * После загрузки чанка Marker entity сам поддерживает его загруженным
- * через plugin chunk ticket ({@link #addTicket}).
+ * After a chunk is loaded, the Marker entity keeps it loaded itself
+ * via a plugin chunk ticket ({@link #addTicket}).
  */
 public class StructureChunkTracker {
 
@@ -34,16 +34,16 @@ public class StructureChunkTracker {
     public record ChunkPos(int x, int z) {}
 
     // ════════════════════════════════════════
-    // LOAD — прочитать из SQLite + миграция из JSON
+    // LOAD — read from SQLite + JSON migration
     // ════════════════════════════════════════
     public static void load() {
         chunksByWorld.clear();
 
         try (Connection con = DatabaseManager.getConnection()) {
-            // Миграция из старого JSON-файла
+            // Migrate from the old JSON file
             migrateFromJson(con);
 
-            // Загружаем данные из SQLite
+            // Load the data from SQLite
             try (PreparedStatement st = con.prepareStatement(
                     "SELECT world, cx, cz FROM structure_chunks ORDER BY world, cx, cz");
                  ResultSet rs = st.executeQuery()) {
@@ -68,16 +68,16 @@ public class StructureChunkTracker {
     }
 
     // ════════════════════════════════════════
-    // SAVE — записать в SQLite (полная перезапись)
+    // SAVE — write to SQLite (full overwrite)
     // ════════════════════════════════════════
     public static void save() {
         try (Connection con = DatabaseManager.getConnection()) {
-            // Очищаем таблицу
+            // Clear the table
             try (PreparedStatement st = con.prepareStatement("DELETE FROM structure_chunks")) {
                 st.executeUpdate();
             }
 
-            // Вставляем все текущие записи
+            // Insert all current entries
             try (PreparedStatement st = con.prepareStatement(
                     "INSERT OR IGNORE INTO structure_chunks (world, cx, cz) VALUES (?, ?, ?)")) {
                 for (Map.Entry<String, Set<ChunkPos>> entry : chunksByWorld.entrySet()) {
@@ -99,7 +99,7 @@ public class StructureChunkTracker {
     }
 
     // ════════════════════════════════════════
-    // REBUILD FROM CACHE — перестроить набор чанков из StructureMarker.getAllEntries()
+    // REBUILD FROM CACHE — rebuild the chunk set from StructureMarker.getAllEntries()
     // ════════════════════════════════════════
     public static void rebuildFromCache() {
         chunksByWorld.clear();
@@ -107,10 +107,10 @@ public class StructureChunkTracker {
         for (Map.Entry<String, StructureMarker.StructureData> entry : StructureMarker.getAllEntries()) {
             String fk = entry.getKey();  // "worldUid:x,y,z"
             String[] parts = fk.split(":");
-            if (parts.length < 2) continue; // защита от некорректного формата
+            if (parts.length < 2) continue; // guard against a malformed format
             String worldUid = parts[0];
             String[] coords = parts[1].split(",");
-            if (coords.length < 3) continue; // защита от некорректного формата
+            if (coords.length < 3) continue; // guard against a malformed format
             try {
                 int x = Integer.parseInt(coords[0]);
                 int z = Integer.parseInt(coords[2]);
@@ -120,7 +120,7 @@ public class StructureChunkTracker {
 
                 chunksByWorld.computeIfAbsent(worldUid, k -> new HashSet<>()).add(new ChunkPos(cx, cz));
             } catch (NumberFormatException ignored) {
-                // Некорректные координаты — пропускаем
+                // Malformed coordinates — skip
             }
         }
 
@@ -128,8 +128,8 @@ public class StructureChunkTracker {
     }
 
     // ════════════════════════════════════════
-    // LOAD TRACKED CHUNKS — при старте загрузить все чанки со структурами
-    // и добавить plugin chunk ticket (чтобы не выгружались)
+    // LOAD TRACKED CHUNKS — at startup load all chunks with structures
+    // and add a plugin chunk ticket (so they don't unload)
     // ════════════════════════════════════════
     public static void loadTrackedChunks() {
         int loaded = 0;
@@ -142,7 +142,7 @@ public class StructureChunkTracker {
             }
 
             for (ChunkPos cp : entry.getValue()) {
-                world.loadChunk(cp.x(), cp.z());  // загружает чанк (триггерит ChunkLoadEvent)
+                world.loadChunk(cp.x(), cp.z());  // loads the chunk (triggers ChunkLoadEvent)
                 world.addPluginChunkTicket(cp.x(), cp.z(), Main.getInstance());
                 loaded++;
             }
@@ -153,7 +153,7 @@ public class StructureChunkTracker {
     }
 
     // ════════════════════════════════════════
-    // ADD TICKET — добавить plugin chunk ticket при установке Marker'а
+    // ADD TICKET — add a plugin chunk ticket when placing a Marker
     // ════════════════════════════════════════
     public static void addTicket(World world, int blockX, int blockZ) {
         if (world == null) return;
@@ -174,12 +174,12 @@ public class StructureChunkTracker {
     }
 
     // ════════════════════════════════════════
-    // CLEAR — очистить трекер (при полной очистке кэша структур)
+    // CLEAR — reset the tracker (on a full structure cache clear)
     // ════════════════════════════════════════
     public static void clear() {
         chunksByWorld.clear();
 
-        // Снимаем все chunk tickets плагина с загруженных чанков
+        // Remove all plugin chunk tickets from loaded chunks
         for (World world : Bukkit.getWorlds()) {
             for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
                 world.removePluginChunkTicket(chunk.getX(), chunk.getZ(), Main.getInstance());
@@ -195,17 +195,17 @@ public class StructureChunkTracker {
     }
 
     // ════════════════════════════════════════
-    // MIGRATION — импорт из старого JSON
+    // MIGRATION — import from the old JSON
     // ════════════════════════════════════════
     private static void migrateFromJson(Connection con) {
         java.io.File jsonFile = new java.io.File(Main.getInstance().getDataFolder(), "structure-chunks.json");
         if (!jsonFile.exists()) return;
 
-        // Проверяем, есть ли уже данные в БД
+        // Check whether the DB already has data
         try (PreparedStatement st = con.prepareStatement("SELECT COUNT(*) FROM structure_chunks");
              ResultSet rs = st.executeQuery()) {
             if (rs.next() && rs.getInt(1) > 0) {
-                // БД уже заполнена — удаляем JSON и выходим
+                // DB already populated — delete the JSON and exit
                 jsonFile.delete();
                 return;
             }
@@ -218,7 +218,7 @@ public class StructureChunkTracker {
                 return;
             }
 
-            // Парсим JSON: {"world-uuid":[[cx,cz],[cx,cz],...], "world-uuid2":[...]}
+            // Parse the JSON: {"world-uuid":[[cx,cz],[cx,cz],...], "world-uuid2":[...]}
             if (json.startsWith("{")) json = json.substring(1);
             if (json.endsWith("}")) json = json.substring(0, json.length() - 1);
 
@@ -266,7 +266,7 @@ public class StructureChunkTracker {
 
             ConsoleLogger.info("[StructureChunkTracker] Migrated " + imported + " chunk positions from JSON to SQLite.");
 
-            // Удаляем JSON после успешной миграции
+            // Delete the JSON after a successful migration
             jsonFile.delete();
             ConsoleLogger.info("[StructureChunkTracker] Deleted old structure-chunks.json");
         } catch (Exception e) {

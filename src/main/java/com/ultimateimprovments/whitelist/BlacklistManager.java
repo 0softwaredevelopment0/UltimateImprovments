@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * 📋 BlacklistManager — чёрный список UltimateImprovments.
+ * 📋 BlacklistManager — the UltimateImprovments blacklist.
  * <p>
- * Может быть включён одновременно с вайтлистом.
- * Игроки из блэклиста не могут зайти на сервер в любом случае.
+ * Can be enabled together with the whitelist.
+ * Blacklisted players cannot join the server under any circumstances.
  * <p>
- * Команды: /ui blacklist on/off/add/list/remove
+ * Commands: /ui blacklist on/off/add/list/remove
  */
 public class BlacklistManager implements Listener {
 
@@ -101,7 +101,7 @@ public class BlacklistManager implements Listener {
             if (rows > 0) {
                 ConsoleLogger.info("[Blacklist] Added: " + lower);
 
-                // Если игрок онлайн — кикаем
+                // If the player is online — kick them
                 @SuppressWarnings("deprecation")
                 Player online = org.bukkit.Bukkit.getPlayerExact(playerName);
                 if (online != null && online.isOnline()) {

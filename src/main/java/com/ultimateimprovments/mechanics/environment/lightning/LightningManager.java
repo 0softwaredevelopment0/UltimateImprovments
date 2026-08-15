@@ -46,9 +46,9 @@ public class LightningManager implements Listener {
     private static final Map<Location, Long> cookingCooldowns = new ConcurrentHashMap<>();
     private static final long COOKING_COOLDOWN_MS = 1000L; // 1 second
 
-    // Защита от дублирования крафта: UUID предметов, которые уже были обработаны
+    // Duplication protection: UUIDs of items already processed
     private static final Set<UUID> cookedItemIds = ConcurrentHashMap.newKeySet();
-    // Периодическая очистка cookedItemIds от старых записей (каждые 100 тиков)
+    // Periodic cleanup of cookedItemIds from old records (every 100 ticks)
     private static int cookedItemCleanupTick = 0;
 
     // Periodic scan task — catches items that were already on the rod
@@ -104,7 +104,7 @@ public class LightningManager implements Listener {
     }
 
     /**
-     * Находит центр активной структуры молний, в которую входит данный блок.
+     * Finds the center of the active lightning structure that the given block belongs to.
      */
     public static Location getCenterForBlock(Location loc) {
         loc = LocationUtil.normalize(loc);
@@ -316,7 +316,7 @@ public class LightningManager implements Listener {
         periodicScanTask = new BukkitRunnable() {
             @Override
             public void run() {
-                // Периодическая очистка cookedItemIds от старых записей (каждые ~5 секунд)
+                // Periodic cleanup of cookedItemIds from old records (every ~5 seconds)
                 cookedItemCleanupTick++;
                 if (cookedItemCleanupTick >= 100) {
                     cookedItemCleanupTick = 0;
@@ -360,8 +360,8 @@ public class LightningManager implements Listener {
     private static final int ENERGY_COST = 100;
 
     /**
-     * Проверяет, есть ли кабель рядом с энергетическим блоком (WAXED_CHISELED_COPPER на Y=-3)
-     * и хватает ли энергии (100 за операцию).
+     * Checks whether there is a cable near the energy block (WAXED_CHISELED_COPPER at Y=-3)
+     * and whether there is enough energy (100 per operation).
      */
     private static boolean hasEnergyForOperation(Location center) {
         Location energyLoc = LightningStructure.getEnergyInputLoc(center);
@@ -373,7 +373,7 @@ public class LightningManager implements Listener {
             CableNode node = CableNetwork.getNode(norm);
             if (node != null && node.getEnergy() >= ENERGY_COST
                     && LocationUtil.isFullyConnected(energyLoc, norm)) {
-                // Проверяем режим батареи: берём только из DISCHARGE/CHARGE_DISCHARGE
+                // Respect the battery mode: take only from DISCHARGE/CHARGE_DISCHARGE
                 BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
                 if (bc != null && !bc.canDischarge()) continue;
                 node.removeEnergy(ENERGY_COST);
@@ -389,21 +389,21 @@ public class LightningManager implements Listener {
         Long lastCook = cookingCooldowns.get(center);
         if (lastCook != null && (now - lastCook) < COOKING_COOLDOWN_MS) return false;
 
-        // Защита от дублирования: проверяем, не был ли уже обработан этот предмет
+        // Duplication protection: check whether this item was already processed
         if (item.getUniqueId() != null && cookedItemIds.contains(item.getUniqueId())) return false;
 
         // Check if item is cookable
         Recipe cooked = findCookingRecipe(stack);
         if (cooked == null) return false;
 
-        // ⚡ ЭНЕРГИЯ: проверяем кабель у WAXED_CHISELED_COPPER (0, -3, 0)
+        // ⚡ ENERGY: check the cable at WAXED_CHISELED_COPPER (0, -3, 0)
         if (!hasEnergyForOperation(center)) {
             return false;
         }
 
         cookingCooldowns.put(center, now);
 
-        // Помечаем предмет как обработанный
+        // Mark the item as processed
         if (item.getUniqueId() != null) {
             cookedItemIds.add(item.getUniqueId());
         }

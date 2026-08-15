@@ -14,13 +14,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Менеджер проверки на читы.
+ * Anti-cheat check manager.
  * <p>
- * Хранит пары (проверяющий → проверяемый).
- * При выходе проверяющего — автоматически завершает проверку.
- * При выходе проверяемого — проверка ставится на паузу,
- * при реконнекте автоматически восстанавливается.
- * Проверяемый игрок заморожен (не может двигаться, взаимодействовать и т.д.).
+ * Stores pairs (inspector → suspect).
+ * On the inspector's quit — automatically ends the check.
+ * On the suspect's quit — the check is paused
+ * and automatically restored on reconnect.
+ * The checked player is frozen (cannot move, interact, etc.).
  */
 public class CheckManager {
 
@@ -29,16 +29,16 @@ public class CheckManager {
     // inspector UUID → suspect UUID
     private final Map<UUID, UUID> activeChecks = new ConcurrentHashMap<>();
 
-    // suspect UUID → inspector UUID (обратный индекс)
+    // suspect UUID → inspector UUID (reverse index)
     private final Map<UUID, UUID> suspectToInspector = new ConcurrentHashMap<>();
 
-    // inspector UUID → original location (для возврата после проверки)
+    // inspector UUID → original location (to return to after the check)
     private final Map<UUID, Location> inspectorLocations = new ConcurrentHashMap<>();
 
     // suspect UUID → repeating title task ID (-1 if not started)
     private final Map<UUID, Integer> suspectTitleTasks = new ConcurrentHashMap<>();
 
-    // suspect UUID → имя инспектора (для восстановления тайтла при реконнекте)
+    // suspect UUID → inspector name (to restore the title on reconnect)
     private final Map<UUID, String> suspectInspectorNames = new ConcurrentHashMap<>();
 
     private CheckManager() {}
@@ -159,7 +159,7 @@ public class CheckManager {
     }
 
     // =========================
-    // FORCE END CHECK — завершить проверку без объекта suspect (он может быть офлайн)
+    // FORCE END CHECK — end the check without the suspect object (they may be offline)
     // =========================
     public static boolean forceEndCheck(Player inspector) {
         if (instance == null) return false;
@@ -188,7 +188,7 @@ public class CheckManager {
         // Cancel title task
         cancelTitleTask(suspectId);
 
-        // Если suspect онлайн — разморозить
+        // If the suspect is online — unfreeze
         Player suspect = Bukkit.getPlayer(suspectId);
         if (suspect != null && suspect.isOnline()) {
             suspect.sendTitle(" ", " ", 0, 1, 0);
@@ -238,19 +238,19 @@ public class CheckManager {
     }
 
     // =========================
-    // CLEANUP BY SUSPECT QUIT — ставит проверку на паузу, не удаляет данные
+    // CLEANUP BY SUSPECT QUIT — pauses the check, does not delete the data
     // =========================
     public static void cleanupBySuspect(UUID suspectId) {
         if (instance == null) return;
 
-        // Если suspect не в проверке — игнорируем
+        // If the suspect is not in a check — ignore
         UUID inspectorId = instance.suspectToInspector.get(suspectId);
         if (inspectorId == null) return;
 
-        // Отменяем тайтл-таск (игрок офлайн)
+        // Cancel the title task (the player is offline)
         cancelTitleTask(suspectId);
 
-        // Уведомляем инспектора
+        // Notify the inspector
         Player inspector = Bukkit.getPlayer(inspectorId);
         if (inspector != null && inspector.isOnline()) {
             inspector.sendMessage(MessageUtil.parse(
@@ -265,7 +265,7 @@ public class CheckManager {
     }
 
     // =========================
-    // REJOIN CHECK — восстановить проверку при реконнекте suspect
+    // REJOIN CHECK — restore the check on the suspect's reconnect
     // =========================
     public static void rejoinCheck(Player suspect) {
         if (instance == null) return;
@@ -277,10 +277,10 @@ public class CheckManager {
         UUID storedSuspect = instance.activeChecks.get(inspectorId);
         if (storedSuspect == null || !storedSuspect.equals(suspectId)) return;
 
-        // Замораживаем suspect
+        // Freeze the suspect
         freezePlayer(suspect);
 
-        // Восстанавливаем тайтл
+        // Restore the title
         String inspectorName = instance.suspectInspectorNames.get(suspectId);
         if (inspectorName == null) {
             Player inspector = Bukkit.getPlayer(inspectorId);
@@ -288,7 +288,7 @@ public class CheckManager {
         }
         startTitleTask(suspect, inspectorName);
 
-        // Отправляем сообщения
+        // Send the messages
         suspect.sendMessage("");
         suspect.sendMessage("§4❌ §c§lVERIFICATION RESUMED");
         suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
@@ -299,13 +299,13 @@ public class CheckManager {
         suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
         suspect.sendMessage("");
 
-        // Уведомляем инспектора
+        // Notify the inspector
         Player inspector = Bukkit.getPlayer(inspectorId);
         if (inspector != null && inspector.isOnline()) {
             inspector.sendMessage(MessageUtil.parse(
                     "<green>✔</green> <white>Player</white> <yellow>" + suspect.getName() +
                     "</yellow> <white>rejoined — check resumed automatically.</white>"));
-            // Телепортируем инспектора к suspect если он далеко
+            // Teleport the inspector to the suspect if they are far
             if (!inspector.getWorld().equals(suspect.getWorld())
                     || inspector.getLocation().distance(suspect.getLocation()) > 50) {
                 inspector.teleport(suspect.getLocation());
@@ -378,7 +378,7 @@ public class CheckManager {
     }
 
     // =========================
-    // FREEZE / UNFREEZE (аналогично AuthAuthenticator)
+    // FREEZE / UNFREEZE (similar to AuthAuthenticator)
     // =========================
     private static void freezePlayer(Player player) {
         player.setGameMode(GameMode.ADVENTURE);
@@ -398,7 +398,7 @@ public class CheckManager {
     }
 
     // =========================
-    // SHUTDOWN — разморозить всех
+    // SHUTDOWN — unfreeze everyone
     // =========================
     public static void shutdown() {
         if (instance == null) return;

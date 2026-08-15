@@ -4,9 +4,9 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.config.MessagesManager;
 
 /**
- * Чтение конфигурации системы авторизации.
- * Все настройки auth.* из config.yml вынесены в отдельный класс
- * для централизованного доступа и простоты тестирования.
+ * Reads the authentication system configuration.
+ * All auth.* settings from config.yml are extracted into a separate class
+ * for centralized access and easy testing.
  */
 public class AuthConfig {
 
@@ -130,6 +130,6 @@ public class AuthConfig {
     }
 
     public static void reloadMessages() {
-        // stub — сообщения теперь в MessagesManager, этот метод для совместимости
+        // stub — messages now live in MessagesManager, this method is for compatibility
     }
 }

@@ -1,17 +1,17 @@
 package com.ultimateimprovments.mechanics.security.anticheat.action;
 
 /**
- * Действия при достижении порога нарушений.
+ * Actions taken when the violation threshold is reached.
  */
 public enum ActionType {
-    /** Только запись в лог */
+    /** Log only */
     LOG,
-    /** Уведомление администраторам */
+    /** Notify administrators */
     NOTIFY,
-    /** Откат игрока на последнюю валидную позицию */
+    /** Roll the player back to the last valid position */
     SETBACK,
-    /** Кик с сервера */
+    /** Kick from the server */
     KICK,
-    /** Бан (через PunishmentManager) */
+    /** Ban (via PunishmentManager) */
     BAN
 }

@@ -6,13 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Аннотация для авто-обнаружения модулей плагина.
+ * Annotation for auto-discovery of plugin modules.
  * <p>
- * Класс должен extends {@link com.ultimateimprovments.module.PluginModule}.
- * После добавления аннотации модуль автоматически регистрируется в ModuleManager —
- * не нужно править PluginStartup.
+ * The class must extend {@link com.ultimateimprovments.module.PluginModule}.
+ * Once the annotation is added, the module is automatically registered in ModuleManager —
+ * no need to edit PluginStartup.
  * <p>
- * Пример:
+ * Example:
  * <pre>{@code
  * @ModuleInfo(name = "MyFeature", path = "features/my", essential = false)
  * public class MyFeatureModule extends PluginModule { ... }
@@ -21,12 +21,12 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ModuleInfo {
-    /** Отображаемое имя модуля. По умолчанию — имя класса без "Module". */
+    /** Display name of the module. Defaults to the class name without "Module". */
     String name() default "";
 
-    /** Путь в иерархии модулей (например "energy/generation/basic"). */
+    /** Path in the module hierarchy (e.g. "energy/generation/basic"). */
     String path() default "";
 
-    /** Является ли модуль критическим для работы плагина. */
+    /** Whether the module is critical for the plugin to work. */
     boolean essential() default false;
 }

@@ -3,9 +3,9 @@ package com.ultimateimprovments.config;
 import java.util.List;
 
 /**
- * Все правила валидации для config.yml.
+ * All validation rules for config.yml.
  * <p>
- * Извлечено из {@link ConfigIntegrityValidator} для уменьшения размера класса.
+ * Extracted from {@link ConfigIntegrityValidator} to reduce class size.
  */
 final class ConfigRules {
 
@@ -40,7 +40,7 @@ final class ConfigRules {
     }
 
     // =========================
-    // ФАБРИЧНЫЕ МЕТОДЫ
+    // FACTORY METHODS
     // =========================
     static Rule bool(String key) {
         return new Rule(key, ValueType.BOOLEAN, 0, 0, false, false, null, 0, "");
@@ -79,7 +79,7 @@ final class ConfigRules {
     }
 
     // =========================
-    // ПРАВИЛА ВАЛИДАЦИИ
+    // VALIDATION RULES
     // =========================
     static final List<Rule> ALL = List.of(
             bool("energy.generator.enabled"),

@@ -8,15 +8,15 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 
 /**
- * 🚫 OpCommandBlocker — блокирует ванильные команды /op и /deop,
- * так как UltimateImprovments использует свой собственный интерфейс (/ui chgop).
+ * 🚫 OpCommandBlocker — blocks the vanilla /op and /deop commands,
+ * because UltimateImprovments uses its own interface (/ui chgop).
  * <p>
- * Перехватывает:
+ * Intercepts:
  * <ul>
- *   <li>{@code /op}, {@code /deop} (с любыми аргументами)</li>
+ *   <li>{@code /op}, {@code /deop} (with any arguments)</li>
  *   <li>{@code /minecraft:op}, {@code /minecraft:deop}</li>
  *   <li>{@code /bukkit:op}, {@code /bukkit:deop}</li>
- *   <li>Как от игроков (PlayerCommandPreprocessEvent), так и из консоли (ServerCommandEvent)</li>
+ *   <li>Both from players (PlayerCommandPreprocessEvent) and from the console (ServerCommandEvent)</li>
  * </ul>
  */
 public class OpCommandBlocker implements Listener {
@@ -25,7 +25,7 @@ public class OpCommandBlocker implements Listener {
             "<red>❌ Vanilla /op and /deop are disabled.</red> <gray>Use:</gray> <white>/ui chgop</white>";
 
     /**
-     * Проверяет, является ли команда вариантом /op или /deop (с учётом неймспейсов и аргументов).
+     * Checks whether the command is a variant of /op or /deop (considering namespaces and arguments).
      */
     private static boolean isOpCommand(String msg) {
         return msg.equals("/op")

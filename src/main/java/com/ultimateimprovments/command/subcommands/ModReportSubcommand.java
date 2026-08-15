@@ -10,10 +10,10 @@ import org.bukkit.entity.Player;
 /**
  * Handles /ui modreport <name> — moderation of a report.
  * <p>
- * Открывает режим ввода для модератора:
- * 1. Пишет заключение (текст)
- * 2. Выбирает вердикт (1 — Подтверждён, 2 — Отклонён, 3 — Закрыт)
- * Или cancel для отмены.
+ * Opens an input mode for the moderator:
+ * 1. Writes a conclusion (text)
+ * 2. Chooses a verdict (1 — Confirmed, 2 — Rejected, 3 — Closed)
+ * Or cancel to abort.
  */
 public final class ModReportSubcommand {
 
@@ -40,7 +40,7 @@ public final class ModReportSubcommand {
 
         String modName = args[1];
 
-        // Проверяем, что такое имя существует в мод-очереди
+        // Check that such a name exists in the mod queue
         if (!ReportManager.isModNameExists(modName)) {
             player.sendMessage(MessageUtil.parse(
                     "<red>❌ Moderation report </red><yellow>" + modName + "</yellow> <red>not found!</red>"));
@@ -67,7 +67,7 @@ public final class ModReportSubcommand {
             return true;
         }
 
-        // Показываем информацию о репорте
+        // Show the report info
         player.sendMessage(MessageUtil.parse(
                 "<gray>═══ <white>Moderate: </white><yellow>" + modName + "</yellow> ═══</gray>"));
         player.sendMessage(MessageUtil.parse(
@@ -77,7 +77,7 @@ public final class ModReportSubcommand {
         player.sendMessage(MessageUtil.parse(
                 "<gray>Reason: </gray><white>" + report.reason + "</white>"));
 
-        // Начинаем сессию модерации
+        // Start the moderation session
         ReportManager.startModeration(player, reportId, modName);
 
         return true;

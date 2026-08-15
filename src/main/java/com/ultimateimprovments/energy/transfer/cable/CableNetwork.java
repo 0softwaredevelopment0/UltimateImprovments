@@ -161,8 +161,8 @@ public class CableNetwork {
     // =========================
     
     /**
-     * Быстрый итератор по всем узлам без создания промежуточного списка.
-     * Использовать вместо getAllNodes() когда нужен только обход.
+     * Fast iterator over all nodes without creating an intermediate list.
+     * Use instead of getAllNodes() when only traversal is needed.
      */
     public static void forEachNode(java.util.function.Consumer<CableNode> action) {
         for (Map<Long, CableNode> worldNodes : nodesByWorld.values()) {

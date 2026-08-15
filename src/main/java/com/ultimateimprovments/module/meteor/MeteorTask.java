@@ -9,20 +9,24 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.BlockDisplay;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Marker;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 /**
- * MeteorTask — вертикальное падение метеора (Marker entity).
+ * MeteorTask — vertical meteor fall (Marker entity).
  *
- * <p>Marker спавнится высоко в небе и телепортируется вниз каждый тик.
- * При ударе о землю: реальный взрыв + на месте падения спавнится
- * структура метеора из указанных блоков с рудой в центре.</p>
+ * <p>The Marker spawns high in the sky and is teleported down every tick.
+ * On ground impact: a real explosion + a meteor structure made of the specified
+ * blocks with ore in the center spawns at the impact point.</p>
  */
 public class MeteorTask extends BukkitRunnable {
 
@@ -34,8 +38,13 @@ public class MeteorTask extends BukkitRunnable {
     private double currentY;
 
     private final int sphereRadius;
+    private final float explosionPower;
     private final List<BlockData> shellBlocks;
     private final Map<Material, Double> coreOres;
+    private final Material coreOre;
+
+    private final List<BlockDisplay> displays = new ArrayList<>();
+    private final List<Vector> displayOffsets = new ArrayList<>();
 
     private Marker marker;
     private boolean impactDone = false;
@@ -50,6 +59,7 @@ public class MeteorTask extends BukkitRunnable {
                       double targetX, double targetY, double targetZ,
                       int totalTicks,
                       int sphereRadius,
+                      float explosionPower,
                       List<BlockData> shellBlocks,
                       Map<Material, Double> coreOres) {
         this.world = world;
@@ -60,14 +70,20 @@ public class MeteorTask extends BukkitRunnable {
         this.currentY = startY;
         this.totalTicks = totalTicks;
         this.sphereRadius = sphereRadius;
+        this.explosionPower = explosionPower;
         this.shellBlocks = shellBlocks;
         this.coreOres = coreOres;
         this.random = new Random();
+        // Pick the core ore once so the falling visual matches what actually lands.
+        this.coreOre = pickCoreOre();
 
-        // ── Создаём Marker на стартовой высоте ──
+        // ── Create the Marker at the start height ──
         Location startLoc = new Location(world, targetX, startY, targetZ);
         this.marker = (Marker) world.spawnEntity(startLoc, EntityType.MARKER);
         this.marker.setPersistent(false);
+
+        // ── Spawn the falling block visualizers (a glowing sphere of blocks) ──
+        spawnBlockVisualizers(startLoc);
     }
 
     // ──────────── Main loop ────────────
@@ -103,44 +119,49 @@ public class MeteorTask extends BukkitRunnable {
     private void tickAnimation() {
         tick++;
 
-        // ── Позиция ──
+        // ── Position ──
         double progress = (double) tick / totalTicks;
-        // Линейная интерполяция от startY к targetY — гарантированно достигает земли
+        // Linear interpolation from startY to targetY — guaranteed to reach the ground
         currentY = lerp(startY, targetY, progress);
 
         Location loc = new Location(world, targetX, currentY, targetZ);
 
-        // ── Телепортируем Marker ──
+        // ── Teleport the Marker ──
         if (marker != null) {
             marker.teleport(loc);
         }
 
-        // ── Партиклы ──
+        // ── Move the block visualizers with the marker ──
+        moveDisplays(loc);
+
+        // ── Particles ──
         double intensity = 0.5 + progress * 2.0;
+        // Spread the fire across the whole visible sphere, not just the center
+        double fireSpread = sphereRadius + 0.6;
 
-        // Огненная аура
+        // Fire aura
         world.spawnParticle(Particle.FLAME, loc, (int) (6 * intensity),
-                0.8, 0.5, 0.8, 0.02);
+                fireSpread, fireSpread * 0.6, fireSpread, 0.02);
 
-        // Дым
+        // Smoke
         world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, loc, (int) (4 * intensity),
-                0.5, 0.3, 0.5, 0.03);
+                fireSpread, fireSpread * 0.4, fireSpread, 0.03);
 
-        // Искры
+        // Sparks
         world.spawnParticle(Particle.LAVA, loc, (int) (2 * intensity),
-                1.0, 0.5, 1.0, 0);
+                fireSpread, fireSpread * 0.6, fireSpread, 0);
 
-        // Trail сверху (дым остаётся выше)
+        // Trail above (smoke stays higher)
         Location trailLoc = loc.clone().add(0, 1.0, 0);
         world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, trailLoc, (int) (3 * intensity),
                 0.3, 0.5, 0.3, 0.05);
 
-        // Яркая вспышка в последней трети
+        // Bright flash in the last third
         if (progress > 0.7 && random.nextDouble() < 0.2) {
             world.spawnParticle(Particle.FLASH, loc, 1, 0, 0, 0, 0);
         }
 
-        // ── Звук ──
+        // ── Sound ──
         float volume = 0.3f + (float) progress * 0.7f;
         float pitch = 0.3f + (float) progress * 0.6f;
         world.playSound(loc, Sound.ENTITY_GHAST_SHOOT, volume * 0.5f, pitch);
@@ -158,23 +179,23 @@ public class MeteorTask extends BukkitRunnable {
     private void impact() {
         impactDone = true;
 
-        // Удаляем Marker
+        // Remove the Marker and the falling visualizers (real blocks replace them)
         removeMarker();
+        removeDisplays();
 
         Location impactLoc = new Location(world, targetX, targetY, targetZ);
 
-        // ── Взрыв (sphereRadius * 10) ──
-        float explosionPower = sphereRadius * 10.0f;
+        // ── Explosion (configurable power, TNT = 4.0) ──
         world.createExplosion(impactLoc, explosionPower, true);
 
-        // ── Партиклы взрыва ──
+        // ── Explosion particles ──
         world.spawnParticle(Particle.EXPLOSION_EMITTER, impactLoc, 1, 0, 0, 0, 0);
         world.spawnParticle(Particle.FLAME, impactLoc, 60, 4, 2, 4, 0.15);
         world.spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, impactLoc, 80, 4, 2, 4, 0.08);
         world.spawnParticle(Particle.LAVA, impactLoc, 30, 1, 0.5, 1, 0);
         world.spawnParticle(Particle.FLASH, impactLoc, 1, 0, 0, 0, 0);
 
-        // Восходящий столб дыма
+        // Rising smoke column
         for (int i = 0; i < 5; i++) {
             double offsetY = i * 1.5;
             Location smokeLoc = impactLoc.clone().add(0, offsetY, 0);
@@ -183,15 +204,15 @@ public class MeteorTask extends BukkitRunnable {
             world.spawnParticle(Particle.FLAME, smokeLoc, 5, 0.5, 0.3, 0.5, 0.02);
         }
 
-        // ── Звуки ──
+        // ── Sounds ──
         world.playSound(impactLoc, Sound.ENTITY_GENERIC_EXPLODE, 3.0f, 0.6f);
         world.playSound(impactLoc, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0f, 0.4f);
         world.playSound(impactLoc, Sound.ENTITY_DRAGON_FIREBALL_EXPLODE, 2.0f, 0.8f);
 
-        // ── Спавним структуру метеора (сфера из блоков + центральная руда) ──
+        // ── Spawn the meteor structure (block sphere + central ore) ──
         spawnMeteorStructure(impactLoc);
 
-        // ── Кратер ──
+        // ── Crater ──
         spawnCrater(impactLoc);
 
         ConsoleLogger.info("[Meteor] Impact at " + impactLoc.getBlockX() + " " + impactLoc.getBlockY() + " " + impactLoc.getBlockZ()
@@ -202,11 +223,11 @@ public class MeteorTask extends BukkitRunnable {
     }
 
     /**
-     * Спавнит сферическую структуру метеора из shellBlocks + случайная руда в центре.
+     * Spawns the spherical meteor structure from shellBlocks + a random ore in the center.
      */
     private void spawnMeteorStructure(Location center) {
-        // Выбираем центральную руду по шансам
-        Material coreOre = pickCoreOre();
+        // Use the ore already picked at spawn so the landing matches the visual
+        Material coreOre = this.coreOre;
 
         int r = sphereRadius;
 
@@ -218,16 +239,16 @@ public class MeteorTask extends BukkitRunnable {
 
                     Block b = center.getBlock().getRelative(dx, dy, dz);
 
-                    // Не заменяем воздух/жидкости если блок уже был твёрдым?
-                    // Метеор ЗАМЕНЯET существующие блоки (сила удара)
+                    // Don't replace air/liquids if the block was already solid?
+                    // The meteor REPLACES existing blocks (impact force)
 
-                    // Центр — руда
+                    // Center — ore
                     if (dist <= 0.5) {
                         b.setType(coreOre);
                         continue;
                     }
 
-                    // Оболочка — случайный блок из display_blocks
+                    // Shell — a random block from display_blocks
                     BlockData blockData = shellBlocks.get(random.nextInt(shellBlocks.size()));
                     b.setType(blockData.getMaterial());
                 }
@@ -236,7 +257,7 @@ public class MeteorTask extends BukkitRunnable {
     }
 
     /**
-     * Выбирает руду из core_ores по шансам (weighted random).
+     * Picks the ore from core_ores by chances (weighted random).
      */
     private Material pickCoreOre() {
         if (coreOres == null || coreOres.isEmpty()) {
@@ -263,7 +284,7 @@ public class MeteorTask extends BukkitRunnable {
     }
 
     /**
-     * Создаёт кратер вокруг места падения.
+     * Creates a crater around the impact point.
      */
     private void spawnCrater(Location impactLoc) {
         int craterR = sphereRadius * 2;
@@ -276,7 +297,7 @@ public class MeteorTask extends BukkitRunnable {
                 Block b = world.getBlockAt(impactLoc.clone().add(dx, 0, dz));
                 Block above = b.getRelative(BlockFace.UP);
 
-                // Центр: magma + fire
+                // Center: magma + fire
                 if (dist <= craterR * 0.35) {
                     if (!b.isEmpty()) {
                         if (random.nextDouble() < 0.5) b.setType(Material.MAGMA_BLOCK);
@@ -286,13 +307,13 @@ public class MeteorTask extends BukkitRunnable {
                         above.setType(Material.FIRE);
                     }
                 }
-                // Среднее кольцо: blackstone
+                // Middle ring: blackstone
                 else if (dist <= craterR * 0.7) {
                     if (random.nextDouble() < 0.25 && !b.isEmpty()) {
                         b.setType(Material.BLACKSTONE);
                     }
                 }
-                // Внешнее кольцо: fire
+                // Outer ring: fire
                 else if (dist <= craterR) {
                     if (above.isEmpty() && random.nextDouble() < 0.15) {
                         above.setType(Material.FIRE);
@@ -310,12 +331,80 @@ public class MeteorTask extends BukkitRunnable {
 
     private void safeCleanup() {
         removeMarker();
+        removeDisplays();
+    }
+
+    /**
+     * Removes the Marker entity without running the impact logic.
+     * Called from {@code MeteorModule.onDisable()} so markers are not leaked
+     * on reload/disable (cancelling the task alone does not despawn the entity).
+     */
+    public void cleanup() {
+        removeMarker();
+        removeDisplays();
     }
 
     private void removeMarker() {
         if (marker != null && marker.isValid()) {
             marker.remove();
             marker = null;
+        }
+    }
+
+    /**
+     * Removes all block visualizer entities.
+     */
+    private void removeDisplays() {
+        for (BlockDisplay display : displays) {
+            if (display.isValid()) {
+                display.remove();
+            }
+        }
+        displays.clear();
+        displayOffsets.clear();
+    }
+
+    /**
+     * Spawns a glowing sphere of BlockDisplay entities that visualize the
+     * falling meteor (shell blocks + the central ore).
+     */
+    private void spawnBlockVisualizers(Location center) {
+        int r = sphereRadius;
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dy = -r; dy <= r; dy++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    if (dist > r + 0.5) continue;
+
+                    BlockData data = dist <= 0.5
+                            ? coreOre.createBlockData()
+                            : shellBlocks.get(random.nextInt(shellBlocks.size()));
+
+                    Location loc = center.clone().add(dx, dy, dz);
+                    BlockDisplay display = world.spawn(loc, BlockDisplay.class, d -> d.setBlock(data));
+                    display.setPersistent(false);
+                    // Fullbright — makes the rock look molten/burning
+                    display.setBrightness(new Display.Brightness(15, 15));
+
+                    displays.add(display);
+                    displayOffsets.add(new Vector(dx, dy, dz));
+                }
+            }
+        }
+    }
+
+    /**
+     * Teleports the block visualizers so they follow the marker each tick.
+     */
+    private void moveDisplays(Location center) {
+        for (int i = 0; i < displays.size(); i++) {
+            BlockDisplay display = displays.get(i);
+            if (!display.isValid()) continue;
+            Vector offset = displayOffsets.get(i);
+            display.teleport(new Location(world,
+                    center.getX() + offset.getX(),
+                    center.getY() + offset.getY(),
+                    center.getZ() + offset.getZ()));
         }
     }
 

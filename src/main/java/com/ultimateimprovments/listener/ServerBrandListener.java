@@ -15,12 +15,12 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
 /**
- * Скрывает/подменяет brand сервера (Leaf) для игроков без права ui.show.brand.
+ * Hides/replaces the server brand (Leaf) for players without the ui.show.brand permission.
  * <p>
- * Brand отправляется сервером на этапе конфигурации (до PlayerJoinEvent).
- * Отправляем подмену с задержкой в 1 тик, чтобы пакет пришёл ПОСЛЕ того,
- * как клиент обработал все пакеты конфигурации.
- * Также переотправляем при смене мира и респавне (некоторые клиенты сбрасывают brand).
+ * The brand is sent by the server during the configuration phase (before PlayerJoinEvent).
+ * We send the replacement after a 1-tick delay so the packet arrives AFTER
+ * the client processed all configuration packets.
+ * Also re-sent on world change and respawn (some clients reset the brand).
  */
 public class ServerBrandListener implements Listener {
 
@@ -42,7 +42,7 @@ public class ServerBrandListener implements Listener {
     }
 
     /**
-     * Планирует отправку подмены brand через 1 тик, если игрок не имеет права на показ.
+     * Schedules the brand replacement after 1 tick if the player lacks the show permission.
      */
     private void scheduleBrandSpoof(Player player) {
         FileConfiguration config = Main.getInstance().getConfig();
@@ -61,7 +61,7 @@ public class ServerBrandListener implements Listener {
             return;
         }
 
-        // Задержка 1 тик — чтобы клиент точно обработал все пакеты конфигурации
+        // 1-tick delay — so the client definitely processed all configuration packets
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             if (!player.isOnline()) return;
             sendBrandPacket(player);
@@ -69,7 +69,7 @@ public class ServerBrandListener implements Listener {
     }
 
     /**
-     * Отправляет пакет с подменой brand напрямую игроку.
+     * Sends the brand replacement packet directly to the player.
      */
     private void sendBrandPacket(Player player) {
         try {

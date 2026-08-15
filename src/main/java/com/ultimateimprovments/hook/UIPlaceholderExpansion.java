@@ -8,22 +8,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * PlaceholderAPI Expansion для UltimateImprovments.
+ * PlaceholderAPI expansion for UltimateImprovments.
  *
- * <p>Регистрирует все наши плейсхолдеры в PAPI под идентификатором {@code ui}.
- * Если PAPI установлен, внешние плагины (TAB, scoreboard-плагины, Discord-интеграции)
- * могут писать {@code %ui_player_ping%}, {@code %ui_online%},
- * {@code %ui_tps_5m%} и т.д. — и получать те же значения, что видит наш плагин.
+ * <p>Registers all our placeholders in PAPI under the {@code ui} identifier.
+ * If PAPI is installed, external plugins (TAB, scoreboard plugins, Discord integrations)
+ * can use {@code %ui_player_ping%}, {@code %ui_online%},
+ * {@code %ui_tps_5m%} etc. — and get the same values our plugin sees.
  *
- * <p><b>Список имён:</b> единый для внутреннего и внешнего резолвера, берётся из
- * {@link PlaceholderResolver#getBuiltinNames()} + динамические шаблоны (tps_* mspt_* и т.п.).
+ * <p><b>Name list:</b> shared between the internal and external resolver, taken from
+ * {@link PlaceholderResolver#getBuiltinNames()} + dynamic templates (tps_*, mspt_* etc.).
  *
- * <p><b>Если PAPI не установлен:</b> этот класс НЕ регистрируется (см. {@link PluginStartup}),
- * а внутренний {@link PlaceholderResolver#resolve(String, Player)} продолжает работать
- * для собственных строк плагина.
+ * <p><b>If PAPI is not installed:</b> this class is NOT registered (see {@link PluginStartup}),
+ * and the internal {@link PlaceholderResolver#resolve(String, Player)} keeps working
+ * for the plugin's own strings.
  *
- * <p>Все запросы делегируются в {@link PlaceholderResolver#resolveInternal(String, Player)} —
- * внутренний резолв БЕЗ шага PAPI, чтобы избежать рекурсии PAPI → resolve → PAPI.
+ * <p>All requests are delegated to {@link PlaceholderResolver#resolveInternal(String, Player)} —
+ * an internal resolve WITHOUT the PAPI step, to avoid recursion PAPI → resolve → PAPI.
  */
 public class UIPlaceholderExpansion extends PlaceholderExpansion {
 
@@ -44,7 +44,7 @@ public class UIPlaceholderExpansion extends PlaceholderExpansion {
 
     @Override
     public boolean persist() {
-        return true; // не выгружать при /reload
+        return true; // do not unload on /reload
     }
 
     @Override
@@ -53,28 +53,28 @@ public class UIPlaceholderExpansion extends PlaceholderExpansion {
     }
 
     /**
-     * PAPI вызывает этот метод для каждого {@code %ui_<params>%}.
-     * <p>{@code params} = всё, что после {@code ui_}. Например,
+     * PAPI calls this method for each {@code %ui_<params>%}.
+     * <p>{@code params} = everything after {@code ui_}. For example,
      * {@code %ui_player_ping%} → onRequest(offline, "player_ping").
      */
     @Override
     public @Nullable String onRequest(OfflinePlayer offline, @NotNull String params) {
         if (params == null || params.isEmpty()) return null;
 
-        // PAPI всегда передаёт OfflinePlayer. Если игрок онлайн — берём Player;
-        // иначе Player=null (статические плейсхолдеры и серверные значения всё равно работают).
+        // PAPI always passes an OfflinePlayer. If the player is online — use the Player;
+        // otherwise Player=null (static placeholders and server values still work).
         Player online = (offline != null && offline.isOnline()) ? offline.getPlayer() : null;
 
-        // 1. Быстрый путь: точное совпадение имени в BUILTIN
+        // 1. Fast path: exact name match in BUILTIN
         String direct = PlaceholderResolver.resolveBuiltin(online, params);
         if (direct != null) return direct;
 
-        // 2. Динамические шаблоны (%tps_5m%, %ping_5m_all%, %copy:"x"%, ...)
-        //    Делаем безопасный wrapper: НЕ вызываем resolvePapi, чтобы не было рекурсии.
+        // 2. Dynamic templates (%tps_5m%, %ping_5m_all%, %copy:"x"%, ...)
+        //    Safe wrapper: do NOT call resolvePapi to avoid recursion.
         String wrapped = "%" + params + "%";
         String resolved = PlaceholderResolver.resolveInternal(wrapped, online);
 
-        // Если ничего не изменилось — этот плейсхолдер не наш. Пусть PAPI вернёт null.
+        // If nothing changed — this placeholder is not ours. Let PAPI return null.
         if (resolved.equals(wrapped)) return null;
         if (resolved.isEmpty()) return null;
         return resolved;

@@ -9,12 +9,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Отслеживание состояния авторизации игроков.
+ * Tracks the authentication state of players.
  * <p>
- * Хранит:
- * - Кто уже авторизован (authenticated)
- * - Кто ожидает авторизации (pendingAuth)
- * - Счётчик неверных попыток ввода пароля (wrongAttempts)
+ * Stores:
+ * - Who is already authenticated (authenticated)
+ * - Who is awaiting authentication (pendingAuth)
+ * - Counter of wrong password attempts (wrongAttempts)
  */
 public class AuthPlayerState {
 

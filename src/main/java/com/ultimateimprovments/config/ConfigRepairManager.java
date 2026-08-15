@@ -12,38 +12,39 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * 🔧 ConfigRepairManager — умный ремонт конфигов.
+ * 🔧 ConfigRepairManager — smart config repair.
  * <p>
- * Вместо полной замены файла (как было с compromised-*) находит недостающие ключи
- * в текущем конфиге относительно эталона из JAR и ДОБАВЛЯЕТ их в конец файла.
+ * Instead of fully replacing the file (as was done with compromised-*) it finds
+ * the missing keys in the current config relative to the JAR reference and ADDS
+ * them to the end of the file.
  * <p>
- * Все существующие значения СОХРАНЯЮТСЯ — не нужно перенастраивать конфиг заново.
+ * All existing values are KEPT — no need to reconfigure the config from scratch.
  */
 public class ConfigRepairManager {
 
     private ConfigRepairManager() {}
 
     /**
-     * Проверяет и чинит конфиг: если есть недостающие ключи — добавляет их в конец файла.
+     * Checks and repairs the config: if there are missing keys — adds them to the end of the file.
      *
-     * @param plugin         экземпляр плагина
-     * @param resourcePath   путь к эталону в JAR (например "config.yml")
-     * @param config         текущий загруженный конфиг
-     * @param dataFile       файл конфига на диске
-     * @return true если были добавлены новые ключи, false если всё в порядке
+     * @param plugin         plugin instance
+     * @param resourcePath   path to the JAR reference (e.g. "config.yml")
+     * @param config         the currently loaded config
+     * @param dataFile       the config file on disk
+     * @return true if new keys were added, false if everything is fine
      */
     public static boolean repair(Main plugin, String resourcePath, FileConfiguration config, File dataFile) {
         FileConfiguration defaultConfig = loadDefaultResource(plugin, resourcePath);
         if (defaultConfig == null) return false;
 
-        // Собираем все пути из эталона
+        // Collect all paths from the reference
         Set<String> requiredPaths = collectAllPaths(defaultConfig);
 
-        // Ищем недостающие
+        // Find the missing ones
         List<String> missing = findMissingPaths(config, requiredPaths);
 
         if (missing.isEmpty()) {
-            return false; // всё ок
+            return false; // all good
         }
 
         ConsoleLogger.warn("[ConfigRepair] Missing " + missing.size() + " key(s) in " + dataFile.getName());
@@ -51,31 +52,31 @@ public class ConfigRepairManager {
             ConsoleLogger.warn("[ConfigRepair]   + " + path);
         }
 
-        // Добавляем недостающие ключи в конец файла
+        // Add the missing keys to the end of the file
         appendMissingKeys(plugin, config, dataFile, defaultConfig, missing);
         ConsoleLogger.info("[ConfigRepair] ✔ Added " + missing.size() + " missing key(s) to " + dataFile.getName());
         return true;
     }
 
     /**
-     * Добавляет недостающие ключи в конец YAML-файла, сохраняя структуру.
+     * Adds the missing keys to the end of the YAML file, preserving the structure.
      */
     /**
-     * Добавляет недостающие ключи в конфиг.
+     * Adds the missing keys to the config.
      * <p>
-     * Два режима:
+     * Two modes:
      * <ol>
-     *   <li><b>Новые root-секции</b> (корень не существует в userConfig) — дописываются YAML-блоком
-     *       в конец файла. Это безопасно, т.к. дубликатов не будет.</li>
-     *   <li><b>Под-ключи в существующих секциях</b> (корень уже есть) — устанавливаются через
-     *       {@code config.set()}, после чего весь файл перезаписывается {@code config.save()}.
-     *       Это необходимо, чтобы SnakeYAML не перезатёр существующие значения дубликатом root-секции.</li>
+     *   <li><b>New root sections</b> (root does not exist in userConfig) — appended as a YAML block
+     *       at the end of the file. This is safe because there will be no duplicates.</li>
+     *   <li><b>Sub-keys in existing sections</b> (root already present) — set via
+     *       {@code config.set()}, after which the whole file is rewritten with {@code config.save()}.
+     *       This is required so that SnakeYAML does not overwrite existing values with a duplicate root section.</li>
      * </ol>
      */
     private static void appendMissingKeys(Main plugin, FileConfiguration userConfig, File dataFile, FileConfiguration defaultConfig, List<String> missing) {
-        // Разделяем недостающие ключи на две группы:
-        //   A — root-секция уже существует → config.set() + save
-        //   B — новая root-секция → YAML append (без риска дубликата)
+        // Split the missing keys into two groups:
+        //   A — root section already exists → config.set() + save
+        //   B — new root section → YAML append (no duplicate risk)
         List<String> appendPaths = new ArrayList<>();
         boolean needsFullSave = false;
 
@@ -83,8 +84,8 @@ public class ConfigRepairManager {
             String rootKey = path.contains(".") ? path.substring(0, path.indexOf('.')) : path;
 
             if (userConfig.isSet(rootKey)) {
-                // Root-секция уже существует — устанавливаем через set(),
-                // чтобы избежать YAML-дубликата root-ключа
+                // Root section already exists — set via set(),
+                // to avoid a duplicate root key in YAML
                 userConfig.set(path, defaultConfig.get(path));
                 needsFullSave = true;
             } else {
@@ -92,8 +93,8 @@ public class ConfigRepairManager {
             }
         }
 
-        // ── Группа A: под-ключи в существующих секциях → config.set() + save ──
-        // Выполняется ПЕРВЫМ, чтобы save() не перезаписал YAML-append, который будет после.
+        // ── Group A: sub-keys in existing sections → config.set() + save ──
+        // Done FIRST so that save() does not overwrite the YAML-append that comes after.
         if (needsFullSave) {
             try {
                 userConfig.save(dataFile);
@@ -103,7 +104,7 @@ public class ConfigRepairManager {
             }
         }
 
-        // ── Группа B: новые root-секции → YAML append в КОНЕЦ уже сохранённого файла ──
+        // ── Group B: new root sections → YAML append at the END of the already-saved file ──
         if (!appendPaths.isEmpty()) {
             appendPaths.sort(Comparator.comparingInt(String::length));
 
@@ -111,7 +112,7 @@ public class ConfigRepairManager {
             appendix.append("\n");
             appendix.append("# === Missing keys added by UltimateImprovments (auto-repair) ===\n");
 
-            // Группируем по корневой секции
+            // Group by root section
             Map<String, Set<String>> sectionMap = new LinkedHashMap<>();
             for (String path : appendPaths) {
                 String rootKey = path.contains(".") ? path.substring(0, path.indexOf('.')) : path;
@@ -149,7 +150,7 @@ public class ConfigRepairManager {
     }
 
     /**
-     * Рекурсивно строит YAML-путь для вложенного ключа.
+     * Recursively builds the YAML path for a nested key.
      */
     private static void appendYamlPath(StringBuilder sb, ConfigurationSection section, String path, int depth) {
         String indent = "  ".repeat(depth);
@@ -171,7 +172,7 @@ public class ConfigRepairManager {
         } else {
             Object val = section.get(path);
             if (val == null) {
-                // Попробуем получить прямое значение ключа
+                // Try to get the direct key value
                 val = section.get(key);
             }
             sb.append(indent).append(formatYamlValue(key, val)).append("\n");
@@ -179,7 +180,7 @@ public class ConfigRepairManager {
     }
 
     /**
-     * Форматирует YAML-значение: строки в кавычки, списки и т.д.
+     * Formats a YAML value: strings in quotes, lists, etc.
      */
     private static String formatYamlValue(String key, Object value) {
         if (value == null) {
@@ -199,7 +200,7 @@ public class ConfigRepairManager {
             }
             return sb.toString().trim();
         }
-        // Строка — в кавычки (экранируем бэкслеши, чтобы SnakeYAML не споткнулся о \p, \n и т.д.)
+        // String — quote it (escape backslashes so SnakeYAML doesn't stumble on \p, \n, etc.)
         return key + ": \"" + value.toString().replace("\\", "\\\\") + "\"";
     }
 
@@ -212,7 +213,7 @@ public class ConfigRepairManager {
     }
 
     // =========================
-    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ (из ConfigIntegrityValidator)
+    // HELPER METHODS (from ConfigIntegrityValidator)
     // =========================
 
     private static FileConfiguration loadDefaultResource(Main plugin, String resourcePath) {

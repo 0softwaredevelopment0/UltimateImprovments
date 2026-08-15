@@ -12,12 +12,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 /**
- * Отвечает за сохранение и загрузку реактора из SQLite.
+ * Handles saving and loading the reactor from SQLite.
  */
 public class ReactorPersistence {
 
     /**
-     * Сохраняет текущее состояние реактора в БД.
+     * Saves the current reactor state to the DB.
      */
     public static void saveToDb(ReactorState state) {
         Location loc = state.getReactorLocation();
@@ -64,7 +64,7 @@ public class ReactorPersistence {
     }
 
     /**
-     * Загружает реактор из БД и заполняет состояние.
+     * Loads the reactor from the DB and fills the state.
      */
     public static boolean loadFromDb(ReactorState state) {
         try (Connection con = DatabaseManager.getConnection();
@@ -115,7 +115,7 @@ public class ReactorPersistence {
     }
 
     /**
-     * Удаляет реактор из БД.
+     * Removes the reactor from the DB.
      */
     public static void deleteFromDb(String reactorId) {
         if (reactorId == null) return;
@@ -129,7 +129,7 @@ public class ReactorPersistence {
     }
 
     /**
-     * Сохраняет все активные реакторы (вызывается из ReactorManager.saveAll()).
+     * Saves all active reactors (called from ReactorManager.saveAll()).
      */
     public static void saveAll(ReactorState state) {
         if (state == null || !state.isValid() || state.getReactorLocation() == null) return;

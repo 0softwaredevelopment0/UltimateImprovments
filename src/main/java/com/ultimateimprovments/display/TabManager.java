@@ -25,13 +25,12 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Управляет кастомным таб-листом:
+/** * Manages the custom tab list:
  * <ul>
- *   <li>Header — текст над списком игроков (MiniMessage + плейсхолдеры)</li>
- *   <li>Footer — текст под списком игроков (MiniMessage + плейсхолдеры)</li>
- *   <li>PlayerList name — префикс/суффикс перед/после ника (пинг, PAPI и т.д.)</li> * <li>Hide spectators — скрытие игроков в спектаторе из таба</li>
- * <li>Sort mode — сортировка ников в табе (A-Z, Z-A, LuckPerms, OP)</li>
+ *   <li>Header — text above the player list (MiniMessage + placeholders)</li>
+ *   <li>Footer — text below the player list (MiniMessage + placeholders)</li>
+ *   <li>PlayerList name — prefix/suffix before/after the name (ping, PAPI, etc.)</li> * <li>Hide spectators — hides spectator players from the tab</li>
+ *   <li>Sort mode — sorts names in the tab (A-Z, Z-A, LuckPerms, OP)</li>
  * </ul>
  */
 public class TabManager extends BukkitRunnable implements Listener {
@@ -60,17 +59,17 @@ public class TabManager extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Инициализирует TabManager. Если уже был запущен — clean up предыдущего.
+     * Initializes TabManager. If it was already running — clean up the previous one.
      */
     public static void init() {
-        // Clean up previous BukkitRunnable (но НЕ cancelTasks — это убивает ВСЕ задачи плагина)
+        // Clean up the previous BukkitRunnable (but NOT cancelTasks — that kills ALL plugin tasks)
         if (instance != null) {
             try { instance.cancel(); } catch (Exception ignored) {}
         }
 
         instance = new TabManager();
 
-        // Регистрируем Listener ТОЛЬКО один раз за всё время работы плагина
+        // Register the Listener ONLY once for the whole plugin lifetime
         if (!listenersRegistered) {
             Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
             listenersRegistered = true;
@@ -78,7 +77,7 @@ public class TabManager extends BukkitRunnable implements Listener {
 
         instance.reloadConfig();
 
-        // Скрываем уже онлайн спектаторов при старте/reload
+        // Hide already-online spectators on start/reload
         if (instance.hideSpectators) {
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 for (Player p : Bukkit.getOnlinePlayers()) {
@@ -90,7 +89,7 @@ public class TabManager extends BukkitRunnable implements Listener {
         }
 
         if (instance.enabled) {
-            // BukkitRunnable НЕЛЬЗЯ переиспользовать после cancel() — всегда новый instance
+            // A BukkitRunnable CANNOT be reused after cancel() — always a new instance
             instance.runTaskTimer(Main.getInstance(), 20L, instance.intervalTicks);
         }
     }
@@ -103,19 +102,19 @@ public class TabManager extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Сбрасывает флаг регистрации listener'ов (вызывается из Main.onDisable()).
-     * Нужен чтобы при следующем старте плагина (после /reload) listeners зарегистрировались заново.
+     * Resets the listener registration flag (called from Main.onDisable()).
+     * Needed so listeners get re-registered on the next plugin start (after /reload).
      */
     public static void resetListenerState() {
         listenersRegistered = false;
     }
 
     /**
-     * Перезагрузка конфига. BukkitRunnable нельзя переиспользовать после cancel(),
-     * поэтому при reload создаём новый instance через init().
+     * Config reload. A BukkitRunnable can't be reused after cancel(),
+     * so on reload we create a new instance via init().
      */
     public static void reload() {
-        // Просто переинициализируем — создаётся новый BukkitRunnable
+        // Just re-initialize — a new BukkitRunnable is created
         init();
     }
 
@@ -131,7 +130,7 @@ public class TabManager extends BukkitRunnable implements Listener {
         this.hideSpectators = config.getBoolean("tab.hide_spectators", false);
         this.intervalTicks = Math.max(10, config.getInt("tab.update_interval_ticks", 20));
         this.playerListIntervalTicks = config.getInt("tab.player_list.update_interval_ticks", 0);
-        // Если 0 — обновляется с той же частотой, что header/footer
+        // If 0 — updates at the same frequency as the header/footer
         if (playerListIntervalTicks <= 0) {
             playerListIntervalTicks = intervalTicks;
         } else {
@@ -151,8 +150,8 @@ public class TabManager extends BukkitRunnable implements Listener {
     // ── Spectator hide / show ──
 
     /**
-     * Отправляет ClientboundPlayerInfoRemovePacket всем онлайн-игрокам,
-     * чтобы скрыть спектатора из их tab list.
+     * Sends ClientboundPlayerInfoRemovePacket to all online players
+     * to hide the spectator from their tab list.
      */
     private static void removeSpectatorFromTabList(Player spectator) {
         ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(
@@ -167,8 +166,8 @@ public class TabManager extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Отправляет ClientboundPlayerInfoRemovePacket с батчем UUID всех ванишнутых
-     * всем онлайн-игрокам (кроме самих ванишнутых).
+     * Sends ClientboundPlayerInfoRemovePacket with a batch of all vanished UUIDs
+     * to all online players (except the vanished themselves).
      */
     private static void batchRemoveVanishedFromTabList(List<UUID> vanishedUuids) {
         ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(vanishedUuids);
@@ -181,7 +180,7 @@ public class TabManager extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Возвращает спектатора в tab list всех онлайн-игроков.
+     * Returns the spectator to all online players' tab lists.
      */
     private static void addSpectatorToTabList(Player spectator) {
         try {
@@ -206,7 +205,7 @@ public class TabManager extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Скрывает всех текущих спектаторов из таба данного игрока.
+     * Hides all current spectators from the given player's tab.
      */
     private static void hideCurrentSpectatorsFrom(Player viewer) {
         List<UUID> spectatorUuids = new ArrayList<>();
@@ -224,11 +223,11 @@ public class TabManager extends BukkitRunnable implements Listener {
     }
 
     // ── Listeners ──
-    // ВАЖНО: все event handler'ы используют TabManager.getInstance() вместо this,
-    // потому что после /ui reload Bukkit всё ещё держит ссылку на СТАРЫЙ instance
-    // (listenersRegistered=true → registerEvents() не вызывается заново).
-    // Если бы handler'ы использовали this.hideSpectators, они бы читали устаревшие
-    // значения из старого объекта, а не из текущего.
+    // IMPORTANT: all event handlers use TabManager.getInstance() instead of this,
+    // because after /ui reload Bukkit still holds a reference to the OLD instance
+    // (listenersRegistered=true → registerEvents() isn't called again).
+    // If handlers used this.hideSpectators, they'd read stale values from the
+    // old object instead of the current one.
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onGameModeChange(PlayerGameModeChangeEvent event) {
@@ -244,10 +243,10 @@ public class TabManager extends BukkitRunnable implements Listener {
             if (!player.isOnline()) return;
 
             if (newMode == GameMode.SPECTATOR && oldMode != GameMode.SPECTATOR) {
-                // Переключился в спектатор — скрыть из таба
+                // Switched to spectator — hide from the tab
                 removeSpectatorFromTabList(player);
             } else if (oldMode == GameMode.SPECTATOR && newMode != GameMode.SPECTATOR) {
-                // Вышел из спектатора — вернуть в таб
+                // Left spectator — return to the tab
                 addSpectatorToTabList(player);
             }
         }, 1L);
@@ -262,12 +261,12 @@ public class TabManager extends BukkitRunnable implements Listener {
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             if (!player.isOnline()) return;
 
-            // Если сам новый игрок в спектаторе — скрыть его от всех
+            // If the new player is a spectator — hide them from everyone
             if (player.getGameMode() == GameMode.SPECTATOR) {
                 removeSpectatorFromTabList(player);
             }
 
-            // Скрыть всех текущих спектаторов от нового игрока
+            // Hide all current spectators from the new player
             hideCurrentSpectatorsFrom(player);
         }, 1L);
     }
@@ -279,7 +278,7 @@ public class TabManager extends BukkitRunnable implements Listener {
 
         Player player = event.getPlayer();
         if (player.getGameMode() == GameMode.SPECTATOR) {
-            // При смене мира клиент пере-добавляет в таб — скрываем снова
+            // On world change the client re-adds to the tab — hide again
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline() && player.getGameMode() == GameMode.SPECTATOR) {
                     removeSpectatorFromTabList(player);
@@ -295,7 +294,7 @@ public class TabManager extends BukkitRunnable implements Listener {
 
         Player player = event.getPlayer();
         if (player.getGameMode() == GameMode.SPECTATOR) {
-            // При респавне клиент пере-добавляет в таб — скрываем снова
+            // On respawn the client re-adds to the tab — hide again
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline() && player.getGameMode() == GameMode.SPECTATOR) {
                     removeSpectatorFromTabList(player);
@@ -311,8 +310,8 @@ public class TabManager extends BukkitRunnable implements Listener {
         List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
         sortPlayers(players);
 
-        // playerListTickCounter отслеживает РЕАЛЬНЫЕ тики, а не вызовы run()
-        // run() вызывается раз в intervalTicks тиков
+        // playerListTickCounter tracks REAL ticks, not run() calls
+        // run() is called every intervalTicks ticks
         playerListTickCounter += intervalTicks;
         boolean updatePlayerList = (playerListTickCounter >= playerListIntervalTicks);
         if (updatePlayerList) {
@@ -323,19 +322,19 @@ public class TabManager extends BukkitRunnable implements Listener {
             if (player == null || !player.isOnline()) continue;
 
             // Per-player header/footer (with player-specific placeholders)
-            // Обновляется каждый tick (раз в intervalTicks)
+            // Updated every tick (every intervalTicks)
             Component playerHeader = buildComponent(headerLines, player);
             Component playerFooter = buildComponent(footerLines, player);
             player.sendPlayerListHeaderAndFooter(playerHeader, playerFooter);
 
-            // Player list name — обновляется по отдельному интервалу
+            // Player list name — updated on a separate interval
             if (objectiveEnabled && updatePlayerList) {
                 if (!objectiveFormat.isEmpty()) {
-                    // Кастомный формат — полный контроль: %luckperms_prefix%%player_name%...
+                    // Custom format — full control: %luckperms_prefix%%player_name%...
                     String resolved = PlaceholderResolver.resolve(objectiveFormat, player);
                     player.playerListName(MessageUtil.parse(resolved));
                 } else {
-                    // Старая логика: prefix + name + suffix
+                    // Old logic: prefix + name + suffix
                     String prefix = PlaceholderResolver.resolve(objectivePrefix, player);
                     String suffix = PlaceholderResolver.resolve(objectiveSuffix, player);
 
@@ -349,13 +348,13 @@ public class TabManager extends BukkitRunnable implements Listener {
         }
 
         // Apply sorting via playerListOrder (Paper API)
-        // Сортировка обновляется каждый тик, потому что игроки заходят/выходят
+        // Sorting updates every tick because players join/leave
         if (sortMode != SortMode.NONE) {
             applySortOrder(players);
         }
 
-        // Re-hide spectators — setPlayerListOrder() и другие операции могут
-        // заставить клиент пере-добавить скрытого спектатора в таб
+        // Re-hide spectators — setPlayerListOrder() and other operations may
+        // make the client re-add a hidden spectator to the tab
         if (hideSpectators) {
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p != null && p.getGameMode() == GameMode.SPECTATOR) {
@@ -364,8 +363,8 @@ public class TabManager extends BukkitRunnable implements Listener {
             }
         }
 
-        // Re-hide vanished players — то же самое: любые tab-операции могут
-        // заставить клиент пере-добавить ванишнутых в таб-лист
+        // Re-hide vanished players — same thing: any tab operations may
+        // make the client re-add the vanished to the tab list
         List<UUID> vanishedUuids = new ArrayList<>();
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (p != null && VanishManager.isVanished(p.getUniqueId())) {
@@ -378,7 +377,7 @@ public class TabManager extends BukkitRunnable implements Listener {
     }
 
     /**
-     * Строит Component из списка строк MiniMessage + плейсхолдеры.
+     * Builds a Component from a list of MiniMessage strings + placeholders.
      */
     private Component buildComponent(List<String> lines, Player player) {
         if (lines == null || lines.isEmpty()) return Component.empty();

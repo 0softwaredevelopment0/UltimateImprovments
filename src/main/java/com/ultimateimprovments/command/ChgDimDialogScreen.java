@@ -19,27 +19,27 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * ChgDimDialogScreen — создаёт и открывает Custom Screen (Dialog) для телепортации между мирами.
+ * ChgDimDialogScreen — creates and opens a Custom Screen (Dialog) for teleporting between worlds.
  * <p>
- * Использует Minecraft 26.2 Dialog API для показа экрана с полем ввода названия мира
- * и кнопками «✔ Teleport» / «✖ Cancel».
+ * Uses the Minecraft 26.2 Dialog API to show a screen with a world-name input field
+ * and «✔ Teleport» / «✖ Cancel» buttons.
  * <p>
- * При ошибке (мир не найден, нет прав, кулдаун) вызывается повторно с текстом ошибки,
- * который отображается прямо в диалоговом окне.
+ * On an error (world not found, no permission, cooldown) it is called again with the error text
+ * displayed right in the dialog window.
  * <p>
- * Диалог использует {@link DialogAction#CLOSE} (а НЕ {@link DialogAction#WAIT_FOR_RESPONSE}):
- * при {@code WAIT_FOR_RESPONSE} клиент после клика уходит на экран «Waiting for server…»
- * и игнорирует {@code ClientboundClearDialogPacket}, поэтому окно висело бы ~4 секунды.
- * С {@code CLOSE} клиент закрывает окно СРАЗУ после клика сам, а сервер переоткрывает
- * его (при ошибке) или выполняет действие.
+ * The dialog uses {@link DialogAction#CLOSE} (NOT {@link DialogAction#WAIT_FOR_RESPONSE}):
+ * with {@code WAIT_FOR_RESPONSE} the client goes to the «Waiting for server…» screen
+ * after a click and ignores {@code ClientboundClearDialogPacket}, so the window would
+ * hang for ~4 seconds. With {@code CLOSE} the client closes the window itself immediately
+ * after the click, and the server reopens it (on error) or performs the action.
  */
 public class ChgDimDialogScreen {
 
-    /** Идентификатор CustomAll действия для телепортации. */
+    /** CustomAll action identifier for the teleport. */
     public static final Identifier CHGDIM_SUBMIT_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "chgdim_submit");
     /** CustomAll action identifier for returning to the starting point. */
     public static final Identifier CHGDIM_RETURN_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "chgdim_return");
-    /** Идентификатор CustomAll действия для отмены. */
+    /** CustomAll action identifier for the cancel. */
     public static final Identifier CHGDIM_CANCEL_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "chgdim_cancel");
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
@@ -47,10 +47,10 @@ public class ChgDimDialogScreen {
     private ChgDimDialogScreen() {}
 
     /**
-     * Открывает экран телепортации для игрока.
+     * Opens the teleport screen for the player.
      *
-     * @param player целевой игрок
-     * @param errorMessage опциональное сообщение об ошибке (null если нет ошибки)
+     * @param player the target player
+     * @param errorMessage optional error message (null if there is no error)
      */
     public static void open(Player player, String errorMessage) {
         if (!(player instanceof CraftPlayer craftPlayer)) {
@@ -59,7 +59,7 @@ public class ChgDimDialogScreen {
         }
         ServerPlayer serverPlayer = craftPlayer.getHandle();
 
-        // ─── Заголовки ───
+        // ─── Titles ───
         net.minecraft.network.chat.Component title = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString(
                 "changedimmension.dialog.title",
@@ -69,10 +69,10 @@ public class ChgDimDialogScreen {
             MM.deserialize("<gray>Teleport to World</gray>")
         );
 
-        // ─── Текст тела ───
+        // ─── Body text ───
         String bodyStr;
         if (errorMessage != null && !errorMessage.isEmpty()) {
-            // Показываем ошибку прямо в диалоге
+            // Show the error right in the dialog
             bodyStr = "<red>❌ " + errorMessage + "</red>\n\n<white>Enter a valid world name:</white>";
         } else {
             bodyStr = Main.getInstance().getConfig().getString(
@@ -81,7 +81,7 @@ public class ChgDimDialogScreen {
         }
         net.minecraft.network.chat.Component bodyText = toNative(MM.deserialize(bodyStr));
 
-        // ─── Поле ввода названия мира ───
+        // ─── World name input field ───
         net.minecraft.network.chat.Component inputLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString(
                 "changedimmension.dialog.world_label",
@@ -89,7 +89,7 @@ public class ChgDimDialogScreen {
         );
         TextInput worldInput = new TextInput(200, inputLabel, false, "", 64, Optional.empty());
 
-        // ─── Кнопки ───
+        // ─── Buttons ───
         net.minecraft.network.chat.Component tpLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString(
                 "changedimmension.dialog.tp_button",
@@ -101,7 +101,7 @@ public class ChgDimDialogScreen {
                 "<red>✖ Cancel</red>"))
         );
 
-        // TP → CustomAll action (отправляет название мира)
+        // TP → CustomAll action (sends the world name)
         ActionButton tpBtn = new ActionButton(
             new CommonButtonData(tpLabel, 150),
             Optional.of(new CustomAll(CHGDIM_SUBMIT_ID, Optional.empty()))
@@ -116,19 +116,19 @@ public class ChgDimDialogScreen {
             new CommonButtonData(returnLabel, 150),
             Optional.of(new CustomAll(CHGDIM_RETURN_ID, Optional.empty()))
         );
-        // Cancel → CustomAll action (закрывает диалог без телепортации)
+        // Cancel → CustomAll action (closes the dialog without teleporting)
         ActionButton cancelBtn = new ActionButton(
             new CommonButtonData(cancelLabel, 150),
             Optional.of(new CustomAll(CHGDIM_CANCEL_ID, Optional.empty()))
         );
 
-        // ─── Сборка диалога ───
+        // ─── Build the dialog ───
         CommonDialogData data = new CommonDialogData(
             title,
             Optional.of(externalTitle),
-            true,                           // canCloseWithEscape — можно закрыть ESC
+            true,                           // canCloseWithEscape — can close with ESC
             true,                           // pause
-            DialogAction.CLOSE,               // afterAction — клиент закрывает окно сам, мгновенно (без «Waiting for server»)
+            DialogAction.CLOSE,               // afterAction — the client closes the window itself, instantly (no «Waiting for server»)
             List.of(new PlainMessage(bodyText, 310)),
             List.of(new Input("world_name", worldInput))
         );
@@ -145,14 +145,14 @@ public class ChgDimDialogScreen {
     }
 
     /**
-     * Открывает экран телепортации без ошибки (чистый диалог).
+     * Opens the teleport screen without an error (clean dialog).
      */
     public static void open(Player player) {
         open(player, null);
     }
 
     /**
-     * Закрывает открытый диалог у игрока.
+     * Closes the open dialog of the player.
      */
     public static void close(Player player) {
         if (!(player instanceof CraftPlayer craftPlayer)) return;
@@ -163,8 +163,8 @@ public class ChgDimDialogScreen {
     }
 
     /**
-     * Преобразует Adventure Component → Minecraft Component.
-     * Сериализует через legacy section-коды, затем создаёт Minecraft Component.
+     * Converts an Adventure Component → Minecraft Component.
+     * Serializes through legacy section codes, then creates a Minecraft Component.
      */
     private static net.minecraft.network.chat.Component toNative(Component adv) {
         String legacy = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer

@@ -14,15 +14,15 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * HomeDatabase — общий доступ к таблице player_homes для всех home-команд.
+ * HomeDatabase — shared access to the player_homes table for all home commands.
  * <p>
- * Настройки (max_homes) читаются из config.yml раздел {@code home}.
+ * Settings (max_homes) are read from the {@code home} section of config.yml.
  */
 public final class HomeDatabase {
 
     private HomeDatabase() {}
 
-    /** @return максимальное количество домов на игрока из конфига */
+    /** @return the maximum number of homes per player from the config */
     public static int getMaxHomes() {
         return Main.getInstance().getConfig().getInt("home.max_homes", 10);
     }

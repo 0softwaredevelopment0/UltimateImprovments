@@ -5,8 +5,8 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * Периодическая задача очистки просроченных ключей кодовой панели из БД.
- * Запускается раз в 20 секунд (400 тиков).
+ * Periodic task that cleans expired code panel keys from the DB.
+ * Runs every 20 seconds (400 ticks).
  */
 public class CodePanelCleanupTask extends BukkitRunnable {
 

@@ -64,7 +64,7 @@ public class LightningStructure {
 
     // =========================
     // ENERGY INPUT LOCATION (WAXED_CHISELED_COPPER at 0, -3, 0 from center)
-    // Сюда должен быть подведён кабель с энергией 100 за операцию.
+    // A cable with 100 energy per operation must be connected here.
     // =========================
     public static Location getEnergyInputLoc(Location center) {
         if (center == null) return null;

@@ -13,18 +13,18 @@ import java.util.HashMap;
 import java.util.UUID;
 
 /**
- * Обрабатывает команды /ui chgdim — телепортацию между мирами.
+ * Handles the /ui chgdim command — teleportation between worlds.
  * <p>
- * Открывает Custom Screen (Dialog) при /ui chgdim, где игрок вводит
- * название мира и нажимает Teleport / Cancel.
+ * Opens a Custom Screen (Dialog) on /ui chgdim, where the player enters
+ * the world name and presses Teleport / Cancel.
  */
 public class ChgDimCommand {
 
-    /** Карта кулдаунов: UUID → timestamp последней телепортации. Package-private для ChgDimDialogHandler. */
+    /** Cooldown map: UUID → timestamp of the last teleport. Package-private for ChgDimDialogHandler. */
     static final HashMap<UUID, Long> cooldowns = new HashMap<>();
 
     /**
-     * Выполняет телепортацию в указанный мир.
+     * Teleports to the specified world.
      */
     public static boolean teleport(Player player, String worldName) {
         // =========================
@@ -75,7 +75,7 @@ public class ChgDimCommand {
         float teleportPitch = worldConfig != null ? (float) worldConfig.getDouble("pitch", 0.0) : 0.0f;
 
         // =========================
-        // СОХРАНЯЕМ ТЕКУЩУЮ ПОЗИЦИЮ В БД (всегда, перед телепортацией)
+        // SAVE THE CURRENT POSITION IN THE DB (always, before teleporting)
         // =========================
         DimensionManager.saveReturnLocation(player);
 
@@ -90,7 +90,7 @@ public class ChgDimCommand {
     }
 
     /**
-     * Выполняет возврат в исходную точку.
+     * Teleports back to the original point.
      */
     public static boolean teleportBack(Player player) {
         if (!DimensionManager.hasReturnLocation(player)) {

@@ -22,11 +22,11 @@ import com.ultimateimprovments.structure.StructureChunkTracker;
 import com.ultimateimprovments.structure.StructureMarker;
 
 /**
- * PluginStartup — матрёшка инициализации UltimateImprovments.
+ * PluginStartup — the initialization nesting doll of UltimateImprovments.
  * <p>
- * Вызывается из {@link Main#onEnable()}.
- * Разбивает запуск на логические фазы: инфраструктура → модули → пост-модули → финиш.
- * Каждая фаза — отдельный метод, что даёт читаемую древовидную структуру.
+ * Called from {@link Main#onEnable()}.
+ * Splits startup into logical phases: infrastructure → modules → post-modules → finish.
+ * Each phase is a separate method, giving a readable tree structure.
  */
 public class PluginStartup {
 
@@ -38,11 +38,11 @@ public class PluginStartup {
     }
 
     // ==========================================================================
-    // 🚀 STARTUP — корень матрёшки
+    // 🚀 STARTUP — root of the matryoshka
     // ==========================================================================
 
     public void startupPlugin() {
-        // Guard: предотвращает двойной startup (напр. от PlugMan enable без disable)
+        // Guard: prevents double startup (e.g. from PlugMan enable without disable)
         if (startupPerformed) {
             ConsoleLogger.warn("[Startup] Already performed! Doing full reset first...");
             try {
@@ -59,19 +59,22 @@ public class PluginStartup {
         // Auth command log filter — hide passwords from server console
         AuthCommandLogFilter.register();
 
-        // Auth Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        // Auth Dialog handler — registered as early as possible to not miss events
         com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
 
-        // Sudo Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        // Sudo Dialog handler — registered as early as possible to not miss events
         com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler.register();
 
-        // ChgDim Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        // ChgDim Dialog handler — registered as early as possible to not miss events
         com.ultimateimprovments.command.ChgDimDialogHandler.register();
 
-        // AskPos Dialog handler — диалоги запроса координат (/ui askpos)
+        // AskPos Dialog handler — coordinate request dialogs (/ui askpos)
         com.ultimateimprovments.command.AskPosDialogHandler.register();
 
-        // Code Panel Dialog handler — регистрируется как можно раньше, чтобы не пропустить события
+        // GetPos Dialog handler — coordinate lookup dialogs (/ui getpos)
+        com.ultimateimprovments.command.GetPosDialogHandler.register();
+
+        // Code Panel Dialog handler — registered as early as possible to not miss events
         com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register();
 
         ConsoleLogger.info("");
@@ -80,8 +83,8 @@ public class PluginStartup {
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("");
 
-        // Проверка Java-версии: предупреждаем, но НЕ отключаем плагин.
-        // Модули с несовместимыми классами сами отвалятся (без стектрейсов — см. PluginModule).
+        // Java version check: warn, but do NOT disable the plugin.
+        // Modules with incompatible classes will fail on their own (no stacktraces — see PluginModule).
         checkJavaVersion();
 
         initInfrastructure();
@@ -91,12 +94,12 @@ public class PluginStartup {
     }
 
     /**
-     * Проверяет Java-версию и печатает предупреждение если классы плагина
-     * несовместимы с текущей Java. НЕ отключает плагин — только предупреждает.
+     * Checks the Java version and prints a warning if the plugin classes are
+     * incompatible with the current Java. Does NOT disable the plugin — only warns.
      * <p>
-     * Вместо хардкода номера версии — реально пробует загрузить один тестовый класс.
-     * Если Paper не может сконвертировать class (IllegalArgumentException),
-     * печатает одно понятное сообщение вместо 60+ 'Fatal error' от Paper.
+     * Instead of hardcoding a version number — actually tries to load one test class.
+     * If Paper cannot convert the class (IllegalArgumentException),
+     * prints one clear message instead of 60+ 'Fatal error' lines from Paper.
      */
     private void checkJavaVersion() {
         try {
@@ -115,17 +118,17 @@ public class PluginStartup {
                 ConsoleLogger.warn("");
             }
         } catch (ClassNotFoundException ignored) {
-            // Класс обязан быть — но если нет, просто продолжаем
+            // The class must exist — but if not, just continue
         }
     }
 
     // ==========================================================================
-    // 🏗 ФАЗА 1: ИНФРАСТРУКТУРА
+    // 🏗 PHASE 1: INFRASTRUCTURE
     // ==========================================================================
 
     private void initInfrastructure() {
-        // Права плагина (канонический список в Permissions) — регистрируются раньше
-        // всех модулей, чтобы любой код мог на них полагаться.
+        // Plugin permissions (canonical list in Permissions) — registered before
+        // all modules so any code can rely on them.
         Permissions.registerAll();
 
         FileLogger.ensureDirectory(plugin.getDataFolder(), "DataFolder");
@@ -138,8 +141,8 @@ public class PluginStartup {
 
         PlaceholderResolver.init();
 
-        // PlaceholderAPI hook — регистрируем UIPlaceholderExpansion
-        // ТОЛЬКО если PAPI установлен; иначе только внутренний резолвер работает.
+        // PlaceholderAPI hook — register UIPlaceholderExpansion
+        // ONLY if PAPI is installed; otherwise only the internal resolver works.
         if (PlaceholderResolver.isPapiAvailable()) {
             try {
                 com.ultimateimprovments.hook.UIPlaceholderExpansion expansion =
@@ -155,7 +158,7 @@ public class PluginStartup {
                 ConsoleLogger.warn("[PlaceholderAPI] Registration failed: " + t.getMessage());
             }
         } else {
-            ConsoleLogger.info("[PlaceholderAPI] PlaceholderAPI не обнаружен — плейсхолдеры работают только внутри плагина");
+            ConsoleLogger.info("[PlaceholderAPI] PlaceholderAPI not found — placeholders work only inside the plugin");
         }
 
         Keys.init(plugin);
@@ -188,17 +191,17 @@ public class PluginStartup {
     }
 
     // ==========================================================================
-    // 🧩 ФАЗА 2: МОДУЛИ
+    // 🧩 PHASE 2: MODULES
     // ==========================================================================
 
     private void initModuleSystem() {
         ModuleManager.init(plugin);
         var mm = ModuleManager.getInstance();
 
-        // Регистрируем модули вручную — это полный и упорядоченный список.
-        // Авто-сканирование (ModuleScanner) не используется: раньше его путь был
-        // написан со старой орфографией и никогда не находил модули; а если бы
-        // работал — пропустил бы модули вне пакета com/ultimateimprovments/module
+        // Modules are registered manually — this is the full and ordered list.
+        // Auto-scanning (ModuleScanner) is not used: its path was previously written
+        // with old spelling and never found modules; and if it did work it would skip
+        // modules outside the com/ultimateimprovments/module package
         // (OmniscannerModule, ProtectionModule).
         registerSystemModules(mm);
         registerEnergyModules(mm);
@@ -270,6 +273,10 @@ public class PluginStartup {
         SimpleModules.registerSelfDestructEnchantment(mm);
         // DegradationEnchantment
         SimpleModules.registerDegradationEnchantment(mm);
+        // AttackAoeEnchantment
+        SimpleModules.registerAttackAoeEnchantment(mm);
+        // ItemStealingEnchantment
+        SimpleModules.registerItemStealingEnchantment(mm);
     }
 
     private void registerProtectionModules(ModuleManager mm) {
@@ -312,7 +319,7 @@ public class PluginStartup {
     }
 
     // ==========================================================================
-    // 🔗 ФАЗА 3: ПОСТ-МОДУЛЬНЫЕ СИСТЕМЫ
+    // 🔗 PHASE 3: POST-MODULE SYSTEMS
     // ==========================================================================
 
     private void initPostModuleSystems() {
@@ -353,25 +360,25 @@ public class PluginStartup {
         CheckManager.init();
         plugin.getServer().getPluginManager().registerEvents(new CheckListener(), plugin);
 
-        // Commands — регистрация Bukkit-команд через CommandMap
+        // Commands — register Bukkit commands via CommandMap
         CommandRegistrar.getInstance().registerAll(plugin);
 
-        // SubCommand registry — инициализация диспетчера /ultimateimprovments
+        // SubCommand registry — initialize the /ultimateimprovments dispatcher
         com.ultimateimprovments.command.PluginReloadCommand.init();
 
         ConsoleLogger.info("[Init] Post-module systems ready.");
     }
 
     /**
-     * Сбрасывает флаг startupPerformed. Вызывается из PluginShutdown
-     * чтобы при следующем startup (например после /ui reload) guard не сработал.
+     * Resets the startupPerformed flag. Called from PluginShutdown
+     * so the guard does not trigger on the next startup (e.g. after /ui reload).
      */
     public static void resetStartupFlag() {
         startupPerformed = false;
     }
 
     // ==========================================================================
-    // 🎯 ФАЗА 4: ФИНИШ
+    // 🎯 PHASE 4: FINISH
     // ==========================================================================
 
     private void finishStartup() {

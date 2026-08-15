@@ -1,26 +1,6 @@
 {
   "ambient_light": 0.0,
   "attributes": {
-    "minecraft:audio/ambient_sounds": {
-      "mood": {
-        "block_search_extent": 8,
-        "offset": 2.0,
-        "sound": "minecraft:ambient.cave",
-        "tick_delay": 6000
-      }
-    },
-    "minecraft:audio/background_music": {
-      "creative": {
-        "max_delay": 24000,
-        "min_delay": 12000,
-        "sound": "minecraft:music.creative"
-      },
-      "default": {
-        "max_delay": 24000,
-        "min_delay": 12000,
-        "sound": "minecraft:music.game"
-      }
-    },
     "minecraft:gameplay/bed_rule": {
       "can_set_spawn": "never",
       "can_sleep": "always",
@@ -38,7 +18,7 @@
   "coordinate_scale": 1.0,
   "has_ceiling": false,
   "has_ender_dragon_fight": false,
-  "has_skylight": true,
+  "has_skylight": false,
   "height": 4064,
   "infiniburn": "#minecraft:infiniburn_overworld",
   "logical_height": 4064,

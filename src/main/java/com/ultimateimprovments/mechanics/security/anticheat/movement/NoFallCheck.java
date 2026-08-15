@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * NoFall — отключение урона от падения.
- * Детекция: игрок утверждает что на земле, но Y меняется (падает).
+ * NoFall — disabling fall damage.
+ * Detection: the player claims to be on the ground, but Y changes (falling).
  */
 public class NoFallCheck extends AbstractCheck {
 

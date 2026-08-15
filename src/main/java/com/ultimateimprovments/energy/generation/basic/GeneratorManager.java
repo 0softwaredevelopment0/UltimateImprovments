@@ -106,7 +106,7 @@ public class GeneratorManager implements Listener {
                 Location furnaceLoc = LocationUtil.normalize(new Location(world, x, y, z));
                 if (furnaceLoc == null) continue;
                 if (furnaceLoc.getBlock().getType() != Materials.BLAST_FURNACE) continue;
-                // Проверяем PDC — убеждаемся, что это именно генератор, а не обычная печь
+                // Check PDC — make sure it is really a generator, not a regular furnace
                 org.bukkit.block.BlockState state = furnaceLoc.getBlock().getState();
                 if (!(state instanceof TileState tileState)) continue;
                 if (!tileState.getPersistentDataContainer().has(Keys.GENERATOR, PersistentDataType.BYTE)) continue;
@@ -210,7 +210,7 @@ public class GeneratorManager implements Listener {
     }
 
     // =========================
-    // ASSEMBLE FROM FRAME (called from ReactorListener — сохраняем для совместимости)
+    // ASSEMBLE FROM FRAME (called from ReactorListener — kept for compatibility)
     // =========================
     public static void assembleFromFrame(Player player, Location furnaceLoc) {
         furnaceLoc = LocationUtil.normalize(furnaceLoc);

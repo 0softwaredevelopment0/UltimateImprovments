@@ -4,7 +4,7 @@ import com.ultimateimprovments.core.Main;
 import org.bukkit.configuration.file.FileConfiguration;
 
 /**
- * Загружает и хранит конфигурацию реактора из config.yml.
+ * Loads and stores the reactor configuration from config.yml.
  */
 public class ReactorConfig {
 

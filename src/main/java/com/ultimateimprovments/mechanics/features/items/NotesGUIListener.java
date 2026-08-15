@@ -22,11 +22,11 @@ import org.bukkit.inventory.meta.BookMeta;
 import java.util.UUID;
 
 /**
- * Обрабатывает события GUI заметок: клики, закрытие, редактирование книг, выход.
+ * Handles note GUI events: clicks, closing, book editing, quit.
  *
- * ⚠ Использует NotesGUI.openPlayers для идентификации GUI вместо getTitle(),
- *   потому что в Paper 1.21.x InventoryView.getTitle() возвращает Component,
- *   а не String, и сравнение .equals() всегда ложно.
+ * ⚠ Uses NotesGUI.openPlayers to identify the GUI instead of getTitle(),
+ *   because in Paper 1.21.x InventoryView.getTitle() returns a Component,
+ *   not a String, so .equals() comparison is always false.
  */
 public class NotesGUIListener implements Listener {
 
@@ -41,15 +41,15 @@ public class NotesGUIListener implements Listener {
 
         if (noteNumber == null) return;
 
-        // Восстанавливаем предмет, который был в руке до открытия редактора книги
+        // Restore the item that was in hand before opening the book editor
         NotesGUI.restorePending(player, uuid);
 
-        // 🕐 Кулдаун сохранения 5 секунд — предотвращает спам-сохранения
+        // 🕐 5-second save cooldown — prevents save spam
         if (!NotesDatabase.checkSaveCooldown(uuid)) {
-            // Слишком часто — не сохраняем, но GUI всё равно открываем
+            // Too often — do not save, but still open the GUI
             Main.getInstance().getLogger().fine("[Notes] Save skipped (cooldown) for " + player.getName() + " slot #" + noteNumber);
         } else {
-            // Сохраняем контент
+            // Save the content
             try {
                 BookMeta newMeta = event.getNewBookMeta();
                 String content = NotesGUI.joinPages(newMeta.getPages());
@@ -59,7 +59,7 @@ public class NotesGUIListener implements Listener {
             }
         }
 
-        // Возвращаем GUI
+        // Return to the GUI
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             if (player.isOnline()) {
                 NotesGUI.openMainGUI(player);
@@ -68,7 +68,7 @@ public class NotesGUIListener implements Listener {
     }
 
     // =========================
-    // 🛡 DRAG HANDLER — не даём перетаскивать заметки
+    // 🛡 DRAG HANDLER — prevent dragging notes
     // =========================
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
@@ -87,14 +87,14 @@ public class NotesGUIListener implements Listener {
     }
 
     // =========================
-    // INVENTORY CLICK (защита + обработка)
+    // INVENTORY CLICK (protection + handling)
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         UUID uuid = player.getUniqueId();
 
-        // Проверяем только по openPlayers — getTitle() не работает в Paper 1.21.x
+        // Check only via openPlayers — getTitle() does not work in Paper 1.21.x
         if (!NotesGUI.openPlayers.contains(uuid)) return;
 
         event.setCancelled(true);
@@ -109,7 +109,7 @@ public class NotesGUIListener implements Listener {
         if (slot < 0 || slot >= NotesGUI.GUI_SIZE) return;
         int noteNumber = slot + 1;
 
-        // Помечаем переход, закрываем GUI и открываем редактор книги
+        // Mark the transition, close the GUI and open the book editor
         NotesGUI.transitioningToBook.add(uuid);
         player.closeInventory();
         NotesGUI.openPlayers.remove(uuid);
@@ -124,12 +124,12 @@ public class NotesGUIListener implements Listener {
         if (!(event.getPlayer() instanceof Player player)) return;
         UUID uuid = player.getUniqueId();
 
-        // Переход из главного GUI в редактор книги — игнорируем
+        // Transition from main GUI to the book editor — ignore
         if (NotesGUI.transitioningToBook.contains(uuid)) {
             return;
         }
 
-        // Закрытие главного GUI — чистим note-предметы из инвентаря
+        // Closing the main GUI — clean up note items from the inventory
         if (NotesGUI.openPlayers.contains(uuid)) {
             if (!NotesGUI.editingSlots.containsKey(uuid)) {
                 NotesGUI.openPlayers.remove(uuid);
@@ -138,9 +138,9 @@ public class NotesGUIListener implements Listener {
             return;
         }
 
-        // Escape из книги: игрок закрыл книгу без сохранения
+        // Escape from the book: player closed the book without saving
         if (NotesGUI.editingSlots.containsKey(uuid)) {
-            // 🛡 ANTI-DUP: восстанавливаем старый предмет в руку и чистим заметки из инвентаря
+            // 🛡 ANTI-DUP: restore the old item into the hand and clean notes from the inventory
             NotesGUI.restorePending(player, uuid);
             removeNoteItems(player);
             NotesGUI.editingSlots.remove(uuid);
@@ -153,7 +153,7 @@ public class NotesGUIListener implements Listener {
     }
 
     // =========================
-    // PLAYER QUIT — чистим состояние + восстанавливаем предмет в руке
+    // PLAYER QUIT — clean up state + restore the item in hand
     // =========================
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -200,7 +200,7 @@ public class NotesGUIListener implements Listener {
         }
     }
 
-    /** Check if an item is a note book (WRITABLE/WRITTEN_BOOK with "Заметка #" display name). */
+    /** Check if an item is a note book (WRITABLE/WRITTEN_BOOK with a "Note #" display name). */
     private boolean isNoteBook(ItemStack item) {
         if (item == null
                 || (item.getType() != Materials.WRITABLE_BOOK && item.getType() != Materials.WRITTEN_BOOK)) return false;

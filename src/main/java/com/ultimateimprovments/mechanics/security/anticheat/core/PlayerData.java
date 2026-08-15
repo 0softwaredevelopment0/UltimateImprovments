@@ -11,17 +11,17 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Данные игрока для античита.
+ * Anti-cheat player data.
  * <p>
- * Хранит историю позиций, кликов, ротации, скорости и Violation Level для каждой проверки.
- * Потокобезопасен — используется из main thread и async.
+ * Stores position, click, rotation, speed and Violation Level history for each check.
+ * Thread-safe — used from both the main thread and async contexts.
  */
 public class PlayerData {
 
     private final UUID uuid;
     private final String name;
 
-    // ── Position history (последние 20 позиций — ~1 секунда) ──
+    // ── Position history (last 20 positions — ~1 second) ──
     private final Deque<Location> positionHistory = new ConcurrentLinkedDeque<>();
     private volatile Location lastLocation;
     private volatile Location lastGroundLocation;

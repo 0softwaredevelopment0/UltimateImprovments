@@ -27,50 +27,50 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Менеджер «Блоков защиты».
+ * Manager for «Protection Blocks».
  * <p>
- * Кэширует состояние всех размещённых блоков в памяти; для быстрого
- * event-фильтра используется индекс по chunk-key (см. {@link #byChunkKey}).
+ * Caches the state of all placed blocks in memory; a chunk-key index is used
+ * for fast event filtering (see {@link #byChunkKey}).
  * <p>
- * Также отвечает за голограммы (TextDisplay) над блоками и расчёт
- * очков по предмету-топливу (через {@code Bukkit.getUnsafe().getBurnTime}).
+ * Also handles the holograms (TextDisplay) above blocks and computes
+ * points from the fuel item (via {@code Bukkit.getUnsafe().getBurnTime}).
  */
 public class ProtectionManager {
 
-    /** volatile для безопасного чтения с async-потоков (dirty-retry таск). */
+    /** volatile for safe reads from async threads (dirty-retry task). */
     private static volatile ProtectionManager instance;
 
-    /** Все зарегистрированные блоки защиты: UUID блока → данные. */
+    /** All registered protection blocks: block UUID → data. */
     private final Map<UUID, ProtectionBlock> blocks = new ConcurrentHashMap<>();
 
-    /** Индекс для быстрого lookup по chunk-key: chunk-key → список UUID блоков в этом чанке.
-     *  Используем CopyOnWriteArrayList, потому что unregisterBlock мутирует список
-     *  (list.remove), а onChunkLoad итерирует его же — обычный ArrayList даёт
-     *  ConcurrentModificationException при одновременном chunk load+block break. */
+    /** Index for fast lookup by chunk-key: chunk-key → list of block UUIDs in that chunk.
+     *  Uses CopyOnWriteArrayList because unregisterBlock mutates the list
+     *  (list.remove) while onChunkLoad iterates it — a plain ArrayList would throw
+     *  ConcurrentModificationException on concurrent chunk load + block break. */
     private final Map<Long, List<UUID>> byChunkKey = new ConcurrentHashMap<>();
 
-    /** Блоки из БД, чей мир не был загружен на старте плагина.
-     *  На WorldLoadEvent они будут зарегистрированы в основном кэше.
-     *  Это лечит баг: блок в кастомном Multiverse-мире, который не загружен на старте,
-     *  молча терялся на /mv load (loadFromDb делал continue). */
+    /** Blocks from the DB whose world was not loaded at plugin startup.
+     *  They get registered in the main cache on WorldLoadEvent.
+     *  This fixes a bug: a block in a custom Multiverse world not loaded at startup
+     *  was silently lost on /mv load (loadFromDb did continue). */
     private final Map<String, List<ProtectionDatabase.LoadedBlock>> pendingByWorld = new ConcurrentHashMap<>();
 
-    /** Атомарный guard против двойного destroyBlock (две TNT в один тик и т.п.).
-     *  ConcurrentHashMap.newKeySet().add() возвращает true ровно один раз на UUID,
-     *  что гарантирует однократный вызов эффектов (particles/sound/DB-delete). */
+    /** Atomic guard against double destroyBlock (two TNT in one tick, etc.).
+     *  ConcurrentHashMap.newKeySet().add() returns true exactly once per UUID,
+     *  guaranteeing the effects (particles/sound/DB-delete) run only once. */
     private final Set<UUID> destroyed = ConcurrentHashMap.newKeySet();
 
-    /** UUID TextDisplay-голограмм для каждого блока. BlockId → entity UUID. */
+    /** UUID of the TextDisplay hologram for each block. BlockId → entity UUID. */
     private final Map<UUID, UUID> blockHolograms = new ConcurrentHashMap<>();
 
-    /** Блоки, чей saveWhitelist в БД упал — будут ретрайнуты фоновым таском.
-     *  Для защиты от потери whitelist при кратковременной недоступности БД. */
+    /** Blocks whose saveWhitelist failed — will be retried by a background task.
+     *  Protects against losing the whitelist during brief DB unavailability. */
     private final Set<UUID> dirtyWhitelist = ConcurrentHashMap.newKeySet();
 
-    /** BukkitTask для ретраев записи whitelist (см. {@link #startDirtyRetryTask}). */
+    /** BukkitTask for whitelist write retries (see {@link #startDirtyRetryTask}). */
     private BukkitTask dirtyRetryTask;
 
-    /** Материал блока защиты (кешируется). */
+    /** Protection block material (cached). */
     private Material cachedMaterial;
 
     private final MiniMessage MM = MiniMessage.miniMessage();
@@ -125,14 +125,14 @@ public class ProtectionManager {
     }
 
     /**
-     * Вызывается из {@link ProtectionDatabase#saveWhitelist(ProtectionBlock)} при неудаче записи.
-     * Блок добавляется в retry-очередь; фоновый scheduler раз в 5 секунд попробует снова.
+     * Called from {@link ProtectionDatabase#saveWhitelist(ProtectionBlock)} on write failure.
+     * The block is added to the retry queue; a background scheduler retries every 5 seconds.
      */
     void markWhitelistDirty(UUID blockId) {
         if (blockId != null) dirtyWhitelist.add(blockId);
     }
 
-    /** Вызывается из {@link ProtectionDatabase#saveWhitelist(ProtectionBlock)} при успехе. */
+    /** Called from {@link ProtectionDatabase#saveWhitelist(ProtectionBlock)} on success. */
     void clearWhitelistDirty(UUID blockId) {
         if (blockId != null) dirtyWhitelist.remove(blockId);
     }
@@ -148,11 +148,11 @@ public class ProtectionManager {
     }
 
     /**
-     * Полный hot-reload конфигурации Protection: обновляет cachedMaterial (раньше он
-     * кешировался только в init() и не подхватывал изменение protection.block.material
-     * до перезапуска). Вызывается из /ui reload или любого места, где меняется конфиг.
+     * Full hot-reload of the Protection config: refreshes cachedMaterial (previously it
+     * was only cached in init() and didn't pick up protection.block.material changes
+     * until restart). Called from /ui reload or anywhere the config changes.
      * <p>
-     * Также перезапускает dirtyRetryTask (если по какой-то причине остановился).
+     * Also restarts dirtyRetryTask (if it stopped for some reason).
      */
     public void reloadConfig() {
         cacheMaterial();
@@ -166,8 +166,8 @@ public class ProtectionManager {
         for (ProtectionDatabase.LoadedBlock lb : ProtectionDatabase.loadAllBlocks()) {
             World world = Bukkit.getWorld(lb.worldName());
             if (world == null) {
-                // Мир ещё не загружен (Multiverse, custom datapack world, etc) —
-                // не теряем блок, а откладываем регистрацию до WorldLoadEvent.
+                // World not loaded yet (Multiverse, custom datapack world, etc) —
+                // don't lose the block, defer registration until WorldLoadEvent.
                 pendingByWorld.computeIfAbsent(lb.worldName(), k -> new ArrayList<>()).add(lb);
                 ConsoleLogger.info("[ProtectionBlock] World " + lb.worldName()
                         + " not loaded yet — deferring registration of block " + lb.id());
@@ -184,9 +184,9 @@ public class ProtectionManager {
     }
 
     /**
-     * Регистрирует все отложенные блоки для указанного мира. Вызывается из
-     * {@link ProtectionListener#onWorldLoad} при WorldLoadEvent.
-     * Идемпотентно — повторный вызов для того же мира ничего не делает.
+     * Registers all deferred blocks for the given world. Called from
+     * {@link ProtectionListener#onWorldLoad} on WorldLoadEvent.
+     * Idempotent — calling again for the same world does nothing.
      */
     public void onWorldLoad(World world) {
         if (world == null) return;
@@ -194,7 +194,7 @@ public class ProtectionManager {
         if (pending == null || pending.isEmpty()) return;
         int registered = 0;
         for (ProtectionDatabase.LoadedBlock lb : pending) {
-            if (blocks.containsKey(lb.id())) continue; // уже зарегистрирован, защита от дублей
+            if (blocks.containsKey(lb.id())) continue; // already registered, duplicate guard
             Location loc = new Location(world, lb.x(), lb.y(), lb.z());
             ProtectionBlock block = new ProtectionBlock(lb.id(), loc, lb.owner(),
                     lb.radius(), lb.integrity(), lb.points(), lb.enabled());
@@ -211,7 +211,7 @@ public class ProtectionManager {
     // =========================
     // BLOCK REGISTRATION
     // =========================
-    /** Привязывает блок к кэшу. Если save = true — синхронно пишет в БД. */
+    /** Binds a block to the cache. If save = true — writes to the DB synchronously. */
     public void registerBlock(ProtectionBlock block, boolean save) {
         blocks.put(block.getId(), block);
         long chunkKey = LocationUtil.toKey(block.getX() >> 4, 0, block.getZ() >> 4);
@@ -223,7 +223,7 @@ public class ProtectionManager {
         }
     }
 
-    /** Удаляет блок из кэша и БД. Не удаляет сам Minecraft-блок (это делает вызывающий код). */
+    /** Removes a block from the cache and DB. Does NOT remove the Minecraft block (the caller does). */
     public void unregisterBlock(UUID id, boolean saveDelete) {
         ProtectionBlock block = blocks.remove(id);
         if (block == null) return;
@@ -236,7 +236,7 @@ public class ProtectionManager {
             Entity e = Bukkit.getEntity(hid);
             if (e != null) e.remove();
         }
-        // Очищаем destroyed-guard, чтобы блок мог быть зарегистрирован заново в будущем
+        // Clear the destroyed-guard so the block can be re-registered in the future
         destroyed.remove(id);
         if (saveDelete) ProtectionDatabase.deleteBlock(id);
     }
@@ -249,11 +249,11 @@ public class ProtectionManager {
     }
 
     /**
-     * Точный lookup блока защиты в точке location. Использует chunk-key индекс,
-     * чтобы не итерировать все блоки на каждое событие break/place/interact.
+     * Exact lookup of a protection block at a location. Uses the chunk-key index
+     * so we don't iterate all blocks on every break/place/interact event.
      * <p>
-     * Раньше: O(N) линейный проход по {@code blocks.values()}. На 1000 блоков это
-     * 1000 проверок на КАЖДОЕ действие игрока.
+     * Before: O(N) linear pass over {@code blocks.values()}. With 1000 blocks that's
+     * 1000 checks for EVERY player action.
      */
     public ProtectionBlock getBlockAt(Location location) {
         if (location == null || location.getWorld() == null) return null;
@@ -275,11 +275,11 @@ public class ProtectionManager {
     }
 
     /**
-     * True если location находится внутри радиуса какого-либо включённого и живого блока.
+     * True if the location is inside the radius of any enabled and alive block.
      * <p>
-     * Использует chunk-key индекс: сканирует только блоки в чанках в окне
-     * {@code ±ceil(maxRadius/16)+1}. Для maxRadius=64 это 9×9 = 81 чанк
-     * (было: N чанков, где N = общее число блоков).
+     * Uses the chunk-key index: scans only blocks in chunks within the window
+     * {@code ±ceil(maxRadius/16)+1}. For maxRadius=64 that's a 9×9 = 81 chunk
+     * window (was: N chunks, where N = total number of blocks).
      */
     public ProtectionBlock findProtectingBlock(Location location) {
         if (location == null || location.getWorld() == null) return null;
@@ -303,8 +303,8 @@ public class ProtectionManager {
                     int dx = pb.getX() - tx;
                     int dz = pb.getZ() - tz;
                     int dy = pb.getY() - ty;
-                    // Простая «кубическая» метрика — блок защищает куб со стороной 2*radius+1.
-                    // Граница блока (центральный блок) не входит.
+                    // Simple «cubic» metric — the block protects a cube with side 2*radius+1.
+                    // The block's own position (center block) is not included.
                     if (Math.abs(dx) > pb.getRadius() || Math.abs(dz) > pb.getRadius()) continue;
                     if (Math.abs(dy) > pb.getRadius()) continue;
                     if (dx == 0 && dy == 0 && dz == 0) continue;
@@ -315,7 +315,7 @@ public class ProtectionManager {
         return null;
     }
 
-    /** Сколько блоков из list попадают в радиус защиты block. */
+    /** How many blocks from the list fall within the protection radius of block. */
     public int countBlocksInRadius(ProtectionBlock block, List<Block> list) {
         int count = 0;
         if (block == null || list == null) return 0;
@@ -341,8 +341,8 @@ public class ProtectionManager {
     // PLACE / BREAK
     // =========================
     /**
-     * Создаёт новый блок защиты при первой установке предмета.
-     * @return созданный блок (уже зарегистрирован и сохранён в БД)
+     * Creates a new protection block when the item is first placed.
+     * @return the created block (already registered and saved to the DB)
      */
     public ProtectionBlock createBlock(Location placed, UUID owner) {
         UUID id = UUID.randomUUID();
@@ -356,9 +356,8 @@ public class ProtectionManager {
     }
 
     /**
-     * Подсчёт очков от предмета-топлива. Используется встроенный справочник
-     * «burn-ticks» для ванильных видов топлива (Paper API getBurnTime
-     * нестабилен между версиями).
+     * Computes points from a fuel item. Uses a built-in «burn-ticks» reference
+     * for vanilla fuels (the Paper API getBurnTime is unstable across versions).
      */
     public int computePointsFromFuel(Material material, int amount) {
         if (material == null || amount <= 0) return 0;
@@ -369,8 +368,8 @@ public class ProtectionManager {
     }
 
     /**
-     * Встроенный справочник «burn-ticks» для ванильных видов топлива.
-     * Значения соответствуют ванильным furnace-рецептам Minecraft 1.21.x.
+     * Built-in «burn-ticks» reference for vanilla fuels.
+     * Values match vanilla furnace recipes of Minecraft 1.21.x.
      */
     private static final Map<Material, Integer> FUEL_BURN_TICKS;
     static {
@@ -401,7 +400,7 @@ public class ProtectionManager {
         m.put(Material.WOODEN_SHOVEL, 200);
         m.put(Material.WOODEN_HOE, 200);
         m.put(Material.WOODEN_SWORD, 200);
-        // Саплинги в Paper 1.21.x — отдельные Material.* на каждый тип
+        // Saplings in Paper 1.21.x — separate Material.* per type
         for (Material sap : new Material[]{
                 Material.OAK_SAPLING, Material.SPRUCE_SAPLING, Material.BIRCH_SAPLING,
                 Material.JUNGLE_SAPLING, Material.ACACIA_SAPLING, Material.DARK_OAK_SAPLING,
@@ -518,25 +517,25 @@ public class ProtectionManager {
     /**
      * Called by ProtectionListener on ChunkLoadEvent.
      * <p>
-     * Был: O(N) — линейный проход по всем chunk-keys. Стал: O(1) — прямой
-     * {@code byChunkKey.get(chunkKey)} + перебор блоков только в этом чанке.
+     * Was: O(N) — linear pass over all chunk-keys. Now: O(1) — direct
+     * {@code byChunkKey.get(chunkKey)} + iterating blocks only in that chunk.
      */
     public void onChunkLoad(int chunkX, int chunkZ, World world) {
         long key = LocationUtil.toKey(chunkX, 0, chunkZ);
         List<UUID> ids = byChunkKey.get(key);
         if (ids == null) return;
-        // byChunkKey.values — CopyOnWriteArrayList, его iterator уже делает snapshot,
-        // так что безопасно итерировать даже если unregisterBlock удаляет элементы.
+        // byChunkKey.values is a CopyOnWriteArrayList whose iterator already snapshots,
+        // so it's safe to iterate even if unregisterBlock removes elements.
         for (UUID id : ids) {
             ProtectionBlock block = blocks.get(id);
             if (block == null) continue;
             if (!block.getWorld().equals(world)) continue;
-            // Проверяем, что блок физически всё ещё на месте
+            // Verify the block is still physically present
             Material m = block.getBlockLocation().getBlock().getType();
             if (m == cachedMaterial) {
                 spawnHologram(block);
             } else {
-                // Блок заменили/уничтожили — удаляем из кэша
+                // Block was replaced/destroyed — remove from cache
                 unregisterBlock(id, true);
                 ConsoleLogger.info("[ProtectionBlock] Block at " + block.getBlockLocation()
                         + " no longer exists (" + m + "). Removed from cache.");
@@ -548,7 +547,7 @@ public class ProtectionManager {
     private static class ChunkLoadSpawner {
         static void scheduleSpawn(ProtectionBlock block) {
             Main pl = Main.getInstance();
-            if (pl == null) return; // plugin disabled / reloading — пропускаем
+            if (pl == null) return; // plugin disabled / reloading — skip
             new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -567,17 +566,17 @@ public class ProtectionManager {
     public void applyIntegrityDamage(ProtectionBlock block, double amount) {
         if (block == null) return;
         UUID id = block.getId();
-        // Защита от stale-reference: если блок уже удалён из кэша (например, после destroy),
-        // любой оставшийся вызов с старой ссылкой не должен пере-вставлять DB-строку.
+        // Stale-reference guard: if the block is already removed from the cache (e.g. after destroy),
+        // any remaining call with an old reference must not re-insert the DB row.
         if (!blocks.containsKey(id)) return;
-        // Disabled-блоки не получают damage: иначе фантомно копится integrity loss,
-        // но destroy не происходит (см. protect-gated auditory код в triggerIntruderEffects).
+        // Disabled blocks receive no damage: otherwise integrity loss accumulates
+        // phantom-like but destroy never happens (see the protect-gated auditory code in triggerIntruderEffects).
         if (!block.isEnabled()) return;
         double newVal = block.getIntegrity() - amount;
-        // Если блок сейчас умрёт от этого удара — атомарный guard destroyed.add()
-        // срабатывает ОДИН раз на destroy-событие. Раньше integrity уменьшали ДО guard'а,
-        // поэтому при двух событиях в один тик делался лишний DB-write и integrity мог
-        // уйти в глубокий минус, прежде чем второй вызов блокировался.
+        // If the block will die from this hit — the atomic guard destroyed.add()
+        // fires ONCE per destroy-event. Previously integrity was reduced BEFORE the guard,
+        // so two events in one tick caused an extra DB-write and integrity could
+        // go deep negative before the second call was blocked.
         if (newVal <= 0.0) {
             if (destroyed.add(id)) {
                 try {
@@ -585,21 +584,21 @@ public class ProtectionManager {
                     saveBlockState(block);
                     destroyBlock(block, true);
                 } catch (Throwable t) {
-                    // Если destroy упал — разрешаем повторный trigger позже.
+                    // If destroy failed — allow a later retrigger.
                     destroyed.remove(id);
                     throw t;
                 }
             }
             return;
         }
-        // Блок пережил удар — просто уменьшаем и пишем, без касания destroyed.
+        // The block survived the hit — just reduce and write, without touching destroyed.
         block.setIntegrity(newVal);
         saveBlockState(block);
     }
 
     /**
-     * Уничтожает блок защиты: взрыв + удаление + удаление из БД.
-     * Если physicalBlockRemove = true, также удаляет Minecraft-блок.
+     * Destroys a protection block: explosion + removal + DB deletion.
+     * If physicalBlockRemove = true, also removes the Minecraft block.
      */
     public void destroyBlock(ProtectionBlock block, boolean physicalBlockRemove) {
         if (block == null) return;
@@ -630,10 +629,10 @@ public class ProtectionManager {
     }
 
     /**
-     * Фоновый ретрай whitelist. Каждые 5 секунд пытается записать блоки,
-     * ранее отмеченные как «грязные» через markWhitelistDirty.
-     * Без этого при моргании БД whitelist откатывался к старому состоянию
-     * на следующем рестарте (in-memory верный, БД не обновилась).
+     * Background whitelist retry. Every 5 seconds tries to write blocks
+     * previously marked «dirty» via markWhitelistDirty.
+     * Without this, during a DB blip the whitelist would roll back to its old
+     * state on the next restart (in-memory correct, DB not updated).
      */
     private void startDirtyRetryTask() {
         if (dirtyRetryTask != null) return;

@@ -11,11 +11,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Управление таймаутом на авторизацию.
- * Если игрок не залогинился / не зарегистрировался за N секунд — кикает.
+ * Manages the authentication timeout.
+ * Kicks the player if they did not log in / register within N seconds.
  * <p>
- * Таймер запускается при входе игрока (handleJoin) и отменяется
- * при успешной авторизации или выходе с сервера.
+ * The timer starts when the player joins (handleJoin) and is cancelled
+ * on successful authentication or when the player leaves.
  */
 public class AuthTimeoutManager {
 
@@ -31,9 +31,9 @@ public class AuthTimeoutManager {
     }
 
     /**
-     * Запускает таймер кика для игрока.
+     * Starts the kick timer for a player.
      *
-     * @param player игрок, который должен авторизоваться
+     * @param player the player who must authenticate
      */
     public void startLoginTimeout(Player player) {
         UUID uuid = player.getUniqueId();
@@ -60,9 +60,9 @@ public class AuthTimeoutManager {
     }
 
     /**
-     * Отменяет таймер кика для игрока.
+     * Cancels the kick timer for a player.
      *
-     * @param uuid UUID игрока
+     * @param uuid the player's UUID
      */
     public void cancelLoginTimeout(UUID uuid) {
         BukkitRunnable task = loginTimeoutTasks.remove(uuid);
@@ -72,7 +72,7 @@ public class AuthTimeoutManager {
     }
 
     /**
-     * Очищает все данные игрока.
+     * Clears all of the player's data.
      */
     public void removePlayer(UUID uuid) {
         cancelLoginTimeout(uuid);

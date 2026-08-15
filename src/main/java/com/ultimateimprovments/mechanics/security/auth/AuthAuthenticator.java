@@ -17,9 +17,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Логика аутентификации: вход, регистрация, смена пароля, выход.
+ * Authentication logic: login, registration, password change, logout.
  * <p>
- * Все взаимодействие с игроком осуществляется через чат-команды:
+ * All player interaction happens via chat commands:
  * <ul>
  *   <li>{@code /ui auth register <password>}</li>
  *   <li>{@code /ui auth login <password>}</li>
@@ -27,8 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code /ui auth chgpass <old_password> <new_password>}</li>
  * </ul>
  * <p>
- * Оркестрирует взаимодействие между AuthDatabase, AuthPlayerState,
- * AuthRateLimiter, AuthTimeoutManager и AuthConfig.
+ * Orchestrates the interaction between AuthDatabase, AuthPlayerState,
+ * AuthRateLimiter, AuthTimeoutManager and AuthConfig.
  */
 public class AuthAuthenticator {
 
@@ -38,8 +38,8 @@ public class AuthAuthenticator {
     private final AuthTimeoutManager timeoutManager;
 
     /**
-     * Сохраняет состояние игрока ДО фриза, чтобы восстановить после авторизации.
-     * Без этого операторы теряют CREATIVE и allowFlight при каждом входе.
+     * Saves the player's state BEFORE the freeze, to restore it after authentication.
+     * Without this, operators lose CREATIVE and allowFlight on every join.
      */
     private final Map<UUID, SavedPlayerState> savedStates = new ConcurrentHashMap<>();
 
@@ -101,21 +101,21 @@ public class AuthAuthenticator {
             }
         }
 
-        // Сохраняем финальное состояние registered для использования в Runnable
+        // Save the final registered state for use in the Runnable
         final boolean isRegistered = registered;
 
-        // Freeze player (лёгкий фриз: нельзя двигаться/взаимодействовать до логина)
+        // Freeze the player (light freeze: can't move/interact until login)
         playerState.setPendingAuth(uuid);
         freezePlayer(player);
         timeoutManager.startLoginTimeout(player);
 
-        // Dialog-based prompt (Custom Screen) — открываем диалог с задержкой
+        // Dialog-based prompt (Custom Screen) — open the dialog with a delay
         new BukkitRunnable() {
             @Override
             public void run() {
                 if (!player.isOnline()) return;
                 if (playerState.isAuthenticated(uuid)) return;
-                // Открываем Custom Screen вместо чата
+                // Open a Custom Screen instead of chat
                 AuthDialogScreen.open(player, isRegistered);
             }
         }.runTaskLater(Main.getInstance(), 5L);
@@ -124,8 +124,8 @@ public class AuthAuthenticator {
     // =========================
     // HANDLE PASSWORD SUBMIT (login/register via /ui auth login <pass> | register <pass>)
     //
-    // ⚠ Argon2id (32MB memory, 2 итерации) выполняется на async thread,
-    // чтобы не фризить сервер на 1-2 секунды при каждом логине.
+    // ⚠ Argon2id (32MB memory, 2 iterations) runs on an async thread
+    // to avoid freezing the server for 1-2 seconds on every login.
     // =========================
     public void handlePasswordSubmit(Player player, String password) {
         UUID uuid = player.getUniqueId();
@@ -140,7 +140,7 @@ public class AuthAuthenticator {
 
         String playerIp = getPlayerIp(player);
 
-        // Argon2id на async thread — предотвращает фриз сервера
+        // Argon2id on an async thread — prevents server freezes
         Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
             try {
                 boolean registered = AuthDatabase.isRegistered(uuid);
@@ -156,7 +156,7 @@ public class AuthAuthenticator {
                         }
                     });
                 } else {
-                    // Проверки длины пароля (на async потоке — безопасно, чисто строки)
+                    // Password length checks (on the async thread — safe, pure strings)
                     int minLen = AuthConfig.getMinPasswordLength();
                     int maxLen = AuthConfig.getMaxPasswordLength();
                     if (password.length() < minLen || password.length() > maxLen) {
@@ -178,7 +178,7 @@ public class AuthAuthenticator {
                         return;
                     }
 
-                    // Проверка лимита аккаунтов на IP
+                    // Check the per-IP account limit
                     if (!playerIp.isEmpty()) {
                         int maxAccounts = AuthConfig.getMaxAccountsPerIp();
                         if (maxAccounts > 0) {
@@ -203,7 +203,7 @@ public class AuthAuthenticator {
                         }
                     }
 
-                    // hashArgon2 на async thread (32MB memory)
+                    // hashArgon2 on an async thread (32MB memory)
                     AuthDatabase.register(uuid, password, playerIp);
 
                     Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
@@ -237,7 +237,7 @@ public class AuthAuthenticator {
     }
 
     /**
-     * Отправляет игроку repeat-prompt после неверного пароля или иной ошибки.
+     * Sends the player a repeat prompt after a wrong password or other error.
      */
     private void sendChatPromptAfterError(Player player, boolean isRegistered) {
         new BukkitRunnable() {
@@ -245,14 +245,14 @@ public class AuthAuthenticator {
             public void run() {
                 if (!player.isOnline()) return;
                 if (playerState.isAuthenticated(player.getUniqueId())) return;
-                // Повторно открываем Custom Screen после ошибки
+                // Re-open the Custom Screen after an error
                 AuthDialogScreen.open(player, isRegistered);
             }
         }.runTaskLater(Main.getInstance(), 20L);
     }
 
     // =========================
-    // LOGIN SUCCESS (вызывается с main thread после async проверки пароля)
+    // LOGIN SUCCESS (called from the main thread after the async password check)
     // =========================
     private void handleLoginSuccess(Player player, UUID uuid, String playerIp) {
         if (AuthConfig.isIpCheckEnabled()) {
@@ -267,7 +267,7 @@ public class AuthAuthenticator {
         AuthDatabase.updateLastLogin(uuid);
         playerState.resetWrongAttempts(uuid);
 
-        // Если 2FA включена — запускаем challenge вместо полной аутентификации
+        // If 2FA is enabled — start a challenge instead of full authentication
         if (Auth2FA.isEnabled(uuid) && AuthConfig.isGithub2FAEnabled()) {
             start2FAChallenge(player);
             return;
@@ -277,7 +277,7 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // 2FA CHALLENGE — подтверждение через GitHub OAuth
+    // 2FA CHALLENGE — confirmation via GitHub OAuth
     // =========================
     public void start2FAChallenge(Player player) {
         UUID uuid = player.getUniqueId();
@@ -289,7 +289,7 @@ public class AuthAuthenticator {
 
         String githubUsername = Auth2FA.getGithubUsername(uuid);
         if (githubUsername == null || githubUsername.isEmpty()) {
-            // Нет привязанного GitHub — отключаем 2FA и пускаем без подтверждения
+            // No linked GitHub — disable 2FA and let them in without confirmation
             Auth2FA.remove(uuid);
             authenticatePlayer(player, "<green>✅</green> <white>Logged in (2FA reset — no GitHub account linked).</white>");
             return;
@@ -297,17 +297,17 @@ public class AuthAuthenticator {
 
         String playerName = player.getName();
 
-        // Снимаем общий таймаут логина — у 2FA-челленджа свой лимит (5 минут),
-        // иначе игрока выкинуло бы через auth.login_timeout_seconds посреди ожидания.
+        // Remove the global login timeout — the 2FA challenge has its own limit (5 minutes),
+        // otherwise the player would be kicked via auth.login_timeout_seconds mid-wait.
         timeoutManager.cancelLoginTimeout(uuid);
 
-        // Запускаем челлендж — одноразовый state-токен, 5 минут
+        // Start the challenge — a one-time state token, 5 minutes
         String requestId = Auth2FA.getInstance().sendConfirmation(uuid, playerName);
         String authUrl = Auth2FA.getInstance().getAuthUrl(uuid);
         if (requestId == null || authUrl == null) {
             player.sendMessage("§c❌ GitHub 2FA is not configured! Contact an administrator.");
-            // Не размораживаем игрока — он остаётся pendingAuth (все действия заблокированы),
-            // и пере-армим таймаут, чтобы игрока выкинуло через login_timeout_seconds.
+            // Don't unfreeze the player — they stay pendingAuth (all actions blocked),
+            // and re-arm the timeout so the player gets kicked via login_timeout_seconds.
             timeoutManager.startLoginTimeout(player);
             return;
         }
@@ -331,12 +331,12 @@ public class AuthAuthenticator {
         ConsoleLogger.info("[Auth2FA] GitHub challenge started for " + playerName
                 + " (github: " + githubUsername + ", state: " + requestId + ")");
 
-        // Запускаем polling — проверяем статус каждые 20 тиков (1 секунда)
-        // Обычно игрок аутентифицируется раньше через callback (completeGithubAuth),
-        // polling — запасной путь (например, если игрок закрыл страницу и открыл заново).
+        // Start polling — check the status every 20 ticks (1 second)
+        // Usually the player authenticates earlier via the callback (completeGithubAuth),
+        // polling is a fallback path (e.g. if the player closed the page and reopened it).
         new BukkitRunnable() {
             int ticks = 0;
-            final int maxTicks = 20 * 300; // 5 минут максимум
+            final int maxTicks = 20 * 300; // 5 minutes max
 
             @Override
             public void run() {
@@ -353,8 +353,8 @@ public class AuthAuthenticator {
 
                 ticks += 20;
                 if (ticks > maxTicks) {
-                    // Таймаут: снимаем челлендж и пере-армим общий таймаут логина,
-                    // чтобы игрок не завис замороженным навсегда (его выкинет).
+                    // Timeout: remove the challenge and re-arm the global login timeout
+                    // so the player doesn't stay frozen forever (they get kicked).
                     Auth2FA.getInstance().clearPending(uuid);
                     player.sendMessage("§c❌ 2FA timeout! Use /ui auth login again.");
                     timeoutManager.startLoginTimeout(player);
@@ -362,7 +362,7 @@ public class AuthAuthenticator {
                     return;
                 }
 
-                // Проверяем статус (на async потоке, чтобы не блокировать сервер)
+                // Check the status (on an async thread to not block the server)
                 Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
                     String status = Auth2FA.getInstance().checkConfirmation(uuid);
 
@@ -382,12 +382,12 @@ public class AuthAuthenticator {
                     });
                 });
             }
-        }.runTaskTimer(Main.getInstance(), 20L, 20L); // первый через 1 сек, потом каждую секунду
+        }.runTaskTimer(Main.getInstance(), 20L, 20L); // first after 1 sec, then every second
     }
 
     /**
-     * Завершает GitHub-аутентификацию игрока (вызывается с main thread из HTTP callback).
-     * Если игрок онлайн и ждёт 2FA — аутентифицируем и обновляем сессию (1 час).
+     * Completes a player's GitHub authentication (called from the main thread from an HTTP callback).
+     * If the player is online and waiting for 2FA — authenticate and refresh the session (1 hour).
      */
     public void completeGithubAuth(UUID uuid) {
         Player player = Bukkit.getPlayer(uuid);
@@ -396,14 +396,14 @@ public class AuthAuthenticator {
         if (Auth2FA.getInstance() == null || !Auth2FA.getInstance().hasPendingConfirmation(uuid)) return;
 
         Auth2FA.getInstance().clearPending(uuid);
-        AuthDatabase.updateLastLogin(uuid); // сессия 1 час с момента подтверждения
+        AuthDatabase.updateLastLogin(uuid); // session 1 hour from the confirmation
 
         authenticatePlayer(player, "<green>✅</green> <white>GitHub authorization successful! Welcome.</white>");
     }
 
     /**
-     * Устаревший метод — больше не нужен (2FA через кнопки, а не коды).
-     * Оставлен для обратной совместимости.
+     * Deprecated method — no longer needed (2FA via buttons, not codes).
+     * Kept for backward compatibility.
      */
     @Deprecated
     public boolean verify2FACode(Player player, String code) {
@@ -420,7 +420,7 @@ public class AuthAuthenticator {
 
         if (attempts >= maxWrong) {
             timeoutManager.cancelLoginTimeout(uuid);
-            // Закрываем диалог перед киком
+            // Close the dialog before kicking
             AuthDialogScreen.close(player);
             String kickMsg = MessagesManager.getString("auth.admin.kick_too_many_attempts",
                     "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>")
@@ -438,7 +438,7 @@ public class AuthAuthenticator {
     }
 
     // =========================
-    // AUTHENTICATE PLAYER (вызывается с main thread)
+    // AUTHENTICATE PLAYER (called from the main thread)
     // =========================
     private void authenticatePlayer(Player player, String message) {
         UUID uuid = player.getUniqueId();
@@ -463,10 +463,10 @@ public class AuthAuthenticator {
 
     // =========================
     // SELF CHANGE PASSWORD via /ui auth chgpass <old> <new>
-    // hashArgon2 вызывается на async thread
+    // hashArgon2 is called on an async thread
     //
-    // Note: для chat-интерфейса требуется <old_password>. Если вызывается без аргументов,
-    // вызывающий код должен передать пустую строку или сообщить usage.
+    // Note: the chat interface requires <old_password>. If called without arguments,
+    // the caller must pass an empty string or report usage.
     // =========================
     public void handleSelfChangePassword(Player player, String newPassword) {
         UUID uuid = player.getUniqueId();
@@ -489,7 +489,7 @@ public class AuthAuthenticator {
             return;
         }
 
-        // hashArgon2 на async thread (32MB memory)
+        // hashArgon2 on an async thread (32MB memory)
         Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
             try {
                 AuthDatabase.changePasswordSelf(uuid, newPassword);
@@ -580,7 +580,7 @@ public class AuthAuthenticator {
 
     // =========================
     // SELF-LOGOUT via /ui auth logout <password>
-    // Argon2 verify на async thread
+    // Argon2 verify on an async thread
     // =========================
     public boolean handleLogout(Player player, String password) {
         UUID uuid = player.getUniqueId();
@@ -589,7 +589,7 @@ public class AuthAuthenticator {
         if (!AuthDatabase.isRegistered(uuid)) return false;
         if (!rateLimiter.checkCooldown(player)) return false;
 
-        // Argon2 verify на async thread
+        // Argon2 verify on an async thread
         Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
             try {
                 boolean valid = AuthDatabase.checkPassword(uuid, password);
@@ -620,7 +620,7 @@ public class AuthAuthenticator {
             }
         });
 
-        // Возвращаем true сразу — реальная проверка асинхронная
+        // Return true immediately — the real check is asynchronous
         return true;
     }
 
@@ -648,7 +648,7 @@ public class AuthAuthenticator {
                 player.setInvulnerable(false);
             } catch (Throwable ignored) {}
         }
-        // Сохраняем состояние ДО фриза
+        // Save the state BEFORE the freeze
         savedStates.put(uuid, new SavedPlayerState(
                 player.getGameMode(),
                 player.getWalkSpeed(),
@@ -682,7 +682,7 @@ public class AuthAuthenticator {
     }
 
     /**
-     * Восстанавливает сохранённое состояние игрока (используется forceLogin из AuthManager).
+     * Restores the player's saved state (used by forceLogin from AuthManager).
      */
     public void restorePlayerState(Player player) {
         unfreezePlayer(player);

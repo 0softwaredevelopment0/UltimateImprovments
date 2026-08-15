@@ -1,11 +1,13 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.punish.CrashExecutor;
 import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.punish.PunishJoinListener;
 import com.ultimateimprovments.util.AlertBroadcast;
 import com.ultimateimprovments.util.MessageUtil;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -14,13 +16,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * 🛡 PunishSubcommand — обработчик /ui punish.
+ * 🛡 PunishSubcommand — handler for /ui punish.
  * <p>
- * Команды:
+ * Commands:
  * <pre>
  * /ui punish ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
  * /ui punish mute <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]
@@ -29,13 +32,14 @@ import java.util.stream.Collectors;
  * /ui punish listwarns <player>
  * /ui punish unban <player>
  * /ui punish unmute <player>
+ * /ui punish actionlist [tab] [page] — all active punishments with tabs & pages
  * </pre>
  * <p>
- * Правила флагов:
+ * Flag rules:
  * <ul>
- *   <li>-time и -permanent несовместимы (оба — ошибка)</li>
- *   <li>Если не указан ни -time, ни -permanent — ошибка (для ban/mute/warn)</li>
- *   <li>-ip и -hw несовместимы</li>
+ *   <li>-time and -permanent are incompatible (both — error)</li>
+ *   <li>If neither -time nor -permanent is given — error (for ban/mute/warn)</li>
+ *   <li>-ip and -hw are incompatible</li>
  * </ul>
  */
 public final class PunishSubcommand {
@@ -43,24 +47,24 @@ public final class PunishSubcommand {
     private PunishSubcommand() {}
 
     // =========================
-    // CRASH CONFIRMATION — ожидающие подтверждения краши
+    // CRASH CONFIRMATION — crashes awaiting confirmation
     // =========================
 
-    /** Игроки, ожидающие подтверждения краша (sender UUID → данные). */
+    /** Players awaiting crash confirmation (sender UUID → data). */
     private static final Map<UUID, PendingCrash> pendingCrashes = new HashMap<>();
-    /** Время ожидания подтверждения краша (мс). */
+    /** Crash confirmation timeout (ms). */
     private static final long CONFIRM_TIMEOUT_MS = 30_000L;
 
     private record PendingCrash(String method, String targetName, long createdAt) {}
 
     // =========================
-    // BROADCAST TO MODERATORS — рассылка уведомлений о наказаниях
+    // BROADCAST TO MODERATORS — sends punishment notifications
     // =========================
 
     /**
-     * Отправляет уведомление о наказании через {@link AlertBroadcast}
-     * всем игрокам с правом {@code ui.alerts} (или legacy {@code ui.punish.notify}).
-     * Консольное логирование уже есть в {@link PunishmentManager#punish}.
+     * Sends a punishment notification via {@link AlertBroadcast}
+     * to all players with the {@code ui.alerts} permission (or legacy {@code ui.punish.notify}).
+     * Console logging already happens in {@link PunishmentManager#punish}.
      */
     private static void broadcastToModerators(String message) {
         AlertBroadcast.send(message);
@@ -90,6 +94,7 @@ public final class PunishSubcommand {
             case "unban" -> handleUnban(sender, args);
             case "unmute" -> handleUnmute(sender, args);
             case "unwarn" -> handleUnwarn(sender, args);
+            case "actionlist" -> handleActionList(sender, args);
             case "crash" -> handleCrash(sender, args);
             default -> {
                 sendUsage(sender);
@@ -126,7 +131,7 @@ public final class PunishSubcommand {
             uuid = target.getUniqueId().toString();
             name = target.getName();
         } else {
-            // Офлайн-игрок — используем ники из ввода
+            // Offline player — use the input names
             uuid = "offline:" + targetName.toLowerCase();
             name = targetName;
         }
@@ -158,7 +163,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Кикаем если онлайн
+        // Kick if online
         if (target != null && target.isOnline()) {
             PunishmentManager.PunishmentRecord ban = PunishmentManager.getActiveBan(
                     uuid, ip, hwId);
@@ -172,7 +177,7 @@ public final class PunishSubcommand {
             }
         }
 
-        // Если -ip или -hw — кикаем всех подходящих онлайн
+        // If -ip or -hw — kick all matching online players
         if (parsed.ip || parsed.hw) {
             for (Player p : PunishmentManager.findPlayersByIpOrHw(ip, hwId)) {
                 if (!p.getName().equalsIgnoreCase(name)) {
@@ -189,7 +194,7 @@ public final class PunishSubcommand {
                 "<green>✔</green> <white>Player</white> <yellow>" + name + "</yellow> <white>has been banned.</white>" + scope
         ));
 
-        // Уведомление операторам
+        // Notify operators
         String duration = parsed.isPermanent ? "<red>permanent</red>" : "<yellow>" + parsed.timeStr + "</yellow>";
         broadcastToModerators(
                 "<red>⛔</red> <yellow>" + name + "</yellow> <gray>banned by</gray> <white>" + sender.getName() + "</white>" +
@@ -259,7 +264,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Добавляем в кеш мута (если цель онлайн)
+        // Add to the mute cache (if the target is online)
         if (target != null && target.isOnline()) {
             PunishmentManager.PunishmentRecord muteRecord = PunishmentManager.getActiveMute(
                     uuid, ip, hwId);
@@ -267,7 +272,7 @@ public final class PunishSubcommand {
                 PunishJoinListener.addMuteCache(target, muteRecord);
             }
 
-            // Уведомление цели
+            // Notify the target
             String duration = parsed.isPermanent ? "permanent" : parsed.timeStr;
             target.sendMessage(MessageUtil.parse(
                     "<red>🔇 You have been muted!</red>\n" +
@@ -282,7 +287,7 @@ public final class PunishSubcommand {
                 "<green>✔</green> <white>Player</white> <yellow>" + name + "</yellow> <white>has been muted.</white>" + scope
         ));
 
-        // Уведомление операторам
+        // Notify operators
         String duration = parsed.isPermanent ? "<red>permanent</red>" : "<yellow>" + parsed.timeStr + "</yellow>";
         broadcastToModerators(
                 "<red>🔇</red> <yellow>" + name + "</yellow> <gray>muted by</gray> <white>" + sender.getName() + "</white>" +
@@ -308,7 +313,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Парсим флаги (kick не требует -time/-permanent)
+        // Parse the flags (kick doesn't require -time/-permanent)
         FlagParseResult flags = parseFlags(sender, args, 3);
         if (flags == null) return true;
 
@@ -335,19 +340,19 @@ public final class PunishSubcommand {
             hwId = PunishmentManager.computeHwId(targetIp, target.getName());
         }
 
-        // Кикаем цель
+        // Kick the target
         PunishmentManager.kickPlayer(target, reason, sender.getName());
         sender.sendMessage(MessageUtil.parse(
                 "<green>✔</green> <white>Player</white> <yellow>" + target.getName() + "</yellow> <white>has been kicked.</white>"
         ));
 
-        // Уведомление операторам
+        // Notify operators
         broadcastToModerators(
                 "<red>👢</red> <yellow>" + target.getName() + "</yellow> <gray>kicked by</gray> <white>" + sender.getName() + "</white>" +
                 "<gray> | Reason:</gray> <white>" + reason + "</white>"
         );
 
-        // Если -ip или -hw — кикаем всех подходящих
+        // If -ip or -hw — kick all matching
         if (flags.ip || flags.hw) {
             for (Player p : PunishmentManager.findPlayersByIpOrHw(ip, hwId)) {
                 if (!p.getUniqueId().equals(target.getUniqueId())) {
@@ -411,7 +416,7 @@ public final class PunishSubcommand {
             ));
         }
 
-        // Если -ip/-hw — варним всех подходящих
+        // If -ip/-hw — warn all matching
         if (parsed.ip || parsed.hw) {
             String ip = null;
             String hwId = null;
@@ -440,7 +445,7 @@ public final class PunishSubcommand {
                 "<green>✔</green> <white>Player</white> <yellow>" + name + "</yellow> <white>has been warned.</white>"
         ));
 
-        // Уведомление операторам
+        // Notify operators
         String duration = parsed.isPermanent ? "<red>permanent</red>" : "<yellow>" + parsed.timeStr + "</yellow>";
         broadcastToModerators(
                 "<yellow>⚠</yellow> <yellow>" + name + "</yellow> <gray>warned by</gray> <white>" + sender.getName() + "</white>" +
@@ -456,7 +461,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleListWarns(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            // Показываем свои варны
+            // Show own warns
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(MessageUtil.parse(
                         "<red>❌ Usage: </red><white>/ui punish listwarns <player></white>"
@@ -473,7 +478,7 @@ public final class PunishSubcommand {
 
         String targetName = args[2];
 
-        // Проверяем, смотрит ли на себя
+        // Check whether they're viewing themselves
         if (sender instanceof Player player && player.getName().equalsIgnoreCase(targetName)) {
             if (!sender.hasPermission("ui.command.punish.listwarns.self")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>"));
@@ -483,7 +488,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Смотрит на другого
+        // Viewing someone else
         if (!sender.hasPermission("ui.command.punish.listwarns.other")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You don't have permission to view other players' warns!</red>"
@@ -501,7 +506,7 @@ public final class PunishSubcommand {
             name = target.getName();
             showWarns(sender, uuid, name);
         } else {
-            // Поищем по нику в БД
+            // Look up by name in the DB
             sender.sendMessage(MessageUtil.parse(
                     "<yellow>⚠</yellow> <white>Player</white> <yellow>" + targetName + "</yellow> <white>not online. Showing warns by name...</white>"
             ));
@@ -622,9 +627,9 @@ public final class PunishSubcommand {
 
         if (target != null) {
             uuid = target.getUniqueId().toString();
-            // Очищаем кеш мута
+            // Clear the mute cache
             PunishJoinListener.removeMuteCache(target);
-            // Уведомляем игрока
+            // Notify the player
             target.sendMessage(MessageUtil.parse(
                     "<green>🔊 You have been unmuted!</green>"
             ));
@@ -689,7 +694,7 @@ public final class PunishSubcommand {
                     "<gray>Reason: " + reason + "</gray>"
             ));
 
-            // Уведомление цели (если онлайн)
+            // Notify the target (if online)
             @SuppressWarnings("deprecation")
             Player warnTarget = Bukkit.getPlayerExact(targetName);
             if (warnTarget != null && warnTarget.isOnline()) {
@@ -712,11 +717,161 @@ public final class PunishSubcommand {
     }
 
     // =========================
+    // ACTIONLIST — all active punishments (tabs + pages)
+    // =========================
+
+    /** How many punishments fit on one actionlist page. */
+    private static final int ACTIONLIST_PAGE_SIZE = 5;
+    /** Valid actionlist tabs (dynamic switching via clickable tabs). */
+    private static final List<String> ACTIONLIST_TABS = List.of("all", "ban", "mute", "warn", "kick");
+
+    /**
+     * Shows ALL active punishments of every player with tabs and pagination:
+     * {@code /ui punish actionlist [tab] [page]}. Tabs and arrows are clickable for players
+     * (the state is encoded in the command arguments — no in-memory session needed).
+     */
+    private static boolean handleActionList(CommandSender sender, String[] args) {
+        if (!sender.hasPermission(Permissions.CMD_PUNISH_ACTIONLIST)) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ You don't have permission to view the punishment list!</red>"
+            ));
+            return true;
+        }
+
+        String tab = "all";
+        int page = 1;
+        if (args.length >= 3) tab = args[2].toLowerCase();
+        if (args.length >= 4) {
+            try {
+                page = Math.max(1, Integer.parseInt(args[3]));
+            } catch (NumberFormatException ignored) {
+                // keep page 1
+            }
+        }
+        if (!ACTIONLIST_TABS.contains(tab)) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Unknown tab: </red><yellow>" + escape(args[2]) + "</yellow><red>.</red> "
+                    + "<gray>Available: </gray><white>all, ban, mute, warn, kick</white>"
+            ));
+            return true;
+        }
+
+        List<PunishmentManager.PunishmentRecord> all = PunishmentManager.getAllActivePunishments();
+        List<PunishmentManager.PunishmentRecord> filtered = switch (tab) {
+            case "ban" -> filterByType(all, PunishmentManager.PunishType.BAN);
+            case "mute" -> filterByType(all, PunishmentManager.PunishType.MUTE);
+            case "warn" -> filterByType(all, PunishmentManager.PunishType.WARN);
+            case "kick" -> filterByType(all, PunishmentManager.PunishType.KICK);
+            default -> all;
+        };
+
+        int totalPages = Math.max(1, (int) Math.ceil(filtered.size() / (double) ACTIONLIST_PAGE_SIZE));
+        page = Math.min(page, totalPages);
+        int from = (page - 1) * ACTIONLIST_PAGE_SIZE;
+        int to = Math.min(from + ACTIONLIST_PAGE_SIZE, filtered.size());
+        boolean clickable = sender instanceof Player;
+
+        // Header
+        sender.sendMessage(MessageUtil.parse(
+                "<gray>═══ <white>⚖ Active punishments</white> "
+                + "<dark_gray>(" + filtered.size() + " shown, " + all.size() + " total)</dark_gray> ═══</gray>"
+        ));
+
+        // Tabs — the active one is highlighted, the rest are clickable
+        StringBuilder tabs = new StringBuilder();
+        for (String t : ACTIONLIST_TABS) {
+            String label = switch (t) {
+                case "ban" -> "<red>⛔ Bans</red>";
+                case "mute" -> "<red>🔇 Mutes</red>";
+                case "warn" -> "<yellow>⚠ Warns</yellow>";
+                case "kick" -> "<gray>👢 Kicks</gray>";
+                default -> "<white>All</white>";
+            };
+            if (t.equals(tab)) {
+                tabs.append("<dark_aqua>[</dark_aqua>").append(label).append("<dark_aqua>]</dark_aqua> ");
+            } else if (clickable) {
+                tabs.append("<click:run_command:/ui punish actionlist ").append(t).append(" 1>")
+                        .append("<gray>[</gray>").append(label).append("<gray>]</gray></click> ");
+            } else {
+                tabs.append("<gray>[</gray>").append(label).append("<gray>]</gray> ");
+            }
+        }
+        sender.sendMessage(MessageUtil.parse(tabs.toString()));
+
+        // Items
+        if (filtered.isEmpty()) {
+            sender.sendMessage(MessageUtil.parse("  <dark_gray>(no active punishments)</dark_gray>"));
+        } else {
+            for (int i = from; i < to; i++) {
+                sender.sendMessage(MessageUtil.parse(actionListItem(filtered.get(i))));
+            }
+        }
+
+        // Footer: prev / page / next
+        String prev = page > 1
+                ? (clickable
+                    ? "<click:run_command:/ui punish actionlist " + tab + " " + (page - 1) + "><dark_aqua>[« Prev]</dark_aqua></click>"
+                    : "<dark_aqua>[« Prev]</dark_aqua>")
+                : "<dark_gray>[« Prev]</dark_gray>";
+        String next = page < totalPages
+                ? (clickable
+                    ? "<click:run_command:/ui punish actionlist " + tab + " " + (page + 1) + "><dark_aqua>[Next »]</dark_aqua></click>"
+                    : "<dark_aqua>[Next »]</dark_aqua>")
+                : "<dark_gray>[Next »]</dark_gray>";
+        sender.sendMessage(MessageUtil.parse(prev + "  <white>Page " + page + "/" + totalPages + "</white>  " + next));
+        return true;
+    }
+
+    /** Filters a record list by punishment type. */
+    private static List<PunishmentManager.PunishmentRecord> filterByType(
+            List<PunishmentManager.PunishmentRecord> records, PunishmentManager.PunishType type) {
+        return records.stream().filter(r -> r.type == type).collect(Collectors.toList());
+    }
+
+    /** Renders one punishment item (badge, player, reason, duration, scope). */
+    private static String actionListItem(PunishmentManager.PunishmentRecord r) {
+        String badge = switch (r.type) {
+            case BAN -> "<red>⛔ Ban</red>";
+            case MUTE -> "<red>🔇 Mute</red>";
+            case WARN -> "<yellow>⚠ Warn</yellow>";
+            case KICK -> "<gray>👢 Kick</gray>";
+        };
+        String scope = r.isIpScope() && r.isHwScope() ? " [IP+HW]"
+                : r.isIpScope() ? " [IP]"
+                : r.isHwScope() ? " [HW]" : "";
+        return "  <white>#" + r.id + ".</white> " + badge + " <yellow>" + r.playerName + "</yellow>" + scope
+                + "\n      <gray>" + actionListReason(r.reason) + "</gray>\n"
+                + "      <dark_gray>By: " + r.punishedBy + " | " + actionListDuration(r) + "</dark_gray>";
+    }
+
+    /** Truncates long reasons for a tidy list. */
+    private static String actionListReason(String reason) {
+        if (reason == null || reason.isEmpty()) return "(no reason)";
+        reason = reason.length() > 100 ? reason.substring(0, 100) + "…" : reason;
+        // Reasons are arbitrary admin text — escape MiniMessage tags so they render as plain text
+        return MiniMessage.miniMessage().escapeTags(reason);
+    }
+
+    /** Escapes MiniMessage tags in user-supplied text. */
+    private static String escape(String text) {
+        return text == null ? "" : MiniMessage.miniMessage().escapeTags(text);
+    }
+
+    /** Duration text: permanent / instant (kick) / remaining time. */
+    private static String actionListDuration(PunishmentManager.PunishmentRecord r) {
+        if (r.type == PunishmentManager.PunishType.KICK) return "<gray>instant</gray>";
+        if (r.isPermanent()) return "<red>permanent</red>";
+        long remaining = r.getRemainingMs();
+        if (remaining <= 0) return "<dark_gray>expired</dark_gray>";
+        return "<yellow>" + PunishmentManager.formatRemaining(remaining) + " left</yellow>";
+    }
+
+    // =========================
     // FLAG PARSING
     // =========================
 
     /**
-     * Результат парсинга флагов для наказаний, требующих time/permanent.
+     * Flag parse result for punishments requiring time/permanent.
      */
     private static class PunishArgs {
         String reason;
@@ -724,11 +879,11 @@ public final class PunishSubcommand {
         boolean isPermanent;
         boolean ip;
         boolean hw;
-        String timeStr; // для отображения
+        String timeStr; // for display
     }
 
     /**
-     * Результат парсинга для kick (без time/permanent).
+     * Parse result for kick (no time/permanent).
      */
     private static class FlagParseResult {
         String reason;
@@ -737,8 +892,8 @@ public final class PunishSubcommand {
     }
 
     /**
-     * Парсит аргументы для ban/mute/warn (требуют -time или -permanent).
-     * Отправляет сообщения об ошибках sender при невалидных флагах.
+     * Parses arguments for ban/mute/warn (require -time or -permanent).
+     * Sends error messages to the sender on invalid flags.
      */
     private static PunishArgs parsePunishArgs(CommandSender sender, String[] args, int startIndex) {
         PunishArgs result = new PunishArgs();
@@ -755,7 +910,7 @@ public final class PunishSubcommand {
             if (arg.toLowerCase().startsWith("-time:")) {
                 String timeVal = arg.substring(6);
                 if (timeVal.isEmpty()) {
-                    // -time без значения — ошибка
+                    // -time without a value — error
                     sender.sendMessage(MessageUtil.parse("<red>❌ -time flag requires a value (e.g. -time:30m)</red>"));
                     return null;
                 }
@@ -773,7 +928,7 @@ public final class PunishSubcommand {
             }
         }
 
-        // Валидация
+        // Validation
         if (!hasTime && !hasPermanent) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You must specify either </red><white>-time:<N>s|m|h|d</white><red> or </red><white>-permanent</white><red>.</red>"
@@ -822,8 +977,8 @@ public final class PunishSubcommand {
     }
 
     /**
-     * Парсит аргументы для kick (без time/permanent).
-     * Отправляет сообщения об ошибках sender при невалидных флагах.
+     * Parses arguments for kick (no time/permanent).
+     * Sends error messages to the sender on invalid flags.
      */
     private static FlagParseResult parseFlags(CommandSender sender, String[] args, int startIndex) {
         FlagParseResult result = new FlagParseResult();
@@ -838,7 +993,7 @@ public final class PunishSubcommand {
             } else if (arg.equalsIgnoreCase("-hw")) {
                 hasHw = true;
             } else if (arg.toLowerCase().startsWith("-time:") || arg.equalsIgnoreCase("-permanent")) {
-                // Для kick эти флаги игнорируются
+                // These flags are ignored for kick
                 continue;
             } else {
                 if (reasonBuilder.length() > 0) reasonBuilder.append(" ");
@@ -867,7 +1022,7 @@ public final class PunishSubcommand {
     }
 
     // =========================
-    // CRASH (с подтверждением)
+    // CRASH (with confirmation)
     // =========================
     private static boolean handleCrash(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.crash")) {
@@ -875,7 +1030,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Подтверждение/отмена (legacy: /ui punish crash confirm|cancel)
+        // Confirm/cancel (legacy: /ui punish crash confirm|cancel)
         if (args.length >= 3) {
             String sub = args[2].toLowerCase();
             if (sub.equals("confirm")) {
@@ -888,16 +1043,16 @@ public final class PunishSubcommand {
 
         if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui punish crash <particle|packet|entity> <player></white>"
+                    "<red>❌ Usage: </red><white>/ui punish crash <particle|entity|bossbar|chat|scoreboard|team|chunk|explosion|title> <player></white>"
             ));
             return true;
         }
 
         String method = args[2].toLowerCase();
-        if (!method.equals("particle") && !method.equals("packet") && !method.equals("entity")) {
+        if (!CRASH_METHODS.contains(method)) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ Unknown crash method: </red><yellow>" + args[2] + "</yellow>\n" +
-                    "<gray>Available: </gray><white>particle</white><gray>, </gray><white>packet</white><gray>, </gray><white>entity</white>"
+                    "<gray>Available: </gray><white>particle, entity, bossbar, chat, scoreboard, team, chunk, explosion, title, blockupdate</white>"
             ));
             return true;
         }
@@ -912,7 +1067,7 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // 🛡 Failsafe: нельзя крашить самого себя
+        // 🛡 Failsafe: can't crash yourself
         if (sender instanceof Player p && p.getUniqueId().equals(target.getUniqueId())) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ You cannot crash yourself!</red>"
@@ -920,11 +1075,11 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Ленивая очистка истёкших подтверждений (без отдельного таска — карта ограничена)
+        // Lazy cleanup of expired confirmations (no separate task — the map is bounded)
         long now = System.currentTimeMillis();
         pendingCrashes.values().removeIf(p -> now - p.createdAt() > CONFIRM_TIMEOUT_MS);
 
-        // Сохраняем ожидающее подтверждение (вместе с выбранным методом)
+        // Save the pending confirmation (together with the chosen method)
         pendingCrashes.put(getSenderId(sender), new PendingCrash(method, target.getName(), now));
 
         sender.sendMessage(MessageUtil.parse(
@@ -945,30 +1100,42 @@ public final class PunishSubcommand {
         return true;
     }
 
-    /** Короткое описание метода для сообщения подтверждения. */
+    /** Valid crash methods. */
+    private static final Set<String> CRASH_METHODS = Set.of(
+            "particle", "entity", "bossbar", "chat", "scoreboard", "team", "chunk", "explosion", "title", "blockupdate"
+    );
+
+    /** Short method description for the confirmation message. */
     private static String describeMethod(String method) {
         return switch (method) {
             case "particle" -> "a massive particle overload";
-            case "packet" -> "16 near-limit tab-flood packets (~30MB)";
             case "entity" -> "thousands of virtual entities";
+            case "bossbar" -> "hundreds of huge boss bars (always-rendered OOM)";
+            case "chat" -> "dozens of 2MB chat messages (immediate-render OOM)";
+            case "scoreboard" -> "a huge sidebar objective with giant scores";
+            case "team" -> "huge scoreboard teams rendered over nametags";
+            case "chunk" -> "thousands of fake chunk packets (re-parse flood)";
+            case "explosion" -> "explosions with billions of block particles";
+            case "title" -> "huge title/action-bar texts (instant render)";
+            case "blockupdate" -> "millions of block changes in your section (re-mesh storm)";
             default -> "a client overload";
         };
     }
 
-    /** Выполняет подтверждённый краш. */
+    /** Executes the confirmed crash. */
     private static boolean confirmCrash(CommandSender sender) {
         PendingCrash pending = pendingCrashes.remove(getSenderId(sender));
 
         if (pending == null) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ No pending crash confirmation. Use </red><white>/ui punish crash <particle|packet|entity> <player></white><red> first.</red>"
+                    "<red>❌ No pending crash confirmation. Use </red><white>/ui punish crash <method> <player></white><red> first.</red>"
             ));
             return true;
         }
 
         if (System.currentTimeMillis() - pending.createdAt() > CONFIRM_TIMEOUT_MS) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Confirmation expired (30s). Use </red><white>/ui punish crash <particle|packet|entity> <player></white><red> again.</red>"
+                    "<red>❌ Confirmation expired (30s). Use </red><white>/ui punish crash <method> <player></white><red> again.</red>"
             ));
             return true;
         }
@@ -982,11 +1149,18 @@ public final class PunishSubcommand {
             return true;
         }
 
-        // Выполняем выбранный метод краша (все пакеты идут ТОЛЬКО клиенту цели)
+        // Execute the chosen crash method (all packets go ONLY to the target's client)
         switch (pending.method()) {
             case "particle" -> CrashExecutor.crashWithParticles(target);
-            case "packet" -> CrashExecutor.crashWithPacket(target);
             case "entity" -> CrashExecutor.crashWithEntities(target);
+            case "bossbar" -> CrashExecutor.crashWithBossBar(target);
+            case "chat" -> CrashExecutor.crashWithChat(target);
+            case "scoreboard" -> CrashExecutor.crashWithScoreboard(target);
+            case "team" -> CrashExecutor.crashWithTeam(target);
+            case "chunk" -> CrashExecutor.crashWithChunk(target);
+            case "explosion" -> CrashExecutor.crashWithExplosion(target);
+            case "title" -> CrashExecutor.crashWithTitle(target);
+            case "blockupdate" -> CrashExecutor.crashWithBlockUpdate(target);
             default -> {
                 sender.sendMessage(MessageUtil.parse(
                         "<red>❌ Unknown crash method: </red><yellow>" + pending.method() + "</yellow>"
@@ -1000,7 +1174,7 @@ public final class PunishSubcommand {
                 " <white>has been crashed via</white> <gold>" + pending.method() + "</gold><white>.</white>"
         ));
 
-        // Уведомление операторам
+        // Notify operators
         broadcastToModerators(
                 "<red>💥</red> <yellow>" + target.getName() + "</yellow> <gray>crashed by</gray> <white>" + sender.getName() + "</white>" +
                 " <gray>| Method:</gray> <gold>" + pending.method() + "</gold>"
@@ -1009,7 +1183,7 @@ public final class PunishSubcommand {
         return true;
     }
 
-    /** Отменяет ожидающий краш. */
+    /** Cancels a pending crash. */
     private static boolean cancelCrash(CommandSender sender) {
         PendingCrash removed = pendingCrashes.remove(getSenderId(sender));
 
@@ -1026,7 +1200,7 @@ public final class PunishSubcommand {
         return true;
     }
 
-    /** UUID отправителя (игрок или sentinel для консоли). */
+    /** Sender UUID (player or sentinel for console). */
     private static UUID getSenderId(CommandSender sender) {
         if (sender instanceof Player p) {
             return p.getUniqueId();
@@ -1048,7 +1222,8 @@ public final class PunishSubcommand {
                 "<white>/ui punish unban <player></white>\n" +
                 "<white>/ui punish unmute <player></white>\n" +
                 "<white>/ui punish unwarn <player> <reason> <warnId></white>\n" +
-                "<white>/ui punish crash <particle|packet|entity> <player></white> <gray>(requires confirm)</gray>\n" +
+                "<white>/ui punish actionlist [tab] [page]</white> <gray>(tabs: all, ban, mute, warn, kick)</gray>\n" +
+                "<white>/ui punish crash <method> <player></white> <gray>(requires confirm)</gray>\n" +
                 "<gray>Flags: -time:<N>s|m|h|d, -permanent, -ip, -hw</gray>"
         ));
     }
@@ -1061,7 +1236,7 @@ public final class PunishSubcommand {
 
         if (args.length == 2) {
             String prefix = args[1].toLowerCase();
-            for (String action : List.of("ban", "mute", "kick", "warn", "listwarns", "unban", "unmute", "unwarn", "crash")) {
+            for (String action : List.of("ban", "mute", "kick", "warn", "listwarns", "unban", "unmute", "unwarn", "actionlist", "crash")) {
                 if (action.startsWith(prefix)) {
                     completions.add(action);
                 }
@@ -1069,12 +1244,13 @@ public final class PunishSubcommand {
         } else if (args.length == 3) {
             String action = args[1].toLowerCase();
             if (action.equals("crash")) {
-                // способы краша + confirm/cancel
-                completions.add("particle");
-                completions.add("packet");
-                completions.add("entity");
+                // crash methods + confirm/cancel
+                completions.addAll(CRASH_METHODS);
                 completions.add("confirm");
                 completions.add("cancel");
+            } else if (action.equals("actionlist")) {
+                // actionlist tabs
+                completions.addAll(ACTIONLIST_TABS);
             } else if (List.of("ban", "mute", "kick", "warn", "unban", "unmute", "unwarn", "listwarns").contains(action)) {
                 for (Player p : Bukkit.getOnlinePlayers()) {
                     completions.add(p.getName());
@@ -1084,23 +1260,21 @@ public final class PunishSubcommand {
             String action = args[1].toLowerCase();
             if (action.equals("crash")) {
                 String method = args[2].toLowerCase();
-                if (method.equals("particle") || method.equals("packet") || method.equals("entity")) {
-                    // /ui punish crash <method> <tab> → имена игроков
+                if (CRASH_METHODS.contains(method)) {
+                    // /ui punish crash <method> <tab> → player names
                     for (Player p : Bukkit.getOnlinePlayers()) {
                         completions.add(p.getName());
                     }
                 } else if (!method.equals("confirm") && !method.equals("cancel")) {
-                    // ещё не выбран способ → подсказываем методы
-                    completions.add("particle");
-                    completions.add("packet");
-                    completions.add("entity");
+                    // method not chosen yet → suggest methods
+                    completions.addAll(CRASH_METHODS);
                 }
             } else {
-                // после имени игрока → флаги наказания
+                // after the player name → punishment flags
                 addFlagCompletions(action, args, completions);
             }
         } else if (args.length >= 5) {
-            // Флаги
+            // Flags
             String action = args[1].toLowerCase();
             addFlagCompletions(action, args, completions);
         }
@@ -1110,8 +1284,8 @@ public final class PunishSubcommand {
     }
 
     /**
-     * Подсказывает флаги для ban/mute/warn/kick (crash флагов не имеет).
-     * Уже использованные флаги не дублируются.
+     * Suggests flags for ban/mute/warn/kick (crash has no flags).
+     * Already-used flags are not duplicated.
      */
     private static void addFlagCompletions(String action, String[] args, List<String> completions) {
         if (action.equals("crash")) {

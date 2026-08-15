@@ -13,13 +13,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Команды /ui heal и /ui feed — восстанавливают здоровье/голод игроку.
+ * Commands /ui heal and /ui feed — restore health/hunger to a player.
  * <p>
- * Настройки в config.yml → heal_feed:
+ * Settings in config.yml → heal_feed:
  * <ul>
- *   <li>enabled — вкл/выкл команды</li>
- *   <li>heal_amount — сколько хп восстанавливать (0 = всё)</li>
- *   <li>feed_amount — сколько сытости восстанавливать (0 = всё)</li>
+ *   <li>enabled — enable/disable the commands</li>
+ *   <li>heal_amount — how much HP to restore (0 = all)</li>
+ *   <li>feed_amount — how much saturation to restore (0 = all)</li>
  * </ul>
  */
 public final class HealFeedSubcommand {
@@ -54,7 +54,7 @@ public final class HealFeedSubcommand {
 
         double amount = getHealAmount();
         if (amount <= 0) {
-            // Всё хп
+            // Full HP
             target.setHealth(target.getAttribute(Attribute.MAX_HEALTH).getDefaultValue());
         } else {
             double newHealth = Math.min(target.getHealth() + amount,
@@ -98,7 +98,7 @@ public final class HealFeedSubcommand {
 
         double amount = getFeedAmount();
         if (amount <= 0) {
-            // Всю сытость
+            // Full saturation
             target.setFoodLevel(20);
             target.setSaturation(20);
             target.setExhaustion(0);
@@ -119,16 +119,15 @@ public final class HealFeedSubcommand {
     // CONFIG HELPERS
     // =========================
     /**
-     * Возвращает количество хп для heal из config.yml.
-     * 0 = всё хп.
+     * Returns the heal/feed config section from config.yml.
      */
     private static ConfigurationSection getConfig() {
         return Main.getInstance().getConfig().getConfigurationSection("heal_feed");
     }
 
     /**
-     * Возвращает количество хп для heal из config.yml.
-     * 0 = всё хп.
+     * Returns the HP amount for heal from config.yml.
+     * 0 = all HP.
      */
     public static double getHealAmount() {
         var cfg = getConfig();
@@ -137,8 +136,8 @@ public final class HealFeedSubcommand {
     }
 
     /**
-     * Возвращает количество сытости для feed из config.yml.
-     * 0 = вся сытость.
+     * Returns the saturation amount for feed from config.yml.
+     * 0 = all saturation.
      */
     public static double getFeedAmount() {
         var cfg = getConfig();
@@ -147,7 +146,7 @@ public final class HealFeedSubcommand {
     }
 
     /**
-     * Проверяет, включена ли команда.
+     * Checks whether the command is enabled.
      */
     public static boolean isEnabled() {
         var cfg = getConfig();
@@ -156,7 +155,7 @@ public final class HealFeedSubcommand {
     }
 
     /**
-     * Таб-комплишн: подсказывает имена игроков.
+     * Tab-completion: suggests player names.
      */
     public static List<String> tabComplete(String[] args) {
         if (args.length == 2) {

@@ -1,7 +1,7 @@
 package com.ultimateimprovments.mechanics.security.anticheat.core;
 
 /**
- * Результат проверки античита.
+ * Anticheat check result.
  */
 public class CheckResult {
 
@@ -17,17 +17,17 @@ public class CheckResult {
         this.detail = detail;
     }
 
-    /** Проверка пройдена — нет нарушений. */
+    /** Check passed — no violations. */
     public static CheckResult passed() {
         return new CheckResult(false, 0, null, null);
     }
 
-    /** Нарушение обнаружено. */
+    /** Violation detected. */
     public static CheckResult flagged(double vl, String message) {
         return new CheckResult(true, vl, message, null);
     }
 
-    /** Нарушение обнаружено с деталями. */
+    /** Violation detected with details. */
     public static CheckResult flagged(double vl, String message, String detail) {
         return new CheckResult(true, vl, message, detail);
     }

@@ -21,11 +21,11 @@ import java.util.HashMap;
 import java.util.UUID;
 
 /**
- * Обрабатывает команду /ui suicide — двухэтапное подтверждение с таймером.
+ * Handles the /ui suicide command — two-stage confirmation with a timer.
  */
 public class SuicideCommand {
 
-    // Игроки, которые подтвердили суицид (ждут таймера)
+    // Players who confirmed suicide (waiting for the timer)
     private static final HashMap<UUID, Boolean> suicideConfirmed = new HashMap<>();
     private static final HashMap<UUID, BukkitRunnable> suicideTasks = new HashMap<>();
     private static final HashMap<UUID, Long> suicideCooldowns = new HashMap<>();
@@ -35,14 +35,14 @@ public class SuicideCommand {
         FileConfiguration cfg = Main.getInstance().getConfig();
 
         // =========================
-        // НАСТРОЙКИ ИЗ КОНФИГА
+        // CONFIG SETTINGS
         // =========================
         int countdownDuration = cfg.getInt("suicide.countdown_duration", 10);
         int cooldownSeconds = cfg.getInt("suicide.cooldown_seconds", 10);
         int confirmTimeout = cfg.getInt("suicide.confirm_timeout", 30);
 
         // =========================
-        // КУЛДАУН
+        // COOLDOWN
         // =========================
         if (suicideCooldowns.containsKey(uuid)) {
             long remaining = (suicideCooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
@@ -57,7 +57,7 @@ public class SuicideCommand {
         }
 
         // =========================
-        // ПРОВЕРКА: уже есть активный таймер
+        // CHECK: an active timer already exists
         // =========================
         if (suicideTasks.containsKey(uuid)) {
             String msg = MessagesManager.getString("suicide.messages.already_running",
@@ -67,7 +67,7 @@ public class SuicideCommand {
         }
 
         // =========================
-        // ЭТАП 1: ПОДТВЕРЖДЕНИЕ
+        // STAGE 1: CONFIRMATION
         // =========================
         if (!suicideConfirmed.getOrDefault(uuid, false)) {
             suicideConfirmed.put(uuid, true);
@@ -113,7 +113,7 @@ public class SuicideCommand {
                 player.playSound(player.getLocation(), warningSnd, 1.0f, 0.5f);
             }
 
-            // Автосброс подтверждения
+            // Auto-reset of the confirmation
             long confirmTimeoutTicks = confirmTimeout * 20L;
             new BukkitRunnable() {
                 @Override
@@ -130,7 +130,7 @@ public class SuicideCommand {
         }
 
         // =========================
-        // ЭТАП 2: ЗАПУСК ТАЙМЕРА (подтверждено, без отмены)
+        // STAGE 2: START THE TIMER (confirmed, no cancellation)
         // =========================
         suicideConfirmed.remove(uuid);
         startCountdown(player, countdownDuration, cooldownSeconds);
@@ -197,7 +197,7 @@ public class SuicideCommand {
         bossBar.setProgress(1.0);
 
         // =========================
-        // ЧАТ: начальное сообщение
+        // CHAT: initial message
         // =========================
         String confirmedTitle = MessagesManager.getString("suicide.messages.confirmed_title", "<dark_red>☠</dark_red> <red>Countdown started!</red>");
         String confirmedNoCancel = MessagesManager.getString("suicide.messages.confirmed_no_cancel", "<red>Cannot be cancelled!</red>");
@@ -213,7 +213,7 @@ public class SuicideCommand {
         playSuicideBeep(player, 1.2f);
 
         // =========================
-        // ТАЙМЕР ОБРАТНОГО ОТСЧЁТА (каждый тик)
+        // COUNTDOWN TIMER (every tick)
         // =========================
         int duration = countdownDuration;
         int totalTicks = duration * 20;

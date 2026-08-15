@@ -11,24 +11,24 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * 🔄 AccessListCheckTask — периодическая проверка всех онлайн-игроков
- * по whitelist, blacklist и opwhitelist.
+ * 🔄 AccessListCheckTask — periodic check of all online players
+ * against the whitelist, blacklist and opwhitelist.
  * <p>
- * Запускается с интервалом из config.yml → access_control.check_interval_ticks.
- * При обнаружении нарушителя — кикает или снимает OP.
+ * Runs with the interval from config.yml → access_control.check_interval_ticks.
+ * On finding a violator — kicks them or removes OP.
  * <p>
- * Дублирует логику {@link WhitelistManager#onPlayerLogin},
- * {@link BlacklistManager#onPlayerLogin} и {@link OpWhitelistManager#checkAndDeop}
- * для уже подключённых игроков (например если список изменился через БД напрямую).
+ * Duplicates the logic of {@link WhitelistManager#onPlayerLogin},
+ * {@link BlacklistManager#onPlayerLogin} and {@link OpWhitelistManager#checkAndDeop}
+ * for already connected players (e.g. if the list changed directly via the DB).
  */
 public class AccessListCheckTask extends BukkitRunnable {
 
     private static int taskId = -1;
 
     /**
-     * Запускает периодическую задачу с интервалом из конфига.
+     * Starts the periodic task with the interval from the config.
      *
-     * @param plugin экземпляр плагина
+     * @param plugin the plugin instance
      */
     public static void start(Main plugin) {
         if (taskId != -1) {
@@ -46,7 +46,7 @@ public class AccessListCheckTask extends BukkitRunnable {
     }
 
     /**
-     * Останавливает задачу.
+     * Stops the task.
      */
     public static void stop() {
         if (taskId != -1) {
@@ -62,7 +62,7 @@ public class AccessListCheckTask extends BukkitRunnable {
         boolean opWhitelistEnabled = OpWhitelistManager.isEnabled();
 
         if (!whitelistEnabled && !blacklistEnabled && !opWhitelistEnabled) {
-            return; // ничего не включено — нечего проверять
+            return; // nothing enabled — nothing to check
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -75,7 +75,7 @@ public class AccessListCheckTask extends BukkitRunnable {
                 player.kickPlayer(MessageUtil.legacy(
                         "<red>⛔ You are blacklisted from this server!</red>"
                 ));
-                continue; // игрок уже кикнут
+                continue; // player already kicked
             }
 
             // =========================
@@ -90,7 +90,7 @@ public class AccessListCheckTask extends BukkitRunnable {
             }
 
             // =========================
-            // OP WHITELIST CHECK (через OpWhitelistManager)
+            // OP WHITELIST CHECK (via OpWhitelistManager)
             // =========================
             if (opWhitelistEnabled && player.isOp()) {
                 if (!OpWhitelistManager.isWhitelisted(name)) {

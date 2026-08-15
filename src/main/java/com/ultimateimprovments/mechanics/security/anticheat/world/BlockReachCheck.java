@@ -10,14 +10,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 /**
- * BlockReach — взаимодействие с блоками дальше ванильного лимита.
+ * BlockReach — block interaction beyond the vanilla limit.
  * <p>
- * Ванильный лимит (block_interaction_range):
- * Survival: 4.5 блоков (ray-cast от глаз до поверхности блока)
- * Creative: 5.0 блоков
+ * Vanilla limit (block_interaction_range):
+ * Survival: 4.5 blocks (ray-cast from eyes to the block surface)
+ * Creative: 5.0 blocks
  * <p>
- * Проверка считает дистанцию от глаз до ЦЕНТРА блока (+0.5 по XYZ),
- * поэтому порог выше номинального (≈5.5 survival / 6.5 creative).
+ * The check measures the distance from the eyes to the block CENTER (+0.5 on XYZ),
+ * so the threshold is above the nominal one (≈5.5 survival / 6.5 creative).
  */
 public class BlockReachCheck extends AbstractCheck {
 

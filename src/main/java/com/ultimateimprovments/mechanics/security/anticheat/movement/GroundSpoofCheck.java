@@ -9,8 +9,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * GroundSpoof — игрок отправляет onGround=true, находясь в воздухе.
- * Детекция: клиент утверждает что на земле, но Y уменьшается (падает).
+ * GroundSpoof — the player sends onGround=true while in the air.
+ * Detection: the client claims to be on the ground, but Y decreases (falling).
  */
 public class GroundSpoofCheck extends AbstractCheck {
 

@@ -18,19 +18,19 @@ import org.bukkit.event.Listener;
 import java.util.List;
 
 /**
- * CodePanelDialogHandler — слушает {@link PlayerCustomClickEvent} и обрабатывает
- * клики по кнопкам кодовой панели (Custom Screen).
+ * CodePanelDialogHandler — listens to {@link PlayerCustomClickEvent} and handles
+ * clicks on the code panel buttons (Custom Screen).
  * <p>
- * Действия:
+ * Actions:
  * <ul>
- *   <li>{@code ultimateimprovments:codepanel_digit_N} — добавить цифру N</li>
- *   <li>{@code ultimateimprovments:codepanel_backspace} — удалить последнюю цифру</li>
- *   <li>{@code ultimateimprovments:codepanel_confirm} — проверить введённый код</li>
- *   <li>{@code ultimateimprovments:codepanel_cancel} — закрыть диалог и сбросить ввод</li>
+ *   <li>{@code ultimateimprovments:codepanel_digit_N} — add digit N</li>
+ *   <li>{@code ultimateimprovments:codepanel_backspace} — delete the last digit</li>
+ *   <li>{@code ultimateimprovments:codepanel_confirm} — check the entered code</li>
+ *   <li>{@code ultimateimprovments:codepanel_cancel} — close the dialog and reset the input</li>
  * </ul>
  * <p>
- * Проверка кода — по БД {@link CodePanelDatabase} (ключи с правами/попытками/командами),
- * как было в старой {@code CodePanelClick#check} / {@code CodePanelGUIListener#checkCode}.
+ * Code checking — via the {@link CodePanelDatabase} DB (keys with permissions/attempts/commands),
+ * as in the old {@code CodePanelClick#check} / {@code CodePanelGUIListener#checkCode}.
  */
 public class CodePanelDialogHandler implements Listener {
 
@@ -45,7 +45,7 @@ public class CodePanelDialogHandler implements Listener {
         Player player = getPlayerFromConnection(event);
         if (player == null) return;
 
-        // ─── Cancel — закрыть и сбросить ───
+        // ─── Cancel — close and reset ───
         if (identifier.equals(CANCEL_KEY)) {
             CodePanelDialogScreen.close(player);
             CodePanelSession.reset(player.getUniqueId());
@@ -56,7 +56,7 @@ public class CodePanelDialogHandler implements Listener {
             return;
         }
 
-        // ─── Backspace — удалить последнюю цифру ───
+        // ─── Backspace — delete the last digit ───
         if (identifier.equals(BACKSPACE_KEY)) {
             StringBuilder sb = CodePanelSession.get(player.getUniqueId());
             if (sb.length() > 0) {
@@ -67,7 +67,7 @@ public class CodePanelDialogHandler implements Listener {
             return;
         }
 
-        // ─── Confirm — проверить код ───
+        // ─── Confirm — check the code ───
         if (identifier.equals(CONFIRM_KEY)) {
             int cooldown = Main.getInstance().getConfig().getInt("codepanel.enter_cooldown", 3);
             if (CodePanelSession.isEnterOnCooldown(player.getUniqueId())) {
@@ -86,7 +86,7 @@ public class CodePanelDialogHandler implements Listener {
             return;
         }
 
-        // ─── Digit — добавить цифру ───
+        // ─── Digit — add a digit ───
         if (identifier.namespace().equals("ultimateimprovments")
                 && identifier.value().startsWith(CodePanelDialogScreen.DIGIT_PREFIX)) {
             String digit = identifier.value().substring(CodePanelDialogScreen.DIGIT_PREFIX.length());
@@ -95,7 +95,7 @@ public class CodePanelDialogHandler implements Listener {
             int max = Main.getInstance().getConfig().getInt("codepanel.max_length", 10);
             String code = CodePanelSession.getCode(player.getUniqueId());
             if (code.length() >= max) {
-                // Максимум достигнут — даём отклик, чтобы игрок понимал, что ввод отклонён
+                // Max reached — give feedback so the player knows the input was rejected
                 playSound(player, "fail");
                 return;
             }
@@ -106,16 +106,16 @@ public class CodePanelDialogHandler implements Listener {
     }
 
     /**
-     * Переоткрывает диалог, чтобы экран показал обновлённый код.
+     * Reopens the dialog so the screen shows the updated code.
      */
     private void reopen(Player player) {
         reopen(player, null);
     }
 
     /**
-     * Закрывает и переоткрывает диалог, показывая ошибку прямо в окне (образец ChgDim).
-     * Задержка 10 тиков — клиент должен успеть обработать закрытие старого диалога
-     * до отправки нового (как в ChgDimDialogHandler/SudoDialogHandler).
+     * Closes and reopens the dialog, showing the error right in the window (ChgDim pattern).
+     * 10-tick delay — the client must process the old dialog's close before
+     * the new one is sent (as in ChgDimDialogHandler/SudoDialogHandler).
      */
     private void reopenWithError(Player player, String errorMessage) {
         CodePanelDialogScreen.close(player);
@@ -127,7 +127,7 @@ public class CodePanelDialogHandler implements Listener {
     }
 
     private void reopen(Player player, String errorMessage) {
-        // 1 тик — клиент уже закрыл окно сам (DialogAction.CLOSE), Show открывает его заново
+        // 1 tick — the client already closed the window itself (DialogAction.CLOSE), Show reopens it
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             if (player.isOnline()) {
                 CodePanelDialogScreen.open(player, errorMessage);
@@ -136,12 +136,12 @@ public class CodePanelDialogHandler implements Listener {
     }
 
     // =========================
-    // CHECK CODE — БД ключей
+    // CHECK CODE — key DB
     // =========================
     private void checkCode(Player player) {
         String input = CodePanelSession.getCode(player.getUniqueId());
 
-        // Чистим просроченные ключи в БД
+        // Clean up expired keys in the DB
         CodePanelDatabase.cleanupExpiredKeys();
 
         List<CodePanelDatabase.CodePanelKey> keys = CodePanelDatabase.getAllKeys();
@@ -155,16 +155,16 @@ public class CodePanelDialogHandler implements Listener {
         for (CodePanelDatabase.CodePanelKey key : keys) {
             if (!key.code.equals(input)) continue;
 
-            // Проверка whitelist / blacklist
+            // Whitelist / blacklist check
             if (!key.isPlayerAllowed(player.getName())) {
-                // Ошибка показывается прямо в диалоге
+                // The error is shown right in the dialog
                 playSound(player, "fail");
                 reopenWithError(player, msg("codepanel.messages.no_access",
                         "<red>❌ You don't have access to this code!</red>"));
                 return;
             }
 
-            // max_attempts — увеличиваем счётчик
+            // max_attempts — increment the counter
             if (key.maxAttempts > 0) {
                 CodePanelDatabase.incrementAttemptsUsed(key.keyName);
                 int newUsed = key.attemptsUsed + 1;
@@ -182,7 +182,7 @@ public class CodePanelDialogHandler implements Listener {
             playSound(player, "success");
             CodePanelSession.reset(player.getUniqueId());
 
-            // Исполняем привязанные команды (через запятую, $entity/%entity% → игрок)
+            // Execute the bound commands (comma-separated, $entity/%entity% → player)
             if (key.command != null && !key.command.isEmpty()) {
                 String[] commands = key.command.split(",");
                 for (String rawCmd : commands) {
@@ -199,7 +199,7 @@ public class CodePanelDialogHandler implements Listener {
             return;
         }
 
-        // НЕВЕРНЫЙ КОД — закрываем и переоткрываем диалог с ошибкой в окне
+        // WRONG CODE — close and reopen the dialog with the error in the window
         playSound(player, "fail");
         reopenWithError(player, msg("codepanel.messages.error",
                 "<dark_red>❌</dark_red> <red>Error:</red> <gray>Incorrect code!</gray>"));
@@ -225,7 +225,7 @@ public class CodePanelDialogHandler implements Listener {
     }
 
     /**
-     * Получает Bukkit Player из PlayerCustomClickEvent через PlayerGameConnection.
+     * Gets the Bukkit Player from PlayerCustomClickEvent via PlayerGameConnection.
      */
     private static Player getPlayerFromConnection(PlayerCustomClickEvent event) {
         if (event.getCommonConnection() instanceof PlayerGameConnection gameConn) {
@@ -236,7 +236,7 @@ public class CodePanelDialogHandler implements Listener {
     }
 
     /**
-     * Регистрирует слушатель в плагине.
+     * Registers the listener in the plugin.
      */
     public static void register() {
         Bukkit.getPluginManager().registerEvents(new CodePanelDialogHandler(), Main.getInstance());

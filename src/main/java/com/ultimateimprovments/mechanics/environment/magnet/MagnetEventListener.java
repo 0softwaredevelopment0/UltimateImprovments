@@ -10,10 +10,10 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Обрабатывает событие выбрасывания предмета игроком.
- * Если выброшен металлический предмет — помечает игрока как "dirty"
- * в MagnetManager, чтобы в следующем тике магнита его инвентарь
- * был перепроверен, а скорость сброшена, если металла больше нет.
+ * Handles the item drop event from a player.
+ * If a metallic item was dropped — marks the player as "dirty"
+ * in MagnetManager, so on the next magnet tick their inventory
+ * is re-checked and the speed is reset if there is no metal left.
  */
 public class MagnetEventListener implements Listener {
 
@@ -22,18 +22,18 @@ public class MagnetEventListener implements Listener {
         Player player = event.getPlayer();
         ItemStack dropped = event.getItemDrop().getItemStack();
 
-        // Если выброшенный предмет не металлический — ничего не делаем
+        // If the dropped item is not metallic — do nothing
         if (!isMetallic(dropped)) return;
 
-        // Отмечаем, что игрок выбросил металлический предмет,
-        // чтобы MagnetManager перепроверил его инвентарь в следующем тике
+        // Mark that the player dropped a metallic item,
+        // so MagnetManager re-checks their inventory on the next tick
         MagnetManager.markPlayerDirty(player.getUniqueId());
     }
 
     /**
-     * Проверяет, является ли предмет металлическим (магнитится).
-     * Дублирует логику MagnetManager.isMetallic(), но вызывается
-     * из event listener, где статический доступ удобнее.
+     * Checks whether the item is metallic (magnetizable).
+     * Duplicates the logic of MagnetManager.isMetallic(), but is called
+     * from the event listener, where static access is more convenient.
      */
     public static boolean isMetallic(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;

@@ -30,8 +30,8 @@ public class GeneratorTask extends BukkitRunnable {
 
     // =========================
     // BURN TRACKING (per furnace location)
-    // fuelTimer: сколько тиков осталось гореть текущему топливу (decrements every tick)
-    // energyAccumulator: накопленная дробная энергия (>= 1 → добавляем к батарее)
+    // fuelTimer: how many ticks the current fuel has left to burn (decrements every tick)
+    // energyAccumulator: accumulated fractional energy (>= 1 → added to the battery)
     // Generator works independently of furnace smelting state.
     // =========================
     private final Map<Location, Integer> fuelTimer = new HashMap<>();
@@ -59,7 +59,7 @@ public class GeneratorTask extends BukkitRunnable {
         // CALCULATE PER-TICK ENERGY
         // =========================
         int effectiveBurn = Math.max(burnDuration, 1);
-        // Энергия за тик (floor-деление). Остаток распределяется через extraTicks
+        // Energy per tick (floor division). The remainder is distributed via extraTicks
         int energyPerTick = totalEnergyPerFuel / effectiveBurn;
 
         // =========================
@@ -123,7 +123,7 @@ public class GeneratorTask extends BukkitRunnable {
                 double energyPerTickDouble = (double) totalEnergyPerFuel / effectiveBurn;
                 double acc = energyAccumulator.getOrDefault(furnaceLoc, 0.0) + energyPerTickDouble;
 
-                // На последнем тике горения округляем, чтобы не потерять энергию из-за double-precision
+                // On the last burn tick we round, so no energy is lost due to double-precision
                 int toAdd;
                 if (timer == 1) {
                     toAdd = (int) Math.round(acc);
@@ -240,14 +240,14 @@ public class GeneratorTask extends BukkitRunnable {
                 CableNetwork.markFlowingKey(node.getWorld().getUID().toString(), node.getKey());
             }
 
-            // Found a battery — add energy here (только если режим позволяет зарядку)
+            // Found a battery — add energy here (only if the mode allows charging)
             if (node.getType() == NodeType.BATTERY) {
                 BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
                 if ((bc == null || bc.canCharge()) && node.getEnergy() < node.getMaxEnergy()) {
                     node.addEnergy(amount);
                     return;
                 }
-                // Если батарея в режиме DISCHARGE или полная — продолжаем BFS к другим батареям
+                // If the battery is in DISCHARGE mode or full — continue BFS to other batteries
                 continue;
             }
 

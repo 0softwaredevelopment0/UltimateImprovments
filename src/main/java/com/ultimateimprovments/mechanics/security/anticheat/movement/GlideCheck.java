@@ -11,8 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Glide — медленное падение без парашюта/элитры.
- * Детекция: игрок в воздухе, Y уменьшается медленнее, чем гравитация.
+ * Glide — slow falling without a parachute/elytra.
+ * Detection: the player is airborne and Y decreases slower than gravity.
  */
 public class GlideCheck extends AbstractCheck {
 

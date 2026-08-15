@@ -22,14 +22,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Система голосования.
+ * Voting system.
  * <p>
- * Команды:
+ * Commands:
  * <ul>
  *   <li>{@code /ui vote create <name> <title> <desc> -answer_1:t,d -answer_2:t,d ... -time:<N><s|m|h|d>}</li>
- *   <li>{@code /ui vote <name> [<index>|<title>]} — проголосовать или посмотреть результаты</li>
- *   <li>{@code /ui vote delete <name>} — удалить с подтверждением</li>
- *   <li>{@code /ui vote change <name> <params>} — изменить (пересоздать с теми же params)</li>
+ *   <li>{@code /ui vote <name> [<index>|<title>]} — vote or view results</li>
+ *   <li>{@code /ui vote delete <name>} — delete with confirmation</li>
+ *   <li>{@code /ui vote change <name> <params>} — change (recreate with the same params)</li>
  * </ul>
  */
 public class VoteManager {
@@ -38,13 +38,13 @@ public class VoteManager {
     // IN-MEMORY CACHE
     // =========================
     private static final Map<String, Vote> votes = new ConcurrentHashMap<>();
-    /** Игроки, подтвердившие удаление голосования (vote_name -> sender_uuid -> true) */
+    /** Players who confirmed vote deletion (vote_name -> sender_uuid -> true) */
     private static final Map<String, Map<UUID, Boolean>> pendingDeletes = new ConcurrentHashMap<>();
-    /** Активные таймеры закрытия голосований */
+    /** Active vote close timers */
     private static final Map<String, BukkitTask> closeTimers = new ConcurrentHashMap<>();
 
     // =========================
-    // INIT — загрузить из БД при старте
+    // INIT — load from DB on startup
     // =========================
     public static void init() {
         votes.clear();
@@ -59,7 +59,7 @@ public class VoteManager {
     // =========================
     private static void loadFromDatabase() {
         try (Connection con = DatabaseManager.getConnection()) {
-            // Загружаем голосования
+            // Load votes
             try (PreparedStatement st = con.prepareStatement(
                     "SELECT name, title, question, creator_uuid, created_at, expires_at, ended FROM votes")) {
                 ResultSet rs = st.executeQuery();
@@ -78,7 +78,7 @@ public class VoteManager {
                 }
             }
 
-            // Загружаем ответы
+            // Load answers
             try (PreparedStatement st = con.prepareStatement(
                     "SELECT vote_name, answer_index, title, description FROM vote_answers ORDER BY vote_name, answer_index")) {
                 ResultSet rs = st.executeQuery();
@@ -95,7 +95,7 @@ public class VoteManager {
                 }
             }
 
-            // Загружаем голоса игроков
+            // Load player votes
             try (PreparedStatement st = con.prepareStatement(
                     "SELECT vote_name, player_uuid, answer_index FROM vote_records")) {
                 ResultSet rs = st.executeQuery();
@@ -109,7 +109,7 @@ public class VoteManager {
                 }
             }
 
-            // Восстанавливаем таймеры для неистёкших голосований
+            // Restore timers for non-expired votes
             long now = System.currentTimeMillis();
             for (Vote vote : votes.values()) {
                 if (vote.expiresAt > now && !vote.ended) {
@@ -610,7 +610,7 @@ public class VoteManager {
             }
         }
 
-        // Применяем изменения
+        // Apply the changes
         boolean changed = false;
 
         if (newTitle != null && !newTitle.isEmpty()) {
@@ -709,14 +709,14 @@ public class VoteManager {
         vote.ended = true;
         closeTimers.remove(voteName.toLowerCase());
 
-        // Подсчёт результатов
+        // Count the results
         Map<Integer, Integer> counts = new HashMap<>();
         for (int idx : vote.votes.values()) {
             counts.merge(idx, 1, Integer::sum);
         }
         int total = vote.votes.size();
 
-        // Определяем победителя
+        // Determine the winner
         int maxCount = 0;
         int winnerIdx = -1;
         boolean isTie = false;
@@ -925,7 +925,7 @@ public class VoteManager {
         public boolean ended;
         public Map<UUID, Integer> votes; // player -> answer index
 
-        /** Сколько человек онлайн (можно голосовать) */
+        /** How many players are online (can vote) */
         public int getDisplayTotal() {
             return (int) Bukkit.getOnlinePlayers().stream()
                     .filter(p -> !p.hasPermission("ui.command.vote.bypass"))

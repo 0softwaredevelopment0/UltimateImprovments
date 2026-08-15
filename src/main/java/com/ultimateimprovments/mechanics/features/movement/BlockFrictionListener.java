@@ -17,38 +17,38 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Кастомное трение блоков — модификация горизонтальной velocity игрока.
+ * Custom block friction — modifies the player's horizontal velocity.
  * <p>
- * <b>Механика Minecraft:</b><br>
- * Каждый тик сервер умножает горизонтальную velocity на {@code friction * 0.91}.<br>
- * Default (0.6): {@code vel *= 0.546} — экспоненциальное замедление.<br>
- * Custom (1.1):  {@code vel *= 1.001} — экспоненциальное ускорение!<br>
- * Custom (0.9):  {@code vel *= 0.819} — замедление быстрее default.
+ * <b>Minecraft mechanics:</b><br>
+ * Every tick the server multiplies the horizontal velocity by {@code friction * 0.91}.<br>
+ * Default (0.6): {@code vel *= 0.546} — exponential deceleration.<br>
+ * Custom (1.1):  {@code vel *= 1.001} — exponential acceleration!<br>
+ * Custom (0.9):  {@code vel *= 0.819} — deceleration faster than default.
  * <p>
- * <b>Как работает:</b><br>
- * Сервер уже применил default friction (0.6 * 0.91). Наш корректор
- * умножает velocity на {@code customFriction / 0.6}, чтобы итоговое
- * трение за тик стало {@code customFriction * 0.91}.
+ * <b>How it works:</b><br>
+ * The server has already applied the default friction (0.6 * 0.91). Our corrector
+ * multiplies the velocity by {@code customFriction / 0.6}, so the resulting
+ * friction per tick becomes {@code customFriction * 0.91}.
  * <p>
- * <b>💡 Экспоненциальное ускорение:</b><br>
- * Значения {@code > 1.0} дают {@code vel *= > 0.546} — чем больше значение,
- * тем быстрее разгон. Пример: {@code 1.1 → vel *= 1.001} (медленный разгон),
- * {@code 10000 → vel *= 9100} (мгновенный рывок).
+ * <b>💡 Exponential acceleration:</b><br>
+ * Values {@code > 1.0} give {@code vel *= > 0.546} — the larger the value,
+ * the faster the acceleration. Example: {@code 1.1 → vel *= 1.001} (slow acceleration),
+ * {@code 10000 → vel *= 9100} (instant burst).
  * <p>
- * Настройка в config.yml → block_friction:
+ * Configured in config.yml → block_friction:
  * <pre>
  * block_friction:
- *   BLUE_ICE: 10000  # экспоненциальное ускорение
- *   PACKED_ICE: 0.9  # мягкое замедление
- *   SOUL_SAND: 0.4   # сильное замедление
+ *   BLUE_ICE: 10000  # exponential acceleration
+ *   PACKED_ICE: 0.9  # soft deceleration
+ *   SOUL_SAND: 0.4   # strong deceleration
  * </pre>
  */
 public class BlockFrictionListener implements Listener {
 
-    /** Карта блок → friction (загружается из config.yml) */
+    /** Block → friction map (loaded from config.yml) */
     private static Map<Material, Double> frictionMap = new HashMap<>();
 
-    /** DEFAULT friction для большинства блоков в Minecraft */
+    /** DEFAULT friction for most blocks in Minecraft */
     private static final double DEFAULT_FRICTION = 0.6;
 
     // =========================
@@ -81,7 +81,7 @@ public class BlockFrictionListener implements Listener {
             double friction = cfg.getDouble(key, DEFAULT_FRICTION);
             frictionMap.put(mat, friction);
 
-            // Показываем эффект: экспонента за тик
+            // Show the effect: the exponent per tick
             double effect = friction * 0.91;
             String direction = effect > 1.0 ? "🔼 ACCEL" : effect < 1.0 ? "🔽 DECEL" : "➡ NEUTRAL";
             ConsoleLogger.info("[BlockFriction] " + mat.name()
@@ -101,21 +101,21 @@ public class BlockFrictionListener implements Listener {
     // =========================
 
     /**
-     * При каждом движении игрока по блоку с кастомным friction
-     * корректируем горизонтальную velocity.
+     * On every player movement over a block with custom friction
+     * corrects the horizontal velocity.
      * <p>
-     * Формула коррекции:
+     * Correction formula:
      * {@code vel *= customFriction / DEFAULT_FRICTION}
      * <p>
-     * Почему: сервер уже умножил vel на {@code 0.6 * 0.91} (DEFAULT).
-     * Нам нужно, чтобы итог был {@code customFriction * 0.91}.
+     * Why: the server already multiplied vel by {@code 0.6 * 0.91} (DEFAULT).
+     * We need the result to be {@code customFriction * 0.91}.
      * {@code vel * 0.6*0.91 * (custom/0.6) = vel * custom*0.91} ✓
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
         if (frictionMap.isEmpty()) return;
 
-        // Пропускаем rotation-only (без смены позиции)
+        // Skip rotation-only (no position change)
         Location to = event.getTo();
         if (to == null) return;
         Location from = event.getFrom();
@@ -127,21 +127,21 @@ public class BlockFrictionListener implements Listener {
 
         Player player = event.getPlayer();
 
-        // Блок ПОД ногами игрока (на чём стоит)
+        // The block UNDER the player's feet (what they stand on)
         Block ground = to.getBlock().getRelative(BlockFace.DOWN);
         Double friction = frictionMap.get(ground.getType());
         if (friction == null) return;
 
-        // Множитель velocity: customFriction / 0.6
-        // Значение > 1.0 даёт экспоненциальное УСКОРЕНИЕ (скорость растёт каждый тик).
+        // Velocity multiplier: customFriction / 0.6
+        // A value > 1.0 gives exponential ACCELERATION (speed grows every tick).
         double multiplier = friction / DEFAULT_FRICTION;
 
-        // Берём текущую velocity и умножаем горизонталь
+        // Take the current velocity and multiply the horizontal part
         Vector vel = player.getVelocity();
         double newX = vel.getX() * multiplier;
         double newZ = vel.getZ() * multiplier;
 
-        // Лимит: не быстрее 50 м/с (режим креатива/лога)
+        // Limit: no faster than 50 m/s (creative/flying mode)
         double speed = Math.sqrt(newX * newX + newZ * newZ);
         double maxSpeed = 50.0;
         if (speed > maxSpeed) {

@@ -12,8 +12,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AutoRespawn — мгновенный респавн (0ms задержка после смерти).
- * Детекция: время между смертью и респавном меньше минимального (человеческая реакция).
+ * AutoRespawn — instant respawn (0ms delay after death).
+ * Detection: time between death and respawn is below the minimum (human reaction).
  */
 public class AutoRespawnCheck extends AbstractCheck {
 

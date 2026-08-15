@@ -20,29 +20,29 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 🛡 ProxyServerListener — проверка права ui.proxy.server на уровне пакетов.
+ * 🛡 ProxyServerListener — checks the ui.proxy.server permission at the packet level.
  * <p>
- * Перехватывает входящие {@code PacketPlayInCustomPayload} на канале "BungeeCord"
- * (или других прокси-каналах) и проверяет, есть ли у игрока право ui.proxy.server.
+ * Intercepts incoming {@code PacketPlayInCustomPayload} on the "BungeeCord" channel
+ * (or other proxy channels) and checks whether the player has the ui.proxy.server permission.
  * <p>
- * Зачем: Velocity/BungeeCord не могут нормально работать с правами на backend-сервере.
- * Этот перехватчик блокирует пакеты прокси (Connect, ConnectOther и т.д.) на уровне
- * Netty pipeline — до того, как они будут обработаны сервером.
+ * Why: Velocity/BungeeCord cannot work properly with backend-server permissions.
+ * This interceptor blocks proxy packets (Connect, ConnectOther, etc.) at the
+ * Netty pipeline level — before they are processed by the server.
  * <p>
- * Пакет от прокси выглядит как обычный входящий пакет от клиента.
- * Мы перехватываем его в channelRead(), проверяем permission,
- * и если его нет — потребляем пакет (не передаём дальше) и отправляем игроку сообщение.
+ * A packet from the proxy looks like a regular incoming packet from the client.
+ * We intercept it in channelRead(), check the permission,
+ * and if it is missing — consume the packet (don't pass it further) and send the player a message.
  */
 public class ProxyServerListener implements Listener {
 
     private static ProxyServerListener instance;
 
-    /** Конфигурация */
+    /** Configuration */
     private static boolean enabled = true;
     private static boolean logCommands = true;
     private static String noPermissionMessage = "<red>❌ You don't have permission to switch servers!</red>";
 
-    /** Состояние */
+    /** State */
     private static final String HANDLER_NAME = ":ui_proxy_server";
     private static final String PERMISSION = "ui.proxy.server";
     private final Map<UUID, Boolean> injected = new ConcurrentHashMap<>();
@@ -92,7 +92,7 @@ public class ProxyServerListener implements Listener {
     }
 
     // =========================
-    // NETTY PIPELINE INJECTION (входящие пакеты)
+    // NETTY PIPELINE INJECTION (incoming packets)
     // =========================
     private void injectPlayer(Player player) {
         if (!enabled) return;
@@ -103,18 +103,18 @@ public class ProxyServerListener implements Listener {
             if (channel == null) return;
             if (channel.pipeline().get(HANDLER_NAME) != null) return;
 
-            // Вставляем handler ДО packet_handler, чтобы перехватывать входящие пакеты
+            // Insert the handler BEFORE packet_handler to intercept incoming packets
             channel.pipeline().addBefore("packet_handler", HANDLER_NAME, new ChannelDuplexHandler() {
 
                 @Override
                 public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                    // Проверяем, является ли пакет кастомным payload'ом от прокси
+                    // Check whether the packet is a custom payload from the proxy
                     if (enabled && isCustomPayloadPacket(msg)) {
                         String channelName = getPacketChannel(msg);
                         if (channelName != null && isProxyChannel(channelName)) {
                             if (!player.hasPermission(PERMISSION)) {
-                                // Парсим BungeeCord subchannel ТОЛЬКО когда блокируем пакет,
-                                // чтобы не коррумпировать буфер для downstream-обработчиков
+                                // Parse the BungeeCord subchannel ONLY when blocking the packet,
+                                // so the buffer is not corrupted for downstream handlers
                                 String subchannel = parseBungeeSubchannel(msg);
 
                                 if (logCommands) {
@@ -124,19 +124,19 @@ public class ProxyServerListener implements Listener {
                                             + " (lacks " + PERMISSION + ")");
                                 }
 
-                                // Отправляем сообщение на главном потоке (как в PacketGuard)
+                                // Send the message on the main thread (like in PacketGuard)
                                 final Player p = player;
                                 final String msgText = noPermissionMessage;
                                 Bukkit.getScheduler().runTask(Main.getInstance(), () ->
                                     p.sendMessage(MessageUtil.parse(msgText))
                                 );
 
-                                return; // Потребляем пакет — не передаём дальше
+                                return; // Consume the packet — don't pass it further
                             }
                         }
                     }
 
-                    // Пропускаем пакет дальше по pipeline
+                    // Pass the packet further down the pipeline
                     super.channelRead(ctx, msg);
                 }
             });
@@ -165,8 +165,8 @@ public class ProxyServerListener implements Listener {
     // =========================
 
     /**
-     * Проверяет, является ли объект пакетом кастомного payload (PacketPlayInCustomPayload).
-     * Используем имя класса — универсально для разных маппингов (Mojang/Spigot).
+     * Checks whether the object is a custom payload packet (PacketPlayInCustomPayload).
+     * Uses the class name — universal for different mappings (Mojang/Spigot).
      */
     private static boolean isCustomPayloadPacket(Object msg) {
         String className = msg.getClass().getName();
@@ -175,14 +175,14 @@ public class ProxyServerListener implements Listener {
     }
 
     /**
-     * Извлекает название канала из пакета.
-     * Пробует разные варианты через рефлексию.
+     * Extracts the channel name from the packet.
+     * Tries different variants via reflection.
      */
     private static String getPacketChannel(Object msg) {
         try {
             Class<?> clazz = msg.getClass();
 
-            // Пробуем стандартные геттеры
+            // Try the standard getters
             for (Method method : clazz.getMethods()) {
                 String name = method.getName();
                 if (method.getParameterCount() != 0) continue;
@@ -201,7 +201,7 @@ public class ProxyServerListener implements Listener {
                 }
             }
 
-            // Пробуем поля напрямую
+            // Try fields directly
             for (java.lang.reflect.Field field : clazz.getDeclaredFields()) {
                 if (field.getType().getName().contains("ResourceLocation")
                         || field.getType().getName().contains("MinecraftKey")
@@ -223,7 +223,7 @@ public class ProxyServerListener implements Listener {
     }
 
     /**
-     * Проверяет, является ли канал прокси-каналом (BungeeCord, Velocity и т.д.).
+     * Checks whether the channel is a proxy channel (BungeeCord, Velocity, etc.).
      */
     private static boolean isProxyChannel(String channel) {
         String lower = channel.toLowerCase();
@@ -236,12 +236,12 @@ public class ProxyServerListener implements Listener {
     }
 
     /**
-     * Пытается извлечь BungeeCord subchannel (Connect, ConnectOther, ServerIP и т.д.)
-     * из payload пакета для логирования. Если не удалось — возвращает null.
+     * Tries to extract the BungeeCord subchannel (Connect, ConnectOther, ServerIP, etc.)
+     * from the packet payload for logging. If it fails — returns null.
      */
     private static String parseBungeeSubchannel(Object msg) {
         try {
-            // Ищем метод, возвращающий ByteBuf/FriendlyByteBuf/PacketDataSerializer
+            // Look for a method returning ByteBuf/FriendlyByteBuf/PacketDataSerializer
             Class<?> clazz = msg.getClass();
             for (Method method : clazz.getMethods()) {
                 if (method.getParameterCount() != 0) continue;
@@ -256,8 +256,8 @@ public class ProxyServerListener implements Listener {
                     Object data = method.invoke(msg);
                     if (data == null) continue;
 
-                    // Пытаемся прочитать первую UTF-строку из буфера
-                    String sub = readUtfString(data);
+            // Try to read the first UTF string from the buffer
+            String sub = readUtfString(data);
                     if (sub != null && (sub.startsWith("Connect") || sub.startsWith("Server")
                             || sub.startsWith("IP") || sub.startsWith("PlayerCount")
                             || sub.startsWith("GetServer") || sub.startsWith("Forward"))) {
@@ -266,7 +266,7 @@ public class ProxyServerListener implements Listener {
                 }
             }
 
-            // Fallback: проверяем поля
+            // Fallback: check the fields
             for (java.lang.reflect.Field field : clazz.getDeclaredFields()) {
                 if (field.getType() == byte[].class || field.getType().getName().contains("ByteBuf")
                         || field.getType().getName().contains("PacketData")) {
@@ -285,13 +285,13 @@ public class ProxyServerListener implements Listener {
     }
 
     /**
-     * Пытается прочитать UTF-строку из ByteBuf, FriendlyByteBuf или byte[].
+     * Tries to read a UTF string from a ByteBuf, FriendlyByteBuf or byte[].
      */
     private static String readUtfString(Object data) {
         try {
             if (data instanceof byte[] bytes) {
-                // Первые байты — UTF-8 строка
-                // В BungeeCord: subchannel UTF-8 string (length-prefixed)
+                // First bytes — a UTF-8 string
+                // In BungeeCord: subchannel UTF-8 string (length-prefixed)
                 java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes);
                 java.io.DataInputStream dis = new java.io.DataInputStream(bais);
                 return dis.readUTF();
@@ -318,12 +318,12 @@ public class ProxyServerListener implements Listener {
     }
 
     // =========================
-    // NETTY CHANNEL (рефлексия)
+    // NETTY CHANNEL (reflection)
     // =========================
 
     /**
-     * Получает Netty channel игрока через рефлексию.
-     * Копия метода из PacketGuard для консистентности.
+     * Gets the player's Netty channel via reflection.
+     * A copy of the method from PacketGuard for consistency.
      */
     private static Channel getNettyChannel(Player player) {
         try {

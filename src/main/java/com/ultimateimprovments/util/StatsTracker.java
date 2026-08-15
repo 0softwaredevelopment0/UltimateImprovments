@@ -6,23 +6,23 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * 📊 StatsTracker — сбор и хранение статистики сервера за временные окна.
+ * 📊 StatsTracker — collects and stores server statistics over time windows.
  * <p>
- * Каждые 20 тиков (1 сек) записывает текущие TPS, MSPT, RAM%, Online, средний Ping
- * в циклические буферы. Позволяет получать min/avg/max за любой период
+ * Every 20 ticks (1 sec) it records the current TPS, MSPT, RAM%, Online, avg Ping
+ * into circular buffers. Allows getting min/avg/max for any period
  * (1s, 5m, 1h, 1d, ss = server session).
  * <p>
- * Используется {@link PlaceholderResolver} для плейсхолдеров
- * %tps_1s%, %mspt_5m%, %online_max_1h%, %ram_avg_ss%, %ping_min_30s_all% и т.д.
+ * Used by {@link PlaceholderResolver} for placeholders
+ * %tps_1s%, %mspt_5m%, %online_max_1h%, %ram_avg_ss%, %ping_min_30s_all% etc.
  */
 public class StatsTracker extends BukkitRunnable {
 
     private static StatsTracker instance;
 
-    // Максимальное кол-во хранимых сэмплов (~1 день при 1 сэмпле/сек)
+    // Max number of stored samples (~1 day at 1 sample/sec)
     private static final int MAX_SAMPLES = 86400;
 
-    // Циклические буферы
+    // Circular buffers
     private final double[] tpsBuffer = new double[MAX_SAMPLES];
     private final double[] msptBuffer = new double[MAX_SAMPLES];
     private final double[] ramBuffer = new double[MAX_SAMPLES];
@@ -37,7 +37,7 @@ public class StatsTracker extends BukkitRunnable {
             instance.cancel();
         }
         instance = new StatsTracker();
-        instance.runTaskTimer(Main.getInstance(), 20L, 20L); // каждую секунду
+        instance.runTaskTimer(Main.getInstance(), 20L, 20L); // every second
     }
 
     public static StatsTracker getInstance() {
@@ -46,7 +46,7 @@ public class StatsTracker extends BukkitRunnable {
 
     @Override
     public void run() {
-        // Текущие значения
+        // Current values
         double tps = Math.min(Bukkit.getTPS()[0], 20.0);
         double mspt = Bukkit.getAverageTickTime();
         double ram = getRamUsage();
@@ -62,7 +62,7 @@ public class StatsTracker extends BukkitRunnable {
         sampleCount++;
     }
 
-    /** Средний пинг всех онлайн игроков */
+    /** Average ping of all online players */
     private static double getAvgPlayerPing() {
         Player[] players = Bukkit.getOnlinePlayers().toArray(new Player[0]);
         if (players.length == 0) return 0;
@@ -74,9 +74,9 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     /**
-     * Парсит временной суффикс из плейсхолдера.
-     * Форматы: 1s, 5m, 1h, 1d, ss.
-     * Возвращает количество секунд (0 = ss, -1 = ошибка).
+     * Parses the time suffix from a placeholder.
+     * Formats: 1s, 5m, 1h, 1d, ss.
+     * Returns the number of seconds (0 = ss, -1 = error).
      */
     public static int parseTimeSeconds(String timeStr) {
         if (timeStr == null || timeStr.isEmpty()) return -1;
@@ -98,10 +98,10 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     /**
-     * Возвращает количество сэмплов для запроса.
+     * Returns the number of samples for a query.
      */
     public int getSampleCount(int timeSeconds) {
-        if (timeSeconds <= 0) return sampleCount; // ss = все
+        if (timeSeconds <= 0) return sampleCount; // ss = all
         int samples = timeSeconds; // 1 sample/sec
         return Math.min(samples, sampleCount);
     }
@@ -110,12 +110,12 @@ public class StatsTracker extends BukkitRunnable {
     // TPS
     // ════════════════════════════════════════════
 
-    /** Текущий TPS */
+    /** Current TPS */
     public double getCurrentTps() {
         return Math.min(Bukkit.getTPS()[0], 20.0);
     }
 
-    /** Средний TPS за N сэмплов */
+    /** Average TPS over N samples */
     public double getAvgTps(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentTps();
         int count = Math.min(samples, sampleCount);
@@ -130,7 +130,7 @@ public class StatsTracker extends BukkitRunnable {
         return idx > 0 ? sum / idx : 20.0;
     }
 
-    /** Мин. TPS за N сэмплов */
+    /** Min TPS over N samples */
     public double getMinTps(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentTps();
         int count = Math.min(samples, sampleCount);
@@ -143,7 +143,7 @@ public class StatsTracker extends BukkitRunnable {
         return min;
     }
 
-    /** Макс. TPS за N сэмплов */
+    /** Max TPS over N samples */
     public double getMaxTps(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentTps();
         int count = Math.min(samples, sampleCount);
@@ -160,12 +160,12 @@ public class StatsTracker extends BukkitRunnable {
     // MSPT
     // ════════════════════════════════════════════
 
-    /** Текущий MSPT */
+    /** Current MSPT */
     public double getCurrentMspt() {
         return Bukkit.getAverageTickTime();
     }
 
-    /** Средний MSPT за N сэмплов */
+    /** Average MSPT over N samples */
     public double getAvgMspt(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentMspt();
         int count = Math.min(samples, sampleCount);
@@ -178,7 +178,7 @@ public class StatsTracker extends BukkitRunnable {
         return idx > 0 ? sum / idx : 0;
     }
 
-    /** Мин. MSPT за N сэмплов */
+    /** Min MSPT over N samples */
     public double getMinMspt(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentMspt();
         int count = Math.min(samples, sampleCount);
@@ -190,7 +190,7 @@ public class StatsTracker extends BukkitRunnable {
         return min == Double.MAX_VALUE ? 0 : min;
     }
 
-    /** Макс. MSPT за N сэмплов */
+    /** Max MSPT over N samples */
     public double getMaxMspt(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentMspt();
         int count = Math.min(samples, sampleCount);
@@ -206,12 +206,12 @@ public class StatsTracker extends BukkitRunnable {
     // RAM
     // ════════════════════════════════════════════
 
-    /** Текущая RAM % */
+    /** Current RAM % */
     public double getCurrentRam() {
         return getRamUsage();
     }
 
-    /** Средняя RAM % за N сэмплов */
+    /** Average RAM % over N samples */
     public double getAvgRam(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentRam();
         int count = Math.min(samples, sampleCount);
@@ -224,7 +224,7 @@ public class StatsTracker extends BukkitRunnable {
         return idx > 0 ? sum / idx : 0;
     }
 
-    /** Мин. RAM % за N сэмплов */
+    /** Min RAM % over N samples */
     public double getMinRam(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentRam();
         int count = Math.min(samples, sampleCount);
@@ -236,7 +236,7 @@ public class StatsTracker extends BukkitRunnable {
         return min == Double.MAX_VALUE ? 0 : min;
     }
 
-    /** Макс. RAM % за N сэмплов */
+    /** Max RAM % over N samples */
     public double getMaxRam(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentRam();
         int count = Math.min(samples, sampleCount);
@@ -249,15 +249,15 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     // ════════════════════════════════════════════
-    // PING (средний пинг всех игроков)
+    // PING (average ping of all players)
     // ════════════════════════════════════════════
 
-    /** Текущий средний пинг всех игроков */
+    /** Current average ping of all players */
     public double getCurrentPing() {
         return getAvgPlayerPing();
     }
 
-    /** Средний пинг за N сэмплов */
+    /** Average ping over N samples */
     public double getAvgPing(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentPing();
         int count = Math.min(samples, sampleCount);
@@ -270,7 +270,7 @@ public class StatsTracker extends BukkitRunnable {
         return idx > 0 ? sum / idx : 0;
     }
 
-    /** Мин. пинг за N сэмплов */
+    /** Min ping over N samples */
     public double getMinPing(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentPing();
         int count = Math.min(samples, sampleCount);
@@ -282,7 +282,7 @@ public class StatsTracker extends BukkitRunnable {
         return min == Double.MAX_VALUE ? 0 : min;
     }
 
-    /** Макс. пинг за N сэмплов */
+    /** Max ping over N samples */
     public double getMaxPing(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentPing();
         int count = Math.min(samples, sampleCount);
@@ -298,12 +298,12 @@ public class StatsTracker extends BukkitRunnable {
     // ONLINE
     // ════════════════════════════════════════════
 
-    /** Текущий онлайн */
+    /** Current online */
     public int getCurrentOnline() {
         return Bukkit.getOnlinePlayers().size();
     }
 
-    /** Мин. онлайн за N сэмплов */
+    /** Min online over N samples */
     public int getMinOnline(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentOnline();
         int count = Math.min(samples, sampleCount);
@@ -315,7 +315,7 @@ public class StatsTracker extends BukkitRunnable {
         return min == Integer.MAX_VALUE ? 0 : min;
     }
 
-    /** Макс. онлайн за N сэмплов */
+    /** Max online over N samples */
     public int getMaxOnline(int samples) {
         if (samples <= 0 || sampleCount <= 0) return getCurrentOnline();
         int count = Math.min(samples, sampleCount);
@@ -328,11 +328,11 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     // ════════════════════════════════════════════
-    // COLOR GRADIENTS — плавный 3-стопный градиент
+    // COLOR GRADIENTS — smooth 3-stop gradient
     // ════════════════════════════════════════════
 
     /**
-     * Плавный HEX-градиент для TPS (0–20).
+     * Smooth HEX gradient for TPS (0–20).
      * 0  = #AA0000 (dark-red)
      * 10 = #FFAA00 (orange/yellow)
      * 20 = #00AA00 (green)
@@ -346,7 +346,7 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     /**
-     * Плавный HEX-градиент для MSPT (0–50+).
+     * Smooth HEX gradient for MSPT (0–50+).
      * 0  = #00AA00 (green)
      * 25 = #FFAA00 (yellow)
      * 50+ = #AA0000 (dark-red, clips at 100)
@@ -360,7 +360,7 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     /**
-     * Плавный HEX-градиент для RAM (0–100%).
+     * Smooth HEX gradient for RAM (0–100%).
      * 0%   = #00AA00 (green)
      * 50%  = #FFAA00 (yellow)
      * 100% = #AA0000 (dark-red)
@@ -374,7 +374,7 @@ public class StatsTracker extends BukkitRunnable {
     }
 
     /**
-     * Плавный HEX-градиент для Ping (0–1000ms).
+     * Smooth HEX gradient for Ping (0–1000ms).
      * 0    = #00AA00 (green)
      * 200  = #55FF55 (light green)
      * 400  = #FFFF55 (yellow)
@@ -402,7 +402,7 @@ public class StatsTracker extends BukkitRunnable {
         }
     }
 
-    /** 3-стопный градиент */
+    /** 3-stop gradient */
     private static String gradient3(double val, double stop0, double stop1, double stop2,
                                      int r0, int g0, int b0,
                                      int r1, int g1, int b1,
@@ -416,7 +416,7 @@ public class StatsTracker extends BukkitRunnable {
         }
     }
 
-    /** Лерп между двумя цветами */
+    /** Lerp between two colors */
     private static String lerpColor(int r0, int g0, int b0, int r1, int g1, int b1, double t) {
         int r = lerp(r0, r1, t);
         int g = lerp(g0, g1, t);
@@ -424,12 +424,12 @@ public class StatsTracker extends BukkitRunnable {
         return String.format("<#%02X%02X%02X>", r, g, b);
     }
 
-    /** Линейная интерполяция int */
+    /** Linear interpolation for int */
     private static int lerp(int a, int b, double t) {
         return (int) Math.round(a + (b - a) * t);
     }
 
-    /** Текущая RAM % */
+    /** Current RAM % */
     private static double getRamUsage() {
         Runtime rt = Runtime.getRuntime();
         long used = rt.totalMemory() - rt.freeMemory();

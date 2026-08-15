@@ -17,21 +17,21 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * 🛡 OP Whitelist — белый список операторов (хранится в SQLite).
+ * 🛡 OP Whitelist — operator whitelist (stored in SQLite).
  * <p>
- * Если {@code enabled = true} и игрок имеет OP, но не в вайтлисте —
- * OP мгновенно снимается.
+ * If {@code enabled = true} and a player has OP but is not whitelisted —
+ * OP is removed instantly.
  * <p>
- * Поддерживает команды:
+ * Supports commands:
  * <ul>
- *   <li>{@code /ui opwhitelist add <ник>}</li>
- *   <li>{@code /ui opwhitelist remove <ник>}</li>
+ *   <li>{@code /ui opwhitelist add <nick>}</li>
+ *   <li>{@code /ui opwhitelist remove <nick>}</li>
  *   <li>{@code /ui opwhitelist list}</li>
  *   <li>{@code /ui opwhitelist on}</li>
  *   <li>{@code /ui opwhitelist off}</li>
  * </ul>
  * <p>
- * Данные хранятся в SQLite (таблица {@code op_whitelist} + {@code op_whitelist_meta}).
+ * Data is stored in SQLite (tables {@code op_whitelist} + {@code op_whitelist_meta}).
  */
 public class OpWhitelistManager implements Listener {
 
@@ -43,22 +43,22 @@ public class OpWhitelistManager implements Listener {
     public static void init(Main plugin) {
         load();
         plugin.getServer().getPluginManager().registerEvents(new OpWhitelistManager(), plugin);
-        // ⚠ Периодическая проверка вынесена в AccessListCheckTask (configurable interval)
+        // ⚠ Periodic check moved to AccessListCheckTask (configurable interval)
     }
 
     public static void shutdown() {
-        // Данные уже сохранены в БД — ничего делать не нужно
+        // Data is already persisted in the DB — nothing to do
     }
 
     // ════════════════════════════════════════
-    // LOAD из SQLite
+    // LOAD from SQLite
     // ════════════════════════════════════════
     public static void load() {
         try (Connection con = DatabaseManager.getConnection()) {
-            // Миграция из старого JSON-файла (если существует и БД пуста)
+            // Migrate from the old JSON file (if it exists and the DB is empty)
             migrateFromJson(con);
 
-            // Загружаем enabled-флаг
+            // Load the enabled flag
             try (PreparedStatement st = con.prepareStatement(
                     "SELECT value FROM op_whitelist_meta WHERE key = ?")) {
                 st.setString(1, "enabled");
@@ -69,7 +69,7 @@ public class OpWhitelistManager implements Listener {
                 }
             }
 
-            // Считаем количество записей для лога
+            // Count the records for the log
             int count = 0;
             try (PreparedStatement st = con.prepareStatement(
                     "SELECT COUNT(*) FROM op_whitelist");
@@ -86,32 +86,32 @@ public class OpWhitelistManager implements Listener {
     }
 
     /**
-     * Мигрирует данные из старого op-whitelist.json в SQLite, если JSON существует
-     * и таблицы пусты. После миграции JSON-файл удаляется.
+     * Migrates data from the old op-whitelist.json into SQLite, if the JSON exists
+     * and the tables are empty. After the migration the JSON file is deleted.
      */
     private static void migrateFromJson(Connection con) {
         java.io.File jsonFile = new java.io.File(Main.getInstance().getDataFolder(), "op-whitelist.json");
         if (!jsonFile.exists()) return;
 
-        // Проверяем, есть ли уже данные в БД
+        // Check whether the DB already has data
         try (PreparedStatement st = con.prepareStatement("SELECT COUNT(*) FROM op_whitelist");
              ResultSet rs = st.executeQuery()) {
             if (rs.next() && rs.getInt(1) > 0) {
-                // БД уже заполнена — удаляем JSON и выходим
+                // DB already populated — delete the JSON and exit
                 jsonFile.delete();
                 return;
             }
         } catch (Exception ignored) {}
 
         try {
-            // Парсим JSON вручную (без Gson, как было раньше)
+            // Parse the JSON manually (without Gson, as before)
             String json = java.nio.file.Files.readString(jsonFile.toPath()).trim();
             if (json.isEmpty() || json.equals("{}")) {
                 jsonFile.delete();
                 return;
             }
 
-            // Парсим enabled
+            // Parse enabled
             boolean jsonEnabled = false;
             int enIdx = json.indexOf("\"enabled\"");
             if (enIdx >= 0) {
@@ -122,7 +122,7 @@ public class OpWhitelistManager implements Listener {
                 }
             }
 
-            // Сохраняем enabled в мета-таблицу
+            // Save enabled into the meta table
             try (PreparedStatement st = con.prepareStatement(
                     "INSERT OR REPLACE INTO op_whitelist_meta (key, value) VALUES (?, ?)")) {
                 st.setString(1, "enabled");
@@ -130,7 +130,7 @@ public class OpWhitelistManager implements Listener {
                 st.executeUpdate();
             }
 
-            // Парсим names и импортируем
+            // Parse names and import them
             int namesIdx = json.indexOf("\"names\"");
             if (namesIdx >= 0) {
                 int arrStart = json.indexOf('[', namesIdx);
@@ -155,7 +155,7 @@ public class OpWhitelistManager implements Listener {
                 }
             }
 
-            // Удаляем JSON-файл после успешной миграции
+            // Delete the JSON file after a successful migration
             jsonFile.delete();
             ConsoleLogger.info("[OpWhitelist] Deleted old op-whitelist.json");
         } catch (Exception e) {
@@ -171,7 +171,7 @@ public class OpWhitelistManager implements Listener {
     }
 
     /**
-     * Возвращает отсортированный список имён из whitelist (из БД).
+     * Returns the sorted list of names from the whitelist (from the DB).
      */
     public static List<String> getWhitelistNames() {
         List<String> result = new ArrayList<>();
@@ -204,7 +204,7 @@ public class OpWhitelistManager implements Listener {
                 ConsoleLogger.info("[OpWhitelist] Added: " + lower);
                 return true;
             }
-            return false; // уже есть
+            return false; // already present
         } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[OpWhitelist] Failed to add: " + lower, e);
             return false;
@@ -224,7 +224,7 @@ public class OpWhitelistManager implements Listener {
                 ConsoleLogger.info("[OpWhitelist] Removed: " + lower);
                 return true;
             }
-            return false; // не найден
+            return false; // not found
         } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[OpWhitelist] Failed to remove: " + lower, e);
             return false;
@@ -249,7 +249,7 @@ public class OpWhitelistManager implements Listener {
         }
 
         if (enabled) {
-            // Мгновенная проверка всех онлайн при включении (AccessListCheckTask подхватит далее)
+            // Instant check of all online players on enable (AccessListCheckTask picks it up from here)
             for (Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
                 checkAndDeop(p);
             }
@@ -276,7 +276,7 @@ public class OpWhitelistManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // JOIN EVENT — проверка при входе
+    // JOIN EVENT — check on join
     // ════════════════════════════════════════
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
@@ -293,7 +293,7 @@ public class OpWhitelistManager implements Listener {
 
         if (isWhitelisted(player.getName())) return;
 
-        // Игрок OP, но не в вайтлисте — снимаем OP
+        // Player is OP but not whitelisted — remove OP
         player.setOp(false);
         player.sendMessage(MessageUtil.parse(
                 "<red>⛔</red> <white>Your operator status has been removed — you are not in the OP whitelist.</white>"

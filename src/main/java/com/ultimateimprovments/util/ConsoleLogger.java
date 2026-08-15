@@ -6,16 +6,16 @@ import org.bukkit.Bukkit;
 /**
  * Colourful console logger using MiniMessage and Paper's Adventure API.
  * <p>
- * Цветовая схема:
+ * Colour scheme:
  * <ul>
- *   <li>{@link #info(String)} — <white>белый</white> (информационные сообщения)</li>
- *   <li>{@link #success(String)} — <green>зелёный</green> (успешные операции)</li>
- *   <li>{@link #warn(String)} — <yellow>жёлтый</yellow> (предупреждения)</li>
- *   <li>{@link #error(String)} — <red>красный</red> (ошибки)</li>
+ *   <li>{@link #info(String)} — <white>white</white> (informational messages)</li>
+ *   <li>{@link #success(String)} — <green>green</green> (successful operations)</li>
+ *   <li>{@link #warn(String)} — <yellow>yellow</yellow> (warnings)</li>
+ *   <li>{@link #error(String)} — <red>red</red> (errors)</li>
  * </ul>
  * <p>
- * Использует {@link Bukkit#getConsoleSender()} с {@link MiniMessage} — выводит цветной текст
- * в консоль (с поддержкой ANSI/Virtual Terminal).
+ * Uses {@link Bukkit#getConsoleSender()} with {@link MiniMessage} — prints coloured text
+ * to the console (with ANSI/Virtual Terminal support).
  */
 public final class ConsoleLogger {
 
@@ -25,39 +25,39 @@ public final class ConsoleLogger {
     private ConsoleLogger() {}
 
     /**
-     * Инициализировать логгер. Должен вызываться в onEnable() после instance = this.
+     * Initializes the logger. Must be called in onEnable() after instance = this.
      */
     public static void init() {
         initialized = true;
     }
 
-    /** <white>Белый</white> — информационные сообщения */
+    /** <white>White</white> — informational messages */
     public static void info(String message) {
         if (!initialized) return;
         Bukkit.getConsoleSender().sendMessage(MM.deserialize("<white>" + escape(message) + "</white>"));
     }
 
-    /** <green>Зелёный</green> — успешные операции */
+    /** <green>Green</green> — successful operations */
     public static void success(String message) {
         if (!initialized) return;
         Bukkit.getConsoleSender().sendMessage(MM.deserialize("<green>" + escape(message) + "</green>"));
     }
 
-    /** <yellow>Жёлтый</yellow> — предупреждения */
+    /** <yellow>Yellow</yellow> — warnings */
     public static void warn(String message) {
         if (!initialized) return;
         Bukkit.getConsoleSender().sendMessage(MM.deserialize("<yellow>" + escape(message) + "</yellow>"));
     }
 
-    /** <red>Красный</red> — ошибки */
+    /** <red>Red</red> — errors */
     public static void error(String message) {
         if (!initialized) return;
         Bukkit.getConsoleSender().sendMessage(MM.deserialize("<red>" + escape(message) + "</red>"));
     }
 
     /**
-     * Сырое MiniMessage-сообщение без экранирования (для ASCII-баннеров, градиентов).
-     * Внимание: теги в message будут интерпретироваться как MiniMessage!
+     * Raw MiniMessage message without escaping (for ASCII banners, gradients).
+     * Warning: tags in message will be interpreted as MiniMessage!
      */
     public static void raw(String miniMessage) {
         if (!initialized) return;
@@ -65,11 +65,16 @@ public final class ConsoleLogger {
     }
 
     /**
-     * Экранирует MiniMessage-чувствительные символы,
-     * чтобы содержимое сообщения не интерпретировалось как теги.
+     * Escapes MiniMessage-sensitive characters,
+     * so the message content is not interpreted as tags.
      */
     private static String escape(String message) {
         if (message == null) return "";
-        return message.replace("<", "\\<").replace(">", "\\>");
+        // Escape MiniMessage tags and strip legacy §-codes — MiniMessage
+        // throws on § and should never receive one.
+        return message.replace("<", "\\<")
+                .replace(">", "\\>")
+                .replaceAll("\u00A7[0-9a-fk-orx]", "")
+                .replace("\u00A7", "");
     }
 }

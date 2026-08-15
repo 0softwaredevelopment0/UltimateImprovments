@@ -14,25 +14,25 @@ import java.sql.ResultSet;
 import java.util.*;
 
 /**
- * RedstoneGuard — защита от перегрузки редстоуном.
+ * RedstoneGuard — protection against redstone overload.
  * <p>
- * Если тик редстоуна нагружает сервер больше чем {@code mspt_threshold} (50ms) —
- * плагин сканирует все чанки, находит чанк с наибольшим числом итераций и
- * блокирует его итерации ПОЛНОСТЬЮ И НАВСЕГДА (до ручной разблокировки
- * {@code /ui redstone unlock <номер>}). Затем нагрузка пересчитывается: если она
- * всё ещё выше порога — блокируется следующий самый нагруженный чанк, и так
- * повторяется, пока нагрузка не упадёт ниже порога.
+ * If a redstone tick loads the server more than {@code mspt_threshold} (50ms) —
+ * the plugin scans all chunks, finds the chunk with the most iterations and
+ * blocks its iterations COMPLETELY AND FOREVER (until manual unlock via
+ * {@code /ui redstone unlock <number>}). Then the load is recomputed: if it's
+ * still above the threshold — the next most loaded chunk is blocked, and so
+ * on until the load drops below the threshold.
  * <p>
- * 🔎 Блокируются ТОЛЬКО чанки с реальной редстоун-активностью (итерации выше
- * {@code chunk_iterations_limit}). Чанк без редстоун-итераций не замораживается —
- * чтобы не тратить ресурсы сервера впустую.
+ * 🔎 ONLY chunks with real redstone activity are blocked (iterations above
+ * {@code chunk_iterations_limit}). A chunk without redstone iterations is not frozen —
+ * to not waste server resources.
  * <p>
- * 📣 При блокировке уведомляются все игроки, находящиеся внутри этого чанка.
+ * 📣 On blocking, all players inside that chunk are notified.
  * <p>
- * 💾 Заблокированные чанки сохраняются в БД плагина (таблица {@code redstone_blocks})
- * и переживают рестарт сервера.
+ * 💾 Blocked chunks are saved to the plugin DB (table {@code redstone_blocks})
+ * and survive server restarts.
  * <p>
- * Заблокированные чанки нумеруются (#1, #2, ...) и видны через
+ * Blocked chunks are numbered (#1, #2, ...) and visible via
  * {@code /ui redstone list}.
  */
 public final class RedstoneGuard {
@@ -48,12 +48,12 @@ public final class RedstoneGuard {
     private int chunkIterationsLimit = 10;
 
     private final Map<ChunkKey, Integer> currentTickCounts = new HashMap<>();
-    /** Номер → заблокированный чанк (вечная блокировка). */
+    /** Number → blocked chunk (permanent block). */
     private final Map<Integer, BlockedChunk> blockedChunks = new LinkedHashMap<>();
-    /** O(1) проверка блокировки чанка (зеркало blockedChunks). */
+    /** O(1) chunk-block check (mirror of blockedChunks). */
     private final Set<ChunkKey> blockedKeys = new HashSet<>();
     private int nextBlockNumber = 1;
-    /** Флаг: блокировки уже загружены из БД. */
+    /** Flag: blocks already loaded from the DB. */
     private boolean dbLoaded = false;
 
     private RedstoneGuard(Main plugin) {
@@ -110,18 +110,18 @@ public final class RedstoneGuard {
     }
 
     /**
-     * 🔎 Проверка «редстоуновый ли чанк вообще»: замораживаем только чанки с
-     * реальной редстоун-активностью (итераций больше лимита). Чанки без
-     * редстоун-итераций не блокируются — не тратим ресурсы сервера впустую.
+     * 🔎 Check «is the chunk redstone-active at all»: freeze only chunks with
+     * real redstone activity (iterations above the limit). Chunks without
+     * redstone iterations are not blocked — we don't waste server resources.
      */
     private boolean isRedstoneChunk(int iterations) {
         return iterations > chunkIterationsLimit;
     }
 
     /**
-     * Вызывается раз в тик: если MSPT выше порога — блокирует чанк с наибольшим
-     * числом итераций навсегда. На следующих тиках цикл повторяется, пока
-     * нагрузка не упадёт ниже порога.
+     * Called once per tick: if MSPT is above the threshold — blocks the chunk with
+     * the most iterations forever. On the following ticks the cycle repeats until
+     * the load drops below the threshold.
      */
     public void tick() {
         if (!enabled) {
@@ -141,11 +141,11 @@ public final class RedstoneGuard {
             return;
         }
 
-        // Самый нагруженный незаблокированный чанк (только с реальным редстоуном)
+        // The most loaded unblocked chunk (only with real redstone)
         ChunkKey hottest = null;
         int hottestIterations = 0;
         for (Map.Entry<ChunkKey, Integer> e : snapshot.entrySet()) {
-            // 🔎 Без редстоун-итераций чанк не замораживается
+            // 🔎 Without redstone iterations the chunk isn't frozen
             if (!isRedstoneChunk(e.getValue())) continue;
             if (isKeyBlocked(e.getKey())) continue;
             if (e.getValue() > hottestIterations) {
@@ -162,21 +162,21 @@ public final class RedstoneGuard {
         BlockedChunk blocked = new BlockedChunk(number, hottest, System.currentTimeMillis(), hottestIterations);
         blockedChunks.put(number, blocked);
         blockedKeys.add(hottest);
-        persistBlock(blocked); // 💾 в БД
+        persistBlock(blocked); // 💾 to the DB
         notifyChunkBlocked(mspt, hottest, number, hottestIterations);
-        notifyPlayersInChunk(hottest, number); // 📣 игрокам внутри чанка
+        notifyPlayersInChunk(hottest, number); // 📣 to players inside the chunk
     }
 
     // =========================
-    // УПРАВЛЕНИЕ БЛОКИРОВКАМИ
+    // BLOCK MANAGEMENT
     // =========================
 
-    /** Разблокирует чанк по номеру. Возвращает true если номер найден. */
+    /** Unblocks a chunk by number. Returns true if the number was found. */
     public boolean unlock(int number) {
         BlockedChunk removed = blockedChunks.remove(number);
         if (removed == null) return false;
         blockedKeys.remove(removed.key);
-        deleteBlock(number); // 💾 из БД
+        deleteBlock(number); // 💾 from the DB
         ConsoleLogger.info("[REDSTONE_GUARD] Chunk #" + number + " unblocked: " + removed.key);
         ServerOverloadNotify.broadcast(
                 "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset><white>Чанк </white><yellow>#" + number
@@ -185,7 +185,7 @@ public final class RedstoneGuard {
         return true;
     }
 
-    /** Список всех заблокированных чанков (в порядке нумерации). */
+    /** List of all blocked chunks (in numbering order). */
     public List<BlockedChunk> getBlockedChunks() {
         ensureDbLoaded();
         return new ArrayList<>(blockedChunks.values());
@@ -197,7 +197,7 @@ public final class RedstoneGuard {
     }
 
     // =========================
-    // АЛЕРТЫ
+    // ALERTS
     // =========================
 
     private void notifyChunkBlocked(double mspt, ChunkKey key, int number, int iterations) {
@@ -216,7 +216,7 @@ public final class RedstoneGuard {
     }
 
     /**
-     * 📣 Уведомляет всех игроков, которые СЕЙЧАС стоят в заблокированном чанке.
+     * 📣 Notifies all players currently standing in the blocked chunk.
      */
     private void notifyPlayersInChunk(ChunkKey key, int number) {
         for (Player player : plugin.getServer().getOnlinePlayers()) {
@@ -234,16 +234,16 @@ public final class RedstoneGuard {
     }
 
     // =========================
-    // 💾 PERSISTENCE (БД плагина)
+    // 💾 PERSISTENCE (plugin DB)
     // =========================
 
     /**
-     * Загружает заблокированные чанки из БД (переживают рестарт). Безопасен при
-     * вызове до инициализации БД — повторно попробует при следующем тике.
+     * Loads blocked chunks from the DB (survive restarts). Safe to call
+     * before the DB is initialized — it will retry on the next tick.
      */
     private void ensureDbLoaded() {
         if (dbLoaded) return;
-        if (!DatabaseManager.isConnected()) return; // БД ещё не готова — повторим позже
+        if (!DatabaseManager.isConnected()) return; // DB not ready yet — retry later
 
         blockedChunks.clear();
         blockedKeys.clear();
@@ -279,7 +279,7 @@ public final class RedstoneGuard {
         }
     }
 
-    /** Сохраняет блокировку в БД. */
+    /** Saves a block to the DB. */
     private void persistBlock(BlockedChunk bc) {
         if (!DatabaseManager.isConnected()) return;
         String sql = "INSERT OR REPLACE INTO " + DB_TABLE
@@ -298,7 +298,7 @@ public final class RedstoneGuard {
         }
     }
 
-    /** Удаляет блокировку из БД при разблокировке. */
+    /** Removes a block from the DB on unlock. */
     private void deleteBlock(int number) {
         if (!DatabaseManager.isConnected()) return;
         String sql = "DELETE FROM " + DB_TABLE + " WHERE block_number = ?";
@@ -312,7 +312,7 @@ public final class RedstoneGuard {
     }
 
     // =========================
-    // ДАННЫЕ
+    // DATA
     // =========================
 
     public record BlockedChunk(int number, ChunkKey key, long blockedAtMs, int iterations) {}
@@ -327,7 +327,7 @@ public final class RedstoneGuard {
             );
         }
 
-        /** Координаты центра чанка (для телепортации). */
+        /** Chunk center coordinates (for teleportation). */
         public int centerX() { return x * 16 + 8; }
         public int centerZ() { return z * 16 + 8; }
 

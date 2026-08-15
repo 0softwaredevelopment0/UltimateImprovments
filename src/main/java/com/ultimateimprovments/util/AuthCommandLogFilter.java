@@ -8,16 +8,16 @@ import org.apache.logging.log4j.message.Message;
 import java.util.regex.Pattern;
 
 /**
- * Log4J filter — перехватывает логи команд с паролями и скрывает их.
+ * Log4J filter — intercepts logs of commands with passwords and hides them.
  * <p>
- * Сервер пишет в консоль "{@code rizer001 issued server command: /ui auth login mypassword}".
- * Этот фильтр находит такие строки и маскирует пароль.
+ * The server writes "{@code rizer001 issued server command: /ui auth login mypassword}" to the console.
+ * This filter finds such lines and masks the password.
  */
 public class AuthCommandLogFilter extends AbstractFilter {
 
     /**
-     * Паттерн для нахождения команд аутентификации с паролем.
-     * Маскирует:
+     * Pattern for finding authentication commands with a password.
+     * Masks:
      * <ul>
      *   <li>{@code /ui auth login <password>}</li>
      *   <li>{@code /ui auth register <password>}</li>
@@ -30,13 +30,13 @@ public class AuthCommandLogFilter extends AbstractFilter {
     );
 
     /**
-     * Ищет команду с паролем в сообщении и возвращает маскированную копию.
-     * Пример: {@code "rizer001 issued server command: /ui auth login mypassword"}
+     * Finds a password command in the message and returns a masked copy.
+     * Example: {@code "rizer001 issued server command: /ui auth login mypassword"}
      * → {@code "rizer001 issued server command: /ui auth login ***"}
      */
     static String maskPassword(String message) {
         return AUTH_PASSWORD_PATTERN.matcher(message).replaceAll(m -> {
-            // Берём часть до последнего пробела (команда без пароля) и добавляем ***
+            // Take the part before the last space (the command without the password) and add ***
             String full = m.group();
             int lastSpace = full.lastIndexOf(' ');
             if (lastSpace > 0) {
@@ -64,8 +64,8 @@ public class AuthCommandLogFilter extends AbstractFilter {
     }
 
     /**
-     * Регистрирует фильтр в root Logger'е Log4J.
-     * Должен вызываться при старте плагина (один раз).
+     * Registers the filter in Log4J's root Logger.
+     * Must be called on plugin startup (once).
      */
     public static void register() {
         LoggerContext ctx = LoggerContext.getContext(false);

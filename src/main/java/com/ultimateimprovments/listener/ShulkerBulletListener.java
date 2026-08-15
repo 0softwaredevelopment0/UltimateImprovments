@@ -9,23 +9,23 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.potion.PotionEffectType;
 
 /**
- * Предотвращает наложение эффекта левитации от пуль шалкера на игроков.
- * Шалкеры всё ещё наносят урон, но эффект левитации сразу снимается.
- * Включается/выключается через config.yml → features.shulker_protection.enabled
+ * Prevents the levitation effect from shulker bullets being applied to players.
+ * Shulkers still deal damage, but the levitation effect is removed immediately.
+ * Enabled/disabled via config.yml → features.shulker_protection.enabled
  */
 public class ShulkerBulletListener implements Listener {
 
     @EventHandler
     public void onShulkerDamage(EntityDamageByEntityEvent e) {
-        // Проверяем: включена ли защита в конфиге
+        // Check: is the protection enabled in the config
         if (!Main.getInstance().getConfig()
                 .getBoolean("features.shulker_protection.enabled", true)) return;
 
-        // Проверяем: пуля шалкера попадает в игрока
+        // Check: the shulker bullet hits a player
         if (!(e.getDamager() instanceof ShulkerBullet)) return;
         if (!(e.getEntity() instanceof Player player)) return;
 
-        // Снимаем левитацию на следующем тике (эффект накладывается после события урона)
+        // Remove levitation on the next tick (the effect is applied after the damage event)
         Main.getInstance().getServer().getScheduler().runTask(Main.getInstance(), () -> {
             if (player.isValid() && !player.isDead()) {
                 player.removePotionEffect(PotionEffectType.LEVITATION);

@@ -15,10 +15,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
 
 /**
- * PluginShutdown — матрёшка остановки UltimateImprovments.
+ * PluginShutdown — the shutdown nesting doll of UltimateImprovments.
  * <p>
- * Вызывается из {@link Main#onDisable()}.
- * Останавливает модули, сохраняет данные, чистит состояние — в правильном порядке.
+ * Called from {@link Main#onDisable()}.
+ * Stops modules, saves data, cleans up state — in the right order.
  */
 public class PluginShutdown {
 
@@ -30,11 +30,11 @@ public class PluginShutdown {
     }
 
     // ==========================================================================
-    // 🛑 SHUTDOWN — корень матрёшки
+    // 🛑 SHUTDOWN — the root of the nesting doll
     // ==========================================================================
 
     public void shutdownPlugin() {
-        // Guard: предотвращает двойной shutdown (от /ui reload + PlugMan onDisable)
+        // Guard: prevents double shutdown (from /ui reload + PlugMan onDisable)
         if (shutdownPerformed) {
             ConsoleLogger.info("[Shutdown] Already performed, skipping.");
             return;
@@ -57,7 +57,7 @@ public class PluginShutdown {
     }
 
     /**
-     * Печатает текстовый баннер со статусом DISABLED при выключении плагина.
+     * Prints a text banner with the DISABLED status when the plugin shuts down.
      */
     private void printBanner() {
         ConsoleLogger.info("");
@@ -69,7 +69,7 @@ public class PluginShutdown {
     }
 
     // ==========================================================================
-    // 📦 ФАЗА 1: ОТКЛЮЧЕНИЕ МОДУЛЕЙ
+    // 📦 PHASE 1: MODULE SHUTDOWN
     // ==========================================================================
 
     private void shutdownModules() {
@@ -81,7 +81,7 @@ public class PluginShutdown {
     }
 
     // ==========================================================================
-    // 💾 ФАЗА 2: СОХРАНЕНИЕ ДАННЫХ
+    // 💾 PHASE 2: DATA SAVING
     // ==========================================================================
 
     private void savePersistentData() {
@@ -92,47 +92,47 @@ public class PluginShutdown {
     }
 
     // ==========================================================================
-    // ⏹ ФАЗА 3: ОСТАНОВКА ФОНОВЫХ ЗАДАЧ
+    // ⏹ PHASE 3: STOP BACKGROUND TASKS
     // ==========================================================================
 
     private void stopBackgroundTasks() {
         com.ultimateimprovments.server.AccessListCheckTask.stop();
 
-        // ⛔ Сбрасываем ВСЕ задачи плагина (синхронные и асинхронные).
-        // Критично для /ui reload: часть модулей запускает repeating-таски
-        // с пустым onDisable (или без отмены старого таска в init()), из-за
-        // чего после каждого reload таски ДУБЛИРУЮТСЯ. cancelTasks() гасит
-        // всё разом, а на старте модули создают свежие таски заново.
+        // ⛔ Cancel ALL plugin tasks (sync and async).
+        // Critical for /ui reload: some modules start repeating tasks
+        // with an empty onDisable (or without cancelling the old task in init()),
+        // which DUPLICATES tasks after every reload. cancelTasks() kills
+        // everything at once, and at startup the modules create fresh tasks anew.
         Bukkit.getScheduler().cancelTasks(plugin);
 
-        // cancelTasks() не очищает внутреннее поле task у BukkitRunnable,
-        // поэтому у singleton'ов (FishingListener) повторный runTaskTimer()
-        // упал бы с "Already scheduled" → модуль бы не запустился.
-        // Сбрасываем явно, независимо от порядка отключения модулей.
+        // cancelTasks() does not clear the internal task field of BukkitRunnable,
+        // so for singletons (FishingListener) a repeated runTaskTimer()
+        // would fail with "Already scheduled" → the module would not start.
+        // Reset explicitly, regardless of the module shutdown order.
         TaskManager.resetBukkitRunnableTask(FishingListener.getInstance());
         ConsoleLogger.info("[Shutdown] Background tasks stopped.");
     }
 
     // ==========================================================================
-    // 🧹 ФАЗА 4: ОЧИСТКА СОСТОЯНИЯ
+    // 🧹 PHASE 4: STATE CLEANUP
     // ==========================================================================
 
     private void cleanupPluginState() {
-        // Unregister ALL event listeners for this plugin — критически важно для /ui reload
-        // иначе при повторном registerEvents() старые листенеры остаются и события срабатывают дважды
+        // Unregister ALL event listeners for this plugin — critical for /ui reload;
+        // otherwise on repeated registerEvents() the old listeners remain and events fire twice
         HandlerList.unregisterAll(plugin);
 
         OpWhitelistManager.shutdown();
         TabManager.resetListenerState();
         CheckManager.shutdown();
 
-        // GitHub 2FA HTTP server — закрываем порт при выключении/reload
+        // GitHub 2FA HTTP server — close the port on shutdown/reload
         com.ultimateimprovments.mechanics.security.auth.GithubAuthServer.shutdown();
 
-        // Сбрасываем флаг startup, чтобы при следующем старте guard не сработал ложно
+        // Reset the startup flag so the guard does not falsely trigger on the next start
         PluginStartup.resetStartupFlag();
 
-        // Сбрасываем реестр субкоманд и флаг инициализации для корректного /ui reload
+        // Reset the subcommand registry and init flag for a correct /ui reload
         SubCommandRegistry.reset();
         PluginReloadCommand.reset();
 

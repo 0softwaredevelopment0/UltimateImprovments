@@ -18,11 +18,11 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import java.util.List;
 
 /**
- * Защита от падения в пустоту.
- * Если игрок получает урон от пустоты (VOID) в одном из защищённых миров,
- * он телепортируется в указанный мир на заданные координаты.
+ * Protection from falling into the void.
+ * If a player takes void damage (VOID) in one of the protected worlds,
+ * they are teleported to the specified world at the given coordinates.
  *
- * Настройки в config.yml → void_protection
+ * Settings in config.yml → void_protection
  */
 public class VoidProtectionListener implements Listener {
 
@@ -30,22 +30,22 @@ public class VoidProtectionListener implements Listener {
     public void onVoidDamage(EntityDamageEvent e) {
 
         // =========================
-        // Только игрок
+        // Only players
         // =========================
         if (!(e.getEntity() instanceof Player player)) return;
 
         // =========================
-        // Только урон от пустоты
+        // Only void damage
         // =========================
         if (e.getCause() != EntityDamageEvent.DamageCause.VOID) return;
 
         // =========================
-        // Проверка: включена ли защита
+        // Check: is the protection enabled
         // =========================
         if (!Main.getInstance().getConfig().getBoolean("void_protection.enabled", false)) return;
 
         // =========================
-        // Проверка: мир игрока в списке защищённых
+        // Check: is the player's world in the protected list
         // =========================
         List<String> protectedWorlds = Main.getInstance().getConfig()
                 .getStringList("void_protection.worlds");
@@ -63,12 +63,12 @@ public class VoidProtectionListener implements Listener {
         if (!isProtected) return;
 
         // =========================
-        // Отменяем урон от пустоты
+        // Cancel the void damage
         // =========================
         e.setCancelled(true);
 
         // =========================
-        // Получаем целевую точку
+        // Get the target point
         // =========================
         ConfigurationSection targetSection = Main.getInstance().getConfig()
                 .getConfigurationSection("void_protection.target");
@@ -95,12 +95,12 @@ public class VoidProtectionListener implements Listener {
         Location targetLocation = new Location(targetWorld, x, y, z, yaw, pitch);
 
         // =========================
-        // Телепортация + эффекты после прибытия
+        // Teleport + effects after arrival
         // =========================
         player.teleportAsync(targetLocation).thenAccept(success -> {
             if (!success) return;
 
-            // Частицы
+            // Particles
             targetWorld.spawnParticle(
                     Particle.END_ROD,
                     targetLocation,
@@ -117,7 +117,7 @@ public class VoidProtectionListener implements Listener {
                     40, 0.5, 1.0, 0.5, 0.5
             );
 
-            // Звук
+            // Sound
             targetWorld.playSound(
                     targetLocation,
                     Sound.ENTITY_ENDERMAN_TELEPORT,
@@ -129,7 +129,7 @@ public class VoidProtectionListener implements Listener {
                     0.5f, 1.5f
             );
 
-            // Сообщение игроку
+            // Message to the player
             String message = MessagesManager.getString("void_protection.message", "<green>✔</green> <white>Вы были спасены из пустоты!</white>");
             player.sendMessage(MessageUtil.parse(message));
         });

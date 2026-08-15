@@ -13,10 +13,10 @@ import org.bukkit.entity.Player;
 import java.util.UUID;
 
 /**
- * Обрабатывает команду /ui auth — управление системой авторизации.
+ * Handles the /ui auth command — manages the authentication system.
  * <p>
- * Chat-based: вся аутентификация, регистрация, logout, change-password
- * производятся через команды, без GUI.
+ * Chat-based: all authentication, registration, logout, change-password
+ * are done through commands, without a GUI.
  */
 public class AuthCommand {
 
@@ -68,13 +68,13 @@ public class AuthCommand {
         UUID uuid = player.getUniqueId();
         AuthManager manager = AuthManager.getInstance();
 
-        // /ui auth 2fa setup <github_username> — включить 2FA
+        // /ui auth 2fa setup <github_username> — enable 2FA
         if (args.length >= 3 && args[2].equalsIgnoreCase("setup")) {
             if (args.length < 4) {
                 player.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui auth 2fa setup <github_username></white>"));
                 return;
             }
-            // Игрок должен быть авторизован
+            // The player must be authenticated
             if (!manager.isAuthenticated(uuid)) {
                 player.sendMessage(MessageUtil.parse("<red>❌ You must be logged in to set up 2FA!</red>"));
                 return;
@@ -92,7 +92,7 @@ public class AuthCommand {
             return;
         }
 
-        // /ui auth 2fa disable — отключить 2FA
+        // /ui auth 2fa disable — disable 2FA
         if (args.length >= 3 && args[2].equalsIgnoreCase("disable")) {
             if (!manager.isAuthenticated(uuid)) {
                 player.sendMessage(MessageUtil.parse("<red>❌ You must be logged in to disable 2FA!</red>"));

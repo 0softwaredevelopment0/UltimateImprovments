@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Работа с таблицей code_panel_keys в SQLite.
- * Все ключи теперь хранятся в БД, а не в config.yml.
+ * Works with the code_panel_keys table in SQLite.
+ * All keys are now stored in the DB, not in config.yml.
  */
 public class CodePanelDatabase {
 
@@ -23,9 +23,9 @@ public class CodePanelDatabase {
         public String keyName;
         public String code;
         public String command;
-        public int maxAttempts;    // -1 = без лимита
+        public int maxAttempts;    // -1 = no limit
         public int attemptsUsed;
-        public long expiresAt;     // 0 = не истекает
+        public long expiresAt;     // 0 = never expires
         public List<String> whitelist;
         public List<String> blacklist;
 
@@ -44,10 +44,10 @@ public class CodePanelDatabase {
             if (!blacklist.isEmpty()) {
                 return !blacklist.contains(playerName.toLowerCase());
             }
-            return true; // нет ограничений
+            return true; // no restrictions
         }
 
-        // Парсит "player1,player2" или "(player1,player2)" в список
+        // Parses "player1,player2" or "(player1,player2)" into a list
         private static List<String> parseNameList(String str) {
             List<String> result = new ArrayList<>();
             if (str == null || str.isBlank()) return result;
@@ -79,7 +79,7 @@ public class CodePanelDatabase {
     }
 
     // =========================
-    // CREATE TABLE (если вдруг не создалась в DatabaseInit)
+    // CREATE TABLE (in case DatabaseInit did not create it)
     // =========================
     public static void initTable() {
         try (Connection con = DatabaseManager.getConnection();
@@ -258,7 +258,7 @@ public class CodePanelDatabase {
     }
 
     // =========================
-    // CLEANUP EXPIRED KEYS — удаляет ключи с истёкшим expires_at ИЛИ с превышенными попытками
+    // CLEANUP EXPIRED KEYS — removes keys with expired expires_at OR with exceeded attempts
     // =========================
     public static List<String> cleanupExpiredKeys() {
         List<String> removed = new ArrayList<>();
@@ -270,7 +270,7 @@ public class CodePanelDatabase {
                    OR (max_attempts > 0 AND attempts_used >= max_attempts)
              """)) {
             ps.setLong(1, now);
-            // Сначала выберем удаляемые ключи для лога
+            // First select the keys to delete for logging
             try (PreparedStatement sel = con.prepareStatement("""
                     SELECT key_name FROM code_panel_keys
                     WHERE (expires_at > 0 AND expires_at <= ?)

@@ -11,15 +11,15 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.*;
 
 /**
- * Все рецепты для «Создатель предметов» (Item Creator).
- * Каждый рецепт: 3x3 матрица ингредиентов + результат (ItemStack с PDC, лором и т.д.).
- * Рецепты проверяются по порядку — первый подходящий выигрывает.
+ * All recipes for the «Item Creator».
+ * Each recipe: a 3x3 ingredient matrix + a result (ItemStack with PDC, lore, etc.).
+ * Recipes are checked in order — the first match wins.
  */
 public class ItemCreatorRecipe {
 
     public record Recipe(
             String name,
-            ItemStack[] matrix,   // 9 слотов (row-major), null = пусто
+            ItemStack[] matrix,   // 9 slots (row-major), null = empty
             ItemStack result
     ) {}
 
@@ -237,7 +237,7 @@ public class ItemCreatorRecipe {
                         "<gray>Right-click with any item to inject it as a particle.</gray>",
                         "particle_injector")));
 
-        // 21. Generator (BLAST_FURNACE с PDC)
+        // 21. Generator (BLAST_FURNACE with PDC)
         add(recipe("Generator",
                 "IBI", "BFB", "IBI",
                 'I', Material.IRON_BLOCK,
@@ -255,9 +255,9 @@ public class ItemCreatorRecipe {
     // =========================
 
     /**
-     * Ищет рецепт, подходящий под 9 слотов крафтера.
-     * @param grid 9 ItemStack (слоты 0-8 CRAFTER)
-     * @return Recipe если найден, null если нет
+     * Finds a recipe matching the 9 crafter slots.
+     * @param grid 9 ItemStacks (slots 0-8 of the CRAFTER)
+     * @return the Recipe if found, null otherwise
      */
     public static Recipe match(ItemStack[] grid) {
         for (Recipe r : recipes) {
@@ -302,7 +302,7 @@ public class ItemCreatorRecipe {
         recipes.add(r);
     }
 
-    /** Создаёт рецепт из строковой матрицы и мапы ингредиентов. */
+    /** Creates a recipe from a string matrix and an ingredient map. */
     private static Recipe recipe(String name, String row1, String row2, String row3, Object... args) {
         // Parse args into char->ItemStack map
         Map<Character, ItemStack> ingredientMap = new HashMap<>();
@@ -327,7 +327,7 @@ public class ItemCreatorRecipe {
         return new Recipe(name, matrix, result);
     }
 
-    /** Создаёт ItemStack с PDC тегом (BYTE = 1). */
+    /** Creates an ItemStack with a PDC tag (BYTE = 1). */
     private static ItemStack pdcItem(Material mat, String name, String lore, org.bukkit.NamespacedKey key) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
@@ -342,7 +342,7 @@ public class ItemCreatorRecipe {
         return item;
     }
 
-    /** Создаёт блоковый предмет ускорителя с PDC тегом 'particle_block'. */
+    /** Creates an accelerator block item with the 'particle_block' PDC tag. */
     private static ItemStack particleBlockItem(Material mat, String name, String lore, String blockType) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
@@ -351,7 +351,7 @@ public class ItemCreatorRecipe {
             if (!lore.isEmpty()) {
                 meta.lore(List.of(MessageUtil.parse("<!italic>" + lore)));
             }
-            // Используем NamespacedKey для particle_block
+            // Use a NamespacedKey for particle_block
             org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey("ui", "particle_block");
             meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, blockType);
             item.setItemMeta(meta);
@@ -387,14 +387,14 @@ public class ItemCreatorRecipe {
         return item;
     }
 
-    /** Проверяет, есть ли у предмета PDC тег particle_block. */
+    /** Checks whether the item has the particle_block PDC tag. */
     public static boolean isParticleBlock(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         var pdc = item.getItemMeta().getPersistentDataContainer();
         return pdc.has(new org.bukkit.NamespacedKey("ui", "particle_block"), PersistentDataType.STRING);
     }
 
-    /** Получает тип particle_block из PDC предмета. */
+    /** Gets the particle_block type from the item's PDC. */
     public static String getParticleBlockType(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         var pdc = item.getItemMeta().getPersistentDataContainer();

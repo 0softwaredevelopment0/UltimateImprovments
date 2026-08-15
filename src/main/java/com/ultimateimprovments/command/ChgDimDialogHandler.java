@@ -16,18 +16,18 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 /**
- * ChgDimDialogHandler — слушает {@link PlayerCustomClickEvent} и обрабатывает
- * отправку названия мира или отмену из Custom Screen телепортации.
+ * ChgDimDialogHandler — listens for {@link PlayerCustomClickEvent} and handles
+ * world-name submission or cancellation from the Custom Screen teleportation.
  * <p>
- * Два режима:
+ * Two modes:
  * <ul>
- *   <li>{@code ultimateimprovments:chgdim_submit} — телепортация в указанный мир</li>
+ *   <li>{@code ultimateimprovments:chgdim_submit} — teleport to the specified world</li>
  *   <li>{@code ultimateimprovments:chgdim_return} — return to the starting point (formerly /ui chgdim_return)</li>
- *   <li>{@code ultimateimprovments:chgdim_cancel} — отмена телепортации</li>
+ *   <li>{@code ultimateimprovments:chgdim_cancel} — cancel the teleportation</li>
  * </ul>
  * <p>
- * При ошибке (мир не найден, нет прав, кулдаун) — переоткрывает диалог
- * с текстом ошибки прямо внутри окна.
+ * On error (world not found, no permission, cooldown) — re-opens the dialog
+ * with the error text right inside the window.
  */
 public class ChgDimDialogHandler implements Listener {
 
@@ -39,7 +39,7 @@ public class ChgDimDialogHandler implements Listener {
     public void onCustomClick(PlayerCustomClickEvent event) {
         Key identifier = event.getIdentifier();
 
-        // Получаем игрока через PlayerGameConnection
+        // Get the player through PlayerGameConnection
         Player player = getPlayerFromConnection(event);
         if (player == null) return;
 
@@ -68,7 +68,7 @@ public class ChgDimDialogHandler implements Listener {
         // ─── Submit (TP) ───
         if (!identifier.equals(CHGDIM_SUBMIT_KEY)) return;
 
-        // Извлекаем название мира из DialogResponseView (Paper API)
+        // Extract the world name from DialogResponseView (Paper API)
         DialogResponseView response = event.getDialogResponseView();
         if (response == null) {
             ConsoleLogger.warn("[ChgDimDialog] No dialog response view from " + player.getName());
@@ -87,20 +87,20 @@ public class ChgDimDialogHandler implements Listener {
         ConsoleLogger.info("[ChgDimDialog] World name submitted by " + player.getName()
             + ": \"" + worldName + "\"");
 
-        // Проверяем права на конкретный мир
+        // Check permission for the specific world
         if (!player.hasPermission("ui.command.chgdim." + worldName)) {
             reopenWithError(player, "You do not have permission to teleport to \"" + worldName + "\"!");
             return;
         }
 
-        // Проверяем кулдаун
+        // Check the cooldown
         String cooldownError = checkCooldown(player);
         if (cooldownError != null) {
             reopenWithError(player, cooldownError);
             return;
         }
 
-        // Проверяем, настроен ли мир в конфиге
+        // Check whether the world is configured
         FileConfiguration config = Main.getInstance().getConfig();
         ConfigurationSection worldsSection = config.getConfigurationSection("changedimmension.worlds");
 
@@ -109,14 +109,14 @@ public class ChgDimDialogHandler implements Listener {
             return;
         }
 
-        // Проверяем, существует ли мир на сервере
+        // Check whether the world exists on the server
         org.bukkit.World world = Bukkit.getWorld(worldName);
         if (world == null) {
             reopenWithError(player, "World \"" + worldName + "\" not found on the server!");
             return;
         }
 
-        // ─── Успех — телепортируем ───
+        // ─── Success — teleport ───
         ChgDimDialogScreen.close(player);
 
         String finalWorldName = worldName;
@@ -126,9 +126,9 @@ public class ChgDimDialogHandler implements Listener {
     }
 
     /**
-     * Проверяет кулдаун телепортации для игрока.
+     * Checks the teleportation cooldown for the player.
      *
-     * @return null если кулдаун пройден, или строку с сообщением об ошибке
+     * @return null if the cooldown has passed, or an error message string
      */
     private String checkCooldown(Player player) {
         java.util.UUID playerUuid = player.getUniqueId();
@@ -148,7 +148,7 @@ public class ChgDimDialogHandler implements Listener {
     }
 
     /**
-     * Получает Bukkit Player из PlayerCustomClickEvent через PlayerGameConnection.
+     * Gets the Bukkit Player from PlayerCustomClickEvent via PlayerGameConnection.
      */
     private static Player getPlayerFromConnection(PlayerCustomClickEvent event) {
         if (event.getCommonConnection() instanceof PlayerGameConnection gameConn) {
@@ -159,7 +159,7 @@ public class ChgDimDialogHandler implements Listener {
     }
 
     /**
-     * Закрывает диалог и переоткрывает его с сообщением об ошибке.
+     * Closes the dialog and re-opens it with an error message.
      */
     private void reopenWithError(Player player, String errorMessage) {
         ChgDimDialogScreen.close(player);
@@ -171,7 +171,7 @@ public class ChgDimDialogHandler implements Listener {
     }
 
     /**
-     * Регистрирует слушатель в плагине.
+     * Registers the listener in the plugin.
      */
     public static void register() {
         Bukkit.getPluginManager().registerEvents(new ChgDimDialogHandler(), Main.getInstance());

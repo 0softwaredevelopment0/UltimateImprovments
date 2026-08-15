@@ -22,7 +22,7 @@ public class EnergyBalancerTask extends BukkitRunnable {
         int maxTransfer = cfg.getInt("energy.balancer.max_transfer", 25);
         boolean log = cfg.getBoolean("energy.balancer.log", false);
 
-        // Собираем только BATTERY ноды, избегая двойного копирования
+        // Collect only BATTERY nodes, avoiding double copying
         List<CableNode> batteries = new ArrayList<>();
         CableNetwork.forEachNode(node -> {
             if (node != null && node.getType() == NodeType.BATTERY) {

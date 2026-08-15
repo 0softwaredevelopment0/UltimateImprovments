@@ -10,8 +10,8 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Timer — клиент отправляет пакеты движения быстрее серверного тикрейта.
- * Детекция: подсчёт пакетов PlayerMove за секунду, превышение лимита.
+ * Timer — the client sends movement packets faster than the server tick rate.
+ * Detection: counting PlayerMove packets per second, exceeding the limit.
  */
 public class TimerCheck extends AbstractCheck {
 

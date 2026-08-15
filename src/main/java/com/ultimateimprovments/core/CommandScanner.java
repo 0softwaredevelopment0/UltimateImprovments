@@ -8,25 +8,25 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import java.lang.reflect.Constructor;
 
 /**
- * CommandScanner — автоматическое обнаружение и регистрация субкоманд /ultimateimprovments.
+ * CommandScanner — automatic discovery and registration of /ultimateimprovments subcommands.
  * <p>
- * Сканирует пакет {@code com.ultimateimprovments.command.subcommands} в JAR плагина,
- * находит все классы, реализующие {@link SubCommand} с публичным
- * конструктором без параметров, и регистрирует их в {@link SubCommandRegistry}.
+ * Scans the {@code com.ultimateimprovments.command.subcommands} package in the plugin JAR,
+ * finds all classes implementing {@link SubCommand} with a public no-arg
+ * constructor, and registers them in {@link SubCommandRegistry}.
  * <p>
- * Если на классе есть {@link SubCommandInfo} — использует name/aliases оттуда.
- * Иначе выводит name из {@link SubCommand#getName()}.
+ * If the class has {@link SubCommandInfo} — uses its name/aliases.
+ * Otherwise derives the name from {@link SubCommand#getName()}.
  */
 public final class CommandScanner {
 
     private CommandScanner() {}
 
     /**
-     * Автоматически находит и регистрирует все субкоманды.
+     * Automatically finds and registers all subcommands.
      *
-     * @param registry    SubCommandRegistry
-     * @param plugin      экземпляр плагина
-     * @param scanPackage пакет для сканирования (например "com.ultimateimprovments.command.subcommands")
+     * @param registry    the SubCommandRegistry
+     * @param plugin      the plugin instance
+     * @param scanPackage the package to scan (e.g. "com.ultimateimprovments.command.subcommands")
      */
     public static void autoRegister(SubCommandRegistry registry, Main plugin, String scanPackage) {
         var jarFile = plugin.getPluginFile();
@@ -34,14 +34,14 @@ public final class CommandScanner {
 
         int registered = 0;
 
-        // Регистрируем помеченные @SubCommandInfo
+        // Register classes annotated with @SubCommandInfo
         for (var clazz : classes) {
             if (registerSubCommand(registry, clazz)) {
                 registered++;
             }
         }
 
-        // Затем сканируем все реализации SubCommand (для классов без аннотации)
+        // Then scan all SubCommand implementations (for classes without the annotation)
         registered += scanSubCommandImplementations(registry, jarFile, scanPackage);
 
         ConsoleLogger.info("[CommandScanner] Auto-registered " + registered + " subcommands.");
@@ -54,7 +54,7 @@ public final class CommandScanner {
             Object instance = ctor.newInstance();
 
             if (instance instanceof SubCommand cmd) {
-                // Если есть @SubCommandInfo с name, оборачиваем в адаптер с алиасами
+                // If @SubCommandInfo has a name, wrap in an adapter with aliases
                 SubCommandInfo info = clazz.getAnnotation(SubCommandInfo.class);
                 if (info != null && !info.name().isEmpty()) {
                     String customName = info.name();
@@ -69,7 +69,7 @@ public final class CommandScanner {
                 return true;
             }
         } catch (NoSuchMethodException e) {
-            // Нет конструктора без параметров — пропускаем
+            // No no-arg constructor — skip
         } catch (Exception e) {
             ConsoleLogger.warn("[CommandScanner] Failed: " + clazz.getSimpleName() + " - " + e.getMessage());
         }
@@ -77,8 +77,8 @@ public final class CommandScanner {
     }
 
     /**
-     * Сканирует JAR на предмет классов, реализующих SubCommand,
-     * но не имеющих @SubCommandInfo.
+     * Scans the JAR for classes implementing SubCommand
+     * but lacking @SubCommandInfo.
      */
     private static int scanSubCommandImplementations(
             SubCommandRegistry registry, java.io.File jarFile, String packagePrefix) {
@@ -95,7 +95,7 @@ public final class CommandScanner {
 
                 if (!name.endsWith(".class") || !name.startsWith(prefix)) continue;
                 if (name.contains("$")) continue;
-                // Пропускаем служебные классы
+                // Skip utility classes
                 if (name.contains("LegacySubCommandAdapter") || name.contains("HelpSubCommand")) continue;
 
                 String className = name.replace('/', '.').substring(0, name.length() - ".class".length());
@@ -103,10 +103,10 @@ public final class CommandScanner {
                 try {
                     Class<?> clazz = Class.forName(className, false, CommandScanner.class.getClassLoader());
 
-                    // Уже зарегистрирован через @SubCommandInfo?
+                    // Already registered via @SubCommandInfo?
                     if (clazz.isAnnotationPresent(SubCommandInfo.class)) continue;
 
-                    // Реализует SubCommand?
+                    // Implements SubCommand?
                     if (SubCommand.class.isAssignableFrom(clazz)
                             && !clazz.isInterface()
                             && !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers())) {

@@ -6,9 +6,9 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.type.CopperBulb;
 
 /**
- * Управление визуальными эффектами, звуками и обновлением табличек реактора.
+ * Manages the reactor's visual effects, sounds and sign updates.
  * <p>
- * Извлечено из {@link ReactorManager} для уменьшения размера класса (~1400 → ~700 строк).
+ * Extracted from {@link ReactorManager} to reduce class size (~1400 → ~700 lines).
  */
 public class ReactorDisplay {
 
@@ -215,7 +215,7 @@ public class ReactorDisplay {
         boolean meltdownCdown = reactor.isMeltdownCountdown();
 
         // =========================
-        // САМОУНИЧТОЖЕНИЕ: все строки пустые, на 2-й строке "Нет сигнала"
+        // SELF-DESTRUCT: all lines empty, line 2 shows "No signal"
         // =========================
         if (selfDestruct) {
             String blank = " ";
@@ -283,7 +283,7 @@ public class ReactorDisplay {
             setSignText(base, 1, -4, -3, 2, color + "S: Завершён");
         }
 
-        // Износ реактора
+        // Reactor wear
         int displayWear = (int) Math.round(displayReactorWear);
         setSignText(base, 1, -4, -3, 3, color + "W: " + displayWear + " %");
     }

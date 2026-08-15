@@ -30,24 +30,24 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Vanish-система: полностью скрывает игрока от других.
+ * Vanish system: completely hides a player from others.
  * <p>
- * Возможности:
+ * Features:
  * <ul>
- *   <li>Скрытие из tab-complete (AsyncTabCompleteEvent)</li>
- *   <li>Отмена join/quit сообщений</li>
- *   <li>Визуальная невидимость (hidePlayer)</li>
- *   <li>Отключение звуков (setSilent)</li>
- *   <li>Скрытие из tab list (ClientboundPlayerInfoRemovePacket)</li>
- *   <li>Фильтрация /list команды</li>
- *   <li>Работа с оффлайн-игроками (состояние сохраняется)</li>
+ *   <li>Hidden from tab-complete (AsyncTabCompleteEvent)</li>
+ *   <li>Join/quit messages cancelled</li>
+ *   <li>Visual invisibility (hidePlayer)</li>
+ *   <li>Sounds disabled (setSilent)</li>
+ *   <li>Hidden from the tab list (ClientboundPlayerInfoRemovePacket)</li>
+ *   <li>/list command filtering</li>
+ *   <li>Works with offline players (state persists)</li>
  * </ul>
  */
 public class VanishManager implements Listener {
 
     private static VanishManager instance;
 
-    // UUIDs игроков в ванише (ConcurrentHashMap для потокобезопасности)
+    // UUIDs of vanished players (ConcurrentHashMap for thread safety)
     private static final Set<UUID> vanishedPlayers = ConcurrentHashMap.newKeySet();
 
     // =========================
@@ -69,15 +69,15 @@ public class VanishManager implements Listener {
     }
 
     // =========================
-    // PERSISTENCE (БД → vanished_players)
+    // PERSISTENCE (DB → vanished_players)
     // =========================
     private static void loadVanishedPlayers() {
         vanishedPlayers.clear();
 
-        // 1. Миграция старых данных из config.yml, если есть
+        // 1. Migrate old data from config.yml, if any
         migrateFromConfig();
 
-        // 2. Загрузка из БД
+        // 2. Load from the DB
         Connection con = DatabaseManager.getConnection();
         if (con == null) return;
 
@@ -96,12 +96,12 @@ public class VanishManager implements Listener {
         }
     }
 
-    /** Миграция vanished_players из config.yml в БД (однократно, при первом запуске после обновления). */
+    /** Migrates vanished_players from config.yml into the DB (once, on the first start after the update). */
     private static void migrateFromConfig() {
         List<String> uuidStrings = Main.getInstance().getConfig().getStringList("vanish.vanished_players");
         if (uuidStrings == null || uuidStrings.isEmpty()) return;
 
-        // Проверяем — есть ли уже UUID в БД? Если да, миграция уже была.
+        // Check — is the UUID already in the DB? If so, the migration already ran.
         Connection con = DatabaseManager.getConnection();
         if (con == null) return;
 
@@ -109,18 +109,18 @@ public class VanishManager implements Listener {
                 "SELECT COUNT(*) FROM vanished_players");
              ResultSet rs = check.executeQuery()) {
             if (rs.next() && rs.getInt(1) > 0) {
-                // В БД уже есть данные — чистим config и выходим
+                // The DB already has data — clean the config and exit
                 clearConfigSection();
                 return;
             }
         } catch (Exception ignored) {}
 
-        // Копируем из config в БД
+        // Copy from config into the DB
         try (PreparedStatement ps = con.prepareStatement(
                 "INSERT OR IGNORE INTO vanished_players (uuid) VALUES (?)")) {
             for (String s : uuidStrings) {
                 try {
-                    UUID.fromString(s); // валидация
+                    UUID.fromString(s); // validation
                     ps.setString(1, s);
                     ps.executeUpdate();
                 } catch (IllegalArgumentException ignored) {
@@ -132,11 +132,11 @@ public class VanishManager implements Listener {
             ConsoleLogger.warn("[Vanish] Migration failed: " + e.getMessage());
         }
 
-        // Очищаем config от старых данных
+        // Clean the config of old data
         clearConfigSection();
     }
 
-    /** Удаляет устаревшую секцию vanish.vanished_players из config.yml. */
+    /** Removes the outdated vanish.vanished_players section from config.yml. */
     private static void clearConfigSection() {
         Main.getInstance().getConfig().set("vanish.vanished_players", null);
         Main.getInstance().saveConfig();
@@ -206,8 +206,8 @@ public class VanishManager implements Listener {
     // =========================
 
     /**
-     * Отправляет ClientboundPlayerInfoRemovePacket всем онлайн-игрокам,
-     * чтобы скрыть target из их tab list (клавиша TAB).
+     * Sends ClientboundPlayerInfoRemovePacket to all online players
+     * to hide the target from their tab list (TAB key).
      */
     private static void removeFromTabList(Player target) {
         ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(
@@ -222,8 +222,8 @@ public class VanishManager implements Listener {
     }
 
     /**
-     * Отправляет ClientboundPlayerInfoUpdatePacket (ADD_PLAYER) всем онлайн-игрокам,
-     * чтобы вернуть target в их tab list.
+     * Sends ClientboundPlayerInfoUpdatePacket (ADD_PLAYER) to all online players
+     * to return the target to their tab list.
      */
     private static void addToTabList(Player target) {
         try {
@@ -248,7 +248,7 @@ public class VanishManager implements Listener {
     }
 
     /**
-     * Удаляет всех ванишнутых игроков из tab list данного игрока.
+     * Removes all vanished players from the given player's tab list.
      */
     private static void removeVanishedPlayersFromTabList(Player viewer) {
         if (vanishedPlayers.isEmpty()) return;
@@ -268,26 +268,26 @@ public class VanishManager implements Listener {
     // APPLY / REMOVE VANISH
     // =========================
     private static void applyVanish(Player player) {
-        // Скрываем от всех онлайн-игроков (entity)
+        // Hide from all online players (entity)
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.getUniqueId().equals(player.getUniqueId())) continue;
             online.hidePlayer(Main.getInstance(), player);
         }
-        // Удаляем из tab list (через пакет)
+        // Remove from the tab list (via packet)
         removeFromTabList(player);
-        // Отключаем звуки
+        // Disable sounds
         player.setSilent(true);
     }
 
     private static void removeVanish(Player player) {
-        // Показываем всем онлайн-игрокам (entity)
+        // Show to all online players (entity)
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.getUniqueId().equals(player.getUniqueId())) continue;
             online.showPlayer(Main.getInstance(), player);
         }
-        // Возвращаем в tab list (через пакет)
+        // Return to the tab list (via packet)
         addToTabList(player);
-        // Включаем звуки обратно
+        // Re-enable sounds
         player.setSilent(false);
     }
 
@@ -301,7 +301,7 @@ public class VanishManager implements Listener {
             if (online.getUniqueId().equals(player.getUniqueId())) continue;
             online.hidePlayer(Main.getInstance(), player);
         }
-        // Удаляем из tab list всех остальных игроков
+        // Remove from all other players' tab lists
         removeFromTabList(player);
         player.setSilent(true);
 
@@ -317,11 +317,11 @@ public class VanishManager implements Listener {
             if (vanishedUuid.equals(player.getUniqueId())) continue;
             Player vanishedOnline = Bukkit.getPlayer(vanishedUuid);
             if (vanishedOnline != null && vanishedOnline.isOnline()) {
-                // Скрываем entity
+                // Hide the entity
                 player.hidePlayer(Main.getInstance(), vanishedOnline);
             }
         }
-        // Удаляем ванишнутых из tab list игрока
+        // Remove the vanished from the player's tab list
         removeVanishedPlayersFromTabList(player);
     }
 
@@ -330,7 +330,7 @@ public class VanishManager implements Listener {
     // =========================
 
     /**
-     * PlayerJoin — применяем ваниш при входе, отменяем join-сообщение.
+     * PlayerJoin — apply vanish on join, cancel the join message.
      */
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -338,18 +338,18 @@ public class VanishManager implements Listener {
         UUID uuid = player.getUniqueId();
 
         if (isVanished(uuid)) {
-            // Отменяем join message
+            // Cancel the join message
             event.setJoinMessage(null);
 
-            // Применяем ваниш (скрываем от других, отключаем звуки)
-            // Задержка на 1 тик чтобы скрытие применилось после спавна
+            // Apply vanish (hide from others, disable sounds)
+            // 1-tick delay so hiding applies after the spawn
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline()) {
                     applyVanishOnJoin(player);
                 }
             }, 1L);
         } else {
-            // Игрок не в ванише, но нужно скрыть от него всех кто в ванише
+            // The player isn't vanished, but must hide all vanished players from them
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline()) {
                     hideVanishedPlayersFrom(player);
@@ -359,7 +359,7 @@ public class VanishManager implements Listener {
     }
 
     /**
-     * PlayerQuit — отменяем quit-сообщение для ванишнутых.
+     * PlayerQuit — cancel the quit message for the vanished.
      */
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerQuit(PlayerQuitEvent event) {
@@ -369,8 +369,8 @@ public class VanishManager implements Listener {
     }
 
     /**
-     * PlayerChangedWorldEvent — при смене мира у ванишнутого игрок может
-     * снова появиться в табе других игроков. Переприменяем удаление из таба.
+     * PlayerChangedWorldEvent — on world change a vanished player may
+     * reappear in other players' tabs. Re-apply the tab removal.
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onWorldChange(PlayerChangedWorldEvent event) {
@@ -378,7 +378,7 @@ public class VanishManager implements Listener {
         if (isVanished(player.getUniqueId())) {
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline() && isVanished(player.getUniqueId())) {
-                    // hidePlayer уже кросс-мировой, но пакет таба нужно отправить снова
+                    // hidePlayer is already cross-world, but the tab packet must be sent again
                     removeFromTabList(player);
                 }
             }, 2L);
@@ -386,7 +386,7 @@ public class VanishManager implements Listener {
     }
 
     /**
-     * PlayerRespawnEvent — при респавне игрок может снова появиться в табе.
+     * PlayerRespawnEvent — on respawn the player may reappear in the tab.
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerRespawn(PlayerRespawnEvent event) {
@@ -401,8 +401,8 @@ public class VanishManager implements Listener {
     }
 
     /**
-     * AsyncTabComplete — фильтруем имена ванишнутых игроков из автодополнения.
-     * Работает для TAB в чате и в командах.
+     * AsyncTabComplete — filter vanished players' names from autocomplete.
+     * Works for TAB in chat and in commands.
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onAsyncTabComplete(com.destroystokyo.paper.event.server.AsyncTabCompleteEvent event) {
@@ -431,9 +431,9 @@ public class VanishManager implements Listener {
     }
 
     /**
-     * PlayerCommandPreprocessEvent — перехватываем /minecraft:list,
-     * только для случая, когда команда вызвана через пространство имён.
-     * Обычный /list теперь перехватывается через CommandRegistrar (VanishListCommand).
+     * PlayerCommandPreprocessEvent — intercept /minecraft:list,
+     * only for the case where the command is called via the namespace.
+     * A plain /list is now intercepted via CommandRegistrar (VanishListCommand).
      */
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
@@ -441,7 +441,7 @@ public class VanishManager implements Listener {
 
         String message = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
 
-        // Только /minecraft:list — обычный /list уже переопределён через CommandMap
+        // Only /minecraft:list — a plain /list is already overridden via CommandMap
         if (!message.equals("/minecraft:list") && !message.startsWith("/minecraft:list ")) return;
 
         Player sender = event.getPlayer();

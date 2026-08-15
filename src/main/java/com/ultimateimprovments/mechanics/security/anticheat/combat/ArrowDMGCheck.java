@@ -14,20 +14,20 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ArrowDMG — детекция модифицированных пакетов стрел.
+ * ArrowDMG — detection of modified arrow packets.
  * <p>
- * Хак: подменяет пакет разгона стрелы, увеличивая её скорость
- * в 2-3+ раза (arrow velocity / arrow damage hack).
+ * Hack: replaces the arrow launch packet, increasing its speed
+ * 2-3+ times (arrow velocity / arrow damage hack).
  * <p>
- * Детекция:
- * 1. {@link EntityShootBowEvent} — проверяет velocity выпущенной стрелы.
- *    В ванилле: лук на полном заряде даёт velocity ≈ 1.5-3.0.
- *    С чарой Power до 4 добавляет множитель, но не скорость.
- *    Хак может установить velocity > 4.0 → флаг.
- * 2. {@link ProjectileLaunchEvent} — перекрёстная проверка для crossbow.
- * 3. Multi-shot арбалеты (Piercing IV) — 3 стрелы, каждая проверяется отдельно.
+ * Detection:
+ * 1. {@link EntityShootBowEvent} — checks the velocity of the fired arrow.
+ *    In vanilla: a fully drawn bow gives velocity ≈ 1.5-3.0.
+ *    Power up to 4 adds a multiplier but not speed.
+ *    A hack can set velocity > 4.0 → flag.
+ * 2. {@link ProjectileLaunchEvent} — cross-check for crossbows.
+ * 3. Multi-shot crossbows (Piercing IV) — 3 arrows, each checked separately.
  * <p>
- * Exemption: игроки в CREATIVE могут стрелять с любой скоростью.
+ * Exemption: CREATIVE players may shoot at any speed.
  */
 public class ArrowDMGCheck extends AbstractCheck {
 

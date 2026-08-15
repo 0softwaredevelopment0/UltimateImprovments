@@ -9,8 +9,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 /**
- * ForceField — атака entities вокруг игрока без поворота.
- * Детекция: атака цели, находящейся позади игрока.
+ * ForceField — attacking entities around the player without turning.
+ * Detection: attacking a target that is behind the player.
  */
 public class ForceFieldCheck extends AbstractCheck {
 

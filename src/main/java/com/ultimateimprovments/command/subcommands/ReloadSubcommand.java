@@ -10,10 +10,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * /ui reload — асинхронная перезагрузка плагина.
+ * /ui reload — asynchronous plugin reload.
  * <p>
- * Фаза 1 (async): сохранение данных.
- * Фаза 2 (sync): shutdown + reloadConfig + startup.
+ * Phase 1 (async): data saving.
+ * Phase 2 (sync): shutdown + reloadConfig + startup.
  */
 public final class ReloadSubcommand {
 

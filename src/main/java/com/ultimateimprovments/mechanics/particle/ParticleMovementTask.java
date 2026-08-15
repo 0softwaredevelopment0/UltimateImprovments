@@ -27,7 +27,7 @@ public class ParticleMovementTask extends BukkitRunnable {
         // Charge engines from cable network
         ParticleAcceleratorManager.chargeEngines();
 
-        // Collision detection — ДО движения (по старым позициям)
+        // Collision detection — BEFORE movement (old positions)
         checkCollisions();
 
         // Move all particles
@@ -43,9 +43,9 @@ public class ParticleMovementTask extends BukkitRunnable {
                     return data.dead;
                 });
 
-        // Collision detection — ПОСЛЕ движения (новые позиции)
-        // Двойная проверка ловит частицы, которые разминулись в процессе перемещения,
-        // а также частицы, прилетевшие в один и тот же блок с разных направлений.
+        // Collision detection — AFTER movement (new positions)
+        // Double check catches particles that passed each other mid-move,
+        // as well as particles arriving at the same block from different directions.
         checkCollisions();
     }
 
@@ -109,14 +109,14 @@ public class ParticleMovementTask extends BukkitRunnable {
 
         if (blockType == ParticleAcceleratorManager.ENGINE) {
             // Particles always pass through — never blocked by engine.
-            // Если буфер полон (1000) И есть редстоун-сигнал → ускорить.
+            // If the buffer is full (1000) AND there is a redstone signal → accelerate.
             if (data.speed < ParticleAcceleratorManager.MAX_SPEED
                     && ParticleAcceleratorManager.canEngineAccelerate(blockLoc)) {
-                // Потребляем весь буфер (1000→0) и делаем скачок скорости
+                // Consume the whole buffer (1000→0) and make a speed jump
                 ParticleAcceleratorManager.consumeEngineEnergy(blockLoc);
                 data.speed = Math.min(ParticleAcceleratorManager.MAX_SPEED,
                         data.speed + ParticleAcceleratorManager.SPEED_INCREMENT);
-                // Visual: мощный электрический разряд
+                // Visual: powerful electric discharge
                 Location center = blockLoc.clone().add(0.5, 0.5, 0.5);
                 blockLoc.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, center, 20, 0.5, 0.5, 0.5, 0);
                 blockLoc.getWorld().spawnParticle(Particle.FLASH, center, 1, 0, 0, 0, 0);
@@ -124,7 +124,7 @@ public class ParticleMovementTask extends BukkitRunnable {
             }
             // Even if no acceleration, particle passes through normally
         } else if (blockType == ParticleAcceleratorManager.SENSOR) {
-            // Запоминаем скорость последней пролетевшей частицы (для мультиметра)
+            // Remember the speed of the last particle that passed (for the multimeter)
             ParticleAcceleratorManager.setSensorLastSpeed(blockLoc, data.speed);
             // Visual: spark on sensor
             Location center = blockLoc.clone().add(0.5, 0.5, 0.5);
@@ -171,13 +171,13 @@ public class ParticleMovementTask extends BukkitRunnable {
     // =========================
     // COLLISION DETECTION — proper swept-segment 3D test
     // =========================
-    // Реальный 3D-тест минимального расстояния между двумя отрезками
-    // [a.start, a.end] и [b.start, b.end] за один тик. Исправляет баги
-    // старого скалярного sweep-test'а:
-    //   - ложные коллизии для расходящихся перпендикулярных частиц,
-    //   - ложные коллизии для параллельных частиц, плывущих рядом,
-    //   - пропуски при “пролёте сквозь друга” в один тик.
-    // Алгоритм: Real-Time Collision Detection (Christer Ericke),
+    // Real 3D test of the minimum distance between two segments
+    // [a.start, a.end] and [b.start, b.end] in one tick. Fixes bugs
+    // of the old scalar sweep test:
+    //   - false collisions for diverging perpendicular particles,
+    //   - false collisions for parallel particles floating side by side,
+    //   - misses when particles “pass through each other” in one tick.
+    // Algorithm: Real-Time Collision Detection (Christer Ericke),
     // clamped s,t ∈ [0,1].
     private void checkCollisions() {
         List<ParticleAcceleratorManager.ParticleData> particles = new ArrayList<>(ParticleAcceleratorManager.getActiveParticles());
@@ -229,8 +229,8 @@ public class ParticleMovementTask extends BukkitRunnable {
                 EndState eb = endById.get(b.id);
                 if (eb == null) continue;
 
-                // Дешёвая предварительная проверка: если оба стационарны и далеко,
-                // нет смысла считать полный тест.
+                // Cheap pre-check: if both are stationary and far apart,
+                // there is no point in computing the full test.
                 if (!ea.moves() && !eb.moves()) {
                     if (ea.start.distance(eb.start) > REACH_DISTANCE * 2.0) continue;
                 }

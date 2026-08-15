@@ -40,7 +40,7 @@ public final class ItemSubcommand {
     }
 
     private static void handleList(Player player, ItemStack held) {
-        // getItemIntegrityPercent уже возвращает % (0.0–100.0) — источник истины
+        // getItemIntegrityPercent already returns % (0.0–100.0) — the source of truth
         double current = ItemIntegrityAPI.getItemIntegrityPercent(held);
         double pct = Math.max(0.0, current);
         String name = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
@@ -72,7 +72,7 @@ public final class ItemSubcommand {
         try {
             double value = Double.parseDouble(args[3]);
             if (value <= 0) { player.sendMessage("§4❌ §cЗначение должно быть больше 0!"); return; }
-            // Фактическое значение возвращает сам API — не пересчитываем локально
+            // The actual value is returned by the API itself — we don't recalculate locally
             double newVal = Math.max(0.0, ItemIntegrityAPI.increaseItemIntegrityPercent(held, value));
             player.sendMessage("§a✔ §fДобавлено §e" + IntegrityManager.formatPercent(value) + "%§f. Текущая: §e" + IntegrityManager.formatPercent(newVal) + "%");
         } catch (NumberFormatException e) {

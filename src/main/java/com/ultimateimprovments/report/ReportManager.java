@@ -20,19 +20,19 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Система репортов на игроков.
+ * Player report system.
  * <p>
- * Позволяет подавать жалобы, админам — управлять списком для модерации,
- * модерировать с вынесением вердикта.
+ * Allows filing complaints, admins manage the moderation list
+ * and moderate with a verdict.
  */
 public class ReportManager implements Listener {
 
     private static ReportManager instance;
 
-    // Сессии модерации: модератор → текущая сессия
+    // Moderation sessions: moderator → current session
     private static final Map<UUID, ModerationSession> modSessions = new ConcurrentHashMap<>();
 
-    // Подтверждение удаления из mod_reports: админ → report_id
+    // Delete confirmation for mod_reports: admin → report_id
     private static final Map<UUID, Integer> removeConfirmations = new ConcurrentHashMap<>();
 
     public static class ModerationSession {
@@ -62,10 +62,10 @@ public class ReportManager implements Listener {
     public static void init() {
         instance = new ReportManager();
         Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
-        // Запускаем таймер очистки просроченных репортов (каждые 5 минут)
+        // Start the expired-report cleanup timer (every 5 minutes)
         Bukkit.getScheduler().runTaskTimerAsynchronously(Main.getInstance(), () -> {
             expireOldReports();
-        }, 200L, 6000L); // 10 сек задержка, 5 мин интервал
+        }, 200L, 6000L); // 10 sec delay, 5 min interval
     }
 
     public static ReportManager getInstance() { return instance; }
@@ -93,7 +93,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Проверяет, заходил ли игрок на сервер хоть раз.
+     * Checks whether the player has ever joined the server.
      */
     public static boolean hasEverJoined(String playerName) {
         try (Connection con = DatabaseManager.getConnection();
@@ -108,7 +108,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает UUID игрока по нику из базы визитов.
+     * Gets a player's UUID by name from the visits database.
      */
     public static String getUuidByName(String playerName) {
         try (Connection con = DatabaseManager.getConnection();
@@ -126,18 +126,18 @@ public class ReportManager implements Listener {
     // ════════════════════════════════════════
 
     /**
-     * Создаёт репорт на игрока.
-     * @return null если успешно, иначе сообщение ошибки
+     * Creates a report against a player.
+     * @return null on success, otherwise an error message
      */
     public static String createReport(Player reporter, String reportedName, String reason) {
-        // Проверяем, есть ли у репортёра уже активный репорт
+        // Check whether the reporter already has an active report
         String reporterUuid = reporter.getUniqueId().toString();
         if (hasPendingReport(reporterUuid)) {
             return MessagesManager.getString("report.errors.already_pending",
                     "<red>❌ У вас уже есть активный репорт! Дождитесь его модерации.</red>");
         }
 
-        // Получаем UUID репортируемого
+        // Get the reported player's UUID
         String reportedUuid = getUuidByName(reportedName);
         if (reportedUuid == null) {
             return MessagesManager.getString("report.errors.never_joined",
@@ -145,13 +145,13 @@ public class ReportManager implements Listener {
                     .replace("%player%", reportedName);
         }
 
-        // Нельзя зарепортить себя
+        // Can't report yourself
         if (reporterUuid.equals(reportedUuid)) {
             return MessagesManager.getString("report.errors.self_report",
                     "<red>❌ Вы не можете подать репорт на самого себя!</red>");
         }
 
-        // Получаем время истечения из конфига
+        // Get the expiration time from the config
         long expireSeconds = parseExpireTime(
                 Main.getInstance().getConfig().getString("report.expire_time", "3d"));
         long now = System.currentTimeMillis() / 1000;
@@ -173,7 +173,7 @@ public class ReportManager implements Listener {
                     "<red>❌ Ошибка базы данных при создании репорта!</red>");
         }
 
-        // Уведомляем репортируемого (если онлайн)
+        // Notify the reported player (if online)
         Player reportedPlayer = Bukkit.getPlayerExact(reportedName);
         if (reportedPlayer != null && reportedPlayer.isOnline()) {
             String notifiedMsg = MessagesManager.getString("report.reported_notification",
@@ -181,11 +181,11 @@ public class ReportManager implements Listener {
             reportedPlayer.sendMessage(MessageUtil.parse(notifiedMsg));
         }
 
-        return null; // успех
+        return null; // success
     }
 
     /**
-     * Проверяет, есть ли у игрока репорт в статусе pending.
+     * Checks whether the player has a report in pending status.
      */
     public static boolean hasPendingReport(String uuid) {
         try (Connection con = DatabaseManager.getConnection();
@@ -200,7 +200,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает статус активного репорта игрока.
+     * Gets the status of the player's active report.
      */
     public static ReportData getActiveReport(String uuid) {
         try (Connection con = DatabaseManager.getConnection();
@@ -229,7 +229,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает репорт по ID.
+     * Gets a report by ID.
      */
     public static ReportData getReportById(int id) {
         try (Connection con = DatabaseManager.getConnection();
@@ -262,7 +262,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает все репорты.
+     * Gets all reports.
      */
     public static List<ReportData> getAllReports() {
         List<ReportData> list = new ArrayList<>();
@@ -299,7 +299,7 @@ public class ReportManager implements Listener {
     // ════════════════════════════════════════
 
     /**
-     * Добавляет репорт в список модерации с именем.
+     * Adds a report to the moderation list with a name.
      */
     public static boolean addToModQueue(int reportId, String name) {
         try (Connection con = DatabaseManager.getConnection();
@@ -315,7 +315,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Удаляет репорт из списка модерации.
+     * Removes a report from the moderation list.
      */
     public static boolean removeFromModQueue(int reportId) {
         try (Connection con = DatabaseManager.getConnection();
@@ -329,7 +329,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Проверяет, существует ли mod_report с таким ID репорта.
+     * Checks whether a mod_report with this report ID exists.
      */
     public static boolean isInModQueue(int reportId) {
         try (Connection con = DatabaseManager.getConnection();
@@ -343,7 +343,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Проверяет, существует ли mod_report с таким именем.
+     * Checks whether a mod_report with this name exists.
      */
     public static boolean isModNameExists(String name) {
         try (Connection con = DatabaseManager.getConnection();
@@ -357,7 +357,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает имя mod_reports по ID репорта.
+     * Gets the mod_reports name by report ID.
      */
     public static String getModNameByReportId(int reportId) {
         try (Connection con = DatabaseManager.getConnection();
@@ -372,7 +372,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает список всех репортов в модерации (с данными репорта).
+     * Gets the list of all reports in moderation (with report data).
      */
     public static List<String> getModQueueNames() {
         List<String> names = new ArrayList<>();
@@ -395,7 +395,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает только имена из очереди модерации (для таб-комплита /ui modreport).
+     * Gets only the names from the moderation queue (for /ui modreport tab-complete).
      */
     public static List<String> getModQueueNameList() {
         List<String> names = new ArrayList<>();
@@ -411,7 +411,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Получает ID репорта по имени mod_reports.
+     * Gets a report ID by mod_reports name.
      */
     public static int getReportIdByModName(String name) {
         try (Connection con = DatabaseManager.getConnection();
@@ -425,7 +425,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Удаляет mod_reports по имени.
+     * Deletes mod_reports by name.
      */
     public static boolean removeFromModQueueByName(String name) {
         try (Connection con = DatabaseManager.getConnection();
@@ -443,16 +443,16 @@ public class ReportManager implements Listener {
     // ════════════════════════════════════════
 
     /**
-     * Проверяет, находится ли игрок в активной сессии модерации.
-     * Используется в {@link com.ultimateimprovments.chat.ChatManager#onPlayerChat}
-     * чтобы не отправлять сообщения модератора в чат.
+     * Checks whether the player is in an active moderation session.
+     * Used in {@link com.ultimateimprovments.chat.ChatManager#onPlayerChat}
+     * to avoid sending the moderator's messages to chat.
      */
     public static boolean isInModeration(Player player) {
         return modSessions.containsKey(player.getUniqueId());
     }
 
     /**
-     * Начинает сессию модерации для игрока.
+     * Starts a moderation session for a player.
      */
     public static void startModeration(Player moderator, int reportId, String modName) {
         ModerationSession session = new ModerationSession();
@@ -471,7 +471,7 @@ public class ReportManager implements Listener {
     }
 
     /**
-     * Обработка сообщений от игроков в режиме модерации.
+     * Handles messages from players in moderation mode.
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
@@ -493,7 +493,7 @@ public class ReportManager implements Listener {
         }
 
         if (session.step == ModerationSession.Step.CONCLUSION) {
-            // Сохраняем заключение, переходим к вердикту
+            // Save the conclusion, move to the verdict
             session.conclusion = text;
             session.step = ModerationSession.Step.VERDICT;
 
@@ -507,7 +507,7 @@ public class ReportManager implements Listener {
                     MessagesManager.getString("report.moderation.type_or_cancel",
                             "<gray>Напишите номер или </gray><red>cancel</red><gray> для отмены.</gray>")));
         } else if (session.step == ModerationSession.Step.VERDICT) {
-            // Обрабатываем вердикт
+            // Process the verdict
             String verdictOption;
             String verdictLabel;
             switch (text) {
@@ -530,7 +530,7 @@ public class ReportManager implements Listener {
                 }
             }
 
-            // Сохраняем вердикт в БД
+            // Save the verdict to the DB
             final String finalVerdictOption = verdictOption;
             final String finalVerdictLabel = verdictLabel;
             Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
@@ -549,7 +549,7 @@ public class ReportManager implements Listener {
                 }
             });
 
-            // Уведомляем репортёра (если онлайн)
+            // Notify the reporter (if online)
             try (Connection con = DatabaseManager.getConnection();
                  PreparedStatement ps = con.prepareStatement(
                          "SELECT reporter_uuid FROM reports WHERE id = ?")) {
@@ -587,7 +587,7 @@ public class ReportManager implements Listener {
                 MessagesManager.getString("report.admin.remove_confirm",
                         "<yellow>⚠</yellow> <white>Удалить </white><yellow>%name%</yellow><white>? Напишите </white><yellow>/ui reports remove confirm</yellow><white> для подтверждения.</white>")
                         .replace("%name%", modName)));
-        // Задержка истечения подтверждения (30 сек)
+        // Confirmation expiration delay (30 sec)
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
             removeConfirmations.remove(admin.getUniqueId());
         }, 600L);
@@ -630,10 +630,10 @@ public class ReportManager implements Listener {
     // ════════════════════════════════════════
 
     /**
-     * Парсит время истечения (3d, 12h, 30m, 60s) в секунды.
+     * Parses an expiration time (3d, 12h, 30m, 60s) into seconds.
      */
     public static long parseExpireTime(String input) {
-        if (input == null || input.isEmpty()) return 259200L; // 3d по умолчанию
+        if (input == null || input.isEmpty()) return 259200L; // 3d by default
         input = input.trim().toLowerCase();
         try {
             char unit = input.charAt(input.length() - 1);

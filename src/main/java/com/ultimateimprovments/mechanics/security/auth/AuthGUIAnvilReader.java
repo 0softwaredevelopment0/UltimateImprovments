@@ -4,19 +4,19 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryView;
 
 /**
- * Чтение текста из поля переименования наковальни через NMS reflection.
- * Вынесено в отдельный класс для изоляции грязной рефлексии.
+ * Reads text from the anvil rename field via NMS reflection.
+ * Extracted into a separate class to isolate the dirty reflection.
  */
 public class AuthGUIAnvilReader {
 
     private AuthGUIAnvilReader() {}
 
     /**
-     * Получает текст, введённый игроком в поле переименования наковальни.
-     * Использует NMS reflection для доступа к полю itemName в AnvilMenu.
+     * Gets the text the player entered in the anvil rename field.
+     * Uses NMS reflection to access the itemName field in AnvilMenu.
      *
-     * @param player игрок, у которого открыта наковальня
-     * @return текст из поля переименования, или null если не удалось прочитать
+     * @param player the player whose anvil is open
+     * @return the text from the rename field, or null if it could not be read
      */
     public static String getAnvilRenameText(Player player) {
         try {

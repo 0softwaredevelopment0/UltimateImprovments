@@ -13,13 +13,13 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * SQLite-персистенция для «Блоков защиты».
+ * SQLite persistence for "Protection Blocks".
  * <p>
- * Таблицы:
+ * Tables:
  * <ul>
  *   <li>{@code protection_blocks} — UUID, world, x/y/z, owner, radius, integrity, points, enabled,
  *       radius_upgrade_count, repair_count</li>
- *   <li>{@code protection_whitelist} — (block_id, player_uuid) — игроки, имеющие доступ</li>
+ *   <li>{@code protection_whitelist} — (block_id, player_uuid) — players with access</li>
  * </ul>
  */
 public class ProtectionDatabase {
@@ -103,8 +103,8 @@ public class ProtectionDatabase {
     // =========================
     // SAVE WHITELIST (replace all entries for block)
     // <p>
-    // Возвращает true при успешной записи; onSuccess/onFailure вызываются для
-    // обновления dirty-set в ProtectionManager (retry при ошибке БД).
+    // Returns true on a successful write; onSuccess/onFailure are called to
+    // update the dirty-set in ProtectionManager (retry on DB error).
     // =========================
     public static synchronized boolean saveWhitelist(
             ProtectionBlock block,
@@ -136,7 +136,7 @@ public class ProtectionDatabase {
         }
     }
 
-    /** Backward-compat overload — старая сигнатура без колбэков. */
+    /** Backward-compat overload — old signature without callbacks. */
     public static synchronized void saveWhitelist(ProtectionBlock block) {
         saveWhitelist(block, null, null);
     }
@@ -201,7 +201,7 @@ public class ProtectionDatabase {
         }
     }
 
-    /** Вспомогательная POJO для загруженного блока до воссоздания ProtectionBlock с Location. */
+    /** Helper POJO for a loaded block before recreating a ProtectionBlock with a Location. */
     public record LoadedBlock(
             UUID id, String worldName, int x, int y, int z, UUID owner,
             int radius, double integrity, int points, boolean enabled,

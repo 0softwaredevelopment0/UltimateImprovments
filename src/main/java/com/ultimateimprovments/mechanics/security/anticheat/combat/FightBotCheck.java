@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 /**
- * FightBot — автоматический бой (bot).
- * Детекция: аномально ровные интервалы между атаками.
+ * FightBot — automatic combat (bot).
+ * Detection: abnormally even intervals between attacks.
  */
 public class FightBotCheck extends AbstractCheck {
 

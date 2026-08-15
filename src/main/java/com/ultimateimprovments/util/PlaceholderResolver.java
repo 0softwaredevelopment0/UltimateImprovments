@@ -21,20 +21,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Единый резольвер плейсхолдеров UltimateImprovments.
+ * The single UltimateImprovments placeholder resolver.
  * <p>
- * <b>Формат:</b> {@code %<name>%} — например {@code %player_ping%}, {@code %online%}, {@code %tps_5m%}.
- * Один и тот же формат используется внутри плагина (файл/конфиг/GUI/чат/scoreboard/tab)
- * и снаружи через PlaceholderAPI (TAB, deluxe menus и т.д.) — плейсхолдер
- * {@code %ui_<name>%} внутри PAPI ссылается на тот же резолвер.
+ * <b>Format:</b> {@code %<name>%} — e.g. {@code %player_ping%}, {@code %online%}, {@code %tps_5m%}.
+ * The same format is used inside the plugin (file/config/GUI/chat/scoreboard/tab)
+ * and externally via PlaceholderAPI (TAB, deluxe menus, etc.) — the
+ * {@code %ui_<name>%} placeholder inside PAPI references the same resolver.
  *
- * <p>Если PlaceholderAPI установлен — наш {@link com.ultimateimprovments.hook.UIPlaceholderExpansion}
- * регистрирует ВСЕ имена из реестра в PAPI. Если PAPI нет — экспаншен не
- * регистрируется, но внутренний резолвер по-прежнему обрабатывает все плейсхолдеры
- * из конфигов/MiniMessage-строк плагина.
+ * <p>If PlaceholderAPI is installed — our {@link com.ultimateimprovments.hook.UIPlaceholderExpansion}
+ * registers ALL names from the registry into PAPI. If PAPI is missing — the expansion
+ * isn't registered, but the internal resolver still handles all placeholders
+ * from the plugin's configs/MiniMessage strings.
  *
- * <p><b>Доступные имена:</b> см. {@link #getBuiltinNames()}.
- * Динамические/ping/copy-link решаются отдельно (см. {@link #resolve(String, Player)}).
+ * <p><b>Available names:</b> see {@link #getBuiltinNames()}.
+ * Dynamic/ping/copy-link placeholders are resolved separately (see {@link #resolve(String, Player)}).
  */
 public class PlaceholderResolver {
 
@@ -43,17 +43,17 @@ public class PlaceholderResolver {
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
-    /** Основной паттерн: %name% — только простые имена из BUILTIN. */
+    /** Main pattern: %name% — only simple names from BUILTIN. */
     private static final Pattern NAME_PLACEHOLDER = Pattern.compile("%([a-z_][a-z0-9_]*)%");
-    /** Динамические/цветные версии: %tps_5m%, %mspt_max_1h_color% и т.д. */
+    /** Dynamic/colored versions: %tps_5m%, %mspt_max_1h_color% etc. */
     private static final Pattern DYNAMIC_PLACEHOLDER = Pattern.compile(
             "%(tps|mspt|online|ram)(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(color))?%"
     );
-    /** Пинг-плейсхолдеры со scope и цветом. */
+    /** Ping placeholders with scope and color. */
     private static final Pattern PING_PLACEHOLDER = Pattern.compile(
             "%ping(?:_(min|max|avg))?(?:_(\\d+[smhd]|ss))?(?:_(?!(?:color)\\b)(\\w+))?(?:_(color))?%"
     );
-    /** Click-actions: %copy:"text"% и %link:"url"%. */
+    /** Click-actions: %copy:"text"% and %link:"url"%. */
     private static final Pattern COPY_LINK_PATTERN = Pattern.compile(
             "%(copy|link):\"([^\"]+)\"%"
     );
@@ -74,7 +74,7 @@ public class PlaceholderResolver {
     private static boolean papiAvailable = false;
     private static boolean luckPermsAvailable = false;
 
-    // === LuckPerms reflection state (прокидывается в PlaceholderRegistry) ===
+    // === LuckPerms reflection state (forwarded to PlaceholderRegistry) ===
     public static Method lpGetUserManager;
     public static Object lpInstance;
     public static Method lpUserManagerGetUser;
@@ -83,7 +83,7 @@ public class PlaceholderResolver {
     public static Method lpMetaDataGetSuffix;
     public static Method lpMetaDataGetPrimaryGroup;
 
-    // === Общий реестр ВНУТРЕННИХ плейсхолдеров ===
+    // === Registry of INTERNAL placeholders ===
     private static final Map<String, BiFunction<Player, String, String>> BUILTIN = new HashMap<>();
 
     static {
@@ -106,7 +106,7 @@ public class PlaceholderResolver {
         BUILTIN.put("player_world",  (p, s) -> p != null ? p.getWorld().getName() : "?");
         BUILTIN.put("player_coords", PlaceholderResolver::resolvePlayerCoords);
 
-        // ── Date / Time (локальная TZ ОС сервера) ──
+        // ── Date / Time (server OS local TZ) ──
         BUILTIN.put("server_time", (p, s) -> LocalTime.now().format(TIME_FORMAT));
         BUILTIN.put("server_date", (p, s) -> LocalDate.now().format(DATE_FORMAT));
 
@@ -124,7 +124,7 @@ public class PlaceholderResolver {
             return day + "d " + (hour % 24) + "h " + (min % 60) + "m";
         });
 
-        // ── TPS / MSPT / RAM (как %name%) ──
+        // ── TPS / MSPT / RAM (as %name%) ──
         BUILTIN.put("tps",  (p, s) -> TPS_FORMAT.format(Math.min(Bukkit.getTPS()[0], 20.0)));
         BUILTIN.put("mspt", (p, s) -> TPS_FORMAT.format(Bukkit.getAverageTickTime()));
         BUILTIN.put("ram", PlaceholderResolver::resolveRam);
@@ -141,42 +141,42 @@ public class PlaceholderResolver {
     private PlaceholderResolver() {}
 
     // ════════════════════════════════════════════
-    // Public API (используется PlaceholderExpansion)
+    // Public API (used by PlaceholderExpansion)
     // ════════════════════════════════════════════
 
-    /** Возвращает резолвер для имени плейсхолдера (без % ). */
+    /** Returns the resolver for a placeholder name (without %). */
     public static BiFunction<Player, String, String> getBuiltin(String name) {
         return BUILTIN.get(name);
     }
 
-    /** Все известные имена для документации и регистрации в PAPI. */
+    /** All known names for documentation and PAPI registration. */
     public static Set<String> getBuiltinNames() {
         return BUILTIN.keySet();
     }
 
-    /** Резолвит одно имя (вызывается из UIPlaceholderExpansion). */
+    /** Resolves a single name (called from UIPlaceholderExpansion). */
     public static String resolveBuiltin(Player player, String name) {
         BiFunction<Player, String, String> fn = BUILTIN.get(name);
         return fn != null ? String.valueOf(fn.apply(player, "")) : null;
     }
 
-    /** true если PlaceholderAPI установлен и доступен. */
+    /** true if PlaceholderAPI is installed and available. */
     public static boolean isPapiAvailable() {
         return papiAvailable;
     }
 
-    /** true если LuckPerms установлен и хук подключился. */
+    /** true if LuckPerms is installed and the hook connected. */
     public static boolean isLuckPermsAvailable() {
         return luckPermsAvailable;
     }
 
-    /** Имя реестра, по которому PAPI Expansion цепляется. */
+    /** The registry name the PAPI Expansion hooks into. */
     public static String getPapiIdentifier() {
         return "ui";
     }
 
     // ════════════════════════════════════════════
-    // Init: детектим PAPI и LuckPerms
+    // Init: detect PAPI and LuckPerms
     // ════════════════════════════════════════════
 
     public static void init() {
@@ -224,35 +224,35 @@ public class PlaceholderResolver {
     }
 
     // ════════════════════════════════════════════
-    // RESOLVE — главная точка входа
+    // RESOLVE — the main entry point
     // ════════════════════════════════════════════
 
     /**
-     * Разрешает все плейсхолдеры в строке.
-     * Порядок:
+     * Resolves all placeholders in a string.
+     * Order:
      * <ol>
-     *   <li>{@code %name%} — простые встроенные</li>
-     *   <li>{@code %tps_5m%} / {@code %mspt%} — динамические/цветные</li>
-     *   <li>{@code %ping_5m_all%} — пинг</li>
-     *   <li>{@code %copy:"x"%} и {@code %link:"url"%} — клики</li>
-     *   <li>PlaceholderAPI (если есть) — последним шагом, в т.ч. разрешены сторонние плейсхолдеры ({@code %vault_balance%}, {@code %someplugin_x%} и т.д.)</li>
+     *   <li>{@code %name%} — simple built-ins</li>
+     *   <li>{@code %tps_5m%} / {@code %mspt%} — dynamic/colored</li>
+     *   <li>{@code %ping_5m_all%} — ping</li>
+     *   <li>{@code %copy:"x"%} and {@code %link:"url"%} — clicks</li>
+     *   <li>PlaceholderAPI (if present) — last step, third-party placeholders allowed too ({@code %vault_balance%}, {@code %someplugin_x%}, etc.)</li>
      * </ol>
      */
     public static String resolve(String text, Player player) {
-        // Fast-path: если в строке нет '%', нечего резолвить.
+        // Fast-path: if the string has no '%', nothing to resolve.
         if (text == null || text.isEmpty() || text.indexOf('%') < 0) return text;
         text = resolveInternal(text, player);
         if (papiAvailable) {
-            // PAPI-вызов разрешён и для null player — некоторые Expansion-плагины
-            // поддерживают серверные плейсхолдеры (напр. %server_online%) без игрока.
+            // The PAPI call is allowed for a null player too — some Expansion plugins
+            // support server placeholders (e.g. %server_online%) without a player.
             text = resolvePapi(text, player);
         }
         return text;
     }
 
     /**
-     * Внутренний резолв без шага PAPI — чтобы UIPlaceholderExpansion мог
-     * безопасно делегировать сюда, не вызывая рекурсию PAPI → resolve → PAPI.
+     * Internal resolve without the PAPI step — so UIPlaceholderExpansion can
+     * safely delegate here without causing PAPI → resolve → PAPI recursion.
      */
     public static String resolveInternal(String text, Player player) {
         if (text == null || text.isEmpty()) return text;
@@ -263,7 +263,7 @@ public class PlaceholderResolver {
         return text;
     }
 
-    /** Только статические {@code %name%} — быстрая ветка без regex ping/dynamic. */
+    /** Only static {@code %name%} — fast path without regex ping/dynamic. */
     public static String resolveOnlyStatic(String text, Player player) {
         if (text == null || text.isEmpty()) return text;
         return resolveStatic(text, player);
@@ -446,7 +446,7 @@ public class PlaceholderResolver {
     }
 
     // ════════════════════════════════════════════
-    // Утилиты для встроенных значений
+    // Utilities for built-in values
     // ════════════════════════════════════════════
 
     private static String resolvePingColor(Player player, String unused) {

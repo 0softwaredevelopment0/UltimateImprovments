@@ -5,13 +5,13 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Базовая абстракция модуля плагина.
+ * Base abstraction of a plugin module.
  * <p>
- * Каждый модуль независим: если {@link #onInit} выбрасывает исключение,
- * модуль считается отключённым, но остальные модули продолжают работать.
+ * Each module is independent: if {@link #onInit} throws an exception,
+ * the module is considered disabled, but the other modules keep working.
  * <p>
- * {@code essential = true} — модуль критичен для работы плагина,
- * {@code essential = false} — модуль можно отключить без потери основной функциональности.
+ * {@code essential = true} — the module is critical for the plugin,
+ * {@code essential = false} — the module can be disabled without losing core functionality.
  */
 public abstract class PluginModule {
 
@@ -47,10 +47,10 @@ public abstract class PluginModule {
     // =========================
 
     /**
-     * Инициализирует модуль. В случае ошибки модуль отключается,
-     * но исключение НЕ пробрасывается — плагин продолжает работу.
+     * Initializes the module. On error the module is disabled,
+     * but the exception is NOT rethrown — the plugin keeps working.
      *
-     * @return true если модуль успешно инициализирован
+     * @return true if the module was initialized successfully
      */
     public boolean initialize(JavaPlugin plugin) {
         if (enabled) return true;
@@ -64,7 +64,7 @@ public abstract class PluginModule {
             String msg = t.getMessage() != null ? t.getMessage() : "";
             disableReason = msg.isEmpty() ? t.getClass().getSimpleName() : msg;
 
-            // Детектируем ошибку несовместимости Java-версии (Paper не может сконвертировать class)
+            // Detect a Java version mismatch error (Paper cannot convert the class)
             if (msg.contains("major version") || msg.contains("Unsupported class file")) {
                 ConsoleLogger.error("[Module:" + name + "] \u2717 Java version mismatch!");
                 ConsoleLogger.error("[Module:" + name + "]   Update your Java Runtime to fix this issue.");
@@ -76,7 +76,7 @@ public abstract class PluginModule {
     }
 
     /**
-     * Отключает модуль. Ошибки при отключении логируются, но не пробрасываются.
+     * Disables the module. Disable errors are logged, not rethrown.
      */
     public boolean disable(JavaPlugin plugin) {
         if (!enabled) return true;
@@ -92,7 +92,7 @@ public abstract class PluginModule {
     }
 
     /**
-     * Перезагружает конфигурацию модуля (если поддерживается).
+     * Reloads the module configuration (if supported).
      */
     public void reloadConfig(JavaPlugin plugin) {
         if (!enabled) return;
@@ -107,12 +107,12 @@ public abstract class PluginModule {
     // ABSTRACT / OVERRIDE POINTS
     // =========================
 
-    /** Выполнить инициализацию модуля. */
+    /** Run the module initialization. */
     protected abstract void onInit(JavaPlugin plugin) throws Exception;
 
-    /** Выполнить остановку модуля. */
+    /** Run the module shutdown. */
     protected abstract void onDisable(JavaPlugin plugin);
 
-    /** Перезагрузить конфиг (по умолчанию — no-op). */
+    /** Reload the config (no-op by default). */
     protected void onReloadConfig(JavaPlugin plugin) {}
 }

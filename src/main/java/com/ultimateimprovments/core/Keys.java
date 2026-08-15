@@ -6,8 +6,9 @@ public class Keys {
 
     public static NamespacedKey PLASMA;
     public static NamespacedKey SHOCKER;
+    public static NamespacedKey BLAZING_SWORD;
 
-    // Feature keys (из датапака)
+    // Feature keys (from the datapack)
     public static NamespacedKey ANTIMATTER;
     public static NamespacedKey LOCATOR;
 
@@ -52,7 +53,7 @@ public class Keys {
     // Totem Charge
     public static NamespacedKey TOTEM_CHARGE;
 
-    // XP Bottle Upgrade (Пузырёк опыта x2/x3/...)
+    // XP Bottle Upgrade (Experience bottle x2/x3/...)
     public static NamespacedKey EXP_BOTTLE_MULTIPLIER;
 
     // Block Collapse
@@ -70,7 +71,7 @@ public class Keys {
     // Generator
     public static NamespacedKey GENERATOR;
 
-    // Protection Block (Блок защиты)
+    // Protection Block (Protection Block)
     // PDC tag stored on the placed block (BlockData style) and item.
     public static NamespacedKey PROTECTION_BLOCK;
     // PDC tag stored on the protection block's item (placeable).
@@ -81,6 +82,7 @@ public class Keys {
     public static void init(Main plugin) {
         PLASMA = new NamespacedKey(plugin, "is_plasma_cannon");
         SHOCKER = new NamespacedKey(plugin, "is_shocker");
+        BLAZING_SWORD = new NamespacedKey(plugin, "is_blazing_sword");
         ANTIMATTER = new NamespacedKey(plugin, "isAntimatter");
         LOCATOR = new NamespacedKey(plugin, "isLocator");
         HEALTH_METER = new NamespacedKey(plugin, "isHealthMeter");

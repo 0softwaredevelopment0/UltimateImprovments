@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 /**
- * BackTrack — атака с предыдущей позиции (позиционный десинк).
- * Детекция: атака цели, которая находится далеко от текущей позиции игрока.
+ * BackTrack — attack from a previous position (positional desync).
+ * Detection: attacking a target that is far from the player's current position.
  */
 public class BackTrackCheck extends AbstractCheck {
 

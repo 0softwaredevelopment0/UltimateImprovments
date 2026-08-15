@@ -86,7 +86,7 @@ public class ReactorTask extends BukkitRunnable {
         }
 
         // =========================
-        // WEAR TICK (every 1s — накопление износа + чат-таймер)
+        // WEAR TICK (every 1s — wear accumulation + chat timer)
         // =========================
         if (tick % INTENSITY_DOWN_INTERVAL == 0) {
             reactor.tickWear();

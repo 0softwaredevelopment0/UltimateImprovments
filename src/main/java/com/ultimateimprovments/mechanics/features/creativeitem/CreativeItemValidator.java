@@ -18,28 +18,28 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 /**
- * Фича: блокировка предметов с чрезмерной метадатой (NBT/компоненты)
- * при попытке взять их в креативном режиме.
+ * Feature: blocks items with excessive metadata (NBT/components)
+ * when trying to take them in creative mode.
  *
- * Защищает сервер от "краш-предметов" — вещей с гигантским NBT,
- * включая вложенные контейнеры (shulker в shulker в shulker...),
- * которые при загрузке забивают ОЗУ и крашат сервер.
+ * Protects the server from "crash items" — things with huge NBT,
+ * including nested containers (shulker in shulker in shulker...),
+ * which fill up RAM and crash the server when loaded.
  *
- * Проверки:
- *   1. Рекурсивный обход контейнеров (shulker, bundle) — подсчёт total NBT size
- *   2. Лимит глубины вложенности (max_recursion_depth)
- *   3. Размер сериализованного предмета (serializeAsBytes)
- *   4. Длина названия и описания (lore)
- *   5. Количество зачарований
- *   6. Количество PDC-ключей (PersistentDataContainer)
+ * Checks:
+ *   1. Recursive container traversal (shulker, bundle) — total NBT size count
+ *   2. Nesting depth limit (max_recursion_depth)
+ *   3. Serialized item size (serializeAsBytes)
+ *   4. Name and lore length
+ *   5. Enchantment count
+ *   6. PDC key count (PersistentDataContainer)
  */
 public class CreativeItemValidator implements Listener {
 
     private static CreativeItemValidator instance;
     private static boolean enabled = true;
-    private static int maxItemBytes = 8192;         // 8 KB (снижено — ловим вложенные)
+    private static int maxItemBytes = 8192;         // 8 KB (lowered — catches nesting)
     private static int maxTotalNbtSize = 32768;     // 32 KB total across all containers
-    private static int maxRecursionDepth = 8;       // макс глубина shulker-в-shulker
+    private static int maxRecursionDepth = 8;       // max shulker-in-shulker depth
     private static int maxPdcKeys = 30;
     private static int maxLoreLines = 50;
     private static int maxLoreChars = 1000;
@@ -89,7 +89,7 @@ public class CreativeItemValidator implements Listener {
     }
 
     // =========================
-    // EVENT: проверка размера метадаты
+    // EVENT: metadata size check
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onCreativeSlot(InventoryCreativeEvent e) {
@@ -101,8 +101,8 @@ public class CreativeItemValidator implements Listener {
         if (cursor == null || cursor.isEmpty() || cursor.getType().isAir()) return;
 
         // =========================
-        // МЕТОД 1: Рекурсивный обход контейнеров
-        // Ловит shulker-в-shulker → экспоненциальный рост NBT
+        // METHOD 1: Recursive container traversal
+        // Catches shulker-in-shulker → exponential NBT growth
         // =========================
         NbtStats stats = countNbtRecursive(cursor, 0);
         if (stats.exceeded) {
@@ -114,7 +114,7 @@ public class CreativeItemValidator implements Listener {
         }
 
         // =========================
-        // МЕТОД 2: Размер сериализованного предмета
+        // METHOD 2: Serialized item size
         // =========================
         try {
             byte[] raw = cursor.serializeAsBytes();
@@ -129,7 +129,7 @@ public class CreativeItemValidator implements Listener {
         }
 
         // =========================
-        // МЕТОД 3: Ручные проверки метадаты
+        // METHOD 3: Manual metadata checks
         // =========================
         ItemMeta meta = cursor.getItemMeta();
         if (meta == null) return;

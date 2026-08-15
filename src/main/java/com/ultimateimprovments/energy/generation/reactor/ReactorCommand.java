@@ -142,7 +142,7 @@ public class ReactorCommand implements CommandExecutor {
     }
 
     // =========================
-    // DARK SYNTHESIS REACTOR (без незеритового скрапа)
+    // DARK SYNTHESIS REACTOR (without netherite scrap)
     // =========================
     public static void assembleDarkSynthesis(Player player) {
 
@@ -160,7 +160,7 @@ public class ReactorCommand implements CommandExecutor {
         }
 
         // =========================
-        // VALIDATE STRUCTURE — с детальными ошибками
+        // VALIDATE STRUCTURE — with detailed errors
         // =========================
         java.util.List<String> errors = ReactorStructure.getValidationErrors(pending.center());
         if (!errors.isEmpty()) {
@@ -228,7 +228,7 @@ public class ReactorCommand implements CommandExecutor {
     }
 
     // =========================
-    // 🏆 НАЗВАНИЕ ТИРА ПО МОЩНОСТИ (shared static)
+    // 🏆 POWER TIER NAME (shared static)
     // =========================
     public static String getMagnetPowerTierStatic(int power) {
         if (power >= 10000000) return "§k✧ §4✧✧ АБСОЛЮТНАЯ БЕСКОНЕЧНОСТЬ ✧✧ §k✧ §8(" + power + ")";
@@ -278,7 +278,7 @@ public class ReactorCommand implements CommandExecutor {
         Location loc = pending.center();
 
         // =========================
-        // VALIDATE — блок должен быть LODESTONE
+        // VALIDATE — the block must be LODESTONE
         // =========================
         if (loc.getBlock().getType() != Material.LODESTONE) {
             player.sendMessage("§cМагнитный камень (LODESTONE) не найден!");
@@ -309,7 +309,7 @@ public class ReactorCommand implements CommandExecutor {
         }
 
         // =========================
-        // ACTIVATE MAGNET — асинхронное сканирование структуры
+        // ACTIVATE MAGNET — async structure scanning
         // =========================
         MagnetManager.activateAsync(loc, player);
 

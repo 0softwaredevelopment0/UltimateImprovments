@@ -16,10 +16,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AntiCheatManager — центральный менеджер античита.
+ * AntiCheatManager — central anti-cheat manager.
  * <p>
- * Регистрирует все проверки, управляет PlayerData для каждого игрока,
- * обрабатывает результаты проверок и запускает действия (ActionManager).
+ * Registers all checks, manages PlayerData for each player,
+ * processes check results and triggers actions (ActionManager).
  */
 public class AntiCheatManager {
 
@@ -32,7 +32,7 @@ public class AntiCheatManager {
     private final Map<CheckCategory, List<AbstractCheck>> checksByCategory = new EnumMap<>(CheckCategory.class);
     private final Map<String, AbstractCheck> checksByName = new ConcurrentHashMap<>();
 
-    // Global enabled flag (runtime toggle) — по дефолту ВЫКЛ
+    // Global enabled flag (runtime toggle) — OFF by default
     private volatile boolean globalEnabled = false;
     private static final String CONFIG_ENABLED_PATH = "anticheat.enabled";
 
@@ -112,7 +112,7 @@ public class AntiCheatManager {
     // =========================
 
     /**
-     * Обрабатывает результат проверки и выполняет действие если нужно.
+     * Processes a check result and executes an action if needed.
      */
     public void handleResult(Player player, AbstractCheck check, CheckResult result) {
         if (!globalEnabled) return;

@@ -4,7 +4,7 @@
       "text": "UI Plugin datapack.",
       "color": "white"
     },
-    "pack_format": 99,
-    "supported_formats": [98, 99]
+    "min_format": 107,
+    "max_format": 107
   }
 }

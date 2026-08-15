@@ -38,46 +38,46 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Управляет скоростью вагонеток с экспоненциальным разгоном на энергорельсах.
+ * Manages minecart speed with exponential acceleration on powered rails.
  * <p>
- * <b>Все внутренние вычисления — в блоках/тик (blocks/tick).</b>
- * Конфиг хранит значения в блоках/сек для читаемости, конвертация при загрузке (÷20).
+ * <b>All internal math is in blocks/tick.</b>
+ * The config stores values in blocks/sec for readability, converted on load (÷20).
  * <p>
- * Возможности:
+ * Features:
  * <ul>
- *   <li>Экспоненциальный разгон на активных POWERED_RAIL (×N за тик)</li>
- *   <li>Экспоненциальное замедление вне рельсов</li>
- *   <li>Коллизия: при ударе об entity наносит урон = скорость × 20 (блоки/сек ↔ урон)</li>
- *   <li>Отображение скорости в actionbar (блоки/тик) через /ui togglespeed</li>
- *   <li>Ускорение применяется напрямую в каждом тике (без двойного шедулинга)</li>
- *   <li>Очистка мёртвых вагонеток через VehicleDestroyEvent (без сканирования)</li>
- *   <li>Очистка speedDisplayPlayers при выходе игрока</li>
+ *   <li>Exponential acceleration on active POWERED_RAIL (×N per tick)</li>
+ *   <li>Exponential deceleration off rails</li>
+ *   <li>Collision: hitting an entity deals damage = speed × 20 (blocks/sec ↔ damage)</li>
+ *   <li>Speed display in actionbar (blocks/tick) via /ui togglespeed</li>
+ *   <li>Acceleration applied directly each tick (no double scheduling)</li>
+ *   <li>Dead minecart cleanup via VehicleDestroyEvent (no scanning)</li>
+ *   <li>speedDisplayPlayers cleanup when a player quits</li>
  * </ul>
  */
 public class MinecartSpeedManager implements Listener {
 
     private static boolean enabled;
-    /** Включена ли переплавка в HopperMinecart при высокой скорости. */
+    /** Whether smelting in HopperMinecart at high speed is enabled. */
     private static boolean hopperSmeltEnabled;
-    /** Минимальная скорость для переплавки (блоки/тик). Конфиг: блоки/сек, конвертируется ÷20. */
+    /** Minimum speed for smelting (blocks/tick). Config: blocks/sec, converted ÷20. */
     private static double hopperSmeltMinSpeed;
     /** Rate-limit counter for hopper smelting (ticks since last smelt, max 20 = 1 sec). */
     private static final Map<UUID, Integer> smeltTickCounter = new ConcurrentHashMap<>();
     /** Next inventory slot to check for smeltable items (round-robin). */
     private static final Map<UUID, Integer> nextSmeltSlot = new ConcurrentHashMap<>();
-    /** Кэш всех CookingRecipe (FURNACE, BLASTING, SMOKER, CAMPFIRE). */
+    /** Cache of all CookingRecipe (FURNACE, BLASTING, SMOKER, CAMPFIRE). */
     private static final List<CookingRecipe<?>> cookingRecipes = new ArrayList<>();
-    /** Базовая макс. скорость (блоки/тик). Конфиг: блоки/сек, конвертируется ÷20. */
+    /** Base max speed (blocks/tick). Config: blocks/sec, converted ÷20. */
     private static double baseMaxSpeed;
-    /** Абсолютный потолок (блоки/тик). Конфиг: блоки/сек, конвертируется ÷20. */
+    /** Absolute speed cap (blocks/tick). Config: blocks/sec, converted ÷20. */
     private static double maxSpeedLimit;
-    /** Множитель ускорения за тик (безразмерный, ×1.015 = +1.5%/тик). */
+    /** Per-tick acceleration multiplier (dimensionless, ×1.015 = +1.5%/tick). */
     private static double accelerationFactor;
-    /** Множитель замедления за тик (безразмерный). */
+    /** Per-tick deceleration multiplier (dimensionless). */
     private static double decelerationFactor;
-    /** Аддитивный буст скорости за тик (блоки/тик) — добавляется к velocity на энергорельсах. */
+    /** Additive per-tick speed boost (blocks/tick) — added to velocity on powered rails. */
     private static double thrustPerTick;
-    /** Мин. скорость для коллизии (блоки/тик). Конфиг: блоки/сек, конвертируется ÷20. */
+    /** Min speed for collision (blocks/tick). Config: blocks/sec, converted ÷20. */
     private static double collisionMinSpeed;
     private static int intervalTicks;
 
@@ -85,13 +85,13 @@ public class MinecartSpeedManager implements Listener {
     private static BukkitRunnable speedTask;
     private static BukkitRunnable displayTask;
     private static BukkitRunnable particleTask;
-    /** Текущая скорость каждой вагонетки в блоках/тик. */
+    /** Current speed of each minecart in blocks/tick. */
     private static final Map<UUID, Double> cartSpeeds = new ConcurrentHashMap<>();
     private static final Set<UUID> speedDisplayPlayers = ConcurrentHashMap.newKeySet();
-    /** Предыдущие позиции игрока для вычисления скорости через дельту позиции.
-     *  Используем позицию самого игрока (а не транспорта), потому что игрок
-     *  движется вместе с вагонеткой — дельта позиции игрока = скорость вагонетки.
-     *  Это исключает моргание датчика из-за mount/dismount детекции. */
+    /** Previous player positions for computing speed via position delta.
+     *  We use the player's own position (not the vehicle), because the player
+     *  moves together with the minecart — the player position delta = minecart speed.
+     *  This eliminates sensor flicker from mount/dismount detection. */
     private static final Map<UUID, Location> prevPositions = new ConcurrentHashMap<>();
 
     private MinecartSpeedManager() {}
@@ -99,10 +99,10 @@ public class MinecartSpeedManager implements Listener {
     public static void init(Main plugin) {
         MinecartSpeedManager.plugin = plugin;
 
-        // 🛡 Гасим существующие задачи перед созданием новых.
-        // Это защита от дублирования при повторном init (например, при
-        // /ui modules disable Core → enable Core, или если CoreModule
-        // упал на другой фиче и был перевключён).
+        // 🛡 Cancel existing tasks before creating new ones.
+        // This prevents duplication on repeated init (e.g. after
+        // /ui modules disable Core → enable Core, or if CoreModule
+        // failed on another feature and was toggled).
         cancelTasks();
 
         reloadConfig();
@@ -125,10 +125,10 @@ public class MinecartSpeedManager implements Listener {
             }
         }
 
-        // Прямое обновление скорости в каждом тике — БЕЗ двойного шедулинга.
-        // Раньше был inner runTask в конце тика, из-за чего вагонетка
-        // "буксовала" — физика успевала обработать тик, а скорость обновлялась
-        // только в конце, уже после того как вагонетка съезжала с рельсов.
+        // Direct speed update every tick — WITHOUT double scheduling.
+        // There used to be an inner runTask at the end of the tick, which made
+        // the minecart "spin its wheels" — physics processed the tick while
+        // speed only updated at the end, after the cart had left the rails.
         speedTask = new BukkitRunnable() {
             @Override
             public void run() {
@@ -178,10 +178,10 @@ public class MinecartSpeedManager implements Listener {
         };
         particleTask.runTaskTimer(plugin, 0L, 1L);
 
-        // Speed display task — показывает скорость в actionbar.
-        // Всегда использует дельту позиции ИГРОКА (не транспорта).
-        // Без mount/dismount детекции — позиция игрока движется вместе с вагонеткой,
-        // поэтому дельта = скорость вагонетки. Это исключает моргание датчика.
+        // Speed display task — shows speed in the actionbar.
+        // Always uses the PLAYER's position delta (not the vehicle).
+        // No mount/dismount detection — the player position moves with the minecart,
+        // so the delta = minecart speed. This eliminates sensor flicker.
         displayTask = new BukkitRunnable() {
             @Override
             public void run() {
@@ -204,7 +204,7 @@ public class MinecartSpeedManager implements Listener {
                     double blocksPerTick = currentLoc.distance(prevLoc);
                     String msg = "\u00a76\u26a1 \u00a7e" + String.format("%.3f", blocksPerTick) + " \u00a77\u0431\u043b\u043e\u043a/\u0442\u0438\u043a";
 
-                    // Если игрок в вагонетке на скорости переплавки — добавляем индикатор [⚡]
+                    // If the player is in a minecart at smelting speed — add a [⚡] indicator
                     if (player.getVehicle() instanceof Minecart && blocksPerTick >= hopperSmeltMinSpeed) {
                         msg += " \u00a78[\u00a7e\u26a1\u00a78]";
                     }
@@ -329,7 +329,7 @@ public class MinecartSpeedManager implements Listener {
                 }
             }
 
-            // Если в инвентаре нет места — дропаем результат наружу
+            // If the inventory has no space — drop the result outside
             if (!added) {
                 Location loc = hopper.getLocation();
                 hopper.getWorld().dropItemNaturally(loc, result);
@@ -368,21 +368,20 @@ public class MinecartSpeedManager implements Listener {
     }
 
     // =========================
-    // SPEED UPDATE — экспоненциальный разгон (все значения в блоках/тик)
+    // SPEED UPDATE — exponential acceleration (all values in blocks/tick)
     //
-    // 🛠 ЛОГИКА РАБОТЫ:
-    //   1. Если вагонетка на POWERED_RAIL → скорость растёт экспоненциально
+    // 🛠 HOW IT WORKS:
+    //   1. If the cart is on POWERED_RAIL → speed grows exponentially
     //      (currentSpeed × accelerationFactor).
-    //   2. Если НЕ на POWERED_RAIL → скорость НЕ сбрасывается, а сохраняется.
-    //      Это критически важно: на стыках рельсов вагонетка на 1 тик может
-    //      не определиться как "на рельсах", и раньше decelerationFactor
-    //      (0.995) съедал весь прирост (1.002 × 0.995 = 0.997 < 1 — скорость
-    //      ПАДАЛА, а не росла).
-    //   3. setMaxSpeed() поднимает лимит вагонетки.
-    //   4. Вместо полной перезаписи velocity (setVelocity) — аддитивный буст:
-    //      добавляем thrust к текущей скорости по направлению рельсов.
-    //      Это не ломает физику рельсов (повороты, подъёмы) и не сбивает
-    //      вагонетку с путей на высокой скорости.
+    //   2. If NOT on POWERED_RAIL → speed is NOT reset, it is preserved.
+    //      This is critical: at rail joints the cart may not register as "on rails"
+    //      for 1 tick, and previously decelerationFactor (0.995) ate the whole
+    //      gain (1.002 × 0.995 = 0.997 < 1 — speed DROPPED instead of growing).
+    //   3. setMaxSpeed() raises the cart's speed limit.
+    //   4. Instead of fully rewriting velocity (setVelocity) — an additive boost:
+    //      add thrust to the current speed along the rail direction.
+    //      This doesn't break rail physics (turns, climbs) and doesn't knock
+    //      the cart off the track at high speed.
     // =========================
     private static void updateCart(Minecart cart) {
         UUID uuid = cart.getUniqueId();
@@ -391,16 +390,16 @@ public class MinecartSpeedManager implements Listener {
         boolean onPoweredRail = isOnPoweredRail(cart);
 
         if (onPoweredRail) {
-            // Экспоненциальный разгон: ×N за тик на активных рельсах.
+            // Exponential acceleration: ×N per tick on active rails.
             currentSpeed = Math.min(currentSpeed * accelerationFactor, maxSpeedLimit);
         }
-        // else: скорость НЕ уменьшается вне рельсов.
-        // На высокой скорости isOnPoweredRail() может ложно возвращать false,
-        // т.к. вагонетка пролетает несколько блоков за тик — проверка одного
-        // блока в getLocation().getBlock() не успевает поймать энергорельс.
-        // Раньше decelerationFactor (0.997) съедал скорость при каждом
-        // таком ложном срабатывании, и вагонетка не могла разогнаться выше
-        // определённого порога — цикл "разгон → ложный off-rail → замедление".
+        // else: speed is NOT reduced off rails.
+        // At high speed isOnPoweredRail() may falsely return false,
+        // because the cart flies several blocks per tick — checking a single
+        // block in getLocation().getBlock() can't catch the powered rail.
+        // Previously decelerationFactor (0.997) ate speed on every such
+        // false positive, and the cart couldn't accelerate past a certain
+        // threshold — a "accelerate → false off-rail → decelerate" loop.
 
         cartSpeeds.put(uuid, currentSpeed);
 
@@ -411,77 +410,77 @@ public class MinecartSpeedManager implements Listener {
             ConsoleLogger.warn("[MinecartSpeed] setMaxSpeed failed: " + e.getMessage());
         }
 
-        // Применяем буст скорости:
-        // - на рельсах: разгон до целевой скорости
-        // - вне рельсов (если скорость > базовой): поддержание скорости,
-        //   компенсация ложных false от isOnPoweredRail на высокой скорости.
-        //   Если вагонетка реально сошла с рельсов — ванильное трение
-        //   замедлит её сильнее, чем буст +0.04/тик может компенсировать.
+        // Apply the speed boost:
+        // - on rails: accelerate toward the target speed
+        // - off rails (if speed > base): maintain speed,
+        //   compensating for false negatives from isOnPoweredRail at high speed.
+        //   If the cart truly left the rails — vanilla friction will slow it
+        //   down more than a +0.04/tick boost can compensate.
         if (onPoweredRail || currentSpeed > baseMaxSpeed) {
             applyVelocityBoost(cart, currentSpeed);
         }
     }
 
     // =========================
-    // APPLY VELOCITY BOOST — аддитивный буст вместо перезаписи velocity
+    // APPLY VELOCITY BOOST — additive boost instead of rewriting velocity
     // =========================
     /**
-     * Добавляет ускорение к текущей скорости вагонетки, а не перезаписывает её.
+     * Adds acceleration to the cart's current velocity instead of rewriting it.
      * <p>
-     * Раньше код делал cart.setVelocity(dir.multiply(currentSpeed)) — полная
-     * перезапись velocity каждый тик. Это ломало физику рельсов: вагонетка
-     * не чувствовала повороты, подъёмы и слетала с путей на высокой скорости.
+     * The old code did cart.setVelocity(dir.multiply(currentSpeed)) — a full
+     * velocity rewrite every tick. That broke rail physics: the cart didn't
+     * feel turns or climbs and flew off the track at high speed.
      * <p>
-     * Теперь мы только добавляем thrust в направлении движения, а всё
-     * остальное (гравитация, рельсы, повороты) обрабатывает Minecraft Physics.
+     * Now we only add thrust in the direction of motion, and Minecraft Physics
+     * handles everything else (gravity, rails, turns).
      */
     private static void applyVelocityBoost(Minecart cart, double targetSpeed) {
-        // Определяем направление движения по рельсам
+        // Determine the movement direction along the rails
         Vector dir = getRailMovementDirection(cart);
 
         Vector currentVel = cart.getVelocity();
-        // Проецируем текущую скорость на направление рельсов
+        // Project the current velocity onto the rail direction
         double dot = currentVel.dot(dir);
 
-        // Добавляем буст только если текущая скорость ВДОЛЬ РЕЛЬСОВ меньше целевой
+        // Only add the boost if the current speed ALONG THE RAILS is below target
         if (dot < targetSpeed) {
-            // thrust = насколько не хватает, но не более thrustPerTick за тик (чтобы не ломать физику)
+            // thrust = how much is missing, but no more than thrustPerTick per tick (to not break physics)
             double thrust = Math.min(targetSpeed - dot, thrustPerTick);
-            // Добавляем к velocity, а НЕ перезаписываем
+            // Add to velocity, NOT rewrite it
             currentVel.add(dir.multiply(thrust));
             cart.setVelocity(currentVel);
         }
     }
 
     // =========================
-    // GET RAIL MOVEMENT DIRECTION — определяет направление движения по рельсам
+    // GET RAIL MOVEMENT DIRECTION — determines the movement direction along rails
     // =========================
     /**
-     * Определяет направление рельсов под вагонеткой.
+     * Determines the rail direction under the cart.
      * <p>
-     * Пытается получить направление из:
-     * 1. Блока POWERED_RAIL (блок под вагонеткой)
-     * 2. Направления движения вагонетки (fallback)
-     * 3. Направления facing вагонетки (последний fallback)
+     * Tries to get the direction from:
+     * 1. The POWERED_RAIL block (the block under the cart)
+     * 2. The cart's movement direction (fallback)
+     * 3. The cart's facing direction (last fallback)
      * <p>
-     * Всегда возвращает горизонтальное направление (Y = 0).
+     * Always returns a horizontal direction (Y = 0).
      */
     private static Vector getRailMovementDirection(Minecart cart) {
-        // Направление из текущей скорости вагонетки (предпочтительно — отражает реальное движение)
+        // Direction from the cart's current velocity (preferred — reflects real motion)
         Vector vel = cart.getVelocity().clone();
         vel.setY(0);
         if (vel.lengthSquared() > 0.0001) {
             return vel.normalize();
         }
 
-        // Fallback: facing вагонетки
+        // Fallback: the cart's facing
         Vector facing = cart.getFacing().getDirection();
         facing.setY(0);
         if (facing.lengthSquared() > 0.01) {
             return facing.normalize();
         }
 
-        // Последний fallback: север (negative Z)
+        // Last fallback: north (negative Z)
         return new Vector(0, 0, -1);
     }
 
@@ -489,7 +488,7 @@ public class MinecartSpeedManager implements Listener {
         Block block = cart.getLocation().getBlock();
         Block below = block.getRelative(BlockFace.DOWN);
 
-        // Проверяем, что блок — POWERED_RAIL И он активирован редстоун-сигналом
+        // Check that the block is POWERED_RAIL AND powered by a redstone signal
         if (block.getType() == Material.POWERED_RAIL) {
             return block.isBlockPowered();
         }
@@ -508,12 +507,12 @@ public class MinecartSpeedManager implements Listener {
         if (!(event.getVehicle() instanceof Minecart cart)) return;
 
         UUID cartId = cart.getUniqueId();
-        double speed = cartSpeeds.getOrDefault(cartId, baseMaxSpeed); // блоки/тик
+        double speed = cartSpeeds.getOrDefault(cartId, baseMaxSpeed); // blocks/tick
 
         // Only deal damage + knockback when going fast enough
         if (speed < collisionMinSpeed) return;
 
-        // Convert blocks/tick → blocks/sec for damage (1 блок/тик = 20 урона)
+        // Convert blocks/tick → blocks/sec for damage (1 block/tick = 20 damage)
         double damage = speed * 20.0;
 
         Entity target = event.getEntity();
@@ -603,7 +602,7 @@ public class MinecartSpeedManager implements Listener {
     }
 
     // =========================
-    // CONFIG — значения в конфиге хранятся в блоках/сек, конвертируются ÷20
+    // CONFIG — values in config are stored in blocks/sec, converted ÷20
     // =========================
     public static void reloadConfig() {
         var cfg = Main.getInstance().getConfig().getConfigurationSection("features.minecart_speed");
@@ -622,33 +621,33 @@ public class MinecartSpeedManager implements Listener {
             hopperSmeltMinSpeed = cfg.getDouble("hopper_smelt.min_speed", 100.0) / 20.0;
         } else {
             enabled = true;
-            baseMaxSpeed = 8.0 / 20.0;          // 0.4 блок/тик
-            maxSpeedLimit = 999999999.0 / 20.0;  // ~50M блок/тик
+            baseMaxSpeed = 8.0 / 20.0;          // 0.4 blocks/tick
+            maxSpeedLimit = 999999999.0 / 20.0;  // ~50M blocks/tick
             accelerationFactor = 1.015;
             decelerationFactor = 0.997;
             thrustPerTick = 0.04;
-            collisionMinSpeed = 15.0 / 20.0;      // 0.75 блок/тик
+            collisionMinSpeed = 15.0 / 20.0;      // 0.75 blocks/tick
             intervalTicks = 1;
             hopperSmeltEnabled = true;
-            hopperSmeltMinSpeed = 100.0 / 20.0;   // 5.0 блок/тик
+            hopperSmeltMinSpeed = 100.0 / 20.0;   // 5.0 blocks/tick
         }
         if (intervalTicks < 1) intervalTicks = 1;
         if (accelerationFactor < 1.0) accelerationFactor = 1.0;
         if (decelerationFactor > 1.0) decelerationFactor = 1.0;
         if (decelerationFactor < 0.0) decelerationFactor = 0.0;
-        if (baseMaxSpeed < 0.05) baseMaxSpeed = 0.05;  // min 1 блок/сек
+        if (baseMaxSpeed < 0.05) baseMaxSpeed = 0.05;  // min 1 block/sec
         if (collisionMinSpeed < 0.0) collisionMinSpeed = 0.0;
         if (thrustPerTick < 0.0) thrustPerTick = 0.0;
-        if (hopperSmeltMinSpeed < 0.0) hopperSmeltMinSpeed = 0.0;            // ⚠ coal_heat section полностью удалён: механика угля→алмаз убрана.
-        // Удалите раздел coal_heat из config.yml вручную.
+        if (hopperSmeltMinSpeed < 0.0) hopperSmeltMinSpeed = 0.0;            // ⚠ coal_heat section fully removed: the coal→diamond mechanic is gone.
+        // Remove the coal_heat section from config.yml manually.
     }
 
     // =========================
     // SHUTDOWN
     // =========================
     /**
-     * Отменяет и обнуляет все три задачи (speedTask, particleTask, displayTask).
-     * Используется как в shutdown(), так и в init() для предотвращения дублирования.
+     * Cancels and nulls all three tasks (speedTask, particleTask, displayTask).
+     * Used both in shutdown() and init() to prevent duplication.
      */
     private static void cancelTasks() {
         if (speedTask != null) {
@@ -683,12 +682,12 @@ public class MinecartSpeedManager implements Listener {
     // =========================
     // PUBLIC ACCESSORS (for /ui togglespeed command)
     // =========================
-    /** @return карта скоростей (блоки/тик). */
+    /** @return the speed map (blocks/tick). */
     public static Map<UUID, Double> getCartSpeeds() {
         return cartSpeeds;
     }
 
-    /** @return базовая макс. скорость (блоки/тик). */
+    /** @return the base max speed (blocks/tick). */
     public static double getBaseMaxSpeed() {
         return baseMaxSpeed;
     }

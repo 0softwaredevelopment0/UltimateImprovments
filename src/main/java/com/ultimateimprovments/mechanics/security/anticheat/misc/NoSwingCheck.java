@@ -12,8 +12,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * NoSwing / NoAnimation — атаки/ломание без анимации взмаха руки.
- * Детекция: игрок ломает блок или атакует entity, но не отправил swing packet.
+ * NoSwing / NoAnimation — attacks/breaking without the arm swing animation.
+ * Detection: the player breaks a block or attacks an entity but sent no swing packet.
  */
 public class NoSwingCheck extends AbstractCheck {
 

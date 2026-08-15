@@ -15,19 +15,19 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Flight — полёт без элитры/эффектов.
+ * Flight — flying without an elytra/effects.
  * <p>
- * Детектирует три типа полёта:
- * 1. Hover — игрок в воздухе, Y-скорость ≈ 0 (зависание)
- * 2. Horizontal flight — горизонтальное движение в воздухе быстрее макс. возможного
- * 3. Vertical ascent — подъём в воздухе без прыжка (yDelta > 0.42)
+ * Detects three types of flight:
+ * 1. Hover — the player is airborne with Y velocity ≈ 0 (hovering)
+ * 2. Horizontal flight — horizontal air movement faster than the max possible
+ * 3. Vertical ascent — climbing in the air without a jump (yDelta > 0.42)
  * <p>
- * Ground detection использует ДВОЙНУЮ проверку:
+ * Ground detection uses a DOUBLE check:
  * - server-side {@code player.isOnGround()}
- * - block-based проверка {@link #hasBlockBelow} — игрок считается на земле
- * ТОЛЬКО если под ним есть твёрдый блок в пределах 1.5 блоков.
- * Если {@code player.isOnGround()} возвращает true, но блока под игроком нет —
- * это спуф onGround, считаем что игрок в воздухе.
+ * - block-based check {@link #hasBlockBelow} — the player counts as on the ground
+ * ONLY if there is a solid block below within 1.5 blocks.
+ * If {@code player.isOnGround()} returns true but there is no block below —
+ * that's an onGround spoof; the player counts as airborne.
  */
 public class FlightCheck extends AbstractCheck {
 
@@ -55,16 +55,15 @@ public class FlightCheck extends AbstractCheck {
     public void onReload() { loadConfig(); }
 
     /**
-     * Проверяет, есть ли твёрдый блок под/на уровне ног игрока (до blocksDown блоков вниз).
-     * Использует целочисленные Y-координаты блоков, чтобы корректно обрабатывать
-     * полублоки, ковры, плиты и т.д.
-     * Если блока нет — игрок не может быть "на земле" (спуф onGround).
+     * Checks whether there is a solid block below/at the player's feet level (up to blocksDown blocks down).
+     * Uses integer block Y coordinates to correctly handle slabs, carpets, plates, etc.
+     * If there is no block — the player cannot be "on the ground" (onGround spoof).
      */
     private boolean hasBlockBelow(Location loc, int blocksDown) {
-        // Проверяем блок на уровне ног (feet block) — хендлит полублоки, ковры
+        // Check the block at feet level — handles slabs, carpets
         Block feetBlock = loc.getBlock();
         if (isSolidOrSupport(feetBlock)) return true;
-        // Проверяем blocksDown блоков вниз
+        // Check blocksDown blocks below
         for (int dy = 1; dy <= blocksDown; dy++) {
             Block below = loc.getWorld().getBlockAt(loc.getBlockX(), loc.getBlockY() - dy, loc.getBlockZ());
             if (isSolidOrSupport(below)) return true;
@@ -73,7 +72,7 @@ public class FlightCheck extends AbstractCheck {
     }
 
     /**
-     * Проверяет, может ли блок удерживать игрока (твёрдый, жидкость, лестница, лиана, паутина).
+     * Checks whether a block can support the player (solid, liquid, ladder, vine, cobweb).
      */
     private boolean isSolidOrSupport(Block b) {
         return b.getType().isSolid()
@@ -85,16 +84,16 @@ public class FlightCheck extends AbstractCheck {
     }
 
     /**
-     * Определяет, действительно ли игрок на земле.
-     * Комбинирует server-side onGround и block-based проверку.
-     * Если сервер говорит onGround=true, но под игроком нет блоков — это спуф.
-     * Использует {@link Player#getLocation()} для block-based проверки,
-     * потому что server-side позиция может отличаться от e.getTo().
+     * Determines whether the player is really on the ground.
+     * Combines the server-side onGround flag and a block-based check.
+     * If the server says onGround=true but there are no blocks below — that's a spoof.
+     * Uses {@link Player#getLocation()} for the block-based check,
+     * because the server-side position may differ from e.getTo().
      */
     private boolean isActuallyOnGround(Player player) {
         boolean serverOnGround = player.isOnGround();
-        // Проверяем блоки под СЕРВЕРНОЙ позицией игрока (getLocation),
-        // а не e.getTo() — это точнее отражает где игрок реально находится
+        // Check blocks below the SERVER-side player position (getLocation),
+        // not e.getTo() — this reflects where the player actually is more accurately
         boolean blockBelow = hasBlockBelow(player.getLocation(), 3);
         return serverOnGround && blockBelow;
     }
@@ -104,6 +103,8 @@ public class FlightCheck extends AbstractCheck {
         if (e.getTo() == null) return;
         Player player = e.getPlayer();
         if (!isEnabled() || isExempted(player)) return;
+        // Fully off when the anti-cheat is disabled globally (anticheat.enabled: false)
+        if (!AntiCheatManager.getInstance().isGlobalEnabled()) return;
 
         // ── Double verification: server isOnGround + block check ──
         boolean actuallyOnGround = isActuallyOnGround(player);
@@ -113,24 +114,25 @@ public class FlightCheck extends AbstractCheck {
         // DEBUG (1% chance, or always if ground spoof detected)
         boolean debug = Math.random() < 0.01;
         if (debug || groundSpoof) {
-            ConsoleLogger.info("[FlightCheck-DEBUG] " + player.getName()
+            ConsoleLogger.raw("<white>[FlightCheck-DEBUG] " + player.getName()
                     + " | to=(" + String.format("%.2f,%.2f,%.2f", e.getTo().getX(), e.getTo().getY(), e.getTo().getZ()) + ")"
                     + " | serverOG=" + serverOnGround
                     + " | blockOG=" + hasBlockBelow(player.getLocation(), 3)
-                    + (groundSpoof ? " | §cGROUND SPOOF!" : "")
-                    + " | airTicks=" + airTickCounters.getOrDefault(player.getUniqueId(), 0));
+                    + (groundSpoof ? " | <red>GROUND SPOOF!</red>" : "")
+                    + " | airTicks=" + airTickCounters.getOrDefault(player.getUniqueId(), 0)
+                    + "</white>");
         }
 
         PlayerData data = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
 
-        // Если сервер говорит "на земле" — верим ТОЛЬКО если есть блок под игроком
+        // If the server says "on the ground" — believe it ONLY if there is a block below
         if (actuallyOnGround) {
             airTickCounters.put(player.getUniqueId(), 0);
             data.updatePosition(e.getTo(), true);
             return;
         }
 
-        // Игрок в воздухе (или спуфит onGround)
+        // The player is airborne (or spoofing onGround)
         int airTickCount = airTickCounters.merge(player.getUniqueId(), 1, Integer::sum);
         double yDelta = e.getTo().getY() - e.getFrom().getY();
 
@@ -174,8 +176,8 @@ public class FlightCheck extends AbstractCheck {
         }
 
         // ── Check 4: Long-term air (7.5+ seconds = definitely abnormal) ──
-        // Порог 150 тиков (7.5 секунд) — достаточно, чтобы не флагать обычные
-        // падения с высоты (Y=320 → Y=0 = ~6 секунд), но ловить реальный полёт.
+        // Threshold of 150 ticks (7.5 seconds) — enough not to flag normal
+        // falls from height (Y=320 → Y=0 = ~6 seconds), but to catch real flight.
         if (airTickCount > 150) {
             double vl = Math.min(10.0, airTickCount / 30.0); // 0.33 VL per second
             CheckResult result = flag(player, vl,

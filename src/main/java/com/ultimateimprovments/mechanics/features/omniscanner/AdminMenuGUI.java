@@ -31,19 +31,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 🎛 /ui menu — админское GUI с информацией о плагине, статистикой сервера и предметами.
+ * 🎛 /ui menu — admin GUI with plugin info, server stats and items.
  * <p>
- * Вкладки:
- * - ✦ Информация — версия, авторы, модули, аптайм
- * - 📊 Статистика — TPS, MSPT, RAM, Ping, Онлайн
- * - 🎒 Предметы — все кастомные предметы плагина (можно взять в инвентарь)
+ * Tabs:
+ * - ✦ Info — version, authors, modules, uptime
+ * - 📊 Stats — TPS, MSPT, RAM, Ping, Online
+ * - 🎒 Items — all custom plugin items (can be taken into inventory)
  */
 public class AdminMenuGUI implements Listener {
 
     private static final Map<UUID, MenuState> openMenus = new HashMap<>();
     private static boolean registered = false;
 
-    // Layout: 6 строк (54 слота)
+    // Layout: 6 rows (54 slots)
     private static final int SLOT_TAB_INFO = 0;
     private static final int SLOT_TAB_STATS = 1;
     private static final int SLOT_TAB_ITEMS = 2;
@@ -76,22 +76,22 @@ public class AdminMenuGUI implements Listener {
         Inventory inv = Bukkit.createInventory(null, 54,
                 MessageUtil.legacy("<!italic><gradient:#00AAFF:#FF55FF>🎛 UltimateImprovments Menu</gradient>"));
 
-        // Верхняя панель
+        // Top panel
         for (int i = 0; i < 9; i++) {
             inv.setItem(i, createDivider());
         }
 
-        // Вкладки
+        // Tabs
         inv.setItem(SLOT_TAB_INFO, createTabItem(Material.BOOK, "✦ Информация", state.tab.equals("INFO")));
         inv.setItem(SLOT_TAB_STATS, createTabItem(Material.CLOCK, "📊 Статистика", state.tab.equals("STATS")));
         inv.setItem(SLOT_TAB_ITEMS, createTabItem(Material.CHEST, "🎒 Предметы", state.tab.equals("ITEMS")));
 
-        // Разделитель между вкладками и контентом
+        // Separator between tabs and content
         for (int i = 9; i < 18; i++) {
             inv.setItem(i, createDivider());
         }
 
-        // Контент вкладки
+        // Tab content
         switch (state.tab) {
             case "STATS":
                 buildStatsContent(inv, player, state);
@@ -103,7 +103,7 @@ public class AdminMenuGUI implements Listener {
                 buildInfoContent(inv, player, state);
         }
 
-        // Нижняя панель (навигация)
+        // Bottom panel (navigation)
         for (int i = 45; i < 54; i++) {
             inv.setItem(i, createDivider());
         }
@@ -217,7 +217,7 @@ public class AdminMenuGUI implements Listener {
                         "<gray>Мин (1м): " + StatsTracker.tpsColor(st.getMinTps(60)) + DF2.format(st.getMinTps(60)) + "</" + StatsTracker.tpsColor(st.getMinTps(60)).substring(1) + "</gray>"
                 )));
 
-        // MSPT (как процент от тика 50ms)
+        // MSPT (as a percentage of the 50ms tick)
         double mspt = st.getCurrentMspt();
         double msptPct = (mspt / 50.0) * 100.0;
         inv.setItem(20, createInfoItem(Material.COMPARATOR,
@@ -358,7 +358,7 @@ public class AdminMenuGUI implements Listener {
                 "<white>Concrete Bucket *</white>",
                 "<gray>Place instant concrete.</gray>"), Keys.CONCRETE_BUCKET));
 
-        // 13. Portable Ender Chest (без PDC — работает по типу блока ENDER_CHEST)
+        // 13. Portable Ender Chest (no PDC — works like the ENDER_CHEST block)
         ItemStack echest = new ItemStack(Material.ENDER_CHEST);
         ItemMeta echestMeta = echest.getItemMeta();
         if (echestMeta != null) {
@@ -392,19 +392,19 @@ public class AdminMenuGUI implements Listener {
                 "<light_purple>Antimatter *</light_purple>",
                 "<gray>Dangerous substance.</gray>"), Keys.ANTIMATTER));
 
-        // 17. Particle Ring (GLASS — с PDC, чтобы детектился как блок ускорителя)
+        // 17. Particle Ring (GLASS — with PDC so it's detected as an accelerator block)
         CUSTOM_ITEMS.add(ParticleAcceleratorManager.createParticleBlockItem(Material.GLASS));
 
-        // 18. Particle Engine (TUFF_BRICKS — с PDC)
+        // 18. Particle Engine (TUFF_BRICKS — with PDC)
         CUSTOM_ITEMS.add(ParticleAcceleratorManager.createParticleBlockItem(Material.TUFF_BRICKS));
 
-        // 19. Particle Speed Sensor (POLISHED_DIORITE — с PDC)
+        // 19. Particle Speed Sensor (POLISHED_DIORITE — with PDC)
         CUSTOM_ITEMS.add(ParticleAcceleratorManager.createParticleBlockItem(Material.POLISHED_DIORITE));
 
-        // 20. Particle Injector (REINFORCED_DEEPSLATE — с PDC)
+        // 20. Particle Injector (REINFORCED_DEEPSLATE — with PDC)
         CUSTOM_ITEMS.add(ParticleAcceleratorManager.createParticleBlockItem(Material.REINFORCED_DEEPSLATE));
 
-        // 21. Netherite Upgraded Sword (пример улучшенного незеритового)
+        // 21. Netherite Upgraded Sword (example of an upgraded netherite item)
         ItemStack netheriteSword = new ItemStack(Material.NETHERITE_SWORD);
         ItemMeta nsMeta = netheriteSword.getItemMeta();
         if (nsMeta != null) {
@@ -457,7 +457,7 @@ public class AdminMenuGUI implements Listener {
         return item;
     }
 
-    /** Помечает предмет PDC ключом PersistentDataType.BYTE (1). */
+    /** Marks the item with a PDC key of type PersistentDataType.BYTE (1). */
     private static ItemStack tagPdc(ItemStack item, NamespacedKey key) {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -573,7 +573,7 @@ public class AdminMenuGUI implements Listener {
     // ========================================================================
 
     // ========================================================================
-    // 🛡 DRAG HANDLER — не даём перетаскивать предметы в GUI
+    // 🛡 DRAG HANDLER — prevents dragging items into the GUI
     // ========================================================================
 
     @EventHandler
@@ -593,7 +593,7 @@ public class AdminMenuGUI implements Listener {
     }
 
     // ========================================================================
-    // 🛡 CLICK HANDLER — блокируем все клики, чистим курсор
+    // 🛡 CLICK HANDLER — blocks all clicks, clears the cursor
     // ========================================================================
 
     @EventHandler
@@ -603,34 +603,34 @@ public class AdminMenuGUI implements Listener {
         MenuState state = openMenus.get(uuid);
         if (state == null) return;
 
-        // 🛡 Блокируем ВСЕ клики + чистим курсор + форсируем синхронизацию
+        // 🛡 Block ALL clicks + clear cursor + force synchronization
         e.setCancelled(true);
         player.setItemOnCursor(null);
         player.updateInventory();
 
-        // Обрабатываем только клики в верхнем инвентаре
+        // Only process clicks in the top inventory
         if (e.getClickedInventory() != e.getView().getTopInventory()) return;
 
         int slot = e.getSlot();
         ItemStack clicked = e.getCurrentItem();
 
-        // PDC-защита: если предмет защищён — блокируем взятие,
-        // но разрешаем прописанные ниже действия (табы, навигация)
+        // PDC protection: if the item is protected — block taking it,
+        // but allow the actions defined below (tabs, navigation)
         boolean isProtectedItem = clicked != null && clicked.hasItemMeta()
                 && clicked.getItemMeta().getPersistentDataContainer()
                         .has(Keys.GUI_PROTECTED, PersistentDataType.BYTE);
 
-        // Вкладки — только ЛКМ
+        // Tabs — left click only
         if (slot == SLOT_TAB_INFO && e.isLeftClick()) { state.tab = "INFO"; state.page = 0; buildGUI(player, state); return; }
         if (slot == SLOT_TAB_STATS && e.isLeftClick()) { state.tab = "STATS"; state.page = 0; buildGUI(player, state); return; }
         if (slot == SLOT_TAB_ITEMS && e.isLeftClick()) { state.tab = "ITEMS"; state.page = 0; buildGUI(player, state); return; }
 
-        // Навигация (только для вкладки предметов)
+        // Navigation (only for the items tab)
         if (state.tab.equals("ITEMS")) {
             int itemsPerPage = CONTENT_END - CONTENT_START + 1;
             int totalPages = Math.max(1, (int) Math.ceil((double) CUSTOM_ITEMS.size() / itemsPerPage));
 
-            // Навигация — только ЛКМ
+            // Navigation — left click only
             if (slot == SLOT_PREV_PAGE && e.isLeftClick() && state.page > 0) {
                 state.page--;
                 buildGUI(player, state);
@@ -642,7 +642,7 @@ public class AdminMenuGUI implements Listener {
                 return;
             }
 
-            // Клик по предмету — только ЛКМ и только НЕ защищённый, дать игроку
+            // Item click — left click only and only if NOT protected, give to the player
             if (slot >= CONTENT_START && slot <= CONTENT_END && e.isLeftClick() && !isProtectedItem) {
                 if (clicked != null && clicked.getType() != Material.BLACK_STAINED_GLASS_PANE) {
                     HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(clicked.clone());
@@ -659,7 +659,7 @@ public class AdminMenuGUI implements Listener {
             }
         }
 
-        // Закрыть — только ЛКМ
+        // Close — left click only
         if (slot == SLOT_CLOSE && e.isLeftClick()) {
             player.closeInventory();
             openMenus.remove(uuid);

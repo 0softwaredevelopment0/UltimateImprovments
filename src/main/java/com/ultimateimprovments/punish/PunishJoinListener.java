@@ -13,20 +13,20 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 🛡 PunishJoinListener — проверяет баны/муты при входе игрока.
+ * 🛡 PunishJoinListener — checks bans/mutes when a player joins.
  * <p>
- * - На PlayerLoginEvent проверяет активные баны (UUID, IP, HW)
- * - На PlayerJoinEvent проверяет активные муты (сохраняет в память)
+ * - On PlayerLoginEvent checks active bans (UUID, IP, HW)
+ * - On PlayerJoinEvent checks active mutes (stores in memory)
  * <p>
- * Муты хранятся в памяти (Map) для быстрой проверки из чат-листенера.
+ * Mutes are kept in memory (Map) for fast checks from the chat listener.
  */
 public class PunishJoinListener implements Listener {
 
-    /** Карта замученных игроков: UUID -> запись мута */
+    /** Map of muted players: UUID -> mute record */
     private static final Map<UUID, PunishmentManager.PunishmentRecord> mutedPlayers = new HashMap<>();
 
     // =========================
-    // LOGIN — проверка бана
+    // LOGIN — ban check
     // =========================
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -36,14 +36,14 @@ public class PunishJoinListener implements Listener {
         String ip = e.getAddress() != null ? e.getAddress().getHostAddress() : "";
         String hwId = PunishmentManager.computeHwId(ip, player.getName());
 
-        // Проверяем бан
+        // Check the ban
         PunishmentManager.PunishmentRecord ban = PunishmentManager.getActiveBan(uuid, ip, hwId);
         if (ban != null) {
             e.disallow(PlayerLoginEvent.Result.KICK_BANNED, buildBanMessage(ban));
             return;
         }
 
-        // Проверяем, не истёк ли мут (чтобы снять при входе)
+        // Check whether the mute expired (to remove it on join)
         PunishmentManager.PunishmentRecord mute = PunishmentManager.getActiveMute(uuid, ip, hwId);
         if (mute != null) {
             if (mute.isExpired()) {
@@ -58,7 +58,7 @@ public class PunishJoinListener implements Listener {
     }
 
     // =========================
-    // JOIN — обновление статуса мута
+    // JOIN — update mute status
     // =========================
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -86,13 +86,13 @@ public class PunishJoinListener implements Listener {
     // =========================
 
     /**
-     * Проверяет, замучен ли игрок.
+     * Checks whether the player is muted.
      */
     public static boolean isMuted(Player player) {
         PunishmentManager.PunishmentRecord record = mutedPlayers.get(player.getUniqueId());
         if (record == null) return false;
 
-        // Проверяем, не истёк ли мут
+        // Check whether the mute expired
         if (record.isExpired()) {
             PunishmentManager.unpunishById(record.id);
             mutedPlayers.remove(player.getUniqueId());
@@ -102,21 +102,21 @@ public class PunishJoinListener implements Listener {
     }
 
     /**
-     * Возвращает запись мута игрока.
+     * Returns the player's mute record.
      */
     public static PunishmentManager.PunishmentRecord getMuteRecord(Player player) {
         return mutedPlayers.get(player.getUniqueId());
     }
 
     /**
-     * Добавляет игрока в кеш мута (вызывается из PunishSubcommand.handleMute()).
+     * Adds the player to the mute cache (called from PunishSubcommand.handleMute()).
      */
     public static void addMuteCache(Player player, PunishmentManager.PunishmentRecord record) {
         mutedPlayers.put(player.getUniqueId(), record);
     }
 
     /**
-     * Снимает мут с игрока (очищает кеш).
+     * Removes the mute from the player (clears the cache).
      */
     public static void removeMuteCache(Player player) {
         mutedPlayers.remove(player.getUniqueId());

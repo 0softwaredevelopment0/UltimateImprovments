@@ -40,7 +40,7 @@ public class BlockPlaceListener implements Listener {
         ItemStack item = e.getItemInHand();
 
         // =========================
-        // ⚡ ГЕНЕРАТОР (BLAST_FURNACE с PDC)
+        // ⚡ GENERATOR (BLAST_FURNACE with PDC)
         // =========================
         if (type == Materials.BLAST_FURNACE
                 && item != null && item.hasItemMeta()
@@ -51,26 +51,26 @@ public class BlockPlaceListener implements Listener {
         }
 
         // =========================
-        // 🔋 BATTERY MULTIBLOCK (hot expand) — НЕ пропускаем через CableNetwork.addNode()
-        // ensureNode уже вызывает autoConnectNode внутри себя
+        // 🔋 BATTERY MULTIBLOCK (hot expand) — do NOT go through CableNetwork.addNode()
+        // ensureNode already calls autoConnectNode internally
         // =========================
         if (type == Materials.WAXED_COPPER_GRATE) {
             BatteryManager.onBlockPlaced(loc);
-            // Если BatteryManager не добавил узел (изолированный блок) — создаём сами
+            // If BatteryManager did not add a node (isolated block) — create it ourselves
             if (!CableNetwork.exists(loc)) {
                 CableNetwork.ensureNode(loc, NodeType.BATTERY);
-                // Создаём Marker с типом "battery", а не "cable"
+                // Create a Marker of type "battery", not "cable"
                 StructureMarker.place(loc, "battery", UUID.randomUUID());
             }
-            return; // Не идём в CableNetwork.addNode — он создал бы Marker "cable"
+            return; // Don't go to CableNetwork.addNode — it would create a "cable" Marker
         }
 
         // =========================
-        // 💡 LIGHT MULTIBLOCK (hot expand) — WAXED_COPPER_BULB, а не REDSTONE_LAMP!
+        // 💡 LIGHT MULTIBLOCK (hot expand) — WAXED_COPPER_BULB, not REDSTONE_LAMP!
         // =========================
         if (type == Materials.WAXED_COPPER_BULB) {
             LightManager.onBlockPlaced(loc);
-            return; // Light не является кабелем
+            return; // Light is not a cable
         }
 
         // =========================

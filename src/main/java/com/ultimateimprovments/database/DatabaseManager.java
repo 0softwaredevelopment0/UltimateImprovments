@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-// SQLClientInfoException — подкласс SQLException, нужен для throws в delegate-методах обёртки
+// SQLClientInfoException — SQLException subclass, needed for throws in the wrapper's delegate methods
 import java.sql.SQLClientInfoException;
 
 public class DatabaseManager {
@@ -32,8 +32,8 @@ public class DatabaseManager {
             dbFile = new File(dataFolder, "database.db");
 
             // ═══════════════════════════════════════════════
-            // MIGRATION: если плагин переименован (MC-Plugin → UltimateImprovments)
-            // и старого DB нет, но есть в папке MC-Plugin — копируем
+            // MIGRATION: if the plugin was renamed (MC-Plugin → UltimateImprovments)
+            // and there is no new DB, but one exists in the MC-Plugin folder — copy it
             // ═══════════════════════════════════════════════
             if (!dbFile.exists()) {
                 File oldDbFile = new File(
@@ -106,8 +106,8 @@ public class DatabaseManager {
             Main.getInstance().getLogger().log(java.util.logging.Level.WARNING, "[Database] getConnection error", e);
         }
 
-        // Возвращаем обёртку с no-op close(), чтобы try-with-resources не закрывал
-        // единственный общий connection, используемый всеми классами одновременно.
+        // Return a wrapper with no-op close() so try-with-resources does not close
+        // the single shared connection used by all classes at once.
         return connection == null ? null : new ConnectionWrapper(connection);
     }
 
@@ -128,13 +128,13 @@ public class DatabaseManager {
     // =========================
 
     /**
-     * Обёртка над {@link Connection}, которая делегирует всё, кроме {@link #close()}.
+     * A wrapper over {@link Connection} that delegates everything except {@link #close()}.
      * <p>
-     * Нужна чтобы {@code try-with-resources} (используемый в 130+ местах)
-     * не закрывал единственный общий connection, что вызывало ошибку
-     * {@code "stmt pointer is closed"} при конкурентном доступе.
+     * Needed so {@code try-with-resources} (used in 130+ places)
+     * does not close the single shared connection, which caused the error
+     * {@code "stmt pointer is closed"} under concurrent access.
      * <p>
-     * Настоящий connection закрывается только через {@link DatabaseManager#close()}.
+     * The real connection is closed only via {@link DatabaseManager#close()}.
      */
     private static class ConnectionWrapper implements Connection {
 
@@ -145,10 +145,10 @@ public class DatabaseManager {
         }
 
         @Override public void close() {
-            // NO-OP — не закрываем общий connection
+            // NO-OP — do not close the shared connection
         }
 
-        // ── Делегирование ──
+        // ── Delegation ──
 
         @Override public Statement createStatement() throws SQLException { return delegate.createStatement(); }
         @Override public PreparedStatement prepareStatement(String sql) throws SQLException { return delegate.prepareStatement(sql); }

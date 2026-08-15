@@ -9,8 +9,8 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 /**
- * AutoClicker — автоматический кликер.
- * Детекция: CPS выше лимита, аномально ровные интервалы между кликами.
+ * AutoClicker — automatic clicker.
+ * Detection: CPS above the limit, abnormally even intervals between clicks.
  */
 public class AutoClickerCheck extends AbstractCheck {
 

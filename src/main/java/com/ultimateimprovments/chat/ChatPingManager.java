@@ -18,20 +18,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 🔔 ChatPingManager — система пингов в чате.
+ * 🔔 ChatPingManager — chat ping system.
  * <p>
- * Позволяет пинговать игроков через специальные метки в сообщении:
+ * Allows pinging players via special tags in the message:
  * <ul>
- *   <li>{@code @everyone} — все игроки (кроме отправителя)</li>
- *   <li>{@code @<ник>} — конкретный игрок (по нику)</li>
- *   <li>{@code @non-op} — все игроки без OP</li>
- *   <li>{@code @is-admin} — все с правом ui.admin или ui.*</li>
- *   <li>{@code @is-non-admin} — все без права ui.admin/ui.*</li>
+ *   <li>{@code @everyone} — all players (except the sender)</li>
+ *   <li>{@code @<nick>} — a specific player (by nick)</li>
+ *   <li>{@code @non-op} — all players without OP</li>
+ *   <li>{@code @is-admin} — all with the ui.admin or ui.* permission</li>
+ *   <li>{@code @is-non-admin} — all without the ui.admin/ui.* permission</li>
  * </ul>
  * <p>
- * Пинги обрабатываются в сообщении после разрешения плейсхолдеров:
- * метка заменяется на ник(и) игрока(ов) с подчёркиванием и цветом,
- * каждому пропингуемому игроку проигрывается звук.
+ * Pings are processed in the message after placeholder resolution:
+ * the tag is replaced with the player nick(s) underlined and colored,
+ * and a sound is played for every pinged player.
  */
 public class ChatPingManager {
 
@@ -43,8 +43,8 @@ public class ChatPingManager {
     private static float pingSoundVolume;
     private static float pingSoundPitch;
 
-    // Паттерн для поиска @меток в сообщении
-    // Ищет @everyone, @non-op, @is-admin, @is-non-admin, @<ник>
+    // Pattern for finding @tags in the message
+    // Looks for @everyone, @non-op, @is-admin, @is-non-admin, @<nick>
     private static final Pattern PING_PATTERN = Pattern.compile(
             "@(everyone|non-op|is-admin|is-non-admin|[\\w]+)"
     );
@@ -52,7 +52,7 @@ public class ChatPingManager {
     private ChatPingManager() {}
 
     /**
-     * Загружает настройки из конфига.
+     * Loads the settings from the config.
      */
     public static void reloadConfig() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -65,14 +65,14 @@ public class ChatPingManager {
     }
 
     /**
-     * Обрабатывает пинги в сообщении.
+     * Processes pings in the message.
      * <p>
-     * Вызывается из {@link ChatManager#onPlayerChat(org.bukkit.event.player.AsyncPlayerChatEvent)}
-     * ПОСЛЕ разрешения плейсхолдеров, но ДО отправки сообщения.
+     * Called from {@link ChatManager#onPlayerChat(org.bukkit.event.player.AsyncPlayerChatEvent)}
+     * AFTER placeholder resolution, but BEFORE the message is sent.
      *
-     * @param message  текущее текстовое сообщение (с уже разрешёнными плейсхолдерами)
-     * @param sender   игрок, отправивший сообщение
-     * @return результат обработки (модифицированное сообщение + список пропингованных)
+     * @param message  the current text message (with placeholders already resolved)
+     * @param sender   the player who sent the message
+     * @return the processing result (modified message + list of pinged players)
      */
     public static PingResult processPings(String message, Player sender) {
         if (!enabled || message == null || message.isEmpty()) {
@@ -91,13 +91,13 @@ public class ChatPingManager {
             List<Player> targets = resolveTargets(keyword, sender);
 
             if (targets.isEmpty()) {
-                // Ник не найден или метка не дала результатов — оставляем как есть
+                // Nick not found or the tag yielded no results — leave as is
                 sb.append(m.group());
             } else {
-                // Строим стилизованный текст для каждого цели
+                // Build the styled text for each target
                 List<String> styledNames = new ArrayList<>();
                 for (Player target : targets) {
-                    // Заменяем %s на ник игрока в pingStyle
+                    // Replace %s with the player nick in pingStyle
                     String styled = pingStyle.replace("%s", target.getName());
                     styledNames.add(styled);
                     if (!target.equals(sender)) {
@@ -116,7 +116,7 @@ public class ChatPingManager {
     }
 
     /**
-     * Проигрывает звук пинга и отправляет уведомление указанным игрокам.
+     * Plays the ping sound and sends a notification to the given players.
      */
     public static void notifyPingedPlayers(List<Player> players, Player sender) {
         if (players == null || players.isEmpty()) return;
@@ -136,10 +136,10 @@ public class ChatPingManager {
     }
 
     /**
-     * Разрешает метку пинга в список игроков.
+     * Resolves a ping tag into a list of players.
      */
     private static List<Player> resolveTargets(String keyword, Player sender) {
-        // Специальные метки
+        // Special tags
         switch (keyword.toLowerCase()) {
             case "everyone" -> {
                 List<Player> all = new ArrayList<>(Bukkit.getOnlinePlayers());
@@ -174,7 +174,7 @@ public class ChatPingManager {
                 return result;
             }
             default -> {
-                // Конкретный ник
+                // A specific nick
                 Player target = Bukkit.getPlayerExact(keyword);
                 if (target != null && target.isOnline()) {
                     return List.of(target);
@@ -185,7 +185,7 @@ public class ChatPingManager {
     }
 
     /**
-     * Результат обработки пингов.
+     * The result of ping processing.
      */
     public record PingResult(
             String formattedMessage,

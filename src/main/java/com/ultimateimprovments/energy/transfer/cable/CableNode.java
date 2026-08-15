@@ -126,14 +126,14 @@ public class CableNode {
     // ENERGY TRANSFER TRACKING
     // =========================
 
-    /** Добавляет переданную энергию к счётчику за этот тик. */
+    /** Adds the transferred energy to this tick's counter. */
     public void addTransferred(int amount) {
         if (amount > 0) {
             energyTransferred.addAndGet(amount);
         }
     }
 
-    /** Возвращает и сбрасывает счётчик переданной энергии за тик. */
+    /** Returns and resets the per-tick transferred energy counter. */
     public int getAndResetTransferred() {
         return energyTransferred.getAndSet(0);
     }

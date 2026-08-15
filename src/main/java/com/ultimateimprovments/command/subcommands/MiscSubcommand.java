@@ -167,7 +167,7 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // TOGGLEBIND — вкл/выкл подключение связей редстоуна
+    // TOGGLEBIND — enable/disable wireless redstone binding
     // =========================
     public static boolean toggleBind(CommandSender sender) {
         if (!(sender instanceof Player player)) {
@@ -196,7 +196,7 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // FLY — включает/выключает полёт (даже в выживании)
+    // FLY — enables/disables flight (even in survival)
     // /ui fly on|off [player]
     // =========================
     public static boolean fly(CommandSender sender, String[] args) {
@@ -217,7 +217,7 @@ public final class MiscSubcommand {
 
         Player target;
         if (args.length >= 3) {
-            // Применяем к другому игроку
+            // Apply to another player
             if (!sender.hasPermission("ui.command.fly.other")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle flight for other players!</red>"));
                 return true;
@@ -228,7 +228,7 @@ public final class MiscSubcommand {
                 return true;
             }
         } else {
-            // Применяем к себе
+            // Apply to self
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command on themselves!</red>"));
                 return true;
@@ -253,7 +253,7 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // GOD — включает/выключает неуязвимость
+    // GOD — enables/disables invulnerability
     // /ui god on|off [player]
     // =========================
     public static boolean god(CommandSender sender, String[] args) {
@@ -274,7 +274,7 @@ public final class MiscSubcommand {
 
         Player target;
         if (args.length >= 3) {
-            // Применяем к другому игроку
+            // Apply to another player
             if (!sender.hasPermission("ui.command.god.other")) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle god mode for other players!</red>"));
                 return true;
@@ -285,7 +285,7 @@ public final class MiscSubcommand {
                 return true;
             }
         } else {
-            // Применяем к себе
+            // Apply to self
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command on themselves!</red>"));
                 return true;
@@ -309,7 +309,7 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // UNLOCK BOOK — превращает подписанную книгу в книгу с пером
+    // UNLOCK BOOK — converts a signed book into a book-and-quill
     // =========================
     public static boolean unlockBook(CommandSender sender) {
         if (!(sender instanceof Player player)) {
@@ -333,7 +333,7 @@ public final class MiscSubcommand {
             return true;
         }
 
-        // Копируем страницы из подписанной книги (List<String>) и создаём книгу с пером
+        // Copy pages from the signed book (List<String>) and create a book-and-quill
         var pages = oldMeta.getPages();
         ItemStack newBook = new ItemStack(Materials.WRITABLE_BOOK, item.getAmount());
         BookMeta newMeta = (BookMeta) newBook.getItemMeta();
@@ -350,7 +350,7 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // UNLOCK SIGN — убирает намазанность воском с таблички
+    // UNLOCK SIGN — removes the waxed component from a sign
     // =========================
     public static boolean unlockSign(CommandSender sender) {
         if (!(sender instanceof Player player)) {
@@ -374,7 +374,7 @@ public final class MiscSubcommand {
             return true;
         }
 
-        // Создаём новую табличку без компонента waxed (свежий предмет не имеет waxed)
+        // Create a new sign without the waxed component (a fresh item has no waxed)
         ItemStack newSign = new ItemStack(item.getType(), item.getAmount());
         if (item.hasItemMeta()) {
             var oldMeta = item.getItemMeta();
@@ -383,10 +383,10 @@ public final class MiscSubcommand {
                 player.sendMessage(MessageUtil.parse("<red>❌ Failed to create new sign!</red>"));
                 return true;
             }
-            // Копируем display name и lore
+            // Copy display name and lore
             if (oldMeta.hasDisplayName()) newMeta.displayName(oldMeta.displayName());
             if (oldMeta.hasLore()) newMeta.lore(oldMeta.lore());
-            // Копируем PDC
+            // Copy PDC
             oldMeta.getPersistentDataContainer().copyTo(newMeta.getPersistentDataContainer(), true);
             newSign.setItemMeta(newMeta);
         }

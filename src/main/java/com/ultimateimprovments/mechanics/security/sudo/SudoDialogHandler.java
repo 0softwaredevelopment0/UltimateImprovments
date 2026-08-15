@@ -13,13 +13,13 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 /**
- * SudoDialogHandler — слушает {@link PlayerCustomClickEvent} и обрабатывает
- * отправку sudo-пароля или отмену из Custom Screen.
+ * SudoDialogHandler — listens to {@link PlayerCustomClickEvent} and handles
+ * sudo password submission or cancellation from the Custom Screen.
  * <p>
- * Два режима:
+ * Two modes:
  * <ul>
- *   <li>{@code ultimateimprovments:sudo_submit} — отправка пароля (Continue)</li>
- *   <li>{@code ultimateimprovments:sudo_cancel} — отмена (закрыть диалог, не кикать)</li>
+ *   <li>{@code ultimateimprovments:sudo_submit} — password submission (Continue)</li>
+ *   <li>{@code ultimateimprovments:sudo_cancel} — cancel (close the dialog, no kick)</li>
  * </ul>
  */
 public class SudoDialogHandler implements Listener {
@@ -34,7 +34,7 @@ public class SudoDialogHandler implements Listener {
         Player player = getPlayerFromConnection(event);
         if (player == null) return;
 
-        // ─── Cancel (закрыть диалог, сбросить ожидающую команду) ───
+        // ─── Cancel (close the dialog, reset the pending command) ───
         if (identifier.equals(SUDO_CANCEL_KEY)) {
             SudoDialogScreen.close(player);
             SudoManager manager = SudoManager.getInstance();
@@ -81,7 +81,7 @@ public class SudoDialogHandler implements Listener {
     }
 
     /**
-     * Получает Bukkit Player из PlayerCustomClickEvent через PlayerGameConnection.
+     * Gets the Bukkit Player from PlayerCustomClickEvent via PlayerGameConnection.
      */
     private static Player getPlayerFromConnection(PlayerCustomClickEvent event) {
         if (event.getCommonConnection() instanceof PlayerGameConnection gameConn) {
@@ -92,7 +92,7 @@ public class SudoDialogHandler implements Listener {
     }
 
     /**
-     * Регистрирует слушатель в плагине.
+     * Registers the listener in the plugin.
      */
     public static void register() {
         Bukkit.getPluginManager().registerEvents(new SudoDialogHandler(), Main.getInstance());

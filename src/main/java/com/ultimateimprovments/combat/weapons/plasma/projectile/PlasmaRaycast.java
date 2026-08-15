@@ -7,7 +7,7 @@ import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
 /**
- * Луч от снаряда до конца шага — первое попадание в блок за тик.
+ * Ray from the projectile to the end of the step — the first block hit per tick.
  */
 public final class PlasmaRaycast {
 

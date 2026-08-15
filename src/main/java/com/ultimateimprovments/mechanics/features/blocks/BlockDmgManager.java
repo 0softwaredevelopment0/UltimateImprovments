@@ -41,7 +41,7 @@ public class BlockDmgManager extends BukkitRunnable {
             Block standing = player.getLocation().getBlock();
             double yOffset = player.getLocation().getY() - standing.getY();
 
-            // Только если игрок вплотную к блоку (в пределах 0.1 блока по Y)
+            // Only if the player is right next to the block (within 0.1 block in Y)
             if (yOffset > 0.1) continue;
 
             // Pointed dripstone at feet level
@@ -49,7 +49,7 @@ public class BlockDmgManager extends BukkitRunnable {
                 player.damage(dripstoneDmg);
             }
 
-            // End rod facing up — игрок стоит на стержне
+            // End rod facing up — the player stands on the rod
             if (standing.getType() == Material.END_ROD) {
                 Directional directional = (Directional) standing.getBlockData();
                 if (directional.getFacing() == BlockFace.UP) {

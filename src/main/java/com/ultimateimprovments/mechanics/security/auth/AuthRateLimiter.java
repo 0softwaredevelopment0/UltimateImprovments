@@ -10,8 +10,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Ограничение частоты запросов к БД авторизации.
- * Защита от спама по кнопке подтверждения пароля.
+ * Rate limiting for authentication DB requests.
+ * Protection against spamming the password confirm button.
  */
 public class AuthRateLimiter {
 
@@ -27,11 +27,11 @@ public class AuthRateLimiter {
     }
 
     /**
-     * Проверяет, не превысил ли игрок лимит запросов.
-     * Если превысил — отправляет сообщение и возвращает false.
+     * Checks whether the player exceeded the request limit.
+     * If exceeded — sends a message and returns false.
      *
-     * @param player игрок
-     * @return true если запрос разрешён, false если нужно подождать
+     * @param player the player
+     * @return true if the request is allowed, false if it should wait
      */
     public boolean checkCooldown(Player player) {
         UUID uuid = player.getUniqueId();
@@ -53,7 +53,7 @@ public class AuthRateLimiter {
     }
 
     /**
-     * Очищает кулдаун для игрока (при успешном входе/выходе).
+     * Clears the cooldown for a player (on successful login/logout).
      */
     public void removePlayer(UUID uuid) {
         requestCooldowns.remove(uuid);

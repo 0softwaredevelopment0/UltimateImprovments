@@ -79,12 +79,12 @@ public class EnchantmentListener implements Listener {
             if (!world.isChunkLoaded(block.getX() >> 4, block.getZ() >> 4)) continue;
 
             // Break naturally with the tool (respects Silk Touch, Fortune)
-            // Запоминаем тип ДО ломки — после breakNaturally() блок уже AIR
+            // Remember the type BEFORE breaking — after breakNaturally() the block is already AIR
             Material brokenType = block.getType();
             block.breakNaturally(tool, true);
 
-            // Механика «руда → камень»: оставляем камень вместо руды, как для
-            // блока из BlockBreakEvent (иначе остаются дыры в жилах)
+            // "Ore → stone" mechanic: leave stone instead of ore, like for
+            // the block in BlockBreakEvent (otherwise holes remain in the veins)
             BlockBreakListener.scheduleStoneReplacement(block, brokenType);
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
@@ -98,15 +98,15 @@ public class EnchantmentListener implements Listener {
 
     /**
      * Flood-fills from {@code origin} collecting all blocks of {@code oreType}
-     * reachable through 6-axis adjacency. Ограничено кубом 16×16×16
-     * по радиусу вокруг origin (offset −7..+8 по каждой оси).
+     * reachable through 6-axis adjacency. Limited to a 16×16×16 cube
+     * by radius around the origin (offset −7..+8 on each axis).
      */
     private @NotNull Set<Block> collectVein(World world, Block origin, Material oreType) {
         Set<Block> vein = new HashSet<>();
         Deque<Block> queue = new ArrayDeque<>();
 
-        // 🛡 Failsafe: VeinMiner не выходит за пределы куба 16×16×16 вокруг origin
-        // (не по чанкам — по радиусу): offset −7..+8 по каждой оси.
+        // 🛡 Failsafe: VeinMiner does not go beyond the 16×16×16 cube around the origin
+        // (by radius, not by chunks): offset −7..+8 on each axis.
         int ox = origin.getX(), oy = origin.getY(), oz = origin.getZ();
         int minX = ox - 7, maxX = ox + 8;
         int minY = oy - 7, maxY = oy + 8;
@@ -127,7 +127,7 @@ public class EnchantmentListener implements Listener {
                 int nz = z + dir[2];
 
                 if (ny < world.getMinHeight() || ny >= world.getMaxHeight()) continue;
-                // 🛡 Failsafe: куб 16×16×16 по радиусу вокруг origin
+                // 🛡 Failsafe: 16×16×16 cube by radius around the origin
                 if (nx < minX || nx > maxX || ny < minY || ny > maxY || nz < minZ || nz > maxZ) continue;
                 if (!world.isChunkLoaded(nx >> 4, nz >> 4)) continue;
 

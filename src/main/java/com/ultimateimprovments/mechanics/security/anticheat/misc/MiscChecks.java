@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Factory — создаёт все miscellaneous-проверки.
+ * Factory — creates all miscellaneous checks.
  */
 public class MiscChecks {
 

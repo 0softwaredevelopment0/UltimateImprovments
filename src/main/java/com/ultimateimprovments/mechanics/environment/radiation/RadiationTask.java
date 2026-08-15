@@ -13,13 +13,13 @@ public class RadiationTask extends BukkitRunnable {
 
         tick++;
 
-        // Главный тик радиации (каждые 20 тиков = 1 сек)
-        // естественный спад, древние обломки, биомы, дозиметр
+        // Main radiation tick (every 20 ticks = 1 sec)
+        // natural decay, ancient debris, biomes, dosimeter
         if (tick % 20 == 0) {
             rad.tick();
         }
 
-        // Эффекты радиации (каждые 10 тиков = 0.5 сек, как в датапаке)
+        // Radiation effects (every 10 ticks = 0.5 sec, like in the datapack)
         if (tick % 10 == 0) {
             rad.tickEffects();
         }

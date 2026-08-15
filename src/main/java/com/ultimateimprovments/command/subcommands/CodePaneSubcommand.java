@@ -17,7 +17,7 @@ public final class CodePaneSubcommand {
         if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может открыть кодовую панель."); return true; }
         if (!player.hasPermission("ui.command.codepane")) { player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!"); return true; }
 
-        // Открываем диалог с чистым вводом
+        // Open a dialog with clean input
         CodePanelSession.reset(player.getUniqueId());
         CodePanelDialogScreen.open(player);
         return true;

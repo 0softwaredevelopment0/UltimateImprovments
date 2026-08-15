@@ -6,11 +6,11 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import java.util.*;
 
 /**
- * ModuleManager — оркестратор модулей плагина.
+ * ModuleManager — orchestrator of the plugin's modules.
  * <p>
- * Регистрирует, инициализирует, останавливает и перезагружает модули.
- * Каждый модуль инициализируется в защищённом try-catch, поэтому
- * ошибка в одном модуле не ломает остальные.
+ * Registers, initializes, stops and reloads modules.
+ * Each module is initialized in a guarded try-catch, so
+ * an error in one module does not break the others.
  */
 public class ModuleManager {
 
@@ -148,22 +148,22 @@ public class ModuleManager {
     // =========================
 
     /**
-     * Включает модуль по имени. Возвращает true если успешно.
+     * Enables a module by name. Returns true on success.
      */
     public boolean enableModule(String name) {
         PluginModule m = moduleMap.get(name);
         if (m == null) return false;
-        if (m.isEnabled()) return true; // уже включён
+        if (m.isEnabled()) return true; // already enabled
         return m.initialize(plugin);
     }
 
     /**
-     * Отключает модуль по имени. Возвращает true если успешно.
+     * Disables a module by name. Returns true on success.
      */
     public boolean disableModule(String name) {
         PluginModule m = moduleMap.get(name);
         if (m == null) return false;
-        if (!m.isEnabled()) return true; // уже выключен
+        if (!m.isEnabled()) return true; // already disabled
         m.disable(plugin);
         return true;
     }
@@ -172,7 +172,7 @@ public class ModuleManager {
     // STATIC HELPERS
     // =========================
 
-    /** Удобный статический метод для инициализации одного модуля. */
+    /** Convenient static method for initializing a single module. */
     public static boolean initModule(Main plugin, PluginModule module) {
         if (instance != null) {
             instance.register(module);

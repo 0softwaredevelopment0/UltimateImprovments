@@ -48,13 +48,13 @@ public class MultimeterListener implements Listener {
         // =========================
         if (!is_multimeter(item)) return;
 
-        // Звук клика при измерении
+        // Click sound when measuring
         player.playSound(block.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
 
         Material type = block.getType();
 
         // =========================
-        // 🛠 СОЗДАТЕЛЬ ПРЕДМЕТОВ (CRAFTER)
+        // 🛠 ITEM CREATOR (CRAFTER)
         // =========================
         if (type == Material.CRAFTER) {
             Location loc = LocationUtil.normalize(block.getLocation());
@@ -87,7 +87,7 @@ public class MultimeterListener implements Listener {
         }
 
         // =========================
-        // ⚡ ДВИГАТЕЛЬ УСКОРИТЕЛЯ (TUFF_BRICKS)
+        // ⚡ ACCELERATOR ENGINE (TUFF_BRICKS)
         // =========================
         if (type == ParticleAcceleratorManager.ENGINE && StructureMarker.existsAt(LocationUtil.normalize(block.getLocation()))) {
             Location loc = LocationUtil.normalize(block.getLocation());
@@ -105,7 +105,7 @@ public class MultimeterListener implements Listener {
         }
 
         // =========================
-        // ⚡ ДАТЧИК СКОРОСТИ (POLISHED_DIORITE)
+        // ⚡ SPEED SENSOR (POLISHED_DIORITE)
         // =========================
         if (type == ParticleAcceleratorManager.SENSOR && StructureMarker.existsAt(LocationUtil.normalize(block.getLocation()))) {
             Location loc = LocationUtil.normalize(block.getLocation());
@@ -125,7 +125,7 @@ public class MultimeterListener implements Listener {
         }
 
         // =========================
-        // ⚡ ГЕНЕРАТОР (BLAST_FURNACE)
+        // ⚡ GENERATOR (BLAST_FURNACE)
         // =========================
         if (type == Materials.BLAST_FURNACE) {
             boolean assembled = GeneratorManager.isAssembled(block.getLocation());

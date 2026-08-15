@@ -17,10 +17,10 @@ import org.bukkit.inventory.ShapedRecipe;
 import java.util.List;
 
 /**
- * Крафт эндер-сундука (Портативное хранилище):
- * 8 незеритовых слитков + 1 звезда Нижнего мира → эндер-сундук
+ * Ender chest crafting (Portable storage):
+ * 8 netherite ingots + 1 Nether star → ender chest
  * <p>
- * Заменяет ванильный рецепт (обсидиан + око Эндера) и удалённый datapack-рецепт.
+ * Replaces the vanilla recipe (obsidian + eye of ender) and the removed datapack recipe.
  */
 public class EnderChestCraftListener implements Listener {
 
@@ -34,13 +34,13 @@ public class EnderChestCraftListener implements Listener {
     private static void registerRecipe() {
         Main plugin = Main.getInstance();
 
-        // Удаляем ванильный рецепт эндер-сундука (8 обсидиана + око Эндера)
+        // Remove the vanilla ender chest recipe (8 obsidian + eye of ender)
         NamespacedKey vanillaKey = NamespacedKey.fromString("minecraft:ender_chest");
         if (vanillaKey != null) {
             Bukkit.removeRecipe(vanillaKey);
         }
 
-        // Удаляем старый рецепт плагина, если был
+        // Remove the old plugin recipe if any
         Bukkit.removeRecipe(RECIPE_KEY);
 
         ItemStack result = createEnderChestItem();
@@ -59,7 +59,7 @@ public class EnderChestCraftListener implements Listener {
     }
 
     /**
-     * Создаёт ItemStack эндер-сундука с кастомным именем и лором.
+     * Creates the ender chest ItemStack with a custom name and lore.
      */
     private static ItemStack createEnderChestItem() {
         ItemStack result = new ItemStack(Material.ENDER_CHEST);
@@ -77,8 +77,8 @@ public class EnderChestCraftListener implements Listener {
     }
 
     /**
-     * При крафте в сетке — подменяет результат на кастомный эндер-сундук.
-     * Это нужно, так как PrepareItemCraftEvent может показать предмет без PDC/лора.
+     * On grid crafting — replaces the result with the custom ender chest.
+     * Needed because PrepareItemCraftEvent may show an item without PDC/lore.
      */
     @EventHandler
     public void onCraft(PrepareItemCraftEvent e) {

@@ -11,32 +11,32 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Канонический список прав UltimateImprovments (ранее объявлялся в plugin.yml,
- * секция {@code permissions:} — теперь всё в коде).
+ * Canonical permission list of UltimateImprovments (previously declared in plugin.yml,
+ * the {@code permissions:} section — now all in code).
  *
- * <p>Иерархия:
+ * <p>Hierarchy:
  * <ul>
- *   <li>{@code ui.*} — все права (wildcard)</li>
- *   <li>{@code ui.admin} — полный доступ (выдаётся OP по умолчанию; включает {@code ui} и {@code ui.*})</li>
- *   <li>{@code ui.command.*} — все права на команды /ui</li>
- *   <li>{@code ui.command.<name>} — право на конкретную команду</li>
+ *   <li>{@code ui.*} — all permissions (wildcard)</li>
+ *   <li>{@code ui.admin} — full access (granted to OP by default; includes {@code ui} and {@code ui.*})</li>
+ *   <li>{@code ui.command.*} — all /ui command permissions</li>
+ *   <li>{@code ui.command.<name>} — permission for a specific command</li>
  * </ul>
  *
- * <p>Регистрация идемпотентна: {@code addPermission} вызывается только если права
- * ещё нет в реестре сервера, поэтому повторные старты (PlugMan, {@code /ui reload})
- * не падают с "already defined".
+ * <p>Registration is idempotent: {@code addPermission} is only called if the permission
+ * is not yet in the server registry, so repeated starts (PlugMan, {@code /ui reload})
+ * do not fail with "already defined".
  */
 public final class Permissions {
 
     private Permissions() {}
 
-    // ═══════════ Корневые ═══════════
+    // ═══════════ Root ═══════════
     public static final String UI = "ui";
     public static final String UI_ALL = "ui.*";
     public static final String UI_ADMIN = "ui.admin";
     public static final String UI_COMMAND_ALL = "ui.command.*";
 
-    // ═══════════ Команды: утилиты ═══════════
+    // ═══════════ Commands: utilities ═══════════
     public static final String CMD_RELOAD = "ui.command.reload";
     public static final String CMD_VERSION = "ui.command.version";
     public static final String CMD_CHECKVER = "ui.command.checkver";
@@ -46,7 +46,7 @@ public final class Permissions {
     public static final String CMD_PLUGINS = "ui.command.plugins";
     public static final String CMD_HELP = "ui.command.help";
 
-    // ═══════════ Команды: игрок ═══════════
+    // ═══════════ Commands: player ═══════════
     public static final String CMD_HOME = "ui.command.home";
     public static final String CMD_SETHOME = "ui.command.sethome";
     public static final String CMD_DELHOME = "ui.command.delhome";
@@ -80,8 +80,9 @@ public final class Permissions {
     public static final String CMD_RTP_OTHER = "ui.command.rtp.other";
     public static final String CMD_RTP_BYPASSCOOLDOWN = "ui.command.rtp.bypasscooldown";
     public static final String CMD_ASKPOS = "ui.command.askpos";
+    public static final String CMD_GETPOS = "ui.command.getpos";
 
-    // ═══════════ Команды: модерация ═══════════
+    // ═══════════ Commands: moderation ═══════════
     public static final String CMD_PUNISH = "ui.command.punish";
     public static final String CMD_PUNISH_KICK = "ui.command.punish.kick";
     public static final String CMD_PUNISH_BAN = "ui.command.punish.ban";
@@ -90,10 +91,12 @@ public final class Permissions {
     public static final String CMD_PUNISH_CRASH = "ui.command.punish.crash";
     public static final String CMD_PUNISH_LISTWARNS_SELF = "ui.command.punish.listwarns.self";
     public static final String CMD_PUNISH_LISTWARNS_OTHER = "ui.command.punish.listwarns.other";
+    public static final String CMD_PUNISH_ACTIONLIST = "ui.command.punish.actionlist";
     public static final String CMD_INVSEE = "ui.command.invsee";
     public static final String CMD_ENDERSEE = "ui.command.endersee";
     public static final String CMD_CHGOP = "ui.command.chgop";
     public static final String CMD_BROADCAST = "ui.command.broadcast";
+    public static final String CMD_CLEARCHAT = "ui.command.clearchat";
     public static final String CMD_EXECCHAT = "ui.command.execchat";
     public static final String CMD_BLACKLIST = "ui.command.blacklist";
     public static final String CMD_OPWHITELIST = "ui.command.opwhitelist";
@@ -111,7 +114,7 @@ public final class Permissions {
     public static final String CMD_REPSTATUS = "ui.command.repstatus";
     public static final String CMD_MODREPORT = "ui.command.modreport";
 
-    // ═══════════ Команды: экономика и система ═══════════
+    // ═══════════ Commands: economy and system ═══════════
     public static final String CMD_MONEY = "ui.command.money";
     public static final String CMD_AUTH = "ui.command.auth";
     public static final String CMD_AUTH_FORCELOGIN = "ui.command.auth.forcelogin";
@@ -145,8 +148,9 @@ public final class Permissions {
     public static final String CMD_VOTE_DELETE_OTHER = "ui.command.vote.delete.other";
     public static final String CMD_VOTE_STATS = "ui.command.vote.stats";
     public static final String CMD_VOTE_BYPASS = "ui.command.vote.bypass";
+    public static final String CMD_PDC = "ui.command.pdc";
 
-    // ═══════════ Фичи и модификаторы ═══════════
+    // ═══════════ Features and modifiers ═══════════
     public static final String UI_ALERTS = "ui.alerts";
     public static final String UI_AUTOCRAFT = "ui.autocraft";
     public static final String UI_SHOW_BRAND = "ui.show.brand";
@@ -163,25 +167,25 @@ public final class Permissions {
     public static final String UI_PUNISH_NOTIFY = "ui.punish.notify";
     public static final String UI_PROXY_SERVER = "ui.proxy.server";
 
-    // ═══════════ РЕГИСТРАЦИЯ ═══════════
+    // ═══════════ REGISTRATION ═══════════
 
     /**
-     * Регистрирует все права плагина в {@link PluginManager}.
-     * Вызывается один раз при старте (см. {@link PluginStartup}).
-     * Идемпотентно: если право уже есть в реестре — пропускается.
+     * Registers all plugin permissions in the {@link PluginManager}.
+     * Called once at startup (see {@link PluginStartup}).
+     * Idempotent: if the permission is already in the registry — it is skipped.
      */
     public static void registerAll() {
         PluginManager pm = Bukkit.getPluginManager();
 
         List<Permission> permissions = List.of(
-                // ── Корневые ──
+                // ── Root ──
                 new Permission(UI, "Base access to UltimateImprovments commands", PermissionDefault.FALSE),
                 new Permission(UI_ALL, "All UltimateImprovments permissions", PermissionDefault.FALSE),
                 new Permission(UI_ADMIN, "Full access to all UltimateImprovments features",
                         PermissionDefault.OP, Map.of(UI, true, UI_ALL, true)),
                 new Permission(UI_COMMAND_ALL, "All /ui command permissions", PermissionDefault.FALSE),
 
-                // ── Команды: утилиты ──
+                // ── Commands: utilities ──
                 new Permission(CMD_RELOAD, "Reload plugin configuration", PermissionDefault.FALSE),
                 new Permission(CMD_VERSION, "Show plugin version", PermissionDefault.FALSE),
                 new Permission(CMD_CHECKVER, "Check for plugin updates", PermissionDefault.FALSE),
@@ -191,7 +195,7 @@ public final class Permissions {
                 new Permission(CMD_PLUGINS, "List plugins", PermissionDefault.FALSE),
                 new Permission(CMD_HELP, "Show command help", PermissionDefault.FALSE),
 
-                // ── Команды: игрок ──
+                // ── Commands: player ──
                 new Permission(CMD_HOME, "Teleport to your home", PermissionDefault.FALSE),
                 new Permission(CMD_SETHOME, "Set your home", PermissionDefault.FALSE),
                 new Permission(CMD_DELHOME, "Delete your home", PermissionDefault.FALSE),
@@ -225,8 +229,9 @@ public final class Permissions {
                 new Permission(CMD_RTP_OTHER, "Random teleport another player", PermissionDefault.FALSE),
                 new Permission(CMD_RTP_BYPASSCOOLDOWN, "Bypass random teleport cooldown", PermissionDefault.FALSE),
                 new Permission(CMD_ASKPOS, "Request player coordinates", PermissionDefault.FALSE),
+                new Permission(CMD_GETPOS, "Get a player's coordinates", PermissionDefault.FALSE),
 
-                // ── Команды: модерация ──
+                // ── Commands: moderation ──
                 new Permission(CMD_PUNISH, "Use punish commands", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_KICK, "Kick players", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_BAN, "Ban players", PermissionDefault.FALSE),
@@ -235,10 +240,12 @@ public final class Permissions {
                 new Permission(CMD_PUNISH_CRASH, "Crash a player's client", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_LISTWARNS_SELF, "View your own warnings", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_LISTWARNS_OTHER, "View other players' warnings", PermissionDefault.FALSE),
+                new Permission(CMD_PUNISH_ACTIONLIST, "View all active punishments (paginated list with tabs)", PermissionDefault.FALSE),
                 new Permission(CMD_INVSEE, "View player inventories", PermissionDefault.FALSE),
                 new Permission(CMD_ENDERSEE, "View player ender chests", PermissionDefault.FALSE),
                 new Permission(CMD_CHGOP, "Grant or revoke operator status", PermissionDefault.FALSE),
                 new Permission(CMD_BROADCAST, "Broadcast a message to the server", PermissionDefault.FALSE),
+                new Permission(CMD_CLEARCHAT, "Clear the chat for a player or everyone", PermissionDefault.FALSE),
                 new Permission(CMD_EXECCHAT, "Send a chat message or run a command as another player", PermissionDefault.FALSE),
                 new Permission(CMD_BLACKLIST, "Manage the blacklist", PermissionDefault.FALSE),
                 new Permission(CMD_OPWHITELIST, "Manage the operator whitelist", PermissionDefault.FALSE),
@@ -256,7 +263,7 @@ public final class Permissions {
                 new Permission(CMD_REPSTATUS, "Check your report status", PermissionDefault.FALSE),
                 new Permission(CMD_MODREPORT, "File a mod report", PermissionDefault.FALSE),
 
-                // ── Команды: экономика и система ──
+                // ── Commands: economy and system ──
                 new Permission(CMD_MONEY, "Manage player balances", PermissionDefault.FALSE),
                 new Permission(CMD_AUTH, "Authentication commands", PermissionDefault.FALSE),
                 new Permission(CMD_AUTH_FORCELOGIN, "Force a player to log in", PermissionDefault.FALSE),
@@ -290,8 +297,9 @@ public final class Permissions {
                 new Permission(CMD_VOTE_DELETE_OTHER, "Delete other players' votes", PermissionDefault.FALSE),
                 new Permission(CMD_VOTE_STATS, "View vote statistics", PermissionDefault.FALSE),
                 new Permission(CMD_VOTE_BYPASS, "Bypass vote restrictions", PermissionDefault.FALSE),
+                new Permission(CMD_PDC, "Manage PersistentDataContainer on items (add/modify/remove/list/clear/container)", PermissionDefault.FALSE),
 
-                // ── Фичи и модификаторы ──
+                // ── Features and modifiers ──
                 new Permission(UI_ALERTS, "Receive server alerts", PermissionDefault.FALSE),
                 new Permission(UI_AUTOCRAFT, "Use auto-crafting", PermissionDefault.FALSE),
                 new Permission(UI_SHOW_BRAND, "Show the server brand", PermissionDefault.FALSE),

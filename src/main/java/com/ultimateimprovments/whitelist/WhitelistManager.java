@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * 📋 WhitelistManager — кастомный вайтлист UltimateImprovments.
+ * 📋 WhitelistManager — custom UltimateImprovments whitelist.
  * <p>
- * Отключает ванильный вайтлист при включении.
- * Работает независимо от OP whitelist.
+ * Disables the vanilla whitelist when enabled.
+ * Works independently of the OP whitelist.
  * <p>
- * Команды: /ui whitelist on/off/add/list/remove
+ * Commands: /ui whitelist on/off/add/list/remove
  */
 public class WhitelistManager implements Listener {
 
@@ -61,7 +61,7 @@ public class WhitelistManager implements Listener {
 
             ConsoleLogger.info("[Whitelist] Loaded " + count + " players, enabled=" + enabled);
 
-            // Обновляем ванильный вайтлист
+            // Update the vanilla whitelist
             syncVanillaWhitelist();
         } catch (Exception e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[Whitelist] Failed to load", e);
@@ -73,7 +73,7 @@ public class WhitelistManager implements Listener {
     // =========================
 
     /**
-     * Если UltimateImprovments whitelist включён — отключает ванильный и выводит сообщение.
+     * If the UltimateImprovments whitelist is enabled — disables the vanilla one and prints a message.
      */
     private static void syncVanillaWhitelist() {
         if (enabled) {

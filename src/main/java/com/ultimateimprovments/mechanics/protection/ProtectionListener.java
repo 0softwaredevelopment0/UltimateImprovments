@@ -31,18 +31,18 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Слушатель событий «Блока защиты».
+ * Listener for «Protection Block» events.
  * <p>
  * <ul>
  *   <li>{@link BlockBreakEvent}, {@link BlockPlaceEvent}, {@link PlayerInteractEvent}
- *       — проверяет, попадает ли действие в радиус активного блока,
- *       и отменяет событие для не-whitelisted игроков.</li>
- *   <li>{@link Shift+RMB по блоку} — открывает GUI для хозяина/whitelisted.</li>
- *   <li>{@link RMB по блоку с топливом} — добавляет очки и потребляет предмет.</li>
- *   <li>{@link EntityExplodeEvent},{@link BlockExplodeEvent} — убирает защищённые
- *       блоки из списка взрыва, списывает целостность защитного блока.</li>
- *   <li>Сохранение данных при ломании «Блока защиты» в {@link BlockBreakEvent#HIGHEST}.</li>
- *   <li>Spawn/despawn голограмм на chunk load/unload.</li>
+ *       — checks whether the action falls within an active block's radius,
+ *       and cancels the event for non-whitelisted players.</li>
+ *   <li>{@link Shift+RMB on a block} — opens the GUI for the owner/whitelisted.</li>
+ *   <li>{@link RMB on a block with fuel} — adds points and consumes the item.</li>
+ *   <li>{@link EntityExplodeEvent},{@link BlockExplodeEvent} — removes protected
+ *       blocks from the explosion list, spends the protection block's integrity.</li>
+ *   <li>Saves data when the «Protection Block» is broken at {@link BlockBreakEvent#HIGHEST}.</li>
+ *   <li>Spawn/despawn of holograms on chunk load/unload.</li>
  * </ul>
  */
 public class ProtectionListener implements Listener {
@@ -59,8 +59,8 @@ public class ProtectionListener implements Listener {
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent e) {
-        // Только RMB (и shift+RMB) — LMB игнорируем.
-        // В Paper 1.21.x Action.RIGHT_CLICK удалён, нужно проверять обе варианта.
+        // Only RMB (and shift+RMB) — LMB is ignored.
+        // In Paper 1.21.x Action.RIGHT_CLICK was removed, both variants must be checked.
         Action a = e.getAction();
         if (a != Action.RIGHT_CLICK_AIR && a != Action.RIGHT_CLICK_BLOCK) return;
         Player player = e.getPlayer();
@@ -69,14 +69,14 @@ public class ProtectionListener implements Listener {
         if (block == null) return;
 
         ProtectionBlock pb = manager.getBlockAt(block.getLocation());
-        if (pb == null) return; // кликнули не по блоку защиты
+        if (pb == null) return; // clicked a non-protection block
 
-        // Все клики по нашему блоку — прерываем стандартное поведение
+        // All clicks on our block — break the standard behavior
         e.setCancelled(true);
 
-        // Офф-блок: всё равно говорим, что он выключен
+        // Off-block: still say it's disabled
         if (!pb.isEnabled()) {
-            // Whitelist/owner всё равно могут открыть GUI чтобы включить
+            // Whitelist/owner can still open the GUI to enable it
             if (!pb.isWhitelisted(player.getUniqueId()) && !player.getUniqueId().equals(pb.getOwner())) {
                 player.sendMessage(MessageUtil.parse(
                         ProtectionConfig.getMessage("not_whitelisted",
@@ -84,7 +84,7 @@ public class ProtectionListener implements Listener {
                 return;
             }
         } else {
-            // Если блок включён, но играка нет в whitelist — тыкать нельзя (даже RMB)
+            // If the block is enabled but the player isn't in the whitelist — can't click (even RMB)
             if (!pb.isWhitelisted(player.getUniqueId()) && !player.getUniqueId().equals(pb.getOwner())) {
                 player.sendMessage(MessageUtil.parse(
                         ProtectionConfig.getMessage("not_whitelisted",
@@ -98,13 +98,13 @@ public class ProtectionListener implements Listener {
             // SHIFT+RMB — open GUI
             ProtectionGUI.openMainMenu(player, pb);
         } else {
-            // RMB — попытка топлива
+            // RMB — fuel attempt
             handleFuelClick(player, pb);
         }
     }
 
     /**
-     * RMB с топливом: добавляет очки и потребляет стак.
+     * RMB with fuel: adds points and consumes the stack.
      */
     private void handleFuelClick(Player player, ProtectionBlock pb) {
         ItemStack hand = player.getInventory().getItemInMainHand();
@@ -119,13 +119,13 @@ public class ProtectionListener implements Listener {
             player.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
                     "fuel_not_burnable",
                     "<red>Этот предмет не переплавляется и не даёт очков!</red>")));
-            // Воспроизводим звук ошибки
+            // Play the error sound
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
             return;
         }
         pb.setPoints(pb.getPoints() + points);
         manager.saveBlockState(pb);
-        // Потребляем стак
+        // Consume the stack
         hand.setAmount(0);
         player.getInventory().setItemInMainHand(null);
         player.playSound(player.getLocation(), Sound.BLOCK_SMOKER_SMOKE, 0.6f, 1.2f);
@@ -145,7 +145,7 @@ public class ProtectionListener implements Listener {
         ProtectionBlock pb = manager.getBlockAt(broken.getLocation());
 
         if (pb != null) {
-            // Ломают сам блок защиты: разрешаем только владельцу/whitelist (правило всегда активно)
+            // Breaking the protection block itself: only the owner/whitelist may do it (always active)
             Player p = e.getPlayer();
             if (p != null && !pb.isWhitelisted(p.getUniqueId()) && !p.getUniqueId().equals(pb.getOwner())) {
                 p.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
@@ -155,9 +155,9 @@ public class ProtectionListener implements Listener {
                 e.setCancelled(true);
                 return;
             }
-            // Раньше тут был saveBlockState + saveWhitelistToDb + сразу же unregisterBlock,
-            // который делал DELETE — три бесполезных DB-write на каждый снятый блок.
-            // Порядок: сначала unregister (удаление из БД), потом optional confirm-сообщение.
+            // Previously this was saveBlockState + saveWhitelistToDb + an immediate unregisterBlock
+            // doing a DELETE — three useless DB-writes per removed block.
+            // Order: unregister first (DB deletion), then an optional confirm message.
             manager.unregisterBlock(pb.getId(), true);
             if (p != null) {
                 p.sendMessage(MessageUtil.parse(ProtectionConfig.getMessage(
@@ -166,12 +166,12 @@ public class ProtectionListener implements Listener {
             return;
         }
 
-        // Защищаемый блок: только не-whitelisted
+        // Protected block: only non-whitelisted
         ProtectionBlock protecting = manager.findProtectingBlock(broken.getLocation());
         if (protecting == null) return;
 
         if (e.getPlayer() != null && protecting.isWhitelisted(e.getPlayer().getUniqueId())) {
-            return; // владелец/whitelist — пропускаем
+            return; // owner/whitelist — skip
         }
         e.setCancelled(true);
         if (e.getPlayer() != null) {
@@ -198,8 +198,8 @@ public class ProtectionListener implements Listener {
     }
 
     // =========================
-    // BLOCK INTERACT (не по блоку защиты — чужие блоки внутри зоны).
-    // Только RMB → разрешаем LMB идти свободно.
+    // BLOCK INTERACT (not on a protection block — foreign blocks inside the zone).
+    // Only RMB → let LMB go freely.
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent e) {
@@ -208,7 +208,7 @@ public class ProtectionListener implements Listener {
         Block block = e.getClickedBlock();
         if (block == null) return;
         ProtectionBlock pb = manager.getBlockAt(block.getLocation());
-        if (pb != null) return; // наш блок, обрабатывается раньше
+        if (pb != null) return; // our block, handled earlier
         ProtectionBlock protecting = manager.findProtectingBlock(block.getLocation());
         if (protecting == null) return;
         if (protecting.isWhitelisted(e.getPlayer().getUniqueId())) return;
@@ -236,7 +236,7 @@ public class ProtectionListener implements Listener {
 
     private void applyExplosionProtection(List<Block> blockList, org.bukkit.World world) {
         if (blockList == null || blockList.isEmpty()) return;
-        // Собираем уникальные защитные блоки, чью зону задело
+        // Collect unique protection blocks whose zone was hit
         java.util.Set<ProtectionBlock> affected = new java.util.HashSet<>();
         Iterator<Block> it = blockList.iterator();
         int totalRemoved = 0;
@@ -245,7 +245,7 @@ public class ProtectionListener implements Listener {
             if (b == null || b.getWorld() == null || !b.getWorld().equals(world)) continue;
             ProtectionBlock protecting = manager.findProtectingBlock(b.getLocation());
             if (protecting == null) continue;
-            // Не позволяем этому блоку взорваться
+            // Don't let this block explode
             it.remove();
             totalRemoved++;
             if (affected.add(protecting) && protecting.isAlive()) {
@@ -254,7 +254,7 @@ public class ProtectionListener implements Listener {
             }
         }
         if (totalRemoved > 0 && !affected.isEmpty()) {
-            // Логируем одно сообщение
+            // Log a single message
             ConsoleLogger.info("[ProtectionBlock] Explosion absorbed " + totalRemoved
                     + " blocks by " + affected.size() + " protection block(s).");
         }
@@ -267,7 +267,7 @@ public class ProtectionListener implements Listener {
         if (pb == null) return;
         Block block = pb.getBlockLocation().getBlock();
         if (block == null || block.getWorld() == null) return;
-        // Дым от блока вверх
+        // Smoke from the block upward
         block.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE,
                 block.getLocation().add(0.5, 1.0, 0.5), 12, 0.3, 0.3, 0.3, 0.02);
         block.getWorld().playSound(block.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
@@ -277,7 +277,7 @@ public class ProtectionListener implements Listener {
     }
 
     // =========================
-    // CHUNK LOAD / UNLOAD — голограммы
+    // CHUNK LOAD / UNLOAD — holograms
     // =========================
     @EventHandler(priority = EventPriority.MONITOR)
     public void onChunkLoad(ChunkLoadEvent e) {
@@ -285,9 +285,9 @@ public class ProtectionListener implements Listener {
     }
 
     /**
-     * Мир загружен — регистрируем все отложенные блоки защиты, которые
-     * ждали этого мира на старте плагина (см. ProtectionManager.pendingByWorld).
-     * Без этого блоки в кастомных Multiverse-мирах молча терялись.
+     * World loaded — register all deferred protection blocks that were
+     * waiting for this world at plugin startup (see ProtectionManager.pendingByWorld).
+     * Without this, blocks in custom Multiverse worlds were silently lost.
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onWorldLoad(WorldLoadEvent e) {

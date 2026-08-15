@@ -25,7 +25,7 @@ public class RecipeRegistry implements Listener {
     }
 
     /**
-     * @return неизменяемое множество всех зарегистрированных кастомных рецептов
+     * @return an immutable set of all registered custom recipes
      */
     public static Set<NamespacedKey> getCustomRecipes() {
         return Collections.unmodifiableSet(CUSTOM_RECIPES);

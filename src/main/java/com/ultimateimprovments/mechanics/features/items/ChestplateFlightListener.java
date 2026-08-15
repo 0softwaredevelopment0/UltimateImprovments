@@ -21,18 +21,18 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 🦅 Chestplate Flight Upgrade — улучшение нагрудника в наковальне мембранами фантома.
+ * 🦅 Chestplate Flight Upgrade — chestplate upgrade in the anvil using phantom membranes.
  * <p>
- * <b>Механика:</b>
+ * <b>Mechanics:</b>
  * <ul>
- *   <li>Слот 1 (наковальня): любой нагрудник (кожаный, железный, алмазный и т.д.)</li>
- *   <li>Слот 2: мембраны фантома (каждая = +1%, 64 мембраны = +64%)</li>
- *   <li>Результат: тот же нагрудник с лором "Улучшение полёта: X.X%"</li>
- *   <li>При 100%: лор "Пригоден для полёта", нагрудник получает компонент glider</li>
+ *   <li>Slot 1 (anvil): any chestplate (leather, iron, diamond, etc.)</li>
+ *   <li>Slot 2: phantom membranes (each = +1%, 64 membranes = +64%)</li>
+ *   <li>Result: the same chestplate with lore "Flight Upgrade: X.X%"</li>
+ *   <li>At 100%: lore "Flight Ready", chestplate gets the glider component</li>
  * </ul>
  * <p>
- * Процент хранится в PDC как {@code Keys.CHESTPLATE_FLIGHT} (Double).
- * Градиент в лоре: тёмно-красный → красный → оранжевый → жёлтый → зелёный → тёмно-зелёный.
+ * The percent is stored in PDC as {@code Keys.CHESTPLATE_FLIGHT} (Double).
+ * Lore gradient: dark red → red → orange → yellow → green → dark green.
  */
 public class ChestplateFlightListener implements Listener {
 
@@ -108,14 +108,14 @@ public class ChestplateFlightListener implements Listener {
     }
 
     /**
-     * Возвращает MiniMessage color tag для процента улучшения полёта.
-     * Цвет интерполируется между 6 стопами в зависимости от pct (0-100):
-     * 0% → #006400 (тёмно-зелёный)
-     * 20% → #00FF00 (зелёный)
-     * 40% → #FFFF00 (жёлтый)
-     * 60% → #FF8C00 (оранжевый)
-     * 80% → #FF0000 (красный)
-     * 100% → #8B0000 (тёмно-красный)
+     * Returns the MiniMessage color tag for the flight upgrade percent.
+     * The color is interpolated between 6 stops depending on pct (0-100):
+     * 0% → #006400 (dark green)
+     * 20% → #00FF00 (green)
+     * 40% → #FFFF00 (yellow)
+     * 60% → #FF8C00 (orange)
+     * 80% → #FF0000 (red)
+     * 100% → #8B0000 (dark red)
      */
     private static String flightGradientColor(double pct) {
         double clamped = Math.max(0.0, Math.min(100.0, pct));
@@ -141,16 +141,16 @@ public class ChestplateFlightListener implements Listener {
     }
 
     /**
-     * Устанавливает стоимость наковальни и количество потребляемых предметов из слота 2.
-     * repairCost = уровни опыта (0 = бесплатно),
-     * repairCostAmount = сколько предметов из слота 2 потребляется (membraneCount).
+     * Sets the anvil cost and how many items are consumed from slot 2.
+     * repairCost = experience levels (0 = free),
+     * repairCostAmount = how many items from slot 2 are consumed (membraneCount).
      */
     private void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
         try {
             inv.setRepairCost(repairCost);
             inv.setRepairCostAmount(repairCostAmount);
         } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            // Fallback для старых версий Paper
+            // Fallback for older Paper versions
             try {
                 Field costField = inv.getClass().getDeclaredField("repairCost");
                 costField.setAccessible(true);

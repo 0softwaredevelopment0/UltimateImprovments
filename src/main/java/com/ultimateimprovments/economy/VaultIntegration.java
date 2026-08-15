@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Vault-интеграция для Economy.
+ * Vault integration for Economy.
  * <p>
- * Регистрируется как {@link Economy} в Vault при старте модуля.
- * Использует валюту "coins" как единственную (Vault поддерживает только одну).<br>
- * Множественные валюты доступны только через {@link EconomyManager} напрямую.
+ * Registered as {@link Economy} in Vault when the module starts.
+ * Uses the "coins" currency as the only one (Vault supports only one).<br>
+ * Multiple currencies are available only directly via {@link EconomyManager}.
  */
 public final class VaultIntegration implements Economy {
 
@@ -85,7 +85,7 @@ public final class VaultIntegration implements Economy {
 
     @Override
     public boolean hasAccount(OfflinePlayer player) {
-        return true; // каждый игрок имеет "теневой" счёт (создаётся при первом запросе)
+        return true; // every player has a "shadow" account (created on the first request)
     }
 
     @Override
@@ -151,7 +151,7 @@ public final class VaultIntegration implements Economy {
 
     @Override
     public boolean createPlayerAccount(OfflinePlayer player) {
-        // Счёт создаётся лениво при первом запросе
+        // The account is created lazily on the first request
         return true;
     }
 

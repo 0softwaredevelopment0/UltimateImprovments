@@ -7,7 +7,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 /**
- * Выдаёт дефолтный баланс игроку при первом входе на сервер.
+ * Gives a default balance to a player on their first server join.
  */
 public final class PlayerJoinListener implements Listener {
 

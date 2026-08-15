@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * /ui ac stats — диагностика античита: статус, проверки, VL игроков, PlayerData.
+ * /ui ac stats — anticheat diagnostics: status, checks, player VLs, PlayerData.
  */
 public final class AcStatsSubcommand {
 
@@ -294,7 +294,7 @@ public final class AcStatsSubcommand {
     // =========================
 
     /**
-     * /ui ac exempt <player> — освободить игрока от всех проверок античита
+     * /ui ac exempt <player> — exempt a player from all anticheat checks
      */
     private static boolean exemptPlayer(CommandSender sender, String[] args) {
         if (args.length < 3) {
@@ -329,7 +329,7 @@ public final class AcStatsSubcommand {
     }
 
     /**
-     * /ui ac unexempt <player> — снять освобождение с игрока
+     * /ui ac unexempt <player> — remove the exemption from a player
      */
     private static boolean unexemptPlayer(CommandSender sender, String[] args) {
         if (args.length < 3) {
@@ -363,7 +363,7 @@ public final class AcStatsSubcommand {
     }
 
     /**
-     * /ui ac toggle [on|off] — глобально включить/выключить античит
+     * /ui ac toggle [on|off] — globally enable/disable the anticheat
      */
     private static boolean toggleAntiCheat(CommandSender sender, String[] args) {
         AntiCheatManager acm = AntiCheatManager.getInstance();

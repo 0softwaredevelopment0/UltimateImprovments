@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityShootBowEvent;
 
 /**
- * FastBow — стрельба из лука быстрее ванильного лимита.
- * Детекция: интервал между выстрелами < минимального времени натяжения.
+ * FastBow — shooting a bow faster than the vanilla limit.
+ * Detection: interval between shots < minimum draw time.
  */
 public class FastBowCheck extends AbstractCheck {
 

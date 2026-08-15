@@ -11,18 +11,18 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 
 /**
- * Перехватывает команды /stop и /restart на самом раннем этапе.
+ * Intercepts the /stop and /restart commands at the earliest stage.
  *
- * Зачем: В Paper команда /restart обрабатывается внутренним кодом DedicatedServer
- * до того, как Bukkit CommandMap получает управление. Поэтому обычное переопределение
- * через CommandMap (registerOverride) для /restart не работает, хотя для /stop работает.
+ * Why: In Paper the /restart command is handled by DedicatedServer's internal code
+ * before the Bukkit CommandMap gets control. So the usual override
+ * via CommandMap (registerOverride) does not work for /restart, although it works for /stop.
  *
- * PlayerCommandPreprocessEvent срабатывает на уровне сетевого пакета (PlayerConnection),
- * ДО любой обработки команды Paper'ом — поэтому он гарантированно перехватит /restart.
+ * PlayerCommandPreprocessEvent fires at the network packet level (PlayerConnection),
+ * BEFORE any command processing by Paper — so it reliably intercepts /restart.
  *
- * ServerCommandEvent перехватывает команды из консоли.
+ * ServerCommandEvent intercepts commands from the console.
  *
- * Настройки читаются из config.yml -> power:
+ * Settings are read from config.yml -> power:
  */
 public class PowerInterceptListener implements Listener {
 
@@ -38,7 +38,7 @@ public class PowerInterceptListener implements Listener {
     }
 
     /**
-     * Позволяет обновить настройки при /ui reload без пересоздания слушателя.
+     * Allows updating settings on /ui reload without recreating the listener.
      */
     public static void reloadConfigStatic() {
         if (instance != null) {
@@ -47,7 +47,7 @@ public class PowerInterceptListener implements Listener {
     }
 
     /**
-     * Перезагружает настройки из config.yml.
+     * Reloads settings from config.yml.
      */
     public void reloadConfig() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -67,8 +67,8 @@ public class PowerInterceptListener implements Listener {
         // =========================
         // BLOCK /RESTART (player)
         // =========================
-        // Проверяем точное совпадение и начало (чтобы поймать /restart с аргументами)
-        // А также варианты с неймспейсами minecraft: и bukkit:
+        // Check exact match and prefix (to catch /restart with arguments)
+        // Also variants with minecraft: and bukkit: namespaces:
         if (isRestartCommand(msg)) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(MessageUtil.parse(restartMessage));
@@ -76,8 +76,8 @@ public class PowerInterceptListener implements Listener {
         }
 
         // =========================
-        // BLOCK /STOP (player) — дублирующий перехват на случай,
-        // если CommandMap override по какой-то причине не сработает
+        // BLOCK /STOP (player) — duplicate interception in case
+        // the CommandMap override does not fire for some reason
         // =========================
         if (isStopCommand(msg)) {
             event.setCancelled(true);
@@ -111,7 +111,7 @@ public class PowerInterceptListener implements Listener {
     }
 
     /**
-     * Проверяет, является ли сообщение командой /restart (с учётом неймспейсов и аргументов).
+     * Checks whether the message is a /restart command (considering namespaces and arguments).
      */
     private boolean isRestartCommand(String msg) {
         return msg.equals("/restart")
@@ -123,7 +123,7 @@ public class PowerInterceptListener implements Listener {
     }
 
     /**
-     * Проверяет, является ли сообщение командой /stop (с учётом неймспейсов и аргументов).
+     * Checks whether the message is a /stop command (considering namespaces and arguments).
      */
     private boolean isStopCommand(String msg) {
         return msg.equals("/stop")

@@ -19,7 +19,7 @@ public final class ExpSplitSubcommand {
     private ExpSplitSubcommand() {}
 
     /**
-     * /ui expsplit — забирает весь опыт из уровней, отдаёт бутылку с опытом.
+     * /ui expsplit — takes all experience from levels, gives an experience bottle.
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.expsplit")) {
@@ -77,7 +77,7 @@ public final class ExpSplitSubcommand {
     }
 
     /**
-     * Обрабатывает использование XP-бутылки — забирает опыт.
+     * Handles XP bottle usage — collects the experience.
      */
     public static boolean useBottle(Player player, ItemStack item) {
         if (item == null || item.getType() != Material.GLASS_BOTTLE) return false;

@@ -11,30 +11,30 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 2FA система — подтверждение входа через GitHub OAuth.
+ * 2FA system — login confirmation via GitHub OAuth.
  * <p>
- * Поток работы:
- * 1. Игрок привязывает GitHub: /ui auth 2fa setup &lt;github_username&gt;
- * 2. При входе (после пароля): плагин запускает челлендж и пишет в чат
- *    кликабельную ссылку на {@code <public_url>/auth?state=...}
- * 3. Игрок открывает ссылку → GitHub OAuth → редирект на /callback
- * 4. Плагин сверяет GitHub-аккаунт с привязанным к UUID игрока
- * 5. Если совпало — вход разрешён; сессия живёт 1 час (auth.session_duration_minutes)
+ * Flow:
+ * 1. The player links GitHub: /ui auth 2fa setup &lt;github_username&gt;
+ * 2. On login (after the password): the plugin starts a challenge and writes
+ *    a clickable link to {@code <public_url>/auth?state=...} into the chat
+ * 3. The player opens the link → GitHub OAuth → redirect to /callback
+ * 4. The plugin checks the GitHub account against the one linked to the player's UUID
+ * 5. On a match — login is allowed; the session lives for 1 hour (auth.session_duration_minutes)
  * <p>
- * Требует OAuth App на https://github.com/settings/developers и открытого порта
- * (auth.2fa.github.port) + public_url в конфиге.
+ * Requires an OAuth App at https://github.com/settings/developers and an open port
+ * (auth.2fa.github.port) + public_url in the config.
  */
 public class Auth2FA {
 
     private static Auth2FA instance;
     private static boolean tableChecked = false;
 
-    /** Максимальное время ожидания подтверждения (5 минут). */
+    /** Maximum confirmation wait time (5 minutes). */
     private static final long CHALLENGE_TIMEOUT_MS = 5 * 60_000L;
 
-    /** uuid → ожидающее подтверждение. */
+    /** uuid → pending confirmation. */
     private final Map<UUID, PendingAuth> pendingAuths = new ConcurrentHashMap<>();
-    /** state-токен → uuid (одноразовая привязка для OAuth callback). */
+    /** state-token → uuid (one-time binding for the OAuth callback). */
     private final Map<String, UUID> stateToUuid = new ConcurrentHashMap<>();
 
     // =========================
@@ -64,8 +64,8 @@ public class Auth2FA {
         try (Connection con = DatabaseManager.getConnection();
              var st = con.createStatement()) {
 
-            // Одноразовая миграция: старая telegram-таблица (telegram_chat_id) больше
-            // не используется — удаляем её только если она ещё со старой схемой.
+            // One-time migration: the old telegram table (telegram_chat_id) is no
+            // longer used — drop it only if it still has the old schema.
             try (ResultSet rs = st.executeQuery("PRAGMA table_info(auth_2fa)")) {
                 boolean isLegacyTelegram = false;
                 while (rs.next()) {
@@ -111,7 +111,7 @@ public class Auth2FA {
         }
     }
 
-    /** Привязанный GitHub username игрока (или null). */
+    /** The player's linked GitHub username (or null). */
     public static String getGithubUsername(UUID uuid) {
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement(
@@ -161,10 +161,10 @@ public class Auth2FA {
     // =========================
 
     /**
-     * Начинает GitHub-челлендж: генерирует одноразовый state-токен.
+     * Starts a GitHub challenge: generates a one-time state token.
      *
-     * @return state-токен (используется как requestId), или null если 2FA не настроена
-     *         или HTTP-сервер не запущен
+     * @return the state token (used as requestId), or null if 2FA is not set up
+     *         or the HTTP server is not running
      */
     public String sendConfirmation(UUID uuid, String playerName) {
         if (!AuthConfig.isGithub2FAEnabled()) return null;
@@ -182,8 +182,8 @@ public class Auth2FA {
     }
 
     /**
-     * Кликабельная ссылка для игрока: {@code <public_url>/auth?state=...}
-     * или null, если челлендж не запущен.
+     * The clickable link for the player: {@code <public_url>/auth?state=...}
+     * or null if the challenge is not running.
      */
     public String getAuthUrl(UUID uuid) {
         PendingAuth pending = pendingAuths.get(uuid);
@@ -191,13 +191,13 @@ public class Auth2FA {
         return GithubAuthServer.getPublicBase() + "/auth?state=" + pending.state;
     }
 
-    /** Обратная привязка state → uuid (вызывается из HTTP callback). */
+    /** Reverse binding state → uuid (called from the HTTP callback). */
     public static UUID resolveState(String state) {
         if (instance == null || state == null) return null;
         return instance.stateToUuid.get(state);
     }
 
-    /** Помечает челлендж одобренным (вызывается из HTTP callback). */
+    /** Marks the challenge as approved (called from the HTTP callback). */
     public static void markApproved(UUID uuid, String githubUsername) {
         if (instance == null) return;
         PendingAuth pending = instance.pendingAuths.get(uuid);

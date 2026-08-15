@@ -11,14 +11,14 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Speed — ускоренное передвижение.
+ * Speed — accelerated movement.
  * <p>
- * Детекция:
- * 1. Дистанция за тик превышает максимум (walk/sprint/ice/roads).
- * 2. Спринт-прыжок БЕЗ увеличения высоты — хак "ground-speed".
- *    Если игрок спринтит, шлёт прыжок (yDelta > 0), но прыжок
- *    НАСТОЛЬКО мал, что не даёт высоты — это хак который разгоняет
- *    игрока в 2.5× без реального прыжка.
+ * Detection:
+ * 1. Distance per tick exceeds the maximum (walk/sprint/ice/roads).
+ * 2. Sprint-jump WITHOUT gaining height — the "ground-speed" hack.
+ *    If the player sprints and sends a jump (yDelta > 0), but the jump
+ *    is SO small that it gives no height — that's a hack that speeds
+ *    the player up 2.5× without a real jump.
  */
 public class SpeedCheck extends AbstractCheck {
 
@@ -27,7 +27,7 @@ public class SpeedCheck extends AbstractCheck {
     private double minJumpHeight;
     private double sprintJumpSpeedMul;
 
-    // Последние yDelta для детекции ground-speed
+    // Last yDelta values for ground-speed detection
     private final ConcurrentHashMap<UUID, Double> lastYDelta = new ConcurrentHashMap<>();
 
     public SpeedCheck() {
@@ -60,14 +60,14 @@ public class SpeedCheck extends AbstractCheck {
         boolean onGround = player.isOnGround();
         double maxSpeed = onGround ? maxSpeedGround : maxSpeedAir;
 
-        // ── Спринт-прыжок без высоты (ground-speed hack) ──
-        // Хак: игрок шлёт прыжок (yDelta > 0) но прыжок настолько мал,
-        // что это не настоящий прыжок (vanilla jump = 0.42).
-        // Результат: сервер даёт спринт-прыжковый буст скорости
-        // без фактического прыжка, разгоняя в 2.5× быстрее нормы.
+        // ── Sprint-jump without height (ground-speed hack) ──
+        // Hack: the player sends a jump (yDelta > 0) but the jump is so small
+        // that it's not a real jump (vanilla jump = 0.42).
+        // Result: the server grants the sprint-jump speed boost
+        // without an actual jump, speeding the player up 2.5× faster than normal.
         if (player.isSprinting() && yDelta > 0 && yDelta < minJumpHeight) {
-            // Fake jump detected — не даём спринт-буст
-            // Флагаем за ground-speed
+            // Fake jump detected — deny the sprint boost
+            // Flag for ground-speed
             double vl = Math.min(3.0, (minJumpHeight - yDelta) * 20.0);
             CheckResult result = flag(player, vl,
                     "Ground-Speed: YΔ=" + String.format("%.3f", yDelta)
@@ -76,7 +76,7 @@ public class SpeedCheck extends AbstractCheck {
             return;
         }
 
-        // Sprinting increases speed (только для реальных прыжков)
+        // Sprinting increases speed (only for real jumps)
         if (player.isSprinting()) maxSpeed *= sprintJumpSpeedMul;
 
         if (horizontalDist > maxSpeed) {

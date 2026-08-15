@@ -8,19 +8,19 @@ import java.nio.file.Files;
 import java.util.*;
 
 /**
- * Обнаруживает и удаляет дубликаты root-level ключей в YAML-файлах.
+ * Detects and removes duplicate root-level keys in YAML files.
  * <p>
- * SnakeYAML (используемый Bukkit) при загрузке файла с дублирующимися ключами
- * берёт ПОСЛЕДНЕЕ значение, игнорируя все предыдущие. Это приводит к тому,
- * что правки пользователя в первой секции теряются, если есть дубликат.
+ * SnakeYAML (used by Bukkit) when loading a file with duplicate keys
+ * takes the LAST value, ignoring all previous ones. This means the user's
+ * edits in the first section are lost if a duplicate exists.
  * <p>
- * Алгоритм:
+ * Algorithm:
  * <ol>
- *   <li>Сканирует файл построчно</li>
- *   <li>Находит все root-level ключи (строки без отступа, соответствующие {@code key:})</li>
- *   <li>Если ключ встречается повторно — удаляет ПОСЛЕДНИЙ дубликат целиком
- *       (включая все его под-ключи до следующего root-level ключа)</li>
- *   <li>Сохраняет очищенный файл на диск</li>
+ *   <li>Scans the file line by line</li>
+ *   <li>Finds all root-level keys (lines without indentation matching {@code key:})</li>
+ *   <li>If a key repeats — removes the LAST duplicate entirely
+ *       (including all its sub-keys up to the next root-level key)</li>
+ *   <li>Saves the cleaned file to disk</li>
  * </ol>
  */
 public class YamlDuplicateCleaner {
@@ -28,12 +28,12 @@ public class YamlDuplicateCleaner {
     private YamlDuplicateCleaner() {}
 
     /**
-     * Сканирует YAML-файл на дубликаты root-level ключей и удаляет все,
-     * кроме ПЕРВОГО вхождения.
+     * Scans a YAML file for duplicate root-level keys and removes all
+     * except the FIRST occurrence.
      *
-     * @param file     файл для обработки
-     * @param fileName отображаемое имя файла в логах
-     * @return true если дубликаты были найдены и удалены
+     * @param file     the file to process
+     * @param fileName the display name of the file in logs
+     * @return true if duplicates were found and removed
      */
     public static boolean cleanDuplicates(File file, String fileName) {
         if (!file.exists()) return false;
@@ -42,7 +42,7 @@ public class YamlDuplicateCleaner {
             List<String> lines = Files.readAllLines(file.toPath());
             List<Section> sections = findRootSections(lines);
 
-            // Ищем дубликаты: группируем по ключу, первый — оставляем, остальные — на удаление
+            // Find duplicates: group by key, keep the first, remove the rest
             Map<String, Section> firstOccurrence = new LinkedHashMap<>();
             Set<Integer> linesToRemove = new HashSet<>();
             int duplicateCount = 0;
@@ -62,7 +62,7 @@ public class YamlDuplicateCleaner {
 
             if (linesToRemove.isEmpty()) return false;
 
-            // Собираем очищенный файл (пропускаем удалённые строки)
+            // Build the cleaned file (skip the removed lines)
             List<String> cleaned = new ArrayList<>(lines.size());
             for (int i = 0; i < lines.size(); i++) {
                 if (!linesToRemove.contains(i)) {
@@ -83,12 +83,12 @@ public class YamlDuplicateCleaner {
     }
 
     /**
-     * Находит все root-level секции в YAML-файле.
+     * Finds all root-level sections in a YAML file.
      * <p>
-     * Секция = строка с корневым ключом + все строки до следующего корневого ключа (или конца файла).
+     * Section = a line with a root key + all lines up to the next root key (or end of file).
      */
     private static List<Section> findRootSections(List<String> lines) {
-        // Находим индексы всех root-level ключей
+        // Find the indices of all root-level keys
         List<Integer> keyLines = new ArrayList<>();
         for (int i = 0; i < lines.size(); i++) {
             if (isRootKey(lines.get(i))) {
@@ -98,7 +98,7 @@ public class YamlDuplicateCleaner {
 
         if (keyLines.isEmpty()) return Collections.emptyList();
 
-        // Строим секции: от ключа до следующего ключа (или конца файла)
+        // Build sections: from a key to the next key (or end of file)
         List<Section> sections = new ArrayList<>(keyLines.size());
         for (int k = 0; k < keyLines.size(); k++) {
             int start = keyLines.get(k);
@@ -111,30 +111,30 @@ public class YamlDuplicateCleaner {
     }
 
     /**
-     * Проверяет, является ли строка root-level YAML ключом:
+     * Checks whether a line is a root-level YAML key:
      * <ul>
-     *   <li>Без ведущих пробелов/табуляции</li>
-     *   <li>Не комментарий</li>
-     *   <li>Не элемент списка ({@code - })</li>
-     *   <li>Соответствует шаблону {@code [word_chars]:}</li>
+     *   <li>No leading spaces/tabs</li>
+     *   <li>Not a comment</li>
+     *   <li>Not a list item ({@code - })</li>
+     *   <li>Matches the {@code [word_chars]:} pattern</li>
      * </ul>
      */
     private static boolean isRootKey(String line) {
         if (line == null || line.isEmpty()) return false;
-        // Не начинается с пробела или табуляции
+        // Must not start with a space or tab
         char first = line.charAt(0);
         if (first == ' ' || first == '\t') return false;
-        // Не комментарий
+        // Not a comment
         String trimmed = line.trim();
         if (trimmed.startsWith("#")) return false;
-        // Не элемент списка на root-уровне
+        // Not a root-level list item
         if (trimmed.startsWith("- ")) return false;
-        // Должен быть YAML ключом: буквы/цифры/подчёркивание/дефис, затем двоеточие
+        // Must be a YAML key: letters/digits/underscore/hyphen, then a colon
         return trimmed.matches("^[a-zA-Z_][a-zA-Z0-9_-]*:.*");
     }
 
     /**
-     * Извлекает имя ключа из строки вида {@code key: value}.
+     * Extracts the key name from a line of the form {@code key: value}.
      */
     private static String extractKey(String line) {
         String trimmed = line.trim();
@@ -146,7 +146,7 @@ public class YamlDuplicateCleaner {
     }
 
     /**
-     * Внутренний класс, описывающий секцию root-level ключа в YAML-файле.
+     * Inner class describing a root-level key section in a YAML file.
      */
     private static class Section {
         final String key;

@@ -12,41 +12,41 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 📡 Одно разобранное условие авто-броадкаста.
+ * 📡 A single parsed auto-broadcast condition.
  * <p>
- * Условие задаётся строкой вида {@code "<имя>=<значение>"}, например
- * {@code is-op=true} или {@code height-above=25}. Условия, у которых есть
- * оператор сравнения, используют суффиксы {@code -is} / {@code -above} / {@code -below}.
+ * A condition is a string like {@code "<name>=<value>"}, e.g.
+ * {@code is-op=true} or {@code height-above=25}. Conditions with a comparison
+ * operator use the {@code -is} / {@code -above} / {@code -below} suffixes.
  * <p>
- * Два вида условий:
+ * Two kinds of conditions:
  * <ul>
- *   <li><b>Игровые</b> ({@code is-op}, {@code is-gamemode}, {@code height-*},
+ *   <li><b>Player</b> ({@code is-op}, {@code is-gamemode}, {@code height-*},
  *       {@code health-*}, {@code hunger-*}, {@code is-alert}, {@code is-group},
- *       {@code xp-lvl-*}) — проверяются отдельно для каждого онлайн-игрока.</li>
- *   <li><b>Глобальные</b> ({@code online-*}) — проверяются один раз за цикл
- *       против общего количества игроков на сервере, не зависят от конкретного игрока.</li>
+ *       {@code xp-lvl-*}) — checked separately for each online player.</li>
+ *   <li><b>Global</b> ({@code online-*}) — checked once per cycle against the
+ *       total number of players on the server, independent of any player.</li>
  * </ul>
  * <p>
- * Однотипные условия (одинаковое имя) с разными значениями = ИЛИ.
- * Условия разных имён = И. Дубликаты «имя=значение» отсекаются с
- * предупреждением в консоли на этапе парсинга.
+ * Same-name conditions (identical name) with different values = OR.
+ * Conditions of different names = AND. Duplicate «name=value» pairs are dropped
+ * with a console warning at parse time.
  */
 public final class BroadcastCondition {
 
-    /** Оператор сравнения числовых условий. */
+    /** Comparison operator for numeric conditions. */
     public enum Op { IS, ABOVE, BELOW }
 
-    /** Паттерн условий с оператором: height-above=25, xp-lvl-below=10 и т.д. */
+    /** Pattern for conditions with an operator: height-above=25, xp-lvl-below=10 etc. */
     private static final Pattern PREFIXED =
             Pattern.compile("^(height|health|hunger|online|xp-lvl)-(is|above|below)$");
 
-    private final String name;        // нормализованное имя, напр. "height-above", "is-op"
-    private final Op op;              // IS для простых (boolean/строковых) условий
-    private final String rawValue;    // значение как строка из конфига (нижний регистр)
-    private final boolean global;     // true для online-* (серверное условие)
-    private final boolean boolValue;  // для is-op / is-alert
-    private final int intValue;       // для height / health / hunger / xp-lvl / online
-    private final GameMode gameMode;  // для is-gamemode
+    private final String name;        // normalized name, e.g. "height-above", "is-op"
+    private final Op op;              // IS for simple (boolean/string) conditions
+    private final String rawValue;    // the value as a config string (lowercase)
+    private final boolean global;     // true for online-* (server condition)
+    private final boolean boolValue;  // for is-op / is-alert
+    private final int intValue;       // for height / health / hunger / xp-lvl / online
+    private final GameMode gameMode;  // for is-gamemode
 
     private BroadcastCondition(String name, Op op, String rawValue, boolean global,
                                boolean boolValue, int intValue, GameMode gameMode) {
@@ -60,12 +60,12 @@ public final class BroadcastCondition {
     }
 
     /**
-     * Разбирает одну запись условия из строки конфига.
+     * Parses one condition entry from a config string.
      *
-     * @param section  имя секции (для сообщений об ошибках)
-     * @param entry    запись вида "имя=значение" (уже обрезанная)
-     * @param warnings накопитель предупреждений (может быть null)
-     * @return готовое условие или {@code null}, если запись некорректна (уже предупреждено)
+     * @param section  the section name (for error messages)
+     * @param entry    an entry like "name=value" (already trimmed)
+     * @param warnings a warning accumulator (may be null)
+     * @return the parsed condition or {@code null} if the entry is invalid (already warned)
      */
     public static BroadcastCondition parse(String section, String entry, List<String> warnings) {
         int eq = entry.indexOf('=');
@@ -82,7 +82,7 @@ public final class BroadcastCondition {
             return null;
         }
 
-        // Условия с оператором: height-above=25, xp-lvl-is=10 ...
+        // Conditions with an operator: height-above=25, xp-lvl-is=10 ...
         Matcher m = PREFIXED.matcher(left);
         if (m.matches()) {
             String base = m.group(1);
@@ -104,7 +104,7 @@ public final class BroadcastCondition {
             return new BroadcastCondition(left, op, value, global, false, intValue, null);
         }
 
-        // Простые условия: is-op, is-gamemode, is-alert, is-group
+        // Simple conditions: is-op, is-gamemode, is-alert, is-group
         Op op = Op.IS;
         switch (left) {
             case "is-op":
@@ -138,8 +138,8 @@ public final class BroadcastCondition {
     }
 
     /**
-     * Проверяет условие для конкретного игрока. Не вызывать для глобальных условий
-     * (online-*) — для них есть {@link #matchesGlobal()}.
+     * Checks the condition for a specific player. Don't call for global conditions
+     * (online-*) — those have {@link #matchesGlobal()}.
      */
     public boolean matches(Player player) {
         if (player == null) return false;
@@ -151,21 +151,21 @@ public final class BroadcastCondition {
             case "is-gamemode":
                 return player.getGameMode() == gameMode;
             case "is-group": {
-                // Основная группа LuckPerms (как плейсхолдер %group%)
+                // Main LuckPerms group (like the %group% placeholder)
                 String group = PlaceholderResolver.resolveBuiltin(player, "group");
                 if (group != null && !group.isEmpty() && group.equalsIgnoreCase(rawValue)) {
                     return true;
                 }
-                // Fallback: LuckPerms выдаёт право group.<имя> для основной И унаследованных
-                // групп, поэтому проверка покрывает и наследование.
+                // Fallback: LuckPerms grants the group.<name> permission for the main AND
+                // inherited groups, so this check also covers inheritance.
                 return player.hasPermission("group." + rawValue);
             }
             case "height":
                 return compareInt(player.getLocation().getBlockY());
             case "health":
                 return switch (op) {
-                    // IS сравнивает ЦЕЛУЮ часть здоровья (19.5 → 19),
-                    // ABOVE/BELOW — сырое значение (19.5 > 18 → true).
+                    // IS compares the INTEGER part of health (19.5 → 19),
+                    // ABOVE/BELOW use the raw value (19.5 > 18 → true).
                     case IS -> (int) player.getHealth() == intValue;
                     case ABOVE -> player.getHealth() > intValue;
                     case BELOW -> player.getHealth() < intValue;
@@ -180,30 +180,30 @@ public final class BroadcastCondition {
     }
 
     /**
-     * Проверяет глобальное (серверное) условие {@code online-*}.
-     * Для всех остальных условий возвращает {@code false}.
+     * Checks the global (server) condition {@code online-*}.
+     * Returns {@code false} for all other conditions.
      */
     public boolean matchesGlobal() {
         if (!global) return false;
         return compareInt(Bukkit.getOnlinePlayers().size());
     }
 
-    /** @return имя условия (нормализованное), напр. "height-above" */
+    /** @return the condition name (normalized), e.g. "height-above" */
     public String getName() {
         return name;
     }
 
-    /** @return сырое значение условия (нижний регистр) */
+    /** @return the raw condition value (lowercase) */
     public String getRawValue() {
         return rawValue;
     }
 
-    /** @return true если условие глобальное (online-*) и не зависит от игрока */
+    /** @return true if the condition is global (online-*) and doesn't depend on a player */
     public boolean isGlobal() {
         return global;
     }
 
-    /** Ключ для дедупликации: имя=значение (регистронезависимо). */
+    /** Deduplication key: name=value (case-insensitive). */
     public String dedupeKey() {
         return name + "=" + rawValue;
     }

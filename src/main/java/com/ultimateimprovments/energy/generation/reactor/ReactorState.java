@@ -4,8 +4,8 @@ import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Location;
 
 /**
- * Состояние реактора — параметры ядра, корпуса, износ, рецепт.
- * Содержит только поля и getter/setter методы, без логики тиков.
+ * Reactor state — core, case, wear and recipe parameters.
+ * Contains only fields and getter/setter methods, no tick logic.
  */
 public class ReactorState {
 

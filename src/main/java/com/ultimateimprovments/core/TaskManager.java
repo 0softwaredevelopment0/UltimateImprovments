@@ -69,8 +69,8 @@ public class TaskManager {
         gunTask = new PlasmaProjectileTask().runTaskTimer(plugin, 1L, 1L);
         // ReactorTask now managed by ReactorModule
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
-        // FishingListener — singleton. При cancel() мы сбрасываем его internal task
-        // через resetBukkitRunnableTask(), поэтому .runTaskTimer() не упадёт с "Already scheduled".
+        // FishingListener — singleton. On cancel() we reset its internal task
+        // via resetBukkitRunnableTask(), so .runTaskTimer() won't fail with "Already scheduled".
         fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
         codePanelCleanupTask = new CodePanelCleanupTask().runTaskTimer(plugin, 200L, 400L);
 
@@ -146,8 +146,8 @@ public class TaskManager {
         if (radiationTask != null) radiationTask.cancel();
         if (fishingTask != null) {
             fishingTask.cancel();
-            // Сбрасываем internal task BukkitRunnable после cancel(),
-            // чтобы повторный .runTaskTimer() не упал с "Already scheduled"
+            // Reset the internal BukkitRunnable task after cancel(),
+            // so a repeated .runTaskTimer() won't fail with "Already scheduled"
             resetBukkitRunnableTask(FishingListener.getInstance());
         }
         if (codePanelCleanupTask != null) codePanelCleanupTask.cancel();
@@ -155,12 +155,12 @@ public class TaskManager {
     }
 
     /**
-     * Сбрасывает внутреннее поле task BukkitRunnable через рефлексию.
-     * BukkitRunnable.checkNotYetScheduled() падает если task != null даже после cancel().
-     * Это фикс для singleton'ов (например FishingListener) при /ui reload.
+     * Resets the internal task BukkitRunnable field via reflection.
+     * BukkitRunnable.checkNotYetScheduled() fails if task != null even after cancel().
+     * This is a fix for singletons (e.g. FishingListener) on /ui reload.
      * <p>
-     * Публичный — вызывается также из PluginShutdown после глобального cancelTasks(),
-     * чтобы повторный runTaskTimer() гарантированно не упал с "Already scheduled".
+     * Public — also called from PluginShutdown after a global cancelTasks(),
+     * so a repeated runTaskTimer() is guaranteed not to fail with "Already scheduled".
      */
     public static void resetBukkitRunnableTask(BukkitRunnable runnable) {
         if (runnable == null) return;

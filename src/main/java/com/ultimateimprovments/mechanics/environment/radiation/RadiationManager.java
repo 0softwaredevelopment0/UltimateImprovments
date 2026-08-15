@@ -199,14 +199,14 @@ public class RadiationManager implements Listener {
         Player player = e.getEntity();
         if (!enabled || !deathReset) return;
         resetRadiation(player);
-        // БД: не пишем сразу — AsyncAutoSaveManager сохранит каждые 5 мин
+        // DB: do not write immediately — AsyncAutoSaveManager saves every 5 min
     }
 
     @EventHandler
     public void onPlayerRespawn(PlayerRespawnEvent e) {
         Player player = e.getPlayer();
         if (!enabled || !deathReset) return;
-        // Подстраховка: после возрождения радиация точно 0
+        // Safety net: after respawn radiation is definitely 0
         resetRadiation(player);
     }
 
@@ -220,7 +220,7 @@ public class RadiationManager implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         Player player = e.getPlayer();
-        // Сохраняем в БД перед удалением из памяти, чтобы радиация не терялась
+        // Save to DB before removing from memory so radiation is not lost
         saveToDB(player);
         radiationMap.remove(player.getUniqueId());
         radViewEnabled.remove(player.getUniqueId());
@@ -236,22 +236,22 @@ public class RadiationManager implements Listener {
             if (player.getGameMode() == GameMode.CREATIVE
                     || player.getGameMode() == GameMode.SPECTATOR) continue;
 
-            // Пропускаем мёртвых игроков — радиация сброшена при смерти
+            // Skip dead players — radiation was reset on death
             if (player.isDead() || player.getHealth() <= 0) continue;
 
             UUID uuid = player.getUniqueId();
             int rad = radiationMap.getOrDefault(uuid, 0);
 
             // =========================
-            // ЕСТЕСТВЕННЫЙ СПАД (-1 за тик)
+            // NATURAL DECAY (-1 per tick)
             // =========================
             if (rad > 0) {
                 rad = Math.max(0, rad - naturalDecay);
             }
 
             // =========================
-            // ДРЕВНИЕ ОБЛОМКИ В ИНВЕНТАРЕ — радиация × количество
-            // Чем больше обломков, тем выше радиация
+            // ANCIENT DEBRIS IN INVENTORY — radiation × amount
+            // The more debris, the higher the radiation
             // =========================
             int debrisCount = countInInventory(player, Material.ANCIENT_DEBRIS);
             if (debrisCount > 0) {
@@ -259,14 +259,14 @@ public class RadiationManager implements Listener {
             }
 
             // =========================
-            // БИОМ BASALT_DELTAS
+            // BASALT_DELTAS BIOME
             // =========================
             if (player.getLocation().getBlock().getBiome() == org.bukkit.block.Biome.BASALT_DELTAS) {
                 rad += basaltDeltasRad;
             }
 
             // =========================
-            // THE END — РАДИАЦИЯ ПОД ОТКРЫТЫМ НЕБОМ
+            // THE END — RADIATION UNDER OPEN SKY
             // =========================
             if (player.getWorld().getEnvironment() == World.Environment.THE_END
                     && player.getLocation().getBlock().getLightFromSky() >= 15) {
@@ -274,7 +274,7 @@ public class RadiationManager implements Listener {
             }
 
             // =========================
-            // СВИНЦОВЫЙ ЩИТ УМЕНЬШАЕТ РАДИАЦИЮ
+            // LEAD SHIELD REDUCES RADIATION
             // =========================
             if (hasCustomItem(player.getInventory().getItemInMainHand(), Keys.LEAD_SHIELD)
                     || hasCustomItem(player.getInventory().getItemInOffHand(), Keys.LEAD_SHIELD)) {
@@ -282,7 +282,7 @@ public class RadiationManager implements Listener {
             }
 
             // =========================
-            // TOGGLE-ОТОБРАЖЕНИЕ РАДИАЦИИ В ACTIONBAR (Р/Ч)
+            // TOGGLE RADIATION DISPLAY IN ACTIONBAR (R/h)
             // =========================
             if (radViewEnabled.contains(uuid)) {
                 double roentgen = rad / 100.0;
@@ -303,7 +303,7 @@ public class RadiationManager implements Listener {
             if (player.getGameMode() == GameMode.CREATIVE
                     || player.getGameMode() == GameMode.SPECTATOR) continue;
 
-            // Пропускаем мёртвых игроков
+            // Skip dead players
             if (player.isDead() || player.getHealth() <= 0) continue;
 
             int rad = radiationMap.getOrDefault(player.getUniqueId(), 0);
@@ -312,30 +312,30 @@ public class RadiationManager implements Listener {
             int duration = 40; // 2 seconds
 
             if (rad < 400) {
-                // Уровень 1: 200-399  (~2-4 Р/Ч)
+                // Level 1: 200-399  (~2-4 R/h)
                 giveEffect(player, PotionEffectType.HUNGER, duration, 0);
                 giveEffect(player, PotionEffectType.SLOWNESS, duration, 0);
             } else if (rad < 800) {
-                // Уровень 2: 400-799  (~4-8 Р/Ч)
+                // Level 2: 400-799  (~4-8 R/h)
                 giveEffect(player, PotionEffectType.HUNGER, duration, 1);
                 giveEffect(player, PotionEffectType.SLOWNESS, duration, 1);
                 giveEffect(player, PotionEffectType.NAUSEA, duration, 0);
                 giveEffect(player, PotionEffectType.WEAKNESS, duration, 0);
             } else if (rad < 1600) {
-                // Уровень 3: 800-1599  (~8-16 Р/Ч)
+                // Level 3: 800-1599  (~8-16 R/h)
                 giveEffect(player, PotionEffectType.HUNGER, duration, 2);
                 giveEffect(player, PotionEffectType.SLOWNESS, duration, 2);
                 giveEffect(player, PotionEffectType.NAUSEA, duration, 0);
                 giveEffect(player, PotionEffectType.WEAKNESS, duration, 1);
             } else if (rad < 3200) {
-                // Уровень 4: 1600-3199  (~16-32 Р/Ч)
+                // Level 4: 1600-3199  (~16-32 R/h)
                 giveEffect(player, PotionEffectType.HUNGER, duration, 4);
                 giveEffect(player, PotionEffectType.SLOWNESS, duration, 4);
                 giveEffect(player, PotionEffectType.NAUSEA, duration, 1);
                 giveEffect(player, PotionEffectType.WEAKNESS, duration, 2);
                 giveEffect(player, PotionEffectType.BLINDNESS, duration, 0);
             } else if (rad < 6400) {
-                // Уровень 5: 3200-6399  (~32-64 Р/Ч)
+                // Level 5: 3200-6399  (~32-64 R/h)
                 giveEffect(player, PotionEffectType.HUNGER, duration, 6);
                 giveEffect(player, PotionEffectType.SLOWNESS, duration, 6);
                 giveEffect(player, PotionEffectType.NAUSEA, duration, 1);
@@ -343,7 +343,7 @@ public class RadiationManager implements Listener {
                 giveEffect(player, PotionEffectType.BLINDNESS, duration, 0);
                 giveEffect(player, PotionEffectType.MINING_FATIGUE, duration, 1);
             } else {
-                // Уровень 6: 6400+  (64+ Р/Ч)
+                // Level 6: 6400+  (64+ R/h)
                 giveEffect(player, PotionEffectType.HUNGER, duration, 10);
                 giveEffect(player, PotionEffectType.SLOWNESS, duration, 10);
                 giveEffect(player, PotionEffectType.NAUSEA, duration, 2);
@@ -395,7 +395,7 @@ public class RadiationManager implements Listener {
     }
 
     // =========================
-    // ЕДА УМЕНЬШАЕТ РАДИАЦИЮ (-10, если радиация > 200)
+    // FOOD REDUCES RADIATION (-10, if radiation > 200)
     // =========================
 
     @EventHandler

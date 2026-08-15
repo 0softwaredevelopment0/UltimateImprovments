@@ -10,9 +10,9 @@ import com.ultimateimprovments.structure.StructureMarker;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
- * AutoSaveManager — автоматическое сохранение всех систем в БД каждые 5 минут.
+ * AutoSaveManager — automatic saving of all systems to the DB every 5 minutes.
  * <p>
- * Запускается синхронно на главном серверном потоке.
+ * Runs synchronously on the main server thread.
  * Saves: CableNetwork, ReactorManager, MagnetManager, RadiationManager,
  * and structures (StructureMarker — full re-save of the structure_markers table;
  * the «every 10 minutes» requirement is covered with a margin).
@@ -21,24 +21,24 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
 
     private static AsyncAutoSaveManager instance;
 
-    private static final long SAVE_INTERVAL_TICKS = 6000L; // 5 минут (6000 тиков)
+    private static final long SAVE_INTERVAL_TICKS = 6000L; // 5 minutes (6000 ticks)
 
     /**
-     * Запускает автоматическое сохранение.
+     * Starts the automatic saving.
      */
     public static void init(Main plugin) {
         if (instance != null) {
             instance.cancel();
         }
         instance = new AsyncAutoSaveManager();
-        // Запускаем с задержкой 5 минут, потом каждые 5 минут
-        // Синхронно — предотвращает data race при чтении ReactorManager/RadiationManager из async потока
+        // Start with a 5-minute delay, then every 5 minutes
+        // Synchronous — prevents data races when reading ReactorManager/RadiationManager from an async thread
         instance.runTaskTimer(plugin, SAVE_INTERVAL_TICKS, SAVE_INTERVAL_TICKS);
         ConsoleLogger.info("[AutoSave] Auto-save started (every 5 minutes)");
     }
 
     /**
-     * Останавливает автоматическое сохранение.
+     * Stops the automatic saving.
      */
     public static void shutdown() {
         if (instance != null) {
@@ -48,7 +48,7 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
     }
 
     /**
-     * Выполняет синхронное сохранение всех систем (вызывается при onDisable).
+     * Performs a synchronous save of all systems (called on onDisable).
      */
     public static void saveAllNow() {
         try {
@@ -94,9 +94,9 @@ public class AsyncAutoSaveManager extends BukkitRunnable {
 
         plugin.getLogger().fine("[AutoSave] Starting auto-save...");
 
-        // Все save() методы теперь либо no-op (CableNetwork, MagnetManager),
-        // либо используют SQLite с busy_timeout=5000 (ReactorManager, RadiationManager).
-        // На синхронном потоке BUSY практически невозможен — нет конкурентных писателей.
+        // All save() methods are now either no-op (CableNetwork, MagnetManager)
+        // or use SQLite with busy_timeout=5000 (ReactorManager, RadiationManager).
+        // On the synchronous thread BUSY is practically impossible — there are no concurrent writers.
         try { CableNetwork.save(); } catch (Exception e) {
             ConsoleLogger.warn("[AutoSave] CableNetwork error: " + e.getMessage());
         }

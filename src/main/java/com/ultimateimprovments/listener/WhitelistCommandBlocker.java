@@ -8,13 +8,13 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 
 /**
- * 🚫 WhitelistCommandBlocker — блокирует ванильную команду /whitelist,
- * так как UltimateImprovments использует свой собственный вайтлист (/ui whitelist).
+ * 🚫 WhitelistCommandBlocker — blocks the vanilla /whitelist command,
+ * because UltimateImprovments uses its own whitelist (/ui whitelist).
  * <p>
- * Перехватывает:
+ * Intercepts:
  * <ul>
- *   <li>{@code /whitelist}, {@code /minecraft:whitelist}, {@code /bukkit:whitelist} (любые аргументы)</li>
- *   <li>Как от игроков (PlayerCommandPreprocessEvent), так и из консоли (ServerCommandEvent)</li>
+ *   <li>{@code /whitelist}, {@code /minecraft:whitelist}, {@code /bukkit:whitelist} (any arguments)</li>
+ *   <li>Both from players (PlayerCommandPreprocessEvent) and from the console (ServerCommandEvent)</li>
  * </ul>
  */
 public class WhitelistCommandBlocker implements Listener {
@@ -22,7 +22,7 @@ public class WhitelistCommandBlocker implements Listener {
     private static final String BLOCK_MESSAGE = "<red>❌ Vanilla /whitelist is disabled.</red> <gray>Use:</gray> <white>/ui whitelist</white>";
 
     /**
-     * Проверяет, является ли команда вариантом /whitelist (с учётом неймспейсов и аргументов).
+     * Checks whether the command is a variant of /whitelist (considering namespaces and arguments).
      */
     private static boolean isWhitelistCommand(String msg) {
         return msg.equals("/whitelist")

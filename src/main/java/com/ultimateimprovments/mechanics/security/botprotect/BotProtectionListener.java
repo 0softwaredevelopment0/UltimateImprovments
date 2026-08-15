@@ -23,19 +23,19 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Защита от ботов / флуда входом.
+ * Protection against bots / join flooding.
  * <p>
- * Две фичи:
+ * Two features:
  * <ol>
- *   <li><b>Очередь входа</b> — если больше N игроков пытаются зайти за окно времени,
- *       лишние получают сообщение об очереди. Операторы и консоль уведомляются.</li>
- *   <li><b>Кулдаун реджоина</b> — если игрок вышел и пытается зайти снова слишком быстро,
- *       получает сообщение подождать. Время выхода сохраняется в БД, так что перезапуск
- *       сервера не сбрасывает кулдаун.</li>
+ *   <li><b>Join queue</b> — if more than N players try to join within a time window,
+ *       the extras get a queue message. Operators and the console are notified.</li>
+ *   <li><b>Rejoin cooldown</b> — if a player left and tries to join again too quickly,
+ *       they get a wait message. The quit time is persisted in the DB, so a server
+ *       restart does not reset the cooldown.</li>
  * </ol>
  * <p>
- * Использует {@link AsyncPlayerPreLoginEvent} (асинхронный, до захода игрока).
- * Все Bukkit API вызовы синхронизируются через {@code runTask()}.
+ * Uses {@link AsyncPlayerPreLoginEvent} (async, before the player joins).
+ * All Bukkit API calls are synchronized via {@code runTask()}.
  */
 public class BotProtectionListener implements Listener {
 
@@ -70,7 +70,7 @@ public class BotProtectionListener implements Listener {
     }
 
     /**
-     * Перезагружает конфиг из config.yml.
+     * Reloads the config from config.yml.
      */
     public void loadConfig() {
         var config = plugin.getConfig();
@@ -88,7 +88,7 @@ public class BotProtectionListener implements Listener {
     // =========================================================
 
     /**
-     * Сохраняет время выхода в БД.
+     * Saves the quit time to the DB.
      */
     private void dbSaveQuitTime(UUID uuid, long quitTime) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -105,7 +105,7 @@ public class BotProtectionListener implements Listener {
     }
 
     /**
-     * Удаляет время выхода из БД (после успешного захода или истечения кулдауна).
+     * Removes the quit time from the DB (after a successful join or cooldown expiry).
      */
     private void dbRemoveQuitTime(UUID uuid) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -121,7 +121,7 @@ public class BotProtectionListener implements Listener {
     }
 
     /**
-     * Читает время выхода из БД (если в памяти нет — перезагрузка сервера).
+     * Reads the quit time from the DB (if not in memory — server restart).
      */
     private Long dbLoadQuitTime(UUID uuid) {
         try (Connection con = DatabaseManager.getConnection();
@@ -153,12 +153,12 @@ public class BotProtectionListener implements Listener {
         long now = System.currentTimeMillis();
 
         // ═════════════════════════════════════════════════════
-        //  FEATURE 3: Priority session queue — bypass cooldown,
-        //  но имеет свою rate-limit очередь (не конфликтует с обычной)
+        //  FEATURE 3: Priority session queue — bypasses the cooldown,
+        //  but has its own rate-limit queue (does not conflict with the regular one)
         // ═════════════════════════════════════════════════════
         Long sessionExpiry = prioritySessions.remove(uuid);
         if (sessionExpiry != null && now < sessionExpiry) {
-            // Priority queue check (свой sliding window)
+            // Priority queue check (its own sliding window)
             long cutoff = now - (windowSeconds * 1000L);
             while (!priorityTimestamps.isEmpty() && priorityTimestamps.peekFirst() < cutoff) {
                 priorityTimestamps.pollFirst();
@@ -175,7 +175,7 @@ public class BotProtectionListener implements Listener {
                 ConsoleLogger.info("[BotProtect] " + name + " priority queued: position #" + position
                         + " (" + priorityCount + " priority joins in " + windowSeconds + "s window)");
 
-                // Возвращаем сессию — пусть попробует снова через секунду
+                // Return the session — let them try again in a second
                 prioritySessions.put(uuid, sessionExpiry);
                 return;
             }
@@ -187,7 +187,7 @@ public class BotProtectionListener implements Listener {
         // ═════════════════════════════════════════════════════
         //  FEATURE 2: Rejoin cooldown
         // ═════════════════════════════════════════════════════
-        // Пробуем из in-memory кэша, потом из БД (на случай перезагрузки)
+        // Try the in-memory cache first, then the DB (in case of a restart)
         Long quitTime = quitTimes.remove(uuid);
         if (quitTime == null) {
             quitTime = dbLoadQuitTime(uuid);
@@ -197,20 +197,20 @@ public class BotProtectionListener implements Listener {
             long elapsed = now - quitTime;
             int cooldownMs = rejoinCooldownSeconds * 1000;
             if (elapsed < cooldownMs) {
-                long remaining = (cooldownMs - elapsed + 999) / 1000; // округление вверх
+                long remaining = (cooldownMs - elapsed + 999) / 1000; // round up
                 String msg = MessagesManager.getString("bot_protection.rejoin_cooldown",
                         "<red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>")
                         .replace("%seconds%", String.valueOf(remaining));
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
                 ConsoleLogger.info("[BotProtect] " + name + " rejected: rejoin cooldown (" + remaining + "s remaining)");
 
-                // ВАЖНО: возвращаем quitTime обратно в кэш, чтобы следующий реконнект
-                // (в пределах того же кулдауна) тоже был отклонён.
+                // IMPORTANT: put quitTime back into the cache so the next reconnect
+                // (within the same cooldown) is also rejected.
                 quitTimes.put(uuid, quitTime);
                 return;
             }
 
-            // Кулдаун истёк — удаляем из БД (запись в памяти уже удалена через remove)
+            // Cooldown expired — remove from the DB (the in-memory entry was already removed)
             dbRemoveQuitTime(uuid);
         }
 
@@ -248,8 +248,8 @@ public class BotProtectionListener implements Listener {
     }
 
     /**
-     * Уведомляет операторов и консоль о превышении лимита входа (не чаще раза за окно).
-     * Безопасно для вызова из асинхронного события — планирует на главный поток.
+     * Notifies operators and the console about exceeding the join limit (at most once per window).
+     * Safe to call from an async event — schedules onto the main thread.
      */
     private void notifyOpsAsync(long now, int count) {
         if (!notifyOps) return;
@@ -263,7 +263,7 @@ public class BotProtectionListener implements Listener {
                         .replace("%count%", String.valueOf(count))
                         .replace("%seconds%", String.valueOf(windowSeconds));
 
-                // Планируем на главный поток (Bukkit API не thread-safe)
+                // Schedule onto the main thread (Bukkit API is not thread-safe)
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     // Console only
                     Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(msg));
@@ -301,10 +301,10 @@ public class BotProtectionListener implements Listener {
     }
 
     /**
-     * Периодическая очистка устаревших данных:
-     * — prioritySessions (истекшие сессии)
-     * — priorityTimestamps (окна вне интервала)
-     * — quitTimes (игроки вышли и кулдаун давно истёк — не вернутся)
+     * Periodic cleanup of stale data:
+     * — prioritySessions (expired sessions)
+     * — priorityTimestamps (windows outside the interval)
+     * — quitTimes (players left and the cooldown expired long ago — they won't return)
      */
     private void cleanupStaleData() {
         long now = System.currentTimeMillis();
@@ -318,7 +318,7 @@ public class BotProtectionListener implements Listener {
             priorityTimestamps.pollFirst();
         }
 
-        // Clean stale quitTimes — кулдаун истёк, игрок явно не вернётся
+        // Clean stale quitTimes — the cooldown expired, the player is clearly not coming back
         long cooldownMs = rejoinCooldownSeconds * 1000L;
         quitTimes.entrySet().removeIf(entry -> now - entry.getValue() > cooldownMs);
     }

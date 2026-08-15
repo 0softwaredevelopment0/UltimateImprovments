@@ -13,32 +13,32 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * SudoManager — «sudo-режим» как на GitHub: опасные действия требуют
- * ввода sudo-пароля, после чего включается сессия (по умолчанию 15 минут),
- * в течение которой опасные команды проходят без подтверждения.
+ * SudoManager — GitHub-style «sudo mode»: dangerous actions require entering
+ * a sudo password, after which a session starts (default 15 minutes) during
+ * which dangerous commands pass without confirmation.
  * <p>
- * Механика:
+ * Mechanics:
  * <ul>
- *   <li>Игроки с правом {@code ui.sudo} подпадают под sudo.</li>
- *   <li>Опасные команды задаются в config.yml {@code features.sudo.dangerous_commands}.</li>
- *   <li>Если у игрока нет sudo-пароля — открывается «второе окно авторизации»
- *       (диалог) с просьбой задать пароль и не забывать его.</li>
- *   <li>Кулдаун между попытками — 10 секунд, число попыток не ограничено.</li>
- *   <li>При неверном пароле предлагается сброс: запрос уходит в консоль,
- *       консоль подтверждает через {@code /ui sudo confirmreset <player>}.</li>
+ *   <li>Players with the {@code ui.sudo} permission are subject to sudo.</li>
+ *   <li>Dangerous commands are defined in config.yml {@code features.sudo.dangerous_commands}.</li>
+ *   <li>If the player has no sudo password — a «second authorization window»
+ *       (dialog) opens asking them to set a password and not forget it.</li>
+ *   <li>Cooldown between attempts — 10 seconds, unlimited attempts.</li>
+ *   <li>On a wrong password a reset is offered: the request goes to the console,
+ *       the console confirms via {@code /ui sudo confirmreset <player>}.</li>
  * </ul>
  */
 public class SudoManager {
 
     private static SudoManager instance;
 
-    /** Активные sudo-сессии: UUID → время истечения (ms). */
+    /** Active sudo sessions: UUID → expiration time (ms). */
     private final Map<UUID, Long> sudoExpiry = new ConcurrentHashMap<>();
-    /** Кулдаун между попытками пароля: UUID → когда можно снова (ms). */
+    /** Password attempt cooldown: UUID → when allowed again (ms). */
     private final Map<UUID, Long> attemptCooldowns = new ConcurrentHashMap<>();
-    /** Заблокированные команды, ожидающие sudo: UUID → полная команда. */
+    /** Blocked commands awaiting sudo: UUID → full command. */
     private final Map<UUID, String> pendingCommands = new ConcurrentHashMap<>();
-    /** Запросы на сброс пароля: UUID → время истечения (ms). */
+    /** Password reset requests: UUID → expiration time (ms). */
     private final Map<UUID, Long> resetRequests = new ConcurrentHashMap<>();
 
     private SudoManager() {}
@@ -71,7 +71,7 @@ public class SudoManager {
         return Math.max(Main.getInstance().getConfig().getInt("features.sudo.attempt_cooldown_seconds", 10), 1);
     }
 
-    /** Список опасных команд (префиксы, без слэша). */
+    /** List of dangerous commands (prefixes, without a slash). */
     public static List<String> getDangerousCommands() {
         return Main.getInstance().getConfig().getStringList("features.sudo.dangerous_commands");
     }
@@ -109,16 +109,16 @@ public class SudoManager {
     // =========================
 
     /**
-     * Проверяет, является ли команда опасной.
-     * Нормализация: слэш убирается, регистр нижний, пробелы схлопываются.
-     * Совпадение по префиксу (команда или её подкоманда).
+     * Checks whether a command is dangerous.
+     * Normalization: slash removed, lowercase, spaces collapsed.
+     * Matches by prefix (the command or one of its subcommands).
      */
     public boolean isDangerous(String message) {
         String normalized = normalize(message);
         for (String prefix : getDangerousCommands()) {
             String p = normalize(prefix);
             if (p.isEmpty()) continue;
-            // Префикс: /lp → lp, lp sync, lp group ...
+            // Prefix: /lp → lp, lp sync, lp group ...
             if (normalized.equals(p) || normalized.startsWith(p + " ")) {
                 return true;
             }
@@ -133,22 +133,22 @@ public class SudoManager {
     }
 
     // =========================
-    // INTERCEPT (вызывается из SudoCommandInterceptor)
+    // INTERCEPT (called from SudoCommandInterceptor)
     // =========================
 
     /**
-     * Блокирует опасную команду: сохраняет её, открывает диалог sudo.
+     * Blocks a dangerous command: saves it, opens the sudo dialog.
      *
-     * @return true — команду нужно отменить (event.setCancelled)
+     * @return true — the command must be cancelled (event.setCancelled)
      */
     public boolean intercept(Player player, String message) {
         UUID uuid = player.getUniqueId();
 
         if (isSudoActive(uuid)) {
-            return false; // sudo уже активна — пропускаем
+            return false; // sudo already active — skip
         }
 
-        // Сохраняем команду, чтобы перевыполнить её после успешного sudo
+        // Save the command to re-run it after a successful sudo
         pendingCommands.put(uuid, message);
 
         player.sendMessage(MessageUtil.parse(
@@ -161,12 +161,12 @@ public class SudoManager {
     }
 
     // =========================
-    // PASSWORD SUBMIT (диалог)
+    // PASSWORD SUBMIT (dialog)
     // =========================
     public void handlePasswordSubmit(Player player, String password) {
         UUID uuid = player.getUniqueId();
 
-        // Кулдаун между попытками (10 сек, попытки не ограничены)
+        // Cooldown between attempts (10 sec, unlimited attempts)
         long now = System.currentTimeMillis();
         Long cd = attemptCooldowns.get(uuid);
         if (cd != null && now < cd) {
@@ -175,12 +175,12 @@ public class SudoManager {
             player.sendMessage(MessageUtil.parse(
                     "<red>❌ Too fast! Try again in </red><yellow>" + remaining + "</yellow><red>s.</red>"));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.8f);
-            // Переоткрываем после окончания кулдауна — один диалог на 10 сек
+            // Re-open after the cooldown ends — one dialog per 10 sec
             reopenDialogLater(player, remaining);
             return;
         }
 
-        // Argon2id на async thread — не фризим сервер
+        // Argon2id on an async thread — no server freezes
         Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
             try {
                 boolean registered = SudoDatabase.isRegistered(uuid);
@@ -188,7 +188,7 @@ public class SudoManager {
                 if (registered) {
                     ok = SudoDatabase.checkPassword(uuid, password);
                 } else {
-                    // Регистрируем первый пароль (INSERT OR REPLACE — можно и перезадать)
+                    // Register the first password (INSERT OR REPLACE — can be reset)
                     ok = SudoDatabase.register(uuid, password);
                 }
 
@@ -227,12 +227,12 @@ public class SudoManager {
                         + getSessionMinutes() + "</yellow><white> min.</white>"));
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 1.2f);
 
-        // Перевыполняем заблокированную команду
+        // Re-run the blocked command
         String pending = pendingCommands.remove(uuid);
         if (pending != null && !pending.isEmpty()) {
             Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                 if (player.isOnline()) {
-                    player.performCommand(pending.substring(1)); // без "/"
+                    player.performCommand(pending.substring(1)); // without "/"
                 }
             });
         }
@@ -253,7 +253,7 @@ public class SudoManager {
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 0.3f, 0.7f);
         ConsoleLogger.info("[Sudo] Wrong sudo password attempt by " + player.getName());
 
-        // Автоматически открываем диалог снова после кулдауна — «ещё одна попытка через 10 сек»
+        // Automatically re-open the dialog after the cooldown — «another attempt in 10 sec»
         reopenDialogLater(player, getAttemptCooldownSeconds());
     }
 
@@ -270,19 +270,19 @@ public class SudoManager {
     }
 
     /**
-     * Отменяет ожидающую sudo-команду (при отмене диалога или выходе из sudo).
+     * Cancels a pending sudo command (on dialog cancel or sudo exit).
      */
     public void discardPending(UUID uuid) {
         pendingCommands.remove(uuid);
     }
 
     // =========================
-    // RESET FLOW (сброс пароля через консоль)
+    // RESET FLOW (password reset via console)
     // =========================
 
     /**
-     * Игрок запрашивает сброс sudo-пароля.
-     * В консоль уходит запрос на подтверждение: /ui sudo confirmreset <player>.
+     * A player requests a sudo password reset.
+     * A confirmation request goes to the console: /ui sudo confirmreset <player>.
      */
     public void requestReset(Player player) {
         UUID uuid = player.getUniqueId();
@@ -299,7 +299,7 @@ public class SudoManager {
             return;
         }
 
-        resetRequests.put(uuid, now + 60_000L); // запрос валиден 60 сек
+        resetRequests.put(uuid, now + 60_000L); // the request is valid for 60 sec
         player.sendMessage(MessageUtil.parse(
                 "<green>✔</green> <white>Reset request sent to console. Wait for confirmation.</white>"));
 
@@ -313,7 +313,7 @@ public class SudoManager {
     }
 
     /**
-     * Консоль подтверждает сброс пароля. Игрок задаст новый при следующем sudo.
+     * The console confirms the password reset. The player sets a new one on the next sudo.
      */
     public boolean confirmReset(String playerName) {
         Player target = Bukkit.getPlayerExact(playerName);

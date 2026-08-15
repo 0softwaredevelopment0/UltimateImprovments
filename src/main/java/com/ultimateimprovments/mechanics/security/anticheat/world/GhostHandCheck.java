@@ -11,8 +11,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 
 /**
- * GhostHand — взаимодействие с блоками сквозь стены.
- * Детекция: между игроком и ломаемым блоком есть сплошные блоки.
+ * GhostHand — interacting with blocks through walls.
+ * Detection: solid blocks exist between the player and the broken block.
  */
 public class GhostHandCheck extends AbstractCheck {
 

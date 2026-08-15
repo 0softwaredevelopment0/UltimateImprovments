@@ -49,7 +49,7 @@ public class PlasmaPhysics {
     }
 
     /**
-     * Рикошет от блока: отражение + лёгкий шум + гарантия движения от грани.
+     * Block ricochet: reflection + slight noise + guaranteed movement away from the face.
      */
     public static Vector ricochetOffBlock(Vector direction, Vector faceNormal, Random random) {
         Vector reflected = reflect(direction, faceNormal);
@@ -64,7 +64,7 @@ public class PlasmaPhysics {
         return ensureMovingAwayFromWall(reflected, faceNormal);
     }
 
-    /** Рикошет от сущности (больше шума). */
+    /** Ricochet off an entity (more noise). */
     public static Vector ricochetOffEntity(Vector direction, Vector hitNormal, Random random) {
         Vector result = reflect(direction, hitNormal);
 
@@ -90,7 +90,7 @@ public class PlasmaPhysics {
     }
 
     /**
-     * Нормаль смотрит от грани к снаряду; после отражения скорость должна уходить от стены.
+     * The normal points from the face toward the projectile; after reflection the velocity must move away from the wall.
      */
     public static Vector ensureMovingAwayFromWall(Vector direction, Vector faceNormal) {
         Vector n = faceNormal.clone().normalize();
@@ -108,12 +108,12 @@ public class PlasmaPhysics {
         return dir;
     }
 
-    /** Центр воздушного блока, откуда снаряд влетел в грань. */
+    /** Center of the air block the projectile flew into the face from. */
     public static Location positionAfterBlockRicochet(Block block, BlockFace hitFace) {
         return centerOfAirCellOnFace(block, hitFace);
     }
 
-    /** Выход с противоположной стороны пробитого блока. */
+    /** Exit on the opposite side of the pierced block. */
     public static Location positionAfterBlockPenetration(Block block, BlockFace hitFace, Vector direction) {
         BlockFace exitFace = hitFace.getOppositeFace();
         Location out = block.getLocation()
@@ -138,7 +138,7 @@ public class PlasmaPhysics {
         return block.getRelative(hitFace).getLocation().add(0.5, 0.5, 0.5);
     }
 
-    /** Запасная защита: только если координаты внутри твёрдого блока. */
+    /** Fallback safeguard: only if the coordinates are inside a solid block. */
     public static Location escapeToAir(Location location, Vector preferredOutward) {
         if (isAir(location)) {
             return location;

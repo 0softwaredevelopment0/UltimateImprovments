@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
 /**
- * Derp / NoHead — невозможная ротация головы.
- * Детекция: pitch вне диапазона [-90, 90], резкие смены pitch/yaw.
+ * Derp / NoHead — impossible head rotation.
+ * Detection: pitch outside [-90, 90], abrupt pitch/yaw changes.
  */
 public class DerpCheck extends AbstractCheck {
 

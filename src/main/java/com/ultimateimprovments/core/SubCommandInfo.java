@@ -6,13 +6,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Аннотация для авто-обнаружения субкоманд /ui.
+ * Annotation for auto-discovery of /ui subcommands.
  * <p>
- * Класс должен implements {@link com.ultimateimprovments.command.SubCommand}.
- * После добавления аннотации команда автоматически регистрируется — не нужно
- * править PluginReloadCommand.init().
+ * The class must implement {@link com.ultimateimprovments.command.SubCommand}.
+ * Once the annotation is added, the command is automatically registered — no need
+ * to edit PluginReloadCommand.init().
  * <p>
- * Пример:
+ * Example:
  * <pre>{@code
  * @SubCommandInfo(name = "warp", aliases = {"warps"})
  * public class WarpSubCommand implements SubCommand {
@@ -23,9 +23,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SubCommandInfo {
-    /** Имя команды (регистронезависимое). По умолчанию — имя класса в lowercase без "Subcommand". */
+    /** Command name (case-insensitive). Defaults to the class name in lowercase without "Subcommand". */
     String name() default "";
 
-    /** Алиасы (дополнительные имена). */
+    /** Aliases (additional names). */
     String[] aliases() default {};
 }

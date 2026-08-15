@@ -10,26 +10,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * /ui execchat — отправить сообщение чата от имени игрока.
+ * /ui execchat — send a chat message on behalf of a player.
  * <p>
- * Полная имитация ввода: текст проходит весь обычный чат-пайплайн
- * (AsyncPlayerChatEvent → фильтры, муты, кастомное форматирование чата),
- * а если текст начинается с {@code /} — выполняется как команда
- * (та же логика, что и {@code Player#chat}, где сервер сам разводит
- * чат и команды).
+ * Full input simulation: the text goes through the whole normal chat pipeline
+ * (AsyncPlayerChatEvent → filters, mutes, custom chat formatting),
+ * and if the text starts with {@code /} — it is executed as a command
+ * (the same logic as {@code Player#chat}, where the server itself routes
+ * chat and commands).
  *
  * <pre>{@code
  * /ui execchat Rizer "hello everyone"
- * /ui execchat Rizer "/home"        // выполнит /home от имени Rizer
+ * /ui execchat Rizer "/home"        // executes /home as Rizer
  * }</pre>
  * <p>
- * Семантика:
+ * Semantics:
  * <ul>
- *   <li>Команды выполняются с правами ЦЕЛИ (как если бы игрок напечатал её сам),
- *       а не с правами отправителя — эскалации прав нет.</li>
- *   <li>Чат-сообщения проходят обычные проверки: муты и фильтры применяются,
- *       поэтому сообщение замученного игрока будет заблокировано.</li>
- *   <li>Право на команду: {@code ui.command.execchat} (default: false).</li>
+ *   <li>Commands run with the TARGET's permissions (as if the player typed it themselves),
+ *       not the sender's — no privilege escalation.</li>
+ *   <li>Chat messages go through the normal checks: mutes and filters apply,
+ *       so a muted player's message will be blocked.</li>
+ *   <li>Command permission: {@code ui.command.execchat} (default: false).</li>
  * </ul>
  */
 public final class ExecChatSubcommand {
@@ -37,8 +37,8 @@ public final class ExecChatSubcommand {
     private ExecChatSubcommand() {}
 
     /**
-     * Соединяет все аргументы начиная с startIndex в одну строку
-     * и срезает обрамляющие кавычки: {@code "/home test"} → {@code /home test}.
+     * Joins all arguments starting from startIndex into a single string
+     * and strips surrounding quotes: {@code "/home test"} → {@code /home test}.
      */
     private static String joinMessage(String[] args, int startIndex) {
         StringBuilder sb = new StringBuilder();
@@ -55,7 +55,7 @@ public final class ExecChatSubcommand {
         return message;
     }
 
-    @SuppressWarnings("deprecation") // Player#chat — единственный верный способ полной имитации ввода в 1.21+
+    @SuppressWarnings("deprecation") // Player#chat — the only correct way to fully simulate input in 1.21+
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.execchat")) {
             sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
@@ -80,7 +80,7 @@ public final class ExecChatSubcommand {
             return true;
         }
 
-        // Полная имитация ввода: "/..." → команда, иначе → чат (все фильтры/муты применяются)
+        // Full input simulation: "/..." → command, otherwise → chat (all filters/mutes apply)
         target.chat(message);
 
         String kind = message.startsWith("/") ? "command" : "chat message";

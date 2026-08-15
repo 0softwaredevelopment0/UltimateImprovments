@@ -21,16 +21,16 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * ⚡ AutoCraftManager — режим автокрафтера.
+ * ⚡ AutoCraftManager — autocrafter mode.
  * <p>
- * Когда режим включён, клик по результату крафта в верстаке:
+ * When enabled, clicking the craft result in the workbench:
  * <ul>
- *   <li>Обычный левый клик — результат сразу выпадает в инвентарь</li>
- *   <li>Shift+клик — крафтит всё, что возможно (как ванильный шифт-клик + авто-цикл)</li>
+ *   <li>Normal left click — the result immediately goes into the inventory</li>
+ *   <li>Shift+click — crafts everything possible (like vanilla shift-click + auto-cycle)</li>
  * </ul>
  * <p>
- * Команда: {@code /ui toggleautocraft}
- * Право: {@code ui.autocraft} (default: op)
+ * Command: {@code /ui toggleautocraft}
+ * Permission: {@code ui.autocraft} (default: op)
  */
 public class AutoCraftManager implements Listener {
 

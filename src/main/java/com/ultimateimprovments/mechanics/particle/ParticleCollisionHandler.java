@@ -14,27 +14,27 @@ import java.util.Map;
  * - Two particles collide at the right speed range → new item
  * - Speed is percentage of MAX_SPEED (5.0 blocks/tick = 100%)
  * <p>
- * Рецепты загружаются из config.yml (particle_accelerator.collision_recipes).
+ * Recipes are loaded from config.yml (particle_accelerator.collision_recipes).
  */
 public class ParticleCollisionHandler {
 
     private static final List<CollisionRecipe> recipes = new ArrayList<>();
 
     /**
-     * Загружает рецепты коллизий из config.yml.
-     * Вызывается из {@link ParticleAcceleratorManager#init(Main)}.
+     * Loads the collision recipes from config.yml.
+     * Called from {@link ParticleAcceleratorManager#init(Main)}.
      * <p>
-     * Если секция отсутствует или пуста, используются хардкодные дефолты
+     * If the section is missing or empty, hardcoded defaults are used
      * (Gold+Di→Em, Di+Em→Netherite Scrap).
      * <p>
-     * Безопасно вызывать многократно — при повторном вызове сбрасывает и перезагружает.
+     * Safe to call repeatedly — on a repeated call it resets and reloads.
      */
     public static void loadConfig(Main plugin) {
-        recipes.clear(); // всегда перезагружаем (поддерживает /reload)
+        recipes.clear(); // always reload (supports /reload)
 
         List<?> rawList = plugin.getConfig().getList("particle_accelerator.collision_recipes");
         if (rawList == null || rawList.isEmpty()) {
-            // Загружаем дефолты, если нет секции в конфиге
+            // Load defaults if there is no section in the config
             loadDefaults();
             return;
         }

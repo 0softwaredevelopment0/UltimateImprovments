@@ -145,11 +145,11 @@ public class BossBarManager extends BukkitRunnable {
 
     @Override
     public void run() {
-        // Safety net: перечитываем enabled из конфига на каждый тик.
-        // Если кто-то выключил bossbar.enabled в config.yml и сделал reload,
-        // но таск по какой-то причине остался запущен — проверка отсечёт.
+        // Safety net: re-read enabled from the config on every tick.
+        // If someone disabled bossbar.enabled in config.yml and reloaded,
+        // but the task is somehow still running — this check catches it.
         if (!Main.getInstance().getConfig().getBoolean("bossbar.enabled", false)) {
-            // Если таск всё ещё работает, а конфиг говорит false — останавливаемся
+            // If the task is still running but the config says false — stop
             removeAllBars();
             this.cancel();
             return;

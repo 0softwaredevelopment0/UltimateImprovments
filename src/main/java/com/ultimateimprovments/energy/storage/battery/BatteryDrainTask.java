@@ -26,7 +26,7 @@ public class BatteryDrainTask extends BukkitRunnable {
         double dischargeMultiplier = cfg.getDouble("energy.battery.smooth_charge.discharge_multiplier", 0.5);
         boolean log = cfg.getBoolean("energy.battery_drain.log", false);
 
-        // Используем прямой итератор без создания копии
+        // Use a direct iterator without creating a copy
         List<CableNode> batteries = new ArrayList<>();
         CableNetwork.forEachNode(node -> {
             if (node != null && node.getType() == NodeType.BATTERY) {
@@ -54,12 +54,12 @@ public class BatteryDrainTask extends BukkitRunnable {
 
                 // BFS to find other batteries - using connection keys for efficiency
                 Set<Long> visited = new HashSet<>();
-                // Parent tracking: nodeKey -> parentKey (для реконструкции пути)
+                // Parent tracking: nodeKey -> parentKey (for path reconstruction)
                 Map<Long, Long> parent = new HashMap<>();
                 Queue<CableNode> queue = new LinkedList<>();
                 queue.add(battery);
                 visited.add(battery.getKey());
-                parent.put(battery.getKey(), -1L); // корень
+                parent.put(battery.getKey(), -1L); // root
 
                 int remaining = dynamicDischarge;
                 CableNode targetBattery = null;
@@ -111,7 +111,7 @@ public class BatteryDrainTask extends BukkitRunnable {
                     Set<Long> pathKeys = new HashSet<>();
                     while (parent.containsKey(current) && current != battery.getKey()) {
                         long p = parent.get(current);
-                        if (p == battery.getKey()) break; // сосед батареи — разрыв
+                        if (p == battery.getKey()) break; // battery neighbor — break
                         if (p != -1L) pathKeys.add(p);
                         current = p;
                     }

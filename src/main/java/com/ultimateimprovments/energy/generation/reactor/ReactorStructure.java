@@ -138,10 +138,10 @@ public class ReactorStructure {
     }
 
     // =========================
-    // LOCATE CENTER (without full validation — только поиск бочки)
-    // Находит бочку для алмазов и вычисляет центр, НО не проверяет всю структуру.
-    // Нужно для меню сборки: показать опцию реактора,
-    // а полная валидация будет при клике на кнопку.
+    // LOCATE CENTER (without full validation — barrel search only)
+    // Finds the diamond barrel and computes the center, but does NOT validate the whole structure.
+    // Needed for the assembly menu: show the reactor option,
+    // with full validation happening on button click.
     // =========================
     public static Location locateCenter(Location entityLoc) {
 

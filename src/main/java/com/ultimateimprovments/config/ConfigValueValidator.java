@@ -10,9 +10,9 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * Проверяет значения config.yml по правилам из {@link ConfigRules}.
+ * Validates config.yml values against the rules from {@link ConfigRules}.
  * <p>
- * Извлечено из {@link ConfigIntegrityValidator} для уменьшения размера класса.
+ * Extracted from {@link ConfigIntegrityValidator} to reduce class size.
  */
 final class ConfigValueValidator {
 
@@ -29,7 +29,7 @@ final class ConfigValueValidator {
         static Result warn(String msg) { return new Result(Severity.WARN, msg); }
     }
 
-    /** Проверяет все значения конфига по правилам. */
+    /** Validates all config values against the rules. */
     static void validateValues(Main plugin, FileConfiguration config) {
         int errors = 0;
         int warnings = 0;

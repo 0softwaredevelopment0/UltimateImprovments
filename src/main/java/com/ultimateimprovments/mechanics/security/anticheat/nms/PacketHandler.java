@@ -20,22 +20,22 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * PacketHandler — NMS packet-перехватчик для античита.
+ * PacketHandler — NMS packet interceptor for the anti-cheat.
  * <p>
- * Инжектирует {@link ChannelDuplexHandler} в Netty pipeline каждого игрока
- * и перехватывает входящие пакеты ДО их обработки Bukkit/Paper.
+ * Injects a {@link ChannelDuplexHandler} into each player's Netty pipeline
+ * and intercepts inbound packets BEFORE they are processed by Bukkit/Paper.
  * <p>
- * Перехваченные пакеты:
+ * Intercepted packets:
  * <ul>
- *   <li>{@code ServerboundMovePlayerPacket} — движение (позиция, ротация, onGround)</li>
- *   <li>{@code ServerboundInteractPacket} — атаки/взаимодействия</li>
- *   <li>{@code ServerboundSwingPacket} — взмах рукой (CPS)</li>
- *   <li>{@code ServerboundPlayerCommandPacket} — прыжки, сник</li>
- *   <li>{@code ServerboundUseItemOnPacket} — использование предмета на блоке</li>
+ *   <li>{@code ServerboundMovePlayerPacket} — movement (position, rotation, onGround)</li>
+ *   <li>{@code ServerboundInteractPacket} — attacks/interactions</li>
+ *   <li>{@code ServerboundSwingPacket} — arm swing (CPS)</li>
+ *   <li>{@code ServerboundPlayerCommandPacket} — jumps, sneak</li>
+ *   <li>{@code ServerboundUseItemOnPacket} — using an item on a block</li>
  * </ul>
  * <p>
- * Данные из пакетов записываются в {@link PlayerData} и используются
- * проверками античита для более точной детекции.
+ * Packet data is written to {@link PlayerData} and used by the anti-cheat
+ * checks for more accurate detection.
  */
 public class PacketHandler implements Listener {
 
@@ -68,7 +68,7 @@ public class PacketHandler implements Listener {
         }
 
         // Verify NMS reflection works before proceeding
-        // validateReflection() returns true OR throws — проверка не нужна
+        // validateReflection() returns true OR throws — no extra check needed
         validateReflection();
 
         try {
@@ -92,8 +92,8 @@ public class PacketHandler implements Listener {
     }
 
     /**
-     * Проверяет, доступны ли NMS классы через рефлексию.
-     * Если нет — бросает исключение, античит не запускается.
+     * Checks whether the NMS classes are available via reflection.
+     * If not — throws an exception and the anti-cheat does not start.
      */
     private static boolean validateReflection() {
         try {

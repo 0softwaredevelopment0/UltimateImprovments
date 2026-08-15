@@ -14,8 +14,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Jesus / WaterWalk — хождение по воде без Frost Walker.
- * Детекция: игрок стоит на поверхности воды, не тонет, без соответствующих эффектов.
+ * Jesus / WaterWalk — walking on water without Frost Walker.
+ * Detection: the player stands on the water surface without sinking and without the relevant effects.
  */
 public class JesusCheck extends AbstractCheck {
 

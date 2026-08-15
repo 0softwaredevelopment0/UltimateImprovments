@@ -52,25 +52,25 @@ public class ParticleAcceleratorManager implements Listener {
     // PDC KEYS
     // =========================
     public static final NamespacedKey PARTICLE_ID_KEY = new NamespacedKey("ui", "particle_id");
-    /** PDC key на предмете блока ускорителя — хранит строку типа блока ("particle_ring", "particle_engine" и т.д.). */
+    /** PDC key on the accelerator block item — stores the block type string ("particle_ring", "particle_engine", etc.). */
     public static final NamespacedKey PARTICLE_BLOCK_KEY = new NamespacedKey("ui", "particle_block");
-    /** PDC key на Marker'е датчика — хранит последнюю скорость частицы. */
+    /** PDC key on the sensor Marker — stores the last particle speed. */
     private static final NamespacedKey SENSOR_LAST_SPEED_KEY = new NamespacedKey("ui", "sensor_last_speed");
 
     // =========================
     // ENGINE CONFIG
     // =========================
-    /** Максимальная энергия двигателя — 1000⚡. Должен быть полностью заряжен, чтобы ускорить частицу. */
+    /** Max engine energy — 1000⚡. Must be fully charged to accelerate a particle. */
     private static final int ENGINE_MAX_ENERGY = 1000;
-    /** Сколько энергии потребляет одно ускорение — весь буфер (1000). */
+    /** How much energy one acceleration consumes — the whole buffer (1000). */
     private static final int ENGINE_COST_PER_USE = 1000;
-    /** Скорость зарядки от кабелей за тик. */
+    /** Charging speed from cables per tick. */
     private static final int ENGINE_CHARGE_RATE = 20;
-    public static final double SPEED_INCREMENT = 0.5; // разовый скачок при ускорении
+    public static final double SPEED_INCREMENT = 0.5; // one-time jump on acceleration
     public static final double MAX_SPEED = 5.0;
     public static final double INITIAL_SPEED = 0.1;
 
-    /** World+position key для engineEnergy */
+    /** World+position key for engineEnergy */
     public record EnginePos(UUID worldUid, long blockKey) {}
 
     /** Engine energy buffers: EnginePos → energy amount. */
@@ -91,9 +91,9 @@ public class ParticleAcceleratorManager implements Listener {
         enabled = plugin.getConfig().getBoolean("particle_accelerator.enabled", true);
         Bukkit.getPluginManager().registerEvents(new ParticleAcceleratorManager(), plugin);
         ParticleCollisionHandler.loadConfig(plugin);
-        // Сначала готовим таблицу для буферов энергии двигателей, затем загружаем
-        // ранее накопленный прогресс из БД в in-memory кэш (иначе при рестарте
-        // все буферы будут сброшены в 0, и игрок потеряет progress по зарядке).
+        // First prepare the table for engine energy buffers, then load the
+        // previously accumulated progress from the DB into the in-memory cache
+        // (otherwise on restart all buffers reset to 0 and the player loses charging progress).
         ParticleEnergyDatabase.initTables();
         loadEngineEnergyFromDb();
         scanExistingAccelerators();
@@ -103,9 +103,9 @@ public class ParticleAcceleratorManager implements Listener {
     }
 
     /**
-     * Подтягивает буферы энергии из SQLite. Вызывается из init() до
-     * scanExistingAccelerators() — последний потом дополняет кэш для двигателей,
-     * которые есть в мире, но ещё не имели буфера (новые установки).
+     * Pulls energy buffers from SQLite. Called from init() before
+     * scanExistingAccelerators() — the latter then fills the cache for engines
+     * that exist in the world but had no buffer yet (new installations).
      */
     private static void loadEngineEnergyFromDb() {
         Map<UUID, Map<Long, Integer>> all = ParticleEnergyDatabase.loadAll();
@@ -127,7 +127,7 @@ public class ParticleAcceleratorManager implements Listener {
     // SCAN EXISTING — rebuild from Marker entities
     // =========================
     public static void scanExistingAccelerators() {
-        // 1. Добавляем/обновляем из Marker'ов (НЕ чистим engineEnergy — там данные из БД!)
+        // 1. Add/update from Markers (do NOT clear engineEnergy — it holds DB data!)
         for (var entry : StructureMarker.getAllEntries()) {
             String type = entry.getValue().type();
             if (!"accelerator".equals(type)) continue;
@@ -151,19 +151,19 @@ public class ParticleAcceleratorManager implements Listener {
             // Sensor speed is transient — loaded from Marker PDC on first particle pass
         }
 
-        // 2. Чистим устаревшие engineEnergy записи — только для загруженных миров!
-        // Если мир не загружен (Multiverse etc.) — сохраняем буферы, они восстановятся при загрузке мира
+        // 2. Clear stale engineEnergy entries — only for loaded worlds!
+        // If the world isn't loaded (Multiverse etc.) — keep the buffers, they'll restore on world load
         engineEnergy.entrySet().removeIf(e -> {
             EnginePos pos = e.getKey();
             World w = Bukkit.getWorld(pos.worldUid());
-            if (w == null) return false; // мир не загружен — НЕ удаляем, сохраняем буфер
+            if (w == null) return false; // world not loaded — do NOT delete, keep the buffer
             Location loc = LocationUtil.toLocation(pos.blockKey(), w);
             if (loc == null) return false;
             if (loc.getBlock().getType() != ENGINE) {
                 ParticleEnergyDatabase.deleteOne(pos.worldUid(), pos.blockKey());
                 return true;
             }
-            // Проверяем, есть ли Marker на этом блоке (только для загруженных чанков)
+            // Check whether this block has a Marker (only for loaded chunks)
             if (loc.getChunk().isLoaded() && !StructureMarker.existsAt(loc)) {
                 ParticleEnergyDatabase.deleteOne(pos.worldUid(), pos.blockKey());
                 return true;
@@ -223,7 +223,7 @@ public class ParticleAcceleratorManager implements Listener {
         return engineEnergy.getOrDefault(pos, 0);
     }
 
-    /** Проверяет, может ли двигатель ускорить частицу: buffer == 1000 И есть редстоун-сигнал. */
+    /** Checks whether the engine can accelerate a particle: buffer == 1000 AND a redstone signal. */
     public static boolean canEngineAccelerate(Location engineLoc) {
         if (engineLoc == null) return false;
         // Buffer must be full (1000)
@@ -234,7 +234,7 @@ public class ParticleAcceleratorManager implements Listener {
         return block.isBlockPowered() || block.isBlockIndirectlyPowered();
     }
 
-    /** Ускоряет частицу: потребляет весь буфер (1000→0). Должен вызываться ТОЛЬКО после canEngineAccelerate(). */
+    /** Accelerates a particle: consumes the whole buffer (1000→0). Must be called ONLY after canEngineAccelerate(). */
     public static boolean consumeEngineEnergy(Location engineLoc) {
         if (engineLoc == null || engineLoc.getWorld() == null) return false;
         EnginePos pos = new EnginePos(engineLoc.getWorld().getUID(), LocationUtil.toKey(engineLoc));
@@ -244,13 +244,13 @@ public class ParticleAcceleratorManager implements Listener {
         return true;
     }
 
-    /** Запоминает скорость частицы на датчике. */
+    /** Stores the particle speed on the sensor. */
     public static void setSensorLastSpeed(Location sensorLoc, double speed) {
         if (sensorLoc == null) return;
         sensorLastSpeed.put(LocationUtil.normalize(sensorLoc), speed);
     }
 
-    /** Возвращает последнюю зарегистрированную скорость датчика. */
+    /** Returns the sensor's last registered speed. */
     public static double getSensorLastSpeed(Location sensorLoc) {
         if (sensorLoc == null) return 0;
         return sensorLastSpeed.getOrDefault(LocationUtil.normalize(sensorLoc), 0.0);
@@ -362,9 +362,9 @@ public class ParticleAcceleratorManager implements Listener {
             int pulled = pullFromCables(loc, ENGINE_CHARGE_RATE);
             int newEnergy = Math.min(ENGINE_MAX_ENERGY, current + pulled);
             entry.setValue(newEnergy);
-            // Персистим каждый успешный pull в БД — маленький INSERT OR REPLACE.
-            // Альтернатива (периодический flush) рискует потерять progress в
-            // crash'е между flush'ами.
+            // Persist every successful pull to the DB — a small INSERT OR REPLACE.
+            // The alternative (periodic flush) risks losing progress in a
+            // crash between flushes.
             ParticleEnergyDatabase.upsertOne(pos.worldUid(), pos.blockKey(), newEnergy);
         }
     }
@@ -378,13 +378,13 @@ public class ParticleAcceleratorManager implements Listener {
         String worldUid = engineLoc.getWorld().getUID().toString();
         long engineKey = LocationUtil.toKey(engineLoc);
 
-        // BFS через кабельную сеть от двигателя.
-        // В этой архитектуре CABLE-узлы сами НЕ хранят энергию:
-        // CableNode.addEnergy/removeEnergy возвращают no-op для NodeType.CABLE
-        // (см. методы и комментарии в CableLossTask / CableTickTask).
-        // Они лишь «провода»-роутеры между источниками (BATTERY/GENERATOR)
-        // и потребителями (наш двигатель ускорителя). Поэтому идём через сеть
-        // и снимаем энергию напрямую с BATTERY/GENERATOR.
+        // BFS through the cable network from the engine.
+        // In this architecture CABLE nodes themselves do NOT store energy:
+        // CableNode.addEnergy/removeEnergy return no-op for NodeType.CABLE
+        // (see methods and comments in CableLossTask / CableTickTask).
+        // They're just «wire» routers between sources (BATTERY/GENERATOR)
+        // and consumers (our accelerator engine). So we traverse the network
+        // and draw energy directly from BATTERY/GENERATOR.
         Set<Long> visited = new HashSet<>();
         Queue<Long> queue = new ArrayDeque<>();
         for (long nearKey : LocationUtil.getNeighborKeys(engineKey)) {
@@ -403,10 +403,10 @@ public class ParticleAcceleratorManager implements Listener {
             CableNode cur = CableNetwork.getNodeByKey(worldUid, curKey);
             if (cur == null) continue;
 
-            // Источник энергии — BATTERY или GENERATOR с энергией
+            // Energy source — a BATTERY or GENERATOR with energy
             NodeType type = cur.getType();
             if ((type == NodeType.BATTERY || type == NodeType.GENERATOR) && cur.getEnergy() > 0) {
-                // Уважаем режим батареи: берём только из DISCHARGE/CHARGE_DISCHARGE
+                // Respect the battery mode: only draw from DISCHARGE/CHARGE_DISCHARGE
                 if (type == NodeType.BATTERY) {
                     BatteryManager.BatteryCluster bc = BatteryManager.getCluster(cur.getLocation());
                     if (bc != null && !bc.canDischarge()) continue;
@@ -417,14 +417,14 @@ public class ParticleAcceleratorManager implements Listener {
                 totalPulled += toTake;
                 CableNetwork.markFlowingKey(worldUid, curKey);
                 cur.addTransferred(toTake);
-                // Не заходим в этот источник повторно через другие пути —
-                // батарею/генератор «обслужили» за этот тик.
+                // Don't revisit this source through other paths —
+                // the battery/generator was already «serviced» this tick.
             }
 
-            // Дальше идём и через CABLE-роутеры, и через конечные точки (BATTERY/GENERATOR),
-            // чтобы добраться до любых источников энергии в сети за один обход.
-            // BATTERY↔BATTERY соединения запрещены на уровне CableNetwork,
-            // так что цепочки батарей всё равно пройдут через кабели.
+            // Then traverse both CABLE routers and endpoints (BATTERY/GENERATOR)
+            // to reach any energy source in the network in one pass.
+            // BATTERY↔BATTERY connections are forbidden at the CableNetwork level,
+            // so battery chains still pass through cables.
             for (long connKey : cur.getConnectionKeys()) {
                 if (visited.contains(connKey)) continue;
                 CableNode next = CableNetwork.getNodeByKey(worldUid, connKey);
@@ -515,8 +515,8 @@ public class ParticleAcceleratorManager implements Listener {
         if (type == ENGINE) {
             EnginePos pos = new EnginePos(loc.getWorld().getUID(), LocationUtil.toKey(loc));
             engineEnergy.remove(pos);
-            // Удаляем из БД, иначе при следующем load этот ключ снова появится в кэше
-            // и будет медленно дрейфовать к устаревшим координатам.
+            // Remove from the DB, otherwise on the next load this key reappears in the
+            // cache and slowly drifts toward stale coordinates.
             ParticleEnergyDatabase.deleteOne(pos.worldUid(), pos.blockKey());
         }
 
@@ -553,8 +553,8 @@ public class ParticleAcceleratorManager implements Listener {
     }
 
     /**
-     * Создаёт PDC-тегированный предмет для блока ускорителя.
-     * Используется для дропа при ломании и для выдачи в админке.
+     * Creates a PDC-tagged item for the accelerator block.
+     * Used for the drop on break and for admin give.
      */
     public static ItemStack createParticleBlockItem(Material material) {
         return switch (material) {

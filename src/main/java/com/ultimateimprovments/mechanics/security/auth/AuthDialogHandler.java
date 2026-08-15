@@ -13,13 +13,13 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 /**
- * AuthDialogHandler — слушает {@link PlayerCustomClickEvent} и обрабатывает
- * отправку формы с паролем или отмену авторизации из Custom Screen.
+ * AuthDialogHandler — listens for {@link PlayerCustomClickEvent} and handles
+ * password form submission or authentication cancellation from the Custom Screen.
  * <p>
- * Два режима:
+ * Two modes:
  * <ul>
- *   <li>{@code ultimateimprovments:auth_submit} — отправка пароля (Continue)</li>
- *   <li>{@code ultimateimprovments:auth_cancel} — отмена авторизации (Exit → kick)</li>
+ *   <li>{@code ultimateimprovments:auth_submit} — submit the password (Continue)</li>
+ *   <li>{@code ultimateimprovments:auth_cancel} — cancel authentication (Exit → kick)</li>
  * </ul>
  */
 public class AuthDialogHandler implements Listener {
@@ -31,7 +31,7 @@ public class AuthDialogHandler implements Listener {
     public void onCustomClick(PlayerCustomClickEvent event) {
         Key identifier = event.getIdentifier();
 
-        // Получаем игрока через PlayerGameConnection
+        // Get the player through PlayerGameConnection
         Player player = getPlayerFromConnection(event);
         if (player == null) return;
 
@@ -40,7 +40,7 @@ public class AuthDialogHandler implements Listener {
             String kickMsg = Main.getInstance().getConfig()
                 .getString("messages.auth.dialog.kick_cancelled",
                     "§c❌ Authentication cancelled.\n§7You cancelled the authentication process.");
-            // Небольшая задержка, чтобы клиент успел закрыть диалог
+            // Small delay so the client has time to close the dialog
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline()) {
                     player.kickPlayer(kickMsg);
@@ -53,7 +53,7 @@ public class AuthDialogHandler implements Listener {
         // ─── Submit (Continue) ───
         if (!identifier.equals(AUTH_SUBMIT_KEY)) return;
 
-        // Извлекаем пароль из DialogResponseView (Paper API)
+        // Extract the password from DialogResponseView (Paper API)
         DialogResponseView response = event.getDialogResponseView();
         if (response == null) {
             ConsoleLogger.warn("[AuthDialog] No dialog response view in auth submit from " + player.getName());
@@ -70,7 +70,7 @@ public class AuthDialogHandler implements Listener {
         ConsoleLogger.info("[AuthDialog] Password submitted by " + player.getName()
             + " (len=" + password.length() + ")");
 
-        // Делегируем существующей системе авторизации
+        // Delegate to the existing authentication system
         AuthManager manager = AuthManager.getInstance();
         if (manager != null) {
             manager.handlePasswordSubmit(player, password);
@@ -78,7 +78,7 @@ public class AuthDialogHandler implements Listener {
     }
 
     /**
-     * Получает Bukkit Player из PlayerCustomClickEvent через PlayerGameConnection.
+     * Gets the Bukkit Player from PlayerCustomClickEvent via PlayerGameConnection.
      */
     private static Player getPlayerFromConnection(PlayerCustomClickEvent event) {
         if (event.getCommonConnection() instanceof PlayerGameConnection gameConn) {
@@ -89,7 +89,7 @@ public class AuthDialogHandler implements Listener {
     }
 
     /**
-     * Показывает ошибку и открывает диалог заново.
+     * Shows an error and re-opens the dialog.
      */
     private void showErrorAndReopen(Player player) {
         boolean registered = AuthDatabase.isRegistered(player.getUniqueId());
@@ -103,7 +103,7 @@ public class AuthDialogHandler implements Listener {
 
 
     /**
-     * Регистрирует слушатель в плагине.
+     * Registers the listener in the plugin.
      */
     public static void register() {
         Bukkit.getPluginManager().registerEvents(new AuthDialogHandler(), Main.getInstance());

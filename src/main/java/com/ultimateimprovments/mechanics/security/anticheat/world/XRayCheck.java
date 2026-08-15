@@ -14,8 +14,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * XRay — статистическая детекция рентгена (игрок находит руду слишком часто).
- * Детекция: соотношение сломанных руд к сломанному камню аномально высокое.
+ * XRay — statistical X-ray detection (the player finds ore too often).
+ * Detection: the ratio of broken ores to broken stone is abnormally high.
  */
 public class XRayCheck extends AbstractCheck {
 

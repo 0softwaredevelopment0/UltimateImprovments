@@ -11,8 +11,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AllJumps — прыжки без отрыва от земли или аномальные прыжки.
- * Детекция: Y-скорость вверх без прыжка, повторные прыжки в воздухе.
+ * AllJumps — jumps without leaving the ground or abnormal jumps.
+ * Detection: upward Y velocity without a jump, repeated mid-air jumps.
  */
 public class AllJumpsCheck extends AbstractCheck {
 

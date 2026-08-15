@@ -115,7 +115,7 @@ public class EnergyManager {
         // BATTERY RULES
         // =========================
 
-        // батарея -> батарея запрещено
+        // battery -> battery is not allowed
         if (source.getType() == NodeType.BATTERY
                 && target.getType() == NodeType.BATTERY) {
 

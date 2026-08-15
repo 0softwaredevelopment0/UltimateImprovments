@@ -6,10 +6,10 @@ import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.command.CommandSender;
 
 /**
- * /ui meteor spawn <count> — форсированный спавн метеоров.
+ * /ui meteor spawn <count> — force-spawns meteors.
  * <p>
- * Требует permission: ui.command.meteor.spawn
- * Модуль должен быть включён в config.yml (meteor.enabled: true).
+ * Requires the permission: ui.command.meteor.spawn
+ * The module must be enabled in config.yml (meteor.enabled: true).
  */
 public final class MeteorSubcommand {
 
@@ -65,10 +65,17 @@ public final class MeteorSubcommand {
             return true;
         }
 
-        module.spawnMeteors(count);
-        sender.sendMessage(MessageUtil.parse(
-                "<green>✔</green> <white>Spawned </white><yellow>" + count + "</yellow><white> meteor(s)!</white>"
-        ));
+        int spawned = module.spawnMeteors(count);
+        if (spawned < count) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠ Spawned </yellow><white>" + spawned + "</white><yellow> of </yellow><white>"
+                    + count + "</white><yellow> meteor(s) — active limit reached.</yellow>"
+            ));
+        } else {
+            sender.sendMessage(MessageUtil.parse(
+                    "<green>✔</green> <white>Spawned </white><yellow>" + spawned + "</yellow><white> meteor(s)!</white>"
+            ));
+        }
 
         return true;
     }

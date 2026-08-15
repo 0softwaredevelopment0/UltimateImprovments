@@ -12,8 +12,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * MovementSpoof — фейковые пакеты движения (микро-движения для обхода AFK).
- * Детекция: очень маленькие перемещения, повторяющиеся с одинаковой амплитудой.
+ * MovementSpoof — fake movement packets (micro-movements to bypass AFK).
+ * Detection: very small movements repeated with the same amplitude.
  */
 public class MovementSpoofCheck extends AbstractCheck {
 

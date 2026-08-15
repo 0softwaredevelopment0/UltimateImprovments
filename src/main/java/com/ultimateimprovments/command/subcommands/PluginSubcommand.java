@@ -14,19 +14,19 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * /ui plugin &lt;name&gt; on|off|restart — управление другими плагинами.<br>
- * Показывает предупреждение с clickable кнопками подтверждения/отмены.
+ * /ui plugin &lt;name&gt; on|off|restart — manage other plugins.<br>
+ * Shows a warning with clickable confirm/cancel buttons.
  * <p>
- * Использование:
+ * Usage:
  * <ul>
- *   <li>{@code /ui plugin <name> on} — включить плагин</li>
- *   <li>{@code /ui plugin <name> off} — выключить плагин</li>
- *   <li>{@code /ui plugin <name> restart} — перезагрузить плагин (disable + enable)</li>
- *   <li>{@code /ui plugin confirm} — подтвердить ожидающее действие</li>
- *   <li>{@code /ui plugin cancel} — отменить ожидающее действие</li>
+ *   <li>{@code /ui plugin <name> on} — enable the plugin</li>
+ *   <li>{@code /ui plugin <name> off} — disable the plugin</li>
+ *   <li>{@code /ui plugin <name> restart} — restart the plugin (disable + enable)</li>
+ *   <li>{@code /ui plugin confirm} — confirm a pending action</li>
+ *   <li>{@code /ui plugin cancel} — cancel a pending action</li>
  * </ul>
  * <p>
- * Требуется пермишен: {@code ui.command.plugin}.
+ * Requires the permission: {@code ui.command.plugin}.
  */
 public final class PluginSubcommand {
 
@@ -81,7 +81,7 @@ public final class PluginSubcommand {
         String pluginName = args[1];
         String action = args[2].toLowerCase();
 
-        // Проверяем, существует ли такой плагин
+        // Check whether such a plugin exists
         Plugin target = Bukkit.getPluginManager().getPlugin(pluginName);
         if (target == null) {
             sender.sendMessage(MessageUtil.parse(
@@ -89,7 +89,7 @@ public final class PluginSubcommand {
             return true;
         }
 
-        // Info — read-only, доступно для любых плагинов включая UltimateImprovments
+        // Info — read-only, available for any plugin including UltimateImprovments
         if (action.equals("info")) {
             return handleInfo(sender, target);
         }
@@ -101,14 +101,14 @@ public final class PluginSubcommand {
             return true;
         }
 
-        // Не даём выключить свой же плагин
+        // Do not allow disabling our own plugin
         if (target.getName().equals("UltimateImprovments")) {
             sender.sendMessage(MessageUtil.parse(
                     "<dark_red>❌</dark_red> <red>Cannot manage UltimateImprovments itself. Use </red><white>/ui reload</white><red> instead.</red>"));
             return true;
         }
 
-        // Проверяем, не в том ли уже состоянии плагин
+        // Check whether the plugin is already in the target state
         boolean isEnabled = target.isEnabled();
         if (action.equals("on") && isEnabled) {
             sender.sendMessage(MessageUtil.parse(
@@ -121,14 +121,14 @@ public final class PluginSubcommand {
             return true;
         }
 
-        // Сохраняем ожидающее действие
+        // Store the pending action
         UUID uuid = sender instanceof Player player ? player.getUniqueId() : CONSOLE_UUID;
         pendingActions.put(uuid, new PendingAction(pluginName, action, System.currentTimeMillis()));
 
-        // Запускаем фоновую очистку истёкших действий (только один раз)
+        // Start the background cleanup of expired actions (only once)
         startCleanupTask();
 
-        // Показываем предупреждение с clickable кнопками
+        // Show the warning with clickable buttons
         String actionDisplay = switch (action) {
             case "on" -> "ENABLE";
             case "off" -> "DISABLE";
@@ -241,7 +241,7 @@ public final class PluginSubcommand {
             return true;
         }
 
-        // Проверяем, не истекло ли время ожидания
+        // Check whether the confirmation window has expired
         if (System.currentTimeMillis() - pending.createdAt > TIMEOUT_MS) {
             sender.sendMessage(MessageUtil.parse(
                     "<dark_red>❌</dark_red> <red>Confirmation timeout expired (30s). Use </red><white>/ui plugin <name> <on|off|restart></white><red> again.</red>"));
@@ -357,7 +357,7 @@ public final class PluginSubcommand {
                     UUID uuid = entry.getKey();
                     PendingAction expired = entry.getValue();
 
-                    // Уведомляем игрока, если онлайн
+                    // Notify the player if online
                     if (!uuid.equals(CONSOLE_UUID)) {
                         Player player = Bukkit.getPlayer(uuid);
                         if (player != null && player.isOnline()) {
@@ -375,12 +375,12 @@ public final class PluginSubcommand {
                 return false;
             });
 
-            // Если больше нет ожидающих действий — отменяем таск
+            // If there are no more pending actions — cancel the task
             if (pendingActions.isEmpty() && cleanupTask != null) {
                 cleanupTask.cancel();
                 cleanupTask = null;
             }
-        }, 100L, 100L); // первый запуск через 5 сек, потом каждые 5 сек
+        }, 100L, 100L); // first run after 5s, then every 5s
     }
 
     /**

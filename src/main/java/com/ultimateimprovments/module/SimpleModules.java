@@ -4,6 +4,7 @@ import com.ultimateimprovments.broadcast.AutoBroadcastManager;
 import com.ultimateimprovments.chat.ChatManager;
 import com.ultimateimprovments.command.PowerManager;
 import com.ultimateimprovments.command.vote.VoteManager;
+import com.ultimateimprovments.combat.weapons.blazing.BlazingSwordListener;
 import com.ultimateimprovments.combat.weapons.plasma.GunListener;
 import com.ultimateimprovments.combat.weapons.shoker.ShokerListener;
 import com.ultimateimprovments.core.CommandRegistrar;
@@ -48,6 +49,7 @@ import com.ultimateimprovments.listener.ServerBrandListener;
 import com.ultimateimprovments.listener.ShulkerBulletListener;
 import com.ultimateimprovments.listener.VoidProtectionListener;
 import com.ultimateimprovments.mechanics.crafting.AntimatterCraftListener;
+import com.ultimateimprovments.mechanics.crafting.BlazingSwordCraftListener;
 import com.ultimateimprovments.mechanics.crafting.ChunkLoaderCraftListener;
 import com.ultimateimprovments.mechanics.crafting.ConcreteBucketCraftListener;
 import com.ultimateimprovments.mechanics.crafting.EnderChestCraftListener;
@@ -122,6 +124,7 @@ import com.ultimateimprovments.mechanics.security.botprotect.BotProtectionListen
 import com.ultimateimprovments.mechanics.security.sudo.SudoCommandInterceptor;
 import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
 import com.ultimateimprovments.punish.PunishJoinListener;
+import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.server.EmergencyEntitiesKill;
 import com.ultimateimprovments.server.PacketGuard;
 import com.ultimateimprovments.server.ProxyServerListener;
@@ -139,28 +142,27 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 /**
- * SimpleModules — реестр всех простых (тонких) модулей-обёрток.
+ * SimpleModules — registry of all simple (thin) wrapper modules.
  * <p>
- * Раньше каждый такой модуль жил в отдельном файле (~60 файлов по 17-77 строк):
- * конструктор + вызов {@code XxxManager.init()} в {@code onInit} и пустой
- * {@code onDisable}. Теперь все они собраны в этом одном файле как анонимные
- * классы, сгруппированные по доменам — ровно в том порядке, в котором их
- * регистрировал {@code PluginStartup}.
+ * Previously each such module lived in its own file (~60 files of 17-77 lines):
+ * constructor + calling {@code XxxManager.init()} in {@code onInit} and an empty
+ * {@code onDisable}. Now they're all collected in this single file as anonymous
+ * classes grouped by domain — exactly in the order {@code PluginStartup} registered them.
  * <p>
- * Модули с нетривиальной логикой (Core, Database, Economy, AntiCheat, ...)
- * остались отдельными классами.
+ * Modules with non-trivial logic (Core, Database, Economy, AntiCheat, ...)
+ * remain separate classes.
  * <p>
- * ВАЖНО: эти модули регистрируются вручную через {@code PluginStartup} —
- * авто-сканирование (ModuleScanner) их не найдёт, т.к. это анонимные классы.
+ * IMPORTANT: these modules are registered manually via {@code PluginStartup} —
+ * auto-scanning (ModuleScanner) won't find them because they're anonymous classes.
  */
 public final class SimpleModules {
 
     private SimpleModules() {}
 
     /**
-     * База для большинства модулей: onDisable — no-op.
-     * Модули с очисткой/остановкой задач переопределяют onDisable
-     * и наследуют PluginModule напрямую.
+     * Base for most modules: onDisable — no-op.
+     * Modules with task cleanup/shutdown override onDisable
+     * and inherit PluginModule directly.
      */
     private abstract static class SimpleModule extends PluginModule {
         SimpleModule(String name, String path, boolean essential) {
@@ -172,15 +174,15 @@ public final class SimpleModules {
     }
 
     // ==========================================================================
-    // 🧩 ГРУППЫ РЕГИСТРАЦИИ (порядок = порядок из PluginStartup)
+    // 🧩 REGISTRATION GROUPS (order = PluginStartup order)
     // ==========================================================================
 
     // --------------------------------------------------------------------------
-    // CORE (Database + Core — регистрируются сразу после VersionCheckModule)
+    // CORE (Database + Core — registered right after VersionCheckModule)
     // --------------------------------------------------------------------------
 
     public static void registerCoreModules(ModuleManager mm) {
-        // Database (essential — без БД плагин не работает)
+        // Database (essential — the plugin doesn't work without the DB)
         mm.register(new PluginModule("Database", "infrastructure/database", true) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -189,13 +191,13 @@ public final class SimpleModules {
                 DatabaseInit.init();
                 ConsoleLogger.info("[SQLITE] Database initialized successfully.");
 
-                // Vote Manager (загрузить голосования из БД)
+                // Vote Manager (load votes from the DB)
                 VoteManager.init();
             }
 
             @Override
             protected void onDisable(JavaPlugin plugin) {
-                // Отменяем все таймеры голосований
+                // Cancel all vote timers
                 VoteManager.shutdown();
                 try {
                     DatabaseManager.close();
@@ -205,7 +207,7 @@ public final class SimpleModules {
             }
         });
 
-        // Core (essential — базовые системы: задачи, команды, общие слушатели)
+        // Core (essential — base systems: tasks, commands, common listeners)
         mm.register(new SimpleModule("Core", "infrastructure/core", true) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -224,6 +226,7 @@ public final class SimpleModules {
                 pm.registerEvents(new ServerBrandListener(), main);
                 pm.registerEvents(new ShokerListener(), main);
                 pm.registerEvents(new GunListener(), main);
+                pm.registerEvents(new BlazingSwordListener(), main);
                 pm.registerEvents(new ShulkerBulletListener(), main);
                 pm.registerEvents(FishingListener.getInstance(), main);
 
@@ -362,7 +365,7 @@ public final class SimpleModules {
                     tickTask.cancel();
                     tickTask = null;
                 }
-                // Marker'ы сохраняются в world-файлах, save не нужен
+                // Markers persist in world files, no save needed
             }
         });
 
@@ -377,17 +380,17 @@ public final class SimpleModules {
             @Override
             protected void onDisable(JavaPlugin plugin) {
                 TaskManager.getInstance().stopLightTask();
-                // Marker'ы сохраняются в world-файлах, save не нужен
+                // Markers persist in world files, no save needed
             }
         });
     }
 
     // --------------------------------------------------------------------------
-    // ENERGY MACHINES (Assembler + Workbench — регистрируются после энерго-группы)
+    // ENERGY MACHINES (Assembler + Workbench — registered after the energy group)
     // --------------------------------------------------------------------------
 
     public static void registerEnergyMachines(ModuleManager mm) {
-        // Assembler (essential — CRAFTER + рамка наверху, авто-крафт раз в 2 тика)
+        // Assembler (essential — CRAFTER + item frame on top, auto-craft every 2 ticks)
         mm.register(new PluginModule("Assembler", "energy/machines/assembler", true) {
             private BukkitTask assemblerTask;
 
@@ -395,7 +398,7 @@ public final class SimpleModules {
             protected void onInit(JavaPlugin plugin) throws Exception {
                 AssemblerManager.init();
 
-                // ⚠ Paper 1.21.4+: BukkitRunnable нельзя передавать в Scheduler.runTaskTimer()
+                // ⚠ Paper 1.21.4+: BukkitRunnable can't be passed to Scheduler.runTaskTimer()
                 assemblerTask = new AssemblerTask().runTaskTimer((Main) plugin, 40L, 2L);
 
                 ConsoleLogger.info("[AssemblerModule] ✔ Assembler system initialized.");
@@ -424,12 +427,12 @@ public final class SimpleModules {
                 main.getServer().getPluginManager().registerEvents(craftingListener, main);
                 main.getServer().getPluginManager().registerEvents(new EnergyWorkbenchManager.RedstoneListener(), main);
 
-                // Блокируем авто-крафт CRAFTER по редстоуну каждый тик
+                // Block CRAFTER auto-craft via redstone every tick
                 lockTask = Bukkit.getScheduler().runTaskTimer(main, () -> {
                     EnergyWorkbenchManager.maintainLocks();
                 }, 0L, 1L);
 
-                // Заряжаем буферы Assembler'ов от соседних кабелей каждые 2 тика
+                // Charge Assembler buffers from neighboring cables every 2 ticks
                 Bukkit.getScheduler().runTaskTimer(main, () -> {
                     EnergyWorkbenchManager.chargeAllBuffers();
                 }, 0L, 2L);
@@ -450,11 +453,11 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // CRAFTING (регистрируется до Sudo)
+    // CRAFTING (registered before Sudo)
     // --------------------------------------------------------------------------
 
     public static void registerCrafting(ModuleManager mm) {
-        // Crafting (essential — крафты ключевая механика плагина)
+        // Crafting (essential — crafting is a key plugin mechanic)
         mm.register(new SimpleModule("Crafting", "mechanics/crafting", true) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -463,6 +466,7 @@ public final class SimpleModules {
                 MultimeterCraftListener.init();
                 PlasmaCannonCraftListener.init();
                 ShokerCraftListener.init();
+                BlazingSwordCraftListener.init();
                 AntimatterCraftListener.init();
                 EntityLocatorCraftListener.init();
                 LeadIngotCraftListener.init();
@@ -483,6 +487,7 @@ public final class SimpleModules {
                 pm.registerEvents(new MultimeterCraftListener(), main);
                 pm.registerEvents(new PlasmaCannonCraftListener(), main);
                 pm.registerEvents(new ShokerCraftListener(), main);
+                pm.registerEvents(new BlazingSwordCraftListener(), main);
                 pm.registerEvents(new AntimatterCraftListener(), main);
                 pm.registerEvents(new EntityLocatorCraftListener(), main);
                 pm.registerEvents(new LeadIngotCraftListener(), main);
@@ -541,7 +546,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // SUDO (GitHub-style, регистрируется после CraftingModule)
+    // SUDO (GitHub-style, registered after CraftingModule)
     // --------------------------------------------------------------------------
 
     public static void registerSudo(ModuleManager mm) {
@@ -562,7 +567,7 @@ public final class SimpleModules {
     }
 
     /**
-     * Очищает sudo-состояние игрока при выходе (сессии, кулдауны, pending-команды).
+     * Clears a player's sudo state on quit (sessions, cooldowns, pending commands).
      */
     private static class SudoQuitListener implements Listener {
         @EventHandler
@@ -731,7 +736,7 @@ public final class SimpleModules {
             }
         });
 
-        // ExpBottleUpgrade — заряженные пузырьки опыта (наковальня x1+x1→x2 и т.д.)
+        // ExpBottleUpgrade — charged experience bottles (anvil x1+x1→x2 etc.)
         mm.register(new SimpleModule("ExpBottleUpgrade", "mechanics/features/exp_bottle", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -926,9 +931,9 @@ public final class SimpleModules {
             @Override
             protected void onDisable(JavaPlugin plugin) {
                 WirelessRedstoneManager.restoreAllPowerBlocks();
-                // Сбрасываем синглтон + отменяем таск-наблюдатель, иначе после
-                // /ui reload старый наблюдатель либо останется висеть (дубликат),
-                // либо init() с guard'ом не перезапустит его вовсе.
+                // Reset the singleton + cancel the watcher task, otherwise after
+                // /ui reload the old watcher either stays alive (duplicate),
+                // or init() with its guard won't restart it at all.
                 WirelessRedstoneManager.shutdown();
             }
 
@@ -940,28 +945,28 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // ECONOMY (регистрируется до AOEEnchantment)
+    // ECONOMY (registered before AOEEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerEconomy(ModuleManager mm) {
-        // Economy — валютная система (ядро + Vault + PAPI)
+        // Economy — currency system (core + Vault + PAPI)
         mm.register(new SimpleModule("Economy", "economy", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
-                // 1. Ядро
+                // 1. Core
                 EconomyManager.init();
 
-                // 2. Vault интеграция (только если Vault установлен)
+                // 2. Vault integration (only if Vault is installed)
                 if (PluginHook.check("Vault", "Economy")) {
                     new VaultIntegration(plugin);
                 }
 
-                // 3. События
+                // 3. Events
                 var pm = plugin.getServer().getPluginManager();
                 pm.registerEvents(new PlayerJoinListener(), plugin);
                 pm.registerEvents(new IncomeListener(), plugin);
 
-                // 4. PAPI расширение
+                // 4. PAPI expansion
                 try {
                     if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
                         new EconomyPlaceholderExpansion().register();
@@ -976,7 +981,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // AOE ENCHANTMENT (регистрируется после EconomyModule)
+    // AOE ENCHANTMENT (registered after EconomyModule)
     // --------------------------------------------------------------------------
 
     public static void registerAOEEnchantment(ModuleManager mm) {
@@ -1000,7 +1005,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // AUTOSMELT ENCHANTMENT (регистрируется после AOEEnchantment)
+    // AUTOSMELT ENCHANTMENT (registered after AOEEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerAutoSmeltEnchantment(ModuleManager mm) {
@@ -1023,7 +1028,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // VEINMINER ENCHANTMENT (регистрируется после AutoSmeltEnchantment)
+    // VEINMINER ENCHANTMENT (registered after AutoSmeltEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerVeinMinerEnchantment(ModuleManager mm) {
@@ -1047,7 +1052,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // TREECAPITATOR ENCHANTMENT (регистрируется после VeinMinerEnchantment)
+    // TREECAPITATOR ENCHANTMENT (registered after VeinMinerEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerTreeCapitatorEnchantment(ModuleManager mm) {
@@ -1071,7 +1076,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // FLIGHT ENCHANTMENT (регистрируется после TreeCapitatorEnchantment)
+    // FLIGHT ENCHANTMENT (registered after TreeCapitatorEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerFlightEnchantment(ModuleManager mm) {
@@ -1095,7 +1100,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // MAGNET ENCHANTMENT (регистрируется после FlightEnchantment)
+    // MAGNET ENCHANTMENT (registered after FlightEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerMagnetEnchantment(ModuleManager mm) {
@@ -1119,7 +1124,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // IGNITING ENCHANTMENT (регистрируется после MagnetEnchantment)
+    // IGNITING ENCHANTMENT (registered after MagnetEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerIgnitingEnchantment(ModuleManager mm) {
@@ -1144,7 +1149,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // LEVITATION ENCHANTMENT (регистрируется после IgnitingEnchantment)
+    // LEVITATION ENCHANTMENT (registered after IgnitingEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerLevitationEnchantment(ModuleManager mm) {
@@ -1168,7 +1173,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // SELF-DESTRUCT ENCHANTMENT (регистрируется после LevitationEnchantment)
+    // SELF-DESTRUCT ENCHANTMENT (registered after LevitationEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerSelfDestructEnchantment(ModuleManager mm) {
@@ -1196,7 +1201,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // DEGRADATION ENCHANTMENT (регистрируется после SelfDestructEnchantment)
+    // DEGRADATION ENCHANTMENT (registered after SelfDestructEnchantment)
     // --------------------------------------------------------------------------
 
     public static void registerDegradationEnchantment(ModuleManager mm) {
@@ -1217,6 +1222,62 @@ public final class SimpleModules {
 
                 ConsoleLogger.info("[Degradation] Levels: 1-255 | Item: any with durability | Spends "
                         + "integrity as after level uses per second while in a player's inventory");
+            }
+        });
+    }
+
+    // --------------------------------------------------------------------------
+    // ATTACK AOE ENCHANTMENT (registered after DegradationEnchantment)
+    // --------------------------------------------------------------------------
+
+    public static void registerAttackAoeEnchantment(ModuleManager mm) {
+        // Attack AoE: REAL data-driven enchantment (ui:attack_aoe, registered by
+        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Hitting one entity
+        // damages every living entity in a (2·level+1)³ cube around the victim
+        // with the same force. Sneaking disables it for precise attacks.
+        mm.register(new SimpleModule("AttackAoeEnchantment", "enchantment/attackaoe", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Damage listener (cleaves entities around the victim)
+                main.getServer().getPluginManager().registerEvents(
+                        new com.ultimateimprovments.enchantment.attackaoe.EnchantmentListener(), main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.attackaoe.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[AttackAoE] Levels: 1-255 | Weapons: swords, axes | Radius: "
+                        + "(2·level+1)³ cube (level 1 → 3×3, level 2 → 5×5, ...)");
+                ConsoleLogger.info("[AttackAoE] Hit one entity → all entities in the radius take the same damage");
+                ConsoleLogger.info("[AttackAoE] Sneak to disable AoE for precise single-target attacks");
+            }
+        });
+    }
+
+    // --------------------------------------------------------------------------
+    // ITEM STEALING ENCHANTMENT (registered after AttackAoeEnchantment)
+    // --------------------------------------------------------------------------
+
+    public static void registerItemStealingEnchantment(ModuleManager mm) {
+        // Item Stealing: REAL data-driven enchantment (ui:item_stealing, registered
+        // by the UI-Datapack, max level 1) + PDC mirror failsafe. Hooking a player
+        // with the enchanted fishing rod and reeling in steals the item from his
+        // hand instead of pulling him; empty hands → normal pull.
+        mm.register(new SimpleModule("ItemStealingEnchantment", "enchantment/itemstealing", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Fishing listener (steal the held item instead of pulling the player)
+                main.getServer().getPluginManager().registerEvents(
+                        new com.ultimateimprovments.enchantment.itemstealing.EnchantmentListener(), main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.itemstealing.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[ItemStealing] Level: 1 | Item: fishing rod | Hooking a player and reeling in "
+                        + "steals the item from his hand (empty hands → normal pull)");
             }
         });
     }
@@ -1379,7 +1440,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // UTILITY (BotProtection — регистрируется после registerUtility)
+    // UTILITY (BotProtection — registered after registerUtility)
     // --------------------------------------------------------------------------
 
     public static void registerBotProtection(ModuleManager mm) {
@@ -1412,7 +1473,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // DISPLAY (MOTD — регистрируется после registerDisplay)
+    // DISPLAY (MOTD — registered after registerDisplay)
     // --------------------------------------------------------------------------
 
     public static void registerMOTD(ModuleManager mm) {
@@ -1428,8 +1489,8 @@ public final class SimpleModules {
             @Override
             protected void onDisable(JavaPlugin plugin) {
                 if (listener != null) {
-                    // ⛔ ОБЯЗАТЕЛЬНО отписываемся от Bukkit событий,
-                    // иначе при каждом /ui reload будет висеть дубликат listener'а
+                    // ⛔ MUST unsubscribe from Bukkit events,
+                    // otherwise a duplicate listener lingers on every /ui reload
                     HandlerList.unregisterAll(listener);
                     this.listener = null;
                 }
@@ -1437,9 +1498,9 @@ public final class SimpleModules {
 
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
-                // При reload: disable() → onDisable() обнуляет listener.
-                // Новый listener создаётся в onInit() после вызова onReloadConfig(),
-                // поэтому здесь проверка на null — иконка загрузится в конструкторе нового listener.
+                // On reload: disable() → onDisable() nulls the listener.
+                // A new listener is created in onInit() after onReloadConfig() is called,
+                // hence the null check here — the icon loads in the new listener's constructor.
                 if (listener != null) {
                     listener.loadIcon();
                 }
@@ -1448,31 +1509,44 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // SECURITY (Punish и StructureIntegrity — AntiCheat остаётся отдельным классом)
-    // Порядок в PluginStartup: registerPunish → new AntiCheatModule() → registerStructureIntegrity
+    // SECURITY (Punish and StructureIntegrity — AntiCheat stays a separate class)
+    // Order in PluginStartup: registerPunish → new AntiCheatModule() → registerStructureIntegrity
     // --------------------------------------------------------------------------
 
     public static void registerPunish(ModuleManager mm) {
-        // Punish — наказания, вайтлист и блэклист
+        // Punish — punishments, whitelist and blacklist
         mm.register(new SimpleModule("Punish", "infrastructure/punish", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 Main main = (Main) plugin;
 
-                // Инициализируем менеджеры
-                // Whitelist и Blacklist регистрируют свои события сами
+                // Initialize the managers
+                // Whitelist and Blacklist register their own events
 
-                // Регистрируем слушатель наказаний
+                // Register the punishment listener
                 var pm = main.getServer().getPluginManager();
                 pm.registerEvents(new PunishJoinListener(), main);
+
+                // Purge kick records older than 24h at startup, then once per hour
+                // (kicks are logged as active=1 and never expire on their own).
+                // The guard prevents duplicate timers if the module re-initializes.
+                Bukkit.getScheduler().runTaskAsynchronously(main, PunishmentManager::deleteOldKicks);
+                if (!kickCleanupScheduled) {
+                    kickCleanupScheduled = true;
+                    Bukkit.getScheduler().runTaskTimerAsynchronously(main, PunishmentManager::deleteOldKicks,
+                            20L * 60 * 60, 20L * 60 * 60); // first run after 1h, then every 1h
+                }
 
                 ConsoleLogger.info("[PunishModule] Punishment, Whitelist & Blacklist systems initialized.");
             }
         });
     }
 
+    /** Guards against scheduling the kick cleanup timer twice on module re-init. */
+    private static boolean kickCleanupScheduled = false;
+
     public static void registerStructureIntegrity(ModuleManager mm) {
-        // StructureIntegrity — индикатор целостности структур (эндер-сундуки)
+        // StructureIntegrity — structure integrity indicator (ender chests)
         mm.register(new PluginModule("StructureIntegrity", "mechanics/features/structure_integrity", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -1502,7 +1576,7 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // PARTICLE ACCELERATOR (регистрируется до OmniscannerModule)
+    // PARTICLE ACCELERATOR (registered before OmniscannerModule)
     // --------------------------------------------------------------------------
 
     public static void registerParticle(ModuleManager mm) {
@@ -1574,7 +1648,7 @@ public final class SimpleModules {
             protected void onDisable(JavaPlugin plugin) {
                 AsyncAutoSaveManager.shutdown();
 
-                // Сохраняем все системы синхронно при выключении
+                // Save all systems synchronously on shutdown
                 AsyncAutoSaveManager.saveAllNow();
             }
         });

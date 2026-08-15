@@ -77,12 +77,12 @@ public class EnchantmentListener implements Listener {
             }
 
             // Break naturally with tool (respects Silk Touch, Fortune)
-            // Запоминаем тип ДО ломки — после breakNaturally() блок уже AIR
+            // Remember the type BEFORE breaking — after breakNaturally() the block is already AIR
             Material brokenType = block.getType();
             block.breakNaturally(tool, true);
 
-            // Механика «руда → камень»: оставляем камень вместо руды, как для
-            // блока из BlockBreakEvent (иначе остаются дыры в жилах)
+            // "Ore → stone" mechanic: leave stone instead of ore, like for
+            // the block in BlockBreakEvent (otherwise holes remain in the veins)
             BlockBreakListener.scheduleStoneReplacement(block, brokenType);
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
@@ -96,9 +96,9 @@ public class EnchantmentListener implements Listener {
 
     /**
      * Scans a cubic area around {@code origin} for blocks matching {@code targetType}.
-     * 🛡 Ограничено кубом 16×16×16 по радиусу вокруг origin (не по чанкам):
-     * offset −7..+8 по каждой оси; при уровне < 8 радиус меньше (±level).
-     * Сканируются только загруженные чанки.
+     * 🛡 Limited to a 16×16×16 cube by radius around the origin (not by chunks):
+     * offset −7..+8 on each axis; at level < 8 the radius is smaller (±level).
+     * Only loaded chunks are scanned.
      */
     private @NotNull List<Location> scanBlocks(World world, Location origin,
                                                 Material targetType, int radius) {
@@ -108,7 +108,7 @@ public class EnchantmentListener implements Listener {
         int oy = origin.getBlockY();
         int oz = origin.getBlockZ();
 
-        // 🛡 Лимит 16×16×16: радиус не больше куба origin−7..origin+8 по каждой оси.
+        // 🛡 16×16×16 limit: radius no larger than the origin−7..origin+8 cube on each axis.
         int r = Math.min(radius, 8);
         int minX = Math.max(ox - r, ox - 7);
         int maxX = Math.min(ox + r, ox + 8);

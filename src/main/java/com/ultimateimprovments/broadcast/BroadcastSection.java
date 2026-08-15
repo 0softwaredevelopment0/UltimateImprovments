@@ -12,26 +12,26 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 📢 Одна секция авто-броадкаста из конфига.
+ * 📢 One auto-broadcast section from the config.
  * <p>
- * Секция — это «канал» со своим интервалом, условиями и набором сообщений:
+ * A section is a "channel" with its own interval, conditions and message set:
  * <ul>
- *   <li>{@code cooldown_ticks} — интервал между отправками в тиках (20 тиков = 1 сек);</li>
- *   <li>{@code conditions} — строка условий (см. {@link BroadcastCondition});</li>
- *   <li>{@code messages} — сообщения в формате MiniMessage, отправляются по кругу.</li>
+ *   <li>{@code cooldown_ticks} — interval between sends in ticks (20 ticks = 1 sec);</li>
+ *   <li>{@code conditions} — the conditions string (see {@link BroadcastCondition});</li>
+ *   <li>{@code messages} — MiniMessage-format messages, sent in rotation.</li>
  * </ul>
  * <p>
- * Однотипные условия (одинаковое имя) с разными значениями — ИЛИ:
- * игроку достаточно совпадения с любым из них. Условия разных имён — И:
- * должны выполниться все. Дубликаты «имя=значение» отсекаются на этапе парсинга
- * с предупреждением в консоль (используется только первое вхождение).
+ * Conditions of the same kind (same name) with different values are OR:
+ * the player only needs to match any of them. Conditions of different names are AND:
+ * all must be met. "name=value" duplicates are discarded at parse time
+ * with a console warning (only the first occurrence is used).
  */
 public final class BroadcastSection {
 
     private final String name;
     private final int cooldownTicks;
     private final List<String> messages = new ArrayList<>();
-    /** Условия, сгруппированные по имени (внутри группы — ИЛИ, между группами — И). */
+    /** Conditions grouped by name (inside a group — OR, between groups — AND). */
     private final Map<String, List<BroadcastCondition>> conditionGroups = new LinkedHashMap<>();
 
     private int accumulatedTicks;
@@ -44,10 +44,10 @@ public final class BroadcastSection {
     }
 
     /**
-     * Разбирает секцию из конфига.
+     * Parses a section from the config.
      *
-     * @param section секция конфига (например {@code auto_broadcast.sections.example})
-     * @return готовая секция или {@code null}, если секция невалидна (уже предупреждено в консоль)
+     * @param section the config section (e.g. {@code auto_broadcast.sections.example})
+     * @return the ready section or {@code null} if the section is invalid (already warned to the console)
      */
     public static BroadcastSection parse(ConfigurationSection section) {
         String name = section.getName();
@@ -67,14 +67,14 @@ public final class BroadcastSection {
 
         BroadcastSection parsed = new BroadcastSection(name, cooldown, messages);
 
-        // Разбираем строку условий: "a=1, b=2, c=3"
+        // Parse the conditions string: "a=1, b=2, c=3"
         String conditions = section.getString("conditions", "");
         if (conditions != null && !conditions.trim().isEmpty()) {
             List<String> warnings = new ArrayList<>();
             Set<String> seen = new HashSet<>();
             for (String part : conditions.split(",")) {
                 String entry = part.trim();
-                if (entry.isEmpty()) continue; // лишние запятые/пробелы — без предупреждения
+                if (entry.isEmpty()) continue; // stray commas/spaces — no warning
                 BroadcastCondition condition = BroadcastCondition.parse(name, entry, warnings);
                 if (condition == null) continue;
                 if (!seen.add(condition.dedupeKey())) {
@@ -93,29 +93,29 @@ public final class BroadcastSection {
         return parsed;
     }
 
-    /** @return имя секции из конфига */
+    /** @return the section name from the config */
     public String getName() {
         return name;
     }
 
-    /** @return интервал отправки в тиках */
+    /** @return the send interval in ticks */
     public int getCooldownTicks() {
         return cooldownTicks;
     }
 
-    /** @return количество сообщений в секции */
+    /** @return the number of messages in the section */
     public int getMessageCount() {
         return messages.size();
     }
 
-    /** Накопить тики (вызывается каждый игровой тик-тик менеджера). */
+    /** Accumulate ticks (called every manager tick). */
     public void accumulate(int ticks) {
         accumulatedTicks += ticks;
     }
 
     /**
-     * @return true, когда пришло время отправить сообщение (накоплено >= cooldown_ticks).
-     *         При срабатывании накопленные тики сбрасываются.
+     * @return true when it is time to send the message (accumulated >= cooldown_ticks).
+     *         On fire the accumulated ticks are reset.
      */
     public boolean isReady() {
         if (accumulatedTicks < cooldownTicks) return false;
@@ -123,7 +123,7 @@ public final class BroadcastSection {
         return true;
     }
 
-    /** Следующее сообщение по кругу (ротация). */
+    /** Next message in rotation. */
     public String nextMessage() {
         String message = messages.get(messageIndex % messages.size());
         messageIndex++;
@@ -131,9 +131,9 @@ public final class BroadcastSection {
     }
 
     /**
-     * Проверяет все глобальные условия (online-*) секции.
+     * Checks all global conditions (online-*) of the section.
      *
-     * @return true, если глобальных условий нет или все они выполнены
+     * @return true if there are no global conditions or all of them are met
      */
     public boolean matchesGlobal() {
         for (List<BroadcastCondition> group : conditionGroups.values()) {
@@ -153,8 +153,8 @@ public final class BroadcastSection {
     }
 
     /**
-     * Проверяет все игровые условия секции для конкретного игрока.
-     * Игровых условий нет → всегда true (сообщение идёт всем).
+     * Checks all game conditions of the section for a specific player.
+     * No game conditions → always true (the message goes to everyone).
      */
     public boolean matches(Player player) {
         for (List<BroadcastCondition> group : conditionGroups.values()) {

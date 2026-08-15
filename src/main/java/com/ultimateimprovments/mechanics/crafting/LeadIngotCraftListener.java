@@ -74,7 +74,7 @@ public class LeadIngotCraftListener implements Listener {
     }
 
     // =========================
-    // OVERRIDE RESULT — ставим PDC на свинцовый слиток
+    // OVERRIDE RESULT — set PDC on the lead ingot
     // =========================
     @EventHandler
     public void onCraft(PrepareItemCraftEvent e) {
@@ -105,12 +105,12 @@ public class LeadIngotCraftListener implements Listener {
     }
 
     // =========================
-    // ЗАЩИТА ОТ РАСКРАФЧИВАНИЯ
-    // Если любой ингредиент имеет isLeadIngot PDC, а рецепт — НЕ lead_ingot → блокируем
+    // UNCRAFT PROTECTION
+    // If any ingredient has the isLeadIngot PDC and the recipe is NOT lead_ingot → block
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onUncraftProtection(PrepareItemCraftEvent e) {
-        // Пропускаем наш собственный рецепт — он легальный
+        // Skip our own recipe — it is legitimate
         Recipe recipe = e.getRecipe();
         if (recipe instanceof ShapedRecipe sr && sr.getKey().equals(RECIPE_KEY)) return;
 
@@ -118,7 +118,7 @@ public class LeadIngotCraftListener implements Listener {
         ItemStack[] matrix = inv.getMatrix();
         if (matrix == null) return;
 
-        // Проверяем все слоты матрицы (может быть и 2×2 крафт)
+        // Check all matrix slots (may be a 2×2 craft too)
         for (int i = 0; i < matrix.length; i++) {
             ItemStack ingredient = matrix[i];
             if (ingredient == null || ingredient.getType() == Material.AIR) continue;
@@ -128,7 +128,7 @@ public class LeadIngotCraftListener implements Listener {
             if (ingMeta == null) continue;
 
             if (ingMeta.getPersistentDataContainer().has(Keys.LEAD_INGOT, PersistentDataType.BYTE)) {
-                // Найден свинцовый слиток в нелегальном рецепте — блокируем
+                // Found a lead ingot in an illegal recipe — block it
                 inv.setResult(null);
                 return;
             }
@@ -136,13 +136,13 @@ public class LeadIngotCraftListener implements Listener {
     }
 
     // =========================
-    // ДОП. ЗАЩИТА ОТ РАСКРАФЧИВАНИЯ ЧЕРЕЗ ВАНИЛЬНЫЙ CRAFTER
-    // Ванильный Crafter при авто-крафте (по редстоуну) НЕ стреляет
-    // PrepareItemCraftEvent — только CrafterCraftEvent.
+    // ADDITIONAL UNCRAFT PROTECTION VIA THE VANILLA CRAFTER
+    // The vanilla Crafter on auto-craft (by redstone) does NOT fire
+    // PrepareItemCraftEvent — only CrafterCraftEvent.
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCrafterCraft(CrafterCraftEvent e) {
-        // Проверяем все слоты матрицы Crafter на наличие LEAD_INGOT PDC
+        // Check all Crafter matrix slots for the LEAD_INGOT PDC
         if (!(e.getBlock().getState() instanceof Crafter crafter)) return;
         Inventory inv = crafter.getInventory();
         for (ItemStack item : inv.getContents()) {

@@ -14,63 +14,64 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * ConfigGuideManager — управляет ЭМБЕДЖЕННЫМ в config.yml руководством пользователя.
+ * ConfigGuideManager — manages the user guide EMBEDDED in config.yml.
  * <p>
- * С v26.2 plugin-guide.txt больше не хранится как отдельный файл и НЕ поставляется
- * как JAR-ресурс. Его содержимое лежит В НАЧАЛЕ config.yml в виде YAML-комментариев
- * между маркерами и поддерживается вручную (перевод/правки делаются прямо в файле):
+ * Since v26.2, plugin-guide.txt is no longer stored as a separate file and is NOT
+ * shipped as a JAR resource. Its content lives AT THE TOP of config.yml as YAML
+ * comments between markers and is maintained manually (translations/edits are made
+ * directly in the file):
  * <pre>
  * # === ULTIMATEIMPROVMENTS GUIDE BEGIN (auto-managed, don't edit between markers) ===
- * [несколько сотен строк содержимого плагин-гайда в виде комментов с префиксом "# "]
+ * [several hundred lines of the plugin guide as comments prefixed with "# "]
  * # === ULTIMATEIMPROVMENTS GUIDE END ===
  * </pre>
  * <p>
- * На старте плагин вызывает {@link #init(Main)}, который лишь удаляет устаревшие
- * файлы из dataFolder ({@code plugin-guide.txt}/{@code plugin-guide.hash}) от старых
- * версий. Авто-эмбед/обновление гайда из JAR-ресурса больше НЕ выполняется — гайд
- * редактируется непосредственно в config.yml.
+ * On startup the plugin calls {@link #init(Main)}, which only removes the legacy
+ * files from dataFolder ({@code plugin-guide.txt}/{@code plugin-guide.hash}) left by
+ * old versions. Auto-embedding/updating the guide from the JAR resource is NO LONGER
+ * performed — the guide is edited directly in config.yml.
  * <p>
- * В классе сохранены вспомогательные методы (sha256, reconstructRawGuideText,
- * dedupeMetaBlocks, indexOfLine), используемые unit-тестами {@code ConfigGuideManagerTest}.
- * Производственный вход — только {@link #init(Main)}.
+ * Helper methods (sha256, reconstructRawGuideText, dedupeMetaBlocks, indexOfLine)
+ * are kept in this class for the unit tests {@code ConfigGuideManagerTest}.
+ * The only production entry point is {@link #init(Main)}.
  */
 public class ConfigGuideManager {
 
     public static final String GUIDE_BEGIN_MARKER = "# === ULTIMATEIMPROVMENTS GUIDE BEGIN (auto-managed by ConfigGuideManager, do not edit between markers) ===";
     public static final String GUIDE_END_MARKER = "# === ULTIMATEIMPROVMENTS GUIDE END ===";
-    /** Баннер «не редактировать» над блоком _meta (в самом низу config.yml). */
+    /** "Don't edit" banner above the _meta block (at the very bottom of config.yml). */
     public static final String META_BANNER = "# === INTEGRITY META — DO NOT EDIT (auto-managed) ===";
     public static final String META_KEY = "_meta";
     public static final String META_HASH_KEY = "guide_hash";
-    /** Имя JAR-ресурса, откуда берётся актуальный гайд для эмбеда. */
+    /** Name of the JAR resource that provides the current guide for embedding. */
     public static final String GUIDE_RESOURCE = "plugin-guide.txt";
-    /** Имя устаревшего файла в dataFolder (миграция с прошлых версий). */
+    /** Name of the legacy file in dataFolder (migration from previous versions). */
     public static final String LEGACY_GUIDE_FILE = "plugin-guide.txt";
     public static final String LEGACY_HASH_FILE = "plugin-guide.hash";
 
     private ConfigGuideManager() {}
 
     /**
-     * Инициализирует гайд: мигрирует старые plugin-guide.txt/plugin-guide.hash из dataFolder.
+     * Initializes the guide: migrates old plugin-guide.txt/plugin-guide.hash out of dataFolder.
      * <p>
-     * С v26.2 JAR-ресурс {@code plugin-guide.txt} НЕ поставляется — гайд живёт прямо в
-     * config.yml (между маркерами) и поддерживается вручную, поэтому авто-эмбед/обновление
-     * из JAR-ресурса больше не выполняется.
+     * Since v26.2 the JAR resource {@code plugin-guide.txt} is NOT shipped — the guide
+     * lives directly in config.yml (between markers) and is maintained manually, so
+     * auto-embedding/updating from the JAR resource is no longer performed.
      */
     public static void init(Main plugin) {
-        // Миграция устаревших файлов из dataFolder (если остались от старых версий)
+        // Migrate legacy files out of dataFolder (if left by old versions)
         migrateLegacyFiles(plugin);
     }
 
     /**
-     * Встраивает/обновляет эмбедженный гайд в config.yml между маркерами.
+     * Embeds/updates the embedded guide in config.yml between markers.
      * <p>
-     * Логика:
+     * Logic:
      * <ul>
-     *   <li>Если маркеров нет → вставить в начало файла (сразу после warnings/comments header).</li>
-     *   <li>Если маркеры есть → скопировать текущий диапазон (raw text), посчитать SHA-256,
-     *       сравнить с {@code _meta.guide_hash}; если не совпадает — заменить содержимым из
-     *       JAR-ресурса {@code plugin-guide.txt} и обновить хеш.</li>
+     *   <li>No markers → insert at the top of the file (right after the warnings/comments header).</li>
+     *   <li>Markers present → copy the current range (raw text), compute SHA-256, compare it
+     *       with {@code _meta.guide_hash}; if it differs — replace with the content from the
+     *       JAR resource {@code plugin-guide.txt} and update the hash.</li>
      * </ul>
      */
     public static void ensureEmbeddedGuide(Main plugin, File configFile) {
@@ -90,19 +91,20 @@ public class ConfigGuideManager {
 
             String currentEmbeddedHash;
             if (beginIdx >= 0 && endIdx > beginIdx) {
-                // Хеш должен считаться от КАНОНИЧНОЙ формы (raw guide text без префиксов "# "),
-                // иначе любой комментарий-префикс вызовет ложный "needs update" на каждом
-                // старте. Преобразование делает выделенный package-private helper
-                // {@link #reconstructRawGuideText} — единая логика для boot-time check и
-                // тестов; String.join("\n", ...) тут критичен: append('\n') per-line
-                // добавлял бы лишний перевод строки в конце и хеш бы постоянно отличался.
+                // The hash must be computed from the CANONICAL form (raw guide text without
+                // "# " prefixes), otherwise any comment prefix would trigger a false
+                // "needs update" on every startup. The conversion is done by the dedicated
+                // package-private helper {@link #reconstructRawGuideText} — one shared logic
+                // for the boot-time check and the tests; String.join("\n", ...) is critical
+                // here: append('\n') per-line would add a trailing newline and the hash
+                // would constantly differ.
                 currentEmbeddedHash = sha256(reconstructRawGuideText(lines, beginIdx, endIdx));
             } else {
                 currentEmbeddedHash = null;
             }
 
             if (currentEmbeddedHash == null) {
-                // Нет эмбеда → встроить в начало файла
+                // No embed → embed at the top of the file
                 List<String> newLines = new ArrayList<>(lines.size() + 200);
                 newLines.add(GUIDE_BEGIN_MARKER);
                 for (String gl : guideText.split("\\R", -1)) {
@@ -113,17 +115,17 @@ public class ConfigGuideManager {
                     }
                 }
                 newLines.add(GUIDE_END_MARKER);
-                newLines.add(""); // пустая строка-разделитель
+                newLines.add(""); // blank separator line
                 newLines.addAll(lines);
                 Files.write(configFile.toPath(), newLines, StandardCharsets.UTF_8);
                 ConsoleLogger.info("[Guide] Embedded plugin-guide into config.yml ("
                         + newLines.size() + " lines).");
             } else if (!guideHash.equals(currentEmbeddedHash)) {
-                // Есть расхождение — заменить содержимое между маркерами, сохранив всё после END_MARKER
+                // Hash mismatch — replace the content between markers, keeping everything after END_MARKER
                 List<String> newLines = new ArrayList<>(lines.size() + 200);
-                // 1) префикс до BEGIN_MARKER
+                // 1) prefix up to BEGIN_MARKER
                 for (int i = 0; i < beginIdx; i++) newLines.add(lines.get(i));
-                // 2) BEGIN + новое содержимое гайда + END
+                // 2) BEGIN + new guide content + END
                 newLines.add(GUIDE_BEGIN_MARKER);
                 for (String gl : guideText.split("\\R", -1)) {
                     if (gl.isEmpty()) {
@@ -133,8 +135,8 @@ public class ConfigGuideManager {
                     }
                 }
                 newLines.add(GUIDE_END_MARKER);
-                // 3) суффикс после END_MARKER (старые строки после endIdx)
-                newLines.add(""); // blank line после маркеров
+                // 3) suffix after END_MARKER (old lines after endIdx)
+                newLines.add(""); // blank line after the markers
                 for (int i = endIdx + 1; i < lines.size(); i++) newLines.add(lines.get(i));
                 Files.write(configFile.toPath(), newLines, StandardCharsets.UTF_8);
                 ConsoleLogger.info("[Guide] Updated embedded plugin-guide in config.yml (was "
@@ -144,19 +146,19 @@ public class ConfigGuideManager {
                 return;
             }
 
-            // Обновляем/вставляем _meta: { guide_hash: ... } — через raw text,
-            // чтобы гарантировать что блок ОКАЖЕТСЯ в самом низу файла
-            // (snakeyaml HashMap order не гарантирован).
+            // Update/insert _meta: { guide_hash: ... } — via raw text,
+            // to guarantee the block ENDS UP at the very bottom of the file
+            // (snakeyaml HashMap order is not guaranteed).
             upsertMetaBlockAtEnd(configFile, guideHash);
 
-            // После ЛЮБОЙ записи нужно держать _meta последним — другие могут вызвать
-            // plugin.getConfig().save() (ConfigRepairManager / Migration) и snakeyaml
-            // переставит ключи HashMap'ом. Чистим ДУБЛИ: оставляем ОДИН блок,
-            // и тот что в самом низу (это наш).
+            // After ANY write we must keep _meta last — other code may call
+            // plugin.getConfig().save() (ConfigRepairManager / Migration) and snakeyaml
+            // would reorder keys via HashMap. Clean DUPLICATES: keep ONE block,
+            // the one at the very bottom (ours).
             dedupeMetaBlocks(configFile);
 
-            // Перезагрузим Bukkit config, чтобы in-memory модель (getConfig().getString,
-            // getString("messages.*") и т.д.) шла от свежего файла.
+            // Reload the Bukkit config so the in-memory model (getConfig().getString,
+            // getString("messages.*") etc.) reflects the fresh file.
             try {
                 plugin.reloadConfig();
             } catch (Exception e) {
@@ -169,9 +171,9 @@ public class ConfigGuideManager {
     }
 
     /**
-     * Мигрирует устаревшие файлы из dataFolder в config.yml: если есть plugin-guide.txt
-     * или plugin-guide.hash — удаляет их (содержимое будет заменено из JAR при
-     * {@link #ensureEmbeddedGuide}). Всегда безопасно вызывать — отсутствие файлов OK.
+     * Migrates legacy files out of dataFolder into config.yml: if plugin-guide.txt
+     * or plugin-guide.hash exist — deletes them (content will be replaced from the JAR
+     * on {@link #ensureEmbeddedGuide}). Always safe to call — missing files are OK.
      */
     public static void migrateLegacyFiles(Main plugin) {
         File legacy = new File(plugin.getDataFolder(), LEGACY_GUIDE_FILE);
@@ -193,17 +195,17 @@ public class ConfigGuideManager {
     }
 
     /**
-     * Вставляет/обновляет блок {@code _meta: { guide_hash: ... }} В САМОМ НИЗУ config.yml
-     * с баннером «НЕ РЕДАКТИРОВАТЬ» выше него. Используем raw text manipulation,
-     * а не snakeyaml — порядок ключей в snakeyaml HashMap НЕ гарантирован.
+     * Inserts/updates the {@code _meta: { guide_hash: ... }} block AT THE VERY BOTTOM
+     * of config.yml with a "DO NOT EDIT" banner above it. Uses raw text manipulation,
+     * not snakeyaml — key order in snakeyaml HashMap is NOT guaranteed.
      * <p>
-     * Алгоритм:
+     * Algorithm:
      * <ol>
-     *   <li>Читаем файл построчно.</li>
-     *   <li>Если есть баннер + существующий _meta — заменяем старый блок на новый in-place.</li>
-     *   <li>Если только баннер без _meta — добавляем _meta после баннера.</li>
-     *   <li>Если ничего нет — дописываем баннер + _meta в самый конец файла.</li>
-     *   <li>Гарантируем что ПОСЛЕ блока _meta ничего не идёт (последняя непустая строка файла).</li>
+     *   <li>Read the file line by line.</li>
+     *   <li>Banner + existing _meta present — replace the old block with the new one in-place.</li>
+     *   <li>Only a banner without _meta — append _meta after the banner.</li>
+     *   <li>Nothing present — append banner + _meta at the very end of the file.</li>
+     *   <li>Guarantee that NOTHING follows the _meta block (it is the last non-empty line).</li>
      * </ol>
      */
     private static void upsertMetaBlockAtEnd(File configFile, String hash) {
@@ -213,7 +215,7 @@ public class ConfigGuideManager {
             int metaIdx = indexOfLine(lines, "_meta:");
 
             if (bannerIdx >= 0 && metaIdx >= 0) {
-                // Оба есть — заменяем содержимое _meta по месту.
+                // Both present — replace the _meta content in place.
                 int startMeta = metaIdx;
                 int endMeta = startMeta;
                 while (endMeta + 1 < lines.size()) {
@@ -229,11 +231,11 @@ public class ConfigGuideManager {
                 newMeta.add("  guide_hash: \"" + hash + "\"");
                 List<String> merged = new ArrayList<>(lines.size());
                 merged.addAll(lines.subList(0, bannerIdx + 1));
-                // Всегда вставляем пустую строку между баннером и _meta для читаемости
+                // Always insert a blank line between the banner and _meta for readability
                 merged.add("");
                 merged.addAll(newMeta);
                 if (endMeta + 1 < lines.size()) {
-                    // после _meta есть «хвост» — оставляем пустую строку-разделитель
+                    // there is a "tail" after _meta — keep a blank separator line
                     if (!lines.get(endMeta + 1).isEmpty()) merged.add("");
                     merged.addAll(lines.subList(endMeta + 1, lines.size()));
                 }
@@ -241,15 +243,15 @@ public class ConfigGuideManager {
                 Files.write(configFile.toPath(), lines, StandardCharsets.UTF_8);
                 ConsoleLogger.info("[Guide] Updated _meta.guide_hash in-place (hash " + hash.substring(0, 12) + ").");
             } else if (bannerIdx >= 0) {
-                // Баннер есть, _meta нет — дописываем _meta после баннера
+                // Banner present, no _meta — append _meta after the banner
                 List<String> newLines = new ArrayList<>(lines);
-                newLines.add(bannerIdx + 1, ""); // пустая строка
+                newLines.add(bannerIdx + 1, ""); // blank line
                 newLines.add(bannerIdx + 2, "_meta:");
                 newLines.add(bannerIdx + 3, "  guide_hash: \"" + hash + "\"");
                 Files.write(configFile.toPath(), newLines, StandardCharsets.UTF_8);
                 ConsoleLogger.info("[Guide] Inserted _meta after existing banner.");
             } else {
-                // Совсем нет — добавляем баннер + _meta в самый конец файла
+                // None at all — append banner + _meta at the very end of the file
                 List<String> newLines = new ArrayList<>(lines);
                 if (!newLines.isEmpty() && !newLines.get(newLines.size() - 1).isEmpty()) {
                     newLines.add("");
@@ -268,10 +270,10 @@ public class ConfigGuideManager {
     }
 
     // ============================================================
-    // Утилиты
+    // Utilities
     // ============================================================
 
-    /** Читает текст JAR-ресурса {@code plugin-guide.txt} или null. */
+    /** Reads the text of the JAR resource {@code plugin-guide.txt} or null. */
     private static String loadGuideTextFromJar(Main plugin) {
         try (InputStreamReader reader = new InputStreamReader(
                 plugin.getResource(GUIDE_RESOURCE), StandardCharsets.UTF_8)) {
@@ -285,7 +287,7 @@ public class ConfigGuideManager {
         }
     }
 
-    /** SHA-256 hex-стринг. */
+    /** SHA-256 hex string. */
     private static String sha256(String text) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -299,30 +301,31 @@ public class ConfigGuideManager {
     }
 
     /**
-     * Извлекает из {@code lines[beginIdx+1 .. endIdx-1]} (содержимое между
-     * {@link #GUIDE_BEGIN_MARKER} и {@link #GUIDE_END_MARKER}) каноничную форму
-     * исходного plugin-guide.txt: снимает префикс {@code "# "} или {@code "#"} с
-     * каждой строки и соединяет результат через {@code "\n"} (без хвостового
-     * перевода строки). Это строгий инверс пути ЗАПИСИ в ensureEmbeddedGuide, и
-     * вместе они гарантируют что SHA-256 эмбедженного диапазона совпадает с
-     * SHA-256 raw guide text из JAR — иначе гайд бы перезаписывался на каждом
-     * старте.
+     * Extracts the canonical form of the source plugin-guide.txt from
+     * {@code lines[beginIdx+1 .. endIdx-1]} (the content between
+     * {@link #GUIDE_BEGIN_MARKER} and {@link #GUIDE_END_MARKER}): strips the
+     * {@code "# "} or {@code "#"} prefix from each line and joins the result with
+     * {@code "\n"} (no trailing newline). This is the strict inverse of the WRITE
+     * path in ensureEmbeddedGuide, and together they guarantee that the SHA-256 of
+     * the embedded range matches the SHA-256 of the raw guide text from the JAR —
+     * otherwise the guide would be re-embedded on every startup.
      * <p>
-     * Известное ограничение: префикс снимается только ОДИН раз. Если исходный
-     * plugin-guide.txt содержит markdown-style «{@code ###SubSubHeader}» (тройной
-     * хэш в начале строки), после эмбеда и обратного strip'а получится
-     * «{@code ##SubSubHeader}» — один хэш теряется, хеш не совпадает, гайд будет
-     * переэмбеживаться. На практике plugin-guide.txt не использует {@code ###}
-     * (только {@code ##} разделы), но если потребуется — перейди на префикс
-     * «{@code #>}» (YAML-комментарий, не конфликтует с markdown).
+     * Known limitation: the prefix is stripped only ONCE. If the source
+     * plugin-guide.txt contains a markdown-style «{@code ###SubSubHeader}» (triple
+     * hash at the start of a line), after embedding and the inverse strip you get
+     * «{@code ##SubSubHeader}» — one hash is lost, the hash does not match, and the
+     * guide gets re-embedded. In practice plugin-guide.txt does not use {@code ###}
+     * (only {@code ##} sections), but if needed — switch to the «{@code #>}»
+     * prefix (a YAML comment that does not conflict with markdown).
      * <p>
-     * Помечено package-private (не private) чтобы тесты могли вызывать напрямую
-     * (reflection не используется, потому что оба класса в com.ultimateimprovments.config).
+     * Package-private (not private) so that tests can call it directly
+     * (reflection is not used because both classes are in com.ultimateimprovments.config).
      */
     static String reconstructRawGuideText(List<String> lines, int beginIdx, int endIdx) {
-        // Без capacity-hint: пустой диапазон (beginIdx+1 >= endIdx) даёт пустую String и не
-        // бросает IllegalArgumentException. ArrayList растёт от default 10 через ~9 удвоений
-        // до ~5866 (типичный гайд — ~2940 строк) — дешевле, чем поддерживать формулу capacity.
+        // Without a capacity hint: an empty range (beginIdx+1 >= endIdx) yields an empty String
+        // and does not throw IllegalArgumentException. ArrayList grows from the default 10
+        // through ~9 doublings up to ~5866 (typical guide — ~2940 lines) — cheaper than
+        // maintaining a capacity formula.
         List<String> stripped = new ArrayList<>();
         for (int i = beginIdx + 1; i < endIdx; i++) {
             String line = lines.get(i);
@@ -340,11 +343,11 @@ public class ConfigGuideManager {
     }
 
     /**
-     * Удаляет ВСЕ вхождения блока {@code _meta:} кроме последнего (это то что
-     * {@link #upsertMetaBlockAtEnd} только что записал в самый низ). Защита от
-     * случая, когда кто-то снаружи вызвал {@code plugin.getConfig().save()} и
-     * snakeyaml HashMap order переставил ключи — после такой перестановки может
-     * появиться дубль _meta: блока в середине файла.
+     * Removes ALL occurrences of the {@code _meta:} block except the last one (the
+     * one {@link #upsertMetaBlockAtEnd} just wrote at the very bottom). Protection
+     * against the case when someone externally called {@code plugin.getConfig().save()}
+     * and the snakeyaml HashMap order reshuffled the keys — after such a reshuffle a
+     * duplicate _meta: block can appear in the middle of the file.
      */
     private static void dedupeMetaBlocks(File configFile) {
         try {
@@ -358,16 +361,16 @@ public class ConfigGuideManager {
                 }
             }
             if (firstMeta < 0 || firstMeta == lastMeta) {
-                return; // нет или один — ОК
+                return; // none or one — OK
             }
-            // Удаляем все ВХОЖДЕНИЯ _meta: кроме последнего (снизу вверх, чтобы индексы не съезжали)
-            // + удаляем под-ключи _meta (строки с 2-space-indent)
+            // Remove all _meta: occurrences except the last one (bottom-up so indices stay valid)
+            // + remove the _meta sub-keys (lines with 2-space indent)
             List<Integer> toRemove = new ArrayList<>();
             for (int i = 0; i < lines.size(); i++) {
                 if (i == lastMeta) continue;
                 if (lines.get(i).trim().equals("_meta:")) {
                     toRemove.add(i);
-                    // Удалить ВСЕ под-ключи сразу после (indented) — пока есть 2-space indent
+                    // Remove ALL sub-keys right after (indented) — while there is a 2-space indent
                     int j = i + 1;
                     while (j < lines.size() && (lines.get(j).startsWith("  ") || lines.get(j).startsWith("\t"))) {
                         toRemove.add(j);
@@ -375,7 +378,7 @@ public class ConfigGuideManager {
                     }
                 }
             }
-            // Сортируем по убыванию и удаляем (чтобы индексы не съезжали)
+            // Sort in descending order and remove (so indices stay valid)
             toRemove.sort((a, b) -> b - a);
             for (int idx : toRemove) {
                 lines.remove(idx);
@@ -388,21 +391,21 @@ public class ConfigGuideManager {
     }
 
     /**
-     * Поиск строки в списке (нормализованно: trim + trim trailing CR для CRLF случае).
-     * Это защищает от сюрпризов когда кто-то сохранил файл с CRLF и в константе LF.
+     * Finds a line in the list (normalized: trim + strip trailing CR for the CRLF case).
+     * This guards against surprises when someone saved the file with CRLF and the constant uses LF.
      */
     private static int indexOfLine(List<String> lines, String marker) {
         String normMarker = marker.endsWith("\r") ? marker : marker.trim();
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
-            // убираем trailing CR, если есть (CRLF vs LF)
+            // strip the trailing CR if present (CRLF vs LF)
             if (line.endsWith("\r")) line = line.substring(0, line.length() - 1);
             if (line.equals(normMarker)) return i;
         }
         return -1;
     }
 
-    /** Утилита для других мест — возвращает текущий хеш гайда (для логов). */
+    /** Utility for other places — returns the current guide hash (for logs). */
     public static String currentGuideHash(Main plugin) {
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         if (!configFile.exists()) return null;

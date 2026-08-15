@@ -97,7 +97,7 @@ public final class AuthSubcommand {
             return true;
         }
 
-        // /ui auth 2fa — коды больше не используются, показываем статус
+        // /ui auth 2fa — codes are no longer used, show the status
         if (args.length >= 3) {
             if (mgr.is2FAEnabled(uuid)) {
                 player.sendMessage("§a✔ 2FA enabled");
@@ -115,7 +115,7 @@ public final class AuthSubcommand {
             return true;
         }
 
-        // /ui auth 2fa — статус
+        // /ui auth 2fa — status
         if (mgr.is2FAEnabled(uuid)) {
             player.sendMessage("§a✔ 2FA enabled");
             player.sendMessage("§7GitHub account: §f" + mgr.getGithubUsername(uuid));

@@ -11,14 +11,14 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * 🎯 PiercingListener — обработчик зачарования PIERCING (Пробитие).
+ * 🎯 PiercingListener — handler for the PIERCING enchantment.
  * <p>
- * В ванилле PIERCING на арбалетах пробивает сущностей насквозь,
- * но НЕ игнорирует броню. Данный слушатель:
+ * In vanilla, PIERCING on crossbows pierces entities,
+ * but does NOT ignore armor. This listener:
  * <ul>
- *   <li>НЕ даёт PIERCING игнорировать броню (защита работает как обычно)</li>
- *   <li>Добавляет +extraCost% к трате целостности брони цели при ударе</li>
- *   <li>Unbreaking проверяется на итоговую стоимость (не игнорируется)</li>
+ *   <li>Does NOT let PIERCING ignore armor (protection works as usual)</li>
+ *   <li>Adds +extraCost% to the target's armor integrity cost on hit</li>
+ *   <li>Unbreaking is checked against the final cost (not ignored)</li>
  * </ul>
  */
 public class PiercingListener implements Listener {
@@ -36,13 +36,13 @@ public class PiercingListener implements Listener {
     }
 
     /**
-     * При ударе игрока оружием с зачарованием PIERCING:
-     * - Броня НЕ игнорируется (защита работает как в ванилле)
-     * - Устанавливается флаг, что следующий урон броне должен получить +extraCost%
-     * - В decreaseIntegrity() проверяется флаг и добавляется extraCost ДО Unbreaking
+     * When a player hits with a PIERCING weapon:
+     * - Armor is NOT ignored (protection works as in vanilla)
+     * - Sets a flag that the next armor damage should get +extraCost%
+     * - In decreaseIntegrity() the flag is checked and extraCost is added BEFORE Unbreaking
      * <p>
-     * Если удар БЕЗ PIERCING — флаг сбрасывается, чтобы обычные удары
-     * не получали бонус от предыдущего PIERCING-удара в этом же тике.
+     * If the hit is WITHOUT PIERCING — the flag is reset so regular hits
+     * do not get a bonus from a previous PIERCING hit in the same tick.
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityDamage(EntityDamageByEntityEvent e) {
@@ -50,31 +50,31 @@ public class PiercingListener implements Listener {
         if (!enabled) return;
         if (!(e.getEntity() instanceof Player victim)) return;
 
-        // Проверяем, есть ли у атакующего PIERCING на оружии
+        // Check whether the attacker has PIERCING on their weapon
         ItemStack weapon = getWeapon(e.getDamager());
         if (weapon == null || weapon.getType() == Material.AIR) {
-            // Без оружия — не PIERCING, сбрасываем флаг
+            // No weapon — not PIERCING, reset the flag
             IntegrityManager.setPiercingActive(false);
             return;
         }
 
         if (weapon.containsEnchantment(Enchantment.PIERCING)) {
-            // Устанавливаем флаг — следующий урон броне получит +extraCost%
+            // Set the flag — the next armor damage gets +extraCost%
             IntegrityManager.setPiercingActive(true);
         } else {
-            // Оружие без PIERCING — сбрасываем флаг
+            // Weapon without PIERCING — reset the flag
             IntegrityManager.setPiercingActive(false);
         }
     }
 
     /**
-     * Получает оружие атакующего (если атакующий — игрок).
+     * Gets the attacker's weapon (if the attacker is a player).
      */
     private ItemStack getWeapon(org.bukkit.entity.Entity damager) {
         if (damager instanceof Player attacker) {
             return attacker.getInventory().getItemInMainHand();
         }
-        // Для мобов/projectiles не проверяем PIERCING (ванилла сама обрабатывает)
+        // For mobs/projectiles we do not check PIERCING (vanilla handles it)
         return null;
     }
 }

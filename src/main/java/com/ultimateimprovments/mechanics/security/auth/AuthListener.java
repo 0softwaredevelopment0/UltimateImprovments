@@ -15,10 +15,10 @@ import org.bukkit.event.player.*;
 import java.util.UUID;
 
 /**
- * Слушатель событий для системы авторизации (chat-based).
+ * Event listener for the authentication system (chat-based).
  * <p>
- * Блокирует действия неавторизованных игроков. GUI-handlers удалены —
- * все взаимодействие теперь происходит через чат-команды:
+ * Blocks actions of unauthenticated players. GUI handlers removed —
+ * all interaction now happens through chat commands:
  * {@code /ui auth login/register/logout/chgpass/2fa}.
  */
 public class AuthListener implements Listener {
@@ -165,7 +165,7 @@ public class AuthListener implements Listener {
 
     // =========================
     // BLOCK CHAT / COMMANDS if not authed
-    // Разрешаем только /ui auth (login/register/logout/chgpass/2fa) до входа.
+    // Allow only /ui auth (login/register/logout/chgpass/2fa) before login.
     // =========================
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
@@ -174,7 +174,7 @@ public class AuthListener implements Listener {
 
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
 
-        // Разрешаем /ui auth login, register, chgpass, logout и 2fa
+        // Allow /ui auth login, register, chgpass, logout and 2fa
         if (msg.startsWith("/ui auth login") || msg.startsWith("/ui auth register")
                 || msg.startsWith("/ui auth logout")
                 || msg.startsWith("/ui auth chgpass")
@@ -200,8 +200,8 @@ public class AuthListener implements Listener {
     }
 
     // =========================
-    // ⚠ DEPRECATED GUI HANDLERS УДАЛЕНЫ:
-    // Реальная GUI-логика авторизации удалена (chat-based auth).
-    // Игроки, требующие авторизации, заморожены, и им заблокированы ВСЕ действия.
+    // ⚠ DEPRECATED GUI HANDLERS REMOVED:
+    // The actual GUI auth logic is gone (chat-based auth).
+    // Players requiring auth are frozen, and ALL actions are blocked for them.
     // =========================
 }

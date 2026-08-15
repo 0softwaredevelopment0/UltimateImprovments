@@ -5,10 +5,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
 /**
- * Базовый класс для всех проверок античита.
+ * Base class for all anti-cheat checks.
  * <p>
- * Каждая проверка наследует этот класс и реализует логику обнаружения.
- * Проверка может быть как Listener (event-based), так и вызываться из AntiCheatManager.
+ * Every check extends this class and implements its detection logic.
+ * A check can be a Listener (event-based) or be invoked from AntiCheatManager.
  */
 public abstract class AbstractCheck implements Listener {
 
@@ -30,12 +30,12 @@ public abstract class AbstractCheck implements Listener {
     // =========================
 
     /**
-     * Вызывается при инициализации — загрузка конфига, регистрация listener'ов.
+     * Called on initialization — config loading, listener registration.
      */
     public abstract void onInit();
 
     /**
-     * Вызывается при перезагрузке конфига.
+     * Called when the config is reloaded.
      */
     public abstract void onReload();
 
@@ -71,7 +71,7 @@ public abstract class AbstractCheck implements Listener {
     // =========================
 
     /**
-     * Проверяет, освобождён ли игрок от этой проверки.
+     * Checks whether the player is exempt from this check.
      */
     protected boolean isExempted(Player player) {
         return ExemptionManager.getInstance().isExempted(player, name);
@@ -82,7 +82,7 @@ public abstract class AbstractCheck implements Listener {
     // =========================
 
     /**
-     * Добавляет VL и возвращает результат.
+     * Adds VL and returns the result.
      */
     protected CheckResult flag(Player player, double vl, String message) {
         PlayerData data = AntiCheatManager.getInstance().getPlayerData(player);

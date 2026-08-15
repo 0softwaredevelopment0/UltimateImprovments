@@ -40,9 +40,9 @@ public class ScannerItemListener implements Listener {
         var pdc = meta.getPersistentDataContainer();
 
         // =========================
-        // Сначала проверяем, является ли предмет сканером
-        // Если да — всегда отменяем событие, чтобы не сработало
-        // дефолтное поведение (например, ENDER_EYE выбрасывается)
+        // First check whether the item is a scanner
+        // If so — always cancel the event so the default
+        // behaviour does not trigger (e.g. ENDER_EYE being thrown)
         // =========================
         boolean isHealthMeter = pdc.has(Keys.HEALTH_METER, PersistentDataType.BYTE);
         boolean isOreFinder = pdc.has(Keys.ORE_FINDER, PersistentDataType.BYTE);
@@ -51,13 +51,13 @@ public class ScannerItemListener implements Listener {
 
         if (!isHealthMeter && !isOreFinder && !isMobFinder && !isRadar) return;
 
-        // Отменяем ВСЕГДА, даже при кулдауне
+        // Cancel ALWAYS, even on cooldown
         e.setCancelled(true);
 
         UUID uid = player.getUniqueId();
         long now = System.currentTimeMillis();
 
-        // Global cooldown check (после cancellation — безопасно)
+        // Global cooldown check (after cancellation — safe)
         Long last = cooldowns.get(uid);
         if (last != null && (now - last) < COOLDOWN_MS) {
             long remaining = ((COOLDOWN_MS - (now - last)) / 1000) + 1;

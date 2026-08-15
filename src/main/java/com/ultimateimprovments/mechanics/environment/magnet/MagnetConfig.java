@@ -3,9 +3,9 @@ package com.ultimateimprovments.mechanics.environment.magnet;
 import com.ultimateimprovments.core.Main;
 
 /**
- * Конфигурация магнита — все параметры из config.yml (features.magnet).
+ * Magnet configuration — all parameters from config.yml (features.magnet).
  * <p>
- * Извлечено из {@link MagnetManager} для уменьшения размера класса.
+ * Extracted from {@link MagnetManager} to reduce class size.
  */
 public final class MagnetConfig {
 

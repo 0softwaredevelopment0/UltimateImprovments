@@ -4,24 +4,24 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 /**
- * ⚠️ AlertBroadcast — централизованная рассылка алертов.
+ * ⚠️ AlertBroadcast — centralized alert broadcasting.
  * <p>
- * Отправляет MiniMessage-строку всем онлайн-игрокам, имеющим право
- * {@code ui.alerts} (плюс legacy-права для обратной совместимости:
+ * Sends a MiniMessage string to all online players having the permission
+ * {@code ui.alerts} (plus legacy permissions for backward compatibility:
  * {@code ui.overload.logs}, {@code ui.punish.notify},
  * {@code ui.anticheat.notify}).
  * <p>
- * Использование:
+ * Usage:
  * <pre>{@code
- * AlertBroadcast.send("<red>⚠ Сервер перегружен!</red>");
+ * AlertBroadcast.send("<red>⚠ Server overloaded!</red>");
  * }</pre>
  */
 public final class AlertBroadcast {
 
-    /** Основное право на получение алертов. */
+    /** The main permission for receiving alerts. */
     public static final String PERMISSION = "ui.alerts";
 
-    /** Старые права алертов (обратная совместимость). */
+    /** Legacy alert permissions (backward compatibility). */
     private static final String[] LEGACY_PERMISSIONS = {
             "ui.overload.logs",
             "ui.punish.notify",
@@ -31,10 +31,10 @@ public final class AlertBroadcast {
     private AlertBroadcast() {}
 
     /**
-     * Отправляет алерт всем онлайн-игрокам с правом {@code ui.alerts}
-     * (или любым legacy-правом).
+     * Sends an alert to all online players with the {@code ui.alerts} permission
+     * (or any legacy permission).
      *
-     * @param miniMessage строка в формате MiniMessage
+     * @param miniMessage a string in MiniMessage format
      */
     public static void send(String miniMessage) {
         if (miniMessage == null) return;
@@ -47,8 +47,8 @@ public final class AlertBroadcast {
     }
 
     /**
-     * @return true если игрок имеет право на алерты (ui.alerts или legacy),
-     *         либо является оператором (для обратной совместимости с античитом).
+     * @return true if the player has alert permission (ui.alerts or legacy),
+     *         or is an operator (for backward compatibility with the anticheat).
      */
     public static boolean hasAlertPermission(Player player) {
         if (player.isOp()) return true;

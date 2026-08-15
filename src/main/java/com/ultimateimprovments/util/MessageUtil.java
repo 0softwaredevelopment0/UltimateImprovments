@@ -17,18 +17,18 @@ public class MessageUtil {
     private static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
 
     /**
-     * Главная точка входа: пишет текст с ПОЛНЫМ резолвом плейсхолдеров и
-     * парсингом MiniMessage.
+     * Main entry point: renders text with FULL placeholder resolution and
+     * MiniMessage parsing.
      * <ol>
-     *   <li>Если в тексте есть '%' — {@link PlaceholderResolver#resolve(String, Player)}
-     *       пропускает все наши BUILTIN (включая динамические tps/mspt/online/ram/ping),
-     *       а в самом конце применяет PlaceholderAPI. Так работают плейсхолдеры
-     *       ЛЮБЫХ PAPI-плагинов.</li>
-     *   <li>Если '%' нет — строка проходит в MiniMessage напрямую (fast-path).</li>
+     *   <li>If the text contains '%' — {@link PlaceholderResolver#resolve(String, Player)}
+     *       passes through all our BUILTIN placeholders (including dynamic tps/mspt/online/ram/ping),
+     *       and applies PlaceholderAPI at the very end. This is how placeholders
+     *       of ANY PAPI plugin work.</li>
+     *   <li>If there is no '%' — the string goes straight to MiniMessage (fast-path).</li>
      * </ol>
      *
-     * @param text    MiniMessage-строка с плейсхолдерами {@code %name%}
-     * @param player  целевой игрок ({@code null} для серверных строк — PAPI всё равно работает для сервер-плейсхолдеров)
+     * @param text    a MiniMessage string with {@code %name%} placeholders
+     * @param player  the target player ({@code null} for server strings — PAPI still works for server placeholders)
      */
     public static Component parse(String text, @Nullable Player player) {
         if (text == null) return Component.empty();
@@ -39,9 +39,9 @@ public class MessageUtil {
     }
 
     /**
-     * Безопасный десериализатор: MiniMessage не понимает legacy §-коды и бросает
-     * ParsingExceptionImpl (что роняет Bukkit-таски). Если строка содержит § —
-     * конвертируем через LegacyComponentSerializer вместо краша.
+     * Safe deserializer: MiniMessage does not understand legacy § codes and throws
+     * ParsingExceptionImpl (which crashes Bukkit tasks). If the string contains § —
+     * convert via LegacyComponentSerializer instead of crashing.
      */
     private static Component deserialize(String text) {
         if (text != null && text.indexOf('\u00A7') >= 0) {
@@ -51,8 +51,8 @@ public class MessageUtil {
     }
 
     /**
-     * Сценарий без игрока — для статики (GUI titles, MOTD, broadcast).
-     * Делегирует в {@link #parse(String, Player)} с {@code player=null}.
+     * No-player scenario — for static content (GUI titles, MOTD, broadcast).
+     * Delegates to {@link #parse(String, Player)} with {@code player=null}.
      */
     public static Component parse(String miniMessage) {
         return parse(miniMessage, null);

@@ -32,13 +32,13 @@ public class DeathBellManager implements Listener {
 
         org.bukkit.entity.Entity entity = e.getEntity();
         if (entity instanceof org.bukkit.entity.Player player) {
-            // Молния на месте игрока, который позвонил в колокол
+            // Lightning at the player's location who rang the bell
             player.getWorld().strikeLightning(player.getLocation());
         } else if (entity != null) {
-            // Если колокол позвонило не игроком — молния на сущности
+            // If the bell was rung not by a player — lightning on the entity
             entity.getWorld().strikeLightning(entity.getLocation());
         } else {
-            // Fallback: на колокол
+            // Fallback: on the bell
             e.getBlock().getWorld().strikeLightning(e.getBlock().getLocation());
         }
     }

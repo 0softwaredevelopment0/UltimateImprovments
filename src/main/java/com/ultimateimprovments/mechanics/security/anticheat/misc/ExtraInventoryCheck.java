@@ -8,8 +8,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
 /**
- * ExtraInventory — доступ к слотам инвентаря вне нормального диапазона.
- * Детекция: клик по слоту с индексом вне стандартных 36 слотов в survival.
+ * ExtraInventory — access to inventory slots outside the normal range.
+ * Detection: clicking a slot with an index beyond the standard 36 slots in survival.
  */
 public class ExtraInventoryCheck extends AbstractCheck {
 

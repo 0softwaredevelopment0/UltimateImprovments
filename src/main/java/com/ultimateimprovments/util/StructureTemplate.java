@@ -129,7 +129,7 @@ public class StructureTemplate {
             readString(dis); // root name (unused)
             Map<String, Object> root = (Map<String, Object>) readTag(dis, rootType);
 
-            // Extract size (может быть TAG_Int_Array или TAG_List)
+            // Extract size (can be TAG_Int_Array or TAG_List)
             int[] size = toIntArray(root.get("size"));
             if (size == null || size.length < 3) {
                 throw new IOException("Missing or invalid 'size' in structure file");

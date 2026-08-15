@@ -4,14 +4,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 /**
- * 📢 Broadcast — централизованная рассылка сообщений ВСЕМ игрокам.
+ * 📢 Broadcast — centralized messaging to ALL players.
  * <p>
- * В отличие от {@link AlertBroadcast} не проверяет права — сообщение уходит
- * каждому онлайн-игроку, не важно какое право у него есть.
+ * Unlike {@link AlertBroadcast} it does not check permissions — the message goes
+ * to every online player, regardless of their permissions.
  * <p>
- * Использование:
+ * Usage:
  * <pre>{@code
- * Broadcast.send("<gold>⚡ Сервер перезагружается через 10 секунд!</gold>");
+ * Broadcast.send("<gold>⚡ Server reloading in 10 seconds!</gold>");
  * }</pre>
  */
 public final class Broadcast {
@@ -22,9 +22,9 @@ public final class Broadcast {
     private Broadcast() {}
 
     /**
-     * Отправляет MiniMessage-строку всем онлайн-игрокам (без проверки прав).
+     * Sends a MiniMessage string to all online players (no permission check).
      *
-     * @param miniMessage строка в формате MiniMessage
+     * @param miniMessage the MiniMessage-format string
      */
     public static void send(String miniMessage) {
         if (miniMessage == null) return;

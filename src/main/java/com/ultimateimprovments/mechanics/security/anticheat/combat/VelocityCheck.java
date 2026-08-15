@@ -10,8 +10,8 @@ import org.bukkit.event.player.PlayerVelocityEvent;
 import org.bukkit.util.Vector;
 
 /**
- * Velocity / AntiKnockback — игрок игнорирует полученный knockback.
- * Детекция: сервер отправляет velocity, но игрок не двигается в ожидаемом направлении.
+ * Velocity / AntiKnockback — the player ignores received knockback.
+ * Detection: the server sends velocity, but the player does not move in the expected direction.
  */
 public class VelocityCheck extends AbstractCheck {
 

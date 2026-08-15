@@ -11,8 +11,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 /**
- * Criticals — принудительные криты без прыжка/падения.
- * Детекция: урон выше ожидаемого критического, но игрок на земле без падения.
+ * Criticals — forced criticals without a jump/fall.
+ * Detection: damage above the expected critical, but the player is on the ground without falling.
  */
 public class CriticalsCheck extends AbstractCheck {
 

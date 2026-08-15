@@ -27,44 +27,44 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 🛡 Integrity System (Система целостности)
+ * 🛡 Integrity System
  * <p>
- * Заменяет стандартную прочность Minecraft на кастомную систему целостности
- * в процентах. Все предметы с прочностью становятся неразрушимыми
- * через ванильную механику, а целостность отображается в описании (lore).
+ * Replaces Minecraft's vanilla durability with a custom percentage-based
+ * integrity system. All durable items become unbreakable through vanilla
+ * mechanics, and integrity is displayed in the item lore.
  * <p>
- * Целостность хранится в виде процентов (0.0 — 100.0).
- * При использовании предмета (ломка блоков, атака, получение урона в броне)
- * целостность уменьшается. При достижении 0 предмет ломается.
+ * Integrity is stored as a percentage (0.0 — 100.0).
+ * When an item is used (mining blocks, attacking, armor taking damage),
+ * its integrity decreases. At 0 the item breaks.
  * <p>
- * В лоре отображается ТОЛЬКО процент, никаких числовых значений прочности.
+ * The lore shows ONLY the percentage — no numeric durability values.
  */
 public class IntegrityManager extends BukkitRunnable {
 
     private static IntegrityManager instance;
 
-    // ===== КОНСТАНТЫ =====
-    /** Версия системы целостности для детекта миграции старых PDC данных (V3 = процентная система) */
+    // ===== CONSTANTS =====
+    /** Integrity system version for detecting migration of old PDC data (V3 = percentage system) */
     private static final int INTEGRITY_VERSION = 3;
 
-    // ===== НАСТРОЙКИ (загружаются из config.yml) =====
+    // ===== SETTINGS (loaded from config.yml) =====
     private static boolean enabled = true;
     private static int intervalTicks = 10;
     private static double costMultiplier = 1.0;
 
-    // ===== HEX ГРАДИЕНТ (от тёмно-зелёного к тёмно-красному) =====
-    private static int gradientRedHigh = 0x00;     // R при 100% целостности (тёмно-зелёный)
-    private static int gradientGreenHigh = 0x66;    // G при 100%
-    private static int gradientBlueHigh = 0x00;     // B при 100%
-    private static int gradientRedLow = 0x99;       // R при 0% целостности (тёмно-красный)
-    private static int gradientGreenLow = 0x00;     // G при 0%
-    private static int gradientBlueLow = 0x00;      // B при 0%
+    // ===== HEX GRADIENT (from dark-green to dark-red) =====
+    private static int gradientRedHigh = 0x00;     // R at 100% integrity (dark-green)
+    private static int gradientGreenHigh = 0x66;    // G at 100%
+    private static int gradientBlueHigh = 0x00;     // B at 100%
+    private static int gradientRedLow = 0x99;       // R at 0% integrity (dark-red)
+    private static int gradientGreenLow = 0x00;     // G at 0%
+    private static int gradientBlueLow = 0x00;      // B at 0%
 
-    // Текст лора (храним как plain и цветной)
+    // Lore text (stored both as plain and colored)
     private static String loreText = "§7Целостность:";
     private static String bareLorePrefix = "Целостность:";
 
-    // Поведение при поломке
+    // Break behavior
     private static boolean breakPlaySound = true;
     private static boolean breakSendMessage = true;
     private static String breakMessage = "<dark_red>❌</dark_red> <red>Ваш предмет</red> <white>%item%</white> <red>сломался!</red>";
@@ -72,65 +72,65 @@ public class IntegrityManager extends BukkitRunnable {
     private static float breakSoundVolume = 1.0f;
     private static float breakSoundPitch = 1.0f;
 
-    // Логирование
+    // Logging
     private static boolean logInit = false;
     private static boolean logBreak = true;
     private static boolean logErrors = false;
 
-    // Фильтры
+    // Filters
     private static Set<String> blacklist = new HashSet<>();
     private static Set<String> whitelist = new HashSet<>();
 
-    // ===== XP → ЦЕЛОСТНОСТЬ (сбор опыта восстанавливает целостность всех предметов) =====
+    // ===== XP → INTEGRITY (collecting XP restores integrity of all items) =====
     private static boolean xpIntegrityEnabled = true;
     private static double xpIntegrityPerXp = 0.1;
     private static String xpIntegrityMessage = "<green>✨</green> <white>Сбор опыта восстановил</white> <yellow>%amount%%</yellow> <white>целостности всех предметов!</white>";
 
-    // ===== LOW INTEGRITY WARNING — предупреждение при низкой целостности =====
+    // ===== LOW INTEGRITY WARNING =====
     private static boolean lowIntegrityWarningEnabled = true;
     private static List<Integer> lowIntegrityThresholds = List.of(5, 10, 25, 50, 75);
     private static String lowIntegrityWarningMessage = "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>%item%</yellow> <white>имеет</white> <red>%pct%%</red> <white>целостности!</white>";
 
-    // ===== ДОП. НАСТРОЙКИ (износа, ремонта и т.д.) =====
-    // Ремонт в наковальне
+    // ===== ADDITIONAL SETTINGS (wear, repair, etc.) =====
+    // Anvil repair
     private static boolean anvilRepairEnabled = true;
     private static double anvilRepairMultiplier = 0.25;
     private static boolean anvilCombineEnabled = true;
     private static double anvilCombineBonus = 0.1;
 
-    // Крафт материалом в наковальне (+N% целостности за каждую единицу материала)
+    // Crafting with materials in an anvil (+N% integrity per material unit)
     private static boolean anvilMaterialCraftEnabled = true;
     private static double anvilMaterialCraftBonus = 10.0;
     private static String anvilMaterialCraftMessage = "<green>🔨</green> <white>Создан новый предмет! Целостность:</white> <yellow>%current%%</yellow> <white>(+%bonus%% за материалы)</white>";
 
-    // XP + Mending (Починка)
+    // XP + Mending
     private static boolean mendingXpEnabled = true;
     private static double mendingXpMultiplier = 0.5;
 
-    // Unbreaking (Неразрушимость)
+    // Unbreaking
     private static boolean unbreakingEnabled = true;
 
-    // ===== PIERCING (Пробитие) =====
-    // Когда атакующий использует оружие с зачарованием PIERCING,
-    // броня цели получает +piercingExtraCost% целостности при ударе.
-    // Броня НЕ игнорируется — защита работает как обычно.
-    // Unbreaking проверяется на итоговую стоимость (не игнорируется).
+    // ===== PIERCING =====
+    // When the attacker uses a weapon with the PIERCING enchantment,
+    // the target's armor loses an additional +piercingExtraCost% integrity per hit.
+    // Armor is NOT bypassed — protection works as usual.
+    // Unbreaking is applied to the final cost (not ignored).
     private static boolean piercingEnabled = true;
     private static double piercingExtraCost = 0.5;
 
-    // Флаг: текущий удар по броне вызван PIERCING-оружием
-    // Сбрасывается при старте следующего тика (run())
+    // Flag: the current armor hit was caused by a PIERCING weapon
+    // Reset at the start of the next tick (run())
     private static boolean piercingActive = false;
 
-    // Флаг: таск был запланирован (runTaskTimer вызывался)
-    // Предотвращает cancel() незапланированного таска в reloadConfig() при init()
+    // Flag: the task was scheduled (runTaskTimer was called)
+    // Prevents cancel() of an unscheduled task in reloadConfig() during init()
     private static boolean taskScheduled = false;
 
-    // Крафт / точило — объединение
+    // Crafting / grindstone — combining
     private static boolean combineEnabled = true;
     private static double combineLossRate = 0.0;
 
-    // Сообщения
+    // Messages
     private static String anvilRepairMessage = "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>%current%%</yellow><white>!</white>";
     private static String anvilCombineMessage = "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>%current%%</yellow><white></white>";
     private static String mendingMessage = "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%%</yellow> <white>целостности!</white>";
@@ -150,7 +150,7 @@ public class IntegrityManager extends BukkitRunnable {
         instance.runTaskTimer(plugin, 40L, intervalTicks);
         taskScheduled = true;
 
-        // Регистрируем PiercingListener (обработчик PIERCING-ударов)
+        // Register the PiercingListener (handler for PIERCING hits)
         PiercingListener.init(plugin);
 
         ConsoleLogger.info("[INTEGRITY] System initialized (interval=" + intervalTicks + " ticks)");
@@ -170,9 +170,9 @@ public class IntegrityManager extends BukkitRunnable {
         intervalTicks = cfg.getInt("interval_ticks", 10);
         costMultiplier = cfg.getDouble("cost_multiplier", 1.0);
 
-        // Формат чисел — теперь всегда проценты, игнорируем старые настройки
+        // Number format — always percentages now, legacy settings are ignored
 
-        // ===== HEX ГРАДИЕНТ (загружаем из конфига) =====
+        // ===== HEX GRADIENT (loaded from config) =====
         var gradient = cfg.getConfigurationSection("gradient");
         if (gradient != null) {
             int[] high = parseHexColor(gradient.getString("high_color", "#006600"));
@@ -189,11 +189,11 @@ public class IntegrityManager extends BukkitRunnable {
             }
         }
 
-        // Текст лора
+        // Lore text
         loreText = cfg.getString("lore_text", "§7Целостность:");
         bareLorePrefix = loreText.replaceAll("§.", "").trim();
 
-        // Поведение при поломке
+        // Break behavior
         var onBreak = cfg.getConfigurationSection("on_break");
         if (onBreak != null) {
             breakPlaySound = onBreak.getBoolean("play_sound", true);
@@ -204,7 +204,7 @@ public class IntegrityManager extends BukkitRunnable {
             breakSoundPitch = (float) onBreak.getDouble("sound_pitch", 1.0);
         }
 
-        // Логирование
+        // Logging
         var logging = cfg.getConfigurationSection("logging");
         if (logging != null) {
             logInit = logging.getBoolean("log_init", false);
@@ -212,7 +212,7 @@ public class IntegrityManager extends BukkitRunnable {
             logErrors = logging.getBoolean("log_errors", false);
         }
 
-        // Фильтры
+        // Filters
         blacklist = new HashSet<>(cfg.getStringList("blacklist"));
         whitelist = new HashSet<>(cfg.getStringList("whitelist"));
 
@@ -240,7 +240,7 @@ public class IntegrityManager extends BukkitRunnable {
             lowIntegrityWarningMessage = MessagesManager.getString("features.integrity.low_integrity_warning.message", "<yellow>⚠</yellow> <white>Ваш предмет</white> <yellow>%item%</yellow> <white>имеет</white> <red>%pct%%</red> <white>целостности!</white>");
         }
 
-        // ===== XP → ЦЕЛОСТНОСТЬ =====
+        // ===== XP → INTEGRITY =====
         var xpInt = cfg.getConfigurationSection("xp_integrity");
         if (xpInt != null) {
             xpIntegrityEnabled = xpInt.getBoolean("enabled", true);
@@ -248,7 +248,7 @@ public class IntegrityManager extends BukkitRunnable {
             xpIntegrityMessage = MessagesManager.getString("features.integrity.xp_integrity.message", "<green>✨</green> <white>Сбор опыта восстановил</white> <yellow>%amount%%</yellow> <white>целостности всех предметов!</white>");
         }
 
-        // ===== РЕМОНТ В НАКОВАЛЬНЕ =====
+        // ===== ANVIL REPAIR =====
         var anvil = cfg.getConfigurationSection("anvil_repair");
         if (anvil != null) {
             anvilRepairEnabled = anvil.getBoolean("enabled", true);
@@ -258,7 +258,7 @@ public class IntegrityManager extends BukkitRunnable {
             anvilRepairMessage = MessagesManager.getString("features.integrity.anvil_repair.repair_message", "<green>🔧</green> <white>Целостность восстановлена до</white> <yellow>%current%%</yellow><white>!</white>");
             anvilCombineMessage = MessagesManager.getString("features.integrity.anvil_repair.combine_message", "<green>🔗</green> <white>Предметы объединены! Целостность:</white> <yellow>%current%%</yellow><white></white>");
 
-            // ===== КРАФТ МАТЕРИАЛОМ =====
+            // ===== MATERIAL CRAFTING =====
             var matCraft = anvil.getConfigurationSection("material_craft");
             if (matCraft != null) {
                 anvilMaterialCraftEnabled = matCraft.getBoolean("enabled", true);
@@ -267,14 +267,14 @@ public class IntegrityManager extends BukkitRunnable {
             }
         }
 
-        // ===== XP + MENDING (ПОЧИНКА) =====
+        // ===== XP + MENDING =====
         var mending = cfg.getConfigurationSection("mending_xp");
         if (mending != null) {
             mendingXpEnabled = mending.getBoolean("enabled", true);
             mendingXpMultiplier = mending.getDouble("integrity_multiplier", 0.5);
             mendingMessage = MessagesManager.getString("features.integrity.mending_xp.message", "<aqua>✨</aqua> <white>Починка восстановила</white> <yellow>%amount%%</yellow> <white>целостности!</white>");
         } else {
-            // Fallback: старый ключ silk_touch_xp (для обратной совместимости)
+            // Fallback: legacy silk_touch_xp key (for backward compatibility)
             var stxp = cfg.getConfigurationSection("silk_touch_xp");
             if (stxp != null) {
                 mendingXpEnabled = stxp.getBoolean("enabled", true);
@@ -283,14 +283,14 @@ public class IntegrityManager extends BukkitRunnable {
             }
         }
 
-        // ===== ОБЪЕДИНЕНИЕ ПРЕДМЕТОВ =====
+        // ===== ITEM COMBINING =====
         var combine = cfg.getConfigurationSection("combine");
         if (combine != null) {
             combineEnabled = combine.getBoolean("enabled", true);
             combineLossRate = combine.getDouble("loss_rate", 0.0);
         }
 
-        // Перезапуск таска — только если он уже был запланирован (защита от init())
+        // Restart the task — only if it was already scheduled (protects against init())
         if (instance != null && taskScheduled) {
             try {
                 instance.cancel();
@@ -315,9 +315,9 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // SYNC VANILLA DAMAGE — всегда обнуляет ванильный damage.
-    // Целостность хранится ТОЛЬКО в PDC. Ванильный damage = 0,
-    // чтобы предмет не терял ванильную прочность.
+    // SYNC VANILLA DAMAGE — always resets vanilla damage.
+    // Integrity is stored ONLY in PDC. Vanilla damage = 0
+    // so the item never loses vanilla durability.
     // =========================
     private static void syncVanillaDamage(ItemStack item, ItemMeta meta, double currentIntegrity) {
         if (meta instanceof Damageable damageable && damageable.hasMaxDamage()) {
@@ -371,11 +371,11 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // HEX GRADIENT — плавный градиент от тёмно-зелёного (100%) до тёмно-красного (0%)
+    // HEX GRADIENT — smooth gradient from dark-green (100%) to dark-red (0%)
     // =========================
 
     /**
-     * Парсит HEX строку (#RRGGBB) и возвращает массив [R, G, B] или null при ошибке.
+     * Parses a HEX string (#RRGGBB) and returns an [R, G, B] array or null on error.
      */
     private static int[] parseHexColor(String hex) {
         try {
@@ -394,24 +394,24 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     /**
-     * Вычисляет цвет HEX градиента для указанного процента целостности.
-     * 100% = тёмно-зелёный (highColor), 0% = тёмно-красный (lowColor).
-     * Возвращает Minecraft HEX-формат: §x§R§R§G§G§B§B
+     * Computes the HEX gradient color for the given integrity percentage.
+     * 100% = dark-green (highColor), 0% = dark-red (lowColor).
+     * Returns the Minecraft HEX format: §x§R§R§G§G§B§B
      */
     public static String getGradientColor(double pct) {
         double t = Math.max(0.0, Math.min(1.0, pct / 100.0));
         
-        // Линейная интерполяция RGB
+        // Linear RGB interpolation
         int r = (int) Math.round(gradientRedLow + (gradientRedHigh - gradientRedLow) * t);
         int g = (int) Math.round(gradientGreenLow + (gradientGreenHigh - gradientGreenLow) * t);
         int b = (int) Math.round(gradientBlueLow + (gradientBlueHigh - gradientBlueLow) * t);
         
-        // Клиппинг
+        // Clipping
         r = Math.max(0, Math.min(0xFF, r));
         g = Math.max(0, Math.min(0xFF, g));
         b = Math.max(0, Math.min(0xFF, b));
         
-        // Minecraft HEX формат: §x§R§R§G§G§B§B
+        // Minecraft HEX format: §x§R§R§G§G§B§B
         return String.format("§x§%X§%X§%X§%X§%X§%X",
                 (r >> 4) & 0xF, r & 0xF,
                 (g >> 4) & 0xF, g & 0xF,
@@ -419,9 +419,9 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // GETTERS ДЛЯ КОНФИГА
+    // CONFIG GETTERS
     // =========================
-    // ===== XP → ЦЕЛОСТНОСТЬ =====
+    // ===== XP → INTEGRITY =====
     public static boolean isXpIntegrityEnabled() { return xpIntegrityEnabled; }
     public static double getXpIntegrityPerXp() { return xpIntegrityPerXp; }
     public static String getXpIntegrityMessage() { return xpIntegrityMessage; }
@@ -444,7 +444,7 @@ public class IntegrityManager extends BukkitRunnable {
     public static String getAnvilCombineMessage() { return anvilCombineMessage; }
     @Deprecated public static String getSilkTouchMessage() { return mendingMessage; }
 
-    // ===== MENDING XP (Починка) =====
+    // ===== MENDING XP =====
     public static boolean isMendingXpEnabled() { return mendingXpEnabled; }
     public static double getMendingXpMultiplier() { return mendingXpMultiplier; }
     public static String getMendingMessage() { return mendingMessage; }
@@ -454,22 +454,22 @@ public class IntegrityManager extends BukkitRunnable {
     public static double getPiercingExtraCost() { return piercingExtraCost; }
 
     /**
-     * Устанавливает флаг, что текущий удар по броне вызван PIERCING-оружием.
-     * Флаг сбрасывается в начале каждого тика (run()).
+     * Sets the flag that the current armor hit was caused by a PIERCING weapon.
+     * The flag is reset at the start of each tick (run()).
      */
     public static void setPiercingActive(boolean active) { piercingActive = active; }
 
-    /** Проверяет, активен ли PIERCING для текущего удара. */
+    /** Checks whether PIERCING is active for the current hit. */
     private static boolean isPiercingActive() { return piercingActive; }
 
     // =========================
-    // TICK — сканирование инвентарей
+    // TICK — scanning inventories
     // =========================
     @Override
     public void run() {
         if (!enabled) return;
 
-        // Сбрасываем флаг PIERCING в начале каждого тика
+        // Reset the PIERCING flag at the start of each tick
         piercingActive = false;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -492,10 +492,10 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // PROCESS ITEM — инициализация + обновление лора
+    // PROCESS ITEM — initialization + lore update
     // =========================
     private void processItem(ItemStack item) {
-        // Unbreakable предметы всегда имеют 100% целостности
+        // Unbreakable items always have 100% integrity
         if (isUnbreakable(item)) {
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
@@ -506,8 +506,8 @@ public class IntegrityManager extends BukkitRunnable {
                 pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
                 pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 100.0);
                 syncVanillaDamage(item, meta, 100.0);
-                // Оптимизация: переписываем meta только если лор реально изменился
-                // (или предмет ещё не был инициализирован), а не каждый тик.
+                // Optimization: rewrite meta only if the lore actually changed
+                // (or the item was not initialized yet), not every tick.
                 if (updateLore(meta) || !alreadyTagged) {
                     item.setItemMeta(meta);
                 }
@@ -518,7 +518,7 @@ public class IntegrityManager extends BukkitRunnable {
         int maxDurability = getMaxDurability(item);
         if (maxDurability <= 0) return;
 
-        // Проверка фильтров
+        // Filter check
         String matName = item.getType().name();
         if (!whitelist.isEmpty() && !whitelist.contains(matName)) return;
         if (blacklist.contains(matName)) return;
@@ -531,12 +531,12 @@ public class IntegrityManager extends BukkitRunnable {
 
         double itemMaxDura = (double) maxDurability;
 
-        // Миграция: если есть старый INTEGRITY_TAG, но нет INTEGRITY_MAX — переинициализируем
+        // Migration: if an old INTEGRITY_TAG exists but no INTEGRITY_MAX — re-initialize
         if (isTagged && !pdc.has(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE)) {
             isTagged = false;
         }
 
-        // Детект миграции: проверяем версию системы в PDC
+        // Migration detection: check the system version stored in PDC
         int storedVersion = pdc.getOrDefault(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, 0);
         boolean migrated = false;
         if (isTagged && storedVersion < INTEGRITY_VERSION) {
@@ -545,10 +545,10 @@ public class IntegrityManager extends BukkitRunnable {
             double newCurrent;
 
             if (oldMax == 100.0) {
-                // V1 данные: уже в процентах (max=100.0), просто обновляем версию
+                // V1 data: already percentages (max=100.0), just bump the version
                 newCurrent = Math.max(0, Math.min(100.0, oldCurrent));
             } else if (oldMax > 0) {
-                // V2 данные: абсолютные значения (max=durability) → конвертируем в проценты
+                // V2 data: absolute values (max=durability) → convert to percentages
                 newCurrent = (oldCurrent / oldMax) * 100.0;
             } else {
                 newCurrent = 100.0;
@@ -566,16 +566,16 @@ public class IntegrityManager extends BukkitRunnable {
         }
 
         if (!isTagged) {
-            // Инициализация: сбрасываем ванильный damage в 0 и ставим 100% целостности.
-            // При миграции все предметы с неполной прочностью становятся полностью целыми,
-            // т.к. износ теперь управляется только системой целостности.
+            // Initialization: reset vanilla damage to 0 and set 100% integrity.
+            // During migration, all items with partial durability become fully intact
+            // since wear is now managed only by the integrity system.
             double initialCurrent = 100.0;
 
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
             pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
             pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
             pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, initialCurrent);
-            // Зеркалим в ванильный damage — резервная копия
+            // Mirror into vanilla damage — a backup copy
             syncVanillaDamage(item, meta, initialCurrent);
 
             if (logInit) {
@@ -585,23 +585,23 @@ public class IntegrityManager extends BukkitRunnable {
             }
         }
 
-        // Обновляем лор; применяем meta только если лор изменился
-        // Если была миграция — всегда сохраняем meta (чтобы не потерять PDC данные)
+        // Update the lore; apply meta only if the lore changed.
+        // If there was a migration — always save meta (to not lose PDC data)
         if (updateLore(meta) || migrated) {
             item.setItemMeta(meta);
         }
     }
 
     // =========================
-    // UPDATE LORE — обновление описания (возвращает true, если лор был изменён)
-    // Показывает ТОЛЬКО процент целостности, никаких числовых значений прочности.
+    // UPDATE LORE — updates the item lore (returns true if the lore changed)
+    // Shows ONLY the integrity percentage, no numeric durability values.
     // =========================
     private static boolean updateLore(ItemMeta meta) {
         var pdc = meta.getPersistentDataContainer();
 
-        // Unbreakable — показываем "◆ Unbreakable" вместо процента
+        // Unbreakable — show "◆ Unbreakable" instead of the percentage
         if (meta.isUnbreakable() || pdc.has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE)) {
-            // Оптимизация: лор уже показывает "◆ Unbreakable" — переписывать не нужно
+            // Optimization: lore already shows "◆ Unbreakable" — no rewrite needed
             if (pdc.getOrDefault(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, -1.0) == 100.0
                     && loreHasUnbreakableLine(meta)) {
                 return false;
@@ -609,9 +609,9 @@ public class IntegrityManager extends BukkitRunnable {
 
             List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
             if (lore == null) lore = new ArrayList<>();
-            // Удаляем старые строки целостности
+            // Remove old integrity lines
             lore.removeIf(line -> stripColor(line).contains(bareLorePrefix));
-            // Добавляем "◆ Unbreakable"
+            // Add "◆ Unbreakable"
             lore.add(loreText + " §b◆ Unbreakable");
             meta.setLore(lore);
             pdc.set(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, 100.0);
@@ -623,33 +623,33 @@ public class IntegrityManager extends BukkitRunnable {
 
         if (maxIntegrity <= 0) return false;
 
-        // Оптимизация: целостность не изменилась И лор уже показывает процент —
-        // пропускаем. Проверка содержимого лора нужна, чтобы после снятия
-        // "Unbreakable" при 100% сразу восстановить процентную строку.
+        // Optimization: integrity unchanged AND lore already shows the percentage —
+        // skip. The lore content check ensures that after removing
+        // "Unbreakable" at 100% the percentage line is restored immediately.
         if (pdc.getOrDefault(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, -1.0) == currentIntegrity
                 && loreHasPercentLine(meta)) {
-            return false; // Отображаемые данные актуальны — обновление не требуется
+            return false; // Displayed data is up to date — no update needed
         }
 
-        // Вычисляем процент (0.0 — 100.0, с дробной частью)
+        // Compute the percentage (0.0 — 100.0, with fractional part)
         double pct = (currentIntegrity / maxIntegrity) * 100.0;
         pct = Math.max(0, Math.min(100.0, pct));
 
-        // Работаем с лором
+        // Work with the lore
         List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
         if (lore == null) lore = new ArrayList<>();
 
-        // Удаляем старые строки целостности (по plain-префиксу, без §-цветов)
+        // Remove old integrity lines (by plain prefix, ignoring §-colors)
         lore.removeIf(line -> stripColor(line).contains(bareLorePrefix));
 
-        // Плавный HEX градиент от тёмно-зелёного (100%) до тёмно-красного (0%)
+        // Smooth HEX gradient from dark-green (100%) to dark-red (0%)
         String color = getGradientColor(pct);
 
-        // Форматируем процент: 75.500, 100.000, 0.000
+        // Format the percentage: 75.500, 100.000, 0.000
         String pctStr = PCT_FMT.format(pct);
 
-        // Собираем строку лора
-        // Пример: §7Целостность: §x§0§0§6§6§0§075.500%
+        // Build the lore line
+        // Example: §7Integrity: §x§0§0§6§6§0§075.500%
         StringBuilder sb = new StringBuilder();
         sb.append(loreText).append(" ");
         sb.append(color).append(pctStr).append("%");
@@ -662,8 +662,8 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     /**
-     * Принудительно обновляет лор целостности на предмете.
-     * Используется когда предмет меняет целостность вне тика (например, в наковальне).
+     * Forcefully updates the integrity lore on an item.
+     * Used when an item's integrity changes outside the tick (e.g. in an anvil).
      */
     public static void updateItemLore(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return;
@@ -676,15 +676,15 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     /**
-     * Удаляет все §-цвета из строки
+     * Strips all §-color codes from a string
      */
     private static String stripColor(String input) {
         return input.replaceAll("§.", "");
     }
 
     /**
-     * true, если в лоре уже есть строка целостности с процентом (не "◆ Unbreakable").
-     * Используется, чтобы не переписывать meta, когда отображаемые данные актуальны.
+     * true if the lore already contains an integrity line with a percentage (not "◆ Unbreakable").
+     * Used to avoid rewriting meta when the displayed data is up to date.
      */
     private static boolean loreHasPercentLine(ItemMeta meta) {
         if (!meta.hasLore()) return false;
@@ -698,7 +698,7 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     /**
-     * true, если в лоре уже есть строка "◆ Unbreakable" (вместо процента).
+     * true if the lore already contains a "◆ Unbreakable" line (instead of a percentage).
      */
     private static boolean loreHasUnbreakableLine(ItemMeta meta) {
         if (!meta.hasLore()) return false;
@@ -712,7 +712,7 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // ENSURE INITIALIZED — гарантирует, что предмет инициализирован
+    // ENSURE INITIALIZED — guarantees the item is initialized
     // =========================
     public static void ensureInitialized(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return;
@@ -722,7 +722,7 @@ public class IntegrityManager extends BukkitRunnable {
         if (meta == null) return;
 
         var pdc = meta.getPersistentDataContainer();
-        if (pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) return;            // Инициализация — всегда 100.0% целостности, ванильный damage сбрасывается
+        if (pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) return;            // Initialization is always 100.0% integrity, vanilla damage gets reset
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
         pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
         pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
@@ -734,7 +734,7 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // INCREASE INTEGRITY — увеличивает целостность (с капом на 100.0%)
+    // INCREASE INTEGRITY — increases integrity (capped at 100.0%)
     // =========================
     public static void increaseIntegrity(ItemStack item, double amount) {
         if (item == null || item.getType() == Material.AIR) return;
@@ -745,7 +745,7 @@ public class IntegrityManager extends BukkitRunnable {
 
         var pdc = meta.getPersistentDataContainer();
 
-        // Если не инициализирован — НЕ чиним (предмет проинициализируется в processItem)
+        // If not initialized — do NOT repair (the item will be initialized in processItem)
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
             return;
         }
@@ -754,20 +754,20 @@ public class IntegrityManager extends BukkitRunnable {
 
         double current = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
 
-        if (current >= maxIntegrity) return; // Уже на максимуме
+        if (current >= maxIntegrity) return; // Already at maximum
 
         double newVal = Math.min(maxIntegrity, current + amount);
 
         pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, newVal);
 
-        // Зеркалим в ванильный damage
+        // Mirror into vanilla damage
         syncVanillaDamage(item, meta, newVal);
 
         item.setItemMeta(meta);
     }
 
     // =========================
-    // SET CURRENT INTEGRITY — устанавливает текущую целостность напрямую (в процентах 0.0 — 100.0)
+    // SET CURRENT INTEGRITY — sets the current integrity directly (percentage 0.0 — 100.0)
     // =========================
     public static void setCurrentIntegrity(ItemStack item, double value) {
         if (item == null || item.getType() == Material.AIR) return;
@@ -782,7 +782,7 @@ public class IntegrityManager extends BukkitRunnable {
         double maxIntegrity = 100.0;
         double clamped = Math.max(0, Math.min(maxIntegrity, value));
 
-        // Оптимизация: значение не изменилось — не переписываем meta
+        // Optimization: value unchanged — don't rewrite meta
         double current = pdc.getOrDefault(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, 0.0);
         if (current == clamped) return;
 
@@ -792,23 +792,23 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // CHECK UNBREAKABLE — проверяет, есть ли у предмета тег неразрушимости
+    // CHECK UNBREAKABLE — checks whether the item has an unbreakable tag
     // =========================
     public static boolean isUnbreakable(ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
-        // Кастомный PDC тег ИЛИ ванильный Unbreakable (ItemMeta.isUnbreakable())
+        // Custom PDC tag OR vanilla Unbreakable (ItemMeta.isUnbreakable())
         if (meta.isUnbreakable()) return true;
         return meta.getPersistentDataContainer()
                 .has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE);
     }
 
     // =========================
-    // DECREASE INTEGRITY — уменьшение целостности предмета
+    // DECREASE INTEGRITY — decreases an item's integrity
     // =========================
     public static void decreaseIntegrity(ItemStack item, double amount, Player owner) {
-        // Unbreakable предметы не теряют целостность
+        // Unbreakable items never lose integrity
         if (isUnbreakable(item)) return;
 
         if (item == null || item.getType() == Material.AIR) return;
@@ -822,7 +822,7 @@ public class IntegrityManager extends BukkitRunnable {
 
         var pdc = meta.getPersistentDataContainer();
 
-        // Если предмет ещё не инициализирован — инициализируем с 100% целостности
+        // If the item is not initialized yet — initialize it with 100% integrity
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
             double initialCurrent = 100.0;
 
@@ -839,25 +839,25 @@ public class IntegrityManager extends BukkitRunnable {
         int maxDura = getMaxDurability(item);
         if (maxDura <= 0) return;
 
-        // Нормированная формула: (amount / maxDura) × 100% × costMultiplier × amount
-        // Множитель amount даёт квадратичную зависимость: чем сильнее удар → тем больше износ.
-        // Для инструментов (amount=1 при ломке блока) поведение не меняется.
-        // Для брони: amount пропорционален входящему урону (≈ originalDamage / 4).
+        // Normalized formula: (amount / maxDura) × 100% × costMultiplier × amount
+        // The amount multiplier gives a quadratic relationship: the stronger the hit → the more wear.
+        // For tools (amount=1 when mining a block) behavior is unchanged.
+        // For armor: amount is proportional to incoming damage (≈ originalDamage / 4).
         double cost = (amount / (double) maxDura) * 100.0 * costMultiplier * amount;
 
-        // ⚔ PIERCING (Пробитие): добавляет +piercingExtraCost% к трате целостности брони
+        // ⚔ PIERCING: adds +piercingExtraCost% to the armor's integrity cost
         if (piercingEnabled && isPiercingActive()) {
             cost += piercingExtraCost;
         }
 
-        // 🔮 Unbreaking: шанс потратить прочность уменьшается в (уровень + 1) раз
-        // Например: Unbreaking I = x2 меньше шанс, Unbreaking II = x3, Unbreaking III = x4 и т.д.
+        // 🔮 Unbreaking: the chance to spend durability is reduced by (level + 1) times
+        // E.g. Unbreaking I = x2 less chance, Unbreaking II = x3, Unbreaking III = x4, etc.
         if (unbreakingEnabled) {
             int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
             if (unbreakingLevel > 0) {
                 double divisor = unbreakingLevel + 1.0;
                 if (Math.random() > 1.0 / divisor) {
-                    // Удача — прочность не тратится
+                    // Lucky — durability is not spent
                     return;
                 }
             }
@@ -869,18 +869,18 @@ public class IntegrityManager extends BukkitRunnable {
         syncVanillaDamage(item, meta, newVal);
         item.setItemMeta(meta);
 
-        // Если целостность закончилась — ломаем предмет
+        // If integrity ran out — break the item
         if (newVal <= 0) {
             breakItem(item, owner);
         } else {
-            // Иначе проверяем пороги для предупреждения
+            // Otherwise check warning thresholds
             checkLowIntegrityWarning(item, owner);
         }
     }
 
     // =========================
-    // DECREASE INTEGRITY BY PERCENT — уменьшение ровно на N% целостности
-    // (без нормировки по прочности: прямой процент, без Unbreaking)
+    // DECREASE INTEGRITY BY PERCENT — decreases by exactly N% integrity
+    // (no durability normalization: direct percentage, no Unbreaking)
     // =========================
     public static void decreaseIntegrityPercent(ItemStack item, double percent, Player owner) {
         if (item == null || item.getType() == Material.AIR) return;
@@ -896,7 +896,7 @@ public class IntegrityManager extends BukkitRunnable {
 
         var pdc = meta.getPersistentDataContainer();
 
-        // Если предмет ещё не инициализирован — инициализируем с 100% целостности
+        // If the item is not initialized yet — initialize it with 100% integrity
         if (!pdc.has(Keys.INTEGRITY_TAG, PersistentDataType.BYTE)) {
             pdc.set(Keys.INTEGRITY_TAG, PersistentDataType.BYTE, (byte) 1);
             pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
@@ -913,7 +913,7 @@ public class IntegrityManager extends BukkitRunnable {
         syncVanillaDamage(item, meta, newVal);
         item.setItemMeta(meta);
 
-        // Если целостность закончилась — ломаем предмет
+        // If integrity ran out — break the item
         if (newVal <= 0) {
             breakItem(item, owner);
         } else {
@@ -922,8 +922,8 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // LOW INTEGRITY WARNING — предупреждение при низкой целостности
-    // Каждый порог (75,50,25,10,5%) срабатывает 1 раз до следующего ремонта
+    // LOW INTEGRITY WARNING — warns about low integrity
+    // Each threshold (75,50,25,10,5%) fires once until the next repair
     // =========================
     private static void checkLowIntegrityWarning(ItemStack item, Player player) {
         if (!lowIntegrityWarningEnabled) return;
@@ -948,27 +948,27 @@ public class IntegrityManager extends BukkitRunnable {
             int threshold = lowIntegrityThresholds.get(i);
             int bit = 1 << i;
 
-            // Если целостность ≤ порога И флаг ещё не стоит — предупреждаем
+            // If integrity ≤ threshold AND the flag is not set yet — warn
             if (pct <= threshold && (warnFlags & bit) == 0) {
                 warnFlags |= bit;
                 warned = true;
             }
 
-            // Если целостность > порога И флаг стоит — снимаем (предмет починили)
+            // If integrity > threshold AND the flag is set — clear it (item was repaired)
             if (pct > threshold && (warnFlags & bit) != 0) {
                 warnFlags &= ~bit;
             }
         }
 
-        // При первом сканировании (warnFlags == 0) pre-set флаги для порогов
-        // выше текущей целостности — чтобы не спамить за "пропущенные" пороги.
-        // Например: предмет на 30% → 75% и 50% сразу помечаются как "уже предупреждено"
+        // On the first scan (warnFlags == 0) pre-set flags for thresholds
+        // above the current integrity — to avoid spamming about "skipped" thresholds.
+        // Example: an item at 30% → 75% and 50% are immediately marked as "already warned"
         int prevFlags = pdc.getOrDefault(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, 0);
         if (prevFlags == 0 && warnFlags > 0) {
-            warned = false; // не шлём сообщение при первой инициализации
+            warned = false; // don't send a message on first initialization
         }
 
-        // Сохраняем флаги в PDC
+        // Save the flags to PDC
         int oldFlags = pdc.getOrDefault(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, 0);
         if (warned || warnFlags != oldFlags) {
             pdc.set(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, warnFlags);
@@ -985,26 +985,26 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     // =========================
-    // BREAK ITEM — ломание предмета
+    // BREAK ITEM — breaks an item
     // =========================
     private static void breakItem(ItemStack item, Player owner) {
-        // Получаем имя ДО setAmount(0), иначе item станет AIR
+        // Get the name BEFORE setAmount(0), otherwise the item becomes AIR
         String itemName = getItemName(item);
 
-        // Устанавливаем количество 0 (предмет исчезает) — только после получения имени
+        // Set the amount to 0 (item disappears) — only after getting the name
         item.setAmount(0);
 
         if (owner == null) return;
-        // Примечание: owner теперь всегда должен передаваться из контекста (decreaseIntegrity, etc.)
-        // ВАЖНО: вызывающий код всегда передаёт Player — удаляем дорогой O(n²) fallback
+        // Note: owner should now always be passed from the caller context (decreaseIntegrity, etc.)
+        // IMPORTANT: callers always pass a Player — removed the expensive O(n²) fallback
 
-        // Воспроизводим звук поломки
+        // Play the break sound
         if (breakPlaySound) {
             Sound sound = getSound(breakSoundName, Sound.ENTITY_ITEM_BREAK);
             owner.getWorld().playSound(owner.getLocation(), sound, breakSoundVolume, breakSoundPitch);
         }
 
-        // Отправляем сообщение
+        // Send the message
         if (breakSendMessage) {
             String msg = breakMessage.replace("%item%", itemName);
             owner.sendMessage(MessageUtil.parse(msg));
@@ -1078,9 +1078,9 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     /**
-     * Возвращает макс. целостность для предмета по умолчанию.
-     * Равна ванильной maxDurability. Если предмет не указан — возвращает 0.
-     * @deprecated Используйте {@link #getMaxIntegrity(ItemStack)} вместо константы.
+     * Returns the default max integrity for an item.
+     * Equals the vanilla maxDurability. Returns 0 if no item is given.
+     * @deprecated Use {@link #getMaxIntegrity(ItemStack)} instead of a constant.
      */
     @Deprecated
     public static double getMaxIntegrityConstant() {

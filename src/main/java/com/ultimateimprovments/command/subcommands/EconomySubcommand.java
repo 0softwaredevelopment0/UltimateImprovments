@@ -17,8 +17,8 @@ import java.util.UUID;
 /**
  * /ui money &lt;give|list|remove|set&gt; &lt;player&gt; [currency] [amount]
  * <p>
- * Управление балансом игроков.
- * Требуется пермишен: {@code ui.command.money}.
+ * Manages player balances.
+ * Requires the permission: {@code ui.command.money}.
  */
 public final class EconomySubcommand {
 
@@ -78,15 +78,15 @@ public final class EconomySubcommand {
         double amount;
         String currency;
 
-        // Определяем: currency указан или нет
+        // Determine: currency given or not
         // /ui money give <player> <amount> — currency = coins
         // /ui money give <player> <currency> <amount>
         try {
-            // Пробуем распарсить args[3] как число
+            // Try to parse args[3] as a number
             amount = Double.parseDouble(args[3]);
             currency = EconomyManager.getInstance().getPrimaryCurrency();
         } catch (NumberFormatException e) {
-            // Значит args[3] — это валюта
+            // So args[3] is a currency
             currency = args[3].toLowerCase();
             if (args.length < 5) {
                 sender.sendMessage(MessageUtil.parse(
@@ -129,7 +129,7 @@ public final class EconomySubcommand {
 
     private static boolean handleList(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            // Для игрока — показать свой баланс
+            // For a player — show their own balance
             if (sender instanceof Player player) {
                 return showBalances(sender, player.getUniqueId(), player.getName());
             }

@@ -12,8 +12,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Teleport — аномальная телепортация не от сервера.
- * Детекция: мгновенное перемещение на дистанцию больше лимита без причины.
+ * Teleport — abnormal teleportation not initiated by the server.
+ * Detection: instant movement further than the limit without a cause.
  */
 public class TeleportCheck extends AbstractCheck {
 

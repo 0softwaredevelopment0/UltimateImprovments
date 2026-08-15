@@ -6,37 +6,37 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Единый интерфейс для всех субкоманд /ui.
+ * Unified interface for all /ui subcommands.
  *
- * <p>Каждая субкоманда — отдельный класс с execute() и tabComplete().
- * Регистрируется в {@link SubCommandRegistry} и автоматически подхватывается
- * диспетчером {@link PluginReloadCommand}.</p>
+ * <p>Each subcommand is a separate class with execute() and tabComplete().
+ * It is registered in {@link SubCommandRegistry} and automatically picked up
+ * by the {@link PluginReloadCommand} dispatcher.</p>
  */
 public interface SubCommand {
 
     /**
-     * Выполняет субкоманду.
+     * Executes the subcommand.
      *
-     * @param sender отправитель команды (игрок или консоль)
-     * @param args   полный массив аргументов (args[0] — имя субкоманды)
-     * @return true если команда обработана
+     * @param sender the command sender (player or console)
+     * @param args   the full argument array (args[0] — the subcommand name)
+     * @return true if the command was handled
      */
     boolean execute(CommandSender sender, String[] args);
 
     /**
-     * Возвращает подсказки tab-complete для этой субкоманды.
+     * Returns tab-complete suggestions for this subcommand.
      *
-     * @param sender отправитель
-     * @param args   полный массив аргументов
-     * @return список подсказок или пустой список
+     * @param sender the sender
+     * @param args   the full argument array
+     * @return a list of suggestions or an empty list
      */
     default List<String> tabComplete(CommandSender sender, String[] args) {
         return Collections.emptyList();
     }
 
     /**
-     * Возвращает имя субкоманды (регистронезависимое).
-     * По умолчанию — имя класса в lowercase.
+     * Returns the subcommand name (case-insensitive).
+     * By default — the class name in lowercase.
      */
     default String getName() {
         return getClass().getSimpleName()
@@ -45,7 +45,7 @@ public interface SubCommand {
     }
 
     /**
-     * Возвращает список алиасов (дополнительных имён) для этой субкоманды.
+     * Returns the alias list (additional names) for this subcommand.
      */
     default List<String> getAliases() {
         return Collections.emptyList();

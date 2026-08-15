@@ -14,9 +14,9 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * ExemptionManager — определяет, должен ли игрок быть освобождён от проверок.
+ * ExemptionManager — determines whether a player should be exempt from checks.
  * <p>
- * Проверяет:
+ * Checks:
  * - GameMode (CREATIVE, SPECTATOR)
  * - Permission bypass
  * - Active potion effects (SPEED, JUMP, LEVITATION, SLOW_FALLING, DOLPHINS_GRACE)
@@ -46,7 +46,7 @@ public class ExemptionManager {
     }
 
     /**
-     * Проверяет, освобождён ли игрок от ВСЕХ проверок.
+     * Checks whether the player is exempt from ALL checks.
      */
     public boolean isExemptedAll(Player player) {
         if (player == null || !player.isOnline()) return true;
@@ -71,11 +71,11 @@ public class ExemptionManager {
     }
 
     /**
-     * Проверяет, освобождён ли игрок от конкретной проверки.
+     * Checks whether the player is exempt from a specific check.
      *
-     * @param player    игрок
-     * @param checkName имя проверки (например "KillAura", "Speed")
-     * @return true если игрок освобождён
+     * @param player    the player
+     * @param checkName the check name (e.g. "KillAura", "Speed")
+     * @return true if the player is exempt
      */
     public boolean isExempted(Player player, String checkName) {
         if (player == null || !player.isOnline()) return true;
@@ -100,8 +100,8 @@ public class ExemptionManager {
             case "Velocity", "AntiKnockback":
                 return isVelocityExempted(player);
             case "Elytra":
-                // НЕ exempt'им gliding и riptide — ElytraCheck сам регулирует пороги
-                // для riptide (повышенный лимит), но не пропускает хак-флай
+                // Do NOT exempt gliding and riptide — ElytraCheck adjusts its own
+                // thresholds for riptide (higher limit) but still catches hack-flight
                 return player.getGameMode() == GameMode.CREATIVE;
             case "InventoryMove":
                 return player.getGameMode() == GameMode.CREATIVE;
@@ -115,11 +115,11 @@ public class ExemptionManager {
     }
 
     /**
-     * Освобождение для movement-проверок.
+     * Exemption for movement checks.
      */
     private boolean isMovementExempted(Player player, String checkName) {
         // Potion effects that affect movement
-        // SPEED и JUMP_BOOST не exemptят Flight — скорость и прыжок не дают летать
+        // SPEED and JUMP_BOOST do not exempt Flight — speed and jump don't grant flight
         if (hasEffect(player, PotionEffectType.SPEED)) {
             if (!"Flight".equals(checkName)) return true;
         }
@@ -213,21 +213,21 @@ public class ExemptionManager {
     // =========================
 
     /**
-     * Освободить игрока от конкретной проверки.
+     * Exempt a player from a specific check.
      */
     public void exempt(UUID uuid, String checkName) {
         customExemptions.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(checkName);
     }
 
     /**
-     * Освободить игрока от всех проверок.
+     * Exempt a player from all checks.
      */
     public void exemptAll(UUID uuid) {
         customExemptions.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add("*");
     }
 
     /**
-     * Снять освобождение с игрока для конкретной проверки.
+     * Remove a player's exemption from a specific check.
      */
     public void unexempt(UUID uuid, String checkName) {
         Set<String> set = customExemptions.get(uuid);
@@ -235,7 +235,7 @@ public class ExemptionManager {
     }
 
     /**
-     * Снять все освобождения с игрока.
+     * Remove all exemptions from a player.
      */
     public void unexemptAll(UUID uuid) {
         customExemptions.remove(uuid);

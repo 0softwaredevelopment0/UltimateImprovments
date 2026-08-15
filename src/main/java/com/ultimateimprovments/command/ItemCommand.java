@@ -64,7 +64,7 @@ public class ItemCommand {
     }
 
     private static void handleList(Player player, ItemStack heldItem) {
-        // getItemIntegrityPercent уже возвращает % (0.0–100.0) — источник истины
+        // getItemIntegrityPercent already returns % (0.0–100.0) — the source of truth
         double current = ItemIntegrityAPI.getItemIntegrityPercent(heldItem);
         double pctCurrent = Math.max(0.0, current);
         String itemName = heldItem.hasItemMeta() && heldItem.getItemMeta().hasDisplayName()
@@ -105,7 +105,7 @@ public class ItemCommand {
         if (args.length >= 4) {
             setUnbreakable = Boolean.parseBoolean(args[3]);
         } else {
-            // Toggle: если есть тег — снять, если нет — добавить
+            // Toggle: if the tag exists — remove it, otherwise — add it
             ItemMeta meta = heldItem.getItemMeta();
             if (meta == null) {
                 player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Cannot modify item meta!</red>"));
@@ -125,7 +125,7 @@ public class ItemCommand {
         if (setUnbreakable) {
             meta.getPersistentDataContainer().set(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE, (byte) 1);
             heldItem.setItemMeta(meta);
-            // Force 100% integrity (API сам обновит лор)
+            // Force 100% integrity (the API will update the lore itself)
             ItemIntegrityAPI.setItemIntegrity(heldItem, 100.0);
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item is now </white><aqua>Unbreakable</aqua><white>! Integrity locked at 100%.</white>"));
         } else {
@@ -147,7 +147,7 @@ public class ItemCommand {
                 player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Value must be greater than 0!</red>"));
                 return;
             }
-            // Фактическое значение возвращает сам API — не пересчитываем локально
+            // The actual value is returned by the API itself — we don't recalculate locally
             double newVal = Math.max(0.0, ItemIntegrityAPI.increaseItemIntegrityPercent(heldItem, value));
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Added </white><yellow>" + IntegrityManager.formatPercent(value) + "%</yellow><white>. Current: </white><yellow>" + IntegrityManager.formatPercent(newVal) + "%</yellow>"));
         } catch (NumberFormatException e) {
