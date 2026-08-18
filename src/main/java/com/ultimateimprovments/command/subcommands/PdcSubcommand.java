@@ -479,59 +479,64 @@ public final class PdcSubcommand implements SubCommand {
         String mode = args[keyStart + 1].toLowerCase();
         Set<NamespacedKey> keys = target.container().getKeys();
 
-        sender.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        sender.sendMessage("§8┃  §6✦ §fPDC of §e" + target.name());
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</dark_gray>"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>  <gold>✦</gold> <white>PDC of </white><yellow>" + target.name()));
 
         switch (mode) {
             case "all" -> {
                 if (keys.isEmpty()) {
-                    sender.sendMessage("§8┃  §7No PDC keys found.");
+                    sender.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>  <gray>No PDC keys found.</gray>"));
                 } else {
                     for (NamespacedKey k : keys) {
-                        sender.sendMessage("§8┃  §a" + k + " §8→ " + describeValue(target.container(), k));
+                        sender.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>  <green>" + k
+                                + "</green> <dark_gray>→</dark_gray> " + describeValue(target.container(), k)));
                     }
                 }
             }
             case "namespace" -> {
                 if (args.length < keyStart + 3) {
                     sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui pdc <storage> <target...> list namespace <namespace></white>"));
-                    sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+                    sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</dark_gray>"));
                     return;
                 }
                 String ns = args[keyStart + 2];
                 boolean any = false;
                 for (NamespacedKey k : keys) {
                     if (k.getNamespace().equalsIgnoreCase(ns)) {
-                        sender.sendMessage("§8┃  §a" + k + " §8→ " + describeValue(target.container(), k));
+                        sender.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>  <green>" + k
+                                + "</green> <dark_gray>→</dark_gray> " + describeValue(target.container(), k)));
                         any = true;
                     }
                 }
                 if (!any) {
-                    sender.sendMessage("§8┃  §7No keys in namespace §e" + ns + "§7.");
+                    sender.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>  <gray>No keys in namespace </gray><yellow>"
+                            + ns + "</yellow><gray>.</gray>"));
                 }
             }
             case "key" -> {
                 if (args.length < keyStart + 3) {
                     sender.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui pdc <storage> <target...> list key <key></white>"));
-                    sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+                    sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</dark_gray>"));
                     return;
                 }
                 String keyName = args[keyStart + 2];
                 boolean any = false;
                 for (NamespacedKey k : keys) {
                     if (k.getKey().equalsIgnoreCase(keyName)) {
-                        sender.sendMessage("§8┃  §a" + k + " §8→ " + describeValue(target.container(), k));
+                        sender.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>  <green>" + k
+                                + "</green> <dark_gray>→</dark_gray> " + describeValue(target.container(), k)));
                         any = true;
                     }
                 }
                 if (!any) {
-                    sender.sendMessage("§8┃  §7No keys named §e" + keyName + "§7.");
+                    sender.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray>  <gray>No keys named </gray><yellow>"
+                            + keyName + "</yellow><gray>.</gray>"));
                 }
             }
             default -> sender.sendMessage(MessageUtil.parse("<red>❌ Unknown mode: </red><yellow>" + mode
                     + "</yellow><gray>. Use all, namespace or key.</gray>"));
         }
-        sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</dark_gray>"));
     }
 
     // ── clear (top level) ──
@@ -581,9 +586,20 @@ public final class PdcSubcommand implements SubCommand {
     // HELPERS
     // ============================================================
 
-    /** Parses "namespace:key" (plain key → minecraft namespace). Returns null + error message on failure. */
+    /**
+     * Parses "namespace:key" (plain key → minecraft namespace).
+     * <p>
+     * Minecraft resource locations are lowercase-only, so uppercase input
+     * (e.g. {@code MyNs:MyKey}) is silently normalized to lowercase
+     * ({@code myns:mykey}) instead of being rejected.
+     * Returns null + error message on failure.
+     */
     private NamespacedKey parseKey(CommandSender sender, String raw) {
-        NamespacedKey key = NamespacedKey.fromString(raw);
+        String candidate = raw.trim();
+        NamespacedKey key = NamespacedKey.fromString(candidate);
+        if (key == null && !candidate.equals(candidate.toLowerCase())) {
+            key = NamespacedKey.fromString(candidate.toLowerCase());
+        }
         if (key == null) {
             sender.sendMessage(MessageUtil.parse("<red>❌ Invalid key: </red><yellow>" + raw
                     + "</yellow><gray>. Use format </gray><white>namespace:key</white><gray>.</gray>"));
@@ -681,24 +697,24 @@ public final class PdcSubcommand implements SubCommand {
         }
     }
 
-    /** Human-readable description of a PDC value: "TYPE: value". */
+    /** Human-readable description of a PDC value: "TYPE: value" (miniMessage). */
     private String describeValue(PersistentDataContainer pdc, NamespacedKey key) {
-        if (pdc.has(key, PersistentDataType.BYTE)) return "§bBYTE§8: §f" + pdc.get(key, PersistentDataType.BYTE);
-        if (pdc.has(key, PersistentDataType.SHORT)) return "§bSHORT§8: §f" + pdc.get(key, PersistentDataType.SHORT);
-        if (pdc.has(key, PersistentDataType.INTEGER)) return "§bINTEGER§8: §f" + pdc.get(key, PersistentDataType.INTEGER);
-        if (pdc.has(key, PersistentDataType.LONG)) return "§bLONG§8: §f" + pdc.get(key, PersistentDataType.LONG);
-        if (pdc.has(key, PersistentDataType.FLOAT)) return "§bFLOAT§8: §f" + pdc.get(key, PersistentDataType.FLOAT);
-        if (pdc.has(key, PersistentDataType.DOUBLE)) return "§bDOUBLE§8: §f" + pdc.get(key, PersistentDataType.DOUBLE);
-        if (pdc.has(key, PersistentDataType.STRING)) return "§bSTRING§8: §f\"" + pdc.get(key, PersistentDataType.STRING) + "\"";
-        if (pdc.has(key, PersistentDataType.BOOLEAN)) return "§bBOOLEAN§8: §f" + pdc.get(key, PersistentDataType.BOOLEAN);
-        if (pdc.has(key, PersistentDataType.BYTE_ARRAY)) return "§bBYTE_ARRAY§8: §f" + Arrays.toString(pdc.get(key, PersistentDataType.BYTE_ARRAY));
-        if (pdc.has(key, PersistentDataType.INTEGER_ARRAY)) return "§bINTEGER_ARRAY§8: §f" + Arrays.toString(pdc.get(key, PersistentDataType.INTEGER_ARRAY));
-        if (pdc.has(key, PersistentDataType.LONG_ARRAY)) return "§bLONG_ARRAY§8: §f" + Arrays.toString(pdc.get(key, PersistentDataType.LONG_ARRAY));
+        if (pdc.has(key, PersistentDataType.BYTE)) return "<aqua>BYTE</aqua><dark_gray>:</dark_gray> <white>" + pdc.get(key, PersistentDataType.BYTE);
+        if (pdc.has(key, PersistentDataType.SHORT)) return "<aqua>SHORT</aqua><dark_gray>:</dark_gray> <white>" + pdc.get(key, PersistentDataType.SHORT);
+        if (pdc.has(key, PersistentDataType.INTEGER)) return "<aqua>INTEGER</aqua><dark_gray>:</dark_gray> <white>" + pdc.get(key, PersistentDataType.INTEGER);
+        if (pdc.has(key, PersistentDataType.LONG)) return "<aqua>LONG</aqua><dark_gray>:</dark_gray> <white>" + pdc.get(key, PersistentDataType.LONG);
+        if (pdc.has(key, PersistentDataType.FLOAT)) return "<aqua>FLOAT</aqua><dark_gray>:</dark_gray> <white>" + pdc.get(key, PersistentDataType.FLOAT);
+        if (pdc.has(key, PersistentDataType.DOUBLE)) return "<aqua>DOUBLE</aqua><dark_gray>:</dark_gray> <white>" + pdc.get(key, PersistentDataType.DOUBLE);
+        if (pdc.has(key, PersistentDataType.STRING)) return "<aqua>STRING</aqua><dark_gray>:</dark_gray> <white>\"" + pdc.get(key, PersistentDataType.STRING) + "\"</white>";
+        if (pdc.has(key, PersistentDataType.BOOLEAN)) return "<aqua>BOOLEAN</aqua><dark_gray>:</dark_gray> <white>" + pdc.get(key, PersistentDataType.BOOLEAN);
+        if (pdc.has(key, PersistentDataType.BYTE_ARRAY)) return "<aqua>BYTE_ARRAY</aqua><dark_gray>:</dark_gray> <white>" + Arrays.toString(pdc.get(key, PersistentDataType.BYTE_ARRAY)) + "</white>";
+        if (pdc.has(key, PersistentDataType.INTEGER_ARRAY)) return "<aqua>INTEGER_ARRAY</aqua><dark_gray>:</dark_gray> <white>" + Arrays.toString(pdc.get(key, PersistentDataType.INTEGER_ARRAY)) + "</white>";
+        if (pdc.has(key, PersistentDataType.LONG_ARRAY)) return "<aqua>LONG_ARRAY</aqua><dark_gray>:</dark_gray> <white>" + Arrays.toString(pdc.get(key, PersistentDataType.LONG_ARRAY)) + "</white>";
         if (pdc.has(key, PersistentDataType.TAG_CONTAINER)) {
             PersistentDataContainer inner = pdc.get(key, PersistentDataType.TAG_CONTAINER);
-            return "§bTAG_CONTAINER§8: §f{" + inner.getKeys().size() + " key(s)}";
+            return "<aqua>TAG_CONTAINER</aqua><dark_gray>:</dark_gray> <white>{" + inner.getKeys().size() + " key(s)}</white>";
         }
-        return "§7unknown type";
+        return "<gray>unknown type</gray>";
     }
 
     private void sendUsage(CommandSender sender) {

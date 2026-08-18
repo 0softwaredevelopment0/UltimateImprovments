@@ -145,7 +145,7 @@ public class MinecartSpeedManager implements Listener {
         };
         speedTask.runTaskTimer(plugin, 0L, intervalTicks);
 
-        // Particle task — spawns END_ROD at every minecart (Y+0.5), always every 1 tick
+        // Particle task — spawns CAMPFIRE_SIGNAL_SMOKE at every minecart (~ ~ ~), always every 1 tick
         // Also handles hopper minecart smelting at high speed
         particleTask = new BukkitRunnable() {
             @Override
@@ -153,10 +153,10 @@ public class MinecartSpeedManager implements Listener {
                 for (World world : Bukkit.getWorlds()) {
                     for (Minecart cart : world.getEntitiesByClass(Minecart.class)) {
                         if (!cart.isValid()) continue;
-                        // END_ROD particle at Y + 0.5
+                        // CAMPFIRE_SIGNAL_SMOKE particle at the minecart position, normal render, 1 particle, 0 delta
                         Location loc = cart.getLocation();
-                        cart.getWorld().spawnParticle(Particle.END_ROD,
-                                loc.getX(), loc.getY() + 0.5, loc.getZ(),
+                        cart.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE,
+                                loc.getX(), loc.getY(), loc.getZ(),
                                 1, 0, 0, 0, 0);
 
                         // Hopper minecart smelting at high speed (1 item/sec rate-limited)

@@ -3709,6 +3709,62 @@ messages:
       # Message shown on success
       forced_sender_success: "<green>✔</green> <white>Player</white> <yellow>%target%</yellow> <white>has been force-suicided.</white>"
 
+  # =========================
+  # PUNISHMENT MESSAGES
+  # =========================
+  punishment:
+    discord_url: "https://dsc.gg/rizer001-development"
+
+    ban:
+      - "<red>This account has been banned!"
+      - "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>"
+      - "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>"
+      - "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    kick:
+      - "<red>This account has been kicked!"
+      - "<gray>Kicked by <dark_gray>»</dark_gray> <white>%punisher%</white>"
+      - "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    mute:
+      - "<red>You have been muted!"
+      - "<gray>Muted by <dark_gray>»</dark_gray> <white>%punisher%</white>"
+      - "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>"
+      - "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    warn:
+      - "<yellow>You have been warned!"
+      - "<gray>Warned by <dark_gray>»</dark_gray> <white>%punisher%</white>"
+      - "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>"
+      - "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    whitelist:
+      - "<red>This account is not whitelisted on this server!"
+      - "<gray>Nickname <dark_gray>»</dark_gray> <white>%player%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    blacklist:
+      - "<red>This account is blacklisted on this server!"
+      - "<gray>Nickname <dark_gray>»</dark_gray> <white>%player%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+
 # === LOCALIZED MESSAGES (EN) ===
 messages_en:
   auth:
@@ -4668,6 +4724,59 @@ messages_en:
       # Confirmation message shown to the player
       remove_confirm: "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/ui reports remove confirm</yellow><white> to confirm.</white>"
 
-# === INTEGRITY META — DO NOT EDIT (auto-managed) ===
-_meta:
-  guide_hash: "pending-on-first-run"
+  # =========================
+  # PUNISHMENT MESSAGES
+  # =========================
+  punishment:
+    discord_url: "https://dsc.gg/rizer001-development"
+
+    ban:
+      - "<red>This account has been banned!"
+      - "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>"
+      - "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>"
+      - "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    kick:
+      - "<red>This account has been kicked!"
+      - "<gray>Kicked by <dark_gray>»</dark_gray> <white>%punisher%</white>"
+      - "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    mute:
+      - "<red>You have been muted!"
+      - "<gray>Muted by <dark_gray>»</dark_gray> <white>%punisher%</white>"
+      - "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>"
+      - "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    warn:
+      - "<yellow>You have been warned!"
+      - "<gray>Warned by <dark_gray>»</dark_gray> <white>%punisher%</white>"
+      - "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>"
+      - "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    whitelist:
+      - "<red>This account is not whitelisted on this server!"
+      - "<gray>Nickname <dark_gray>»</dark_gray> <white>%player%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+    blacklist:
+      - "<red>This account is blacklisted on this server!"
+      - "<gray>Nickname <dark_gray>»</dark_gray> <white>%player%</white>"
+      - "<gray>If you think this is a mistake,"
+      - "<gray>please report an appeal on Discord:"
+      - "<white>%discord_url%"
+
+

@@ -2,6 +2,7 @@ package com.ultimateimprovments.whitelist;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.DatabaseManager;
+import com.ultimateimprovments.punish.PunishmentMessages;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.entity.Player;
@@ -19,7 +20,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * 📋 BlacklistManager — the UltimateImprovments blacklist.
+ * BlacklistManager — the UltimateImprovments blacklist.
  * <p>
  * Can be enabled together with the whitelist.
  * Blacklisted players cannot join the server under any circumstances.
@@ -105,9 +106,8 @@ public class BlacklistManager implements Listener {
                 @SuppressWarnings("deprecation")
                 Player online = org.bukkit.Bukkit.getPlayerExact(playerName);
                 if (online != null && online.isOnline()) {
-                    online.kickPlayer(MessageUtil.legacy(
-                            "<red>⛔ You have been blacklisted from this server!</red>"
-                    ));
+                    online.kickPlayer(PunishmentMessages.buildBlacklistKickMessage(
+                            playerName, PunishmentMessages.getDiscordUrl()));
                 }
                 return true;
             }
@@ -184,9 +184,9 @@ public class BlacklistManager implements Listener {
 
         String playerName = e.getPlayer().getName();
         if (isBlacklisted(playerName)) {
-            e.disallow(PlayerLoginEvent.Result.KICK_BANNED, MessageUtil.legacy(
-                    "<red>⛔ You are blacklisted from this server!</red>"
-            ));
+            e.disallow(PlayerLoginEvent.Result.KICK_BANNED,
+                    PunishmentMessages.buildBlacklistKickMessage(
+                            playerName, PunishmentMessages.getDiscordUrl()));
         }
     }
 }

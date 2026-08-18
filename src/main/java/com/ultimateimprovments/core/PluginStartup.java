@@ -1,6 +1,5 @@
 package com.ultimateimprovments.core;
 
-import com.ultimateimprovments.config.ConfigGuideManager;
 import com.ultimateimprovments.config.ConfigIntegrityValidator;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.maintenance.MaintenanceManager;
@@ -137,7 +136,6 @@ public class PluginStartup {
         ConfigIntegrityValidator.validate(plugin);
 
         MessagesManager.init(plugin);
-        ConfigGuideManager.init(plugin);
 
         PlaceholderResolver.init();
 

@@ -1,6 +1,0 @@
-{
-  "type": "minecraft:add_features",
-  "biomes": "#minecraft:is_overworld",
-  "features": ["minecraft:oldbeacon"],
-  "step": "surface_structures"
-}

@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * When a player lands a melee hit with the Blazing Sword, the victim takes the
  * golden sword's own hit plus 4 additional normal (armor- and protection-reducible)
  * damage, and is then BURNED for 10 seconds: 1 normal damage per second (also
- * armor-reducible), with the "burning" hurt sound played to the victim.
+ * armor-reducible), with the "burning" hurt sound played for the victim —
+ * applies to ANY living entity (players and mobs alike).
  * Re-hitting the victim refreshes the burn timer.
  */
 public class BlazingSwordListener implements Listener {
@@ -127,12 +128,16 @@ public class BlazingSwordListener implements Listener {
         activeBurns.put(victimId, state);
     }
 
-    /** Plays the "burning" hurt sound to the victim. */
+    /**
+     * Plays the "burning" sound for ANY entity: players hear the hurt-on-fire
+     * sound personally, all other entities (mobs etc.) emit the generic burn
+     * sound at their location so the burn is noticeable on every victim.
+     */
     private void playBurnSound(LivingEntity victim) {
         if (victim instanceof Player player) {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_HURT_ON_FIRE, 1.0f, 1.0f);
         } else {
-            victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_GENERIC_HURT, 0.6f, 1.0f);
+            victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_GENERIC_BURN, 0.6f, 1.0f);
         }
     }
 

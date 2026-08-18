@@ -117,6 +117,8 @@ import com.ultimateimprovments.mechanics.features.world.ServerOverloadListener;
 import com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge;
 import com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge;
 import com.ultimateimprovments.mechanics.features.world.NetheriteKingListener;
+import com.ultimateimprovments.mechanics.features.world.OutOfMemoryListener;
+import com.ultimateimprovments.mechanics.features.world.ServerFreezeListener;
 import com.ultimateimprovments.mechanics.features.world.BeaconManager;
 import com.ultimateimprovments.mechanics.features.world.ChunkLoaderItemListener;
 import com.ultimateimprovments.mechanics.features.world.ConcreteBucketManager;
@@ -816,6 +818,22 @@ public final class SimpleModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 NetheriteKingListener.register((Main) plugin);
+            }
+        });
+
+        // java.lang.OutOfMemoryError — RAM usage at 100%
+        mm.register(new SimpleModule("OutOfMemory", "mechanics/features/out_of_memory", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                OutOfMemoryListener.register((Main) plugin);
+            }
+        });
+
+        // The server has not responding! — main thread frozen 10+ seconds
+        mm.register(new SimpleModule("ServerFreeze", "mechanics/features/server_freeze", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                ServerFreezeListener.register((Main) plugin);
             }
         });
 

@@ -136,7 +136,7 @@ public class ChatManager implements Listener {
         Player player = event.getPlayer();
 
         // =========================
-        // 🛡 MODERATION SESSION — don't send the moderator's messages to chat.
+        // MODERATION SESSION — don't send the moderator's messages to chat.
         // Do NOT cancel the event — ReportManager (also LOWEST priority) will cancel
         // it itself and process the message (conclusion/verdict).
         // =========================
@@ -145,18 +145,18 @@ public class ChatManager implements Listener {
         }
 
         // =========================
-        // 🛡 MUTE CHECK — check whether the player is muted
+        // MUTE CHECK — check whether the player is muted
         // =========================
         if (com.ultimateimprovments.punish.PunishJoinListener.isMuted(player)) {
             event.setCancelled(true);
             var muteRecord = com.ultimateimprovments.punish.PunishJoinListener.getMuteRecord(player);
             if (muteRecord != null) {
-                String duration = muteRecord.isPermanent() ? "permanent" : muteRecord.getRemainingMs() / 1000 + "s";
-                player.sendMessage(MessageUtil.parse(
-                        "<red>🔇 You are muted!</red>\n" +
-                        "<gray>Reason:</gray> <white>" + muteRecord.reason + "</white>\n" +
-                        "<gray>Remaining:</gray> <white>" + duration + "</white>"
-                ));
+                String durationFmt = muteRecord.isPermanent()
+                        ? "Permanent"
+                        : com.ultimateimprovments.punish.PunishmentMessages.formatTime(muteRecord.getRemainingMs());
+                player.sendMessage(com.ultimateimprovments.punish.PunishmentMessages.buildMuteChatMessage(
+                        muteRecord.punishedBy, muteRecord.reason, durationFmt,
+                        com.ultimateimprovments.punish.PunishmentMessages.getDiscordUrl()));
             }
             return;
         }
@@ -180,7 +180,7 @@ public class ChatManager implements Listener {
         String resolved = PlaceholderResolver.resolve(format, player);
 
         // =========================
-        // 🔔 PING PROCESSING — handle @everyone, @nick, @non-op, @is-admin
+        // PING PROCESSING — handle @everyone, @nick, @non-op, @is-admin
         // =========================
         ChatPingManager.PingResult pingResult = ChatPingManager.processPings(rawMessage, player);
         String pingedMessage = pingResult.formattedMessage();
@@ -222,7 +222,7 @@ public class ChatManager implements Listener {
         // Cancel original event and broadcast manually
         event.setCancelled(true);
 
-        // ⚠ Paper 1.21.4 may not fill recipients
+        // Paper 1.21.4 may not fill recipients
         // If recipients is empty — send to all online players
         java.util.Set<Player> recipients = event.getRecipients();
         if (recipients == null || recipients.isEmpty()) {
@@ -242,7 +242,7 @@ public class ChatManager implements Listener {
         // Console log
         ConsoleLogger.info(PlainTextComponentSerializer.plainText().serialize(broadcast));
 
-        // 🔔 Play ping sounds + send notification for pinged players
+        // Play ping sounds + send notification for pinged players
         if (!pingedPlayers.isEmpty()) {
             ChatPingManager.notifyPingedPlayers(pingedPlayers, player);
         }

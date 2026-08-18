@@ -8,9 +8,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.CrafterCraftEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 
 /**
@@ -40,6 +42,25 @@ public class EnergyCraftingListener implements Listener {
         if (e.getInventory().getType() != InventoryType.CRAFTER) {
             e.getInventory().setResult(null);
         }
+    }
+
+    // =========================
+    // CRAFTER BLOCK — the vanilla Crafter NEVER fires PrepareItemCraftEvent.
+    // When powered by redstone it evaluates the recipe itself and fires
+    // CrafterCraftEvent, dispensing event.getResult(). Re-apply the full
+    // custom item (PDC, name, durability, attributes) from the registered
+    // recipe here so custom recipes always craft in the Crafter.
+    // =========================
+    @EventHandler
+    public void onCrafterCraft(CrafterCraftEvent e) {
+        Recipe recipe = e.getRecipe();
+        if (!(recipe instanceof Keyed keyed)) return;
+        if (!RecipeRegistry.getCustomRecipes().contains(keyed.getKey())) return;
+
+        ItemStack result = recipe.getResult();
+        if (result == null || result.getType().isAir()) return;
+
+        e.setResult(result.clone());
     }
 
     // =========================

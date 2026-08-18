@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 🛡 PunishJoinListener — checks bans/mutes when a player joins.
+ * PunishJoinListener — checks bans/mutes when a player joins.
  * <p>
  * - On PlayerLoginEvent checks active bans (UUID, IP, HW)
  * - On PlayerJoinEvent checks active mutes (stores in memory)
@@ -127,22 +127,11 @@ public class PunishJoinListener implements Listener {
     // =========================
 
     private static String buildBanMessage(PunishmentManager.PunishmentRecord ban) {
-        String duration;
-        if (ban.isPermanent()) {
-            duration = "Permanent";
-        } else {
-            long remaining = ban.getRemainingMs() / 1000;
-            if (remaining < 60) duration = remaining + "s";
-            else if (remaining < 3600) duration = (remaining / 60) + "m " + (remaining % 60) + "s";
-            else if (remaining < 86400) duration = (remaining / 3600) + "h " + ((remaining % 3600) / 60) + "m";
-            else duration = (remaining / 86400) + "d " + ((remaining % 86400) / 3600) + "h";
-        }
-
-        return MessageUtil.legacy(
-                "<red>⛔ You are banned from this server!</red>\n" +
-                "<gray>Reason:</gray> <white>" + ban.reason + "</white>\n" +
-                "<gray>Duration:</gray> <white>" + duration + "</white>\n" +
-                "<dark_gray>By: " + ban.punishedBy + "</dark_gray>"
-        );
+        String duration = ban.isPermanent()
+                ? "Permanent"
+                : PunishmentMessages.formatTime(ban.getRemainingMs());
+        return PunishmentMessages.buildBanKickMessage(
+                ban.playerName, ban.punishedBy, ban.reason, duration,
+                PunishmentMessages.getDiscordUrl());
     }
 }

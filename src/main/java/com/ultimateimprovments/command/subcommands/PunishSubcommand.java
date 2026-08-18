@@ -273,13 +273,12 @@ public final class PunishSubcommand {
             }
 
             // Notify the target
-            String duration = parsed.isPermanent ? "permanent" : parsed.timeStr;
-            target.sendMessage(MessageUtil.parse(
-                    "<red>🔇 You have been muted!</red>\n" +
-                    "<gray>Reason:</gray> <white>" + parsed.reason + "</white>\n" +
-                    "<gray>Duration:</gray> <white>" + duration + "</white>\n" +
-                    "<dark_gray>By: " + sender.getName() + "</dark_gray>"
-            ));
+            String durationFmt = parsed.isPermanent
+                    ? "Permanent"
+                    : parsed.timeStr;
+            target.sendMessage(com.ultimateimprovments.punish.PunishmentMessages.buildMuteChatMessage(
+                    sender.getName(), parsed.reason, durationFmt,
+                    com.ultimateimprovments.punish.PunishmentMessages.getDiscordUrl()));
         }
 
         String scope = parsed.ip ? " [IP]" : parsed.hw ? " [HW]" : "";
@@ -407,13 +406,12 @@ public final class PunishSubcommand {
         }
 
         if (target != null && target.isOnline()) {
-            String duration = parsed.isPermanent ? "permanent" : parsed.timeStr;
-            target.sendMessage(MessageUtil.parse(
-                    "<yellow>⚠ You have been warned!</yellow>\n" +
-                    "<gray>Reason:</gray> <white>" + parsed.reason + "</white>\n" +
-                    "<gray>Duration:</gray> <white>" + duration + "</white>\n" +
-                    "<dark_gray>By: " + sender.getName() + "</dark_gray>"
-            ));
+            String durationFmt = parsed.isPermanent
+                    ? "Permanent"
+                    : parsed.timeStr;
+            target.sendMessage(com.ultimateimprovments.punish.PunishmentMessages.buildWarnChatMessage(
+                    sender.getName(), parsed.reason, durationFmt,
+                    com.ultimateimprovments.punish.PunishmentMessages.getDiscordUrl()));
         }
 
         // If -ip/-hw — warn all matching

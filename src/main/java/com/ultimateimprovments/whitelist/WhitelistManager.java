@@ -2,6 +2,7 @@ package com.ultimateimprovments.whitelist;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.DatabaseManager;
+import com.ultimateimprovments.punish.PunishmentMessages;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * 📋 WhitelistManager — custom UltimateImprovments whitelist.
+ * WhitelistManager — custom UltimateImprovments whitelist.
  * <p>
  * Disables the vanilla whitelist when enabled.
  * Works independently of the OP whitelist.
@@ -194,10 +195,9 @@ public class WhitelistManager implements Listener {
 
         String playerName = e.getPlayer().getName();
         if (!isWhitelisted(playerName)) {
-            e.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, MessageUtil.legacy(
-                    "<red>⛔ You are not whitelisted on this server!</red>\n" +
-                    "<gray>Use the UltimateImprovments whitelist system.</gray>"
-            ));
+            e.disallow(PlayerLoginEvent.Result.KICK_WHITELIST,
+                    PunishmentMessages.buildWhitelistKickMessage(
+                            playerName, PunishmentMessages.getDiscordUrl()));
         }
     }
 }

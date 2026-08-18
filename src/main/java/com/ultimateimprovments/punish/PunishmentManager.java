@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * 🛡 PunishmentManager — punishment system (ban/mute/kick/warn).
+ * PunishmentManager — punishment system (ban/mute/kick/warn).
  * <p>
  * Supported flags:
  * <ul>
@@ -480,11 +480,9 @@ public class PunishmentManager {
      * Kicks a player from the server.
      */
     public static void kickPlayer(Player player, String reason, String kicker) {
-        String message = MessageUtil.legacy(
-                "<red>⛔ You have been kicked!</red>\n" +
-                "<gray>Reason:</gray> <white>" + reason + "</white>\n" +
-                "<dark_gray>By: " + kicker + "</dark_gray>"
-        );
+        String message = PunishmentMessages.buildKickMessage(
+                player.getName(), kicker, reason,
+                PunishmentMessages.getDiscordUrl());
         player.kickPlayer(message);
 
         // Log the kick to the DB

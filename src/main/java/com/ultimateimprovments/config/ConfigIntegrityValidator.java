@@ -12,8 +12,8 @@ import java.nio.file.Files;
  * <p>
  * Since v26.2 everything lives in config.yml (messages + guide + settings + meta-hash).
  * Therefore the standalone messages.yml file is no longer validated here —
- * the migration of legacy files is done in {@link MessagesManager#init(Main)} and
- * {@link ConfigGuideManager#init(Main)}, and value validation only for config.yml.
+ * the migration of legacy files is done in {@link MessagesManager#init(Main)},
+ * and value validation only for config.yml.
  * <p>
  * Uses {@link ConfigRepairManager} for smart repair:
  * missing keys are ADDED to the end of the file, existing values are NOT touched.
@@ -99,8 +99,7 @@ public class ConfigIntegrityValidator {
         File data = plugin.getDataFolder();
         String[] legacy = {
                 "messages.yml",
-                "messages-en.yml",
-                "plugin-guide.hash"
+                "messages-en.yml"
         };
         for (String name : legacy) {
             File f = new File(data, name);
