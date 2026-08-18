@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.whitelist.BlacklistManager;
 import org.bukkit.Bukkit;
@@ -28,9 +30,7 @@ public final class BlacklistSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.blacklist")) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You don't have permission to manage the blacklist!</red>"
-            ));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

@@ -64,8 +64,8 @@ public class HelpSubCommand implements SubCommand {
         put("check", "Anti-cheat check on player");
         put("uncheck", "Remove anti-cheat check");
         put("ac", "Anti-cheat stats");
-        put("invsee", "View player inventory");
-        put("endersee", "View player ender chest");
+        put("invsee", "View/edit player inventory (online and offline)");
+        put("endersee", "View/edit player ender chest (online and offline)");
         put("setspawn", "Set server spawn");
         put("spawn", "Teleport to spawn");
         put("broadcast", "Broadcast a message (-clean = no prefix)");
@@ -100,6 +100,7 @@ public class HelpSubCommand implements SubCommand {
         put("flyspeed", "Set fly speed");
         put("uuid", "Get player UUID");
         put("getpos", "Get a player's coordinates");
+        put("turret", "Configure end crystal turret (shift+RMB on crystal)");
         put("near", "Find nearby players");
         put("rtp", "Random teleport");
         put("meteor", "Meteor module");
@@ -114,7 +115,9 @@ public class HelpSubCommand implements SubCommand {
         put("chgop", "Change OP status");
         put("setrad", "Set player radiation");
         put("cilist", "Custom item list");
-        put("i_want_to_get_impossible_achivement_uwu", "Get the impossible achievement");
+        put("dont_run_this_command", "Get the impossible achievement (don't run it!)");
+        put("advancement", "Start a timed advancement challenge (/ui advancement start woodcutter|teleport)");
+        put("cmdblocklist", "List active command blocks (#, world, coordinates)");
     }
 
     private static void put(String name, String desc) {

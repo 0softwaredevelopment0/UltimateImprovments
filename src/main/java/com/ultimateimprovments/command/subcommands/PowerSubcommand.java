@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.command.PowerManager;
 import com.ultimateimprovments.util.Broadcast;
 import com.ultimateimprovments.util.MessageUtil;
@@ -35,7 +37,7 @@ public final class PowerSubcommand {
         if (!(sender instanceof Player)) { pm.executeDirect(false); return true; }
         Player player = (Player) sender;
         if (!player.hasPermission("ui.command.power.off")) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to shut down the server!</red>")); return true;
+            CommandErrors.noPermission(player); return true;
         }
         if (pm.hasPendingRequest()) { sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>There is already an active power management request.</red>")); return true; }
         pm.requestStop(player.getName(), player.getUniqueId());
@@ -50,7 +52,7 @@ public final class PowerSubcommand {
         if (!(sender instanceof Player)) { pm.executeDirect(true); return true; }
         Player player = (Player) sender;
         if (!player.hasPermission("ui.command.power.reboot")) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to restart the server!</red>")); return true;
+            CommandErrors.noPermission(player); return true;
         }
         if (pm.hasPendingRequest()) { sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>There is already an active power management request.</red>")); return true; }
         pm.requestRestart(player.getName(), player.getUniqueId());
@@ -76,7 +78,7 @@ public final class PowerSubcommand {
     private static boolean handleUndo(CommandSender sender, PowerManager pm) {
         if (!pm.hasPendingRequest()) { sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>No active shutdown/restart requests.</red>")); return true; }
         if (sender instanceof Player player && !player.hasPermission("ui.command.power.undo")) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to cancel a request!</red>")); return true;
+            CommandErrors.noPermission(player); return true;
         }
         String undoerName = sender instanceof Player ? ((Player) sender).getName() : "Console";
         String action = pm.undoRequest(undoerName);

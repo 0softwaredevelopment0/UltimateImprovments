@@ -379,18 +379,18 @@ features:
 
     # Название пузырька (MiniMessage). {level} — множитель.
     # Name of the upgraded XP bottle item
-    item_name: "<yellow>Пузырёк опыта <gold>x{level}</gold></yellow>"
+    item_name: "<yellow>Experience bottle<gold>x{level}</gold></yellow>"
 
     # Строки лора (MiniMessage). {level} — множитель, {next} — следующий уровень.
     item_lore:
-      - "<gray>Даёт в <aqua>{level}</aqua> раз больше опыта</gray>"
-      - "<dark_gray>{level} + {level} = <aqua>x{next}</aqua> на наковальне</dark_gray>"
+      - "<gray>Gives <aqua>{level}</aqua> times more experience.</gray>"
+      - "<dark_gray>{level} + {level} = <aqua>x{next}</aqua> on an anvil.</dark_gray>"
 
   glassbreak:
     # Whether glass break damage is enabled
     enabled: true
     # Damage dealt when glass breaks
-    damage: 4
+    damage: 1
 
   magnet:
     # Whether the magnet feature is enabled
@@ -914,6 +914,16 @@ void_protection:
     yaw: 0.0
     # Pitch of the void protection spawn point
     pitch: 0.0
+
+# 📝 Death logger — records every player death to deaths.log in the plugin folder
+# and (optionally) to the console. Each line contains: death message, damage cause,
+# final damage, fall distance, world, coordinates and attacker. Disabled by default —
+# enable only for debugging.
+death_logger:
+  # Whether death logging is enabled
+  enabled: false
+  # Whether deaths are also printed to the console
+  log_to_console: true
 
 power:
   # Whether /stop and /restart are intercepted and replaced
@@ -1488,6 +1498,7 @@ enchant:
     - "degradation"
     - "attack_aoe"
     - "item_stealing"
+    - "repairing"
 
 spawn:
   # Spawn mode: legit or creative

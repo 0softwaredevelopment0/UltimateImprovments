@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.mechanics.security.sudo.SudoDatabase;
 import com.ultimateimprovments.mechanics.security.sudo.SudoDialogScreen;
 import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
@@ -27,7 +29,7 @@ public final class SudoSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.sudo")) {
-            p.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use sudo commands!</red>"));
+            CommandErrors.noPermission(p);
             return true;
         }
         if (!SudoManager.isEnabled()) {

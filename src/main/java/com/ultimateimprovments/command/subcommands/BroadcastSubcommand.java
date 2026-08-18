@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.util.Broadcast;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlaceholderResolver;
@@ -55,7 +57,7 @@ public final class BroadcastSubcommand {
         }
 
         if (!sender.hasPermission("ui.command.broadcast")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to broadcast!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

@@ -1,12 +1,10 @@
 package com.ultimateimprovments.listener;
 
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
-import com.ultimateimprovments.energy.machines.assembler.AssemblerManager;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
-import com.ultimateimprovments.energy.machines.workbench.EnergyWorkbenchManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.LocationUtil;
@@ -100,13 +98,10 @@ public class BlockBreakListener implements Listener {
         }
 
         // =========================
-        // 🛠 ITEM CREATOR (CRAFTER) — dismantle when broken, clean up Marker
+        // CRAFTER — clean up any orphaned Marker (old Item Assembler leftovers)
         // =========================
         if (e.getBlock().getType() == Material.CRAFTER) {
-            if (AssemblerManager.isAssembled(loc)) {
-                AssemblerManager.removeAssembler(loc);
-            } else if (StructureMarker.existsAt(loc)) {
-                // Orphaned Marker cleanup
+            if (StructureMarker.existsAt(loc)) {
                 StructureMarker.removeAt(loc);
             }
         }

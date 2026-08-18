@@ -81,6 +81,9 @@ public class EnchantmentListener implements Listener {
             Material brokenType = block.getType();
             block.breakNaturally(tool, true);
 
+            // Count toward the Woodcutter timed challenge (no BlockBreakEvent fires here)
+            com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge.countBroken(player, brokenType);
+
             // "Ore → stone" mechanic: leave stone instead of ore, like for
             // the block in BlockBreakEvent (otherwise holes remain in the veins)
             BlockBreakListener.scheduleStoneReplacement(block, brokenType);

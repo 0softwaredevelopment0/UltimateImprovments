@@ -125,7 +125,7 @@ public class EnderChestManager implements Listener {
 
         // Award advancement
         try {
-            var adv = Bukkit.getAdvancement(new NamespacedKey("minecraft", "datapack/blowed_by_echest"));
+            var adv = Bukkit.getAdvancement(new NamespacedKey("ui", "datapack/blowed_by_echest"));
             if (adv != null) {
                 var progress = player.getAdvancementProgress(adv);
                 if (!progress.isDone()) {

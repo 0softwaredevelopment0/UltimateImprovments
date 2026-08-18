@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 import net.kyori.adventure.text.Component;
@@ -35,9 +37,7 @@ public final class ChgOpSubcommand {
     // ════════════════════════════════════════
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.chgop")) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You don't have permission to manage operator status!</red>"
-            ));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

@@ -1,74 +1,31 @@
 package com.ultimateimprovments.energy.machines.workbench;
 
-import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.config.MessagesManager;
-import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.mechanics.crafting.RecipeRegistry;
 import com.ultimateimprovments.util.MessageUtil;
-import net.kyori.adventure.text.Component;
-import org.bukkit.Location;
-import org.bukkit.block.Block;
-
+import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-
-import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.inventory.Recipe;
 
+/**
+ * Gates custom recipes.
+ * <p>
+ * The old "Item Assembler" structure (assembled Crafter + energy buffer) was
+ * removed. Custom recipes now craft directly in any vanilla Crafter block,
+ * while the regular workbench / 2x2 grid only shows the recipe book preview
+ * (the result slot is cleared, so nothing can be crafted there).
+ */
 public class EnergyCraftingListener implements Listener {
 
-    private static final Component ASSEMBLER_TITLE = Component.text("Item assembler");
-
     // =========================
-    // PREVIEW
-    // =========================
-    @EventHandler
-    public void onPrepareCraft(PrepareItemCraftEvent e) {
-
-        if (!(e.getView().getPlayer() instanceof Player player)) {
-            return;
-        }
-
-        if (!isEnabled()) {
-            return;
-        }
-
-        // =========================
-        // ONLY ITEM ASSEMBLER (CRAFTER)
-        // =========================
-        if (e.getInventory().getType() != InventoryType.CRAFTER) {
-            return;
-        }
-
-        if (!ASSEMBLER_TITLE.equals(e.getView().title())) {
-            return;
-        }
-
-        Location workbench = findWorkbench(player);
-
-        if (workbench == null) {
-            e.getInventory().setResult(null);
-            return;
-        }
-
-        int cost = getCost();
-
-        if (!EnergyWorkbenchManager.hasBufferEnergy(workbench, cost)) {
-            e.getInventory().setResult(null);
-        }
-    }
-
-    // =========================
-    // BLOCK CUSTOM RECIPES OUTSIDE THE ITEM ASSEMBLER
-    // Blocks PrepareItemCraftEvent for custom recipes
-    // in the regular workbench (WORKBENCH), vanilla Crafter and 2x2 crafting.
+    // PREVIEW — block custom recipes outside the Crafter block
+    // (workbench & 2x2 keep the recipe book preview, but the result is null)
     // =========================
     @EventHandler(priority = EventPriority.LOW)
     public void onPrepareCraftBlockOutside(PrepareItemCraftEvent e) {
@@ -78,11 +35,9 @@ public class EnergyCraftingListener implements Listener {
         NamespacedKey recipeKey = keyed.getKey();
         if (!RecipeRegistry.getCustomRecipes().contains(recipeKey)) return;
 
-        // Allow only in the Item Assembler GUI (CRAFTER + "Item assembler" title)
-        boolean isAssembler = (e.getInventory().getType() == InventoryType.CRAFTER)
-                && ASSEMBLER_TITLE.equals(e.getView().title());
-
-        if (!isAssembler) {
+        // Custom recipes craft in the vanilla Crafter block — everywhere else
+        // (WORKBENCH, CRAFTING 2x2) the result is cleared (preview only).
+        if (e.getInventory().getType() != InventoryType.CRAFTER) {
             e.getInventory().setResult(null);
         }
     }
@@ -92,122 +47,23 @@ public class EnergyCraftingListener implements Listener {
     // =========================
     @EventHandler
     public void onCraft(CraftItemEvent e) {
-
-        if (!(e.getWhoClicked() instanceof Player player)) {
+        boolean inCrafter = e.getInventory().getType() == InventoryType.CRAFTER;
+        if (inCrafter) {
+            // Allowed — vanilla Crafter block
             return;
         }
 
-        if (!isEnabled()) {
-            return;
-        }
-
-        // =========================
-        // ONLY ITEM ASSEMBLER (CRAFTER)
-        // =========================
-        boolean inAssembler = (e.getInventory().getType() == InventoryType.CRAFTER)
-                && ASSEMBLER_TITLE.equals(e.getView().title());
-
-        if (inAssembler) {
-            // Energy-based crafting in the Item Assembler
-            Location workbench = findWorkbench(player);
-
-            if (workbench == null) {
+        // Block custom recipes outside the Crafter block
+        Recipe recipe = e.getRecipe();
+        if (recipe instanceof Keyed keyed) {
+            NamespacedKey recipeKey = keyed.getKey();
+            if (RecipeRegistry.getCustomRecipes().contains(recipeKey)) {
                 e.setCancelled(true);
-                player.sendMessage(MessageUtil.parse(getMsg()));
-                return;
-            }
-
-            int cost = getCost();
-
-            if (!EnergyWorkbenchManager.hasBufferEnergy(workbench, cost)) {
-                e.setCancelled(true);
-                player.sendMessage(MessageUtil.parse(getMsg()));
-                return;
-            }
-
-            EnergyWorkbenchManager.consumeBufferEnergy(workbench, cost);
-        } else {
-            // =========================
-            // Not in the Assembler — block custom recipes
-            // =========================
-            Recipe recipe = e.getRecipe();
-            if (recipe instanceof Keyed keyed) {
-                NamespacedKey recipeKey = keyed.getKey();
-                if (RecipeRegistry.getCustomRecipes().contains(recipeKey)) {
-                    e.setCancelled(true);
-                    player.sendMessage(MessageUtil.parse("<gold>✧</gold> <gray>This item can only be crafted in the</gray> <aqua>Item Assembler</aqua><gray>!</gray>"));
+                if (e.getWhoClicked() instanceof Player player) {
+                    player.sendMessage(MessageUtil.parse(
+                            "<gold>✧</gold> <gray>This item can only be crafted in a</gray> <aqua>Crafter</aqua><gray>!</gray>"));
                 }
             }
         }
-    }
-
-    // =========================
-    // FIND WORKBENCH
-    // =========================
-    private Location findWorkbench(Player player) {
-
-        Location base = player.getLocation();
-
-        int radius = Main.getInstance()
-                .getConfig()
-                .getInt(
-                        "energy_crafting.workbench_search_radius",
-                        3
-                );
-
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-
-                    Block block =
-                            base.clone()
-                                    .add(x, y, z)
-                                    .getBlock();
-
-                    Location loc =
-                            LocationUtil.normalize(
-                                    block.getLocation()
-                            );
-
-                    if (!EnergyWorkbenchManager.exists(loc)) {
-                        continue;
-                    }
-
-                    return loc;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    // =========================
-    // CONFIG
-    // =========================
-    private boolean isEnabled() {
-
-        return Main.getInstance()
-                .getConfig()
-                .getBoolean(
-                        "energy_crafting.enabled",
-                        true
-                );
-    }
-
-    private int getCost() {
-
-        return Main.getInstance()
-                .getConfig()
-                .getInt(
-                        "energy_crafting.energy_per_craft",
-                        100
-                );
-    }
-
-    private String getMsg() {
-        return MessagesManager.getString(
-                "energy_crafting.messages.no_energy",
-                "<dark_red>❌</dark_red> <red>Error: <gray>Not enough energy for craft!</gray></red>"
-        );
     }
 }

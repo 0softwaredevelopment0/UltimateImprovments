@@ -7,7 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.util.Vector;
 
@@ -69,13 +69,13 @@ public class BoostedCobwebManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!enabled) return;
+        if (!(event.getDamager() instanceof Player player)) return;
 
-        Player player = event.getPlayer();
         if (isInCobweb(player)) {
             event.setCancelled(true);
-            player.sendActionBar("§c❌ You can't break blocks in the cobweb!");
+            player.sendActionBar("§c❌ You can't attack in the cobweb!");
         }
     }
 

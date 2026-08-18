@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Location;
@@ -54,7 +56,7 @@ public final class SpawnCommand {
     // ============================================================
     private static boolean executeSetSpawn(Player player, String[] args) {
         if (!player.hasPermission("ui.command.setspawn")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to set the spawn point!</red>"));
+            CommandErrors.noPermission(player);
             return true;
         }
 
@@ -113,7 +115,7 @@ public final class SpawnCommand {
     // ============================================================
     private static void executeSpawn(Player player) {
         if (!player.hasPermission("ui.command.spawn")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use /ui spawn!</red>"));
+            CommandErrors.noPermission(player);
             return;
         }
 

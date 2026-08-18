@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.generation.reactor.ReactorCommand;
 import com.ultimateimprovments.energy.generation.reactor.ReactorManager;
@@ -29,7 +31,7 @@ public final class StructureSubcommand {
 
     private static void handleDfc(Player player, String[] args) {
         if (!player.hasPermission("ui.command.structures")) {
-            player.sendMessage("§4❌ §cУ вас нет прав на управление структурами!");
+            CommandErrors.noPermission(player);
             return;
         }
         if (args.length < 3) {
@@ -85,7 +87,7 @@ public final class StructureSubcommand {
             player.sendMessage("§8└────────────────────────────────┘");
         } else if (args[2].equalsIgnoreCase("assemble")) {
             if (!player.hasPermission("ui.command.structures.dfc")) {
-                player.sendMessage("§4❌ §cУ вас нет прав на сборку реактора!");
+                CommandErrors.noPermission(player);
                 return;
             }
             ReactorCommand.assembleDarkSynthesis(player);
@@ -101,7 +103,7 @@ public final class StructureSubcommand {
         }
         if (args[2].equalsIgnoreCase("stats")) {
             if (!player.hasPermission("ui.command.structures.magnet")) {
-                player.sendMessage("§4❌ §cУ вас нет прав на просмотр статистики магнита!");
+                CommandErrors.noPermission(player);
                 return;
             }
             Location playerLoc = player.getLocation();
@@ -131,7 +133,7 @@ public final class StructureSubcommand {
             player.sendMessage("§8└────────────────────────────────┘");
         } else if (args[2].equalsIgnoreCase("assemble")) {
             if (!player.hasPermission("ui.command.structures.magnet")) {
-                player.sendMessage("§4❌ §cУ вас нет прав на сборку магнита!");
+                CommandErrors.noPermission(player);
                 return;
             }
             ReactorCommand.assembleMagnet(player);

@@ -374,10 +374,10 @@ public class ItemCreatorRecipe {
         ItemStack item = new ItemStack(Material.EMERALD_BLOCK);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(MessageUtil.parse("<!italic><gold>✦ Чанклоадер ✦</gold>"));
+            meta.displayName(MessageUtil.parse("<!italic><white>Chunkloader</white>"));
             meta.lore(List.of(
-                    MessageUtil.parse("<!italic><gray>При установке чанк остается загруженным</gray>"),
-                    MessageUtil.parse("<!italic><gray>Разрушить — получить предмет обратно</gray>")
+                    MessageUtil.parse("<!italic><gray>Loads the chunk when it is placed</gray>"),
+                    MessageUtil.parse("<!italic><gray>Breaking will deactivate it</gray>")
             ));
             meta.getPersistentDataContainer().set(
                     new org.bukkit.NamespacedKey("ui", "is_chunk_loader"),

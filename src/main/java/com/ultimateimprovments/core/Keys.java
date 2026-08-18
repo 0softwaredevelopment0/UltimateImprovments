@@ -7,6 +7,8 @@ public class Keys {
     public static NamespacedKey PLASMA;
     public static NamespacedKey SHOCKER;
     public static NamespacedKey BLAZING_SWORD;
+    public static NamespacedKey GLASS_SWORD;
+    public static NamespacedKey ELECTRIC_TRIDENT;
 
     // Feature keys (from the datapack)
     public static NamespacedKey ANTIMATTER;
@@ -83,6 +85,8 @@ public class Keys {
         PLASMA = new NamespacedKey(plugin, "is_plasma_cannon");
         SHOCKER = new NamespacedKey(plugin, "is_shocker");
         BLAZING_SWORD = new NamespacedKey(plugin, "is_blazing_sword");
+        GLASS_SWORD = new NamespacedKey(plugin, "is_glass_sword");
+        ELECTRIC_TRIDENT = new NamespacedKey(plugin, "is_electric_trident");
         ANTIMATTER = new NamespacedKey(plugin, "isAntimatter");
         LOCATOR = new NamespacedKey(plugin, "isLocator");
         HEALTH_METER = new NamespacedKey(plugin, "isHealthMeter");

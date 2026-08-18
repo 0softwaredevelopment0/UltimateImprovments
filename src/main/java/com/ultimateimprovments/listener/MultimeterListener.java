@@ -1,9 +1,7 @@
 package com.ultimateimprovments.listener;
 
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
-import com.ultimateimprovments.energy.machines.workbench.EnergyWorkbenchManager;
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.energy.machines.assembler.AssemblerManager;
 import com.ultimateimprovments.energy.transfer.cable.*;
 import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
 import com.ultimateimprovments.structure.StructureMarker;
@@ -52,25 +50,6 @@ public class MultimeterListener implements Listener {
         player.playSound(block.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
 
         Material type = block.getType();
-
-        // =========================
-        // 🛠 ITEM CREATOR (CRAFTER)
-        // =========================
-        if (type == Material.CRAFTER) {
-            Location loc = LocationUtil.normalize(block.getLocation());
-            if (EnergyWorkbenchManager.exists(loc) || AssemblerManager.isAssembled(loc)) {
-                int buffer = EnergyWorkbenchManager.getBufferEnergy(loc);
-                boolean hasRedstone = block.isBlockPowered() || block.isBlockIndirectlyPowered();
-                player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
-                player.sendMessage(MessageUtil.parse("<aqua>Type: </aqua><white>Создатель предметов</white>"));
-                player.sendMessage(MessageUtil.parse("<aqua>Buffer: </aqua>"
-                        + (buffer >= 100 ? "<green>" : "<yellow>")
-                        + buffer + "/100 ⚡</" + (buffer >= 100 ? "green" : "yellow") + ">"));
-                player.sendMessage(MessageUtil.parse("<aqua>Redstone: </aqua><white>" + (hasRedstone ? "<green>✔</green>" : "<red>✘</red>") + "</white>"));
-                player.sendMessage(MessageUtil.parse("<dark_gray>Требуется: 100⚡ + редстоун-сигнал для крафта</dark_gray>"));
-                return;
-            }
-        }
 
         // =========================
         // 🏗 STRUCTURE INTEGRITY (ENDER_CHEST)

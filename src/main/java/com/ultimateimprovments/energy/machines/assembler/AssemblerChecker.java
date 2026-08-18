@@ -1,28 +1,22 @@
 package com.ultimateimprovments.energy.machines.assembler;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
-import org.bukkit.inventory.InventoryView;
 
 /**
- * Utility for checking if a craft event happens inside an Item Assembler GUI.
+ * Utility for checking if a craft event happens inside a Crafter block.
+ * <p>
+ * The old "Item Assembler" structure (assembled Crafter + energy buffer) was
+ * removed — custom items now craft directly in the vanilla Crafter block.
  */
 public class AssemblerChecker {
-
-    private static final Component ASSEMBLER_TITLE = Component.text("Создатель предметов");
 
     private AssemblerChecker() {}
 
     /**
-     * @return true if the craft event is inside the Item Assembler GUI
+     * @return true if the craft event happens inside any Crafter block inventory
      */
     public static boolean isAssemblerCraft(PrepareItemCraftEvent e) {
-        if (e.getInventory().getType() != InventoryType.CRAFTER) return false;
-
-        InventoryView view = e.getView();
-        if (view == null) return false;
-
-        return ASSEMBLER_TITLE.equals(view.title());
+        return e.getInventory().getType() == InventoryType.CRAFTER;
     }
 }

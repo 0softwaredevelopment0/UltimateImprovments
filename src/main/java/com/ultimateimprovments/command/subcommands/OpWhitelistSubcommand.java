@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.whitelist.OpWhitelistManager;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -26,9 +28,7 @@ public final class OpWhitelistSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.opwhitelist")) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You don't have permission to use the OP whitelist!</red>"
-            ));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

@@ -1,10 +1,12 @@
 package com.ultimateimprovments.enchantment.flight;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.mechanics.security.auth.AuthPlayerState;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -47,6 +49,9 @@ public class EnchantmentListener implements Listener {
 
     /** Periodic sweep interval: 10 ticks (0.5s) — fast enough to feel instant. */
     static final long SWEEP_INTERVAL_TICKS = 10L;
+
+    /** Integrity drain interval: 20 ticks = 1 second of active flight. */
+    static final long INTEGRITY_DRAIN_INTERVAL_TICKS = 20L;
 
     /** Raw slot of the chestplate in the player's own inventory (36-39 = armor). */
     private static final int CHESTPLATE_RAW_SLOT = 38;
@@ -175,6 +180,25 @@ public class EnchantmentListener implements Listener {
         }
     }
 
+    /**
+     * While a player is actively flying with the Flight chestplate, the
+     * chestplate loses 1 use of integrity per second — flight is no longer free.
+     */
+    private static void drainFlightIntegrity() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            try {
+                if (!player.isFlying()) continue;
+                ItemStack chest = player.getInventory().getChestplate();
+                if (chest == null || chest.getType() == Material.AIR) continue;
+                if (com.ultimateimprovments.enchantment.flight.Enchantment.getLevel(chest) <= 0) continue;
+
+                ItemIntegrityAPI.decreaseItemIntegrity(chest, 1, player);
+            } catch (Exception e) {
+                ConsoleLogger.warn("[Flight] Integrity drain error for " + player.getName() + ": " + e.getMessage());
+            }
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────
     //  REGISTRATION
     // ─────────────────────────────────────────────────────────────
@@ -186,7 +210,9 @@ public class EnchantmentListener implements Listener {
         Bukkit.getPluginManager().registerEvents(new EnchantmentListener(), plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::sweepAllPlayers,
                 SWEEP_INTERVAL_TICKS, SWEEP_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::drainFlightIntegrity,
+                INTEGRITY_DRAIN_INTERVAL_TICKS, INTEGRITY_DRAIN_INTERVAL_TICKS);
         ConsoleLogger.info("[Flight] Listener registered (flight sweep every "
-                + (SWEEP_INTERVAL_TICKS / 20.0) + "s).");
+                + (SWEEP_INTERVAL_TICKS / 20.0) + "s, 1 integrity-use/s while flying).");
     }
 }

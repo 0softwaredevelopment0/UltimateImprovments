@@ -4,7 +4,10 @@ import com.ultimateimprovments.broadcast.AutoBroadcastManager;
 import com.ultimateimprovments.chat.ChatManager;
 import com.ultimateimprovments.command.PowerManager;
 import com.ultimateimprovments.command.vote.VoteManager;
+import com.ultimateimprovments.combat.turret.TurretListener;
+import com.ultimateimprovments.combat.turret.TurretManager;
 import com.ultimateimprovments.combat.weapons.blazing.BlazingSwordListener;
+import com.ultimateimprovments.combat.weapons.electrictrident.ElectricTridentListener;
 import com.ultimateimprovments.combat.weapons.plasma.GunListener;
 import com.ultimateimprovments.combat.weapons.shoker.ShokerListener;
 import com.ultimateimprovments.core.CommandRegistrar;
@@ -28,12 +31,8 @@ import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.energy.generation.reactor.ReactorListener;
 import com.ultimateimprovments.energy.generation.reactor.ReactorManager;
-import com.ultimateimprovments.energy.machines.assembler.AssemblerListener;
-import com.ultimateimprovments.energy.machines.assembler.AssemblerManager;
-import com.ultimateimprovments.energy.machines.assembler.AssemblerTask;
 import com.ultimateimprovments.energy.machines.furnace.ElectricFurnaceManager;
 import com.ultimateimprovments.energy.machines.workbench.EnergyCraftingListener;
-import com.ultimateimprovments.energy.machines.workbench.EnergyWorkbenchManager;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.hook.PluginHook;
@@ -51,9 +50,11 @@ import com.ultimateimprovments.listener.VoidProtectionListener;
 import com.ultimateimprovments.mechanics.crafting.AntimatterCraftListener;
 import com.ultimateimprovments.mechanics.crafting.BlazingSwordCraftListener;
 import com.ultimateimprovments.mechanics.crafting.ChunkLoaderCraftListener;
+import com.ultimateimprovments.mechanics.crafting.ElectricTridentCraftListener;
 import com.ultimateimprovments.mechanics.crafting.ConcreteBucketCraftListener;
 import com.ultimateimprovments.mechanics.crafting.EnderChestCraftListener;
 import com.ultimateimprovments.mechanics.crafting.EntityLocatorCraftListener;
+import com.ultimateimprovments.mechanics.crafting.GlassSwordCraftListener;
 import com.ultimateimprovments.mechanics.crafting.HealthMeterCraftListener;
 import com.ultimateimprovments.mechanics.crafting.LeadIngotCraftListener;
 import com.ultimateimprovments.mechanics.crafting.LeadShieldCraftListener;
@@ -107,6 +108,15 @@ import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityLi
 import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityManager;
 import com.ultimateimprovments.mechanics.features.updater.UpdateChecker;
 import com.ultimateimprovments.mechanics.features.world.AntimatterManager;
+import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
+import com.ultimateimprovments.mechanics.features.world.BeyondSpaceListener;
+import com.ultimateimprovments.mechanics.features.world.CmdBlockTracker;
+import com.ultimateimprovments.mechanics.features.world.EarthCoreListener;
+import com.ultimateimprovments.mechanics.features.world.KaboomListener;
+import com.ultimateimprovments.mechanics.features.world.ServerOverloadListener;
+import com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge;
+import com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge;
+import com.ultimateimprovments.mechanics.features.world.NetheriteKingListener;
 import com.ultimateimprovments.mechanics.features.world.BeaconManager;
 import com.ultimateimprovments.mechanics.features.world.ChunkLoaderItemListener;
 import com.ultimateimprovments.mechanics.features.world.ConcreteBucketManager;
@@ -227,6 +237,7 @@ public final class SimpleModules {
                 pm.registerEvents(new ShokerListener(), main);
                 pm.registerEvents(new GunListener(), main);
                 pm.registerEvents(new BlazingSwordListener(), main);
+                pm.registerEvents(new ElectricTridentListener(), main);
                 pm.registerEvents(new ShulkerBulletListener(), main);
                 pm.registerEvents(FishingListener.getInstance(), main);
 
@@ -390,52 +401,17 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerEnergyMachines(ModuleManager mm) {
-        // Assembler (essential — CRAFTER + item frame on top, auto-craft every 2 ticks)
-        mm.register(new PluginModule("Assembler", "energy/machines/assembler", true) {
-            private BukkitTask assemblerTask;
-
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                AssemblerManager.init();
-
-                // ⚠ Paper 1.21.4+: BukkitRunnable can't be passed to Scheduler.runTaskTimer()
-                assemblerTask = new AssemblerTask().runTaskTimer((Main) plugin, 40L, 2L);
-
-                ConsoleLogger.info("[AssemblerModule] ✔ Assembler system initialized.");
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                if (assemblerTask != null) {
-                    assemblerTask.cancel();
-                    assemblerTask = null;
-                }
-                AssemblerManager.shutdown();
-            }
-        });
-
-        // Energy Workbench (essential)
+        // Custom recipe gating — custom items craft in the vanilla Crafter block,
+        // workbench/2x2 only show the recipe book preview (the old "Item Assembler"
+        // structure and its energy requirement were removed).
         mm.register(new PluginModule("Energy Workbench", "energy/machines/workbench", true) {
             private EnergyCraftingListener craftingListener;
-            private BukkitTask lockTask;
 
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 Main main = (Main) plugin;
-                EnergyWorkbenchManager.init();
                 craftingListener = new EnergyCraftingListener();
                 main.getServer().getPluginManager().registerEvents(craftingListener, main);
-                main.getServer().getPluginManager().registerEvents(new EnergyWorkbenchManager.RedstoneListener(), main);
-
-                // Block CRAFTER auto-craft via redstone every tick
-                lockTask = Bukkit.getScheduler().runTaskTimer(main, () -> {
-                    EnergyWorkbenchManager.maintainLocks();
-                }, 0L, 1L);
-
-                // Charge Assembler buffers from neighboring cables every 2 ticks
-                Bukkit.getScheduler().runTaskTimer(main, () -> {
-                    EnergyWorkbenchManager.chargeAllBuffers();
-                }, 0L, 2L);
             }
 
             @Override
@@ -443,10 +419,6 @@ public final class SimpleModules {
                 if (craftingListener != null) {
                     HandlerList.unregisterAll(craftingListener);
                     craftingListener = null;
-                }
-                if (lockTask != null) {
-                    lockTask.cancel();
-                    lockTask = null;
                 }
             }
         });
@@ -467,6 +439,8 @@ public final class SimpleModules {
                 PlasmaCannonCraftListener.init();
                 ShokerCraftListener.init();
                 BlazingSwordCraftListener.init();
+                GlassSwordCraftListener.init();
+                ElectricTridentCraftListener.init();
                 AntimatterCraftListener.init();
                 EntityLocatorCraftListener.init();
                 LeadIngotCraftListener.init();
@@ -488,6 +462,8 @@ public final class SimpleModules {
                 pm.registerEvents(new PlasmaCannonCraftListener(), main);
                 pm.registerEvents(new ShokerCraftListener(), main);
                 pm.registerEvents(new BlazingSwordCraftListener(), main);
+                pm.registerEvents(new GlassSwordCraftListener(), main);
+                pm.registerEvents(new ElectricTridentCraftListener(), main);
                 pm.registerEvents(new AntimatterCraftListener(), main);
                 pm.registerEvents(new EntityLocatorCraftListener(), main);
                 pm.registerEvents(new LeadIngotCraftListener(), main);
@@ -500,7 +476,6 @@ public final class SimpleModules {
                 pm.registerEvents(new EnderChestCraftListener(), main);
                 pm.registerEvents(new ScannerItemListener(), main);
                 pm.registerEvents(new MetalDetectorListener(), main);
-                pm.registerEvents(new AssemblerListener(), main);
                 pm.registerEvents(new ConcreteBucketCraftListener(), main);
                 pm.registerEvents(new ChunkLoaderCraftListener(), main);
                 pm.registerEvents(new ChunkLoaderItemListener(), main);
@@ -777,6 +752,91 @@ public final class SimpleModules {
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
                 AntimatterManager.reloadConfig();
+            }
+        });
+
+        // Beyond Space — reach the block placement limit
+        mm.register(new SimpleModule("BeyondSpace", "mechanics/features/beyond_space", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                BeyondSpaceListener.register((Main) plugin);
+            }
+        });
+
+        // Hit, hit, to pieces! — break a bedrock block
+        mm.register(new SimpleModule("BedrockBreak", "mechanics/features/bedrock_break", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                BedrockBreakListener.register((Main) plugin);
+            }
+        });
+
+        // Kaboom! — kill a mob after dealing 1,000 mace damage
+        mm.register(new SimpleModule("Kaboom", "mechanics/features/kaboom", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                KaboomListener.register((Main) plugin);
+            }
+        });
+
+        // Where is the Earth's core here? — reach the lower placement limit
+        mm.register(new SimpleModule("EarthCore", "mechanics/features/earth_core", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                EarthCoreListener.register((Main) plugin);
+            }
+        });
+
+        // Something's not right here... — online while the server is overloaded
+        mm.register(new SimpleModule("ServerOverload", "mechanics/features/server_overload", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                ServerOverloadListener.register((Main) plugin);
+            }
+        });
+
+        // The Woodcutter at Full Throttle — timed challenge (7,200 wood in 1 hour)
+        mm.register(new SimpleModule("WoodcutterChallenge", "mechanics/features/woodcutter_challenge", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                WoodcutterChallenge.register((Main) plugin);
+            }
+        });
+
+        // Let me teleport! — timed challenge (60 ender pearl teleports in 1 minute)
+        mm.register(new SimpleModule("EnderPearlChallenge", "mechanics/features/ender_pearl_challenge", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                EnderPearlChallenge.register((Main) plugin);
+            }
+        });
+
+        // A Netherite King — netherite block in inventory
+        mm.register(new SimpleModule("NetheriteKing", "mechanics/features/netherite_king", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                NetheriteKingListener.register((Main) plugin);
+            }
+        });
+
+        // Active command blocks tracking (for /ui cmdblocklist)
+        mm.register(new SimpleModule("CmdBlockTracker", "mechanics/features/cmdblock_tracker", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                CmdBlockTracker.register((Main) plugin);
+            }
+        });
+
+        // DeathLogger — records every player death to deaths.log + console (debug; off by default)
+        mm.register(new SimpleModule("DeathLogger", "mechanics/features/death_logger", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                com.ultimateimprovments.listener.DeathLogger.init((Main) plugin);
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                com.ultimateimprovments.listener.DeathLogger.reloadConfig();
             }
         });
 
@@ -1179,7 +1239,7 @@ public final class SimpleModules {
     public static void registerSelfDestructEnchantment(ModuleManager mm) {
         // SelfDestruct: REAL data-driven curse (ui:self_destruct, registered by
         // the UI-Datapack, max level 1, in the #minecraft:curse tag → red tooltip)
-        // + PDC mirror failsafe. 10s countdown → invisible power-10 creeper.
+        // + PDC mirror failsafe. 30s silent countdown → 19 damage to the holder.
         mm.register(new SimpleModule("SelfDestructEnchantment", "enchantment/selfdestruct", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -1195,7 +1255,7 @@ public final class SimpleModules {
                 // 3. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.selfdestruct.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[SelfDestruct] Level: 1 | Item: any | 10s timer → smoke, rising beep, invisible creeper (power 10)");
+                ConsoleLogger.info("[SelfDestruct] Level: 1 | Item: any | 30s silent timer → 19 damage to the holder + item destroyed");
             }
         });
     }
@@ -1278,6 +1338,66 @@ public final class SimpleModules {
 
                 ConsoleLogger.info("[ItemStealing] Level: 1 | Item: fishing rod | Hooking a player and reeling in "
                         + "steals the item from his hand (empty hands → normal pull)");
+            }
+        });
+    }
+
+    // --------------------------------------------------------------------------
+    // REPAIRING ENCHANTMENT (registered after ItemStealingEnchantment)
+    // --------------------------------------------------------------------------
+
+    public static void registerRepairingEnchantment(ModuleManager mm) {
+        // Repairing: REAL data-driven enchantment (ui:repairing, registered by
+        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Every second an
+        // enchanted item with durability restores level × 0.1% of its integrity
+        // (level 1 → 0.1%/s, level 255 → 25.5%/s) while in a player's inventory.
+        mm.register(new SimpleModule("RepairingEnchantment", "enchantment/repairing", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Integrity repair engine (sweep every second)
+                com.ultimateimprovments.enchantment.repairing.EnchantmentListener.register(main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.repairing.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[Repairing] Levels: 1-255 | Item: any with durability | Restores "
+                        + "level × 0.1% integrity every level seconds (0.1%/s average) while in a player's inventory");
+            }
+        });
+    }
+
+    // --------------------------------------------------------------------------
+    // TURRET (end crystal turrets)
+    // --------------------------------------------------------------------------
+
+    public static void registerTurret(ModuleManager mm) {
+        mm.register(new PluginModule("Turret", "combat/turret", false) {
+            private BukkitTask tickTask;
+            private TurretListener listener;
+
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+                TurretManager.init();
+                listener = new TurretListener();
+                main.getServer().getPluginManager().registerEvents(listener, main);
+                tickTask = Bukkit.getScheduler().runTaskTimer(main, TurretManager.getInstance()::tick, 0L, 1L);
+                ConsoleLogger.info("[Turret] End crystal turrets initialized (16³ range, 1 dmg/tick, line of sight required).");
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                if (tickTask != null) {
+                    tickTask.cancel();
+                    tickTask = null;
+                }
+                if (listener != null) {
+                    HandlerList.unregisterAll(listener);
+                    listener = null;
+                }
+                TurretManager.shutdown();
             }
         });
     }

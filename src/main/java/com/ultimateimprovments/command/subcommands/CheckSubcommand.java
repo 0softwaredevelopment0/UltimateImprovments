@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.mechanics.security.check.CheckManager;
@@ -22,8 +24,7 @@ public final class CheckSubcommand {
         }
 
         if (!inspector.hasPermission("ui.command.check")) {
-            inspector.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
-                    "<red>❌ You don't have permission to use this command!</red>")));
+            CommandErrors.noPermission(inspector);
             return true;
         }
 
@@ -61,8 +62,7 @@ public final class CheckSubcommand {
         }
 
         if (!inspector.hasPermission("ui.command.check")) {
-            inspector.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
-                    "<red>❌ You don't have permission to use this command!</red>")));
+            CommandErrors.noPermission(inspector);
             return true;
         }
 

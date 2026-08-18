@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.security.auth.AuthAuthenticator;
 import com.ultimateimprovments.mechanics.security.auth.AuthDatabase;
@@ -180,7 +182,7 @@ public final class AuthSubcommand {
 
     private static boolean handleForceLogin(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.auth.forcelogin")) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to force login!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth forcelogin </white><gray><nick></gray>")); return true; }
@@ -197,7 +199,7 @@ public final class AuthSubcommand {
 
     private static boolean handleResetAuth(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.auth.resetauth")) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to reset authentication!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth resetauth </white><gray><nick></gray>")); return true; }
@@ -214,7 +216,7 @@ public final class AuthSubcommand {
 
     private static boolean handleDelSession(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.auth.delsession")) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to reset a session!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth delsession </white><gray><nick></gray>")); return true; }
@@ -288,7 +290,7 @@ public final class AuthSubcommand {
 
     private static boolean handleChgPass(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.auth.chgpass")) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>You don't have permission to change passwords!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 4) { sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui auth chgpass </white><gray><nick> <new_password></gray>")); return true; }

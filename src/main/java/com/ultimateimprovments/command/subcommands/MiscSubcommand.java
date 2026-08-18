@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.command.home.HomeCommand;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.database.PlayerSettingsDB;
@@ -30,7 +32,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean vanish(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.vanish")) {
-            p.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_no_permission", "<red>❌ You don't have permission to use vanish!</red>"))); return true;
+            CommandErrors.noPermission(p); return true;
         }
         if (args.length < 2) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_usage", "<red>❌ Usage: </red><white>/ui vanish <nick></white>"))); return true; }
         String targetName = args[1];
@@ -56,7 +58,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean notes(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.notes_player_only", "<red>❌ Only players can use notes!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.notes")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.notes_no_permission", "<red>❌ You don't have permission to use notes!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.notes")) { CommandErrors.noPermission(player); return true; }
         NotesGUI.openMainGUI(player);
         return true;
     }
@@ -66,7 +68,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleSpeed(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.togglespeed")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.togglespeed")) { CommandErrors.noPermission(player); return true; }
         UUID uuid = player.getUniqueId();
         MinecartSpeedManager.toggleSpeedDisplay(uuid);
         if (MinecartSpeedManager.isSpeedDisplayEnabled(uuid)) {
@@ -82,7 +84,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleFly(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.togglefly")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.togglefly")) { CommandErrors.noPermission(player); return true; }
         UUID uuid = player.getUniqueId();
         ElytraBoostManager.toggleFlyEnabled(uuid);
         if (ElytraBoostManager.isFlyEnabled(uuid)) {
@@ -98,7 +100,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleRadView(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>")); return true; }
-        if (!player.hasPermission("ui.command.toggleradview")) { player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>")); return true; }
+        if (!player.hasPermission("ui.command.toggleradview")) { CommandErrors.noPermission(player); return true; }
         RadiationManager.toggleRadView(player);
         if (RadiationManager.isRadViewEnabled(player)) {
             player.sendMessage(MessageUtil.parse("<green>☢</green> <white>Radiation display: </white><green>ON</green>"));
@@ -113,7 +115,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleAutoCraft(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.autocraft")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.autocraft")) { CommandErrors.noPermission(player); return true; }
         AutoCraftManager.toggleAutoCraft(player);
         return true;
     }
@@ -123,7 +125,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleBossBar(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.togglebb")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.togglebb")) { CommandErrors.noPermission(player); return true; }
         UUID uuid = player.getUniqueId();
         boolean enabled = PlayerSettingsDB.toggleBossbar(uuid);
         if (enabled) {
@@ -139,7 +141,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean togglePing(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.toggleping")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.toggleping")) { CommandErrors.noPermission(player); return true; }
         UUID uuid = player.getUniqueId();
         boolean enabled = PlayerSettingsDB.togglePing(uuid);
         if (enabled) {
@@ -155,7 +157,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleScoreboard(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.togglesb")) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission!</red>"))); return true; }
+        if (!player.hasPermission("ui.command.togglesb")) { CommandErrors.noPermission(player); return true; }
         UUID uuid = player.getUniqueId();
         boolean enabled = PlayerSettingsDB.toggleScoreboard(uuid);
         if (enabled) {
@@ -175,7 +177,7 @@ public final class MiscSubcommand {
             return true;
         }
         if (!player.hasPermission("ui.command.togglebind")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>"));
+            CommandErrors.noPermission(player);
             return true;
         }
         UUID uuid = player.getUniqueId();
@@ -219,7 +221,7 @@ public final class MiscSubcommand {
         if (args.length >= 3) {
             // Apply to another player
             if (!sender.hasPermission("ui.command.fly.other")) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle flight for other players!</red>"));
+                CommandErrors.noPermission(sender);
                 return true;
             }
             target = Bukkit.getPlayerExact(args[2]);
@@ -234,7 +236,7 @@ public final class MiscSubcommand {
                 return true;
             }
             if (!player.hasPermission("ui.command.fly")) {
-                player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle flight!</red>"));
+                CommandErrors.noPermission(player);
                 return true;
             }
             target = player;
@@ -276,7 +278,7 @@ public final class MiscSubcommand {
         if (args.length >= 3) {
             // Apply to another player
             if (!sender.hasPermission("ui.command.god.other")) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle god mode for other players!</red>"));
+                CommandErrors.noPermission(sender);
                 return true;
             }
             target = Bukkit.getPlayerExact(args[2]);
@@ -291,7 +293,7 @@ public final class MiscSubcommand {
                 return true;
             }
             if (!player.hasPermission("ui.command.god")) {
-                player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to toggle god mode!</red>"));
+                CommandErrors.noPermission(player);
                 return true;
             }
             target = player;
@@ -317,7 +319,7 @@ public final class MiscSubcommand {
             return true;
         }
         if (!player.hasPermission("ui.command.unlock")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unlock items!</red>"));
+            CommandErrors.noPermission(player);
             return true;
         }
 
@@ -358,7 +360,7 @@ public final class MiscSubcommand {
             return true;
         }
         if (!player.hasPermission("ui.command.unlock")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unlock items!</red>"));
+            CommandErrors.noPermission(player);
             return true;
         }
 

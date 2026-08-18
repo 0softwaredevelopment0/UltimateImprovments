@@ -1,6 +1,5 @@
 package com.ultimateimprovments.enchantment.itemstealing;
 
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,14 +23,16 @@ import java.util.Map;
  * If the hooked player holds NOTHING in both hands, the vanilla behavior stays:
  * the player is pulled normally.
  * <p>
- * Only {@link PlayerFishEvent.State#REEL_IN} (the "try to pull" moment) is handled.
+ * Only {@link PlayerFishEvent.State#CAUGHT_ENTITY} is handled — in 26.x that is the
+ * state that carries the hooked entity on reel-in; {@code REEL_IN} always fires with
+ * {@code getCaught() == null}.
  */
 public class EnchantmentListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onFish(PlayerFishEvent event) {
-        // Only the reel-in (pull attempt) moment matters.
-        if (event.getState() != PlayerFishEvent.State.REEL_IN) return;
+        // The hooked entity is only present in the CAUGHT_ENTITY state.
+        if (event.getState() != PlayerFishEvent.State.CAUGHT_ENTITY) return;
 
         // The caught entity must be a player — we steal from players only.
         if (!(event.getCaught() instanceof Player victim)) return;
@@ -40,10 +41,12 @@ public class EnchantmentListener implements Listener {
         // Can't hook yourself.
         if (victim.equals(fisher)) return;
 
-        // The rod must carry the Item Stealing charm.
+        // The rod must carry the Item Stealing charm (main hand first, offhand as fallback).
         ItemStack rod = fisher.getInventory().getItemInMainHand();
-        if (rod == null || rod.getType() == Material.AIR) return;
-        if (Enchantment.getLevel(rod) <= 0) return;
+        if (!Enchantment.isValidTool(rod)) {
+            rod = fisher.getInventory().getItemInOffHand();
+        }
+        if (!Enchantment.isValidTool(rod) || Enchantment.getLevel(rod) <= 0) return;
 
         // Look for an item in the victim's hands: main hand first, offhand as fallback.
         boolean fromOffhand = false;

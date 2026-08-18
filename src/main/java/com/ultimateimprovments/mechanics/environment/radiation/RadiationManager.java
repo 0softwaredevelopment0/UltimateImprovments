@@ -8,9 +8,14 @@ import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Trident;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -199,7 +204,10 @@ public class RadiationManager implements Listener {
         Player player = e.getEntity();
         if (!enabled || !deathReset) return;
         resetRadiation(player);
-        // DB: do not write immediately — AsyncAutoSaveManager saves every 5 min
+        // Persist 0 IMMEDIATELY — otherwise the old value stays in the DB until the
+        // next autosave (up to 5 min) or quit, and a restart within that window
+        // would restore the radiation the player should have lost on death.
+        saveToDB(player);
     }
 
     @EventHandler
@@ -208,6 +216,43 @@ public class RadiationManager implements Listener {
         if (!enabled || !deathReset) return;
         // Safety net: after respawn radiation is definitely 0
         resetRadiation(player);
+        saveToDB(player);
+    }
+
+    // =========================
+    // KILL REDUCTION (kill_reduction config) — was defined but never called
+    // =========================
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityDeath(EntityDeathEvent e) {
+        if (!enabled) return;
+        Player killer = e.getEntity().getKiller();
+        if (killer == null) return;
+        if (e.getEntity() instanceof Player) {
+            onPlayerKill(killer);
+        } else {
+            onMobKill(killer);
+        }
+    }
+
+    // =========================
+    // WEAPON-USE RADIATION (mace/trident/elytra configs) — were defined but never called
+    // =========================
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMaceHit(EntityDamageByEntityEvent e) {
+        if (!enabled) return;
+        if (!(e.getDamager() instanceof Player player)) return;
+        if (player.getInventory().getItemInMainHand().getType() != Material.MACE) return;
+        onMaceUse(player);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTridentThrow(ProjectileLaunchEvent e) {
+        if (!enabled) return;
+        if (e.getEntity() instanceof Trident && e.getEntity().getShooter() instanceof Player player) {
+            onTridentUse(player);
+        }
     }
 
     @EventHandler
@@ -271,6 +316,13 @@ public class RadiationManager implements Listener {
             if (player.getWorld().getEnvironment() == World.Environment.THE_END
                     && player.getLocation().getBlock().getLightFromSky() >= 15) {
                 rad += endRad;
+            }
+
+            // =========================
+            // ELYTRA GLIDING ADDS RADIATION (elytra_use_radiation)
+            // =========================
+            if (player.isGliding()) {
+                rad += elytraUseRad;
             }
 
             // =========================

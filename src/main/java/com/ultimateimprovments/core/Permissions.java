@@ -81,6 +81,7 @@ public final class Permissions {
     public static final String CMD_RTP_BYPASSCOOLDOWN = "ui.command.rtp.bypasscooldown";
     public static final String CMD_ASKPOS = "ui.command.askpos";
     public static final String CMD_GETPOS = "ui.command.getpos";
+    public static final String CMD_TURRET = "ui.command.turret";
 
     // ═══════════ Commands: moderation ═══════════
     public static final String CMD_PUNISH = "ui.command.punish";
@@ -94,6 +95,7 @@ public final class Permissions {
     public static final String CMD_PUNISH_ACTIONLIST = "ui.command.punish.actionlist";
     public static final String CMD_INVSEE = "ui.command.invsee";
     public static final String CMD_ENDERSEE = "ui.command.endersee";
+    public static final String CMD_INV_EDIT = "ui.command.inv.edit";
     public static final String CMD_CHGOP = "ui.command.chgop";
     public static final String CMD_BROADCAST = "ui.command.broadcast";
     public static final String CMD_CLEARCHAT = "ui.command.clearchat";
@@ -230,6 +232,7 @@ public final class Permissions {
                 new Permission(CMD_RTP_BYPASSCOOLDOWN, "Bypass random teleport cooldown", PermissionDefault.FALSE),
                 new Permission(CMD_ASKPOS, "Request player coordinates", PermissionDefault.FALSE),
                 new Permission(CMD_GETPOS, "Get a player's coordinates", PermissionDefault.FALSE),
+                new Permission(CMD_TURRET, "Configure end crystal turrets", PermissionDefault.TRUE),
 
                 // ── Commands: moderation ──
                 new Permission(CMD_PUNISH, "Use punish commands", PermissionDefault.FALSE),
@@ -241,8 +244,9 @@ public final class Permissions {
                 new Permission(CMD_PUNISH_LISTWARNS_SELF, "View your own warnings", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_LISTWARNS_OTHER, "View other players' warnings", PermissionDefault.FALSE),
                 new Permission(CMD_PUNISH_ACTIONLIST, "View all active punishments (paginated list with tabs)", PermissionDefault.FALSE),
-                new Permission(CMD_INVSEE, "View player inventories", PermissionDefault.FALSE),
-                new Permission(CMD_ENDERSEE, "View player ender chests", PermissionDefault.FALSE),
+                new Permission(CMD_INVSEE, "View player inventories (online and offline)", PermissionDefault.FALSE),
+                new Permission(CMD_ENDERSEE, "View player ender chests (online and offline)", PermissionDefault.FALSE),
+                new Permission(CMD_INV_EDIT, "Edit offline player inventories (with backup)", PermissionDefault.FALSE),
                 new Permission(CMD_CHGOP, "Grant or revoke operator status", PermissionDefault.FALSE),
                 new Permission(CMD_BROADCAST, "Broadcast a message to the server", PermissionDefault.FALSE),
                 new Permission(CMD_CLEARCHAT, "Clear the chat for a player or everyone", PermissionDefault.FALSE),

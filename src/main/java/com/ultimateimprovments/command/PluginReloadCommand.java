@@ -14,6 +14,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 
 import java.util.List;/**
      * Dispatcher of /ui commands.
@@ -33,11 +35,33 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
     }
 
     /**
+     * Registers plugin permissions in code (not plugin.yml) so they are
+     * available to the permission system with their defaults. Idempotent —
+     * safe across /ui reload (init() may run again after reset()).
+     */
+    private static void registerCodePermissions() {
+        registerPermission("ui.command.dont_run_this_command", PermissionDefault.TRUE);
+    }
+
+    private static void registerPermission(String name, PermissionDefault def) {
+        try {
+            if (Bukkit.getPluginManager().getPermission(name) == null) {
+                Bukkit.getPluginManager().addPermission(new Permission(name, def));
+            }
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Permissions] Failed to register " + name + ": " + e.getMessage());
+        }
+    }
+
+    /**
      * Initializes the subcommand registry. Called once on startup.
      */
     public static void init() {
         if (initialized) return;
         initialized = true;
+
+        // ── Permissions are registered in code (not plugin.yml) ──
+        registerCodePermissions();
 
         SubCommandRegistry registry = SubCommandRegistry.getInstance();
 
@@ -51,6 +75,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(new PdcSubcommand());
         registry.register(new GetPosSubcommand());
         registry.register(new ClearChatSubcommand());
+        registry.register(new TurretSubcommand());
+        registry.register(new InvseeSubcommand());
+        registry.register(new EnderseeSubcommand());
         registry.register(LegacySubCommandAdapter.of("reload",
                 (s, a) -> ReloadSubcommand.execute(s)));
 
@@ -117,9 +144,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("uncheck",
                 (s, a) -> { CheckSubcommand.uncheck(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("expsplit", ExpSplitSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("invsee", InvseeCommand::execute));
-        registry.register(LegacySubCommandAdapter.of("endersee",
-                (s, a) -> { InvseeCommand.executeEnder(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("ac", AcStatsSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("cilist",
                 (s, a) -> { CilistCommand.execute(s); return true; }));
@@ -167,7 +191,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("menu", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.menu")) {
-                p.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+                CommandErrors.noPermission(p);
                 return true;
             }
             com.ultimateimprovments.mechanics.features.omniscanner.AdminMenuGUI.open(p);
@@ -176,7 +200,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("suicide", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.suicide")) {
-                p.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+                CommandErrors.noPermission(p);
                 return true;
             }
             SuicideCommand.execute(p);
@@ -184,7 +208,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }));
         registry.register(LegacySubCommandAdapter.of("forcesuicide", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("ui.command.forcesuicide")) return false;
+            if (!p.hasPermission("ui.command.forcesuicide")) { CommandErrors.noPermission(p); return false; }
             if (a.length < 2) return false;
             Player target = Bukkit.getPlayerExact(a[1]);
             if (target == null) return false;
@@ -194,7 +218,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }));
         registry.register(LegacySubCommandAdapter.of("str", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("ui.command.structures")) return false;
+            if (!p.hasPermission("ui.command.structures")) { CommandErrors.noPermission(p); return false; }
             StructureSubcommand.execute(p, a);
             return true;
         }));
@@ -220,21 +244,65 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             ConsoleLogger.info("[OpManager] Console revoked OP from " + target.getName());
             return true;
         }));
-        registry.register(LegacySubCommandAdapter.of("i_want_to_get_impossible_achivement_uwu", (s, a) -> {
+        registry.register(LegacySubCommandAdapter.of("dont_run_this_command", (s, a) -> {
             if (!(s instanceof Player p)) return false;
+            if (!p.hasPermission("ui.command.dont_run_this_command")) { CommandErrors.noPermission(p); return false; }
             try {
                 var adv = Bukkit.getAdvancement(
-                        new org.bukkit.NamespacedKey("minecraft", "datapack/impossible"));
+                        new org.bukkit.NamespacedKey("ui", "datapack/impossible"));
                 if (adv != null) {
                     var progress = p.getAdvancementProgress(adv);
                     if (!progress.isDone()) {
                         progress.awardCriteria("1");
-                        p.sendMessage("§b✦ §fНевозможное достижение получено!");
+                        p.sendMessage(MessageUtil.parse(
+                                "<red>⚠ <white>Тебе же сказали <red>НЕ</red> выполнять эту команду...</white> "
+                                + "<yellow>Невозможное достижение получено!</yellow>"));
                     }
                 }
             } catch (Exception ignored) {}
             return true;
         }));
+
+        // ── Active command blocks list: /ui cmdblocklist [page] ──
+        registry.register(LegacySubCommandAdapter.of("cmdblocklist",
+                com.ultimateimprovments.mechanics.features.world.CmdBlockTracker::execute));
+
+        // ── Timed advancement challenges: /ui advancement start <achievement> ──
+        registry.register(LegacySubCommandAdapter.of("advancement", (s, a) -> {
+            if (!(s instanceof Player p)) return false;
+            if (a.length < 2) {
+                p.sendMessage(MessageUtil.parse("<red>Использование: <white>/ui advancement start <название></white>"));
+                return true;
+            }
+            if (a[1].equalsIgnoreCase("start")) {
+                if (a.length < 3) {
+                    p.sendMessage(MessageUtil.parse("<red>Укажи название ачивки: <white>woodcutter, teleport</white>"));
+                    return true;
+                }
+                String challenge = a[2];
+                if (challenge.equalsIgnoreCase("teleport") || challenge.equalsIgnoreCase("let_me_teleport")) {
+                    com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge.start(p, challenge);
+                } else {
+                    com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge.start(p, challenge);
+                }
+                return true;
+            }
+            if (a[1].equalsIgnoreCase("stop")) {
+                boolean stopped = com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge.stop(p)
+                        || com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge.stop(p);
+                if (!stopped) {
+                    p.sendMessage(MessageUtil.parse("<red>✖ <white>You don't have an active challenge.</white>"));
+                }
+                return true;
+            }
+            p.sendMessage(MessageUtil.parse("<red>Неизвестная подкоманда. Доступно: <white>start, stop</white>"));
+            return true;
+        }, tc((s, a) -> {
+            if (a.length == 2) return List.of("start", "stop");
+            if (a.length == 3 && a[1].equalsIgnoreCase("start"))
+                return List.of("woodcutter", "teleport");
+            return List.of();
+        })));
         registry.register(LegacySubCommandAdapter.of("unlock", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (a.length < 2) return false;
@@ -248,7 +316,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("askpos", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.askpos")) {
-                p.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+                CommandErrors.noPermission(p);
                 return true;
             }
             AskCordsManager.execute(p);
@@ -260,7 +328,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 tc((s, a) -> EnchantSubcommand.tabComplete(s, a))));
         registry.register(LegacySubCommandAdapter.of("vote", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("ui.command.vote")) return false;
+            if (!p.hasPermission("ui.command.vote")) { CommandErrors.noPermission(p); return false; }
             if (a.length < 2) {
                 VoteManager.list(p);
                 return true;
@@ -268,7 +336,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             String vs = a[1].toLowerCase();
             return switch (vs) {
                 case "create" -> {
-                    if (!p.hasPermission("ui.command.vote.create")) yield false;
+                    if (!p.hasPermission("ui.command.vote.create")) { CommandErrors.noPermission(p); yield false; }
                     if (a.length < 5) yield false;
                     VoteManager.parseCreate(p, a, 2);
                     yield true;
@@ -279,13 +347,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     yield true;
                 }
                 case "change" -> {
-                    if (!p.hasPermission("ui.command.vote.change")) yield false;
+                    if (!p.hasPermission("ui.command.vote.change")) { CommandErrors.noPermission(p); yield false; }
                     if (a.length < 4) yield false;
                     VoteManager.change(p, a[2], a, 3);
                     yield true;
                 }
                 case "stats" -> {
-                    if (!p.hasPermission("ui.command.vote.stats")) yield false;
+                    if (!p.hasPermission("ui.command.vote.stats")) { CommandErrors.noPermission(p); yield false; }
                     if (a.length < 3) yield false;
                     VoteManager.view(p, a[2]);
                     yield true;

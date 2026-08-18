@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.punish.CrashExecutor;
@@ -72,9 +74,7 @@ public final class PunishSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish")) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You don't have permission to use punish commands!</red>"
-            ));
+            CommandErrors.noPermission(sender);
             return true;
         }
 
@@ -108,7 +108,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleBan(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.ban")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to ban!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) {
@@ -210,7 +210,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleMute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.mute")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to mute!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) {
@@ -303,7 +303,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleKick(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.kick")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to kick!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) {
@@ -372,7 +372,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleWarn(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.warn")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to warn!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) {
@@ -469,7 +469,7 @@ public final class PunishSubcommand {
                 return true;
             }
             if (!sender.hasPermission("ui.command.punish.listwarns.self")) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>"));
+                CommandErrors.noPermission(sender);
                 return true;
             }
             showWarns(sender, player.getUniqueId().toString(), player.getName());
@@ -481,7 +481,7 @@ public final class PunishSubcommand {
         // Check whether they're viewing themselves
         if (sender instanceof Player player && player.getName().equalsIgnoreCase(targetName)) {
             if (!sender.hasPermission("ui.command.punish.listwarns.self")) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission!</red>"));
+                CommandErrors.noPermission(sender);
                 return true;
             }
             showWarns(sender, player.getUniqueId().toString(), player.getName());
@@ -490,9 +490,7 @@ public final class PunishSubcommand {
 
         // Viewing someone else
         if (!sender.hasPermission("ui.command.punish.listwarns.other")) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You don't have permission to view other players' warns!</red>"
-            ));
+            CommandErrors.noPermission(sender);
             return true;
         }
 
@@ -571,7 +569,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleUnban(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.ban")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unban!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) {
@@ -610,7 +608,7 @@ public final class PunishSubcommand {
 
     private static boolean handleUnmute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.mute")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unmute!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) {
@@ -658,7 +656,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleUnwarn(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.warn")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to unwarn!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 5) {
@@ -732,9 +730,7 @@ public final class PunishSubcommand {
      */
     private static boolean handleActionList(CommandSender sender, String[] args) {
         if (!sender.hasPermission(Permissions.CMD_PUNISH_ACTIONLIST)) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You don't have permission to view the punishment list!</red>"
-            ));
+            CommandErrors.noPermission(sender);
             return true;
         }
 
@@ -1026,7 +1022,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleCrash(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.crash")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to crash players!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

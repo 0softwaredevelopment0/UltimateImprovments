@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.mechanics.features.blocks.EnderChestManager;
@@ -83,7 +85,7 @@ public final class InvseeCommand {
             return true;
         }
         if (!player.hasPermission("ui.command.invsee")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(player);
             return true;
         }
         if (args.length < 2) {
@@ -112,7 +114,7 @@ public final class InvseeCommand {
             return true;
         }
         if (!player.hasPermission("ui.command.endersee")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(player);
             return true;
         }
         if (args.length < 2) {
@@ -129,6 +131,21 @@ public final class InvseeCommand {
 
         ensureRegistered();
         openEnderSeeGUI(player, target);
+        return true;
+    }
+
+    // =========================
+    // PERMISSION-FREE OPENERS (used by /ui inv)
+    // =========================
+    public static boolean openInvsee(Player viewer, Player target) {
+        ensureRegistered();
+        openInvseeGUI(viewer, target);
+        return true;
+    }
+
+    public static boolean openEnder(Player viewer, Player target) {
+        ensureRegistered();
+        openEnderSeeGUI(viewer, target);
         return true;
     }
 
@@ -183,15 +200,8 @@ public final class InvseeCommand {
     // OPEN REAL ENDER CHEST
     // =========================
     private static void openEnderSeeGUI(Player viewer, Player target) {
-        var config = Main.getInstance().getConfig();
-        boolean enabled = config.getBoolean("endersee.enabled", false);
-        if (!enabled) {
-            viewer.sendMessage(MessageUtil.parse("<red>❌ EnderSee is disabled in the config!</red>"));
-            return;
-        }
-
-        // Open the target's REAL ender chest — Paper syncs all changes itself
-        // Mark the viewer so EnderChestManager doesn't damage them on close
+        // Open the target's REAL ender chest — Paper syncs all changes itself.
+        // Mark the viewer so EnderChestManager doesn't damage them on close.
         EnderChestManager.addEnderseeViewer(viewer.getUniqueId());
         viewer.openInventory(target.getEnderChest());
     }
@@ -401,16 +411,26 @@ public final class InvseeCommand {
         meta.displayName(MessageUtil.parse("<gold>✦ Player Info</gold>")
                 .decoration(TextDecoration.ITALIC, false));
         meta.lore(java.util.List.of(
-                MessageUtil.parse("<gray>UUID: <white>" + target.getUniqueId() + "</white></gray>"),
-                MessageUtil.parse("<gray>Nick: <white>" + target.getName() + "</white></gray>"),
-                MessageUtil.parse("<gray>IP: <white>" + ip + "</white></gray>"),
-                MessageUtil.parse("<gray>World: <white>" + target.getWorld().getName() + "</white></gray>"),
-                MessageUtil.parse("<gray>Location: <white>" + loc + "</white></gray>"),
-                MessageUtil.parse("<gray>Health: <white>" + String.format("%.1f ❤", target.getHealth()) + "</white></gray>"),
-                MessageUtil.parse("<gray>Food: <white>" + target.getFoodLevel() + " 🍖</white></gray>"),
-                MessageUtil.parse("<gray>Level: <white>" + target.getLevel() + " ⭐</white></gray>"),
-                MessageUtil.parse("<gray>XP Progress: <white>" + String.format("%.1f%%", target.getExp() * 100) + "</white></gray>"),
+                MessageUtil.parse("<gray>UUID: <white>" + target.getUniqueId() + "</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<gray>Nick: <white>" + target.getName() + "</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<gray>IP: <white>" + ip + "</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<gray>World: <white>" + target.getWorld().getName() + "</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<gray>Location: <white>" + loc + "</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<gray>Health: <white>" + String.format("%.1f ❤", target.getHealth()) + "</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<gray>Food: <white>" + target.getFoodLevel() + " 🍖</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<gray>Level: <white>" + target.getLevel() + " ⭐</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
+                MessageUtil.parse("<gray>XP Progress: <white>" + String.format("%.1f%%", target.getExp() * 100) + "</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<gray>Gamemode: <white>" + target.getGameMode().name() + "</white></gray>")
+                        .decoration(TextDecoration.ITALIC, false)
         ));
         // Block taking the book any way
         meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BOOLEAN, true);

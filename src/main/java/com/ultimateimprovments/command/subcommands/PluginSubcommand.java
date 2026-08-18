@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
@@ -51,8 +53,7 @@ public final class PluginSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>You don't have permission to manage plugins!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

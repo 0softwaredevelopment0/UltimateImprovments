@@ -230,7 +230,7 @@ public class ReactorManager {
     // =========================
     private void grantAdvancement(Player player, String key) {
         try {
-            var adv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("minecraft", key));
+            var adv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("ui", key));
             if (adv != null) {
                 var progress = player.getAdvancementProgress(adv);
                 if (!progress.isDone()) {

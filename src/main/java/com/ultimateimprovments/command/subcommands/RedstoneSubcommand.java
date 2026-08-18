@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.server.RedstoneGuard;
 import com.ultimateimprovments.server.RedstoneGuard.BlockedChunk;
 import com.ultimateimprovments.server.RedstoneGuard.ChunkKey;
@@ -36,9 +38,7 @@ public final class RedstoneSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You don't have permission to manage redstone chunks!</red>"
-            ));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

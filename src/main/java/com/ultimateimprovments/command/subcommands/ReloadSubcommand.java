@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.PluginShutdown;
 import com.ultimateimprovments.core.PluginStartup;
@@ -23,7 +25,7 @@ public final class ReloadSubcommand {
 
     public static boolean execute(CommandSender sender) {
         if (sender instanceof Player player && !player.hasPermission("ui.command.reload")) {
-            player.sendMessage("§4❌ §cError: §7You don't have permission!");
+            CommandErrors.noPermission(player);
             return true;
         }
 

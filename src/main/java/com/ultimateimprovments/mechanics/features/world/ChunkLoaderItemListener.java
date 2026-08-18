@@ -86,9 +86,9 @@ public class ChunkLoaderItemListener implements Listener {
         StructureMarker.place(loc, "chunkloader", structureId);
 
         player.sendMessage(MessageUtil.parse(
-                "<green>✔</green> <white>Чанклоадер установлен! Чанк</white> <gold>("
+                "<green>✔</green> <white>Chunkloader placed! Chunk</white> <gold>("
                         + (loc.getBlockX() >> 4) + ", " + (loc.getBlockZ() >> 4)
-                        + ")</gold> <white>теперь всегда прогружен.</white>"));
+                        + ")</gold> <white>now always loaded.</white>"));
 
         ConsoleLogger.info("[ChunkLoader] Placed at " + loc.getWorld().getName()
                 + " " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ()
@@ -126,8 +126,8 @@ public class ChunkLoaderItemListener implements Listener {
         world.dropItemNaturally(loc, drop);
 
         breaker.sendMessage(MessageUtil.parse(
-                "<yellow>⚠</yellow> <white>Чанклоадер разрушен! Чанк</white> <gold>(" + cx + ", " + cz
-                        + ")</gold> <white>больше не прогружен принудительно.</white>"));
+                "<yellow>⚠</yellow> <white>Chunkloader broken! Chunk</white> <gold>(" + cx + ", " + cz
+                        + ")</gold> <white>no more loaded.</white>"));
 
         ConsoleLogger.info("[ChunkLoader] Broken at " + loc.getWorld().getName()
                 + " " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ()
@@ -156,7 +156,7 @@ public class ChunkLoaderItemListener implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
 
-        meta.displayName(MessageUtil.parse("<i:false><gold>✦ Чанклоадер ✦</gold>"));
+        meta.displayName(MessageUtil.parse("<i:false><white></white>"));
         meta.lore(java.util.List.of(
                 MessageUtil.parse("<i:false><gray>При установке чанк остается загруженным</gray>"),
                 MessageUtil.parse("<i:false><gray>Разрушить — получить предмет обратно</gray>")

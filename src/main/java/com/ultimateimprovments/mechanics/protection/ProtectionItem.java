@@ -171,8 +171,8 @@ public class ProtectionItem implements Listener {
         // Message to the player
         e.getPlayer().sendMessage("");
         e.getPlayer().sendMessage("§a✔ §fБлок защиты установлен!");
-        e.getPlayer().sendMessage("§7▸ <gold>Он сейчас ВЫКЛЮЧЕН. Откройте GUI (Shift+RMB) и включите.");
-        e.getPlayer().sendMessage("§7▸ <gray>Используйте §fRMB с топливом в руке§7 для очков.</gray>");
+        e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>▸ <gold>Он сейчас ВЫКЛЮЧЕН. Откройте GUI (Shift+RMB) и включите.</gold>"));
+        e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>▸ <gray>Используйте <white>RMB с топливом в руке</white> для очков.</gray>"));
         e.getPlayer().sendMessage("");
     }
 

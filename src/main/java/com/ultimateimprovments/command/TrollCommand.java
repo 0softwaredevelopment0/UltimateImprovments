@@ -132,7 +132,7 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
     private boolean checkPermission(Player player, String permission) {
         if (permission == null || permission.isEmpty()) return true;
         if (player.hasPermission(permission)) return true;
-        player.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+        CommandErrors.noPermission(player);
         return false;
     }
 

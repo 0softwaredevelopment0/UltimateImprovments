@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 
@@ -250,7 +252,7 @@ public final class EnchantSubcommand {
         }
 
         if (!sender.hasPermission(getPermission())) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
 
@@ -502,6 +504,19 @@ public final class EnchantSubcommand {
                             }
                         }
                         // Item Stealing requires a fishing rod — skip silently
+                    }
+                    case "repairing" -> {
+                        // Works on ANY item with durability.
+                        if (com.ultimateimprovments.enchantment.repairing.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.repairing.Enchantment.setLevel(item, level);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.repairing.Enchantment.hasRepairing(item)) {
+                                com.ultimateimprovments.enchantment.repairing.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Repairing requires an item with durability — skip silently
                     }
                     default -> { /* unknown custom enchant — skip */ }
                 }

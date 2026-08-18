@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.command.ChgDimDialogScreen;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
@@ -17,8 +19,7 @@ public final class ChgDimSubcommand {
             return true;
         }
         if (!player.hasPermission("ui.command.chgdim")) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("changedimmension.messages.no_permission",
-                            "<dark_red>❌</dark_red> <red>У вас нет прав на эту команду!</red>")));
+            CommandErrors.noPermission(player);
             return true;
         }
         // Open a Custom Screen (Dialog) to enter the world name

@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
@@ -35,7 +37,7 @@ public final class HealFeedSubcommand {
             return true;
         }
         if (!sender.hasPermission("ui.command.heal")) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission to use this command!</red>")));
+            CommandErrors.noPermission(sender);
             return true;
         }
 
@@ -79,7 +81,7 @@ public final class HealFeedSubcommand {
             return true;
         }
         if (!sender.hasPermission("ui.command.feed")) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission", "<red>❌ You don't have permission to use this command!</red>")));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

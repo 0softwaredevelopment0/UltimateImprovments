@@ -231,7 +231,7 @@ public class PluginStartup {
     private void registerEnergyModules(ModuleManager mm) {
         // Cable, Basic Generator, Reactor, Electric Furnace, Battery Drain, Battery Multi, Light Multi
         SimpleModules.registerEnergy(mm);
-        // Assembler, Workbench
+        // Custom recipe gating (Crafter-only crafting)
         SimpleModules.registerEnergyMachines(mm);
     }
 
@@ -277,6 +277,10 @@ public class PluginStartup {
         SimpleModules.registerAttackAoeEnchantment(mm);
         // ItemStealingEnchantment
         SimpleModules.registerItemStealingEnchantment(mm);
+        // RepairingEnchantment
+        SimpleModules.registerRepairingEnchantment(mm);
+        // Turret — end crystal turrets
+        SimpleModules.registerTurret(mm);
     }
 
     private void registerProtectionModules(ModuleManager mm) {
@@ -365,6 +369,10 @@ public class PluginStartup {
 
         // SubCommand registry — initialize the /ultimateimprovments dispatcher
         com.ultimateimprovments.command.PluginReloadCommand.init();
+
+        // Custom suicide death message
+        plugin.getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.command.SuicideDeathListener(), plugin);
 
         ConsoleLogger.info("[Init] Post-module systems ready.");
     }

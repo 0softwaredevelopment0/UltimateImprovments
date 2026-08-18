@@ -215,6 +215,9 @@ public class PowerManager {
                                 .replace("%action%", actionMsg));
                         playBeepToAll(countdownSoundPitchMax);
 
+                        // "We're shutting down!" — award to everyone online before the power action
+                        com.ultimateimprovments.mechanics.features.world.ShutdownListener.grantToAllOnline();
+
                         if (type == RequestType.STOP) {
                             Bukkit.getServer().shutdown();
                         } else {
@@ -456,12 +459,16 @@ public class PowerManager {
             Broadcast.send(MessagesManager.getString("power.direct_restart",
                     "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>"));
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                // "We're shutting down!" — award to everyone online before the power action
+                com.ultimateimprovments.mechanics.features.world.ShutdownListener.grantToAllOnline();
                 Bukkit.getServer().restart();
             }, 20);
         } else {
             Broadcast.send(MessagesManager.getString("power.direct_stop",
                     "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>"));
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+                // "We're shutting down!" — award to everyone online before the power action
+                com.ultimateimprovments.mechanics.features.world.ShutdownListener.grantToAllOnline();
                 Bukkit.getServer().shutdown();
             }, 20);
         }

@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Material;
@@ -23,7 +25,7 @@ public final class ExpSplitSubcommand {
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.expsplit")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (!(sender instanceof Player player)) {

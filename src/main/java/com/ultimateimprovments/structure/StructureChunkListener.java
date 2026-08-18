@@ -3,8 +3,6 @@ package com.ultimateimprovments.structure;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
-import com.ultimateimprovments.energy.machines.assembler.AssemblerManager;
-import com.ultimateimprovments.energy.machines.workbench.EnergyWorkbenchManager;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.mechanics.environment.lightning.LightningManager;
@@ -79,8 +77,6 @@ public class StructureChunkListener implements Listener {
         BatteryManager.rebuildFromMarkers();
         LightManager.rebuildFromMarkers();
         LightningManager.rebuildFromMarkers();
-        EnergyWorkbenchManager.scanFromMarkers();
-        AssemblerManager.scanExistingAssemblers();
         GeneratorManager.scanExistingGenerators();
         ParticleAcceleratorManager.scanExistingAccelerators();
         MagnetManager.rebuildFromMarkers();

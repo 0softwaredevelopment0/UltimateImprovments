@@ -182,7 +182,7 @@ public class AntimatterManager implements Listener {
     private void grantAdvancement(Player player, String advancementKey) {
         try {
             Advancement advancement = Bukkit.getAdvancement(
-                    new org.bukkit.NamespacedKey("minecraft", advancementKey));
+                    new org.bukkit.NamespacedKey("ui", advancementKey));
             if (advancement != null) {
                 var progress = player.getAdvancementProgress(advancement);
                 if (!progress.isDone()) {

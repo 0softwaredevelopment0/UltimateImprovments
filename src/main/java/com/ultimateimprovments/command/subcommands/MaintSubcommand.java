@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.maintenance.MaintenanceManager;
 import com.ultimateimprovments.util.MessageUtil;
@@ -27,8 +29,7 @@ public final class MaintSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.maintenance")) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
-                    "<red>❌ You don't have permission to use maintenance commands!</red>")));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

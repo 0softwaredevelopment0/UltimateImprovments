@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.module.meteor.MeteorModule;
 import com.ultimateimprovments.util.MessageUtil;
@@ -37,7 +39,7 @@ public final class MeteorSubcommand {
 
     private static boolean handleSpawn(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.meteor.spawn")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to spawn meteors!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

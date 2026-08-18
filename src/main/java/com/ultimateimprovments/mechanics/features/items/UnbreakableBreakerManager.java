@@ -1,6 +1,7 @@
 package com.ultimateimprovments.mechanics.features.items;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.*;
@@ -226,13 +227,13 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
 
         ItemStack tool = player.getInventory().getItemInMainHand();
         if (!isValidTool(tool, config)) {
-            player.sendActionBar("§c❌ Неподходящий инструмент для этого блока!");
+            player.sendActionBar("§c❌ That's the wrong tool for this block!");
             e.setCancelled(true);
             return;
         }
 
         if (config.requireHaste() && getHasteLevel(player) <= 0) {
-            player.sendActionBar("§c❌ Нужна спешка (Haste) чтобы ломать этот блок!");
+            player.sendActionBar("§c❌ You need the Haste effect to break this block!");
             e.setCancelled(true);
             return;
         }
@@ -275,7 +276,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         // 📊 Breaking % in the action bar for each click
         int percent = (int) Math.round(progress * 100);
         player.sendActionBar(MessageUtil.parse(
-                "<yellow>🔨</yellow> <white>Ломание:</white> <aqua>" + percent + "%</aqua>"
+                "<white>Breakthrough progress: <yellow>" + percent + "<yellow>%"
         ));
 
         if (config.playEffects()) {
@@ -315,6 +316,11 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         // Save the block type BEFORE changing it so dropBlock works correctly
         Material blockType = block.getType();
 
+        // Hit, hit, to pieces! — award the achievement for breaking bedrock
+        if (blockType == Material.BEDROCK) {
+            BedrockBreakListener.grant(player);
+        }
+
         if (config.playEffects()) {
             block.getWorld().playSound(center, Sound.BLOCK_STONE_BREAK, 1.0f, 0.5f);
             block.getWorld().playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 0.5f, 1.8f);
@@ -338,7 +344,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
             block.getWorld().dropItemNaturally(center, new ItemStack(blockType));
         }
 
-        player.sendActionBar(MessageUtil.parse("<green>✔</green> <white>Блок разрушен!</white>"));
+        player.sendActionBar(MessageUtil.parse("<green>✔ Block has been broken!</green>"));
     }
 
     // ========== CRACK ANIMATION ==========

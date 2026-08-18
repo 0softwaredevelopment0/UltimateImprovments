@@ -64,6 +64,8 @@ public class AimbotCheck extends AbstractCheck {
         if (!(e.getDamager() instanceof Player player)) return;
         if (!isEnabled() || isExempted(player)) return;
         if (!(e.getEntity() instanceof LivingEntity target)) return;
+        // Cross-world damage (portals, Multiverse worlds) — geometry/angle checks are meaningless here
+        if (!player.getWorld().equals(target.getWorld())) return;
 
         PlayerData data = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
         UUID uuid = player.getUniqueId();
@@ -77,10 +79,8 @@ public class AimbotCheck extends AbstractCheck {
         Location currTargetPos = target.getLocation();
         Location currAttackerPos = player.getLocation();
 
-        boolean targetMoving = prevTargetPos != null
-                && prevTargetPos.distanceSquared(currTargetPos) > 0.01;
-        boolean attackerMoving = prevAttackerPos != null
-                && prevAttackerPos.distanceSquared(currAttackerPos) > 0.01;
+        boolean targetMoving = hasMoved(prevTargetPos, currTargetPos);
+        boolean attackerMoving = hasMoved(prevAttackerPos, currAttackerPos);
 
         lastTargetPositions.put(uuid, currTargetPos.clone());
         lastAttackerPositions.put(uuid, currAttackerPos.clone());
@@ -127,6 +127,16 @@ public class AimbotCheck extends AbstractCheck {
             // Not both moving — reset history to avoid stale data skewing stats
             attackHistory.remove(uuid);
         }
+    }
+
+    /**
+     * True if the entity moved between two ticks — worlds must match, otherwise
+     * distanceSquared throws IllegalArgumentException.
+     */
+    private static boolean hasMoved(Location from, Location to) {
+        if (from == null || to == null) return false;
+        if (!from.getWorld().equals(to.getWorld())) return false;
+        return from.distanceSquared(to) > 0.01;
     }
 
     /**

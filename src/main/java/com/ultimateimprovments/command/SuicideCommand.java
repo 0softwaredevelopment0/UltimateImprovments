@@ -18,6 +18,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -29,6 +31,9 @@ public class SuicideCommand {
     private static final HashMap<UUID, Boolean> suicideConfirmed = new HashMap<>();
     private static final HashMap<UUID, BukkitRunnable> suicideTasks = new HashMap<>();
     private static final HashMap<UUID, Long> suicideCooldowns = new HashMap<>();
+
+    // Players about to die from a suicide countdown (to override the death message)
+    private static final Set<UUID> suicideDeaths = new HashSet<>();
 
     public static boolean execute(Player player) {
         UUID uuid = player.getUniqueId();
@@ -88,20 +93,20 @@ public class SuicideCommand {
             player.sendMessage("§8┃ " + MessageUtil.legacy(warningNoCancel));
             player.sendMessage("§8┃");
 
-            TextComponent confirmButton = new TextComponent("§8┃     §2[§a✔ Подтвердить суицид§2]");
+            TextComponent confirmButton = new TextComponent("§8┃     §2[§a✔ Confirm suicide§2]");
             confirmButton.setClickEvent(new ClickEvent(
                     ClickEvent.Action.RUN_COMMAND,
                     "/ui suicide"
             ));
             confirmButton.setHoverEvent(new HoverEvent(
                     HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§aНажмите чтобы подтвердить и запустить отсчёт\n")
-                            .append("§c⚠ Отмена после нажатия невозможна!")
+                    new ComponentBuilder("§aPress to confirm a suicide\n")
+                            .append("§c⚠ Cancelling after confirming impossible!")
                             .create()
             ));
             player.spigot().sendMessage(confirmButton);
 
-            player.sendMessage("§8┃   §7или введите §f/ui suicide§7 снова");
+            player.sendMessage("§8┃   §7or enter §f/ui suicide§7 again");
             player.sendMessage("§8┃");
             player.sendMessage("§8┃ " + MessageUtil.legacy(warningCancelHint));
             player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
@@ -133,8 +138,25 @@ public class SuicideCommand {
         // STAGE 2: START THE TIMER (confirmed, no cancellation)
         // =========================
         suicideConfirmed.remove(uuid);
+        grantSuicideAdvancement(player);
         startCountdown(player, countdownDuration, cooldownSeconds);
         return true;
+    }
+
+    /**
+     * Grants the {@code ui:datapack/suicide} achievement when the player
+     * confirms the suicide (second {@code /ui suicide}).
+     */
+    private static void grantSuicideAdvancement(Player player) {
+        try {
+            var adv = Bukkit.getAdvancement(new org.bukkit.NamespacedKey("ui", "datapack/suicide"));
+            if (adv != null) {
+                var progress = player.getAdvancementProgress(adv);
+                if (!progress.isDone()) {
+                    progress.awardCriteria("1");
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     // =========================
@@ -242,6 +264,7 @@ public class SuicideCommand {
 
                     player.sendMessage(MessageUtil.parse(deathMsg));
                     player.playSound(player.getLocation(), finishSound, 1.0f, 1.0f);
+                    suicideDeaths.add(uuid);
                     player.setHealth(0);
                     cancel();
                     return;
@@ -279,8 +302,19 @@ public class SuicideCommand {
         suicideTasks.put(uuid, task);
     }
 
+    /**
+     * Consumes (and clears) the "died from suicide" marker for a player,
+     * so the death listener can override the death message exactly once.
+     *
+     * @return true if the death was caused by a suicide countdown
+     */
+    public static boolean consumeSuicideDeath(UUID uuid) {
+        return suicideDeaths.remove(uuid);
+    }
+
     public static void cleanup(UUID uuid) {
         suicideConfirmed.remove(uuid);
+        suicideDeaths.remove(uuid);
         BukkitRunnable task = suicideTasks.remove(uuid);
         if (task != null) {
             task.cancel();

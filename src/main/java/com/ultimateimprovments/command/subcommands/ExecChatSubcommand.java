@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -58,7 +60,7 @@ public final class ExecChatSubcommand {
     @SuppressWarnings("deprecation") // Player#chat — the only correct way to fully simulate input in 1.21+
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.execchat")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 3) {

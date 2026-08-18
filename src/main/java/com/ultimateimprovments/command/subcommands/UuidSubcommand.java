@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -27,9 +29,7 @@ public final class UuidSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ You don't have permission to use this command!</red>"
-            ));
+            CommandErrors.noPermission(sender);
             return true;
         }
 

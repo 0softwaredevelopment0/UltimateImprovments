@@ -361,6 +361,9 @@ final class ConfigRules {
             stringList("void_protection.worlds"),
             notBlank("void_protection.target.world", 256),
 
+            bool("death_logger.enabled"),
+            bool("death_logger.log_to_console"),
+
             bool("power.intercept_commands"),
             integer("power.request_timeout", 1, 3600),
             integer("power.countdown_duration", 0, 3600),

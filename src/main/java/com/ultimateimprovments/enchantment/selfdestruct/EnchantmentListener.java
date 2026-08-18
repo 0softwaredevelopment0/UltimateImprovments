@@ -3,42 +3,34 @@ package com.ultimateimprovments.enchantment.selfdestruct;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.World;
-import org.bukkit.entity.Creeper;
+import org.bukkit.Material;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * Listener: Curse of Self-Destruct — the countdown engine.
+ * Listener: Curse of Self-Destruct — the silent countdown engine.
  * <p>
  * While a player carries the cursed item in ANY inventory slot (storage, armor,
- * offhand, main hand or cursor), a 10-second timer runs:
- * <ul>
- *   <li>smoke particles rise from the player every tick;</li>
- *   <li>a rising "beep" ({@link Sound#BLOCK_NOTE_BLOCK_BIT}) is heard by every
- *       player within {@value #BEEP_RADIUS} blocks — pitch climbs from
- *       {@value #PITCH_MIN} to {@value #PITCH_MAX} over the 10 seconds;</li>
- *   <li>when the timer ends, an <b>invisible ignited creeper</b> (explosion
- *       radius {@value #EXPLOSION_RADIUS}, 1-tick fuse) spawns at the player,
- *       explodes, and the cursed item is destroyed.</li>
- * </ul>
+ * offhand, main hand or cursor), a 30-second timer runs in TOTAL silence: no
+ * sounds, no particles. The only feedback is a lore line on the item itself —
+ * {@code Self-destruct: Ns} — which ticks down every second.
+ * <p>
+ * When the timer ends, the item is destroyed and the holder takes 19 damage
+ * (9.5 hearts, armor-reducible). No explosion.
  * <p>
  * The item can NOT be removed while the timer runs — {@link InventoryLockListener}
- * cancels clicks, drags, drops, hand swaps and hopper extraction. If the player
- * logs out, the timer resets (it restarts on their next login).
+ * cancels clicks, drags, drops, hand swaps, hopper extraction and death drops.
+ * If the player logs out, the timer resets (it restarts on their next login).
  * <p>
  * Uses {@link Bukkit#getCurrentTick()} for timing. The sweep runs every
  * {@value #SWEEP_INTERVAL_TICKS} tick.
@@ -48,32 +40,14 @@ public final class EnchantmentListener implements Listener {
     /** Sweep interval: 1 tick — the timer must feel exact. */
     static final long SWEEP_INTERVAL_TICKS = 1L;
 
-    /** Timer duration: 10 seconds. */
-    static final long TIMER_TICKS = 200L;
+    /** Timer duration in ticks: 30 seconds. */
+    static final long TIMER_TICKS = Enchantment.TIMER_SECONDS * 20L;
 
-    /** Radius (blocks) in which the beep is audible. */
-    private static final double BEEP_RADIUS = 5.0;
-
-    /** Beeps are replayed every N ticks (avoid sound spam). */
-    private static final long BEEP_INTERVAL_TICKS = 5L;
-
-    /** Explosion radius of the invisible creeper. */
-    private static final int EXPLOSION_RADIUS = 10;
-
-    /** Beep pitch range over the countdown (low → high). */
-    private static final float PITCH_MIN = 0.5f;
-    private static final float PITCH_MAX = 2.0f;
+    /** Damage dealt to the holder when the timer ends (19 = 9.5 hearts). */
+    private static final double DETONATION_DAMAGE = 19.0;
 
     /** player → tick when the countdown started. */
     private static final Map<UUID, Long> ACTIVE = new HashMap<>();
-    /** player → last tick a beep was played. */
-    private static final Map<UUID, Long> LAST_BEEP = new HashMap<>();
-
-    private EnchantmentListener() {}
-
-    // ─────────────────────────────────────────────────────────────
-    //  SLOT TRACKING
-    // ─────────────────────────────────────────────────────────────
 
     /** Kind constants for where the cursed item lives. */
     private static final int KIND_STORAGE = 0;
@@ -84,6 +58,8 @@ public final class EnchantmentListener implements Listener {
 
     /** A location of the cursed item inside a player's inventory. */
     private record CurseSlot(int kind, int index) {}
+
+    private EnchantmentListener() {}
 
     // ─────────────────────────────────────────────────────────────
     //  SWEEP
@@ -101,9 +77,7 @@ public final class EnchantmentListener implements Listener {
         }
     }
 
-    /**
-     * Advances the countdown for one player.
-     */
+    /** Advances the countdown for one player. */
     static void updatePlayer(Player player, long now) {
         UUID id = player.getUniqueId();
 
@@ -111,36 +85,25 @@ public final class EnchantmentListener implements Listener {
         CurseSlot slot = findCursedSlot(player);
         if (slot == null) {
             ACTIVE.remove(id);
-            LAST_BEEP.remove(id);
             return;
         }
 
         long start = ACTIVE.computeIfAbsent(id, k -> now);
-
         long elapsed = now - start;
+
         if (elapsed >= TIMER_TICKS) {
             ACTIVE.remove(id);
-            LAST_BEEP.remove(id);
             detonate(player, slot);
             return;
         }
 
-        // ─── Smoke particles from the player ───
-        Location loc = player.getLocation();
-        player.getWorld().spawnParticle(Particle.SMOKE, loc.clone().add(0, 0.8, 0), 2, 0.3, 0.4, 0.3, 0.0);
-
-        // ─── Rising beep, heard by everyone within BEEP_RADIUS ───
-        Long lastBeep = LAST_BEEP.get(id);
-        if (lastBeep == null || now - lastBeep >= BEEP_INTERVAL_TICKS) {
-            LAST_BEEP.put(id, now);
-            double progress = (double) elapsed / TIMER_TICKS;
-            float pitch = PITCH_MIN + (float) (progress * (PITCH_MAX - PITCH_MIN));
-            double radiusSq = BEEP_RADIUS * BEEP_RADIUS;
-            for (Player nearby : Bukkit.getOnlinePlayers()) {
-                if (nearby.getWorld().equals(player.getWorld())
-                        && nearby.getLocation().distanceSquared(loc) <= radiusSq) {
-                    nearby.playSound(nearby.getLocation(), Sound.BLOCK_NOTE_BLOCK_BIT, 1.0f, pitch);
-                }
+        // Update the lore countdown once per second — silence, no sound/particles.
+        if (elapsed % 20L == 0L) {
+            ItemStack item = readAt(player, slot);
+            if (item != null && Enchantment.isCursed(item)) {
+                int secondsLeft = (int) Math.ceil((TIMER_TICKS - elapsed) / 20.0);
+                Enchantment.setCountdownLore(item, secondsLeft);
+                writeAt(player, slot, item);
             }
         }
     }
@@ -149,52 +112,16 @@ public final class EnchantmentListener implements Listener {
     //  DETONATION
     // ─────────────────────────────────────────────────────────────
 
-    /**
-     * BOOM. Removes the cursed item, then spawns an invisible ignited creeper
-     * (explosion radius {@value #EXPLOSION_RADIUS}) with a 1-tick fuse — the
-     * vanilla creeper tick detonates it on the very next tick.
-     * <p>
-     * Failsafes: if the spawn is cancelled (CreatureSpawnEvent / entity limits)
-     * a direct {@link World#createExplosion} fires instead; and one tick later
-     * {@link Creeper#explode()} is forced if the vanilla tick hasn't already
-     * detonated it (the isValid guard makes a double explosion impossible —
-     * explodeCreeper discards the entity).
-     */
+    /** Removes the cursed item and deals 19 damage to the holder. No explosion. */
     private static void detonate(Player player, CurseSlot slot) {
         removeAt(player, slot);
 
-        World world = player.getWorld();
-        Location loc = player.getLocation();
-        Creeper creeper = world.spawn(loc, Creeper.class, c -> {
-            // Invisible for 10 seconds (longer than the explosion lingers).
-            c.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 20 * 10, 0, false, false));
-            c.setExplosionRadius(EXPLOSION_RADIUS);
-            // 1-tick fuse: on the next entity tick swell(0)+1 >= maxSwell(1) → explodeCreeper().
-            c.setMaxFuseTicks(1);
-            c.setFuseTicks(0);
-            c.setIgnited(true);
-        });
-
-        // Spawn failed (cancelled event / limits) — the item is already gone,
-        // so make absolutely sure the explosion still happens.
-        if (creeper == null || !creeper.isValid()) {
-            world.createExplosion(loc, EXPLOSION_RADIUS, false, true);
-            ConsoleLogger.warn("[SelfDestruct] " + player.getName()
-                    + " — creeper spawn failed, direct explosion (power " + EXPLOSION_RADIUS + ").");
-            return;
-        }
-
-        // Deterministic 1-tick fuse: force explode() if the vanilla tick hasn't
-        // already done it (isValid() is false after explodeCreeper → no double boom).
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-            if (creeper.isValid() && !creeper.isDead()) {
-                creeper.explode();
-            }
-        }, 1L);
+        // Normal (armor-reducible) damage to the player who carried the item.
+        DamageSource source = DamageSource.builder(DamageType.GENERIC).build();
+        player.damage(DETONATION_DAMAGE, source);
 
         ConsoleLogger.warn("[SelfDestruct] " + player.getName()
-                + " — Curse of Self-Destruct detonated (invisible creeper, power "
-                + EXPLOSION_RADIUS + ").");
+                + " — Curse of Self-Destruct detonated (19 damage, item destroyed).");
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -219,21 +146,44 @@ public final class EnchantmentListener implements Listener {
         return null;
     }
 
-    /** Removes the stack at the given location. */
-    private static void removeAt(Player player, CurseSlot slot) {
+    /** Reads the stack at the given location. */
+    private static ItemStack readAt(Player player, CurseSlot slot) {
         PlayerInventory inv = player.getInventory();
-        switch (slot.kind()) {
-            case KIND_STORAGE -> inv.setItem(slot.index(), null);
+        return switch (slot.kind()) {
+            case KIND_STORAGE -> inv.getItem(slot.index());
             case KIND_ARMOR -> {
                 ItemStack[] armor = inv.getArmorContents();
-                armor[slot.index()] = null;
-                inv.setArmorContents(armor);
+                yield slot.index() < armor.length ? armor[slot.index()] : null;
             }
-            case KIND_OFFHAND -> inv.setItemInOffHand(null);
-            case KIND_MAINHAND -> inv.setItemInMainHand(null);
-            case KIND_CURSOR -> player.getOpenInventory().setCursor(null);
+            case KIND_OFFHAND -> inv.getItemInOffHand();
+            case KIND_MAINHAND -> inv.getItemInMainHand();
+            case KIND_CURSOR -> player.getOpenInventory().getCursor();
+            default -> null; // unreachable
+        };
+    }
+
+    /** Writes the stack (or removes it when null) at the given location. */
+    private static void writeAt(Player player, CurseSlot slot, ItemStack item) {
+        PlayerInventory inv = player.getInventory();
+        switch (slot.kind()) {
+            case KIND_STORAGE -> inv.setItem(slot.index(), item);
+            case KIND_ARMOR -> {
+                ItemStack[] armor = inv.getArmorContents();
+                if (slot.index() < armor.length) {
+                    armor[slot.index()] = item;
+                    inv.setArmorContents(armor);
+                }
+            }
+            case KIND_OFFHAND -> inv.setItemInOffHand(item);
+            case KIND_MAINHAND -> inv.setItemInMainHand(item);
+            case KIND_CURSOR -> player.getOpenInventory().setCursor(item);
             default -> { /* unreachable */ }
         }
+    }
+
+    /** Removes the stack at the given location. */
+    private static void removeAt(Player player, CurseSlot slot) {
+        writeAt(player, slot, null);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -243,9 +193,7 @@ public final class EnchantmentListener implements Listener {
     /** Leaving the game resets the countdown (restarts on next login). */
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        UUID id = event.getPlayer().getUniqueId();
-        ACTIVE.remove(id);
-        LAST_BEEP.remove(id);
+        ACTIVE.remove(event.getPlayer().getUniqueId());
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -259,6 +207,6 @@ public final class EnchantmentListener implements Listener {
         Bukkit.getPluginManager().registerEvents(new EnchantmentListener(), plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::sweepAllPlayers,
                 SWEEP_INTERVAL_TICKS, SWEEP_INTERVAL_TICKS);
-        ConsoleLogger.info("[SelfDestruct] Listener registered (10s countdown sweep every tick).");
+        ConsoleLogger.info("[SelfDestruct] Listener registered (silent 30s countdown sweep every tick).");
     }
 }

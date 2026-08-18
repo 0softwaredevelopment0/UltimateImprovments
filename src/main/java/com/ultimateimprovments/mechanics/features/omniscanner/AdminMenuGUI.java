@@ -362,8 +362,8 @@ public class AdminMenuGUI implements Listener {
         ItemStack echest = new ItemStack(Material.ENDER_CHEST);
         ItemMeta echestMeta = echest.getItemMeta();
         if (echestMeta != null) {
-            echestMeta.displayName(MessageUtil.parse("<!italic><white>Портативное хранилище</white>"));
-            echestMeta.lore(List.of(MessageUtil.parse("<!italic><gray>Поставьте и сломайте чтобы прочитать описание.</gray>")));
+            echestMeta.displayName(MessageUtil.parse("<!italic><white>Portable storage</white>"));
+            echestMeta.lore(List.of(MessageUtil.parse("<!italic><gray>Holds a larger number of items</gray>")));
             echest.setItemMeta(echestMeta);
         }
         CUSTOM_ITEMS.add(echest);
@@ -372,10 +372,10 @@ public class AdminMenuGUI implements Listener {
         ItemStack cl = new ItemStack(Material.EMERALD_BLOCK);
         ItemMeta clMeta = cl.getItemMeta();
         if (clMeta != null) {
-            clMeta.displayName(MessageUtil.parse("<!italic><gold>✦ Чанклоадер ✦</gold>"));
+            clMeta.displayName(MessageUtil.parse("<!italic><white>Chunkloader</white>"));
             clMeta.lore(List.of(
-                    MessageUtil.parse("<!italic><gray>При установке чанк остается загруженным</gray>"),
-                    MessageUtil.parse("<!italic><gray>Разрушить — получить предмет обратно</gray>")
+                    MessageUtil.parse("<!italic><gray>Loads a chunk when placed</gray>"),
+                    MessageUtil.parse("<!italic><gray>Break to collect it</gray>")
             ));
             clMeta.getPersistentDataContainer().set(ChunkLoaderItemListener.getChunkLoaderKey(), PersistentDataType.BYTE, (byte) 1);
             cl.setItemMeta(clMeta);

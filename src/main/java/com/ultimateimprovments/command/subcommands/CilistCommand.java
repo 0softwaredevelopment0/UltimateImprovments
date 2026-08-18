@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
@@ -11,12 +13,12 @@ public final class CilistCommand {
 
     public static void execute(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.cilist")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(sender);
             return;
         }
         sender.sendMessage(Component.empty());
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════════════════════</gold>"));
-        sender.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Custom Items</white> <gray>(craft only in Item Assembler)</gray>"));
+        sender.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Custom Items</white> <gray>(craft only in Crafter)</gray>"));
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════════════════════</gold>"));
         sender.sendMessage(Component.empty());
 
@@ -28,7 +30,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Iron Netherite Iron</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Iron Iron Iron</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Used to craft a Lead Shield</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 2. Lead Shield
@@ -39,7 +41,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Lead Shield Lead</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Lead Lead Lead</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Protects from radiation when held</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 3. Entity Locator
@@ -50,7 +52,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Redstone Redstone Block Comparator</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Breeze Rod Breeze Rod Tripwire Hook</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Shows distance to nearest entity (action bar)</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 4. Photon cannon
@@ -61,7 +63,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Echo Shard Heart of the Sea Glass Pane</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Breeze Rod Echo Shard Purpur</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Shoots echo shards (ammo in offhand)</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 5. Electro Shoker
@@ -72,7 +74,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Yellow Concrete Black Concrete Breeze Rod</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Stick Netherite Scrap Netherite Scrap</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Stuns enemies with electricity (ammo — breeze rod)</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 6. Antimatter Flask
@@ -83,7 +85,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Glass Bottle Netherite Scrap</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Netherite Scrap Netherite Scrap</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Creates a powerful explosion with radiation when thrown</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 7. Multimeter
@@ -94,7 +96,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Diamond Clock Diamond</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Iron Diamond Iron</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB on cable/battery — show energy info</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 8. Health Meter
@@ -105,7 +107,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Lapis Lazuli Heart of the Sea Lapis Lazuli</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Iron Lapis Lazuli Iron</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB — check health of the entity you're looking at</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 9. Ore Finder
@@ -116,7 +118,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Diamond Gold Diamond</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Iron Redstone Iron</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB — scan chunk and show ore counts</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 10. Mob Finder
@@ -127,7 +129,7 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Iron Breeze Rod</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Breeze Rod Netherite Scrap Breeze Rod</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB — scan chunk and show mob counts</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         // 11. Portable Radar
@@ -138,12 +140,11 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse("   <gray>Eye of Ender Redstone Block Eye of Ender</gray>"));
         sender.sendMessage(MessageUtil.parse("   <gray>Netherite Scrap Eye of Ender Netherite Scrap</gray>"));
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>RMB — find nearest entity within 64 blocks (type, coords, distance)</gray>"));
-        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Assembler only</red>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════════════════════</gold>"));
-        sender.sendMessage(MessageUtil.parse("<gray>💡 Place a crafting table and use it as an Item Assembler</gray>"));
-        sender.sendMessage(MessageUtil.parse("<gray>   to craft all custom items!</gray>"));
+        sender.sendMessage(MessageUtil.parse("<gray>💡 Place a Crafter block to craft all custom items!</gray>"));
         sender.sendMessage(Component.empty());
     }
 }

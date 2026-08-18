@@ -72,7 +72,11 @@ public class EnchantmentListener implements Listener {
             if (!world.isChunkLoaded(block.getX() >> 4, block.getZ() >> 4)) continue;
 
             // Break naturally with the tool (respects Silk Touch, Fortune)
+            Material brokenType = block.getType();
             block.breakNaturally(tool, true);
+
+            // Count toward the Woodcutter timed challenge (no BlockBreakEvent fires here)
+            com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge.countBroken(player, brokenType);
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
             // which IntegrityListener redirects to decreaseItemIntegrity(item, 1, player))

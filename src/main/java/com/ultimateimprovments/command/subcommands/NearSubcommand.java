@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -24,7 +26,7 @@ public final class NearSubcommand {
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.near")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (!(sender instanceof Player player)) {

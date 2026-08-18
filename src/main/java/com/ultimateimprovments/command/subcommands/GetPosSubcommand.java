@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.command.GetPosDialogScreen;
 import com.ultimateimprovments.command.SubCommand;
 import com.ultimateimprovments.util.MessageUtil;
@@ -32,7 +34,7 @@ public final class GetPosSubcommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (!(sender instanceof Player player)) {

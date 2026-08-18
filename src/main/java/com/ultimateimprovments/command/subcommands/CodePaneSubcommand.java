@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.command.CodePaneKeyCommand;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogScreen;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelSession;
@@ -15,7 +17,7 @@ public final class CodePaneSubcommand {
             return CodePaneKeyCommand.execute(sender, args);
         }
         if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может открыть кодовую панель."); return true; }
-        if (!player.hasPermission("ui.command.codepane")) { player.sendMessage("§4❌ §cУ вас нет прав на использование кодовой панели!"); return true; }
+        if (!player.hasPermission("ui.command.codepane")) { CommandErrors.noPermission(player); return true; }
 
         // Open a dialog with clean input
         CodePanelSession.reset(player.getUniqueId());

@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.report.ReportManager;
 import com.ultimateimprovments.util.MessageUtil;
@@ -21,8 +23,7 @@ public final class ReportSubcommand {
         }
 
         if (!player.hasPermission("ui.command.report")) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.no_permission",
-                    "<red>❌ You don't have permission to use this command!</red>")));
+            CommandErrors.noPermission(player);
             return true;
         }
 

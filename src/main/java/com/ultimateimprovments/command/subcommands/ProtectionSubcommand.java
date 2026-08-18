@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.protection.ProtectionBlock;
 import com.ultimateimprovments.mechanics.protection.ProtectionConfig;
@@ -24,7 +26,7 @@ public final class ProtectionSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.protection")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to manage protection blocks!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (args.length < 2) {

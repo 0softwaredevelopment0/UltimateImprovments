@@ -19,7 +19,7 @@ public class CodePaneKeyCommand {
     public static boolean execute(CommandSender sender, String[] args) {
         // Permission check
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key")) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission", "<red>❌ You don't have permission to manage code panel keys!</red>")));
+            CommandErrors.noPermission(sender);
             return true;
         }
 
@@ -81,7 +81,7 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleAdd(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.add")) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_add", "<red>❌ You don't have permission to add keys!</red>")));
+            CommandErrors.noPermission(sender);
             return;
         }
         if (args.length < 5) {
@@ -203,7 +203,7 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleList(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.list")) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_list", "<red>❌ You don't have permission to list keys!</red>")));
+            CommandErrors.noPermission(sender);
             return;
         }
 
@@ -266,7 +266,7 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleRemove(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.remove")) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_remove", "<red>❌ You don't have permission to remove keys!</red>")));
+            CommandErrors.noPermission(sender);
             return;
         }
         if (args.length < 4) {
@@ -290,7 +290,7 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleModify(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.modify")) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("codepane.key.no_permission_modify", "<red>❌ You don't have permission to modify keys!</red>")));
+            CommandErrors.noPermission(sender);
             return;
         }
         if (args.length < 5) {

@@ -1,6 +1,9 @@
 package com.ultimateimprovments.enchantment.selfdestruct;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.MessageUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -9,6 +12,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Curse of Self-Destruct — real datapack enchantment with a PDC failsafe.
@@ -28,8 +34,9 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  * <p>
  * Effect: the item works on ANY item. While it sits in ANY inventory slot of a player,
- * a 10-second countdown starts (smoke + rising beep). When it ends, an invisible
- * ignited creeper (power 10) spawns and explodes, and the item is destroyed.
+ * a silent 30-second countdown runs — no sounds, no particles, only a lore line
+ * {@code Self-destruct: Ns} ticking down on the item. When it ends, the item is
+ * destroyed and the holder takes 19 damage (9.5 hearts, armor-reducible).
  * <p>
  * Max level: 1<br>
  * Works on: any item
@@ -44,6 +51,9 @@ public final class Enchantment {
 
     /** The only level this enchantment can have. */
     public static final int MAX_LEVEL = 1;
+
+    /** Countdown duration in seconds. */
+    public static final long TIMER_SECONDS = 30L;
 
     private Enchantment() {}
 
@@ -109,6 +119,7 @@ public final class Enchantment {
             item.addUnsafeEnchantment(real, 1);
         }
         setPdcLevel(item, 1);
+        setCountdownLore(item, (int) TIMER_SECONDS);
     }
 
     /**
@@ -122,6 +133,7 @@ public final class Enchantment {
             item.removeEnchantment(real);
         }
         clearPdcLevel(item);
+        removeCountdownLore(item);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -247,5 +259,45 @@ public final class Enchantment {
         if (meta == null) return;
         meta.getPersistentDataContainer().remove(LEVEL_KEY);
         item.setItemMeta(meta);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    //  COUNTDOWN LORE
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Sets (or updates) the countdown line on the item's lore:
+     * {@code <red>Self-destruct: <white>N<gray>s}. Other lore is preserved.
+     */
+    public static void setCountdownLore(@NotNull ItemStack item, int secondsLeft) {
+        if (secondsLeft < 0) secondsLeft = 0;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+
+        List<Component> lore = meta.lore();
+        if (lore == null) lore = new ArrayList<>();
+
+        lore.removeIf(Enchantment::isCountdownLine);
+        lore.add(MessageUtil.parse("<red>Self-destruct: <white>" + secondsLeft + "<gray>s"));
+
+        meta.lore(lore);
+        item.setItemMeta(meta);
+    }
+
+    /** Strips the countdown line from the item's lore. */
+    public static void removeCountdownLore(@NotNull ItemStack item) {
+        if (!item.hasItemMeta()) return;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return;
+        List<Component> lore = meta.lore();
+        if (lore == null) return;
+        if (lore.removeIf(Enchantment::isCountdownLine)) {
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+    }
+
+    private static boolean isCountdownLine(Component line) {
+        return PlainTextComponentSerializer.plainText().serialize(line).startsWith("Self-destruct:");
     }
 }

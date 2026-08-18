@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
@@ -49,7 +51,7 @@ public final class RtpSubcommand {
         if (args.length > 1) {
             // /ui rtp <player>
             if (!sender.hasPermission("ui.command.rtp.other")) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to teleport other players!</red>"));
+                CommandErrors.noPermission(sender);
                 return true;
             }
             target = Bukkit.getPlayerExact(args[1]);

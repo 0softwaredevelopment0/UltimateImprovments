@@ -94,14 +94,14 @@ public class BlazingSwordCraftListener implements Listener {
         ShapedRecipe recipe = new ShapedRecipe(RECIPE_KEY, result);
         recipe.setGroup(RECIPE_KEY.getKey());
 
-        // Complex 3x3 sword-shaped recipe: blaze rods + gold ingots + stick.
+        // Complex 3x3 sword-shaped recipe: netherite scraps + gold ingots + stick.
         recipe.shape(
                 "BGB",
                 "GGG",
                 "BSB"
         );
 
-        recipe.setIngredient('B', Material.BLAZE_ROD);
+        recipe.setIngredient('B', Material.NETHERITE_SCRAP);
         recipe.setIngredient('G', Material.GOLD_INGOT);
         recipe.setIngredient('S', Material.STICK);
 

@@ -22,8 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * commands with a custom MiniMessage format:
  *
  * <ul>
- *   <li>Sender sees: {@code [<target> » You] <message>}</li>
- *   <li>Receiver sees: {@code [You » <sender>] <message>}</li>
+ *   <li>Sender sees: {@code [You » <target>] <message>}</li>
+ *   <li>Receiver sees: {@code [<sender> » You] <message>}</li>
  * </ul>
  */
 public class MsgCommand extends Command {
@@ -90,9 +90,9 @@ public class MsgCommand extends Command {
     private void sendMessage(Player sender, Player target, String message) {
         String escaped = escape(message);
 
-        // Sender: [target » You] ; Receiver: [You » sender]
-        String senderView = "<white>[<gray>" + target.getName() + " <yellow>» <gray>You<white>] <reset>" + escaped;
-        String targetView = "<white>[<gray>You<yellow> » <gray>" + sender.getName() + "<white>] <reset>" + escaped;
+        // Sender: [You » target] ; Receiver: [sender » You]
+        String senderView = "<white>[<gray>You <yellow>» <gray>" + target.getName() + "<white>] <reset>" + escaped;
+        String targetView = "<white>[<gray>" + sender.getName() + " <yellow>» <gray>You<white>] <reset>" + escaped;
 
         sender.sendMessage(MM.deserialize(senderView));
         target.sendMessage(MM.deserialize(targetView));

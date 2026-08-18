@@ -1,5 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
+
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.report.ReportManager;
 import com.ultimateimprovments.report.ReportManager.ReportData;
@@ -16,7 +18,7 @@ public final class RepStatusSubcommand {
 
     public static boolean execute(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.repstatus")) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ You don't have permission to use this command!</red>"));
+            CommandErrors.noPermission(sender);
             return true;
         }
         if (!(sender instanceof Player player)) {

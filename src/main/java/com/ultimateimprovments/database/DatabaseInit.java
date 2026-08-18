@@ -724,6 +724,30 @@ public class DatabaseInit {
             ON wireless_links(world);
         """);
 
+        // =========================
+        // 🛡 TURRETS — end crystal turrets
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS turrets (
+                world TEXT NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                z INTEGER NOT NULL,
+                enabled INTEGER DEFAULT 0,
+                mode TEXT DEFAULT 'blacklist',
+                entries TEXT DEFAULT '',
+                owner TEXT DEFAULT '',
+                PRIMARY KEY(world, x, y, z)
+            );
+        """);
+
+        // 🛡 TURRETS — owner column migration (for old DBs)
+        try {
+            st.execute("ALTER TABLE turrets ADD COLUMN owner TEXT DEFAULT ''");
+        } catch (Exception ignored) {
+            // Column already exists — this is fine
+        }
+
         // Initialize the latest_commit_sha and installed_tag rows if missing
         st.execute("""
             INSERT OR IGNORE INTO updater_state (key, value)
