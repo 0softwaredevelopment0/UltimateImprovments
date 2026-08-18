@@ -18,6 +18,17 @@
 
 ---
 
+<p align="center">
+  <a href="GUIDE.md">
+    <img src="https://img.shields.io/badge/%F0%9F%93%96%20FULL%20GUIDE-GUIDE.md-blueviolet?style=for-the-badge" alt="Full Guide">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-AGPLv3-blue?style=for-the-badge" alt="License">
+  </a>
+</p>
+
+---
+
 > **Ultimate Improvments** is a monolithic plugin that turns a vanilla server into a full-featured gameplay experience. It's one `.jar` with everything inside: authentication, an energy network, a fusion reactor, radiation, custom items and enchantments, an achievement tree, turrets, protection systems, and 80+ toggleable modules.
 
 > 📖 **Full documentation:** see [GUIDE.md](GUIDE.md) — commands, items, enchantments, achievements, configuration and more.
