@@ -120,6 +120,7 @@ public class DatapackInstaller {
         copyFromJar(plugin, "datapacks/UI-Datapack/", targetFolder);
 
         ConsoleLogger.success("[Datapack] Installed to " + targetFolder.getAbsolutePath());
+        ConsoleLogger.info("[Datapack] Loaded parts: " + DatapackModules.describe());
     }
 
     private void deleteRecursively(File dir) throws Exception {
@@ -157,6 +158,12 @@ public class DatapackInstaller {
                 String relative = entry.getName().substring(resourcePath.length());
 
                 if (relative.isEmpty()) continue;
+
+                // Skip disabled datapack parts (config: datapack.modules.*)
+                if (!DatapackModules.isPathEnabled(relative)) {
+                    ConsoleLogger.info("[Datapack] Skipping (disabled part): " + relative);
+                    continue;
+                }
 
                 File outFile = new File(targetDir, relative);
 

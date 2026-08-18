@@ -1,5 +1,6 @@
 package com.ultimateimprovments.module;
 
+import com.ultimateimprovments.core.DatapackModules;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 
@@ -37,6 +38,17 @@ public class ModuleManager {
             ConsoleLogger.warn("[ModuleManager] Module '" + module.getName() + "' already registered!");
             return;
         }
+
+        // Datapack module gating: if a datapack part is disabled, skip the code
+        // modules bound to it (custom enchantments, achievement listeners, ...).
+        String datapackPart = DatapackModules.getPartForModule(module.getName());
+        if (datapackPart != null && !DatapackModules.isEnabled(datapackPart)) {
+            ConsoleLogger.info("[ModuleManager] Skipping module '" + module.getName()
+                    + "' — datapack module '" + datapackPart
+                    + "' is disabled (datapack.modules." + datapackPart + ": false).");
+            return;
+        }
+
         modules.add(module);
         moduleMap.put(module.getName(), module);
     }

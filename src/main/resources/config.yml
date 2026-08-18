@@ -3,6 +3,32 @@
 # If you need help with configuration, please contact the developer (DM: @rizer001_dm)
 # or check out the README.
 
+# ============================================================
+# Datapack modules
+# ============================================================
+# The bundled UI-Datapack is installed as ONE pack, but you can choose which
+# parts of it are loaded on the server. Disabling a part also disables the
+# plugin code features bound to it (custom enchantments, achievements, ...).
+# All parts are enabled by default.
+# NOTE: changes require a full server restart — the datapack is reinstalled
+# and loaded together with the world.
+datapack:
+  modules:
+    # Custom enchantments (ui:*) + their enchantable item tags + curse tag
+    enchantments: true
+    # Custom advancement tree (ui:advancement) + achievement listeners
+    advancements: true
+    # New custom recipes (ui:recipe): chainmail, heavy_core, reinforced deepslate, ...
+    custom_recipes: true
+    # Overrides of vanilla recipes (minecraft:recipe): netherite ingot, bookshelf, ...
+    vanilla_recipes: true
+    # Loot table rebalances (minecraft:loot_table)
+    loot_tables: true
+    # Custom biomes, structures and world generation (minecraft:worldgen, minecraft:structure)
+    worldgen: true
+    # Dimension build limits (minecraft:dimension_type): extended height/depth
+    dimension_limits: true
+
 energy:
   generator:
     # Whether the energy generator is enabled

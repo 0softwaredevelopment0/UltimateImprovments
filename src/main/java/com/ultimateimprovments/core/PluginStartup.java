@@ -135,6 +135,10 @@ public class PluginStartup {
 
         ConfigIntegrityValidator.validate(plugin);
 
+        // Datapack module toggles (datapack.modules.*) — read before any
+        // module registration / datapack install so disabled parts are skipped.
+        DatapackModules.init(plugin);
+
         MessagesManager.init(plugin);
 
         PlaceholderResolver.init();

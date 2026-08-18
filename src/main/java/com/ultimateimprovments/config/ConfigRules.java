@@ -82,6 +82,14 @@ final class ConfigRules {
     // VALIDATION RULES
     // =========================
     static final List<Rule> ALL = List.of(
+            bool("datapack.modules.enchantments"),
+            bool("datapack.modules.advancements"),
+            bool("datapack.modules.custom_recipes"),
+            bool("datapack.modules.vanilla_recipes"),
+            bool("datapack.modules.loot_tables"),
+            bool("datapack.modules.worldgen"),
+            bool("datapack.modules.dimension_limits"),
+
             bool("energy.generator.enabled"),
             integer("energy.generator.energy_per_fuel", 0, Integer.MAX_VALUE, "Энергия за тик горения"),
             integer("energy.generator.fuel_burn_ticks", 1, 72000, "Длительность горения топлива"),

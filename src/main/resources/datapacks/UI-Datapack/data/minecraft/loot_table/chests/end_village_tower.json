@@ -20,7 +20,7 @@
               "function": "minecraft:set_name",
               "entity": "this",
               "name": {
-                "text": "Зачарованные древние обломки",
+                "text": "Enchanted ancient debris",
                 "bold": false,
                 "italic": false,
                 "underlined": false,
