@@ -3,6 +3,7 @@ package com.ultimateimprovments.mechanics.features.world;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -110,7 +111,7 @@ public final class CmdBlockTracker implements Listener {
             try {
                 page = Integer.parseInt(args[1]);
             } catch (NumberFormatException ignored) {
-                sender.sendMessage("§eUsage: /ui cmdblocklist <page>");
+                sender.sendMessage(MessageUtil.parse("<yellow>Usage: /ui cmdblocklist <page>"));
             }
         }
         return showPage(sender, page);
@@ -127,62 +128,58 @@ public final class CmdBlockTracker implements Listener {
         List<ActiveCmdBlock> pageBlocks = all.subList(from, to);
 
         // ─── Header ───
-        sender.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        sender.sendMessage("§8┃  §6✦ §fActive Command Blocks §7— §8(" + page + "/" + totalPages + ")");
-        sender.sendMessage("§8┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gold>✦ <white>Active Command Blocks <gray>— <dark_gray>(" + page + "/" + totalPages + ")"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"));
 
         // ─── Rows: #N  world  X Y Z ───
         if (pageBlocks.isEmpty()) {
-            sender.sendMessage("§8┃  §7No active command blocks right now.");
+            sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>No active command blocks right now."));
         } else {
             int base = (page - 1) * PER_PAGE;
             for (int i = 0; i < pageBlocks.size(); i++) {
                 ActiveCmdBlock b = pageBlocks.get(i);
                 long agoSec = Math.max(0, (System.currentTimeMillis() - b.lastExecMs()) / 1000);
-                sender.sendMessage("§8┃  §e#" + (base + i + 1) + " §7— §f" + b.world()
-                        + " §7(§f" + b.x() + "§7, §f" + b.y() + "§7, §f" + b.z()
-                        + "§7) §8" + agoSec + "s ago");
+                sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <yellow>#" + (base + i + 1) + " <gray>— <white>" + b.world()
+                        + " <gray>(<white>" + b.x() + "<gray>, <white>" + b.y() + "<gray>, <white>" + b.z()
+                        + "<gray>) <dark_gray>" + agoSec + "s ago"));
             }
         }
 
         // ─── Footer: page indicator + [<] / [>] ───
-        sender.sendMessage("§8┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"));
 
-        net.md_5.bungee.api.chat.TextComponent footer =
-                new net.md_5.bungee.api.chat.TextComponent("§8┃  §7Page §e" + page + "§7/" + totalPages + "   ");
+        net.kyori.adventure.text.Component footer = MessageUtil.parse(
+                "<dark_gray>┃  <gray>Page <yellow>" + page + "<gray>/" + totalPages + "   ");
 
         if (page > 1) {
-            net.md_5.bungee.api.chat.TextComponent prev =
-                    new net.md_5.bungee.api.chat.TextComponent("§e[<]");
-            prev.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(
-                    net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND,
-                    "/ui cmdblocklist " + (page - 1)));
-            prev.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(
-                    net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT,
-                    new net.md_5.bungee.api.chat.ComponentBuilder("§7Previous page").create()));
-            footer.addExtra(prev);
+            net.kyori.adventure.text.Component prev = net.kyori.adventure.text.Component.text("[<]")
+                    .color(net.kyori.adventure.text.format.NamedTextColor.YELLOW)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
+                            "/ui cmdblocklist " + (page - 1)))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            MessageUtil.parse("<gray>Previous page")));
+            footer = footer.append(prev);
         } else {
-            footer.addExtra(new net.md_5.bungee.api.chat.TextComponent("§8[<]"));
+            footer = footer.append(MessageUtil.parse("<dark_gray>[<]"));
         }
 
-        footer.addExtra(new net.md_5.bungee.api.chat.TextComponent("  "));
+        footer = footer.append(MessageUtil.parse("  "));
 
         if (page < totalPages) {
-            net.md_5.bungee.api.chat.TextComponent next =
-                    new net.md_5.bungee.api.chat.TextComponent("§e[>]");
-            next.setClickEvent(new net.md_5.bungee.api.chat.ClickEvent(
-                    net.md_5.bungee.api.chat.ClickEvent.Action.RUN_COMMAND,
-                    "/ui cmdblocklist " + (page + 1)));
-            next.setHoverEvent(new net.md_5.bungee.api.chat.HoverEvent(
-                    net.md_5.bungee.api.chat.HoverEvent.Action.SHOW_TEXT,
-                    new net.md_5.bungee.api.chat.ComponentBuilder("§7Next page").create()));
-            footer.addExtra(next);
+            net.kyori.adventure.text.Component next = net.kyori.adventure.text.Component.text("[>]")
+                    .color(net.kyori.adventure.text.format.NamedTextColor.YELLOW)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
+                            "/ui cmdblocklist " + (page + 1)))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            MessageUtil.parse("<gray>Next page")));
+            footer = footer.append(next);
         } else {
-            footer.addExtra(new net.md_5.bungee.api.chat.TextComponent("§8[>]"));
+            footer = footer.append(MessageUtil.parse("<dark_gray>[>]"));
         }
 
-        sender.spigot().sendMessage(footer);
-        sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        sender.sendMessage(footer);
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         return true;
     }
 

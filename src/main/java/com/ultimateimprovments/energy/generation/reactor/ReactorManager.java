@@ -8,6 +8,7 @@ import com.ultimateimprovments.energy.transfer.cable.NodeType;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 
 import org.bukkit.*;
 import org.bukkit.block.Barrel;
@@ -383,7 +384,7 @@ public class ReactorManager {
         // BROADCAST STATE CHANGES
         // =========================
         if (heating != display.wasHeating()) {
-            broadcast(heating ? "§6🔥 §eНагрев включён" : "§7🔥 §fНагрев выключен");
+            broadcast(heating ? "<gold>🔥 <yellow>Нагрев включён" : "<gray>🔥 <white>Нагрев выключен");
             display.setHeating(heating);
 
             // 🏆 Advancement: start_dfc — reactor started
@@ -394,7 +395,7 @@ public class ReactorManager {
             }
         }
         if (cooling != display.wasCooling()) {
-            broadcast(cooling ? "§b❄ §3Охлаждение включено" : "§7❄ §fОхлаждение выключено");
+            broadcast(cooling ? "<aqua>❄ <dark_aqua>Охлаждение включено" : "<gray>❄ <white>Охлаждение выключено");
             display.setCooling(cooling);
         }
 
@@ -413,7 +414,7 @@ public class ReactorManager {
                         grantAdvancementAll("datapack/start_dfc"));
                 }
             } else if (noFuelWarnTick == 0) {
-                broadcast("§e⚠ §7Нет топлива! В левую бочку поместите алмазные блоки, в правую — золотые блоки.");
+                broadcast("<yellow>⚠ <gray>Нет топлива! В левую бочку поместите алмазные блоки, в правую — золотые блоки.");
                 noFuelWarnTick++;
             } else {
                 noFuelWarnTick++;
@@ -446,8 +447,8 @@ public class ReactorManager {
         display.setIntegrityWarnTick(warnTick);
         if (warnTick >= 200) {
             display.setIntegrityWarnTick(0);
-            if (coreShInt < 100) broadcast("§4⚠ §cЦелостность оболочки ядра нарушена!");
-            if (coreCaseInt < 100) broadcast("§4⚠ §cЦелостность корпуса реактора нарушена!");
+            if (coreShInt < 100) broadcast("<dark_red>⚠ <red>Целостность оболочки ядра нарушена!");
+            if (coreCaseInt < 100) broadcast("<dark_red>⚠ <red>Целостность корпуса реактора нарушена!");
         }
 
         // =========================
@@ -601,7 +602,7 @@ public class ReactorManager {
             meltdownCountdown = true;
             meltdownTimer = 200; // 10 seconds
             selfDestruct = true;
-            broadcast("§4☠ §cЦелостность разрушена! §f10§c секунд до детонации...");
+            broadcast("<dark_red>☠ <red>Целостность разрушена! <white>10<red> секунд до детонации...");
         }
     }
 
@@ -730,9 +731,9 @@ public class ReactorManager {
                 finalMeltdownActive = true;
                 meltdownCountdown = true;
                 meltdownTimer = wearFinalMeltdownDuration * 20;
-                broadcast("§4☠ §cВзрыв неизбежен! §f" + wearFinalMeltdownDuration + "§c сек до детонации...");
+                broadcast("<dark_red>☠ <red>Взрыв неизбежен! <white>" + wearFinalMeltdownDuration + "<red> сек до детонации...");
             } else if (selfDestructChatTimer > 0) {
-                broadcast("§4☠ §cДетонация через §f" + selfDestructChatTimer + "§c сек...");
+                broadcast("<dark_red>☠ <red>Детонация через <white>" + selfDestructChatTimer + "<red> сек...");
             }
         }
     }
@@ -745,7 +746,7 @@ public class ReactorManager {
 
         meltdownTimer--;
         if (meltdownTimer > 0 && meltdownTimer % 20 == 0) {
-            broadcast("§4☠ §cВзрыв неизбежен! §f" + (meltdownTimer / 20) + "§c сек...");
+            broadcast("<dark_red>☠ <red>Взрыв неизбежен! <white>" + (meltdownTimer / 20) + "<red> сек...");
         }
         if (meltdownTimer <= 0) {
             meltdownCountdown = false;
@@ -791,8 +792,8 @@ public class ReactorManager {
         selfDestructActive = true;
         selfDestructChatTimer = wearChatCountdown;
         finalMeltdownActive = false;
-        broadcast("§4☠ §cКритический износ реактора! §f" + wearChatCountdown + "§c сек до детонации...");
-        broadcast("§4☠ §cПротокол самоуничтожения инициирован.");
+        broadcast("<dark_red>☠ <red>Критический износ реактора! <white>" + wearChatCountdown + "<red> сек до детонации...");
+        broadcast("<dark_red>☠ <red>Протокол самоуничтожения инициирован.");
 
         // 🏆 Advancement: dfc_self_destruct — self-destruction
         if (!advDfcSelfDestructGranted) {
@@ -807,7 +808,7 @@ public class ReactorManager {
     private void checkIntegrityThreshold(int prevVal, int currVal, String name) {
         if (currVal < prevVal) {
             if (currVal == 75 || currVal == 50 || currVal == 25) {
-                broadcast("§4⚠ §cЦелостность " + name + ": §f" + currVal + "%");
+                broadcast("<dark_red>⚠ <red>Целостность " + name + ": <white>" + currVal + "%");
             }
         }
     }
@@ -874,7 +875,7 @@ public class ReactorManager {
         display.resetDisplay();
 
         saveToDb();
-        broadcast("§4☢ §cРецепт слияния готов! Древний обломок выброшен в центре реактора.");
+        broadcast("<dark_red>☢ <red>Рецепт слияния готов! Древний обломок выброшен в центре реактора.");
 
         // 🏆 Advancement: complete_dfc_recipe — recipe completed
         if (!advCompletedRecipeGranted) {
@@ -912,7 +913,7 @@ public class ReactorManager {
         base.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, coreCenter, 100, 3.0, 3.0, 3.0, 0.5);
         base.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, coreCenter, 64, 0, 0, 0, 0.1);
 
-        broadcast("§4☠ §cРасплавление! Ядро реактора разрушено!");
+        broadcast("<dark_red>☠ <red>Расплавление! Ядро реактора разрушено!");
 
         // 🏆 Advancement: explode_dfc — reactor explosion
         if (!advExplodeDfcGranted) {
@@ -1053,13 +1054,13 @@ public class ReactorManager {
     // HELPER: BROADCAST
     // =========================
     private void broadcast(String message) {
-        String prefix = "§4Р.Т.С §8» §f";
+        String prefix = "<dark_red>Р.Т.С <dark_gray>» <white>";
         Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
         for (Player player : online) {
             if (reactorLocation != null
                     && player.getWorld().equals(reactorLocation.getWorld())
                     && player.getLocation().distanceSquared(reactorLocation) <= 225) {
-                player.sendMessage(prefix + message);
+                player.sendMessage(MessageUtil.parse(prefix + message));
             }
         }
     }

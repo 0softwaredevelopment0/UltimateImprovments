@@ -663,6 +663,51 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🏰 CLANS
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS clans (
+                name TEXT PRIMARY KEY,
+                display_name TEXT NOT NULL,
+                owner_uuid TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                has_home INTEGER DEFAULT 0,
+                home_world TEXT DEFAULT '',
+                home_x DOUBLE DEFAULT 0,
+                home_y DOUBLE DEFAULT 0,
+                home_z DOUBLE DEFAULT 0,
+                home_yaw FLOAT DEFAULT 0,
+                home_pitch FLOAT DEFAULT 0
+            );
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS clan_members (
+                clan_name TEXT NOT NULL,
+                player_uuid TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                role TEXT NOT NULL,
+                joined_at INTEGER NOT NULL,
+                PRIMARY KEY (clan_name, player_uuid)
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_clan_members_uuid
+            ON clan_members(player_uuid);
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS clan_requests (
+                clan_name TEXT NOT NULL,
+                player_uuid TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                requested_at INTEGER NOT NULL,
+                PRIMARY KEY (clan_name, player_uuid)
+            );
+        """);
+
+        // =========================
         // 🗳 VOTES
         // =========================
         st.execute("""

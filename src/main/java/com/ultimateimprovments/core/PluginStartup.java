@@ -1,5 +1,6 @@
 package com.ultimateimprovments.core;
 
+import com.ultimateimprovments.config.ConfigCrashSalvage;
 import com.ultimateimprovments.config.ConfigIntegrityValidator;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.maintenance.MaintenanceManager;
@@ -72,6 +73,9 @@ public class PluginStartup {
 
         // GetPos Dialog handler — coordinate lookup dialogs (/ui getpos)
         com.ultimateimprovments.command.GetPosDialogHandler.register();
+
+        // SharePos Dialog handler — coordinate sharing confirmation dialogs (/ui sharepos)
+        com.ultimateimprovments.command.SharePosDialogHandler.register();
 
         // Code Panel Dialog handler — registered as early as possible to not miss events
         com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register();
@@ -180,9 +184,25 @@ public class PluginStartup {
             ConsoleLogger.info("[Config] File exists: config.yml");
         }
 
+        // Paper-26: reloadConfig() НЕ бросает на битом YAML — loadConfiguration молча
+        // глотает ошибку парсинга (логирует и возвращает пустой конфиг + дефолты из JAR).
+        // Поэтому парсинг проверяем САМИ, до reloadConfig:
+        // «синтаксический краш → игнор секции» — ConfigCrashSalvage удаляет только
+        // сломанные секции (с бэкапом в config-broken/), остальные настройки сохраняются,
+        // а ConfigRepairManager (вызывается следом) допишет дефолты удалённых секций.
+        if (!ConfigCrashSalvage.salvage(plugin)) {
+            // Запасной вариант: сломанную часть не удалось локализовать —
+            // пересоздаём файл из JAR (старое поведение), с бэкапом оригинала.
+            ConsoleLogger.warn("[Config] Could not isolate the broken part — recreating config.yml from JAR...");
+            ConfigCrashSalvage.backupWholeFile(plugin);
+            if (configFile.exists()) configFile.delete();
+            plugin.saveDefaultConfig();
+        }
+
         try {
             plugin.reloadConfig();
         } catch (Exception e) {
+            // Страховка на случай другого сбоя загрузки.
             ConsoleLogger.warn("[Config] Failed to load config.yml: " + e.getMessage());
             ConsoleLogger.warn("[Config] Deleting broken config.yml and recreating from JAR...");
             if (configFile.exists()) configFile.delete();

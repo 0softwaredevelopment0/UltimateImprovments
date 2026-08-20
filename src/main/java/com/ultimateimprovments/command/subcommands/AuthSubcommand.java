@@ -74,12 +74,12 @@ public final class AuthSubcommand {
             }
             mgr.setupGithub2FA(uuid, args[3]);
             player.sendMessage("");
-            player.sendMessage("§6✦ §f2FA §8— §7Setup");
-            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-            player.sendMessage("§a✔ 2FA enabled!");
-            player.sendMessage("§7GitHub account: §f" + args[3]);
-            player.sendMessage("§7On next login you'll receive a clickable GitHub authorization link.");
-            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            player.sendMessage(MessageUtil.parse("<gold>✦ <white>2FA <dark_gray>— <gray>Setup"));
+            player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+            player.sendMessage(MessageUtil.parse("<green>✔ 2FA enabled!"));
+            player.sendMessage(MessageUtil.parse("<gray>GitHub account: <white>" + args[3]));
+            player.sendMessage(MessageUtil.parse("<gray>On next login you'll receive a clickable GitHub authorization link."));
+            player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
             player.sendMessage("");
             return true;
         }
@@ -95,41 +95,41 @@ public final class AuthSubcommand {
                 return true;
             }
             mgr.disable2FA(uuid);
-            player.sendMessage("§c✖ 2FA disabled.");
+            player.sendMessage(MessageUtil.parse("<red>✖ 2FA disabled."));
             return true;
         }
 
         // /ui auth 2fa — codes are no longer used, show the status
         if (args.length >= 3) {
             if (mgr.is2FAEnabled(uuid)) {
-                player.sendMessage("§a✔ 2FA enabled");
-                player.sendMessage("§7GitHub account: §f" + mgr.getGithubUsername(uuid));
+                player.sendMessage(MessageUtil.parse("<green>✔ 2FA enabled"));
+                player.sendMessage(MessageUtil.parse("<gray>GitHub account: <white>" + mgr.getGithubUsername(uuid)));
                 if (!com.ultimateimprovments.mechanics.security.auth.AuthConfig.isGithub2FAEnabled()) {
-                    player.sendMessage("§c⚠ GitHub 2FA is disabled in config.yml (auth.2fa.github.enabled: false)");
+                    player.sendMessage(MessageUtil.parse("<red>⚠ GitHub 2FA is disabled in config.yml (auth.2fa.github.enabled: false)"));
                 } else {
-                    player.sendMessage("§7On login you'll get a clickable GitHub authorization link.");
+                    player.sendMessage(MessageUtil.parse("<gray>On login you'll get a clickable GitHub authorization link."));
                 }
-                player.sendMessage("§7Disable: §e/ui auth 2fa disable");
+                player.sendMessage(MessageUtil.parse("<gray>Disable: <yellow>/ui auth 2fa disable"));
             } else {
-                player.sendMessage("§c✖ 2FA disabled");
-                player.sendMessage("§7Enable: §e/ui auth 2fa setup <github_username>");
+                player.sendMessage(MessageUtil.parse("<red>✖ 2FA disabled"));
+                player.sendMessage(MessageUtil.parse("<gray>Enable: <yellow>/ui auth 2fa setup <github_username>"));
             }
             return true;
         }
 
         // /ui auth 2fa — status
         if (mgr.is2FAEnabled(uuid)) {
-            player.sendMessage("§a✔ 2FA enabled");
-            player.sendMessage("§7GitHub account: §f" + mgr.getGithubUsername(uuid));
+            player.sendMessage(MessageUtil.parse("<green>✔ 2FA enabled"));
+            player.sendMessage(MessageUtil.parse("<gray>GitHub account: <white>" + mgr.getGithubUsername(uuid)));
             if (!com.ultimateimprovments.mechanics.security.auth.AuthConfig.isGithub2FAEnabled()) {
-                player.sendMessage("§c⚠ GitHub 2FA is disabled in config.yml (auth.2fa.github.enabled: false)");
+                player.sendMessage(MessageUtil.parse("<red>⚠ GitHub 2FA is disabled in config.yml (auth.2fa.github.enabled: false)"));
             } else {
-                player.sendMessage("§7On login you'll get a clickable GitHub authorization link.");
+                player.sendMessage(MessageUtil.parse("<gray>On login you'll get a clickable GitHub authorization link."));
             }
-            player.sendMessage("§7Disable: §e/ui auth 2fa disable");
+            player.sendMessage(MessageUtil.parse("<gray>Disable: <yellow>/ui auth 2fa disable"));
         } else {
-            player.sendMessage("§c✖ 2FA disabled");
-            player.sendMessage("§7Enable: §e/ui auth 2fa setup <github_username>");
+            player.sendMessage(MessageUtil.parse("<red>✖ 2FA disabled"));
+            player.sendMessage(MessageUtil.parse("<gray>Enable: <yellow>/ui auth 2fa setup <github_username>"));
         }
         return true;
     }
@@ -251,9 +251,9 @@ public final class AuthSubcommand {
         }
         if (args.length < 3) {
             player.sendMessage("");
-            player.sendMessage("§8╔ §6✦ §lLogout§r §8╗");
-            player.sendMessage("§7Use: §e/ui auth logout <password>");
-            player.sendMessage("§7▸ Введите ваш пароль для подтверждения выхода.");
+            player.sendMessage(MessageUtil.parse("<dark_gray>╔ <gold>✦ <bold>Logout<reset> <dark_gray>╗"));
+            player.sendMessage(MessageUtil.parse("<gray>Use: <yellow>/ui auth logout <password>"));
+            player.sendMessage(MessageUtil.parse("<gray>▸ Введите ваш пароль для подтверждения выхода."));
             player.sendMessage("");
             return true;
         }

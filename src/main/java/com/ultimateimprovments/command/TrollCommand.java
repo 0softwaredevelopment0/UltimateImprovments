@@ -37,7 +37,7 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§cOnly players can use this command.");
+            sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<red>Only players can use this command."));
             return true;
         }
 

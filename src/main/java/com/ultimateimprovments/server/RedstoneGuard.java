@@ -179,7 +179,7 @@ public final class RedstoneGuard {
         deleteBlock(number); // 💾 from the DB
         ConsoleLogger.info("[REDSTONE_GUARD] Chunk #" + number + " unblocked: " + removed.key);
         ServerOverloadNotify.broadcast(
-                "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset><white>Чанк </white><yellow>#" + number
+                MessageUtil.PREFIX + " <white>Чанк </white><yellow>#" + number
                         + " </yellow><gray>(" + removed.key + ") </gray><green>разблокирован</green>"
         );
         return true;
@@ -201,14 +201,14 @@ public final class RedstoneGuard {
     // =========================
 
     private void notifyChunkBlocked(double mspt, ChunkKey key, int number, int iterations) {
-        String consoleMsg = "Server » MSPT=" + String.format("%.1f", mspt)
-                + " → BLOCKED CHUNK #" + number + " " + key
-                + " FOREVER (iterations=" + iterations + ", limit " + chunkIterationsLimit + ")";
-
-        ConsoleLogger.warn(consoleMsg);
+        ConsoleLogger.log(
+                MessageUtil.PREFIX + " <red>MSPT=" + String.format("%.1f", mspt)
+                        + " → BLOCKED CHUNK #" + number + " " + key + " FOREVER</red>"
+                        + " <gray>(iterations=" + iterations + ", limit " + chunkIterationsLimit + ")</gray>"
+        );
 
         ServerOverloadNotify.broadcast(
-                "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset><white>MSPT </white><red>" + String.format("%.1f", mspt)
+                MessageUtil.PREFIX + " <white>MSPT </white><red>" + String.format("%.1f", mspt)
                         + " </red><gray>→ </gray><red>Заблокирован чанк </red><yellow>#" + number
                         + " </yellow><gray>(" + key + ") </gray><red>навсегда</red>"
                         + " <dark_gray>| /ui redstone unlock " + number + "</dark_gray>"

@@ -3,7 +3,6 @@
   "values": [
     "minecraft:trial_spawner",
     "minecraft:vault",
-    "minecraft:reinforced_deepslate",
-    "minecraft:ancient_debris"
+    "minecraft:reinforced_deepslate"
   ]
 }

@@ -82,6 +82,11 @@ final class ConfigRules {
     // VALIDATION RULES
     // =========================
     static final List<Rule> ALL = List.of(
+            bool("datapack.enabled"),
+            string("datapack.mode", false, 16),
+            bool("datapack.restart_to_apply"),
+            bool("datapack.warn_if_not_loaded"),
+            bool("datapack.auto_enable"),
             bool("datapack.modules.enchantments"),
             bool("datapack.modules.advancements"),
             bool("datapack.modules.custom_recipes"),
@@ -194,7 +199,6 @@ final class ConfigRules {
             integer("features.blockdmg.endrod_damage", 0, Integer.MAX_VALUE),
             integer("features.blockdmg.interval_ticks", 1, 72000),
             bool("features.boostedcobweb.enabled"),
-            integer("features.boostedcobweb.interval_ticks", 1, 72000),
 
             bool("features.block_collapse.enabled"),
             dbl("features.block_collapse.rate", 0, 10000),
@@ -222,11 +226,6 @@ final class ConfigRules {
             dbl("features.enderchest.explosion_chance", 0, 1, "Шанс взрыва (0.0 — 1.0)"),
             dbl("features.enderchest.explosion_power", 0, 100),
             integer("features.enderchest.damage", 0, Integer.MAX_VALUE),
-            bool("features.enderchest.rate_limit.enabled"),
-            integer("features.enderchest.rate_limit.max_opens", 1, 1000, "Макс. открытий в окно"),
-            integer("features.enderchest.rate_limit.window_ms", 100, 600000, "Окно в мс"),
-            integer("features.enderchest.rate_limit.damage", 0, Integer.MAX_VALUE, "Урон при превышении лимита"),
-            dbl("features.enderchest.rate_limit.explosion_power", 0, 100, "Сила взрыва (0 = без взрыва)"),
             bool("features.entitylocator.enabled"),
             integer("features.entitylocator.scan_radius", 1, 1000),
             integer("features.entitylocator.interval_ticks", 1, 72000),
@@ -329,7 +328,6 @@ final class ConfigRules {
             bool("brand_spoof.enabled"),
             notBlank("brand_spoof.custom_brand", 64),
 
-            bool("vanish.enabled"),
             stringList("vanish.vanished_players"),
 
             bool("radiation.enabled"),
@@ -441,6 +439,14 @@ final class ConfigRules {
             integer("home.name_min_length", 1, 100),
             integer("home.name_max_length", 1, 100),
             notBlank("home.mode", 16),
+
+            integer("clan.name_min_length", 1, 100),
+            integer("clan.name_max_length", 1, 100),
+            integer("clan.confirm_timeout", 1, 3600),
+            integer("clan.request_cooldown_seconds", 0, 3600),
+            integer("clan.request_expire_seconds", 1, 604800),
+            notBlank("clan.home.mode", 16),
+            integer("clan.home.tp_cooldown_seconds", 0, 86400),
 
             notBlank("report.expire_time", 16),
 

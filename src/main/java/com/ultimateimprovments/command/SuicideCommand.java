@@ -4,10 +4,6 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.SoundUtil;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.boss.BarColor;
@@ -85,31 +81,25 @@ public class SuicideCommand {
                     .replace("%timeout%", String.valueOf(confirmTimeout));
 
             player.sendMessage("");
-            player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-            player.sendMessage("§8┃ " + MessageUtil.legacy(warningTitle));
-            player.sendMessage("§8┃");
-            player.sendMessage("§8┃ " + MessageUtil.legacy(warningText));
-            player.sendMessage("§8┃");
-            player.sendMessage("§8┃ " + MessageUtil.legacy(warningNoCancel));
-            player.sendMessage("§8┃");
+            player.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ " + warningTitle));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ " + warningText));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ " + warningNoCancel));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃"));
 
-            TextComponent confirmButton = new TextComponent("§8┃     §2[§a✔ Confirm suicide§2]");
-            confirmButton.setClickEvent(new ClickEvent(
-                    ClickEvent.Action.RUN_COMMAND,
-                    "/ui suicide"
-            ));
-            confirmButton.setHoverEvent(new HoverEvent(
-                    HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§aPress to confirm a suicide\n")
-                            .append("§c⚠ Cancelling after confirming impossible!")
-                            .create()
-            ));
-            player.spigot().sendMessage(confirmButton);
+            net.kyori.adventure.text.Component confirmButton = net.kyori.adventure.text.Component.text("[✔ Confirm suicide]")
+                    .color(net.kyori.adventure.text.format.NamedTextColor.GREEN)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui suicide"))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            MessageUtil.parse("<green>Press to confirm a suicide\n<red>⚠ Cancelling after confirming impossible!")));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃     <dark_green>[").append(confirmButton).append(MessageUtil.parse("<dark_green>]")));
 
-            player.sendMessage("§8┃   §7or enter §f/ui suicide§7 again");
-            player.sendMessage("§8┃");
-            player.sendMessage("§8┃ " + MessageUtil.legacy(warningCancelHint));
-            player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃   <gray>or enter <white>/ui suicide<gray> again"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ " + warningCancelHint));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
             player.sendMessage("");
 
             String warningSound = cfg.getString("suicide.sounds.warning", "BLOCK_NOTE_BLOCK_PLING");
@@ -172,12 +162,12 @@ public class SuicideCommand {
 
         // Send forced-suicide message to the target
         target.sendMessage("");
-        target.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        target.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("suicide.messages.forced_title", "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>")));
-        target.sendMessage("§8┃");
-        target.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("suicide.messages.forced_body", "<gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>").replace("%sender%", sender.getName())));
-        target.sendMessage("§8┃   " + MessageUtil.legacy(MessagesManager.getString("suicide.messages.forced_nocancel", "<red>Cannot be cancelled!</red>")));
-        target.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        target.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        target.sendMessage(MessageUtil.parse("<dark_gray>┃   " + MessagesManager.getString("suicide.messages.forced_title", "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>")));
+        target.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+        target.sendMessage(MessageUtil.parse("<dark_gray>┃   " + MessagesManager.getString("suicide.messages.forced_body", "<gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>").replace("%sender%", sender.getName())));
+        target.sendMessage(MessageUtil.parse("<dark_gray>┃   " + MessagesManager.getString("suicide.messages.forced_nocancel", "<red>Cannot be cancelled!</red>")));
+        target.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         target.sendMessage("");
 
         startCountdown(target, countdownDuration, cooldownSeconds);
@@ -225,11 +215,11 @@ public class SuicideCommand {
         String confirmedNoCancel = MessagesManager.getString("suicide.messages.confirmed_no_cancel", "<red>Cannot be cancelled!</red>");
 
         player.sendMessage("");
-        player.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        player.sendMessage("§8┃ " + MessageUtil.legacy(confirmedTitle));
-        player.sendMessage("§8┃");
-        player.sendMessage("§8┃ " + MessageUtil.legacy(confirmedNoCancel));
-        player.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        player.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ " + confirmedTitle));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ " + confirmedNoCancel));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         player.sendMessage("");
 
         playSuicideBeep(player, 1.2f);

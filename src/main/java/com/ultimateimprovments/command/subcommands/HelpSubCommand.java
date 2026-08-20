@@ -2,11 +2,7 @@ package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.SubCommand;
 import com.ultimateimprovments.command.SubCommandRegistry;
-
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
+import com.ultimateimprovments.util.MessageUtil;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -136,7 +132,7 @@ public class HelpSubCommand implements SubCommand {
             try {
                 page = Integer.parseInt(args[1]);
             } catch (NumberFormatException ignored) {
-                sender.sendMessage("§eUsage: /ui help <page>");
+                sender.sendMessage(MessageUtil.parse("<yellow>Usage: /ui help <page>"));
             }
         }
         return showPage(sender, page);
@@ -159,9 +155,9 @@ public class HelpSubCommand implements SubCommand {
         List<String> pageCommands = all.subList(from, to);
 
         // ─── Header ───
-        sender.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        sender.sendMessage("§8┃  §6✦ §fUltimateImprovments §7— Help §8(" + page + "/" + totalPages + ")");
-        sender.sendMessage("§8┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gold>✦ <white>UltimateImprovments <gray>— Help <dark_gray>(" + page + "/" + totalPages + ")"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"));
 
         // ─── Command rows ───
         for (String name : pageCommands) {
@@ -170,48 +166,54 @@ public class HelpSubCommand implements SubCommand {
             String desc = DESCRIPTIONS.getOrDefault(canonicalName, "Manage " + name);
             boolean access = hasAccess(sender, canonicalName);
 
-            TextComponent cmd = new TextComponent((access ? "§f" : "§c") + "/ui " + name);
-            cmd.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ui " + name));
-            cmd.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder(desc).create()));
+            net.kyori.adventure.text.Component cmd = net.kyori.adventure.text.Component.text("/ui " + name)
+                    .color(access
+                            ? net.kyori.adventure.text.format.NamedTextColor.WHITE
+                            : net.kyori.adventure.text.format.NamedTextColor.RED)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui " + name))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            MessageUtil.parse(desc)));
 
-            TextComponent line = new TextComponent("§8┃  ");
-            line.addExtra(cmd);
-            line.addExtra(new TextComponent(" §7— " + desc + (access ? "" : " §c(no permission)")));
-            sender.spigot().sendMessage(line);
+            net.kyori.adventure.text.Component line = MessageUtil.parse("<dark_gray>┃  ")
+                    .append(cmd)
+                    .append(MessageUtil.parse(" <gray>— " + desc + (access ? "" : " <red>(no permission)")));
+            sender.sendMessage(line);
         }
 
         // ─── Footer: page indicator + [<] / [>] ───
-        sender.sendMessage("§8┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"));
 
-        TextComponent footer = new TextComponent("§8┃  §7Page §e" + page + "§7/" + totalPages + "   ");
+        net.kyori.adventure.text.Component footer = MessageUtil.parse(
+                "<dark_gray>┃  <gray>Page <yellow>" + page + "<gray>/" + totalPages + "   ");
 
         // [<] — previous page
         if (page > 1) {
-            TextComponent prev = new TextComponent("§e[<]");
-            prev.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ui help " + (page - 1)));
-            prev.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§7Previous page").create()));
-            footer.addExtra(prev);
+            net.kyori.adventure.text.Component prev = net.kyori.adventure.text.Component.text("[<]")
+                    .color(net.kyori.adventure.text.format.NamedTextColor.YELLOW)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui help " + (page - 1)))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            MessageUtil.parse("<gray>Previous page")));
+            footer = footer.append(prev);
         } else {
-            footer.addExtra(new TextComponent("§8[<]"));
+            footer = footer.append(MessageUtil.parse("<dark_gray>[<]"));
         }
 
-        footer.addExtra(new TextComponent("  "));
+        footer = footer.append(MessageUtil.parse("  "));
 
         // [>] — next page
         if (page < totalPages) {
-            TextComponent next = new TextComponent("§e[>]");
-            next.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ui help " + (page + 1)));
-            next.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§7Next page").create()));
-            footer.addExtra(next);
+            net.kyori.adventure.text.Component next = net.kyori.adventure.text.Component.text("[>]")
+                    .color(net.kyori.adventure.text.format.NamedTextColor.YELLOW)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui help " + (page + 1)))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            MessageUtil.parse("<gray>Next page")));
+            footer = footer.append(next);
         } else {
-            footer.addExtra(new TextComponent("§8[>]"));
+            footer = footer.append(MessageUtil.parse("<dark_gray>[>]"));
         }
 
-        sender.spigot().sendMessage(footer);
-        sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        sender.sendMessage(footer);
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         return true;
     }
 

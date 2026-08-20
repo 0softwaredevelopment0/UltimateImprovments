@@ -170,7 +170,7 @@ public class ProtectionItem implements Listener {
                 .createBlock(placed.getLocation(), e.getPlayer().getUniqueId());
         // Message to the player
         e.getPlayer().sendMessage("");
-        e.getPlayer().sendMessage("§a✔ §fБлок защиты установлен!");
+        e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<green>✔ <white>Блок защиты установлен!"));
         e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>▸ <gold>Он сейчас ВЫКЛЮЧЕН. Откройте GUI (Shift+RMB) и включите.</gold>"));
         e.getPlayer().sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>▸ <gray>Используйте <white>RMB с топливом в руке</white> для очков.</gray>"));
         e.getPlayer().sendMessage("");

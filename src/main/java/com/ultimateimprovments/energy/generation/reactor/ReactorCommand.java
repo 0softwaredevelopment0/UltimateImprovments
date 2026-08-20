@@ -2,6 +2,7 @@ package com.ultimateimprovments.energy.generation.reactor;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
 
 import org.bukkit.Location;
@@ -25,7 +26,7 @@ public class ReactorCommand implements CommandExecutor {
             String[] args
     ) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("§cOnly players can use this command.");
+            sender.sendMessage(MessageUtil.parse("<red>Only players can use this command."));
             return true;
         }
 
@@ -33,12 +34,12 @@ public class ReactorCommand implements CommandExecutor {
         // PERMISSION CHECK
         // =========================
         if (!player.hasPermission("ui.command.reactor")) {
-            player.sendMessage("§4❌ §cУ вас нет прав на использование этой команды!");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>У вас нет прав на использование этой команды!"));
             return true;
         }
 
         if (args.length < 2 || !args[0].equalsIgnoreCase("assemble")) {
-            player.sendMessage("§cUsage: /reactor assemble <type>");
+            player.sendMessage(MessageUtil.parse("<red>Usage: /reactor assemble <type>"));
             return true;
         }
 
@@ -47,7 +48,7 @@ public class ReactorCommand implements CommandExecutor {
         switch (type) {
             case "dark_synthesis" -> assembleDarkSynthesis(player);
             case "magnet" -> assembleMagnet(player);
-            default -> player.sendMessage("§cНеизвестный тип механизма: " + type);
+            default -> player.sendMessage(MessageUtil.parse("<red>Неизвестный тип механизма: " + type));
         }
 
         return true;
@@ -61,7 +62,7 @@ public class ReactorCommand implements CommandExecutor {
         ReactorManager reactor = ReactorManager.getInstance();
 
         if (reactor == null || !reactor.isValid()) {
-            player.sendMessage("§4❌ §cError: §7Активных реакторов не найдено.");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error: <gray>Активных реакторов не найдено."));
             return true;
         }
 
@@ -69,73 +70,73 @@ public class ReactorCommand implements CommandExecutor {
         Location reactorLoc = reactor.getReactorLocation();
 
         if (reactorLoc == null || !playerLoc.getWorld().equals(reactorLoc.getWorld())) {
-            player.sendMessage("§4❌ §cError: §7Рядом нет активного реактора.");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error: <gray>Рядом нет активного реактора."));
             return true;
         }
 
         double distance = playerLoc.distance(reactorLoc);
         if (distance > 50) {
-            player.sendMessage("§4❌ §cError: §7Рядом нет активного реактора (ближайший в §f"
-                    + String.format("%.1f", distance) + "§7 м).");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error: <gray>Рядом нет активного реактора (ближайший в <white>"
+                    + String.format("%.1f", distance) + "<gray> м)."));
             return true;
         }
 
         String status;
         if (reactor.isMeltdownCountdown()) {
-            status = "§4!!! §cВзрыв неизбежен §4!!!";
+            status = "<dark_red>!!! <red>Взрыв неизбежен <dark_red>!!!";
         } else if (reactor.getCoreShInt() < 100 || reactor.getCoreCaseInt() < 100) {
-            status = "§eДеградация";
+            status = "<yellow>Деградация";
         } else {
-            status = "§aНормальный";
+            status = "<green>Нормальный";
         }
 
         int meltdownSecs = reactor.isMeltdownCountdown()
                 ? (reactor.getMeltdownTimer() / 20)
                 : 0;
 
-        player.sendMessage("§8┌────────────────────────────────┐");
-        player.sendMessage("§8│ §4Р.Т.С §8» §fСтатистика реактора");
-        player.sendMessage("§8├────────────────────────────────┤");
-        player.sendMessage("§8│ §7ID: §f" + reactor.getReactorId());
-        player.sendMessage("§8│ §7Статус: " + status);
+        player.sendMessage(MessageUtil.parse("<dark_gray>┌────────────────────────────────┐"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_red>Р.Т.С <dark_gray>» <white>Статистика реактора"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>├────────────────────────────────┤"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>ID: <white>" + reactor.getReactorId()));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Статус: " + status));
         if (reactor.isMeltdownCountdown()) {
-            player.sendMessage("§8│ §7Детонация: §c" + meltdownSecs + " сек");
+            player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Детонация: <red>" + meltdownSecs + " сек"));
         }
-        player.sendMessage("§8│ §7Дист: §f" + String.format("%.1f", distance) + " м");
-        player.sendMessage("§8│ §6═[ §eДанные ядра §6]═");
-        player.sendMessage("§8│ §7Температура:  §f" + reactor.getDisplayCoreTemp() + " C*");
-        player.sendMessage("§8│ §7Давление:    §f" + reactor.getDisplayCorePress() + " kPa");
-        player.sendMessage("§8│ §7Целостность: §f" + reactor.getDisplayCoreShInt() + " %");
-        player.sendMessage("§8│ §6═[═══════════]═");
-        player.sendMessage("§8│ §3═[ §bДанные корпуса §3]═");
-        player.sendMessage("§8│ §7Температура:  §f" + reactor.getDisplayCoreCaseTemp() + " C*");
-        player.sendMessage("§8│ §7Давление:    §f" + reactor.getDisplayCoreCasePress() + " kPa");
-        player.sendMessage("§8│ §7Целостность: §f" + reactor.getDisplayCoreCaseInt() + " %");
-        player.sendMessage("§8│ §3═[═══════════]═");
-        player.sendMessage("§8│ §5═[ §dДанные рецепта §5]═");
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Дист: <white>" + String.format("%.1f", distance) + " м"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gold>═[ <yellow>Данные ядра <gold>]═"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Температура:  <white>" + reactor.getDisplayCoreTemp() + " C*"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Давление:    <white>" + reactor.getDisplayCorePress() + " kPa"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Целостность: <white>" + reactor.getDisplayCoreShInt() + " %"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gold>═[═══════════]═"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_aqua>═[ <aqua>Данные корпуса <dark_aqua>]═"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Температура:  <white>" + reactor.getDisplayCoreCaseTemp() + " C*"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Давление:    <white>" + reactor.getDisplayCoreCasePress() + " kPa"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Целостность: <white>" + reactor.getDisplayCoreCaseInt() + " %"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_aqua>═[═══════════]═"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_purple>═[ <light_purple>Данные рецепта <dark_purple>]═"));
         int recipePct = reactor.getDisplayRecipeTime();
-        player.sendMessage("§8│ §7Прогресс:   §f" + recipePct + " %");
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Прогресс:   <white>" + recipePct + " %"));
         String recipeStatus;
         if (recipePct <= 0) {
-            recipeStatus = "§7Бездействует";
+            recipeStatus = "<gray>Бездействует";
         } else if (recipePct < 100) {
-            recipeStatus = "§eГотовится";
+            recipeStatus = "<yellow>Готовится";
         } else {
-            recipeStatus = "§aЗавершён";
+            recipeStatus = "<green>Завершён";
         }
-        player.sendMessage("§8│ §7Статус:     " + recipeStatus);
-        player.sendMessage("§8│ §7Износ:      §f" + reactor.getDisplayReactorWear() + " %");
-        player.sendMessage("§8│ §7Выработка:  §f" + reactor.getDisplayEnergyRate() + " E/сек");
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Статус:     " + recipeStatus));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Износ:      <white>" + reactor.getDisplayReactorWear() + " %"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Выработка:  <white>" + reactor.getDisplayEnergyRate() + " E/сек"));
         if (reactor.isSelfDestruct() && !reactor.isMeltdownCountdown()) {
-            player.sendMessage("§8│ §7Самоликвид: §cАктивен");
+            player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Самоликвид: <red>Активен"));
         }
-        player.sendMessage("§8│ §5═[═══════════]═");
-        player.sendMessage("§8│ §7Позиция: §f"
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_purple>═[═══════════]═"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Позиция: <white>"
                 + reactorLoc.getBlockX() + " "
                 + reactorLoc.getBlockY() + " "
                 + reactorLoc.getBlockZ()
-                + " §7(мир: §f" + reactorLoc.getWorld().getName() + "§7)");
-        player.sendMessage("§8└────────────────────────────────┘");
+                + " <gray>(мир: <white>" + reactorLoc.getWorld().getName() + "<gray>)"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>└────────────────────────────────┘"));
         player.sendMessage("");
 
         return true;
@@ -155,7 +156,7 @@ public class ReactorCommand implements CommandExecutor {
         ReactorManager.PendingAssembly pending = ReactorManager.getPendingAssembly(player, "dark_synthesis");
 
         if (pending == null) {
-            player.sendMessage("§cСначала нажмите SHIFT+ПКМ по рамке реактора!");
+            player.sendMessage(MessageUtil.parse("<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"));
             return;
         }
 
@@ -165,11 +166,11 @@ public class ReactorCommand implements CommandExecutor {
         java.util.List<String> errors = ReactorStructure.getValidationErrors(pending.center());
         if (!errors.isEmpty()) {
             player.sendMessage("");
-            player.sendMessage("§4❌ §cСтруктура реактора повреждена! §7Найдены ошибки:");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Структура реактора повреждена! <gray>Найдены ошибки:"));
             for (String err : errors) {
-                player.sendMessage("§8 • §f" + err);
+                player.sendMessage(MessageUtil.parse("<dark_gray> • <white>" + err));
             }
-            player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
@@ -180,11 +181,11 @@ public class ReactorCommand implements CommandExecutor {
         Location existing = reactor.getReactorLocation();
         if (existing != null) {
             if (existing.equals(pending.center())) {
-                player.sendMessage("§eРеактор уже активен на этом месте!");
+                player.sendMessage(MessageUtil.parse("<yellow>Реактор уже активен на этом месте!"));
                 ReactorManager.clearPendingAssembly(player);
                 return;
             }
-            player.sendMessage("§cДругой реактор уже активен! Сломайте его сначала.");
+            player.sendMessage(MessageUtil.parse("<red>Другой реактор уже активен! Сломайте его сначала."));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
@@ -210,14 +211,14 @@ public class ReactorCommand implements CommandExecutor {
         // =========================
         // NAME THE FUEL BARRELS
         // =========================
-        nameBarrel(pending.center(), 0, -3, -2, "§6Топливо: §bАлмазные блоки");
-        nameBarrel(pending.center(), 0, -3, 2, "§6Топливо: §eЗолотые блоки");
+        nameBarrel(pending.center(), 0, -3, -2, "<gold>Топливо: <aqua>Алмазные блоки");
+        nameBarrel(pending.center(), 0, -3, 2, "<gold>Топливо: <yellow>Золотые блоки");
 
-        player.sendMessage("§a✔ §fРеактор тёмного синтеза собран! §8(ID: " + reactor.getReactorId() + ")");
-        player.sendMessage("§8┃ §7Температура ядра: §f" + reactor.getCoreTemp() + " C*");
-        player.sendMessage("§8┃ §7Давление: §f" + reactor.getCorePress() + " kPa");
-        player.sendMessage("§8┃ §7Целостность оболочки: §f" + reactor.getCoreShInt() + "%");
-        player.sendMessage("§8┃ §7Топливо: §bалмазные блоки §7→ левая бочка, §eзолотые блоки §7→ правая бочка");
+        player.sendMessage(MessageUtil.parse("<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: " + reactor.getReactorId() + ")"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Температура ядра: <white>" + reactor.getCoreTemp() + " C*"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Давление: <white>" + reactor.getCorePress() + " kPa"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Целостность оболочки: <white>" + reactor.getCoreShInt() + "%"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка"));
 
         ReactorManager.clearPendingAssembly(player);
 
@@ -231,33 +232,33 @@ public class ReactorCommand implements CommandExecutor {
     // 🏆 POWER TIER NAME (shared static)
     // =========================
     public static String getMagnetPowerTierStatic(int power) {
-        if (power >= 10000000) return "§k✧ §4✧✧ АБСОЛЮТНАЯ БЕСКОНЕЧНОСТЬ ✧✧ §k✧ §8(" + power + ")";
-        if (power >= 5000000) return "§4✧✧ БЕСКОНЕЧНАЯ БЕЗДНА ✧✧ §8(" + power + ")";
-        if (power >= 2500000) return "§c✦ ВСЕЛЕНСКАЯ КАТАСТРОФА ✦ §8(" + power + ")";
-        if (power >= 1000000) return "§d✧ ПЕРВОЗДАННАЯ СИНГУЛЯРНОСТЬ ✧ §8(" + power + ")";
-        if (power >= 500000) return "§6☠ НЕПОСТИЖИМАЯ ☠ §8(" + power + ")";
-        if (power >= 250000) return "§3✦ БОГОПОДОБНАЯ ✦ §8(" + power + ")";
-        if (power >= 100000) return "§4✧✧✧ ВСЕСОКРУШАЮЩАЯ СИНГУЛЯРНОСТЬ ✧✧✧ §8(" + power + ")";
-        if (power >= 50000) return "§c☠ АБСОЛЮТНАЯ СИНГУЛЯРНОСТЬ ☠ §8(" + power + ")";
-        if (power >= 25000) return "§6⚡ БОЖЕСТВЕННАЯ СИНГУЛЯРНОСТЬ ⚡ §8(" + power + ")";
-        if (power >= 10000) return "§d✧✧ НЕПРЕВЗОЙДЁННАЯ ✧✧ §8(" + power + ")";
-        if (power >= 5000) return "§5✦ ТРАНСЦЕНДЕНТНАЯ ✦ §8(" + power + ")";
-        if (power >= 2500) return "§9⚜ СИНГУЛЯРНАЯ ⚜ §8(" + power + ")";
-        if (power >= 1000) return "§3✦ БЕСКОНЕЧНАЯ ✦ §8(" + power + ")";
-        if (power >= 500) return "§5✧✧ АБСОЛЮТНАЯ ✧✧ §8(" + power + ")";
-        if (power >= 300) return "§5☯ КОСМИЧЕСКАЯ ☯ §8(" + power + ")";
-        if (power >= 200) return "§d✦ ТИТАНИЧЕСКАЯ ✦ §8(" + power + ")";
-        if (power >= 150) return "§d◈ ЛЕГЕНДАРНАЯ ◈ §8(" + power + ")";
-        if (power >= 100) return "§c☆ НЕВЕРОЯТНАЯ ☆ §8(" + power + ")";
-        if (power >= 75) return "§c♦ ЧРЕЗВЫЧАЙНАЯ ♦ §8(" + power + ")";
-        if (power >= 50) return "§6★ ИСКЛЮЧИТЕЛЬНАЯ ★ §8(" + power + ")";
-        if (power >= 30) return "§6⬆ ОЧЕНЬ СИЛЬНАЯ ⬆ §8(" + power + ")";
-        if (power >= 20) return "§e⬆ СИЛЬНАЯ ⬆ §8(" + power + ")";
-        if (power >= 12) return "§e⬆ ВЫШЕ СРЕДНЕГО ⬆ §8(" + power + ")";
-        if (power >= 7) return "§a➤ СРЕДНЯЯ ➤ §8(" + power + ")";
-        if (power >= 4) return "§7➤ НИЖЕ СРЕДНЕГО ➤ §8(" + power + ")";
-        if (power >= 2) return "§7▸ СЛАБАЯ ▸ §8(" + power + ")";
-        return "§7▸ ОЧЕНЬ СЛАБАЯ ▸ §8(" + power + ")";
+        if (power >= 10000000) return "<obfuscated>✧ <dark_red>✧✧ АБСОЛЮТНАЯ БЕСКОНЕЧНОСТЬ ✧✧ <obfuscated>✧ <dark_gray>(" + power + ")";
+        if (power >= 5000000) return "<dark_red>✧✧ БЕСКОНЕЧНАЯ БЕЗДНА ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 2500000) return "<red>✦ ВСЕЛЕНСКАЯ КАТАСТРОФА ✦ <dark_gray>(" + power + ")";
+        if (power >= 1000000) return "<light_purple>✧ ПЕРВОЗДАННАЯ СИНГУЛЯРНОСТЬ ✧ <dark_gray>(" + power + ")";
+        if (power >= 500000) return "<gold>☠ НЕПОСТИЖИМАЯ ☠ <dark_gray>(" + power + ")";
+        if (power >= 250000) return "<dark_aqua>✦ БОГОПОДОБНАЯ ✦ <dark_gray>(" + power + ")";
+        if (power >= 100000) return "<dark_red>✧✧✧ ВСЕСОКРУШАЮЩАЯ СИНГУЛЯРНОСТЬ ✧✧✧ <dark_gray>(" + power + ")";
+        if (power >= 50000) return "<red>☠ АБСОЛЮТНАЯ СИНГУЛЯРНОСТЬ ☠ <dark_gray>(" + power + ")";
+        if (power >= 25000) return "<gold>⚡ БОЖЕСТВЕННАЯ СИНГУЛЯРНОСТЬ ⚡ <dark_gray>(" + power + ")";
+        if (power >= 10000) return "<light_purple>✧✧ НЕПРЕВЗОЙДЁННАЯ ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 5000) return "<dark_purple>✦ ТРАНСЦЕНДЕНТНАЯ ✦ <dark_gray>(" + power + ")";
+        if (power >= 2500) return "<blue>⚜ СИНГУЛЯРНАЯ ⚜ <dark_gray>(" + power + ")";
+        if (power >= 1000) return "<dark_aqua>✦ БЕСКОНЕЧНАЯ ✦ <dark_gray>(" + power + ")";
+        if (power >= 500) return "<dark_purple>✧✧ АБСОЛЮТНАЯ ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 300) return "<dark_purple>☯ КОСМИЧЕСКАЯ ☯ <dark_gray>(" + power + ")";
+        if (power >= 200) return "<light_purple>✦ ТИТАНИЧЕСКАЯ ✦ <dark_gray>(" + power + ")";
+        if (power >= 150) return "<light_purple>◈ ЛЕГЕНДАРНАЯ ◈ <dark_gray>(" + power + ")";
+        if (power >= 100) return "<red>☆ НЕВЕРОЯТНАЯ ☆ <dark_gray>(" + power + ")";
+        if (power >= 75) return "<red>♦ ЧРЕЗВЫЧАЙНАЯ ♦ <dark_gray>(" + power + ")";
+        if (power >= 50) return "<gold>★ ИСКЛЮЧИТЕЛЬНАЯ ★ <dark_gray>(" + power + ")";
+        if (power >= 30) return "<gold>⬆ ОЧЕНЬ СИЛЬНАЯ ⬆ <dark_gray>(" + power + ")";
+        if (power >= 20) return "<yellow>⬆ СИЛЬНАЯ ⬆ <dark_gray>(" + power + ")";
+        if (power >= 12) return "<yellow>⬆ ВЫШЕ СРЕДНЕГО ⬆ <dark_gray>(" + power + ")";
+        if (power >= 7) return "<green>➤ СРЕДНЯЯ ➤ <dark_gray>(" + power + ")";
+        if (power >= 4) return "<gray>➤ НИЖЕ СРЕДНЕГО ➤ <dark_gray>(" + power + ")";
+        if (power >= 2) return "<gray>▸ СЛАБАЯ ▸ <dark_gray>(" + power + ")";
+        return "<gray>▸ ОЧЕНЬ СЛАБАЯ ▸ <dark_gray>(" + power + ")";
     }
 
     // =========================
@@ -271,7 +272,7 @@ public class ReactorCommand implements CommandExecutor {
         ReactorManager.PendingAssembly pending = ReactorManager.getPendingAssembly(player, "magnet");
 
         if (pending == null) {
-            player.sendMessage("§cСначала нажмите SHIFT+ПКМ по рамке на магните!");
+            player.sendMessage(MessageUtil.parse("<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!"));
             return;
         }
 
@@ -281,7 +282,7 @@ public class ReactorCommand implements CommandExecutor {
         // VALIDATE — the block must be LODESTONE
         // =========================
         if (loc.getBlock().getType() != Material.LODESTONE) {
-            player.sendMessage("§cМагнитный камень (LODESTONE) не найден!");
+            player.sendMessage(MessageUtil.parse("<red>Магнитный камень (LODESTONE) не найден!"));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
@@ -290,7 +291,7 @@ public class ReactorCommand implements CommandExecutor {
         // CHECK IF ALREADY ACTIVE
         // =========================
         if (MagnetManager.isActive(loc)) {
-            player.sendMessage("§eМагнит уже активен на этом месте!");
+            player.sendMessage(MessageUtil.parse("<yellow>Магнит уже активен на этом месте!"));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
@@ -328,7 +329,7 @@ public class ReactorCommand implements CommandExecutor {
         Block block = base.clone().add(dx, dy, dz).getBlock();
         if (block.getType() == Material.BARREL) {
             Barrel barrel = (Barrel) block.getState();
-            barrel.setCustomName(displayName);
+            barrel.customName(MessageUtil.parse(displayName));
             barrel.update();
         }
     }

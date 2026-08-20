@@ -81,6 +81,7 @@ public final class Permissions {
     public static final String CMD_RTP_BYPASSCOOLDOWN = "ui.command.rtp.bypasscooldown";
     public static final String CMD_ASKPOS = "ui.command.askpos";
     public static final String CMD_GETPOS = "ui.command.getpos";
+    public static final String CMD_SHAREPOS = "ui.command.sharepos";
     public static final String CMD_TURRET = "ui.command.turret";
 
     // ═══════════ Commands: moderation ═══════════
@@ -151,6 +152,10 @@ public final class Permissions {
     public static final String CMD_VOTE_STATS = "ui.command.vote.stats";
     public static final String CMD_VOTE_BYPASS = "ui.command.vote.bypass";
     public static final String CMD_PDC = "ui.command.pdc";
+    public static final String CMD_ITEMNBT = "ui.command.itemnbt";
+    public static final String CMD_CLAN = "ui.command.clan";
+    public static final String CMD_CLAN_REMOVE = "ui.command.clan.remove";
+    public static final String CMD_CLAN_HOME_BYPASS = "ui.command.clan.home.bypasscooldown";
 
     // ═══════════ Features and modifiers ═══════════
     public static final String UI_ALERTS = "ui.alerts";
@@ -232,6 +237,7 @@ public final class Permissions {
                 new Permission(CMD_RTP_BYPASSCOOLDOWN, "Bypass random teleport cooldown", PermissionDefault.FALSE),
                 new Permission(CMD_ASKPOS, "Request player coordinates", PermissionDefault.FALSE),
                 new Permission(CMD_GETPOS, "Get a player's coordinates", PermissionDefault.FALSE),
+                new Permission(CMD_SHAREPOS, "Share your coordinates in chat (confirmation dialog)", PermissionDefault.TRUE),
                 new Permission(CMD_TURRET, "Configure end crystal turrets", PermissionDefault.TRUE),
 
                 // ── Commands: moderation ──
@@ -302,6 +308,10 @@ public final class Permissions {
                 new Permission(CMD_VOTE_STATS, "View vote statistics", PermissionDefault.FALSE),
                 new Permission(CMD_VOTE_BYPASS, "Bypass vote restrictions", PermissionDefault.FALSE),
                 new Permission(CMD_PDC, "Manage PersistentDataContainer on items (add/modify/remove/list/clear/container)", PermissionDefault.FALSE),
+                new Permission(CMD_ITEMNBT, "Edit item data components / NBT (name, lore, hide flags, unbreakable, equipment, food, repair cost)", PermissionDefault.FALSE),
+                new Permission(CMD_CLAN, "Use the clan system (create/disband/manage/home/requests)", PermissionDefault.TRUE),
+                new Permission(CMD_CLAN_REMOVE, "Remove any clan by name (admin)", PermissionDefault.FALSE),
+                new Permission(CMD_CLAN_HOME_BYPASS, "Bypass the clan home teleport cooldown", PermissionDefault.FALSE),
 
                 // ── Features and modifiers ──
                 new Permission(UI_ALERTS, "Receive server alerts", PermissionDefault.FALSE),

@@ -7,11 +7,6 @@ import com.ultimateimprovments.core.Main;
 
 import com.ultimateimprovments.util.MessageUtil;
 
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
-
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -24,6 +19,7 @@ import org.bukkit.inventory.PlayerInventory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.function.Consumer;
 
@@ -126,22 +122,73 @@ public final class EnchantSubcommand {
         return null;
     }
 
-    /** All enchantment names (vanilla + custom) for tab-complete. */
+    /**
+     * All enchantment names (vanilla + UI-Datapack + custom) for tab-complete.
+     * <p>
+     * Built from THREE sources so nothing is ever missed:
+     * <ol>
+     *   <li>{@link Registry#ENCHANTMENT} — all vanilla enchantments + enchantments
+     *       registered by other plugins (short key for {@code minecraft:}, full key otherwise);</li>
+     *   <li>The bundled UI-Datapack {@code data/ui/enchantment/*.json} files — the custom
+     *       enchantments (ui:aoe, ui:autosmelt, ...) even if the registry does not
+     *       expose them in iteration (data-driven registries often don't);</li>
+     *   <li>{@code enchant.custom_enchantments} from the config.</li>
+     * </ol>
+     */
     private static List<String> allEnchantNames() {
-        List<String> names = new ArrayList<>();
+        Set<String> names = new java.util.LinkedHashSet<>();
+
+        // 1. Registry — vanilla + other plugins
         for (Enchantment ench : Registry.ENCHANTMENT) {
             NamespacedKey key = ench.getKey();
-            // Show the full key for custom namespaces (ui:aoe),
-            // vanilla minecraft ones — short (sharpness).
             names.add(key.getNamespace().equals("minecraft") ? key.getKey() : key.toString());
         }
+
+        // 2. UI-Datapack enchantments — read from the bundled datapack files
+        for (String uiEnchant : datapackEnchantNames()) {
+            names.add("ui:" + uiEnchant);
+            names.add(uiEnchant); // bare name also resolves (ui: is the fallback in resolveEnchant)
+        }
+
+        // 3. Config custom enchantments
         List<String> customs = Main.getInstance().getConfig().getStringList("enchant.custom_enchantments");
         for (String c : customs) {
-            if (c != null && !c.isEmpty() && !names.contains(c.toLowerCase())) {
+            if (c != null && !c.isEmpty()) {
                 names.add(c.toLowerCase());
             }
         }
-        return names;
+        return new ArrayList<>(names);
+    }
+
+    /** Cached list of UI-Datapack enchantment ids (file names of data/ui/enchantment/*.json). */
+    private static volatile List<String> cachedDatapackEnchants = null;
+
+    /**
+     * Reads {@code datapacks/UI-Datapack/data/ui/enchantment/*.json} from the plugin jar
+     * and returns their ids (file names without the .json extension).
+     */
+    private static List<String> datapackEnchantNames() {
+        List<String> cached = cachedDatapackEnchants;
+        if (cached != null) return cached;
+
+        List<String> result = new ArrayList<>();
+        try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(Main.getInstance().getPluginFile())) {
+            var entries = zip.entries();
+            String prefix = "datapacks/UI-Datapack/data/ui/enchantment/";
+            while (entries.hasMoreElements()) {
+                var entry = entries.nextElement();
+                if (entry.isDirectory()) continue;
+                String name = entry.getName();
+                if (!name.startsWith(prefix) || !name.endsWith(".json")) continue;
+                String id = name.substring(prefix.length(), name.length() - ".json".length());
+                result.add(id);
+            }
+        } catch (Exception e) {
+            // datapack not reachable — registry + config still cover the list
+        }
+        result.sort(String::compareTo);
+        cachedDatapackEnchants = result;
+        return result;
     }
 
     // =========================
@@ -591,49 +638,52 @@ public final class EnchantSubcommand {
         int to = Math.min(from + PER_PAGE, entries.size());
 
         // ─── Header ───
-        sender.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        sender.sendMessage("§8┃  §6✦ §fEnchantments §7of §e" + targetPlayer.getName()
-                + " §8(" + page + "/" + totalPages + ")");
-        sender.sendMessage("§8┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gold>✦ <white>Enchantments <gray>of <yellow>" + targetPlayer.getName()
+                + " <dark_gray>(" + page + "/" + totalPages + ")"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"));
 
         if (entries.isEmpty()) {
-            sender.sendMessage("§8┃  §7No enchantments found.");
+            sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>No enchantments found."));
         } else {
             for (int i = from; i < to; i++) {
-                sender.sendMessage("§8┃  " + entries.get(i));
+                sender.sendMessage(MessageUtil.parse("<dark_gray>┃  " + entries.get(i)));
             }
         }
 
-        // ─── Footer: pagination ───
-        sender.sendMessage("§8┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫");
-        TextComponent footer = new TextComponent("§8┃  §7Page §e" + page + "§7/" + totalPages + "   ");
+        // ─── Footer: pagination (Adventure) ───
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫"));
+        net.kyori.adventure.text.Component footer = MessageUtil.parse(
+                "<dark_gray>┃  <gray>Page <yellow>" + page + "<gray>/" + totalPages + "   ");
 
         if (page > 1) {
-            TextComponent prev = new TextComponent("§e[<]");
-            prev.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                    "/ui enchant check " + targetPlayer.getName() + " " + (page - 1)));
-            prev.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§7Previous page").create()));
-            footer.addExtra(prev);
+            net.kyori.adventure.text.Component prev = net.kyori.adventure.text.Component.text("[<]")
+                    .color(net.kyori.adventure.text.format.NamedTextColor.YELLOW)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
+                            "/ui enchant check " + targetPlayer.getName() + " " + (page - 1)))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            MessageUtil.parse("<gray>Previous page")));
+            footer = footer.append(prev);
         } else {
-            footer.addExtra(new TextComponent("§8[<]"));
+            footer = footer.append(MessageUtil.parse("<dark_gray>[<]"));
         }
 
-        footer.addExtra(new TextComponent("  "));
+        footer = footer.append(MessageUtil.parse("  "));
 
         if (page < totalPages) {
-            TextComponent next = new TextComponent("§e[>]");
-            next.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                    "/ui enchant check " + targetPlayer.getName() + " " + (page + 1)));
-            next.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§7Next page").create()));
-            footer.addExtra(next);
+            net.kyori.adventure.text.Component next = net.kyori.adventure.text.Component.text("[>]")
+                    .color(net.kyori.adventure.text.format.NamedTextColor.YELLOW)
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
+                            "/ui enchant check " + targetPlayer.getName() + " " + (page + 1)))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            MessageUtil.parse("<gray>Next page")));
+            footer = footer.append(next);
         } else {
-            footer.addExtra(new TextComponent("§8[>]"));
+            footer = footer.append(MessageUtil.parse("<dark_gray>[>]"));
         }
 
-        sender.spigot().sendMessage(footer);
-        sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        sender.sendMessage(footer);
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         return true;
     }
 
@@ -667,57 +717,57 @@ public final class EnchantSubcommand {
                         || e.getKey().equals(com.ultimateimprovments.enchantment.itemstealing.Enchantment.ENCHANTMENT_KEY)) {
                     continue;
                 }
-                enchants.add("§a" + e.getKey().getKey() + " " + e.getValue());
+                enchants.add("<green>" + e.getKey().getKey() + " " + e.getValue());
             }
 
             // Custom enchants — real enchantment or legacy PDC
             int aoe = com.ultimateimprovments.enchantment.aoe.Enchantment.getLevel(item);
             if (aoe > 0) {
-                enchants.add("§bAoe " + aoe);
+                enchants.add("<aqua>Aoe " + aoe);
             }
             if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.getLevel(item) > 0) {
-                enchants.add("§bAutoSmelt");
+                enchants.add("<aqua>AutoSmelt");
             }
             if (com.ultimateimprovments.enchantment.veinminer.Enchantment.getLevel(item) > 0) {
-                enchants.add("§bVeinMiner");
+                enchants.add("<aqua>VeinMiner");
             }
             if (com.ultimateimprovments.enchantment.treecapitator.Enchantment.getLevel(item) > 0) {
-                enchants.add("§bTreeCapitator");
+                enchants.add("<aqua>TreeCapitator");
             }
             if (com.ultimateimprovments.enchantment.flight.Enchantment.getLevel(item) > 0) {
-                enchants.add("§bFlight");
+                enchants.add("<aqua>Flight");
             }
             if (com.ultimateimprovments.enchantment.magnet.Enchantment.getLevel(item) > 0) {
-                enchants.add("§bMagnet");
+                enchants.add("<aqua>Magnet");
             }
             int igniting = com.ultimateimprovments.enchantment.igniting.Enchantment.getLevel(item);
             if (igniting > 0) {
-                enchants.add("§bIgniting " + igniting);
+                enchants.add("<aqua>Igniting " + igniting);
             }
             if (com.ultimateimprovments.enchantment.levitation.Enchantment.getLevel(item) > 0) {
-                enchants.add("§bLevitation");
+                enchants.add("<aqua>Levitation");
             }
             // Curse — shown in red
             if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.getLevel(item) > 0) {
-                enchants.add("§cCurse of Self-Destruct");
+                enchants.add("<red>Curse of Self-Destruct");
             }
             int degradation = com.ultimateimprovments.enchantment.degradation.Enchantment.getLevel(item);
             if (degradation > 0) {
-                enchants.add("§cCurse of Degradation " + degradation);
+                enchants.add("<red>Curse of Degradation " + degradation);
             }
             int attackAoe = com.ultimateimprovments.enchantment.attackaoe.Enchantment.getLevel(item);
             if (attackAoe > 0) {
-                enchants.add("§bAttack AoE " + attackAoe);
+                enchants.add("<aqua>Attack AoE " + attackAoe);
             }
             if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.getLevel(item) > 0) {
-                enchants.add("§bItem Stealing");
+                enchants.add("<aqua>Item Stealing");
             }
 
             if (enchants.isEmpty()) continue;
 
             String itemName = item.getType().name().toLowerCase().replace('_', ' ');
-            entries.add("§7" + slot.name + " §8— §f" + itemName
-                    + " §7: §r" + String.join("§7, ", enchants));
+            entries.add("<gray>" + slot.name + " <dark_gray>— <white>" + itemName
+                    + " <gray>: <reset>" + String.join("<gray>, ", enchants));
         }
 
         return entries;

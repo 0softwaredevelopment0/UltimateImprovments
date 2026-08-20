@@ -219,9 +219,9 @@ public class ReactorDisplay {
         // =========================
         if (selfDestruct) {
             String blank = " ";
-            String noSignal = "§cНЕТ СИГНАЛА";
+            String noSignal = "<red>НЕТ СИГНАЛА";
             String meltdownLine = meltdownCdown
-                    ? "§cВзрыв неизбежен!"
+                    ? "<red>Взрыв неизбежен!"
                     : noSignal;
 
             setSignText(base, 0, -4, -3, 0, blank);
@@ -251,7 +251,7 @@ public class ReactorDisplay {
 
         // Flash all text red-white when any integrity is below 100%
         boolean flashing = displayCoreShIntInt < 100 || displayCoreCaseIntInt < 100;
-        String color = (flashing && (displayTick % 10 < 5)) ? "§c" : "§f";
+        String color = (flashing && (displayTick % 10 < 5)) ? "<red>" : "<white>";
 
         // =========================
         // CENTER SIGN — CORE DATA
@@ -318,7 +318,7 @@ public class ReactorDisplay {
         Block block = base.clone().add(dx, dy, dz).getBlock();
         var state = block.getState();
         if (state instanceof org.bukkit.block.Sign signState) {
-            signState.setLine(line, text);
+            signState.line(line, com.ultimateimprovments.util.MessageUtil.parse(text));
             signState.update(true, false);
         }
     }

@@ -332,18 +332,18 @@ public class MagnetManager extends BukkitRunnable {
     public static void activateAsync(Location loc, Player player) {
         loc = LocationUtil.normalize(loc);
         if (loc == null) {
-            player.sendMessage("§4❌ §cInvalid position!");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Invalid position!"));
             return;
         }
         long key = toKey(loc);
         if (locationToCluster.containsKey(key)) {
-            player.sendMessage("§eМагнит уже активен на этом месте!");
+            player.sendMessage(MessageUtil.parse("<yellow>Магнит уже активен на этом месте!"));
             return;
         }
 
-        player.sendMessage("§8[§bMagnet§8] §7Starting structure scan...");
-        player.sendMessage("§8[§bMagnet§8] §7Please wait. This may take a while");
-        player.sendMessage("§8[§bMagnet§8] §7with a large number of blocks.");
+        player.sendMessage(MessageUtil.parse("<dark_gray>[<aqua>Magnet<dark_gray>] <gray>Starting structure scan..."));
+        player.sendMessage(MessageUtil.parse("<dark_gray>[<aqua>Magnet<dark_gray>] <gray>Please wait. This may take a while"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>[<aqua>Magnet<dark_gray>] <gray>with a large number of blocks."));
 
         World world = loc.getWorld();
         int sx = loc.getBlockX(), sy = loc.getBlockY(), sz = loc.getBlockZ();
@@ -357,8 +357,8 @@ public class MagnetManager extends BukkitRunnable {
                 );
             } catch (Exception e) {
                 Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-                    player.sendMessage("§4❌ §cError during async scan!");
-                    player.sendMessage("§7Trying sync mode...");
+                    player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error during async scan!"));
+                    player.sendMessage(MessageUtil.parse("<gray>Trying sync mode..."));
 
                     // Fallback: synchronous execution
                     Set<Long> connected = floodFillFast(world, sx, sy, sz);
@@ -377,12 +377,12 @@ public class MagnetManager extends BukkitRunnable {
      */
     private static void finishActivation(Set<Long> connected, World world, long key, Player player) {
         if (connected.isEmpty()) {
-            player.sendMessage("§4❌ §cMagnet not assembled: LODESTONE structure not found!");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Magnet not assembled: LODESTONE structure not found!"));
             return;
         }
 
         if (locationToCluster.containsKey(key)) {
-            player.sendMessage("§eМагнит уже активен на этом месте!");
+            player.sendMessage(MessageUtil.parse("<yellow>Магнит уже активен на этом месте!"));
             return;
         }
 
@@ -406,16 +406,16 @@ public class MagnetManager extends BukkitRunnable {
         String powerDesc = getMagnetPowerTierStatic(power);
         int magnetRadius = getClusterRadius(power);
 
-        player.sendMessage("§a✔ §fMagnet assembled!");
-        player.sendMessage("§8┃ §7Blocks in structure: §f" + power + " §7pcs");
-        player.sendMessage("§8┃ §7Attraction force: " + powerDesc);
+        player.sendMessage(MessageUtil.parse("<green>✔ <white>Magnet assembled!"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Blocks in structure: <white>" + power + " <gray>pcs"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Attraction force: " + powerDesc));
         if (cluster.center != null) {
-            player.sendMessage("§8┃ §7Center: §f"
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Center: <white>"
                     + cluster.center.getBlockX() + " "
                     + cluster.center.getBlockY() + " "
-                    + cluster.center.getBlockZ());
+                    + cluster.center.getBlockZ()));
         }
-        player.sendMessage("§8┃ §7Radius: §f" + magnetRadius + " §7blocks (min. " + MagnetConfig.getMinRadius() + ")");
+        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Radius: <white>" + magnetRadius + " <gray>blocks (min. " + MagnetConfig.getMinRadius() + ")"));
 
         ConsoleLogger.info(
                 "[Magnet] Activated cluster #" + cluster.id
@@ -428,33 +428,33 @@ public class MagnetManager extends BukkitRunnable {
      * Returns the magnet tier name by power.
      */
     public static String getMagnetPowerTierStatic(int power) {
-        if (power >= 10000000) return "§k✧ §4✧✧ ABSOLUTE INFINITY ✧✧ §k✧ §8(" + power + ")";
-        if (power >= 5000000) return "§4✧✧ INFINITE ABYSS ✧✧ §8(" + power + ")";
-        if (power >= 2500000) return "§c✦ COSMIC CATASTROPHE ✦ §8(" + power + ")";
-        if (power >= 1000000) return "§d✧ PRIMORDIAL SINGULARITY ✧ §8(" + power + ")";
-        if (power >= 500000) return "§6☠ INCOMPREHENSIBLE ☠ §8(" + power + ")";
-        if (power >= 250000) return "§3✦ GODLIKE ✦ §8(" + power + ")";
-        if (power >= 100000) return "§4✧✧✧ ALL-CRUSHING SINGULARITY ✧✧✧ §8(" + power + ")";
-        if (power >= 50000) return "§c☠ ABSOLUTE SINGULARITY ☠ §8(" + power + ")";
-        if (power >= 25000) return "§6⚡ DIVINE SINGULARITY ⚡ §8(" + power + ")";
-        if (power >= 10000) return "§d✧✧ UNMATCHED ✧✧ §8(" + power + ")";
-        if (power >= 5000) return "§5✦ TRANSCENDENT ✦ §8(" + power + ")";
-        if (power >= 2500) return "§9⚜ SINGULAR ⚜ §8(" + power + ")";
-        if (power >= 1000) return "§3✦ INFINITE ✦ §8(" + power + ")";
-        if (power >= 500) return "§5✧✧ ABSOLUTE ✧✧ §8(" + power + ")";
-        if (power >= 300) return "§5☯ COSMIC ☯ §8(" + power + ")";
-        if (power >= 200) return "§d✦ TITANIC ✦ §8(" + power + ")";
-        if (power >= 150) return "§d◈ LEGENDARY ◈ §8(" + power + ")";
-        if (power >= 100) return "§c☆ INCREDIBLE ☆ §8(" + power + ")";
-        if (power >= 75) return "§c♦ EXTREME ♦ §8(" + power + ")";
-        if (power >= 50) return "§6★ EXCEPTIONAL ★ §8(" + power + ")";
-        if (power >= 30) return "§6⬆ VERY STRONG ⬆ §8(" + power + ")";
-        if (power >= 20) return "§e⬆ STRONG ⬆ §8(" + power + ")";
-        if (power >= 12) return "§e⬆ ABOVE AVERAGE ⬆ §8(" + power + ")";
-        if (power >= 7) return "§a➤ AVERAGE ➤ §8(" + power + ")";
-        if (power >= 4) return "§7➤ BELOW AVERAGE ➤ §8(" + power + ")";
-        if (power >= 2) return "§7▸ WEAK ▸ §8(" + power + ")";
-        return "§7▸ VERY WEAK ▸ §8(" + power + ")";
+        if (power >= 10000000) return "<obfuscated>✧ <dark_red>✧✧ ABSOLUTE INFINITY ✧✧ <obfuscated>✧ <dark_gray>(" + power + ")";
+        if (power >= 5000000) return "<dark_red>✧✧ INFINITE ABYSS ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 2500000) return "<red>✦ COSMIC CATASTROPHE ✦ <dark_gray>(" + power + ")";
+        if (power >= 1000000) return "<light_purple>✧ PRIMORDIAL SINGULARITY ✧ <dark_gray>(" + power + ")";
+        if (power >= 500000) return "<gold>☠ INCOMPREHENSIBLE ☠ <dark_gray>(" + power + ")";
+        if (power >= 250000) return "<dark_aqua>✦ GODLIKE ✦ <dark_gray>(" + power + ")";
+        if (power >= 100000) return "<dark_red>✧✧✧ ALL-CRUSHING SINGULARITY ✧✧✧ <dark_gray>(" + power + ")";
+        if (power >= 50000) return "<red>☠ ABSOLUTE SINGULARITY ☠ <dark_gray>(" + power + ")";
+        if (power >= 25000) return "<gold>⚡ DIVINE SINGULARITY ⚡ <dark_gray>(" + power + ")";
+        if (power >= 10000) return "<light_purple>✧✧ UNMATCHED ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 5000) return "<dark_purple>✦ TRANSCENDENT ✦ <dark_gray>(" + power + ")";
+        if (power >= 2500) return "<blue>⚜ SINGULAR ⚜ <dark_gray>(" + power + ")";
+        if (power >= 1000) return "<dark_aqua>✦ INFINITE ✦ <dark_gray>(" + power + ")";
+        if (power >= 500) return "<dark_purple>✧✧ ABSOLUTE ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 300) return "<dark_purple>☯ COSMIC ☯ <dark_gray>(" + power + ")";
+        if (power >= 200) return "<light_purple>✦ TITANIC ✦ <dark_gray>(" + power + ")";
+        if (power >= 150) return "<light_purple>◈ LEGENDARY ◈ <dark_gray>(" + power + ")";
+        if (power >= 100) return "<red>☆ INCREDIBLE ☆ <dark_gray>(" + power + ")";
+        if (power >= 75) return "<red>♦ EXTREME ♦ <dark_gray>(" + power + ")";
+        if (power >= 50) return "<gold>★ EXCEPTIONAL ★ <dark_gray>(" + power + ")";
+        if (power >= 30) return "<gold>⬆ VERY STRONG ⬆ <dark_gray>(" + power + ")";
+        if (power >= 20) return "<yellow>⬆ STRONG ⬆ <dark_gray>(" + power + ")";
+        if (power >= 12) return "<yellow>⬆ ABOVE AVERAGE ⬆ <dark_gray>(" + power + ")";
+        if (power >= 7) return "<green>➤ AVERAGE ➤ <dark_gray>(" + power + ")";
+        if (power >= 4) return "<gray>➤ BELOW AVERAGE ➤ <dark_gray>(" + power + ")";
+        if (power >= 2) return "<gray>▸ WEAK ▸ <dark_gray>(" + power + ")";
+        return "<gray>▸ VERY WEAK ▸ <dark_gray>(" + power + ")";
     }
 
     // =========================

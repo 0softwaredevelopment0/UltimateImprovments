@@ -2,6 +2,7 @@ package com.ultimateimprovments.mechanics.features.integrity;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.config.MessagesManager;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.HashSet;
@@ -34,7 +35,7 @@ public class IntegrityConfig {
     private int gradientGreenLow = 0x00;
     private int gradientBlueLow = 0x00;
 
-    private String loreText = "§fЦелостность:";
+    private String loreText = "<white>Целостность:</white>";
     private String bareLorePrefix = "Целостность:";
 
     // Behavior on break
@@ -92,8 +93,8 @@ public class IntegrityConfig {
             if (low != null) { gradientRedLow = low[0]; gradientGreenLow = low[1]; gradientBlueLow = low[2]; }
         }
 
-        loreText = cfg.getString("lore_text", "§7Целостность:");
-        bareLorePrefix = loreText.replaceAll("§.", "").trim();
+        loreText = cfg.getString("lore_text", "<gray>Целостность:</gray>");
+        bareLorePrefix = MessageUtil.toPlainText(loreText).trim();
 
         var onBreak = cfg.getConfigurationSection("on_break");
         if (onBreak != null) {

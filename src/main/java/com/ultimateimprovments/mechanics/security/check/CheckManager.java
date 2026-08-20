@@ -91,16 +91,16 @@ public class CheckManager {
 
         // Chat instructions
         suspect.sendMessage("");
-        suspect.sendMessage("§4❌ §cVerification");
-        suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        suspect.sendMessage("§fInspector: §e" + inspector.getName());
+        suspect.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Verification"));
+        suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+        suspect.sendMessage(MessageUtil.parse("<white>Inspector: <yellow>" + inspector.getName()));
         suspect.sendMessage("");
-        suspect.sendMessage("§7You cannot move or interact with anything");
-        suspect.sendMessage("§7until the check is complete.");
+        suspect.sendMessage(MessageUtil.parse("<gray>You cannot move or interact with anything"));
+        suspect.sendMessage(MessageUtil.parse("<gray>until the check is complete."));
         suspect.sendMessage("");
-        suspect.sendMessage("§7If you have any prohibited modifications —");
-        suspect.sendMessage("§7disable them now. It is in your best interest.");
-        suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        suspect.sendMessage(MessageUtil.parse("<gray>If you have any prohibited modifications —"));
+        suspect.sendMessage(MessageUtil.parse("<gray>disable them now. It is in your best interest."));
+        suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
         suspect.sendMessage("");
 
         // Notify inspector
@@ -144,10 +144,10 @@ public class CheckManager {
             suspect.sendTitle(" ", " ", 0, 1, 0);
             unfreezePlayer(suspect);
             suspect.sendMessage("");
-            suspect.sendMessage("§a✔ §f§lCHECK COMPLETE!");
-            suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-            suspect.sendMessage("§fInspector: §e" + inspector.getName());
-            suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            suspect.sendMessage(MessageUtil.parse("<green>✔ <white><bold>CHECK COMPLETE!"));
+            suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+            suspect.sendMessage(MessageUtil.parse("<white>Inspector: <yellow>" + inspector.getName()));
+            suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
             suspect.sendMessage("");
         }
 
@@ -194,10 +194,10 @@ public class CheckManager {
             suspect.sendTitle(" ", " ", 0, 1, 0);
             unfreezePlayer(suspect);
             suspect.sendMessage("");
-            suspect.sendMessage("§a✔ §f§lCHECK COMPLETE!");
-            suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-            suspect.sendMessage("§fInspector: §e" + inspector.getName());
-            suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            suspect.sendMessage(MessageUtil.parse("<green>✔ <white><bold>CHECK COMPLETE!"));
+            suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+            suspect.sendMessage(MessageUtil.parse("<white>Inspector: <yellow>" + inspector.getName()));
+            suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
             suspect.sendMessage("");
         }
 
@@ -226,10 +226,10 @@ public class CheckManager {
             suspect.sendTitle(" ", " ", 0, 1, 0);
             unfreezePlayer(suspect);
             suspect.sendMessage("");
-            suspect.sendMessage("§e⚠ §f§lCHECK INTERRUPTED!");
-            suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-            suspect.sendMessage("§fInspector disconnected.");
-            suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+            suspect.sendMessage(MessageUtil.parse("<yellow>⚠ <white><bold>CHECK INTERRUPTED!"));
+            suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+            suspect.sendMessage(MessageUtil.parse("<white>Inspector disconnected."));
+            suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
             suspect.sendMessage("");
         }
 
@@ -290,13 +290,13 @@ public class CheckManager {
 
         // Send the messages
         suspect.sendMessage("");
-        suspect.sendMessage("§4❌ §c§lVERIFICATION RESUMED");
-        suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        suspect.sendMessage("§fInspector: §e" + inspectorName);
+        suspect.sendMessage(MessageUtil.parse("<dark_red>❌ <red><bold>VERIFICATION RESUMED"));
+        suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+        suspect.sendMessage(MessageUtil.parse("<white>Inspector: <yellow>" + inspectorName));
         suspect.sendMessage("");
-        suspect.sendMessage("§7Your check was paused while you were offline.");
-        suspect.sendMessage("§7It has now resumed. You are still frozen.");
-        suspect.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+        suspect.sendMessage(MessageUtil.parse("<gray>Your check was paused while you were offline."));
+        suspect.sendMessage(MessageUtil.parse("<gray>It has now resumed. You are still frozen."));
+        suspect.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
         suspect.sendMessage("");
 
         // Notify the inspector
@@ -360,8 +360,8 @@ public class CheckManager {
                     return;
                 }
                 suspect.sendTitle(
-                        "§cVerification",
-                        "§fAll instructions are in the chat",
+                        MessageUtil.legacy("<red>Verification"),
+                        MessageUtil.legacy("<white>All instructions are in the chat"),
                         5, 50, 10
                 );
             }
@@ -411,7 +411,7 @@ public class CheckManager {
             if (suspect != null && suspect.isOnline()) {
                 suspect.sendTitle(" ", " ", 0, 1, 0);
                 unfreezePlayer(suspect);
-                suspect.sendMessage("§e⚠ Check interrupted (plugin reload).");
+                suspect.sendMessage(MessageUtil.parse("<yellow>⚠ Check interrupted (plugin reload)."));
             }
         }
         instance.activeChecks.clear();

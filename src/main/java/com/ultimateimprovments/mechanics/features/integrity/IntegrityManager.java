@@ -6,6 +6,8 @@ import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.SoundUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -61,7 +63,7 @@ public class IntegrityManager extends BukkitRunnable {
     private static int gradientBlueLow = 0x00;      // B at 0%
 
     // Lore text (stored both as plain and colored)
-    private static String loreText = "§7Целостность:";
+    private static String loreText = "<gray>Целостность:</gray>";
     private static String bareLorePrefix = "Целостность:";
 
     // Break behavior
@@ -190,8 +192,8 @@ public class IntegrityManager extends BukkitRunnable {
         }
 
         // Lore text
-        loreText = cfg.getString("lore_text", "§7Целостность:");
-        bareLorePrefix = loreText.replaceAll("§.", "").trim();
+        loreText = cfg.getString("lore_text", "<gray>Целостность:</gray>");
+        bareLorePrefix = MessageUtil.toPlainText(loreText).trim();
 
         // Break behavior
         var onBreak = cfg.getConfigurationSection("on_break");
@@ -396,7 +398,7 @@ public class IntegrityManager extends BukkitRunnable {
     /**
      * Computes the HEX gradient color for the given integrity percentage.
      * 100% = dark-green (highColor), 0% = dark-red (lowColor).
-     * Returns the Minecraft HEX format: §x§R§R§G§G§B§B
+     * Returns a MiniMessage HEX tag: {@code <#RRGGBB>}
      */
     public static String getGradientColor(double pct) {
         double t = Math.max(0.0, Math.min(1.0, pct / 100.0));
@@ -411,11 +413,8 @@ public class IntegrityManager extends BukkitRunnable {
         g = Math.max(0, Math.min(0xFF, g));
         b = Math.max(0, Math.min(0xFF, b));
         
-        // Minecraft HEX format: §x§R§R§G§G§B§B
-        return String.format("§x§%X§%X§%X§%X§%X§%X",
-                (r >> 4) & 0xF, r & 0xF,
-                (g >> 4) & 0xF, g & 0xF,
-                (b >> 4) & 0xF, b & 0xF);
+        // MiniMessage HEX format: <#RRGGBB>
+        return String.format("<#%02X%02X%02X>", r, g, b);
     }
 
     // =========================
@@ -607,13 +606,12 @@ public class IntegrityManager extends BukkitRunnable {
                 return false;
             }
 
-            List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
-            if (lore == null) lore = new ArrayList<>();
+            List<Component> lore = meta.lore() != null ? new ArrayList<>(meta.lore()) : new ArrayList<>();
             // Remove old integrity lines
-            lore.removeIf(line -> stripColor(line).contains(bareLorePrefix));
+            lore.removeIf(line -> plain(line).contains(bareLorePrefix));
             // Add "◆ Unbreakable"
-            lore.add(loreText + " §b◆ Unbreakable");
-            meta.setLore(lore);
+            lore.add(MessageUtil.parse(loreText + " <aqua>◆ Unbreakable</aqua>"));
+            meta.lore(lore);
             pdc.set(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, 100.0);
             return true;
         }
@@ -636,11 +634,10 @@ public class IntegrityManager extends BukkitRunnable {
         pct = Math.max(0, Math.min(100.0, pct));
 
         // Work with the lore
-        List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
-        if (lore == null) lore = new ArrayList<>();
+        List<Component> lore = meta.lore() != null ? new ArrayList<>(meta.lore()) : new ArrayList<>();
 
-        // Remove old integrity lines (by plain prefix, ignoring §-colors)
-        lore.removeIf(line -> stripColor(line).contains(bareLorePrefix));
+        // Remove old integrity lines (by plain prefix, ignoring formatting)
+        lore.removeIf(line -> plain(line).contains(bareLorePrefix));
 
         // Smooth HEX gradient from dark-green (100%) to dark-red (0%)
         String color = getGradientColor(pct);
@@ -649,13 +646,9 @@ public class IntegrityManager extends BukkitRunnable {
         String pctStr = PCT_FMT.format(pct);
 
         // Build the lore line
-        // Example: §7Integrity: §x§0§0§6§6§0§075.500%
-        StringBuilder sb = new StringBuilder();
-        sb.append(loreText).append(" ");
-        sb.append(color).append(pctStr).append("%");
-
-        lore.add(sb.toString());
-        meta.setLore(lore);
+        // Example: <gray>Integrity:</gray> <#006600>75.500%
+        lore.add(MessageUtil.parse(loreText + " " + color + pctStr + "%"));
+        meta.lore(lore);
         pdc.set(Keys.INTEGRITY_LAST_SEEN, PersistentDataType.DOUBLE, currentIntegrity);
 
         return true;
@@ -676,10 +669,10 @@ public class IntegrityManager extends BukkitRunnable {
     }
 
     /**
-     * Strips all §-color codes from a string
+     * Serializes a lore component to plain text (strips all formatting).
      */
-    private static String stripColor(String input) {
-        return input.replaceAll("§.", "");
+    private static String plain(Component component) {
+        return PlainTextComponentSerializer.plainText().serialize(component);
     }
 
     /**
@@ -687,9 +680,9 @@ public class IntegrityManager extends BukkitRunnable {
      * Used to avoid rewriting meta when the displayed data is up to date.
      */
     private static boolean loreHasPercentLine(ItemMeta meta) {
-        if (!meta.hasLore()) return false;
-        for (String line : meta.getLore()) {
-            String clean = stripColor(line);
+        if (!meta.hasLore() || meta.lore() == null) return false;
+        for (Component line : meta.lore()) {
+            String clean = plain(line);
             if (clean.contains(bareLorePrefix) && clean.contains("%") && !clean.contains("◆")) {
                 return true;
             }
@@ -701,9 +694,9 @@ public class IntegrityManager extends BukkitRunnable {
      * true if the lore already contains a "◆ Unbreakable" line (instead of a percentage).
      */
     private static boolean loreHasUnbreakableLine(ItemMeta meta) {
-        if (!meta.hasLore()) return false;
-        for (String line : meta.getLore()) {
-            String clean = stripColor(line);
+        if (!meta.hasLore() || meta.lore() == null) return false;
+        for (Component line : meta.lore()) {
+            String clean = plain(line);
             if (clean.contains(bareLorePrefix) && clean.contains("◆")) {
                 return true;
             }

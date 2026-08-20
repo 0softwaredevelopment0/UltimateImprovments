@@ -92,34 +92,34 @@ public final class AcStatsSubcommand {
         }
 
         sender.sendMessage("");
-        sender.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        sender.sendMessage("§8┃   §6⚡ AntiCheat §7— §fDiagnostics");
-        sender.sendMessage("§8┃");
-        sender.sendMessage("§8┃  §7Module:    §f" + (Main.getInstance().getConfig().getBoolean("anticheat.enabled", true) ? "§aENABLED" : "§cDISABLED"));
-        sender.sendMessage("§8┃  §7Packet:    " + (packetEnabled ? "§aACTIVE" : "§cOFF (event-only)"));
-        sender.sendMessage("§8┃  §7Checks:    §a" + enabledCount + " enabled §7/ §c" + disabledCount + " disabled §7(" + allChecks.size() + " total)");
-        sender.sendMessage("§8┃  §7Players:   §f" + trackedPlayers + " §7tracked §8/ §f" + Bukkit.getOnlinePlayers().size() + " online");
-        sender.sendMessage("§8┃  §7Active VL: §f" + vlCounts.size() + " §7checks with violations");
-        sender.sendMessage("§8┃");
-        sender.sendMessage("§8┃  §7└ <click> §f/ui ac checks §7— список проверок");
-        sender.sendMessage("§8┃  §7└ <click> §f/ui ac players §7— VL игроков");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃   <gold>⚡ AntiCheat <gray>— <white>Diagnostics"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Module:    <white>" + (Main.getInstance().getConfig().getBoolean("anticheat.enabled", true) ? "<green>ENABLED" : "<red>DISABLED")));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Packet:    " + (packetEnabled ? "<green>ACTIVE" : "<red>OFF (event-only)")));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Checks:    <green>" + enabledCount + " enabled <gray>/ <red>" + disabledCount + " disabled <gray>(" + allChecks.size() + " total)"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Players:   <white>" + trackedPlayers + " <gray>tracked <dark_gray>/ <white>" + Bukkit.getOnlinePlayers().size() + " online"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Active VL: <white>" + vlCounts.size() + " <gray>checks with violations"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>└ <click> <white>/ui ac checks <gray>— список проверок"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>└ <click> <white>/ui ac players <gray>— VL игроков"));
 
         // Category breakdown
         for (CheckCategory cat : CheckCategory.values()) {
             List<AbstractCheck> catChecks = acm.getChecksByCategory(cat);
             long catEnabled = catChecks.stream().filter(AbstractCheck::isEnabled).count();
             String catName = switch (cat) {
-                case COMBAT -> "§c⚔ Combat";
-                case MOVEMENT -> "§b🏃 Movement";
-                case WORLD -> "§a🌍 World";
-                case MISC -> "§d🎒 Misc";
+                case COMBAT -> "<red>⚔ Combat";
+                case MOVEMENT -> "<aqua>🏃 Movement";
+                case WORLD -> "<green>🌍 World";
+                case MISC -> "<light_purple>🎒 Misc";
             };
-            sender.sendMessage("§8┃     " + catName + "§7: §f" + catChecks.size() + " §7(§a" + catEnabled + " active§7)");
+            sender.sendMessage(MessageUtil.parse("<dark_gray>┃     " + catName + "<gray>: <white>" + catChecks.size() + " <gray>(<green>" + catEnabled + " active<gray>)"));
         }
 
-        sender.sendMessage("§8┃");
-        sender.sendMessage("§8┃  §7Actions:    §fNOTIFY §7≥1 VL  |  §fSETBACK §7≥1 VL");
-        sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Actions:    <white>NOTIFY <gray>≥1 VL  |  <white>SETBACK <gray>≥1 VL"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         sender.sendMessage("");
 
         return true;
@@ -131,34 +131,34 @@ public final class AcStatsSubcommand {
 
     private static boolean showChecks(CommandSender sender, AntiCheatManager acm) {
         sender.sendMessage("");
-        sender.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        sender.sendMessage("§8┃   §6📋 AntiCheat §7— All Checks");
-        sender.sendMessage("§8┃");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃   <gold>📋 AntiCheat <gray>— All Checks"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
 
         for (CheckCategory cat : CheckCategory.values()) {
             List<AbstractCheck> catChecks = acm.getChecksByCategory(cat);
             String catPrefix = switch (cat) {
-                case COMBAT -> "§c⚔";
-                case MOVEMENT -> "§b🏃";
-                case WORLD -> "§a🌍";
-                case MISC -> "§d🎒";
+                case COMBAT -> "<red>⚔";
+                case MOVEMENT -> "<aqua>🏃";
+                case WORLD -> "<green>🌍";
+                case MISC -> "<light_purple>🎒";
             };
 
-            sender.sendMessage("§8┃");
-            sender.sendMessage("§8┃  " + catPrefix + " §f" + cat.name());
+            sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+            sender.sendMessage(MessageUtil.parse("<dark_gray>┃  " + catPrefix + " <white>" + cat.name()));
 
             for (AbstractCheck check : catChecks) {
-                String status = check.isEnabled() ? "§a✔" : "§c✘";
+                String status = check.isEnabled() ? "<green>✔" : "<red>✘";
                 String vlDecay = String.format("%.1f", check.getVlDecay());
-                sender.sendMessage("§8┃    " + status + " §f" + padRight(check.getName(), 16)
-                        + "§7 decay: §f" + vlDecay + "§7/s"
-                        + " §8[" + check.getConfigPath() + "]");
+                sender.sendMessage(MessageUtil.parse("<dark_gray>┃    " + status + " <white>" + padRight(check.getName(), 16)
+                        + "<gray> decay: <white>" + vlDecay + "<gray>/s"
+                        + " <dark_gray>[" + check.getConfigPath() + "]"));
             }
         }
 
-        sender.sendMessage("§8┃");
-        sender.sendMessage("§8┃  §7Legend: §a✔ enabled  §c✘ disabled");
-        sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Legend: <green>✔ enabled  <red>✘ disabled"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         sender.sendMessage("");
 
         return true;
@@ -176,14 +176,14 @@ public final class AcStatsSubcommand {
         }
 
         sender.sendMessage("");
-        sender.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        sender.sendMessage("§8┃   §6👤 AntiCheat §7— Player VLs");
-        sender.sendMessage("§8┃");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃   <gold>👤 AntiCheat <gray>— Player VLs"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
 
         for (Player p : online) {
             PlayerData data = acm.getPlayerData(p);
             if (data == null) {
-                sender.sendMessage("§8┃  §7" + padRight(p.getName(), 16) + "§8no data");
+                sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>" + padRight(p.getName(), 16) + "<dark_gray>no data"));
                 continue;
             }
 
@@ -191,21 +191,21 @@ public final class AcStatsSubcommand {
             List<String> activeVls = new ArrayList<>();
             for (Map.Entry<String, Double> entry : vls.entrySet()) {
                 if (entry.getValue() > 0) {
-                    activeVls.add(entry.getKey() + "§7:§e" + String.format("%.1f", entry.getValue()));
+                    activeVls.add(entry.getKey() + "<gray>:<yellow>" + String.format("%.1f", entry.getValue()));
                 }
             }
 
             if (activeVls.isEmpty()) {
-                sender.sendMessage("§8┃  §a✔ §f" + padRight(p.getName(), 16) + "§7clean");
+                sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <green>✔ <white>" + padRight(p.getName(), 16) + "<gray>clean"));
             } else {
-                sender.sendMessage("§8┃  §c⚠ §f" + padRight(p.getName(), 16)
-                        + "§7" + String.join(" §8|§7 ", activeVls));
+                sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <red>⚠ <white>" + padRight(p.getName(), 16)
+                        + "<gray>" + String.join(" <dark_gray>|<gray> ", activeVls)));
             }
         }
 
-        sender.sendMessage("§8┃");
-        sender.sendMessage("§8┃  §7<click> §f/ui ac player <ник> §7— детали игрока");
-        sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray><click> <white>/ui ac player <ник> <gray>— детали игрока"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         sender.sendMessage("");
 
         return true;
@@ -236,28 +236,28 @@ public final class AcStatsSubcommand {
         }
 
         sender.sendMessage("");
-        sender.sendMessage("§8┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
-        sender.sendMessage("§8┃   §6👤 AC Stats §7— §f" + target.getName());
-        sender.sendMessage("§8┃");
-        sender.sendMessage("§8┃  §7GameMode:  §f" + target.getGameMode());
-        sender.sendMessage("§8┃  §7Ping:      §f" + target.getPing() + "ms");
-        sender.sendMessage("§8┃  §7Exempt:    " + (data.isExempted() ? "§aYES" : "§cNO"));
-        sender.sendMessage("§8┃  §7On Ground: §f" + data.wasOnGround());
-        sender.sendMessage("§8┃  §7CPS:       §f" + data.getCps());
-        sender.sendMessage("§8┃  §7Position:  §f" + (data.getLastLocation() != null
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃   <gold>👤 AC Stats <gray>— <white>" + target.getName()));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>GameMode:  <white>" + target.getGameMode()));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Ping:      <white>" + target.getPing() + "ms"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Exempt:    " + (data.isExempted() ? "<green>YES" : "<red>NO")));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>On Ground: <white>" + data.wasOnGround()));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>CPS:       <white>" + data.getCps()));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Position:  <white>" + (data.getLastLocation() != null
                 ? String.format("%.0f, %.0f, %.0f",
                         data.getLastLocation().getX(),
                         data.getLastLocation().getY(),
                         data.getLastLocation().getZ())
-                : "none"));
-        sender.sendMessage("§8┃");
+                : "none")));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
 
         // Violation levels by check
-        sender.sendMessage("§8┃  §6VL by check:");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gold>VL by check:"));
 
         var vls = data.getAllVl();
         if (vls.isEmpty()) {
-            sender.sendMessage("§8┃    §7(no violations)");
+            sender.sendMessage(MessageUtil.parse("<dark_gray>┃    <gray>(no violations)"));
         } else {
             boolean hasAny = false;
             for (Map.Entry<String, Double> entry : vls.entrySet().stream()
@@ -265,25 +265,25 @@ public final class AcStatsSubcommand {
                     .collect(Collectors.toList())) {
                 if (entry.getValue() <= 0) continue;
                 hasAny = true;
-                String color = entry.getValue() >= 10 ? "§c" : entry.getValue() >= 5 ? "§e" : "§a";
+                String color = entry.getValue() >= 10 ? "<red>" : entry.getValue() >= 5 ? "<yellow>" : "<green>";
                 String bar = getBar(entry.getValue(), 15);
-                sender.sendMessage("§8┃    §f" + padRight(entry.getKey(), 14)
+                sender.sendMessage(MessageUtil.parse("<dark_gray>┃    <white>" + padRight(entry.getKey(), 14)
                         + color + String.format("%5.1f", entry.getValue())
-                        + " §8" + bar);
+                        + " <dark_gray>" + bar));
             }
             if (!hasAny) {
-                sender.sendMessage("§8┃    §7(no active violations)");
+                sender.sendMessage(MessageUtil.parse("<dark_gray>┃    <gray>(no active violations)"));
             }
         }
 
-        sender.sendMessage("§8┃");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃"));
         String loc = target.getLocation().getBlockX() + " " + target.getLocation().getBlockY() + " " + target.getLocation().getBlockZ();
-        sender.sendMessage("§8┃  §7Location:  §f" + loc + " §8[" + target.getWorld().getName() + "]");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Location:  <white>" + loc + " <dark_gray>[" + target.getWorld().getName() + "]"));
         if (data.getLastGroundLocation() != null) {
             var g = data.getLastGroundLocation();
-            sender.sendMessage("§8┃  §7Last gnd: §f" + g.getBlockX() + " " + g.getBlockY() + " " + g.getBlockZ());
+            sender.sendMessage(MessageUtil.parse("<dark_gray>┃  <gray>Last gnd: <white>" + g.getBlockX() + " " + g.getBlockY() + " " + g.getBlockZ()));
         }
-        sender.sendMessage("§8┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+        sender.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛"));
         sender.sendMessage("");
 
         return true;

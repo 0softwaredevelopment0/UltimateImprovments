@@ -1,6 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.PluginModule;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -28,7 +29,7 @@ public final class ModulesSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§4❌ §cИспользование: §f/ui modules list|enable|disable §7<путь>");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui modules list|enable|disable <gray><путь>"));
             return true;
         }
         var mm = ModuleManager.getInstance();
@@ -37,7 +38,7 @@ public final class ModulesSubcommand {
             case "enable" -> handleEnable(sender, args, mm);
             case "disable" -> handleDisable(sender, args, mm);
             default -> {
-                sender.sendMessage("§4❌ §cИспользование: §f/ui modules list|enable|disable §7<путь>");
+                sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui modules list|enable|disable <gray><путь>"));
                 yield true;
             }
         };
@@ -81,10 +82,10 @@ public final class ModulesSubcommand {
     private static boolean handleList(CommandSender sender, ModuleManager mm) {
         TreeNode root = buildTree(mm);
 
-        sender.sendMessage("§6══════════════════════════════════");
-        sender.sendMessage("§6  ✦ §fАрхитектура модулей UltimateImprovments");
-        sender.sendMessage("§6══════════════════════════════════");
-        sender.sendMessage("§3📁 §fui/");
+        sender.sendMessage(MessageUtil.parse("<gold>══════════════════════════════════"));
+        sender.sendMessage(MessageUtil.parse("<gold>  ✦ <white>Архитектура модулей UltimateImprovments"));
+        sender.sendMessage(MessageUtil.parse("<gold>══════════════════════════════════"));
+        sender.sendMessage(MessageUtil.parse("<dark_aqua>📁 <white>ui/"));
 
         List<Map.Entry<String, TreeNode>> entries = new ArrayList<>(root.children.entrySet());
         // Sort: folders first (no module), then by name
@@ -99,8 +100,8 @@ public final class ModulesSubcommand {
             printTree(sender, entries.get(i).getValue(), "", i == entries.size() - 1);
         }
 
-        sender.sendMessage("§6══════════════════════════════════");
-        sender.sendMessage("§8  §a✔§8 включён  §c❌§8 выключен  ⚡ ядро");
+        sender.sendMessage(MessageUtil.parse("<gold>══════════════════════════════════"));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>  <green>✔<dark_gray> включён  <red>❌<dark_gray> выключен  ⚡ ядро"));
         return true;
     }
 
@@ -119,14 +120,14 @@ public final class ModulesSubcommand {
         if (node.module != null) {
             // Leaf system
             boolean on = node.module.isEnabled();
-            String status = on ? "§a✔" : "§c❌";
-            String essential = node.module.isEssential() ? " §8⚡" : "";
-            String line = prefix + connector + status + " §f" + node.name + essential;
-            line += " §7(" + node.module.getName() + ")";
-            sender.sendMessage(line);
+            String status = on ? "<green>✔" : "<red>❌";
+            String essential = node.module.isEssential() ? " <dark_gray>⚡" : "";
+            String line = prefix + connector + status + " <white>" + node.name + essential;
+            line += " <gray>(" + node.module.getName() + ")";
+            sender.sendMessage(MessageUtil.parse(line));
         } else {
             // Intermediate directory
-            sender.sendMessage(prefix + connector + "§3📁 §f" + node.name + "/");
+            sender.sendMessage(MessageUtil.parse(prefix + connector + "<dark_aqua>📁 <white>" + node.name + "/"));
         }
 
         for (int i = 0; i < entries.size(); i++) {
@@ -141,33 +142,33 @@ public final class ModulesSubcommand {
     // ============================================================
     private static boolean handleEnable(CommandSender sender, String[] args, ModuleManager mm) {
         if (!sender.hasPermission("*") && !sender.isOp()) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на управление модулями!");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>У вас нет прав на управление модулями!"));
             return true;
         }
         if (args.length < 3) {
-            sender.sendMessage("§4❌ §cИспользование: §f/ui modules enable §7<путь>");
-            sender.sendMessage("§8  Пример: §7/ui modules enable energy/generation/basic");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui modules enable <gray><путь>"));
+            sender.sendMessage(MessageUtil.parse("<dark_gray>  Пример: <gray>/ui modules enable energy/generation/basic"));
             return true;
         }
         PluginModule found = findModuleByPath(mm, args[2]);
         if (found == null) {
-            sender.sendMessage("§4❌ §cМодуль по пути §e" + args[2] + "§c не найден!");
-            sender.sendMessage("§8  Используйте §7/ui modules list§8 для просмотра.");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Модуль по пути <yellow>" + args[2] + "<red> не найден!"));
+            sender.sendMessage(MessageUtil.parse("<dark_gray>  Используйте <gray>/ui modules list<dark_gray> для просмотра."));
             return true;
         }
         if (found.isEnabled()) {
-            sender.sendMessage("§eℹ §fМодуль §e" + found.getName() + "§f уже включён.");
+            sender.sendMessage(MessageUtil.parse("<yellow>ℹ <white>Модуль <yellow>" + found.getName() + "<white> уже включён."));
             return true;
         }
         boolean ok = mm.enableModule(found.getName());
         if (ok && found.isEnabled()) {
-            sender.sendMessage("§a✔ §fМодуль §e" + found.getName() + "§f включён!");
-            sender.sendMessage("§8  Путь: §7" + found.getModulePath());
+            sender.sendMessage(MessageUtil.parse("<green>✔ <white>Модуль <yellow>" + found.getName() + "<white> включён!"));
+            sender.sendMessage(MessageUtil.parse("<dark_gray>  Путь: <gray>" + found.getModulePath()));
             ConsoleLogger.info("[CMD] " + sender.getName() + " enabled: " + found.getModulePath());
         } else {
-            sender.sendMessage("§4❌ §cНе удалось включить модуль §e" + found.getName() + "§c!");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Не удалось включить модуль <yellow>" + found.getName() + "<red>!"));
             if (found.getDisableReason() != null)
-                sender.sendMessage("§8  Причина: §7" + found.getDisableReason());
+                sender.sendMessage(MessageUtil.parse("<dark_gray>  Причина: <gray>" + found.getDisableReason()));
         }
         return true;
     }
@@ -177,32 +178,32 @@ public final class ModulesSubcommand {
     // ============================================================
     private static boolean handleDisable(CommandSender sender, String[] args, ModuleManager mm) {
         if (!sender.hasPermission("*") && !sender.isOp()) {
-            sender.sendMessage("§4❌ §cУ вас нет прав на управление модулями!");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>У вас нет прав на управление модулями!"));
             return true;
         }
         if (args.length < 3) {
-            sender.sendMessage("§4❌ §cИспользование: §f/ui modules disable §7<путь>");
-            sender.sendMessage("§8  Пример: §7/ui modules disable energy/generation/basic");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui modules disable <gray><путь>"));
+            sender.sendMessage(MessageUtil.parse("<dark_gray>  Пример: <gray>/ui modules disable energy/generation/basic"));
             return true;
         }
         PluginModule found = findModuleByPath(mm, args[2]);
         if (found == null) {
-            sender.sendMessage("§4❌ §cМодуль по пути §e" + args[2] + "§c не найден!");
-            sender.sendMessage("§8  Используйте §7/ui modules list§8 для просмотра.");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Модуль по пути <yellow>" + args[2] + "<red> не найден!"));
+            sender.sendMessage(MessageUtil.parse("<dark_gray>  Используйте <gray>/ui modules list<dark_gray> для просмотра."));
             return true;
         }
         if (!found.isEnabled()) {
-            sender.sendMessage("§eℹ §fМодуль §e" + found.getName() + "§f уже выключен.");
+            sender.sendMessage(MessageUtil.parse("<yellow>ℹ <white>Модуль <yellow>" + found.getName() + "<white> уже выключен."));
             return true;
         }
         if (found.isEssential()) {
-            sender.sendMessage("§4❌ §cНельзя отключить ядерный модуль §e" + found.getName() + "§c!");
-            sender.sendMessage("§8  ⚡ = модули ядра (без них плагин нестабилен)");
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Нельзя отключить ядерный модуль <yellow>" + found.getName() + "<red>!"));
+            sender.sendMessage(MessageUtil.parse("<dark_gray>  ⚡ = модули ядра (без них плагин нестабилен)"));
             return true;
         }
         mm.disableModule(found.getName());
-        sender.sendMessage("§c❌ §fМодуль §e" + found.getName() + "§f отключён.");
-        sender.sendMessage("§8  Путь: §7" + found.getModulePath());
+        sender.sendMessage(MessageUtil.parse("<red>❌ <white>Модуль <yellow>" + found.getName() + "<white> отключён."));
+        sender.sendMessage(MessageUtil.parse("<dark_gray>  Путь: <gray>" + found.getModulePath()));
         ConsoleLogger.info("[CMD] " + sender.getName() + " disabled: " + found.getModulePath());
         return true;
     }

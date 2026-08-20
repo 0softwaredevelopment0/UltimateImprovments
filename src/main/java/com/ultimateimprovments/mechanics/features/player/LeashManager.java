@@ -2,6 +2,7 @@ package com.ultimateimprovments.mechanics.features.player;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 
 import org.bukkit.Bukkit;
 import org.bukkit.FluidCollisionMode;
@@ -373,13 +374,13 @@ public class LeashManager implements Listener {
         if (heldItem.getType() != Material.LEAD) return;
         if (!pending.isValid() || pending.isDead()) {
             pendingLink.remove(player.getUniqueId());
-            player.sendMessage("§c❌ Выбранная сущность мертва или исчезла!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Выбранная сущность мертва или исчезла!"));
             return;
         }
         Material blockType = event.getClickedBlock().getType();
         String blockTypeName = blockType.name();
         if (!blockTypeName.contains("FENCE") && !blockTypeName.contains("WALL") && !blockTypeName.contains("GATE")) {
-            player.sendMessage("§c❌ Можно привязать только к забору, стене или ограде!");
+            player.sendMessage(MessageUtil.parse("<red>❌ Можно привязать только к забору, стене или ограде!"));
             return;
         }
         event.setCancelled(true);
@@ -395,7 +396,7 @@ public class LeashManager implements Listener {
         leashEntityTo(pending, anchor);
         pendingLink.remove(player.getUniqueId());
         if (player.getGameMode() != org.bukkit.GameMode.CREATIVE) heldItem.setAmount(heldItem.getAmount() - 1);
-        player.sendMessage("§a✔ §e" + getEntityName(pending) + "§f привязан к блоку");
+        player.sendMessage(MessageUtil.parse("<green>✔ <yellow>" + getEntityName(pending) + "<white> привязан к блоку"));
     }
 
     // =========================
@@ -422,12 +423,12 @@ public class LeashManager implements Listener {
         Set<UUID> holders = getCustomLeashHolders(target);
         if (holders.contains(player.getUniqueId())) {
             unleashEntityFrom(target, player);
-            player.sendMessage("§e👝 §fПоводок снят с §e" + getEntityName(target));
+            player.sendMessage(MessageUtil.parse("<yellow>👝 <white>Поводок снят с <yellow>" + getEntityName(target)));
             return;
         }
         leashEntityTo(target, player);
         if (player.getGameMode() != org.bukkit.GameMode.CREATIVE) heldItem.setAmount(heldItem.getAmount() - 1);
-        player.sendMessage("§a✔ §fСущность привязана: §e" + getEntityName(target));
+        player.sendMessage(MessageUtil.parse("<green>✔ <white>Сущность привязана: <yellow>" + getEntityName(target)));
     }
 
     // =========================
@@ -437,16 +438,16 @@ public class LeashManager implements Listener {
         Entity pending = pendingLink.get(player.getUniqueId());
         if (pending == null) {
             pendingLink.put(player.getUniqueId(), target);
-            player.sendMessage("§e👝 §fВыбрана сущность: §e" + getEntityName(target));
-            player.sendMessage("§7Теперь SHIFT+ПКМ по другой сущности или блоку (забор), чтобы привязать §e" + getEntityName(target) + "§7.");
+            player.sendMessage(MessageUtil.parse("<yellow>👝 <white>Выбрана сущность: <yellow>" + getEntityName(target)));
+            player.sendMessage(MessageUtil.parse("<gray>Теперь SHIFT+ПКМ по другой сущности или блоку (забор), чтобы привязать <yellow>" + getEntityName(target) + "<gray>."));
             return;
         }
         if (!pending.isValid() || pending.isDead()) {
             pendingLink.remove(player.getUniqueId());
-            player.sendMessage("§c❌ Выбранная сущность мертва или исчезла! Выберите заново.");
+            player.sendMessage(MessageUtil.parse("<red>❌ Выбранная сущность мертва или исчезла! Выберите заново."));
             return;
         }
-        if (pending.equals(target)) { player.sendMessage("§c❌ Нельзя привязать сущность к самой себе!"); return; }
+        if (pending.equals(target)) { player.sendMessage(MessageUtil.parse("<red>❌ Нельзя привязать сущность к самой себе!")); return; }
 
         // Don't untie existing links — add a new one in parallel
         leashEntityTo(pending, target);
@@ -456,7 +457,7 @@ public class LeashManager implements Listener {
                     ? player.getInventory().getItemInMainHand() : player.getInventory().getItemInOffHand();
             if (held.getType() == Material.LEAD) held.setAmount(held.getAmount() - 1);
         }
-        player.sendMessage("§a✔ §e" + getEntityName(pending) + "§f привязан к §e" + getEntityName(target));
+        player.sendMessage(MessageUtil.parse("<green>✔ <yellow>" + getEntityName(pending) + "<white> привязан к <yellow>" + getEntityName(target)));
     }
 
     // =========================
@@ -574,10 +575,10 @@ public class LeashManager implements Listener {
     }
 
     private static String getEntityName(Entity entity) {
-        if (entity == null) return "§f?";
+        if (entity == null) return "<white>?";
         if (entity.getCustomName() != null) return entity.getCustomName();
         String typeName = entity.getType().name().toLowerCase().replace("_", " ");
         if (!typeName.isEmpty()) typeName = typeName.substring(0, 1).toUpperCase() + typeName.substring(1);
-        return "§f" + typeName;
+        return "<white>" + typeName;
     }
 }

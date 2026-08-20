@@ -229,23 +229,23 @@ public class LightningStructure {
     public static List<String> getValidationErrors(Location center) {
         List<String> errors = new ArrayList<>();
         if (center == null || center.getWorld() == null) {
-            errors.add("§c[1] Центр структуры = null");
+            errors.add("<red>[1] Центр структуры = null");
             return errors;
         }
         Location base = LocationUtil.normalize(center);
 
         // 1. Lightning rod
         if (!isBlock(base, ROD, Materials.WAXED_LIGHTNING_ROD)) {
-            errors.add("§6[1] Громоотвод §e(0, 0, 0) §7— должен быть WAXED_LIGHTNING_ROD на §f["
+            errors.add("<gold>[1] Громоотвод <yellow>(0, 0, 0) <gray>— должен быть WAXED_LIGHTNING_ROD на <white>["
                 + (base.getBlockX()) + " " + base.getBlockY() + " " + base.getBlockZ() + "]");
         }
 
         // 2. Bulb
         if (!isBlock(base, BULB, Materials.WAXED_COPPER_BULB)) {
-            errors.add("§6[2] Медная лампочка §e(0, -1, 0)"
-                + " §7— должна быть WAXED_COPPER_BULB на §f["
+            errors.add("<gold>[2] Медная лампочка <yellow>(0, -1, 0)"
+                + " <gray>— должна быть WAXED_COPPER_BULB на <white>["
                 + (base.getBlockX()) + " " + (base.getBlockY() - 1) + " " + base.getBlockZ() + "]"
-                + " §7(сейчас: §f" + getBlock(base, BULB[0], BULB[1], BULB[2]) + "§7)");
+                + " <gray>(сейчас: <white>" + getBlock(base, BULB[0], BULB[1], BULB[2]) + "<gray>)");
         }
 
         // 3. Inner trapdoors
@@ -254,16 +254,16 @@ public class LightningStructure {
             if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) innerTrapIssues++;
         }
         if (innerTrapIssues > 0) {
-            errors.add("§6[3] Люки вокруг лампочки §eY=-1"
-                + " §7— " + innerTrapIssues + " не WAXED_COPPER_TRAPDOOR");
+            errors.add("<gold>[3] Люки вокруг лампочки <yellow>Y=-1"
+                + " <gray>— " + innerTrapIssues + " не WAXED_COPPER_TRAPDOOR");
         }
 
         // 4. Grate
         if (!isBlock(base, GRATE, Materials.WAXED_COPPER_GRATE)) {
-            errors.add("§6[4] Медная решётка §e(0, -2, 0)"
-                + " §7— должна быть WAXED_COPPER_GRATE на §f["
+            errors.add("<gold>[4] Медная решётка <yellow>(0, -2, 0)"
+                + " <gray>— должна быть WAXED_COPPER_GRATE на <white>["
                 + (base.getBlockX()) + " " + (base.getBlockY() - 2) + " " + base.getBlockZ() + "]"
-                + " §7(сейчас: §f" + getBlock(base, GRATE[0], GRATE[1], GRATE[2]) + "§7)");
+                + " <gray>(сейчас: <white>" + getBlock(base, GRATE[0], GRATE[1], GRATE[2]) + "<gray>)");
         }
 
         // 5. Stairs
@@ -272,8 +272,8 @@ public class LightningStructure {
             if (!isBlock(base, pos, Materials.WAXED_CUT_COPPER_STAIRS)) stairIssues++;
         }
         if (stairIssues > 0) {
-            errors.add("§6[5] Ступени вокруг решётки §eY=-2"
-                + " §7— " + stairIssues + " не WAXED_CUT_COPPER_STAIRS");
+            errors.add("<gold>[5] Ступени вокруг решётки <yellow>Y=-2"
+                + " <gray>— " + stairIssues + " не WAXED_CUT_COPPER_STAIRS");
         }
 
         // 6. Mid trapdoors
@@ -282,16 +282,16 @@ public class LightningStructure {
             if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) midTrapIssues++;
         }
         if (midTrapIssues > 0) {
-            errors.add("§6[6] Угловые люки §eY=-2"
-                + " §7— " + midTrapIssues + " не WAXED_COPPER_TRAPDOOR");
+            errors.add("<gold>[6] Угловые люки <yellow>Y=-2"
+                + " <gray>— " + midTrapIssues + " не WAXED_COPPER_TRAPDOOR");
         }
 
         // 7. Chiseled
         if (!isBlock(base, CHISELED, Materials.WAXED_CHISELED_COPPER)) {
-            errors.add("§6[7] Резная медь §e(0, -3, 0)"
-                + " §7— должна быть WAXED_CHISELED_COPPER на §f["
+            errors.add("<gold>[7] Резная медь <yellow>(0, -3, 0)"
+                + " <gray>— должна быть WAXED_CHISELED_COPPER на <white>["
                 + (base.getBlockX()) + " " + (base.getBlockY() - 3) + " " + base.getBlockZ() + "]"
-                + " §7(сейчас: §f" + getBlock(base, CHISELED[0], CHISELED[1], CHISELED[2]) + "§7)");
+                + " <gray>(сейчас: <white>" + getBlock(base, CHISELED[0], CHISELED[1], CHISELED[2]) + "<gray>)");
         }
 
         // 8. Cut copper cross
@@ -300,8 +300,8 @@ public class LightningStructure {
             if (!isBlock(base, pos, Materials.WAXED_CUT_COPPER)) cutIssues++;
         }
         if (cutIssues > 0) {
-            errors.add("§6[8] Резной медный крест §eY=-3"
-                + " §7— " + cutIssues + " не WAXED_CUT_COPPER");
+            errors.add("<gold>[8] Резной медный крест <yellow>Y=-3"
+                + " <gray>— " + cutIssues + " не WAXED_CUT_COPPER");
         }
 
         // 9. Copper block corners
@@ -310,8 +310,8 @@ public class LightningStructure {
             if (!isBlock(base, pos, Materials.WAXED_COPPER_BLOCK)) cornerIssues++;
         }
         if (cornerIssues > 0) {
-            errors.add("§6[9] Угловые медные блоки §eY=-3"
-                + " §7— " + cornerIssues + " не WAXED_COPPER_BLOCK");
+            errors.add("<gold>[9] Угловые медные блоки <yellow>Y=-3"
+                + " <gray>— " + cornerIssues + " не WAXED_COPPER_BLOCK");
         }
 
         // 10. Outer trapdoors
@@ -320,15 +320,15 @@ public class LightningStructure {
             if (!isBlock(base, pos, Materials.WAXED_COPPER_TRAPDOOR)) outerTrapIssues++;
         }
         if (outerTrapIssues > 0) {
-            errors.add("§6[10] Боковые люки §eY=-3"
-                + " §7— " + outerTrapIssues + " не WAXED_COPPER_TRAPDOOR");
+            errors.add("<gold>[10] Боковые люки <yellow>Y=-3"
+                + " <gray>— " + outerTrapIssues + " не WAXED_COPPER_TRAPDOOR");
         }
 
         // 11. Item frame on top of rod
         if (!hasItemFrameOnTop(base)) {
-            errors.add("§6[11] Рамка §7— не найдена на верхней грани громоотвода §f["
+            errors.add("<gold>[11] Рамка <gray>— не найдена на верхней грани громоотвода <white>["
                 + base.getBlockX() + " " + base.getBlockY() + " " + base.getBlockZ() + "]"
-                + "§7. Повесьте рамку НА ВЕРХНЮЮ ГРАНЬ громоотвода");
+                + "<gray>. Повесьте рамку НА ВЕРХНЮЮ ГРАНЬ громоотвода");
         }
 
         return errors;

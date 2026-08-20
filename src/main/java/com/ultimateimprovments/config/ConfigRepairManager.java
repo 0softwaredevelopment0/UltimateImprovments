@@ -59,52 +59,41 @@ public class ConfigRepairManager {
     }
 
     /**
-     * Adds the missing keys to the end of the YAML file, preserving the structure.
-     */
-    /**
      * Adds the missing keys to the config.
      * <p>
      * Two modes:
      * <ol>
+     *   <li><b>Sub-keys in existing sections</b> (root already present) — inserted as text
+     *       at the end of their root section, preserving the user's comments.</li>
      *   <li><b>New root sections</b> (root does not exist in userConfig) — appended as a YAML block
      *       at the end of the file. This is safe because there will be no duplicates.</li>
-     *   <li><b>Sub-keys in existing sections</b> (root already present) — set via
-     *       {@code config.set()}, after which the whole file is rewritten with {@code config.save()}.
-     *       This is required so that SnakeYAML does not overwrite existing values with a duplicate root section.</li>
      * </ol>
      */
     private static void appendMissingKeys(Main plugin, FileConfiguration userConfig, File dataFile, FileConfiguration defaultConfig, List<String> missing) {
         // Split the missing keys into two groups:
-        //   A — root section already exists → config.set() + save
+        //   A — root section already exists → textual insert into that section
         //   B — new root section → YAML append (no duplicate risk)
         List<String> appendPaths = new ArrayList<>();
-        boolean needsFullSave = false;
+        Map<String, List<String>> existingRoots = new LinkedHashMap<>();
 
         for (String path : missing) {
             String rootKey = path.contains(".") ? path.substring(0, path.indexOf('.')) : path;
 
             if (userConfig.isSet(rootKey)) {
-                // Root section already exists — set via set(),
-                // to avoid a duplicate root key in YAML
-                userConfig.set(path, defaultConfig.get(path));
-                needsFullSave = true;
+                // Root section already exists — insert the missing sub-keys as text
+                // into that section (keeps the user's comments intact).
+                existingRoots.computeIfAbsent(rootKey, k -> new ArrayList<>()).add(path);
             } else {
                 appendPaths.add(path);
             }
         }
 
-        // ── Group A: sub-keys in existing sections → config.set() + save ──
-        // Done FIRST so that save() does not overwrite the YAML-append that comes after.
-        if (needsFullSave) {
-            try {
-                userConfig.save(dataFile);
-                ConsoleLogger.info("[ConfigRepair] Saved config with merged missing sub-keys.");
-            } catch (IOException e) {
-                plugin.getLogger().log(Level.WARNING, "[ConfigRepair] Failed to save config after merging missing keys", e);
-            }
+        // ── Group A: sub-keys in existing sections → textual insert (comments preserved) ──
+        if (!existingRoots.isEmpty()) {
+            insertIntoExistingSections(dataFile, defaultConfig, existingRoots);
         }
 
-        // ── Group B: new root sections → YAML append at the END of the already-saved file ──
+        // ── Group B: new root sections → YAML append at the END of the file ──
         if (!appendPaths.isEmpty()) {
             appendPaths.sort(Comparator.comparingInt(String::length));
 
@@ -147,6 +136,82 @@ public class ConfigRepairManager {
                 plugin.getLogger().log(Level.WARNING, "[ConfigRepair] Failed to append keys to " + dataFile.getName(), e);
             }
         }
+    }
+
+    /**
+     * Inserts missing sub-keys into existing root sections WITHOUT rewriting the
+     * whole file, so the user's comments are preserved. Each root's missing keys
+     * are inserted at the end of that section (right before the next root key or EOF).
+     */
+    private static void insertIntoExistingSections(File dataFile, FileConfiguration defaultConfig, Map<String, List<String>> existingRoots) {
+        try {
+            List<String> lines = new ArrayList<>(Files.readAllLines(dataFile.toPath()));
+
+            // Build the insertion block for each root
+            Map<String, String> blocks = new LinkedHashMap<>();
+            for (Map.Entry<String, List<String>> entry : existingRoots.entrySet()) {
+                String rootKey = entry.getKey();
+                StringBuilder sb = new StringBuilder();
+                ConfigurationSection section = defaultConfig.getConfigurationSection(rootKey);
+                for (String path : entry.getValue()) {
+                    if (!path.contains(".")) continue;
+                    String relativePath = path.substring(path.indexOf('.') + 1);
+                    if (section != null) {
+                        appendYamlPath(sb, section, relativePath, 1);
+                    } else {
+                        Object val = defaultConfig.get(path);
+                        if (val != null) sb.append("  ").append(formatYamlValue(relativePath, val)).append("\n");
+                    }
+                }
+                blocks.put(rootKey, sb.toString());
+            }
+
+            // Locate all root-level key lines
+            List<Integer> rootLines = new ArrayList<>();
+            for (int i = 0; i < lines.size(); i++) {
+                if (isRootKeyLine(lines.get(i))) rootLines.add(i);
+            }
+
+            // Insert bottom-up so line indices stay valid
+            for (int r = rootLines.size() - 1; r >= 0; r--) {
+                int rootIdx = rootLines.get(r);
+                String rootKey = extractKey(lines.get(rootIdx));
+                String block = blocks.remove(rootKey);
+                if (block == null || block.isEmpty()) continue;
+
+                // Insertion point: end of this section = next root line (or EOF),
+                // skipping trailing blank lines so we insert before them.
+                int insertAt = (r + 1 < rootLines.size()) ? rootLines.get(r + 1) : lines.size();
+                int target = insertAt;
+                while (target > rootIdx + 1 && lines.get(target - 1).trim().isEmpty()) target--;
+
+                List<String> toInsert = new ArrayList<>(java.util.Arrays.asList(block.split("\n", -1)));
+                lines.addAll(target, toInsert);
+            }
+
+            Files.write(dataFile.toPath(), lines);
+            ConsoleLogger.info("[ConfigRepair] Inserted missing sub-keys into existing sections (comments preserved).");
+        } catch (IOException e) {
+            ConsoleLogger.warn("[ConfigRepair] Failed to insert missing sub-keys: " + e.getMessage());
+        }
+    }
+
+    /** Whether a line is a root-level YAML key (no indent, not a comment, not a list item). */
+    private static boolean isRootKeyLine(String line) {
+        if (line == null || line.isEmpty()) return false;
+        char first = line.charAt(0);
+        if (first == ' ' || first == '\t') return false;
+        String trimmed = line.trim();
+        if (trimmed.startsWith("#")) return false;
+        if (trimmed.startsWith("- ")) return false;
+        return trimmed.matches("^[a-zA-Z_][a-zA-Z0-9_-]*:.*");
+    }
+
+    /** Extracts the key name from a {@code key: value} line. */
+    private static String extractKey(String line) {
+        String trimmed = line.trim();
+        int colon = trimmed.indexOf(':');
+        return colon > 0 ? trimmed.substring(0, colon) : trimmed;
     }
 
     /**

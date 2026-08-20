@@ -1,6 +1,7 @@
 package com.ultimateimprovments.mechanics.features.blocks;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -64,7 +65,7 @@ public class BoostedCobwebManager implements Listener {
             event.setCancelled(true);
             player.teleport(from);
             player.setVelocity(new Vector(0, 0, 0));
-            player.sendActionBar("§c❌ You can't move in the cobweb!");
+            player.sendActionBar(com.ultimateimprovments.util.MessageUtil.parse("<red>❌ You can't move in the cobweb!"));
         }
     }
 
@@ -75,7 +76,7 @@ public class BoostedCobwebManager implements Listener {
 
         if (isInCobweb(player)) {
             event.setCancelled(true);
-            player.sendActionBar("§c❌ You can't attack in the cobweb!");
+            player.sendActionBar(MessageUtil.parse("<red>❌ You can't attack in the cobweb!</red>"));
         }
     }
 

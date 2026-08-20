@@ -52,12 +52,13 @@ public class ServerOverloadWarning extends BukkitRunnable {
             warnedHigh = false;
             if (!warnedCritical) {
                 warnedCritical = true;
-                Main.getInstance()
-                        .getLogger()
-                        .severe("Server » MSPT=" + mspt);
+                ConsoleLogger.log(
+                        MessageUtil.PREFIX + " <red>MSPT=" + String.format("%.1f", mspt)
+                                + " — critical threshold!</red>"
+                );
                 ServerOverloadNotify.broadcast(
-                        "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset><white>MSPT </white><red>" + String.format("%.2f", mspt) +
-                                " </red><gray>→ </gray><red>Критическая нагрузка на сервер!</red>"
+                        MessageUtil.PREFIX + " <white>Server MSPT reached a critical threshold! Check tick info.<dark_gray>(<yellow>"
+                                + String.format("%.1f", mspt) + "<dark_gray>)"
                 );
             }
             return;
@@ -67,12 +68,13 @@ public class ServerOverloadWarning extends BukkitRunnable {
             warnedCritical = false;
             if (!warnedHigh) {
                 warnedHigh = true;
-                Main.getInstance()
-                        .getLogger()
-                        .warning("Server » MSPT=" + mspt);
+                ConsoleLogger.log(
+                        MessageUtil.PREFIX + " <yellow>MSPT=" + String.format("%.1f", mspt)
+                                + " — safe operation exceeded!</yellow>"
+                );
                 ServerOverloadNotify.broadcast(
-                        "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset><white>MSPT </white><red>" + String.format("%.2f", mspt) +
-                                " </red><gray>→ </gray><yellow>Высокая нагрузка на сервер!</yellow>"
+                        MessageUtil.PREFIX + " <white>Server MSPT is exceeding safe operation parameters! <dark_gray>(<yellow>"
+                                + String.format("%.1f", mspt) + "<dark_gray>)"
                 );
             }
             return;

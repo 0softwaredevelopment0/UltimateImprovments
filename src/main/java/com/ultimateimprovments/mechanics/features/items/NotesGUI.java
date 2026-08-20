@@ -9,6 +9,7 @@ import net.minecraft.world.item.component.WritableBookContent;
 
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.Materials;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -71,22 +72,22 @@ public class NotesGUI {
         BookMeta meta = (BookMeta) book.getItemMeta();
         if (meta == null) return book;
 
-        meta.setDisplayName("§fЗаметка #" + noteNumber);
+        meta.displayName(MessageUtil.parse("<white>Заметка #" + noteNumber));
 
         if (hasText) {
             String preview = content.length() > 30 ? content.substring(0, 30) + "..." : content;
-            List<String> lore = new ArrayList<>();
-            lore.add("§7" + preview.replace("\n", " "));
+            List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
+            lore.add(MessageUtil.parse("<gray>" + preview.replace("\n", " ")));
             try {
-                meta.setLore(lore);
+                meta.lore(lore);
             } catch (Exception ignored) {
                 // Paper 1.21.x may restrict lore on WRITABLE_BOOK
             }
         } else {
-            List<String> lore = new ArrayList<>();
-            lore.add("§8(пусто)");
+            List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
+            lore.add(MessageUtil.parse("<dark_gray>(пусто)"));
             try {
-                meta.setLore(lore);
+                meta.lore(lore);
             } catch (Exception ignored) {}
         }
 

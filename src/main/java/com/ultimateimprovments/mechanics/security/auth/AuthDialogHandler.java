@@ -2,6 +2,7 @@ package com.ultimateimprovments.mechanics.security.auth;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.dialog.DialogResponseView;
 import io.papermc.paper.event.player.PlayerCustomClickEvent;
@@ -39,11 +40,11 @@ public class AuthDialogHandler implements Listener {
         if (identifier.equals(AUTH_CANCEL_KEY)) {
             String kickMsg = Main.getInstance().getConfig()
                 .getString("messages.auth.dialog.kick_cancelled",
-                    "§c❌ Authentication cancelled.\n§7You cancelled the authentication process.");
+                    "<red>❌ Authentication cancelled.\n<gray>You cancelled the authentication process.");
             // Small delay so the client has time to close the dialog
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline()) {
-                    player.kickPlayer(kickMsg);
+                    player.kickPlayer(MessageUtil.legacy(kickMsg));
                 }
             }, 5L);
             ConsoleLogger.info("[AuthDialog] Player " + player.getName() + " cancelled authentication (Exit button).");

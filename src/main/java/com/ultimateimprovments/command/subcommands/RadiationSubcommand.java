@@ -20,18 +20,18 @@ public final class RadiationSubcommand {
             if (sender instanceof Player p && !p.hasPermission("ui.command.setrad")) {
                 CommandErrors.noPermission(p); return true;
             }
-            if (args.length < 3) { sender.sendMessage("§4❌ §cUsage: §f/ui setrad §7<player> <value>"); return true; }
+            if (args.length < 3) { sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>Usage: <white>/ui setrad <gray><player> <value>")); return true; }
             @SuppressWarnings("deprecation")
             Player target = Bukkit.getPlayer(args[1]);
-            if (target == null) { sender.sendMessage("§4❌ §cPlayer §e" + args[1] + "§c is offline or not exist!"); return true; }
+            if (target == null) { sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>Player <yellow>" + args[1] + "<red> is offline or not exist!")); return true; }
             try {
                 int value = Integer.parseInt(args[2]);
-                if (value < 0) { sender.sendMessage("§4❌ §cRadiation value cannot be negative!"); return true; }
+                if (value < 0) { sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>Radiation value cannot be negative!")); return true; }
                 RadiationManager.setRadiation(target, value);
                 double roentgen = value / 100.0;
-                sender.sendMessage("§a✔ §fPlayer radiation §e" + args[1] + "§f was set to §e" + value + " §7(§f" + String.format(Locale.US, "%.1f", roentgen) + " r/h§7)");
+                sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<green>✔ <white>Player radiation <yellow>" + args[1] + "<white> was set to <yellow>" + value + " <gray>(<white>" + String.format(Locale.US, "%.1f", roentgen) + " r/h<gray>)"));
             } catch (NumberFormatException e) {
-                sender.sendMessage("§4❌ §cIncorrect value: §f" + args[2]);
+                sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>Incorrect value: <white>" + args[2]));
             }
             return true;
         }

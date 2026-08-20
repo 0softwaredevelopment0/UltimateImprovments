@@ -4,6 +4,7 @@ import com.ultimateimprovments.command.CommandErrors;
 
 import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
 import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -14,30 +15,31 @@ public final class ItemSubcommand {
     private ItemSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { sender.sendMessage("§4❌ §cТолько игрок может использовать эту команду!"); return true; }
+        if (!(sender instanceof Player)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Только игрок может использовать эту команду!")); return true; }
+        Player player = (Player) sender;
         if (!player.hasPermission("ui.command.item")) { CommandErrors.noPermission(player); return true; }
-        if (args.length < 2) { player.sendMessage("§4❌ §cИспользование: §f/ui item int <set|add|list> [значение]"); return true; }
+        if (args.length < 2) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui item int <set|add|list> [значение]")); return true; }
 
         if (args[1].equalsIgnoreCase("int")) {
-            if (args.length < 3) { player.sendMessage("§4❌ §cИспользование: §f/ui item int set|add|list"); return true; }
+            if (args.length < 3) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui item int set|add|list")); return true; }
 
             ItemStack held = player.getInventory().getItemInMainHand();
-            if (held == null || held.getType() == Material.AIR) { player.sendMessage("§4❌ §cВы должны держать предмет в руке!"); return true; }
+            if (held == null || held.getType() == Material.AIR) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Вы должны держать предмет в руке!")); return true; }
 
             if (!ItemIntegrityAPI.hasItemIntegrity(held)) {
                 ItemIntegrityAPI.initializeItemIntegrity(held);
-                if (!ItemIntegrityAPI.hasItemIntegrity(held)) { player.sendMessage("§4❌ §cЭтот предмет не имеет системы целостности!"); return true; }
+                if (!ItemIntegrityAPI.hasItemIntegrity(held)) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Этот предмет не имеет системы целостности!")); return true; }
             }
 
             switch (args[2].toLowerCase()) {
                 case "list" -> handleList(player, held);
                 case "set" -> handleSet(player, args, held);
                 case "add" -> handleAdd(player, args, held);
-                default -> player.sendMessage("§4❌ §cНеизвестная подкоманда: §f" + args[2]);
+                default -> player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Неизвестная подкоманда: <white>" + args[2]));
             }
             return true;
         }
-        player.sendMessage("§4❌ §cНеизвестная подкоманда: §f" + args[1]);
+        player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Неизвестная подкоманда: <white>" + args[1]));
         return true;
     }
 
@@ -48,37 +50,37 @@ public final class ItemSubcommand {
         String name = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
                 ? held.getItemMeta().getDisplayName()
                 : capitalize(held.getType().name().toLowerCase().replace("_", " "));
-        player.sendMessage("§6═══════════════════════");
-        player.sendMessage("§6  ✦ §fИнформация о целостности");
-        player.sendMessage("§6═══════════════════════");
-        player.sendMessage("§7Предмет: §f" + name);
-        player.sendMessage("§7Текущая: §a" + IntegrityManager.formatPercent(pct) + "%");
-        player.sendMessage("§7Макс:    §a" + IntegrityManager.formatPercent(Math.max(0.0, ItemIntegrityAPI.getItemMaxIntegrityPercent(held))) + "%");
-        player.sendMessage("§6═══════════════════════");
+        player.sendMessage(MessageUtil.parse("<gold>═══════════════════════"));
+        player.sendMessage(MessageUtil.parse("<gold>  ✦ <white>Информация о целостности"));
+        player.sendMessage(MessageUtil.parse("<gold>═══════════════════════"));
+        player.sendMessage(MessageUtil.parse("<gray>Предмет: <white>" + name));
+        player.sendMessage(MessageUtil.parse("<gray>Текущая: <green>" + IntegrityManager.formatPercent(pct) + "%"));
+        player.sendMessage(MessageUtil.parse("<gray>Макс:    <green>" + IntegrityManager.formatPercent(Math.max(0.0, ItemIntegrityAPI.getItemMaxIntegrityPercent(held))) + "%"));
+        player.sendMessage(MessageUtil.parse("<gold>═══════════════════════"));
     }
 
     private static void handleSet(Player player, String[] args, ItemStack held) {
-        if (args.length < 4) { player.sendMessage("§4❌ §cИспользование: §f/ui item int set §7<значение>"); return; }
+        if (args.length < 4) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui item int set <gray><значение>")); return; }
         try {
             double value = Double.parseDouble(args[3]);
-            if (value < 0 || value > 100) { player.sendMessage("§4❌ §cЗначение должно быть от 0 до 100!"); return; }
+            if (value < 0 || value > 100) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Значение должно быть от 0 до 100!")); return; }
             double actual = Math.max(0.0, ItemIntegrityAPI.setItemIntegrity(held, value));
-            player.sendMessage("§a✔ §fЦелостность установлена на §e" + IntegrityManager.formatPercent(actual) + "%");
+            player.sendMessage(MessageUtil.parse("<green>✔ <white>Целостность установлена на <yellow>" + IntegrityManager.formatPercent(actual) + "%"));
         } catch (NumberFormatException e) {
-            player.sendMessage("§4❌ §cНеверный формат числа!");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Неверный формат числа!"));
         }
     }
 
     private static void handleAdd(Player player, String[] args, ItemStack held) {
-        if (args.length < 4) { player.sendMessage("§4❌ §cИспользование: §f/ui item int add §7<значение>"); return; }
+        if (args.length < 4) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui item int add <gray><значение>")); return; }
         try {
             double value = Double.parseDouble(args[3]);
-            if (value <= 0) { player.sendMessage("§4❌ §cЗначение должно быть больше 0!"); return; }
+            if (value <= 0) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Значение должно быть больше 0!")); return; }
             // The actual value is returned by the API itself — we don't recalculate locally
             double newVal = Math.max(0.0, ItemIntegrityAPI.increaseItemIntegrityPercent(held, value));
-            player.sendMessage("§a✔ §fДобавлено §e" + IntegrityManager.formatPercent(value) + "%§f. Текущая: §e" + IntegrityManager.formatPercent(newVal) + "%");
+            player.sendMessage(MessageUtil.parse("<green>✔ <white>Добавлено <yellow>" + IntegrityManager.formatPercent(value) + "%<white>. Текущая: <yellow>" + IntegrityManager.formatPercent(newVal) + "%"));
         } catch (NumberFormatException e) {
-            player.sendMessage("§4❌ §cНеверный формат числа!");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Неверный формат числа!"));
         }
     }
 

@@ -453,10 +453,10 @@ public class VanishManager implements Listener {
             if (isVanished(online.getUniqueId())) {
                 vanishedCount++;
                 if (canSeeVanished) {
-                    visibleNames.add("§7" + online.getDisplayName() + "§r");
+                    visibleNames.add("<gray>" + online.getDisplayName() + "<reset>");
                 }
             } else {
-                visibleNames.add("§f" + online.getDisplayName() + "§r");
+                visibleNames.add("<white>" + online.getDisplayName() + "<reset>");
             }
         }
 
@@ -464,10 +464,10 @@ public class VanishManager implements Listener {
         int visibleCount = totalOnline - (canSeeVanished ? 0 : vanishedCount);
 
         event.setCancelled(true);
-        sender.sendMessage("§7На сервере §f" + visibleCount + "§7/§f" + Bukkit.getMaxPlayers() + " §7игроков:");
-        sender.sendMessage(String.join("§7, ", visibleNames));
+        sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>На сервере <white>" + visibleCount + "<gray>/<white>" + Bukkit.getMaxPlayers() + " <gray>игроков:"));
+        sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse(String.join("<gray>, ", visibleNames)));
         if (vanishedCount > 0 && canSeeVanished) {
-            sender.sendMessage("§7(" + vanishedCount + " в ванише)");
+            sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<gray>(" + vanishedCount + " в ванише)"));
         }
     }
 

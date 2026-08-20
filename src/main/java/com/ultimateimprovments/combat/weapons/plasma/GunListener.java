@@ -1,6 +1,7 @@
 package com.ultimateimprovments.combat.weapons.plasma;
 
 import com.ultimateimprovments.core.Keys;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -57,7 +58,7 @@ public class GunListener implements Listener {
                 || ammo.getType() != Material.ECHO_SHARD
                 || ammo.getAmount() <= 0) {
 
-            p.sendActionBar("§7[§dPLASMA§7] §cNo ammo");
+            p.sendActionBar(MessageUtil.parse("<gray>[<light_purple>PLASMA<gray>] <red>No ammo"));
             return;
         }
 
@@ -78,12 +79,12 @@ public class GunListener implements Listener {
 
                 double left = (COOLDOWN_TICKS - passedTicks) / 20.0;
 
-                p.sendActionBar(
-                        "§7[§6RELOAD§7] §c"
+                p.sendActionBar(MessageUtil.parse(
+                        "<gray>[<gold>RELOAD<gray>] <red>"
                                 + String.format("%.1f", left)
-                                + "s §8| §7Ammo: §e"
+                                + "s <dark_gray>| <gray>Ammo: <yellow>"
                                 + ammoCount
-                );
+                ));
                 return;
             }
         }
@@ -111,10 +112,10 @@ public class GunListener implements Listener {
                 1.1f
         );
 
-        p.sendActionBar(
-                "§7[§dPLASMA§7] §fShot §8| §7Ammo: §e"
+        p.sendActionBar(MessageUtil.parse(
+                "<gray>[<light_purple>PLASMA<gray>] <white>Shot <dark_gray>| <gray>Ammo: <yellow>"
                         + (ammoCount - 1)
-        );
+        ));
     }
 
     // =========================

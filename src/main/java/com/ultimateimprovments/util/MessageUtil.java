@@ -18,6 +18,9 @@ public class MessageUtil {
     private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
     private static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
 
+    /** Префикс плагина для всех сообщений: "[UI] ". */
+    public static final String PREFIX = "<white>[<green>UI<white>] <reset>";
+
     /**
      * Main entry point: renders text with FULL placeholder resolution and
      * MiniMessage parsing.

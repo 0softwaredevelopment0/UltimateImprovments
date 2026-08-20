@@ -43,10 +43,10 @@ public class AuthListener implements Listener {
                         "<yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different name.</white>");
                 String dupParsed = MessageUtil.legacy(dupMessage);
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-                        "§6✦ UltimateImprovments\n" +
-                        "§7━━━━━━━━━━━━━━━━━━━━━\n\n" +
+                        MessageUtil.legacy("<gold>✦ UltimateImprovments\n" +
+                        "<gray>━━━━━━━━━━━━━━━━━━━━━\n\n") +
                         dupParsed + "\n\n" +
-                        "§7━━━━━━━━━━━━━━━━━━━━━"
+                        MessageUtil.legacy("<gray>━━━━━━━━━━━━━━━━━━━━━")
                 );
                 return;
             }
@@ -184,8 +184,8 @@ public class AuthListener implements Listener {
 
         event.setCancelled(true);
         player.sendMessage("");
-        player.sendMessage("§c❌ §fПожалуйста, авторизуйтесь!");
-        player.sendMessage("§e/ui auth login <password> §7| §e/ui auth register <password>");
+        player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<red>❌ <white>Пожалуйста, авторизуйтесь!"));
+        player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<yellow>/ui auth login <password> <gray>| <yellow>/ui auth register <password>"));
         player.sendMessage("");
     }
 

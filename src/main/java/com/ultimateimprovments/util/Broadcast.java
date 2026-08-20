@@ -16,9 +16,6 @@ import org.bukkit.entity.Player;
  */
 public final class Broadcast {
 
-    /** Server message prefix: "sᴇʀᴠᴇʀ » ". */
-    public static final String SERVER_PREFIX = "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset> ";
-
     private Broadcast() {}
 
     /**
@@ -35,13 +32,14 @@ public final class Broadcast {
     }
 
     /**
-     * Sends a message to all players with the server prefix {@code "sᴇʀᴠᴇʀ » "}.
+     * Sends a message to all players with the plugin prefix {@code "[UI] "}
+     * (see {@link MessageUtil#PREFIX}).
      *
      * @param miniMessage the message text (MiniMessage)
      */
     public static void sendServer(String miniMessage) {
         if (miniMessage == null) return;
-        send(SERVER_PREFIX + miniMessage);
+        send(MessageUtil.PREFIX + " " + miniMessage);
     }
 
     /**

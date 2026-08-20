@@ -213,13 +213,13 @@ public class AuthAuthenticator {
 
                         // Suggest 2FA setup
                         player.sendMessage("");
-                        player.sendMessage("§6✦ §fTwo-Factor Authentication (2FA)");
-                        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-                        player.sendMessage("§eWant to secure your account via GitHub?");
-                        player.sendMessage("§f1. Enter: §e/ui auth 2fa setup <github_username>");
-                        player.sendMessage("§f2. On next login you'll receive a clickable GitHub authorization link.");
-                        player.sendMessage("§7You can set up 2FA later with the same command.");
-                        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
+                        player.sendMessage(MessageUtil.parse("<gold>✦ <white>Two-Factor Authentication (2FA)"));
+                        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+                        player.sendMessage(MessageUtil.parse("<yellow>Want to secure your account via GitHub?"));
+                        player.sendMessage(MessageUtil.parse("<white>1. Enter: <yellow>/ui auth 2fa setup <github_username>"));
+                        player.sendMessage(MessageUtil.parse("<white>2. On next login you'll receive a clickable GitHub authorization link."));
+                        player.sendMessage(MessageUtil.parse("<gray>You can set up 2FA later with the same command."));
+                        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
                         player.sendMessage("");
                     });
                 }
@@ -305,7 +305,7 @@ public class AuthAuthenticator {
         String requestId = Auth2FA.getInstance().sendConfirmation(uuid, playerName);
         String authUrl = Auth2FA.getInstance().getAuthUrl(uuid);
         if (requestId == null || authUrl == null) {
-            player.sendMessage("§c❌ GitHub 2FA is not configured! Contact an administrator.");
+            player.sendMessage(MessageUtil.parse("<red>❌ GitHub 2FA is not configured! Contact an administrator."));
             // Don't unfreeze the player — they stay pendingAuth (all actions blocked),
             // and re-arm the timeout so the player gets kicked via login_timeout_seconds.
             timeoutManager.startLoginTimeout(player);
@@ -313,19 +313,19 @@ public class AuthAuthenticator {
         }
 
         player.sendMessage("");
-        player.sendMessage("§6✦ §fGitHub 2FA §8— §7Two-Factor Authentication");
-        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        player.sendMessage("§eAuthorize your GitHub account to enter the server!");
-        player.sendMessage("§7Click the link to open GitHub:");
+        player.sendMessage(MessageUtil.parse("<gold>✦ <white>GitHub 2FA <dark_gray>— <gray>Two-Factor Authentication"));
+        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+        player.sendMessage(MessageUtil.parse("<yellow>Authorize your GitHub account to enter the server!"));
+        player.sendMessage(MessageUtil.parse("<gray>Click the link to open GitHub:"));
         try {
-            player.sendMessage(Component.text("§9§n" + authUrl)
+            player.sendMessage(MessageUtil.parse("<blue><u>" + authUrl + "</u></blue>")
                     .clickEvent(ClickEvent.openUrl(new java.net.URL(authUrl))));
         } catch (Exception e) {
-            player.sendMessage("§9§n" + authUrl);
+            player.sendMessage(MessageUtil.parse("<blue><u>" + authUrl + "</u></blue>"));
         }
-        player.sendMessage("§7Account: §f" + githubUsername + "§7. The link is valid for 5 minutes.");
-        player.sendMessage("§7━━━━━━━━━━━━━━━━━━━━━");
-        player.sendMessage("§7Awaiting authorization...");
+        player.sendMessage(MessageUtil.parse("<gray>Account: <white>" + githubUsername + "<gray>. The link is valid for 5 minutes."));
+        player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━"));
+        player.sendMessage(MessageUtil.parse("<gray>Awaiting authorization..."));
         player.sendMessage("");
 
         ConsoleLogger.info("[Auth2FA] GitHub challenge started for " + playerName
@@ -356,7 +356,7 @@ public class AuthAuthenticator {
                     // Timeout: remove the challenge and re-arm the global login timeout
                     // so the player doesn't stay frozen forever (they get kicked).
                     Auth2FA.getInstance().clearPending(uuid);
-                    player.sendMessage("§c❌ 2FA timeout! Use /ui auth login again.");
+                    player.sendMessage(MessageUtil.parse("<red>❌ 2FA timeout! Use /ui auth login again."));
                     timeoutManager.startLoginTimeout(player);
                     cancel();
                     return;
@@ -376,7 +376,7 @@ public class AuthAuthenticator {
                             cancel();
                         } else if ("timeout".equals(status) || "not_found".equals(status)) {
                             Auth2FA.getInstance().clearPending(uuid);
-                            player.sendMessage("§c❌ 2FA error! Use /ui auth login again.");
+                            player.sendMessage(MessageUtil.parse("<red>❌ 2FA error! Use /ui auth login again."));
                             cancel();
                         }
                     });

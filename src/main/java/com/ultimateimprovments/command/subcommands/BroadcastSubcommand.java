@@ -73,7 +73,7 @@ public final class BroadcastSubcommand {
         Player senderPlayer = sender instanceof Player ? (Player) sender : null;
         String resolved = PlaceholderResolver.resolve(message, senderPlayer);
 
-        // Broadcast: -clean → embedded without prefix, otherwise the "sᴇʀᴠᴇʀ » " prefix
+        // Broadcast: -clean → embedded without prefix, otherwise the "[UI] " prefix
         if (clean) {
             Broadcast.sendEmbedded(resolved);
         } else {
@@ -81,7 +81,7 @@ public final class BroadcastSubcommand {
         }
 
         // Log to console
-        String fullMessage = (clean ? "" : Broadcast.SERVER_PREFIX) + resolved;
+        String fullMessage = (clean ? "" : MessageUtil.PREFIX + " ") + resolved;
         Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(fullMessage));
 
         return true;

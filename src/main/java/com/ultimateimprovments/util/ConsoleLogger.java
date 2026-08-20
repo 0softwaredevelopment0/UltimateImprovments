@@ -56,6 +56,17 @@ public final class ConsoleLogger {
     }
 
     /**
+     * Logs a fully-formatted MiniMessage string — tags are interpreted and
+     * rendered as colors (Paper console with ANSI/VT support).
+     * Use for messages that already contain the colored plugin prefix
+     * ({@link MessageUtil#PREFIX}).
+     */
+    public static void log(String miniMessage) {
+        if (!initialized) return;
+        Bukkit.getConsoleSender().sendMessage(MM.deserialize(miniMessage));
+    }
+
+    /**
      * Raw MiniMessage message without escaping (for ASCII banners, gradients).
      * Warning: tags in message will be interpreted as MiniMessage!
      */

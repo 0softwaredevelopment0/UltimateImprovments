@@ -80,15 +80,15 @@ public final class ProtectionSubcommand {
 
     private static boolean handleList(CommandSender sender) {
         Collection<ProtectionBlock> all = ProtectionManager.getInstance().allBlocks();
-        sender.sendMessage("§6✦ §fЗащитные блоки: §7" + all.size());
+        sender.sendMessage(MessageUtil.parse("<gold>✦ <white>Защитные блоки: <gray>" + all.size()));
         int idx = 0;
         for (ProtectionBlock b : all) {
             idx++;
-            sender.sendMessage("§8[" + idx + "] §f" + b.getId() + " §8@ §7" + b.getWorld().getName()
+            sender.sendMessage(MessageUtil.parse("<dark_gray>[" + idx + "] <white>" + b.getId() + " <dark_gray>@ <gray>" + b.getWorld().getName()
                     + " " + b.getX() + " " + b.getY() + " " + b.getZ()
-                    + (b.isEnabled() ? " §a[ON]" : " §c[OFF]")
-                    + " §7(r=" + b.getRadius() + ", i=" + String.format("%.1f%%", b.getIntegrity())
-                    + ", p=" + b.getPoints() + ")");
+                    + (b.isEnabled() ? " <green>[ON]" : " <red>[OFF]")
+                    + " <gray>(r=" + b.getRadius() + ", i=" + String.format("%.1f%%", b.getIntegrity())
+                    + ", p=" + b.getPoints() + ")"));
         }
         return true;
     }
@@ -139,17 +139,17 @@ public final class ProtectionSubcommand {
     }
 
     private static void sendBlockInfo(Player player, ProtectionBlock b) {
-        player.sendMessage("§6✦ §fБлок защиты");
-        player.sendMessage(" §7ID: §f" + b.getId());
-        player.sendMessage(" §7Координаты: §f" + b.getWorld().getName() + " "
-                + b.getX() + " " + b.getY() + " " + b.getZ());
-        player.sendMessage(" §7Статус: " + (b.isEnabled() ? "§aON" : "§cOFF"));
-        player.sendMessage(" §7Радиус: §f" + b.getRadius() + "/" + ProtectionConfig.getMaxRadius());
-        player.sendMessage(" §7Целостность: §f" + String.format("%.1f%%", b.getIntegrity()));
-        player.sendMessage(" §7Очки: §f" + b.getPoints());
-        player.sendMessage(" §7Whitelist (size): §f" + b.getWhitelist().size());
-        player.sendMessage(" §7След. upgrade radius: §f" + b.getRadiusUpgradeCost() + " очков");
-        player.sendMessage(" §7След. repair: §f" + b.getRepairCost() + " очков");
+        player.sendMessage(MessageUtil.parse("<gold>✦ <white>Блок защиты"));
+        player.sendMessage(MessageUtil.parse(" <gray>ID: <white>" + b.getId()));
+        player.sendMessage(MessageUtil.parse(" <gray>Координаты: <white>" + b.getWorld().getName() + " "
+                + b.getX() + " " + b.getY() + " " + b.getZ()));
+        player.sendMessage(MessageUtil.parse(" <gray>Статус: " + (b.isEnabled() ? "<green>ON" : "<red>OFF")));
+        player.sendMessage(MessageUtil.parse(" <gray>Радиус: <white>" + b.getRadius() + "/" + ProtectionConfig.getMaxRadius()));
+        player.sendMessage(MessageUtil.parse(" <gray>Целостность: <white>" + String.format("%.1f%%", b.getIntegrity())));
+        player.sendMessage(MessageUtil.parse(" <gray>Очки: <white>" + b.getPoints()));
+        player.sendMessage(MessageUtil.parse(" <gray>Whitelist (size): <white>" + b.getWhitelist().size()));
+        player.sendMessage(MessageUtil.parse(" <gray>След. upgrade radius: <white>" + b.getRadiusUpgradeCost() + " очков"));
+        player.sendMessage(MessageUtil.parse(" <gray>След. repair: <white>" + b.getRepairCost() + " очков"));
     }
 
     private static boolean handleDelete(CommandSender sender, String[] args) {

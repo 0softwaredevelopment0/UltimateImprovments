@@ -289,13 +289,13 @@ public class BatteryManager implements Listener {
         if (loc == null) return;
         long key = toKey(loc);
         if (locationToCluster.containsKey(key)) {
-            if (player != null) player.sendMessage("§eBattery already assembled here!");
+            if (player != null) player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<yellow>Battery already assembled here!"));
             return;
         }
 
         Set<Long> connected = floodFillFast(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         if (connected.isEmpty()) {
-            if (player != null) player.sendMessage("§4❌ §cNo WAXED_COPPER_GRATE blocks nearby!");
+            if (player != null) player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>No WAXED_COPPER_GRATE blocks nearby!"));
             return;
         }
 
@@ -328,9 +328,9 @@ public class BatteryManager implements Listener {
         }
 
         if (player != null) {
-            player.sendMessage("§a✔ §fBattery assembled! (Marker-based)");
-            player.sendMessage("§8┃ §7Blocks: §f" + cluster.blockKeys.size() + " §7| Capacity: §f" + cluster.capacity + " §7energy");
-            player.sendMessage("§8┃ §7Apply redstone to any block to discharge");
+            player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<green>✔ <white>Battery assembled! (Marker-based)"));
+            player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>Blocks: <white>" + cluster.blockKeys.size() + " <gray>| Capacity: <white>" + cluster.capacity + " <gray>energy"));
+            player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>Apply redstone to any block to discharge"));
         }
 
         ConsoleLogger.info("[BatteryMulti] Assembled cluster #" + cluster.id + " UUID=" + uuid + " with " + connected.size() + " blocks");
@@ -448,7 +448,7 @@ public class BatteryManager implements Listener {
                 + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
 
         if (player != null) {
-            player.sendMessage("§e❕ Battery disassembled (block broken)");
+            player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<yellow>❕ Battery disassembled (block broken)"));
         }
     }
 

@@ -227,13 +227,13 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
 
         ItemStack tool = player.getInventory().getItemInMainHand();
         if (!isValidTool(tool, config)) {
-            player.sendActionBar("§c❌ That's the wrong tool for this block!");
+            player.sendActionBar(com.ultimateimprovments.util.MessageUtil.parse("<red>❌ That's the wrong tool for this block!"));
             e.setCancelled(true);
             return;
         }
 
         if (config.requireHaste() && getHasteLevel(player) <= 0) {
-            player.sendActionBar("§c❌ You need the Haste effect to break this block!");
+            player.sendActionBar(com.ultimateimprovments.util.MessageUtil.parse("<red>❌ You need the Haste effect to break this block!"));
             e.setCancelled(true);
             return;
         }

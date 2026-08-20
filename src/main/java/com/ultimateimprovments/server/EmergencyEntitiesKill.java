@@ -2,6 +2,7 @@ package com.ultimateimprovments.server;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -139,15 +140,15 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         }
 
         if (logEnabled) {
-            ConsoleLogger.warn(
-                    "Server » Removed " + removed + " " + topType
+            ConsoleLogger.log(
+                    MessageUtil.PREFIX + " <yellow>Removed " + removed + " " + topType
                             + " (MSPT=" + String.format("%.1f", mspt)
-                            + ", total entities: " + counts.values().stream().mapToInt(Integer::intValue).sum() + ")"
+                            + ", total entities: " + counts.values().stream().mapToInt(Integer::intValue).sum() + ")</yellow>"
             );
         }
 
         ServerOverloadNotify.broadcast(
-                "<white>sᴇʀᴠᴇʀ <dark_gray>» <reset><white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
+                MessageUtil.PREFIX + " <white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
                         + " <gray>(MSPT </gray><red>" + String.format("%.1f", mspt) + "</red><gray>)</gray>"
         );
     }

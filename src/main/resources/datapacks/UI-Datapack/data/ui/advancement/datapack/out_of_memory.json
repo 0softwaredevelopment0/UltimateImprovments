@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Stay on the server while it's reaches 100% RAM usage",
+      "text": "Stay on the server while it's reaches 95% RAM usage",
       "type": "text",
       "color": "gray",
       "bold": false,

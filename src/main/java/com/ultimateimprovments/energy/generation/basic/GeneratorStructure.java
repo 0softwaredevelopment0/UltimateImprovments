@@ -63,17 +63,17 @@ public class GeneratorStructure {
     public static List<String> getValidationErrors(Location center) {
         List<String> errors = new ArrayList<>();
         if (center == null || center.getWorld() == null) {
-            errors.add("§c[1] Structure center = null");
+            errors.add("<red>[1] Structure center = null");
             return errors;
         }
         Location base = LocationUtil.normalize(center);
 
         // Just check blast furnace
         if (base.getBlock().getType() != Materials.BLAST_FURNACE) {
-            errors.add("§6[1] Blast furnace §e(0, 0, 0)"
-                    + " §7— must be BLAST_FURNACE at §f["
+            errors.add("<gold>[1] Blast furnace <yellow>(0, 0, 0)"
+                    + " <gray>— must be BLAST_FURNACE at <white>["
                     + base.getBlockX() + " " + base.getBlockY() + " " + base.getBlockZ() + "]"
-                    + " §7(current: §f" + base.getBlock().getType() + "§7)");
+                    + " <gray>(current: <white>" + base.getBlock().getType() + "<gray>)");
         }
 
         return errors;

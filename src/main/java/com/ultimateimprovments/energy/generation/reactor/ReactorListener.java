@@ -5,6 +5,7 @@ import com.ultimateimprovments.mechanics.environment.lightning.LightningStructur
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetStructure;
 import com.ultimateimprovments.util.Materials;
+import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.StructureTemplate;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
@@ -87,26 +88,26 @@ public class ReactorListener implements Listener {
         // Check: part of a reactor?
         Location reactorCenter = ReactorStructure.findCenter(clicked.getLocation());
         if (reactorCenter != null && reactor.getReactorLocation() != null) {
-            player.sendMessage(
-                    "§8[§cР.Т.С§8] §7ID: §f" + reactor.getReactorId()
-                            + " §8| §fT=" + reactor.getCoreTemp()
-                            + " §8| §fP=" + reactor.getCorePress()
-                            + " §8| §fI=" + reactor.getCoreShInt() + "%"
-            );
+            player.sendMessage(MessageUtil.parse(
+                    "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>" + reactor.getReactorId()
+                            + " <dark_gray>| <white>T=" + reactor.getCoreTemp()
+                            + " <dark_gray>| <white>P=" + reactor.getCorePress()
+                            + " <dark_gray>| <white>I=" + reactor.getCoreShInt() + "%"
+            ));
             return;
         }
 
         // Check: an active magnet?
         if (MagnetStructure.isActive(clicked.getLocation())) {
-            player.sendMessage("§8[§bМагнит§8] §7Уже активен");
+            player.sendMessage(MessageUtil.parse("<dark_gray>[<aqua>Магнит<dark_gray>] <gray>Уже активен"));
             return;
         }
 
         // Check: an active lightning structure?
         Location lightningCenter = LightningStructure.findCenter(clicked.getLocation());
         if (lightningCenter != null && LightningManager.isActive(lightningCenter)) {
-            player.sendMessage("§8[§e⚡ Молнии§8] §7Активна §8| §f"
-                    + lightningCenter.getBlockX() + " " + lightningCenter.getBlockY() + " " + lightningCenter.getBlockZ());
+            player.sendMessage(MessageUtil.parse("<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Активна <dark_gray>| <white>"
+                    + lightningCenter.getBlockX() + " " + lightningCenter.getBlockY() + " " + lightningCenter.getBlockZ()));
             return;
         }
 
@@ -137,8 +138,8 @@ public class ReactorListener implements Listener {
         if (lightningCenter != null) {
             LightningManager.disassemble(lightningCenter);
             if (player != null) {
-                player.sendMessage("§e⚡ Структура молний разрушена и деактивирована!"
-                        + " §8[§7" + lightningCenter.getBlockX() + " " + lightningCenter.getBlockY() + " " + lightningCenter.getBlockZ() + "§8]");
+                player.sendMessage(MessageUtil.parse("<yellow>⚡ Структура молний разрушена и деактивирована!"
+                        + " <dark_gray>[<gray>" + lightningCenter.getBlockX() + " " + lightningCenter.getBlockY() + " " + lightningCenter.getBlockZ() + "<dark_gray>]"));
             }
             return;
         }
@@ -165,8 +166,8 @@ public class ReactorListener implements Listener {
 
         reactor.setReactorLocation(null);
         if (player != null) {
-            player.sendMessage("§c❕ Реактор разрушен и деактивирован!"
-                    + " §8[§7" + reactorLoc.getBlockX() + " " + reactorLoc.getBlockY() + " " + reactorLoc.getBlockZ() + "§8]");
+            player.sendMessage(MessageUtil.parse("<red>❕ Реактор разрушен и деактивирован!"
+                    + " <dark_gray>[<gray>" + reactorLoc.getBlockX() + " " + reactorLoc.getBlockY() + " " + reactorLoc.getBlockZ() + "<dark_gray>]"));
         }
     }
 
@@ -217,7 +218,7 @@ public class ReactorListener implements Listener {
 
         Location frameLoc = LocationUtil.normalize(frame.getLocation());
         if (frameLoc == null) {
-            player.sendMessage("§4❌ §cОшибка определения позиции рамки!");
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Ошибка определения позиции рамки!"));
             return;
         }
 
@@ -238,12 +239,12 @@ public class ReactorListener implements Listener {
         String reactorErr = StructureTemplate.getTemplateError("reactor");
 
         if (lightningErr != null || reactorErr != null) {
-            player.sendMessage("§4⚠ §cОшибка загрузки NBT-шаблонов структур:");
+            player.sendMessage(MessageUtil.parse("<dark_red>⚠ <red>Ошибка загрузки NBT-шаблонов структур:"));
             if (lightningErr != null)
-                player.sendMessage("  §8• §eМолнии§8: §c" + lightningErr);
+                player.sendMessage(MessageUtil.parse("  <dark_gray>• <yellow>Молнии<dark_gray>: <red>" + lightningErr));
             if (reactorErr != null)
-                player.sendMessage("  §8• §cРеактор§8: §c" + reactorErr);
-            player.sendMessage("§7Проверьте консоль сервера для деталей.");
+                player.sendMessage(MessageUtil.parse("  <dark_gray>• <red>Реактор<dark_gray>: <red>" + reactorErr));
+            player.sendMessage(MessageUtil.parse("<gray>Проверьте консоль сервера для деталей."));
         }
 
         // =========================
@@ -253,11 +254,11 @@ public class ReactorListener implements Listener {
             Location center = lightningTmpl.findMatch(frameLoc, 5);
             if (center != null) {
                 if (LightningManager.isActive(center)) {
-                    player.sendMessage("§e⚡ Структура молний уже собрана!");
-                    player.sendMessage("§7Команды: §f/ui str lightning enable§7/§cdisable");
+                    player.sendMessage(MessageUtil.parse("<yellow>⚡ Структура молний уже собрана!"));
+                    player.sendMessage(MessageUtil.parse("<gray>Команды: <white>/ui str lightning enable<gray>/<red>disable"));
                     return;
                 }
-                player.sendMessage("§8[§e⚡ Молнии§8] §7Обнаружена структура молний — сборка...");
+                player.sendMessage(MessageUtil.parse("<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Обнаружена структура молний — сборка..."));
                 LightningManager.assemble(center, frame, player);
                 return;
             }
@@ -273,12 +274,12 @@ public class ReactorListener implements Listener {
                 if (reactor != null) {
                     Location existing = reactor.getReactorLocation();
                     if (existing != null && existing.equals(center)) {
-                        player.sendMessage("§eРеактор уже активен на этом месте!");
+                        player.sendMessage(MessageUtil.parse("<yellow>Реактор уже активен на этом месте!"));
                         return;
                     }
                 }
                 ReactorManager.setPendingAssembly(player, center, frame, "dark_synthesis");
-                player.sendMessage("§8[§cРеактор§8] §7Обнаружен реактор — сборка...");
+                player.sendMessage(MessageUtil.parse("<dark_gray>[<red>Реактор<dark_gray>] <gray>Обнаружен реактор — сборка..."));
                 player.performCommand("reactor assemble dark_synthesis");
                 return;
             }
@@ -294,11 +295,11 @@ public class ReactorListener implements Listener {
         );
         if (attachedLoc != null && attachedLoc.getBlock().getType() == Material.LODESTONE) {
             if (MagnetManager.isActive(attachedLoc)) {
-                player.sendMessage("§eМагнит уже активен на этом месте!");
+                player.sendMessage(MessageUtil.parse("<yellow>Магнит уже активен на этом месте!"));
                 return;
             }
             ReactorManager.setPendingAssembly(player, attachedLoc, frame, "magnet");
-            player.sendMessage("§8[§bМагнит§8] §7Обнаружен магнит — сборка...");
+            player.sendMessage(MessageUtil.parse("<dark_gray>[<aqua>Магнит<dark_gray>] <gray>Обнаружен магнит — сборка..."));
             player.performCommand("reactor assemble magnet");
             return;
         }
@@ -313,7 +314,7 @@ public class ReactorListener implements Listener {
         );
         if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Materials.WAXED_COPPER_GRATE) {
             if (BatteryManager.isActive(attachedLoc2)) {
-                player.sendMessage("§eБатарея уже собрана на этом месте!");
+                player.sendMessage(MessageUtil.parse("<yellow>Батарея уже собрана на этом месте!"));
                 return;
             }
             BatteryManager.assemble(attachedLoc2, player);
@@ -325,7 +326,7 @@ public class ReactorListener implements Listener {
         // =========================
         if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Material.REDSTONE_LAMP) {
             if (LightManager.isActive(attachedLoc2)) {
-                player.sendMessage("§eЛампочка уже собрана на этом месте!");
+                player.sendMessage(MessageUtil.parse("<yellow>Лампочка уже собрана на этом месте!"));
                 return;
             }
             LightManager.assemble(attachedLoc2, player);
@@ -345,13 +346,13 @@ public class ReactorListener implements Listener {
             // Check for a cable nearby
             if (GeneratorManager.hasNearbyCable(generatorLoc)) {
                 if (GeneratorManager.isAssembled(generatorLoc)) {
-                    player.sendMessage("§eГенератор уже собран на этом месте!");
+                    player.sendMessage(MessageUtil.parse("<yellow>Генератор уже собран на этом месте!"));
                     return;
                 }
                 GeneratorManager.assembleFromFrame(player, generatorLoc);
                 return;
             } else {
-                player.sendMessage("§4❌ §cНет кабеля рядом с плавильной печью!");
+                player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Нет кабеля рядом с плавильной печью!"));
                 return;
             }
         }
@@ -359,11 +360,11 @@ public class ReactorListener implements Listener {
         // =========================
         // 4. NOTHING FOUND
         // =========================
-        player.sendMessage("§c❌ Структура не распознана!");
-        player.sendMessage("§7Убедитесь, что все блоки структуры соответствуют NBT-шаблону.");
-        player.sendMessage("§7Поддерживаемые структуры: громоотвод (молнии), LODESTONE (магнит),");
-        player.sendMessage("§7реактор (алмазная/золотая бочка с рамкой), BLAST_FURNACE + рамка (генератор),");
-        player.sendMessage("§7WAXED_COPPER_GRATE (батарея), REDSTONE_LAMP (лампочка)");
+        player.sendMessage(MessageUtil.parse("<red>❌ Структура не распознана!"));
+        player.sendMessage(MessageUtil.parse("<gray>Убедитесь, что все блоки структуры соответствуют NBT-шаблону."));
+        player.sendMessage(MessageUtil.parse("<gray>Поддерживаемые структуры: громоотвод (молнии), LODESTONE (магнит),"));
+        player.sendMessage(MessageUtil.parse("<gray>реактор (алмазная/золотая бочка с рамкой), BLAST_FURNACE + рамка (генератор),"));
+        player.sendMessage(MessageUtil.parse("<gray>WAXED_COPPER_GRATE (батарея), REDSTONE_LAMP (лампочка)"));
     }
 
     // =========================

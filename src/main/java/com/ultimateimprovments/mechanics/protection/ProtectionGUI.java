@@ -192,9 +192,9 @@ public final class ProtectionGUI {
         awaitingPlayerName.put(player.getUniqueId(), block);
         player.closeInventory();
         player.sendMessage("");
-        player.sendMessage("§8╔ §6✦ §lДобавить игрока§r §8╗");
-        player.sendMessage("§7Введите ник игрока в чат.");
-        player.sendMessage("§7Или напишите §ccancel§7 для отмены.");
+        player.sendMessage(MessageUtil.parse("<dark_gray>╔ <gold>✦ <bold>Добавить игрока<reset> <dark_gray>╗"));
+        player.sendMessage(MessageUtil.parse("<gray>Введите ник игрока в чат."));
+        player.sendMessage(MessageUtil.parse("<gray>Или напишите <red>cancel<gray> для отмены."));
         player.sendMessage("");
     }
 

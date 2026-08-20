@@ -178,7 +178,7 @@ public class ReactorStructure {
         List<String> errors = new ArrayList<>();
 
         if (center == null || center.getWorld() == null) {
-            errors.add("§c[1] Reactor center = null (search error)");
+            errors.add("<red>[1] Reactor center = null (search error)");
             return errors;
         }
 
@@ -188,62 +188,62 @@ public class ReactorStructure {
         // 1. COPPER BULBS
         // =========================
         checkBlockDetailed(errors, base, BULB_COOL, Materials.WAXED_COPPER_BULB,
-                "§6[1] Cooling bulb §e(1, 0, -2)"
-                        + "§7 — must be WAXED_COPPER_BULB at §f"
+                "<gold>[1] Cooling bulb <yellow>(1, 0, -2)"
+                        + "<gray> — must be WAXED_COPPER_BULB at <white>"
                         + locStr(base, BULB_COOL));
 
         checkBlockDetailed(errors, base, BULB_HEAT, Materials.WAXED_COPPER_BULB,
-                "§6[2] Heating bulb §e(-1, 0, -2)"
-                        + "§7 — must be WAXED_COPPER_BULB at §f"
+                "<gold>[2] Heating bulb <yellow>(-1, 0, -2)"
+                        + "<gray> — must be WAXED_COPPER_BULB at <white>"
                         + locStr(base, BULB_HEAT));
 
         checkBlockDetailed(errors, base, BULB_SH_INT, Materials.WAXED_COPPER_BULB,
-                "§6[3] Shell integrity bulb §e(-1, 0, 2)"
-                        + "§7 — must be WAXED_COPPER_BULB at §f"
+                "<gold>[3] Shell integrity bulb <yellow>(-1, 0, 2)"
+                        + "<gray> — must be WAXED_COPPER_BULB at <white>"
                         + locStr(base, BULB_SH_INT));
 
         checkBlockDetailed(errors, base, BULB_CASE_INT, Materials.WAXED_COPPER_BULB,
-                "§6[4] Case integrity bulb §e(1, 0, 2)"
-                        + "§7 — must be WAXED_COPPER_BULB at §f"
+                "<gold>[4] Case integrity bulb <yellow>(1, 0, 2)"
+                        + "<gray> — must be WAXED_COPPER_BULB at <white>"
                         + locStr(base, BULB_CASE_INT));
 
         // =========================
         // 2. BARRELS (fuel input)
         // =========================
         checkBlockDetailed(errors, base, DIAMOND_BARREL, Material.BARREL,
-                "§6[5] Diamond barrel (fuel input) §e(0, -3, -2)"
-                        + "§7 — must be BARREL at §f"
+                "<gold>[5] Diamond barrel (fuel input) <yellow>(0, -3, -2)"
+                        + "<gray> — must be BARREL at <white>"
                         + locStr(base, DIAMOND_BARREL));
 
         checkBlockDetailed(errors, base, GOLD_BARREL, Material.BARREL,
-                "§6[6] Gold barrel (fuel input) §e(0, -3, 2)"
-                        + "§7 — must be BARREL at §f"
+                "<gold>[6] Gold barrel (fuel input) <yellow>(0, -3, 2)"
+                        + "<gray> — must be BARREL at <white>"
                         + locStr(base, GOLD_BARREL));
 
         // =========================
         // 2.5. CORE BLOCKS (upper and lower — polished blackstone)
         // =========================
         checkBlockDetailed(errors, base, UPPER_CORE, Material.POLISHED_BLACKSTONE,
-                "§6[5.5] Upper core §e(0, -1, 0)"
-                        + "§7 — must be POLISHED_BLACKSTONE at §f"
+                "<gold>[5.5] Upper core <yellow>(0, -1, 0)"
+                        + "<gray> — must be POLISHED_BLACKSTONE at <white>"
                         + locStr(base, UPPER_CORE));
 
         checkBlockDetailed(errors, base, LOWER_CORE, Material.POLISHED_BLACKSTONE,
-                "§6[5.6] Lower core §e(0, -5, 0)"
-                        + "§7 — must be POLISHED_BLACKSTONE at §f"
+                "<gold>[5.6] Lower core <yellow>(0, -5, 0)"
+                        + "<gray> — must be POLISHED_BLACKSTONE at <white>"
                         + locStr(base, LOWER_CORE));
 
         // =========================
         // 3. LEVERS (optional)
         // =========================
         checkBlockDetailedOptional(errors, base, LEVER, Material.LEVER,
-                "§6[7] Heating lever §e(-1, 0, -3)"
-                        + "§7 — optional, but must be LEVER at §f"
+                "<gold>[7] Heating lever <yellow>(-1, 0, -3)"
+                        + "<gray> — optional, but must be LEVER at <white>"
                         + locStr(base, LEVER));
 
         checkBlockDetailedOptional(errors, base, LEVER_COOL, Material.LEVER,
-                "§6[7.2] Cooling lever §e(1, 0, -3)"
-                        + "§7 — optional, but must be LEVER at §f"
+                "<gold>[7.2] Cooling lever <yellow>(1, 0, -3)"
+                        + "<gray> — optional, but must be LEVER at <white>"
                         + locStr(base, LEVER_COOL));
 
         // =========================
@@ -260,11 +260,11 @@ public class ReactorStructure {
                     case 2 -> "right";
                     default -> "";
                 };
-                errors.add("§6[8." + (i + 1) + "] Wall sign (" + side + ") §e("
+                errors.add("<gold>[8." + (i + 1) + "] Wall sign (" + side + ") <yellow>("
                         + dx + ", " + dy + ", " + dz + ")"
-                        + "§7 — not found at §f" + locStr(base, pos)
-                        + "§7. Current block: §f" + actual
-                        + "§7. Place any wall sign (OAK/DARK_OAK/BIRCH/...)");
+                        + "<gray> — not found at <white>" + locStr(base, pos)
+                        + "<gray>. Current block: <white>" + actual
+                        + "<gray>. Place any wall sign (OAK/DARK_OAK/BIRCH/...)");
             }
         }
 
@@ -282,10 +282,10 @@ public class ReactorStructure {
         // 7. ITEM FRAME
         // =========================
         if (!hasItemFrame(base)) {
-            errors.add("§6[11] ItemFrame §e(0, 0, 0)"
-                    + "§7 — not found on top of core §f"
+            errors.add("<gold>[11] ItemFrame <yellow>(0, 0, 0)"
+                    + "<gray> — not found on top of core <white>"
                     + locStr(base, new int[]{0, 0, 0})
-                    + "§7. Place the item frame ON THE TOP FACE of the center block (polished blackstone)");
+                    + "<gray>. Place the item frame ON THE TOP FACE of the center block (polished blackstone)");
         }
 
         return errors;
@@ -295,7 +295,7 @@ public class ReactorStructure {
     // DETAILED CHECK HELPERS
     // =========================
     private static String locStr(Location base, int[] pos) {
-        return "§f[" + (base.getBlockX() + pos[0])
+        return "<white>[" + (base.getBlockX() + pos[0])
                 + " " + (base.getBlockY() + pos[1])
                 + " " + (base.getBlockZ() + pos[2]) + "]";
     }
@@ -305,9 +305,9 @@ public class ReactorStructure {
         Material actual = getBlock(base, pos[0], pos[1], pos[2]);
         if (actual != expected) {
             errors.add(desc
-                    + "§7. Сейчас: §f" + actual
-                    + "§7. Нужно: §f" + expected
-                    + "§7. " + getBlockAdvice(expected));
+                    + "<gray>. Сейчас: <white>" + actual
+                    + "<gray>. Нужно: <white>" + expected
+                    + "<gray>. " + getBlockAdvice(expected));
         }
     }
 
@@ -316,8 +316,8 @@ public class ReactorStructure {
         Material actual = getBlock(base, pos[0], pos[1], pos[2]);
         if (actual != expected && actual != Material.AIR) {
             errors.add(desc
-                    + "§7. Сейчас: §f" + actual
-                    + "§7. Нужно: §f" + expected + "§7 или §fAIR");
+                    + "<gray>. Сейчас: <white>" + actual
+                    + "<gray>. Нужно: <white>" + expected + "<gray> или <white>AIR");
         }
     }
 
@@ -342,10 +342,10 @@ public class ReactorStructure {
             Material mat = getBlock(base, dx, dy, dz);
             if (mat == Material.GLASS) continue;
             if (mat == Material.AIR) {
-                errors.add("§6[9." + (i + 1) + "] Reactor wall (" + wallNames[i] + ") §e("
+                errors.add("<gold>[9." + (i + 1) + "] Reactor wall (" + wallNames[i] + ") <yellow>("
                         + dx + ", " + dy + ", " + dz + ")"
-                        + "§7 — empty (AIR) at §f" + locStr(base, checkPositions[i])
-                        + "§7. Place any solid block");
+                        + "<gray> — empty (AIR) at <white>" + locStr(base, checkPositions[i])
+                        + "<gray>. Place any solid block");
                 continue;
             }
             if (isCopperBlock(mat)) continue;
@@ -354,11 +354,11 @@ public class ReactorStructure {
             if (mat == Material.GOLD_BLOCK) continue;
             if (mat == Material.BARREL) continue;
             if (mat == Material.END_ROD) continue;
-            errors.add("§6[9." + (i + 1) + "] Reactor wall (" + wallNames[i] + ") §e("
+            errors.add("<gold>[9." + (i + 1) + "] Reactor wall (" + wallNames[i] + ") <yellow>("
                     + dx + ", " + dy + ", " + dz + ")"
-                    + "§7 — invalid block §f" + mat + "§7 at §f"
+                    + "<gray> — invalid block <white>" + mat + "<gray> at <white>"
                     + locStr(base, checkPositions[i])
-                    + "§7. Allowed: copper blocks, glass, WAXED_CHISELED_COPPER");
+                    + "<gray>. Allowed: copper blocks, glass, WAXED_CHISELED_COPPER");
         }
     }
 
@@ -373,21 +373,21 @@ public class ReactorStructure {
             int dx = floorPositions[i][0], dy = floorPositions[i][1], dz = floorPositions[i][2];
             Material mat = getBlock(base, dx, dy, dz);
             if (mat == Material.AIR) {
-                errors.add("§6[10." + (i + 1) + "] Reactor floor §e("
+                errors.add("<gold>[10." + (i + 1) + "] Reactor floor <yellow>("
                         + dx + ", " + dy + ", " + dz + ")"
-                        + "§7 — empty (AIR) at §f" + locStr(base, floorPositions[i])
-                        + "§7. Fill the reactor floor with any solid blocks");
+                        + "<gray> — empty (AIR) at <white>" + locStr(base, floorPositions[i])
+                        + "<gray>. Fill the reactor floor with any solid blocks");
             }
         }
     }
 
     private static String getBlockAdvice(Material expected) {
         return switch (expected) {
-            case WAXED_COPPER_BULB -> "§aTip: waxed copper bulb (WAXED_COPPER_BULB)";
-            case BARREL -> "§aTip: barrel (BARREL) — fuel goes inside";
-            case LEVER -> "§aTip: lever (LEVER)";
-            case WAXED_CHISELED_COPPER -> "§aTip: waxed chiseled copper (WAXED_CHISELED_COPPER)";
-            case POLISHED_BLACKSTONE -> "§aTip: polished blackstone (POLISHED_BLACKSTONE)";
+            case WAXED_COPPER_BULB -> "<green>Tip: waxed copper bulb (WAXED_COPPER_BULB)";
+            case BARREL -> "<green>Tip: barrel (BARREL) — fuel goes inside";
+            case LEVER -> "<green>Tip: lever (LEVER)";
+            case WAXED_CHISELED_COPPER -> "<green>Tip: waxed chiseled copper (WAXED_CHISELED_COPPER)";
+            case POLISHED_BLACKSTONE -> "<green>Tip: polished blackstone (POLISHED_BLACKSTONE)";
             default -> "";
         };
     }

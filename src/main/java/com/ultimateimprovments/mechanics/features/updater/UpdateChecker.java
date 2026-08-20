@@ -11,11 +11,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
-
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -501,19 +496,15 @@ public class UpdateChecker {
                                 .replace("%to%", finalJarVer)));
 
                         if (sender instanceof Player) {
-                            TextComponent updateButton = new TextComponent(MessageUtil.legacy(
+                            net.kyori.adventure.text.Component updateButton = MessageUtil.parse(
                                     MessagesManager.getString("update.install_button",
-                                            "<dark_green>[<green>✔ Install Update</green><dark_green>]</dark_green>")));
-                            updateButton.setClickEvent(new ClickEvent(
-                                    ClickEvent.Action.RUN_COMMAND,
-                                    "/ui updatejar"));
-                            updateButton.setHoverEvent(new HoverEvent(
-                                    HoverEvent.Action.SHOW_TEXT,
-                                    new ComponentBuilder("§aClick to download and install update\n")
-                                            .append("§7File: §f" + finalJarName + "\n")
-                                            .append("§7Restart required after installation")
-                                            .create()));
-                            ((Player) sender).spigot().sendMessage(updateButton);
+                                            "<dark_green>[<green>✔ Install Update</green><dark_green>]</dark_green>"))
+                                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui updatejar"))
+                                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                                            MessageUtil.parse("<green>Click to download and install update\n"
+                                                    + "<gray>File: <white>" + finalJarName + "\n"
+                                                    + "<gray>Restart required after installation")));
+                            sender.sendMessage(updateButton);
 
                             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                                     "update.install_hint",

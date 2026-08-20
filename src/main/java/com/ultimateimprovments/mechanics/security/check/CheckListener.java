@@ -1,5 +1,6 @@
 package com.ultimateimprovments.mechanics.security.check;
 
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -133,7 +134,7 @@ public class CheckListener implements Listener {
         }
 
         e.setCancelled(true);
-        player.sendMessage("§c❌ §fВы на проверке! Команды недоступны.");
+        player.sendMessage(MessageUtil.parse("<red>❌ <white>Вы на проверке! Команды недоступны.</white>"));
     }
 
     // =========================

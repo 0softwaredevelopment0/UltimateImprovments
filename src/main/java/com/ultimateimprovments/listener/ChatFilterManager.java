@@ -269,14 +269,14 @@ public class ChatFilterManager implements Listener {
             }
         }
 
-        // Build final string with §c…§r
+        // Build final string with <red>…<reset>
         StringBuilder sb = new StringBuilder();
         int lastEnd = 0;
         for (int[] r : merged) {
             sb.append(message, lastEnd, r[0]);
-            sb.append("§c");
+            sb.append("<red>");
             sb.append(message, r[0], r[1]);
-            sb.append("§r");
+            sb.append("<reset>");
             lastEnd = r[1];
         }
         sb.append(message.substring(lastEnd));
@@ -312,7 +312,7 @@ public class ChatFilterManager implements Listener {
 
                 // Player message
                 player.sendMessage(MessageUtil.parse(warningMessage));
-                player.sendMessage("§7→ §f" + highlighted);
+                player.sendMessage(MessageUtil.parse("<gray>→ <white>" + highlighted));
                 player.sendMessage(MessageUtil.parse(MessagesManager.getString("chat_filter.violation_match", "<gray>└</gray> <white>Match:</white> %source%").replace("%source%", source)));
                 return;
             }

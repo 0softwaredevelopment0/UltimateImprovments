@@ -73,6 +73,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── SubCommand implementations (newer) ──
         registry.register(new HelpSubCommand());
         registry.register(new PdcSubcommand());
+        registry.register(new ItemNbtSubcommand());
+        registry.register(new ClanSubcommand());
+        registry.register(new SharePosSubcommand());
         registry.register(new GetPosSubcommand());
         registry.register(new ClearChatSubcommand());
         registry.register(new TurretSubcommand());
@@ -213,7 +216,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             Player target = Bukkit.getPlayerExact(a[1]);
             if (target == null) return false;
             SuicideCommand.forceExecute(target, p);
-            p.sendMessage("§a✔ §fPlayer §e" + target.getName() + " §fhas been force-suicided.");
+            p.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<green>✔ <white>Player <yellow>" + target.getName() + " <white>has been force-suicided."));
             return true;
         }));
         registry.register(LegacySubCommandAdapter.of("str", (s, a) -> {

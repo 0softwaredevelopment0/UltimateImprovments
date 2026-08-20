@@ -13,6 +13,25 @@
 # NOTE: changes require a full server restart — the datapack is reinstalled
 # and loaded together with the world.
 datapack:
+  # Master toggle: false disables the whole datapack (removes it from the
+  # world datapacks folder) and disables all bound plugin code features.
+  enabled: true
+  # How the datapack is installed on the server:
+  #   override        — always delete the existing UI-Datapack folder and re-extract from the jar
+  #   ignore          — if the UI-Datapack folder already exists, leave it untouched (do not reinstall)
+  #   check-override  — check the world datapack list (level.dat); only reinstall if UI-Datapack
+  #                     is NOT enabled there. If it is already enabled — skip.
+  mode: override
+  # If the datapack is not enabled in the world after install, restart the server
+  # automatically so it gets loaded (40 ticks delay). false = only warn.
+  restart_to_apply: false
+  # Print a console warning (with possible causes and how to enable) if the
+  # datapack is not enabled in the world / could not be enabled.
+  warn_if_not_loaded: true
+  # If the datapack is not enabled in the world, try to enable it automatically
+  # by running /datapack enable "file/UI-Datapack" from the console, then verify.
+  # If it still can't be enabled — the warning above is printed with the error.
+  auto_enable: false
   modules:
     # Custom enchantments (ui:*) + their enchantable item tags + curse tag
     enchantments: true
@@ -636,7 +655,7 @@ features:
       low_color: "#990000"
 
     # Lore line showing the integrity value
-    lore_text: "§fIntegrity:"
+    lore_text: "<white>Integrity:</white>"
 
     on_break:
       # Whether a sound plays when an item breaks
@@ -1147,6 +1166,22 @@ home:
   name_max_length: 16
   # Home mode: legit or creative
   mode: legit
+
+clan:
+  # Clan name length limits (plain text, MiniMessage tags are not counted)
+  name_min_length: 2
+  name_max_length: 32
+  # How long a pending confirmation stays valid, in seconds
+  confirm_timeout: 30
+  # Cooldown between join requests, in seconds
+  request_cooldown_seconds: 10
+  # How long a join request stays valid, in seconds (1 hour = 3600)
+  request_expire_seconds: 3600
+  home:
+    # Clan home mode: legit (only shows coordinates, no teleport) or standard (teleports)
+    mode: legit
+    # Teleport cooldown in seconds when mode is standard (0 = disabled)
+    tp_cooldown_seconds: 0
 
 report:
   # How long reports stay active (e.g. 3d)
@@ -2637,10 +2672,6 @@ messages:
   
     messages:
       # Message related to player registration
-      register_title: "<dark_gray>Register</dark_gray>"
-      # Message related to player login
-      login_title: "<dark_gray>Enter password</dark_gray>"
-      # Message related to player registration
       success_register: "<green>✔ Registration successful!</green>"
       # Message related to player login
       success_login: "<green>✔ You have successfully logged in!</green>"
@@ -3002,38 +3033,6 @@ messages:
       example3: "<gray> /ui codepane key add warp 4321 command:(say %entity% got access)</gray>"
       # Chat message for codepanel help (example4)
       example4: "<gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
-  
-  suicide:
-    messages:
-      # Chat message for suicide (cooldown_message)
-      cooldown_message: "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before using this again!</red>"
-      # Chat message for suicide (already_running)
-      already_running: "<dark_red>❌</dark_red> <red>You already have a countdown running!</red>"
-      # Title text shown to the player
-      warning_title: "<dark_red>☠</dark_red> <red>WARNING!</red>"
-      # Chat message for suicide (warning_text)
-      warning_text: "<white>You are about to commit suicide!</white>"
-      # Message shown when the action is cancelled
-      warning_no_cancel: "<red>⚠ This cannot be undone after confirmation!</red>"
-      # Hint text shown to the player
-      warning_confirm_hint: "<yellow>Type</yellow> <white>/ui suicide</white> <yellow>again to confirm and start the countdown.</yellow>"
-      # Hint text shown to the player
-      warning_cancel_hint: "<gray>If you change your mind — just wait</gray> <yellow>%timeout%</yellow> <gray>seconds and the request will expire.</gray>"
-      # Chat message for suicide (timeout_message)
-      timeout_message: "<yellow>ℹ</yellow> <white>Suicide request cancelled (timed out).</white>"
-      # Title text shown to the player
-      confirmed_title: "<dark_red>☠</dark_red> <red>Countdown started!</red>"
-      # Confirmation message shown to the player
-      confirmed_no_cancel: "<red>Cannot be cancelled!</red>"
-      # Chat message for suicide (timer_actionbar)
-      timer_actionbar: "<red><bold>☠</bold></red> <white>Suicide in</white> <yellow><bold>%seconds%</bold></yellow> <white>seconds</white>"
-      # Chat message for suicide (timer_chat)
-      timer_chat: "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Suicide in</red> <yellow>%seconds%</yellow> <red>seconds...</red>"
-      # Chat message for suicide (death_message)
-      death_message: "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>You have committed suicide...</red>"
-    bossbar:
-      # Title text shown to the player
-      title: "<dark_red>☠</dark_red> <red>Suicide in</red> <yellow>%seconds%</yellow> <red>seconds</red>"
   
   changedimmension:
     messages:
@@ -4725,31 +4724,6 @@ messages_en:
       # Chat message for report verdict (closed)
       closed: "Closed"
     admin:
-  # ─── Auth Dialog (Custom Screen) messages ─────────────
-  auth:
-    dialog:
-      # Message related to player login
-      login_title: "<gold>✦ Login Required</gold>"
-      # Message related to player registration
-      register_title: "<gold>✦ Registration Required</gold>"
-      # Message related to player login
-      body_login: "<white>Please enter your password to log in.</white>"
-      # Message related to player registration
-      body_register: "<white>Please choose a password to register.</white>"
-      # Message related to passwords
-      password_label: "<gray>Password</gray>"
-      # Button label shown to the player
-      continue_button: "<green>✔ Continue</green>"
-      # Button label shown to the player
-      exit_button: "<red>✖ Exit Server</red>"
-      # Message shown when the entered password is incorrect
-      wrong_password: "<red>❌ Incorrect password!</red>"
-      # Kick message shown to the player
-      kick_cancelled: "§c❌ Authentication cancelled.\n§7You cancelled the authentication process."
-
-      # Confirmation message shown to the player
-      remove_confirm: "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/ui reports remove confirm</yellow><white> to confirm.</white>"
-
   # =========================
   # PUNISHMENT MESSAGES
   # =========================
