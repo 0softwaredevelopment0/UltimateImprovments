@@ -69,50 +69,10 @@ tasks {
     }
 
     shadowJar {
-        // doLast перенесён в copyJarToFolder
+        // Shadow jar → build/libs/UltimateImprovments-<version>.jar
     }
-}
-
-// Отдельная таска — всегда запускается, т.к. у неё нет входов/выходов (UP-TO-DATE не применяется)
-tasks.register('copyJarToFolder') {
-    dependsOn(tasks.named('shadowJar'))
-    doLast {
-        def jarDir = new File(project.projectDir, "Jar")
-        def libsDir = new File(project.buildDir, "libs")
-
-        // Ищем первый .jar файл в build/libs/ (не sources/javadoc)
-        def source = libsDir.listFiles()?.find { f ->
-            f.name.endsWith(".jar") && !f.name.contains("sources") && !f.name.contains("javadoc")
-        }
-
-        if (source == null || !source.exists()) {
-            logger.warn("[JAR] Файл не найден в build/libs/")
-            return
-        }
-
-        jarDir.mkdirs()
-
-        // Удаляем старые JAR'ы в Jar/
-        jarDir.listFiles()?.each { f ->
-            if (f.name.endsWith(".jar") && f.delete()) {
-                logger.lifecycle("[JAR] Удалён старый: ${f.name}")
-            }
-        }
-
-        def jarName = "UltimateImprovments-${project.version}.jar"
-        def target = new File(jarDir, jarName)
-        java.nio.file.Files.copy(
-            source.toPath(),
-            target.toPath(),
-            java.nio.file.StandardCopyOption.REPLACE_EXISTING
-        )
-        logger.lifecycle("[JAR] Скопирован в Jar/: ${jarName}")
-    }
-}
-
-tasks.named('assemble') {
-    dependsOn(tasks.named('copyJarToFolder'))
 }
 
 // Paper 26.x (1.21.4+) uses Mojang mappings natively — shadowJar produces production-ready jar.
 // reobfJar is not available in modern Paperweight.
+// Built jar lives in build/libs/ — tracked by git for easy download.

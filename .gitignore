@@ -19,7 +19,11 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/
+# Build output — track only libs/*.jar for easy download
+build/*
+!build/libs/
+build/libs/*
+!build/libs/*.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 .gradle/
@@ -32,3 +36,4 @@ nul
 node_modules/
 scan_cyrillic.js
 scan_cyrillic.py
+Jar/
