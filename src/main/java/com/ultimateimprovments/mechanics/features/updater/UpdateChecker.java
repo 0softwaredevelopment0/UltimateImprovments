@@ -33,13 +33,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Auto-updater: compares the version from the JAR filename in the {@code Jar/}
+ * Auto-updater: compares the version from the JAR filename in the {@code build/libs/}
  * folder on GitHub with the plugin's current version.
  * <p>
  * Logic:
  * <ol>
  *   <li>Read the plugin's current version (e.g. "1.7.54");</li>
- *   <li>Query the GitHub API {@code /contents/Jar/} — get the file list;</li>
+ *   <li>Query the GitHub API {@code /contents/build/libs/} — get the file list;</li>
  *   <li>Find all {@code .jar} files, extract the version from the name;</li>
  *   <li>Pick the JAR with the newest version;</li>
  *   <li>Compare by components (major.minor.commits):</li>
@@ -55,17 +55,17 @@ public class UpdateChecker {
     // =========================
     private static final String GITHUB_OWNER = "rizer001";
     private static final String GITHUB_REPO = "UltimateImprovments";
-    /** GitHub Contents API — file list in the repository's Jar/ folder. */
+    /** GitHub Contents API — file list in the repository's build/libs/ folder. */
     private static final String JAR_DIR_API_URL = "https://api.github.com/repos/"
-            + GITHUB_OWNER + "/" + GITHUB_REPO + "/contents/Jar/";
+            + GITHUB_OWNER + "/" + GITHUB_REPO + "/contents/build/libs/";
     private static final String USER_AGENT = "UltimateImprovments-Updater";
     private static final int TIMEOUT_SECONDS = 15;
 
     /** Regex for extracting major.minor.commits from a jar filename. */
     private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
-    /** Regex for a jar file like "UltimateImprovments-1.7.54.jar". */
+    /** Regex for a jar file like "UltimateImprovments-1.7.54.jar" or "UltimateImprovments-1.7.54-all.jar". */
     private static final Pattern JAR_FILE_PATTERN = Pattern.compile(
-            Pattern.quote(GITHUB_REPO) + "-(\\d+\\.\\d+(?:\\.\\d+)?)\\.jar", Pattern.CASE_INSENSITIVE);
+            Pattern.quote(GITHUB_REPO) + "-(\\d+\\.\\d+(?:\\.\\d+)?)(?:-all)?\\.jar", Pattern.CASE_INSENSITIVE);
 
     // =========================
     // STATUS (volatile — written from async, read from main)
@@ -96,7 +96,7 @@ public class UpdateChecker {
     // =========================
     public static void checkAsync() {
         Main plugin = Main.getInstance();
-        ConsoleLogger.info("[Updater] Checking for updates (Jar/ folder)...");
+        ConsoleLogger.info("[Updater] Checking for updates (build/libs/ folder)...");
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
@@ -132,17 +132,17 @@ public class UpdateChecker {
                 + (storedVersion.isEmpty() ? "<none>" : storedVersion));
 
         // ════════════════════════════════════════
-        // 2. HTTP request to the GitHub Contents API — file list in Jar/
+        // 2. HTTP request to the GitHub Contents API — file list in build/libs/
         // ════════════════════════════════════════
         JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
         if (latestJar == null) {
-            ConsoleLogger.info("[Updater] No jar files found in Jar/ folder — up to date.");
+            ConsoleLogger.info("[Updater] No jar files found in build/libs/ folder — up to date.");
             status = UpdateStatus.UP_TO_DATE;
             return;
         }
 
         String jarVersion = latestJar.version;
-        ConsoleLogger.info("[Updater] Latest jar in Jar/: " + latestJar.name
+        ConsoleLogger.info("[Updater] Latest jar in build/libs/: " + latestJar.name
                 + " (version: " + jarVersion + ")");
 
         // ════════════════════════════════════════
@@ -187,12 +187,11 @@ public class UpdateChecker {
         ConsoleLogger.warn("");
     }
 
-    // =========================
-    // 🔍 GITHUB CONTENTS API — Jar/
+    // =========================     // 🔍 GITHUB CONTENTS API — build/libs/
     // =========================
 
     /**
-     * Data about a jar file from the Jar/ folder on GitHub.
+     * Data about a jar file from the build/libs/ folder on GitHub.
      */
     private static class JarFileInfo {
         final String name;          // "UltimateImprovments-1.7.75.jar"
@@ -207,7 +206,7 @@ public class UpdateChecker {
     }
 
     /**
-     * Queries the GitHub Contents API for the {@code Jar/} folder and returns
+     * Queries the GitHub Contents API for the {@code build/libs/} folder and returns
      * info about the newest jar file (with the highest version).
      *
      * @return JarFileInfo or null if there are no jar files
@@ -422,7 +421,7 @@ public class UpdateChecker {
     // =========================
 
     /**
-     * Runs an async GitHub check (Jar/ folder) for new versions
+     * Runs an async GitHub check (build/libs/ folder) for new versions
      * and sends the result to the command sender.
      */
     public static void checkOnly(CommandSender sender) {
@@ -435,12 +434,12 @@ public class UpdateChecker {
                 String currentVersion = plugin.getDescription().getVersion();
                 String storedVersion = getStoredTag();
 
-                // Step 1: get the latest jar from Jar/
+                // Step 1: get the latest jar from build/libs/
                 JarFileInfo latestJar = fetchLatestJarFromRepo(plugin);
                 if (latestJar == null) {
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                                "update.check_error", "<red>❌ No jar files found in GitHub Jar/ folder!</red>")));
+                                "update.check_error", "<red>❌ No jar files found in GitHub build/libs/ folder!</red>")));
                     });
                     return;
                 }
@@ -468,8 +467,8 @@ public class UpdateChecker {
                             "<gray>Your version:</gray> <white>%version%</white>")
                             .replace("%version%", finalCurrentVer)));
                     sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                            "update.latest_release",
-                            "<gray>GitHub Jar/:</gray> <white>%name%</white>")
+                            "update.latest_release",                             "<gray>GitHub build/libs/:</gray> <white>%name%</white>")
+
                             .replace("%name%", finalJarName)));
 
                     if (finalHasVer) {
@@ -591,7 +590,7 @@ public class UpdateChecker {
     // =========================
 
     /**
-     * Downloads the latest JAR from the {@code Jar/} folder on GitHub and replaces the current one.
+     * Downloads the latest JAR from the {@code build/libs/} folder on GitHub and replaces the current one.
      * After a successful replacement, saves the jar version to the DB.
      */
     public static void downloadAndReplace(CommandSender sender) {
@@ -631,8 +630,8 @@ public class UpdateChecker {
                     if (latestJar == null) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                                    "update.no_release_info",
-                                    "<red>❌ Could not find any jar files in GitHub Jar/ folder!</red>")));
+                                    "update.no_release_info",                                     "<red>❌ Could not find any jar files in GitHub build/libs/ folder!</red>")));
+
                         });
                         return;
                     }

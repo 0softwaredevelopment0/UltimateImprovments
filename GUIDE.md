@@ -394,7 +394,7 @@ cd UltimateImprovments
 ./gradlew build
 ```
 
-The JAR lands in `Jar/UltimateImprovments-<version>.jar`. Requirements: JDK 26+, Git.
+The JAR lands in `build/libs/UltimateImprovments-<version>.jar`. Requirements: JDK 26+, Git.
 
 **Updating:**
 1. Delete the old datapack in `world/datapacks/`.

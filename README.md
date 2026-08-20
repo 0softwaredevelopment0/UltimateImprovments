@@ -136,7 +136,7 @@ cd UltimateImprovments
 ./gradlew build
 ```
 
-The built JAR will be in `Jar/UltimateImprovments-<version>.jar`. Requires JDK 26+.
+The built JAR will be in `build/libs/UltimateImprovments-<version>.jar`. Requires JDK 26+.
 
 ---
 
