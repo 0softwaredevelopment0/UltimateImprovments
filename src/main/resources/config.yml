@@ -4779,4 +4779,13 @@ messages_en:
       - "<gray>please report an appeal on Discord:"
       - "<white>%discord_url%"
 
-
+# ══════════════════════════════════════════════════════════════
+# Override Join Messages (OJM) feature
+# Use the <player> placeholder here to show player's nick
+# Enable/disable this feature
+ojm:
+  enabled: false
+  # Join message
+  join: "<white>[<green>+<white>] <player> <green>joined the game"
+  # Leave message
+  leave: "<white>[<red>-<white>] <player> <red>left the game"

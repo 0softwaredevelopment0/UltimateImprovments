@@ -541,6 +541,10 @@ final class ConfigRules {
             string("enchant.permission", false, 128),
             stringList("enchant.custom_enchantments"),
 
+            bool("ojm.enabled"),
+            string("ojm.join", false, 512),
+            string("ojm.leave", false, 512),
+
             notBlank("plugin_version", 32)
     );
 }

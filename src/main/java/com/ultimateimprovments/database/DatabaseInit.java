@@ -677,9 +677,15 @@ public class DatabaseInit {
                 home_y DOUBLE DEFAULT 0,
                 home_z DOUBLE DEFAULT 0,
                 home_yaw FLOAT DEFAULT 0,
-                home_pitch FLOAT DEFAULT 0
+                home_pitch FLOAT DEFAULT 0,
+                description TEXT DEFAULT '',
+                settings TEXT DEFAULT ''
             );
         """);
+
+        // Migration for existing databases: CREATE TABLE IF NOT EXISTS won't add columns.
+        try { st.execute("ALTER TABLE clans ADD COLUMN description TEXT DEFAULT ''"); } catch (Exception ignored) {}
+        try { st.execute("ALTER TABLE clans ADD COLUMN settings TEXT DEFAULT ''"); } catch (Exception ignored) {}
 
         st.execute("""
             CREATE TABLE IF NOT EXISTS clan_members (
@@ -695,6 +701,14 @@ public class DatabaseInit {
         st.execute("""
             CREATE INDEX IF NOT EXISTS idx_clan_members_uuid
             ON clan_members(player_uuid);
+        """);
+
+        // Migration: existing clan creators (owner_uuid) become the leader role.
+        // Must run after clan_members exists — safe on fresh DBs (no rows to update).
+        st.execute("""
+            UPDATE clan_members SET role = 'leader'
+            WHERE role != 'leader'
+              AND player_uuid IN (SELECT owner_uuid FROM clans WHERE clans.name = clan_members.clan_name)
         """);
 
         st.execute("""
@@ -792,6 +806,21 @@ public class DatabaseInit {
         } catch (Exception ignored) {
             // Column already exists — this is fine
         }
+
+        // =========================
+        // 📋 CMD LOG — /ui cmdlog <on/off> toggle (persist across restarts)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS cmdlog_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            );
+        """);
+
+        st.execute("""
+            INSERT OR IGNORE INTO cmdlog_meta (key, value)
+            VALUES ('enabled', 'false');
+        """);
 
         // Initialize the latest_commit_sha and installed_tag rows if missing
         st.execute("""

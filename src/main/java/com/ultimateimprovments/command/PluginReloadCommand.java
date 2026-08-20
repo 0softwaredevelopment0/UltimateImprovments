@@ -105,7 +105,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
 
         // ── Legacy adapters (simple static calls) ──
         registry.register(LegacySubCommandAdapter.of("chgdim", ChgDimSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("codepane", CodePaneSubcommand::execute));
+        registry.register(LegacySubCommandAdapter.of("codepane", CodePaneSubcommand::execute,
+                tc((s, a) -> CodePaneSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("item", ItemSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("auth", AuthSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("power", PowerSubcommand::execute));

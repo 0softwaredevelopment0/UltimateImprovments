@@ -30,3 +30,5 @@ __pycache__/
 nul
 .claude/
 node_modules/
+scan_cyrillic.js
+scan_cyrillic.py

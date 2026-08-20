@@ -21,6 +21,7 @@ public final class ClanManager {
     public static final String CONFIRM_HOME_SET = "home_set";
     public static final String CONFIRM_HOME_DEL = "home_del";
     public static final String CONFIRM_LEAVE = "leave";
+    public static final String CONFIRM_TRANSFER = "transfer";
 
     /** A pending confirmation: action + expiry timestamp. */
     public record ConfirmRequest(String action, long expiresAt) {}

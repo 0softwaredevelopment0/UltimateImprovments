@@ -386,6 +386,15 @@ public class PluginStartup {
         CheckManager.init();
         plugin.getServer().getPluginManager().registerEvents(new CheckListener(), plugin);
 
+        // CmdLog — /ui cmdlog <on|off>: player command logging to chat (state in DB)
+        com.ultimateimprovments.chat.CmdLogger.init(plugin);
+
+        // Clan friendly fire — /ui clan edit selfpvp <on|off> (state in DB, default off)
+        com.ultimateimprovments.command.clan.ClanFriendlyFireListener.init(plugin);
+
+        // OJM — override join/leave messages (config section ojm)
+        com.ultimateimprovments.chat.OjmManager.init(plugin);
+
         // Commands — register Bukkit commands via CommandMap
         CommandRegistrar.getInstance().registerAll(plugin);
 
