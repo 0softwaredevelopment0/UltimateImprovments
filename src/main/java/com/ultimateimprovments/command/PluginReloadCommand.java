@@ -137,8 +137,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("rtp", RtpSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("meteor", MeteorSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("plugin", PluginSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("report", ReportSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("reports", ReportsSubcommand::execute));
+        registry.register(LegacySubCommandAdapter.of("report", ReportSubcommand::execute,
+                tc((s, a) -> ReportSubcommand.tabComplete(a))));
+        registry.register(LegacySubCommandAdapter.of("reports", ReportsSubcommand::execute,
+                tc((s, a) -> ReportsSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("redstone", RedstoneSubcommand::execute,
                 tc((s, a) -> RedstoneSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("modreport", ModReportSubcommand::execute));
@@ -369,7 +371,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     yield true;
                 }
             };
-        }));
+        }, tc((s, a) -> {
+            if (!(s instanceof Player p)) return List.of();
+            return VoteManager.tabComplete(p, a);
+        })));
 
         ConsoleLogger.info("[COMMANDS] SubCommand registry initialized.");
     }

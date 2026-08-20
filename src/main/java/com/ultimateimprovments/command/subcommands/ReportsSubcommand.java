@@ -9,7 +9,9 @@ import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Handles /ui reports list|add <id> <name>|remove <id> — admin reports management.
@@ -213,5 +215,49 @@ public final class ReportsSubcommand {
         }
 
         return true;
+    }
+
+    public static List<String> tabComplete(String[] args) {
+        if (args.length == 2) {
+            return filterByInput(List.of("list", "add", "remove"), args[1]);
+        }
+        String action = args[1].toLowerCase();
+        return switch (action) {
+            case "add" -> {
+                // /ui reports add <id> <name>
+                if (args.length == 3) {
+                    List<String> ids = new ArrayList<>();
+                    for (ReportData r : ReportManager.getAllReports()) {
+                        ids.add(String.valueOf(r.id));
+                    }
+                    yield filterByInput(ids, args[2]);
+                }
+                yield List.of(); // name is free text
+            }
+            case "remove" -> {
+                // /ui reports remove <id>|confirm
+                if (args.length == 3) {
+                    List<String> opts = new ArrayList<>();
+                    opts.add("confirm");
+                    for (String entry : ReportManager.getModQueueNames()) {
+                        // extract the ID from entries like "#12 name"
+                        if (entry.startsWith("#")) {
+                            int space = entry.indexOf(' ');
+                            opts.add(space > 0 ? entry.substring(1, space) : entry.substring(1));
+                        }
+                    }
+                    yield filterByInput(opts, args[2]);
+                }
+                yield List.of();
+            }
+            default -> List.of();
+        };
+    }
+
+    private static List<String> filterByInput(List<String> options, String input) {
+        String lower = input.toLowerCase();
+        return options.stream()
+                .filter(s -> s.toLowerCase().startsWith(lower))
+                .collect(Collectors.toList());
     }
 }

@@ -5,8 +5,13 @@ import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.report.ReportManager;
 import com.ultimateimprovments.util.MessageUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Handles /ui report <player> <reason> — submitting a report about a player.
@@ -52,5 +57,23 @@ public final class ReportSubcommand {
         }
 
         return true;
+    }
+
+    public static List<String> tabComplete(String[] args) {
+        if (args.length == 2) {
+            // Player names
+            return filterByInput(
+                    Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()),
+                    args[1]);
+        }
+        // args.length >= 3 — reason (free text, no suggestions)
+        return List.of();
+    }
+
+    private static List<String> filterByInput(List<String> options, String input) {
+        String lower = input.toLowerCase();
+        return options.stream()
+                .filter(s -> s.toLowerCase().startsWith(lower))
+                .collect(Collectors.toList());
     }
 }

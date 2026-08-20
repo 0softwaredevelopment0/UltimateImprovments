@@ -961,4 +961,112 @@ public class VoteManager {
     public static Vote getVote(String name) {
         return votes.get(name.toLowerCase());
     }
+
+    // =========================
+    // TAB COMPLETION
+    // =========================
+    public static List<String> tabComplete(Player player, String[] args) {
+        if (args.length == 1) {
+            List<String> opts = new ArrayList<>();
+            if (player.hasPermission("ui.command.vote.create")) opts.add("create");
+            if (player.hasPermission("ui.command.vote.delete")) opts.add("delete");
+            if (player.hasPermission("ui.command.vote.change")) opts.add("change");
+            if (player.hasPermission("ui.command.vote.stats")) opts.add("stats");
+            opts.addAll(votes.keySet());
+            return filterByInput(opts, args[0]);
+        }
+
+        String sub = args[1].toLowerCase();
+
+        return switch (sub) {
+            case "create" -> tabCompleteCreate(args);
+            case "delete" -> tabCompleteDelete(args);
+            case "change" -> tabCompleteChange(args);
+            case "stats" -> tabCompleteStats(args);
+            default -> {
+                // /ui vote <name> [answerIndex]
+                Vote vote = votes.get(sub);
+                if (vote != null && args.length == 3) {
+                    List<String> opts = new ArrayList<>();
+                    for (int i = 0; i < vote.answers.size(); i++) {
+                        opts.add(String.valueOf(i));
+                        opts.add(vote.answers.get(i).title);
+                    }
+                    yield filterByInput(opts, args[2]);
+                }
+                yield List.of();
+            }
+        };
+    }
+
+    private static List<String> tabCompleteCreate(String[] args) {
+        // /ui vote create <name> <title> <desc> -answer_1:t,d -time:5m
+        if (args.length <= 4) return List.of(); // name, title, desc — free text
+        String last = args[args.length - 1];
+        List<String> opts = new ArrayList<>();
+        if (!last.startsWith("-")) {
+            opts.add("-answer_1:");
+            opts.add("-answer_2:");
+            opts.add("-answer_3:");
+            opts.add("-time:");
+        } else if (last.startsWith("-answer_")) {
+            opts.add(last + "");
+        } else if (last.startsWith("-time:")) {
+            opts.add("-time:5m");
+            opts.add("-time:1h");
+            opts.add("-time:1d");
+        } else {
+            opts.add("-answer_1:");
+            opts.add("-answer_2:");
+            opts.add("-answer_3:");
+            opts.add("-time:");
+        }
+        return filterByInput(opts, last);
+    }
+
+    private static List<String> tabCompleteDelete(String[] args) {
+        // /ui vote delete <name>
+        if (args.length == 3) return filterByInput(new ArrayList<>(votes.keySet()), args[2]);
+        return List.of();
+    }
+
+    private static List<String> tabCompleteChange(String[] args) {
+        // /ui vote change <name> [-title X] [-desc Y] [-answer_N:t,d] [-time:X]
+        if (args.length == 3) return filterByInput(new ArrayList<>(votes.keySet()), args[2]);
+        String last = args[args.length - 1];
+        List<String> opts = new ArrayList<>();
+        if (!last.startsWith("-")) {
+            opts.add("-title");
+            opts.add("-desc");
+            opts.add("-answer_1:");
+            opts.add("-answer_2:");
+            opts.add("-time:");
+        } else if (last.startsWith("-time:")) {
+            opts.add("-time:5m");
+            opts.add("-time:1h");
+            opts.add("-time:1d");
+        } else if (last.startsWith("-answer_")) {
+            opts.add(last + "");
+        } else {
+            opts.add("-title");
+            opts.add("-desc");
+            opts.add("-answer_1:");
+            opts.add("-answer_2:");
+            opts.add("-time:");
+        }
+        return filterByInput(opts, last);
+    }
+
+    private static List<String> tabCompleteStats(String[] args) {
+        // /ui vote stats <name>
+        if (args.length == 3) return filterByInput(new ArrayList<>(votes.keySet()), args[2]);
+        return List.of();
+    }
+
+    private static List<String> filterByInput(List<String> options, String input) {
+        String lower = input.toLowerCase();
+        return options.stream()
+                .filter(s -> s.toLowerCase().startsWith(lower))
+                .collect(Collectors.toList());
+    }
 }
