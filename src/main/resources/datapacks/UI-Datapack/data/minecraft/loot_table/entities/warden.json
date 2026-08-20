@@ -8,7 +8,13 @@
           "type": "minecraft:item",
           "name": "minecraft:ancient_debris",
           "weight": 1,
-          "quality": 1
+          "quality": 1,
+          "conditions": [
+            {
+              "condition": "minecraft:random_chance",
+              "chance": 0.9
+            }
+          ]
         }
       ]
     }

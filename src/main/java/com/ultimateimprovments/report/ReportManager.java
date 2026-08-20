@@ -500,9 +500,9 @@ public class ReportManager implements Listener {
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.moderation.verdict_prompt",
                             "<green>✔</green> <white>Заключение сохранено. Выберите вердикт:</white>")));
-            player.sendMessage(MessageUtil.parse("<white>1.</white> <green>Подтверждён</green>"));
-            player.sendMessage(MessageUtil.parse("<white>2.</white> <red>Отклонён</red>"));
-            player.sendMessage(MessageUtil.parse("<white>3.</white> <gray>Закрыт</gray>"));
+            player.sendMessage(MessageUtil.parse("<white>1.</white> <green>Accepted</green>"));
+            player.sendMessage(MessageUtil.parse("<white>2.</white> <red>Declined</red>"));
+            player.sendMessage(MessageUtil.parse("<white>3.</white> <gray>Closed</gray>"));
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.moderation.type_or_cancel",
                             "<gray>Напишите номер или </gray><red>cancel</red><gray> для отмены.</gray>")));
@@ -513,15 +513,15 @@ public class ReportManager implements Listener {
             switch (text) {
                 case "1" -> {
                     verdictOption = "confirmed";
-                    verdictLabel = MessagesManager.getString("report.verdict.confirmed", "Подтверждён");
+                    verdictLabel = MessagesManager.getString("report.verdict.confirmed", "Accepted");
                 }
                 case "2" -> {
                     verdictOption = "rejected";
-                    verdictLabel = MessagesManager.getString("report.verdict.rejected", "Отклонён");
+                    verdictLabel = MessagesManager.getString("report.verdict.rejected", "Declined");
                 }
                 case "3" -> {
                     verdictOption = "closed";
-                    verdictLabel = MessagesManager.getString("report.verdict.closed", "Закрыт");
+                    verdictLabel = MessagesManager.getString("report.verdict.closed", "Closed");
                 }
                 default -> {
                     player.sendMessage(MessageUtil.parse(
