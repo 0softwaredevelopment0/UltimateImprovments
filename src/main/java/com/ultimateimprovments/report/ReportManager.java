@@ -134,21 +134,21 @@ public class ReportManager implements Listener {
         String reporterUuid = reporter.getUniqueId().toString();
         if (hasPendingReport(reporterUuid)) {
             return MessagesManager.getString("report.errors.already_pending",
-                    "<red>❌ У вас уже есть активный репорт! Дождитесь его модерации.</red>");
+                    "<red>❌ You already have an active report! Wait for it to be moderated.</red>");
         }
 
         // Get the reported player's UUID
         String reportedUuid = getUuidByName(reportedName);
         if (reportedUuid == null) {
             return MessagesManager.getString("report.errors.never_joined",
-                    "<red>❌ Игрок <yellow>%player%</yellow> <red>ни разу не заходил на сервер!</red>")
+                    "<red>❌ Player </red><yellow>%player%</yellow><red> has never joined the server!</red>")
                     .replace("%player%", reportedName);
         }
 
         // Can't report yourself
         if (reporterUuid.equals(reportedUuid)) {
             return MessagesManager.getString("report.errors.self_report",
-                    "<red>❌ Вы не можете подать репорт на самого себя!</red>");
+                    "<red>❌ You cannot report yourself!</red>");
         }
 
         // Get the expiration time from the config
@@ -170,14 +170,14 @@ public class ReportManager implements Listener {
         } catch (Exception e) {
             ConsoleLogger.warn("[Reports] Failed to create report: " + e.getMessage());
             return MessagesManager.getString("report.errors.db_error",
-                    "<red>❌ Ошибка базы данных при создании репорта!</red>");
+                    "<red>❌ Database error while creating report!</red>");
         }
 
         // Notify the reported player (if online)
         Player reportedPlayer = Bukkit.getPlayerExact(reportedName);
         if (reportedPlayer != null && reportedPlayer.isOnline()) {
             String notifiedMsg = MessagesManager.getString("report.reported_notification",
-                    "<yellow>⚠</yellow> <white>На вас была подана жалоба!</white>");
+                    "<yellow>⚠</yellow> <white>A report has been filed against you!</white>");
             reportedPlayer.sendMessage(MessageUtil.parse(notifiedMsg));
         }
 
@@ -463,11 +463,11 @@ public class ReportManager implements Listener {
         modSessions.put(moderator.getUniqueId(), session);
 
         String msg = MessagesManager.getString("report.moderation.enter_conclusion",
-                "<green>✔</green> <white>Напишите заключение по репорту </white><yellow>%name%</yellow>");
+                "<green>✔</green> <white>Write a conclusion for report </white><yellow>%name%</yellow>");
         moderator.sendMessage(MessageUtil.parse(msg.replace("%name%", modName)));
         moderator.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("report.moderation.type_or_cancel",
-                        "<gray>Напишите текст или </gray><red>cancel</red><gray> для отмены.</gray>")));
+                        "<gray>Type text or </gray><red>cancel</red><gray> to abort.</gray>")));
     }
 
     /**
@@ -488,7 +488,7 @@ public class ReportManager implements Listener {
             removeConfirmations.remove(uuid);
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.moderation.cancelled",
-                            "<yellow>✦</yellow> <gray>Модерация отменена.</gray>")));
+                            "<yellow>✦</yellow> <gray>Moderation cancelled.</gray>")));
             return;
         }
 
@@ -499,13 +499,13 @@ public class ReportManager implements Listener {
 
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.moderation.verdict_prompt",
-                            "<green>✔</green> <white>Заключение сохранено. Выберите вердикт:</white>")));
+                            "<green>✔</green> <white>Conclusion saved. Choose a verdict:</white>")));
             player.sendMessage(MessageUtil.parse("<white>1.</white> <green>Accepted</green>"));
             player.sendMessage(MessageUtil.parse("<white>2.</white> <red>Declined</red>"));
             player.sendMessage(MessageUtil.parse("<white>3.</white> <gray>Closed</gray>"));
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.moderation.type_or_cancel",
-                            "<gray>Напишите номер или </gray><red>cancel</red><gray> для отмены.</gray>")));
+                            "<gray>Type a number or </gray><red>cancel</red><gray> to abort.</gray>")));
         } else if (session.step == ModerationSession.Step.VERDICT) {
             // Process the verdict
             String verdictOption;
@@ -525,7 +525,7 @@ public class ReportManager implements Listener {
                 }
                 default -> {
                     player.sendMessage(MessageUtil.parse(
-                            "<red>❌ Неверный номер! Используйте 1, 2 или 3.</red>"));
+                            "<red>❌ Invalid number! Use 1, 2, or 3.</red>"));
                     return;
                 }
             }
@@ -560,7 +560,7 @@ public class ReportManager implements Listener {
                     Player reporterPlayer = Bukkit.getPlayer(UUID.fromString(reporterUuid));
                     if (reporterPlayer != null && reporterPlayer.isOnline()) {
                         String notifiedMsg = MessagesManager.getString("report.reporter_notified",
-                                "<green>✔</green> <white>Ваш репорт рассмотрен! Вердикт: </white><yellow>%verdict%</yellow>")
+                                "<green>✔</green> <white>Your report has been reviewed! Verdict: </white><yellow>%verdict%</yellow>")
                                 .replace("%verdict%", finalVerdictLabel);
                         reporterPlayer.sendMessage(MessageUtil.parse(notifiedMsg));
                     }
@@ -571,7 +571,7 @@ public class ReportManager implements Listener {
 
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.moderation.verdict_saved",
-                            "<green>✔</green> <white>Вердикт </white><yellow>%verdict%</yellow> <white>сохранён по репорту </white><yellow>%name%</yellow>")
+                            "<green>✔</green> <white>Verdict </white><yellow>%verdict%</yellow><white> saved for report </white><yellow>%name%</yellow>")
                             .replace("%verdict%", finalVerdictLabel)
                             .replace("%name%", session.modName)));
         }
@@ -585,7 +585,7 @@ public class ReportManager implements Listener {
         removeConfirmations.put(admin.getUniqueId(), reportId);
         admin.sendMessage(MessageUtil.parse(
                 MessagesManager.getString("report.admin.remove_confirm",
-                        "<yellow>⚠</yellow> <white>Удалить </white><yellow>%name%</yellow><white>? Напишите </white><yellow>/ui reports remove confirm</yellow><white> для подтверждения.</white>")
+                        "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/ui reports remove confirm</yellow><white> to confirm.</white>")
                         .replace("%name%", modName)));
         // Confirmation expiration delay (30 sec)
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
@@ -653,10 +653,10 @@ public class ReportManager implements Listener {
     public static String formatTimeLeft(long expiresAt) {
         long now = System.currentTimeMillis() / 1000;
         long left = expiresAt - now;
-        if (left <= 0) return "просрочен";
-        if (left < 60) return left + "с";
-        if (left < 3600) return (left / 60) + "м";
-        if (left < 86400) return (left / 3600) + "ч";
-        return (left / 86400) + "д";
+        if (left <= 0) return "expired";
+        if (left < 60) return left + "s";
+        if (left < 3600) return (left / 60) + "m";
+        if (left < 86400) return (left / 3600) + "h";
+        return (left / 86400) + "d";
     }
 }

@@ -31,7 +31,7 @@ public final class RepStatusSubcommand {
         if (report == null) {
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.no_active_report",
-                            "<yellow>✦</yellow> <white>У вас нет активных репортов.</white>")));
+                            "<yellow>✦</yellow> <white>You have no active reports.</white>")));
             return true;
         }
 
@@ -45,7 +45,7 @@ public final class RepStatusSubcommand {
                 "<gray>Reason: </gray><white>" + report.reason + "</white>"));
         if (report.status.equals("pending")) {
             player.sendMessage(MessageUtil.parse(
-                    "<gray>Status: </gray><yellow>На рассмотрении</yellow>"));
+                    "<gray>Status: </gray><yellow>Pending</yellow>"));
             player.sendMessage(MessageUtil.parse(
                     "<gray>Expires: </gray><white>" + timeLeft + "</white>"));
         }

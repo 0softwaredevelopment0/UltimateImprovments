@@ -52,7 +52,7 @@ public final class ReportSubcommand {
         } else {
             player.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("report.success",
-                            "<green>✔</green> <white>Репорт на игрока </white><yellow>%player%</yellow> <white>отправлен!</white>")
+                            "<green>✔</green> <white>Report against </white><yellow>%player%</yellow><white> submitted!</white>")
                             .replace("%player%", targetName)));
         }
 
