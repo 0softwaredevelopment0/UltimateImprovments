@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SpaceRocketManager implements Listener {
 
     private static final NamespacedKey KEY_ROCKET = new NamespacedKey(Main.getInstance(), "space_rocket");
-    private static final double LIFT_SPEED = 1.5; // blocks per tick (~30 blocks/sec)
+    private static final double LIFT_SPEED = 5.0; // blocks per tick (~100 blocks/sec, ~20s to space)
     private static final int LIFT_CHECK_INTERVAL = 1; // every tick
 
     /** Players currently in launch sequence (uuid → task) */
