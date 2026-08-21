@@ -4802,6 +4802,8 @@ ojm:
 space:
   # Master toggle: enable/disable the space dimension
   enabled: true
+  # Debug logging: verbose space logs in console (gravity, teleport, etc.)
+  debug: false
   # Cooldown between teleports, in ticks (100 = 5 seconds)
   teleport_cooldown_ticks: 100
   # Rocket right-click launch delay, in ticks (60 = 3 seconds)

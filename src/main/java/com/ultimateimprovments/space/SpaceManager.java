@@ -41,9 +41,17 @@ public class SpaceManager {
     private static final Map<UUID, Boolean> teleporting = new ConcurrentHashMap<>();
 
     private static boolean enabled = false;
+    private static boolean debug = false;
     private static World spaceWorld;
     private static Main plugin;
     private static java.util.List<String> spaceEntryWorlds = java.util.List.of("world");
+
+    public static boolean isDebug() { return debug; }
+
+    /** Log only when space.debug = true in config. */
+    public static void debugLog(String msg) {
+        if (debug) ConsoleLogger.info("[Space] " + msg);
+    }
 
     // ===== INIT =====
 
@@ -51,7 +59,8 @@ public class SpaceManager {
         plugin = pl;
         var cfg = pl.getConfig();
         enabled = cfg.getBoolean("space.enabled", true);
-        ConsoleLogger.info("[Space] Config space.enabled = " + enabled);
+        debug = cfg.getBoolean("space.debug", false);
+        ConsoleLogger.info("[Space] Config space.enabled = " + enabled + ", debug = " + debug);
         if (!enabled) {
             ConsoleLogger.info("[Space] Space dimension disabled in config.");
             return;
@@ -61,11 +70,11 @@ public class SpaceManager {
         if (spaceEntryWorlds.isEmpty()) {
             spaceEntryWorlds = java.util.List.of("world");
         }
-        ConsoleLogger.info("[Space] Entry worlds: " + spaceEntryWorlds);
+        debugLog("Entry worlds: " + spaceEntryWorlds);
 
         SpaceGravityListener.reloadConfig();
 
-        ConsoleLogger.info("[Space] Creating world '" + WORLD_NAME + "'...");
+        debugLog("Creating world '" + WORLD_NAME + "'...");
 
         new BukkitRunnable() {
             @Override
@@ -75,7 +84,7 @@ public class SpaceManager {
                     loadFromDatabase();
                     ensureSpawnPlatform();
                     if (spaceWorld != null) {
-                        ConsoleLogger.info("[Space] Space dimension ready. World: " + spaceWorld.getName()
+                        debugLog("Space dimension ready. World: " + spaceWorld.getName()
                                 + " (maxHeight=" + spaceWorld.getMaxHeight()
                                 + ", min_y=" + spaceWorld.getMinHeight() + ")");
                     } else {
@@ -115,7 +124,7 @@ public class SpaceManager {
         // 1) Already loaded?
         spaceWorld = Bukkit.getWorld(WORLD_NAME);
         if (spaceWorld != null) {
-            ConsoleLogger.info("[Space] World '" + WORLD_NAME + "' already loaded.");
+            debugLog("World '" + WORLD_NAME + "' already loaded.");
             return;
         }
 
@@ -123,21 +132,21 @@ public class SpaceManager {
         for (World w : Bukkit.getWorlds()) {
             if (WORLD_NAME.equals(w.getName())) {
                 spaceWorld = w;
-                ConsoleLogger.info("[Space] Found '" + WORLD_NAME + "' in loaded worlds list.");
+                debugLog("Found '" + WORLD_NAME + "' in loaded worlds list.");
                 return;
             }
         }
 
         // 3) Create fresh via WorldCreator (datapack dimension removed to avoid registry conflict)
         try {
-            ConsoleLogger.info("[Space] Building WorldCreator for '" + WORLD_NAME + "'...");
+            debugLog("Building WorldCreator for '" + WORLD_NAME + "'...");
             WorldCreator creator = new WorldCreator(WORLD_NAME)
                     .environment(World.Environment.THE_END)
                     .generator(new VoidChunkGenerator())
                     .generateStructures(false)
                     .seed(Bukkit.getWorlds().get(0).getSeed());
 
-            ConsoleLogger.info("[Space] Calling creator.createWorld()...");
+            debugLog("Calling creator.createWorld()...");
             spaceWorld = creator.createWorld();
             if (spaceWorld != null) {
                 spaceWorld.setKeepSpawnInMemory(false);
@@ -151,7 +160,7 @@ public class SpaceManager {
                 spaceWorld.setGameRuleValue("mobGriefing", "false");
                 spaceWorld.setGameRuleValue("announceAdvancements", "false");
                 spaceWorld.setGameRuleValue("doImmediateRespawn", "true");
-                ConsoleLogger.info("[Space] World '" + WORLD_NAME + "' created successfully. "
+                debugLog("World '" + WORLD_NAME + "' created successfully. "
                         + "Environment=" + spaceWorld.getEnvironment()
                         + " maxHeight=" + spaceWorld.getMaxHeight());
             } else {
@@ -171,7 +180,7 @@ public class SpaceManager {
         Block block = spaceWorld.getBlockAt(0, -1, 0);
         if (block.getType() != Material.COBBLED_DEEPSLATE) {
             block.setType(Material.COBBLED_DEEPSLATE);
-            ConsoleLogger.info("[Space] Spawn platform restored at (0, -1, 0).");
+            debugLog("Spawn platform restored at (0, -1, 0).");
         }
     }
 
@@ -206,7 +215,7 @@ public class SpaceManager {
             if (firstVisit) {
                 grantAdvancement(player, ADV_THE_SPACE);
             }
-            ConsoleLogger.info("[Space] " + player.getName() + " teleported to space" + (firstVisit ? " (first visit)" : "") + ".");
+            debugLog(player.getName() + " teleported to space" + (firstVisit ? " (first visit)" : "") + ".");
         }
         return success;
     }
@@ -237,7 +246,7 @@ public class SpaceManager {
         cooldowns.put(uuid, System.currentTimeMillis() + (100L * 50));
         boolean success = player.teleport(saved);
         if (success) {
-            ConsoleLogger.info("[Space] " + player.getName() + " returned from space.");
+            debugLog(player.getName() + " returned from space.");
             clearLastPosition(uuid);
         }
         return success;
@@ -303,7 +312,7 @@ public class SpaceManager {
         cooldowns.put(uuid, System.currentTimeMillis() + (100L * 50));
         boolean success = player.teleport(target);
         if (success) {
-            ConsoleLogger.info("[Space] " + player.getName() + " landed from space at "
+            debugLog(player.getName() + " landed from space at "
                     + target.getWorld().getName() + " "
                     + target.getBlockX() + " " + target.getBlockY() + " " + target.getBlockZ());
             clearLastPosition(uuid);

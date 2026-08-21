@@ -547,6 +547,7 @@ final class ConfigRules {
 
             // Space dimension
             bool("space.enabled"),
+            bool("space.debug"),
             integer("space.teleport_cooldown_ticks", 0, 6000),
             integer("space.rocket_launch_delay_ticks", 1, 200),
             dbl("space.gravity", 0, 10),

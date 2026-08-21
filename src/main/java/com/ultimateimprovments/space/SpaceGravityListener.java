@@ -1,7 +1,6 @@
 package com.ultimateimprovments.space;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
@@ -69,13 +68,13 @@ public class SpaceGravityListener implements Listener {
                 attr.setBaseValue(spaceGravity);
                 PersistentDataContainer pdc = player.getPersistentDataContainer();
                 pdc.set(KEY_GRAVITY_APPLIED, PersistentDataType.BYTE, (byte) 1);
-                ConsoleLogger.info("[Space] Gravity set to " + spaceGravity + " for " + player.getName()
+                SpaceManager.debugLog("Gravity set to " + spaceGravity + " for " + player.getName()
                         + " (default=" + Attribute.GRAVITY.getDefaultValue() + ")");
             } else {
-                ConsoleLogger.warn("[Space] Attribute.GRAVITY is null for " + player.getName() + "!");
+                com.ultimateimprovments.util.ConsoleLogger.warn("[Space] Attribute.GRAVITY is null for " + player.getName() + "!");
             }
         } catch (Exception e) {
-            ConsoleLogger.error("[Space] Failed to apply gravity for " + player.getName() + ": " + e.getMessage());
+            com.ultimateimprovments.util.ConsoleLogger.error("[Space] Failed to apply gravity for " + player.getName() + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -88,11 +87,11 @@ public class SpaceGravityListener implements Listener {
                 AttributeInstance attr = player.getAttribute(Attribute.GRAVITY);
                 if (attr != null) {
                     attr.setBaseValue(Attribute.GRAVITY.getDefaultValue());
-                    ConsoleLogger.info("[Space] Gravity reset for " + player.getName());
+                    SpaceManager.debugLog("Gravity reset for " + player.getName());
                 }
             }
         } catch (Exception e) {
-            ConsoleLogger.error("[Space] Failed to reset gravity for " + player.getName() + ": " + e.getMessage());
+            com.ultimateimprovments.util.ConsoleLogger.error("[Space] Failed to reset gravity for " + player.getName() + ": " + e.getMessage());
         }
     }
 }
