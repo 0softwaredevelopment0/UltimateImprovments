@@ -3,6 +3,7 @@ package com.ultimateimprovments.space;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.DatabaseManager;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -70,6 +71,7 @@ public class SpaceManager {
         plugin = pl;
         var cfg = pl.getConfig();
         enabled = cfg.getBoolean("space.enabled", true);
+        ConsoleLogger.info("[Space] Config space.enabled = " + enabled);
         if (!enabled) {
             ConsoleLogger.info("[Space] Space dimension disabled in config.");
             return;
@@ -79,6 +81,7 @@ public class SpaceManager {
         if (spaceEntryWorlds.isEmpty()) {
             spaceEntryWorlds = java.util.List.of("world");
         }
+        ConsoleLogger.info("[Space] Entry worlds: " + spaceEntryWorlds);
 
         SpaceGravityListener.reloadConfig();
 
@@ -87,10 +90,20 @@ public class SpaceManager {
         new BukkitRunnable() {
             @Override
             public void run() {
-                createSpaceWorld();
-                loadFromDatabase();
-                ensureSpawnPlatform();
-                ConsoleLogger.info("[Space] Space dimension ready.");
+                try {
+                    createSpaceWorld();
+                    loadFromDatabase();
+                    ensureSpawnPlatform();
+                    if (spaceWorld != null) {
+                        ConsoleLogger.info("[Space] Space dimension ready. World: " + spaceWorld.getName()
+                                + " (maxHeight=" + spaceWorld.getMaxHeight() + ", min_y=" + spaceWorld.getMinHeight() + ")");
+                    } else {
+                        ConsoleLogger.error("[Space] Space dimension NOT ready — spaceWorld is null after createSpaceWorld()!");
+                    }
+                } catch (Exception e) {
+                    ConsoleLogger.error("[Space] Exception during space init: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
         }.runTaskLater(pl, 1L);
 
@@ -128,12 +141,14 @@ public class SpaceManager {
         }
 
         try {
+            ConsoleLogger.info("[Space] Building WorldCreator for '" + WORLD_NAME + "'...");
             WorldCreator creator = new WorldCreator(WORLD_NAME)
                     .environment(World.Environment.NORMAL)
                     .generator(new VoidChunkGenerator())
                     .generateStructures(false)
                     .seed(Bukkit.getWorlds().get(0).getSeed());
 
+            ConsoleLogger.info("[Space] Calling creator.createWorld()...");
             spaceWorld = creator.createWorld();
             if (spaceWorld != null) {
                 spaceWorld.setKeepSpawnInMemory(false);
@@ -147,12 +162,15 @@ public class SpaceManager {
                 spaceWorld.setGameRuleValue("mobGriefing", "false");
                 spaceWorld.setGameRuleValue("announceAdvancements", "false");
                 spaceWorld.setGameRuleValue("doImmediateRespawn", "true");
-                ConsoleLogger.info("[Space] World '" + WORLD_NAME + "' created successfully.");
+                ConsoleLogger.info("[Space] World '" + WORLD_NAME + "' created successfully. "
+                        + "Environment=" + spaceWorld.getEnvironment()
+                        + " maxHeight=" + spaceWorld.getMaxHeight());
             } else {
-                ConsoleLogger.error("[Space] Failed to create world '" + WORLD_NAME + "'!");
+                ConsoleLogger.error("[Space] creator.createWorld() returned NULL for '" + WORLD_NAME + "'!");
+                ConsoleLogger.error("[Space] Check server logs for datapack errors with dimension_type/ui_space or biome/ui_biome_space.");
             }
         } catch (Exception e) {
-            ConsoleLogger.error("[Space] Error creating world: " + e.getMessage());
+            ConsoleLogger.error("[Space] Exception creating world: " + e.getClass().getSimpleName() + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -167,6 +185,7 @@ public class SpaceManager {
      */
     public static void ensureSpawnPlatform() {
         if (spaceWorld == null) return;
+
         Block block = spaceWorld.getBlockAt(0, -1, 0);
         if (block.getType() != Material.COBBLED_DEEPSLATE) {
             block.setType(Material.COBBLED_DEEPSLATE);
@@ -187,7 +206,9 @@ public class SpaceManager {
      */
     public static boolean teleportToSpace(Player player) {
         if (!enabled || spaceWorld == null) {
-            player.sendMessage("<red>❌ Space dimension is not available.</red>");
+            player.sendMessage(MessageUtil.parse("<red>❌ Space dimension is not available.</red>"));
+            ConsoleLogger.warn("[Space] Teleport failed for " + player.getName()
+                    + ": enabled=" + enabled + ", spaceWorld=" + (spaceWorld != null ? "loaded" : "NULL"));
             return false;
         }
 
@@ -242,7 +263,7 @@ public class SpaceManager {
         UUID uuid = player.getUniqueId();
         if (isOnCooldown(player)) {
             long remaining = (cooldowns.get(uuid) - System.currentTimeMillis()) / 1000;
-            player.sendMessage("<yellow>✦</yellow> <white>Wait " + remaining + "s before teleporting again.</white>");
+            player.sendMessage(MessageUtil.parse("<yellow>✦</yellow> <white>Wait " + remaining + "s before teleporting again.</white>"));
             return false;
         }
 
@@ -256,7 +277,7 @@ public class SpaceManager {
             if (overworld != null) {
                 saved = overworld.getSpawnLocation();
             } else {
-                player.sendMessage("<red>❌ No return point found.</red>");
+                player.sendMessage(MessageUtil.parse("<red>❌ No return point found.</red>"));
                 return false;
             }
         }
@@ -352,8 +373,7 @@ public class SpaceManager {
         } else {
             // Fallback: first available world at spawn
             World fallbackWorld = Bukkit.getWorlds().get(0);
-            int targetBuildLimit = fallbackWorld.getMaxHeight();
-            target = new Location(fallbackWorld, 0.5, fallbackWorld.getSpawnLocation().getY(), 0.5);
+            target = fallbackWorld.getSpawnLocation();
             ConsoleLogger.warn("[Space] No saved position for " + player.getName() + ", using fallback.");
         }
 
@@ -372,7 +392,7 @@ public class SpaceManager {
             World fallbackWorld = target.getWorld() != null ? target.getWorld() : Bukkit.getWorlds().get(0);
             Location fallback = fallbackWorld.getSpawnLocation();
             player.teleport(fallback);
-            player.sendMessage("<yellow>⚠</yellow> <white>Return point failed, teleported to spawn.</white>");
+            player.sendMessage(MessageUtil.parse("<yellow>⚠</yellow> <white>Return point failed, teleported to spawn.</white>"));
         }
     }
 
