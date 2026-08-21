@@ -54,7 +54,7 @@ public class ChunkLoaderCraftListener implements Listener {
                 "NBN"
         );
 
-        recipe.setIngredient('N', Material.NETHERITE_BLOCK);
+        recipe.setIngredient('N', Material.NETHERITE_SCRAP);
         recipe.setIngredient('B', Material.DIAMOND_BLOCK);
         recipe.setIngredient('E', Material.EMERALD_BLOCK);
 

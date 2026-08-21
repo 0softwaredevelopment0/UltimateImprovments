@@ -156,10 +156,10 @@ public class ChunkLoaderItemListener implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
 
-        meta.displayName(MessageUtil.parse("<i:false><white></white>"));
+        meta.displayName(MessageUtil.parse("<i:false><white>Chunkloader</white>"));
         meta.lore(java.util.List.of(
-                MessageUtil.parse("<i:false><gray>При установке чанк остается загруженным</gray>"),
-                MessageUtil.parse("<i:false><gray>Разрушить — получить предмет обратно</gray>")
+                MessageUtil.parse("<i:false><gray>Keeps the chunk loaded when placed</gray>"),
+                MessageUtil.parse("<i:false><gray>Break to get the item back</gray>")
         ));
         meta.getPersistentDataContainer().set(CHUNK_LOADER_KEY, PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);

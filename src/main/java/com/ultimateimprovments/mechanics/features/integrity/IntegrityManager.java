@@ -63,7 +63,7 @@ public class IntegrityManager extends BukkitRunnable {
     private static int gradientBlueLow = 0x00;      // B at 0%
 
     // Lore text (stored both as plain and colored)
-    private static String loreText = "<gray>Целостность:</gray>";
+    private static String loreText = "<i:false><gray>Целостность:</gray>";
     private static String bareLorePrefix = "Целостность:";
 
     // Break behavior
