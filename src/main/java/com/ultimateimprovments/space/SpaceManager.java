@@ -193,16 +193,9 @@ public class SpaceManager {
         lastOverworldPos.put(uuid, loc.clone());
         saveLastPosition(uuid, loc);
 
-        Location spaceLoc;
         boolean firstVisit = !hasVisitedSpace(uuid);
-
-        if (firstVisit) {
-            ensureSpawnPlatform();
-            spaceLoc = new Location(spaceWorld, SPAWN_X, SPAWN_Y, SPAWN_Z);
-        } else {
-            int buildLimit = spaceWorld.getMaxHeight() + 1;
-            spaceLoc = new Location(spaceWorld, 0.5, buildLimit, 0.5);
-        }
+        ensureSpawnPlatform();
+        Location spaceLoc = new Location(spaceWorld, SPAWN_X, SPAWN_Y, SPAWN_Z);
 
         teleporting.put(uuid, true);
         boolean success = player.teleport(spaceLoc);

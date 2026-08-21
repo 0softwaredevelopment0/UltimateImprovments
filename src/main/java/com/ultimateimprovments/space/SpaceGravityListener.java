@@ -1,7 +1,9 @@
 package com.ultimateimprovments.space;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -61,20 +63,36 @@ public class SpaceGravityListener implements Listener {
     }
 
     private void applySpaceGravity(Player player) {
-        if (player.getAttribute(Attribute.GRAVITY) != null) {
-            player.getAttribute(Attribute.GRAVITY).setBaseValue(spaceGravity);
-            PersistentDataContainer pdc = player.getPersistentDataContainer();
-            pdc.set(KEY_GRAVITY_APPLIED, PersistentDataType.BYTE, (byte) 1);
+        try {
+            AttributeInstance attr = player.getAttribute(Attribute.GRAVITY);
+            if (attr != null) {
+                attr.setBaseValue(spaceGravity);
+                PersistentDataContainer pdc = player.getPersistentDataContainer();
+                pdc.set(KEY_GRAVITY_APPLIED, PersistentDataType.BYTE, (byte) 1);
+                ConsoleLogger.info("[Space] Gravity set to " + spaceGravity + " for " + player.getName()
+                        + " (default=" + Attribute.GRAVITY.getDefaultValue() + ")");
+            } else {
+                ConsoleLogger.warn("[Space] Attribute.GRAVITY is null for " + player.getName() + "!");
+            }
+        } catch (Exception e) {
+            ConsoleLogger.error("[Space] Failed to apply gravity for " + player.getName() + ": " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     private void resetGravity(Player player) {
-        PersistentDataContainer pdc = player.getPersistentDataContainer();
-        if (pdc.has(KEY_GRAVITY_APPLIED, PersistentDataType.BYTE)) {
-            pdc.remove(KEY_GRAVITY_APPLIED);
-            if (player.getAttribute(Attribute.GRAVITY) != null) {
-                player.getAttribute(Attribute.GRAVITY).setBaseValue(Attribute.GRAVITY.getDefaultValue());
+        try {
+            PersistentDataContainer pdc = player.getPersistentDataContainer();
+            if (pdc.has(KEY_GRAVITY_APPLIED, PersistentDataType.BYTE)) {
+                pdc.remove(KEY_GRAVITY_APPLIED);
+                AttributeInstance attr = player.getAttribute(Attribute.GRAVITY);
+                if (attr != null) {
+                    attr.setBaseValue(Attribute.GRAVITY.getDefaultValue());
+                    ConsoleLogger.info("[Space] Gravity reset for " + player.getName());
+                }
             }
+        } catch (Exception e) {
+            ConsoleLogger.error("[Space] Failed to reset gravity for " + player.getName() + ": " + e.getMessage());
         }
     }
 }
