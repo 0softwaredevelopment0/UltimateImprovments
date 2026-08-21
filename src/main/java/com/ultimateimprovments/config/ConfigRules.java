@@ -553,6 +553,7 @@ final class ConfigRules {
             dbl("space.oxygen_damage_per_second", 0, 1000),
             dbl("space.radiation_points", 0, 10000),
             integer("space.radiation_interval_ticks", 1, 6000),
+            dbl("space.radiation_decay_per_second", 0, 1000),
             bool("space.meteor_space_only"),
             stringList("space.space_entry_worlds"),
 

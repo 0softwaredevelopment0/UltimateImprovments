@@ -4811,6 +4811,8 @@ space:
   radiation_points: 199
   # Radiation interval, in ticks (200 = 10 seconds)
   radiation_interval_ticks: 200
+  # Radiation decay per second (default 19.9 = radiation_points / 10)
+  radiation_decay_per_second: 19.9
   # Meteor integration: meteors only spawn in the space dimension
   meteor_space_only: true
   # Worlds FROM which players can auto-enter space (elytra, /tp, etc.)

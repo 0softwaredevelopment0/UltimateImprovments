@@ -25,6 +25,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Every {@code radiation_interval_ticks} ticks, every player in space
  * gains {@code radiation_points} radiation points (configurable).
  * <p>
+ * Radiation decays over time at {@code radiation_decay_per_second} points/sec.
+ * By default, decay rate matches the gain so that old radiation wears off
+ * before the next batch arrives.
+ * <p>
  * Effects based on accumulated radiation:
  * <ul>
  *   <li>  1+ points → Slowness I</li>
@@ -40,14 +44,15 @@ public class SpaceRadiationListener implements Listener {
 
     private static int radiationPoints = 199;
     private static long radiationIntervalTicks = 200;
+    private static double radiationDecayPerSecond = 19.9;
 
     private static boolean running = false;
-    private static final Map<UUID, Boolean> taskRunning = new ConcurrentHashMap<>();
 
     public static void reloadConfig() {
         var cfg = Main.getInstance().getConfig();
         radiationPoints = cfg.getInt("space.radiation_points", 199);
         radiationIntervalTicks = cfg.getLong("space.radiation_interval_ticks", 200);
+        radiationDecayPerSecond = cfg.getDouble("space.radiation_decay_per_second", 19.9);
     }
 
     public static void start(Main plugin) {
@@ -56,6 +61,7 @@ public class SpaceRadiationListener implements Listener {
 
         reloadConfig();
 
+        // Main radiation tick — add points every interval
         new BukkitRunnable() {
             @Override
             public void run() {
@@ -65,15 +71,12 @@ public class SpaceRadiationListener implements Listener {
                 for (Player player : SpaceManager.getSpaceWorld().getPlayers()) {
                     if (player.isDead()) continue;
 
-                    // Add radiation points
                     int current = getRadiation(player);
                     int newAmount = current + radiationPoints;
                     setRadiation(player, newAmount);
 
-                    // Apply effects based on accumulated radiation
                     applyRadiationEffects(player, newAmount);
 
-                    // Warn at thresholds
                     if (current < 100 && newAmount >= 100) {
                         player.sendMessage(MessageUtil.parse(
                                 "<dark_gray>[<green>UI<white>] <red>Radiation rising... Wither effects detected.</red>"));
@@ -85,6 +88,26 @@ public class SpaceRadiationListener implements Listener {
                 }
             }
         }.runTaskTimer(plugin, radiationIntervalTicks, radiationIntervalTicks);
+
+        // Decay tick — remove radiation every second
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!SpaceManager.isEnabled() || SpaceManager.getSpaceWorld() == null) {
+                    return;
+                }
+                int decayPerTick = (int) Math.ceil(radiationDecayPerSecond); // per 1 second = 20 ticks
+                for (Player player : SpaceManager.getSpaceWorld().getPlayers()) {
+                    if (player.isDead()) continue;
+                    int current = getRadiation(player);
+                    if (current <= 0) continue;
+
+                    int newAmount = Math.max(0, current - decayPerTick);
+                    setRadiation(player, newAmount);
+                    applyRadiationEffects(player, newAmount);
+                }
+            }
+        }.runTaskTimer(plugin, 20L, 20L); // every 1 second
     }
 
     // ===== RADIATION POINTS =====
@@ -107,31 +130,39 @@ public class SpaceRadiationListener implements Listener {
     // ===== EFFECTS =====
 
     private static void applyRadiationEffects(Player player, int points) {
-        if (points <= 0) return;
+        if (points <= 0) {
+            // Clear all radiation effects when radiation is gone
+            player.removePotionEffect(PotionEffectType.SLOWNESS);
+            player.removePotionEffect(PotionEffectType.WITHER);
+            player.removePotionEffect(PotionEffectType.NAUSEA);
+            return;
+        }
 
         // Slowness at 1+ points
-        if (points >= 1) {
-            int amplifier = Math.min(points / 100, 2); // max Slowness III
-            player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
-                    (int) (radiationIntervalTicks + 20), amplifier, false, false, true));
-        }
+        int slowAmp = Math.min(points / 100, 2);
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
+                40, slowAmp, false, false, true));
 
         // Wither at 100+ points
         if (points >= 100) {
-            int amplifier = Math.min((points - 100) / 100, 2); // max Wither III
+            int witherAmp = Math.min((points - 100) / 100, 2);
             player.addPotionEffect(new PotionEffect(PotionEffectType.WITHER,
-                    (int) (radiationIntervalTicks + 20), amplifier, false, false, true));
+                    40, witherAmp, false, false, true));
+        } else {
+            player.removePotionEffect(PotionEffectType.WITHER);
         }
 
         // Nausea at 200+ points
         if (points >= 200) {
             player.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA,
-                    (int) (radiationIntervalTicks + 20), 0, false, false, true));
+                    40, 0, false, false, true));
+        } else {
+            player.removePotionEffect(PotionEffectType.NAUSEA);
         }
 
-        // Damage at 300+ points (1 heart per 100 above 300)
+        // Damage at 300+ points
         if (points >= 300) {
-            double damage = Math.min((points - 300) / 100.0 + 1.0, 10.0); // max 10 damage
+            double damage = Math.min((points - 300) / 100.0 + 1.0, 10.0);
             player.damage(damage);
         }
     }
