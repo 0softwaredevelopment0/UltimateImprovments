@@ -1,11 +1,11 @@
 {
   "display": {
     "icon": {
-      "id": "minecraft:ender_pearl",
+      "id": "minecraft:grass_block",
       "count": 1
     },
     "title": {
-      "text": "Beyond Space",
+      "text": "We're landing!",
       "type": "text",
       "color": "white",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Reach the block placement limit.",
+      "text": "Land from space.",
       "type": "text",
       "color": "gray",
       "bold": false,
@@ -29,7 +29,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "ui:datapack/craft_shoker",
+  "parent": "ui:datapack/the_space",
   "criteria": {
     "1": {
       "trigger": "minecraft:impossible",

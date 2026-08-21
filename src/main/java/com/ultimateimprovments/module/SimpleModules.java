@@ -109,7 +109,6 @@ import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityMa
 import com.ultimateimprovments.mechanics.features.updater.UpdateChecker;
 import com.ultimateimprovments.mechanics.features.world.AntimatterManager;
 import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
-import com.ultimateimprovments.mechanics.features.world.BeyondSpaceListener;
 import com.ultimateimprovments.mechanics.features.world.CmdBlockTracker;
 import com.ultimateimprovments.mechanics.features.world.EarthCoreListener;
 import com.ultimateimprovments.mechanics.features.world.KaboomListener;
@@ -758,13 +757,6 @@ public final class SimpleModules {
         });
 
         // Beyond Space — reach the block placement limit
-        mm.register(new SimpleModule("BeyondSpace", "mechanics/features/beyond_space", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                BeyondSpaceListener.register((Main) plugin);
-            }
-        });
-
         // Hit, hit, to pieces! — break a bedrock block
         mm.register(new SimpleModule("BedrockBreak", "mechanics/features/bedrock_break", false) {
             @Override

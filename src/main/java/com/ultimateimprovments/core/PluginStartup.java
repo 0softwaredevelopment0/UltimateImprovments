@@ -395,6 +395,16 @@ public class PluginStartup {
         // OJM — override join/leave messages (config section ojm)
         com.ultimateimprovments.chat.OjmManager.init(plugin);
 
+        // 🚀 SPACE DIMENSION
+        com.ultimateimprovments.space.SpaceManager.createTable();
+        com.ultimateimprovments.space.SpaceManager.init(plugin);
+        plugin.getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.space.SpaceGravityListener(), plugin);
+        plugin.getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.space.SpaceRocketManager(), plugin);
+        com.ultimateimprovments.space.SpaceOxygenListener.start(plugin);
+        com.ultimateimprovments.space.SpaceRadiationListener.start(plugin);
+
         // Commands — register Bukkit commands via CommandMap
         CommandRegistrar.getInstance().registerAll(plugin);
 

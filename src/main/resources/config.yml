@@ -2316,7 +2316,7 @@ near:
 # Only works in the configured world, falls near players.
 meteor:
   # Whether this feature is enabled
-  enabled: false
+  enabled: true
 
   # World where meteors fall
   # World where meteors can spawn
@@ -4789,3 +4789,30 @@ ojm:
   join: "<white>[<green>+<white>] <player> <green>joined the game"
   # Leave message
   leave: "<white>[<red>-<white>] <player> <red>left the game"
+
+# ══════════════════════════════════════════════════════════════
+# 🚀 SPACE DIMENSION
+# ══════════════════════════════════════════════════════════════
+# Empty void dimension with gravity, radiation, and oxygen mechanics.
+# Players enter via rocket item (craftable) or /ui space command.
+space:
+  # Master toggle: enable/disable the space dimension
+  enabled: true
+  # Cooldown between teleports, in ticks (100 = 5 seconds)
+  teleport_cooldown_ticks: 100
+  # Rocket right-click launch delay, in ticks (60 = 3 seconds)
+  rocket_launch_delay_ticks: 60
+  # Gravity attribute value in space (default MC gravity is 0.08)
+  gravity: 0.01
+  # Oxygen: damage per second to entities without helmet
+  oxygen_damage_per_second: 1
+  # Radiation: damage dealt to all players every 10 seconds
+  radiation_damage: 199
+  # Radiation interval, in ticks (200 = 10 seconds)
+  radiation_interval_ticks: 200
+  # Meteor integration: meteors only spawn in the space dimension
+  meteor_space_only: true
+  # Worlds FROM which players can auto-enter space (elytra, /tp, etc.)
+  # Return teleport always uses the saved overworld position in DB.
+  space_entry_worlds:
+    - "world"

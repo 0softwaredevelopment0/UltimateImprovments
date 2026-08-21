@@ -545,6 +545,17 @@ final class ConfigRules {
             string("ojm.join", false, 512),
             string("ojm.leave", false, 512),
 
+            // Space dimension
+            bool("space.enabled"),
+            integer("space.teleport_cooldown_ticks", 0, 6000),
+            integer("space.rocket_launch_delay_ticks", 1, 200),
+            dbl("space.gravity", 0, 10),
+            dbl("space.oxygen_damage_per_second", 0, 1000),
+            dbl("space.radiation_damage", 0, 10000),
+            integer("space.radiation_interval_ticks", 1, 6000),
+            bool("space.meteor_space_only"),
+            stringList("space.space_entry_worlds"),
+
             notBlank("plugin_version", 32)
     );
 }

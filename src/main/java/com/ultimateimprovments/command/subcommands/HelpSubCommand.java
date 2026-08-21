@@ -100,6 +100,7 @@ public class HelpSubCommand implements SubCommand {
         put("near", "Find nearby players");
         put("rtp", "Random teleport");
         put("meteor", "Meteor module");
+        put("space", "Space dimension (enter/exit)");
         put("plugin", "Plugin management");
         put("heal", "Heal a player");
         put("feed", "Feed a player");

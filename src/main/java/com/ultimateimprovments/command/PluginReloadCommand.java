@@ -376,6 +376,10 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             return VoteManager.tabComplete(p, a);
         })));
 
+        // Space dimension
+        registry.register(LegacySubCommandAdapter.of("space", SpaceSubcommand::execute,
+                tc((s, a) -> SpaceSubcommand.tabComplete(a))));
+
         ConsoleLogger.info("[COMMANDS] SubCommand registry initialized.");
     }
 

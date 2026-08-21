@@ -155,6 +155,7 @@ public final class Permissions {
     public static final String CMD_PDC = "ui.command.pdc";
     public static final String CMD_ITEMNBT = "ui.command.itemnbt";
     public static final String CMD_CLAN = "ui.command.clan";
+    public static final String CMD_SPACE = "ui.command.space";
     public static final String CMD_CLAN_REMOVE = "ui.command.clan.remove";
     public static final String CMD_CLAN_HOME_BYPASS = "ui.command.clan.home.bypasscooldown";
 
@@ -314,6 +315,7 @@ public final class Permissions {
                 new Permission(CMD_CLAN, "Use the clan system (create/disband/manage/home/requests)", PermissionDefault.TRUE),
                 new Permission(CMD_CLAN_REMOVE, "Remove any clan by name (admin)", PermissionDefault.FALSE),
                 new Permission(CMD_CLAN_HOME_BYPASS, "Bypass the clan home teleport cooldown", PermissionDefault.FALSE),
+                new Permission(CMD_SPACE, "Use the space dimension (teleport enter/exit)", PermissionDefault.TRUE),
 
                 // ── Features and modifiers ──
                 new Permission(UI_ALERTS, "Receive server alerts", PermissionDefault.FALSE),

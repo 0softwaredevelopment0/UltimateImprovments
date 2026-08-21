@@ -111,7 +111,14 @@ public class MeteorModule extends PluginModule {
         var cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("meteor.enabled", false)) return;
 
-        String worldName = cfg.getString("meteor.world", "world");
+        // Space-only mode: only spawn meteors in the space dimension
+        boolean spaceOnly = cfg.getBoolean("space.meteor_space_only", false);
+        String worldName;
+        if (spaceOnly) {
+            worldName = "ui_space";
+        } else {
+            worldName = cfg.getString("meteor.world", "world");
+        }
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
             ConsoleLogger.warn("[Meteor] World '" + worldName + "' not found!");
@@ -139,7 +146,13 @@ public class MeteorModule extends PluginModule {
             return 0;
         }
 
-        String worldName = cfg.getString("meteor.world", "world");
+        boolean spaceOnly = cfg.getBoolean("space.meteor_space_only", false);
+        String worldName;
+        if (spaceOnly) {
+            worldName = "ui_space";
+        } else {
+            worldName = cfg.getString("meteor.world", "world");
+        }
         World world = Bukkit.getWorld(worldName);
         if (world == null) {
             ConsoleLogger.warn("[Meteor] World '" + worldName + "' not found!");
