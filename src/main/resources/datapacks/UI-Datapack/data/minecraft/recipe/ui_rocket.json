@@ -6,24 +6,12 @@
     "TCT"
   ],
   "key": {
-    "N": {
-      "item": "minecraft:netherite_ingot"
-    },
-    "F": {
-      "item": "minecraft:firework_star"
-    },
-    "I": {
-      "item": "minecraft:iron_block"
-    },
-    "R": {
-      "item": "minecraft:redstone_block"
-    },
-    "T": {
-      "item": "minecraft:tnt"
-    },
-    "C": {
-      "item": "minecraft:clock"
-    }
+    "N": "minecraft:netherite_ingot",
+    "F": "minecraft:firework_star",
+    "I": "minecraft:iron_block",
+    "R": "minecraft:redstone_block",
+    "T": "minecraft:tnt",
+    "C": "minecraft:clock"
   },
   "result": {
     "id": "minecraft:firework_rocket",
