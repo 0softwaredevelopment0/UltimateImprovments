@@ -19,6 +19,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import com.ultimateimprovments.mechanics.crafting.RecipeRegistry;
 import org.bukkit.inventory.ShapedRecipe;
 
 import java.util.Map;
@@ -186,6 +187,7 @@ public class SpaceRocketManager implements Listener {
         recipe.setIngredient('T', Material.TNT);
         recipe.setIngredient('C', Material.CLOCK);
         plugin.getServer().addRecipe(recipe);
+        RecipeRegistry.registerRecipe(key);
     }
 
     public static void shutdown() {

@@ -143,6 +143,17 @@ public final class CilistCommand {
         sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
         sender.sendMessage(Component.empty());
 
+        // 12. Space Rocket
+        sender.sendMessage(MessageUtil.parse("<yellow>12. Space Rocket</yellow>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Material: </white><gray>Firework Rocket</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Recipe:</white>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Netherite Ingot Firework Star Netherite Ingot</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>Iron Block Redstone Block Iron Block</gray>"));
+        sender.sendMessage(MessageUtil.parse("   <gray>TNT Clock TNT</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <white>Description: </white><gray>Right-click to launch into space</gray>"));
+        sender.sendMessage(MessageUtil.parse(" <gray>▪</gray> <red>Crafter only</red>"));
+        sender.sendMessage(Component.empty());
+
         sender.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════════════════════</gold>"));
         sender.sendMessage(MessageUtil.parse("<gray>💡 Place a Crafter block to craft all custom items!</gray>"));
         sender.sendMessage(Component.empty());
