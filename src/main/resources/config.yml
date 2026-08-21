@@ -4806,8 +4806,9 @@ space:
   gravity: 0.01
   # Oxygen: damage per second to entities without helmet
   oxygen_damage_per_second: 1
-  # Radiation: damage dealt to all players every 10 seconds
-  radiation_damage: 199
+  # Radiation: points added to all players every 10 seconds in space
+  # Effects scale with accumulated points: slowness, wither, nausea, damage
+  radiation_points: 199
   # Radiation interval, in ticks (200 = 10 seconds)
   radiation_interval_ticks: 200
   # Meteor integration: meteors only spawn in the space dimension

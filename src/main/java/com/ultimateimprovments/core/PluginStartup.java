@@ -403,6 +403,8 @@ public class PluginStartup {
         plugin.getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.space.SpaceRocketManager(), plugin);
         com.ultimateimprovments.space.SpaceOxygenListener.start(plugin);
+        plugin.getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.space.SpaceRadiationListener(), plugin);
         com.ultimateimprovments.space.SpaceRadiationListener.start(plugin);
 
         // Commands — register Bukkit commands via CommandMap

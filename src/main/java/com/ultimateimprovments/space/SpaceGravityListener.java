@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -51,6 +52,12 @@ public class SpaceGravityListener implements Listener {
         if (SpaceManager.isInSpace(player)) {
             applySpaceGravity(player);
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onDeath(PlayerDeathEvent event) {
+        // Reset gravity on death so respawning works correctly
+        resetGravity(event.getEntity());
     }
 
     private void applySpaceGravity(Player player) {
