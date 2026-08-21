@@ -278,9 +278,9 @@ public class SpaceManager {
         Location loc = player.getLocation();
         if (loc.getWorld() == null) return;
 
-        int buildLimit = loc.getWorld().getMaxHeight();
-        // Only land when the player falls BELOW the build limit in space
-        if (loc.getBlockY() < buildLimit) {
+        int minHeight = loc.getWorld().getMinHeight();
+        // Only land when the player falls to the very bottom of the space dimension
+        if (loc.getBlockY() <= minHeight + 1) {
             returnFromSpace(player);
         }
     }
