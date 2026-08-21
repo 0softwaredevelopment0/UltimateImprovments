@@ -279,7 +279,8 @@ public class SpaceManager {
         if (loc.getWorld() == null) return;
 
         int buildLimit = loc.getWorld().getMaxHeight();
-        if (loc.getBlockY() >= buildLimit - 1) {
+        // Only land when the player falls BELOW the build limit in space
+        if (loc.getBlockY() < buildLimit) {
             returnFromSpace(player);
         }
     }
@@ -296,7 +297,8 @@ public class SpaceManager {
         Location target;
         if (saved != null && saved.getWorld() != null) {
             int targetBuildLimit = saved.getWorld().getMaxHeight();
-            double targetY = Math.min(saved.getY(), targetBuildLimit);
+            // Ensure Y is below buildLimit to avoid re-triggering auto-teleport
+            double targetY = Math.min(saved.getY(), targetBuildLimit - 1);
             target = new Location(saved.getWorld(), saved.getX(), targetY, saved.getZ(),
                     saved.getYaw(), saved.getPitch());
         } else {
