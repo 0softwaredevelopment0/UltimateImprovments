@@ -19,6 +19,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import org.bukkit.inventory.ShapedRecipe;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -165,6 +167,25 @@ public class SpaceRocketManager implements Listener {
         }
         player.removePotionEffect(PotionEffectType.SLOWNESS);
         player.removePotionEffect(PotionEffectType.JUMP_BOOST);
+    }
+
+    // ===== RECIPE =====
+
+    public static void registerRecipe(Main plugin) {
+        NamespacedKey key = new NamespacedKey(plugin, "space_rocket_recipe");
+        // Remove if already registered
+        if (plugin.getServer().getRecipe(key) != null) {
+            plugin.getServer().removeRecipe(key);
+        }
+        ShapedRecipe recipe = new ShapedRecipe(key, createRocket());
+        recipe.shape("NFN", "IRI", "TCT");
+        recipe.setIngredient('N', Material.NETHERITE_INGOT);
+        recipe.setIngredient('F', Material.FIREWORK_STAR);
+        recipe.setIngredient('I', Material.IRON_BLOCK);
+        recipe.setIngredient('R', Material.REDSTONE_BLOCK);
+        recipe.setIngredient('T', Material.TNT);
+        recipe.setIngredient('C', Material.CLOCK);
+        plugin.getServer().addRecipe(recipe);
     }
 
     public static void shutdown() {

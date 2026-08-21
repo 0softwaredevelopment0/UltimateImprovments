@@ -402,6 +402,7 @@ public class PluginStartup {
                 new com.ultimateimprovments.space.SpaceGravityListener(), plugin);
         plugin.getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.space.SpaceRocketManager(), plugin);
+        com.ultimateimprovments.space.SpaceRocketManager.registerRecipe(plugin);
         com.ultimateimprovments.space.SpaceOxygenListener.start(plugin);
         plugin.getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.space.SpaceRadiationListener(), plugin);
