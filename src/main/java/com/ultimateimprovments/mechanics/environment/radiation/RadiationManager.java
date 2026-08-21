@@ -91,6 +91,9 @@ public class RadiationManager implements Listener {
     private int reactorPressRad;
     private int reactorMeltdownCloseRad;
     private int reactorMeltdownFarRad;
+    private int spaceRadiation;
+    private int spaceIntervalTicks;
+    private int spaceTickCounter = 0;
 
     private void loadConfig() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -111,6 +114,8 @@ public class RadiationManager implements Listener {
         reactorPressRad = cfg.getInt("radiation.reactor_pressure_radiation", 600);
         reactorMeltdownCloseRad = cfg.getInt("radiation.reactor_meltdown_close", 6400);
         reactorMeltdownFarRad = cfg.getInt("radiation.reactor_meltdown_far", 3200);
+        spaceRadiation = cfg.getInt("radiation.space_radiation", 199);
+        spaceIntervalTicks = cfg.getInt("radiation.space_interval_ticks", 200);
     }
 
     public void reloadConfig() {
@@ -319,6 +324,14 @@ public class RadiationManager implements Listener {
             }
 
             // =========================
+            // SPACE DIMENSION — RADIATION EVERY spaceIntervalTicks
+            // =========================
+            if (com.ultimateimprovments.space.SpaceManager.isInSpace(player.getWorld())
+                    && spaceTickCounter >= spaceIntervalTicks) {
+                rad += spaceRadiation;
+            }
+
+            // =========================
             // ELYTRA GLIDING ADDS RADIATION (elytra_use_radiation)
             // =========================
             if (player.isGliding()) {
@@ -342,6 +355,13 @@ public class RadiationManager implements Listener {
             }
 
             radiationMap.put(uuid, Math.max(0, rad));
+        }
+
+        // Reset space radiation counter
+        if (spaceTickCounter >= spaceIntervalTicks) {
+            spaceTickCounter = 0;
+        } else {
+            spaceTickCounter++;
         }
     }
 

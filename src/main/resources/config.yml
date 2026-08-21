@@ -837,7 +837,7 @@ vanish:
 radiation:
   # Whether radiation mechanics are enabled
   enabled: true
-  # Natural radiation decay rate
+  # Natural radiation decay rate per tick
   natural_decay: 1
   # Whether radiation effects are applied to players
   effects_enabled: true
@@ -874,6 +874,10 @@ radiation:
   # Radiation far from a melted-down reactor
   reactor_meltdown_far: 3200
 
+  # Space dimension radiation (points added every space_interval_ticks)
+  space_radiation: 199
+  # Space radiation interval in ticks (200 = 10 seconds)
+  space_interval_ticks: 200
 netherite_upgrade:
   base_values:
     # Base attribute values used to compute the upgrade lore
@@ -4806,13 +4810,6 @@ space:
   gravity: 0.01
   # Oxygen: damage per second to entities without helmet
   oxygen_damage_per_second: 1
-  # Radiation: points added to all players every 10 seconds in space
-  # Effects scale with accumulated points: slowness, wither, nausea, damage
-  radiation_points: 199
-  # Radiation interval, in ticks (200 = 10 seconds)
-  radiation_interval_ticks: 200
-  # Radiation decay per second (default 19.9 = radiation_points / 10)
-  radiation_decay_per_second: 19.9
   # Meteor integration: meteors only spawn in the space dimension
   meteor_space_only: true
   # Worlds FROM which players can auto-enter space (elytra, /tp, etc.)

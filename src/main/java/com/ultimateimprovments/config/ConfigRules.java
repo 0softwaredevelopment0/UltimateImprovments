@@ -551,9 +551,8 @@ final class ConfigRules {
             integer("space.rocket_launch_delay_ticks", 1, 200),
             dbl("space.gravity", 0, 10),
             dbl("space.oxygen_damage_per_second", 0, 1000),
-            dbl("space.radiation_points", 0, 10000),
-            integer("space.radiation_interval_ticks", 1, 6000),
-            dbl("space.radiation_decay_per_second", 0, 1000),
+            integer("radiation.space_radiation", 0, 10000),
+            integer("radiation.space_interval_ticks", 1, 6000),
             bool("space.meteor_space_only"),
             stringList("space.space_entry_worlds"),
 
