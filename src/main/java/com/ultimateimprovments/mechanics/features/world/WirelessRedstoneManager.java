@@ -5,7 +5,7 @@ import com.ultimateimprovments.database.DatabaseManager;
 import com.ultimateimprovments.database.PlayerSettingsDB;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -550,7 +550,7 @@ public class WirelessRedstoneManager implements Listener {
         if (first != null) {
             if (first.equals(clickedPos)) {
                 bindingPlayers.remove(uuid);
-                player.sendActionBar(ChatColor.RED + "✕ Binding cancelled");
+                player.sendActionBar(MessageUtil.parse("<red>✕ Binding cancelled</red>"));
                 e.setCancelled(true);
                 return;
             }
@@ -558,7 +558,7 @@ public class WirelessRedstoneManager implements Listener {
             Location firstLoc = first.toLocation();
             if (firstLoc == null || !firstLoc.getWorld().equals(clicked.getWorld())) {
                 bindingPlayers.remove(uuid);
-                player.sendActionBar(ChatColor.RED + "✕ Devices must be in the same world!");
+                player.sendActionBar(MessageUtil.parse("<red>✕ Devices must be in the same world!</red>"));
                 e.setCancelled(true);
                 return;
             }
@@ -571,9 +571,7 @@ public class WirelessRedstoneManager implements Listener {
             saveLinkDb(first, second);
 
             int count = getPartners(first).size();
-            player.sendActionBar(ChatColor.GREEN + "✓ "
-                    + blockName(firstLoc.getBlock()) + " ↔ " + name + " linked! ("
-                    + count + " connection" + (count > 1 ? "s" : "") + ")");
+            player.sendActionBar(MessageUtil.parse("<green>✓ " + blockName(firstLoc.getBlock()) + " ↔ " + name + " linked! (" + count + " connection" + (count > 1 ? "s" : "") + ")</green>"));
             e.setCancelled(true);
             return;
         }
@@ -590,17 +588,14 @@ public class WirelessRedstoneManager implements Listener {
                 firstInfo = " e.g. " + blockName(ploc.getBlock())
                         + " at [" + ploc.getBlockX() + " " + ploc.getBlockY() + " " + ploc.getBlockZ() + "]";
             }
-            player.sendActionBar(ChatColor.GOLD + "⚡ " + name + " has " + count + " connection"
-                    + (count > 1 ? "s" : "") + firstInfo
-                    + ". Shift+RMB another device to add.");
+            player.sendActionBar(MessageUtil.parse("<gold>⚡ " + name + " has " + count + " connection" + (count > 1 ? "s" : "") + firstInfo + ". Shift+RMB another device to add.</gold>"));
             bindingPlayers.put(uuid, clickedPos);
             e.setCancelled(true);
             return;
         }
 
         bindingPlayers.put(uuid, clickedPos);
-        player.sendActionBar(ChatColor.AQUA + "🔗 Binding: Shift+RMB any redstone device to link, "
-                + "or same block to cancel.");
+        player.sendActionBar(MessageUtil.parse("<aqua>🔗 Binding: Shift+RMB any redstone device to link, or same block to cancel.</aqua>"));
         e.setCancelled(true);
     }
 
@@ -667,8 +662,7 @@ public class WirelessRedstoneManager implements Listener {
 
         Player player = e.getPlayer();
         int count = partners.size();
-        player.sendActionBar(ChatColor.RED + "☠ " + blockName(block) + " broken — "
-                + count + " wireless connection" + (count > 1 ? "s" : "") + " removed!");
+        player.sendActionBar(MessageUtil.parse("<red>☠ " + blockName(block) + " broken — " + count + " wireless connection" + (count > 1 ? "s" : "") + " removed!</red>"));
         breakAllLinks(brokenPos);
     }
 
