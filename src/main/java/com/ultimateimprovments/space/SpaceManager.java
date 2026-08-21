@@ -14,7 +14,6 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -129,23 +128,11 @@ public class SpaceManager {
             }
         }
 
-        // 3) World folder may exist from a previous run and conflict with datapack key.
-        //    Delete the stale folder so WorldCreator can re-create cleanly.
-        try {
-            File worldFolder = new File(Bukkit.getWorldContainer(), WORLD_NAME);
-            if (worldFolder.exists() && worldFolder.isDirectory()) {
-                ConsoleLogger.info("[Space] Deleting stale world folder '" + WORLD_NAME + "'...");
-                deleteDirectory(worldFolder);
-            }
-        } catch (Exception e) {
-            ConsoleLogger.warn("[Space] Could not delete stale folder: " + e.getMessage());
-        }
-
-        // 4) Create fresh
+        // 3) Create fresh via WorldCreator (datapack dimension removed to avoid registry conflict)
         try {
             ConsoleLogger.info("[Space] Building WorldCreator for '" + WORLD_NAME + "'...");
             WorldCreator creator = new WorldCreator(WORLD_NAME)
-                    .environment(World.Environment.NORMAL)
+                    .environment(World.Environment.THE_END)
                     .generator(new VoidChunkGenerator())
                     .generateStructures(false)
                     .seed(Bukkit.getWorlds().get(0).getSeed());
@@ -502,20 +489,5 @@ public class SpaceManager {
         }
     }
 
-    // ===== UTILITY =====
 
-    private static void deleteDirectory(File dir) {
-        if (dir == null || !dir.exists()) return;
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File f : files) {
-                if (f.isDirectory()) {
-                    deleteDirectory(f);
-                } else {
-                    f.delete();
-                }
-            }
-        }
-        dir.delete();
-    }
 }
