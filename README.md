@@ -6,7 +6,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-26%2B-orange)](https://www.oracle.com/java/)
-[![Paper](https://img.shields.io/badge/Paper-26.2%2B-green)](https://papermc.io/)
+[![Server](https://img.shields.io/badge/Paper-26.2+%2B-green)](https://papermc.io/)
 [![Version](https://img.shields.io/badge/Version-1.8.2-brightgreen)](https://github.com/rizer001/UltimateImprovments/releases)
 ![Development status](https://img.shields.io/badge/status-ActiveDev-green)
 
