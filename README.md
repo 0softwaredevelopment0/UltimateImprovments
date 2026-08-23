@@ -11,7 +11,7 @@
 ![Development status](https://img.shields.io/badge/status-ActiveDev-green)
 
 **Author:** [rizer001](https://github.com/rizer001)
-**Core:** Paper 26.2+ (or Leaf fork)
+**Server:** Paper 26.2+
 **Database:** SQLite
 **Build:** Gradle (JDK 26)
 
