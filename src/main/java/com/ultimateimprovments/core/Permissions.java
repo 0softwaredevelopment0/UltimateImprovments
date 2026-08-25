@@ -168,6 +168,12 @@ public final class Permissions {
     public static final String UI_ANTICHEAT_NOTIFY = "ui.anticheat.notify";
     public static final String UI_CHAT_CUSTOM_BYPASS = "ui.chat.custom.bypass";
     public static final String UI_CHAT_FILTER_BYPASS = "ui.chat.filter.bypass";
+    public static final String CMD_CHATCHNL = "ui.command.chatchnl";
+    public static final String UI_CHAT_CHANNEL_LOCAL = "ui.chat.channel.local";
+    public static final String UI_CHAT_CHANNEL_GLOBAL = "ui.chat.channel.global";
+    public static final String UI_CHAT_CHANNEL_WORLD = "ui.chat.channel.world";
+    public static final String UI_CHAT_CHANNEL_PRIVATE = "ui.chat.channel.private";
+    public static final String UI_CHAT_CHANNEL_ADMIN = "ui.chat.channel.admin";
     public static final String UI_GMPROTECT_BYPASS = "ui.gmprotect.bypass";
     public static final String UI_CREATIVE_BYPASS = "ui.creative.bypass";
     public static final String UI_PACKETGUARD_BYPASS = "ui.packetguard.bypass";

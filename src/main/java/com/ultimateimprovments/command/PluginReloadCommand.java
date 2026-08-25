@@ -78,6 +78,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(new SharePosSubcommand());
         registry.register(new GetPosSubcommand());
         registry.register(new ClearChatSubcommand());
+        registry.register(new ChatChannelSubcommand());
         registry.register(new TurretSubcommand());
         registry.register(new InvseeSubcommand());
         registry.register(new EnderseeSubcommand());

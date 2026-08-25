@@ -16,34 +16,27 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Custom chat system.
- * <p>
- * Intercepts AsyncPlayerChatEvent and formats the message by the template
- * from config.yml. Supports:
+ * Custom chat system with two modes:
  * <ul>
- *   <li>MiniMessage in the format and player messages</li>
- *   <li>Built-in placeholders %player_name%, %world_name% etc.</li>
- *   <li>PAPI placeholders %luckperms_prefix%, %player_world% etc.</li>
- *   <li>Static mode — a single format for everyone</li>
- *   <li>Per-group mode — a format for each LuckPerms group</li>
- *   <li>Per-world mode — a format for each world</li>
- *   <li>Pings (@everyone, @nick, @non-op, @is-admin, @is-non-admin)</li>
+ *   <li><b>static</b> — single format for everyone (original behaviour)</li>
+ *   <li><b>channels</b> — per-channel routing: local, global, world, private, admin</li>
  * </ul>
- * By default the system is DISABLED (chat.enabled: false).
+ * Player picks a channel with {@code /ui chatchnl <channel> [player]}.
+ * Default channel: GLOBAL.
  */
 public class ChatManager implements Listener {
 
     private static ChatManager instance;
     private static final MiniMessage MM = MiniMessage.miniMessage();
 
-    /** Chat mode. */
-    enum Mode { STATIC, PER_GROUP, PER_WORLD }
+    enum Mode { STATIC, CHANNELS }
 
     private boolean enabled;
     private Mode mode;
@@ -51,15 +44,14 @@ public class ChatManager implements Listener {
     private boolean messagePlaceholders;
     private String bypassPermission;
 
-    // Default format (used for STATIC and as fallback)
-    private String defaultFormat;
+    // ===== STATIC =====
+    private String staticFormat;
 
-    // Per-group formats (LuckPerms) — used when mode == PER_GROUP
-    private Map<String, String> groupFormats;
-    private String defaultGroupFormat;
+    // ===== CHANNELS =====
+    private Map<ChatChannel, String> channelFormats;
+    private int localRadius;
 
-    // Per-world formats — used when mode == PER_WORLD
-    private Map<String, String> worldFormats;
+    // ========================= LIFECYCLE =========================
 
     public static void init() {
         instance = new ChatManager();
@@ -76,9 +68,7 @@ public class ChatManager implements Listener {
     }
 
     public static void reload() {
-        if (instance != null) {
-            instance.reloadConfig();
-        }
+        if (instance != null) instance.reloadConfig();
         ChatPingManager.reloadConfig();
     }
 
@@ -90,63 +80,61 @@ public class ChatManager implements Listener {
         this.messagePlaceholders = cfg.getBoolean("chat.message_placeholders", true);
         this.bypassPermission = cfg.getString("chat.bypass_permission", "ui.chat.custom.bypass");
 
-        // Mode: static | per-group | per-world
-        String modeStr = cfg.getString("chat.mode", "static").toLowerCase().replace(" ", "_");
-        switch (modeStr) {
-            case "per_group" -> this.mode = Mode.PER_GROUP;
-            case "per_world" -> this.mode = Mode.PER_WORLD;
-            default -> this.mode = Mode.STATIC;
+        // Mode: static | channels
+        String modeStr = cfg.getString("chat.mode", "static").toLowerCase();
+        this.mode = modeStr.equals("channels") ? Mode.CHANNELS : Mode.STATIC;
+
+        // STATIC format
+        this.staticFormat = cfg.getString("chat.format",
+                "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%");
+
+        // CHANNELS
+        this.channelFormats = new HashMap<>();
+        this.localRadius = cfg.getInt("chat.channels.local.radius", 100);
+
+        if (mode == Mode.CHANNELS) {
+            String basePath = "chat.channels";
+
+            channelFormats.put(ChatChannel.LOCAL,
+                    cfg.getString(basePath + ".local.format",
+                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+            channelFormats.put(ChatChannel.GLOBAL,
+                    cfg.getString(basePath + ".global.format",
+                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+            channelFormats.put(ChatChannel.WORLD,
+                    cfg.getString(basePath + ".world.format",
+                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+            channelFormats.put(ChatChannel.PRIVATE,
+                    cfg.getString(basePath + ".private.format",
+                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+            channelFormats.put(ChatChannel.ADMIN,
+                    cfg.getString(basePath + ".admin.format",
+                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+
+            this.localRadius = cfg.getInt(basePath + ".local.radius", 100);
         }
 
-        this.defaultFormat = cfg.getString("chat.format",
-                "<dark_gray>[</dark_gray><white>%player_name%</white><dark_gray>]</dark_gray> <white>%message%</white>");
-
-        // ===== Per-group (LuckPerms) — always loaded for /ui chat reload =====
-        this.groupFormats = new HashMap<>();
-        if (cfg.isConfigurationSection("chat.groups.formats")) {
-            for (String key : cfg.getConfigurationSection("chat.groups.formats").getKeys(false)) {
-                String fmt = cfg.getString("chat.groups.formats." + key);
-                if (fmt != null && !fmt.isEmpty()) {
-                    groupFormats.put(key.toLowerCase(), fmt);
-                }
-            }
-        }
-        this.defaultGroupFormat = cfg.getString("chat.groups.default", defaultFormat);
-
-        // ===== Per-world — always loaded =====
-        this.worldFormats = new HashMap<>();
-        if (cfg.isConfigurationSection("chat.worlds")) {
-            for (String key : cfg.getConfigurationSection("chat.worlds").getKeys(false)) {
-                String fmt = cfg.getString("chat.worlds." + key);
-                if (fmt != null && !fmt.isEmpty()) {
-                    worldFormats.put(key.toLowerCase(), fmt);
-                }
-            }
-        }
-
-        ConsoleLogger.info("[Chat] Custom chat "
-                + (enabled ? "enabled" : "disabled")
+        ConsoleLogger.info("[Chat] Custom chat " + (enabled ? "enabled" : "disabled")
                 + " | mode=" + mode.name().toLowerCase()
                 + " | player-minimessage=" + playerMiniMessage
                 + " | message-placeholders=" + messagePlaceholders);
+    }
+
+    // ========================= EVENT HANDLERS =========================
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        PlayerChannelManager.remove(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
 
-        // =========================
-        // MODERATION SESSION — don't send the moderator's messages to chat.
-        // Do NOT cancel the event — ReportManager (also LOWEST priority) will cancel
-        // it itself and process the message (conclusion/verdict).
-        // =========================
-        if (ReportManager.isInModeration(player)) {
-            return;
-        }
+        // MODERATION SESSION
+        if (ReportManager.isInModeration(player)) return;
 
-        // =========================
-        // MUTE CHECK — check whether the player is muted
-        // =========================
+        // MUTE CHECK
         if (com.ultimateimprovments.punish.PunishJoinListener.isMuted(player)) {
             event.setCancelled(true);
             var muteRecord = com.ultimateimprovments.punish.PunishJoinListener.getMuteRecord(player);
@@ -166,11 +154,21 @@ public class ChatManager implements Listener {
         // Bypass permission
         if (!bypassPermission.isEmpty() && player.hasPermission(bypassPermission)) return;
 
-        // Determine format for this player
-        String format = resolveFormat(player);
+        // Determine channel + format
+        ChatChannel channel = null;
+        String format;
+
+        if (mode == Mode.CHANNELS) {
+            channel = PlayerChannelManager.getChannel(player);
+            format = channelFormats.get(channel);
+            if (format == null || format.isEmpty()) format = staticFormat;
+        } else {
+            format = staticFormat;
+        }
+
         if (format == null || format.isEmpty()) return;
 
-        // Build message component (resolve placeholders if enabled)
+        // Build message component
         String rawMessage = event.getMessage();
         if (messagePlaceholders) {
             rawMessage = PlaceholderResolver.resolve(rawMessage, player);
@@ -179,9 +177,7 @@ public class ChatManager implements Listener {
         // Resolve placeholders in format (except %message%)
         String resolved = PlaceholderResolver.resolve(format, player);
 
-        // =========================
-        // PING PROCESSING — handle @everyone, @nick, @non-op, @is-admin
-        // =========================
+        // PING PROCESSING
         ChatPingManager.PingResult pingResult = ChatPingManager.processPings(rawMessage, player);
         String pingedMessage = pingResult.formattedMessage();
         List<Player> pingedPlayers = pingResult.pingedPlayers();
@@ -192,22 +188,16 @@ public class ChatManager implements Listener {
         boolean hasMessageToken = resolved.contains("%message%");
 
         if (!hasMessageToken) {
-            // No %message% in format — append message at end
             broadcast = MessageUtil.parse(resolved)
                     .append(Component.text(" "))
                     .append(parseMessageComponentForPing(msgForBroadcast, player));
         } else if (playerMiniMessage) {
-            // Parse player message (with ping formatting) as MiniMessage, then embed
             Component msgComp = parseMessageComponentForPing(msgForBroadcast, player);
             String serializedMsg = MM.serialize(msgComp);
             String finalFormat = resolved.replace("%message%", serializedMsg);
             broadcast = MessageUtil.parse(finalFormat);
         } else {
-            // playerMiniMessage: false — escape < and > only in the player's text,
-            // ping MiniMessage tags (server-generated) are inserted into the format already built
             String escapedRaw = rawMessage.replace("<", "\\<").replace(">", "\\>");
-            // If there are pings — apply the @tag replacement with already-built MiniMessage tags
-            // onto the escaped message, so the ping tags don't get escaped
             ChatPingManager.PingResult pingResultEscaped = ChatPingManager.processPings(escapedRaw, player);
             String finalMsg = pingResultEscaped.formattedMessage();
             String finalFormat = resolved.replace("%message%", finalMsg);
@@ -219,12 +209,15 @@ public class ChatManager implements Listener {
             }
         }
 
-        // Cancel original event and broadcast manually
+        // Cancel original event — we broadcast manually
         event.setCancelled(true);
 
-        // Paper 1.21.4 may not fill recipients
-        // If recipients is empty — send to all online players
+        // Determine recipients based on channel
         java.util.Set<Player> recipients = event.getRecipients();
+        if (mode == Mode.CHANNELS && channel != null) {
+            recipients = resolveChannelRecipients(player, channel);
+        }
+
         if (recipients == null || recipients.isEmpty()) {
             for (Player online : Bukkit.getOnlinePlayers()) {
                 online.sendMessage(broadcast);
@@ -233,7 +226,6 @@ public class ChatManager implements Listener {
             for (Player recipient : recipients) {
                 recipient.sendMessage(broadcast);
             }
-            // Ensure the sender always sees their message
             if (!recipients.contains(player)) {
                 player.sendMessage(broadcast);
             }
@@ -242,15 +234,66 @@ public class ChatManager implements Listener {
         // Console log
         ConsoleLogger.info(PlainTextComponentSerializer.plainText().serialize(broadcast));
 
-        // Play ping sounds + send notification for pinged players
+        // Ping sounds
         if (!pingedPlayers.isEmpty()) {
             ChatPingManager.notifyPingedPlayers(pingedPlayers, player);
         }
     }
 
+    // ========================= CHANNEL RECIPIENTS =========================
+
     /**
-     * Parses the player's message into a Component (taking pings and MiniMessage into account).
+     * Returns the set of players who should receive the message for a given channel.
      */
+    private java.util.Set<Player> resolveChannelRecipients(Player sender, ChatChannel channel) {
+        java.util.HashSet<Player> result = new java.util.HashSet<>();
+
+        switch (channel) {
+            case GLOBAL -> {
+                // Everyone online
+                result.addAll(Bukkit.getOnlinePlayers());
+            }
+            case LOCAL -> {
+                // Within radius
+                double radiusSq = (double) localRadius * localRadius;
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (p.getWorld().equals(sender.getWorld())
+                            && p.getLocation().distanceSquared(sender.getLocation()) <= radiusSq) {
+                        result.add(p);
+                    }
+                }
+            }
+            case WORLD -> {
+                // Same world
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (p.getWorld().equals(sender.getWorld())) {
+                        result.add(p);
+                    }
+                }
+            }
+            case PRIVATE -> {
+                // Sender + target
+                result.add(sender);
+                String targetName = PlayerChannelManager.getPrivateTarget(sender);
+                if (targetName != null) {
+                    Player target = Bukkit.getPlayerExact(targetName);
+                    if (target != null) result.add(target);
+                }
+            }
+            case ADMIN -> {
+                // Players with ui.chat.channel.admin permission
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (p.hasPermission(ChatChannel.ADMIN.getPermission()) || p.isOp()) {
+                        result.add(p);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    // ========================= HELPERS =========================
+
     private Component parseMessageComponentForPing(String msg, Player player) {
         if (messagePlaceholders) {
             msg = PlaceholderResolver.resolve(msg, player);
@@ -265,43 +308,14 @@ public class ChatManager implements Listener {
         return Component.text(msg);
     }
 
-    /**
-     * Resolves the chat format for a player based on the configured mode.
-     * Mode determines the lookup strategy: static / per-group / per-world.
-     */
-    private String resolveFormat(Player player) {
-        switch (mode) {
-            case PER_WORLD: {
-                String worldName = player.getWorld().getName().toLowerCase();
-                String wf = worldFormats.get(worldName);
-                if (wf != null) return wf;
-                // Fallback to default format
-                return defaultFormat;
-            }
-            case PER_GROUP: {
-                String group = getPrimaryGroup(player);
-                if (group != null) {
-                    String gf = groupFormats.get(group.toLowerCase());
-                    if (gf != null) return gf;
-                }
-                // Fallback to default group format, then to default format
-                return defaultGroupFormat != null ? defaultGroupFormat : defaultFormat;
-            }
-            default:
-                return defaultFormat;
-        }
-    }
+    // ========================= PUBLIC API =========================
 
-    /**
-     * Gets the player's LuckPerms primary group name via PAPI placeholder.
-     * Returns null if PAPI is not available or group cannot be determined.
-     */
-    private String getPrimaryGroup(Player player) {
-        if (!PlaceholderResolver.isPapiAvailable()) return null;
-        String group = PlaceholderResolver.resolve("%luckperms_primary_group_name%", player);
-        if (group == null || group.isEmpty() || group.equals("%luckperms_primary_group_name%")) {
-            return null;
-        }
-        return group;
-    }
+    /** Returns true if chat is enabled. */
+    public static boolean isEnabled() { return instance != null && instance.enabled; }
+
+    /** Returns the current mode. */
+    public static Mode getMode() { return instance != null ? instance.mode : Mode.STATIC; }
+
+    /** Returns local radius (used by LOCAL channel). */
+    public static int getLocalRadius() { return instance != null ? instance.localRadius : 100; }
 }

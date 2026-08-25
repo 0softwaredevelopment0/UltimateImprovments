@@ -1434,11 +1434,29 @@ chat:
   # Whether the custom chat is enabled
   enabled: true
 
-  # Chat mode (e.g. static)
-  mode: "static"
+  # Chat mode: "static" (single format) or "channels" (local/global/world/private/admin)
+  mode: "channels"
 
-  # Chat format template
-  format: "<green>ᴄʜᴀᴛ <dark_gray>» <white>%player_name%<gray>: <white>%message%"
+  # ===== STATIC MODE =====
+  # Format used when mode = static
+  # Placeholders: %luckperms_prefix%, %player_name%, %message%, %world_name%, etc.
+  format: "<green>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+  # ===== CHANNELS MODE =====
+  # Each channel has its own format. Player switches with /ui chatchnl <channel>
+  channels:
+    local:
+      # Radius in blocks (only players within this distance see local messages)
+      radius: 100
+      format: "<green>ᴄᴜᴄᴇ <dark_gray>»<dark_gray>[<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    global:
+      format: "<green>ᴄᴜᴄᴇ <dark_gray>»<dark_gray>[<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    world:
+      format: "<green>ᴄᴜᴄᴇ <dark_gray>»<dark_gray>[<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    private:
+      format: "<green>ᴄᴜᴄᴇ <dark_gray>»<dark_gray>[<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    admin:
+      format: "<green>ᴄᴜᴄᴇ <dark_gray>»<dark_gray>[<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
   # Whether player messages are parsed as MiniMessage
   player_minimessage: true
@@ -1448,28 +1466,6 @@ chat:
 
   # Permission that bypasses the custom chat format
   bypass_permission: ""
-
-  groups:
-    # Default chat group format
-    default: "<gray>[<white>%player_name%</white>]</gray> <white>%message%</white>"
-
-    formats:
-      # Chat format for the admin group
-      admin: "<red>[Admin]</red> <white>%player_name%</white>: <red>%message%</red>"
-      # Chat format for the VIP group
-      vip: "<gold>[VIP]</gold> <white>%player_name%</white>: <gold>%message%</gold>"
-      # Chat format for the moderator group
-      moderator: "<dark_green>[Mod]</dark_green> <white>%player_name%</white>: <green>%message%</green>"
-      # Chat format for the default group
-      default: "<gray>%player_name%</gray>: <white>%message%</white>"
-
-  worlds:
-    # Chat format in the overworld
-    world: "<green>%player_name%</green>: <white>%message%</white>"
-    # Chat format in the nether
-    world_nether: "<red>%player_name%</red>: <white>%message%</white>"
-    # Chat format in the end
-    world_the_end: "<dark_purple>%player_name%</dark_purple>: <white>%message%</white>"
 
 access_control:
   # How often access control is checked, in ticks

@@ -456,7 +456,12 @@ final class ConfigRules {
             bool("chat.message_placeholders"),
             string("chat.bypass_permission", false, 64),
             notBlank("chat.format", 512),
-            string("chat.groups.default", false, 512),
+            integer("chat.channels.local.radius", 1, 10000),
+            notBlank("chat.channels.local.format", 512),
+            notBlank("chat.channels.global.format", 512),
+            notBlank("chat.channels.world.format", 512),
+            notBlank("chat.channels.private.format", 512),
+            notBlank("chat.channels.admin.format", 512),
 
             notBlank("changedimmension.default_world", 256),
             integer("changedimmension.cooldown_seconds", 0, 36000),
