@@ -43,7 +43,7 @@ public class SunburnManager implements Listener {
     private int helmetDegradeInterval;
     private int helmetIntegrityLoss;
     private boolean extinguishWhenSafe;
-    private Set<String> excludedWorlds;
+    private Set<String> includedWorlds;
 
     // =========================
     // TICK COUNTERS
@@ -86,9 +86,13 @@ public class SunburnManager implements Listener {
         helmetIntegrityLoss = cfg.getInt("sunburn.helmet_integrity_loss", 1);
         extinguishWhenSafe = cfg.getBoolean("sunburn.extinguish_when_safe", true);
 
-        excludedWorlds = new HashSet<>();
-        if (cfg.isList("sunburn.excluded_worlds")) {
-            excludedWorlds.addAll(cfg.getStringList("sunburn.excluded_worlds"));
+        includedWorlds = new HashSet<>();
+        if (cfg.isList("sunburn.included_worlds")) {
+            includedWorlds.addAll(cfg.getStringList("sunburn.included_worlds"));
+        // Default: only overworld if list is empty
+        if (includedWorlds.isEmpty()) {
+            includedWorlds.add("world");
+        }
         }
 
         ConsoleLogger.info("[SunburnModule] Config: enabled=" + enabled
@@ -97,7 +101,7 @@ public class SunburnManager implements Listener {
                 + ", helmetDegrade=" + helmetDegradeInterval
                 + ", helmetLoss=" + helmetIntegrityLoss
                 + ", extinguishWhenSafe=" + extinguishWhenSafe
-                + ", excludedWorlds=" + excludedWorlds);
+                + ", includedWorlds=" + includedWorlds);
     }
 
     public void reloadConfig() {
@@ -134,7 +138,7 @@ public class SunburnManager implements Listener {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.getWorld().getEnvironment() != World.Environment.NORMAL) continue;
-            if (excludedWorlds.contains(player.getWorld().getName())) continue;
+            if (!includedWorlds.contains(player.getWorld().getName())) continue;
             if (player.getGameMode() != GameMode.SURVIVAL && player.getGameMode() != GameMode.ADVENTURE) continue;
             if (player.isDead() || player.getHealth() <= 0) continue;
 

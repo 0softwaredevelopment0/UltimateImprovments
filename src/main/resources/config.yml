@@ -903,10 +903,11 @@ sunburn:
   # How many integrity uses a helmet absorbs per degrade tick
   helmet_integrity_loss: 1
 
-  # --- World Exclusions ---
-  # List of world names where sunburn is completely disabled
-  # Example: ["world_nether", "world_the_end", "lobby"]
-  excluded_worlds: []
+  # --- World Whitelist ---
+  # Only worlds listed here have sunburn enabled
+  # Other worlds (nether, end, lobby, etc.) are unaffected
+  included_worlds:
+    - "world"
 netherite_upgrade:
   base_values:
     # Base attribute values used to compute the upgrade lore
