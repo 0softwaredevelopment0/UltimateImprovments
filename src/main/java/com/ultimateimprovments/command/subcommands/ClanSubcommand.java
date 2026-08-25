@@ -27,8 +27,8 @@ import java.util.UUID;
  * <p>Subcommands:</p>
  * <ul>
  *   <li>{@code create <name>} — create a clan</li>
- *   <li>{@code list [page]} — list all clans (clickable names → listclans)</li>
- *   <li>{@code listclans <clan>} — detailed clan info</li>
+ *   <li>{@code clanlist [page]} — list all clans (clickable names → claninfo)</li>
+ *   <li>{@code claninfo <clan>} — detailed clan info</li>
  *   <li>{@code info} — your clan info</li>
  *   <li>{@code online} — who is online</li>
  *   <li>{@code home} — teleport to clan home</li>
@@ -83,8 +83,8 @@ public final class ClanSubcommand implements SubCommand {
 
         return switch (sub) {
             case "create" -> cmdCreate(player, rest);
-            case "list" -> cmdListClans(player, rest);
-            case "listclans" -> cmdListClansDetail(player, rest);
+            case "clanlist" -> cmdClanList(player, rest);
+            case "claninfo" -> cmdClanInfo(player, rest);
             case "edit" -> cmdEdit(player, rest);
             case "home" -> cmdHome(player, rest);
             case "request", "reqest" -> cmdRequest(player, rest);
@@ -147,7 +147,7 @@ public final class ClanSubcommand implements SubCommand {
     // LIST CLANS (clickable)
     // ============================================================
 
-    private boolean cmdListClans(Player player, String[] args) {
+    private boolean cmdClanList(Player player, String[] args) {
         int page = 1;
         if (args.length >= 1) { try { page = Integer.parseInt(args[0]); } catch (NumberFormatException ignored) {} }
         List<ClanDatabase.ClanData> clans = ClanDatabase.getAllClans();
@@ -166,14 +166,13 @@ public final class ClanSubcommand implements SubCommand {
             for (int i = from; i < to; i++) {
                 ClanDatabase.ClanData c = clans.get(i);
                 String depMark = ClanDatabase.isDependent(c.key()) ? " <dark_gray>[N]</dark_gray>" : "";
-                String plain = MessageUtil.toPlainText(c.displayName());
-                // Clickable clan name
+                String displayName = c.displayName();
+                // Clickable clan name — rendered via MiniMessage
                 net.kyori.adventure.text.Component line = MessageUtil.parse(
-                        "<gray>┌─ </gray><yellow>" + (i + 1) + ".</yellow> ");
-                line = line.append(net.kyori.adventure.text.Component.text(plain)
-                        .color(net.kyori.adventure.text.format.NamedTextColor.WHITE)
+                        "<gray>\u250c\u2500 </gray><yellow>" + (i + 1) + ".</yellow> ");
+                line = line.append(MessageUtil.parse(displayName)
                         .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
-                                "/ui clan listclans " + plain))
+                                "/ui clan claninfo " + MessageUtil.toPlainText(displayName)))
                         .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
                                 MessageUtil.parse("<gray>Click for details</gray>"))));
                 line = line.append(MessageUtil.parse(depMark));
@@ -186,7 +185,7 @@ public final class ClanSubcommand implements SubCommand {
         if (page > 1) {
             footer = footer.append(net.kyori.adventure.text.Component.text("[<]")
                     .color(net.kyori.adventure.text.format.NamedTextColor.YELLOW)
-                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui clan list " + (page - 1)))
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui clan clanlist " + (page - 1)))
                     .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(MessageUtil.parse("<gray>Previous page"))));
         } else {
             footer = footer.append(MessageUtil.parse("<dark_gray>[<]"));
@@ -195,7 +194,7 @@ public final class ClanSubcommand implements SubCommand {
         if (page < totalPages) {
             footer = footer.append(net.kyori.adventure.text.Component.text("[>]")
                     .color(net.kyori.adventure.text.format.NamedTextColor.YELLOW)
-                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui clan list " + (page + 1)))
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand("/ui clan clanlist " + (page + 1)))
                     .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(MessageUtil.parse("<gray>Next page"))));
         } else {
             footer = footer.append(MessageUtil.parse("<dark_gray>[>]"));
@@ -209,9 +208,9 @@ public final class ClanSubcommand implements SubCommand {
     // LIST CLANS DETAIL
     // ============================================================
 
-    private boolean cmdListClansDetail(Player player, String[] args) {
+    private boolean cmdClanInfo(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan listclans <clan></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan claninfo <clan></yellow>"));
             return true;
         }
         String key = normalizeKey(String.join(" ", args));
@@ -226,24 +225,24 @@ public final class ClanSubcommand implements SubCommand {
         String mainKey = ClanDatabase.getMainClan(key);
 
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
-        player.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Clan </white><yellow>" + clan.displayName() + "</yellow>"));
+        player.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Clan </white>" + clan.displayName()));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
         player.sendMessage(MessageUtil.parse("<gray>Leader: </gray><white>" + (ownerName != null ? ownerName : "unknown") + "</white>"));
         player.sendMessage(MessageUtil.parse("<gray>Members: </gray><white>" + members + "</white>"));
         String desc = clan.description();
         if (desc != null && !desc.isBlank()) {
-            player.sendMessage(MessageUtil.parse("<gray>Description: </gray><white>" + desc + "</white>"));
+            player.sendMessage(MessageUtil.parse("<gray>Description: </gray>" + desc));
         }
         if (mainKey != null) {
             ClanDatabase.ClanData mc = ClanDatabase.getClan(mainKey);
             String mn = mc != null ? MessageUtil.toPlainText(mc.displayName()) : mainKey;
-            player.sendMessage(MessageUtil.parse("<gray>Dependent of: </gray><yellow>" + mn + "</yellow>"));
+            player.sendMessage(MessageUtil.parse("<gray>Dependent of: </gray>" + (mc != null ? mc.displayName() : mainKey)));
         } else {
             String depKey = ClanDatabase.getDependentClan(key);
             if (depKey != null) {
                 ClanDatabase.ClanData dc = ClanDatabase.getClan(depKey);
                 String dn = dc != null ? MessageUtil.toPlainText(dc.displayName()) : depKey;
-                player.sendMessage(MessageUtil.parse("<gray>Has dependent: </gray><yellow>" + dn + "</yellow> <dark_gray>[N]</dark_gray>"));
+                player.sendMessage(MessageUtil.parse("<gray>Has dependent: </gray>" + (dc != null ? dc.displayName() : depKey) + " <dark_gray>[N]</dark_gray>"));
             } else {
                 player.sendMessage(MessageUtil.parse("<gray>Alliance: </gray><white>none</white>"));
             }
@@ -450,7 +449,7 @@ public final class ClanSubcommand implements SubCommand {
         }
         String newName = String.join(" ", args);
         if (ClanDatabase.renameClan(key, newName)) {
-            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan renamed to </white><yellow>" + newName + "</yellow><white>.</white>"));
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan renamed to </white>" + newName + "<white>.</white>"));
         } else {
             player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to rename.</white>"));
         }
@@ -468,7 +467,7 @@ public final class ClanSubcommand implements SubCommand {
         }
         String text = args.length >= 1 ? String.join(" ", args) : "";
         if (ClanDatabase.setDescription(key, text)) {
-            player.sendMessage(MessageUtil.parse(text.isEmpty() ? "<green>✔</green> <white>Clan description cleared.</white>" : "<green>✔</green> <white>Clan description set.</white>"));
+            player.sendMessage(MessageUtil.parse(text.isEmpty() ? "<green>✔</green> <white>Clan description cleared.</white>" : "<green>✔</green> <white>Clan description set to </white>" + text));
         } else {
             player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to change the description.</white>"));
         }
@@ -1394,7 +1393,7 @@ public final class ClanSubcommand implements SubCommand {
         if (args.length <= 2) {
             String prefix = args.length == 2 ? args[1].toLowerCase(Locale.ROOT) : "";
             List<String> out = new ArrayList<>(List.of(
-                    "create", "list", "listclans", "edit", "home",
+                    "create", "clanlist", "claninfo", "edit", "home",
                     "request", "invite", "leave", "info", "online",
                     "transfer",
                     "depinvite", "depaccept", "depdecline", "depdisband",
@@ -1410,7 +1409,7 @@ public final class ClanSubcommand implements SubCommand {
         List<String> out = new ArrayList<>();
 
         switch (sub) {
-            case "list", "listclans" -> {
+            case "clanlist", "claninfo" -> {
                 if (args.length == 3) {
                     for (ClanDatabase.ClanData c : ClanDatabase.getAllClans()) {
                         String plain = MessageUtil.toPlainText(c.displayName());
