@@ -1221,6 +1221,15 @@ clan:
     # Teleport cooldown in seconds when mode is standard (0 = disabled)
     tp_cooldown_seconds: 0
 
+  # Dependent clans
+  dependent:
+    # Master toggle for dependent clans
+    enabled: true
+    # How long a dependency invite stays valid (seconds, 24h = 86400)
+    invite_expire_seconds: 86400
+    # Cooldown between dep invites from the same main clan (seconds)
+    invite_cooldown_seconds: 60
+
 report:
   # How long reports stay active (e.g. 3d)
   expire_time: "3d"

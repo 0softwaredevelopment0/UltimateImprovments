@@ -22,6 +22,7 @@ public final class ClanManager {
     public static final String CONFIRM_HOME_DEL = "home_del";
     public static final String CONFIRM_LEAVE = "leave";
     public static final String CONFIRM_TRANSFER = "transfer";
+    public static final String CONFIRM_DEP_DISBAND = "dep_disband";
 
     /** A pending confirmation: action + expiry timestamp. */
     public record ConfirmRequest(String action, long expiresAt) {}
@@ -93,5 +94,24 @@ public final class ClanManager {
     /** Records that the player just sent a join request. */
     public static void markRequest(UUID uuid) {
         requestCooldowns.put(uuid, System.currentTimeMillis());
+    }
+
+    // ============================================================
+    // DEPENDENCY INVITE COOLDOWN
+    // ============================================================
+
+    private static final Map<String, Long> depInviteCooldowns = new HashMap<>();
+
+    /** Returns true if the main clan can send a dep invite right now. */
+    public static boolean canDepInvite(String mainClanKey) {
+        Long last = depInviteCooldowns.get(mainClanKey);
+        if (last == null) return true;
+        int cd = Main.getInstance().getConfig().getInt("clan.dependent.invite_cooldown_seconds", 60);
+        return System.currentTimeMillis() - last >= cd * 1000L;
+    }
+
+    /** Records that the main clan just sent a dep invite. */
+    public static void markDepInvite(String mainClanKey) {
+        depInviteCooldowns.put(mainClanKey, System.currentTimeMillis());
     }
 }

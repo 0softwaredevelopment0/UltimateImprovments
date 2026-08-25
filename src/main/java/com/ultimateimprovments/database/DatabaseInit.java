@@ -719,7 +719,25 @@ public class DatabaseInit {
                 requested_at INTEGER NOT NULL,
                 PRIMARY KEY (clan_name, player_uuid)
             );
-        """);
+            """);
+
+        // Dependencies between clans
+        try { st.execute("""
+            CREATE TABLE IF NOT EXISTS clan_dependencies (
+                main_clan TEXT NOT NULL PRIMARY KEY,
+                dep_clan TEXT NOT NULL UNIQUE,
+                created_at INTEGER NOT NULL
+            );"""); } catch (Exception ignored) {}
+        try { st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_dep_clan
+            ON clan_dependencies(dep_clan);"""); } catch (Exception ignored) {}
+        try { st.execute("""
+            CREATE TABLE IF NOT EXISTS clan_dep_requests (
+                from_clan TEXT NOT NULL,
+                to_clan TEXT NOT NULL,
+                requested_at INTEGER NOT NULL,
+                PRIMARY KEY (from_clan, to_clan)
+            );"""); } catch (Exception ignored) {}
 
         // =========================
         // 🗳 VOTES

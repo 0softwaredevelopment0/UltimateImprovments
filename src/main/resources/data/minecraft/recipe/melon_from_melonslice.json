@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "melon",
+  "pattern": [
+    "###",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "minecraft:melon_slice"
+    }
+  },
+  "result": {
+    "id": "minecraft:melon",
+    "count": 1
+  },
+  "show_notification": false,
+  "tags": [
+    "minecraft:crafting_recipes"
+  ]
+}

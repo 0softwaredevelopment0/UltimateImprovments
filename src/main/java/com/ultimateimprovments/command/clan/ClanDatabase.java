@@ -60,6 +60,10 @@ public final class ClanDatabase {
             long requestedAt
     ) {}
 
+    /** Immutable dependency request row. */
+    public record DepRequestData(String fromClan, String toClan, long requestedAt) {}
+
+
     // ============================================================
     // CLANS
     // ============================================================
@@ -89,6 +93,8 @@ public final class ClanDatabase {
             int removed = ps.executeUpdate();
             deleteMembers(key);
             deleteRequests(key);
+            removeDependency(key);
+            deleteDepRequests(key);
             return removed > 0;
         } catch (Exception e) {
             return false;
@@ -536,6 +542,131 @@ public final class ClanDatabase {
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement("DELETE FROM clan_requests WHERE clan_name = ?")) {
             ps.setString(1, key);
+            ps.executeUpdate();
+        } catch (Exception ignored) {}
+    }
+
+    // ============================================================
+    // DEPENDENCIES
+    // ============================================================
+
+    /** Get the dependent clan of a main clan (or null). */
+    public static String getDependentClan(String mainKey) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT dep_clan FROM clan_dependencies WHERE main_clan = ?")) {
+            ps.setString(1, mainKey);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("dep_clan") : null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Get the main clan of a dependent clan (or null). */
+    public static String getMainClan(String depKey) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT main_clan FROM clan_dependencies WHERE dep_clan = ?")) {
+            ps.setString(1, depKey);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("main_clan") : null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Check if a clan is dependent. */
+    public static boolean isDependent(String clanKey) {
+        return getMainClan(clanKey) != null;
+    }
+
+    /** Set dependency between two clans. */
+    public static boolean setDependency(String mainKey, String depKey) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT INTO clan_dependencies (main_clan, dep_clan, created_at) VALUES (?, ?, ?)")) {
+            ps.setString(1, mainKey);
+            ps.setString(2, depKey);
+            ps.setLong(3, System.currentTimeMillis());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Remove dependency (disband dependent relationship). */
+    public static boolean removeDependency(String mainKey) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "DELETE FROM clan_dependencies WHERE main_clan = ? OR dep_clan = ?")) {
+            ps.setString(1, mainKey);
+            ps.setString(2, mainKey);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    // ============================================================
+    // DEPENDENCY REQUESTS
+    // ============================================================
+
+    /** Add a dependency invite request. */
+    public static boolean addDepRequest(String fromClan, String toClan) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT OR REPLACE INTO clan_dep_requests (from_clan, to_clan, requested_at) VALUES (?, ?, ?)")) {
+            ps.setString(1, fromClan);
+            ps.setString(2, toClan);
+            ps.setLong(3, System.currentTimeMillis());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Get pending dep request for a clan (who invited them). */
+    public static DepRequestData getDepRequest(String toClan) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT from_clan, to_clan, requested_at FROM clan_dep_requests WHERE to_clan = ?")) {
+            ps.setString(1, toClan);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return new DepRequestData(
+                        rs.getString("from_clan"),
+                        rs.getString("to_clan"),
+                        rs.getLong("requested_at")
+                );
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Remove a dep request. */
+    public static boolean removeDepRequest(String fromClan, String toClan) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "DELETE FROM clan_dep_requests WHERE from_clan = ? AND to_clan = ?")) {
+            ps.setString(1, fromClan);
+            ps.setString(2, toClan);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Remove all dep requests involving a clan. */
+    private static void deleteDepRequests(String clanKey) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "DELETE FROM clan_dep_requests WHERE from_clan = ? OR to_clan = ?")) {
+            ps.setString(1, clanKey);
+            ps.setString(2, clanKey);
             ps.executeUpdate();
         } catch (Exception ignored) {}
     }

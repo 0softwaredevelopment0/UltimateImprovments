@@ -10,11 +10,10 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 
 /**
  * ClanFriendlyFireListener — blocks clan members from damaging each other
- * when the clan setting {@code selfpvp} is {@code on}.
+ * when the clan setting selfpvp is on.
  *
- * <p>Default ({@code off}) keeps vanilla behavior — clanmates may fight.
- * The action bar message matches the cobweb style
- * ({@code BoostedCobwebManager}): {@code ❌ You can't attack...}</p>
+ * Also blocks damage between main and dependent clan members
+ * when the main clan has selfpvp=on.
  */
 public final class ClanFriendlyFireListener implements Listener {
 
@@ -30,12 +29,46 @@ public final class ClanFriendlyFireListener implements Listener {
         if (!(event.getEntity() instanceof Player victim)) return;
         if (attacker.getUniqueId().equals(victim.getUniqueId())) return;
 
-        String clan = ClanDatabase.getClanKeyByPlayer(attacker.getUniqueId().toString());
-        if (clan == null) return;
-        if (!clan.equals(ClanDatabase.getClanKeyByPlayer(victim.getUniqueId().toString()))) return;
-        if (!ClanDatabase.isSelfPvpEnabled(clan)) return;
+        String attackerClan = ClanDatabase.getClanKeyByPlayer(attacker.getUniqueId().toString());
+        if (attackerClan == null) return;
+        String victimClan = ClanDatabase.getClanKeyByPlayer(victim.getUniqueId().toString());
+        if (victimClan == null) return;
 
-        event.setCancelled(true);
-        attacker.sendActionBar(MessageUtil.parse("<red>❌ You can't attack your clanmate!</red>"));
+        // Same clan
+        if (attackerClan.equals(victimClan)) {
+            if (ClanDatabase.isSelfPvpEnabled(attackerClan)) {
+                event.setCancelled(true);
+                attacker.sendActionBar(MessageUtil.parse("<red>\u274c You can't attack your clanmate!</red>"));
+            }
+            return;
+        }
+
+        // Different clans — check dependency relationship
+        if (isDependentPair(attackerClan, victimClan)) {
+            // Find the main clan in the pair
+            String mainClan;
+            String mainOfAttacker = ClanDatabase.getMainClan(attackerClan);
+            if (mainOfAttacker != null && mainOfAttacker.equals(victimClan)) {
+                mainClan = victimClan;
+            } else {
+                mainClan = attackerClan;
+            }
+            // Check selfpvp on the main clan
+            if (ClanDatabase.isSelfPvpEnabled(mainClan)) {
+                event.setCancelled(true);
+                attacker.sendActionBar(MessageUtil.parse("<red>\u274c You can't attack your allied clanmate!</red>"));
+            }
+        }
+    }
+
+    /** Returns true if two clans are in a main-dependent relationship. */
+    private boolean isDependentPair(String clan1, String clan2) {
+        // clan1 is main of clan2?
+        String dep1 = ClanDatabase.getDependentClan(clan1);
+        if (dep1 != null && dep1.equals(clan2)) return true;
+        // clan2 is main of clan1?
+        String dep2 = ClanDatabase.getDependentClan(clan2);
+        if (dep2 != null && dep2.equals(clan1)) return true;
+        return false;
     }
 }
