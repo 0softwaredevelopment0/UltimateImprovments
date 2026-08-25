@@ -5,7 +5,6 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -20,21 +19,19 @@ import java.util.stream.Collectors;
 /**
  * EmergencyEntitiesKill — unified entity cleanup mechanic on overload.
  * <p>
- * If MSPT is above the threshold (default 50ms) — the plugin removes the entity type
- * with the highest load (the most common non-player type). On the next check
- * (once per second) the load is recalculated: if it is still above the threshold —
- * the next highest-load type is removed, and so on until it stabilizes below the threshold.
+ * If MSPT is above the threshold — the plugin removes the entity type
+ * with the highest load (the most common non-player type).
  */
 public class EmergencyEntitiesKill extends BukkitRunnable {
 
-    // ===== SETTINGS (loaded from config.yml) =====
     private boolean enabled = true;
     private double msptThreshold = 50.0;
     private int entityLimit = 1000;
     private List<String> killWorlds = new ArrayList<>();
     private boolean logEnabled = true;
+    private boolean broadcastToAll = false;
+    private long cooldownMs = 30_000L;
 
-    // ===== STATE =====
     private static EmergencyEntitiesKill instance;
 
     public EmergencyEntitiesKill() {
@@ -56,6 +53,8 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         entityLimit = cfg.getInt("emergency_entity_kill.entity_limit", 1000);
         killWorlds = cfg.getStringList("emergency_entity_kill.kill_worlds");
         logEnabled = cfg.getBoolean("emergency_entity_kill.log", true);
+        broadcastToAll = cfg.getBoolean("emergency_entity_kill.broadcast_to_all", false);
+        cooldownMs = cfg.getLong("emergency_entity_kill.notification_cooldown_ms", 30_000L);
     }
 
     @Override
@@ -73,16 +72,9 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
         }
         if (totalEntities < entityLimit) return;
 
-        // Unified mechanic: remove the type with the highest load.
-        // The next call (after 1s) recalculates MSPT — if it is still above
-        // the threshold, the next highest-load type is removed. This repeats until it drops.
         removeMostCommonEntities(worlds, mspt);
     }
 
-    /**
-     * Returns the list of worlds where entity removal is allowed.
-     * If killWorlds is empty — returns all worlds.
-     */
     private List<World> getRelevantWorlds() {
         List<World> allWorlds = Bukkit.getWorlds();
         if (killWorlds.isEmpty()) {
@@ -96,15 +88,9 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Two-pass removal of the most common non-player entity type:
-     * pass 1: count + find the most common type (single loop)
-     * pass 2: remove all entities of that type
-     */
     private void removeMostCommonEntities(List<World> worlds, double mspt) {
         Map<String, Integer> counts = new HashMap<>();
 
-        // Pass 1: count + find the maximum in one pass
         String topType = null;
         int maxCount = 0;
 
@@ -126,7 +112,6 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
 
         if (topType == null || maxCount == 0) return;
 
-        // Pass 2: removal
         int removed = 0;
         for (World world : worlds) {
             for (Entity entity : world.getEntities()) {
@@ -147,9 +132,14 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
             );
         }
 
-        ServerOverloadNotify.broadcast(
-                MessageUtil.PREFIX + " <white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
-                        + " <gray>(MSPT </gray><red>" + String.format("%.1f", mspt) + "</red><gray>)</gray>"
-        );
+        String message = MessageUtil.PREFIX + " <white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
+                + " <gray>(MSPT </gray><red>" + String.format("%.1f", mspt) + "</red><gray>)</gray>";
+
+        if (broadcastToAll) {
+            ServerOverloadNotify.broadcastAll(message, cooldownMs);
+        } else {
+            ServerOverloadNotify.setCooldownMs(cooldownMs);
+            ServerOverloadNotify.broadcast(message);
+        }
     }
 }

@@ -1,6 +1,9 @@
 package com.ultimateimprovments.server;
 
 import com.ultimateimprovments.util.AlertBroadcast;
+import com.ultimateimprovments.util.MessageUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 public final class ServerOverloadNotify {
 
@@ -18,17 +21,37 @@ public final class ServerOverloadNotify {
         cooldownEnabled = enabled;
     }
 
+    /** Sends to players with ui.alerts permission / OPs, respects cooldown. */
     public static void broadcast(String message) {
         long now = System.currentTimeMillis();
         if (cooldownEnabled && cooldownMs > 0 && (now - lastBroadcastTime) < cooldownMs) {
             return;
         }
         lastBroadcastTime = now;
-
         AlertBroadcast.send(message);
     }
 
+    /** Sends to players with ui.alerts permission / OPs, no cooldown check. */
     public static void broadcastForce(String message) {
         AlertBroadcast.send(message);
+    }
+
+    /**
+     * Sends to EVERY online player regardless of permission.
+     * Used when broadcast_to_all = true in config.
+     * @param cooldownMillis own cooldown window (0 = no cooldown)
+     */
+    public static void broadcastAll(String message, long cooldownMillis) {
+        long now = System.currentTimeMillis();
+        if (cooldownMillis > 0 && (now - lastBroadcastTime) < cooldownMillis) {
+            return;
+        }
+        lastBroadcastTime = now;
+
+        if (message == null) return;
+        var parsed = MessageUtil.parse(message);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendMessage(parsed);
+        }
     }
 }

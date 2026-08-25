@@ -80,7 +80,7 @@ public class CreativeItemValidator implements Listener {
         maxNameChars = cfg.getInt("max_name_chars", 200);
         maxEnchantments = cfg.getInt("max_enchantments", 40);
         bypassPermission = cfg.getString("bypass_permission", "ui.creative.bypass");
-        denyMessage = MessagesManager.getString("features.creativeitem.message",
+        denyMessage = MessagesManager.getString("features.creative_item_validator.message",
                 "<red>Этот предмет содержит слишком много данных!</red>");
 
         ConsoleLogger.info("[CreativeItem] Config reloaded: enabled="

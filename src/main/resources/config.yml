@@ -1114,6 +1114,10 @@ emergency_entity_kill:
   kill_worlds: []
   # Whether emergency entity kills are logged
   log: true
+  # Whether to notify ALL online players (not just those with ui.alerts)
+  broadcast_to_all: false
+  # Cooldown between notifications in milliseconds
+  notification_cooldown_ms: 30000
 
 server_overload_warning:
   # Whether server overload warnings are enabled
