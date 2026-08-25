@@ -240,7 +240,7 @@ public class ConfigRepairManager {
                 // Try to get the direct key value
                 val = section.get(key);
             }
-            sb.append(indent).append(formatYamlValue(key, val)).append("\n");
+            sb.append(indent).append(formatYamlValue(key, val, depth)).append("\n");
         }
     }
 
@@ -248,6 +248,10 @@ public class ConfigRepairManager {
      * Formats a YAML value: strings in quotes, lists, etc.
      */
     private static String formatYamlValue(String key, Object value) {
+        return formatYamlValue(key, value, 0);
+    }
+
+    private static String formatYamlValue(String key, Object value, int depth) {
         if (value == null) {
             return key + ": null";
         }
@@ -261,7 +265,8 @@ public class ConfigRepairManager {
             }
             StringBuilder sb = new StringBuilder(key).append(":\n");
             for (Object item : list) {
-                sb.append("  - ").append(formatScalar(item)).append("\n");
+                String listIndent = "  ".repeat(depth + 1);
+                sb.append(listIndent).append("- ").append(formatScalar(item)).append("\n");
             }
             return sb.toString().trim();
         }

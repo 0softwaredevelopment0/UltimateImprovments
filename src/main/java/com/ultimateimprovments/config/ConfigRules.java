@@ -545,6 +545,15 @@ final class ConfigRules {
             string("ojm.join", false, 512),
             string("ojm.leave", false, 512),
 
+
+            // Sunburn
+            bool("sunburn.enabled"),
+            integer("sunburn.check_interval", 1, 72000, "Check interval in ticks"),
+            integer("sunburn.fire_ticks", 1, 72000, "Fire duration in ticks"),
+            bool("sunburn.extinguish_when_safe"),
+            integer("sunburn.helmet_degrade_interval", 1, 72000, "Helmet degrade interval in ticks"),
+            integer("sunburn.helmet_integrity_loss", 1, 100, "Integrity uses per degrade"),
+            stringList("sunburn.included_worlds"),
             // Space dimension
             bool("space.enabled"),
             bool("space.debug"),
