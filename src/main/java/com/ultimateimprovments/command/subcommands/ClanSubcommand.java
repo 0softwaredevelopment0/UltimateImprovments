@@ -124,10 +124,11 @@ public final class ClanSubcommand implements SubCommand {
         }
         String rawName = String.join(" ", args);
         String key = normalizeKey(rawName);
+        String plainName = MessageUtil.toPlainText(rawName);
         int min = cfgInt("clan.name_min_length", 2);
-        int max = cfgInt("clan.name_max_length", 32);
-        if (key.length() < min || key.length() > max) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan name must be </white><yellow>" + min + "-" + max + "</yellow><white> characters long.</white>"));
+        int max = cfgInt("clan.name_max_length", 16);
+        if (plainName.length() < min || plainName.length() > max) {
+            player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan name must be </white><yellow>" + min + "-" + max + "</yellow><white> characters (plain text, MiniMessage tags not counted).</white>"));
             return true;
         }
         if (ClanDatabase.clanExists(key)) {
@@ -943,6 +944,12 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdAdmeditRename(Player player, String targetKey, String[] args) {
         if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> edit rename <name></yellow>")); return true; }
         String newName = String.join(" ", args);
+        String plainName = MessageUtil.toPlainText(newName);
+        int max = cfgInt("clan.name_max_length", 16);
+        if (plainName.length() > max) {
+            player.sendMessage(MessageUtil.parse("<red>✖ <white>Name too long (max </white><yellow>" + max + "</yellow><white> chars).</white>"));
+            return true;
+        }
         if (ClanDatabase.renameClan(targetKey, newName)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan renamed to </white><yellow>" + newName + "</yellow><white>.</white>"));
         } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
@@ -950,7 +957,18 @@ public final class ClanSubcommand implements SubCommand {
     }
 
     private boolean cmdAdmeditDescript(Player player, String targetKey, String[] args) {
-        String text = args.length >= 1 ? String.join(" ", args) : "";
+        String full = String.join(" ", args);
+        String text = extractQuoted(full);
+        if (text == null) {
+            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> edit descript \"&lt;description&gt;\"</yellow>"));
+            return true;
+        }
+        int max = cfgInt("clan.description_max_length", 160);
+        String plainText = MessageUtil.toPlainText(text);
+        if (!text.isEmpty() && plainText.length() > max) {
+            player.sendMessage(MessageUtil.parse("<red>✖ <white>Description too long (max </white><yellow>" + max + "</yellow><white> chars).</white>"));
+            return true;
+        }
         if (ClanDatabase.setDescription(targetKey, text)) {
             player.sendMessage(MessageUtil.parse(text.isEmpty() ? "<green>✔</green> <white>Description cleared.</white>" : "<green>✔</green> <white>Description set.</white>"));
         } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
@@ -1592,6 +1610,22 @@ public final class ClanSubcommand implements SubCommand {
         player.sendMessage(MessageUtil.parse("<dark_gray>┃     <dark_green>[<green>✔ " + label + "<dark_green>]</dark_green>")
                 .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(command))
                 .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(MessageUtil.parse("<green>" + label + "</green>"))));
+    }
+
+    /**
+     * Extracts text between the first pair of double quotes.
+     * Returns null if no quotes found. Empty string if quotes are empty.
+     * Example: "Hello <red>world</red>" -> "Hello <red>world</red>"
+     */
+    private static String extractQuoted(String input) {
+        if (input == null || input.isEmpty()) return "";
+        int first = input.indexOf('\"');
+        if (first < 0) first = input.indexOf('"');
+        if (first < 0) return null;
+        int last = input.indexOf('\"', first + 1);
+        if (last < 0) last = input.indexOf('"', first + 1);
+        if (last < 0) return null;
+        return input.substring(first + 1, last);
     }
 
     private static String normalizeKey(String raw) {

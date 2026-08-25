@@ -1202,6 +1202,8 @@ home:
   name_min_length: 1
   # Maximum home name length
   name_max_length: 16
+  # Max plain text length for clan descriptions (MiniMessage tags not counted)
+  description_max_length: 160
   # Home mode: legit or creative
   mode: legit
 
