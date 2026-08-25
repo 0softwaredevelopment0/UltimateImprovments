@@ -63,6 +63,12 @@ public final class ClanDatabase {
     /** Immutable dependency request row. */
     public record DepRequestData(String fromClan, String toClan, long requestedAt) {}
 
+    /** Immutable clan invite row. */
+    public record InviteData(String clanKey, String playerUuid, String playerName, String role, String invitedBy, long requestedAt) {}
+
+    /** Immutable dependency confirmation row. */
+    public record DepConfirmData(String action, String fromClan, String toClan, long requestedAt) {}
+
 
     // ============================================================
     // CLANS
@@ -95,6 +101,8 @@ public final class ClanDatabase {
             deleteRequests(key);
             removeDependency(key);
             deleteDepRequests(key);
+            deleteInvites(key);
+            deleteDepConfirms(key);
             return removed > 0;
         } catch (Exception e) {
             return false;
@@ -546,6 +554,148 @@ public final class ClanDatabase {
         } catch (Exception ignored) {}
     }
 
+
+    // ============================================================
+    // INVITES (add player via request)
+    // ============================================================
+
+    public static boolean addInvite(String clanKey, String playerUuid, String playerName, String role, String invitedBy) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT OR REPLACE INTO clan_invites (clan_name, player_uuid, player_name, role, invited_by, requested_at) VALUES (?, ?, ?, ?, ?, ?)")) {
+            ps.setString(1, clanKey);
+            ps.setString(2, playerUuid);
+            ps.setString(3, playerName);
+            ps.setString(4, role);
+            ps.setString(5, invitedBy);
+            ps.setLong(6, System.currentTimeMillis());
+            ps.executeUpdate();
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
+    public static InviteData getInvite(String clanKey, String playerUuid) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT clan_name, player_uuid, player_name, role, invited_by, requested_at FROM clan_invites WHERE clan_name = ? AND player_uuid = ?")) {
+            ps.setString(1, clanKey);
+            ps.setString(2, playerUuid);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return new InviteData(rs.getString("clan_name"), rs.getString("player_uuid"),
+                        rs.getString("player_name"), rs.getString("role"),
+                        rs.getString("invited_by"), rs.getLong("requested_at"));
+            }
+        } catch (Exception e) { return null; }
+    }
+
+    public static List<InviteData> getInvitesForPlayer(String playerUuid) {
+        List<InviteData> list = new ArrayList<>();
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT clan_name, player_uuid, player_name, role, invited_by, requested_at FROM clan_invites WHERE player_uuid = ?")) {
+            ps.setString(1, playerUuid);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(new InviteData(rs.getString("clan_name"), rs.getString("player_uuid"),
+                            rs.getString("player_name"), rs.getString("role"),
+                            rs.getString("invited_by"), rs.getLong("requested_at")));
+                }
+            }
+        } catch (Exception ignored) {}
+        return list;
+    }
+
+    public static boolean removeInvite(String clanKey, String playerUuid) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("DELETE FROM clan_invites WHERE clan_name = ? AND player_uuid = ?")) {
+            ps.setString(1, clanKey);
+            ps.setString(2, playerUuid);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) { return false; }
+    }
+
+    public static void removeInvitesForPlayer(String playerUuid) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("DELETE FROM clan_invites WHERE player_uuid = ?")) {
+            ps.setString(1, playerUuid);
+            ps.executeUpdate();
+        } catch (Exception ignored) {}
+    }
+
+    public static void deleteInvites(String clanKey) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("DELETE FROM clan_invites WHERE clan_name = ?")) {
+            ps.setString(1, clanKey);
+            ps.executeUpdate();
+        } catch (Exception ignored) {}
+    }
+
+    // ============================================================
+    // DEPENDENCY CONFIRMATIONS
+    // ============================================================
+
+    public static boolean addDepConfirm(String action, String fromClan, String toClan) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "INSERT OR REPLACE INTO clan_dep_confirms (action, from_clan, to_clan, requested_at) VALUES (?, ?, ?, ?)")) {
+            ps.setString(1, action);
+            ps.setString(2, fromClan);
+            ps.setString(3, toClan);
+            ps.setLong(4, System.currentTimeMillis());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) { return false; }
+    }
+
+    public static DepConfirmData getDepConfirm(String action, String fromClan, String toClan) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT action, from_clan, to_clan, requested_at FROM clan_dep_confirms WHERE action = ? AND from_clan = ? AND to_clan = ?")) {
+            ps.setString(1, action);
+            ps.setString(2, fromClan);
+            ps.setString(3, toClan);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return new DepConfirmData(rs.getString("action"), rs.getString("from_clan"),
+                        rs.getString("to_clan"), rs.getLong("requested_at"));
+            }
+        } catch (Exception e) { return null; }
+    }
+
+    public static DepConfirmData getAnyDepConfirm(String clanKey) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT action, from_clan, to_clan, requested_at FROM clan_dep_confirms WHERE from_clan = ? OR to_clan = ?")) {
+            ps.setString(1, clanKey);
+            ps.setString(2, clanKey);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return new DepConfirmData(rs.getString("action"), rs.getString("from_clan"),
+                        rs.getString("to_clan"), rs.getLong("requested_at"));
+            }
+        } catch (Exception e) { return null; }
+    }
+
+    public static boolean removeDepConfirm(String action, String fromClan, String toClan) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "DELETE FROM clan_dep_confirms WHERE action = ? AND from_clan = ? AND to_clan = ?")) {
+            ps.setString(1, action);
+            ps.setString(2, fromClan);
+            ps.setString(3, toClan);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) { return false; }
+    }
+
+    private static void deleteDepConfirms(String clanKey) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "DELETE FROM clan_dep_confirms WHERE from_clan = ? OR to_clan = ?")) {
+            ps.setString(1, clanKey);
+            ps.setString(2, clanKey);
+            ps.executeUpdate();
+        } catch (Exception ignored) {}
+    }
     // ============================================================
     // DEPENDENCIES
     // ============================================================

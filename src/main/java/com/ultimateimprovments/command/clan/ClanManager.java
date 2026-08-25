@@ -23,6 +23,9 @@ public final class ClanManager {
     public static final String CONFIRM_LEAVE = "leave";
     public static final String CONFIRM_TRANSFER = "transfer";
     public static final String CONFIRM_DEP_DISBAND = "dep_disband";
+    public static final String CONFIRM_DEP_REMOVE = "dep_remove";
+    public static final String CONFIRM_ADMEDIT_REMOVE = "admedit_remove";
+    public static final String CONFIRM_ADMEDIT_KICK = "admedit_kick";
 
     /** A pending confirmation: action + expiry timestamp. */
     public record ConfirmRequest(String action, long expiresAt) {}

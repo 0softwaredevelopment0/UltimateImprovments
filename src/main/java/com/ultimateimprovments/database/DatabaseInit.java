@@ -739,6 +739,28 @@ public class DatabaseInit {
                 PRIMARY KEY (from_clan, to_clan)
             );"""); } catch (Exception ignored) {}
 
+            // Clan invites (add player via request system)
+            try { st.execute("""
+                CREATE TABLE IF NOT EXISTS clan_invites (
+                    clan_name TEXT NOT NULL,
+                    player_uuid TEXT NOT NULL,
+                    player_name TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'member',
+                    invited_by TEXT NOT NULL,
+                    requested_at INTEGER NOT NULL,
+                    PRIMARY KEY (clan_name, player_uuid)
+                );"""); } catch (Exception ignored) {}
+
+            // Dependency confirmation requests (depremove / depdisband)
+            try { st.execute("""
+                CREATE TABLE IF NOT EXISTS clan_dep_confirms (
+                    action TEXT NOT NULL,
+                    from_clan TEXT NOT NULL,
+                    to_clan TEXT NOT NULL,
+                    requested_at INTEGER NOT NULL,
+                    PRIMARY KEY (action, from_clan, to_clan)
+                );"""); } catch (Exception ignored) {}
+
         // =========================
         // 🗳 VOTES
         // =========================
