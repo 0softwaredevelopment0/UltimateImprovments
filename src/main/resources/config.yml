@@ -878,6 +878,17 @@ radiation:
   space_radiation: 199
   # Space radiation interval in ticks (200 = 10 seconds)
   space_interval_ticks: 200
+sunburn:
+  # Whether sunburn mechanics are enabled
+  # Players take damage from sunlight in the Overworld if no blocks above them
+  enabled: true
+  # Amount of damage dealt to players exposed to sunlight
+  damage_amount: 1.0
+  # Interval in ticks between sunburn damage (80 = 4 seconds)
+  damage_interval_ticks: 80
+  # How many integrity uses a helmet absorbs per sunburn tick
+  helmet_integrity_loss: 1
+
 netherite_upgrade:
   base_values:
     # Base attribute values used to compute the upgrade lore

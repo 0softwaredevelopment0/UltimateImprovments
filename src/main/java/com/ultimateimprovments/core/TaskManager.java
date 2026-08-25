@@ -11,6 +11,7 @@ import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCleanupTask
 import com.ultimateimprovments.combat.weapons.plasma.PlasmaProjectileTask;
 import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationTask;
+import com.ultimateimprovments.mechanics.environment.sunburn.SunburnTask;
 import com.ultimateimprovments.listener.FishingListener;
 import com.ultimateimprovments.server.EmergencyEntitiesKill;
 import com.ultimateimprovments.server.RedstoneGuardTask;
@@ -37,6 +38,7 @@ public class TaskManager {
     private BukkitTask reactorTask;
     private BukkitTask lightTask;
     private BukkitTask radiationTask;
+    private BukkitTask sunburnTask;
     private BukkitTask fishingTask;
     private BukkitTask codePanelCleanupTask;
 
@@ -69,6 +71,7 @@ public class TaskManager {
         gunTask = new PlasmaProjectileTask().runTaskTimer(plugin, 1L, 1L);
         // ReactorTask now managed by ReactorModule
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
+        sunburnTask = new SunburnTask().runTaskTimer(plugin, 0L, 1L);
         // FishingListener — singleton. On cancel() we reset its internal task
         // via resetBukkitRunnableTask(), so .runTaskTimer() won't fail with "Already scheduled".
         fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
@@ -144,6 +147,7 @@ public class TaskManager {
         if (gunTask != null) gunTask.cancel();
         if (reactorTask != null) reactorTask.cancel();
         if (radiationTask != null) radiationTask.cancel();
+        if (sunburnTask != null) sunburnTask.cancel();
         if (fishingTask != null) {
             fishingTask.cancel();
             // Reset the internal BukkitRunnable task after cancel(),

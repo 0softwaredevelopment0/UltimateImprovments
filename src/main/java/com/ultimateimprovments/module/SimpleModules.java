@@ -76,6 +76,7 @@ import com.ultimateimprovments.mechanics.environment.magnet.MagnetConfig;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetEventListener;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
+import com.ultimateimprovments.mechanics.environment.sunburn.SunburnManager;
 import com.ultimateimprovments.mechanics.features.blocks.BlockDmgManager;
 import com.ultimateimprovments.mechanics.features.blocks.BoostedCobwebManager;
 import com.ultimateimprovments.mechanics.features.blocks.ContainerTriggerManager;
