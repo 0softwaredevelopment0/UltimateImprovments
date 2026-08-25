@@ -424,12 +424,12 @@ features:
 
     # Название пузырька (MiniMessage). {level} — множитель.
     # Name of the upgraded XP bottle item
-    item_name: "<yellow>Experience bottle<gold>x{level}</gold></yellow>"
+    item_name: "<i:false><yellow>Experience bottle <gold>x{level}</gold></yellow>"
 
     # Строки лора (MiniMessage). {level} — множитель, {next} — следующий уровень.
     item_lore:
-      - "<gray>Gives <aqua>{level}</aqua> times more experience.</gray>"
-      - "<dark_gray>{level} + {level} = <aqua>x{next}</aqua> on an anvil.</dark_gray>"
+      - "<i:false><gray>Gives <aqua>{level}</aqua> times more experience.</gray>"
+      - "<i:false><dark_gray>{level} + {level} = <aqua>x{next}</aqua> on an anvil.</dark_gray>"
 
   glassbreak:
     # Whether glass break damage is enabled

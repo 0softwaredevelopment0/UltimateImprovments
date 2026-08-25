@@ -29,7 +29,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
-  "parent": "ui:datapack/were_shutting_down",
+  "parent": "ui:datapack/halt_the_plugin",
   "criteria": {
     "1": {
       "trigger": "minecraft:impossible",

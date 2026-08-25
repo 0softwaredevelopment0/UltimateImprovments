@@ -7,7 +7,7 @@ import org.bukkit.advancement.Advancement;
 import org.bukkit.entity.Player;
 
 /**
- * We're shutting down! — grants the {@code ui:datapack/were_shutting_down}
+ * We're shutting down! — grants the {@code ui:datapack/halt_the_plugin}
  * achievement to every player who is online when the server initiates a
  * shutdown. The Bukkit/Paper API has no shutdown event, so this is hooked
  * from {@link com.ultimateimprovments.core.Main#onDisable()} (which the
@@ -16,7 +16,7 @@ import org.bukkit.entity.Player;
 public final class ShutdownListener {
 
     /** The datapack advancement key (parent: {@code ui:datapack/server_overload}). */
-    private static final NamespacedKey ADVANCEMENT = new NamespacedKey("ui", "datapack/were_shutting_down");
+    private static final NamespacedKey ADVANCEMENT = new NamespacedKey("ui", "datapack/halt_the_plugin");
 
     private ShutdownListener() {}
 

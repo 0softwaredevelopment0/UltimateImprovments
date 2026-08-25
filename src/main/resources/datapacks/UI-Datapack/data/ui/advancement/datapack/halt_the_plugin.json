@@ -5,7 +5,7 @@
       "count": 1
     },
     "title": {
-      "text": "We're shutting down!",
+      "text": "Half the plugin",
       "type": "text",
       "color": "red",
       "bold": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Stay on the server while it's shutting down",
+      "text": "Stay on the server while this plugin to halt.",
       "type": "text",
       "color": "gray",
       "bold": false,

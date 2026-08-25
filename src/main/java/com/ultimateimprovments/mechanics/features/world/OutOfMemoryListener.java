@@ -19,7 +19,7 @@ import org.bukkit.entity.Player;
  */
 public final class OutOfMemoryListener {
 
-    /** The datapack advancement key (parent: {@code ui:datapack/were_shutting_down}). */
+    /** The datapack advancement key (parent: {@code ui:datapack/halt_the_plugin}). */
     private static final NamespacedKey ADVANCEMENT = new NamespacedKey("ui", "datapack/out_of_memory");
 
     /** Sweep interval: 20 ticks (1s). */

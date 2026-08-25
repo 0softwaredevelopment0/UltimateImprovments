@@ -410,9 +410,9 @@
             {
               "function": "minecraft:set_name",
               "name": {
-                "text": "Тяжёлое ядро",
+                "text": "Heavy core",
                 "type": "text",
-                "color": "yellow",
+                "color": "white",
                 "bold": false,
                 "italic": false,
                 "underlined": false,
@@ -427,7 +427,7 @@
               },
               "lore": [
                 {
-                  "text": "Было найдено в Хранилище Испытаний",
+                  "text": "Was finded in Trial Chambers",
                   "type": "text",
                   "color": "gray",
                   "bold": false,
