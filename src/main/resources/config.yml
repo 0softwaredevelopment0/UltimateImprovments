@@ -882,34 +882,22 @@ sunburn:
   # Master toggle - enable/disable the entire sunburn system
   enabled: true
 
-  # --- Fire Effect ---
-  # Duration of fire in ticks applied to exposed players (20 = 1 second)
-  # Fire is refreshed every fire_refresh_interval ticks
-  fire_ticks: 40
+  # How often to check all players for sun exposure (ticks)
+  # 20 = 1 second, 80 = 4 seconds (recommended to avoid lag)
+  check_interval: 80
 
-  # How often to re-apply / refresh the fire effect (ticks)
-  # Lower = more responsive but more CPU usage (20 = 1 second)
-  fire_refresh_interval: 20
+  # Duration of fire applied to exposed players (ticks)
+  # 20 = 1 second. Set equal to or greater than check_interval
+  # so fire stays on continuously while in sunlight
+  fire_ticks: 80
 
-  # --- Extinguish ---
-  # When true, players are immediately extinguished when they leave sunlight
-  # (go underground, night falls, enter water, rain starts, etc.)
-  extinguish_immediately: true
-
-  # --- Weather Checks ---
-  # If true, rain suppresses sunburn (players in rain dont catch fire)
-  check_rain: true
-
-  # If true, thunder storms also suppress sunburn
-  check_thunder: true
-
-  # If true, being submerged in water prevents fire
-  # (Minecraft does this natively, but this ensures it even with plugins)
-  check_water: true
+  # Extinguish player when they leave sunlight (night, underground, etc.)
+  # Minecraft also naturally extinguishes fire in water and rain
+  extinguish_when_safe: true
 
   # --- Helmet Protection ---
-  # How often to degrade helmet durability (ticks) when exposed to sun
-  # Lower = helmet breaks faster (80 = 4 seconds)
+  # How often to degrade helmet durability when exposed to sun (ticks)
+  # While helmet is equipped, player does NOT catch fire
   helmet_degrade_interval: 80
 
   # How many integrity uses a helmet absorbs per degrade tick
