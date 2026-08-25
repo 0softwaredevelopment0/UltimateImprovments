@@ -879,16 +879,46 @@ radiation:
   # Space radiation interval in ticks (200 = 10 seconds)
   space_interval_ticks: 200
 sunburn:
-  # Whether sunburn mechanics are enabled
-  # Players take damage from sunlight in the Overworld if no blocks above them
+  # Master toggle - enable/disable the entire sunburn system
   enabled: true
-  # Amount of damage dealt to players exposed to sunlight
-  damage_amount: 1.0
-  # Interval in ticks between sunburn damage (80 = 4 seconds)
-  damage_interval_ticks: 80
-  # How many integrity uses a helmet absorbs per sunburn tick
+
+  # --- Fire Effect ---
+  # Duration of fire in ticks applied to exposed players (20 = 1 second)
+  # Fire is refreshed every fire_refresh_interval ticks
+  fire_ticks: 40
+
+  # How often to re-apply / refresh the fire effect (ticks)
+  # Lower = more responsive but more CPU usage (20 = 1 second)
+  fire_refresh_interval: 20
+
+  # --- Extinguish ---
+  # When true, players are immediately extinguished when they leave sunlight
+  # (go underground, night falls, enter water, rain starts, etc.)
+  extinguish_immediately: true
+
+  # --- Weather Checks ---
+  # If true, rain suppresses sunburn (players in rain dont catch fire)
+  check_rain: true
+
+  # If true, thunder storms also suppress sunburn
+  check_thunder: true
+
+  # If true, being submerged in water prevents fire
+  # (Minecraft does this natively, but this ensures it even with plugins)
+  check_water: true
+
+  # --- Helmet Protection ---
+  # How often to degrade helmet durability (ticks) when exposed to sun
+  # Lower = helmet breaks faster (80 = 4 seconds)
+  helmet_degrade_interval: 80
+
+  # How many integrity uses a helmet absorbs per degrade tick
   helmet_integrity_loss: 1
 
+  # --- World Exclusions ---
+  # List of world names where sunburn is completely disabled
+  # Example: ["world_nether", "world_the_end", "lobby"]
+  excluded_worlds: []
 netherite_upgrade:
   base_values:
     # Base attribute values used to compute the upgrade lore
