@@ -34,3 +34,6 @@ nul
 node_modules/
 scan_cyrillic.js
 scan_cyrillic.py
+build/
+*.class
+node_modules/
