@@ -1,0 +1,650 @@
+# Anticheat does NOT ban or kick — it only:
+#   log     — writes to console
+#   notify  — notifies admins (perm: ui.anticheat.notify)
+#   setback — teleports back to the last safe position
+# =========================
+anticheat:
+  # Whether this feature is enabled
+  enabled: true
+
+  # Players with this permission fully bypass all checks
+  # Permission that bypasses this check
+  bypass_permission: "ui.anticheat.bypass"
+
+  # Cooldown between actions for one player (ms)
+  # Cooldown between anti-cheat actions, in milliseconds
+  action_cooldown_ms: 100
+
+  # Global actions by VL thresholds
+  actions:
+    log:
+      # Whether the log check is enabled
+      enabled: true
+    notify:
+      # Violation level threshold that triggers the action
+      vl_threshold: 1.0
+    setback:
+      # Violation level threshold that triggers the action
+      vl_threshold: 1.0
+
+  # NMS packet interceptor at the Netty level (before Bukkit events)
+  # Gives more accurate data for movement, CPS and interactions
+  packet:
+    # Whether this feature is enabled
+    enabled: true
+    # Log the injection of each player
+    # Whether packet injections are logged
+    log_inject: false
+
+  # ── COMBAT checks ──
+  combat:
+    killaura:
+      # Whether the killaura check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the killaura check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the killaura check decays
+      vl_decay: 0.5
+      # Maximum angle snap (degrees) considered as an aimbot
+      max_angle_snap: 90.0
+      # Maximum attack angle (degrees) considered valid
+      max_attack_angle: 180.0
+      # Whether attacking multiple targets in one tick is checked
+      check_multi_target: true
+
+    aimbot:
+      # Whether the aimbot check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the aimbot check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the aimbot check decays
+      vl_decay: 0.5
+      # Maximum angle (degrees) for a considered-perfect shot
+      max_angle_for_perfect: 3.0
+      # Maximum allowed rotation speed (degrees per tick)
+      max_rotation_speed: 30.0
+      # Maximum standard deviation of target tracking
+      max_tracking_stddev: 0.5
+      # Minimum tracking samples required for a verdict
+      min_tracking_samples: 5
+
+    fightbot:
+      # Whether the fightbot check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the fightbot check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the fightbot check decays
+      vl_decay: 0.5
+      # Maximum attack interval consistency allowed
+      max_interval_consistency: 0.95
+
+    forcefield:
+      # Whether the forcefield check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the forcefield check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the forcefield check decays
+      vl_decay: 0.5
+      # Maximum attack angle (degrees) considered valid
+      max_attack_angle: 90.0
+
+    aimassist:
+      # Whether the aimassist check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the aimassist check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the aimassist check decays
+      vl_decay: 0.5
+      # Minimum aim consistency allowed
+      min_consistency: 0.85
+
+    fastbow:
+      # Whether the fastbow check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the fastbow check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the fastbow check decays
+      vl_decay: 0.5
+      # Minimum interval between bow shots, in milliseconds
+      min_bow_interval_ms: 1100
+
+    velocity:
+      # Whether the velocity check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the velocity check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the velocity check decays
+      vl_decay: 0.5
+      # Minimum velocity threshold to start checking
+      min_velocity_threshold: 0.1
+      # Minimum expected movement after a hit
+      min_expected_movement: 0.05
+
+    reach:
+      # Whether the reach check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the reach check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the reach check decays
+      vl_decay: 0.5
+      # Maximum allowed attack reach (blocks)
+      max_reach: 3.01
+      # Maximum allowed attack reach in creative mode
+      max_reach_creative: 5.0
+      # Ping compensation added to the reach limit
+      ping_compensation: 0.5
+
+    criticals:
+      # Whether the criticals check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the criticals check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the criticals check decays
+      vl_decay: 0.5
+
+    autoclicker:
+      # Whether the autoclicker check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the autoclicker check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the autoclicker check decays
+      vl_decay: 0.5
+      # Maximum allowed clicks per second
+      max_cps: 20
+      # Maximum click interval consistency allowed
+      max_click_consistency: 0.95
+
+    backtrack:
+      # Whether the backtrack check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the backtrack check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the backtrack check decays
+      vl_decay: 0.5
+      # Maximum allowed distance
+      max_distance: 6.0
+
+    arrowdmg:
+      # Whether the arrowdmg check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the arrowdmg check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the arrowdmg check decays
+      vl_decay: 0.5
+      # Maximum arrow speed considered valid
+      max_arrow_speed: 3.2
+      # Maximum arrow speed considered valid in creative
+      max_arrow_speed_creative: 6.0
+      # Maximum crossbow arrow speed considered valid
+      max_crossbow_speed: 3.5
+
+  # ── MOVEMENT checks ──
+  movement:
+    flight:
+      # Whether the flight check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the flight check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the flight check decays
+      vl_decay: 0.5
+      # Maximum ticks in the air without a jump
+      max_air_ticks: 20
+      # Maximum hover height above the ground (blocks)
+      max_hover_y: 0.1
+      # Maximum horizontal movement speed
+      max_horizontal_speed: 0.5
+      # Expected jump velocity
+      jump_velocity: 0.42
+
+    glide:
+      # Whether the glide check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the glide check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the glide check decays
+      vl_decay: 0.5
+      # Maximum downward glide speed
+      max_glide_speed: -0.05
+      # Minimum glide duration, in ticks
+      min_glide_ticks: 20
+
+    fastfall:
+      # Whether the fastfall check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the fastfall check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the fastfall check decays
+      vl_decay: 0.5
+      # Maximum fall speed
+      max_fall_speed: -3.92
+
+    speed:
+      # Whether the speed check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the speed check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the speed check decays
+      vl_decay: 0.5
+      # Maximum ground movement speed
+      max_speed_ground: 0.4
+      # Maximum air movement speed
+      max_speed_air: 0.4
+      # Minimum jump height
+      min_jump_height: 0.05
+      # Sprint jump speed multiplier
+      sprint_jump_speed_multiplier: 1.3
+
+    alljumps:
+      # Whether the alljumps check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the alljumps check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the alljumps check decays
+      vl_decay: 0.5
+      # Minimum jump velocity
+      min_jump_velocity: 0.42
+      # Maximum air jumps allowed
+      max_air_jumps: 0
+
+    clip:
+      # Whether the clip check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the clip check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the clip check decays
+      vl_decay: 0.5
+      # Maximum clipping distance (blocks)
+      max_clip_distance: 10.0
+      # Whether passable blocks are checked for clipping
+      check_passable_blocks: true
+
+    teleport:
+      # Whether the teleport check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the teleport check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the teleport check decays
+      vl_decay: 0.5
+      # Maximum horizontal teleport distance
+      max_horizontal_distance: 20.0
+      # Maximum vertical teleport distance
+      max_vertical_distance: 100.0
+
+    nofall:
+      # Whether the nofall check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the nofall check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the nofall check decays
+      vl_decay: 0.5
+      # Minimum fall distance
+      min_fall_distance: 3.0
+
+    spider:
+      # Whether the spider check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the spider check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the spider check decays
+      vl_decay: 0.5
+      # Minimum climb speed
+      min_climb_speed: 0.1
+      # Minimum climb duration, in ticks
+      min_climb_ticks: 10
+
+    jesus:
+      # Whether the jesus check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the jesus check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the jesus check decays
+      vl_decay: 0.5
+      # Minimum time walking on water, in ticks
+      min_water_walk_ticks: 15
+
+    fastladder:
+      # Whether the fastladder check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the fastladder check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the fastladder check decays
+      vl_decay: 0.5
+      # Maximum upward climb speed
+      max_climb_speed_up: 0.25
+      # Maximum downward climb speed
+      max_climb_speed_down: -0.15
+
+    timer:
+      # Whether the timer check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the timer check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the timer check decays
+      vl_decay: 0.5
+      # Maximum packets per second
+      max_packets_per_second: 60
+      # Time window, in milliseconds
+      window_ms: 1000
+
+    blink:
+      # Whether the blink check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the blink check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the blink check decays
+      vl_decay: 0.5
+      # Maximum silence duration, in milliseconds
+      max_silence_ms: 2000
+      # Minimum jump distance
+      min_jump_distance: 3.0
+
+    step:
+      # Whether the step check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the step check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the step check decays
+      vl_decay: 0.5
+      # Maximum step height
+      max_step_height: 0.6
+
+    derp:
+      # Whether the derp check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the derp check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the derp check decays
+      vl_decay: 0.5
+      # Minimum pitch (degrees)
+      min_pitch: -90.0
+      # Maximum pitch (degrees)
+      max_pitch: 90.0
+      # Maximum yaw change allowed
+      max_yaw_delta: 180.0
+
+    fasteat:
+      # Whether the fasteat check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the fasteat check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the fasteat check decays
+      vl_decay: 0.5
+      # Minimum eating time, in milliseconds
+      min_eat_time_ms: 1500
+
+    foodsprint:
+      # Whether the foodsprint check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the foodsprint check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the foodsprint check decays
+      vl_decay: 0.5
+
+    groundspoof:
+      # Whether the groundspoof check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the groundspoof check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the groundspoof check decays
+      vl_decay: 0.5
+      # Minimum fall distance
+      min_fall_distance: 2.0
+      # Minimum spoofed ground time, in ticks
+      min_spoof_ticks: 5
+
+    movementspoof:
+      # Whether the movementspoof check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the movementspoof check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the movementspoof check decays
+      vl_decay: 0.5
+      # Minimum micro-movement distance
+      min_micro_distance: 0.001
+      # Minimum repeat count before flagging
+      min_repeat_count: 20
+
+    elytra:
+      # Whether the elytra check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the elytra check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the elytra check decays
+      vl_decay: 0.5
+      # Maximum elytra speed
+      max_elytra_speed: 2.0
+      # Maximum upward glide speed with elytra
+      max_glide_up_speed: 0.1
+      # Elytra boost check window, in milliseconds
+      boost_check_window_ms: 1000
+      # Maximum riptide speed
+      riptide_max_speed: 3.5
+      # Maximum riptide climb
+      riptide_climb_limit: 2.0
+
+    verticalmotion:
+      # Whether the verticalmotion check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the verticalmotion check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the verticalmotion check decays
+      vl_decay: 0.5
+      # Maximum ascent speed
+      max_ascent_speed: 0.05
+      # Expected jump velocity
+      jump_velocity: 0.42
+      # Maximum water ascent speed
+      water_ascent_speed: 0.3
+      # Maximum ladder climb speed
+      ladder_climb_speed: 0.25
+      # Maximum riptide ascent speed
+      riptide_ascent_speed: 2.0
+
+    entitymovement:
+      # Whether the entitymovement check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the entitymovement check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the entitymovement check decays
+      vl_decay: 0.5
+      # Maximum entity movement speed
+      max_entity_speed: 1.0
+
+  # ── WORLD checks ──
+  world:
+    fastplace:
+      # Whether the fastplace check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the fastplace check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the fastplace check decays
+      vl_decay: 0.5
+      # Maximum blocks per second
+      max_blocks_per_second: 8
+
+    blockreach:
+      # Whether the blockreach check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the blockreach check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the blockreach check decays
+      vl_decay: 0.5
+      # Maximum allowed attack reach (blocks)
+      max_reach: 5.5
+      # Maximum allowed attack reach in creative mode
+      max_reach_creative: 6.5
+      # Ping compensation added to the reach limit
+      ping_compensation: 0.5
+
+    liquids:
+      # Whether the liquids check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the liquids check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the liquids check decays
+      vl_decay: 0.5
+      # Maximum allowed distance
+      max_distance: 6.0
+
+    scaffold:
+      # Whether the scaffold check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the scaffold check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the scaffold check decays
+      vl_decay: 0.5
+      # Maximum block place speed, in milliseconds
+      max_place_speed_ms: 50
+      # Whether looking down is required
+      require_look_down: false
+
+    tower:
+      # Whether the tower check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the tower check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the tower check decays
+      vl_decay: 0.5
+      # Maximum blocks per second
+      max_blocks_per_second: 5
+      # Maximum Y gained per placed block
+      max_y_per_block: 1.0
+
+    xray:
+      # Whether the xray check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the xray check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the xray check decays
+      vl_decay: 0.5
+      # Minimum ore ratio considered suspicious
+      min_ore_ratio: 0.3
+      # Minimum total blocks needed for the ratio check
+      min_total_blocks: 50
+
+    ghosthand:
+      # Whether the ghosthand check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the ghosthand check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the ghosthand check decays
+      vl_decay: 0.5
+      # Maximum raycast distance
+      max_ray_distance: 6
+      # Whether occluding blocks are checked
+      check_occluding: true
+
+    fastbreak:
+      # Whether the fastbreak check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the fastbreak check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the fastbreak check decays
+      vl_decay: 0.5
+      # Maximum block breaks per second
+      max_breaks_per_second: 8
+
+    bedbreaker:
+      # Whether the bedbreaker check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the bedbreaker check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the bedbreaker check decays
+      vl_decay: 0.5
+      # Maximum beds destroyed per second
+      max_beds_per_second: 2
+
+    airplace:
+      # Whether the airplace check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the airplace check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the airplace check decays
+      vl_decay: 0.5
+      # Maximum trace distance
+      max_trace_distance: 5.0
+
+  # ── MISC checks ──
+  misc:
+    regen:
+      # Whether the regen check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the regen check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the regen check decays
+      vl_decay: 0.5
+      # Minimum regeneration interval, in milliseconds
+      min_regen_interval_ms: 2500
+      # Minimum heal amount
+      min_heal_amount: 1.0
+
+    noswing:
+      # Whether the noswing check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the noswing check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the noswing check decays
+      vl_decay: 0.5
+      # Maximum swing delay, in milliseconds
+      max_swing_delay_ms: 500
+
+    autorespawn:
+      # Whether the autorespawn check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the autorespawn check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the autorespawn check decays
+      vl_decay: 0.5
+      # Minimum respawn delay, in milliseconds
+      min_respawn_delay_ms: 100
+
+    inventorymove:
+      # Whether the inventorymove check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the inventorymove check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the inventorymove check decays
+      vl_decay: 0.5
+      # Minimum inventory move distance
+      min_move_distance: 0.1
+
+    autoloot:
+      # Whether the autoloot check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the autoloot check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the autoloot check decays
+      vl_decay: 0.5
+      # Maximum clicks per second
+      max_clicks_per_second: 20
+
+    portalinventory:
+      # Whether the portalinventory check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the portalinventory check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the portalinventory check decays
+      vl_decay: 0.5
+
+    extrainventory:
+      # Whether the extrainventory check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the extrainventory check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the extrainventory check decays
+      vl_decay: 0.5
+      # Maximum survival inventory slot
+      max_survival_slot: 40
+
+    antihunger:
+      # Whether the antihunger check is enabled
+      enabled: true
+      # Maximum violation level (VL) before the antihunger check flags a player
+      max_vl: 10.0
+      # How fast the violation level (VL) of the antihunger check decays
+      vl_decay: 0.5
+      # Maximum sprint ticks without hunger loss
+      max_sprint_ticks_without_hunger_loss: 100
+      # Maximum jumps without hunger loss
+      max_jumps_without_hunger_loss: 5
+      # Minimum jump height that causes exhaustion

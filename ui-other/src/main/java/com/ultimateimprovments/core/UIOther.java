@@ -2,7 +2,6 @@ package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.SimpleModules;
-import com.ultimateimprovments.module.AntiCheatModule;
 import com.ultimateimprovments.module.meteor.MeteorModule;
 import com.ultimateimprovments.mechanics.features.omniscanner.OmniscannerModule;
 import com.ultimateimprovments.mechanics.protection.ProtectionModule;
@@ -82,7 +81,6 @@ public class UIOther extends JavaPlugin {
         SimpleModules.registerBackground(mm);
         SimpleModules.registerParticle(mm);
         mm.register(new OmniscannerModule());
-        mm.register(new AntiCheatModule());
         SimpleModules.registerStructureIntegrity(mm);
     }
 

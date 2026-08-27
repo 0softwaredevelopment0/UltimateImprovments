@@ -151,7 +151,7 @@ import org.bukkit.scheduler.BukkitTask;
  * {@code onDisable}. Now they're all collected in this single file as anonymous
  * classes grouped by domain — exactly in the order {@code PluginStartup} registered them.
  * <p>
- * Modules with non-trivial logic (Core, Database, Economy, AntiCheat, ...)
+ * Modules with non-trivial logic (Core, Database, Economy)
  * remain separate classes.
  * <p>
  * IMPORTANT: these modules are registered manually via {@code PluginStartup} —
@@ -1403,8 +1403,8 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // SECURITY (Punish and StructureIntegrity — AntiCheat stays a separate class)
-    // Order in PluginStartup: registerPunish → new AntiCheatModule() → registerStructureIntegrity
+    // SECURITY (Punish and StructureIntegrity)
+    // Order in PluginStartup: registerPunish → registerStructureIntegrity
     // --------------------------------------------------------------------------
 
     private static boolean kickCleanupScheduled = false;

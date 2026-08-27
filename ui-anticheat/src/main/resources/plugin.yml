@@ -1,0 +1,6 @@
+name: UI-Anticheat
+version: '1.8.2'
+main: com.ultimateimprovments.module.UIAntiCheat
+api-version: '1.21'
+description: 'Advanced anti-cheat system for UltimateImprovements'
+depend: [UI-Core]

@@ -1,6 +1,6 @@
 package com.ultimateimprovments.mechanics.security.anticheat.movement;
 
-import com.ultimateimprovments.mechanics.features.player.ElytraBoostManager;
+// ElytraBoostManager is a soft dependency (UI-Other) — accessed via reflection
 import com.ultimateimprovments.mechanics.security.anticheat.AntiCheatManager;
 import com.ultimateimprovments.mechanics.security.anticheat.core.*;
 import org.bukkit.Material;
@@ -85,7 +85,11 @@ public class ElytraCheck extends AbstractCheck {
         if (yDelta > climbLimit) {
             boolean hasFirework = player.getInventory().getItemInMainHand().getType() == Material.FIREWORK_ROCKET
                     || player.getInventory().getItemInOffHand().getType() == Material.FIREWORK_ROCKET;
-            boolean wasBoosted = ElytraBoostManager.isRecentlyBoosted(player.getUniqueId(), boostCheckWindowMs);
+            boolean wasBoosted = false;
+            try {
+                Class<?> ebm = Class.forName("com.ultimateimprovments.mechanics.features.player.ElytraBoostManager");
+                wasBoosted = (boolean) ebm.getMethod("isRecentlyBoosted", java.util.UUID.class, long.class).invoke(null, player.getUniqueId(), boostCheckWindowMs);
+            } catch (Exception ignored) {}
 
             if (!hasFirework && !wasBoosted) {
                 CheckResult result = flag(player, 2.5,

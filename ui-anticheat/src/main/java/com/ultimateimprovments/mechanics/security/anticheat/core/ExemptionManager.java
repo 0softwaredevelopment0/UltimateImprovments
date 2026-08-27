@@ -59,7 +59,10 @@ public class ExemptionManager {
         if (player.hasPermission("ui.anticheat.bypass")) return true;
 
         // Being checked by CheckManager
-        if (com.ultimateimprovments.mechanics.security.check.CheckManager.isBeingChecked(player)) return true;
+        try {
+            Class<?> cm = Class.forName("com.ultimateimprovments.mechanics.security.check.CheckManager");
+            if ((boolean) cm.getMethod("isBeingChecked", org.bukkit.entity.Player.class).invoke(null, player)) return true;
+        } catch (Exception ignored) {}
 
         // Riding a vehicle
         if (player.isInsideVehicle()) return true;

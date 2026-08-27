@@ -8,5 +8,6 @@ include(
     'ui-combat',
     'ui-energy',
     'ui-punish',
+    'ui-anticheat',
     'ui-other'
 )
