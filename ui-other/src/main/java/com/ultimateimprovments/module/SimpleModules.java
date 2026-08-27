@@ -1,7 +1,6 @@
 package com.ultimateimprovments.module;
 
 import com.ultimateimprovments.broadcast.AutoBroadcastManager;
-import com.ultimateimprovments.chat.ChatManager;
 import com.ultimateimprovments.command.PowerManager;
 import com.ultimateimprovments.command.vote.VoteManager;
 import com.ultimateimprovments.combat.turret.TurretListener;
@@ -38,7 +37,6 @@ import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.hook.PluginHook;
 import com.ultimateimprovments.listener.BlockBreakListener;
 import com.ultimateimprovments.listener.BlockPlaceListener;
-import com.ultimateimprovments.listener.ChatFilterManager;
 import com.ultimateimprovments.listener.FishingListener;
 import com.ultimateimprovments.listener.MOTDListener;
 import com.ultimateimprovments.listener.MultimeterListener;
@@ -1457,48 +1455,6 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerUtility(ModuleManager mm) {
-        // ChatFilter
-        mm.register(new PluginModule("ChatFilter", "infrastructure/listeners", false) {
-            private ChatFilterManager filterManager;
-
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                filterManager = new ChatFilterManager();
-                main.getServer().getPluginManager().registerEvents(filterManager, main);
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                if (filterManager != null) {
-                    HandlerList.unregisterAll(filterManager);
-                    filterManager = null;
-                }
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                ChatFilterManager.reloadConfigStatic();
-            }
-        });
-
-        // Chat
-        mm.register(new PluginModule("Chat", "chat", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                ChatManager.init();
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                ChatManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                ChatManager.reload();
-            }
-        });
 
         // VoidProtection
         mm.register(new SimpleModule("VoidProtection", "infrastructure/listeners", false) {

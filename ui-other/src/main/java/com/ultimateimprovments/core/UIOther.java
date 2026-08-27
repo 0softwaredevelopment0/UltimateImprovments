@@ -7,6 +7,7 @@ import com.ultimateimprovments.module.meteor.MeteorModule;
 import com.ultimateimprovments.mechanics.features.omniscanner.OmniscannerModule;
 import com.ultimateimprovments.mechanics.protection.ProtectionModule;
 import com.ultimateimprovments.util.ConsoleLogger;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class UIOther extends JavaPlugin {
@@ -42,7 +43,18 @@ public class UIOther extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        ConsoleLogger.info("[UI-Other] All features disabled.");
+        ConsoleLogger.info("[UI-Other] Disabling...");
+
+        // Unregister all listeners registered by this plugin
+        HandlerList.unregisterAll(this);
+
+        // Shutdown all feature modules
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) {
+            mm.shutdownAll();
+        }
+
+        ConsoleLogger.success("[UI-Other] Disabled!");
     }
 
     private void registerAllModules(ModuleManager mm) {
@@ -110,9 +122,8 @@ public class UIOther extends JavaPlugin {
         com.ultimateimprovments.mechanics.security.check.CheckManager.init();
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.mechanics.security.check.CheckListener(), main);
-        com.ultimateimprovments.chat.CmdLogger.init(main);
+
         com.ultimateimprovments.command.clan.ClanFriendlyFireListener.init(main);
-        com.ultimateimprovments.chat.OjmManager.init(main);
 
         // Space
         com.ultimateimprovments.space.SpaceManager.createTable();

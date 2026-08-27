@@ -1,7 +1,7 @@
 package com.ultimateimprovments.chat;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.report.ReportManager;
+
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlaceholderResolver;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -130,24 +130,6 @@ public class ChatManager implements Listener {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
-
-        // MODERATION SESSION
-        if (ReportManager.isInModeration(player)) return;
-
-        // MUTE CHECK
-        if (com.ultimateimprovments.punish.PunishJoinListener.isMuted(player)) {
-            event.setCancelled(true);
-            var muteRecord = com.ultimateimprovments.punish.PunishJoinListener.getMuteRecord(player);
-            if (muteRecord != null) {
-                String durationFmt = muteRecord.isPermanent()
-                        ? "Permanent"
-                        : com.ultimateimprovments.punish.PunishmentMessages.formatTime(muteRecord.getRemainingMs());
-                player.sendMessage(com.ultimateimprovments.punish.PunishmentMessages.buildMuteChatMessage(
-                        muteRecord.punishedBy, muteRecord.reason, durationFmt,
-                        com.ultimateimprovments.punish.PunishmentMessages.getDiscordUrl()));
-            }
-            return;
-        }
 
         if (!enabled) return;
 
