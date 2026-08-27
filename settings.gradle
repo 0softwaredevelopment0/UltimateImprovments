@@ -1,2 +1,8 @@
 rootProject.name = 'UltimateImprovments'
-include 'ui-core', 'ui-other', 'ui-chat'
+
+include(
+    'ui-core',
+    'ui-chat',
+    'ui-clans',
+    'ui-other'
+)

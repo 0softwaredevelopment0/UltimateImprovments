@@ -1,0 +1,7 @@
+name: UI-Clans
+version: ${project.version}
+main: com.ultimateimprovments.clan.UIClans
+api-version: '1.21'
+depend: [UI-Core]
+description: 'Clan system with dependent clans, friendly fire control, and clan homes'
+author: rizer001

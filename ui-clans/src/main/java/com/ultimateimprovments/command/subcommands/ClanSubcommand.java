@@ -6,6 +6,7 @@ import com.ultimateimprovments.command.clan.ClanDatabase;
 import com.ultimateimprovments.command.clan.ClanManager;
 import com.ultimateimprovments.command.clan.ClanRoles;
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.clan.UIClans;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;

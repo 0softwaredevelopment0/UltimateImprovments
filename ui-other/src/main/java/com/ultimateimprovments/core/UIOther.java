@@ -117,7 +117,6 @@ public class UIOther extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.mechanics.security.check.CheckListener(), main);
 
-        com.ultimateimprovments.command.clan.ClanFriendlyFireListener.init(main);
 
         com.ultimateimprovments.space.SpaceManager.createTable();
         com.ultimateimprovments.space.SpaceManager.init(main);
