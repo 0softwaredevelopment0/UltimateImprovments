@@ -1,0 +1,7 @@
+name: UI-Energy
+version: ${project.version}
+main: com.ultimateimprovments.energy.UIEnergy
+api-version: '1.21'
+depend: [UI-Core, UI-Shared]
+description: 'Energy system: generators, cables, reactors, batteries, machines'
+author: rizer001

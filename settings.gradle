@@ -2,8 +2,10 @@ rootProject.name = 'UltimateImprovments'
 
 include(
     'ui-core',
+    'ui-shared',
     'ui-chat',
     'ui-clans',
     'ui-combat',
+    'ui-energy',
     'ui-other'
 )

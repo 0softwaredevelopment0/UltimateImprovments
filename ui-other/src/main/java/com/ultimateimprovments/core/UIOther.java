@@ -54,8 +54,6 @@ public class UIOther extends JavaPlugin {
     }
 
     private void registerAllModules(ModuleManager mm) {
-        SimpleModules.registerEnergy(mm);
-        SimpleModules.registerEnergyMachines(mm);
         SimpleModules.registerMechanics(mm);
         SimpleModules.registerCrafting(mm);
         SimpleModules.registerSudo(mm);
