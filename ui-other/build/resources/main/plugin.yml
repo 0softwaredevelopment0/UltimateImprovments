@@ -1,0 +1,8 @@
+name: UI-Other
+version: 1.8.2
+description: UltimateImprovments — All features add-on
+main: com.ultimateimprovments.core.UIOther
+api-version: '26.2'
+author: rizer001
+depend: [UI-Core]
+softdepend: [PlaceholderAPI, LuckPerms, Vault]

@@ -1,0 +1,10 @@
+name: UI-Core
+version: 1.8.2
+description: UltimateImprovments — Core foundation
+main: com.ultimateimprovments.core.Main
+api-version: '26.2'
+author: rizer001
+load: STARTUP
+softdepend: [PlaceholderAPI, LuckPerms, Vault]
+libraries:
+  - de.mkammerer:argon2-jvm:2.12

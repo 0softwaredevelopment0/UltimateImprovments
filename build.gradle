@@ -1,78 +1,34 @@
-plugins {
-    id 'java'
-    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.21'
-    id 'com.gradleup.shadow' version '9.4.2'
-}
-
+// Root build.gradle — shared config for all subprojects
 group = 'com.ultimateimprovments'
 version = '1.8.2'
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(26)
+subprojects {
+    apply plugin: 'java-library'
+
+    group = 'com.ultimateimprovments'
+    version = rootProject.version
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(26)
+        }
+    }
+
+    repositories {
+        mavenCentral()
+        maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+        maven { url = 'https://jitpack.io' }
+        maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+    }
+
+    processResources {
+        filteringCharset = 'UTF-8'
+        filesMatching('plugin.yml') {
+            expand(project: project)
+        }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
     }
 }
-
-repositories {
-    mavenCentral()
-    maven {
-        url = 'https://repo.papermc.io/repository/maven-public/'
-    }
-    maven {
-        url = 'https://jitpack.io'
-    }
-    maven {
-        url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/'
-    }
-}
-
-dependencies {
-    paperweight.paperDevBundle("26.2.build.+")
-    implementation 'org.xerial:sqlite-jdbc:3.46.1.3'
-    compileOnly 'de.mkammerer:argon2-jvm:2.12'
-    compileOnly ('com.github.MilkBowl:VaultAPI:1.7') {
-        exclude group: 'org.bukkit', module: 'bukkit'
-    }
-    compileOnly 'me.clip:placeholderapi:2.11.6'
-
-    // Unit-tests for pure-logic helpers (no Bukkit needed) — hash round-trip, dedupe, CRLF marker match.
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-    // JUnit 5 >= 5.4 requires explicit platform-launcher; transitively missing in this setup.
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
-    testLogging {
-        events 'passed', 'failed', 'skipped'
-        showStandardStreams = false
-        exceptionFormat = 'full'
-    }
-}
-
-// =========================
-// AUTO-VERSION: version в build.gradle — единственный источник
-// При сборке подставляется в plugin.yml и config.yml
-// =========================
-processResources {
-    filteringCharset = 'UTF-8'
-    filesMatching('plugin.yml') {
-        expand(project: project)
-    }
-    // config.yml не расширяется через expand — там YAML literal block scalars с \p{L}
-    // которые ломают Groovy SimpleTemplateEngine. Версия хардкодная в config.yml.
-}
-
-tasks {
-    assemble {
-        dependsOn(shadowJar)
-    }
-
-    shadowJar {
-        // Shadow jar → build/libs/UltimateImprovments-<version>.jar
-    }
-}
-
-// Paper 26.x (1.21.4+) uses Mojang mappings natively — shadowJar produces production-ready jar.
-// reobfJar is not available in modern Paperweight.
-// Built jar lives in build/libs/ — tracked by git for easy download.

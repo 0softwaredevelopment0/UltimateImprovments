@@ -1,0 +1,142 @@
+package com.ultimateimprovments.core;
+
+import com.ultimateimprovments.module.ModuleManager;
+import com.ultimateimprovments.module.SimpleModules;
+import com.ultimateimprovments.module.AntiCheatModule;
+import com.ultimateimprovments.module.meteor.MeteorModule;
+import com.ultimateimprovments.mechanics.features.omniscanner.OmniscannerModule;
+import com.ultimateimprovments.mechanics.protection.ProtectionModule;
+import com.ultimateimprovments.util.ConsoleLogger;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class UIOther extends JavaPlugin {
+
+    private static UIOther instance;
+
+    public static UIOther getInstance() {
+        return instance;
+    }
+
+    @Override
+    public void onEnable() {
+        instance = this;
+
+        ConsoleLogger.info("");
+        ConsoleLogger.info("===========================================");
+        ConsoleLogger.info("  UI-Other v" + getDescription().getVersion());
+        ConsoleLogger.info("===========================================");
+
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm == null) {
+            ConsoleLogger.error("[UI-Other] UI-Core not loaded! Disabling...");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        registerAllModules(mm);
+        mm.initAll();
+        initPostModuleSystems();
+
+        ConsoleLogger.success("[UI-Other] All features enabled!");
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Other] All features disabled.");
+    }
+
+    private void registerAllModules(ModuleManager mm) {
+        SimpleModules.registerEnergy(mm);
+        SimpleModules.registerEnergyMachines(mm);
+        SimpleModules.registerMechanics(mm);
+        SimpleModules.registerCrafting(mm);
+        SimpleModules.registerSudo(mm);
+        SimpleModules.registerFeatures(mm);
+        mm.register(new MeteorModule());
+        SimpleModules.registerEconomy(mm);
+        SimpleModules.registerAOEEnchantment(mm);
+        SimpleModules.registerAutoSmeltEnchantment(mm);
+        SimpleModules.registerVeinMinerEnchantment(mm);
+        SimpleModules.registerTreeCapitatorEnchantment(mm);
+        SimpleModules.registerFlightEnchantment(mm);
+        SimpleModules.registerMagnetEnchantment(mm);
+        SimpleModules.registerIgnitingEnchantment(mm);
+        SimpleModules.registerLevitationEnchantment(mm);
+        SimpleModules.registerSelfDestructEnchantment(mm);
+        SimpleModules.registerDegradationEnchantment(mm);
+        SimpleModules.registerAttackAoeEnchantment(mm);
+        SimpleModules.registerItemStealingEnchantment(mm);
+        SimpleModules.registerRepairingEnchantment(mm);
+        SimpleModules.registerTurret(mm);
+        SimpleModules.registerProtection(mm);
+        mm.register(new ProtectionModule());
+        SimpleModules.registerUtility(mm);
+        SimpleModules.registerBotProtection(mm);
+        SimpleModules.registerDisplay(mm);
+        SimpleModules.registerMOTD(mm);
+        SimpleModules.registerBackground(mm);
+        SimpleModules.registerParticle(mm);
+        mm.register(new OmniscannerModule());
+        SimpleModules.registerPunish(mm);
+        mm.register(new AntiCheatModule());
+        SimpleModules.registerStructureIntegrity(mm);
+    }
+
+    private void initPostModuleSystems() {
+        Main main = Main.getInstance();
+
+        // Structure
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.structure.StructureChunkListener(), main);
+        com.ultimateimprovments.structure.StructureMarker.loadFromDatabase();
+        com.ultimateimprovments.structure.StructureChunkTracker.load();
+        com.ultimateimprovments.structure.StructureChunkTracker.loadTrackedChunks();
+        com.ultimateimprovments.structure.StructureMarker.migrateLegacyMarkers();
+
+        // Whitelist / Blacklist
+        com.ultimateimprovments.whitelist.OpWhitelistManager.init(main);
+        com.ultimateimprovments.whitelist.WhitelistManager.init(main);
+        com.ultimateimprovments.whitelist.BlacklistManager.init(main);
+
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.listener.WhitelistCommandBlocker(), main);
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.listener.OpCommandBlocker(), main);
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.listener.LuckPermsCommandBlocker(), main);
+
+        com.ultimateimprovments.server.AccessListCheckTask.start(main);
+        com.ultimateimprovments.report.ReportManager.init();
+        com.ultimateimprovments.mechanics.security.check.CheckManager.init();
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.mechanics.security.check.CheckListener(), main);
+        com.ultimateimprovments.chat.CmdLogger.init(main);
+        com.ultimateimprovments.command.clan.ClanFriendlyFireListener.init(main);
+        com.ultimateimprovments.chat.OjmManager.init(main);
+
+        // Space
+        com.ultimateimprovments.space.SpaceManager.createTable();
+        com.ultimateimprovments.space.SpaceManager.init(main);
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.space.SpaceGravityListener(), main);
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.space.SpaceRocketManager(), main);
+        com.ultimateimprovments.space.SpaceRocketManager.registerRecipe(main);
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.space.SpaceOxygenListener(), main);
+        com.ultimateimprovments.space.SpaceOxygenListener.start(main);
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.space.SpaceRadiationListener(), main);
+        com.ultimateimprovments.space.SpaceRadiationListener.start(main);
+
+        // Commands
+        CommandRegistrar.getInstance().registerAll(main);
+        com.ultimateimprovments.command.PluginReloadCommand.init();
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.command.SuicideDeathListener(), main);
+
+        com.ultimateimprovments.structure.StructureChunkListener.scheduleDelayedRebuild(main);
+
+        ConsoleLogger.info("[UI-Other] Post-module systems ready.");
+    }
+}
