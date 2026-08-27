@@ -17,6 +17,9 @@ public class UIChat extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
+        // Save own config.yml (plugins/UI-Chat/config.yml)
+        saveDefaultConfig();
+
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("  UI-Chat v" + getDescription().getVersion());

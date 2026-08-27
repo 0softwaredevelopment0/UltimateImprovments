@@ -63,7 +63,8 @@ public class ChatFilterManager implements Listener {
      *   2. {@code chat_filter.regex_patterns} — complex Java regex expressions (YAML literal block scalars)
      */
     public void reloadConfig() {
-        FileConfiguration cfg = Main.getInstance().getConfig();
+        var chat = com.ultimateimprovments.chat.UIChat.getInstance();
+        FileConfiguration cfg = chat != null ? chat.getConfig() : Main.getInstance().getConfig();
 
         enabled = cfg.getBoolean("chat_filter.enabled", true);
         warningMessage = MessagesManager.getString("chat_filter.message", "");

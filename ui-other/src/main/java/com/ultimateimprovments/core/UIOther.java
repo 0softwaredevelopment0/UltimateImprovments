@@ -22,6 +22,9 @@ public class UIOther extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
+        // Save own config.yml (plugins/UI-Other/config.yml)
+        saveDefaultConfig();
+
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("  UI-Other v" + getDescription().getVersion());
@@ -44,16 +47,9 @@ public class UIOther extends JavaPlugin {
     @Override
     public void onDisable() {
         ConsoleLogger.info("[UI-Other] Disabling...");
-
-        // Unregister all listeners registered by this plugin
         HandlerList.unregisterAll(this);
-
-        // Shutdown all feature modules
         ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) {
-            mm.shutdownAll();
-        }
-
+        if (mm != null) mm.shutdownAll();
         ConsoleLogger.success("[UI-Other] Disabled!");
     }
 
@@ -97,7 +93,6 @@ public class UIOther extends JavaPlugin {
     private void initPostModuleSystems() {
         Main main = Main.getInstance();
 
-        // Structure
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.structure.StructureChunkListener(), main);
         com.ultimateimprovments.structure.StructureMarker.loadFromDatabase();
@@ -105,7 +100,6 @@ public class UIOther extends JavaPlugin {
         com.ultimateimprovments.structure.StructureChunkTracker.loadTrackedChunks();
         com.ultimateimprovments.structure.StructureMarker.migrateLegacyMarkers();
 
-        // Whitelist / Blacklist
         com.ultimateimprovments.whitelist.OpWhitelistManager.init(main);
         com.ultimateimprovments.whitelist.WhitelistManager.init(main);
         com.ultimateimprovments.whitelist.BlacklistManager.init(main);
@@ -125,7 +119,6 @@ public class UIOther extends JavaPlugin {
 
         com.ultimateimprovments.command.clan.ClanFriendlyFireListener.init(main);
 
-        // Space
         com.ultimateimprovments.space.SpaceManager.createTable();
         com.ultimateimprovments.space.SpaceManager.init(main);
         getServer().getPluginManager().registerEvents(
@@ -140,7 +133,6 @@ public class UIOther extends JavaPlugin {
                 new com.ultimateimprovments.space.SpaceRadiationListener(), main);
         com.ultimateimprovments.space.SpaceRadiationListener.start(main);
 
-        // Commands
         CommandRegistrar.getInstance().registerAll(main);
         com.ultimateimprovments.command.PluginReloadCommand.init();
         getServer().getPluginManager().registerEvents(

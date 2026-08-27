@@ -1,0 +1,96 @@
+# UI-Chat configuration
+# Chat channels, pings, filter settings
+
+chat_ping:
+  # Whether chat ping (@name) is enabled
+  enabled: true
+  # Style of the pinged name in chat
+  ping_style: "<underlined><color:#FFAA00>@%s</color></underlined>"
+  # Sound played when a player is pinged
+  sound_name: "ENTITY_EXPERIENCE_ORB_PICKUP"
+  # Volume of the ping sound
+  sound_volume: 0.5
+  # Pitch of the ping sound
+  sound_pitch: 1.5
+
+chat_filter:
+  # Whether the chat filter is enabled
+  enabled: false
+
+  words:
+    - "*блять*"
+    - "*блят*"
+    - "*хуй*"
+    - "*пизда*"
+    - "*еба*"
+    - "*пидр*"
+    - "*таврь*"
+    - "*нахуй*"
+    - "*нахер*"
+    - "*нах"
+
+  regex_patterns:
+    - |
+      .*(?<!\p{L})(?:бля(?:дь|ть|т)|бляд(?:ь|и|ина)|еб(?:ать|ан|лан|уч)|хуй|хуйня|пизд(?:а|ец|еть)|муд(?:ак|ила)|гандон)(?!\p{L}).*
+    - |
+      .*(?<!\p{L})(?:долбо(?:еб|ёб)|идиот|дебил|кретин|имбецил|придурок)(?!\p{L}).*
+    - |
+      .*п[^а-яёa-z0-9]{0,3}и[^а-яёa-z0-9]{0,3}д[^а-яёa-z0-9]{0,3}(?:а|о)?[^а-яёa-z0-9]{0,3}р.*
+    - |
+      .*х[^а-яёa-z0-9]{0,3}у[^а-яёa-z0-9]{0,3}й.*
+    - |
+      .*[А-ЯЁA-Z]{15,}.*
+    - |
+      .*(.)\1{8,}.*
+    - |
+      .*ж[^а-яёa-z0-9]{0,3}[иi1і][^а-яёa-z0-9]{0,3}р(?:н(?:ы(?:й|е|х|м)?|ая|ое)?|уха|ок|дяй)? .*
+
+chat:
+  # Whether the custom chat is enabled
+  enabled: true
+
+  # Chat mode: "static" (single format) or "channels" (local/global/world/private/admin)
+  mode: "channels"
+
+  # ===== STATIC MODE =====
+  # Format used when mode = static
+  # Placeholders: %luckperms_prefix%, %player_name%, %message%, %world_name%, etc.
+  format: "<green>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+  # ===== CHANNELS MODE =====
+  # Each channel has its own format. Player switches with /ui chatchnl <channel>
+  channels:
+    local:
+      # Radius in blocks (only players within this distance see local messages)
+      radius: 100
+      format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    global:
+      format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    world:
+      format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    private:
+      format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    admin:
+      format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+  # Whether player messages are parsed as MiniMessage
+  player_minimessage: true
+
+  # Whether placeholders in messages are resolved
+  message_placeholders: true
+
+  # Permission that bypasses the custom chat format
+  bypass_permission: ""
+
+ojm:
+  enabled: false
+  # Join message
+  join: "<white>[<green>+<white>] <player> <green>joined the game"
+  # Leave message
+  leave: "<white>[<red>-<white>] <player> <red>left the game"
+
+# ══════════════════════════════════════════════════════════════
+# 🚀 SPACE DIMENSION
+# ══════════════════════════════════════════════════════════════
+# Empty void dimension with gravity, radiation, and oxygen mechanics.
+# Players enter via rocket item (craftable) or /ui space command.

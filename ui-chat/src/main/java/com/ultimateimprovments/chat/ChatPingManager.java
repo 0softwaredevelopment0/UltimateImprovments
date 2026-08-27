@@ -55,7 +55,8 @@ public class ChatPingManager {
      * Loads the settings from the config.
      */
     public static void reloadConfig() {
-        FileConfiguration cfg = Main.getInstance().getConfig();
+        var chat = com.ultimateimprovments.chat.UIChat.getInstance();
+        FileConfiguration cfg = chat != null ? chat.getConfig() : Main.getInstance().getConfig();
         enabled = cfg.getBoolean("chat_ping.enabled", true);
         pingStyle = cfg.getString("chat_ping.ping_style",
                 "<underlined><color:#FFAA00>@%s</color></underlined>");

@@ -72,8 +72,13 @@ public class ChatManager implements Listener {
         ChatPingManager.reloadConfig();
     }
 
+    private org.bukkit.configuration.file.FileConfiguration getPluginConfig() {
+        var chat = com.ultimateimprovments.chat.UIChat.getInstance();
+        return chat != null ? chat.getConfig() : Main.getInstance().getConfig();
+    }
+
     private void reloadConfig() {
-        FileConfiguration cfg = Main.getInstance().getConfig();
+        FileConfiguration cfg = getPluginConfig();
 
         this.enabled = cfg.getBoolean("chat.enabled", false);
         this.playerMiniMessage = cfg.getBoolean("chat.player_minimessage", false);
