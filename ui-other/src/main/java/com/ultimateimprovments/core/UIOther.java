@@ -103,7 +103,6 @@ public class UIOther extends JavaPlugin {
                 new com.ultimateimprovments.listener.LuckPermsCommandBlocker(), main);
 
         com.ultimateimprovments.server.AccessListCheckTask.start(main);
-        com.ultimateimprovments.report.ReportManager.init();
         com.ultimateimprovments.mechanics.security.check.CheckManager.init();
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.mechanics.security.check.CheckListener(), main);

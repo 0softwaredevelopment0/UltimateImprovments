@@ -4,7 +4,7 @@ import com.ultimateimprovments.command.CommandErrors;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.mechanics.features.blocks.EnderChestManager;
+// EnderChestManager soft dep (UI-Other)
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -202,7 +202,7 @@ public final class InvseeCommand {
     private static void openEnderSeeGUI(Player viewer, Player target) {
         // Open the target's REAL ender chest — Paper syncs all changes itself.
         // Mark the viewer so EnderChestManager doesn't damage them on close.
-        EnderChestManager.addEnderseeViewer(viewer.getUniqueId());
+        try{Class.forName("com.ultimateimprovments.mechanics.features.blocks.EnderChestManager").getMethod("addEnderseeViewer", java.util.UUID.class).invoke(null, viewer.getUniqueId());}catch(Exception x){}
         viewer.openInventory(target.getEnderChest());
     }
 

@@ -2,7 +2,6 @@ package com.ultimateimprovments.command;
 
 import com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter;
 import com.ultimateimprovments.command.subcommands.*;
-import com.ultimateimprovments.command.home.HomeCommand;
 import com.ultimateimprovments.command.vote.VoteManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
@@ -71,25 +70,17 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 "com/ultimateimprovments/command/subcommands");
 
         // ── SubCommand implementations (newer) ──
-        registry.register(new HelpSubCommand());
-        registry.register(new PdcSubcommand());
         registry.register(new ItemNbtSubcommand());
         registry.register(new ClanSubcommand());
-        registry.register(new SharePosSubcommand());
-        registry.register(new GetPosSubcommand());
         registry.register(new ClearChatSubcommand());
         registry.register(new ChatChannelSubcommand());
         registry.register(new TurretSubcommand());
-        registry.register(new InvseeSubcommand());
-        registry.register(new EnderseeSubcommand());
         registry.register(LegacySubCommandAdapter.of("reload",
                 (s, a) -> ReloadSubcommand.execute(s)));
 
         // ── Legacy adapters with tab-complete ──
         registry.register(LegacySubCommandAdapter.of("money", EconomySubcommand::execute,
                 tc((s, a) -> EconomySubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("chgop", ChgOpSubcommand::execute,
-                tc((s, a) -> ChgOpSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("broadcast", BroadcastSubcommand::execute,
                 tc((s, a) -> BroadcastSubcommand.tabComplete(a)),
                 List.of("bc"))); // /ui bc — compatibility alias
@@ -126,64 +117,33 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("toggleping",
                 (s, a) -> { MiscSubcommand.togglePing(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("swapjar", SwapJarSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("near", NearSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("rtp", RtpSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("meteor", MeteorSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("plugin", PluginSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("report", ReportSubcommand::execute,
-                tc((s, a) -> ReportSubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("reports", ReportsSubcommand::execute,
-                tc((s, a) -> ReportsSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("redstone", RedstoneSubcommand::execute,
                 tc((s, a) -> RedstoneSubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("modreport", ModReportSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("repstatus",
                 (s, a) -> { RepStatusSubcommand.execute(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("check", CheckSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("uncheck",
                 (s, a) -> { CheckSubcommand.uncheck(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("expsplit", ExpSplitSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("cilist",
-                (s, a) -> { CilistCommand.execute(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("togglebind",
                 (s, a) -> { MiscSubcommand.toggleBind(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("toggleradview",
                 (s, a) -> { MiscSubcommand.toggleRadView(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("fly",
                 (s, a) -> { MiscSubcommand.fly(s, a); return true; }));
-        registry.register(LegacySubCommandAdapter.of("flyspeed", FlySpeedSubcommand::execute,
-                tc((s, a) -> FlySpeedSubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("uuid", UuidSubcommand::execute,
-                tc((s, a) -> UuidSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("sudo", SudoSubcommand::execute,
                 tc((s, a) -> SudoSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("execchat", ExecChatSubcommand::execute,
                 tc((s, a) -> ExecChatSubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("god",
-                (s, a) -> { MiscSubcommand.god(s, a); return true; }));
 
         // ── Heal/Feed with tab-complete ──
         var healTc = tc((s, a) -> HealFeedSubcommand.tabComplete(a));
-        registry.register(LegacySubCommandAdapter.of("heal",
-                (s, a) -> { HealFeedSubcommand.heal(s, a); return true; }, healTc));
-        registry.register(LegacySubCommandAdapter.of("feed",
-                (s, a) -> { HealFeedSubcommand.feed(s, a); return true; }, healTc));
 
         // ── Home — consolidated (1 command, 6 aliases) ──
-        registry.register(LegacySubCommandAdapter.of("home",
-                (s, a) -> { HomeCommand.dispatch(s, a); return true; },
-                tc((s, a) -> HomeCommand.tabComplete(s, a)),
-                java.util.List.of("sethome", "delhome", "listhomes", "ophomels", "opdelhome")));
 
         // ── Spawn ──
-        registry.register(LegacySubCommandAdapter.of("setspawn", (s, a) -> {
-            SpawnCommand.dispatch(s, new String[]{"setspawn", a.length > 1 ? a[1] : ""});
-            return true;
-        }));
-        registry.register(LegacySubCommandAdapter.of("spawn", (s, a) -> {
-            SpawnCommand.dispatch(s, new String[]{});
-            return true;
-        }));
 
         // ── Subcommands with additional logic ──
         registry.register(LegacySubCommandAdapter.of("menu", (s, a) -> {

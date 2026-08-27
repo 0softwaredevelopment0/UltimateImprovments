@@ -9,5 +9,6 @@ include(
     'ui-energy',
     'ui-punish',
     'ui-anticheat',
+    'ui-essentials',
     'ui-other'
 )

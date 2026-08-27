@@ -1105,7 +1105,6 @@ bot_protection:
   priority_session_duration: 10
 
 home:
-  # Maximum home points per player
   max_homes: 10
   # Minimum home name length
   name_min_length: 1
@@ -1117,7 +1116,6 @@ home:
   mode: legit
 
 report:
-  # How long reports stay active (e.g. 3d)
   expire_time: "3d"
 
 changedimmension:
@@ -1454,7 +1452,6 @@ enchant:
     - "repairing"
 
 spawn:
-  # Spawn mode: legit or creative
   mode: legit
   # location is filled via /ui setspawn
 
@@ -1467,13 +1464,7 @@ spawn:
 #
       min_jump_height_for_exhaustion: 0.4
 
-# =========================
-# 🎲 RTP — random teleport
-# =========================
-# Disabled by default (on a vanilla server /rtp is a cheat).
-# All parameters are configurable for maximum flexibility.
 rtp:
-  # Whether this feature is enabled
   enabled: false
 
   # Cooldown between uses (sec). 0 = no cooldown.
@@ -1538,13 +1529,7 @@ rtp:
     # Whether teleporting above the void is avoided
     void: true
 
-# =========================
-# 📍 NEAR — find nearby players
-# =========================
-# Disabled by default (on a vanilla server /near is a cheat).
-# Enable it on servers where it is appropriate.
 near:
-  # Whether this feature is enabled
   enabled: false
 
   # Maximum search radius (configurable limit)
