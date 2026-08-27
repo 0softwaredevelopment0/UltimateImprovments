@@ -75,7 +75,6 @@ public class UIOther extends JavaPlugin {
         SimpleModules.registerAttackAoeEnchantment(mm);
         SimpleModules.registerItemStealingEnchantment(mm);
         SimpleModules.registerRepairingEnchantment(mm);
-        SimpleModules.registerTurret(mm);
         SimpleModules.registerProtection(mm);
         mm.register(new ProtectionModule());
         SimpleModules.registerUtility(mm);

@@ -1,0 +1,7 @@
+name: UI-Combat
+version: ${project.version}
+main: com.ultimateimprovments.combat.UICombat
+api-version: '1.21'
+depend: [UI-Core]
+description: 'Weapons, turrets, and projectile system'
+author: rizer001

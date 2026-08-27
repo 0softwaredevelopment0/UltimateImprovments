@@ -4,5 +4,6 @@ include(
     'ui-core',
     'ui-chat',
     'ui-clans',
+    'ui-combat',
     'ui-other'
 )

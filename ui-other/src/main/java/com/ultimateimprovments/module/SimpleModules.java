@@ -3,12 +3,6 @@ package com.ultimateimprovments.module;
 import com.ultimateimprovments.broadcast.AutoBroadcastManager;
 import com.ultimateimprovments.command.PowerManager;
 import com.ultimateimprovments.command.vote.VoteManager;
-import com.ultimateimprovments.combat.turret.TurretListener;
-import com.ultimateimprovments.combat.turret.TurretManager;
-import com.ultimateimprovments.combat.weapons.blazing.BlazingSwordListener;
-import com.ultimateimprovments.combat.weapons.electrictrident.ElectricTridentListener;
-import com.ultimateimprovments.combat.weapons.plasma.GunListener;
-import com.ultimateimprovments.combat.weapons.shoker.ShokerListener;
 import com.ultimateimprovments.core.CommandRegistrar;
 import com.ultimateimprovments.core.DatapackInstaller;
 import com.ultimateimprovments.core.Main;
@@ -234,10 +228,6 @@ public final class SimpleModules {
                 pm.registerEvents(new MultimeterListener(), main);
                 pm.registerEvents(new PluginHideListener(), main);
                 pm.registerEvents(new ServerBrandListener(), main);
-                pm.registerEvents(new ShokerListener(), main);
-                pm.registerEvents(new GunListener(), main);
-                pm.registerEvents(new BlazingSwordListener(), main);
-                pm.registerEvents(new ElectricTridentListener(), main);
                 pm.registerEvents(new ShulkerBulletListener(), main);
                 pm.registerEvents(FishingListener.getInstance(), main);
 
@@ -1377,43 +1367,6 @@ public final class SimpleModules {
         });
     }
 
-    // --------------------------------------------------------------------------
-    // TURRET (end crystal turrets)
-    // --------------------------------------------------------------------------
-
-    public static void registerTurret(ModuleManager mm) {
-        mm.register(new PluginModule("Turret", "combat/turret", false) {
-            private BukkitTask tickTask;
-            private TurretListener listener;
-
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                TurretManager.init();
-                listener = new TurretListener();
-                main.getServer().getPluginManager().registerEvents(listener, main);
-                tickTask = Bukkit.getScheduler().runTaskTimer(main, TurretManager.getInstance()::tick, 0L, 1L);
-                ConsoleLogger.info("[Turret] End crystal turrets initialized (16³ range, 1 dmg/tick, line of sight required).");
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                if (tickTask != null) {
-                    tickTask.cancel();
-                    tickTask = null;
-                }
-                if (listener != null) {
-                    HandlerList.unregisterAll(listener);
-                    listener = null;
-                }
-                TurretManager.shutdown();
-            }
-        });
-    }
-
-    // --------------------------------------------------------------------------
-    // PROTECTION
-    // --------------------------------------------------------------------------
 
     public static void registerProtection(ModuleManager mm) {
         // RedstoneGuard
