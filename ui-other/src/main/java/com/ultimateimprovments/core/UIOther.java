@@ -82,7 +82,6 @@ public class UIOther extends JavaPlugin {
         SimpleModules.registerBackground(mm);
         SimpleModules.registerParticle(mm);
         mm.register(new OmniscannerModule());
-        SimpleModules.registerPunish(mm);
         mm.register(new AntiCheatModule());
         SimpleModules.registerStructureIntegrity(mm);
     }
@@ -97,9 +96,6 @@ public class UIOther extends JavaPlugin {
         com.ultimateimprovments.structure.StructureChunkTracker.loadTrackedChunks();
         com.ultimateimprovments.structure.StructureMarker.migrateLegacyMarkers();
 
-        com.ultimateimprovments.whitelist.OpWhitelistManager.init(main);
-        com.ultimateimprovments.whitelist.WhitelistManager.init(main);
-        com.ultimateimprovments.whitelist.BlacklistManager.init(main);
 
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.listener.WhitelistCommandBlocker(), main);

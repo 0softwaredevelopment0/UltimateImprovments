@@ -7,5 +7,6 @@ include(
     'ui-clans',
     'ui-combat',
     'ui-energy',
+    'ui-punish',
     'ui-other'
 )

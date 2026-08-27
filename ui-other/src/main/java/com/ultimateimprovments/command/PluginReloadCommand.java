@@ -86,23 +86,15 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 (s, a) -> ReloadSubcommand.execute(s)));
 
         // ── Legacy adapters with tab-complete ──
-        registry.register(LegacySubCommandAdapter.of("punish", PunishSubcommand::execute,
-                tc((s, a) -> PunishSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("money", EconomySubcommand::execute,
                 tc((s, a) -> EconomySubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("whitelist", WhitelistSubcommand::execute,
-                tc((s, a) -> WhitelistSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("chgop", ChgOpSubcommand::execute,
                 tc((s, a) -> ChgOpSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("broadcast", BroadcastSubcommand::execute,
                 tc((s, a) -> BroadcastSubcommand.tabComplete(a)),
                 List.of("bc"))); // /ui bc — compatibility alias
-        registry.register(LegacySubCommandAdapter.of("blacklist", BlacklistSubcommand::execute,
-                tc((s, a) -> BlacklistSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("maint", MaintSubcommand::execute,
                 tc((s, a) -> MaintSubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("opwhitelist", OpWhitelistSubcommand::execute,
-                tc((s, a) -> OpWhitelistSubcommand.tabComplete(a))));
 
         // ── Legacy adapters (simple static calls) ──
         registry.register(LegacySubCommandAdapter.of("chgdim", ChgDimSubcommand::execute));

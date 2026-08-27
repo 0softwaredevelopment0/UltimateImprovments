@@ -127,8 +127,6 @@ import com.ultimateimprovments.mechanics.security.auth.AuthManager;
 import com.ultimateimprovments.mechanics.security.botprotect.BotProtectionListener;
 import com.ultimateimprovments.mechanics.security.sudo.SudoCommandInterceptor;
 import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
-import com.ultimateimprovments.punish.PunishJoinListener;
-import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.server.EmergencyEntitiesKill;
 import com.ultimateimprovments.server.PacketGuard;
 import com.ultimateimprovments.server.ProxyServerListener;
@@ -1409,36 +1407,6 @@ public final class SimpleModules {
     // Order in PluginStartup: registerPunish → new AntiCheatModule() → registerStructureIntegrity
     // --------------------------------------------------------------------------
 
-    public static void registerPunish(ModuleManager mm) {
-        // Punish — punishments, whitelist and blacklist
-        mm.register(new SimpleModule("Punish", "infrastructure/punish", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-
-                // Initialize the managers
-                // Whitelist and Blacklist register their own events
-
-                // Register the punishment listener
-                var pm = main.getServer().getPluginManager();
-                pm.registerEvents(new PunishJoinListener(), main);
-
-                // Purge kick records older than 24h at startup, then once per hour
-                // (kicks are logged as active=1 and never expire on their own).
-                // The guard prevents duplicate timers if the module re-initializes.
-                Bukkit.getScheduler().runTaskAsynchronously(main, PunishmentManager::deleteOldKicks);
-                if (!kickCleanupScheduled) {
-                    kickCleanupScheduled = true;
-                    Bukkit.getScheduler().runTaskTimerAsynchronously(main, PunishmentManager::deleteOldKicks,
-                            20L * 60 * 60, 20L * 60 * 60); // first run after 1h, then every 1h
-                }
-
-                ConsoleLogger.info("[PunishModule] Punishment, Whitelist & Blacklist systems initialized.");
-            }
-        });
-    }
-
-    /** Guards against scheduling the kick cleanup timer twice on module re-init. */
     private static boolean kickCleanupScheduled = false;
 
     public static void registerStructureIntegrity(ModuleManager mm) {

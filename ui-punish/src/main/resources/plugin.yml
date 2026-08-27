@@ -1,0 +1,7 @@
+name: UI-Punish
+version: ${project.version}
+main: com.ultimateimprovments.punish.UIPunish
+api-version: '1.21'
+depend: [UI-Core]
+description: 'Punishment system: ban, mute, kick, jail, freeze, whitelist, blacklist'
+author: rizer001
