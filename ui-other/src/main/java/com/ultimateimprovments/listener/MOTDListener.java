@@ -24,7 +24,7 @@ import java.util.UUID;
  * <ul>
  *   <li>enabled — toggle the MOTD on/off</li>
  *   <li>line1 / line2 — MOTD text (MiniMessage)</li>
- *   <li>icon_enabled — whether to show motd.png</li>
+ *   <li>icon_enabled — whether to show server-icon.png</li>
  *   <li>player_list — custom lines instead of the player list</li>
  *   <li>online_counter — controlling the X/Y counter (normal/hide/fixed/percent/add/random)</li>
  * </ul>
@@ -47,11 +47,11 @@ public class MOTDListener implements Listener {
     }
 
     /**
-     * Loads the motd.png icon from the plugin folder.
+     * Loads the server-icon.png icon from the plugin folder.
      * Can be called again to reload (e.g. on /ui reload).
      */
     public void loadIcon() {
-        File iconFile = new File(Main.getInstance().getDataFolder(), "motd.png");
+        File iconFile = new File(Main.getInstance().getDataFolder(), "server-icon.png");
         if (!iconFile.exists()) {
             this.iconLoaded = false;
             this.cachedIcon = null;
@@ -61,9 +61,9 @@ public class MOTDListener implements Listener {
         try {
             this.cachedIcon = Bukkit.getServer().loadServerIcon(iconFile);
             this.iconLoaded = true;
-            ConsoleLogger.info("[MOTD] Loaded server icon: motd.png");
+            ConsoleLogger.info("[MOTD] Loaded server icon: server-icon.png");
         } catch (Exception e) {
-            ConsoleLogger.warn("[MOTD] Failed to load motd.png (must be 64×64 PNG): " + e.getMessage());
+            ConsoleLogger.warn("[MOTD] Failed to load server-icon.png (must be 64×64 PNG): " + e.getMessage());
             this.iconLoaded = false;
             this.cachedIcon = null;
         }
