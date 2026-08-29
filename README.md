@@ -89,7 +89,7 @@ End-crystal turrets: configure via Shift+RMB, whitelist/blacklist targets, fires
 2. **Drop** it into the `plugins/` folder
 3. **Restart** the server twice (first run installs the datapack, second run activates it)
 
-> ⚠ Requires **Paper 26.2+** (or a Leaf fork). Not compatible with Spigot/Bukkit.
+> ⚠ Requires **Paper 26.2+** (or its fork like Purpur). Not compatible with Spigot/Bukkit.
 
 ---
 
