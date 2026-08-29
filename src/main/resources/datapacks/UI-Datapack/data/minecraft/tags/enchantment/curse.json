@@ -1,0 +1,7 @@
+{
+	"replace": false,
+	"values": [
+		"ui:self_destruct",
+		"ui:degradation"
+	]
+}

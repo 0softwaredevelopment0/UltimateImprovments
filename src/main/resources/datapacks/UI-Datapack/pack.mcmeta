@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "description": {
+      "text": "UI Plugin datapack.",
+      "color": "white"
+    },
+    "min_format": 107,
+    "max_format": 107
+  }
+}

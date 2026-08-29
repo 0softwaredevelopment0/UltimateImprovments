@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:logs",
+    "minecraft:coarse_dirt",
+    "minecraft:dirt",
+    "minecraft:grass_block",
+    "minecraft:mud",
+    "minecraft:lime_terracotta",
+    "minecraft:sand",
+    "minecraft:stone",
+    "minecraft:diorite",
+    "minecraft:granite",
+    "minecraft:gravel"
+  ]
+}

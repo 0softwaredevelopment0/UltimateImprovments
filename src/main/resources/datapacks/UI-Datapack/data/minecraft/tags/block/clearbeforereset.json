@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:chipped_anvil",
+    "minecraft:piston_head",
+    "minecraft:piston",
+    "minecraft:damaged_anvil",
+    "minecraft:anvil",
+    "minecraft:sticky_piston",
+    "minecraft:observer"
+  ]
+}

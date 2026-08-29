@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:air",
+    "minecraft:iron_chain",
+    "minecraft:iron_bars",
+    "minecraft:quartz_pillar",
+    "minecraft:chiseled_quartz_block",
+    "minecraft:polished_blackstone_button",
+    "minecraft:leaf_litter"
+  ]
+}
