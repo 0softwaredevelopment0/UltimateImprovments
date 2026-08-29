@@ -72,6 +72,10 @@ chat:
       format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
     admin:
       format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    # Check channel — for a player under an anti-cheat check. Messages go only
+    # to the inspector. Toggled with /ui chatchnl check (requires being checked).
+    check:
+      format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
   # Whether player messages are parsed as MiniMessage
   player_minimessage: true

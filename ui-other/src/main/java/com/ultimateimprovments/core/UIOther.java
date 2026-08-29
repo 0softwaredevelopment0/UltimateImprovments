@@ -49,6 +49,9 @@ public class UIOther extends JavaPlugin {
         HandlerList.unregisterAll(this);
         ModuleManager mm = ModuleManager.getInstance();
         if (mm != null) mm.shutdownAll();
+        // Unfreeze any players still under an anti-cheat check before the plugin
+        // is disabled/reloaded — otherwise they'd be stuck with 0 walk speed.
+        com.ultimateimprovments.mechanics.security.check.CheckManager.shutdown();
         ConsoleLogger.success("[UI-Other] Disabled!");
     }
 

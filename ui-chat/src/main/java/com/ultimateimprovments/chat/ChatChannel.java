@@ -20,7 +20,14 @@ public enum ChatChannel {
     PRIVATE("private", "ui.chat.channel.private"),
 
     /** Admin chat — visible only to players with ui.chat.channel.admin permission. */
-    ADMIN("admin", "ui.chat.channel.admin");
+    ADMIN("admin", "ui.chat.channel.admin"),
+
+    /**
+     * Check channel — for a player under an anti-cheat check: messages go ONLY to
+     * the inspector (moderator). Toggled via {@code /ui chatchnl check} and only
+     * allowed while the player is actually being checked.
+     */
+    CHECK("check", "ui.chat.channel.check");
 
     private final String configKey;
     private final String permission;

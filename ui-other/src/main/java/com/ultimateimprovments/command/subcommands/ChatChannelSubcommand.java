@@ -5,6 +5,7 @@ import com.ultimateimprovments.chat.ChatManager;
 import com.ultimateimprovments.chat.PlayerChannelManager;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.command.SubCommand;
+import com.ultimateimprovments.mechanics.security.check.CheckManager;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -59,7 +60,28 @@ public final class ChatChannelSubcommand implements SubCommand {
         if (channel == null) {
             player.sendMessage(MessageUtil.parse(
                     "<red>\u274c Unknown channel: </red><yellow>" + channelName + "</yellow>"
-                    + "<gray>. Available: </gray><white>local, global, world, private, admin</white>"));
+                    + "<gray>. Available: </gray><white>local, global, world, private, admin, check</white>"));
+            return true;
+        }
+
+        // Check channel — for a player under an anti-cheat check: toggle it so their
+        // messages go ONLY to the inspector. Requires the base command permission and
+        // being actually checked (a normal player or moderator off-check can't enable it).
+        if (channel == ChatChannel.CHECK) {
+            if (!CheckManager.isBeingChecked(player)) {
+                player.sendMessage(MessageUtil.parse(
+                        "<red>\u274c You are not under a check — you can't use the check channel.</red>"));
+                return true;
+            }
+            if (PlayerChannelManager.getChannel(player) == ChatChannel.CHECK) {
+                PlayerChannelManager.setChannel(player, ChatChannel.GLOBAL);
+                player.sendMessage(MessageUtil.parse(
+                        "<green>\u2714</green> <white>Check channel <red>off</red> — chat restored.</white>"));
+            } else {
+                PlayerChannelManager.setChannel(player, ChatChannel.CHECK);
+                player.sendMessage(MessageUtil.parse(
+                        "<green>\u2714</green> <white>Check channel <red>on</red> — messages go only to the inspector.</white>"));
+            }
             return true;
         }
 
@@ -107,7 +129,7 @@ public final class ChatChannelSubcommand implements SubCommand {
         player.sendMessage(MessageUtil.parse(
                 "<yellow>Usage: </yellow><white>/ui chatchnl &lt;channel&gt; [player]</white>"));
         player.sendMessage(MessageUtil.parse(
-                "<gray>Channels: </gray><white>local, global, world, private, admin</white>"));
+                "<gray>Channels: </gray><white>local, global, world, private, admin, check</white>"));
     }
 
     @Override

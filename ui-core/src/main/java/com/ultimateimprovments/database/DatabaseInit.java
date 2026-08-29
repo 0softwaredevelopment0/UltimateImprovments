@@ -288,6 +288,45 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 📦 UI STATE — generic key/value store for in-memory user data
+        // that must survive a server restart (chat prefs, check state, etc.)
+        // Namespaced so multiple systems can share one table without collisions.
+        // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS ui_state (
+                    namespace TEXT NOT NULL,
+                    state_key TEXT NOT NULL,
+                    state_value TEXT NOT NULL,
+                    updated_at INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY(namespace, state_key)
+                );
+            """);
+
+            st.execute("""
+                CREATE INDEX IF NOT EXISTS idx_ui_state_namespace
+                ON ui_state(namespace);
+            """);
+
+        // =========================
+        // 🔎 ACTIVE CHECKS — anti-cheat checks that survive a server restart
+        // =========================
+            st.execute("""
+                CREATE TABLE IF NOT EXISTS active_checks (
+                    inspector_uuid TEXT PRIMARY KEY,
+                    inspector_name TEXT NOT NULL DEFAULT '',
+                    suspect_uuid TEXT NOT NULL,
+                    suspect_name TEXT NOT NULL DEFAULT '',
+                    inspector_world TEXT NOT NULL DEFAULT '',
+                    inspector_x INTEGER NOT NULL DEFAULT 0,
+                    inspector_y INTEGER NOT NULL DEFAULT 0,
+                    inspector_z INTEGER NOT NULL DEFAULT 0,
+                    inspector_yaw FLOAT NOT NULL DEFAULT 0,
+                    inspector_pitch FLOAT NOT NULL DEFAULT 0,
+                    started_at INTEGER NOT NULL DEFAULT 0
+                );
+            """);
+
+        // =========================
         // 🔑 CODE PANEL KEYS
         // =========================
             st.execute("""

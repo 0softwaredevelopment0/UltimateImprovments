@@ -1140,6 +1140,42 @@ messages:
 
 # === LOCALIZED MESSAGES (EN) ===
 messages_en:
+  # ===== Anti-cheat check (/ui check, /ui uncheck) — English defaults =====
+  check:
+    commands_blocked: "<red>❌ <white>You are under check! Commands are disabled.</white>"
+    start:
+      cannot_check_self: "<red>❌ You cannot check yourself!</red>"
+      already_checking: "<red>❌ You already have an active check!</red>"
+      already_checked: "<red>❌ This player is already being checked!</red>"
+    end:
+      not_checking: "<red>❌ You are not checking this player!</red>"
+      no_active: "<red>❌ You don't have an active check!</red>"
+    title:
+      title: "<red>Verification"
+      subtitle: "<white>All instructions are in the chat"
+    suspect:
+      separator: "<gray>━━━━━━━━━━━━━━━━━━━━━"
+      inspector: "<white>Inspector: <yellow>%inspector%"
+      unknown_inspector: "Unknown"
+      no_move: "<gray>You cannot move or interact with anything"
+      until_done: "<gray>until the check is complete."
+      mod_info: "<gray>If you have any prohibited modifications —"
+      disable_now: "<gray>disable them now. It is in your best interest."
+      completed: "<green>✔ <white><bold>CHECK COMPLETE!"
+      interrupted: "<yellow>⚠ <white><bold>CHECK INTERRUPTED!"
+      inspector_left: "<white>Inspector disconnected."
+      resumed: "<dark_red>❌ <red><bold>VERIFICATION RESUMED"
+      paused_note: "<gray>Your check was paused while you were offline."
+      frozen_note: "<gray>It has now resumed. You are still frozen."
+    inspector:
+      started: "<green>✔</green> <white>Check started for</white> <yellow>%suspect%</yellow><white>.</white>"
+      howto: "<gray>Use </gray><white>/ui uncheck %suspect%</white><gray> when finished.</gray>"
+      ended: "<green>✔</green> <white>Check ended for</white> <yellow>%suspect%</yellow><white>.</white>"
+      returned: "<gray>You have been teleported back to your original location.</gray>"
+      suspect_left: "<yellow>⚠</yellow> <white>Checked player</white> <yellow>%suspect%</yellow> <white>disconnected. Check will resume on rejoin.</white>"
+      rejoined: "<green>✔</green> <white>Player</white> <yellow>%suspect%</yellow> <white>rejoined — check resumed automatically.</white>"
+      teleported: "<gray>Teleported to suspect's new location.</gray>"
+
   auth:
     gui:
       # Message related to player registration

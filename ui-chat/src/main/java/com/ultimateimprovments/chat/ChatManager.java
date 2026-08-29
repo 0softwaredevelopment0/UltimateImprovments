@@ -1,6 +1,7 @@
 package com.ultimateimprovments.chat;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.api.CheckBridge;
 
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlaceholderResolver;
@@ -16,6 +17,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
@@ -115,6 +117,9 @@ public class ChatManager implements Listener {
             channelFormats.put(ChatChannel.ADMIN,
                     cfg.getString(basePath + ".admin.format",
                             "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
+            channelFormats.put(ChatChannel.CHECK,
+                    cfg.getString(basePath + ".check.format",
+                            "<green>\u1d04\u1d1c\u1d04\u1d07 <dark_gray>\u00bb<dark_gray>[<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"));
 
             this.localRadius = cfg.getInt(basePath + ".local.radius", 100);
         }
@@ -126,6 +131,12 @@ public class ChatManager implements Listener {
     }
 
     // ========================= EVENT HANDLERS =========================
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onJoin(PlayerJoinEvent event) {
+        // Restore the player's channel + private target from the DB
+        PlayerChannelManager.loadFromDatabase(event.getPlayer());
+    }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
@@ -151,6 +162,14 @@ public class ChatManager implements Listener {
             if (format == null || format.isEmpty()) format = staticFormat;
         } else {
             format = staticFormat;
+        }
+
+        // PRIVATE channel renders with the same style as /msg
+        // (sender sees "You » target", receiver sees "sender » You").
+        if (channel == ChatChannel.PRIVATE) {
+            sendPrivateStyled(player, event.getMessage());
+            event.setCancelled(true);
+            return;
         }
 
         if (format == null || format.isEmpty()) return;
@@ -275,8 +294,44 @@ public class ChatManager implements Listener {
                     }
                 }
             }
+            case CHECK -> {
+                // Messages go ONLY to the inspector (moderator).
+                // If the player is no longer under a check, fall back to global.
+                result.add(sender);
+                CheckBridge bridge = CheckBridge.get();
+                Player inspector = bridge != null ? bridge.getInspector(sender) : null;
+                if (inspector != null && inspector.isOnline()) {
+                    result.add(inspector);
+                } else {
+                    result.addAll(Bukkit.getOnlinePlayers());
+                }
+            }
         }
         return result;
+    }
+
+    // =========================
+    // PRIVATE CHANNEL — rendered like /msg (sender: "You » target", receiver: "sender » You")
+    // =========================
+    private void sendPrivateStyled(Player sender, String raw) {
+        String targetName = PlayerChannelManager.getPrivateTarget(sender);
+        if (targetName == null) {
+            sender.sendMessage(MessageUtil.parse("<red>No private chat target set. Use </red><white>/ui chatchnl private <player></white>"));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(targetName);
+        if (target == null) {
+            sender.sendMessage(MessageUtil.parse("<red>Private chat target is offline.</red>"));
+            return;
+        }
+        String msg = messagePlaceholders ? PlaceholderResolver.resolve(raw, sender) : raw;
+        String escaped = msg.replace("<", "\\<").replace(">", "\\>")
+                .replaceAll("\u00A7[0-9a-fk-orx]", "").replace("\u00A7", "");
+        String senderView = "<white>[<gray>You <yellow>» <gray>" + target.getName() + "<white>] <reset>" + escaped;
+        String targetView = "<white>[<gray>" + sender.getName() + " <yellow>» <gray>You<white>] <reset>" + escaped;
+        sender.sendMessage(MM.deserialize(senderView));
+        target.sendMessage(MM.deserialize(targetView));
+        ConsoleLogger.info("[Private] " + sender.getName() + " → " + target.getName() + ": " + msg);
     }
 
     // ========================= HELPERS =========================

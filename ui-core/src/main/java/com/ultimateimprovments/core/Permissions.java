@@ -174,6 +174,7 @@ public final class Permissions {
     public static final String UI_CHAT_CHANNEL_WORLD = "ui.chat.channel.world";
     public static final String UI_CHAT_CHANNEL_PRIVATE = "ui.chat.channel.private";
     public static final String UI_CHAT_CHANNEL_ADMIN = "ui.chat.channel.admin";
+    public static final String UI_CHAT_CHANNEL_CHECK = "ui.chat.channel.check";
     public static final String UI_GMPROTECT_BYPASS = "ui.gmprotect.bypass";
     public static final String UI_CREATIVE_BYPASS = "ui.creative.bypass";
     public static final String UI_PACKETGUARD_BYPASS = "ui.packetguard.bypass";

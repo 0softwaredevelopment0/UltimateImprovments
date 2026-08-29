@@ -129,6 +129,13 @@ public class LeashManager implements Listener {
         }
         leashProxies.clear();
         proxyUuids.clear();
+        // Restore the walk speed of every immobilized player before clearing
+        // the maps, so on plugin reload/disable nobody is left unable to move.
+        for (UUID uuid : Set.copyOf(immobilizedPlayers)) {
+            Float origSpeed = originalWalkSpeeds.get(uuid);
+            Player p = Bukkit.getPlayer(uuid);
+            if (p != null) p.setWalkSpeed(origSpeed != null ? origSpeed : 0.2f);
+        }
         immobilizedPlayers.clear();
         originalWalkSpeeds.clear();
         pendingLink.clear();
