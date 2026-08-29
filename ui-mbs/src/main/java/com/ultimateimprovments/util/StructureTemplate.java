@@ -1,6 +1,6 @@
 package com.ultimateimprovments.util;
 
-import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mbs.UIMBS;
 import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Location;
@@ -342,7 +342,7 @@ public class StructureTemplate {
     }
 
     private static void loadTemplate(String name, String resourcePath) {
-        try (InputStream is = Main.getInstance().getResource(resourcePath)) {
+        try (InputStream is = UIMBS.getInstance().getResource(resourcePath)) {
             if (is == null) {
                 String err = "Resource not found: " + resourcePath;
                 ConsoleLogger.error("[Structure] " + err);
@@ -354,7 +354,7 @@ public class StructureTemplate {
             templateErrors.remove(name); // clear any previous error on success
         } catch (Exception e) {
             String err = e.getMessage();
-            Main.getInstance().getLogger().log(java.util.logging.Level.SEVERE,
+            UIMBS.getInstance().getLogger().log(java.util.logging.Level.SEVERE,
                     "[Structure] Failed to load template '" + name + "'", e);
             templateErrors.put(name, err != null ? err : e.getClass().getSimpleName());
         }

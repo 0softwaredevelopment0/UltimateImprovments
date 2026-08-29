@@ -11,5 +11,6 @@ include(
     'ui-anticheat',
     'ui-essentials',
     'ui-datapack',
+    'ui-mbs',
     'ui-other'
 )

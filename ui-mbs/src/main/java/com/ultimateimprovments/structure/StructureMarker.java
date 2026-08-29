@@ -1,7 +1,7 @@
 package com.ultimateimprovments.structure;
 
-import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.DatabaseManager;
+import com.ultimateimprovments.mbs.UIMBS;
 import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Chunk;
@@ -235,7 +235,7 @@ public class StructureMarker {
         int imported = 0;
         int removed = 0;
 
-        for (World world : Main.getInstance().getServer().getWorlds()) {
+        for (World world : UIMBS.getInstance().getServer().getWorlds()) {
             String worldUid = world.getUID().toString();
             for (Chunk chunk : world.getLoadedChunks()) {
                 for (Entity entity : chunk.getEntities()) {

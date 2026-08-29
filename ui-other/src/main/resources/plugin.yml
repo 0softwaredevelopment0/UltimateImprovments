@@ -4,5 +4,5 @@ description: UltimateImprovments — All features add-on
 main: com.ultimateimprovments.core.UIOther
 api-version: '26.2'
 author: rizer001
-depend: [UI-Core]
+depend: [UI-Core, UI-MBS]
 softdepend: [PlaceholderAPI, LuckPerms, Vault]

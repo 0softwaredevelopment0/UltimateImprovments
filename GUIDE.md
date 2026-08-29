@@ -37,6 +37,9 @@ This is the complete guide: installation, every command, custom items, enchantme
 > The datapack lives in its own plugin part — **UI-Datapack** (separate `.jar`, depends on UI-Core).
 > Its settings (`datapack.enabled`, `datapack.mode`, `datapack.modules.*`, ...) are configured in `plugins/UI-Datapack/config.yml`.
 
+> Multi-block structures (NBT templates, markers, lightning/magnet mechanics, reactor/generator validation) live in their own part — **UI-MBS** (separate `.jar`, depends on UI-Core).
+> Energy-dependent structure mechanics talk to UI-Energy through the `MbsEnergy` API bridge, so UI-MBS never depends on UI-Energy.
+
 > ⚠ Requires **Paper 26.2+** or a compatible fork (Leaf). Not compatible with Spigot/Bukkit.
 > Java **26+** is required.
 

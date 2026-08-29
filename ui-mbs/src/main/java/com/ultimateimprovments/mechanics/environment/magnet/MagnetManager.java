@@ -1,6 +1,6 @@
 package com.ultimateimprovments.mechanics.environment.magnet;
 
-import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mbs.UIMBS;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.MessageUtil;
 
@@ -137,7 +137,7 @@ public class MagnetManager extends BukkitRunnable {
     // =========================
     // INIT — rebuild from Marker entities (no SQLite)
     // =========================
-    public static void init(Main plugin) {
+    public static void init(org.bukkit.plugin.java.JavaPlugin plugin) {
         instance = new MagnetManager();
         MagnetConfig.reloadConfig();
         rebuildFromMarkers();
@@ -348,15 +348,15 @@ public class MagnetManager extends BukkitRunnable {
         World world = loc.getWorld();
         int sx = loc.getBlockX(), sy = loc.getBlockY(), sz = loc.getBlockZ();
 
-        Bukkit.getScheduler().runTaskAsynchronously(Main.getInstance(), () -> {
+        Bukkit.getScheduler().runTaskAsynchronously(UIMBS.getInstance(), () -> {
             try {
                 Set<Long> connected = floodFillFastSnapshots(world, sx, sy, sz);
 
-                Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                Bukkit.getScheduler().runTask(UIMBS.getInstance(), () ->
                         finishActivation(connected, world, key, player)
                 );
             } catch (Exception e) {
-                Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
+                Bukkit.getScheduler().runTask(UIMBS.getInstance(), () -> {
                     player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error during async scan!"));
                     player.sendMessage(MessageUtil.parse("<gray>Trying sync mode..."));
 

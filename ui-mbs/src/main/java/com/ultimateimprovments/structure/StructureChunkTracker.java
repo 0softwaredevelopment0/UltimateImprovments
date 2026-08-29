@@ -1,7 +1,7 @@
 package com.ultimateimprovments.structure;
 
-import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.DatabaseManager;
+import com.ultimateimprovments.mbs.UIMBS;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -63,7 +63,7 @@ public class StructureChunkTracker {
                 ConsoleLogger.info("[StructureChunkTracker] No saved chunks in DB.");
             }
         } catch (Exception e) {
-            Main.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to load from DB", e);
+            UIMBS.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to load from DB", e);
         }
     }
 
@@ -92,9 +92,9 @@ public class StructureChunkTracker {
                 st.executeBatch();
             }
 
-            Main.getInstance().getLogger().fine("[StructureChunkTracker] Saved " + countTotal() + " chunk positions to SQLite.");
+            UIMBS.getInstance().getLogger().fine("[StructureChunkTracker] Saved " + countTotal() + " chunk positions to SQLite.");
         } catch (Exception e) {
-            Main.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to save to DB", e);
+            UIMBS.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to save to DB", e);
         }
     }
 
@@ -143,7 +143,7 @@ public class StructureChunkTracker {
 
             for (ChunkPos cp : entry.getValue()) {
                 world.loadChunk(cp.x(), cp.z());  // loads the chunk (triggers ChunkLoadEvent)
-                world.addPluginChunkTicket(cp.x(), cp.z(), Main.getInstance());
+                world.addPluginChunkTicket(cp.x(), cp.z(), UIMBS.getInstance());
                 loaded++;
             }
         }
@@ -159,7 +159,7 @@ public class StructureChunkTracker {
         if (world == null) return;
         int cx = blockX >> 4;
         int cz = blockZ >> 4;
-        world.addPluginChunkTicket(cx, cz, Main.getInstance());
+        world.addPluginChunkTicket(cx, cz, UIMBS.getInstance());
     }
 
     // ════════════════════════════════════════
@@ -182,7 +182,7 @@ public class StructureChunkTracker {
         // Remove all plugin chunk tickets from loaded chunks
         for (World world : Bukkit.getWorlds()) {
             for (org.bukkit.Chunk chunk : world.getLoadedChunks()) {
-                world.removePluginChunkTicket(chunk.getX(), chunk.getZ(), Main.getInstance());
+                world.removePluginChunkTicket(chunk.getX(), chunk.getZ(), UIMBS.getInstance());
             }
         }
 
@@ -190,7 +190,7 @@ public class StructureChunkTracker {
              PreparedStatement st = con.prepareStatement("DELETE FROM structure_chunks")) {
             st.executeUpdate();
         } catch (SQLException e) {
-            Main.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to clear DB", e);
+            UIMBS.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to clear DB", e);
         }
     }
 
@@ -198,7 +198,7 @@ public class StructureChunkTracker {
     // MIGRATION — import from the old JSON
     // ════════════════════════════════════════
     private static void migrateFromJson(Connection con) {
-        java.io.File jsonFile = new java.io.File(Main.getInstance().getDataFolder(), "structure-chunks.json");
+        java.io.File jsonFile = new java.io.File(UIMBS.getInstance().getDataFolder(), "structure-chunks.json");
         if (!jsonFile.exists()) return;
 
         // Check whether the DB already has data
@@ -270,7 +270,7 @@ public class StructureChunkTracker {
             jsonFile.delete();
             ConsoleLogger.info("[StructureChunkTracker] Deleted old structure-chunks.json");
         } catch (Exception e) {
-            Main.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to migrate from JSON", e);
+            UIMBS.getInstance().getLogger().log(Level.WARNING, "[StructureChunkTracker] Failed to migrate from JSON", e);
         }
     }
 }

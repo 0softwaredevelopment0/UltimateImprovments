@@ -1,12 +1,10 @@
 package com.ultimateimprovments.mechanics.environment.lightning;
 
-import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mbs.UIMBS;
+import com.ultimateimprovments.mbs.api.MbsEnergy;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
-import com.ultimateimprovments.energy.storage.battery.BatteryManager;
-import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
-import com.ultimateimprovments.energy.transfer.cable.CableNode;
 
 import java.util.UUID;
 
@@ -60,7 +58,7 @@ public class LightningManager implements Listener {
     // =========================
     public static void init() {
         instance = new LightningManager();
-        Bukkit.getPluginManager().registerEvents(instance, Main.getInstance());
+        Bukkit.getPluginManager().registerEvents(instance, UIMBS.getInstance());
         rebuildFromMarkers();
         cacheCookingRecipes();
         startPeriodicItemScan();
@@ -241,7 +239,7 @@ public class LightningManager implements Listener {
                     if (tryCookItem(center, item, stack)) return;
                 }
             }
-        }.runTaskLater(Main.getInstance(), 5L);
+        }.runTaskLater(UIMBS.getInstance(), 5L);
     }
 
     // =========================
@@ -346,7 +344,7 @@ public class LightningManager implements Listener {
                 }
             }
         };
-        periodicScanTask.runTaskTimer(Main.getInstance(), 20L, 20L);
+        periodicScanTask.runTaskTimer(UIMBS.getInstance(), 20L, 20L);
     }
 
     // =========================
@@ -366,21 +364,9 @@ public class LightningManager implements Listener {
     private static boolean hasEnergyForOperation(Location center) {
         Location energyLoc = LightningStructure.getEnergyInputLoc(center);
         if (energyLoc == null) return false;
-
-        for (Location near : LocationUtil.getNeighbors(energyLoc)) {
-            Location norm = LocationUtil.normalize(near);
-            if (norm == null) continue;
-            CableNode node = CableNetwork.getNode(norm);
-            if (node != null && node.getEnergy() >= ENERGY_COST
-                    && LocationUtil.isFullyConnected(energyLoc, norm)) {
-                // Respect the battery mode: take only from DISCHARGE/CHARGE_DISCHARGE
-                BatteryManager.BatteryCluster bc = BatteryManager.getCluster(node.getLocation());
-                if (bc != null && !bc.canDischarge()) continue;
-                node.removeEnergy(ENERGY_COST);
-                return true;
-            }
-        }
-        return false;
+        // Energy consumption is delegated to the UI-Energy bridge (MbsEnergy),
+        // so UI-MBS never depends on the energy module directly.
+        return MbsEnergy.consume(energyLoc, ENERGY_COST);
     }
 
     private static boolean tryCookItem(Location center, Item item, ItemStack stack) {

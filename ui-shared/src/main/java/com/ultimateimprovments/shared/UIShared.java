@@ -6,7 +6,6 @@ import com.ultimateimprovments.space.SpaceGravityListener;
 import com.ultimateimprovments.space.SpaceManager;
 import com.ultimateimprovments.space.SpaceOxygenListener;
 import com.ultimateimprovments.space.SpaceRadiationListener;
-import com.ultimateimprovments.structure.StructureMarker;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -24,8 +23,7 @@ public class UIShared extends JavaPlugin {
             return;
         }
 
-        // StructureMarker — load from DB
-        StructureMarker.loadFromDatabase();
+        // Structure data is owned by UI-MBS — no longer loaded here.
 
         // Recipe reload listener
         Bukkit.getPluginManager().registerEvents(new RecipeRegistry(), main);

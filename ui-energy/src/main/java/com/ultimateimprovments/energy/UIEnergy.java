@@ -64,6 +64,9 @@ public class UIEnergy extends JavaPlugin {
         LightManager.init();
         lightTask = Bukkit.getScheduler().runTaskTimer(main, LightManager::tick, 0L, 1L);
 
+        // Bridge for UI-MBS structure mechanics (lightning cooking energy cost)
+        com.ultimateimprovments.mbs.api.MbsEnergy.register(new MbsEnergyBridge());
+
         getLogger().info("UI-Energy enabled!");
     }
 
@@ -84,6 +87,7 @@ public class UIEnergy extends JavaPlugin {
         GeneratorManager.shutdown();
         ReactorManager.shutdown();
         ElectricFurnaceManager.shutdown();
+        com.ultimateimprovments.mbs.api.MbsEnergy.unregister();
         org.bukkit.event.HandlerList.unregisterAll(this);
         getLogger().info("UI-Energy disabled!");
         instance = null;

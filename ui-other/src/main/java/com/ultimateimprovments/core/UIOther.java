@@ -87,13 +87,10 @@ public class UIOther extends JavaPlugin {
     private void initPostModuleSystems() {
         Main main = Main.getInstance();
 
+        // Structure data (markers, chunk tracking) is owned by UI-MBS —
+        // this listener only wires the structure managers back together.
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.structure.StructureChunkListener(), main);
-        com.ultimateimprovments.structure.StructureMarker.loadFromDatabase();
-        com.ultimateimprovments.structure.StructureChunkTracker.load();
-        com.ultimateimprovments.structure.StructureChunkTracker.loadTrackedChunks();
-        com.ultimateimprovments.structure.StructureMarker.migrateLegacyMarkers();
-
 
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.listener.WhitelistCommandBlocker(), main);
