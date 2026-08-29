@@ -120,14 +120,12 @@ public class StatsTracker extends BukkitRunnable {
         if (samples <= 0 || sampleCount <= 0) return getCurrentTps();
         int count = Math.min(samples, sampleCount);
         double sum = 0;
-        int idx = 0;
         for (int i = 0; i < count; i++) {
             int bufIdx = (sampleCount - 1 - i) % MAX_SAMPLES;
             double val = tpsBuffer[bufIdx];
             sum += Math.min(val, 20.0);
-            idx++;
         }
-        return idx > 0 ? sum / idx : 20.0;
+        return count > 0 ? sum / count : 20.0;
     }
 
     /** Min TPS over N samples */
@@ -170,12 +168,10 @@ public class StatsTracker extends BukkitRunnable {
         if (samples <= 0 || sampleCount <= 0) return getCurrentMspt();
         int count = Math.min(samples, sampleCount);
         double sum = 0;
-        int idx = 0;
         for (int i = 0; i < count; i++) {
             sum += msptBuffer[(sampleCount - 1 - i) % MAX_SAMPLES];
-            idx++;
         }
-        return idx > 0 ? sum / idx : 0;
+        return count > 0 ? sum / count : 0;
     }
 
     /** Min MSPT over N samples */
@@ -216,12 +212,10 @@ public class StatsTracker extends BukkitRunnable {
         if (samples <= 0 || sampleCount <= 0) return getCurrentRam();
         int count = Math.min(samples, sampleCount);
         double sum = 0;
-        int idx = 0;
         for (int i = 0; i < count; i++) {
             sum += ramBuffer[(sampleCount - 1 - i) % MAX_SAMPLES];
-            idx++;
         }
-        return idx > 0 ? sum / idx : 0;
+        return count > 0 ? sum / count : 0;
     }
 
     /** Min RAM % over N samples */
@@ -262,12 +256,10 @@ public class StatsTracker extends BukkitRunnable {
         if (samples <= 0 || sampleCount <= 0) return getCurrentPing();
         int count = Math.min(samples, sampleCount);
         double sum = 0;
-        int idx = 0;
         for (int i = 0; i < count; i++) {
             sum += pingBuffer[(sampleCount - 1 - i) % MAX_SAMPLES];
-            idx++;
         }
-        return idx > 0 ? sum / idx : 0;
+        return count > 0 ? sum / count : 0;
     }
 
     /** Min ping over N samples */
