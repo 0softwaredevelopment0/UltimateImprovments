@@ -8,24 +8,17 @@ dependencies {
     implementation project(':ui-core')
 }
 
-// The bundled UI-Datapack lives in the (legacy) root project's resources.
-// Package it into the UI-Datapack jar (under datapacks/) so DatapackInstaller
-// can extract it into the world's datapacks folder.
-def datapackResources = { copySpec ->
-    copySpec.from("$rootDir/src/main/resources/datapacks") { into("datapacks") }
-}
-
+// The bundled UI-Datapack resources live in this module's own
+// src/main/resources/datapacks/ and are copied into the jar under
+// datapacks/ by the regular processResources task — the path
+// DatapackInstaller extracts from.
 tasks {
     assemble {
         dependsOn(shadowJar)
-    }
-    jar {
-        datapackResources(delegate)
     }
     shadowJar {
         archiveBaseName.set('UI-Datapack')
         archiveVersion.set(project.version.toString())
         configurations = [project.configurations.runtimeClasspath]
-        datapackResources(delegate)
     }
 }
