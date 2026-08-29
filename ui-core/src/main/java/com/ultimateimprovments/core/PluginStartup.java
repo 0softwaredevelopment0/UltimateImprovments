@@ -51,7 +51,6 @@ public class PluginStartup {
         com.ultimateimprovments.util.FileLogger.ensureDirectory(plugin.getDataFolder(), "DataFolder");
         loadConfigFile();
         ConfigIntegrityValidator.validate(plugin);
-        DatapackModules.init(plugin);
         MessagesManager.init(plugin);
         PlaceholderResolver.init();
 
@@ -99,7 +98,7 @@ public class PluginStartup {
     private void checkJavaVersion() {
         try {
             plugin.getClass().getClassLoader().loadClass(
-                    "com.ultimateimprovments.core.DatapackInstaller");
+                    "com.ultimateimprovments.util.FileLogger");
         } catch (IllegalArgumentException e) {
             String msg = e.getMessage() != null ? e.getMessage() : "";
             if (msg.contains("major version")) ConsoleLogger.warn("  Java version may be incompatible!");

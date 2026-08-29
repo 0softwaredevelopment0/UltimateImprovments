@@ -1,6 +1,5 @@
 package com.ultimateimprovments.module;
 
-import com.ultimateimprovments.core.DatapackModules;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 
@@ -19,6 +18,22 @@ public class ModuleManager {
     private final List<PluginModule> modules = new ArrayList<>();
     private final Map<String, PluginModule> moduleMap = new HashMap<>();
     private Main plugin;
+
+    /**
+     * Optional gate installed by the UI-Datapack plugin. When present, modules
+     * bound to a disabled datapack part ({@code datapack.modules.*: false}) are
+     * skipped at registration. When UI-Datapack is not installed, no gate is
+     * active and all modules are registered.
+     */
+    public interface DatapackGate {
+        /** @return the datapack part a module is bound to, or null if none */
+        String partForModule(String moduleName);
+
+        /** Whether the datapack part is enabled (master toggle included). */
+        boolean isPartEnabled(String part);
+    }
+
+    private DatapackGate datapackGate;
 
     public static void init(Main plugin) {
         instance = new ModuleManager();
@@ -41,16 +56,32 @@ public class ModuleManager {
 
         // Datapack module gating: if a datapack part is disabled, skip the code
         // modules bound to it (custom enchantments, achievement listeners, ...).
-        String datapackPart = DatapackModules.getPartForModule(module.getName());
-        if (datapackPart != null && !DatapackModules.isEnabled(datapackPart)) {
-            ConsoleLogger.info("[ModuleManager] Skipping module '" + module.getName()
-                    + "' — datapack module '" + datapackPart
-                    + "' is disabled (datapack.modules." + datapackPart + ": false).");
-            return;
+        // The gate is provided by the UI-Datapack plugin (see setDatapackGate).
+        if (datapackGate != null) {
+            String datapackPart = datapackGate.partForModule(module.getName());
+            if (datapackPart != null && !datapackGate.isPartEnabled(datapackPart)) {
+                ConsoleLogger.info("[ModuleManager] Skipping module '" + module.getName()
+                        + "' — datapack module '" + datapackPart
+                        + "' is disabled (datapack.modules." + datapackPart + ": false).");
+                return;
+            }
         }
 
         modules.add(module);
         moduleMap.put(module.getName(), module);
+    }
+
+    /**
+     * Installs the datapack gate (called by UI-Datapack at startup, before
+     * UI-Other registers its modules).
+     */
+    public void setDatapackGate(DatapackGate gate) {
+        this.datapackGate = gate;
+    }
+
+    /** Removes the datapack gate (called by UI-Datapack on shutdown). */
+    public void clearDatapackGate() {
+        this.datapackGate = null;
     }
 
     // =========================

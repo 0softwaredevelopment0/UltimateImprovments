@@ -4,7 +4,6 @@ import com.ultimateimprovments.broadcast.AutoBroadcastManager;
 import com.ultimateimprovments.command.PowerManager;
 import com.ultimateimprovments.command.vote.VoteManager;
 import com.ultimateimprovments.core.CommandRegistrar;
-import com.ultimateimprovments.core.DatapackInstaller;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.TaskManager;
 import com.ultimateimprovments.database.AsyncAutoSaveManager;
@@ -242,16 +241,6 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerSystem(ModuleManager mm) {
-        // Datapack
-        mm.register(new SimpleModule("Datapack", "infrastructure/core", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                DatapackInstaller.init((Main) plugin);
-                DatapackInstaller.getInstance().install((Main) plugin);
-                // Success is logged inside DatapackInstaller.install()
-            }
-        });
-
         // Power
         mm.register(new SimpleModule("Power", "infrastructure/core", false) {
             @Override

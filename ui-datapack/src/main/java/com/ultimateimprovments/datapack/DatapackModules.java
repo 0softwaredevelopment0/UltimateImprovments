@@ -1,7 +1,9 @@
-package com.ultimateimprovments.core;
+package com.ultimateimprovments.datapack;
 
+import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
 import java.util.List;
@@ -100,10 +102,10 @@ public final class DatapackModules {
     // =========================
 
     /**
-     * Reads the toggles from the config. Called once at startup (PluginStartup),
-     * before any module registration or datapack install.
+     * Reads the toggles from the UI-Datapack config. Called once at startup
+     * (UIDatapack), before any module registration or datapack install.
      */
-    public static void init(Main plugin) {
+    public static void init(JavaPlugin plugin) {
         FileConfiguration cfg = plugin.getConfig();
         masterEnabled = cfg.getBoolean(MASTER_KEY, true);
         mode = cfg.getString(MODE_KEY, MODE_OVERRIDE);
@@ -203,5 +205,25 @@ public final class DatapackModules {
             if (e.getValue().contains(moduleName)) return e.getKey();
         }
         return null;
+    }
+
+    /**
+     * A {@link ModuleManager.DatapackGate} that gates plugin code modules
+     * (enchantments, achievement listeners, ...) by the datapack part they are
+     * bound to. Installed by UI-Datapack so UI-Other skips the modules of
+     * disabled datapack parts.
+     */
+    public static ModuleManager.DatapackGate gate() {
+        return new ModuleManager.DatapackGate() {
+            @Override
+            public String partForModule(String moduleName) {
+                return getPartForModule(moduleName);
+            }
+
+            @Override
+            public boolean isPartEnabled(String part) {
+                return isEnabled(part);
+            }
+        };
     }
 }

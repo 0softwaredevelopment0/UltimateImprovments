@@ -1,0 +1,31 @@
+plugins {
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.21'
+    id 'com.gradleup.shadow' version '9.4.2'
+}
+
+dependencies {
+    paperweight.paperDevBundle("26.2.build.+")
+    implementation project(':ui-core')
+}
+
+// The bundled UI-Datapack lives in the (legacy) root project's resources.
+// Package it into the UI-Datapack jar (under datapacks/) so DatapackInstaller
+// can extract it into the world's datapacks folder.
+def datapackResources = { copySpec ->
+    copySpec.from("$rootDir/src/main/resources/datapacks") { into("datapacks") }
+}
+
+tasks {
+    assemble {
+        dependsOn(shadowJar)
+    }
+    jar {
+        datapackResources(delegate)
+    }
+    shadowJar {
+        archiveBaseName.set('UI-Datapack')
+        archiveVersion.set(project.version.toString())
+        configurations = [project.configurations.runtimeClasspath]
+        datapackResources(delegate)
+    }
+}

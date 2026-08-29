@@ -34,6 +34,9 @@ This is the complete guide: installation, every command, custom items, enchantme
 2. Drop it into `plugins/`.
 3. Restart the server **twice** — the first run installs the bundled datapack, the second activates it.
 
+> The datapack lives in its own plugin part — **UI-Datapack** (separate `.jar`, depends on UI-Core).
+> Its settings (`datapack.enabled`, `datapack.mode`, `datapack.modules.*`, ...) are configured in `plugins/UI-Datapack/config.yml`.
+
 > ⚠ Requires **Paper 26.2+** or a compatible fork (Leaf). Not compatible with Spigot/Bukkit.
 > Java **26+** is required.
 

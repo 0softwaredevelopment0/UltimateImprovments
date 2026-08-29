@@ -1,0 +1,44 @@
+# ============================================================
+# UI-Datapack configuration
+# ============================================================
+# The bundled UI-Datapack is installed as ONE pack, but you can choose which
+# parts of it are loaded on the server. Disabling a part also disables the
+# plugin code features bound to it (custom enchantments, achievements, ...).
+# All parts are enabled by default.
+# NOTE: changes require a full server restart — the datapack is reinstalled
+# and loaded together with the world.
+datapack:
+  # Master toggle: false disables the whole datapack (removes it from the
+  # world datapacks folder) and disables all bound plugin code features.
+  enabled: true
+  # How the datapack is installed on the server:
+  #   override        — always delete the existing UI-Datapack folder and re-extract from the jar
+  #   ignore          — if the UI-Datapack folder already exists, leave it untouched (do not reinstall)
+  #   check-override  — check the world datapack list (level.dat); only reinstall if UI-Datapack
+  #                     is NOT enabled there. If it is already enabled — skip.
+  mode: override
+  # If the datapack is not enabled in the world after install, restart the server
+  # automatically so it gets loaded (40 ticks delay). false = only warn.
+  restart_to_apply: false
+  # Print a console warning (with possible causes and how to enable) if the
+  # datapack is not enabled in the world / could not be enabled.
+  warn_if_not_loaded: true
+  # If the datapack is not enabled in the world, try to enable it automatically
+  # by running /datapack enable "file/UI-Datapack" from the console, then verify.
+  # If it still can't be enabled — the warning above is printed with the error.
+  auto_enable: false
+  modules:
+    # Custom enchantments (ui:*) + their enchantable item tags + curse tag
+    enchantments: true
+    # Custom advancement tree (ui:advancement) + achievement listeners
+    advancements: true
+    # New custom recipes (ui:recipe): chainmail, heavy_core, reinforced deepslate, ...
+    custom_recipes: true
+    # Overrides of vanilla recipes (minecraft:recipe): netherite ingot, bookshelf, ...
+    vanilla_recipes: true
+    # Loot table rebalances (minecraft:loot_table)
+    loot_tables: true
+    # Custom biomes, structures and world generation (minecraft:worldgen, minecraft:structure)
+    worldgen: true
+    # Dimension build limits (minecraft:dimension_type): extended height/depth
+    dimension_limits: true

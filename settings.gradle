@@ -10,5 +10,6 @@ include(
     'ui-punish',
     'ui-anticheat',
     'ui-essentials',
+    'ui-datapack',
     'ui-other'
 )

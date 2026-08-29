@@ -1,10 +1,11 @@
-package com.ultimateimprovments.core;
+package com.ultimateimprovments.datapack;
 
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.FileLogger;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,7 +17,7 @@ public class DatapackInstaller {
 
     private static DatapackInstaller instance;
 
-    public static void init(Main plugin) {
+    public static void init(JavaPlugin plugin) {
         instance = new DatapackInstaller();
     }
 
@@ -103,7 +104,7 @@ public class DatapackInstaller {
     // DATAPACK INSTALL
     // =========================
 
-    public void install(Main plugin) throws Exception {
+    public void install(JavaPlugin plugin) throws Exception {
         File datapacksFolder = findDatapacksFolder();
 
         File targetFolder = new File(datapacksFolder, "UI-Datapack");
@@ -176,7 +177,7 @@ public class DatapackInstaller {
      * warns (config: {@code datapack.warn_if_not_loaded}) and/or
      * auto-restarts the server (config: {@code datapack.restart_to_apply}).
      */
-    private void checkLoaded(Main plugin, boolean loadedBeforeInstall) {
+    private void checkLoaded(JavaPlugin plugin, boolean loadedBeforeInstall) {
         boolean loaded = loadedBeforeInstall || isLoadedInWorld(findWorldRoot());
         if (loaded) {
             ConsoleLogger.info("[Datapack] UI-Datapack is enabled in the world.");
@@ -196,7 +197,7 @@ public class DatapackInstaller {
      * Runs {@code /datapack enable "file/UI-Datapack"} via the console, then re-checks
      * after a short delay whether the world now lists the datapack as enabled.
      */
-    private void attemptAutoEnable(Main plugin) {
+    private void attemptAutoEnable(JavaPlugin plugin) {
         ConsoleLogger.info("[Datapack] datapack.auto_enable: true — running /datapack enable \"file/UI-Datapack\"...");
         try {
             boolean dispatched = Bukkit.dispatchCommand(
@@ -226,7 +227,7 @@ public class DatapackInstaller {
      * Prints the "datapack not enabled" warning (config: {@code datapack.warn_if_not_loaded})
      * and possibly schedules a restart (config: {@code datapack.restart_to_apply}).
      */
-    private void warnNotLoaded(Main plugin) {
+    private void warnNotLoaded(JavaPlugin plugin) {
         if (DatapackModules.isWarnIfNotLoaded()) {
             ConsoleLogger.warn("");
             ConsoleLogger.warn("[Datapack] ⚠ UI-Datapack is NOT enabled in the world!");
@@ -244,7 +245,7 @@ public class DatapackInstaller {
     }
 
     /** Schedules a server restart if {@code datapack.restart_to_apply} is enabled. */
-    private void maybeRestart(Main plugin) {
+    private void maybeRestart(JavaPlugin plugin) {
         if (!DatapackModules.isRestartToApply()) return;
         ConsoleLogger.warn("[Datapack] datapack.restart_to_apply: true — restarting the server to load the datapack...");
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -282,6 +283,22 @@ public class DatapackInstaller {
         }
     }
 
+    /**
+     * Resolves the plugin's own JAR file via the class code source.
+     * {@code JavaPlugin.getFile()} is protected, so it cannot be used directly.
+     */
+    private static File getPluginJar(JavaPlugin plugin) {
+        try {
+            var location = plugin.getClass().getProtectionDomain().getCodeSource().getLocation();
+            if (location != null) {
+                return new File(location.toURI());
+            }
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Datapack] Failed to resolve plugin JAR: " + e.getMessage());
+        }
+        return null;
+    }
+
     private void deleteRecursively(File dir) throws Exception {
         File[] files = dir.listFiles();
         if (files != null) {
@@ -300,9 +317,12 @@ public class DatapackInstaller {
         }
     }
 
-    private void copyFromJar(Main plugin, String resourcePath, File targetDir) throws Exception {
+    private void copyFromJar(JavaPlugin plugin, String resourcePath, File targetDir) throws Exception {
 
-        var jar = plugin.getPluginFile();
+        File jar = getPluginJar(plugin);
+        if (jar == null || !jar.isFile()) {
+            throw new java.io.IOException("Cannot locate the UI-Datapack plugin JAR (code source: " + jar + ")");
+        }
 
         try (ZipFile zip = new ZipFile(jar)) {
 
