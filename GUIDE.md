@@ -30,7 +30,7 @@ This is the complete guide: installation, every command, custom items, enchantme
 
 ## 🚀 Installation
 
-1. Download the `.jar` from [Releases](https://github.com/rizer001/UltimateImprovments/releases).
+1. Download the `.jar` from [Releases](https://github.com/rizer001-Development/UltimateImprovments/releases).
 2. Drop it into `plugins/`.
 3. Restart the server **twice** — the first run installs the bundled datapack, the second activates it.
 
@@ -389,7 +389,7 @@ Stored in the plugin data folder. Main tables: `auth_users`, `auth_sessions`, `c
 ## 🏗️ Building & Updating
 
 ```bash
-git clone https://github.com/rizer001/UltimateImprovments.git
+git clone https://github.com/rizer001-Development/UltimateImprovments.git
 cd UltimateImprovments
 ./gradlew build
 ```
