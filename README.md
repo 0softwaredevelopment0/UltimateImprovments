@@ -146,5 +146,3 @@ The built JAR will be in `build/libs/UltimateImprovments-<version>.jar`. Require
 **GNU AGPL v3** — see [LICENSE](LICENSE). Free use, modification, and distribution allowed.
 
 ---
-
-*Build date: 2026-08-18 | Latest version: 1.8.2*
