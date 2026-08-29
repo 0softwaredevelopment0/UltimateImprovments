@@ -7,7 +7,7 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-26%2B-orange)](https://www.oracle.com/java/)
 [![Server](https://img.shields.io/badge/Paper-26.2%2B-green)](https://papermc.io/)
-[![Version](https://img.shields.io/badge/Version-1.8.2-brightgreen)](https://github.com/rizer001/UltimateImprovments/releases)
+[![Version](https://img.shields.io/badge/Version-1.8.2-brightgreen)](https://github.com/rizer001-Development/UltimateImprovments/releases)
 ![Development status](https://img.shields.io/badge/status-Stable-green)
 
 **Author:** [rizer001](https://github.com/rizer001)
@@ -85,7 +85,7 @@ End-crystal turrets: configure via Shift+RMB, whitelist/blacklist targets, fires
 
 ## 📦 Quick Install
 
-1. **Download** the `.jar` from [Releases](https://github.com/rizer001/UltimateImprovments/releases)
+1. **Download** the `.jar` from [Releases](https://github.com/rizer001-Development/UltimateImprovments/releases)
 2. **Drop** it into the `plugins/` folder
 3. **Restart** the server twice (first run installs the datapack, second run activates it)
 
@@ -132,7 +132,7 @@ All commands start with `/ui`. The full list is in the in-game help (`/ui help`,
 ## 🏗️ Building from Source
 
 ```bash
-git clone https://github.com/rizer001/UltimateImprovments.git
+git clone https://github.com/rizer001-Development/UltimateImprovments.git
 cd UltimateImprovments
 ./gradlew build
 ```
