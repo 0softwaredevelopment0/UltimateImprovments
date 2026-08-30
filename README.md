@@ -1,6 +1,4 @@
-<div align="center">
-
-# ✦ Ultimate Improvments
+# Ultimate Improvments
 
 **A modular, feature-packed Minecraft plugin for Paper 26.2+ (Java 26)**
 
@@ -13,27 +11,25 @@
 **Author:** [rizer001](https://github.com/rizer001)
 **Server:** Paper 26.2+
 **Database:** SQLite
-
----
-
-### 📄 Organization Docs
-
-[![Full Guide](https://img.shields.io/badge/GUIDE-GUIDE.md-blueviolet)](GUIDE.md) · [![Guide](https://img.shields.io/badge/Guide-rizer001--Development-00AEFF)](https://github.com/rizer001-Development/.github/blob/main/GUIDE.md) · [![Contributing](https://img.shields.io/badge/Contributing-rizer001--Development-4CAF50)](https://github.com/rizer001-Development/.github/blob/main/CONTRIBUTING.md) · [![Security](https://img.shields.io/badge/Security-rizer001--Development-D9534F)](https://github.com/rizer001-Development/.github/blob/main/SECURITY.md) · [![Code of Conduct](https://img.shields.io/badge/Code%20of%20Conduct-rizer001--Development-5BC0DE)](https://github.com/rizer001-Development/.github/blob/main/CODE_OF_CONDUCT.md)
 **Build:** Gradle (JDK 26)
 
-</div>
+---
+
+### Organization Docs
+
+[![Full Guide](https://img.shields.io/badge/GUIDE-GUIDE.md-blueviolet)](GUIDE.md) · [![Guide](https://img.shields.io/badge/Guide-rizer001--Development-00AEFF)](https://github.com/rizer001-Development/.github/blob/main/GUIDE.md) · [![Contributing](https://img.shields.io/badge/Contributing-rizer001--Development-4CAF50)](https://github.com/rizer001-Development/.github/blob/main/CONTRIBUTING.md) · [![Security](https://img.shields.io/badge/Security-rizer001--Development-D9534F)](https://github.com/rizer001-Development/.github/blob/main/SECURITY.md) · [![Code of Conduct](https://img.shields.io/badge/Code%20of%20Conduct-rizer001--Development-5BC0DE)](https://github.com/rizer001-Development/.github/blob/main/CODE_OF_CONDUCT.md)
 
 ---
 
-> **Ultimate Improvments** is a monolithic plugin that turns a vanilla server into a full-featured gameplay experience. It's one `.jar` with everything inside: authentication, an energy network, a fusion reactor, radiation, custom items and enchantments, an achievement tree, turrets, protection systems, and 80+ toggleable modules.
+> **Ultimate Improvments** is a modular plugin that turns a vanilla server into a full-featured gameplay experience. It's one `.jar` with everything inside: authentication, an energy network, a fusion reactor, radiation, custom items and enchantments, an achievement tree, turrets, protection systems, and 80+ toggleable modules.
 
-> 📖 **Full documentation:** see [GUIDE.md](GUIDE.md) — commands, items, enchantments, achievements, configuration and more.
+> **Full documentation:** see [GUIDE.md](GUIDE.md) — commands, items, enchantments, achievements, configuration and more.
 
 ---
 
-## ✨ What can you do with it?
+## What can you do with it?
 
-### 🛡 Security & Administration
+### Security & Administration
 - **Auth** — registration/login via Anvil GUI, Argon2id hashing, GitHub 2FA, sessions
 - **Punishments** — ban/mute/kick/warn with temporary and permanent durations, IP/HW scopes, fully customizable MiniMessage screens
 - **Whitelist / Blacklist** — custom, database-driven, independent of the vanilla one
@@ -41,13 +37,13 @@
 - **`/ui invsee` / `/ui endersee`** — view and edit player inventories **even when they're offline** (reads/writes the `.dat` file with automatic backups)
 - **Report system**, sudo mode, command-block tracker, creative item validation
 
-### ⚡ Technology & Machinery
+### Technology & Machinery
 - **Dark Fusion Reactor** — multi-block structure with temperature/pressure/integrity simulation, wear, meltdown
 - **Energy network** — cables, batteries, generators, electric furnace, energy workbench
 - **Custom crafting** — 20+ craftable items (only craftable in a Crafter, preview in the vanilla workbench)
 - **Particle accelerator**, wireless redstone, magnet & lightning structures
 
-### 🗡 Custom Items
+### Custom Items
 | Item | What it does |
 |------|--------------|
 | Blazing Sword | Sets targets on fire, applies burn damage over time |
@@ -60,16 +56,16 @@
 | Lead Shield, Dosimeter, Portable Radar | Radiation tools |
 | Concrete Bucket, Structure Integrity Indicator | Utility |
 
-### ✨ Custom Enchantments (13)
-Attack AoE, Auto Smelt, Vein Miner, TreeCapitator, Flight, Magnet, Igniting, Levitation, Self-Destruct, Degradation, Repairing, Item Stealing, AoE — all with levels up to 255.
+### Custom Enchantments (13)
+Attack AoE, Auto Smelt, Vein Miner, TreeCapitator, Flight, Magnet, Igniting, Levitation, Self-Destruct, Degradation, Repairing, Item Stealing — all with levels up to 255.
 
-### 🏆 Achievements (35+)
+### Achievements (35+)
 A full custom achievement tree in the `ui:` namespace: build the reactor, reach the world height limit, break bedrock, deal 1000 damage with a mace, stay online during a server overload — and a few "meme" ones. Includes **timed challenges** (`/ui advancement start woodcutter|teleport`).
 
-### 🔫 Turrets
+### Turrets
 End-crystal turrets: configure via Shift+RMB, whitelist/blacklist targets, fires damaging beams with line-of-sight checks.
 
-### 📋 Other Highlights
+### Other Highlights
 - Custom chat (per-group/per-world formats, pings), tab, scoreboard (gradients), bossbar, MOTD
 - Item integrity (durability) system with anvil repair and XP mending
 - Radiation system, homes, notes, spawn, RTP, dimension teleportation
@@ -78,23 +74,23 @@ End-crystal turrets: configure via Shift+RMB, whitelist/blacklist targets, fires
 
 ---
 
-## 📦 Quick Install
+## Quick Install
 
 1. **Download** the `.jar` from [Releases](https://github.com/rizer001-Development/UltimateImprovments/releases)
 2. **Drop** it into the `plugins/` folder
 3. **Restart** the server twice (first run installs the datapack, second run activates it)
 
-> ⚠ Requires **Paper 26.2+** (or its fork like Purpur). Not compatible with Spigot/Bukkit.
+> Requires **Paper 26.2+** (or its fork like Purpur). Not compatible with Spigot/Bukkit.
 
 ---
 
-## 🔌 Modular Architecture
+## Modular Architecture
 
 Every feature is a **module** that can be toggled on/off at runtime via `/ui modules`. If one module fails, the rest keep running. Essential modules (Core, Database, Auth, Crafting, Energy, Reactor, ...) are always on; the rest are optional.
 
 ---
 
-## ⌨️ Commands
+## Commands
 
 All commands start with `/ui`. The full list is in the in-game help (`/ui help`, paginated) and in [GUIDE.md](GUIDE.md). A few examples:
 
@@ -111,7 +107,7 @@ All commands start with `/ui`. The full list is in the in-game help (`/ui help`,
 
 ---
 
-## 🔑 Permissions
+## Permissions
 
 | Permission | Description |
 |------------|-------------|
@@ -124,7 +120,7 @@ All commands start with `/ui`. The full list is in the in-game help (`/ui help`,
 
 ---
 
-## 🏗️ Building from Source
+## Building from Source
 
 ```bash
 git clone https://github.com/rizer001-Development/UltimateImprovments.git
@@ -136,8 +132,8 @@ The built JAR will be in `build/libs/UltimateImprovments-<version>.jar`. Require
 
 ---
 
-## 📄 License
+## License
 
 **GNU AGPL v3** — see [LICENSE](LICENSE). Free use, modification, and distribution allowed.
 
----
+---
