@@ -85,16 +85,13 @@ chat:
       enabled: true
       # Nicknames allowed to use the console channel (case-insensitive)
       whitelist: []
-      # Access control: decides which commands may run. Units are evaluated in
-      # order; the first unit whose required patterns match decides the command
-      # (mode whitelist -> allowed, mode blacklist -> denied). If no unit fires,
-      # the command is allowed unless a whitelist unit exists (then it's denied).
-      # A unit can be disabled without deleting it. `condition` references the
-      # combined pattern numbers (wildcards first, then regexes) and can be:
-      #   single-2        only pattern 2 must match
-      #   1-and-3         patterns 1 and 3 must both match
-      #   1-to-3          patterns 1, 2 and 3 must all match
-      #   all             every pattern must match
+      # Access control: decides which commands may run. A unit fires when all
+      # of its required patterns match. BLACKLIST ALWAYS WINS OVER WHITELIST:
+      # any blacklist unit fires -> denied; otherwise a firing whitelist unit
+      # allows. If nothing fires, the command is allowed unless a whitelist unit
+      # exists (then it's denied). A unit can be disabled without deleting it.
+      # `condition` references the combined pattern numbers (wildcards first,
+      # then regexes) and can be: single-2 | 1-and-3 | 1-to-3 | all.
       access_control:
         # Master toggle for command access control on this channel
         enabled: true
@@ -110,8 +107,14 @@ chat:
               1: "*rm -rf /*"
             # Numbered regex patterns
             regexes:
-            # Matching rule (see comment above)
+            # Matching rule (see comment above): single-2 | 1-and-3 | 1-to-3 | all
             condition: "all"
+            # Optional custom deny message. If enabled, this MiniMessage (sent
+            # with the [UI] prefix) replaces the default denial whenever this
+            # unit blocks the input.
+            custom_deny_msg:
+              enabled: false
+              message: "<red>This is blocked by the server.</red>"
     # Linux channel — the player's chat input is executed on the HOST shell
     # (terminal) and the output is returned to the player; ^C interrupts a
     # running command. Off by default because it runs arbitrary host commands.
@@ -122,9 +125,10 @@ chat:
       enabled: false
       # Nicknames allowed to use the linux channel (case-insensitive)
       whitelist: []
-      # Access control (same behaviour as the console channel: ordered units;
-      # mode whitelist/blacklist, numbered regexes and wildcards, and a matching
-      # rule `condition` = single-X | X-and-Y | X-to-Y | all).
+      # Access control (same engine as the console channel; blacklist always
+      # wins over whitelist). Units: mode whitelist/blacklist, numbered regexes
+      # and wildcards, matching rule `condition`, and an optional custom deny
+      # message per unit.
       access_control:
         # Master toggle for command access control on this channel
         enabled: true
@@ -141,6 +145,10 @@ chat:
             regexes:
             # Matching rule: single-X | X-and-Y | X-to-Y | all
             condition: "all"
+            # Optional custom deny message (sent with the [UI] prefix)
+            custom_deny_msg:
+              enabled: false
+              message: "<red>This is blocked by the server.</red>"
 
   # Whether player messages are parsed as MiniMessage
   player_minimessage: true
@@ -150,6 +158,30 @@ chat:
 
   # Permission that bypasses the custom chat format
   bypass_permission: ""
+
+  # Chat-wide access control for MESSAGE content in all normal channels
+  # (local/global/world/private/admin/check). Same unit engine as the console
+  # and linux command access controls above; blacklist always beats whitelist.
+  # Off by default so ordinary chat is not filtered.
+  access_control:
+    enabled: false
+    units:
+      1:
+        # Disabled units are ignored without removing them from the config
+        enabled: true
+        # whitelist = allowed set | blacklist = forbidden set
+        mode: "blacklist"
+        # Numbered wildcard patterns ("*" = any text)
+        wildcards:
+          1: "*badword*"
+        # Numbered regex patterns
+        regexes:
+        # Matching rule: single-X | X-and-Y | X-to-Y | all
+        condition: "all"
+        # Optional custom deny message (sent with the [UI] prefix)
+        custom_deny_msg:
+          enabled: false
+          message: "<red>Message blocked by chat access control.</red>"
 
 ojm:
   enabled: false

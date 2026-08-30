@@ -11,8 +11,8 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * Command access control for a channel (console / linux), replacing the old flat
- * blacklist.
+ * Access control for chat messages or channel commands. Replaces the old flat
+ * blacklist with a flexible unit engine.
  * <pre>
  * access_control:
  *   enabled: true
@@ -22,22 +22,19 @@ import java.util.regex.PatternSyntaxException;
  *       mode: &quot;blacklist&quot;      # or &quot;whitelist&quot;
  *       wildcards: { 1: &quot;*...*&quot; }
  *       regexes:   { 1: &quot;regex&quot; }
- *       condition: &quot;all&quot;        # single-X | X-and-Y-and-... | X-to-Y | all
+ *       condition: &quot;all&quot;        # single-X | X-and-Y-... | X-to-Y | all
+ *       custom_deny_msg:
+ *         enabled: false
+ *         message: &quot;custom deny message&quot;
  * </pre>
  *
- * <p><b>Deciding a command</b> — units are evaluated in order; the first unit whose
- * required patterns all match (see {@code condition}) decides:
- * <ul>
- *   <li>{@code mode: whitelist} — command is <b>allowed</b>;</li>
- *   <li>{@code mode: blacklist} — command is <b>denied</b> (matched text highlighted).</li>
- * </ul>
- * If no unit fires at all, the command is allowed, unless at least one whitelist unit
- * exists — then it is denied (a whitelist is an allow-list: nothing outside it passes).
- *
- * <p><b>Pattern indexing</b> — each unit's patterns carry one combined number space:
- * wildcards first (in numeric order), then regexes. Every field of {@code condition}
- * references those numbers, e.g. a unit with {@code wildcards:{1,2}} and
- * {@code regexes:{1}} has patterns 1, 2, 3 (wildcards 1..2, then regex 3).
+ * <p><b>Deciding</b> — every pattern carries one combined number space per unit
+ * (wildcards first, then regexes). A unit "fires" when all of its required
+ * patterns (per {@code condition}) match. <b>Blacklist has precedence over
+ * whitelist</b>: if any blacklist unit fires, the command/message is denied no
+ * matter what a whitelist unit says; otherwise a firing whitelist unit allows it.
+ * If nothing fires at all, the input is allowed unless at least one whitelist
+ * unit exists (then it is denied — a whitelist is an allow-list).
  */
 public final class AccessControl {
 
@@ -46,31 +43,35 @@ public final class AccessControl {
 
     /** An immutable outcome of {@link #decide(String)}. */
     public static final class Result {
-        private static final Result ALLOW = new Result(true, false, null);
-        private static final Result NOT_ALLOWED = new Result(false, false, null);
+        private static final Result ALLOW = new Result(true, false, null, null);
+        private static final Result NOT_ALLOWED = new Result(false, false, null, null);
 
         private final boolean allowed;
         private final boolean deniedByBlacklist;
         private final String forbidden;
+        private final String customDenyMessage;
 
-        private Result(boolean allowed, boolean deniedByBlacklist, String forbidden) {
+        private Result(boolean allowed, boolean deniedByBlacklist, String forbidden, String customDenyMessage) {
             this.allowed = allowed;
             this.deniedByBlacklist = deniedByBlacklist;
             this.forbidden = forbidden;
+            this.customDenyMessage = customDenyMessage;
         }
 
         private static Result allow() { return ALLOW; }
         private static Result notAllowed() { return NOT_ALLOWED; }
-        private static Result denyByBlacklist(String forbidden) {
-            return new Result(false, true, forbidden);
+        private static Result denyByBlacklist(String forbidden, String customDenyMessage) {
+            return new Result(false, true, forbidden, customDenyMessage);
         }
 
-        /** True if the command may run. */
+        /** True if the input may pass. */
         public boolean isAllowed() { return allowed; }
         /** True if denial came from a blacklist match (has a highlightable fragment). */
         public boolean isDeniedByBlacklist() { return deniedByBlacklist; }
         /** The matched fragment shown in the block message (blacklist denial only). */
         public String forbidden() { return forbidden; }
+        /** Optional per-unit custom deny message (null/blank if none configured). */
+        public String customDenyMessage() { return customDenyMessage; }
     }
 
     private static final AccessControl DISABLED = new AccessControl(false, List.of(), false);
@@ -125,7 +126,10 @@ public final class AccessControl {
                 }
 
                 String condition = us.getString("condition", "all");
-                units.add(new Unit(unitEnabled, mode, patterns, condition));
+                boolean customDenyEnabled = us.getBoolean("custom_deny_msg.enabled", false);
+                String customDenyMessage = us.getString("custom_deny_msg.message", "");
+                units.add(new Unit(unitEnabled, mode, patterns, condition,
+                        customDenyEnabled, customDenyMessage));
             }
         }
         boolean hasWhitelist = false;
@@ -134,37 +138,50 @@ public final class AccessControl {
     }
 
     /**
-     * Decides what to do with a command. See the class docs for the exact rules.
+     * Decides what to do with the input. See the class docs for the exact rules.
      */
     public Result decide(String cmd) {
         if (!enabled) return Result.allow();
+        boolean whitelistFired = false;
         for (Unit u : units) {
             if (!u.enabled) continue;
             if (!u.fires(cmd)) continue;
-            return u.mode == Mode.WHITELIST ? Result.allow() : Result.denyByBlacklist(u.matchText(cmd));
+            if (u.mode == Mode.BLACKLIST) {
+                // Blacklist always wins over whitelist -> deny immediately.
+                String custom = u.customDenyEnabled && !u.customDenyMessage.isBlank()
+                        ? u.customDenyMessage : null;
+                return Result.denyByBlacklist(u.matchText(cmd), custom);
+            }
+            whitelistFired = true;
         }
+        if (whitelistFired) return Result.allow();
         return hasWhitelist ? Result.notAllowed() : Result.allow();
     }
 
     // ============================= UNITS =============================
 
-    /** A single access-control unit: its patterns + allowed mode + a matching rule. */
+    /** A single access-control unit: patterns + mode + matching rule + custom deny message. */
     private static final class Unit {
         private final boolean enabled;
         private final Mode mode;
         private final List<Pattern> patterns;
         private final boolean requireAll;
         private final List<Integer> required = new ArrayList<>();
+        private final boolean customDenyEnabled;
+        private final String customDenyMessage;
 
-        Unit(boolean enabled, Mode mode, List<Pattern> patterns, String condition) {
+        Unit(boolean enabled, Mode mode, List<Pattern> patterns, String condition,
+             boolean customDenyEnabled, String customDenyMessage) {
             this.enabled = enabled;
             this.mode = mode;
             this.patterns = patterns;
+            this.customDenyEnabled = customDenyEnabled;
+            this.customDenyMessage = customDenyMessage == null ? "" : customDenyMessage;
             this.requireAll = parseCondition(condition);
         }
 
         /**
-         * True when the command satisfies the unit's condition: every required pattern
+         * True when the input satisfies the unit's condition: every required pattern
          * (or every pattern when condition is {@code all}) matches.
          */
         boolean fires(String cmd) {

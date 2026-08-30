@@ -58,6 +58,8 @@ public class ChatManager implements Listener {
     private boolean linuxEnabled;
     private java.util.List<String> linuxWhitelist = java.util.List.of();
     private AccessControl linuxAccessControl = AccessControl.disabled();
+    // Chat-wide access control: filters message content in ALL channels
+    private AccessControl chatAccessControl = AccessControl.disabled();
 
     // ========================= LIFECYCLE =========================
 
@@ -114,6 +116,9 @@ public class ChatManager implements Listener {
         this.linuxEnabled = cfg.getBoolean("chat.channels.linux.enabled", false);
         this.linuxWhitelist = cfg.getStringList("chat.channels.linux.whitelist");
         this.linuxAccessControl = AccessControl.load(cfg, "chat.channels.linux.access_control");
+
+        // Chat-wide access control for message content (all channels)
+        this.chatAccessControl = AccessControl.load(cfg, "chat.access_control");
 
         if (mode == Mode.CHANNELS) {
             String basePath = "chat.channels";
@@ -202,13 +207,14 @@ public class ChatManager implements Listener {
                     if (r.isAllowed()) {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                         ConsoleLogger.info("[ConsoleChat] " + player.getName() + " executed: /" + cmd);
-                    } else if (r.isDeniedByBlacklist()) {
-                        sendForbiddenWarning(player, cmd, r.forbidden());
-                        ConsoleLogger.warn("[ConsoleChat] blocked " + player.getName()
-                                + ": /" + cmd + " (forbidden: " + r.forbidden() + ")");
                     } else {
-                        sendNotAllowedWarning(player, cmd);
-                        ConsoleLogger.warn("[ConsoleChat] not allowed " + player.getName() + ": /" + cmd);
+                        sendAccessDenied(player, cmd, r);
+                        if (r.isDeniedByBlacklist()) {
+                            ConsoleLogger.warn("[ConsoleChat] blocked " + player.getName()
+                                    + ": /" + cmd + " (forbidden: " + r.forbidden() + ")");
+                        } else {
+                            ConsoleLogger.warn("[ConsoleChat] not allowed " + player.getName() + ": /" + cmd);
+                        }
                     }
                 }
                 return;
@@ -240,16 +246,26 @@ public class ChatManager implements Listener {
                 if (r.isAllowed()) {
                     HostTerminal.execute(player, cmd);
                     ConsoleLogger.info("[LinuxChat] " + player.getName() + " ran: " + cmd);
-                } else if (r.isDeniedByBlacklist()) {
-                    sendForbiddenWarning(player, cmd, r.forbidden());
-                    ConsoleLogger.warn("[LinuxChat] blocked " + player.getName()
-                            + ": " + cmd + " (forbidden: " + r.forbidden() + ")");
                 } else {
-                    sendNotAllowedWarning(player, cmd);
-                    ConsoleLogger.warn("[LinuxChat] not allowed " + player.getName() + ": " + cmd);
+                    sendAccessDenied(player, cmd, r);
+                    if (r.isDeniedByBlacklist()) {
+                        ConsoleLogger.warn("[LinuxChat] blocked " + player.getName()
+                                + ": " + cmd + " (forbidden: " + r.forbidden() + ")");
+                    } else {
+                        ConsoleLogger.warn("[LinuxChat] not allowed " + player.getName() + ": " + cmd);
+                    }
                 }
                 return;
             }
+        }
+
+        // Chat-wide access control filters the message content in all normal
+        // channels (console/linux are handled above on their command input).
+        AccessControl.Result chatResult = chatAccessControl.decide(event.getMessage());
+        if (!chatResult.isAllowed()) {
+            event.setCancelled(true);
+            sendAccessDenied(player, event.getMessage(), chatResult);
+            return;
         }
 
         // PRIVATE channel renders with the same style as /msg
@@ -447,6 +463,24 @@ public class ChatManager implements Listener {
                 "<red>\u274c Command is not allowed by the access control.</red>"));
         player.sendMessage(MessageUtil.parse(
                 "<gray>  Command: </gray><white>" + escapeMini(cmd) + "</white>"));
+    }
+
+    /**
+     * Displays the access-control denial for the player. If the denying unit
+     * defines a custom message, it is sent (with the plugin prefix); otherwise
+     * the default forbidden/not-allowed warnings are used.
+     */
+    private void sendAccessDenied(Player player, String content, AccessControl.Result r) {
+        String custom = r.customDenyMessage();
+        if (custom != null && !custom.isBlank()) {
+            player.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + " " + custom));
+            return;
+        }
+        if (r.isDeniedByBlacklist()) {
+            sendForbiddenWarning(player, content, r.forbidden());
+        } else {
+            sendNotAllowedWarning(player, content);
+        }
     }
 
     /** Escapes MiniMessage tag characters so raw command text renders literally. */
