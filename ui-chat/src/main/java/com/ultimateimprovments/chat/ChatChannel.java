@@ -34,7 +34,15 @@ public enum ChatChannel {
      * and no chat format is broadcast. Requires the channel permission AND a
      * nickname in the config whitelist. Toggled via {@code /ui chatchnl console}.
      */
-    CONSOLE("console", "ui.chat.channel.console");
+    CONSOLE("console", "ui.chat.channel.console"),
+
+    /**
+     * Linux channel — the player's chat input is executed on the host shell
+     * (terminal) and the output is sent back to the player. Requires the channel
+     * permission AND a nickname in the config whitelist. Toggled via
+     * {@code /ui chatchnl linux}; typing {@code ^C} interrupts a running command.
+     */
+    LINUX("linux", "ui.chat.channel.linux");
 
     private final String configKey;
     private final String permission;

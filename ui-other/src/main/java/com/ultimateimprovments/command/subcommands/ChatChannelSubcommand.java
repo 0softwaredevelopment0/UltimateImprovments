@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * /ui chatchnl &lt;channel&gt; [player] — switch active chat channel.
  * <p>
- * Channels: local, global, world, private, admin, check, console.
+ * Channels: local, global, world, private, admin, check, console, linux.
  * For private channel a target player name is required.
  * <p>
  * Permissions (per-channel):
@@ -60,7 +60,7 @@ public final class ChatChannelSubcommand implements SubCommand {
         if (channel == null) {
             player.sendMessage(MessageUtil.parse(
                     "<red>\u274c Unknown channel: </red><yellow>" + channelName + "</yellow>"
-                    + "<gray>. Available: </gray><white>local, global, world, private, admin, check, console</white>"));
+                    + "<gray>. Available: </gray><white>local, global, world, private, admin, check, console, linux</white>"));
             return true;
         }
 
@@ -91,6 +91,38 @@ public final class ChatChannelSubcommand implements SubCommand {
                 PlayerChannelManager.setChannel(player, ChatChannel.CONSOLE);
                 player.sendMessage(MessageUtil.parse(
                         "<green>\u2714</green> <white>Console channel <red>on</red> — chat input is executed as console commands.</white>"));
+            }
+            return true;
+        }
+
+        // Linux channel — chat input is executed on the host shell (terminal)
+        // and the output is returned to the player. Requires the channel
+        // permission AND a nickname in the config whitelist, and the channel
+        // must be enabled in the config.
+        if (channel == ChatChannel.LINUX) {
+            if (!ChatManager.isLinuxEnabled()) {
+                player.sendMessage(MessageUtil.parse(
+                        "<red>\u274c The linux channel is disabled in the config.</red>"));
+                return true;
+            }
+            if (!player.hasPermission(channel.getPermission())) {
+                player.sendMessage(MessageUtil.parse(
+                        "<red>\u274c You don't have permission to use the linux channel.</red>"));
+                return true;
+            }
+            if (!ChatManager.isLinuxWhitelisted(player)) {
+                player.sendMessage(MessageUtil.parse(
+                        "<red>\u274c You are not whitelisted for the linux channel.</red>"));
+                return true;
+            }
+            if (PlayerChannelManager.getChannel(player) == ChatChannel.LINUX) {
+                PlayerChannelManager.setChannel(player, ChatChannel.GLOBAL);
+                player.sendMessage(MessageUtil.parse(
+                        "<green>\u2714</green> <white>Linux channel <red>off</red> — chat restored.</white>"));
+            } else {
+                PlayerChannelManager.setChannel(player, ChatChannel.LINUX);
+                player.sendMessage(MessageUtil.parse(
+                        "<green>\u2714</green> <white>Linux channel <red>on</red> — chat input runs on the host terminal.</white>"));
             }
             return true;
         }
@@ -160,7 +192,7 @@ public final class ChatChannelSubcommand implements SubCommand {
         player.sendMessage(MessageUtil.parse(
                 "<yellow>Usage: </yellow><white>/ui chatchnl &lt;channel&gt; [player]</white>"));
         player.sendMessage(MessageUtil.parse(
-                "<gray>Channels: </gray><white>local, global, world, private, admin, check, console</white>"));
+                "<gray>Channels: </gray><white>local, global, world, private, admin, check, console, linux</white>"));
     }
 
     @Override

@@ -1432,6 +1432,20 @@ chat:
         enabled: true
         patterns:
           - "(?i)\\b(op|deop|stop|restart|reload|ban|pardon|unban|kick|whitelist|ban-ip|sudo)\\b"
+    # Linux channel — the player's chat input is executed on the HOST shell
+    # (terminal) and the output is returned to the player; ^C interrupts a
+    # running command. Off by default because it runs arbitrary host commands.
+    # Requires the "ui.chat.channel.linux" permission AND a nickname in the
+    # whitelist below.
+    linux:
+      # Whether the linux (host terminal) channel is enabled at all
+      enabled: false
+      # Nicknames allowed to use the linux channel (case-insensitive)
+      whitelist: []
+      # Forbidden-pattern blacklist (same behaviour as the console channel)
+      blacklist:
+        enabled: true
+        patterns: []
 
   # Whether player messages are parsed as MiniMessage
   player_minimessage: true

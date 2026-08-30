@@ -58,6 +58,10 @@ public class ChatManager implements Listener {
     private java.util.List<String> consoleWhitelist = java.util.List.of();
     private boolean consoleBlacklistEnabled;
     private List<Pattern> consoleBlacklistPatterns = List.of();
+    private boolean linuxEnabled;
+    private java.util.List<String> linuxWhitelist = java.util.List.of();
+    private boolean linuxBlacklistEnabled;
+    private List<Pattern> linuxBlacklistPatterns = List.of();
 
     // ========================= LIFECYCLE =========================
 
@@ -111,6 +115,13 @@ public class ChatManager implements Listener {
         this.consoleBlacklistEnabled = cfg.getBoolean("chat.channels.console.blacklist.enabled", true);
         this.consoleBlacklistPatterns = compilePatterns(
                 cfg.getStringList("chat.channels.console.blacklist.patterns"));
+
+        // Linux (host terminal) channel settings
+        this.linuxEnabled = cfg.getBoolean("chat.channels.linux.enabled", false);
+        this.linuxWhitelist = cfg.getStringList("chat.channels.linux.whitelist");
+        this.linuxBlacklistEnabled = cfg.getBoolean("chat.channels.linux.blacklist.enabled", true);
+        this.linuxBlacklistPatterns = compilePatterns(
+                cfg.getStringList("chat.channels.linux.blacklist.patterns"));
 
         if (mode == Mode.CHANNELS) {
             String basePath = "chat.channels";
@@ -195,7 +206,7 @@ public class ChatManager implements Listener {
                 event.setCancelled(true);
                 String cmd = event.getMessage().trim();
                 if (!cmd.isEmpty()) {
-                    String forbidden = findForbiddenPattern(cmd);
+                    String forbidden = findForbiddenPattern(cmd, consoleBlacklistEnabled, consoleBlacklistPatterns);
                     if (forbidden != null) {
                         sendForbiddenWarning(player, cmd, forbidden);
                         ConsoleLogger.warn("[ConsoleChat] blocked " + player.getName()
@@ -204,6 +215,40 @@ public class ChatManager implements Listener {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                         ConsoleLogger.info("[ConsoleChat] " + player.getName() + " executed: /" + cmd);
                     }
+                }
+                return;
+            }
+        }
+
+        // LINUX channel — the message is executed on the host shell (terminal),
+        // its output is sent back to the player, and ^C acts like Ctrl+C.
+        if (channel == ChatChannel.LINUX) {
+            if (!linuxEnabled || !isLinuxAllowed(player)) {
+                // Channel disabled or access revoked while the mode was active
+                boolean disabled = !linuxEnabled;
+                PlayerChannelManager.setChannel(player, ChatChannel.GLOBAL);
+                player.sendMessage(MessageUtil.parse(disabled
+                        ? "<red>\u274c Linux channel is disabled — chat restored.</red>"
+                        : "<red>\u274c Linux channel access revoked — chat restored.</red>"));
+                channel = ChatChannel.GLOBAL;
+                format = channelFormats.get(channel);
+                if (format == null || format.isEmpty()) format = staticFormat;
+            } else {
+                event.setCancelled(true);
+                String cmd = event.getMessage().trim();
+                if (cmd.isEmpty()) return;
+                if (cmd.equalsIgnoreCase("^C")) {
+                    HostTerminal.interrupt(player);
+                    return;
+                }
+                String forbidden = findForbiddenPattern(cmd, linuxBlacklistEnabled, linuxBlacklistPatterns);
+                if (forbidden != null) {
+                    sendForbiddenWarning(player, cmd, forbidden);
+                    ConsoleLogger.warn("[LinuxChat] blocked " + player.getName()
+                            + ": " + cmd + " (forbidden: " + forbidden + ")");
+                } else {
+                    HostTerminal.execute(player, cmd);
+                    ConsoleLogger.info("[LinuxChat] " + player.getName() + " ran: " + cmd);
                 }
                 return;
             }
@@ -402,9 +447,9 @@ public class ChatManager implements Listener {
     /**
      * Returns the first forbidden substring matched by the blacklist, or null if allowed.
      */
-    private String findForbiddenPattern(String cmd) {
-        if (!consoleBlacklistEnabled || consoleBlacklistPatterns.isEmpty()) return null;
-        for (Pattern p : consoleBlacklistPatterns) {
+    private String findForbiddenPattern(String cmd, boolean blacklistEnabled, List<Pattern> patterns) {
+        if (!blacklistEnabled || patterns == null || patterns.isEmpty()) return null;
+        for (Pattern p : patterns) {
             Matcher m = p.matcher(cmd);
             if (m.find()) return m.group();
         }
@@ -473,5 +518,30 @@ public class ChatManager implements Listener {
         return player != null
                 && player.hasPermission(ChatChannel.CONSOLE.getPermission())
                 && isConsoleWhitelisted(player);
+    }
+
+    /** Returns true if the linux (host terminal) channel is enabled in the config. */
+    public static boolean isLinuxEnabled() { return instance != null && instance.linuxEnabled; }
+
+    /**
+     * Returns true if the player is whitelisted for the linux channel
+     * (nickname in the config whitelist, case-insensitive).
+     */
+    public static boolean isLinuxWhitelisted(Player player) {
+        if (instance == null || player == null) return false;
+        for (String name : instance.linuxWhitelist) {
+            if (name != null && name.equalsIgnoreCase(player.getName())) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the player may use the linux channel:
+     * requires the channel permission AND a whitelist entry.
+     */
+    public static boolean isLinuxAllowed(Player player) {
+        return player != null
+                && player.hasPermission(ChatChannel.LINUX.getPermission())
+                && isLinuxWhitelisted(player);
     }
 }
