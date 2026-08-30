@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * chat interrupts it (like Ctrl+C). Command output is streamed back to the player.
  * <p>
  * DANGER: this runs arbitrary shell commands on the host. It must only be
- * reached via the channel permission + config whitelist + blacklist checks.
+ * reached via the channel permission + config whitelist + access control.
  */
 public final class HostTerminal {
 

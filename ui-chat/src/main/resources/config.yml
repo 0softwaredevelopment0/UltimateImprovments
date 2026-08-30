@@ -85,16 +85,33 @@ chat:
       enabled: true
       # Nicknames allowed to use the console channel (case-insensitive)
       whitelist: []
-      # Blacklist. Each numbered unit cancels a matching command and shows the
-      # player which part matched. A unit has an optional regex and/or a
-      # wildcard (in a wildcard, "*" at the start/end means any text there).
-      # Unit numbers go 1, 2, 3, ... and must not repeat.
-      blacklist:
+      # Access control: decides which commands may run. Units are evaluated in
+      # order; the first unit whose required patterns match decides the command
+      # (mode whitelist -> allowed, mode blacklist -> denied). If no unit fires,
+      # the command is allowed unless a whitelist unit exists (then it's denied).
+      # A unit can be disabled without deleting it. `condition` references the
+      # combined pattern numbers (wildcards first, then regexes) and can be:
+      #   single-2        only pattern 2 must match
+      #   1-and-3         patterns 1 and 3 must both match
+      #   1-to-3          patterns 1, 2 and 3 must all match
+      #   all             every pattern must match
+      access_control:
+        # Master toggle for command access control on this channel
         enabled: true
         units:
           1:
-            regex: ""
-            wildcard: "*rm -rf /*"
+            # Disabled units are ignored without removing them from the config
+            enabled: true
+            # whitelist = allowed set | blacklist = forbidden set
+            mode: "blacklist"
+            # Numbered wildcard patterns ("*" = any text); condition indexes
+            # wildcards first, then regexes
+            wildcards:
+              1: "*rm -rf /*"
+            # Numbered regex patterns
+            regexes:
+            # Matching rule (see comment above)
+            condition: "all"
     # Linux channel — the player's chat input is executed on the HOST shell
     # (terminal) and the output is returned to the player; ^C interrupts a
     # running command. Off by default because it runs arbitrary host commands.
@@ -105,14 +122,25 @@ chat:
       enabled: false
       # Nicknames allowed to use the linux channel (case-insensitive)
       whitelist: []
-      # Blacklist (same behaviour as the console channel: numbered units with
-      # regex and/or wildcard; numbers 1, 2, 3, ... must not repeat).
-      blacklist:
+      # Access control (same behaviour as the console channel: ordered units;
+      # mode whitelist/blacklist, numbered regexes and wildcards, and a matching
+      # rule `condition` = single-X | X-and-Y | X-to-Y | all).
+      access_control:
+        # Master toggle for command access control on this channel
         enabled: true
         units:
           1:
-            regex: ""
-            wildcard: "*rm -rf /*"
+            # Disabled units are ignored without removing them from the config
+            enabled: true
+            # whitelist = allowed set | blacklist = forbidden set
+            mode: "blacklist"
+            # Numbered wildcard patterns ("*" = any text)
+            wildcards:
+              1: "*rm -rf /*"
+            # Numbered regex patterns
+            regexes:
+            # Matching rule: single-X | X-and-Y | X-to-Y | all
+            condition: "all"
 
   # Whether player messages are parsed as MiniMessage
   player_minimessage: true

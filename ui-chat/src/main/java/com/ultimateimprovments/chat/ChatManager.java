@@ -23,8 +23,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Custom chat system with two modes:
@@ -56,10 +54,10 @@ public class ChatManager implements Listener {
     private int localRadius;
     private boolean consoleEnabled;
     private java.util.List<String> consoleWhitelist = java.util.List.of();
-    private Blacklist consoleBlacklist = new Blacklist(false, List.of());
+    private AccessControl consoleAccessControl = AccessControl.disabled();
     private boolean linuxEnabled;
     private java.util.List<String> linuxWhitelist = java.util.List.of();
-    private Blacklist linuxBlacklist = new Blacklist(false, List.of());
+    private AccessControl linuxAccessControl = AccessControl.disabled();
 
     // ========================= LIFECYCLE =========================
 
@@ -110,12 +108,12 @@ public class ChatManager implements Listener {
         // Console channel settings (loaded in both modes so the toggle can validate)
         this.consoleEnabled = cfg.getBoolean("chat.channels.console.enabled", true);
         this.consoleWhitelist = cfg.getStringList("chat.channels.console.whitelist");
-        this.consoleBlacklist = loadBlacklist(cfg, "chat.channels.console.blacklist");
+        this.consoleAccessControl = AccessControl.load(cfg, "chat.channels.console.access_control");
 
         // Linux (host terminal) channel settings
         this.linuxEnabled = cfg.getBoolean("chat.channels.linux.enabled", false);
         this.linuxWhitelist = cfg.getStringList("chat.channels.linux.whitelist");
-        this.linuxBlacklist = loadBlacklist(cfg, "chat.channels.linux.blacklist");
+        this.linuxAccessControl = AccessControl.load(cfg, "chat.channels.linux.access_control");
 
         if (mode == Mode.CHANNELS) {
             String basePath = "chat.channels";
@@ -200,14 +198,17 @@ public class ChatManager implements Listener {
                 event.setCancelled(true);
                 String cmd = event.getMessage().trim();
                 if (!cmd.isEmpty()) {
-                    String forbidden = consoleBlacklist.findForbidden(cmd);
-                    if (forbidden != null) {
-                        sendForbiddenWarning(player, cmd, forbidden);
-                        ConsoleLogger.warn("[ConsoleChat] blocked " + player.getName()
-                                + ": /" + cmd + " (forbidden: " + forbidden + ")");
-                    } else {
+                    AccessControl.Result r = consoleAccessControl.decide(cmd);
+                    if (r.isAllowed()) {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
                         ConsoleLogger.info("[ConsoleChat] " + player.getName() + " executed: /" + cmd);
+                    } else if (r.isDeniedByBlacklist()) {
+                        sendForbiddenWarning(player, cmd, r.forbidden());
+                        ConsoleLogger.warn("[ConsoleChat] blocked " + player.getName()
+                                + ": /" + cmd + " (forbidden: " + r.forbidden() + ")");
+                    } else {
+                        sendNotAllowedWarning(player, cmd);
+                        ConsoleLogger.warn("[ConsoleChat] not allowed " + player.getName() + ": /" + cmd);
                     }
                 }
                 return;
@@ -235,14 +236,17 @@ public class ChatManager implements Listener {
                     HostTerminal.interrupt(player);
                     return;
                 }
-                String forbidden = linuxBlacklist.findForbidden(cmd);
-                if (forbidden != null) {
-                    sendForbiddenWarning(player, cmd, forbidden);
-                    ConsoleLogger.warn("[LinuxChat] blocked " + player.getName()
-                            + ": " + cmd + " (forbidden: " + forbidden + ")");
-                } else {
+                AccessControl.Result r = linuxAccessControl.decide(cmd);
+                if (r.isAllowed()) {
                     HostTerminal.execute(player, cmd);
                     ConsoleLogger.info("[LinuxChat] " + player.getName() + " ran: " + cmd);
+                } else if (r.isDeniedByBlacklist()) {
+                    sendForbiddenWarning(player, cmd, r.forbidden());
+                    ConsoleLogger.warn("[LinuxChat] blocked " + player.getName()
+                            + ": " + cmd + " (forbidden: " + r.forbidden() + ")");
+                } else {
+                    sendNotAllowedWarning(player, cmd);
+                    ConsoleLogger.warn("[LinuxChat] not allowed " + player.getName() + ": " + cmd);
                 }
                 return;
             }
@@ -421,131 +425,35 @@ public class ChatManager implements Listener {
     // ========================= HELPERS =========================
 
     /**
-     * Loads a blacklist from config, reading its numbered units:
-     * <pre>units:
-     *   1:
-     *     regex: &quot;...&quot;
-     *     wildcard: &quot;*...*&quot;</pre>
-     * Units are evaluated in numeric order (1, 2, 3, ...). A unit matches if its
-     * regex OR its wildcard matches.
-     */
-    private static Blacklist loadBlacklist(FileConfiguration cfg, String path) {
-        boolean enabled = cfg.getBoolean(path + ".enabled", true);
-        java.util.ArrayList<BlacklistUnit> units = new java.util.ArrayList<>();
-        org.bukkit.configuration.ConfigurationSection sec = cfg.getConfigurationSection(path + ".units");
-        if (sec != null) {
-            List<String> keys = new java.util.ArrayList<>(sec.getKeys(false));
-            keys.sort((a, b) -> Integer.compare(parseUnitKey(a), parseUnitKey(b)));
-            for (String key : keys) {
-                String regex = sec.getString(key + ".regex", "");
-                String wildcard = sec.getString(key + ".wildcard", "");
-                units.add(new BlacklistUnit(regex, wildcard));
-            }
-        }
-        return new Blacklist(enabled, units);
-    }
-
-    private static int parseUnitKey(String s) {
-        try {
-            return Integer.parseInt(s.trim());
-        } catch (NumberFormatException e) {
-            return Integer.MAX_VALUE;
-        }
-    }
-
-    /**
-     * Converts a wildcard to a regex. {@code *} matches any text (empty included),
-     * so {@code *rm -rf /*} matches any command containing {@code rm -rf /}.
-     */
-    private static Pattern compileWildcard(String wc) {
-        StringBuilder sb = new StringBuilder("(?s)^");
-        for (int i = 0; i < wc.length(); i++) {
-            char c = wc.charAt(i);
-            if (c == '*') sb.append(".*");
-            else if ("\\.^$+?{}[]()|".indexOf(c) >= 0) sb.append('\\').append(c);
-            else sb.append(c);
-        }
-        sb.append('$');
-        try {
-            return Pattern.compile(sb.toString());
-        } catch (java.util.regex.PatternSyntaxException e) {
-            ConsoleLogger.warn("[Chat] Invalid console-channel blacklist wildcard: " + wc
-                    + " (" + e.getMessage() + ")");
-            return null;
-        }
-    }
-
-    /** A single blacklist unit — an optional regex and/or an optional wildcard. */
-    private static final class BlacklistUnit {
-        private final List<Pattern> patterns = new java.util.ArrayList<>();
-        private final String source;
-
-        BlacklistUnit(String regex, String wildcard) {
-            String src = "";
-            if (regex != null && !regex.isBlank()) {
-                try {
-                    patterns.add(Pattern.compile(regex));
-                    src = "regex:" + regex;
-                } catch (java.util.regex.PatternSyntaxException e) {
-                    ConsoleLogger.warn("[Chat] Invalid console-channel blacklist regex: " + regex
-                            + " (" + e.getMessage() + ")");
-                }
-            }
-            if (wildcard != null && !wildcard.isBlank()) {
-                Pattern p = compileWildcard(wildcard);
-                if (p != null) {
-                    patterns.add(p);
-                    src = (src.isEmpty() ? "" : src + " ") + "wildcard:" + wildcard;
-                }
-            }
-            this.source = src.isEmpty() ? "(empty)" : src;
-        }
-
-        /** Returns the first forbidden substring matched in cmd, or null. */
-        String findForbidden(String cmd) {
-            for (Pattern p : patterns) {
-                Matcher m = p.matcher(cmd);
-                if (m.find()) return m.group();
-            }
-            return null;
-        }
-
-        String getSource() { return source; }
-    }
-
-    /** An ordered blacklist made of numbered units, with an enabled toggle. */
-    private static final class Blacklist {
-        private final boolean enabled;
-        private final List<BlacklistUnit> units;
-
-        Blacklist(boolean enabled, List<BlacklistUnit> units) {
-            this.enabled = enabled;
-            this.units = units;
-        }
-
-        /** Returns the first forbidden substring matched by any enabled unit, or null. */
-        String findForbidden(String cmd) {
-            if (!enabled) return null;
-            for (BlacklistUnit u : units) {
-                String f = u.findForbidden(cmd);
-                if (f != null) return f;
-            }
-            return null;
-        }
-    }
-
-    /**
      * Tells the player their command was cancelled and shows it with the
      * forbidden part highlighted in red.
      */
     private void sendForbiddenWarning(Player player, String cmd, String forbidden) {
-        String esc = cmd.replace("<", "\\<").replace(">", "\\>");
-        String fEsc = forbidden.replace("<", "\\<").replace(">", "\\>");
+        String esc = escapeMini(cmd);
+        String fEsc = escapeMini(forbidden);
         String highlighted = esc.replace(fEsc, "<red>" + fEsc + "</red>");
         player.sendMessage(MessageUtil.parse(
                 "<red>\u274c Your command contains forbidden content and was cancelled.</red>"));
         player.sendMessage(MessageUtil.parse(
                 "<gray>  Command: </gray><white>" + highlighted + "</white>"));
+    }
+
+    /**
+     * Tells the player their command was cancelled because it is not in the
+     * access-control allow-list (whitelist unit present, command matched none).
+     */
+    private void sendNotAllowedWarning(Player player, String cmd) {
+        player.sendMessage(MessageUtil.parse(
+                "<red>\u274c Command is not allowed by the access control.</red>"));
+        player.sendMessage(MessageUtil.parse(
+                "<gray>  Command: </gray><white>" + escapeMini(cmd) + "</white>"));
+    }
+
+    /** Escapes MiniMessage tag characters so raw command text renders literally. */
+    private static String escapeMini(String text) {
+        if (text == null) return "";
+        return text.replace("<", "\\<").replace(">", "\\>")
+                .replace("\u00A7", "");
     }
 
     private Component parseMessageComponentForPing(String msg, Player player) {
