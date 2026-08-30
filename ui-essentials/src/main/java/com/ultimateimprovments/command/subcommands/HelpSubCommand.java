@@ -66,7 +66,7 @@ public class HelpSubCommand implements SubCommand {
         put("spawn", "Teleport to spawn");
         put("broadcast", "Broadcast a message (-clean = no prefix)");
         put("clearchat", "Clear the chat (player or all)");
-        put("chatchnl", "Switch chat channel (local/global/world/private/admin)");
+        put("chatchnl", "Switch chat channel (local/global/world/private/admin/check/console)");
         put("report", "Report a player");
         put("reports", "List reports");
         put("modreport", "Moderate reports");

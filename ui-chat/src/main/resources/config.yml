@@ -76,6 +76,13 @@ chat:
     # to the inspector. Toggled with /ui chatchnl check (requires being checked).
     check:
       format: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+    # Console channel — the player's chat input is executed as a console command
+    # and NO chat format is broadcast. Toggled with /ui chatchnl console.
+    # Requires the "ui.chat.channel.console" permission AND a nickname in the
+    # whitelist below (by default nobody is whitelisted).
+    console:
+      # Nicknames allowed to use the console channel (case-insensitive)
+      whitelist: []
 
   # Whether player messages are parsed as MiniMessage
   player_minimessage: true

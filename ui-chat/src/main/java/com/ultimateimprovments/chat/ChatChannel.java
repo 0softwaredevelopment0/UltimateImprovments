@@ -27,7 +27,14 @@ public enum ChatChannel {
      * the inspector (moderator). Toggled via {@code /ui chatchnl check} and only
      * allowed while the player is actually being checked.
      */
-    CHECK("check", "ui.chat.channel.check");
+    CHECK("check", "ui.chat.channel.check"),
+
+    /**
+     * Console channel — the player's chat input is executed as a console command
+     * and no chat format is broadcast. Requires the channel permission AND a
+     * nickname in the config whitelist. Toggled via {@code /ui chatchnl console}.
+     */
+    CONSOLE("console", "ui.chat.channel.console");
 
     private final String configKey;
     private final String permission;

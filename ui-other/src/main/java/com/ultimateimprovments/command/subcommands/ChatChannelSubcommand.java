@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * /ui chatchnl &lt;channel&gt; [player] — switch active chat channel.
  * <p>
- * Channels: local, global, world, private, admin.
+ * Channels: local, global, world, private, admin, check, console.
  * For private channel a target player name is required.
  * <p>
  * Permissions (per-channel):
@@ -60,7 +60,32 @@ public final class ChatChannelSubcommand implements SubCommand {
         if (channel == null) {
             player.sendMessage(MessageUtil.parse(
                     "<red>\u274c Unknown channel: </red><yellow>" + channelName + "</yellow>"
-                    + "<gray>. Available: </gray><white>local, global, world, private, admin, check</white>"));
+                    + "<gray>. Available: </gray><white>local, global, world, private, admin, check, console</white>"));
+            return true;
+        }
+
+        // Console channel — chat input is executed as console commands. Requires
+        // the channel permission AND a nickname in the config whitelist.
+        if (channel == ChatChannel.CONSOLE) {
+            if (!player.hasPermission(channel.getPermission())) {
+                player.sendMessage(MessageUtil.parse(
+                        "<red>\u274c You don't have permission to use the console channel.</red>"));
+                return true;
+            }
+            if (!ChatManager.isConsoleWhitelisted(player)) {
+                player.sendMessage(MessageUtil.parse(
+                        "<red>\u274c You are not whitelisted for the console channel.</red>"));
+                return true;
+            }
+            if (PlayerChannelManager.getChannel(player) == ChatChannel.CONSOLE) {
+                PlayerChannelManager.setChannel(player, ChatChannel.GLOBAL);
+                player.sendMessage(MessageUtil.parse(
+                        "<green>\u2714</green> <white>Console channel <red>off</red> — chat restored.</white>"));
+            } else {
+                PlayerChannelManager.setChannel(player, ChatChannel.CONSOLE);
+                player.sendMessage(MessageUtil.parse(
+                        "<green>\u2714</green> <white>Console channel <red>on</red> — chat input is executed as console commands.</white>"));
+            }
             return true;
         }
 
@@ -129,7 +154,7 @@ public final class ChatChannelSubcommand implements SubCommand {
         player.sendMessage(MessageUtil.parse(
                 "<yellow>Usage: </yellow><white>/ui chatchnl &lt;channel&gt; [player]</white>"));
         player.sendMessage(MessageUtil.parse(
-                "<gray>Channels: </gray><white>local, global, world, private, admin, check</white>"));
+                "<gray>Channels: </gray><white>local, global, world, private, admin, check, console</white>"));
     }
 
     @Override

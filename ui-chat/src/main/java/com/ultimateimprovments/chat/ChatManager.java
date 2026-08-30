@@ -52,6 +52,7 @@ public class ChatManager implements Listener {
     // ===== CHANNELS =====
     private Map<ChatChannel, String> channelFormats;
     private int localRadius;
+    private java.util.List<String> consoleWhitelist = java.util.List.of();
 
     // ========================= LIFECYCLE =========================
 
@@ -98,6 +99,9 @@ public class ChatManager implements Listener {
         // CHANNELS
         this.channelFormats = new HashMap<>();
         this.localRadius = cfg.getInt("chat.channels.local.radius", 100);
+
+        // Console channel whitelist (loaded in both modes so the toggle can validate)
+        this.consoleWhitelist = cfg.getStringList("chat.channels.console.whitelist");
 
         if (mode == Mode.CHANNELS) {
             String basePath = "chat.channels";
@@ -162,6 +166,28 @@ public class ChatManager implements Listener {
             if (format == null || format.isEmpty()) format = staticFormat;
         } else {
             format = staticFormat;
+        }
+
+        // CONSOLE channel — the message is executed as a console command.
+        // No chat format is broadcast: nothing is written to chat by this plugin.
+        if (channel == ChatChannel.CONSOLE) {
+            if (!isConsoleAllowed(player)) {
+                // Access revoked while the mode was active (permission removed / de-whitelisted)
+                PlayerChannelManager.setChannel(player, ChatChannel.GLOBAL);
+                player.sendMessage(MessageUtil.parse(
+                        "<red>\u274c Console channel access revoked — chat restored.</red>"));
+                channel = ChatChannel.GLOBAL;
+                format = channelFormats.get(channel);
+                if (format == null || format.isEmpty()) format = staticFormat;
+            } else {
+                event.setCancelled(true);
+                String cmd = event.getMessage().trim();
+                if (!cmd.isEmpty()) {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                    ConsoleLogger.info("[ConsoleChat] " + player.getName() + " executed: /" + cmd);
+                }
+                return;
+            }
         }
 
         // PRIVATE channel renders with the same style as /msg
@@ -360,4 +386,26 @@ public class ChatManager implements Listener {
 
     /** Returns local radius (used by LOCAL channel). */
     public static int getLocalRadius() { return instance != null ? instance.localRadius : 100; }
+
+    /**
+     * Returns true if the player is whitelisted for the console channel
+     * (nickname in the config whitelist, case-insensitive).
+     */
+    public static boolean isConsoleWhitelisted(Player player) {
+        if (instance == null || player == null) return false;
+        for (String name : instance.consoleWhitelist) {
+            if (name != null && name.equalsIgnoreCase(player.getName())) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the player may use the console channel:
+     * requires the channel permission AND a whitelist entry.
+     */
+    public static boolean isConsoleAllowed(Player player) {
+        return player != null
+                && player.hasPermission(ChatChannel.CONSOLE.getPermission())
+                && isConsoleWhitelisted(player);
+    }
 }
