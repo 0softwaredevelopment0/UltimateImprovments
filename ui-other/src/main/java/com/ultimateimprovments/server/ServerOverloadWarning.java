@@ -53,11 +53,11 @@ public class ServerOverloadWarning extends BukkitRunnable {
             if (!warnedCritical) {
                 warnedCritical = true;
                 ConsoleLogger.log(
-                        MessageUtil.PREFIX + " <red>MSPT=" + String.format("%.1f", mspt)
+                        "<red>MSPT=" + String.format("%.1f", mspt)
                                 + " — critical threshold!</red>"
                 );
                 ServerOverloadNotify.broadcast(
-                        MessageUtil.PREFIX + " <white>Server MSPT reached a critical threshold! Check tick info.<dark_gray>(<yellow>"
+                        MessageUtil.PREFIX + "<white>Server MSPT reached a critical threshold! Check tick info.<dark_gray>(<yellow>"
                                 + String.format("%.1f", mspt) + "<dark_gray>)"
                 );
             }
@@ -69,11 +69,11 @@ public class ServerOverloadWarning extends BukkitRunnable {
             if (!warnedHigh) {
                 warnedHigh = true;
                 ConsoleLogger.log(
-                        MessageUtil.PREFIX + " <yellow>MSPT=" + String.format("%.1f", mspt)
+                        "<yellow>MSPT=" + String.format("%.1f", mspt)
                                 + " — safe operation exceeded!</yellow>"
                 );
                 ServerOverloadNotify.broadcast(
-                        MessageUtil.PREFIX + " <white>Server MSPT is exceeding safe operation parameters! <dark_gray>(<yellow>"
+                        MessageUtil.PREFIX + "<white>Server MSPT is exceeding safe operation parameters! <dark_gray>(<yellow>"
                                 + String.format("%.1f", mspt) + "<dark_gray>)"
                 );
             }

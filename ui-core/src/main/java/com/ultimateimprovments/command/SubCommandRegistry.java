@@ -89,7 +89,7 @@ public class SubCommandRegistry {
             String msg = MessagesManager.getString("general.no_args",
                     "<white>Running <yellow>UltimateImprovments <gray>v<white>%version%\n"
                             + "<white>Type <yellow>/ui help <white> to view commands list.");
-            sender.sendMessage(MessageUtil.parse(msg.replace("%version%", version)));
+            sender.sendMessage(MessageUtil.parse(MessageUtil.PREFIX + msg.replace("%version%", version)));
             return true;
         }
 

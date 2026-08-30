@@ -206,7 +206,9 @@ public final class CmdLogger implements Listener {
     private enum Outcome { ERROR, NO_PERMISSION, SUCCESS }
 
     private void log(Player player, String command, Outcome outcome, String detail) {
-        String line1 = MessageUtil.PREFIX + " <yellow>" + escape(player.getName())
+        // line1 gets the [UI] prefix via Broadcast.send; line2 is a continuation
+        // line rendered without the prefix (sendEmbedded).
+        String line1 = "<yellow>" + escape(player.getName())
                 + " <white>uses <yellow>" + escape(command);
         String line2 = switch (outcome) {
             case ERROR -> "<red>with error: <white>" + escape(detail);
@@ -215,7 +217,7 @@ public final class CmdLogger implements Listener {
             case SUCCESS -> "<white>and it runs correctly.";
         };
         Broadcast.send(line1);
-        Broadcast.send(line2);
+        Broadcast.sendEmbedded(line2);
     }
 
     // =========================

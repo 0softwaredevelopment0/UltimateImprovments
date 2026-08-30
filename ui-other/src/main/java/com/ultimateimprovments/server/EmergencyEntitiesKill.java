@@ -126,13 +126,13 @@ public class EmergencyEntitiesKill extends BukkitRunnable {
 
         if (logEnabled) {
             ConsoleLogger.log(
-                    MessageUtil.PREFIX + " <yellow>Removed " + removed + " " + topType
+                    "<yellow>Removed " + removed + " " + topType
                             + " (MSPT=" + String.format("%.1f", mspt)
                             + ", total entities: " + counts.values().stream().mapToInt(Integer::intValue).sum() + ")</yellow>"
             );
         }
 
-        String message = MessageUtil.PREFIX + " <white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
+        String message = MessageUtil.PREFIX + "<white>Удалено </white><yellow>" + removed + " </yellow><white>" + topType + "</white>"
                 + " <gray>(MSPT </gray><red>" + String.format("%.1f", mspt) + "</red><gray>)</gray>";
 
         if (broadcastToAll) {

@@ -80,8 +80,8 @@ public final class BroadcastSubcommand {
             Broadcast.sendServer(resolved);
         }
 
-        // Log to console
-        String fullMessage = (clean ? "" : MessageUtil.PREFIX + " ") + resolved;
+        // Log to console (PREFIX already ends with a single space)
+        String fullMessage = (clean ? "" : MessageUtil.PREFIX) + resolved;
         Bukkit.getConsoleSender().sendMessage(MessageUtil.parse(fullMessage));
 
         return true;

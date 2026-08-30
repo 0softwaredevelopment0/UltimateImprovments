@@ -31,43 +31,43 @@ public final class ConsoleLogger {
         initialized = true;
     }
 
-    /** <white>White</white> — informational messages */
+    /** <white>White</white> — informational messages (prefixed with {@link MessageUtil#PREFIX}) */
     public static void info(String message) {
         if (!initialized) return;
-        Bukkit.getConsoleSender().sendMessage(MM.deserialize("<white>" + escape(message) + "</white>"));
+        Bukkit.getConsoleSender().sendMessage(MM.deserialize(MessageUtil.PREFIX + "<white>" + escape(message) + "</white>"));
     }
 
-    /** <green>Green</green> — successful operations */
+    /** <green>Green</green> — successful operations (prefixed with {@link MessageUtil#PREFIX}) */
     public static void success(String message) {
         if (!initialized) return;
-        Bukkit.getConsoleSender().sendMessage(MM.deserialize("<green>" + escape(message) + "</green>"));
+        Bukkit.getConsoleSender().sendMessage(MM.deserialize(MessageUtil.PREFIX + "<green>" + escape(message) + "</green>"));
     }
 
-    /** <yellow>Yellow</yellow> — warnings */
+    /** <yellow>Yellow</yellow> — warnings (prefixed with {@link MessageUtil#PREFIX}) */
     public static void warn(String message) {
         if (!initialized) return;
-        Bukkit.getConsoleSender().sendMessage(MM.deserialize("<yellow>" + escape(message) + "</yellow>"));
+        Bukkit.getConsoleSender().sendMessage(MM.deserialize(MessageUtil.PREFIX + "<yellow>" + escape(message) + "</yellow>"));
     }
 
-    /** <red>Red</red> — errors */
+    /** <red>Red</red> — errors (prefixed with {@link MessageUtil#PREFIX}) */
     public static void error(String message) {
         if (!initialized) return;
-        Bukkit.getConsoleSender().sendMessage(MM.deserialize("<red>" + escape(message) + "</red>"));
+        Bukkit.getConsoleSender().sendMessage(MM.deserialize(MessageUtil.PREFIX + "<red>" + escape(message) + "</red>"));
     }
 
     /**
      * Logs a fully-formatted MiniMessage string — tags are interpreted and
-     * rendered as colors (Paper console with ANSI/VT support).
-     * Use for messages that already contain the colored plugin prefix
-     * ({@link MessageUtil#PREFIX}).
+     * rendered as colors (Paper console with ANSI/VT support). The plugin
+     * prefix ({@link MessageUtil#PREFIX}) is prepended automatically.
      */
     public static void log(String miniMessage) {
         if (!initialized) return;
-        Bukkit.getConsoleSender().sendMessage(MM.deserialize(miniMessage));
+        Bukkit.getConsoleSender().sendMessage(MM.deserialize(MessageUtil.PREFIX + miniMessage));
     }
 
     /**
-     * Raw MiniMessage message without escaping (for ASCII banners, gradients).
+     * Raw MiniMessage message without escaping and WITHOUT the plugin prefix
+     * (for ASCII banners, gradients, etc.).
      * Warning: tags in message will be interpreted as MiniMessage!
      */
     public static void raw(String miniMessage) {
