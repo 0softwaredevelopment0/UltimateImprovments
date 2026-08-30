@@ -1425,13 +1425,16 @@ chat:
       enabled: true
       # Nicknames allowed to use the console channel (case-insensitive)
       whitelist: []
-      # Forbidden-pattern blacklist. When enabled, any command matching one of
-      # the Java regex patterns below is cancelled and the player is shown which
-      # part of the command matched (highlighted in red).
+      # Blacklist. Each numbered unit cancels a matching command and shows the
+      # player which part matched. A unit has an optional regex and/or a
+      # wildcard (in a wildcard, "*" at the start/end means any text there).
+      # Unit numbers go 1, 2, 3, ... and must not repeat.
       blacklist:
         enabled: true
-        patterns:
-          - "(?i)\\b(op|deop|stop|restart|reload|ban|pardon|unban|kick|whitelist|ban-ip|sudo)\\b"
+        units:
+          1:
+            regex: ""
+            wildcard: "*rm -rf /*"
     # Linux channel — the player's chat input is executed on the HOST shell
     # (terminal) and the output is returned to the player; ^C interrupts a
     # running command. Off by default because it runs arbitrary host commands.
@@ -1442,10 +1445,14 @@ chat:
       enabled: false
       # Nicknames allowed to use the linux channel (case-insensitive)
       whitelist: []
-      # Forbidden-pattern blacklist (same behaviour as the console channel)
+      # Blacklist (same behaviour as the console channel: numbered units with
+      # regex and/or wildcard; numbers 1, 2, 3, ... must not repeat).
       blacklist:
         enabled: true
-        patterns: []
+        units:
+          1:
+            regex: ""
+            wildcard: "*rm -rf /*"
 
   # Whether player messages are parsed as MiniMessage
   player_minimessage: true

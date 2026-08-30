@@ -56,12 +56,10 @@ public class ChatManager implements Listener {
     private int localRadius;
     private boolean consoleEnabled;
     private java.util.List<String> consoleWhitelist = java.util.List.of();
-    private boolean consoleBlacklistEnabled;
-    private List<Pattern> consoleBlacklistPatterns = List.of();
+    private Blacklist consoleBlacklist = new Blacklist(false, List.of());
     private boolean linuxEnabled;
     private java.util.List<String> linuxWhitelist = java.util.List.of();
-    private boolean linuxBlacklistEnabled;
-    private List<Pattern> linuxBlacklistPatterns = List.of();
+    private Blacklist linuxBlacklist = new Blacklist(false, List.of());
 
     // ========================= LIFECYCLE =========================
 
@@ -112,16 +110,12 @@ public class ChatManager implements Listener {
         // Console channel settings (loaded in both modes so the toggle can validate)
         this.consoleEnabled = cfg.getBoolean("chat.channels.console.enabled", true);
         this.consoleWhitelist = cfg.getStringList("chat.channels.console.whitelist");
-        this.consoleBlacklistEnabled = cfg.getBoolean("chat.channels.console.blacklist.enabled", true);
-        this.consoleBlacklistPatterns = compilePatterns(
-                cfg.getStringList("chat.channels.console.blacklist.patterns"));
+        this.consoleBlacklist = loadBlacklist(cfg, "chat.channels.console.blacklist");
 
         // Linux (host terminal) channel settings
         this.linuxEnabled = cfg.getBoolean("chat.channels.linux.enabled", false);
         this.linuxWhitelist = cfg.getStringList("chat.channels.linux.whitelist");
-        this.linuxBlacklistEnabled = cfg.getBoolean("chat.channels.linux.blacklist.enabled", true);
-        this.linuxBlacklistPatterns = compilePatterns(
-                cfg.getStringList("chat.channels.linux.blacklist.patterns"));
+        this.linuxBlacklist = loadBlacklist(cfg, "chat.channels.linux.blacklist");
 
         if (mode == Mode.CHANNELS) {
             String basePath = "chat.channels";
@@ -206,7 +200,7 @@ public class ChatManager implements Listener {
                 event.setCancelled(true);
                 String cmd = event.getMessage().trim();
                 if (!cmd.isEmpty()) {
-                    String forbidden = findForbiddenPattern(cmd, consoleBlacklistEnabled, consoleBlacklistPatterns);
+                    String forbidden = consoleBlacklist.findForbidden(cmd);
                     if (forbidden != null) {
                         sendForbiddenWarning(player, cmd, forbidden);
                         ConsoleLogger.warn("[ConsoleChat] blocked " + player.getName()
@@ -241,7 +235,7 @@ public class ChatManager implements Listener {
                     HostTerminal.interrupt(player);
                     return;
                 }
-                String forbidden = findForbiddenPattern(cmd, linuxBlacklistEnabled, linuxBlacklistPatterns);
+                String forbidden = linuxBlacklist.findForbidden(cmd);
                 if (forbidden != null) {
                     sendForbiddenWarning(player, cmd, forbidden);
                     ConsoleLogger.warn("[LinuxChat] blocked " + player.getName()
@@ -427,33 +421,117 @@ public class ChatManager implements Listener {
     // ========================= HELPERS =========================
 
     /**
-     * Compiles the configured blacklist regexes, skipping invalid ones with a warning.
+     * Loads a blacklist from config, reading its numbered units:
+     * <pre>units:
+     *   1:
+     *     regex: &quot;...&quot;
+     *     wildcard: &quot;*...*&quot;</pre>
+     * Units are evaluated in numeric order (1, 2, 3, ...). A unit matches if its
+     * regex OR its wildcard matches.
      */
-    private static List<Pattern> compilePatterns(List<String> raw) {
-        java.util.ArrayList<Pattern> result = new java.util.ArrayList<>();
-        if (raw == null) return result;
-        for (String r : raw) {
-            if (r == null || r.trim().isEmpty()) continue;
-            try {
-                result.add(Pattern.compile(r));
-            } catch (java.util.regex.PatternSyntaxException e) {
-                ConsoleLogger.warn("[Chat] Invalid console-channel blacklist regex: " + r
-                        + " (" + e.getMessage() + ")");
+    private static Blacklist loadBlacklist(FileConfiguration cfg, String path) {
+        boolean enabled = cfg.getBoolean(path + ".enabled", true);
+        java.util.ArrayList<BlacklistUnit> units = new java.util.ArrayList<>();
+        org.bukkit.configuration.ConfigurationSection sec = cfg.getConfigurationSection(path + ".units");
+        if (sec != null) {
+            List<String> keys = new java.util.ArrayList<>(sec.getKeys(false));
+            keys.sort((a, b) -> Integer.compare(parseUnitKey(a), parseUnitKey(b)));
+            for (String key : keys) {
+                String regex = sec.getString(key + ".regex", "");
+                String wildcard = sec.getString(key + ".wildcard", "");
+                units.add(new BlacklistUnit(regex, wildcard));
             }
         }
-        return result;
+        return new Blacklist(enabled, units);
+    }
+
+    private static int parseUnitKey(String s) {
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (NumberFormatException e) {
+            return Integer.MAX_VALUE;
+        }
     }
 
     /**
-     * Returns the first forbidden substring matched by the blacklist, or null if allowed.
+     * Converts a wildcard to a regex. {@code *} matches any text (empty included),
+     * so {@code *rm -rf /*} matches any command containing {@code rm -rf /}.
      */
-    private String findForbiddenPattern(String cmd, boolean blacklistEnabled, List<Pattern> patterns) {
-        if (!blacklistEnabled || patterns == null || patterns.isEmpty()) return null;
-        for (Pattern p : patterns) {
-            Matcher m = p.matcher(cmd);
-            if (m.find()) return m.group();
+    private static Pattern compileWildcard(String wc) {
+        StringBuilder sb = new StringBuilder("(?s)^");
+        for (int i = 0; i < wc.length(); i++) {
+            char c = wc.charAt(i);
+            if (c == '*') sb.append(".*");
+            else if ("\\.^$+?{}[]()|".indexOf(c) >= 0) sb.append('\\').append(c);
+            else sb.append(c);
         }
-        return null;
+        sb.append('$');
+        try {
+            return Pattern.compile(sb.toString());
+        } catch (java.util.regex.PatternSyntaxException e) {
+            ConsoleLogger.warn("[Chat] Invalid console-channel blacklist wildcard: " + wc
+                    + " (" + e.getMessage() + ")");
+            return null;
+        }
+    }
+
+    /** A single blacklist unit — an optional regex and/or an optional wildcard. */
+    private static final class BlacklistUnit {
+        private final List<Pattern> patterns = new java.util.ArrayList<>();
+        private final String source;
+
+        BlacklistUnit(String regex, String wildcard) {
+            String src = "";
+            if (regex != null && !regex.isBlank()) {
+                try {
+                    patterns.add(Pattern.compile(regex));
+                    src = "regex:" + regex;
+                } catch (java.util.regex.PatternSyntaxException e) {
+                    ConsoleLogger.warn("[Chat] Invalid console-channel blacklist regex: " + regex
+                            + " (" + e.getMessage() + ")");
+                }
+            }
+            if (wildcard != null && !wildcard.isBlank()) {
+                Pattern p = compileWildcard(wildcard);
+                if (p != null) {
+                    patterns.add(p);
+                    src = (src.isEmpty() ? "" : src + " ") + "wildcard:" + wildcard;
+                }
+            }
+            this.source = src.isEmpty() ? "(empty)" : src;
+        }
+
+        /** Returns the first forbidden substring matched in cmd, or null. */
+        String findForbidden(String cmd) {
+            for (Pattern p : patterns) {
+                Matcher m = p.matcher(cmd);
+                if (m.find()) return m.group();
+            }
+            return null;
+        }
+
+        String getSource() { return source; }
+    }
+
+    /** An ordered blacklist made of numbered units, with an enabled toggle. */
+    private static final class Blacklist {
+        private final boolean enabled;
+        private final List<BlacklistUnit> units;
+
+        Blacklist(boolean enabled, List<BlacklistUnit> units) {
+            this.enabled = enabled;
+            this.units = units;
+        }
+
+        /** Returns the first forbidden substring matched by any enabled unit, or null. */
+        String findForbidden(String cmd) {
+            if (!enabled) return null;
+            for (BlacklistUnit u : units) {
+                String f = u.findForbidden(cmd);
+                if (f != null) return f;
+            }
+            return null;
+        }
     }
 
     /**
