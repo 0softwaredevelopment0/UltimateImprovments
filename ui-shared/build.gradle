@@ -16,5 +16,7 @@ tasks {
         archiveBaseName.set('UI-Shared')
         archiveVersion.set(project.version.toString())
         configurations = [project.configurations.runtimeClasspath]
+        // config.yml lives only in UI-Core (ui-core/src/main/resources)
+        exclude 'config.yml'
     }
 }

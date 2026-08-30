@@ -21,6 +21,14 @@ dependencies {
         exclude group: 'org.bukkit', module: 'bukkit'
     }
     compileOnly 'me.clip:placeholderapi:2.11.6'
+
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }
 
 tasks {
@@ -31,5 +39,7 @@ tasks {
         archiveBaseName.set('UI-Other')
         archiveVersion.set(project.version.toString())
         configurations = [project.configurations.runtimeClasspath]
+        // config.yml lives only in UI-Core (ui-core/src/main/resources)
+        exclude 'config.yml'
     }
 }
