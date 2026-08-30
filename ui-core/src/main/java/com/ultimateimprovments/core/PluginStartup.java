@@ -82,16 +82,14 @@ public class PluginStartup {
         plugin.saveDefaultConfig();
         if (!existed) ConsoleLogger.info("[Config] Created: config.yml");
 
-        if (!ConfigCrashSalvage.salvage(plugin)) {
-            ConfigCrashSalvage.backupWholeFile(plugin);
-            if (configFile.exists()) configFile.delete();
-            plugin.saveDefaultConfig();
-        }
+        // Comment out only the broken lines; never delete the file or back it up.
+        ConfigCrashSalvage.salvage(plugin);
         try { plugin.reloadConfig(); }
         catch (Exception e) {
-            if (configFile.exists()) configFile.delete();
-            plugin.saveDefaultConfig();
-            plugin.reloadConfig();
+            // The file is unreadable after salvage — log it but keep the user's
+            // data on disk. Missing/broken keys fall back to jar-reference defaults
+            // via ConfigRepairManager on the next validation pass.
+            ConsoleLogger.warn("[Config] Could not load config.yml: " + e.getMessage());
         }
     }
 

@@ -32,9 +32,8 @@ public class UIDatapack extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
-        // Save own config.yml (plugins/UI-Datapack/config.yml)
-        saveDefaultConfig();
-
+        // Single config lives in UI-Core (Main.getInstance().getConfig());
+        // UI-Datapack does not ship its own config.yml.
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("  UI-Datapack v" + getDescription().getVersion());

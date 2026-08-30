@@ -8,117 +8,94 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 🧯 ConfigCrashSalvage — «синтаксический краш → игнор секции».
+ * 🧯 ConfigCrashSalvage — "single-config salvage": only the broken lines are commented out.
  * <p>
- * Когда config.yml не парсится (ошибка YAML-синтаксиса в одной секции), вместо
- * удаления ВСЕГО файла (как было раньше) спасаем конфиг:
+ * When config.yml fails to parse (a YAML syntax error in a section), instead of deleting
+ * the whole file (old behavior) or removing/backing-up a whole section, we comment out ONLY
+ * the offending line(s) and re-parse:
  * <ol>
- *   <li>Находим корневую секцию, в которой произошла ошибка (по номеру строки из
- *       исключения SnakeYAML / Bukkit, фолбэк — перебор секций по одной);</li>
- *   <li>Удаляем ТОЛЬКО эту секцию, сохраняя остальные настройки пользователя;</li>
- *   <li>Сломанная секция копируется в {@code plugins/UltimateImprovments/config-broken/}
- *       — ничего не теряется, пользователь может починить её вручную;</li>
- *   <li>Если после удаления файл всё ещё не парсится — повторяем (несколько сломанных секций);</li>
- *   <li>Затем {@link ConfigRepairManager} (вызывается следом при старте) допишет
- *       в конец файла дефолтные ключи удалённых секций — плагин продолжит работать
- *       с настройками по умолчанию для этих секций.</li>
+ *   <li>Try to parse the file.</li>
+ *   <li>On error, locate the problem line and comment it out (prefix {@code # }).</li>
+ *   <li>Repeat until the file parses (handles several consecutive errors).</li>
+ *   <li>The commented-out parameter (and its whole subtree) is ignored — the default value
+ *       from the reference config (in the UI-Core JAR) is used instead via {@link ConfigRepairManager}.</li>
  * </ol>
- * Если сломанную часть не удаётся локализовать (например, мусор вне секций) —
- * метод вернёт {@code false}, и вызывающий код применит старый запасной вариант
- * (пересоздание файла из JAR).
+ * There is no {@code config-broken} folder and no whole-file deletion any more — the user's
+ * data is always kept, only the problem lines are hidden behind a comment.
+ * <p>
+ * If the file really cannot be stabilised (theoretical case) we return {@code false}, but the
+ * caller no longer recreates the file from the JAR with data loss: it just continues, falling
+ * back to defaults from the reference config.
  */
 public final class ConfigCrashSalvage {
 
-    /** Имя папки с бэкапами удалённых секций (внутри dataFolder). */
+    /** Legacy backup-folder name — kept for compatibility, no longer used. */
     public static final String BACKUP_DIR_NAME = "config-broken";
 
-    private static final int MAX_ROUNDS = 100;
+    private static final int MAX_ROUNDS = 1000;
     private static final Pattern LINE_IN_MESSAGE = Pattern.compile("(?i)line\\s+(\\d+)");
 
     private ConfigCrashSalvage() {}
 
-    /** Результат спасательной операции. */
+    /** Result of a salvage operation. */
     public static final class Result {
-        /** true — файл теперь парсится (секции могли быть удалены). */
+        /** true — the file now parses (problem lines commented out). */
         public final boolean success;
-        /** Имена удалённых (сломанных) корневых секций. */
-        public final List<String> removedSections;
-        /** Человекочитаемое описание результата. */
+        /** Commented line numbers (1-based). */
+        public final List<Integer> commentedLines;
+        /** Human-readable result description. */
         public final String message;
 
-        Result(boolean success, List<String> removedSections, String message) {
+        Result(boolean success, List<Integer> commentedLines, String message) {
             this.success = success;
-            this.removedSections = removedSections;
+            this.commentedLines = commentedLines;
             this.message = message;
         }
     }
 
-    // ==========================================================================
-    // 🏗 ENTRY POINTS
-    // ==========================================================================
+    // ========================================================================
+    // ENTRY POINTS
+    // ========================================================================
 
     /**
-     * Пытается починить {@code plugins/<plugin>/config.yml} после неудачной загрузки.
+     * Tries to fix {@code plugins/<plugin>/config.yml} after a failed load by commenting
+     * out only the problem lines. Never deletes the file and never creates backups.
      *
-     * @return true, если файл теперь парсится (даже если пришлось удалить секции)
+     * @return true if the file now parses (even if lines had to be commented out)
      */
     public static boolean salvage(Main plugin) {
-        File dataFolder = plugin.getDataFolder();
-        File configFile = new File(dataFolder, "config.yml");
-        File backupDir = new File(dataFolder, BACKUP_DIR_NAME);
-        Result result = salvageFile(configFile, backupDir, msg -> ConsoleLogger.warn("[ConfigSalvage] " + msg));
+        File configFile = new File(plugin.getDataFolder(), "config.yml");
+        Result result = salvageFile(configFile, msg -> ConsoleLogger.warn("[ConfigSalvage] " + msg));
 
-        for (String section : result.removedSections) {
-            ConsoleLogger.warn("[ConfigSalvage] ⚠ Dropped broken section '" + section + "'");
+        for (int line : result.commentedLines) {
+            ConsoleLogger.warn("[ConfigSalvage] \u26A0 Commented broken line " + (line + 1)
+                    + " — the default value from the reference config will be used");
         }
         if (result.success) {
-            ConsoleLogger.info("[ConfigSalvage] ✔ " + result.message);
+            ConsoleLogger.info("[ConfigSalvage] \u2714 " + result.message);
         } else {
-            ConsoleLogger.warn("[ConfigSalvage] ✗ " + result.message);
+            ConsoleLogger.warn("[ConfigSalvage] ✗ " + result.message
+                    + " — falling back to defaults from the jar reference");
         }
         return result.success;
     }
 
     /**
-     * Копирует сломанный config.yml в {@code config-broken/} перед пересозданием
-     * из JAR — чтобы данные не терялись даже в запасном сценарии, когда
-     * сломанную часть не удалось локализовать.
-     */
-    public static void backupWholeFile(Main plugin) {
-        File dataFolder = plugin.getDataFolder();
-        File configFile = new File(dataFolder, "config.yml");
-        File backupDir = new File(dataFolder, BACKUP_DIR_NAME);
-        if (!configFile.exists()) return;
-        try {
-            backupDir.mkdirs();
-            String timestamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
-            File target = new File(backupDir, "config-broken-" + timestamp + ".yml");
-            Files.copy(configFile.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            ConsoleLogger.warn("[ConfigSalvage] Backed up broken config.yml to " + target.getName());
-        } catch (IOException e) {
-            ConsoleLogger.warn("[ConfigSalvage] Could not back up broken config.yml: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Чистая логика спасания файла — без Bukkit/Main, тестируемая в JUnit.
+     * Pure salvage logic — no Bukkit/Main, testable in JUnit.
      * <p>
-     * Не вызывается, если файл уже парсится (вернёт success без удалений).
+     * Comments out every line that prevents parsing and saves the file.
      *
-     * @param configFile файл конфига
-     * @param backupDir  папка, куда складываются удалённые секции (создаётся при необходимости)
-     * @param log        потребитель лог-строк (может быть no-op)
+     * @param configFile the config file
+     * @param log        log-string consumer (can be a no-op)
      */
-    public static Result salvageFile(File configFile, File backupDir, Consumer<String> log) {
+    public static Result salvageFile(File configFile, Consumer<String> log) {
         if (!configFile.exists()) {
             return new Result(false, new ArrayList<>(), "config.yml does not exist");
         }
@@ -130,92 +107,89 @@ public final class ConfigCrashSalvage {
             return new Result(false, new ArrayList<>(), "cannot read config.yml: " + e.getMessage());
         }
 
-        // Уже парсится — спасать нечего
+        // Already parses — nothing to salvage
         Throwable[] lastError = new Throwable[1];
         if (parses(lines, lastError)) {
             return new Result(true, new ArrayList<>(), "config.yml is valid, nothing to salvage");
         }
 
-        List<String> removed = new ArrayList<>();
+        List<Integer> commented = new ArrayList<>();
         int rounds = 0;
 
         while (true) {
             if (++rounds > MAX_ROUNDS) {
-                return new Result(false, removed, "could not stabilize config.yml after " + MAX_ROUNDS + " attempts");
+                return new Result(false, commented,
+                        "could not stabilize config.yml after " + MAX_ROUNDS + " attempts");
             }
 
             if (parses(lines, lastError)) break;
 
-            List<Section> sections = findRootSections(lines);
-            if (sections.isEmpty()) {
-                return new Result(false, removed, "no root sections found — cannot isolate the broken part");
-            }
-
             int errorLine = findErrorLine(lastError[0]);
+            // 0-based; if we cannot determine the line, start from the last line of the file
+            if (errorLine < 0) errorLine = lines.isEmpty() ? 0 : lines.size() - 1;
+            if (errorLine >= lines.size()) errorLine = lines.size() - 1;
 
-            // Кандидаты на удаление: сначала секция, содержащая строку ошибки,
-            // затем ближайшие к ней, затем все остальные по порядку.
-            List<Section> candidates = orderCandidates(sections, errorLine);
-            Section target = null;
-            for (Section candidate : candidates) {
-                List<String> test = without(lines, candidate);
-                if (parses(test, lastError)) {
-                    target = candidate;
-                    break;
+            String raw = lines.get(errorLine);
+            // If already commented, step upward to the nearest not-yet-touched line
+            if (isCommentOrBlank(raw)) {
+                int cursor = errorLine;
+                boolean found = false;
+                while (cursor > 0) {
+                    cursor--;
+                    if (!isCommentOrBlank(lines.get(cursor))) { found = true; break; }
                 }
-            }
-            if (target == null && !candidates.isEmpty()) {
-                // Один кандидат не чинит файл (например, сломано несколько секций) —
-                // удаляем лучшего кандидата и продолжаем цикл.
-                target = candidates.get(0);
-            }
-            if (target == null) {
-                return new Result(false, removed, "broken content is not inside any root section — cannot isolate it");
+                if (!found) {
+                    return new Result(false, commented, "cannot stabilize — no commentable line near the error");
+                }
+                errorLine = cursor;
             }
 
-            backupSection(backupDir, target, lines, lastError[0]);
-            log.accept("Removing broken section '" + target.key + "' (lines "
-                    + (target.start + 1) + "-" + (target.end + 1) + ")");
-            lines = without(lines, target);
-            removed.add(target.key);
+            String line = lines.get(errorLine);
+            lines.set(errorLine, "# " + line);
+            commented.add(errorLine + 1);
+            log.accept("Commented broken line " + (errorLine + 1) + ": " + line.trim());
         }
 
-        if (!removed.isEmpty()) {
+        if (!commented.isEmpty()) {
             try {
                 Files.write(configFile.toPath(), lines, StandardCharsets.UTF_8);
             } catch (IOException e) {
-                return new Result(false, removed, "cannot write salvaged config.yml: " + e.getMessage());
+                return new Result(false, commented, "cannot write salvaged config.yml: " + e.getMessage());
             }
         }
 
-        String summary = removed.isEmpty()
+        String summary = commented.isEmpty()
                 ? "config.yml is valid, nothing to salvage"
-                : "removed " + removed.size() + " broken section(s): " + String.join(", ", removed)
-                        + " — defaults will be re-added by auto-repair";
+                : "commented " + commented.size() + " broken line(s) — defaults will be used for them";
         log.accept(summary);
-        return new Result(true, removed, summary);
+        return new Result(true, commented, summary);
     }
 
-    // ==========================================================================
-    // 🔍 ЛОКАЛИЗАЦИЯ СЛОМАННОЙ СЕКЦИИ
-    // ==========================================================================
+    // ========================================================================
+    // HELPERS
+    // ========================================================================
+
+    private static boolean isCommentOrBlank(String line) {
+        String trimmed = line.trim();
+        return trimmed.isEmpty() || trimmed.startsWith("#");
+    }
 
     /**
-     * Пытается определить (1-based) номер строки с ошибкой из цепочки исключений:
-     * SnakeYAML {@code MarkedYAMLException.getProblemMark().getLine()}, геттер
-     * {@code getLineNumber()} (некоторые обёртки Paper), либо regex по тексту сообщения.
+     * Tries to determine the (1-based) error line number from the exception chain:
+     * SnakeYAML {@code MarkedYAMLException.getProblemMark().getLine()}, a {@code getLineNumber()}
+     * getter (some Paper wrappers), or a regex over the message text.
      *
-     * @return номер строки (1-based) или -1, если определить не удалось
+     * @return the line number (1-based) or -1 if it could not be determined
      */
     static int findErrorLine(Throwable error) {
         if (error == null) return -1;
 
-        // 1) reflection-геттеры по всей цепочке causes
+        // 1) reflection getters over the whole cause chain
         for (Throwable t = error; t != null; t = t.getCause()) {
             Integer line = reflectionLine(t);
             if (line != null && line > 0) return line;
         }
-        // 2) текст сообщения: "...line 12, column 3..."
+        // 2) message text: "...line 12, column 3..."
         for (Throwable t = error; t != null; t = t.getCause()) {
             if (t.getMessage() == null) continue;
             Matcher m = LINE_IN_MESSAGE.matcher(t.getMessage());
@@ -223,7 +197,7 @@ public final class ConfigCrashSalvage {
                 try {
                     return Integer.parseInt(m.group(1));
                 } catch (NumberFormatException ignored) {
-                    // попробовать следующее сообщение
+                    // try the next message
                 }
             }
         }
@@ -231,12 +205,12 @@ public final class ConfigCrashSalvage {
     }
 
     private static Integer reflectionLine(Throwable t) {
-        // 1) getLineNumber() — например, у обёрток Paper/ансилков
+        // 1) getLineNumber() — e.g. Paper/wrapper exceptions
         try {
             Object val = t.getClass().getMethod("getLineNumber").invoke(t);
             if (val instanceof Number n) return n.intValue();
         } catch (ReflectiveOperationException | RuntimeException ignored) {
-            // нет такого метода
+            // no such method
         }
         // 2) SnakeYAML MarkedYAMLException → getProblemMark().getLine() (0-based)
         try {
@@ -249,43 +223,17 @@ public final class ConfigCrashSalvage {
                 }
             }
         } catch (ReflectiveOperationException | RuntimeException ignored) {
-            // SnakeYAML не на classpath — не страшно, есть фолбэк по сообщению
+            // SnakeYAML not on the classpath — fine, we have the message fallback
         }
         return null;
     }
 
     /**
-     * Сортирует секции-кандидаты: содержащие строку ошибки первыми, затем по
-     * удалённости от неё, затем по порядку в файле. Если номер строки неизвестен
-     * (errorLine &lt; 0) — просто порядок файла.
-     */
-    private static List<Section> orderCandidates(List<Section> sections, int errorLine) {
-        List<Section> ordered = new ArrayList<>(sections);
-        if (errorLine < 0) return ordered;
-
-        ordered.sort((a, b) -> {
-            boolean aContains = a.contains(errorLine - 1);
-            boolean bContains = b.contains(errorLine - 1);
-            if (aContains != bContains) return aContains ? -1 : 1;
-            int da = Math.abs(a.start - (errorLine - 1));
-            int db = Math.abs(b.start - (errorLine - 1));
-            int byDistance = Integer.compare(da, db);
-            if (byDistance != 0) return byDistance;
-            return Integer.compare(a.start, b.start);
-        });
-        return ordered;
-    }
-
-    // ==========================================================================
-    // 🗂 РАБОТА С ФАЙЛОМ / СЕКЦИЯМИ
-    // ==========================================================================
-
-    /**
-     * Пробует распарсить строки как YAML конфиг. Ошибка кладётся в {@code lastError[0]}.
+     * Tries to parse the lines as a YAML config. On error the exception is stored in {@code lastError[0]}.
      * <p>
-     * ВАЖНО: используется {@code loadFromString} (бросает {@code InvalidConfigurationException}),
-     * а не {@code loadConfiguration} — последний в Paper-26 молча ГЛОТАЕТ ошибку парсинга
-     * (логирует и возвращает пустой конфиг), из-за чего битый файл выглядел бы «валидным».
+     * IMPORTANT: we use {@code loadFromString} (throws {@code InvalidConfigurationException}),
+     * not {@code loadConfiguration} — Paper-26 silently swallows the parse error (logs it and
+     * returns an empty config), which would make a broken file look "valid".
      */
     private static boolean parses(List<String> lines, Throwable[] lastError) {
         try {
@@ -295,92 +243,6 @@ public final class ConfigCrashSalvage {
         } catch (Throwable t) {
             lastError[0] = t;
             return false;
-        }
-    }
-
-    /** Список строк без секции {@code section}. */
-    private static List<String> without(List<String> lines, Section section) {
-        List<String> result = new ArrayList<>(lines.size());
-        for (int i = 0; i < lines.size(); i++) {
-            if (i < section.start || i > section.end) result.add(lines.get(i));
-        }
-        return result;
-    }
-
-    /** Копирует удалённую секцию в backupDir с поясняющим заголовком. */
-    private static void backupSection(File backupDir, Section section, List<String> lines, Throwable error) {
-        try {
-            backupDir.mkdirs();
-            String timestamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
-            String name = sanitizeFileName(section.key) + "-" + timestamp + ".yml";
-            StringBuilder sb = new StringBuilder();
-            sb.append("# === Broken section removed from config.yml (YAML syntax error) ===\n");
-            if (error != null && error.getMessage() != null) {
-                sb.append("# Error: ").append(error.getMessage().replace('\n', ' ')).append('\n');
-            }
-            sb.append("# Fix this section and merge it back into config.yml (remove the duplicate key).\n");
-            sb.append("# --------------------------------------------------------------------------\n");
-            for (int i = section.start; i <= section.end; i++) {
-                sb.append(lines.get(i)).append('\n');
-            }
-            Files.write(new File(backupDir, name).toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            // Бэкап не критичен — не прерываем спасание
-        }
-    }
-
-    private static String sanitizeFileName(String key) {
-        return key.replaceAll("[^a-zA-Z0-9_-]", "_");
-    }
-
-    /** Находит все корневые секции файла (0-based диапазоны строк). */
-    static List<Section> findRootSections(List<String> lines) {
-        List<Integer> keyLines = new ArrayList<>();
-        for (int i = 0; i < lines.size(); i++) {
-            if (isRootKey(lines.get(i))) keyLines.add(i);
-        }
-
-        List<Section> sections = new ArrayList<>(keyLines.size());
-        for (int k = 0; k < keyLines.size(); k++) {
-            int start = keyLines.get(k);
-            int end = (k + 1 < keyLines.size()) ? keyLines.get(k + 1) - 1 : lines.size() - 1;
-            sections.add(new Section(extractKey(lines.get(start)), start, end));
-        }
-        return sections;
-    }
-
-    /** Корневой ключ — строка без отступа вида {@code key:} (не комментарий, не элемент списка). */
-    private static boolean isRootKey(String line) {
-        if (line == null || line.isEmpty()) return false;
-        char first = line.charAt(0);
-        if (first == ' ' || first == '\t') return false;
-        String trimmed = line.trim();
-        if (trimmed.startsWith("#")) return false;
-        if (trimmed.startsWith("- ")) return false;
-        return trimmed.matches("^[a-zA-Z_][a-zA-Z0-9_-]*:.*");
-    }
-
-    private static String extractKey(String line) {
-        String trimmed = line.trim();
-        int colon = trimmed.indexOf(':');
-        return colon > 0 ? trimmed.substring(0, colon) : trimmed;
-    }
-
-    /** Корневая секция: ключ + диапазон строк (включительно). */
-    static final class Section {
-        final String key;
-        final int start;
-        final int end;
-
-        Section(String key, int start, int end) {
-            this.key = key;
-            this.start = start;
-            this.end = end;
-        }
-
-        /** Содержит ли секция строку с индексом {@code lineIndex} (0-based). */
-        boolean contains(int lineIndex) {
-            return start <= lineIndex && lineIndex <= end;
         }
     }
 }

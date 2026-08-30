@@ -21,9 +21,8 @@ public class UIOther extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
-        // Save own config.yml (plugins/UI-Other/config.yml)
-        saveDefaultConfig();
-
+        // Single config lives in UI-Core (Main.getInstance().getConfig());
+        // UI-Other does not ship its own config.yml.
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("  UI-Other v" + getDescription().getVersion());

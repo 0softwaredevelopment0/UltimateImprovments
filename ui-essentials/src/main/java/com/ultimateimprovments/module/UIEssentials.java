@@ -17,7 +17,8 @@ public final class UIEssentials extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        saveDefaultConfig();
+        // Single config lives in UI-Core (Main.getInstance().getConfig());
+        // UI-Essentials does not ship its own config.yml.
         ConsoleLogger.info("[Essentials] Initializing...");
         ReportManager.init();
         registerCommands();

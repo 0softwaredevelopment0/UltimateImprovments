@@ -83,8 +83,8 @@ public class ChatManager implements Listener {
     }
 
     private org.bukkit.configuration.file.FileConfiguration getPluginConfig() {
-        var chat = com.ultimateimprovments.chat.UIChat.getInstance();
-        return chat != null ? chat.getConfig() : Main.getInstance().getConfig();
+        // Single config lives in UI-Core (Main.getInstance().getConfig()).
+        return Main.getInstance().getConfig();
     }
 
     private void reloadConfig() {

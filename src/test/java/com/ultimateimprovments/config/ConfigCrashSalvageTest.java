@@ -13,17 +13,15 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for {@link ConfigCrashSalvage} — «синтаксический краш → игнор секции».
+ * Tests for {@link ConfigCrashSalvage} — "syntax crash → comment out only the broken lines".
  * <p>
- * Чистая логика без Bukkit-сервера: на временных файлах проверяем, что при
- * сломанном YAML удаляется ТОЛЬКО битая секция (с бэкапом), а остальные
- * настройки пользователя сохраняются.
+ * Pure logic without a Bukkit server: on temp files we check that a broken YAML comments out
+ * ONLY the problem line(s), the healthy settings survive, the {@code config-broken} folder is
+ * never created and the file is never deleted.
  */
 class ConfigCrashSalvageTest {
 
@@ -52,12 +50,8 @@ class ConfigCrashSalvageTest {
         }
     }
 
-    // ============================================================
-    // Основной сценарий: одна сломанная секция
-    // ============================================================
-
     @Test
-    @DisplayName("Broken section is removed, healthy sections survive")
+    @DisplayName("Broken line is commented out, healthy settings survive")
     void brokenSectionRemoved() throws Exception {
         File file = writeConfig(
                 "healthy:\n" +
@@ -71,22 +65,21 @@ class ConfigCrashSalvageTest {
         assertFalse(parses(file), "precondition: file must be broken");
 
         ConfigCrashSalvage.Result result =
-                ConfigCrashSalvage.salvageFile(file, backupDir(), NO_LOGS::add);
+                ConfigCrashSalvage.salvageFile(file, NO_LOGS::add);
 
         assertTrue(result.success, result.message);
-        assertEquals(List.of("broken"), result.removedSections);
         assertTrue(parses(file), "after salvage the file must parse");
+        assertFalse(result.commentedLines.isEmpty(), "some line must have been commented");
 
-        YamlConfiguration cfg = load(file);
-        assertTrue(cfg.getBoolean("healthy.enabled"), "healthy section value must survive");
-        assertEquals("keep me", cfg.getString("healthy.name"));
-        assertEquals(7, cfg.getInt("another.count"));
-        assertFalse(cfg.isSet("broken"), "broken section must be gone");
+        String content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+        assertTrue(content.contains("\"keep me\""), "healthy value must survive");
+        assertTrue(content.contains("enabled: true"), "healthy settings must survive");
+        assertTrue(content.contains("count: 7"), "healthy settings must survive");
     }
 
     @Test
-    @DisplayName("Removed section is backed up with its content")
-    void backupCreated() throws Exception {
+    @DisplayName("No config-broken folder is created and the file is never deleted")
+    void noBackupFolderNoDeletion() throws Exception {
         File file = writeConfig(
                 "ok:\n" +
                 "  enabled: true\n" +
@@ -94,23 +87,16 @@ class ConfigCrashSalvageTest {
                 "  value: [1, 2\n");
 
         ConfigCrashSalvage.Result result =
-                ConfigCrashSalvage.salvageFile(file, backupDir(), NO_LOGS::add);
+                ConfigCrashSalvage.salvageFile(file, NO_LOGS::add);
         assertTrue(result.success, result.message);
 
-        File[] backups = backupDir().listFiles((dir, name) -> name.startsWith("bad-") && name.endsWith(".yml"));
-        assertNotNull(backups);
-        assertEquals(1, backups.length, "one backup file for the broken section");
-        String backup = Files.readString(backups[0].toPath(), StandardCharsets.UTF_8);
-        assertTrue(backup.contains("bad:"), "backup must contain the broken section");
-        assertTrue(backup.contains("[1, 2"), "backup must contain the broken content");
+        assertFalse(backupDir().exists(), "config-broken folder must not be created");
+        assertTrue(file.exists(), "config.yml must never be deleted");
+        assertTrue(parses(file), "file must remain valid");
     }
 
-    // ============================================================
-    // Несколько сломанных секций
-    // ============================================================
-
     @Test
-    @DisplayName("Multiple broken sections are removed one by one")
+    @DisplayName("Multiple broken lines are commented one by one")
     void multipleBrokenSections() throws Exception {
         File file = writeConfig(
                 "good:\n" +
@@ -121,18 +107,15 @@ class ConfigCrashSalvageTest {
                 "  list: [1, 2\n");
 
         ConfigCrashSalvage.Result result =
-                ConfigCrashSalvage.salvageFile(file, backupDir(), NO_LOGS::add);
+                ConfigCrashSalvage.salvageFile(file, NO_LOGS::add);
 
         assertTrue(result.success, result.message);
-        assertTrue(result.removedSections.containsAll(List.of("broken_a", "broken_b")),
-                "both broken sections must be removed, got: " + result.removedSections);
+        assertTrue(result.commentedLines.size() >= 2,
+                "both broken lines must be commented, got: " + result.commentedLines);
         assertTrue(parses(file));
-        assertTrue(load(file).getBoolean("good.enabled"), "healthy section must survive");
+        String content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+        assertTrue(content.contains("enabled: true"), "healthy section value must survive");
     }
-
-    // ============================================================
-    // Здоровый файл — не трогаем
-    // ============================================================
 
     @Test
     @DisplayName("Healthy config is left untouched")
@@ -145,53 +128,26 @@ class ConfigCrashSalvageTest {
         File file = writeConfig(content);
 
         ConfigCrashSalvage.Result result =
-                ConfigCrashSalvage.salvageFile(file, backupDir(), NO_LOGS::add);
+                ConfigCrashSalvage.salvageFile(file, NO_LOGS::add);
 
         assertTrue(result.success);
-        assertTrue(result.removedSections.isEmpty());
-        assertEquals(content, Files.readString(file.toPath(), StandardCharsets.UTF_8),
-                "healthy file must not be rewritten");
+        assertTrue(result.commentedLines.isEmpty());
         assertFalse(backupDir().exists(), "no backups for a healthy file");
     }
 
-    // ============================================================
-    // Неустранимые случаи — запасной вариант (пересоздание из JAR)
-    // ============================================================
-
     @Test
-    @DisplayName("Tab-indented content (no root sections) cannot be salvaged")
-    void tabIndentedNotSalvageable() throws Exception {
-        // Таб в начале строки — гарантированная ошибка SnakeYAML, корневых секций нет
-        File file = writeConfig("\tbroken: 1\n");
-
-        ConfigCrashSalvage.Result result =
-                ConfigCrashSalvage.salvageFile(file, backupDir(), NO_LOGS::add);
-
-        assertFalse(result.success, "must report failure so caller falls back to recreate");
-        assertFalse(parses(file));
-    }
-
-    @Test
-    @DisplayName("Broken content outside sections cannot be salvaged")
-    void brokenOutsideSectionsNotSalvageable() throws Exception {
-        // Таб-мусор до первого корневого ключа — вне всех секций, удаление секций не поможет
+    @DisplayName("Tab-indented content is commented out, file preserved")
+    void tabIndentedCommentedOut() throws Exception {
         File file = writeConfig(
                 "\tbroken: 1\n" +
                 "ok:\n" +
                 "  enabled: true\n");
 
         ConfigCrashSalvage.Result result =
-                ConfigCrashSalvage.salvageFile(file, backupDir(), NO_LOGS::add);
+                ConfigCrashSalvage.salvageFile(file, NO_LOGS::add);
 
-        assertFalse(result.success);
-    }
-
-    // ============================================================
-    // Вспомогательные
-    // ============================================================
-
-    private static YamlConfiguration load(File file) throws Exception {
-        String content = Files.readString(file.toPath(), StandardCharsets.UTF_8);
-        return YamlConfiguration.loadConfiguration(new StringReader(content));
+        assertTrue(result.success, result.message);
+        assertTrue(parses(file), "after commenting the tab line the file must parse");
+        assertTrue(file.exists(), "file must be preserved");
     }
 }

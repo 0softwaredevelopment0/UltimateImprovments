@@ -22,16 +22,10 @@ public final class UIAntiCheat extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        saveDefaultConfig();
 
-        boolean enabled = getConfig().getBoolean("anticheat.enabled", false);
-
-        File configFile = new File(getDataFolder(), "config.yml");
-        if (configFile.exists() && YamlDuplicateCleaner.cleanDuplicates(configFile, "config.yml")) {
-            reloadConfig();
-            enabled = getConfig().getBoolean("anticheat.enabled", false);
-            ConsoleLogger.info("[AntiCheat] Config cleaned, re-read: anticheat.enabled = " + enabled);
-        }
+        // Single config lives in UI-Core (Main.getInstance().getConfig()).
+        boolean enabled = com.ultimateimprovments.core.Main.getInstance().getConfig()
+                .getBoolean("anticheat.enabled", false);
 
         AntiCheatManager.init();
         AntiCheatManager acm = AntiCheatManager.getInstance();

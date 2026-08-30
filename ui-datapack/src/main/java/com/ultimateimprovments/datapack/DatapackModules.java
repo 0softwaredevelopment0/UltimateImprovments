@@ -106,7 +106,8 @@ public final class DatapackModules {
      * (UIDatapack), before any module registration or datapack install.
      */
     public static void init(JavaPlugin plugin) {
-        FileConfiguration cfg = plugin.getConfig();
+        // Single config lives in UI-Core (Main.getInstance().getConfig()).
+        FileConfiguration cfg = com.ultimateimprovments.core.Main.getInstance().getConfig();
         masterEnabled = cfg.getBoolean(MASTER_KEY, true);
         mode = cfg.getString(MODE_KEY, MODE_OVERRIDE);
         if (mode == null || !mode.equals(MODE_IGNORE) && !mode.equals(MODE_CHECK_OVERRIDE)) {
