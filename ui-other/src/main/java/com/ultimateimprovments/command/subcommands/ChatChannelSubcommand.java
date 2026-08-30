@@ -65,8 +65,14 @@ public final class ChatChannelSubcommand implements SubCommand {
         }
 
         // Console channel — chat input is executed as console commands. Requires
-        // the channel permission AND a nickname in the config whitelist.
+        // the channel permission AND a nickname in the config whitelist, and the
+        // channel must be enabled in the config.
         if (channel == ChatChannel.CONSOLE) {
+            if (!ChatManager.isConsoleEnabled()) {
+                player.sendMessage(MessageUtil.parse(
+                        "<red>\u274c The console channel is disabled in the config.</red>"));
+                return true;
+            }
             if (!player.hasPermission(channel.getPermission())) {
                 player.sendMessage(MessageUtil.parse(
                         "<red>\u274c You don't have permission to use the console channel.</red>"));

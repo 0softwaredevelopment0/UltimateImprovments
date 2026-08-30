@@ -81,8 +81,17 @@ chat:
     # Requires the "ui.chat.channel.console" permission AND a nickname in the
     # whitelist below (by default nobody is whitelisted).
     console:
+      # Whether the console channel is enabled at all
+      enabled: true
       # Nicknames allowed to use the console channel (case-insensitive)
       whitelist: []
+      # Forbidden-pattern blacklist. When enabled, any command matching one of
+      # the Java regex patterns below is cancelled and the player is shown which
+      # part of the command matched (highlighted in red).
+      blacklist:
+        enabled: true
+        patterns:
+          - "(?i)\\b(op|deop|stop|restart|reload|ban|pardon|unban|kick|whitelist|ban-ip|sudo)\\b"
 
   # Whether player messages are parsed as MiniMessage
   player_minimessage: true

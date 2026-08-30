@@ -23,6 +23,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Custom chat system with two modes:
@@ -52,7 +54,10 @@ public class ChatManager implements Listener {
     // ===== CHANNELS =====
     private Map<ChatChannel, String> channelFormats;
     private int localRadius;
+    private boolean consoleEnabled;
     private java.util.List<String> consoleWhitelist = java.util.List.of();
+    private boolean consoleBlacklistEnabled;
+    private List<Pattern> consoleBlacklistPatterns = List.of();
 
     // ========================= LIFECYCLE =========================
 
@@ -100,8 +105,12 @@ public class ChatManager implements Listener {
         this.channelFormats = new HashMap<>();
         this.localRadius = cfg.getInt("chat.channels.local.radius", 100);
 
-        // Console channel whitelist (loaded in both modes so the toggle can validate)
+        // Console channel settings (loaded in both modes so the toggle can validate)
+        this.consoleEnabled = cfg.getBoolean("chat.channels.console.enabled", true);
         this.consoleWhitelist = cfg.getStringList("chat.channels.console.whitelist");
+        this.consoleBlacklistEnabled = cfg.getBoolean("chat.channels.console.blacklist.enabled", true);
+        this.consoleBlacklistPatterns = compilePatterns(
+                cfg.getStringList("chat.channels.console.blacklist.patterns"));
 
         if (mode == Mode.CHANNELS) {
             String basePath = "chat.channels";
@@ -171,11 +180,14 @@ public class ChatManager implements Listener {
         // CONSOLE channel — the message is executed as a console command.
         // No chat format is broadcast: nothing is written to chat by this plugin.
         if (channel == ChatChannel.CONSOLE) {
-            if (!isConsoleAllowed(player)) {
-                // Access revoked while the mode was active (permission removed / de-whitelisted)
+            if (!consoleEnabled || !isConsoleAllowed(player)) {
+                // Channel disabled or access revoked while the mode was active
+                // (permission removed / de-whitelisted)
+                boolean disabled = !consoleEnabled;
                 PlayerChannelManager.setChannel(player, ChatChannel.GLOBAL);
-                player.sendMessage(MessageUtil.parse(
-                        "<red>\u274c Console channel access revoked — chat restored.</red>"));
+                player.sendMessage(MessageUtil.parse(disabled
+                        ? "<red>\u274c Console channel is disabled — chat restored.</red>"
+                        : "<red>\u274c Console channel access revoked — chat restored.</red>"));
                 channel = ChatChannel.GLOBAL;
                 format = channelFormats.get(channel);
                 if (format == null || format.isEmpty()) format = staticFormat;
@@ -183,8 +195,15 @@ public class ChatManager implements Listener {
                 event.setCancelled(true);
                 String cmd = event.getMessage().trim();
                 if (!cmd.isEmpty()) {
-                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
-                    ConsoleLogger.info("[ConsoleChat] " + player.getName() + " executed: /" + cmd);
+                    String forbidden = findForbiddenPattern(cmd);
+                    if (forbidden != null) {
+                        sendForbiddenWarning(player, cmd, forbidden);
+                        ConsoleLogger.warn("[ConsoleChat] blocked " + player.getName()
+                                + ": /" + cmd + " (forbidden: " + forbidden + ")");
+                    } else {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                        ConsoleLogger.info("[ConsoleChat] " + player.getName() + " executed: /" + cmd);
+                    }
                 }
                 return;
             }
@@ -362,6 +381,50 @@ public class ChatManager implements Listener {
 
     // ========================= HELPERS =========================
 
+    /**
+     * Compiles the configured blacklist regexes, skipping invalid ones with a warning.
+     */
+    private static List<Pattern> compilePatterns(List<String> raw) {
+        java.util.ArrayList<Pattern> result = new java.util.ArrayList<>();
+        if (raw == null) return result;
+        for (String r : raw) {
+            if (r == null || r.trim().isEmpty()) continue;
+            try {
+                result.add(Pattern.compile(r));
+            } catch (java.util.regex.PatternSyntaxException e) {
+                ConsoleLogger.warn("[Chat] Invalid console-channel blacklist regex: " + r
+                        + " (" + e.getMessage() + ")");
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the first forbidden substring matched by the blacklist, or null if allowed.
+     */
+    private String findForbiddenPattern(String cmd) {
+        if (!consoleBlacklistEnabled || consoleBlacklistPatterns.isEmpty()) return null;
+        for (Pattern p : consoleBlacklistPatterns) {
+            Matcher m = p.matcher(cmd);
+            if (m.find()) return m.group();
+        }
+        return null;
+    }
+
+    /**
+     * Tells the player their command was cancelled and shows it with the
+     * forbidden part highlighted in red.
+     */
+    private void sendForbiddenWarning(Player player, String cmd, String forbidden) {
+        String esc = cmd.replace("<", "\\<").replace(">", "\\>");
+        String fEsc = forbidden.replace("<", "\\<").replace(">", "\\>");
+        String highlighted = esc.replace(fEsc, "<red>" + fEsc + "</red>");
+        player.sendMessage(MessageUtil.parse(
+                "<red>\u274c Your command contains forbidden content and was cancelled.</red>"));
+        player.sendMessage(MessageUtil.parse(
+                "<gray>  Command: </gray><white>" + highlighted + "</white>"));
+    }
+
     private Component parseMessageComponentForPing(String msg, Player player) {
         if (messagePlaceholders) {
             msg = PlaceholderResolver.resolve(msg, player);
@@ -386,6 +449,9 @@ public class ChatManager implements Listener {
 
     /** Returns local radius (used by LOCAL channel). */
     public static int getLocalRadius() { return instance != null ? instance.localRadius : 100; }
+
+    /** Returns true if the console channel is enabled in the config. */
+    public static boolean isConsoleEnabled() { return instance == null || instance.consoleEnabled; }
 
     /**
      * Returns true if the player is whitelisted for the console channel
