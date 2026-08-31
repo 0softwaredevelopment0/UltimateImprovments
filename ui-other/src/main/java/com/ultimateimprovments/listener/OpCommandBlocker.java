@@ -9,7 +9,7 @@ import org.bukkit.event.server.ServerCommandEvent;
 
 /**
  * 🚫 OpCommandBlocker — blocks the vanilla /op and /deop commands,
- * because UltimateImprovments uses its own interface (/ui chgop).
+ * because UltimateImprovments uses its own interface (/ui op, /ui deop).
  * <p>
  * Intercepts:
  * <ul>
@@ -22,7 +22,7 @@ import org.bukkit.event.server.ServerCommandEvent;
 public class OpCommandBlocker implements Listener {
 
     private static final String BLOCK_MESSAGE =
-            "<red>❌ Vanilla /op and /deop are disabled.</red> <gray>Use:</gray> <white>/ui chgop</white>";
+            "<red>Vanilla /op and /deop are disabled.</red> <gray>Use:</gray> <white>/ui op</white><gray> | </gray><white>/ui deop</white><gray> | </gray><white>/ui oplist</white>";
 
     /**
      * Checks whether the command is a variant of /op or /deop (considering namespaces and arguments).

@@ -10,7 +10,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
@@ -184,24 +183,16 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── Protection Block admin ops ──
         registry.register(LegacySubCommandAdapter.of("protection",
                 (s, a) -> { ProtectionSubcommand.execute(s, a); return true; }));
-        registry.register(LegacySubCommandAdapter.of("op", (s, a) -> {
-            if (!(s instanceof ConsoleCommandSender)) return false;
-            if (a.length < 2) return false;
-            Player target = Bukkit.getPlayerExact(a[1]);
-            if (target == null) return false;
-            target.setOp(true);
-            ConsoleLogger.info("[OpManager] Console granted OP to " + target.getName());
-            return true;
-        }));
-        registry.register(LegacySubCommandAdapter.of("deop", (s, a) -> {
-            if (!(s instanceof ConsoleCommandSender)) return false;
-            if (a.length < 2) return false;
-            Player target = Bukkit.getPlayerExact(a[1]);
-            if (target == null) return false;
-            target.setOp(false);
-            ConsoleLogger.info("[OpManager] Console revoked OP from " + target.getName());
-            return true;
-        }));
+        // ── OP Manager (new system) ──
+        registry.register(LegacySubCommandAdapter.of("op",
+                (s, a) -> com.ultimateimprovments.op.OpSubcommand.execute(s, a),
+                tc((s, a) -> com.ultimateimprovments.op.OpSubcommand.tabComplete(a))));
+        registry.register(LegacySubCommandAdapter.of("deop",
+                (s, a) -> com.ultimateimprovments.op.DeopSubcommand.execute(s, a),
+                tc((s, a) -> com.ultimateimprovments.op.DeopSubcommand.tabComplete(a))));
+        registry.register(LegacySubCommandAdapter.of("oplist",
+                (s, a) -> com.ultimateimprovments.op.OpListSubcommand.execute(s, a),
+                tc((s, a) -> com.ultimateimprovments.op.OpListSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("dont_run_this_command", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.dont_run_this_command")) { CommandErrors.noPermission(p); return false; }

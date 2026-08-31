@@ -96,8 +96,6 @@ public final class UIEssentials extends JavaPlugin {
             // Help
             registry.register(new HelpSubCommand());
 
-            // ChgOp
-            registry.register(LegacySubCommandAdapter.of("chgop", ChgOpSubcommand::execute));
 
             ConsoleLogger.info("[Essentials] Registered 20+ commands.");
         } catch (Exception e) {

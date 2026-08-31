@@ -108,9 +108,9 @@ public class HelpSubCommand implements SubCommand {
         put("expsplit", "Split experience");
         put("swapjar", "Swap plugin jar");
         put("god", "Toggle god mode");
-        put("op", "Grant OP (console)");
-        put("deop", "Revoke OP (console)");
-        put("chgop", "Change OP status");
+        put("op", "Grant operator status (with confirmation)");
+        put("deop", "Revoke operator status (with confirmation)");
+        put("oplist", "View the operator list (paginated)");
         put("setrad", "Set player radiation");
         put("cilist", "Custom item list");
         put("dont_run_this_command", "Get the impossible achievement (don't run it!)");

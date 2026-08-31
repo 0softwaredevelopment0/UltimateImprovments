@@ -97,7 +97,9 @@ public final class Permissions {
     public static final String CMD_INVSEE = "ui.command.invsee";
     public static final String CMD_ENDERSEE = "ui.command.endersee";
     public static final String CMD_INV_EDIT = "ui.command.inv.edit";
-    public static final String CMD_CHGOP = "ui.command.chgop";
+    public static final String CMD_OPLIST = "ui.command.oplist";
+    public static final String CMD_OP = "ui.command.op";
+    public static final String CMD_DEOP = "ui.command.deop";
     public static final String CMD_BROADCAST = "ui.command.broadcast";
     public static final String CMD_CLEARCHAT = "ui.command.clearchat";
     public static final String CMD_EXECCHAT = "ui.command.execchat";
@@ -262,7 +264,9 @@ public final class Permissions {
                 new Permission(CMD_INVSEE, "View player inventories (online and offline)", PermissionDefault.FALSE),
                 new Permission(CMD_ENDERSEE, "View player ender chests (online and offline)", PermissionDefault.FALSE),
                 new Permission(CMD_INV_EDIT, "Edit offline player inventories (with backup)", PermissionDefault.FALSE),
-                new Permission(CMD_CHGOP, "Grant or revoke operator status", PermissionDefault.FALSE),
+                new Permission(CMD_OPLIST, "View the operator list (paginated)", PermissionDefault.FALSE),
+                new Permission(CMD_OP, "Grant operator status", PermissionDefault.FALSE),
+                new Permission(CMD_DEOP, "Revoke operator status", PermissionDefault.FALSE),
                 new Permission(CMD_BROADCAST, "Broadcast a message to the server", PermissionDefault.FALSE),
                 new Permission(CMD_CLEARCHAT, "Clear the chat for a player or everyone", PermissionDefault.FALSE),
                 new Permission(CMD_EXECCHAT, "Send a chat message or run a command as another player", PermissionDefault.FALSE),

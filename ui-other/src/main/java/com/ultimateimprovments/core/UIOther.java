@@ -48,6 +48,7 @@ public class UIOther extends JavaPlugin {
         ConsoleLogger.info("[UI-Other] Disabling...");
         HandlerList.unregisterAll(this);
         com.ultimateimprovments.command.vote.VoteManager.shutdown();
+        com.ultimateimprovments.op.OpManager.shutdown();
         ModuleManager mm = ModuleManager.getInstance();
         if (mm != null) mm.shutdownAll();
         // Unfreeze any players still under an anti-cheat check before the plugin
@@ -101,6 +102,7 @@ public class UIOther extends JavaPlugin {
                 new com.ultimateimprovments.listener.WhitelistCommandBlocker(), main);
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.listener.OpCommandBlocker(), main);
+        com.ultimateimprovments.op.OpManager.init();
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.listener.LuckPermsCommandBlocker(), main);
 
