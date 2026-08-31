@@ -7,6 +7,7 @@ import com.ultimateimprovments.module.CoreModules;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.VersionCheckModule;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlaceholderResolver;
 
 /**
@@ -51,6 +52,7 @@ public class PluginStartup {
         com.ultimateimprovments.util.FileLogger.ensureDirectory(plugin.getDataFolder(), "DataFolder");
         loadConfigFile();
         ConfigIntegrityValidator.validate(plugin);
+        MessageUtil.reloadPrefix();
         MessagesManager.init(plugin);
         PlaceholderResolver.init();
 

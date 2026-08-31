@@ -18,8 +18,26 @@ public class MessageUtil {
     private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
     private static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
 
-    /** Префикс плагина для всех сообщений: "[UI] ". */
-    public static final String PREFIX = "<white>[<green>UI<white>] <reset>";
+    /** Default plugin prefix (MiniMessage): "[UI] ". */
+    public static final String DEFAULT_PREFIX = "<white>[<green>UI<white>] <reset>";
+
+    /**
+     * Current plugin prefix used in all plugin messages.
+     * Configurable via the "prefix" key in config.yml (MiniMessage format).
+     * Updated by {@link #reloadPrefix()}.
+     */
+    public static volatile String PREFIX = DEFAULT_PREFIX;
+
+    /**
+     * (Re)loads the plugin prefix from the "prefix" config key (MiniMessage
+     * format). Falls back to {@link #DEFAULT_PREFIX} when the value is missing
+     * or blank. Called on startup and on every /ui reload.
+     */
+    public static void reloadPrefix() {
+        String configured = com.ultimateimprovments.core.Main.getInstance().getConfig()
+                .getString("prefix", DEFAULT_PREFIX);
+        PREFIX = (configured == null || configured.isBlank()) ? DEFAULT_PREFIX : configured;
+    }
 
     /**
      * Main entry point: renders text with FULL placeholder resolution and

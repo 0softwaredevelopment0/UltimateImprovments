@@ -558,6 +558,7 @@ final class ConfigRules {
             bool("space.meteor_space_only"),
             stringList("space.space_entry_worlds"),
 
-            notBlank("plugin_version", 32)
+            notBlank("plugin_version", 32),
+            string("prefix", false, 512)
     );
 }

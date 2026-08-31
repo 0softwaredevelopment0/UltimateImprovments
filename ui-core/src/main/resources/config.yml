@@ -3,6 +3,12 @@
 # If you need help with configuration, please contact the developer (DM: @rizer001_dm)
 # or check out the README.
 
+# Plugin prefix shown before all plugin messages (MiniMessage format).
+# Set any other prefix you want, e.g. "<white>[<yellow>MyServer<white>] <reset>".
+# If this value is missing or blank, the default prefix is used.
+# Default: "<white>[<green>UI<white>] <reset>"
+prefix: "<white>[<green>UI<white>] <reset>"
+
 messages:
   # Chat message for general (lang)
   lang: en  # default language (en or ru)
