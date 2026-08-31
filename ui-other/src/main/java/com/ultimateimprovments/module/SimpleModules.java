@@ -183,30 +183,10 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerCoreModules(ModuleManager mm) {
-        // Database (essential — the plugin doesn't work without the DB)
-        mm.register(new PluginModule("Database", "infrastructure/database", true) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                // SQLITE INIT
-                DatabaseManager.connect();
-                DatabaseInit.init();
-                ConsoleLogger.info("[SQLITE] Database initialized successfully.");
-
-                // Vote Manager (load votes from the DB)
-                VoteManager.init();
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                // Cancel all vote timers
-                VoteManager.shutdown();
-                try {
-                    DatabaseManager.close();
-                } catch (Exception e) {
-                    ConsoleLogger.warn("[DatabaseModule] Close error: " + e.getMessage());
-                }
-            }
-        });
+        // NOTE: The "Database" module is already registered by CoreModules.registerAll()
+        // in UI-Core's PluginStartup. We must NOT re-register it here (ModuleManager
+        // silently skips duplicates). VoteManager.init() is called separately below
+        // after all core modules are initialized.
 
         // Core (essential — base systems: tasks, commands, common listeners)
         mm.register(new SimpleModule("Core", "infrastructure/core", true) {
@@ -234,6 +214,16 @@ public final class SimpleModules {
                 AutoCraftManager.init(main);
             }
         });
+    }
+
+    /**
+     * Initializes subsystems that depend on the Database module but live in UI-Other.
+     * Must be called AFTER all core modules are initialized (Database is ready).
+     * Previously VoteManager.init() was embedded in a duplicate Database module
+     * registration which was silently skipped by ModuleManager.
+     */
+    public static void initPostCoreSubsystems() {
+        VoteManager.init();
     }
 
     // --------------------------------------------------------------------------

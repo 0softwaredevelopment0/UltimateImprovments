@@ -1,6 +1,7 @@
 name: UI-Essentials
-version: '1.8.2'
+version: ${project.version}
 main: com.ultimateimprovments.module.UIEssentials
-api-version: '1.21'
+api-version: '26.2'
 description: 'Essential commands: home, teleport, heal, reports, NBT editor, and more'
+author: rizer001
 depend: [UI-Core]

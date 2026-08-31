@@ -4,5 +4,5 @@ description: UltimateImprovments — All features add-on
 main: com.ultimateimprovments.core.UIOther
 api-version: '26.2'
 author: rizer001
-depend: [UI-Core, UI-MBS]
+depend: [UI-Core, UI-MBS, UI-Shared, UI-Chat, UI-Clans, UI-Combat, UI-Energy, UI-Punish, UI-Anticheat, UI-Essentials, UI-Datapack]
 softdepend: [PlaceholderAPI, LuckPerms, Vault]
