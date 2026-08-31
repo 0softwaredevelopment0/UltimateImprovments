@@ -3832,6 +3832,7 @@ enchant:
     - "attack_aoe"
     - "item_stealing"
     - "repairing"
+    - "container_stealing"
 
 spawn:
   # Spawn mode: legit or creative

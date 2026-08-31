@@ -1210,6 +1210,33 @@ public final class SimpleModules {
         });
     }
 
+    // --------------------------------------------------------------------------
+    // CONTAINER STEALING ENCHANTMENT (registered after RepairingEnchantment)
+    // --------------------------------------------------------------------------
+
+    public static void registerContainerStealingEnchantment(ModuleManager mm) {
+        // Container Stealing: REAL data-driven enchantment (ui:container_stealing,
+        // registered by the UI-Datapack, max level 1) + PDC mirror failsafe.
+        // Breaking a container drops a single container that retains its contents;
+        // placing it restores them.
+        mm.register(new SimpleModule("ContainerStealingEnchantment", "enchantment/container_stealing", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Block break / block place listener (store + restore contents)
+                main.getServer().getPluginManager().registerEvents(
+                        new com.ultimateimprovments.enchantment.containerstealing.EnchantmentListener(), main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.containerstealing.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[ContainerStealing] Level: 1 | Tools: pickaxe, shovel, axe, hoe | "
+                        + "Breaking a container drops it with its contents inside");
+            }
+        });
+    }
+
 
     public static void registerProtection(ModuleManager mm) {
         // RedstoneGuard

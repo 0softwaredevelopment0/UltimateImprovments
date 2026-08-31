@@ -565,6 +565,18 @@ public final class EnchantSubcommand {
                         }
                         // Repairing requires an item with durability — skip silently
                     }
+                    case "container_stealing" -> {
+                        if (com.ultimateimprovments.enchantment.containerstealing.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.containerstealing.Enchantment.setLevel(item, 1);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.containerstealing.Enchantment.hasContainerStealing(item)) {
+                                com.ultimateimprovments.enchantment.containerstealing.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Container Stealing requires a tool — skip silently
+                    }
                     default -> { /* unknown custom enchant — skip */ }
                 }
             } else {
@@ -714,7 +726,8 @@ public final class EnchantSubcommand {
                         || e.getKey().equals(com.ultimateimprovments.enchantment.selfdestruct.Enchantment.ENCHANTMENT_KEY)
                         || e.getKey().equals(com.ultimateimprovments.enchantment.degradation.Enchantment.ENCHANTMENT_KEY)
                         || e.getKey().equals(com.ultimateimprovments.enchantment.attackaoe.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.itemstealing.Enchantment.ENCHANTMENT_KEY)) {
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.itemstealing.Enchantment.ENCHANTMENT_KEY)
+                        || e.getKey().equals(com.ultimateimprovments.enchantment.containerstealing.Enchantment.ENCHANTMENT_KEY)) {
                     continue;
                 }
                 enchants.add("<green>" + e.getKey().getKey() + " " + e.getValue());
@@ -761,6 +774,9 @@ public final class EnchantSubcommand {
             }
             if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.getLevel(item) > 0) {
                 enchants.add("<aqua>Item Stealing");
+            }
+            if (com.ultimateimprovments.enchantment.containerstealing.Enchantment.getLevel(item) > 0) {
+                enchants.add("<aqua>Container Stealing");
             }
 
             if (enchants.isEmpty()) continue;
