@@ -93,7 +93,8 @@ public final class OpSubcommand {
         sendConfirmDialog(sender,
                 "Grant OP",
                 "<green>GRANT</green>",
-                target.getName());
+                target.getName(),
+                "/ui op confirm");
         return true;
     }
 
@@ -147,28 +148,38 @@ public final class OpSubcommand {
                 "<dark_gray>┃</dark_gray>"
         ));
 
-        // Confirm button
-        Component confirmBtn = MessageUtil.parse(
-                "<dark_gray>┃     </dark_gray><dark_green>[</dark_green><green>✔ Confirm Grant</green><dark_green>]</dark_green>"
-        ).clickEvent(ClickEvent.runCommand("/ui op confirm"))
-         .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                 MessageUtil.parse("<green>Click to confirm</green>\n<gray>Expires in 30 seconds</gray>")));
-        sender.sendMessage(confirmBtn);
+        if (sender instanceof Player) {
+            // Player: show clickable buttons
+            Component confirmBtn = MessageUtil.parse(
+                    "<dark_gray>┃     </dark_gray><dark_green>[</dark_green><green>✔ Confirm Grant</green><dark_green>]</dark_green>"
+            ).clickEvent(ClickEvent.runCommand("/ui op confirm"))
+             .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
+                     MessageUtil.parse("<green>Click to confirm</green>\n<gray>Expires in 30 seconds</gray>")));
+            sender.sendMessage(confirmBtn);
 
-        // Cancel button
-        Component cancelBtn = MessageUtil.parse(
-                "<dark_gray>┃     </dark_gray><dark_red>[</dark_red><red>✕ Cancel</red><dark_red>]</dark_red>"
-        ).clickEvent(ClickEvent.runCommand("/ui oplist"))
-         .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                 MessageUtil.parse("<gray>Click to cancel</gray>")));
-        sender.sendMessage(cancelBtn);
+            Component cancelBtn = MessageUtil.parse(
+                    "<dark_gray>┃     </dark_gray><dark_red>[</dark_red><red>✕ Cancel</red><dark_red>]</dark_red>"
+            ).clickEvent(ClickEvent.runCommand("/ui oplist"))
+             .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
+                     MessageUtil.parse("<gray>Click to cancel</gray>")));
+            sender.sendMessage(cancelBtn);
 
-        sender.sendMessage(MessageUtil.parse(
-                "<dark_gray>┃</dark_gray>"
-        ));
-        sender.sendMessage(MessageUtil.parse(
-                "<dark_gray>┃</dark_gray> <gray>Type </gray><white>/ui op confirm</white><gray> to confirm.</gray>"
-        ));
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>┃</dark_gray>"
+            ));
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>┃</dark_gray> <gray>Click a button or type </gray><white>/ui op confirm</white><gray> to confirm.</gray>"
+            ));
+        } else {
+            // Console / Command Block: text-only instructions
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>┃</dark_gray> <gray>Type </gray><white>/ui op confirm</white><gray> to confirm.</gray>"
+            ));
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>┃</dark_gray> <gray>This action expires in </gray><white>30 seconds</white><gray>.</gray>"
+            ));
+        }
+
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</dark_gray>"
         ));
@@ -272,7 +283,7 @@ public final class OpSubcommand {
     // ════════════════════════════════════════
     // SHARED CONFIRMATION DIALOG
     // ════════════════════════════════════════
-    static void sendConfirmDialog(CommandSender sender, String title, String actionTag, String targetName) {
+    static void sendConfirmDialog(CommandSender sender, String title, String actionTag, String targetName, String confirmCmd) {
         sender.sendMessage(MessageUtil.parse(""));
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</dark_gray>"
@@ -299,28 +310,38 @@ public final class OpSubcommand {
                 "<dark_gray>┃</dark_gray>"
         ));
 
-        // Confirm button
-        Component confirmBtn = MessageUtil.parse(
-                "<dark_gray>┃     </dark_gray><dark_green>[</dark_green><green>✔ Confirm " + title + "</green><dark_green>]</dark_green>"
-        ).clickEvent(ClickEvent.runCommand("/ui op confirm"))
-         .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                 MessageUtil.parse("<green>Click to confirm</green>\n<gray>Expires in 30 seconds</gray>")));
-        sender.sendMessage(confirmBtn);
+        if (sender instanceof Player) {
+            // Player: show clickable buttons
+            Component confirmBtn = MessageUtil.parse(
+                    "<dark_gray>┃     </dark_gray><dark_green>[</dark_green><green>✔ Confirm " + title + "</green><dark_green>]</dark_green>"
+            ).clickEvent(ClickEvent.runCommand(confirmCmd))
+             .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
+                     MessageUtil.parse("<green>Click to confirm</green>\n<gray>Expires in 30 seconds</gray>")));
+            sender.sendMessage(confirmBtn);
 
-        // Cancel button
-        Component cancelBtn = MessageUtil.parse(
-                "<dark_gray>┃     </dark_gray><dark_red>[</dark_red><red>✕ Cancel</red><dark_red>]</dark_red>"
-        ).clickEvent(ClickEvent.runCommand("/ui oplist"))
-         .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
-                 MessageUtil.parse("<gray>Click to cancel</gray>")));
-        sender.sendMessage(cancelBtn);
+            Component cancelBtn = MessageUtil.parse(
+                    "<dark_gray>┃     </dark_gray><dark_red>[</dark_red><red>✕ Cancel</red><dark_red>]</dark_red>"
+            ).clickEvent(ClickEvent.runCommand("/ui oplist"))
+             .hoverEvent(HoverEvent.hoverEvent(HoverEvent.Action.SHOW_TEXT,
+                     MessageUtil.parse("<gray>Click to cancel</gray>")));
+            sender.sendMessage(cancelBtn);
 
-        sender.sendMessage(MessageUtil.parse(
-                "<dark_gray>┃</dark_gray>"
-        ));
-        sender.sendMessage(MessageUtil.parse(
-                "<dark_gray>┃</dark_gray> <gray>Type </gray><white>/ui op confirm</white><gray> to confirm.</gray>"
-        ));
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>┃</dark_gray>"
+            ));
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>┃</dark_gray> <gray>Click a button or type </gray><white>" + confirmCmd + "</white><gray> to confirm.</gray>"
+            ));
+        } else {
+            // Console / Command Block: text-only instructions
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>┃</dark_gray> <gray>Type </gray><white>" + confirmCmd + "</white><gray> to confirm.</gray>"
+            ));
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>┃</dark_gray> <gray>This action expires in </gray><white>30 seconds</white><gray>.</gray>"
+            ));
+        }
+
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</dark_gray>"
         ));
