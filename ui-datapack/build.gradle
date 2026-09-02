@@ -6,6 +6,7 @@ plugins {
 dependencies {
     paperweight.paperDevBundle("26.2.build.+")
     implementation project(':ui-core')
+    implementation 'com.moandjiezana.toml:toml4j:0.7.2'
 }
 
 // The bundled UI-Datapack resources live in this module's own

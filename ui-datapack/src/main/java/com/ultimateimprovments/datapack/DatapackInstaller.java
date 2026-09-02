@@ -8,9 +8,10 @@ import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.Properties;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
 import java.util.zip.ZipFile;
 
 public class DatapackInstaller {
@@ -36,7 +37,7 @@ public class DatapackInstaller {
      * Search priority:
      * <ol>
      *   <li>Bukkit.getWorlds() — the first loaded world's folder (most reliable)</li>
-     *   <li>server.properties → level-name → Bukkit.getWorldContainer()</li>
+     *   <li>server.toml → level-name → Bukkit.getWorldContainer()</li>
      *   <li>The "world" folder in Bukkit.getWorldContainer() (default)</li>
      * </ol>
      * If the datapacks folder is not found — it is created.
@@ -71,22 +72,27 @@ public class DatapackInstaller {
             }
         }
 
-        // 2. Fallback: read level-name from server.properties
+        // 2. Fallback: read level-name from server.toml
         String levelName = "world";
-        File serverDir = new File("").getAbsoluteFile();
-        File serverPropsFile = new File(serverDir, "server.properties");
-        if (serverPropsFile.exists()) {
-            try (FileInputStream fis = new FileInputStream(serverPropsFile)) {
-                Properties props = new Properties();
-                props.load(fis);
-                levelName = props.getProperty("level-name", "world");
+        Path tomlPath = Path.of("server.toml");
+        if (Files.isRegularFile(tomlPath)) {
+            try {
+                com.moandjiezana.toml.Toml toml = new com.moandjiezana.toml.Toml().read(tomlPath.toFile());
+                Map<String, Object> root = toml.toMap();
+                Object serverSection = root.get("server");
+                if (serverSection instanceof Map) {
+                    Object levelNameObj = ((Map<?, ?>) serverSection).get("level-name");
+                    if (levelNameObj != null) {
+                        levelName = levelNameObj.toString();
+                    }
+                }
             } catch (Exception e) {
-                ConsoleLogger.warn("[Datapack] Failed to read server.properties: " + e.getMessage());
+                ConsoleLogger.warn("[Datapack] Failed to read server.toml: " + e.getMessage());
             }
         }
 
         File worldRoot = new File(Bukkit.getWorldContainer(), levelName);
-        ConsoleLogger.info("[Datapack] World root from server.properties: " + worldRoot.getAbsolutePath());
+        ConsoleLogger.info("[Datapack] World root from server.toml: " + worldRoot.getAbsolutePath());
 
         // 3. If the folder is not found, try the standard "world"
         if (!worldRoot.isDirectory()) {
