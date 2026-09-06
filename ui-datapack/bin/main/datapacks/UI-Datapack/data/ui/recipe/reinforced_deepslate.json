@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "O": "minecraft:obsidian",
+    "S": "minecraft:netherite_scrap"
+  },
+  "pattern": [
+    "OOO",
+    "OSO",
+    "OOO"
+  ],
+  "result": {
+    "id": "minecraft:reinforced_deepslate"
+  }
+}

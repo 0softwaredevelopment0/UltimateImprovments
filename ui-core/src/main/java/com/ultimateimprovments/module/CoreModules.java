@@ -25,7 +25,12 @@ public final class CoreModules {
             }
         });
 
-        mm.register(new PluginModule("Core", "infrastructure/core", true) {
+        // NOTE: named "CoreInfra" (not "Core") to avoid colliding with the
+        // real "Core" module registered by UI-Other's SimpleModules.registerCoreModules(),
+        // which owns TaskManager/CommandRegistrar/general listeners. ModuleManager
+        // silently skips duplicate module names, so a name collision here previously
+        // caused that real Core module's init logic to never run.
+        mm.register(new PluginModule("CoreInfra", "infrastructure/core", true) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 ConsoleLogger.info("[Core] Infrastructure initialized.");

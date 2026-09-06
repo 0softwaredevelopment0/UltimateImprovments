@@ -2781,7 +2781,7 @@ features:
       low_color: "#990000"
 
     # Lore line showing the integrity value
-    lore_text: "<white>Integrity:</white>"
+    lore_text: "<i:false><white>Integrity:</white>"
 
     on_break:
       # Whether a sound plays when an item breaks

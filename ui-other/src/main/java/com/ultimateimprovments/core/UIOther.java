@@ -58,6 +58,9 @@ public class UIOther extends JavaPlugin {
     }
 
     private void registerAllModules(ModuleManager mm) {
+        // Must run first: initializes TaskManager, CommandRegistrar and the
+        // general listeners that many other modules below depend on.
+        SimpleModules.registerCoreModules(mm);
         SimpleModules.registerMechanics(mm);
         SimpleModules.registerCrafting(mm);
         SimpleModules.registerSudo(mm);

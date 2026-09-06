@@ -1,0 +1,17 @@
+{
+  "feature": "minecraft:ore_ancient_debris_small",
+  "placement": [
+    {
+      "type": "minecraft:count_on_every_layer",
+      "count": 1
+    },
+    {
+      "type": "minecraft:count",
+      "count": 1
+    },
+    {
+      "type": "minecraft:rarity_filter",
+      "chance": 10
+    }
+  ]
+}

@@ -54,7 +54,7 @@ public class SpaceRocketManager implements Listener {
         ItemStack item = new ItemStack(Material.FIREWORK_ROCKET, 1);
         var meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(MessageUtil.parse("<gold>🚀 Space Rocket</gold>"));
+            meta.displayName(MessageUtil.parse("<white>Space Rocket</white>"));
             meta.lore(java.util.List.of(
                 MessageUtil.parse("<gray>Right-click to launch into space</gray>"),
                 MessageUtil.parse("<dark_gray>You will be lifted to the sky limit</dark_gray>")
@@ -180,7 +180,7 @@ public class SpaceRocketManager implements Listener {
         }
         ShapedRecipe recipe = new ShapedRecipe(key, createRocket());
         recipe.shape("NFN", "IRI", "TCT");
-        recipe.setIngredient('N', Material.NETHERITE_INGOT);
+        recipe.setIngredient('N', Material.NETHERITE_SCRAP);
         recipe.setIngredient('F', Material.FIREWORK_STAR);
         recipe.setIngredient('I', Material.IRON_BLOCK);
         recipe.setIngredient('R', Material.REDSTONE_BLOCK);
