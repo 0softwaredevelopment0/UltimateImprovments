@@ -1,0 +1,8 @@
+name: UI-Datapack
+version: ${project.version}
+description: UltimateImprovments — bundled datapack installer
+main: com.ultimateimprovments.datapack.UIDatapack
+api-version: '26.2'
+author: rizer001
+load: STARTUP
+depend: [UI-Core]

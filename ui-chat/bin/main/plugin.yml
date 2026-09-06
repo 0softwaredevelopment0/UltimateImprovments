@@ -1,0 +1,8 @@
+name: UI-Chat
+version: ${project.version}
+description: UltimateImprovments — Chat system (channels, pings, filter)
+main: com.ultimateimprovments.chat.UIChat
+api-version: '26.2'
+author: rizer001
+depend: [UI-Core]
+softdepend: [PlaceholderAPI, LuckPerms, Vault]
