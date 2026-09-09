@@ -142,7 +142,13 @@ public class IntegrityCombineListener implements Listener {
 
             double newCurrent = Math.min(100.0, combined);
 
-            ItemStack result = slot0.clone();
+            // Start from the vanilla anvil result when possible: the anvil has
+            // already merged enchantments from BOTH slots. Building the result
+            // from slot0.clone() alone would silently drop slot1's enchantments.
+            ItemStack vanilla = event.getResult();
+            ItemStack result = (vanilla != null && vanilla.getType() == slot0.getType())
+                    ? vanilla
+                    : slot0.clone();
             ItemIntegrityAPI.setItemIntegrity(result, newCurrent);
             IntegrityManager.updateItemLore(result);
 
