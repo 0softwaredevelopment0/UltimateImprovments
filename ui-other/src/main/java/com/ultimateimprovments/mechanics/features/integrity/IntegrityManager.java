@@ -120,9 +120,12 @@ public class IntegrityManager extends BukkitRunnable {
     private static boolean piercingEnabled = true;
     private static double piercingExtraCost = 0.5;
 
-    // Flag: the current armor hit was caused by a PIERCING weapon
-    // Reset at the start of the next tick (run())
-    private static boolean piercingActive = false;
+    // PIERCING flag: the current armor hit was caused by a PIERCING weapon.
+    // Stored as the tick when the hit happened; a mark older than
+    // PIERCING_FLAG_MAX_AGE_TICKS is ignored, so it can no longer leak
+    // into unrelated armor damage on later ticks.
+    private static int piercingActiveTick = -1;
+    private static final int PIERCING_FLAG_MAX_AGE_TICKS = 2;
 
     // Flag: the task was scheduled (runTaskTimer was called)
     // Prevents cancel() of an unscheduled task in reloadConfig() during init()
@@ -302,6 +305,9 @@ public class IntegrityManager extends BukkitRunnable {
                 ConsoleLogger.warn("[INTEGRITY] Failed to restart task: " + e.getMessage());
             }
         }
+
+        // Keep the Piercing listener's cached toggle in sync on reloads
+        PiercingListener.reloadConfig();
     }
 
     public static IntegrityManager getInstance() {
@@ -453,13 +459,20 @@ public class IntegrityManager extends BukkitRunnable {
     public static double getPiercingExtraCost() { return piercingExtraCost; }
 
     /**
-     * Sets the flag that the current armor hit was caused by a PIERCING weapon.
-     * The flag is reset at the start of each tick (run()).
+     * Marks that the current armor hit was caused by a PIERCING weapon
+     * (or clears the mark when {@code active} is false).
+     * The mark expires automatically after {@link #PIERCING_FLAG_MAX_AGE_TICKS}
+     * ticks so it cannot leak into unrelated armor damage.
      */
-    public static void setPiercingActive(boolean active) { piercingActive = active; }
+    public static void setPiercingActive(boolean active) {
+        piercingActiveTick = active ? Bukkit.getCurrentTick() : -1;
+    }
 
     /** Checks whether PIERCING is active for the current hit. */
-    private static boolean isPiercingActive() { return piercingActive; }
+    private static boolean isPiercingActive() {
+        if (piercingActiveTick < 0) return false;
+        return Bukkit.getCurrentTick() - piercingActiveTick <= PIERCING_FLAG_MAX_AGE_TICKS;
+    }
 
     // =========================
     // TICK — scanning inventories
@@ -467,9 +480,6 @@ public class IntegrityManager extends BukkitRunnable {
     @Override
     public void run() {
         if (!enabled) return;
-
-        // Reset the PIERCING flag at the start of each tick
-        piercingActive = false;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             PlayerInventory inv = player.getInventory();
@@ -556,6 +566,9 @@ public class IntegrityManager extends BukkitRunnable {
             pdc.set(Keys.INTEGRITY_VERSION, PersistentDataType.INTEGER, INTEGRITY_VERSION);
             pdc.set(Keys.INTEGRITY_MAX, PersistentDataType.DOUBLE, 100.0);
             pdc.set(Keys.INTEGRITY_CURRENT, PersistentDataType.DOUBLE, Math.max(0, Math.min(100.0, newCurrent)));
+            // A migrated item can start mid-wear: pre-mark the thresholds it is
+            // already at or below so the first scan doesn't fire several warnings at once.
+            pdc.set(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, initialWarnMask(newCurrent));
             migrated = true;
 
             if (logInit) {
@@ -953,14 +966,6 @@ public class IntegrityManager extends BukkitRunnable {
             }
         }
 
-        // On the first scan (warnFlags == 0) pre-set flags for thresholds
-        // above the current integrity — to avoid spamming about "skipped" thresholds.
-        // Example: an item at 30% → 75% and 50% are immediately marked as "already warned"
-        int prevFlags = pdc.getOrDefault(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, 0);
-        if (prevFlags == 0 && warnFlags > 0) {
-            warned = false; // don't send a message on first initialization
-        }
-
         // Save the flags to PDC
         int oldFlags = pdc.getOrDefault(Keys.INTEGRITY_WARN_FLAGS, PersistentDataType.INTEGER, 0);
         if (warned || warnFlags != oldFlags) {
@@ -1034,6 +1039,31 @@ public class IntegrityManager extends BukkitRunnable {
         String matName = item.getType().name();
         if (!whitelist.isEmpty() && !whitelist.contains(matName)) return false;
         return !blacklist.contains(matName);
+    }
+
+    /**
+     * Whether the item participates in the integrity system:
+     * it has durability and passes the blacklist/whitelist filters.
+     * The damage listener uses this to decide whether vanilla durability
+     * damage may be redirected — non-tracked items keep vanilla durability
+     * and must NOT have their damage cancelled.
+     */
+    public static boolean isItemTracked(ItemStack item) {
+        return isItemApplicable(item);
+    }
+
+    /**
+     * Warn-flag mask for an item that starts at the given percentage:
+     * marks every threshold it is already at or below as "already warned".
+     */
+    private static int initialWarnMask(double pct) {
+        int mask = 0;
+        for (int i = 0; i < lowIntegrityThresholds.size(); i++) {
+            if (pct <= lowIntegrityThresholds.get(i)) {
+                mask |= (1 << i);
+            }
+        }
+        return mask;
     }
 
     // =========================
