@@ -16,6 +16,13 @@ tasks {
         archiveBaseName.set('UI-Shared')
         archiveVersion.set(project.version.toString())
         configurations = [project.configurations.runtimeClasspath]
+        // Do not bundle sibling UltimateImprovments plugin JARs (UI-Core, ...).
+        // Bundled duplicate core classes were loaded from this JAR instead of
+        // UI-Core, so static state (Main.getInstance()) was null in the module's
+        // copy and modules disabled themselves at startup.
+        dependencies {
+            exclude(dependency('com.ultimateimprovments:.*:.*'))
+        }
         // config.yml lives only in UI-Core (ui-core/src/main/resources)
         exclude 'config.yml'
     }
