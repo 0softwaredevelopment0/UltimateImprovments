@@ -303,6 +303,9 @@ public final class SimpleModules {
                 pm.registerEvents(new ChunkLoaderCraftListener(), main);
                 pm.registerEvents(new ChunkLoaderItemListener(), main);
                 pm.registerEvents(new StructureIntegrityCraftListener(), main);
+                // Gates the custom recipes to the vanilla Crafter block
+                // (was imported but never registered — the gate never fired).
+                pm.registerEvents(new EnergyCraftingListener(), main);
                 ConcreteBucketManager.init(main);
 
                 ConsoleLogger.info("[CraftingModule] ✔ Recipes initialized.");
