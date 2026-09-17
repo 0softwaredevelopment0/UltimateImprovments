@@ -31,4 +31,19 @@ subprojects {
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
+
+    // Copy the module's distributable shadow jar (-all) into the root
+    // build/libs, so after `./gradlew build` every plugin jar lands in one
+    // directory (<root>/build/libs/UI-<Name>-<version>-all.jar).
+    tasks.register('copyJarToRoot', Copy) {
+        group = 'build'
+        description = "Copies this module's -all (shadow) jar into the root build/libs."
+        dependsOn tasks.named('shadowJar')
+        from(tasks.named('shadowJar').map { it.archiveFile })
+        into rootProject.layout.buildDirectory.dir('libs')
+    }
+
+    tasks.named('assemble') {
+        finalizedBy 'copyJarToRoot'
+    }
 }
