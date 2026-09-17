@@ -27,6 +27,21 @@ public class UIPunish extends JavaPlugin {
         // Register punishment listener
         pm.registerEvents(new PunishJoinListener(), main);
 
+        // Register /ui punish in the shared SubCommandRegistry. The CommandScanner
+        // only scans the UI-Core JAR, so module subcommands must register
+        // themselves — otherwise /ui punish falls into "unknown command".
+        com.ultimateimprovments.command.SubCommandRegistry registry =
+                com.ultimateimprovments.command.SubCommandRegistry.getInstance();
+        if (registry != null) {
+            registry.register(com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.of(
+                    "punish",
+                    com.ultimateimprovments.command.subcommands.PunishSubcommand::execute,
+                    com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.tc(
+                            (s, a) -> com.ultimateimprovments.command.subcommands.PunishSubcommand.tabComplete(a))));
+        } else {
+            getLogger().severe("SubCommandRegistry not available — /ui punish is not registered!");
+        }
+
         // Initialize whitelist/blacklist
         WhitelistManager.init(main);
         BlacklistManager.init(main);
