@@ -106,8 +106,11 @@ public class ReactorListener implements Listener {
         // Check: an active lightning structure?
         Location lightningCenter = LightningStructure.findCenter(clicked.getLocation());
         if (lightningCenter != null && LightningManager.isActive(lightningCenter)) {
+            boolean enabled = LightningManager.isEnabled(lightningCenter);
             player.sendMessage(MessageUtil.parse("<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Активна <dark_gray>| <white>"
-                    + lightningCenter.getBlockX() + " " + lightningCenter.getBlockY() + " " + lightningCenter.getBlockZ()));
+                    + lightningCenter.getBlockX() + " " + lightningCenter.getBlockY() + " " + lightningCenter.getBlockZ()
+                    + " <dark_gray>[" + (enabled ? "<green>✔ On" : "<red>❌ Off") + "<dark_gray>]"));
+            player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>SHIFT+ПКМ по рамке — включить/выключить"));
             return;
         }
 
@@ -254,8 +257,11 @@ public class ReactorListener implements Listener {
             Location center = lightningTmpl.findMatch(frameLoc, 5);
             if (center != null) {
                 if (LightningManager.isActive(center)) {
-                    player.sendMessage(MessageUtil.parse("<yellow>⚡ Структура молний уже собрана!"));
-                    player.sendMessage(MessageUtil.parse("<gray>Команды: <white>/ui str lightning enable<gray>/<red>disable"));
+                    boolean enabled = LightningManager.isEnabled(center);
+                    LightningManager.setEnabled(center, !enabled);
+                    player.sendMessage(MessageUtil.parse(enabled
+                            ? "<red>❌ <white>Структура молний выключена!"
+                            : "<green>✔ <white>Структура молний включена!"));
                     return;
                 }
                 player.sendMessage(MessageUtil.parse("<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Обнаружена структура молний — сборка..."));
@@ -280,7 +286,7 @@ public class ReactorListener implements Listener {
                 }
                 ReactorManager.setPendingAssembly(player, center, frame, "dark_synthesis");
                 player.sendMessage(MessageUtil.parse("<dark_gray>[<red>Реактор<dark_gray>] <gray>Обнаружен реактор — сборка..."));
-                player.performCommand("reactor assemble dark_synthesis");
+                ReactorCommand.assembleDarkSynthesis(player);
                 return;
             }
         }
@@ -300,7 +306,7 @@ public class ReactorListener implements Listener {
             }
             ReactorManager.setPendingAssembly(player, attachedLoc, frame, "magnet");
             player.sendMessage(MessageUtil.parse("<dark_gray>[<aqua>Магнит<dark_gray>] <gray>Обнаружен магнит — сборка..."));
-            player.performCommand("reactor assemble magnet");
+            ReactorCommand.assembleMagnet(player);
             return;
         }
 
@@ -426,7 +432,7 @@ public class ReactorListener implements Listener {
         e.setCancelled(true);
 
         // Open reactor stats
-        player.performCommand("ui str dfc stats");
+        ReactorStatsDisplay.sendStats(player);
     }
 
     // =========================

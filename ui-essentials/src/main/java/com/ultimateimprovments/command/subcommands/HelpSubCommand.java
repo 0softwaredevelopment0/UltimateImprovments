@@ -84,7 +84,6 @@ public class HelpSubCommand implements SubCommand {
         put("askpos", "Request player's coordinates (dialog)");
         put("enchant", "Enchant manager (give/take/check, custom AoE)");
         put("pdc", "PDC manager (add/modify/remove/list/clear/container)");
-        put("str", "Structures (dfc/magnet/lightning/...)");
         put("protection", "Protection block admin ops");
         put("menu", "Open admin menu");
         put("sudo", "Sudo mode (dangerous actions)");

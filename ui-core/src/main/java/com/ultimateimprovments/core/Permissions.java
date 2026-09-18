@@ -111,9 +111,6 @@ public final class Permissions {
     public static final String CMD_AC = "ui.command.ac";
     public static final String CMD_PROTECTION = "ui.command.protection";
     public static final String CMD_CMDLOG = "ui.command.cmdlog";
-    public static final String CMD_STRUCTURES = "ui.command.structures";
-    public static final String CMD_STRUCTURES_DFC = "ui.command.structures.dfc";
-    public static final String CMD_STRUCTURES_MAGNET = "ui.command.structures.magnet";
     public static final String CMD_MENU = "ui.command.menu";
     public static final String CMD_REPORT = "ui.command.report";
     public static final String CMD_REPORTS = "ui.command.reports";
@@ -277,9 +274,6 @@ public final class Permissions {
                 new Permission(CMD_AC, "View anti-cheat statistics", PermissionDefault.FALSE),
                 new Permission(CMD_PROTECTION, "Manage protection blocks", PermissionDefault.FALSE),
                 new Permission(CMD_CMDLOG, "Toggle the in-chat command logger (/ui cmdlog)", PermissionDefault.FALSE),
-                new Permission(CMD_STRUCTURES, "Manage structures", PermissionDefault.FALSE),
-                new Permission(CMD_STRUCTURES_DFC, "Manage DFC structures", PermissionDefault.FALSE),
-                new Permission(CMD_STRUCTURES_MAGNET, "Manage magnet structures", PermissionDefault.FALSE),
                 new Permission(CMD_MENU, "Open the admin menu", PermissionDefault.FALSE),
                 new Permission(CMD_REPORT, "Report a player", PermissionDefault.FALSE),
                 new Permission(CMD_REPORTS, "View reports", PermissionDefault.FALSE),
