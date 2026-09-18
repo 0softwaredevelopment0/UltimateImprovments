@@ -115,6 +115,13 @@ public class LightningManager implements Listener {
         return null;
     }
 
+    /** Returns whether the lightning structure at the given center is enabled. */
+    public static boolean isEnabled(Location center) {
+        center = LocationUtil.normalize(center);
+        Boolean state = activeStructures.get(center);
+        return state != null && state;
+    }
+
     public static void setEnabled(Location center, boolean enabled) {
         center = LocationUtil.normalize(center);
         if (activeStructures.containsKey(center)) {
@@ -177,7 +184,7 @@ public class LightningManager implements Listener {
             if (player != null) {
                 player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<green>✔ <white>Lightning structure assembled!"));
                 player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>Drop items on the lightning rod — lightning will smelt them!"));
-                player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>Commands: <white>/ui str lightning enable<gray>/<red>disable <gray>/ <white>stats"));
+                player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>SHIFT+RMB on the frame toggles it on/off, RMB shows status"));
             }
 
             ConsoleLogger.info(

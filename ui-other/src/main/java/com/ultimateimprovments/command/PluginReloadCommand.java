@@ -174,12 +174,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             p.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<green>✔ <white>Player <yellow>" + target.getName() + " <white>has been force-suicided."));
             return true;
         }));
-        registry.register(LegacySubCommandAdapter.of("str", (s, a) -> {
-            if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("ui.command.structures")) { CommandErrors.noPermission(p); return false; }
-            StructureSubcommand.execute(p, a);
-            return true;
-        }));
 
         // ── Protection Block admin ops ──
         registry.register(LegacySubCommandAdapter.of("protection",
