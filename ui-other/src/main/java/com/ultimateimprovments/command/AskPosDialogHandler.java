@@ -98,8 +98,8 @@ public class AskPosDialogHandler implements Listener {
     /**
      * Registers the listener in the plugin.
      */
-    public static void register() {
-        Bukkit.getPluginManager().registerEvents(new AskPosDialogHandler(), Main.getInstance());
+    public static void register(org.bukkit.plugin.Plugin plugin) {
+        Bukkit.getPluginManager().registerEvents(new AskPosDialogHandler(), plugin);
         ConsoleLogger.info("[AskPosDialog] AskPosDialogHandler registered");
     }
 }

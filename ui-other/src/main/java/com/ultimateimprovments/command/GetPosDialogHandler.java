@@ -102,8 +102,8 @@ public class GetPosDialogHandler implements Listener {
     /**
      * Registers the listener in the plugin.
      */
-    public static void register() {
-        Bukkit.getPluginManager().registerEvents(new GetPosDialogHandler(), Main.getInstance());
+    public static void register(org.bukkit.plugin.Plugin plugin) {
+        Bukkit.getPluginManager().registerEvents(new GetPosDialogHandler(), plugin);
         ConsoleLogger.info("[GetPosDialog] GetPosDialogHandler registered");
     }
 }

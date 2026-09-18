@@ -106,8 +106,8 @@ public class AuthDialogHandler implements Listener {
     /**
      * Registers the listener in the plugin.
      */
-    public static void register() {
-        Bukkit.getPluginManager().registerEvents(new AuthDialogHandler(), Main.getInstance());
+    public static void register(org.bukkit.plugin.Plugin plugin) {
+        Bukkit.getPluginManager().registerEvents(new AuthDialogHandler(), plugin);
         ConsoleLogger.info("[AuthDialog] AuthDialogHandler registered");
     }
 }
