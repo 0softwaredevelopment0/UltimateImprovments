@@ -54,6 +54,10 @@ public class UIOther extends JavaPlugin {
         // Unfreeze any players still under an anti-cheat check before the plugin
         // is disabled/reloaded — otherwise they'd be stuck with 0 walk speed.
         com.ultimateimprovments.mechanics.security.check.CheckManager.shutdown();
+        // Reset periodic-task guards, otherwise start() would no-op after a
+        // re-enable (running flag survives the plugin cycle).
+        com.ultimateimprovments.space.SpaceOxygenListener.stop();
+        com.ultimateimprovments.space.SpaceRadiationListener.stop();
         ConsoleLogger.success("[UI-Other] Disabled!");
     }
 
@@ -99,52 +103,54 @@ public class UIOther extends JavaPlugin {
         // Structure data (markers, chunk tracking) is owned by UI-MBS —
         // this listener only wires the structure managers back together.
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.structure.StructureChunkListener(), main);
+                new com.ultimateimprovments.structure.StructureChunkListener(), this);
 
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.listener.WhitelistCommandBlocker(), main);
+                new com.ultimateimprovments.listener.WhitelistCommandBlocker(), this);
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.listener.OpCommandBlocker(), main);
+                new com.ultimateimprovments.listener.OpCommandBlocker(), this);
         com.ultimateimprovments.op.OpManager.init();
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.listener.LuckPermsCommandBlocker(), main);
+                new com.ultimateimprovments.listener.LuckPermsCommandBlocker(), this);
 
         com.ultimateimprovments.server.AccessListCheckTask.start(main);
         com.ultimateimprovments.mechanics.security.check.CheckManager.init();
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.mechanics.security.check.CheckListener(), main);
+                new com.ultimateimprovments.mechanics.security.check.CheckListener(), this);
 
 
         com.ultimateimprovments.space.SpaceManager.createTable();
         com.ultimateimprovments.space.SpaceManager.init(main);
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.space.SpaceGravityListener(), main);
+                new com.ultimateimprovments.space.SpaceGravityListener(), this);
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.space.SpaceRocketManager(), main);
+                new com.ultimateimprovments.space.SpaceRocketManager(), this);
         com.ultimateimprovments.space.SpaceRocketManager.registerRecipe(main);
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.space.SpaceOxygenListener(), main);
+                new com.ultimateimprovments.space.SpaceOxygenListener(), this);
         com.ultimateimprovments.space.SpaceOxygenListener.start(main);
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.space.SpaceRadiationListener(), main);
+                new com.ultimateimprovments.space.SpaceRadiationListener(), this);
         com.ultimateimprovments.space.SpaceRadiationListener.start(main);
 
         CommandRegistrar.getInstance().registerAll(main);
         com.ultimateimprovments.command.PluginReloadCommand.init();
         getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.command.SuicideDeathListener(), main);
+                new com.ultimateimprovments.command.SuicideDeathListener(), this);
 
         // ── Dialog handlers (PlayerCustomClickEvent) ──
         // Dialog screens are opened by commands and modules (getpos, sharepos,
         // askcords, chgdim, auth, codepane, sudo); without these listeners the
         // dialog buttons (submit/cancel) would never fire.
-        com.ultimateimprovments.command.AskPosDialogHandler.register();
-        com.ultimateimprovments.command.GetPosDialogHandler.register();
-        com.ultimateimprovments.command.SharePosDialogHandler.register();
-        com.ultimateimprovments.command.ChgDimDialogHandler.register();
-        com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
-        com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register();
-        com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler.register();
+        // Registered under `this` (UI-Other) so onDisable can remove them —
+        // registering under UI-Core would double them on a re-enable.
+        com.ultimateimprovments.command.AskPosDialogHandler.register(this);
+        com.ultimateimprovments.command.GetPosDialogHandler.register(this);
+        com.ultimateimprovments.command.SharePosDialogHandler.register(this);
+        com.ultimateimprovments.command.ChgDimDialogHandler.register(this);
+        com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register(this);
+        com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register(this);
+        com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler.register(this);
 
         // ── Maintenance mode ──
         // /ui maint reads MaintenanceManager.getInstance(); without init() the
