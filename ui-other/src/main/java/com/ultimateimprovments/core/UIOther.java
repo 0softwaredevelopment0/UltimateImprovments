@@ -152,6 +152,13 @@ public class UIOther extends JavaPlugin {
         com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register(this);
         com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler.register(this);
 
+        // ── Per-player state cleanup on quit ──
+        // Several static per-UUID maps (cooldowns, reply targets, code-panel
+        // sessions) had no quit handler and grew slowly over time. A single
+        // central listener drops all of them in one place.
+        getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.listener.PlayerQuitCleanupListener(), this);
+
         // ── Maintenance mode ──
         // /ui maint reads MaintenanceManager.getInstance(); without init() the
         // instance is null and every /ui maint invocation threw an NPE.

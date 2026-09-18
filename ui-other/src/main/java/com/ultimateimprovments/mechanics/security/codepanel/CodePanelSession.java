@@ -56,6 +56,12 @@ public class CodePanelSession {
     // =========================
     // CLEAN
     // =========================
+    /** Drops the player's session entries (call on quit to avoid a leak). */
+    public static void cleanup(UUID uuid) {
+        input.remove(uuid);
+        enterCooldown.remove(uuid);
+    }
+
     public static void clearAll() {
         input.clear();
         enterCooldown.clear();

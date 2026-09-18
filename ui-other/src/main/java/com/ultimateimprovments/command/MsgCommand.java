@@ -33,6 +33,11 @@ public class MsgCommand extends Command {
     /** Tracks the last message partner per player so /reply keeps working. */
     private static final Map<UUID, UUID> LAST_MESSAGED = new ConcurrentHashMap<>();
 
+    /** Drops the player's reply-target entry (call on quit to avoid a slow leak). */
+    public static void cleanup(UUID uuid) {
+        LAST_MESSAGED.remove(uuid);
+    }
+
     private final boolean reply;
 
     public MsgCommand(String name, boolean reply) {

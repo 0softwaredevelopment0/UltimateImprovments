@@ -49,6 +49,11 @@ public class OmniscannerManager implements Listener {
     private static final long COOLDOWN_MS = 500L;
     private static final Map<UUID, Long> cooldowns = new HashMap<>();
 
+    /** Drops the player's cooldown entry (call on quit to avoid a slow leak). */
+    public static void cleanup(UUID uuid) {
+        cooldowns.remove(uuid);
+    }
+
     // ========================================================================
     // ITEM CREATION
     // ========================================================================
