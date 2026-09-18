@@ -37,6 +37,11 @@ public final class RtpSubcommand {
     /** Cooldown map: player UUID → unix millis when it can be used again. */
     private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
 
+    /** Drops the player's cooldown entry (call on quit to avoid a slow leak). */
+    public static void cleanup(UUID uuid) {
+        cooldowns.remove(uuid);
+    }
+
     /**
      * /ui rtp [player]
      * <p>
