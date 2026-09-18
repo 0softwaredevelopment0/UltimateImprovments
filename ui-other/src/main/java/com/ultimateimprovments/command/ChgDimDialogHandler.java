@@ -173,8 +173,8 @@ public class ChgDimDialogHandler implements Listener {
     /**
      * Registers the listener in the plugin.
      */
-    public static void register() {
-        Bukkit.getPluginManager().registerEvents(new ChgDimDialogHandler(), Main.getInstance());
+    public static void register(org.bukkit.plugin.Plugin plugin) {
+        Bukkit.getPluginManager().registerEvents(new ChgDimDialogHandler(), plugin);
         ConsoleLogger.info("[ChgDimDialog] ChgDimDialogHandler registered");
     }
 }

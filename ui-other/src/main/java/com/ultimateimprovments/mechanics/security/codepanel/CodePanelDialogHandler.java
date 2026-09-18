@@ -238,8 +238,8 @@ public class CodePanelDialogHandler implements Listener {
     /**
      * Registers the listener in the plugin.
      */
-    public static void register() {
-        Bukkit.getPluginManager().registerEvents(new CodePanelDialogHandler(), Main.getInstance());
+    public static void register(org.bukkit.plugin.Plugin plugin) {
+        Bukkit.getPluginManager().registerEvents(new CodePanelDialogHandler(), plugin);
         ConsoleLogger.info("[CodePanelDialog] CodePanelDialogHandler registered");
     }
 }

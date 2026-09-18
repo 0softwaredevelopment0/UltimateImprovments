@@ -94,8 +94,8 @@ public class SudoDialogHandler implements Listener {
     /**
      * Registers the listener in the plugin.
      */
-    public static void register() {
-        Bukkit.getPluginManager().registerEvents(new SudoDialogHandler(), Main.getInstance());
+    public static void register(org.bukkit.plugin.Plugin plugin) {
+        Bukkit.getPluginManager().registerEvents(new SudoDialogHandler(), plugin);
         ConsoleLogger.info("[SudoDialog] SudoDialogHandler registered");
     }
 }
