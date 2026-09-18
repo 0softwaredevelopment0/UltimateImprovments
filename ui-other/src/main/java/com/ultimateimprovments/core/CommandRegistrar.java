@@ -7,7 +7,6 @@ import com.ultimateimprovments.command.TrollCommand;
 import com.ultimateimprovments.command.VanishListCommand;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
-import com.ultimateimprovments.energy.generation.reactor.ReactorCommand;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -42,7 +41,6 @@ public class CommandRegistrar {
         PluginReloadCommand uiCmd = new PluginReloadCommand();
         total++; registered += register(plugin, "ui", uiCmd, uiCmd) ? 1 : 0; // main command
         total++; registered += register(plugin, "ultimateimprovments", uiCmd, uiCmd) ? 1 : 0; // alias
-        total++; registered += register(plugin, "reactor", new ReactorCommand(), null) ? 1 : 0;
 
         // Fake commands to troll hackers (settings in config.yml → troll:)
         TrollCommand trollCmd = new TrollCommand();
