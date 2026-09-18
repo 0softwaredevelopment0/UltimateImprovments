@@ -73,6 +73,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(new ClanSubcommand());
         registry.register(new ClearChatSubcommand());
         registry.register(new ChatChannelSubcommand());
+        registry.register(new CmdLogSubcommand());
         registry.register(new TurretSubcommand());
         registry.register(LegacySubCommandAdapter.of("reload",
                 (s, a) -> ReloadSubcommand.execute(s)));

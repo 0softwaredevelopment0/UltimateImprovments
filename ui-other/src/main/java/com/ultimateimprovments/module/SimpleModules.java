@@ -326,6 +326,17 @@ public final class SimpleModules {
             }
         });
 
+        // Sunburn — without this module registration SunburnManager.init() was
+        // never called (listener not registered, config not loaded), so the
+        // SunburnTask ticked into a null manager every tick and the feature
+        // silently did nothing.
+        mm.register(new SimpleModule("Sunburn", "mechanics/environment/sunburn", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                SunburnManager.init();
+            }
+        });
+
         // Lightning
         mm.register(new SimpleModule("Lightning", "mechanics/environment/lightning", false) {
             @Override

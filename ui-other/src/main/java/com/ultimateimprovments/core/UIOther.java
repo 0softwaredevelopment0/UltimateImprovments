@@ -134,6 +134,23 @@ public class UIOther extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.command.SuicideDeathListener(), main);
 
+        // ── Dialog handlers (PlayerCustomClickEvent) ──
+        // Dialog screens are opened by commands and modules (getpos, sharepos,
+        // askcords, chgdim, auth, codepane, sudo); without these listeners the
+        // dialog buttons (submit/cancel) would never fire.
+        com.ultimateimprovments.command.AskPosDialogHandler.register();
+        com.ultimateimprovments.command.GetPosDialogHandler.register();
+        com.ultimateimprovments.command.SharePosDialogHandler.register();
+        com.ultimateimprovments.command.ChgDimDialogHandler.register();
+        com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register();
+        com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register();
+        com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler.register();
+
+        // ── Maintenance mode ──
+        // /ui maint reads MaintenanceManager.getInstance(); without init() the
+        // instance is null and every /ui maint invocation threw an NPE.
+        com.ultimateimprovments.maintenance.MaintenanceManager.init();
+
         com.ultimateimprovments.structure.StructureChunkListener.scheduleDelayedRebuild(main);
 
         ConsoleLogger.info("[UI-Other] Post-module systems ready.");
