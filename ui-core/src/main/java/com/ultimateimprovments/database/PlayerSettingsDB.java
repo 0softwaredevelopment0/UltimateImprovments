@@ -73,6 +73,20 @@ public class PlayerSettingsDB {
         } catch (SQLException e) {
             ConsoleLogger.error("[PlayerSettings] Create table failed: " + e.getMessage());
         }
+        // Migrations: tables created before ping/wireless-bind columns existed.
+        // CREATE TABLE IF NOT EXISTS does not add columns to an existing table.
+        migrateAddColumn("ping_enabled");
+        migrateAddColumn("wireless_bind_enabled");
+    }
+
+    private static void migrateAddColumn(String column) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement(
+                     "ALTER TABLE player_settings ADD COLUMN " + column + " INTEGER DEFAULT 1")) {
+            ps.executeUpdate();
+        } catch (SQLException ignored) {
+            // Column already exists
+        }
     }
 
     private static void loadAll() {

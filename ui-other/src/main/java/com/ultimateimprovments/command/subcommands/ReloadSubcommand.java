@@ -56,7 +56,20 @@ public final class ReloadSubcommand {
                     @Override
                     public void run() {
                         try {
-                            ConsoleLogger.info("[Reload] Shutting down modules (sync)...");
+                            ConsoleLogger.info("[Reload] Shutting down plugins (sync)...");
+                            // The whole UI-* family must go through a real disable/enable
+                            // cycle: feature listeners and tasks are registered under
+                            // different plugin handles (UI-Core, UI-Other, UI-MBS, ...),
+                            // so touching UI-Core alone leaves stale registrations and
+                            // dead modules after the reload.
+                            java.util.List<org.bukkit.plugin.Plugin> family = new java.util.ArrayList<>();
+                            for (org.bukkit.plugin.Plugin p : org.bukkit.Bukkit.getPluginManager().getPlugins()) {
+                                if (p != plugin && p.getName().startsWith("UI-")) family.add(p);
+                            }
+                            // getPlugins() is dependency (load) order: disable dependents first
+                            for (int i = family.size() - 1; i >= 0; i--) {
+                                org.bukkit.Bukkit.getPluginManager().disablePlugin(family.get(i));
+                            }
                             new PluginShutdown(plugin).shutdownPlugin();
 
                             ConsoleLogger.info("[Reload] Reloading config...");
@@ -67,8 +80,12 @@ public final class ReloadSubcommand {
                             ConfigCrashSalvage.salvage(plugin);
                             plugin.reloadConfig();
 
-                            ConsoleLogger.info("[Reload] Starting up modules (sync)...");
+                            ConsoleLogger.info("[Reload] Starting up plugins (sync)...");
                             new PluginStartup(plugin).startupPlugin();
+                            // Re-enable in load order (dependencies before dependents)
+                            for (org.bukkit.plugin.Plugin p : family) {
+                                org.bukkit.Bukkit.getPluginManager().enablePlugin(p);
+                            }
 
                             long time = System.currentTimeMillis() - start;
                             sender.sendMessage(MessageUtil.parse("<dark_green>✔ <green>Success: <gray>Reload complete."));
