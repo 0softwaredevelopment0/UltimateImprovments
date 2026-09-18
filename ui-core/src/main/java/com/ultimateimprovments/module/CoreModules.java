@@ -2,6 +2,7 @@ package com.ultimateimprovments.module;
 
 import com.ultimateimprovments.database.DatabaseManager;
 import com.ultimateimprovments.database.DatabaseInit;
+import com.ultimateimprovments.database.PlayerSettingsDB;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -15,6 +16,7 @@ public final class CoreModules {
             protected void onInit(JavaPlugin plugin) throws Exception {
                 DatabaseManager.connect();
                 DatabaseInit.init();
+                PlayerSettingsDB.init();
                 ConsoleLogger.info("[SQLITE] Database initialized.");
             }
 
