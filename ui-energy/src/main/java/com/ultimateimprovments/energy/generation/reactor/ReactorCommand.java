@@ -42,14 +42,19 @@ public final class ReactorCommand {
         }
 
         // =========================
-        // VALIDATE STRUCTURE — with detailed errors
+        // VALIDATE STRUCTURE — full NBT template check (with detailed fixes)
         // =========================
-        java.util.List<String> errors = ReactorStructure.getValidationErrors(pending.center());
+        java.util.List<String> errors = validateReactorByTemplate(pending.center());
         if (!errors.isEmpty()) {
             player.sendMessage("");
-            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Структура реактора повреждена! <gray>Найдены ошибки:"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Структура реактора собрана неверно! <gray>Что нужно исправить:"));
+            int shown = 0;
             for (String err : errors) {
-                player.sendMessage(MessageUtil.parse("<dark_gray> • <white>" + err));
+                if (shown++ >= 15) {
+                    player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>...и ещё " + (errors.size() - shown + 1) + " исправлений"));
+                    break;
+                }
+                player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>" + err));
             }
             player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
             ReactorManager.clearPendingAssembly(player);
@@ -107,6 +112,30 @@ public final class ReactorCommand {
                 "[Reactor] Assembled by " + player.getName()
                         + " at " + pending.center()
         );
+    }
+
+    // =========================
+    // NBT TEMPLATE VALIDATION
+    // =========================
+    /**
+     * Validate the reactor against the full NBT template (every solid AND air cell).
+     * Falls back to the legacy key-blocks validator when the template is not loaded
+     * or contains no cells.
+     */
+    private static java.util.List<String> validateReactorByTemplate(Location center) {
+        com.ultimateimprovments.util.StructureTemplate tmpl =
+                com.ultimateimprovments.util.StructureTemplate.get("reactor");
+
+        if (tmpl == null || tmpl.totalCells() == 0) {
+            // Template unavailable → legacy validation (key blocks only)
+            return ReactorStructure.getValidationErrors(center);
+        }
+
+        java.util.List<String> errors = new java.util.ArrayList<>();
+        for (var fix : tmpl.checkAt(center).fixes()) {
+            errors.add(com.ultimateimprovments.util.StructureTemplate.formatFix(fix, center));
+        }
+        return errors;
     }
 
     // =========================

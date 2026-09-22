@@ -255,6 +255,14 @@ public class ReactorListener implements Listener {
         // =========================
         if (lightningTmpl != null) {
             Location center = lightningTmpl.findMatch(frameLoc, 5);
+            if (center == null) {
+                // Retry close to the frame: the anchor block of the template may sit
+                // slightly outside the strict scan grid of findMatch.
+                var best = lightningTmpl.bestMatch(frameLoc, 5);
+                if (best != null && best.matched()) {
+                    center = best.center();
+                }
+            }
             if (center != null) {
                 if (LightningManager.isActive(center)) {
                     boolean enabled = LightningManager.isEnabled(center);
@@ -275,6 +283,12 @@ public class ReactorListener implements Listener {
         // =========================
         if (reactorTmpl != null) {
             Location center = reactorTmpl.findMatch(frameLoc, 5);
+            if (center == null) {
+                var best = reactorTmpl.bestMatch(frameLoc, 5);
+                if (best != null && best.matched()) {
+                    center = best.center();
+                }
+            }
             if (center != null) {
                 ReactorManager reactor = ReactorManager.getInstance();
                 if (reactor != null) {
@@ -364,13 +378,35 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // 4. NOTHING FOUND
+        // 6. NOTHING RECOGNIZED — show the closest structure and how to fix it
         // =========================
-        player.sendMessage(MessageUtil.parse("<red>❌ Структура не распознана!"));
-        player.sendMessage(MessageUtil.parse("<gray>Убедитесь, что все блоки структуры соответствуют NBT-шаблону."));
-        player.sendMessage(MessageUtil.parse("<gray>Поддерживаемые структуры: громоотвод (молнии), LODESTONE (магнит),"));
-        player.sendMessage(MessageUtil.parse("<gray>реактор (алмазная/золотая бочка с рамкой), BLAST_FURNACE + рамка (генератор),"));
-        player.sendMessage(MessageUtil.parse("<gray>WAXED_COPPER_GRATE (батарея), REDSTONE_LAMP (лампочка)"));
+        StructureTemplate.BestCandidate best = StructureTemplate.findBestCandidate(frameLoc, 5);
+
+        player.sendMessage("");
+        player.sendMessage(MessageUtil.parse("<red>❌ Error: Structure not recognized!"));
+
+        if (best == null) {
+            player.sendMessage(MessageUtil.parse("<gray>NBT-шаблоны структур не загружены — проверьте консоль сервера."));
+            return;
+        }
+
+        int pct = best.result().percent();
+        player.sendMessage(MessageUtil.parse("<gray>Больше всего похоже на: <yellow>" + best.template().getDisplayName()
+                + " <gray>— совпадение <yellow>" + pct + "%"));
+
+        if (best.result().fixes().isEmpty()) {
+            player.sendMessage(MessageUtil.parse("<gray>Критичных отличий не найдено — проверьте положение рамки."));
+            return;
+        }
+
+        int limit = Math.min(best.result().fixes().size(), 15);
+        player.sendMessage(MessageUtil.parse("<gray>Чтобы собрать, нужно (" + best.result().fixes().size() + " шт.):"));
+        for (StructureTemplate.Fix fix : best.result().fixes().subList(0, limit)) {
+            player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>" + StructureTemplate.formatFix(fix, best.result().center())));
+        }
+        if (best.result().fixes().size() > limit) {
+            player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>...и ещё " + (best.result().fixes().size() - limit) + " исправлений"));
+        }
     }
 
     // =========================
