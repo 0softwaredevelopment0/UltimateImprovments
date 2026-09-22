@@ -115,14 +115,11 @@ public class DatabaseInit {
                     y INTEGER NOT NULL,
                     z INTEGER NOT NULL,
                     core_temp INTEGER DEFAULT 0,
-                    core_press INTEGER DEFAULT 0,
-                    core_sh_int INTEGER DEFAULT 100,
+                    shield_press REAL DEFAULT 0,
+                    spin REAL DEFAULT 0,
                     core_case_temp INTEGER DEFAULT 0,
                     core_case_press INTEGER DEFAULT 0,
                     core_case_int INTEGER DEFAULT 100,
-                    recipe_time INTEGER DEFAULT 0,
-                    self_destruct INTEGER DEFAULT 0,
-                    reactor_wear INTEGER DEFAULT 0,
                     laser_started INTEGER DEFAULT 0,
                     laser_p1 REAL DEFAULT 0,
                     laser_p2 REAL DEFAULT 0,
@@ -166,15 +163,6 @@ public class DatabaseInit {
                 CREATE INDEX IF NOT EXISTS idx_magnet_blocks_id
                 ON magnet_blocks(magnet_id);
             """);
-
-            // =========================
-            // ⚛ REACTOR WEAR COLUMN MIGRATION (for old DBs)
-            // =========================
-            try {
-                st.execute("ALTER TABLE reactors ADD COLUMN reactor_wear INTEGER DEFAULT 0");
-            } catch (Exception ignored) {
-                // Column already exists — this is fine
-            }
 
             // =========================
             // ⚛ ENERGY GENERATED COLUMN MIGRATION (for old DBs)

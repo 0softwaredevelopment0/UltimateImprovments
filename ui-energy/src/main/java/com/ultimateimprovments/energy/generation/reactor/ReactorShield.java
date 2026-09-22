@@ -24,6 +24,9 @@ import org.bukkit.util.Vector;
  * %/sec — with the default base of 1/3 %/s that is 1%/3s at 100% over-stress,
  * 1%/1.5s at 200%, and 1% per tick at 6000%.
  * <p>
+ * While the stress is within limits the shield passively self-repairs at
+ * 1% every {@code shield_recovery_every_sec} seconds (5s default).
+ * <p>
  * While the lasers fire, vector END_ROD particles travel from each lightning
  * rod of the core column into the core; DUST particles inside the core follow
  * the black → red → orange → yellow → white gradient as the temperature rises
@@ -41,6 +44,7 @@ public class ReactorShield {
     private double stressPress;        // % from pressure
     private double stressSpin;         // % from spin
     private double decayRemainder;     // fractional degradation accumulator
+    private int recoveryTick;          // passive recovery counter (ticks)
     private int failCountdown;         // ticks until detonation (0 = none)
 
     // =========================
@@ -94,6 +98,15 @@ public class ReactorShield {
                     }
                 } else {
                     decayRemainder = 0;
+                    // Passive recovery: 1% every N seconds (5s default) while the
+                    // stress is within limits — the shield self-repairs.
+                    recoveryTick++;
+                    if (recoveryTick >= cfg.getShieldRecoveryEverySec() * 20) {
+                        recoveryTick = 0;
+                        if (integrity < 100) {
+                            integrity = Math.min(100, integrity + cfg.getShieldRecoveryRate());
+                        }
+                    }
                 }
             }
 
@@ -115,6 +128,12 @@ public class ReactorShield {
             tickParticles(base);
         }
     }
+
+    /** Shield failure countdown (ticks until the detonation), 0 = not failing. */
+    public int getFailCountdown() { return Math.max(0, failCountdown); }
+
+    /** Whether the shield is in the failure (detonation countdown) state. */
+    public boolean isFailed() { return state == State.FAILED; }
 
     // =========================
     // STARTUP — called by the laser system on the startup pulse
@@ -262,6 +281,7 @@ public class ReactorShield {
         stressPress = 0;
         stressSpin = 0;
         decayRemainder = 0;
+        recoveryTick = 0;
         failCountdown = 0;
     }
 

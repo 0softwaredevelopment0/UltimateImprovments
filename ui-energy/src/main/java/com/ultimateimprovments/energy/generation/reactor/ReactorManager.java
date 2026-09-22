@@ -57,7 +57,6 @@ public class ReactorManager {
 
     /** Emergency core shutdown latch (shield integrity fell below the critical threshold). */
     private boolean coreEmergencyStopped = false;
-
     public static ReactorManager getInstance() {
         // Kept for compatibility: the first (or only) reactor.
         return (reactors == null || reactors.isEmpty()) ? instance : reactors.get(0);
@@ -128,73 +127,23 @@ public class ReactorManager {
     // =========================
     private ReactorConfig cfg;
     private boolean enabled;
-    private int tempDecayDivisor;
-    private int heatRate;
-    private int coolRate;
     private int coreTempMax;
     private int coreTempMin;
-    private int coreTempCoolMin;
     private int coreWorkTemp;
     private double pressFollowRate;
     private double spinFollowRate;
     private int energyRate;
-    private int caseTempCoolRate;
-    private int caseTempCoolMin;
-    private int casePressHeatRate;
-    private int casePressDecayRate;
-    private int shIntDecayTempThreshold;
-    private int shellIntDecayRate;
-    private int shellIntRecoveryTempMax;
-    private int shellIntRecoveryRate;
-    private int caseIntDecayPressThreshold;
-    private int caseIntDecayTempThreshold;
-    private int caseIntDecayPressRate;
-    private int caseIntDecayTempRate;
-    private int caseIntRecoveryPressMax;
-    private int caseIntRecoveryTempMax;
-    private int caseIntRecoveryRate;
-    private boolean wearEnabled;
-    private int wearIntervalNormal;
-    private int wearIntervalDegradation;
-    private int wearChatCountdown;
-    private int wearFinalMeltdownAt;
-    private int wearFinalMeltdownDuration;
     private int meltdownExplosionRadius;
 
     private void copyConfig() {
         if (cfg == null) return;
         enabled = cfg.isEnabled();
-        tempDecayDivisor = cfg.getTempDecayDivisor();
-        heatRate = cfg.getHeatRate();
-        coolRate = cfg.getCoolRate();
         coreTempMax = cfg.getCoreTempMax();
         coreTempMin = cfg.getCoreTempMin();
-        coreTempCoolMin = cfg.getCoreTempCoolMin();
         coreWorkTemp = cfg.getCoreWorkTemp();
         pressFollowRate = cfg.getPressFollowRate();
         spinFollowRate = cfg.getSpinFollowRate();
         energyRate = cfg.getEnergyRate();
-        caseTempCoolRate = cfg.getCaseTempCoolRate();
-        caseTempCoolMin = cfg.getCaseTempCoolMin();
-        casePressHeatRate = cfg.getCasePressHeatRate();
-        casePressDecayRate = cfg.getCasePressDecayRate();
-        shIntDecayTempThreshold = cfg.getShIntDecayTempThreshold();
-        shellIntDecayRate = cfg.getShellIntDecayRate();
-        shellIntRecoveryTempMax = cfg.getShellIntRecoveryTempMax();
-        shellIntRecoveryRate = cfg.getShellIntRecoveryRate();
-        caseIntDecayPressThreshold = cfg.getCaseIntDecayPressThreshold();
-        caseIntDecayTempThreshold = cfg.getCaseIntDecayTempThreshold();
-        caseIntDecayPressRate = cfg.getCaseIntDecayPressRate();
-        caseIntDecayTempRate = cfg.getCaseIntDecayTempRate();
-        caseIntRecoveryPressMax = cfg.getCaseIntRecoveryPressMax();
-        caseIntRecoveryTempMax = cfg.getCaseIntRecoveryTempMax();
-        caseIntRecoveryRate = cfg.getCaseIntRecoveryRate();
-        wearEnabled = cfg.isWearEnabled();
-        wearIntervalNormal = cfg.getWearIntervalNormal();
-        wearIntervalDegradation = cfg.getWearIntervalDegradation();
-        wearChatCountdown = cfg.getWearChatCountdown();
-        wearFinalMeltdownAt = cfg.getWearFinalMeltdownAt();
-        wearFinalMeltdownDuration = cfg.getWearFinalMeltdownDuration();
         meltdownExplosionRadius = cfg.getMeltdownExplosionRadius();
     }
 
@@ -213,14 +162,6 @@ public class ReactorManager {
     private int coreTemp;           // C*, [TEMP_MIN .. TEMP_MAX]
     private double shieldPress;     // Shield pressure, MPa — follows (T/10M) × 10.01
     private double spin;            // Core spin, RPS — follows 0.95 × (T/10M)
-    private int coreShInt = 100;    // Shell integrity (0-100%)
-
-    // Recipe
-
-
-    // Self-destruct
-    private boolean selfDestruct;
-    private int sdText;
 
     // =========================
     // ENERGY GENERATION (output to cable network)
@@ -228,42 +169,14 @@ public class ReactorManager {
     private long energyGenerated;
     private double energyRemainder;
 
-    // =========================
-    // WEAR SYSTEM
-    // =========================
-    private int reactorWear;
-    private int wearTickCounter;
-    private boolean prevWearDegraded;
-    private boolean selfDestructActive;
-    private int selfDestructChatTimer;
-    private boolean finalMeltdownActive;
-
-    // Meltdown countdown (10s before explosion)
-    private boolean meltdownCountdown;
-    private int meltdownTimer;
-
-    // Previous integrity values for threshold detection
+    // Previous integrity values for threshold warnings
     private int prevShInt = 100;
     private int prevCaseInt = 100;
 
-    // Tick counters
-    private int pressTick;
-    private int recipeTick;
-    private int intensityDownTick;
-    private int intensityUpTick;
-    private int intensityUpCounter; // shield passive recovery: 1% per 5 sec
-    private int soundTick;
-    private int noFuelWarnTick;
-
-    // =========================
-    // PENDING ASSEMBLY
-    // =========================
     // Advancement tracking (one-time grants)
     private boolean advStartDfcGranted = false;
     private boolean advDfcUnstableGranted = false;
-    private boolean advDfcSelfDestructGranted = false;
     private boolean advExplodeDfcGranted = false;
-    private boolean advCompletedRecipeGranted = false;
     private final Set<UUID> advInsideDfcGranted = ConcurrentHashMap.newKeySet();
     private final Set<UUID> advBurnInsideDfcGranted = ConcurrentHashMap.newKeySet();
     private final Set<UUID> advOneTimeHeaterGranted = ConcurrentHashMap.newKeySet();
@@ -355,9 +268,6 @@ public class ReactorManager {
         s.setCaseTemp(r.caseSys.getTemp());
         s.setCasePress(r.caseSys.getPress());
         s.setCaseIntegrity(r.caseSys.getIntegrity());
-        s.setCoreShInt(r.coreShInt);
-        s.setSelfDestruct(r.selfDestruct);
-        s.setReactorWear(r.reactorWear);
         s.setEnergyGenerated(r.energyGenerated);
         s.setLaserStarted(r.lasers.isStarted());
         s.setStructureDamaged(r.structureDamaged);
@@ -408,9 +318,6 @@ public class ReactorManager {
             caseSys.repair(reactorLocation);
             caseSys.setState(ReactorCase.State.BROKEN);
         }
-        coreShInt = state.getCoreShInt();
-        selfDestruct = state.isSelfDestruct();
-        reactorWear = state.getReactorWear();
         energyGenerated = state.getEnergyGenerated();
         lasers.setStarted(state.isLaserStarted());
         structureDamaged = state.isStructureDamaged();
@@ -523,14 +430,14 @@ public class ReactorManager {
         // threshold (25% by default): the core shuts itself off, lasers reset.
         // =========================
         if (!coreEmergencyStopped
-                && coreShInt > 0
-                && coreShInt < cfg.getShieldIntegrityShutdownPercent()
-                && !selfDestructActive && !meltdownCountdown) {
+                && shield.getIntegrity() > 0
+                && shield.getIntegrity() < cfg.getShieldIntegrityShutdownPercent()
+                && !shield.isFailed()) {
             coreEmergencyStopped = true;
             lasers.reset();
             shield.setState(ReactorShield.State.OFFLINE);
             broadcast(StructuresMessages.get("core_emergency_shutdown",
-                    "<dark_red>⚠ <red>Core shell integrity critical — emergency core shutdown! Restart the reactor."));
+                    "<dark_red>⚠ <red>Shield integrity critical — emergency core shutdown! Restart the reactor."));
             saveToDb();
         }
 
@@ -563,7 +470,7 @@ public class ReactorManager {
         display.setIntegrityWarnTick(warnTick);
         if (warnTick >= 200) {
             display.setIntegrityWarnTick(0);
-            if (coreShInt < 100) broadcast("<dark_red>⚠ <red>Core shell integrity compromised!");
+            if (shield.getIntegrity() < 100) broadcast("<dark_red>⚠ <red>Shield integrity compromised!");
             if (caseSys.isBroken()) broadcast("<dark_red>⚠ <red>Case glass is broken!");
         }
 
@@ -622,25 +529,19 @@ public class ReactorManager {
         }
 
         // =========================
-        // NATURAL TEMP DECAY — passive cooling 1 C*/tick (proportional cap
-        // max(1, T/divisor) only applies above the working temperature)
+        // NATURAL TEMP DECAY — passive cooling 1 C*/tick (always, even with
+        // a damaged structure: the core coasts on its own decay)
         // =========================
-        if (structureDamaged) {
-            // Damaged structure: plain 1 C*/tick passive decay — the proportional
-            // cap belongs to the sensors/cooling system, which are dead.
+        if (coreTemp > coreTempMin) {
             coreTemp = Math.max(coreTempMin, coreTemp - 1);
-        } else if (coreTemp > coreTempMin) {
-            int decay = coreTemp > coreWorkTemp
-                    ? Math.max(1, coreTemp / tempDecayDivisor)
-                    : 1;
-            coreTemp = Math.max(coreTempMin, coreTemp - decay);
         }
 
         // =========================
-        // INTEGRITY THRESHOLD WARNINGS (75%, 50%, 25%)
+        // SHIELD INTEGRITY THRESHOLD WARNINGS (75%, 50%, 25%) — via the
+        // stress model; the case integrity lives in ReactorCase.
         // =========================
-        checkIntegrityThreshold(prevShInt, coreShInt, "Core shell");
-        prevShInt = coreShInt;
+        checkIntegrityThreshold(prevShInt, (int) Math.round(shield.getIntegrity()), "Shield");
+        prevShInt = (int) Math.round(shield.getIntegrity());
 
         // =========================
         // ENERGY GENERATION (capped at 50% while the structure is damaged)
@@ -707,16 +608,6 @@ public class ReactorManager {
                 }
             }
         }
-
-        // =========================
-        // MELTDOWN COUNTDOWN START
-        // =========================
-        if ((coreShInt <= 0 || caseSys.getIntegrity() <= 0) && !meltdownCountdown && !selfDestructActive) {
-            meltdownCountdown = true;
-            meltdownTimer = 200; // 10 seconds
-            selfDestruct = true;
-            broadcast("<dark_red>☠ <red>Integrity destroyed! <white>10<red>s to detonation...");
-        }
     }
 
     // =========================
@@ -748,45 +639,7 @@ public class ReactorManager {
                 RadiationManager.addRadiationNear(base, 4.0, radAmount);
             }
         }
-    }
-
-    // =========================
-    // INTENSITY DECAY TICK (every 1s)
-    // =========================
-    public void tickIntensityDown() {
-        if (!enabled || !valid) return;
-        if (structureDamaged) {
-            // Sensors are dead — integrity decay/readouts frozen (keep the advancement check)
-            Bukkit.getScheduler().runTask(Main.getInstance(), this::checkDfcUnstable);
-            return;
-        }
-
-        if (coreTemp >= shIntDecayTempThreshold && coreShInt > 0) {
-            coreShInt = Math.max(0, coreShInt - shellIntDecayRate);
-        }
-        // Case integrity is handled by ReactorCase.tick (glass protection)
-
-        // 🏆 Advancement: dfc_unstable — first integrity degradation
-        Bukkit.getScheduler().runTask(Main.getInstance(), this::checkDfcUnstable);
-    }
-
-    // =========================
-    // INTENSITY RECOVERY TICK (every second — shield 1%/5s passive recovery)
-    // =========================
-    public void tickIntensityUp() {
-        if (!enabled || !valid) return;
-
-        // Shield shell integrity recovers passively: 1% per 5 sec (every 5th call)
-        if (coreTemp <= shellIntRecoveryTempMax && coreShInt < 100) {
-            intensityUpCounter++;
-            if (intensityUpCounter >= 5) {
-                intensityUpCounter = 0;
-                coreShInt = Math.min(100, coreShInt + shellIntRecoveryRate);
-            }
-        }
-    }
-
-    // =========================
+    }    // =========================
     // FUSION TICK (every tick) — fusion particles, absorber collection
     // =========================
     public void tickFusion() {
@@ -794,70 +647,6 @@ public class ReactorManager {
         if (structureDamaged) return; // sensors dead: no particle tracking, no case readouts
         fusion.tick(reactorLocation);
         caseSys.tick(reactorLocation);
-    }
-
-    // =========================
-    // WEAR TICK (every second)
-    // =========================
-    public void tickWear() {
-        if (!enabled || !valid || reactorLocation == null) return;
-
-        if (wearEnabled && !selfDestructActive) {
-            boolean isDegraded = coreShInt < 100 || caseSys.getIntegrity() < 100;
-            if (isDegraded != prevWearDegraded) {
-                wearTickCounter = 0;
-                prevWearDegraded = isDegraded;
-            }
-            wearTickCounter++;
-
-            if (isDegraded) {
-                if (wearTickCounter >= wearIntervalDegradation) {
-                    wearTickCounter = 0;
-                    if (reactorWear > 0) reactorWear--;
-                }
-            } else {
-                if (wearTickCounter >= wearIntervalNormal) {
-                    wearTickCounter = 0;
-                    if (reactorWear < 100) {
-                        reactorWear++;
-                        if (reactorWear >= 100 && !selfDestructActive) {
-                            startSelfDestruct();
-                        }
-                    }
-                }
-            }
-        }
-
-        if (selfDestructActive && !meltdownCountdown) {
-            selfDestructChatTimer--;
-            if (selfDestructChatTimer <= wearFinalMeltdownAt) {
-                finalMeltdownActive = true;
-                meltdownCountdown = true;
-                meltdownTimer = wearFinalMeltdownDuration * 20;
-                broadcast("<dark_red>☠ <red>Explosion inevitable! <white>" + wearFinalMeltdownDuration + "<red>s to detonation...");
-            } else if (selfDestructChatTimer > 0) {
-                broadcast("<dark_red>☠ <red>Detonation in <white>" + selfDestructChatTimer + "<red>s...");
-            }
-        }
-    }
-
-    // =========================
-    // MELTDOWN COUNTDOWN TICK (final 10s)
-    // =========================
-    public void tickMeltdownCountdown() {
-        if (!meltdownCountdown || !enabled || !valid || reactorLocation == null) return;
-        if (structureDamaged) return; // sensor panels are dead — the core burns until it coasts to 0
-
-        meltdownTimer--;
-        if (meltdownTimer > 0 && meltdownTimer % 20 == 0) {
-            broadcast("<dark_red>☠ <red>Explosion inevitable! <white>" + (meltdownTimer / 20) + "<red>s...");
-        }
-        if (meltdownTimer <= 0) {
-            meltdownCountdown = false;
-            finalMeltdownActive = false;
-            selfDestructActive = false;
-            meltdown();
-        }
     }
 
     // =========================
@@ -891,25 +680,7 @@ public class ReactorManager {
     }
 
     // =========================
-    // START SELF-DESTRUCT
-    // =========================
-    private void startSelfDestruct() {
-        selfDestruct = true;
-        selfDestructActive = true;
-        selfDestructChatTimer = wearChatCountdown;
-        finalMeltdownActive = false;
-        broadcast("<dark_red>☠ <red>Critical reactor wear! <white>" + wearChatCountdown + "<red>s to detonation...");
-        broadcast("<dark_red>☠ <red>Self-destruct protocol initiated.");
-
-        // 🏆 Advancement: dfc_self_destruct — self-destruction
-        if (!advDfcSelfDestructGranted) {
-            advDfcSelfDestructGranted = true;
-            grantAdvancementAll("datapack/dfc_self_destruct");
-        }
-    }
-
-    // =========================
-    // INTEGRITY THRESHOLD CHECK
+    // INTEGRITY THRESHOLD CHECK (75% / 50% / 25% warnings)
     // =========================
     private void checkIntegrityThreshold(int prevVal, int currVal, String name) {
         if (currVal < prevVal) {
@@ -923,7 +694,7 @@ public class ReactorManager {
     // INTEGRITY DECAY — dfc_unstable achievement
     // =========================
     private void checkDfcUnstable() {
-        if (!advDfcUnstableGranted && (coreShInt < 100 || caseSys.getIntegrity() < 100)) {
+        if (!advDfcUnstableGranted && (shield.getIntegrity() < 100 || caseSys.getIntegrity() < 100)) {
             advDfcUnstableGranted = true;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
                 grantAdvancementAll("datapack/dfc_unstable"));
@@ -934,28 +705,16 @@ public class ReactorManager {
     // FULL RESET (disassemble / teardown)
     // =========================
     private void resetReactorState() {
-        coreShInt = 100;
         coreTemp = 0;
         shieldPress = 0;
         spin = 0;
         lasers.reset();
         shield.reset();
         fusion.reset();
-        selfDestruct = false;
-        sdText = 0;
-        meltdownCountdown = false;
-        meltdownTimer = 0;
         prevShInt = 100;
         prevCaseInt = 100;
-        reactorWear = 0;
-        wearTickCounter = 0;
-        prevWearDegraded = false;
-        selfDestructActive = false;
-        selfDestructChatTimer = 0;
-        finalMeltdownActive = false;
         energyGenerated = 0;
         energyRemainder = 0;
-        noFuelWarnTick = 0;
         structureDamaged = false;
         damageWarnTick = 0;
 
@@ -974,7 +733,6 @@ public class ReactorManager {
         damageWarnTick = 0;
         lasers.reset();
         shield.reset();
-        coreShInt = 100;
         shieldPress = 0;
         spin = 0;
         broadcast(StructuresMessages.get("damage_shutdown_complete",
@@ -1055,26 +813,8 @@ public class ReactorManager {
         structureDamaged = false;
         damageWarnTick = 0;
         coreEmergencyStopped = false;
-        coreShInt = 100;
-        selfDestruct = false;
-        sdText = 0;
-        reactorWear = 0;
-        wearTickCounter = 0;
-        prevWearDegraded = false;
-        selfDestructActive = false;
-        selfDestructChatTimer = 0;
-        finalMeltdownActive = false;
         energyGenerated = 0;
         energyRemainder = 0;
-        pressTick = 0;
-        recipeTick = 0;
-        intensityDownTick = 0;
-        intensityUpTick = 0;
-        intensityUpCounter = 0;
-        soundTick = 0;
-        noFuelWarnTick = 0;
-        meltdownCountdown = false;
-        meltdownTimer = 0;
         prevShInt = 100;
         prevCaseInt = 100;
 
@@ -1087,7 +827,7 @@ public class ReactorManager {
     public int getCoreTemp() { return coreTemp; }
     public double getShieldPress() { return shieldPress; }
     public double getCoreSpin() { return spin; }
-    public int getCoreShInt() { return coreShInt; }
+    public int getCoreShInt() { return (int) Math.round(shield.getIntegrity()); }
     public int getCoreCaseTemp() { return caseSys.getTemp(); }
     public double getCoreCasePress() { return caseSys.getPress(); }
     public int getCoreCaseInt() { return caseSys.getIntegrity(); }
@@ -1099,12 +839,9 @@ public class ReactorManager {
     /** Whether the core is emergency-stopped (integrity below the critical threshold). */
     public boolean isCoreEmergencyStopped() { return coreEmergencyStopped; }
 
-    public boolean isSelfDestruct() { return selfDestruct; }
-    public boolean isMeltdownCountdown() { return meltdownCountdown; }
-    public int getMeltdownTimer() { return meltdownTimer; }
-    public boolean isSelfDestructActive() { return selfDestructActive; }
-    public boolean isFinalMeltdownActive() { return finalMeltdownActive; }
-    public int getReactorWear() { return reactorWear; }
+    /** Shield failure countdown (detonation timer) — delegated to ReactorShield. */
+    public boolean isMeltdownCountdown() { return shield.getState() == ReactorShield.State.FAILED; }
+    public int getMeltdownTimer() { return shield.getFailCountdown(); }
     public long getEnergyGenerated() { return energyGenerated; }
 
     public int getCoreWorkTemp() { return coreWorkTemp; }
@@ -1209,7 +946,6 @@ public class ReactorManager {
     public int getDisplayCoreCaseTemp() { return display.getDisplayCoreCaseTemp(); }
     public int getDisplayCoreCasePress() { return display.getDisplayCoreCasePress(); }
     public int getDisplayCoreCaseInt() { return display.getDisplayCoreCaseInt(); }
-    public int getDisplayReactorWear() { return display.getDisplayReactorWear(); }
     public int getDisplayEnergyRate() { return display.getDisplayEnergyRate(); }
 
     // =========================

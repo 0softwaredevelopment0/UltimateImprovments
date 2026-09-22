@@ -2,18 +2,23 @@ package com.ultimateimprovments.energy.generation.reactor;
 
 import org.bukkit.scheduler.BukkitRunnable;
 
+/**
+ * Periodic driver for the DFC reactor simulation.
+ * <p>
+ * The heavy per-tick work (lasers, shield, temp decay, displays, fusion)
+ * happens inside {@link ReactorManager#tick()} — this task only spreads the
+ * slower jobs (pressure effects, fuel consumption, structure checks, sounds)
+ * across their intervals.
+ */
 public class ReactorTask extends BukkitRunnable {
 
     // =========================
     // TICK INTERVALS (in server ticks)
     // =========================
-    private static final int PRESSURE_INTERVAL = 100;     // 5s
-    private static final int RECIPE_INTERVAL = 100;         // 5s
-    private static final int INTENSITY_DOWN_INTERVAL = 20; // 1s
-    private static final int INTENSITY_UP_INTERVAL = 60;   // 3s
-    private static final int SOUND_INTERVAL = 10;          // 0.5s
+    private static final int PRESSURE_INTERVAL = 100;       // 5s
+    private static final int SOUND_INTERVAL = 10;           // 0.5s
     private static final int STRUCTURE_CHECK_INTERVAL = 20; // 1s
-    private static final int DISPLAY_UPDATE_INTERVAL = 1;   // every tick (smooth)
+    private static final int FUEL_INTERVAL = 20;            // 1s
 
     // =========================
     // TICK COUNTERS
@@ -39,11 +44,6 @@ public class ReactorTask extends BukkitRunnable {
         reactor.tickSmoothDisplay();
 
         // =========================
-        // MELTDOWN COUNTDOWN (every tick when active)
-        // =========================
-        reactor.tickMeltdownCountdown();
-
-        // =========================
         // CONTROLLED SHUTDOWN CHECK (every tick while the structure is damaged)
         // =========================
         reactor.checkControlledShutdown();
@@ -58,9 +58,7 @@ public class ReactorTask extends BukkitRunnable {
         // =========================
         // DISPLAY UPDATE (every tick)
         // =========================
-        if (tick % DISPLAY_UPDATE_INTERVAL == 0) {
-            reactor.updateDisplays();
-        }
+        reactor.updateDisplays();
 
         // =========================
         // STRUCTURE CHECK (every 1s)
@@ -82,31 +80,10 @@ public class ReactorTask extends BukkitRunnable {
         reactor.tickFusion();
 
         // =========================
-        // INTENSITY DECAY (every 1s)
-        // =========================
-        if (tick % INTENSITY_DOWN_INTERVAL == 0) {
-            reactor.tickIntensityDown();
-        }
-
-        // =========================
-        // WEAR TICK (every 1s — wear accumulation + chat timer)
-        // =========================
-        if (tick % INTENSITY_DOWN_INTERVAL == 0) {
-            reactor.tickWear();
-        }
-
-        // =========================
         // FUEL TICK (every 1s — spin-driven consumption)
         // =========================
-        if (tick % INTENSITY_DOWN_INTERVAL == 0) {
+        if (tick % FUEL_INTERVAL == 0) {
             reactor.tickFuel();
-        }
-
-        // =========================
-        // INTENSITY RECOVERY (every 3s)
-        // =========================
-        if (tick % INTENSITY_UP_INTERVAL == 0) {
-            reactor.tickIntensityUp();
         }
     }
 }
