@@ -1210,6 +1210,7 @@ messages:
       case_stats_temp: "T: %temp% C*"
       case_stats_press: "P: %press% mPa"
       case_stats_int: "I: %int%%"
+      case_stats_broken: "Broken — repair!"
       shield_stats_title: "=| Статы Щита |="
       shield_stats_magnet: "M: %status%"
       shield_stats_int: "I: %int%%"
@@ -1316,6 +1317,7 @@ messages_en:
       case_stats_temp: "T: %temp% C*"
       case_stats_press: "P: %press% mPa"
       case_stats_int: "I: %int%%"
+      case_stats_broken: "Broken — repair!"
       shield_stats_title: "=| Shield Stats |="
       shield_stats_magnet: "M: %status%"
       shield_stats_int: "I: %int%%"
@@ -2567,23 +2569,20 @@ reactor:
   # Collected particles per one ancient debris deposited into the floor barrel
   fusion_debris_per: 10000
 
-  # How fast the reactor case heats up
-  case_temp_heat_rate: 2
-  # Maximum case temperature before damage
-  case_temp_max: 8000
-  # How fast the case cools down
-  case_temp_cool_rate: 2
-  # Minimum temperature the case can be cooled to
-  case_temp_cool_min: -271
-  # Rate at which case temperature naturally decays
-  case_temp_decay_rate: 1
-
-  # How fast case pressure builds from heat
-  case_press_heat_rate: 4
-  # Maximum case pressure before damage
-  case_press_max: 10000
-  # Rate at which case pressure naturally decays
-  case_press_decay_rate: 1
+  # =| Case system (outer glass protection) |=
+  # Case temperature rises only while fusion runs: 15 C*/sec at 150% fusion speed
+  case_heat_rate: 15
+  # Case temperature limits; glass melts at case_temp_max (Broken state, jitter ~10 000)
+  case_temp_min: -273
+  case_temp_max: 10000
+  # Case pressure follows the temperature; glass bursts at case_press_max MPa
+  case_press_max: 15.0
+  case_press_follow_rate: 0.02
+  # Case integrity decays above these thresholds; at 0% the glass shatters
+  case_int_decay_temp: 8000
+  case_int_decay_press: 12.0
+  # Integrity decay rate (% per second while over thresholds); no passive recovery
+  case_int_decay_rate: 1.0
 
   # Temperature above which shell integrity starts decaying
   shell_integrity_decay_temp: 10000000
@@ -2594,20 +2593,6 @@ reactor:
   # Shell integrity recovery rate when cooled down
   shell_int_recovery_rate: 1
 
-  # Pressure above which case integrity starts decaying
-  case_integrity_decay_press: 7000
-  # Temperature above which case integrity starts decaying
-  case_integrity_decay_temp: 7000
-  # Case integrity decay rate from excessive pressure
-  case_int_decay_press_rate: 1
-  # Case integrity decay rate from excessive temperature
-  case_int_decay_temp_rate: 1
-  # Maximum pressure at which case integrity can recover
-  case_int_recovery_press_max: 7000
-  # Maximum temperature at which case integrity can recover
-  case_int_recovery_temp_max: 4999
-  # Case integrity recovery rate in safe conditions
-  case_int_recovery_rate: 1
 
   wear:
     # Whether reactor wear (degradation over time) is enabled

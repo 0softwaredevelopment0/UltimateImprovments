@@ -220,7 +220,7 @@ public class ReactorDisplay {
         String spin = String.format("%.2f", displaySpin);
         int shIntInt = (int) Math.round(displayCoreShInt);
         int caseTempInt = (int) Math.round(displayCoreCaseTemp);
-        String casePress = String.format("%.3f", displayCoreCasePress / 1000.0);
+        String casePress = String.format("%.3f", displayCoreCasePress);
         int caseIntInt = (int) Math.round(displayCoreCaseInt);
 
         // Flash red-white when any integrity is below 100%
@@ -257,15 +257,18 @@ public class ReactorDisplay {
                 .replace("%spin%", spin), 3);
 
         // =========================
-        // CASE STATS — case T, case P (MPa), case integrity
+        // CASE STATS — case T, case P (MPa), case integrity (or Broken)
         // =========================
+        boolean caseBroken = reactor.isCaseBroken();
         setSign(base, SIGN_CASE, 0, msg("signs.case_stats_title", "=| Case Stats |="), 4);
         setSign(base, SIGN_CASE, 1, color + msg("signs.case_stats_temp", "T: %temp% C*")
                 .replace("%temp%", String.valueOf(caseTempInt)), 4);
         setSign(base, SIGN_CASE, 2, color + msg("signs.case_stats_press", "P: %press% mPa")
                 .replace("%press%", casePress), 4);
-        setSign(base, SIGN_CASE, 3, color + msg("signs.case_stats_int", "I: %int%%")
-                .replace("%int%", String.valueOf(caseIntInt)), 4);
+        setSign(base, SIGN_CASE, 3, caseBroken
+                ? "<red>" + msg("signs.case_stats_broken", "Broken — repair!")
+                : color + msg("signs.case_stats_int", "I: %int%%")
+                        .replace("%int%", String.valueOf(caseIntInt)), 4);
 
         // =========================
         // SHIELD STATS — magnet status (M), shield integrity (I), stress (S)

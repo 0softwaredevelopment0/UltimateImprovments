@@ -26,6 +26,12 @@ public class ReactorState {
     private double fusionParticles;
     private double fusionCollected;
 
+    // Case
+    private boolean caseBroken;
+    private int caseTemp;
+    private double casePress;
+    private int caseIntegrity;
+
     // Self-destruct
     private boolean selfDestruct;
 
@@ -138,6 +144,15 @@ public class ReactorState {
     public void setFusionParticles(double val) { fusionParticles = Math.max(0, val); }
     public double getFusionCollected() { return fusionCollected; }
     public void setFusionCollected(double val) { fusionCollected = Math.max(0, val); }
+
+    public boolean isCaseBroken() { return caseBroken; }
+    public void setCaseBroken(boolean val) { caseBroken = val; }
+    public int getCaseTemp() { return caseTemp; }
+    public void setCaseTemp(int val) { caseTemp = val; }
+    public double getCasePress() { return casePress; }
+    public void setCasePress(double val) { casePress = val; }
+    public int getCaseIntegrity() { return caseIntegrity; }
+    public void setCaseIntegrity(int val) { caseIntegrity = val; }
 
 
     // =========================
@@ -265,6 +280,10 @@ public class ReactorState {
         coreCaseInt = 100;
         fusionParticles = 0;
         fusionCollected = 0;
+        caseBroken = false;
+        caseTemp = -273;
+        casePress = 0;
+        caseIntegrity = 100;
         selfDestruct = false;
         reactorWear = 0;
         wearTickCounter = 0;

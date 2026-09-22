@@ -44,13 +44,9 @@ public class ReactorConfig {
     private double pressFollowRate; // how fast shield pressure follows its temperature target
     private double spinFollowRate;  // how fast core spin follows its temperature target
     private int energyRate;         // energy per tick at working temperature
-    private int caseTempHeatRate;
-    private int caseTempMax;
     private int caseTempCoolRate;
     private int caseTempCoolMin;
-    private int caseTempDecayRate;
     private int casePressHeatRate;
-    private int casePressMax;
     private int casePressDecayRate;
     private int shIntDecayTempThreshold;
     private int shellIntDecayRate;
@@ -104,6 +100,16 @@ public class ReactorConfig {
     private double fusionAbsorbRate;       // particles/sec collected by the absorber at 100%
     private int fusionDebrisPer;           // collected particles per ancient debris
 
+    // Case system — outer glass protection (T/pressure/integrity)
+    private int caseHeatRate;              // C*/sec at 150% fusion speed (15)
+    private int caseTempMax;               // glass melts at this temp (10 000)
+    private int caseTempMin;               // hard minimum (-273)
+    private double casePressMax;           // glass bursts at this MPa (15)
+    private double casePressFollowRate;    // how fast pressure follows the temp (0..1/tick)
+    private int caseIntDecayTemp;          // integrity decays above this temp
+    private double caseIntDecayPress;      // integrity decays above this MPa
+    private double caseIntDecayRate;       // %/sec decay while over thresholds
+
     // =========================
     // LASERS (roof controls)
     // Power Laser #1/#2 heat the core at power_laser_heat_rate C*/sec each
@@ -129,13 +135,9 @@ public class ReactorConfig {
         pressFollowRate = cfg.getDouble("reactor.press_follow_rate", 0.02);
         spinFollowRate = cfg.getDouble("reactor.spin_follow_rate", 0.01);
         energyRate = cfg.getInt("reactor.energy_rate", 100);
-        caseTempHeatRate = cfg.getInt("reactor.case_temp_heat_rate", 2);
-        caseTempMax = cfg.getInt("reactor.case_temp_max", 8000);
         caseTempCoolRate = cfg.getInt("reactor.case_temp_cool_rate", 2);
         caseTempCoolMin = cfg.getInt("reactor.case_temp_cool_min", -271);
-        caseTempDecayRate = cfg.getInt("reactor.case_temp_decay_rate", 1);
         casePressHeatRate = cfg.getInt("reactor.case_press_heat_rate", 4);
-        casePressMax = cfg.getInt("reactor.case_press_max", 10000);
         casePressDecayRate = cfg.getInt("reactor.case_press_decay_rate", 1);
         shIntDecayTempThreshold = cfg.getInt("reactor.shell_integrity_decay_temp", 10000000);
         shellIntDecayRate = cfg.getInt("reactor.shell_int_decay_rate", 1);
@@ -187,6 +189,14 @@ public class ReactorConfig {
         fusionParticlesPerSec = cfg.getInt("reactor.fusion_particles_per_sec", 20);
         fusionAbsorbRate = cfg.getDouble("reactor.fusion_absorb_rate", 21.0);
         fusionDebrisPer = cfg.getInt("reactor.fusion_debris_per", 10000);
+        caseHeatRate = cfg.getInt("reactor.case_heat_rate", 15);
+        caseTempMax = cfg.getInt("reactor.case_temp_max", 10000);
+        caseTempMin = cfg.getInt("reactor.case_temp_min", -273);
+        casePressMax = cfg.getDouble("reactor.case_press_max", 15.0);
+        casePressFollowRate = cfg.getDouble("reactor.case_press_follow_rate", 0.02);
+        caseIntDecayTemp = cfg.getInt("reactor.case_int_decay_temp", 8000);
+        caseIntDecayPress = cfg.getDouble("reactor.case_int_decay_press", 12.0);
+        caseIntDecayRate = cfg.getDouble("reactor.case_int_decay_rate", 1.0);
     }
 
     // =========================
@@ -203,13 +213,9 @@ public class ReactorConfig {
     public double getPressFollowRate() { return pressFollowRate; }
     public double getSpinFollowRate() { return spinFollowRate; }
     public int getEnergyRate() { return energyRate; }
-    public int getCaseTempHeatRate() { return caseTempHeatRate; }
-    public int getCaseTempMax() { return caseTempMax; }
     public int getCaseTempCoolRate() { return caseTempCoolRate; }
     public int getCaseTempCoolMin() { return caseTempCoolMin; }
-    public int getCaseTempDecayRate() { return caseTempDecayRate; }
     public int getCasePressHeatRate() { return casePressHeatRate; }
-    public int getCasePressMax() { return casePressMax; }
     public int getCasePressDecayRate() { return casePressDecayRate; }
     public int getShIntDecayTempThreshold() { return shIntDecayTempThreshold; }
     public int getShellIntDecayRate() { return shellIntDecayRate; }
@@ -261,4 +267,12 @@ public class ReactorConfig {
     public int getFusionParticlesPerSec() { return fusionParticlesPerSec; }
     public double getFusionAbsorbRate() { return fusionAbsorbRate; }
     public int getFusionDebrisPer() { return fusionDebrisPer; }
+    public int getCaseHeatRate() { return caseHeatRate; }
+    public int getCaseTempMax() { return caseTempMax; }
+    public int getCaseTempMin() { return caseTempMin; }
+    public double getCasePressMax() { return casePressMax; }
+    public double getCasePressFollowRate() { return casePressFollowRate; }
+    public int getCaseIntDecayTemp() { return caseIntDecayTemp; }
+    public double getCaseIntDecayPress() { return caseIntDecayPress; }
+    public double getCaseIntDecayRate() { return caseIntDecayRate; }
 }

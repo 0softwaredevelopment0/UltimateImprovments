@@ -40,6 +40,7 @@ public class ReactorManager {
     private final ReactorShield shield;
     private final ReactorFuel fuel;
     private final ReactorFusion fusion;
+    private final ReactorCase caseSys;
 
     public static ReactorManager getInstance() {
         return instance;
@@ -78,13 +79,9 @@ public class ReactorManager {
     private double pressFollowRate;
     private double spinFollowRate;
     private int energyRate;
-    private int caseTempHeatRate;
-    private int caseTempMax;
     private int caseTempCoolRate;
     private int caseTempCoolMin;
-    private int caseTempDecayRate;
     private int casePressHeatRate;
-    private int casePressMax;
     private int casePressDecayRate;
     private int shIntDecayTempThreshold;
     private int shellIntDecayRate;
@@ -118,13 +115,9 @@ public class ReactorManager {
         pressFollowRate = cfg.getPressFollowRate();
         spinFollowRate = cfg.getSpinFollowRate();
         energyRate = cfg.getEnergyRate();
-        caseTempHeatRate = cfg.getCaseTempHeatRate();
-        caseTempMax = cfg.getCaseTempMax();
         caseTempCoolRate = cfg.getCaseTempCoolRate();
         caseTempCoolMin = cfg.getCaseTempCoolMin();
-        caseTempDecayRate = cfg.getCaseTempDecayRate();
         casePressHeatRate = cfg.getCasePressHeatRate();
-        casePressMax = cfg.getCasePressMax();
         casePressDecayRate = cfg.getCasePressDecayRate();
         shIntDecayTempThreshold = cfg.getShIntDecayTempThreshold();
         shellIntDecayRate = cfg.getShellIntDecayRate();
@@ -162,9 +155,6 @@ public class ReactorManager {
     private double shieldPress;     // Shield pressure, MPa — follows (T/10M) × 10.01
     private double spin;            // Core spin, RPS — follows 0.95 × (T/10M)
     private int coreShInt = 100;    // Shell integrity (0-100%)
-    private int coreCaseTemp;
-    private int coreCasePress;
-    private int coreCaseInt = 100;  // Case integrity (0-100%)
 
     // Recipe
 
@@ -273,6 +263,7 @@ public class ReactorManager {
         this.shield = new ReactorShield(this);
         this.fuel = new ReactorFuel(this);
         this.fusion = new ReactorFusion(this);
+        this.caseSys = new ReactorCase(this);
     }
 
     // =========================
@@ -298,10 +289,11 @@ public class ReactorManager {
         s.setSpin(r.spin);
         s.setFusionParticles(r.fusion.getParticles());
         s.setFusionCollected(r.fusion.getCollected());
+        s.setCaseBroken(r.caseSys.isBroken());
+        s.setCaseTemp(r.caseSys.getTemp());
+        s.setCasePress(r.caseSys.getPress());
+        s.setCaseIntegrity(r.caseSys.getIntegrity());
         s.setCoreShInt(r.coreShInt);
-        s.setCoreCaseTemp(r.coreCaseTemp);
-        s.setCoreCasePress(r.coreCasePress);
-        s.setCoreCaseInt(r.coreCaseInt);
         s.setSelfDestruct(r.selfDestruct);
         s.setReactorWear(r.reactorWear);
         s.setEnergyGenerated(r.energyGenerated);
@@ -326,10 +318,16 @@ public class ReactorManager {
             instance.spin = state.getSpin();
             instance.fusion.setParticles(state.getFusionParticles());
             instance.fusion.setCollected(state.getFusionCollected());
+            instance.caseSys.setState(state.isCaseBroken()
+                    ? ReactorCase.State.BROKEN : ReactorCase.State.OK);
+            instance.caseSys.setTemp(state.getCaseTemp());
+            instance.caseSys.setPress(state.getCasePress());
+            instance.caseSys.setIntegrity(state.getCaseIntegrity());
+            if (instance.caseSys.isBroken()) {
+                instance.caseSys.repair(instance.reactorLocation);
+                instance.caseSys.setState(ReactorCase.State.BROKEN);
+            }
             instance.coreShInt = state.getCoreShInt();
-            instance.coreCaseTemp = state.getCoreCaseTemp();
-            instance.coreCasePress = state.getCoreCasePress();
-            instance.coreCaseInt = state.getCoreCaseInt();
             instance.selfDestruct = state.isSelfDestruct();
             instance.reactorWear = state.getReactorWear();
             instance.energyGenerated = state.getEnergyGenerated();
@@ -445,17 +443,6 @@ public class ReactorManager {
         }
 
         // =========================
-        // CASE REACTION — follows laser heating/cooling
-        // =========================
-        if (heating) {
-            coreCaseTemp = Math.min(coreCaseTemp + caseTempHeatRate, caseTempMax);
-            coreCasePress = Math.min(coreCasePress + casePressHeatRate, casePressMax);
-        }
-        if (cooling) {
-            coreCaseTemp = Math.max(coreCaseTemp - caseTempCoolRate, caseTempCoolMin);
-        }
-
-        // =========================
         // INTEGRITY WARNING (every 10 seconds)
         // =========================
         int warnTick = display.getIntegrityWarnTick() + 1;
@@ -463,7 +450,7 @@ public class ReactorManager {
         if (warnTick >= 200) {
             display.setIntegrityWarnTick(0);
             if (coreShInt < 100) broadcast("<dark_red>⚠ <red>Целостность оболочки ядра нарушена!");
-            if (coreCaseInt < 100) broadcast("<dark_red>⚠ <red>Целостность корпуса реактора нарушена!");
+            if (caseSys.isBroken()) broadcast("<dark_red>⚠ <red>Стекло корпуса разбито!");
         }
 
         // =========================
@@ -520,27 +507,10 @@ public class ReactorManager {
         }
 
         // =========================
-        // CASE PRESSURE DECAY
-        // =========================
-        if (coreCasePress > 0) {
-            coreCasePress -= casePressDecayRate;
-            if (coreCasePress < 0) coreCasePress = 0;
-        }
-
-        // =========================
-        // CASE TEMP DECAY
-        // =========================
-        if (coreCaseTemp > caseTempCoolMin) {
-            coreCaseTemp -= caseTempDecayRate;
-        }
-
-        // =========================
         // INTEGRITY THRESHOLD WARNINGS (75%, 50%, 25%)
         // =========================
         checkIntegrityThreshold(prevShInt, coreShInt, "оболочки ядра");
-        checkIntegrityThreshold(prevCaseInt, coreCaseInt, "корпуса");
         prevShInt = coreShInt;
-        prevCaseInt = coreCaseInt;
 
         // =========================
         // ENERGY GENERATION
@@ -610,7 +580,7 @@ public class ReactorManager {
         // =========================
         // MELTDOWN COUNTDOWN START
         // =========================
-        if ((coreShInt <= 0 || coreCaseInt <= 0) && !meltdownCountdown && !selfDestructActive) {
+        if ((coreShInt <= 0 || caseSys.getIntegrity() <= 0) && !meltdownCountdown && !selfDestructActive) {
             meltdownCountdown = true;
             meltdownTimer = 200; // 10 seconds
             selfDestruct = true;
@@ -656,12 +626,7 @@ public class ReactorManager {
         if (coreTemp >= shIntDecayTempThreshold && coreShInt > 0) {
             coreShInt = Math.max(0, coreShInt - shellIntDecayRate);
         }
-        if (coreCasePress >= caseIntDecayPressThreshold && coreCaseInt > 0) {
-            coreCaseInt = Math.max(0, coreCaseInt - caseIntDecayPressRate);
-        }
-        if (coreCaseTemp >= caseIntDecayTempThreshold && coreCaseInt > 0) {
-            coreCaseInt = Math.max(0, coreCaseInt - caseIntDecayTempRate);
-        }
+        // Case integrity is handled by ReactorCase.tick (glass protection)
 
         // 🏆 Advancement: dfc_unstable — first integrity degradation
         Bukkit.getScheduler().runTask(Main.getInstance(), this::checkDfcUnstable);
@@ -676,9 +641,7 @@ public class ReactorManager {
         if (coreTemp <= shellIntRecoveryTempMax && coreShInt < 100) {
             coreShInt = Math.min(100, coreShInt + shellIntRecoveryRate);
         }
-        if (coreCasePress <= caseIntRecoveryPressMax && coreCaseTemp <= caseIntRecoveryTempMax && coreCaseInt < 100) {
-            coreCaseInt = Math.min(100, coreCaseInt + caseIntRecoveryRate);
-        }
+        // Case integrity does NOT recover passively — repair the glass instead
     }
 
     // =========================
@@ -687,6 +650,7 @@ public class ReactorManager {
     public void tickFusion() {
         if (!enabled || !valid || reactorLocation == null) return;
         fusion.tick(reactorLocation);
+        caseSys.tick(reactorLocation);
     }
 
     // =========================
@@ -696,7 +660,7 @@ public class ReactorManager {
         if (!enabled || !valid || reactorLocation == null) return;
 
         if (wearEnabled && !selfDestructActive) {
-            boolean isDegraded = coreShInt < 100 || coreCaseInt < 100;
+            boolean isDegraded = coreShInt < 100 || caseSys.getIntegrity() < 100;
             if (isDegraded != prevWearDegraded) {
                 wearTickCounter = 0;
                 prevWearDegraded = isDegraded;
@@ -813,7 +777,7 @@ public class ReactorManager {
     // INTEGRITY DECAY — dfc_unstable achievement
     // =========================
     private void checkDfcUnstable() {
-        if (!advDfcUnstableGranted && (coreShInt < 100 || coreCaseInt < 100)) {
+        if (!advDfcUnstableGranted && (coreShInt < 100 || caseSys.getIntegrity() < 100)) {
             advDfcUnstableGranted = true;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
                 grantAdvancementAll("datapack/dfc_unstable"));
@@ -826,9 +790,6 @@ public class ReactorManager {
     private void resetReactorState() {
         coreShInt = 100;
         coreTemp = 0;
-        coreCaseInt = 100;
-        coreCaseTemp = 0;
-        coreCasePress = 0;
         shieldPress = 0;
         spin = 0;
         lasers.reset();
@@ -924,10 +885,8 @@ public class ReactorManager {
         shield.reset();
         fuel.reset();
         fusion.reset();
+        caseSys.reset();
         coreShInt = 100;
-        coreCaseTemp = 0;
-        coreCasePress = 0;
-        coreCaseInt = 100;
         selfDestruct = false;
         sdText = 0;
         reactorWear = 0;
@@ -959,9 +918,10 @@ public class ReactorManager {
     public double getShieldPress() { return shieldPress; }
     public double getCoreSpin() { return spin; }
     public int getCoreShInt() { return coreShInt; }
-    public int getCoreCaseTemp() { return coreCaseTemp; }
-    public int getCoreCasePress() { return coreCasePress; }
-    public int getCoreCaseInt() { return coreCaseInt; }
+    public int getCoreCaseTemp() { return caseSys.getTemp(); }
+    public double getCoreCasePress() { return caseSys.getPress(); }
+    public int getCoreCaseInt() { return caseSys.getIntegrity(); }
+    public boolean isCaseBroken() { return caseSys.isBroken(); }
 
     public boolean isSelfDestruct() { return selfDestruct; }
     public boolean isMeltdownCountdown() { return meltdownCountdown; }
@@ -1024,6 +984,7 @@ public class ReactorManager {
     public ReactorShield getShield() { return shield; }
     public ReactorFuel getFuel() { return fuel; }
     public ReactorFusion getFusion() { return fusion; }
+    public ReactorCase getCase() { return caseSys; }
 
     /** Fuel tick (every second): consumption by spin + spin decay when dry. */
     public void tickFuel() {

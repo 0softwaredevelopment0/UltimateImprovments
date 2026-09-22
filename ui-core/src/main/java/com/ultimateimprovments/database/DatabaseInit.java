@@ -212,6 +212,26 @@ public class DatabaseInit {
             // fusion_collected — collected-particles progress toward a debris
             // =========================
             try {
+                st.execute("ALTER TABLE reactors ADD COLUMN case_broken INTEGER DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN case_temp INTEGER DEFAULT -273");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN case_press REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN case_int INTEGER DEFAULT 100");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
                 st.execute("ALTER TABLE reactors ADD COLUMN fusion_particles REAL DEFAULT 0");
             } catch (Exception ignored) {
                 // Column already exists — this is fine
