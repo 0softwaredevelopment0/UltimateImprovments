@@ -72,11 +72,9 @@ public class ReactorTask extends BukkitRunnable {
         }
 
         // =========================
-        // RECIPE TICK (every 5s)
+        // FUSION TICK (every tick — particles spawn/collect)
         // =========================
-        if (tick % RECIPE_INTERVAL == 0) {
-            reactor.tickRecipe();
-        }
+        reactor.tickFusion();
 
         // =========================
         // INTENSITY DECAY (every 1s)

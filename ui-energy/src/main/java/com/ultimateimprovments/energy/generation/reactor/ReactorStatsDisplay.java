@@ -63,8 +63,9 @@ public final class ReactorStatsDisplay {
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Температура:  <white>" + reactor.getDisplayCoreCaseTemp() + " C*"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Давление:    <white>" + String.format("%.3f", reactor.getDisplayCoreCasePress() / 1000.0) + " mPa"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Целостность: <white>" + reactor.getDisplayCoreCaseInt() + " %"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_purple>═[ <light_purple>Данные рецепта <dark_purple>]═"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Прогресс:   <white>" + reactor.getDisplayRecipeTime() + " %"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_purple>═[ <light_purple>Данные слияния <dark_purple>]═"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Скорость:   <white>" + String.format("%.0f", reactor.getFusion().getSpeedPct()) + " %"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Партиклы:   <white>" + (int) reactor.getFusion().getParticles()));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Износ:      <white>" + reactor.getDisplayReactorWear() + " %"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Выработка:  <white>" + reactor.getDisplayEnergyRate() + " E/сек"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Позиция: <white>" + reactorLoc.getBlockX() + " " + reactorLoc.getBlockY() + " " + reactorLoc.getBlockZ()));

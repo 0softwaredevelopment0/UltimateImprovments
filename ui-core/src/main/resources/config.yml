@@ -1222,11 +1222,11 @@ messages:
       fuel_stats_title: "=| Статы Топлива |="
       fuel_stats_status: "S: %status%"
       fuel_stats_f: "F: %f%%"
-      fuel_stats_m: "M: %m%%"
+      fuel_stats_s: "S: %s%%"
       fusion_stats_title: "=| Статы Синтеза |="
       fusion_stats_status: "S: %status%"
-      fusion_stats_p: "P: %p%%"
-      fusion_stats_f: "F: %f%%"
+      fusion_stats_p: "P: %p%"
+      fusion_stats_speed: "S: %s%%"
       stress_title: "=| Нагрузка Щита |="
       stress_h: "H: %h%%"
       stress_p: "P: %p%%"
@@ -1239,6 +1239,11 @@ messages:
       status_offline: "Оффлайн"
       status_fueled: "Есть топливо"
       status_empty: "Пусто"
+      status_fuel_yes: "Yes"
+      status_fuel_no: "No"
+      status_fusion_offline: "Offline"
+      status_fusion_online: "Online"
+      status_fusion_full: "Full"
       status_idle: "Ожидание"
       status_running: "Работает"
       status_done: "Готово"
@@ -1323,11 +1328,11 @@ messages_en:
       fuel_stats_title: "=| Fuel Stats |="
       fuel_stats_status: "S: %status%"
       fuel_stats_f: "F: %f%%"
-      fuel_stats_m: "M: %m%%"
+      fuel_stats_s: "S: %s%%"
       fusion_stats_title: "=| Fusion Stats |="
       fusion_stats_status: "S: %status%"
-      fusion_stats_p: "P: %p%%"
-      fusion_stats_f: "F: %f%%"
+      fusion_stats_p: "P: %p%"
+      fusion_stats_speed: "S: %s%%"
       stress_title: "=| Shield Stress |="
       stress_h: "H: %h%%"
       stress_p: "P: %p%%"
@@ -1340,6 +1345,11 @@ messages_en:
       status_offline: "Offline"
       status_fueled: "Fueled"
       status_empty: "Empty"
+      status_fuel_yes: "Yes"
+      status_fuel_no: "No"
+      status_fusion_offline: "Offline"
+      status_fusion_online: "Online"
+      status_fusion_full: "Full"
       status_idle: "Idle"
       status_running: "Running"
       status_done: "Done"
@@ -2539,6 +2549,23 @@ reactor:
   fuel_over_per_10k: 1.0
   # RPS lost per second while the reactor is out of fuel
   fuel_no_fuel_spin_decay: 500.0
+
+  # =| Fusion system |=
+  # Ancient debris forms in the core from fusion particles
+  # Below fusion_temp_min there is no fusion at all
+  fusion_temp_min: 1000000
+  # 100% speed point (20 particles/sec at fusion_particles_per_sec = 20)
+  fusion_temp_work: 10000000
+  # 150% speed point (30 particles/sec)
+  fusion_temp_peak: 15000000
+  # Fusion speed falls back to 0% here (25M C*)
+  fusion_temp_end: 25000000
+  # Fusion particles spawned per second at 100% speed
+  fusion_particles_per_sec: 20
+  # Particles collected per second by the Content Absorber at 100% power (0-100%)
+  fusion_absorb_rate: 21.0
+  # Collected particles per one ancient debris deposited into the floor barrel
+  fusion_debris_per: 10000
 
   # How fast the reactor case heats up
   case_temp_heat_rate: 2

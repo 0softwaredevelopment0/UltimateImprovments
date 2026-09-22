@@ -22,9 +22,9 @@ public class ReactorState {
     private int coreCasePress;
     private int coreCaseInt = 100;
 
-    // Recipe
-    private int recipeTime;
-    private boolean rcDone;
+    // Fusion
+    private double fusionParticles;
+    private double fusionCollected;
 
     // Self-destruct
     private boolean selfDestruct;
@@ -134,12 +134,11 @@ public class ReactorState {
     // =========================
     // RECIPE
     // =========================
-    public int getRecipeTime() { return recipeTime; }
-    public void setRecipeTime(int val) { recipeTime = val; }
-    public void addRecipeTime(int val) { recipeTime += val; }
+    public double getFusionParticles() { return fusionParticles; }
+    public void setFusionParticles(double val) { fusionParticles = Math.max(0, val); }
+    public double getFusionCollected() { return fusionCollected; }
+    public void setFusionCollected(double val) { fusionCollected = Math.max(0, val); }
 
-    public boolean isRcDone() { return rcDone; }
-    public void setRcDone(boolean val) { rcDone = val; }
 
     // =========================
     // SELF-DESTRUCT
@@ -264,8 +263,8 @@ public class ReactorState {
         coreCaseTemp = 0;
         coreCasePress = 0;
         coreCaseInt = 100;
-        recipeTime = 0;
-        rcDone = false;
+        fusionParticles = 0;
+        fusionCollected = 0;
         selfDestruct = false;
         reactorWear = 0;
         wearTickCounter = 0;

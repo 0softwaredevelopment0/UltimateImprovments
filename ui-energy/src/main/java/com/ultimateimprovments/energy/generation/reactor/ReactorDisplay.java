@@ -43,7 +43,6 @@ public class ReactorDisplay {
     private double displayCoreCaseTemp;
     private double displayCoreCasePress;
     private double displayCoreCaseInt = 100;
-    private double displayRecipeTime;
     private double displayReactorWear;
     private double displayEnergyRate;
 
@@ -76,7 +75,6 @@ public class ReactorDisplay {
         displayCoreCaseTemp += (reactor.getCoreCaseTemp() - displayCoreCaseTemp) * SMOOTHING_FACTOR;
         displayCoreCasePress += (reactor.getCoreCasePress() - displayCoreCasePress) * SMOOTHING_FACTOR;
         displayCoreCaseInt += (reactor.getCoreCaseInt() - displayCoreCaseInt) * SMOOTHING_FACTOR;
-        displayRecipeTime += (reactor.getRecipeTime() - displayRecipeTime) * SMOOTHING_FACTOR;
         displayReactorWork();
     }
 
@@ -224,7 +222,6 @@ public class ReactorDisplay {
         int caseTempInt = (int) Math.round(displayCoreCaseTemp);
         String casePress = String.format("%.3f", displayCoreCasePress / 1000.0);
         int caseIntInt = (int) Math.round(displayCoreCaseInt);
-        int recipeInt = (int) Math.round(displayRecipeTime);
 
         // Flash red-white when any integrity is below 100%
         boolean flashing = shIntInt < 100 || caseIntInt < 100;
@@ -299,34 +296,40 @@ public class ReactorDisplay {
                 .replace("%spin%", spinPct), 0);
 
         // =========================
-        // FUEL STATS — status, average fill of both barrels (F), consumption (M)
+        // FUEL STATS — Yes/No status, average fill (F), consumption speed (S)
         // =========================
         boolean fueled = reactor.hasBarrelFuelPublic();
-        String fuelM = String.format("%.1f", reactor.getFuelConsumptionPct());
+        String fuelS = String.format("%.1f", reactor.getFuelConsumptionPct());
         setSign(base, SIGN_FUEL, 0, msg("signs.fuel_stats_title", "=| Fuel Stats |="), 2);
         setSign(base, SIGN_FUEL, 1, color + msg("signs.fuel_stats_status", "S: %status%")
                 .replace("%status%", fueled
-                        ? msg("signs.status_fueled", "Fueled")
-                        : msg("signs.status_empty", "Empty")), 2);
+                        ? msg("signs.status_fuel_yes", "Yes")
+                        : msg("signs.status_fuel_no", "No")), 2);
         setSign(base, SIGN_FUEL, 2, color + msg("signs.fuel_stats_f", "F: %f%%")
                 .replace("%f%", String.valueOf(reactor.getFuelFillPercent())), 2);
-        setSign(base, SIGN_FUEL, 3, color + msg("signs.fuel_stats_m", "M: %m%%")
-                .replace("%m%", fuelM), 2);
+        setSign(base, SIGN_FUEL, 3, color + msg("signs.fuel_stats_s", "S: %s%%")
+                .replace("%s%", fuelS), 2);
 
         // =========================
-        // FUSION STATS — recipe status + progress
+        // FUSION STATS — status (Offline/Online/Full), particles (P), speed (S)
         // =========================
-        String fusionStatus;
-        if (recipeInt <= 0) fusionStatus = msg("signs.status_idle", "Idle");
-        else if (recipeInt < reactor.getRecipeTimeMax()) fusionStatus = msg("signs.status_running", "Running");
-        else fusionStatus = msg("signs.status_done", "Done");
+        var fusion = reactor.getFusion();
+        boolean barrelFull = fusion.isFloorBarrelFull(base);
+        boolean fusionOnline = fusion.getSpeedPct() > 0 && !barrelFull;
+        String fusionStatus = barrelFull
+                ? msg("signs.status_fusion_full", "Full")
+                : (fusionOnline
+                        ? msg("signs.status_fusion_online", "Online")
+                        : msg("signs.status_fusion_offline", "Offline"));
+        String fusionS = String.format("%.0f", fusion.getSpeedPct());
+        String fusionP = String.valueOf((int) fusion.getParticles());
         setSign(base, SIGN_FUSION, 0, msg("signs.fusion_stats_title", "=| Fusion Stats |="), 5);
         setSign(base, SIGN_FUSION, 1, color + msg("signs.fusion_stats_status", "S: %status%")
                 .replace("%status%", fusionStatus), 5);
-        setSign(base, SIGN_FUSION, 2, color + msg("signs.fusion_stats_p", "P: %p%%")
-                .replace("%p%", String.valueOf(recipeInt)), 5);
-        setSign(base, SIGN_FUSION, 3, color + msg("signs.fusion_stats_f", "F: %f%%")
-                .replace("%f%", fueled ? "100" : "0"), 5);
+        setSign(base, SIGN_FUSION, 2, color + msg("signs.fusion_stats_p", "P: %p%")
+                .replace("%p%", fusionP), 5);
+        setSign(base, SIGN_FUSION, 3, color + msg("signs.fusion_stats_speed", "S: %s%%")
+                .replace("%s%", fusionS), 5);
 
         // =========================
         // SHIELD STRESS — heat %, pressure %, spin % (live from the shield)
@@ -452,7 +455,6 @@ public class ReactorDisplay {
         displayCoreCaseTemp = 0;
         displayCoreCasePress = 0;
         displayCoreCaseInt = 100;
-        displayRecipeTime = 0;
         displayReactorWear = 0;
         displayEnergyRate = 0;
         displayTick = 0;
@@ -487,7 +489,6 @@ public class ReactorDisplay {
     public int getDisplayCoreCaseTemp() { return (int) Math.round(displayCoreCaseTemp); }
     public int getDisplayCoreCasePress() { return (int) Math.round(displayCoreCasePress); }
     public int getDisplayCoreCaseInt() { return (int) Math.round(displayCoreCaseInt); }
-    public int getDisplayRecipeTime() { return (int) Math.round(displayRecipeTime); }
     public int getDisplayReactorWear() { return (int) Math.round(displayReactorWear); }
     public int getDisplayEnergyRate() { return (int) Math.round(displayEnergyRate); }
 

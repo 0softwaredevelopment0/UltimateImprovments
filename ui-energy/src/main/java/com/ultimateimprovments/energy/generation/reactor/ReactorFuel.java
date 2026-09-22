@@ -50,7 +50,6 @@ public class ReactorFuel {
     public void tick(Location base) {
         ReactorConfig cfg = ReactorConfig.getInstance();
         double spin = reactor.getCoreSpin();
-        double spinMin = cfg.getFuelSpinMin();
 
         consumptionPct = consumptionForSpin(spin, cfg);
 
@@ -59,7 +58,7 @@ public class ReactorFuel {
         if (!hasFuel(base)) {
             // Out of fuel — the spin coasts down (fusion needs fuel)
             double decay = cfg.getFuelNoFuelSpinDecay();
-            if (decay > 0 && spin > spinMin) {
+            if (decay > 0 && spin > 0) {
                 reactor.applySpinDelta(-decay);
             }
             return;
@@ -77,25 +76,25 @@ public class ReactorFuel {
     }
 
     /**
-     * Consumption % for the given spin: 0 below the minimum, ~5%/s at the
-     * 95 000 RPS working point, 1% floor, +1% per 10 000 RPS above 100 000.
+     * Consumption % for the given spin: 100% at 0 RPS falling linearly to the
+     * base rate (5%) at the 95 000 RPS working point, 1% floor above it,
+     * +1% per 10 000 RPS over 100 000.
      */
     static double consumptionForSpin(double spin, ReactorConfig cfg) {
-        double spinMin = cfg.getFuelSpinMin();          // 1000
         double workSpin = cfg.getFuelWorkSpin();        // 95000
         double overSpin = cfg.getFuelOverSpin();        // 100000
         double base = cfg.getFuelBaseRate();            // 5 %/s at workSpin
         double min = cfg.getFuelMinRate();              // 1 %
         double per10k = cfg.getFuelOverPer10k();        // 1 % per 10k above overSpin
 
-        if (spin < spinMin) return 0;
+        if (spin <= 0) return 100;
         if (spin <= workSpin) {
-            // Fall from base (at workSpin) to the 1% floor (at spinMin)
-            double f = (spin - spinMin) / Math.max(1, workSpin - spinMin);
-            return min + (base - min) * f;
+            // Fall from 100% (at 0 spin) to the base rate (at the working point)
+            double f = spin / Math.max(1, workSpin);
+            return base + (100.0 - base) * (1.0 - f);
         }
         if (spin <= overSpin) {
-            // Smooth dip back down to 1% between workSpin and overSpin
+            // Smooth dip back to the 1% floor between workSpin and overSpin
             double f = (spin - workSpin) / Math.max(1, overSpin - workSpin);
             return base + (min - base) * f;
         }
