@@ -105,13 +105,14 @@ public class ReactorDisplay {
 
     // =========================
     // VISUAL TICK (every tick — particles)
-    // Core chamber center: (0.5, −5.5, 0.5) — middle of the twin towers.
+    // Core chamber center: (0.5, −3.5, 0.5) — 2 blocks above the geometric
+    // middle of the twin towers (visual raise shared by all particle systems).
     // =========================
     public void tickVisual() {
         Location base = reactor.getReactorLocation();
         if (base == null) return;
 
-        Location coreCenter = base.clone().add(0.5, -5.5, 0.5);
+        Location coreCenter = base.clone().add(0.5, -3.5, 0.5);
 
         double workMult = reactor.getCoreWorkTemp() > 0
                 ? (double) reactor.getCoreTemp() / reactor.getCoreWorkTemp() : 0.0;

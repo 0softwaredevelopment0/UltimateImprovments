@@ -1184,6 +1184,8 @@ messages:
     repair_report: "<gold>Attention! <white>%cat% восстановлена! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
     damage_uncontrolled: "<gold>❕ <white>Структура реактора повреждена — управление потеряно! Охладите ядро до <yellow>0 C*"
     damage_shutdown_complete: "<green>✔ <white>Ядро охлаждено до <yellow>0 C* <white>— реактор остановлен и обесточен."
+    core_emergency_shutdown: "<dark_red>⚠ <red>Целостность оболочки ядра критическая — ядро аварийно отключено! Перезапустите реактор."
+    core_restart_after_shutdown: "<green>✔ <white>Ядро перезапущено после аварийного отключения."
     structure_repaired: "<green>✔ <white>Структура реактора полностью восстановлена — управление возвращено."
     pending_frame_reactor: "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"
     pending_frame_magnet: "<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!"
@@ -1302,6 +1304,8 @@ messages_en:
     repair_report: "<gold>Attention! <white>%cat% repair detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
     damage_uncontrolled: "<gold>❕ <white>Reactor structure damaged — control lost! Cool the core down to <yellow>0 C*"
     damage_shutdown_complete: "<green>✔ <white>Core cooled to <yellow>0 C* <white>— reactor stopped and powered down."
+    core_emergency_shutdown: "<dark_red>⚠ <red>Core shell integrity critical — emergency core shutdown! Restart the reactor."
+    core_restart_after_shutdown: "<green>✔ <white>Core restarted after the emergency shutdown."
     structure_repaired: "<green>✔ <white>Reactor structure fully restored — control returned."
     pending_frame_reactor: "<red>First press SHIFT+RMB on the reactor frame!"
     pending_frame_magnet: "<red>First press SHIFT+RMB on the magnet frame!"
@@ -2551,8 +2555,10 @@ reactor:
   shield_failure_countdown: 10
   # Explosion radius of the shield-breach creeper
   shield_explosion_radius: 10
+  # Emergency core shutdown when the shield integrity drops below this % (restart via startup pulse)
+  shield_integrity_shutdown_percent: 25
   # Laser beam particles: END_ROD speed (blocks/tick) and total count per tick
-  shield_particle_rod_speed: 0.8
+  shield_particle_rod_speed: 0.35
   shield_particle_rod_count: 16
   # DUST particles inside the core per tick (color = temperature gradient)
   shield_particle_dust_count: 16

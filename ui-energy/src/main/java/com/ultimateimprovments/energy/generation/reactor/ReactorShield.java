@@ -160,14 +160,16 @@ public class ReactorShield {
 
         ReactorConfig cfg = ReactorConfig.getInstance();
 
-        // Core chamber center (anchor-relative): (0.5, −5.5, 0.5)
-        Location core = base.clone().add(0.5, -5.5, 0.5);
+        // Core chamber center (anchor-relative): (0.5, −3.5, 0.5) —
+        // visually raised 2 blocks above the geometric center.
+        Location core = base.clone().add(0.5, -3.5, 0.5);
 
         // =========================
         // END_ROD beams — from each rod tip toward the core (moderate speed,
         // NORMAL render mode, 16 particles total across the active rods)
         // =========================
-        double speed = cfg.getShieldParticleRodSpeed();
+        // Moderate speed so particles reach the core instead of flying through it
+        double speed = Math.min(cfg.getShieldParticleRodSpeed(), 0.35);
         int total = cfg.getShieldParticleRodCount();
         int perRod = Math.max(1, total / RODS.length);
         for (int[] rod : RODS) {

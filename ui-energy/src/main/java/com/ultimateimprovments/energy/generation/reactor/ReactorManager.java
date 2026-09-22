@@ -52,6 +52,9 @@ public class ReactorManager {
     private boolean structureDamaged = false;
     private int damageWarnTick = 0;
 
+    /** Emergency core shutdown latch (shield integrity fell below the critical threshold). */
+    private boolean coreEmergencyStopped = false;
+
     public static ReactorManager getInstance() {
         return instance;
     }
@@ -446,6 +449,22 @@ public class ReactorManager {
             lasers.tickCooldownMode(base);
         }
 
+        // =========================
+        // EMERGENCY CORE SHUTDOWN — shield integrity below the critical
+        // threshold (25% by default): the core shuts itself off, lasers reset.
+        // =========================
+        if (!coreEmergencyStopped
+                && coreShInt > 0
+                && coreShInt < cfg.getShieldIntegrityShutdownPercent()
+                && !selfDestructActive && !meltdownCountdown) {
+            coreEmergencyStopped = true;
+            lasers.reset();
+            shield.setState(ReactorShield.State.OFFLINE);
+            broadcast(StructuresMessages.get("core_emergency_shutdown",
+                    "<dark_red>⚠ <red>Целостность оболочки ядра критическая — ядро аварийно отключено! Перезапустите реактор."));
+            saveToDb();
+        }
+
         boolean heating = lasers.isHeating();
         boolean cooling = lasers.isCooling();
 
@@ -639,7 +658,8 @@ public class ReactorManager {
         if (structureDamaged) return; // sensors are dead — pressure readouts frozen
 
         Location base = reactorLocation;
-        Location coreCenter = base.clone().add(0.5, -5.5, 0.5);
+        // 2 blocks above the geometric center — matches the core visuals
+        Location coreCenter = base.clone().add(0.5, -3.5, 0.5);
 
         int particleCount;
         int radAmount;
@@ -965,6 +985,7 @@ public class ReactorManager {
         caseSys.reset();
         structureDamaged = false;
         damageWarnTick = 0;
+        coreEmergencyStopped = false;
         coreShInt = 100;
         selfDestruct = false;
         sdText = 0;
@@ -1005,6 +1026,9 @@ public class ReactorManager {
 
     /** Whether the structure is damaged (uncontrolled-core mode). */
     public boolean isStructureDamaged() { return structureDamaged; }
+
+    /** Whether the core is emergency-stopped (integrity below the critical threshold). */
+    public boolean isCoreEmergencyStopped() { return coreEmergencyStopped; }
 
     public boolean isSelfDestruct() { return selfDestruct; }
     public boolean isMeltdownCountdown() { return meltdownCountdown; }
@@ -1095,6 +1119,11 @@ public class ReactorManager {
 
     /** Called by the laser startup pulse — ignites the shield formation. */
     public void onStartupPulse() {
+        if (coreEmergencyStopped) {
+            coreEmergencyStopped = false;
+            broadcast(StructuresMessages.get("core_restart_after_shutdown",
+                    "<green>✔ <white>Ядро перезапущено после аварийного отключения."));
+        }
         shield.start();
     }
 

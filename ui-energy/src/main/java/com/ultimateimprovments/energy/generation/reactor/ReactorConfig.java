@@ -80,6 +80,7 @@ public class ReactorConfig {
     private int shieldExplosionRadius;    // creeper explosion radius
     private double shieldParticleRodSpeed;   // END_ROD beam speed (blocks/tick)
     private int shieldParticleRodCount;      // total END_ROD particles per tick
+    private int shieldIntegrityShutdownPercent; // emergency core shutdown threshold
     private int shieldParticleDustCount;     // DUST particles in the core per tick
 
     // Fuel system — consumption by core spin (100% = 1 gold ingot + 1 diamond / 10s)
@@ -174,6 +175,7 @@ public class ReactorConfig {
         shieldExplosionRadius = cfg.getInt("reactor.shield_explosion_radius", 10);
         shieldParticleRodSpeed = cfg.getDouble("reactor.shield_particle_rod_speed", 0.8);
         shieldParticleRodCount = cfg.getInt("reactor.shield_particle_rod_count", 16);
+        shieldIntegrityShutdownPercent = cfg.getInt("reactor.shield_integrity_shutdown_percent", 25);
         shieldParticleDustCount = cfg.getInt("reactor.shield_particle_dust_count", 16);
         fuelSpinMin = cfg.getDouble("reactor.fuel_spin_min", 1000);
         fuelWorkSpin = cfg.getDouble("reactor.fuel_work_spin", 95000);
@@ -252,6 +254,7 @@ public class ReactorConfig {
     public int getShieldExplosionRadius() { return shieldExplosionRadius; }
     public double getShieldParticleRodSpeed() { return shieldParticleRodSpeed; }
     public int getShieldParticleRodCount() { return shieldParticleRodCount; }
+    public int getShieldIntegrityShutdownPercent() { return shieldIntegrityShutdownPercent; }
     public int getShieldParticleDustCount() { return shieldParticleDustCount; }
     public double getFuelSpinMin() { return fuelSpinMin; }
     public double getFuelWorkSpin() { return fuelWorkSpin; }
