@@ -43,7 +43,6 @@ public class ReactorDisplay {
     private double displayCoreCaseTemp;
     private double displayCoreCasePress;
     private double displayCoreCaseInt = 100;
-    private double displayReactorWear;
     private double displayEnergyRate;
 
     private static final double SMOOTHING_FACTOR = 0.35;
@@ -71,7 +70,7 @@ public class ReactorDisplay {
         displayCoreTemp += (reactor.getCoreTemp() - displayCoreTemp) * SMOOTHING_FACTOR;
         displayShieldPress += (reactor.getShieldPress() - displayShieldPress) * SMOOTHING_FACTOR;
         displaySpin += (reactor.getCoreSpin() - displaySpin) * SMOOTHING_FACTOR;
-        displayCoreShInt += (reactor.getCoreShInt() - displayCoreShInt) * SMOOTHING_FACTOR;
+        displayCoreShInt += (reactor.getShield().getIntegrity() - displayCoreShInt) * SMOOTHING_FACTOR;
         displayCoreCaseTemp += (reactor.getCoreCaseTemp() - displayCoreCaseTemp) * SMOOTHING_FACTOR;
         displayCoreCasePress += (reactor.getCoreCasePress() - displayCoreCasePress) * SMOOTHING_FACTOR;
         displayCoreCaseInt += (reactor.getCoreCaseInt() - displayCoreCaseInt) * SMOOTHING_FACTOR;
@@ -79,8 +78,6 @@ public class ReactorDisplay {
     }
 
     private void displayReactorWork() {
-        displayReactorWear += (reactor.getReactorWear() - displayReactorWear) * SMOOTHING_FACTOR;
-
         double workMult = reactor.getCoreWorkTemp() > 0
                 ? (double) reactor.getCoreTemp() / reactor.getCoreWorkTemp() : 0.0;
         double rawEnergyRate = workMult > 0.0001
@@ -213,7 +210,7 @@ public class ReactorDisplay {
         // Sign rewrite once per second (20 ticks) — smooth values keep ticking
         if (displayTick % 20 != 0) return;
 
-        boolean selfDestruct = reactor.isSelfDestructActive() || reactor.isMeltdownCountdown();
+        boolean selfDestruct = reactor.isMeltdownCountdown();
         boolean meltdownCdown = reactor.isMeltdownCountdown();
 
         int tInt = (int) Math.round(displayCoreTemp);
@@ -466,7 +463,6 @@ public class ReactorDisplay {
         displayCoreCaseTemp = 0;
         displayCoreCasePress = 0;
         displayCoreCaseInt = 100;
-        displayReactorWear = 0;
         displayEnergyRate = 0;
         displayTick = 0;
         prevHeating = false;
@@ -500,7 +496,6 @@ public class ReactorDisplay {
     public int getDisplayCoreCaseTemp() { return (int) Math.round(displayCoreCaseTemp); }
     public int getDisplayCoreCasePress() { return (int) Math.round(displayCoreCasePress); }
     public int getDisplayCoreCaseInt() { return (int) Math.round(displayCoreCaseInt); }
-    public int getDisplayReactorWear() { return (int) Math.round(displayReactorWear); }
     public int getDisplayEnergyRate() { return (int) Math.round(displayEnergyRate); }
 
     // Broadcast state tracking

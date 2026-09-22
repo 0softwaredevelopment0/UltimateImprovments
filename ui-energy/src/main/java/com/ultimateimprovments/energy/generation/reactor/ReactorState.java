@@ -17,7 +17,6 @@ public class ReactorState {
     private int coreTemp;          // Core temperature, C* [-273 .. 2,000,000,000]
     private double shieldPress;    // Shield pressure, MPa (≈10.01 at working temp 10M C*)
     private double spin;           // Core spin, RPS (0.95x of the ten-million multiplier)
-    private int coreShInt = 100;
     private int coreCaseTemp;
     private int coreCasePress;
     private int coreCaseInt = 100;
@@ -32,28 +31,9 @@ public class ReactorState {
     private double casePress;
     private int caseIntegrity;
 
-    // Self-destruct
-    private boolean selfDestruct;
-
     // Energy
     private long energyGenerated;
     private double energyRemainder;
-
-    // Wear
-    private int reactorWear;
-    private int wearTickCounter;
-    private boolean prevWearDegraded;
-    private boolean selfDestructActive;
-    private int selfDestructChatTimer;
-    private boolean finalMeltdownActive;
-
-    // Meltdown
-    private boolean meltdownCountdown;
-    private int meltdownTimer;
-
-    // Previous integrity values
-    private int prevShInt = 100;
-    private int prevCaseInt = 100;
 
     // Lasers (roof controls): startup latch + powers P1, P2 (0..100),
     // Stab (0..200), Absorber valve (0..100)
@@ -74,7 +54,6 @@ public class ReactorState {
         coreTemp = o.coreTemp;
         shieldPress = o.shieldPress;
         spin = o.spin;
-        coreShInt = o.coreShInt;
         coreCaseTemp = o.coreCaseTemp;
         coreCasePress = o.coreCasePress;
         coreCaseInt = o.coreCaseInt;
@@ -84,25 +63,14 @@ public class ReactorState {
         caseTemp = o.caseTemp;
         casePress = o.casePress;
         caseIntegrity = o.caseIntegrity;
-        selfDestruct = o.selfDestruct;
         energyGenerated = o.energyGenerated;
         energyRemainder = o.energyRemainder;
-        reactorWear = o.reactorWear;
-        selfDestructActive = o.selfDestructActive;
-        selfDestructChatTimer = o.selfDestructChatTimer;
-        finalMeltdownActive = o.finalMeltdownActive;
-        meltdownCountdown = o.meltdownCountdown;
-        meltdownTimer = o.meltdownTimer;
         laserStarted = o.laserStarted;
         laserPowers = o.laserPowers == null ? new double[4] : o.laserPowers.clone();
         structureDamaged = o.structureDamaged;
     }
 
     // Tick counters
-    private int pressTick;
-    private int recipeTick;
-    private int intensityDownTick;
-    private int intensityUpTick;
     private int soundTick;
     private int displayTick;
     private boolean prevHeating;
@@ -118,8 +86,6 @@ public class ReactorState {
     private double displayCoreCaseTemp;
     private double displayCoreCasePress;
     private double displayCoreCaseInt = 100;
-    private double displayRecipeTime;
-    private double displayReactorWear;
     private double displayEnergyRate;
 
     // =========================
@@ -160,9 +126,6 @@ public class ReactorState {
     public double getSpin() { return spin; }
     public void setSpin(double val) { spin = Math.max(0, val); }
 
-    public int getCoreShInt() { return coreShInt; }
-    public void setCoreShInt(int val) { coreShInt = Math.max(0, Math.min(100, val)); }
-
     // =========================
     // CASE
     // =========================
@@ -193,13 +156,6 @@ public class ReactorState {
     public int getCaseIntegrity() { return caseIntegrity; }
     public void setCaseIntegrity(int val) { caseIntegrity = val; }
 
-
-    // =========================
-    // SELF-DESTRUCT
-    // =========================
-    public boolean isSelfDestruct() { return selfDestruct; }
-    public void setSelfDestruct(boolean val) { selfDestruct = val; }
-
     // =========================
     // ENERGY
     // =========================
@@ -208,38 +164,6 @@ public class ReactorState {
     public double getEnergyRemainder() { return energyRemainder; }
     public void setEnergyRemainder(double val) { energyRemainder = val; }
     public void addEnergyGenerated(int val) { energyGenerated += val; }
-
-    // =========================
-    // WEAR
-    // =========================
-    public int getReactorWear() { return reactorWear; }
-    public void setReactorWear(int val) { reactorWear = val; }
-    public int getWearTickCounter() { return wearTickCounter; }
-    public void setWearTickCounter(int val) { wearTickCounter = val; }
-    public boolean isPrevWearDegraded() { return prevWearDegraded; }
-    public void setPrevWearDegraded(boolean val) { prevWearDegraded = val; }
-    public boolean isSelfDestructActive() { return selfDestructActive; }
-    public void setSelfDestructActive(boolean val) { selfDestructActive = val; }
-    public int getSelfDestructChatTimer() { return selfDestructChatTimer; }
-    public void setSelfDestructChatTimer(int val) { selfDestructChatTimer = val; }
-    public boolean isFinalMeltdownActive() { return finalMeltdownActive; }
-    public void setFinalMeltdownActive(boolean val) { finalMeltdownActive = val; }
-
-    // =========================
-    // MELTDOWN
-    // =========================
-    public boolean isMeltdownCountdown() { return meltdownCountdown; }
-    public void setMeltdownCountdown(boolean val) { meltdownCountdown = val; }
-    public int getMeltdownTimer() { return meltdownTimer; }
-    public void setMeltdownTimer(int val) { meltdownTimer = val; }
-
-    // =========================
-    // PREVIOUS INTEGRITY
-    // =========================
-    public int getPrevShInt() { return prevShInt; }
-    public void setPrevShInt(int val) { prevShInt = val; }
-    public int getPrevCaseInt() { return prevCaseInt; }
-    public void setPrevCaseInt(int val) { prevCaseInt = val; }
 
     // =========================
     // LASERS
@@ -288,10 +212,6 @@ public class ReactorState {
     public void setDisplayCoreCasePress(double val) { displayCoreCasePress = val; }
     public double getDisplayCoreCaseInt() { return displayCoreCaseInt; }
     public void setDisplayCoreCaseInt(double val) { displayCoreCaseInt = val; }
-    public double getDisplayRecipeTime() { return displayRecipeTime; }
-    public void setDisplayRecipeTime(double val) { displayRecipeTime = val; }
-    public double getDisplayReactorWear() { return displayReactorWear; }
-    public void setDisplayReactorWear(double val) { displayReactorWear = val; }
     public double getDisplayEnergyRate() { return displayEnergyRate; }
     public void setDisplayEnergyRate(double val) { displayEnergyRate = val; }
 
@@ -304,7 +224,6 @@ public class ReactorState {
     public int getDisplayCoreCaseTempInt() { return (int) Math.round(displayCoreCaseTemp); }
     public int getDisplayCoreCasePressInt() { return (int) Math.round(displayCoreCasePress); }
     public int getDisplayCoreCaseIntInt() { return (int) Math.round(displayCoreCaseInt); }
-    public int getDisplayRecipeTimeInt() { return (int) Math.round(displayRecipeTime); }
 
     // =========================
     // RESET
@@ -313,7 +232,6 @@ public class ReactorState {
         coreTemp = 0;
         shieldPress = 0;
         spin = 0;
-        coreShInt = 100;
         coreCaseTemp = 0;
         coreCasePress = 0;
         coreCaseInt = 100;
@@ -323,20 +241,9 @@ public class ReactorState {
         caseTemp = -273;
         casePress = 0;
         caseIntegrity = 100;
-        selfDestruct = false;
-        reactorWear = 0;
-        wearTickCounter = 0;
-        prevWearDegraded = false;
-        selfDestructActive = false;
-        selfDestructChatTimer = 0;
-        finalMeltdownActive = false;
         energyGenerated = 0;
         energyRemainder = 0;
 
-        pressTick = 0;
-        recipeTick = 0;
-        intensityDownTick = 0;
-        intensityUpTick = 0;
         soundTick = 0;
         noFuelWarnTick = 0;
 
@@ -347,17 +254,11 @@ public class ReactorState {
         displayCoreCaseTemp = 0;
         displayCoreCasePress = 0;
         displayCoreCaseInt = 100;
-        displayRecipeTime = 0;
-        displayReactorWear = 0;
         displayEnergyRate = 0;
         displayTick = 0;
         prevHeating = false;
         prevCooling = false;
         integrityWarnTick = 0;
-        meltdownCountdown = false;
-        meltdownTimer = 0;
-        prevShInt = 100;
-        prevCaseInt = 100;
         laserStarted = false;
         laserPowers = new double[4];
     }

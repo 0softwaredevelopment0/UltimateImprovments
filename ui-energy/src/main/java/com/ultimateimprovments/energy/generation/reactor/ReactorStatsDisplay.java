@@ -81,7 +81,6 @@ public final class ReactorStatsDisplay {
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_purple>═[ <light_purple>Fusion data <dark_purple>]═"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Speed:      <white>" + String.format("%.0f", reactor.getFusion().getSpeedPct()) + " %"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Particles:  <white>" + (int) reactor.getFusion().getParticles()));
-        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Wear:       <white>" + reactor.getDisplayReactorWear() + " %"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Output:     <white>" + reactor.getDisplayEnergyRate() + " E/s"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Position: <white>" + reactorLoc.getBlockX() + " " + reactorLoc.getBlockY() + " " + reactorLoc.getBlockZ()));
         player.sendMessage(MessageUtil.parse("<dark_gray>└────────────────────────────────┘"));

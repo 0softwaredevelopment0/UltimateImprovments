@@ -2511,18 +2511,10 @@ reactor:
   # Whether the reactor machine is enabled
   enabled: true
 
-  # Passive temperature decay per tick = max(1, T / temp_decay_divisor)
-  temp_decay_divisor: 10000
   # Maximum core temperature (hard limit)
   core_temp_max: 2000000000
   # Minimum core temperature (hard limit)
   core_temp_min: -273
-  # Minimum temperature the core can be cooled to
-  core_temp_cool_min: -270
-  # How fast the core heats up while running (C* per tick)
-  heat_rate: 5000
-  # How fast the core cools down (C* per tick)
-  cool_rate: 5000
   # Working temperature = 1x of the ten-million multiplier (10M C* = 1x, 30M = 3x)
   core_work_temp: 10000000
   # How fast shield pressure follows its temperature target (0..1 per tick)
@@ -2549,6 +2541,10 @@ reactor:
   shield_stress_spin_per: 35000
   # Shield degradation base at 100% over-stress: % per second (1%/3s at 100%, 1%/1.5s at 200%, 1%/tick at 6000%)
   shield_decay_base: 0.333
+  # Passive shield recovery while the stress is within limits:
+  # +shield_recovery_rate % every shield_recovery_every_sec seconds
+  shield_recovery_every_sec: 5
+  shield_recovery_rate: 1.0
   # Seconds between shield integrity 0% and the detonation
   shield_failure_countdown: 10
   # Explosion radius of the shield-breach creeper
@@ -2610,39 +2606,8 @@ reactor:
   # Integrity decay rate (% per second while over thresholds); no passive recovery
   case_int_decay_rate: 1.0
 
-  # Temperature above which shell integrity starts decaying
-  shell_integrity_decay_temp: 10000000
-  # Shell integrity decay rate above the critical temperature
-  shell_int_decay_rate: 1
-  # Maximum temperature at which shell integrity can recover
-  shell_int_recovery_temp_max: 9999999
-  # Shell integrity recovery rate when cooled down
-  shell_int_recovery_rate: 1
-
-
-  wear:
-    # Whether reactor wear (degradation over time) is enabled
-    enabled: true
-    # Interval between normal wear checks, in ticks
-    interval_normal: 1200
-    # Interval between wear checks while degraded, in ticks
-    interval_degradation: 20
-    # Ticks before meltdown to show a chat countdown
-    chat_countdown: 30
-    # Wear value at which the final meltdown sequence starts
-    final_meltdown_start_at: 11
-    # Duration of the final meltdown sequence, in ticks
-    final_meltdown_duration: 10
-
-  # Explosion radius when the reactor melts down
+  # Explosion radius when the shield-breach reactor detonation happens
   meltdown_explosion_radius: 10
-
-  # Maximum processing time for reactor recipes, in ticks
-  recipe_time_max: 100
-
-  # Fusion recipe progresses within this temperature window
-  recipe_temp_min: 5000000
-  recipe_temp_max: 15000000
 
 features:
   antimatter:
