@@ -75,6 +75,16 @@ public class ReactorConfig {
     private int recipeTimeMax;
     private int recipeTempMin;      // fusion recipe progresses in [min, max] window
     private int recipeTempMax;
+    private double shieldBuildRate;       // shield integrity build-up %/sec (Creating state)
+    private double shieldStressHeatPer;   // C* per 1% temperature stress
+    private double shieldStressPressPer;  // MPa per 1% pressure stress
+    private double shieldStressSpinPer;   // RPS per 1% spin stress
+    private double shieldDecayBase;       // %/sec at 100% over-stress (scales linearly)
+    private int shieldFailureCountdown;   // seconds between shield 0% and detonation
+    private int shieldExplosionRadius;    // creeper explosion radius
+    private double shieldParticleRodSpeed;   // END_ROD beam speed (blocks/tick)
+    private int shieldParticleRodCount;      // total END_ROD particles per tick
+    private int shieldParticleDustCount;     // DUST particles in the core per tick
 
     // =========================
     // LASERS (roof controls)
@@ -135,6 +145,16 @@ public class ReactorConfig {
         laserRampRate = cfg.getDouble("reactor.laser_ramp_rate", 5.0);
         powerLaserHeatRate = cfg.getInt("reactor.power_laser_heat_rate", 5000);
         stabCoolRate = cfg.getInt("reactor.stab_cool_rate", 9500);
+        shieldBuildRate = cfg.getDouble("reactor.shield_build_rate", 5.0);
+        shieldStressHeatPer = cfg.getDouble("reactor.shield_stress_heat_per", 400000);
+        shieldStressPressPer = cfg.getDouble("reactor.shield_stress_press_per", 0.5);
+        shieldStressSpinPer = cfg.getDouble("reactor.shield_stress_spin_per", 35000);
+        shieldDecayBase = cfg.getDouble("reactor.shield_decay_base", 0.333);
+        shieldFailureCountdown = cfg.getInt("reactor.shield_failure_countdown", 10);
+        shieldExplosionRadius = cfg.getInt("reactor.shield_explosion_radius", 10);
+        shieldParticleRodSpeed = cfg.getDouble("reactor.shield_particle_rod_speed", 0.8);
+        shieldParticleRodCount = cfg.getInt("reactor.shield_particle_rod_count", 16);
+        shieldParticleDustCount = cfg.getInt("reactor.shield_particle_dust_count", 16);
     }
 
     // =========================
@@ -185,4 +205,14 @@ public class ReactorConfig {
     public double getLaserRampRate() { return laserRampRate; }
     public int getPowerLaserHeatRate() { return powerLaserHeatRate; }
     public int getStabCoolRate() { return stabCoolRate; }
+    public double getShieldBuildRate() { return shieldBuildRate; }
+    public double getShieldStressHeatPer() { return shieldStressHeatPer; }
+    public double getShieldStressPressPer() { return shieldStressPressPer; }
+    public double getShieldStressSpinPer() { return shieldStressSpinPer; }
+    public double getShieldDecayBase() { return shieldDecayBase; }
+    public int getShieldFailureCountdown() { return shieldFailureCountdown; }
+    public int getShieldExplosionRadius() { return shieldExplosionRadius; }
+    public double getShieldParticleRodSpeed() { return shieldParticleRodSpeed; }
+    public int getShieldParticleRodCount() { return shieldParticleRodCount; }
+    public int getShieldParticleDustCount() { return shieldParticleDustCount; }
 }

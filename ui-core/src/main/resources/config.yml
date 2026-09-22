@@ -1213,7 +1213,7 @@ messages:
       shield_stats_title: "=| Статы Щита |="
       shield_stats_magnet: "M: %status%"
       shield_stats_int: "I: %int%%"
-      shield_stats_status: "S: %status%"
+      shield_stats_status: "S: %stress%%"
       power_stats_title: "=| Статы Питания |="
       power_stats_p1p2: "P1/P2: %p1%/%p2%%"
       power_stats_stab: "Stab: %stab%%"
@@ -1233,6 +1233,9 @@ messages:
       stress_s: "S: %s%%"
       status_stable: "Стабильно"
       status_unstable: "Нестабильно"
+      status_creating: "Создание"
+      status_working: "Работает"
+      status_failed: "Отказ"
       status_offline: "Оффлайн"
       status_fueled: "Есть топливо"
       status_empty: "Пусто"
@@ -1311,7 +1314,7 @@ messages_en:
       shield_stats_title: "=| Shield Stats |="
       shield_stats_magnet: "M: %status%"
       shield_stats_int: "I: %int%%"
-      shield_stats_status: "S: %status%"
+      shield_stats_status: "S: %stress%%"
       power_stats_title: "=| Power Stats |="
       power_stats_p1p2: "P1/P2: %p1%/%p2%%"
       power_stats_stab: "Stab: %stab%%"
@@ -1331,6 +1334,9 @@ messages_en:
       stress_s: "S: %s%%"
       status_stable: "Stable"
       status_unstable: "Unstable"
+      status_creating: "Creating"
+      status_working: "Working"
+      status_failed: "Failed"
       status_offline: "Offline"
       status_fueled: "Fueled"
       status_empty: "Empty"
@@ -2496,6 +2502,26 @@ reactor:
   power_laser_heat_rate: 5000
   # Core cooling per 100% of Stab. Laser power (C* per second, range 0..200% = up to 2x)
   stab_cool_rate: 9500
+
+  # Shield integrity build-up speed while Creating (% per second)
+  shield_build_rate: 5.0
+  # Shield stress from temperature: C* per +1% stress (400 000 → 25% at 10M)
+  shield_stress_heat_per: 400000
+  # Shield stress from pressure: MPa per +1% stress (0.5 → 20% at 10 MPa)
+  shield_stress_press_per: 0.5
+  # Shield stress from spin: RPS per +1% stress (35 000 → ~2.7% at 95 000)
+  shield_stress_spin_per: 35000
+  # Shield degradation base at 100% over-stress: % per second (1%/3s at 100%, 1%/1.5s at 200%, 1%/tick at 6000%)
+  shield_decay_base: 0.333
+  # Seconds between shield integrity 0% and the detonation
+  shield_failure_countdown: 10
+  # Explosion radius of the shield-breach creeper
+  shield_explosion_radius: 10
+  # Laser beam particles: END_ROD speed (blocks/tick) and total count per tick
+  shield_particle_rod_speed: 0.8
+  shield_particle_rod_count: 16
+  # DUST particles inside the core per tick (color = temperature gradient)
+  shield_particle_dust_count: 16
 
   # How fast the reactor case heats up
   case_temp_heat_rate: 2
