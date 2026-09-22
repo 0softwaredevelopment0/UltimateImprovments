@@ -37,6 +37,7 @@ public class ReactorManager {
 
     private final ReactorDisplay display;
     private final ReactorLasers lasers;
+    private final ReactorShield shield;
 
     public static ReactorManager getInstance() {
         return instance;
@@ -276,6 +277,7 @@ public class ReactorManager {
     private ReactorManager() {
         this.display = new ReactorDisplay(this);
         this.lasers = new ReactorLasers(this);
+        this.shield = new ReactorShield(this);
     }
 
     // =========================
@@ -335,6 +337,12 @@ public class ReactorManager {
             instance.reactorWear = state.getReactorWear();
             instance.energyGenerated = state.getEnergyGenerated();
             instance.lasers.setStarted(state.isLaserStarted());
+            // If the reactor was started before the restart, its shield was already
+            // formed — otherwise the lasers would stay locked behind the WORKING gate.
+            if (state.isLaserStarted()) {
+                instance.shield.setState(ReactorShield.State.WORKING);
+                instance.shield.setIntegrity(100);
+            }
             double[] lp = state.getLaserPowers();
             if (lp != null && lp.length >= 4) {
                 instance.lasers.setPower(ReactorLasers.LASER_P1, lp[0]);
@@ -415,6 +423,7 @@ public class ReactorManager {
         // LASERS — roof controls, per-tick ramp + smooth heating/cooling
         // =========================
         lasers.tick(base);
+        shield.tick(base);
 
         boolean heating = lasers.isHeating();
         boolean cooling = lasers.isCooling();
@@ -864,6 +873,7 @@ public class ReactorManager {
         shieldPress = 0;
         spin = 0;
         lasers.reset();
+        shield.reset();
         selfDestruct = false;
         sdText = 0;
         meltdownCountdown = false;
@@ -958,6 +968,7 @@ public class ReactorManager {
         shieldPress = 0;
         spin = 0;
         lasers.reset();
+        shield.reset();
         coreShInt = 100;
         coreCaseTemp = 0;
         coreCasePress = 0;
@@ -1068,10 +1079,10 @@ public class ReactorManager {
         return Math.max(0, temp / coreWorkTemp) * 10.01;
     }
 
-    /** Core spin target, RPS: passive multiplier 0.95x of the ten-million multiplier. */
+    /** Core spin target, RPS: 95 000 RPS at the 10M working point (scales linearly). */
     public double spinTarget(double temp) {
         if (coreWorkTemp <= 0) return 0;
-        return Math.max(0, temp / coreWorkTemp) * 0.95;
+        return Math.max(0, temp / coreWorkTemp) * 95000.0;
     }
 
     /** Adds shield pressure from external sources (Power Lasers etc.), clamped ≥ 0. */
@@ -1095,6 +1106,17 @@ public class ReactorManager {
     }
 
     public ReactorLasers getLasers() { return lasers; }
+    public ReactorShield getShield() { return shield; }
+
+    /** Called by the laser startup pulse — ignites the shield formation. */
+    public void onStartupPulse() {
+        shield.start();
+    }
+
+    /** Shield breach detonation — tears down the reactor. */
+    public void onShieldDetonated() {
+        meltdown();
+    }
 
     // Smoothed display values (delegated to ReactorDisplay)
     public int getDisplayCoreTemp() { return display.getDisplayCoreTemp(); }

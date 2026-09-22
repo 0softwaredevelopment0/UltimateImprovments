@@ -121,23 +121,10 @@ public class ReactorDisplay {
         int meltdownTimer = reactor.getMeltdownTimer();
 
         // =========================
-        // CORE TEMPERATURE PARTICLES (color by the ten-million multiplier)
+        // CORE TEMPERATURE PARTICLES (black → red → orange → yellow → white gradient)
         // =========================
-        Particle.DustOptions color;
-
-        if (workMult <= 0.0001) {
-            color = new Particle.DustOptions(Color.fromRGB(128, 128, 128), 1.25f);
-        } else if (workMult <= 0.15) {
-            color = new Particle.DustOptions(Color.fromRGB(128, 0, 0), 1.25f);
-        } else if (workMult <= 0.3) {
-            color = new Particle.DustOptions(Color.RED, 1.25f);
-        } else if (workMult <= 0.6) {
-            color = new Particle.DustOptions(Color.ORANGE, 1.25f);
-        } else if (workMult <= 1.0) {
-            color = new Particle.DustOptions(Color.YELLOW, 1.25f);
-        } else {
-            color = new Particle.DustOptions(Color.WHITE, 1.25f);
-        }
+        Particle.DustOptions color = new Particle.DustOptions(
+                ReactorShield.dustColor(reactor.getCoreTemp()), 1.25f);
 
         base.getWorld().spawnParticle(
                 Particle.DUST, coreCenter, 16, 0, 0, 0, 0, color
@@ -284,23 +271,22 @@ public class ReactorDisplay {
                 .replace("%int%", String.valueOf(caseIntInt)), 4);
 
         // =========================
-        // SHIELD STATS — magnet status, shell integrity, shield status
+        // SHIELD STATS — magnet status (M), shield integrity (I), stress (S)
         // =========================
-        String shieldStatus = shIntInt >= 100
-                ? msg("signs.status_stable", "Stable")
-                : msg("signs.status_unstable", "Unstable");
+        var shield = reactor.getShield();
+        String shieldStress = String.format("%.1f", shield.getTotalStress());
         setSign(base, SIGN_SHIELD, 0, msg("signs.shield_stats_title", "=| Shield Stats |="), 1);
         setSign(base, SIGN_SHIELD, 1, color + msg("signs.shield_stats_magnet", "M: %status%")
-                .replace("%status%", msg("signs.status_offline", "Offline")), 1);
+                .replace("%status%", shield.statusText()), 1);
         setSign(base, SIGN_SHIELD, 2, color + msg("signs.shield_stats_int", "I: %int%%")
-                .replace("%int%", String.valueOf(shIntInt)), 1);
-        setSign(base, SIGN_SHIELD, 3, color + msg("signs.shield_stats_status", "S: %status%")
-                .replace("%status%", shieldStatus), 1);
+                .replace("%int%", String.valueOf((int) Math.round(shield.getIntegrity()))), 1);
+        setSign(base, SIGN_SHIELD, 3, color + msg("signs.shield_stats_status", "S: %stress%%")
+                .replace("%stress%", shieldStress), 1);
 
         // =========================
         // POWER STATS — laser powers (live from ReactorLasers) + spin %
         // =========================
-        String spinPct = String.valueOf(Math.min(100, (int) Math.round(displaySpin / 0.95 * 100)));
+        String spinPct = String.valueOf(Math.min(100, (int) Math.round(displaySpin / 95000.0 * 100)));
         int p1 = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_P1));
         int p2 = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_P2));
         int stab = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_STAB));
@@ -342,19 +328,18 @@ public class ReactorDisplay {
                 .replace("%f%", fuel ? "100" : "0"), 5);
 
         // =========================
-        // SHIELD STRESS — heat %, pressure %, spin %
+        // SHIELD STRESS — heat %, pressure %, spin % (live from the shield)
         // =========================
-        String heatPct = String.valueOf(Math.min(100,
-                (int) Math.round(Math.max(0, displayCoreTemp) * 100.0 / Math.max(1, reactor.getCoreWorkTemp()))));
-        String pressPct = String.valueOf(Math.min(100,
-                (int) Math.round(displayShieldPress * 100.0 / 10.01)));
+        String heatPct = String.format("%.1f", shield.getStressHeat());
+        String pressPct = String.format("%.1f", shield.getStressPress());
+        String spinPctStress = String.format("%.1f", shield.getStressSpin());
         setSign(base, SIGN_STRESS, 0, msg("signs.stress_title", "=| Shield Stress |="), 6);
         setSign(base, SIGN_STRESS, 1, color + msg("signs.stress_h", "H: %h%%")
                 .replace("%h%", heatPct), 6);
         setSign(base, SIGN_STRESS, 2, color + msg("signs.stress_p", "P: %p%%")
                 .replace("%p%", pressPct), 6);
         setSign(base, SIGN_STRESS, 3, color + msg("signs.stress_s", "S: %s%%")
-                .replace("%s%", spinPct), 6);
+                .replace("%s%", spinPctStress), 6);
 
         updateRoofLaserSigns(base, p1, p2, stab);
     }
