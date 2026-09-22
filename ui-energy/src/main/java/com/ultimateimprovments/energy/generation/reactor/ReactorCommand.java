@@ -105,8 +105,8 @@ public final class ReactorCommand {
         // =========================
         // NAME THE FUEL BARRELS
         // =========================
-        nameBarrel(pending.center(), 0, -3, -2, "<gold>Топливо: <aqua>Алмазные блоки");
-        nameBarrel(pending.center(), 0, -3, 2, "<gold>Топливо: <yellow>Золотые блоки");
+        nameBarrel(pending.center(), -4, -5, 0, "<gold>Топливо: <aqua>Алмазные блоки");
+        nameBarrel(pending.center(), 4, -5, 0, "<gold>Топливо: <yellow>Золотые блоки");
 
         player.sendMessage(MessageUtil.parse(msg("reactor_assembled",
                 "<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: %id%)")
