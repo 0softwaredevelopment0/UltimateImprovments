@@ -405,6 +405,13 @@ public class ReactorDisplay {
         setSignLine(base, off, line, text, cacheIdx);
     }
 
+    /** Clears the sign text cache (after repair) so every panel rewrites fully. */
+    public void resetSignCache() {
+        for (String[] row : signCache) {
+            java.util.Arrays.fill(row, null);
+        }
+    }
+
     private void setSignLine(Location base, int[] off, int line, String text, int cacheIdx) {
         if (signCache[cacheIdx][line] != null && signCache[cacheIdx][line].equals(text)) return;
         signCache[cacheIdx][line] = text;

@@ -435,13 +435,15 @@ public class ReactorManager {
         // West tower bulb = heater, east tower bulb = cooler (DFC 10×11×9 geometry)
         // =========================
         // LASERS — roof controls, per-tick ramp + smooth heating/cooling
-        // Damaged structure: the core can no longer be controlled — no lasers,
-        // no heat injection, no cooling; only the Stabilization Laser keeps
-        // working so the reactor can be shut down down to 0 C*.
+        // Damaged structure: the core can no longer be controlled — no heat,
+        // no power ramp; ONLY the Stabilization Laser keeps working so the
+        // reactor can be shut down by cooling it to 0 C* (cooldown mode).
         // =========================
         if (!structureDamaged) {
             lasers.tick(base);
             shield.tick(base);
+        } else if (coreTemp > coreTempMin) {
+            lasers.tickCooldownMode(base);
         }
 
         boolean heating = lasers.isHeating();
@@ -1151,21 +1153,27 @@ public class ReactorManager {
         ReactorDamageTracker.Snapshot snap = ReactorDamageTracker.scan(reactorLocation);
         if (snap == null) return;
 
-        boolean wasDamaged = structureDamaged;
-        structureDamaged = true;
-        damageWarnTick = 0;
-
-        // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
-        int[] c = ReactorDamageTracker.count(reactorLocation, cat);
-        String body = StructuresMessages.get("damage_report",
-                "<gold>Attention! <white>%cat% damage detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>")
-                .replace("%cat%", catName(cat))
-                .replace("%left%", String.valueOf(c[0]))
-                .replace("%total%", String.valueOf(c[1]));
-        if (!wasDamaged) {
+        // Only "everything else" (core copper, stairs, rods, barrels…) puts the
+        // reactor into uncontrolled mode. Broken bulbs/signs physically stop
+        // working on their own; glass is the case system's domain.
+        if (cat == ReactorDamageTracker.Category.STRUCTURE && !structureDamaged) {
+            structureDamaged = true;
+            damageWarnTick = 0;
             broadcast(StructuresMessages.get("damage_uncontrolled",
                             "<gold>❕ <white>Структура реактора повреждена — управление потеряно! Охладите ядро до <yellow>0 C*"));
         }
+
+        // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
+        int[] c = ReactorDamageTracker.count(reactorLocation, cat);
+        boolean fullyGone = c[0] <= 0;
+        String key = fullyGone ? "failure_report" : "damage_report";
+        String body = StructuresMessages.get(key,
+                        fullyGone
+                                ? "<gold>Attention! <white>%cat% failure detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
+                                : "<gold>Attention! <white>%cat% damage detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>")
+                .replace("%cat%", catName(cat))
+                .replace("%left%", String.valueOf(c[0]))
+                .replace("%total%", String.valueOf(c[1]));
         broadcast(body);
         saveToDb();
     }
@@ -1195,7 +1203,20 @@ public class ReactorManager {
                 .replace("%total%", String.valueOf(c[1]));
         broadcast(body);
 
+        // Sign panels are back — drop the cached text so the sensors rewrite them
+        if (cat == ReactorDamageTracker.Category.SIGN) {
+            display.resetSignCache();
+        }
+
         if (snap.allPresent() && structureDamaged) {
+            structureDamaged = false;
+            damageWarnTick = 0;
+            broadcast(StructuresMessages.get("structure_repaired",
+                    "<green>✔ <white>Структура реактора полностью восстановлена — управление возвращено."));
+        } else if (cat == ReactorDamageTracker.Category.STRUCTURE
+                && snap.structPresent() >= snap.structTotal() && structureDamaged) {
+            // All "control" cells are back — control returns even if some
+            // glass/signs are still missing (those are cosmetic/physical only).
             structureDamaged = false;
             damageWarnTick = 0;
             broadcast(StructuresMessages.get("structure_repaired",
