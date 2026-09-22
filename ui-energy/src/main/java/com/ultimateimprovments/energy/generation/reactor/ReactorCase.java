@@ -225,12 +225,29 @@ public class ReactorCase {
         return true;
     }
 
-    /** Attempts to repair from a player right-click with glass in hand. True when consumed. */
-    public boolean tryRepairByPlayer(Location base, org.bukkit.entity.Player player) {
-        if (state != State.BROKEN) return false;
-        if (base == null) return false;
-        // The click must be inside the structure bounds (checked by the caller)
-        return repair(base);
+    /**
+     * Auto-repair check — called whenever a glass block is placed inside the
+     * structure while the case is broken. When every glass position of the
+     * template is filled again, the case repairs itself (integrity 100%).
+     */
+    public void checkAutoRepair(Location base) {
+        if (state != State.BROKEN || base == null) return;
+        for (int[] off : GLASS) {
+            Block block = base.clone().add(off[0], off[1], off[2]).getBlock();
+            if (block.getType() != Material.GLASS) return; // still missing glass
+        }
+        // Every glass position is filled — restore the case
+        state = State.OK;
+        integrity = 100;
+        brokenWarnTick = 0;
+        jitterPress = 0;
+        temp = Math.min(temp, ReactorConfig.getInstance().getCaseTempMax() - 1);
+
+        Location core = base.clone().add(0.5, -5.5, 0.5);
+        base.getWorld().playSound(core, Sound.BLOCK_GLASS_PLACE, SoundCategory.MASTER, 2.0f, 1.0f);
+        ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
+                "case_repaired", "<green>✔ <white>Стекло корпуса восстановлено! Целостность 100%"));
+        ReactorManager.getInstance().saveToDb();
     }
 
     // =========================

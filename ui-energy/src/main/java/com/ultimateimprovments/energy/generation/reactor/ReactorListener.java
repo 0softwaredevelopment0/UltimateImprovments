@@ -494,7 +494,7 @@ public class ReactorListener implements Listener {
     }
 
     // =========================
-    // SIGN CLICK → STATS / GLASS REPAIR
+    // SIGN CLICK → STATS
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onSignClick(PlayerInteractEvent e) {
@@ -504,36 +504,17 @@ public class ReactorListener implements Listener {
         Block block = e.getClickedBlock();
         if (block == null) return;
 
+        Material type = block.getType();
+        if (!isAnyWallSign(type)) return;
+
         Player player = e.getPlayer();
         ReactorManager reactor = ReactorManager.getInstance();
         if (reactor == null || !reactor.isValid()) return;
 
+        Location signLoc = block.getLocation();
         Location reactorLoc = reactor.getReactorLocation();
         if (reactorLoc == null) return;
-        if (!block.getLocation().getWorld().equals(reactorLoc.getWorld())) return;
-
-        Location clickedLoc = block.getLocation();
-
-        // =========================
-        // GLASS REPAIR — right-click a broken glass position with glass in hand
-        // =========================
-        if (reactor.isCaseBroken()
-                && player.getInventory().getItemInMainHand().getType() == Material.GLASS
-                && isWithinStructure(reactorLoc, clickedLoc)
-                && block.getType() == Material.AIR) {
-            e.setCancelled(true);
-            if (reactor.getCase().repair(reactorLoc)) {
-                ItemStack hand = player.getInventory().getItemInMainHand();
-                if (hand.getAmount() > 1) hand.setAmount(hand.getAmount() - 1);
-                else player.getInventory().setItemInMainHand(null);
-            }
-            return;
-        }
-
-        Material type = block.getType();
-        if (!isAnyWallSign(type)) return;
-
-        Location signLoc = block.getLocation();
+        if (!signLoc.getWorld().equals(reactorLoc.getWorld())) return;
 
         // Check if sign is within reactor structure bounds
         if (!isWithinStructure(reactorLoc, signLoc)) return;
@@ -543,6 +524,30 @@ public class ReactorListener implements Listener {
 
         // Open reactor stats
         ReactorStatsDisplay.sendStats(player);
+    }
+
+    // =========================
+    // GLASS PLACED INSIDE THE STRUCTURE → AUTO-REPAIR CHECK
+    // The player repairs the case manually: any glass block placed within the
+    // structure bounds while the case is broken is checked; when every glass
+    // position is filled again, the case repairs itself.
+    // =========================
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onGlassPlace(org.bukkit.event.block.BlockPlaceEvent e) {
+        if (!e.getBlockPlaced().getType().isSolid() || !e.getBlockPlaced().getType().name().endsWith("GLASS")) {
+            return;
+        }
+        ReactorManager reactor = ReactorManager.getInstance();
+        if (reactor == null || !reactor.isValid() || !reactor.isCaseBroken()) return;
+
+        Location reactorLoc = reactor.getReactorLocation();
+        if (reactorLoc == null) return;
+        Location placed = e.getBlockPlaced().getLocation();
+        if (!placed.getWorld().equals(reactorLoc.getWorld())) return;
+        if (!isWithinStructure(reactorLoc, placed)) return;
+
+        // Let the case system decide whether the repair is complete
+        reactor.getCase().checkAutoRepair(reactorLoc);
     }
 
     // =========================
