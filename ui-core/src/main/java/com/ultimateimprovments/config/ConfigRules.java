@@ -151,6 +151,7 @@ final class ConfigRules {
             integer("reactor.shield_failure_countdown", 1, 3600),
             integer("reactor.shield_explosion_radius", 0, 500),
             dbl("reactor.shield_particle_rod_speed", 0.0, 10.0),
+            integer("reactor.shield_integrity_shutdown_percent", 1, 100),
             integer("reactor.shield_particle_rod_count", 0, 1000),
             integer("reactor.shield_particle_dust_count", 0, 1000),
             dbl("reactor.fuel_spin_min", 0.0, 1000000.0),

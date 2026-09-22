@@ -106,7 +106,8 @@ public class ReactorFusion {
 
     /** Visual: a small burst of END_ROD particles drifting in the core. */
     private void spawnParticleBurst(Location base, int count) {
-        Location core = base.clone().add(0.5, -5.5, 0.5);
+        // 2 blocks above the geometric center (matches the shield visuals)
+        Location core = base.clone().add(0.5, -3.5, 0.5);
         base.getWorld().spawnParticle(Particle.END_ROD, core, count,
                 0.3, 0.3, 0.3, 0.02);
     }
