@@ -66,11 +66,20 @@ public class ReactorLasers {
         if (startupPowered && !prevStartupPowered && !started) {
             started = true;
             ReactorManager.getInstance().broadcastRaw(msg("reactor_startup",
-                    "<gold>⚡ <yellow>Стартап ядра выполнен! Лазеры активны."));
+                    "<gold>⚡ <yellow>Формирование щита... Лазеры активируются после."));
+            // Shield first: integrity builds up (Creating → Working), lasers become operational then
+            ReactorManager.getInstance().onStartupPulse();
         }
         prevStartupPowered = startupPowered;
 
         if (!started) return;
+
+        // Lasers are operational only when the shield is fully formed (WORKING):
+        // before that they ramp their power (signs show it) but do not heat/cool.
+        if (reactor.getShield().getState() != ReactorShield.State.WORKING) {
+            rampOnly(base);
+            return;
+        }
 
         // =========================
         // POWER RAMP — ±5%/sec while the +5/−5 lamp is powered
@@ -90,9 +99,12 @@ public class ReactorLasers {
         // HEATING / COOLING — smooth, every tick
         // Power Lasers: power_laser_heat_rate C*/sec each at 100%
         // Stab Laser: stab_cool_rate C*/sec per 100% of power
+        // Without fuel the Power Lasers do not heat at all (Fuel Stats: No)
         // =========================
-        double heatPerTick = (power[LASER_P1] + power[LASER_P2]) / 100.0
-                * cfg.getPowerLaserHeatRate() / 20.0;
+        double heatPerTick = reactor.hasBarrelFuelPublic()
+                ? (power[LASER_P1] + power[LASER_P2]) / 100.0
+                        * cfg.getPowerLaserHeatRate() / 20.0
+                : 0;
         double coolPerTick = power[LASER_STAB] / 100.0
                 * cfg.getStabCoolRate() / 20.0;
 
@@ -101,6 +113,53 @@ public class ReactorLasers {
         tempRemainder = delta - intPart;
         if (intPart != 0) {
             reactor.applyCoreTempDelta(intPart);
+        }
+    }
+
+    /**
+     * Cooldown mode (damaged structure): only the Stabilization Laser works —
+     * its power lamps stay functional so the core can be cooled to 0 C*.
+     * No startup, no Power Lasers, no Absorber.
+     */
+    public void tickCooldownMode(Location base) {
+        ReactorConfig cfg = ReactorConfig.getInstance();
+        double rampPerTick = cfg.getLaserRampRate() / 20.0;
+
+        // Only the Stab Laser ramps (its +/− lamps), everything else drains off
+        for (int i = 0; i < power.length; i++) {
+            if (i != LASER_STAB) {
+                power[i] = 0;
+                continue;
+            }
+            if (isLampPowered(base, LAMP_PLUS[i])) {
+                power[i] = Math.min(200, power[i] + rampPerTick);
+            }
+            if (isLampPowered(base, LAMP_MINUS[i])) {
+                power[i] = Math.max(0, power[i] - rampPerTick);
+            }
+        }
+
+        double coolPerTick = power[LASER_STAB] / 100.0 * cfg.getStabCoolRate() / 20.0;
+        double delta = -coolPerTick + tempRemainder;
+        int intPart = (int) delta;
+        tempRemainder = delta - intPart;
+        if (intPart != 0) {
+            reactor.applyCoreTempDelta(intPart);
+        }
+    }
+
+    /** Ramps laser power (no heating/cooling) — used before the shield is WORKING. */
+    private void rampOnly(Location base) {
+        ReactorConfig cfg = ReactorConfig.getInstance();
+        double rampPerTick = cfg.getLaserRampRate() / 20.0;
+        double[] max = { 100, 100, 200, 100 };
+        for (int i = 0; i < 4; i++) {
+            if (isLampPowered(base, LAMP_PLUS[i])) {
+                power[i] = Math.min(max[i], power[i] + rampPerTick);
+            }
+            if (isLampPowered(base, LAMP_MINUS[i])) {
+                power[i] = Math.max(0, power[i] - rampPerTick);
+            }
         }
     }
 
@@ -140,9 +199,10 @@ public class ReactorLasers {
         return isLampPowered(base, LAMP_STARTUP);
     }
 
-    /** True while any Power Laser has positive power (for broadcast/case-reaction). */
+    /** True while any Power Laser has positive power and the reactor has fuel. */
     public boolean isHeating() {
-        return power[LASER_P1] > 0 || power[LASER_P2] > 0;
+        return reactor.hasBarrelFuelPublic()
+                && (power[LASER_P1] > 0 || power[LASER_P2] > 0);
     }
 
     /** True while the Stab Laser has positive power. */
