@@ -38,6 +38,7 @@ public class ReactorManager {
     private final ReactorDisplay display;
     private final ReactorLasers lasers;
     private final ReactorShield shield;
+    private final ReactorFuel fuel;
 
     public static ReactorManager getInstance() {
         return instance;
@@ -278,6 +279,7 @@ public class ReactorManager {
         this.display = new ReactorDisplay(this);
         this.lasers = new ReactorLasers(this);
         this.shield = new ReactorShield(this);
+        this.fuel = new ReactorFuel(this);
     }
 
     // =========================
@@ -846,8 +848,7 @@ public class ReactorManager {
         if (reactorLocation == null) return;
         Location base = reactorLocation;
 
-        consumeBarrelFuel(base, -4, -5, 0, Material.DIAMOND_BLOCK);
-        consumeBarrelFuel(base, 4, -5, 0, Material.GOLD_BLOCK);
+        fuel.consumeRecipeUnit(base);
 
         Location dropLoc = base.clone().add(0.5, -5.5, 0.5);
         dropLoc.getWorld().dropItemNaturally(dropLoc, new ItemStack(Material.ANCIENT_DEBRIS, 1));
@@ -1000,47 +1001,8 @@ public class ReactorManager {
     }
 
     // =========================
-    // BARREL FUEL HELPERS
+    // RECIPE COMPLETION (fuel is consumed by ReactorFuel, by spin)
     // =========================
-    private boolean checkBarrelForFuel(Location base, int dx, int dy, int dz, Material fuelType, int minCount) {
-        Block block = base.clone().add(dx, dy, dz).getBlock();
-        if (block.getType() != Material.BARREL) return false;
-        Barrel barrel = (Barrel) block.getState();
-        Inventory inv = barrel.getInventory();
-        for (ItemStack item : inv.getContents()) {
-            if (item != null && item.getType() == fuelType && item.getAmount() >= minCount) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean hasBarrelFuel() {
-        if (reactorLocation == null) return false;
-        Location base = reactorLocation;
-        return checkBarrelForFuel(base, -4, -5, 0, Material.DIAMOND_BLOCK, 1)
-            && checkBarrelForFuel(base, 4, -5, 0, Material.GOLD_BLOCK, 1);
-    }
-
-    private boolean consumeBarrelFuel(Location base, int dx, int dy, int dz, Material fuelType) {
-        Block block = base.clone().add(dx, dy, dz).getBlock();
-        if (block.getType() != Material.BARREL) return false;
-        Barrel barrel = (Barrel) block.getState(false);
-        Inventory inv = barrel.getInventory();
-        for (int i = 0; i < inv.getSize(); i++) {
-            ItemStack item = inv.getItem(i);
-            if (item != null && item.getType() == fuelType) {
-                if (item.getAmount() > 1) {
-                    item.setAmount(item.getAmount() - 1);
-                    inv.setItem(i, item);
-                } else {
-                    inv.setItem(i, null);
-                }
-                return true;
-            }
-        }
-        return false;
-    }
 
     // =========================
     // GETTERS
@@ -1090,6 +1052,11 @@ public class ReactorManager {
         shieldPress = Math.max(0, shieldPress + mPa);
     }
 
+    /** Applies a signed core spin delta (RPS), clamped ≥ 0. */
+    public void applySpinDelta(double delta) {
+        spin = Math.max(0, spin + delta);
+    }
+
     /** Applies a signed core temperature delta (from lasers), clamped to hard limits. */
     public void applyCoreTempDelta(int delta) {
         coreTemp = Math.max(TEMP_MIN, Math.min(TEMP_MAX, coreTemp + delta));
@@ -1107,6 +1074,29 @@ public class ReactorManager {
 
     public ReactorLasers getLasers() { return lasers; }
     public ReactorShield getShield() { return shield; }
+    public ReactorFuel getFuel() { return fuel; }
+
+    /** Fuel tick (every second): consumption by spin + spin decay when dry. */
+    public void tickFuel() {
+        if (!enabled || !valid || reactorLocation == null) return;
+        fuel.ensureNamed(reactorLocation);
+        fuel.tick(reactorLocation);
+    }
+
+    /** Fuel Stats: average fill % of both fuel barrels (F indicator). */
+    public int getFuelFillPercent() {
+        if (reactorLocation == null) return 0;
+        return fuel.getFillPercent(reactorLocation);
+    }
+
+    /** Fuel Stats: current consumption % (M indicator). */
+    public double getFuelConsumptionPct() { return fuel.getConsumptionPct(); }
+
+    /** Both fuel barrels contain fuel (gold ingot / diamond). */
+    public boolean hasBarrelFuel() {
+        if (reactorLocation == null) return false;
+        return fuel.hasFuel(reactorLocation);
+    }
 
     /** Called by the laser startup pulse — ignites the shield formation. */
     public void onStartupPulse() {
