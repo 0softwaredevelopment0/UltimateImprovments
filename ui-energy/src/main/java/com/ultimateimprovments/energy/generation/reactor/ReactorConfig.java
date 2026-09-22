@@ -76,6 +76,17 @@ public class ReactorConfig {
     private int recipeTempMin;      // fusion recipe progresses in [min, max] window
     private int recipeTempMax;
 
+    // =========================
+    // LASERS (roof controls)
+    // Power Laser #1/#2 heat the core at power_laser_heat_rate C*/sec each
+    // at 100% power (range 0..100%). Stab. Laser cools at stab_cool_rate
+    // C*/sec per 100% of power (range 0..200%, 200% = 2x power).
+    // laser_ramp_rate is the ±%/sec applied while a +5%/−5% lamp is powered.
+    // =========================
+    private double laserRampRate;
+    private int powerLaserHeatRate;
+    private int stabCoolRate;
+
     private void load() {
         FileConfiguration cfg = Main.getInstance().getConfig();
 
@@ -121,6 +132,9 @@ public class ReactorConfig {
         recipeTimeMax = cfg.getInt("reactor.recipe_time_max", 100);
         recipeTempMin = cfg.getInt("reactor.recipe_temp_min", 5000000);
         recipeTempMax = cfg.getInt("reactor.recipe_temp_max", 15000000);
+        laserRampRate = cfg.getDouble("reactor.laser_ramp_rate", 5.0);
+        powerLaserHeatRate = cfg.getInt("reactor.power_laser_heat_rate", 5000);
+        stabCoolRate = cfg.getInt("reactor.stab_cool_rate", 9500);
     }
 
     // =========================
@@ -168,4 +182,7 @@ public class ReactorConfig {
     public int getRecipeTimeMax() { return recipeTimeMax; }
     public int getRecipeTempMin() { return recipeTempMin; }
     public int getRecipeTempMax() { return recipeTempMax; }
+    public double getLaserRampRate() { return laserRampRate; }
+    public int getPowerLaserHeatRate() { return powerLaserHeatRate; }
+    public int getStabCoolRate() { return stabCoolRate; }
 }

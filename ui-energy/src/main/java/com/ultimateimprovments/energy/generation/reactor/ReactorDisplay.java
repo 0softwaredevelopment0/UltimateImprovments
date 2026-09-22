@@ -59,7 +59,7 @@ public class ReactorDisplay {
     private int soundTick;
 
     // Cached sign text — signs are only rewritten when the content changes
-    private final String[][] signCache = new String[7][4];
+    private final String[][] signCache = new String[16][4];
 
     public ReactorDisplay(ReactorManager reactor) {
         this.reactor = reactor;
@@ -298,16 +298,19 @@ public class ReactorDisplay {
                 .replace("%status%", shieldStatus), 1);
 
         // =========================
-        // POWER STATS — laser powers (0% until the laser system), spin %, cooling
+        // POWER STATS — laser powers (live from ReactorLasers) + spin %
         // =========================
         String spinPct = String.valueOf(Math.min(100, (int) Math.round(displaySpin / 0.95 * 100)));
+        int p1 = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_P1));
+        int p2 = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_P2));
+        int stab = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_STAB));
         setSign(base, SIGN_POWER, 0, msg("signs.power_stats_title", "=| Power Stats |="), 0);
         setSign(base, SIGN_POWER, 1, color + msg("signs.power_stats_p1p2", "P1/P2: %p1%/%p2%%")
-                .replace("%p1%", "0").replace("%p2%", "0"), 0);
-        setSign(base, SIGN_POWER, 2, color + msg("signs.power_stats_spin", "S: %spin%%")
+                .replace("%p1%", String.valueOf(p1)).replace("%p2%", String.valueOf(p2)), 0);
+        setSign(base, SIGN_POWER, 2, color + msg("signs.power_stats_stab", "Stab: %stab%%")
+                .replace("%stab%", String.valueOf(stab)), 0);
+        setSign(base, SIGN_POWER, 3, color + msg("signs.power_stats_spin", "S: %spin%%")
                 .replace("%spin%", spinPct), 0);
-        setSign(base, SIGN_POWER, 3, color + msg("signs.power_stats_cool", "C: %cool%%")
-                .replace("%cool%", String.valueOf(caseIntInt)), 0);
 
         // =========================
         // FUEL STATS — status + fill of the two side fuel barrels
@@ -352,6 +355,55 @@ public class ReactorDisplay {
                 .replace("%p%", pressPct), 6);
         setSign(base, SIGN_STRESS, 3, color + msg("signs.stress_s", "S: %s%%")
                 .replace("%s%", spinPct), 6);
+
+        updateRoofLaserSigns(base, p1, p2, stab);
+    }
+
+    // =========================
+    // ROOF LASER SIGNS (9 standing signs next to the roof lamps)
+    // Sign line 1 keeps the template title ("Power Laser #1" etc.);
+    // line 2 shows the live power. Absorber shows the valve opening.
+    // =========================
+    private void updateRoofLaserSigns(Location base, int p1, int p2, int stab) {
+        var lasers = reactor.getLasers();
+
+        // [row (−4 | −2), sign offset z] — matches LAMP_PLUS/LAMP_MINUS rows in ReactorLasers
+        int[][] powerSigns = {
+                { -4, -4 }, { -4, -2 }, { -4, 0 }, { -4, 2 },
+                { -2, -4 }, { -2, -2 }, { -2, 0 }, { -2, 2 }
+        };
+        String[] powerText = { p1 + " %", p2 + " %", stab + " %",
+                (int) Math.round(lasers.getPower(ReactorLasers.LASER_ABSORBER)) + " %" };
+
+        // +5% row (x=−4) — Power #1, Power #2, Stab, Absorber
+        for (int i = 0; i < 4; i++) {
+            setRoofSignPower(base, powerSigns[i][0], powerSigns[i][1], powerText[i],
+                    7 + i);
+        }
+        // −5% row (x=−2) — mirrors the same powers
+        for (int i = 0; i < 4; i++) {
+            setRoofSignPower(base, powerSigns[4 + i][0], powerSigns[4 + i][1], powerText[i],
+                    11 + i);
+        }
+
+        // Startup sign (x=−4, z=4)
+        String startupText = lasers.isStarted()
+                ? msg("signs.status_running", "Running")
+                : msg("signs.status_no_startup", "No startup");
+        setRoofSignPower(base, -4, 4, startupText, 15);
+    }
+
+    private void setRoofSignPower(Location base, int dx, int dz, String powerText, int cacheIdx) {
+        String text = "<aqua>" + powerText;
+        if (signCache[cacheIdx][2] != null && signCache[cacheIdx][2].equals(text)) return;
+        signCache[cacheIdx][2] = text;
+
+        Block block = base.clone().add(dx, 1, dz).getBlock();
+        var state = block.getState();
+        if (state instanceof Sign signState) {
+            signState.line(2, MessageUtil.parse(text));
+            signState.update(true, false);
+        }
     }
 
     // =========================
