@@ -36,6 +36,7 @@ public class ReactorManager {
     private static ReactorManager instance;
 
     private final ReactorDisplay display;
+    private final ReactorLasers lasers;
 
     public static ReactorManager getInstance() {
         return instance;
@@ -274,6 +275,7 @@ public class ReactorManager {
     // =========================
     private ReactorManager() {
         this.display = new ReactorDisplay(this);
+        this.lasers = new ReactorLasers(this);
     }
 
     // =========================
@@ -305,6 +307,12 @@ public class ReactorManager {
         s.setSelfDestruct(r.selfDestruct);
         s.setReactorWear(r.reactorWear);
         s.setEnergyGenerated(r.energyGenerated);
+        s.setLaserStarted(r.lasers.isStarted());
+        s.setLaserPowers(new double[] {
+                r.lasers.getPower(ReactorLasers.LASER_P1),
+                r.lasers.getPower(ReactorLasers.LASER_P2),
+                r.lasers.getPower(ReactorLasers.LASER_STAB),
+                r.lasers.getPower(ReactorLasers.LASER_ABSORBER) });
         return s;
     }
 
@@ -326,6 +334,14 @@ public class ReactorManager {
             instance.selfDestruct = state.isSelfDestruct();
             instance.reactorWear = state.getReactorWear();
             instance.energyGenerated = state.getEnergyGenerated();
+            instance.lasers.setStarted(state.isLaserStarted());
+            double[] lp = state.getLaserPowers();
+            if (lp != null && lp.length >= 4) {
+                instance.lasers.setPower(ReactorLasers.LASER_P1, lp[0]);
+                instance.lasers.setPower(ReactorLasers.LASER_P2, lp[1]);
+                instance.lasers.setPower(ReactorLasers.LASER_STAB, lp[2]);
+                instance.lasers.setPower(ReactorLasers.LASER_ABSORBER, lp[3]);
+            }
         }
     }
 
@@ -395,8 +411,13 @@ public class ReactorManager {
         Location base = reactorLocation;
 
         // West tower bulb = heater, east tower bulb = cooler (DFC 10×11×9 geometry)
-        boolean heating = display.isBulbPowered(base, -3, -5, 0);
-        boolean cooling = display.isBulbPowered(base, 3, -5, 0);
+        // =========================
+        // LASERS — roof controls, per-tick ramp + smooth heating/cooling
+        // =========================
+        lasers.tick(base);
+
+        boolean heating = lasers.isHeating();
+        boolean cooling = lasers.isCooling();
 
         // =========================
         // BROADCAST STATE CHANGES
@@ -404,48 +425,23 @@ public class ReactorManager {
         if (heating != display.wasHeating()) {
             broadcast(heating ? "<gold>🔥 <yellow>Нагрев включён" : "<gray>🔥 <white>Нагрев выключен");
             display.setHeating(heating);
-
-            // 🏆 Advancement: start_dfc — reactor started
-            if (heating && !advStartDfcGranted) {
-                advStartDfcGranted = true;
-                Bukkit.getScheduler().runTask(Main.getInstance(), () ->
-                    grantAdvancementAll("datapack/start_dfc"));
-            }
         }
         if (cooling != display.wasCooling()) {
             broadcast(cooling ? "<aqua>❄ <dark_aqua>Охлаждение включено" : "<gray>❄ <white>Охлаждение выключено");
             display.setCooling(cooling);
         }
 
-        // =========================
-        // TEMPERATURE CONTROL
-        // =========================
-        if (heating && coreTemp < TEMP_MAX) {
-            if (hasBarrelFuel()) {
-                coreTemp = Math.min(TEMP_MAX, coreTemp + heatRate);
-                noFuelWarnTick = 0;
-
-                // 🏆 Advancement: start_dfc — reactor started (if not granted yet)
-                if (!advStartDfcGranted) {
-                    advStartDfcGranted = true;
-                    Bukkit.getScheduler().runTask(Main.getInstance(), () ->
-                        grantAdvancementAll("datapack/start_dfc"));
-                }
-            } else if (noFuelWarnTick == 0) {
-                broadcast("<yellow>⚠ <gray>Нет топлива! В левую бочку поместите алмазные блоки, в правую — золотые блоки.");
-                noFuelWarnTick++;
-            } else {
-                noFuelWarnTick++;
-            }
-        }
-        if (cooling && coreTemp > coreTempCoolMin) {
-            coreTemp = Math.max(coreTempCoolMin, coreTemp - coolRate);
+        // 🏆 Advancement: start_dfc — reactor startup (laser startup pulse)
+        if (lasers.isStarted() && !advStartDfcGranted) {
+            advStartDfcGranted = true;
+            Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                grantAdvancementAll("datapack/start_dfc"));
         }
 
         // =========================
-        // CASE REACTION
+        // CASE REACTION — follows laser heating/cooling
         // =========================
-        if (heating && hasBarrelFuel()) {
+        if (heating) {
             coreCaseTemp = Math.min(coreCaseTemp + caseTempHeatRate, caseTempMax);
             coreCasePress = Math.min(coreCasePress + casePressHeatRate, casePressMax);
         }
@@ -507,10 +503,13 @@ public class ReactorManager {
         }
 
         // =========================
-        // NATURAL TEMP DECAY (proportional: max(1, T/divisor) per tick)
+        // NATURAL TEMP DECAY — passive cooling 1 C*/tick (proportional cap
+        // max(1, T/divisor) only applies above the working temperature)
         // =========================
         if (coreTemp > coreTempMin) {
-            int decay = Math.max(1, coreTemp / tempDecayDivisor);
+            int decay = coreTemp > coreWorkTemp
+                    ? Math.max(1, coreTemp / tempDecayDivisor)
+                    : 1;
             coreTemp = Math.max(coreTempMin, coreTemp - decay);
         }
 
@@ -864,6 +863,7 @@ public class ReactorManager {
         coreCasePress = 0;
         shieldPress = 0;
         spin = 0;
+        lasers.reset();
         selfDestruct = false;
         sdText = 0;
         meltdownCountdown = false;
@@ -957,6 +957,7 @@ public class ReactorManager {
         coreTemp = 0;
         shieldPress = 0;
         spin = 0;
+        lasers.reset();
         coreShInt = 100;
         coreCaseTemp = 0;
         coreCasePress = 0;
@@ -1077,6 +1078,23 @@ public class ReactorManager {
     public void addShieldPress(double mPa) {
         shieldPress = Math.max(0, shieldPress + mPa);
     }
+
+    /** Applies a signed core temperature delta (from lasers), clamped to hard limits. */
+    public void applyCoreTempDelta(int delta) {
+        coreTemp = Math.max(TEMP_MIN, Math.min(TEMP_MAX, coreTemp + delta));
+    }
+
+    /** Bulb power check for the laser system. */
+    public boolean isBulbPoweredAt(Location base, int dx, int dy, int dz) {
+        return display.isBulbPowered(base, dx, dy, dz);
+    }
+
+    /** Broadcast to nearby players (used by the laser system). */
+    public void broadcastRaw(String message) {
+        broadcast(message);
+    }
+
+    public ReactorLasers getLasers() { return lasers; }
 
     // Smoothed display values (delegated to ReactorDisplay)
     public int getDisplayCoreTemp() { return display.getDisplayCoreTemp(); }

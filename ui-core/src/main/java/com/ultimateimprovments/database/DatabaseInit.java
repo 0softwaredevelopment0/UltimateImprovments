@@ -122,7 +122,12 @@ public class DatabaseInit {
                     core_case_int INTEGER DEFAULT 100,
                     recipe_time INTEGER DEFAULT 0,
                     self_destruct INTEGER DEFAULT 0,
-                    reactor_wear INTEGER DEFAULT 0
+                    reactor_wear INTEGER DEFAULT 0,
+                    laser_started INTEGER DEFAULT 0,
+                    laser_p1 REAL DEFAULT 0,
+                    laser_p2 REAL DEFAULT 0,
+                    laser_stab REAL DEFAULT 0,
+                    laser_absorber REAL DEFAULT 0
                 );
             """);
 
@@ -192,6 +197,37 @@ public class DatabaseInit {
             }
             try {
                 st.execute("ALTER TABLE reactors ADD COLUMN spin REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+
+            // =========================
+            // ⚛ DFC LASER COLUMNS MIGRATION (for old DBs)
+            // laser_started — startup latch (pulse on the startup lamp)
+            // laser_p1/p2 (0..100), laser_stab (0..200), laser_absorber (0..100)
+            // =========================
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN laser_started INTEGER DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN laser_p1 REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN laser_p2 REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN laser_stab REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN laser_absorber REAL DEFAULT 0");
             } catch (Exception ignored) {
                 // Column already exists — this is fine
             }

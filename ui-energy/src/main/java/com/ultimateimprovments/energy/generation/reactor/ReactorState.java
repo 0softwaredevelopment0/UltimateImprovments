@@ -49,6 +49,11 @@ public class ReactorState {
     private int prevShInt = 100;
     private int prevCaseInt = 100;
 
+    // Lasers (roof controls): startup latch + powers P1, P2 (0..100),
+    // Stab (0..200), Absorber valve (0..100)
+    private boolean laserStarted;
+    private double[] laserPowers = new double[4];
+
     // Tick counters
     private int pressTick;
     private int recipeTick;
@@ -184,6 +189,19 @@ public class ReactorState {
     public void setPrevCaseInt(int val) { prevCaseInt = val; }
 
     // =========================
+    // LASERS
+    // =========================
+    public boolean isLaserStarted() { return laserStarted; }
+    public void setLaserStarted(boolean val) { laserStarted = val; }
+    public double[] getLaserPowers() { return laserPowers.clone(); }
+    public void setLaserPowers(double[] val) {
+        if (val == null) return;
+        for (int i = 0; i < Math.min(4, val.length); i++) {
+            laserPowers[i] = Math.max(0, val[i]);
+        }
+    }
+
+    // =========================
     // TICK COUNTERS
     // =========================
     public int getDisplayTick() { return displayTick; }
@@ -283,5 +301,7 @@ public class ReactorState {
         meltdownTimer = 0;
         prevShInt = 100;
         prevCaseInt = 100;
+        laserStarted = false;
+        laserPowers = new double[4];
     }
 }

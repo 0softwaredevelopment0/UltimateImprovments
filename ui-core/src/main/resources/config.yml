@@ -1196,6 +1196,7 @@ messages:
     reactor_info_line: "<dark_gray>┃ <gray>Температура ядра: <white>%temp% C*"
     reactor_info_pressure: "<dark_gray>┃ <gray>Давление щита: <white>%press% mPa"
     reactor_info_spin: "<dark_gray>┃ <gray>Спин ядра: <white>%spin% RPS"
+    reactor_startup: "<gold>⚡ <yellow>Стартап ядра выполнен! Лазеры активны."
     reactor_info_shield: "<dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%"
     reactor_info_fuel: "<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка"
 
@@ -1215,6 +1216,7 @@ messages:
       shield_stats_status: "S: %status%"
       power_stats_title: "=| Статы Питания |="
       power_stats_p1p2: "P1/P2: %p1%/%p2%%"
+      power_stats_stab: "Stab: %stab%%"
       power_stats_spin: "S: %spin%%"
       power_stats_cool: "C: %cool%%"
       fuel_stats_title: "=| Статы Топлива |="
@@ -1237,6 +1239,8 @@ messages:
       status_idle: "Ожидание"
       status_running: "Работает"
       status_done: "Готово"
+      status_no_startup: "Нет стартапа"
+      status_standby: "Ожидание"
 messages_en:
   # ===== MULTI-BLOCK STRUCTURES (frame assembly: reactor, lightning rod) =====
   structures:
@@ -1290,6 +1294,7 @@ messages_en:
     reactor_info_line: "<dark_gray>┃ <gray>Core temp: <white>%temp% C*"
     reactor_info_pressure: "<dark_gray>┃ <gray>Shield pressure: <white>%press% mPa"
     reactor_info_spin: "<dark_gray>┃ <gray>Core spin: <white>%spin% RPS"
+    reactor_startup: "<gold>⚡ <yellow>Core startup complete! Lasers are active."
     reactor_info_shield: "<dark_gray>┃ <gray>Shell integrity: <white>%shield%%"
     reactor_info_fuel: "<dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel"
 
@@ -1309,6 +1314,7 @@ messages_en:
       shield_stats_status: "S: %status%"
       power_stats_title: "=| Power Stats |="
       power_stats_p1p2: "P1/P2: %p1%/%p2%%"
+      power_stats_stab: "Stab: %stab%%"
       power_stats_spin: "S: %spin%%"
       power_stats_cool: "C: %cool%%"
       fuel_stats_title: "=| Fuel Stats |="
@@ -1331,6 +1337,8 @@ messages_en:
       status_idle: "Idle"
       status_running: "Running"
       status_done: "Done"
+      status_no_startup: "No startup"
+      status_standby: "Standby"
 
   # ===== Anti-cheat check (/ui check, /ui uncheck) — English defaults =====
   check:
@@ -2481,6 +2489,13 @@ reactor:
   spin_follow_rate: 0.01
   # Energy generated per tick at the working temperature
   energy_rate: 100
+
+  # Laser ramp speed: ±%/sec applied while a +5%/−5% lamp is powered (redstone applied)
+  laser_ramp_rate: 5.0
+  # Core heating per Power Laser #1/#2 at 100% power (C* per second, each)
+  power_laser_heat_rate: 5000
+  # Core cooling per 100% of Stab. Laser power (C* per second, range 0..200% = up to 2x)
+  stab_cool_rate: 9500
 
   # How fast the reactor case heats up
   case_temp_heat_rate: 2

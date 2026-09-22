@@ -31,12 +31,14 @@ public class ReactorPersistence {
                  core_temp, shield_press, spin, core_sh_int,
                  core_case_temp, core_case_press, core_case_int,
                  recipe_time, self_destruct,
-                 reactor_wear, energy_generated)
+                 reactor_wear, energy_generated,
+                 laser_started, laser_p1, laser_p2, laser_stab, laser_absorber)
                 VALUES (?, ?, ?, ?, ?,
                         ?, ?, ?, ?,
                         ?, ?, ?,
                         ?, ?,
-                        ?, ?)
+                        ?, ?,
+                        ?, ?, ?, ?, ?)
             """)) {
 
             ps.setString(1, id);
@@ -55,6 +57,12 @@ public class ReactorPersistence {
             ps.setInt(14, state.isSelfDestruct() ? 1 : 0);
             ps.setInt(15, state.getReactorWear());
             ps.setLong(16, state.getEnergyGenerated());
+            ps.setInt(17, state.isLaserStarted() ? 1 : 0);
+            double[] lp = state.getLaserPowers();
+            ps.setDouble(18, lp.length > 0 ? lp[0] : 0);
+            ps.setDouble(19, lp.length > 1 ? lp[1] : 0);
+            ps.setDouble(20, lp.length > 2 ? lp[2] : 0);
+            ps.setDouble(21, lp.length > 3 ? lp[3] : 0);
 
             ps.executeUpdate();
 
@@ -108,6 +116,18 @@ public class ReactorPersistence {
                 }
                 try { state.setEnergyGenerated(rs.getLong("energy_generated")); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load energy_generated: " + e.getMessage());
+                }
+                try { state.setLaserStarted(rs.getInt("laser_started") == 1); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load laser_started: " + e.getMessage());
+                }
+                try {
+                    state.setLaserPowers(new double[] {
+                            rs.getDouble("laser_p1"),
+                            rs.getDouble("laser_p2"),
+                            rs.getDouble("laser_stab"),
+                            rs.getDouble("laser_absorber") });
+                } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load laser powers: " + e.getMessage());
                 }
 
                 ConsoleLogger.info("[Reactor] Loaded reactor " + state.getReactorId());
