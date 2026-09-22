@@ -180,6 +180,22 @@ public class DatabaseInit {
                 // Column already exists — this is fine
             }
 
+            // =========================
+            // ⚛ DFC T/P/S STATS COLUMN MIGRATIONS (for old DBs)
+            // shield_press — MPa (≈10.01 at the 10M C* working point)
+            // spin — core rotation, RPS (0.95x of the ten-million multiplier)
+            // =========================
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN shield_press REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN spin REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+
         // =========================
         // 🔋 BATTERY MULTIBLOCK
         // =========================

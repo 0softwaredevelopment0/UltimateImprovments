@@ -1168,7 +1168,7 @@ messages:
     generator_already_active: "<yellow>Генератор уже собран на этом месте!"
     generator_no_cable: "<dark_red>❌ <red>Нет кабеля рядом с плавильной печью!"
     # Click info messages
-    reactor_stats_click: "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% <dark_gray>| <white>I=%shield%%"
+    reactor_stats_click: "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% mPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%"
     lightning_status_click: "<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Активна <dark_gray>| <white>%coords% <dark_gray>[%status%<dark_gray>]"
     lightning_status_hint: "<dark_gray>┃ <gray>SHIFT+ПКМ по рамке — включить/выключить"
     lightning_status_on: "<green>✔ On"
@@ -1194,9 +1194,49 @@ messages:
     reactor_separator: "<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     reactor_assembled: "<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: %id%)"
     reactor_info_line: "<dark_gray>┃ <gray>Температура ядра: <white>%temp% C*"
-    reactor_info_pressure: "<dark_gray>┃ <gray>Давление: <white>%press% kPa"
+    reactor_info_pressure: "<dark_gray>┃ <gray>Давление щита: <white>%press% mPa"
+    reactor_info_spin: "<dark_gray>┃ <gray>Спин ядра: <white>%spin% RPS"
     reactor_info_shield: "<dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%"
     reactor_info_fuel: "<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка"
+
+    # ===== Таблички статов реактора (в мире) =====
+    signs:
+      core_stats_title: "=| Статы Ядра |="
+      core_stats_temp: "T: %temp% C*"
+      core_stats_press: "P: %press% mPa"
+      core_stats_spin: "S: %spin% RPS"
+      case_stats_title: "=| Статы Корпуса |="
+      case_stats_temp: "T: %temp% C*"
+      case_stats_press: "P: %press% mPa"
+      case_stats_int: "I: %int%%"
+      shield_stats_title: "=| Статы Щита |="
+      shield_stats_magnet: "M: %status%"
+      shield_stats_int: "I: %int%%"
+      shield_stats_status: "S: %status%"
+      power_stats_title: "=| Статы Питания |="
+      power_stats_p1p2: "P1/P2: %p1%/%p2%%"
+      power_stats_spin: "S: %spin%%"
+      power_stats_cool: "C: %cool%%"
+      fuel_stats_title: "=| Статы Топлива |="
+      fuel_stats_status: "S: %status%"
+      fuel_stats_f: "F: %f%%"
+      fuel_stats_m: "M: %m%%"
+      fusion_stats_title: "=| Статы Синтеза |="
+      fusion_stats_status: "S: %status%"
+      fusion_stats_p: "P: %p%%"
+      fusion_stats_f: "F: %f%%"
+      stress_title: "=| Нагрузка Щита |="
+      stress_h: "H: %h%%"
+      stress_p: "P: %p%%"
+      stress_s: "S: %s%%"
+      status_stable: "Стабильно"
+      status_unstable: "Нестабильно"
+      status_offline: "Оффлайн"
+      status_fueled: "Есть топливо"
+      status_empty: "Пусто"
+      status_idle: "Ожидание"
+      status_running: "Работает"
+      status_done: "Готово"
 messages_en:
   # ===== MULTI-BLOCK STRUCTURES (frame assembly: reactor, lightning rod) =====
   structures:
@@ -1222,7 +1262,7 @@ messages_en:
     generator_already_active: "<yellow>The generator is already assembled at this place!"
     generator_no_cable: "<dark_red>❌ <red>No cable near the blast furnace!"
     # Click info messages
-    reactor_stats_click: "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% <dark_gray>| <white>I=%shield%%"
+    reactor_stats_click: "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% mPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%"
     lightning_status_click: "<dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Active <dark_gray>| <white>%coords% <dark_gray>[%status%<dark_gray>]"
     lightning_status_hint: "<dark_gray>┃ <gray>SHIFT+RMB on the frame — toggle on/off"
     lightning_status_on: "<green>✔ On"
@@ -1248,9 +1288,49 @@ messages_en:
     reactor_separator: "<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     reactor_assembled: "<green>✔ <white>Dark Fusion Reactor assembled! <dark_gray>(ID: %id%)"
     reactor_info_line: "<dark_gray>┃ <gray>Core temp: <white>%temp% C*"
-    reactor_info_pressure: "<dark_gray>┃ <gray>Pressure: <white>%press% kPa"
+    reactor_info_pressure: "<dark_gray>┃ <gray>Shield pressure: <white>%press% mPa"
+    reactor_info_spin: "<dark_gray>┃ <gray>Core spin: <white>%spin% RPS"
     reactor_info_shield: "<dark_gray>┃ <gray>Shell integrity: <white>%shield%%"
     reactor_info_fuel: "<dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel"
+
+    # ===== Reactor stat signs (in-world displays) =====
+    signs:
+      core_stats_title: "=| Core Stats |="
+      core_stats_temp: "T: %temp% C*"
+      core_stats_press: "P: %press% mPa"
+      core_stats_spin: "S: %spin% RPS"
+      case_stats_title: "=| Case Stats |="
+      case_stats_temp: "T: %temp% C*"
+      case_stats_press: "P: %press% mPa"
+      case_stats_int: "I: %int%%"
+      shield_stats_title: "=| Shield Stats |="
+      shield_stats_magnet: "M: %status%"
+      shield_stats_int: "I: %int%%"
+      shield_stats_status: "S: %status%"
+      power_stats_title: "=| Power Stats |="
+      power_stats_p1p2: "P1/P2: %p1%/%p2%%"
+      power_stats_spin: "S: %spin%%"
+      power_stats_cool: "C: %cool%%"
+      fuel_stats_title: "=| Fuel Stats |="
+      fuel_stats_status: "S: %status%"
+      fuel_stats_f: "F: %f%%"
+      fuel_stats_m: "M: %m%%"
+      fusion_stats_title: "=| Fusion Stats |="
+      fusion_stats_status: "S: %status%"
+      fusion_stats_p: "P: %p%%"
+      fusion_stats_f: "F: %f%%"
+      stress_title: "=| Shield Stress |="
+      stress_h: "H: %h%%"
+      stress_p: "P: %p%%"
+      stress_s: "S: %s%%"
+      status_stable: "Stable"
+      status_unstable: "Unstable"
+      status_offline: "Offline"
+      status_fueled: "Fueled"
+      status_empty: "Empty"
+      status_idle: "Idle"
+      status_running: "Running"
+      status_done: "Done"
 
   # ===== Anti-cheat check (/ui check, /ui uncheck) — English defaults =====
   check:
@@ -2381,21 +2461,26 @@ reactor:
   # Whether the reactor machine is enabled
   enabled: true
 
-  # Rate at which the reactor temperature naturally decays
-  temp_decay_rate: 1
-  # Maximum core temperature before critical events
-  core_temp_max: 6000
-  # Minimum possible core temperature
-  core_temp_min: -272
+  # Passive temperature decay per tick = max(1, T / temp_decay_divisor)
+  temp_decay_divisor: 10000
+  # Maximum core temperature (hard limit)
+  core_temp_max: 2000000000
+  # Minimum core temperature (hard limit)
+  core_temp_min: -273
   # Minimum temperature the core can be cooled to
   core_temp_cool_min: -270
-  # How fast the core heats up while running
-  heat_rate: 3
-  # How fast the core cools down
-  cool_rate: 3
-
-  # Rate at which core pressure is reduced
-  core_press_reduce_rate: 1
+  # How fast the core heats up while running (C* per tick)
+  heat_rate: 5000
+  # How fast the core cools down (C* per tick)
+  cool_rate: 5000
+  # Working temperature = 1x of the ten-million multiplier (10M C* = 1x, 30M = 3x)
+  core_work_temp: 10000000
+  # How fast shield pressure follows its temperature target (0..1 per tick)
+  press_follow_rate: 0.02
+  # How fast core spin follows its temperature target (0..1 per tick)
+  spin_follow_rate: 0.01
+  # Energy generated per tick at the working temperature
+  energy_rate: 100
 
   # How fast the reactor case heats up
   case_temp_heat_rate: 2
@@ -2416,11 +2501,11 @@ reactor:
   case_press_decay_rate: 1
 
   # Temperature above which shell integrity starts decaying
-  shell_integrity_decay_temp: 5000
+  shell_integrity_decay_temp: 10000000
   # Shell integrity decay rate above the critical temperature
   shell_int_decay_rate: 1
   # Maximum temperature at which shell integrity can recover
-  shell_int_recovery_temp_max: 4999
+  shell_int_recovery_temp_max: 9999999
   # Shell integrity recovery rate when cooled down
   shell_int_recovery_rate: 1
 
@@ -2458,6 +2543,10 @@ reactor:
 
   # Maximum processing time for reactor recipes, in ticks
   recipe_time_max: 100
+
+  # Fusion recipe progresses within this temperature window
+  recipe_temp_min: 5000000
+  recipe_temp_max: 15000000
 
 features:
   antimatter:

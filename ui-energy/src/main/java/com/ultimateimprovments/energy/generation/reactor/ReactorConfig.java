@@ -5,6 +5,14 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 /**
  * Loads and stores the reactor configuration from config.yml.
+ * <p>
+ * The DFC stat model works on the "ten-million multiplier": the working
+ * temperature is 10,000,000 C* = 1x (30M = 3x, etc.). Shield pressure (P)
+ * and core spin (S) are derived from the temperature through that multiplier:
+ * <ul>
+ *   <li><b>P</b> — {@code (T / core_work_temp) * 10.01} MPa → 10.010 MPa at working temp</li>
+ *   <li><b>S</b> — {@code 0.95 * (T / core_work_temp)} RPS → 0.95 RPS at working temp</li>
+ * </ul>
  */
 public class ReactorConfig {
 
@@ -26,13 +34,16 @@ public class ReactorConfig {
     // CONFIG FIELDS
     // =========================
     private boolean enabled;
-    private int tempDecayRate;
+    private int tempDecayDivisor;   // passive decay: per tick = max(1, T / divisor)
     private int heatRate;
     private int coolRate;
-    private int coreTempMax;
-    private int coreTempMin;
+    private int coreTempMax;        // hard limit (2,000,000,000)
+    private int coreTempMin;        // hard limit (-273)
     private int coreTempCoolMin;
-    private int corePressReduceRate;
+    private int coreWorkTemp;       // working temperature = 1x (10,000,000)
+    private double pressFollowRate; // how fast shield pressure follows its temperature target
+    private double spinFollowRate;  // how fast core spin follows its temperature target
+    private int energyRate;         // energy per tick at working temperature
     private int caseTempHeatRate;
     private int caseTempMax;
     private int caseTempCoolRate;
@@ -62,18 +73,23 @@ public class ReactorConfig {
     private int selfDestructIntDecayRate;
     private int meltdownExplosionRadius;
     private int recipeTimeMax;
+    private int recipeTempMin;      // fusion recipe progresses in [min, max] window
+    private int recipeTempMax;
 
     private void load() {
         FileConfiguration cfg = Main.getInstance().getConfig();
 
         enabled = cfg.getBoolean("reactor.enabled", true);
-        tempDecayRate = cfg.getInt("reactor.temp_decay_rate", 1);
-        heatRate = cfg.getInt("reactor.heat_rate", 3);
-        coolRate = cfg.getInt("reactor.cool_rate", 3);
-        coreTempMax = cfg.getInt("reactor.core_temp_max", 6000);
-        coreTempMin = cfg.getInt("reactor.core_temp_min", -272);
+        tempDecayDivisor = cfg.getInt("reactor.temp_decay_divisor", 10000);
+        heatRate = cfg.getInt("reactor.heat_rate", 5000);
+        coolRate = cfg.getInt("reactor.cool_rate", 5000);
+        coreTempMax = cfg.getInt("reactor.core_temp_max", 2000000000);
+        coreTempMin = cfg.getInt("reactor.core_temp_min", -273);
         coreTempCoolMin = cfg.getInt("reactor.core_temp_cool_min", -270);
-        corePressReduceRate = cfg.getInt("reactor.core_press_reduce_rate", 1);
+        coreWorkTemp = cfg.getInt("reactor.core_work_temp", 10000000);
+        pressFollowRate = cfg.getDouble("reactor.press_follow_rate", 0.02);
+        spinFollowRate = cfg.getDouble("reactor.spin_follow_rate", 0.01);
+        energyRate = cfg.getInt("reactor.energy_rate", 100);
         caseTempHeatRate = cfg.getInt("reactor.case_temp_heat_rate", 2);
         caseTempMax = cfg.getInt("reactor.case_temp_max", 8000);
         caseTempCoolRate = cfg.getInt("reactor.case_temp_cool_rate", 2);
@@ -82,9 +98,9 @@ public class ReactorConfig {
         casePressHeatRate = cfg.getInt("reactor.case_press_heat_rate", 4);
         casePressMax = cfg.getInt("reactor.case_press_max", 10000);
         casePressDecayRate = cfg.getInt("reactor.case_press_decay_rate", 1);
-        shIntDecayTempThreshold = cfg.getInt("reactor.shell_integrity_decay_temp", 5000);
+        shIntDecayTempThreshold = cfg.getInt("reactor.shell_integrity_decay_temp", 10000000);
         shellIntDecayRate = cfg.getInt("reactor.shell_int_decay_rate", 1);
-        shellIntRecoveryTempMax = cfg.getInt("reactor.shell_int_recovery_temp_max", 4999);
+        shellIntRecoveryTempMax = cfg.getInt("reactor.shell_int_recovery_temp_max", 9999999);
         shellIntRecoveryRate = cfg.getInt("reactor.shell_int_recovery_rate", 1);
         caseIntDecayPressThreshold = cfg.getInt("reactor.case_integrity_decay_press", 7000);
         caseIntDecayTempThreshold = cfg.getInt("reactor.case_integrity_decay_temp", 7000);
@@ -103,19 +119,24 @@ public class ReactorConfig {
         selfDestructIntDecayRate = cfg.getInt("reactor.self_destruct_int_decay_rate", 2);
         meltdownExplosionRadius = cfg.getInt("reactor.meltdown_explosion_radius", 128);
         recipeTimeMax = cfg.getInt("reactor.recipe_time_max", 100);
+        recipeTempMin = cfg.getInt("reactor.recipe_temp_min", 5000000);
+        recipeTempMax = cfg.getInt("reactor.recipe_temp_max", 15000000);
     }
 
     // =========================
     // GETTERS
     // =========================
     public boolean isEnabled() { return enabled; }
-    public int getTempDecayRate() { return tempDecayRate; }
+    public int getTempDecayDivisor() { return tempDecayDivisor; }
     public int getHeatRate() { return heatRate; }
     public int getCoolRate() { return coolRate; }
     public int getCoreTempMax() { return coreTempMax; }
     public int getCoreTempMin() { return coreTempMin; }
     public int getCoreTempCoolMin() { return coreTempCoolMin; }
-    public int getCorePressReduceRate() { return corePressReduceRate; }
+    public int getCoreWorkTemp() { return coreWorkTemp; }
+    public double getPressFollowRate() { return pressFollowRate; }
+    public double getSpinFollowRate() { return spinFollowRate; }
+    public int getEnergyRate() { return energyRate; }
     public int getCaseTempHeatRate() { return caseTempHeatRate; }
     public int getCaseTempMax() { return caseTempMax; }
     public int getCaseTempCoolRate() { return caseTempCoolRate; }
@@ -145,4 +166,6 @@ public class ReactorConfig {
     public int getSelfDestructIntDecayRate() { return selfDestructIntDecayRate; }
     public int getMeltdownExplosionRadius() { return meltdownExplosionRadius; }
     public int getRecipeTimeMax() { return recipeTimeMax; }
+    public int getRecipeTempMin() { return recipeTempMin; }
+    public int getRecipeTempMax() { return recipeTempMax; }
 }

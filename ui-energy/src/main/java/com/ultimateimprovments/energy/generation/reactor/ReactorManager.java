@@ -64,13 +64,16 @@ public class ReactorManager {
     // =========================
     private ReactorConfig cfg;
     private boolean enabled;
-    private int tempDecayRate;
+    private int tempDecayDivisor;
     private int heatRate;
     private int coolRate;
     private int coreTempMax;
     private int coreTempMin;
     private int coreTempCoolMin;
-    private int corePressReduceRate;
+    private int coreWorkTemp;
+    private double pressFollowRate;
+    private double spinFollowRate;
+    private int energyRate;
     private int caseTempHeatRate;
     private int caseTempMax;
     private int caseTempCoolRate;
@@ -98,19 +101,24 @@ public class ReactorManager {
     private int wearFinalMeltdownDuration;
     private int meltdownExplosionRadius;
     private int recipeTimeMax;
+    private int recipeTempMin;
+    private int recipeTempMax;
 
     public int getRecipeTimeMax() { return recipeTimeMax; }
 
     private void copyConfig() {
         if (cfg == null) return;
         enabled = cfg.isEnabled();
-        tempDecayRate = cfg.getTempDecayRate();
+        tempDecayDivisor = cfg.getTempDecayDivisor();
         heatRate = cfg.getHeatRate();
         coolRate = cfg.getCoolRate();
         coreTempMax = cfg.getCoreTempMax();
         coreTempMin = cfg.getCoreTempMin();
         coreTempCoolMin = cfg.getCoreTempCoolMin();
-        corePressReduceRate = cfg.getCorePressReduceRate();
+        coreWorkTemp = cfg.getCoreWorkTemp();
+        pressFollowRate = cfg.getPressFollowRate();
+        spinFollowRate = cfg.getSpinFollowRate();
+        energyRate = cfg.getEnergyRate();
         caseTempHeatRate = cfg.getCaseTempHeatRate();
         caseTempMax = cfg.getCaseTempMax();
         caseTempCoolRate = cfg.getCaseTempCoolRate();
@@ -138,6 +146,8 @@ public class ReactorManager {
         wearFinalMeltdownDuration = cfg.getWearFinalMeltdownDuration();
         meltdownExplosionRadius = cfg.getMeltdownExplosionRadius();
         recipeTimeMax = cfg.getRecipeTimeMax();
+        recipeTempMin = cfg.getRecipeTempMin();
+        recipeTempMax = cfg.getRecipeTempMax();
     }
 
     // =========================
@@ -148,8 +158,13 @@ public class ReactorManager {
     private String reactorId;
 
     // Core parameters
-    private int coreTemp;
-    private int corePress;
+    // Hard temperature limits (C*): absolute zero .. 2 billion
+    public static final int TEMP_MIN = -273;
+    public static final int TEMP_MAX = 2_000_000_000;
+
+    private int coreTemp;           // C*, [TEMP_MIN .. TEMP_MAX]
+    private double shieldPress;     // Shield pressure, MPa — follows (T/10M) × 10.01
+    private double spin;            // Core spin, RPS — follows 0.95 × (T/10M)
     private int coreShInt = 100;    // Shell integrity (0-100%)
     private int coreCaseTemp;
     private int coreCasePress;
@@ -280,7 +295,8 @@ public class ReactorManager {
         ReactorState s = new ReactorState();
         s.setReactorLocation(r.reactorLocation);
         s.setCoreTemp(r.coreTemp);
-        s.setCorePress(r.corePress);
+        s.setShieldPress(r.shieldPress);
+        s.setSpin(r.spin);
         s.setCoreShInt(r.coreShInt);
         s.setCoreCaseTemp(r.coreCaseTemp);
         s.setCoreCasePress(r.coreCasePress);
@@ -300,7 +316,8 @@ public class ReactorManager {
             instance.valid = state.isValid();
             instance.reactorId = state.getReactorId();
             instance.coreTemp = state.getCoreTemp();
-            instance.corePress = state.getCorePress();
+            instance.shieldPress = state.getShieldPress();
+            instance.spin = state.getSpin();
             instance.coreShInt = state.getCoreShInt();
             instance.coreCaseTemp = state.getCoreCaseTemp();
             instance.coreCasePress = state.getCoreCasePress();
@@ -377,8 +394,9 @@ public class ReactorManager {
 
         Location base = reactorLocation;
 
-        boolean heating = display.isBulbPowered(base, -1, 0, -2);
-        boolean cooling = display.isBulbPowered(base, 1, 0, -2);
+        // West tower bulb = heater, east tower bulb = cooler (DFC 10×11×9 geometry)
+        boolean heating = display.isBulbPowered(base, -3, -5, 0);
+        boolean cooling = display.isBulbPowered(base, 3, -5, 0);
 
         // =========================
         // BROADCAST STATE CHANGES
@@ -402,9 +420,9 @@ public class ReactorManager {
         // =========================
         // TEMPERATURE CONTROL
         // =========================
-        if (heating && coreTemp < coreTempMax) {
+        if (heating && coreTemp < TEMP_MAX) {
             if (hasBarrelFuel()) {
-                coreTemp += heatRate;
+                coreTemp = Math.min(TEMP_MAX, coreTemp + heatRate);
                 noFuelWarnTick = 0;
 
                 // 🏆 Advancement: start_dfc — reactor started (if not granted yet)
@@ -421,7 +439,7 @@ public class ReactorManager {
             }
         }
         if (cooling && coreTemp > coreTempCoolMin) {
-            coreTemp -= coolRate;
+            coreTemp = Math.max(coreTempCoolMin, coreTemp - coolRate);
         }
 
         // =========================
@@ -436,11 +454,6 @@ public class ReactorManager {
         }
 
         // =========================
-        // INTEGRITY INDICATOR BULBS
-        // =========================
-        display.updateIntegrityBulbs(base);
-
-        // =========================
         // INTEGRITY WARNING (every 10 seconds)
         // =========================
         int warnTick = display.getIntegrityWarnTick() + 1;
@@ -452,28 +465,28 @@ public class ReactorManager {
         }
 
         // =========================
-        // PRESSURE
+        // SHIELD PRESSURE & CORE SPIN
+        // P follows (T/10M) × 10.01 MPa — 10.010 MPa at the 10M working point
+        // (the .01 is the passive 1.01x multiplier). S follows 0.95×(T/10M) RPS.
+        // Future sources (Power Lasers) add pressure via addShieldPress().
         // =========================
-        corePress += coreTemp;
-        if (corePress < 0) corePress = 0;
-        if (coreTemp >= 1000 && coreTemp <= 5000) {
-            corePress = Math.max(0, corePress - corePressReduceRate);
-        }
+        shieldPress = Math.max(0, shieldPress + (pressureTarget(coreTemp) - shieldPress) * pressFollowRate);
+        spin = Math.max(0, spin + (spinTarget(coreTemp) - spin) * spinFollowRate);
 
         // =========================
         // RADIATION INSIDE CORE CHAMBER
         // =========================
-        if (coreTemp >= 1000) {
-            int radiationAmount = Math.min(coreTemp / 500, 10);
+        if (coreTemp >= 100000) {
+            int radiationAmount = Math.min(coreTemp / 500000, 10);
             int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
             Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
             for (Player player : online) {
                 if (!player.getWorld().equals(base.getWorld())) continue;
                 Location ploc = player.getLocation();
                 int px = ploc.getBlockX(), py = ploc.getBlockY(), pz = ploc.getBlockZ();
-                if (px >= bx - 2 && px <= bx + 2
-                        && py >= by - 5 && py <= by
-                        && pz >= bz - 2 && pz <= bz + 2) {
+                if (px >= bx - 5 && px <= bx + 4
+                        && py >= by - 9 && py <= by
+                        && pz >= bz - 4 && pz <= bz + 4) {
                     RadiationManager.addRadiation(player, radiationAmount);
 
                     // 🏆 Advancement: inside_dfc — player inside the reactor
@@ -494,10 +507,11 @@ public class ReactorManager {
         }
 
         // =========================
-        // NATURAL TEMP DECAY
+        // NATURAL TEMP DECAY (proportional: max(1, T/divisor) per tick)
         // =========================
         if (coreTemp > coreTempMin) {
-            coreTemp = Math.max(coreTempMin, coreTemp - tempDecayRate);
+            int decay = Math.max(1, coreTemp / tempDecayDivisor);
+            coreTemp = Math.max(coreTempMin, coreTemp - decay);
         }
 
         // =========================
@@ -533,8 +547,8 @@ public class ReactorManager {
         // =========================
         // ENERGY GENERATION
         // =========================
-        if (coreTemp > 1000) {
-            double energyPerTick = (double) coreTemp * 0.9;
+        if (coreTemp > coreWorkTemp / 100) {
+            double energyPerTick = ((double) coreTemp / coreWorkTemp) * energyRate;
             energyRemainder += energyPerTick;
             int toGenerate = (int) energyRemainder;
             if (toGenerate > 0) {
@@ -548,7 +562,7 @@ public class ReactorManager {
                     int dx = Math.abs(node.getBlockX() - base.getBlockX());
                     int dy = Math.abs(node.getBlockY() - base.getBlockY());
                     int dz = Math.abs(node.getBlockZ() - base.getBlockZ());
-                    if (dx <= 3 && dy <= 5 && dz <= 3) {
+                    if (dx <= 5 && dy <= 9 && dz <= 4) {
                         nearbyCables.add(node);
                     }
                 }
@@ -573,7 +587,7 @@ public class ReactorManager {
                         }
                         if (genNode != null) {
                             genNode.setType(NodeType.GENERATOR);
-                            genNode.setMaxEnergy(coreTempMax * 10);
+                            genNode.setMaxEnergy(coreWorkTemp * 10);
                             genNode.addEnergy(remaining);
                             CableNetwork.saveNode(genNode);
                         }
@@ -587,7 +601,7 @@ public class ReactorManager {
                     }
                     if (genNode != null) {
                         genNode.setType(NodeType.GENERATOR);
-                        genNode.setMaxEnergy(coreTempMax * 10);
+                        genNode.setMaxEnergy(coreWorkTemp * 10);
                         genNode.addEnergy(toGenerate);
                         CableNetwork.saveNode(genNode);
                     }
@@ -613,17 +627,17 @@ public class ReactorManager {
         if (!enabled || !valid || reactorLocation == null) return;
 
         Location base = reactorLocation;
-        Location coreCenter = base.clone().add(0.5, -2.5, 0.5);
+        Location coreCenter = base.clone().add(0.5, -5.5, 0.5);
 
         int particleCount;
         int radAmount;
 
-        if (corePress >= 500000)      { particleCount = 512; radAmount = 600; }
-        else if (corePress >= 400000) { particleCount = 256; radAmount = 500; }
-        else if (corePress >= 300000) { particleCount = 128; radAmount = 400; }
-        else if (corePress >= 200000) { particleCount = 64;  radAmount = 300; }
-        else if (corePress >= 100000) { particleCount = 32;  radAmount = 200; }
-        else                          { particleCount = 0;   radAmount = 0;   }
+        if (shieldPress >= 8)       { particleCount = 512; radAmount = 600; }
+        else if (shieldPress >= 6)  { particleCount = 256; radAmount = 500; }
+        else if (shieldPress >= 4)  { particleCount = 128; radAmount = 400; }
+        else if (shieldPress >= 2)  { particleCount = 64;  radAmount = 300; }
+        else if (shieldPress >= 1)  { particleCount = 32;  radAmount = 200; }
+        else                        { particleCount = 0;   radAmount = 0;   }
 
         if (particleCount > 0) {
             Location smokePos = coreCenter.clone().add(0, 2.5, 0);
@@ -632,13 +646,6 @@ public class ReactorManager {
             if (radAmount > 0) {
                 RadiationManager.addRadiationNear(base, 4.0, radAmount);
             }
-        }
-
-        // Pressure division
-        if (coreTemp != 0) {
-            corePress = corePress / coreTemp;
-        } else {
-            corePress = 0;
         }
     }
 
@@ -682,10 +689,10 @@ public class ReactorManager {
     public void tickRecipe() {
         if (!enabled || !valid) return;
 
-        if (coreTemp < 1000 && recipeTime > 0) {
+        if (coreTemp < recipeTempMin && recipeTime > 0) {
             recipeTime--;
         }
-        if (coreTemp >= 1000 && coreTemp <= 5000 && recipeTime < recipeTimeMax) {
+        if (coreTemp >= recipeTempMin && coreTemp <= recipeTempMax && recipeTime < recipeTimeMax) {
             recipeTime++;
         }
         if (recipeTime >= recipeTimeMax && hasBarrelFuel()) {
@@ -831,10 +838,10 @@ public class ReactorManager {
         if (reactorLocation == null) return;
         Location base = reactorLocation;
 
-        consumeBarrelFuel(base, 0, -3, -2, Material.DIAMOND_BLOCK);
-        consumeBarrelFuel(base, 0, -3, 2, Material.GOLD_BLOCK);
+        consumeBarrelFuel(base, -4, -5, 0, Material.DIAMOND_BLOCK);
+        consumeBarrelFuel(base, 4, -5, 0, Material.GOLD_BLOCK);
 
-        Location dropLoc = base.clone().add(0.5, -2.5, 0.5);
+        Location dropLoc = base.clone().add(0.5, -5.5, 0.5);
         dropLoc.getWorld().dropItemNaturally(dropLoc, new ItemStack(Material.ANCIENT_DEBRIS, 1));
 
         World world = dropLoc.getWorld();
@@ -855,7 +862,8 @@ public class ReactorManager {
         coreCaseInt = 100;
         coreCaseTemp = 0;
         coreCasePress = 0;
-        corePress = 0;
+        shieldPress = 0;
+        spin = 0;
         selfDestruct = false;
         sdText = 0;
         meltdownCountdown = false;
@@ -894,7 +902,7 @@ public class ReactorManager {
         if (reactorLocation == null) return;
 
         Location base = reactorLocation;
-        Location coreCenter = base.clone().add(0, -2, 0);
+        Location coreCenter = base.clone().add(0.5, -5.5, 0.5);
 
         RadiationManager.addRadiationNear(coreCenter, 1.0, 6400);
         RadiationManager.addRadiationNear(coreCenter, 20.0, 3200);
@@ -947,7 +955,8 @@ public class ReactorManager {
     // =========================
     private void resetAll() {
         coreTemp = 0;
-        corePress = 0;
+        shieldPress = 0;
+        spin = 0;
         coreShInt = 100;
         coreCaseTemp = 0;
         coreCasePress = 0;
@@ -997,8 +1006,8 @@ public class ReactorManager {
     private boolean hasBarrelFuel() {
         if (reactorLocation == null) return false;
         Location base = reactorLocation;
-        return checkBarrelForFuel(base, 0, -3, -2, Material.DIAMOND_BLOCK, 1)
-            && checkBarrelForFuel(base, 0, -3, 2, Material.GOLD_BLOCK, 1);
+        return checkBarrelForFuel(base, -4, -5, 0, Material.DIAMOND_BLOCK, 1)
+            && checkBarrelForFuel(base, 4, -5, 0, Material.GOLD_BLOCK, 1);
     }
 
     private boolean consumeBarrelFuel(Location base, int dx, int dy, int dz, Material fuelType) {
@@ -1025,7 +1034,8 @@ public class ReactorManager {
     // GETTERS
     // =========================
     public int getCoreTemp() { return coreTemp; }
-    public int getCorePress() { return corePress; }
+    public double getShieldPress() { return shieldPress; }
+    public double getCoreSpin() { return spin; }
     public int getCoreShInt() { return coreShInt; }
     public int getCoreCaseTemp() { return coreCaseTemp; }
     public int getCoreCasePress() { return coreCasePress; }
@@ -1039,9 +1049,39 @@ public class ReactorManager {
     public int getReactorWear() { return reactorWear; }
     public long getEnergyGenerated() { return energyGenerated; }
 
+    public int getCoreWorkTemp() { return coreWorkTemp; }
+    public int getEnergyRate() { return energyRate; }
+    /** Fuel status for the display: both side fuel barrels contain their fuel. */
+    public boolean hasBarrelFuelPublic() { return hasBarrelFuel(); }
+
+    // =========================
+    // DFC STAT MODEL HELPERS
+    // =========================
+    /**
+     * Shield pressure target, MPa: (T / working temp) × 10.01.
+     * At the 10M C* working point this is exactly 10.010 MPa — the .01 comes
+     * from the passive 1.01x multiplier; multipliers add up (lasers add more later).
+     */
+    public double pressureTarget(double temp) {
+        if (coreWorkTemp <= 0) return 0;
+        return Math.max(0, temp / coreWorkTemp) * 10.01;
+    }
+
+    /** Core spin target, RPS: passive multiplier 0.95x of the ten-million multiplier. */
+    public double spinTarget(double temp) {
+        if (coreWorkTemp <= 0) return 0;
+        return Math.max(0, temp / coreWorkTemp) * 0.95;
+    }
+
+    /** Adds shield pressure from external sources (Power Lasers etc.), clamped ≥ 0. */
+    public void addShieldPress(double mPa) {
+        shieldPress = Math.max(0, shieldPress + mPa);
+    }
+
     // Smoothed display values (delegated to ReactorDisplay)
     public int getDisplayCoreTemp() { return display.getDisplayCoreTemp(); }
-    public int getDisplayCorePress() { return display.getDisplayCorePress(); }
+    public double getDisplayShieldPress() { return display.getDisplayShieldPress(); }
+    public double getDisplayCoreSpin() { return display.getDisplayCoreSpin(); }
     public int getDisplayCoreShInt() { return display.getDisplayCoreShInt(); }
     public int getDisplayCoreCaseTemp() { return display.getDisplayCoreCaseTemp(); }
     public int getDisplayCoreCasePress() { return display.getDisplayCoreCasePress(); }

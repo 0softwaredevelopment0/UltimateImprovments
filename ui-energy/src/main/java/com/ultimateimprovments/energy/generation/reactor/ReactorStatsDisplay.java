@@ -44,6 +44,9 @@ public final class ReactorStatsDisplay {
 
         int meltdownSecs = reactor.isMeltdownCountdown() ? (reactor.getMeltdownTimer() / 20) : 0;
 
+        String press = String.format("%.3f", reactor.getDisplayShieldPress());
+        String spin = String.format("%.2f", reactor.getDisplayCoreSpin());
+
         player.sendMessage(MessageUtil.parse("<dark_gray>┌────────────────────────────────┐"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_red>Р.Т.С <dark_gray>» <white>Статистика реактора"));
         player.sendMessage(MessageUtil.parse("<dark_gray>├────────────────────────────────┤"));
@@ -53,11 +56,12 @@ public final class ReactorStatsDisplay {
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Дист: <white>" + String.format("%.1f", distance) + " м"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gold>═[ <yellow>Данные ядра <gold>]═"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Температура:  <white>" + reactor.getDisplayCoreTemp() + " C*"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Давление:    <white>" + reactor.getDisplayCorePress() + " kPa"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Давление:    <white>" + press + " mPa"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Спин:        <white>" + spin + " RPS"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Целостность: <white>" + reactor.getDisplayCoreShInt() + " %"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_aqua>═[ <aqua>Данные корпуса <dark_aqua>]═"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Температура:  <white>" + reactor.getDisplayCoreCaseTemp() + " C*"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Давление:    <white>" + reactor.getDisplayCoreCasePress() + " kPa"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Давление:    <white>" + String.format("%.3f", reactor.getDisplayCoreCasePress() / 1000.0) + " mPa"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Целостность: <white>" + reactor.getDisplayCoreCaseInt() + " %"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_purple>═[ <light_purple>Данные рецепта <dark_purple>]═"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Прогресс:   <white>" + reactor.getDisplayRecipeTime() + " %"));
