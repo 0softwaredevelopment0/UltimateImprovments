@@ -192,6 +192,7 @@ public class ReactorManager {
     private int recipeTick;
     private int intensityDownTick;
     private int intensityUpTick;
+    private int intensityUpCounter; // shield passive recovery: 1% per 5 sec
     private int soundTick;
     private int noFuelWarnTick;
 
@@ -633,15 +634,19 @@ public class ReactorManager {
     }
 
     // =========================
-    // INTENSITY RECOVERY TICK (every 3s)
+    // INTENSITY RECOVERY TICK (every second — shield 1%/5s passive recovery)
     // =========================
     public void tickIntensityUp() {
         if (!enabled || !valid) return;
 
+        // Shield shell integrity recovers passively: 1% per 5 sec (every 5th call)
         if (coreTemp <= shellIntRecoveryTempMax && coreShInt < 100) {
-            coreShInt = Math.min(100, coreShInt + shellIntRecoveryRate);
+            intensityUpCounter++;
+            if (intensityUpCounter >= 5) {
+                intensityUpCounter = 0;
+                coreShInt = Math.min(100, coreShInt + shellIntRecoveryRate);
+            }
         }
-        // Case integrity does NOT recover passively — repair the glass instead
     }
 
     // =========================
@@ -901,6 +906,7 @@ public class ReactorManager {
         recipeTick = 0;
         intensityDownTick = 0;
         intensityUpTick = 0;
+        intensityUpCounter = 0;
         soundTick = 0;
         noFuelWarnTick = 0;
         meltdownCountdown = false;
