@@ -259,7 +259,8 @@ public class StructureTemplate {
 
     /**
      * Format one mismatch as a concrete instruction with ABSOLUTE coordinates.
-     * Example: {@code поставить waxed copper bulb в [120, 65, -34]}
+     * Uses the localized {@code structures.fix_*} config messages
+     * (with {@code %block%}, {@code %expected%} and {@code %coords%} placeholders).
      */
     public static String formatFix(Fix f, Location base) {
         if (base == null || base.getWorld() == null) {
@@ -268,28 +269,32 @@ public class StructureTemplate {
         String where = "<white>[" + (base.getBlockX() + f.dx())
                 + " " + (base.getBlockY() + f.dy())
                 + " " + (base.getBlockZ() + f.dz()) + "]";
-
-        if (f.expected() == Material.AIR) {
-            return "<red>сломать</red> <gray>" + blockName(f.actual()) + " <gray>в " + where;
-        }
-        if (f.actual() == Material.AIR) {
-            return "<green>поставить</green> <yellow>" + blockName(f.expected()) + " <gray>в " + where;
-        }
-        return "<yellow>заменить</yellow> <gray>" + blockName(f.actual())
-                + " <yellow>→ " + blockName(f.expected()) + " <gray>в " + where;
+        return formatFixMessage(f, where);
     }
 
     /** Same as {@link #formatFix(Fix, Location)} but with offsets relative to the center. */
     public static String formatFixRelative(Fix f) {
-        String where = "<white>[" + f.dx() + ", " + f.dy() + ", " + f.dz() + "]";
+        return formatFixMessage(f, "<white>[" + f.dx() + ", " + f.dy() + ", " + f.dz() + "]");
+    }
+
+    private static String formatFixMessage(Fix f, String where) {
         if (f.expected() == Material.AIR) {
-            return "<red>сломать</red> <gray>" + blockName(f.actual()) + " <gray>в " + where;
+            return StructuresMessages.get("fix_break",
+                    "<red>break</red> <gray>%block% <gray>at %coords%")
+                    .replace("%block%", blockName(f.actual()))
+                    .replace("%coords%", where);
         }
         if (f.actual() == Material.AIR) {
-            return "<green>поставить</green> <yellow>" + blockName(f.expected()) + " <gray>в " + where;
+            return StructuresMessages.get("fix_place",
+                    "<green>place</green> <yellow>%block% <gray>at %coords%")
+                    .replace("%block%", blockName(f.expected()))
+                    .replace("%coords%", where);
         }
-        return "<yellow>заменить</yellow> <gray>" + blockName(f.actual())
-                + " <yellow>→ " + blockName(f.expected()) + " <gray>в " + where;
+        return StructuresMessages.get("fix_replace",
+                "<yellow>replace</yellow> <gray>%block% <yellow>→ %expected% <gray>at %coords%")
+                .replace("%block%", blockName(f.actual()))
+                .replace("%expected%", blockName(f.expected()))
+                .replace("%coords%", where);
     }
 
     private static String blockName(Material m) {
@@ -377,7 +382,7 @@ public class StructureTemplate {
                 throw new IOException("Missing 'blocks' in structure file");
             }
 
-            StructureTemplate tmpl = new StructureTemplate(name, displayNameFor(name));
+            StructureTemplate tmpl = new StructureTemplate(name, StructuresMessages.structureName(name));
 
             for (Object obj : blocksList) {
                 Map<String, Object> blockEntry = (Map<String, Object>) obj;
@@ -515,17 +520,7 @@ public class StructureTemplate {
     /** Stores loading errors per template name (e.g. "reactor" → "Missing 'size'"). */
     private static final Map<String, String> templateErrors = new LinkedHashMap<>();
 
-    /** Russian display names for known templates (auto-loaded files fall back to their file name). */
-    private static final Map<String, String> DISPLAY_NAMES = Map.of(
-            "reactor", "Реактор тёмного синтеза",
-            "lightning", "Громоотвод (структура молний)"
-    );
-
-    private static String displayNameFor(String name) {
-        return DISPLAY_NAMES.getOrDefault(name, name);
-    }
-
-    /** Wall sign materials of every wood type (interchangeable when matching). */
+    /** Wall and standing sign materials of every wood type (interchangeable when matching). */
     private static final Set<Material> SIGN_TYPES = buildSignTypes();
 
     private static Set<Material> buildSignTypes() {
@@ -533,8 +528,10 @@ public class StructureTemplate {
         for (String wood : Arrays.asList(
                 "oak", "dark_oak", "birch", "spruce", "jungle", "acacia",
                 "cherry", "mangrove", "bamboo", "crimson", "warped", "pale_oak")) {
-            Material m = Material.matchMaterial(wood + "_wall_sign", false);
-            if (m != null) set.add(m);
+            Material wall = Material.matchMaterial(wood + "_wall_sign", false);
+            if (wall != null) set.add(wall);
+            Material standing = Material.matchMaterial(wood + "_sign", false);
+            if (standing != null) set.add(standing);
         }
         return set;
     }

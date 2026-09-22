@@ -1,9 +1,12 @@
 package com.ultimateimprovments.util;
 
+import com.ultimateimprovments.core.Main;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +40,32 @@ public class MessageUtil {
         String configured = com.ultimateimprovments.core.Main.getInstance().getConfig()
                 .getString("prefix", DEFAULT_PREFIX);
         PREFIX = (configured == null || configured.isBlank()) ? DEFAULT_PREFIX : configured;
+    }
+
+    /**
+     * Raw message from config with per-language section selection.
+     * <p>
+     * Language comes from {@code messages.lang} in config.yml ("en" or "ru").
+     * For "en" the primary section is {@code messages_en} with fallback to
+     * {@code messages}; for "ru" — the reverse. This makes every message that
+     * goes through this method follow the server language setting and stay
+     * editable in both RU/EN tabs of the config.
+     *
+     * @param path  path WITHOUT the section prefix (e.g. {@code structures.fix_place})
+     * @param def   fallback when the key is missing in both sections
+     * @return the raw MiniMessage string (not parsed)
+     */
+    public static String raw(String path, String def) {
+        Main plugin = Main.getInstance();
+        if (plugin == null) return def;
+        FileConfiguration config = plugin.getConfig();
+        boolean ru = "ru".equalsIgnoreCase(config.getString("messages.lang", "en"));
+        String primary = ru ? "messages" : "messages_en";
+        String fallback = ru ? "messages_en" : "messages";
+        String value = config.getString(primary + "." + path, null);
+        if (value != null) return value;
+        value = config.getString(fallback + "." + path, null);
+        return value != null ? value : def;
     }
 
     /**

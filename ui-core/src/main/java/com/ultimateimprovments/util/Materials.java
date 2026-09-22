@@ -42,6 +42,8 @@ public final class Materials {
     public static final Material WAXED_CUT_COPPER = fromKey("waxed_cut_copper");
     public static final Material WAXED_CUT_COPPER_STAIRS = fromKey("waxed_cut_copper_stairs");
     public static final Material WAXED_COPPER_TRAPDOOR = fromKey("waxed_copper_trapdoor");
+    /** Reactor structure block (window bars). */
+    public static final Material WAXED_COPPER_BARS = fromKey("waxed_copper_bars");
 
     // ============================================================
     // 📝 ITEMS

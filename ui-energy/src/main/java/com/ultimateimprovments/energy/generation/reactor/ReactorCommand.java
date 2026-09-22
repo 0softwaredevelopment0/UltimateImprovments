@@ -2,6 +2,7 @@ package com.ultimateimprovments.energy.generation.reactor;
 
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.StructuresMessages;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
 
 import org.bukkit.Location;
@@ -37,7 +38,8 @@ public final class ReactorCommand {
         ReactorManager.PendingAssembly pending = ReactorManager.getPendingAssembly(player, "dark_synthesis");
 
         if (pending == null) {
-            player.sendMessage(MessageUtil.parse("<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"));
+            player.sendMessage(MessageUtil.parse(msg("pending_frame_reactor",
+                    "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!")));
             return;
         }
 
@@ -47,16 +49,20 @@ public final class ReactorCommand {
         java.util.List<String> errors = validateReactorByTemplate(pending.center());
         if (!errors.isEmpty()) {
             player.sendMessage("");
-            player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Структура реактора собрана неверно! <gray>Что нужно исправить:"));
+            player.sendMessage(MessageUtil.parse(msg("reactor_invalid_header",
+                    "<dark_red>❌ <red>Структура реактора собрана неверно! <gray>Что нужно исправить:")));
             int shown = 0;
             for (String err : errors) {
                 if (shown++ >= 15) {
-                    player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>...и ещё " + (errors.size() - shown + 1) + " исправлений"));
+                    player.sendMessage(MessageUtil.parse(msg("fixes_more",
+                                    "<dark_gray> • <gray>...и ещё %count% исправлений")
+                            .replace("%count%", String.valueOf(errors.size() - shown + 1))));
                     break;
                 }
                 player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>" + err));
             }
-            player.sendMessage(MessageUtil.parse("<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+            player.sendMessage(MessageUtil.parse(msg("reactor_separator",
+                    "<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
@@ -67,11 +73,13 @@ public final class ReactorCommand {
         Location existing = reactor.getReactorLocation();
         if (existing != null) {
             if (existing.equals(pending.center())) {
-                player.sendMessage(MessageUtil.parse("<yellow>Реактор уже активен на этом месте!"));
+                player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
+                        "<yellow>Реактор уже активен на этом месте!")));
                 ReactorManager.clearPendingAssembly(player);
                 return;
             }
-            player.sendMessage(MessageUtil.parse("<red>Другой реактор уже активен! Сломайте его сначала."));
+            player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
+                    "<yellow>Реактор уже активен на этом месте!")));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
@@ -100,11 +108,20 @@ public final class ReactorCommand {
         nameBarrel(pending.center(), 0, -3, -2, "<gold>Топливо: <aqua>Алмазные блоки");
         nameBarrel(pending.center(), 0, -3, 2, "<gold>Топливо: <yellow>Золотые блоки");
 
-        player.sendMessage(MessageUtil.parse("<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: " + reactor.getReactorId() + ")"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Температура ядра: <white>" + reactor.getCoreTemp() + " C*"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Давление: <white>" + reactor.getCorePress() + " kPa"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Целостность оболочки: <white>" + reactor.getCoreShInt() + "%"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка"));
+        player.sendMessage(MessageUtil.parse(msg("reactor_assembled",
+                "<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: %id%)")
+                .replace("%id%", String.valueOf(reactor.getReactorId()))));
+        player.sendMessage(MessageUtil.parse(msg("reactor_info_line",
+                "<dark_gray>┃ <gray>Температура ядра: <white>%temp% C*")
+                .replace("%temp%", String.valueOf(reactor.getCoreTemp()))));
+        player.sendMessage(MessageUtil.parse(msg("reactor_info_pressure",
+                "<dark_gray>┃ <gray>Давление: <white>%press% kPa")
+                .replace("%press%", String.valueOf(reactor.getCorePress()))));
+        player.sendMessage(MessageUtil.parse(msg("reactor_info_shield",
+                "<dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%")
+                .replace("%shield%", reactor.getCoreShInt() + "%")));
+        player.sendMessage(MessageUtil.parse(msg("reactor_info_fuel",
+                "<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка")));
 
         ReactorManager.clearPendingAssembly(player);
 
@@ -124,7 +141,7 @@ public final class ReactorCommand {
      */
     private static java.util.List<String> validateReactorByTemplate(Location center) {
         com.ultimateimprovments.util.StructureTemplate tmpl =
-                com.ultimateimprovments.util.StructureTemplate.get("reactor");
+                com.ultimateimprovments.util.StructureTemplate.get("darkfusionreactor");
 
         if (tmpl == null || tmpl.totalCells() == 0) {
             // Template unavailable → legacy validation (key blocks only)
@@ -136,6 +153,11 @@ public final class ReactorCommand {
             errors.add(com.ultimateimprovments.util.StructureTemplate.formatFix(fix, center));
         }
         return errors;
+    }
+
+    /** Localized {@code structures.*} message with a hardcoded fallback. */
+    private static String msg(String key, String def) {
+        return StructuresMessages.get(key, def);
     }
 
     // =========================
@@ -182,7 +204,8 @@ public final class ReactorCommand {
         ReactorManager.PendingAssembly pending = ReactorManager.getPendingAssembly(player, "magnet");
 
         if (pending == null) {
-            player.sendMessage(MessageUtil.parse("<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!"));
+            player.sendMessage(MessageUtil.parse(msg("pending_frame_magnet",
+                    "<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!")));
             return;
         }
 
@@ -192,7 +215,8 @@ public final class ReactorCommand {
         // VALIDATE — the block must be LODESTONE
         // =========================
         if (loc.getBlock().getType() != Material.LODESTONE) {
-            player.sendMessage(MessageUtil.parse("<red>Магнитный камень (LODESTONE) не найден!"));
+            player.sendMessage(MessageUtil.parse(msg("magnet_lodestone_missing",
+                    "<red>Магнитный камень (LODESTONE) не найден!")));
             ReactorManager.clearPendingAssembly(player);
             return;
         }

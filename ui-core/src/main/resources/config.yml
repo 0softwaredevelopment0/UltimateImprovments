@@ -591,7 +591,9 @@ messages:
         message: "<yellow>⚠</yellow> <white>Your item</white> <yellow>%item%</yellow> <white>has</white> <red>%pct%%</red> <white>integrity remaining!</white>"
       xp_integrity:
         # Chat message for features integrity (message)
-        message: "<green>✨</green> <white>Collecting XP restored</white> <yellow>%amount%%</yellow> <white>integrity to all items!</white>"
+        message: "<green>✨</green> <white>Mending restored</white> <yellow>%amount%%</yellow> <white>integrity to your Mending items!</white>"
+        # Action bar message for features integrity (action_bar) — shown instead of chat
+        action_bar: "<green>✨ Mending: +</green><yellow>%amount%%</yellow>"
       # Chat message for features integrity (silk_touch_message)
       silk_touch_message: "<aqua>✨</aqua> <white>Repair restored</white> <yellow>%amount%%</yellow> <white>integrity!</white>"
   
@@ -1142,10 +1144,112 @@ messages:
       - "<gray>If you think this is a mistake,"
       - "<gray>please report an appeal on Discord:"
       - "<white>%discord_url%"
-
-
-# === LOCALIZED MESSAGES (EN) ===
+  # ===== MULTI-BLOCK STRUCTURES (frame assembly: reactor, lightning rod) =====
+  structures:
+    # Structure display names (used in "closest match" hints)
+    names:
+      darkfusionreactor: "<red>Реактор тёмного синтеза</red>"
+      lightning: "<yellow>Громоотвод</yellow>"
+    # Assembly flow
+    frame_error: "<dark_red>❌ <red>Не удалось определить позицию рамки!"
+    template_errors_header: "<dark_red>⚠ <red>Ошибка загрузки NBT-шаблонов структур:"
+    template_error_line: "  <dark_gray>• <white>%structure%<dark_gray>: <red>%error%"
+    template_errors_hint: "<gray>Проверьте консоль сервера для деталей."
+    # Recognized structures
+    lightning_toggled_off: "<red>❌ <white>Структура молний выключена!"
+    lightning_toggled_on: "<green>✔ <white>Структура молний включена!"
+    lightning_detected: "<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Обнаружена структура молний — сборка..."
+    reactor_already_active: "<yellow>Реактор уже активен на этом месте!"
+    reactor_detected: "<dark_gray>[<red>Реактор<dark_gray>] <gray>Обнаружен реактор — сборка..."
+    magnet_already_active: "<yellow>Магнит уже активен на этом месте!"
+    magnet_detected: "<dark_gray>[<aqua>Магнит<dark_gray>] <gray>Обнаружен магнит — сборка..."
+    battery_already_active: "<yellow>Батарея уже собрана на этом месте!"
+    lamp_already_active: "<yellow>Лампочка уже собрана на этом месте!"
+    generator_already_active: "<yellow>Генератор уже собран на этом месте!"
+    generator_no_cable: "<dark_red>❌ <red>Нет кабеля рядом с плавильной печью!"
+    # Click info messages
+    reactor_stats_click: "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% <dark_gray>| <white>I=%shield%%"
+    lightning_status_click: "<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Активна <dark_gray>| <white>%coords% <dark_gray>[%status%<dark_gray>]"
+    lightning_status_hint: "<dark_gray>┃ <gray>SHIFT+ПКМ по рамке — включить/выключить"
+    lightning_status_on: "<green>✔ On"
+    lightning_status_off: "<red>❌ Off"
+    reactor_broken: "<red>❕ Реактор разрушен и деактивирован! <dark_gray>[<gray>%coords%<dark_gray>]"
+    pending_frame_reactor: "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"
+    pending_frame_magnet: "<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!"
+    magnet_lodestone_missing: "<red>Магнитный камень (LODESTONE) не найден!"
+    lightning_broken: "<yellow>⚡ Структура молний разрушена и деактивирована! <dark_gray>[<gray>%coords%<dark_gray>]"
+    # Failed assembly
+    not_recognized: "<red>❌ Error: Structure not recognized!"
+    not_loaded: "<gray>NBT-шаблоны структур не загружены — проверьте консоль сервера."
+    closest_match: "<gray>Больше всего похоже на: <yellow>%name% <gray>— совпадение <yellow>%percent%%"
+    no_fixes_needed: "<gray>Критичных отличий не найдено — проверьте положение рамки."
+    fixes_header: "<gray>Чтобы собрать, нужно (%count% шт.):"
+    fixes_more: "<dark_gray> • <gray>...и ещё %count% исправлений"
+    fix_place: "<green>поставить</green> <yellow>%block% <gray>в %coords%"
+    fix_break: "<red>сломать</red> <gray>%block% <gray>в %coords%"
+    fix_replace: "<yellow>заменить</yellow> <gray>%block% <yellow>→ %expected% <gray>в %coords%"
+    # Reactor assembly validation (full NBT check)
+    reactor_invalid_header: "<dark_red>❌ <red>Структура реактора собрана неверно! <gray>Что нужно исправить:"
+    reactor_separator: "<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    reactor_assembled: "<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: %id%)"
+    reactor_info_line: "<dark_gray>┃ <gray>Температура ядра: <white>%temp% C*"
+    reactor_info_pressure: "<dark_gray>┃ <gray>Давление: <white>%press% kPa"
+    reactor_info_shield: "<dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%"
+    reactor_info_fuel: "<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка"
 messages_en:
+  # ===== MULTI-BLOCK STRUCTURES (frame assembly: reactor, lightning rod) =====
+  structures:
+    # Structure display names (used in "closest match" hints)
+    names:
+      darkfusionreactor: "<red>Dark Fusion Reactor</red>"
+      lightning: "<yellow>Lightning Rod</yellow>"
+    # Assembly flow
+    frame_error: "<dark_red>❌ <red>Could not determine the frame position!"
+    template_errors_header: "<dark_red>⚠ <red>Failed to load some structure templates:"
+    template_error_line: "  <dark_gray>• <white>%structure%<dark_gray>: <red>%error%"
+    template_errors_hint: "<gray>Check the server console for details."
+    # Recognized structures
+    lightning_toggled_off: "<red>❌ <white>Lightning structure disabled!"
+    lightning_toggled_on: "<green>✔ <white>Lightning structure enabled!"
+    lightning_detected: "<dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Lightning structure detected — assembling..."
+    reactor_already_active: "<yellow>The reactor is already active at this place!"
+    reactor_detected: "<dark_gray>[<red>Reactor<dark_gray>] <gray>Reactor detected — assembling..."
+    magnet_already_active: "<yellow>The magnet is already active at this place!"
+    magnet_detected: "<dark_gray>[<aqua>Magnet<dark_gray>] <gray>Magnet detected — assembling..."
+    battery_already_active: "<yellow>The battery is already assembled at this place!"
+    lamp_already_active: "<yellow>The lamp is already assembled at this place!"
+    generator_already_active: "<yellow>The generator is already assembled at this place!"
+    generator_no_cable: "<dark_red>❌ <red>No cable near the blast furnace!"
+    # Click info messages
+    reactor_stats_click: "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% <dark_gray>| <white>I=%shield%%"
+    lightning_status_click: "<dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Active <dark_gray>| <white>%coords% <dark_gray>[%status%<dark_gray>]"
+    lightning_status_hint: "<dark_gray>┃ <gray>SHIFT+RMB on the frame — toggle on/off"
+    lightning_status_on: "<green>✔ On"
+    lightning_status_off: "<red>❌ Off"
+    reactor_broken: "<red>❕ Reactor destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]"
+    pending_frame_reactor: "<red>First press SHIFT+RMB on the reactor frame!"
+    pending_frame_magnet: "<red>First press SHIFT+RMB on the magnet frame!"
+    magnet_lodestone_missing: "<red>The lodestone (LODESTONE) was not found!"
+    lightning_broken: "<yellow>⚡ Lightning structure destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]"
+    # Failed assembly
+    not_recognized: "<red>❌ Error: Structure not recognized!"
+    not_loaded: "<gray>Structure templates are not loaded — check the server console."
+    closest_match: "<gray>Closest structure: <yellow>%name% <gray>— match <yellow>%percent%%"
+    no_fixes_needed: "<gray>No critical differences found — check the frame position."
+    fixes_header: "<gray>To assemble, you need (%count%):"
+    fixes_more: "<dark_gray> • <gray>...and %count% more fixes"
+    fix_place: "<green>place</green> <yellow>%block% <gray>at %coords%"
+    fix_break: "<red>break</red> <gray>%block% <gray>at %coords%"
+    fix_replace: "<yellow>replace</yellow> <gray>%block% <yellow>→ %expected% <gray>at %coords%"
+    # Reactor assembly validation (full NBT check)
+    reactor_invalid_header: "<dark_red>❌ <red>Reactor structure is incorrect! <gray>What to fix:"
+    reactor_separator: "<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    reactor_assembled: "<green>✔ <white>Dark Fusion Reactor assembled! <dark_gray>(ID: %id%)"
+    reactor_info_line: "<dark_gray>┃ <gray>Core temp: <white>%temp% C*"
+    reactor_info_pressure: "<dark_gray>┃ <gray>Pressure: <white>%press% kPa"
+    reactor_info_shield: "<dark_gray>┃ <gray>Shell integrity: <white>%shield%%"
+    reactor_info_fuel: "<dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel"
+
   # ===== Anti-cheat check (/ui check, /ui uncheck) — English defaults =====
   check:
     commands_blocked: "<red>❌ <white>You are under check! Commands are disabled.</white>"
@@ -1723,7 +1827,9 @@ messages_en:
         message: "<yellow>⚠</yellow> <white>Your item</white> <yellow>%item%</yellow> <white>has</white> <red>%pct%%</red> <white>integrity remaining!</white>"
       xp_integrity:
         # Chat message for features integrity (message)
-        message: "<green>✨</green> <white>Collecting XP restored</white> <yellow>%amount%%</yellow> <white>integrity to all items!</white>"
+        message: "<green>✨</green> <white>Mending restored</white> <yellow>%amount%%</yellow> <white>integrity to your Mending items!</white>"
+        # Action bar message for features integrity (action_bar) — shown instead of chat
+        action_bar: "<green>✨ Mending: +</green><yellow>%amount%%</yellow>"
       # Chat message for features integrity (silk_touch_message)
       silk_touch_message: "<aqua>✨</aqua> <white>Repair restored</white> <yellow>%amount%%</yellow> <white>integrity!</white>"
   
@@ -2838,10 +2944,13 @@ features:
       loss_rate: 0.0
 
     xp_integrity:
-      # Whether collecting XP restores integrity
+      # XP is spent on repairing EVERY Mending item (both hands and worn armor)
+      # and does not raise the player's level while any repair happened.
       enabled: true
       # Integrity restored per XP point collected
       integrity_per_xp: 0.1
+      # Action bar text shown when XP repairs Mending items (instead of chat)
+      action_bar: "<green>✨ Mending: +</green><yellow>%amount%%</yellow>"
 
     low_integrity_warning:
       # Whether low-integrity warnings are enabled
