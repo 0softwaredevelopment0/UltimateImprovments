@@ -95,6 +95,15 @@ public class ReactorConfig {
     private double fuelOverPer10k;           // +1% per 10 000 RPS above over-spin
     private double fuelNoFuelSpinDecay;      // RPS lost per second when out of fuel
 
+    // Fusion system — ancient debris forms in the core from fusion particles
+    private int fusionTempMin;             // below this temp no fusion (1M C*)
+    private int fusionTempWork;            // 100% speed point (10M C*)
+    private int fusionTempPeak;            // 150% speed point (15M C*)
+    private int fusionTempEnd;             // back to 0% (25M C*)
+    private int fusionParticlesPerSec;     // particles/sec at 100% speed (20)
+    private double fusionAbsorbRate;       // particles/sec collected by the absorber at 100%
+    private int fusionDebrisPer;           // collected particles per ancient debris
+
     // =========================
     // LASERS (roof controls)
     // Power Laser #1/#2 heat the core at power_laser_heat_rate C*/sec each
@@ -171,6 +180,13 @@ public class ReactorConfig {
         fuelMinRate = cfg.getDouble("reactor.fuel_min_rate", 1.0);
         fuelOverPer10k = cfg.getDouble("reactor.fuel_over_per_10k", 1.0);
         fuelNoFuelSpinDecay = cfg.getDouble("reactor.fuel_no_fuel_spin_decay", 500.0);
+        fusionTempMin = cfg.getInt("reactor.fusion_temp_min", 1000000);
+        fusionTempWork = cfg.getInt("reactor.fusion_temp_work", 10000000);
+        fusionTempPeak = cfg.getInt("reactor.fusion_temp_peak", 15000000);
+        fusionTempEnd = cfg.getInt("reactor.fusion_temp_end", 25000000);
+        fusionParticlesPerSec = cfg.getInt("reactor.fusion_particles_per_sec", 20);
+        fusionAbsorbRate = cfg.getDouble("reactor.fusion_absorb_rate", 21.0);
+        fusionDebrisPer = cfg.getInt("reactor.fusion_debris_per", 10000);
     }
 
     // =========================
@@ -238,4 +254,11 @@ public class ReactorConfig {
     public double getFuelMinRate() { return fuelMinRate; }
     public double getFuelOverPer10k() { return fuelOverPer10k; }
     public double getFuelNoFuelSpinDecay() { return fuelNoFuelSpinDecay; }
+    public int getFusionTempMin() { return fusionTempMin; }
+    public int getFusionTempWork() { return fusionTempWork; }
+    public int getFusionTempPeak() { return fusionTempPeak; }
+    public int getFusionTempEnd() { return fusionTempEnd; }
+    public int getFusionParticlesPerSec() { return fusionParticlesPerSec; }
+    public double getFusionAbsorbRate() { return fusionAbsorbRate; }
+    public int getFusionDebrisPer() { return fusionDebrisPer; }
 }

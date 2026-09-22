@@ -30,15 +30,17 @@ public class ReactorPersistence {
                 (reactor_id, world, x, y, z,
                  core_temp, shield_press, spin, core_sh_int,
                  core_case_temp, core_case_press, core_case_int,
-                 recipe_time, self_destruct,
+                 self_destruct,
                  reactor_wear, energy_generated,
-                 laser_started, laser_p1, laser_p2, laser_stab, laser_absorber)
+                 laser_started, laser_p1, laser_p2, laser_stab, laser_absorber,
+                 fusion_particles, fusion_collected)
                 VALUES (?, ?, ?, ?, ?,
                         ?, ?, ?, ?,
                         ?, ?, ?,
+                        ?,
                         ?, ?,
-                        ?, ?,
-                        ?, ?, ?, ?, ?)
+                        ?, ?, ?, ?, ?,
+                        ?, ?)
             """)) {
 
             ps.setString(1, id);
@@ -53,16 +55,17 @@ public class ReactorPersistence {
             ps.setInt(10, state.getCoreCaseTemp());
             ps.setInt(11, state.getCoreCasePress());
             ps.setInt(12, state.getCoreCaseInt());
-            ps.setInt(13, state.getRecipeTime());
-            ps.setInt(14, state.isSelfDestruct() ? 1 : 0);
-            ps.setInt(15, state.getReactorWear());
-            ps.setLong(16, state.getEnergyGenerated());
-            ps.setInt(17, state.isLaserStarted() ? 1 : 0);
+            ps.setInt(13, state.isSelfDestruct() ? 1 : 0);
+            ps.setInt(14, state.getReactorWear());
+            ps.setLong(15, state.getEnergyGenerated());
+            ps.setInt(16, state.isLaserStarted() ? 1 : 0);
             double[] lp = state.getLaserPowers();
-            ps.setDouble(18, lp.length > 0 ? lp[0] : 0);
-            ps.setDouble(19, lp.length > 1 ? lp[1] : 0);
-            ps.setDouble(20, lp.length > 2 ? lp[2] : 0);
-            ps.setDouble(21, lp.length > 3 ? lp[3] : 0);
+            ps.setDouble(17, lp.length > 0 ? lp[0] : 0);
+            ps.setDouble(18, lp.length > 1 ? lp[1] : 0);
+            ps.setDouble(19, lp.length > 2 ? lp[2] : 0);
+            ps.setDouble(20, lp.length > 3 ? lp[3] : 0);
+            ps.setDouble(21, state.getFusionParticles());
+            ps.setDouble(22, state.getFusionCollected());
 
             ps.executeUpdate();
 
@@ -108,8 +111,13 @@ public class ReactorPersistence {
                 state.setCoreCaseTemp(rs.getInt("core_case_temp"));
                 state.setCoreCasePress(rs.getInt("core_case_press"));
                 state.setCoreCaseInt(rs.getInt("core_case_int"));
-                state.setRecipeTime(rs.getInt("recipe_time"));
                 state.setSelfDestruct(rs.getInt("self_destruct") == 1);
+                try {
+                    state.setFusionParticles(rs.getDouble("fusion_particles"));
+                    state.setFusionCollected(rs.getDouble("fusion_collected"));
+                } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load fusion state: " + e.getMessage());
+                }
 
                 try { state.setReactorWear(rs.getInt("reactor_wear")); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load reactor_wear: " + e.getMessage());

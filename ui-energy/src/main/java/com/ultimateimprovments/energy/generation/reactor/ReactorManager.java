@@ -39,6 +39,7 @@ public class ReactorManager {
     private final ReactorLasers lasers;
     private final ReactorShield shield;
     private final ReactorFuel fuel;
+    private final ReactorFusion fusion;
 
     public static ReactorManager getInstance() {
         return instance;
@@ -103,11 +104,6 @@ public class ReactorManager {
     private int wearFinalMeltdownAt;
     private int wearFinalMeltdownDuration;
     private int meltdownExplosionRadius;
-    private int recipeTimeMax;
-    private int recipeTempMin;
-    private int recipeTempMax;
-
-    public int getRecipeTimeMax() { return recipeTimeMax; }
 
     private void copyConfig() {
         if (cfg == null) return;
@@ -148,9 +144,6 @@ public class ReactorManager {
         wearFinalMeltdownAt = cfg.getWearFinalMeltdownAt();
         wearFinalMeltdownDuration = cfg.getWearFinalMeltdownDuration();
         meltdownExplosionRadius = cfg.getMeltdownExplosionRadius();
-        recipeTimeMax = cfg.getRecipeTimeMax();
-        recipeTempMin = cfg.getRecipeTempMin();
-        recipeTempMax = cfg.getRecipeTempMax();
     }
 
     // =========================
@@ -174,8 +167,7 @@ public class ReactorManager {
     private int coreCaseInt = 100;  // Case integrity (0-100%)
 
     // Recipe
-    private int recipeTime;
-    private boolean rcDone;
+
 
     // Self-destruct
     private boolean selfDestruct;
@@ -280,6 +272,7 @@ public class ReactorManager {
         this.lasers = new ReactorLasers(this);
         this.shield = new ReactorShield(this);
         this.fuel = new ReactorFuel(this);
+        this.fusion = new ReactorFusion(this);
     }
 
     // =========================
@@ -303,11 +296,12 @@ public class ReactorManager {
         s.setCoreTemp(r.coreTemp);
         s.setShieldPress(r.shieldPress);
         s.setSpin(r.spin);
+        s.setFusionParticles(r.fusion.getParticles());
+        s.setFusionCollected(r.fusion.getCollected());
         s.setCoreShInt(r.coreShInt);
         s.setCoreCaseTemp(r.coreCaseTemp);
         s.setCoreCasePress(r.coreCasePress);
         s.setCoreCaseInt(r.coreCaseInt);
-        s.setRecipeTime(r.recipeTime);
         s.setSelfDestruct(r.selfDestruct);
         s.setReactorWear(r.reactorWear);
         s.setEnergyGenerated(r.energyGenerated);
@@ -330,11 +324,12 @@ public class ReactorManager {
             instance.coreTemp = state.getCoreTemp();
             instance.shieldPress = state.getShieldPress();
             instance.spin = state.getSpin();
+            instance.fusion.setParticles(state.getFusionParticles());
+            instance.fusion.setCollected(state.getFusionCollected());
             instance.coreShInt = state.getCoreShInt();
             instance.coreCaseTemp = state.getCoreCaseTemp();
             instance.coreCasePress = state.getCoreCasePress();
             instance.coreCaseInt = state.getCoreCaseInt();
-            instance.recipeTime = state.getRecipeTime();
             instance.selfDestruct = state.isSelfDestruct();
             instance.reactorWear = state.getReactorWear();
             instance.energyGenerated = state.getEnergyGenerated();
@@ -540,13 +535,6 @@ public class ReactorManager {
         }
 
         // =========================
-        // RECIPE TIME
-        // =========================
-        if (rcDone) {
-            completeRecipe();
-        }
-
-        // =========================
         // INTEGRITY THRESHOLD WARNINGS (75%, 50%, 25%)
         // =========================
         checkIntegrityThreshold(prevShInt, coreShInt, "оболочки ядра");
@@ -694,20 +682,11 @@ public class ReactorManager {
     }
 
     // =========================
-    // RECIPE TICK (every 5s)
+    // FUSION TICK (every tick) — fusion particles, absorber collection
     // =========================
-    public void tickRecipe() {
-        if (!enabled || !valid) return;
-
-        if (coreTemp < recipeTempMin && recipeTime > 0) {
-            recipeTime--;
-        }
-        if (coreTemp >= recipeTempMin && coreTemp <= recipeTempMax && recipeTime < recipeTimeMax) {
-            recipeTime++;
-        }
-        if (recipeTime >= recipeTimeMax && hasBarrelFuel()) {
-            rcDone = true;
-        }
+    public void tickFusion() {
+        if (!enabled || !valid || reactorLocation == null) return;
+        fusion.tick(reactorLocation);
     }
 
     // =========================
@@ -842,30 +821,9 @@ public class ReactorManager {
     }
 
     // =========================
-    // RECIPE COMPLETION
+    // FULL RESET (disassemble / teardown)
     // =========================
-    private void completeRecipe() {
-        if (reactorLocation == null) return;
-        Location base = reactorLocation;
-
-        fuel.consumeRecipeUnit(base);
-
-        Location dropLoc = base.clone().add(0.5, -5.5, 0.5);
-        dropLoc.getWorld().dropItemNaturally(dropLoc, new ItemStack(Material.ANCIENT_DEBRIS, 1));
-
-        World world = dropLoc.getWorld();
-        world.spawnParticle(Particle.FLAME, dropLoc, 120, 2.5, 2.5, 2.5, 0.15);
-        world.spawnParticle(Particle.LAVA, dropLoc, 40, 1.5, 1.5, 1.5, 0);
-        world.spawnParticle(Particle.SOUL_FIRE_FLAME, dropLoc, 60, 2.0, 2.0, 2.0, 0.1);
-        world.spawnParticle(Particle.ASH, dropLoc, 80, 3.0, 3.0, 3.0, 0.05);
-        world.spawnParticle(Particle.SMALL_FLAME, dropLoc, 50, 1.8, 1.8, 1.8, 0.08);
-        world.spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, dropLoc, 40, 1.0, 1.0, 1.0, 0.02);
-
-        world.playSound(dropLoc, Sound.ENTITY_GENERIC_EXPLODE, SoundCategory.MASTER, 2.0f, 0.5f);
-        world.playSound(dropLoc, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.MASTER, 1.5f, 0.8f);
-
-        recipeTime = 0;
-        rcDone = false;
+    private void resetReactorState() {
         coreShInt = 100;
         coreTemp = 0;
         coreCaseInt = 100;
@@ -875,6 +833,7 @@ public class ReactorManager {
         spin = 0;
         lasers.reset();
         shield.reset();
+        fusion.reset();
         selfDestruct = false;
         sdText = 0;
         meltdownCountdown = false;
@@ -894,13 +853,6 @@ public class ReactorManager {
         display.resetDisplay();
 
         saveToDb();
-        broadcast("<dark_red>☢ <red>Рецепт слияния готов! Древний обломок выброшен в центре реактора.");
-
-        // 🏆 Advancement: complete_dfc_recipe — recipe completed
-        if (!advCompletedRecipeGranted) {
-            advCompletedRecipeGranted = true;
-            grantAdvancementAll("datapack/complete_dfc_recipe");
-        }
     }
 
     // =========================
@@ -970,12 +922,12 @@ public class ReactorManager {
         spin = 0;
         lasers.reset();
         shield.reset();
+        fuel.reset();
+        fusion.reset();
         coreShInt = 100;
         coreCaseTemp = 0;
         coreCasePress = 0;
         coreCaseInt = 100;
-        recipeTime = 0;
-        rcDone = false;
         selfDestruct = false;
         sdText = 0;
         reactorWear = 0;
@@ -1001,10 +953,6 @@ public class ReactorManager {
     }
 
     // =========================
-    // RECIPE COMPLETION (fuel is consumed by ReactorFuel, by spin)
-    // =========================
-
-    // =========================
     // GETTERS
     // =========================
     public int getCoreTemp() { return coreTemp; }
@@ -1014,7 +962,7 @@ public class ReactorManager {
     public int getCoreCaseTemp() { return coreCaseTemp; }
     public int getCoreCasePress() { return coreCasePress; }
     public int getCoreCaseInt() { return coreCaseInt; }
-    public int getRecipeTime() { return recipeTime; }
+
     public boolean isSelfDestruct() { return selfDestruct; }
     public boolean isMeltdownCountdown() { return meltdownCountdown; }
     public int getMeltdownTimer() { return meltdownTimer; }
@@ -1075,6 +1023,7 @@ public class ReactorManager {
     public ReactorLasers getLasers() { return lasers; }
     public ReactorShield getShield() { return shield; }
     public ReactorFuel getFuel() { return fuel; }
+    public ReactorFusion getFusion() { return fusion; }
 
     /** Fuel tick (every second): consumption by spin + spin decay when dry. */
     public void tickFuel() {
@@ -1116,7 +1065,6 @@ public class ReactorManager {
     public int getDisplayCoreCaseTemp() { return display.getDisplayCoreCaseTemp(); }
     public int getDisplayCoreCasePress() { return display.getDisplayCoreCasePress(); }
     public int getDisplayCoreCaseInt() { return display.getDisplayCoreCaseInt(); }
-    public int getDisplayRecipeTime() { return display.getDisplayRecipeTime(); }
     public int getDisplayReactorWear() { return display.getDisplayReactorWear(); }
     public int getDisplayEnergyRate() { return display.getDisplayEnergyRate(); }
 

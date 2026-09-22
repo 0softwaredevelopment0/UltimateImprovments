@@ -206,6 +206,22 @@ public class DatabaseInit {
             // laser_started — startup latch (pulse on the startup lamp)
             // laser_p1/p2 (0..100), laser_stab (0..200), laser_absorber (0..100)
             // =========================
+            // =========================
+            // ⚛ DFC FUSION COLUMNS MIGRATION (for old DBs)
+            // fusion_particles — floating fusion particles in the core
+            // fusion_collected — collected-particles progress toward a debris
+            // =========================
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN fusion_particles REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
+                st.execute("ALTER TABLE reactors ADD COLUMN fusion_collected REAL DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+
             try {
                 st.execute("ALTER TABLE reactors ADD COLUMN laser_started INTEGER DEFAULT 0");
             } catch (Exception ignored) {
