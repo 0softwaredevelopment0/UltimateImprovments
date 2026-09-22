@@ -72,7 +72,7 @@ public class ReactorShield {
                 if (integrity >= 100) {
                     state = State.WORKING;
                     ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                            "shield_working", "<green>✔ <yellow>Щит сформирован! Ядро зажигается, лазеры активируются."));
+                            "shield_working", "<green>✔ <yellow>Shield formed! The core ignites, lasers activate."));
                 }
             }
 
@@ -102,7 +102,7 @@ public class ReactorShield {
                 if (failCountdown > 0 && failCountdown % 20 == 0) {
                     ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
                             "shield_failure_countdown",
-                            "<dark_red>☠ <red>Отказ щита! <white>%sec%<red> сек до взрыва...")
+                            "<dark_red>☠ <red>Shield failure! <white>%sec%<red>s to explosion...")
                             .replace("%sec%", String.valueOf(failCountdown / 20)));
                 }
                 if (failCountdown <= 0) {
@@ -124,7 +124,7 @@ public class ReactorShield {
         state = State.CREATING;
         integrity = Math.max(integrity, 1);
         ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                "shield_creating", "<gold>⚡ <yellow>Формирование щита..."));
+                "shield_creating", "<gold>⚡ <yellow>Forming the shield..."));
     }
 
     // =========================
@@ -230,7 +230,7 @@ public class ReactorShield {
         state = State.FAILED;
         failCountdown = cfg.getShieldFailureCountdown() * 20;
         ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                "shield_failure", "<dark_red>☠ <red>Щит разрушен! Отказ ядра неизбежен."));
+                "shield_failure", "<dark_red>☠ <red>Shield destroyed! Core failure imminent."));
     }
 
     /** Shield breach detonation: primed creeper (fuse 0) + radius from config. */
@@ -247,7 +247,7 @@ public class ReactorShield {
                 org.bukkit.SoundCategory.MASTER, 3.0f, 0.6f);
 
         ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                "shield_detonated", "<dark_red>☠ <red>Взрыв щита! Реактор уничтожен."));
+                "shield_detonated", "<dark_red>☠ <red>Shield detonation! Reactor destroyed."));
 
         reactor.onShieldDetonated();
     }

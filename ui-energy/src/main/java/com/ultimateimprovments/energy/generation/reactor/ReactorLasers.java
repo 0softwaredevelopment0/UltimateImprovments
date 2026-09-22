@@ -66,7 +66,7 @@ public class ReactorLasers {
         if (startupPowered && !prevStartupPowered && !started) {
             started = true;
             ReactorManager.getInstance().broadcastRaw(msg("reactor_startup",
-                    "<gold>⚡ <yellow>Формирование щита... Лазеры активируются после."));
+                    "<gold>⚡ <yellow>Forming the shield... Lasers activate after."));
             // Shield first: integrity builds up (Creating → Working), lasers become operational then
             ReactorManager.getInstance().onStartupPulse();
         }

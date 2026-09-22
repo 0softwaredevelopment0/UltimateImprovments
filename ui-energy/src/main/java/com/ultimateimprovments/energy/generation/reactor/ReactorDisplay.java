@@ -287,7 +287,6 @@ public class ReactorDisplay {
         // =========================
         // POWER STATS — laser powers (live from ReactorLasers) + spin %
         // =========================
-        String spinPct = String.valueOf(Math.min(100, (int) Math.round(displaySpin / 95000.0 * 100)));
         int p1 = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_P1));
         int p2 = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_P2));
         int stab = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_STAB));
@@ -296,8 +295,9 @@ public class ReactorDisplay {
                 .replace("%p1%", String.valueOf(p1)).replace("%p2%", String.valueOf(p2)), 0);
         setSign(base, SIGN_POWER, 2, color + msg("signs.power_stats_stab", "Stab: %stab%%")
                 .replace("%stab%", String.valueOf(stab)), 0);
-        setSign(base, SIGN_POWER, 3, color + msg("signs.power_stats_spin", "S: %spin%%")
-                .replace("%spin%", spinPct), 0);
+        int absorber = (int) Math.round(reactor.getLasers().getPower(ReactorLasers.LASER_ABSORBER));
+        setSign(base, SIGN_POWER, 3, color + msg("signs.power_stats_cool", "C: %cool%%")
+                .replace("%cool%", String.valueOf(absorber)), 0);
 
         // =========================
         // FUEL STATS — Yes/No status, average fill (F), consumption speed (S)

@@ -39,7 +39,7 @@ public final class ReactorCommand {
 
         if (pending == null) {
             player.sendMessage(MessageUtil.parse(msg("pending_frame_reactor",
-                    "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!")));
+                    "<red>First press SHIFT+RMB on the reactor frame!")));
             return;
         }
 
@@ -50,12 +50,12 @@ public final class ReactorCommand {
         if (!errors.isEmpty()) {
             player.sendMessage("");
             player.sendMessage(MessageUtil.parse(msg("reactor_invalid_header",
-                    "<dark_red>❌ <red>Структура реактора собрана неверно! <gray>Что нужно исправить:")));
+                    "<dark_red>❌ <red>Reactor structure is invalid! What to fix:")));
             int shown = 0;
             for (String err : errors) {
                 if (shown++ >= 15) {
                     player.sendMessage(MessageUtil.parse(msg("fixes_more",
-                                    "<dark_gray> • <gray>...и ещё %count% исправлений")
+                                    "<dark_gray> • <gray>...and %count% more fixes")
                             .replace("%count%", String.valueOf(errors.size() - shown + 1))));
                     break;
                 }
@@ -74,12 +74,12 @@ public final class ReactorCommand {
         if (existing != null) {
             if (existing.equals(pending.center())) {
                 player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
-                        "<yellow>Реактор уже активен на этом месте!")));
+                        "<yellow>The reactor is already active at this place!")));
                 ReactorManager.clearPendingAssembly(player);
                 return;
             }
             player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
-                    "<yellow>Реактор уже активен на этом месте!")));
+                    "<yellow>The reactor is already active at this place!")));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
@@ -109,22 +109,22 @@ public final class ReactorCommand {
         nameBarrel(pending.center(), 4, -5, 0, "<dark_aqua>Diamond fuel");
 
         player.sendMessage(MessageUtil.parse(msg("reactor_assembled",
-                "<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: %id%)")
+                "<green>✔ <white>Dark Fusion Reactor assembled! <dark_gray>(ID: %id%)")
                 .replace("%id%", String.valueOf(reactor.getReactorId()))));
         player.sendMessage(MessageUtil.parse(msg("reactor_info_line",
-                "<dark_gray>┃ <gray>Температура ядра: <white>%temp% C*")
+                "<dark_gray>┃ <gray>Core temperature: <white>%temp% C*")
                 .replace("%temp%", String.valueOf(reactor.getCoreTemp()))));
         player.sendMessage(MessageUtil.parse(msg("reactor_info_pressure",
-                "<dark_gray>┃ <gray>Давление щита: <white>%press% mPa")
+                "<dark_gray>┃ <gray>Shield pressure: <white>%press% MPa")
                 .replace("%press%", String.format("%.3f", reactor.getShieldPress()))));
         player.sendMessage(MessageUtil.parse(msg("reactor_info_spin",
-                "<dark_gray>┃ <gray>Спин ядра: <white>%spin% RPS")
+                "<dark_gray>┃ <gray>Core spin: <white>%spin% RPS")
                 .replace("%spin%", String.format("%.2f", reactor.getCoreSpin()))));
         player.sendMessage(MessageUtil.parse(msg("reactor_info_shield",
-                "<dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%")
+                "<dark_gray>┃ <gray>Shell integrity: <white>%shield%%")
                 .replace("%shield%", reactor.getCoreShInt() + "%")));
         player.sendMessage(MessageUtil.parse(msg("reactor_info_fuel",
-                "<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка")));
+                "<dark_gray>┃ <gray>Fuel: <yellow>gold ingots <gray>→ west barrel, <dark_aqua>diamonds <gray>→ east barrel")));
 
         ReactorManager.clearPendingAssembly(player);
 
@@ -167,33 +167,33 @@ public final class ReactorCommand {
     // 🏆 POWER TIER NAME (shared static)
     // =========================
     public static String getMagnetPowerTierStatic(int power) {
-        if (power >= 10000000) return "<obfuscated>✧ <dark_red>✧✧ АБСОЛЮТНАЯ БЕСКОНЕЧНОСТЬ ✧✧ <obfuscated>✧ <dark_gray>(" + power + ")";
-        if (power >= 5000000) return "<dark_red>✧✧ БЕСКОНЕЧНАЯ БЕЗДНА ✧✧ <dark_gray>(" + power + ")";
-        if (power >= 2500000) return "<red>✦ ВСЕЛЕНСКАЯ КАТАСТРОФА ✦ <dark_gray>(" + power + ")";
-        if (power >= 1000000) return "<light_purple>✧ ПЕРВОЗДАННАЯ СИНГУЛЯРНОСТЬ ✧ <dark_gray>(" + power + ")";
-        if (power >= 500000) return "<gold>☠ НЕПОСТИЖИМАЯ ☠ <dark_gray>(" + power + ")";
-        if (power >= 250000) return "<dark_aqua>✦ БОГОПОДОБНАЯ ✦ <dark_gray>(" + power + ")";
-        if (power >= 100000) return "<dark_red>✧✧✧ ВСЕСОКРУШАЮЩАЯ СИНГУЛЯРНОСТЬ ✧✧✧ <dark_gray>(" + power + ")";
-        if (power >= 50000) return "<red>☠ АБСОЛЮТНАЯ СИНГУЛЯРНОСТЬ ☠ <dark_gray>(" + power + ")";
-        if (power >= 25000) return "<gold>⚡ БОЖЕСТВЕННАЯ СИНГУЛЯРНОСТЬ ⚡ <dark_gray>(" + power + ")";
-        if (power >= 10000) return "<light_purple>✧✧ НЕПРЕВЗОЙДЁННАЯ ✧✧ <dark_gray>(" + power + ")";
-        if (power >= 5000) return "<dark_purple>✦ ТРАНСЦЕНДЕНТНАЯ ✦ <dark_gray>(" + power + ")";
-        if (power >= 2500) return "<blue>⚜ СИНГУЛЯРНАЯ ⚜ <dark_gray>(" + power + ")";
-        if (power >= 1000) return "<dark_aqua>✦ БЕСКОНЕЧНАЯ ✦ <dark_gray>(" + power + ")";
-        if (power >= 500) return "<dark_purple>✧✧ АБСОЛЮТНАЯ ✧✧ <dark_gray>(" + power + ")";
-        if (power >= 300) return "<dark_purple>☯ КОСМИЧЕСКАЯ ☯ <dark_gray>(" + power + ")";
-        if (power >= 200) return "<light_purple>✦ ТИТАНИЧЕСКАЯ ✦ <dark_gray>(" + power + ")";
-        if (power >= 150) return "<light_purple>◈ ЛЕГЕНДАРНАЯ ◈ <dark_gray>(" + power + ")";
-        if (power >= 100) return "<red>☆ НЕВЕРОЯТНАЯ ☆ <dark_gray>(" + power + ")";
-        if (power >= 75) return "<red>♦ ЧРЕЗВЫЧАЙНАЯ ♦ <dark_gray>(" + power + ")";
-        if (power >= 50) return "<gold>★ ИСКЛЮЧИТЕЛЬНАЯ ★ <dark_gray>(" + power + ")";
-        if (power >= 30) return "<gold>⬆ ОЧЕНЬ СИЛЬНАЯ ⬆ <dark_gray>(" + power + ")";
-        if (power >= 20) return "<yellow>⬆ СИЛЬНАЯ ⬆ <dark_gray>(" + power + ")";
-        if (power >= 12) return "<yellow>⬆ ВЫШЕ СРЕДНЕГО ⬆ <dark_gray>(" + power + ")";
-        if (power >= 7) return "<green>➤ СРЕДНЯЯ ➤ <dark_gray>(" + power + ")";
-        if (power >= 4) return "<gray>➤ НИЖЕ СРЕДНЕГО ➤ <dark_gray>(" + power + ")";
-        if (power >= 2) return "<gray>▸ СЛАБАЯ ▸ <dark_gray>(" + power + ")";
-        return "<gray>▸ ОЧЕНЬ СЛАБАЯ ▸ <dark_gray>(" + power + ")";
+        if (power >= 10000000) return "<obfuscated>✧ <dark_red>✧✧ ABSOLUTE INFINITY ✧✧ <obfuscated>✧ <dark_gray>(" + power + ")";
+        if (power >= 5000000) return "<dark_red>✧✧ INFINITE ABYSS ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 2500000) return "<red>✦ COSMIC CATASTROPHE ✦ <dark_gray>(" + power + ")";
+        if (power >= 1000000) return "<light_purple>✧ PRIMORDIAL SINGULARITY ✧ <dark_gray>(" + power + ")";
+        if (power >= 500000) return "<gold>☠ UNFATHOMABLE ☠ <dark_gray>(" + power + ")";
+        if (power >= 250000) return "<dark_aqua>✦ GODLIKE ✦ <dark_gray>(" + power + ")";
+        if (power >= 100000) return "<dark_red>✧✧✧ ALL-DEVOURING SINGULARITY ✧✧✧ <dark_gray>(" + power + ")";
+        if (power >= 50000) return "<red>☠ ABSOLUTE SINGULARITY ☠ <dark_gray>(" + power + ")";
+        if (power >= 25000) return "<gold>⚡ DIVINE SINGULARITY ⚡ <dark_gray>(" + power + ")";
+        if (power >= 10000) return "<light_purple>✧✧ UNSURPASSED ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 5000) return "<dark_purple>✦ TRANSCENDENT ✦ <dark_gray>(" + power + ")";
+        if (power >= 2500) return "<blue>⚜ SINGULAR ⚜ <dark_gray>(" + power + ")";
+        if (power >= 1000) return "<dark_aqua>✦ INFINITE ✦ <dark_gray>(" + power + ")";
+        if (power >= 500) return "<dark_purple>✧✧ ABSOLUTE ✧✧ <dark_gray>(" + power + ")";
+        if (power >= 300) return "<dark_purple>☯ COSMIC ☯ <dark_gray>(" + power + ")";
+        if (power >= 200) return "<light_purple>✦ TITANIC ✦ <dark_gray>(" + power + ")";
+        if (power >= 150) return "<light_purple>◈ LEGENDARY ◈ <dark_gray>(" + power + ")";
+        if (power >= 100) return "<red>☆ INCREDIBLE ☆ <dark_gray>(" + power + ")";
+        if (power >= 75) return "<red>♦ EXTRAORDINARY ♦ <dark_gray>(" + power + ")";
+        if (power >= 50) return "<gold>★ EXCEPTIONAL ★ <dark_gray>(" + power + ")";
+        if (power >= 30) return "<gold>⬆ VERY STRONG ⬆ <dark_gray>(" + power + ")";
+        if (power >= 20) return "<yellow>⬆ STRONG ⬆ <dark_gray>(" + power + ")";
+        if (power >= 12) return "<yellow>⬆ ABOVE AVERAGE ⬆ <dark_gray>(" + power + ")";
+        if (power >= 7) return "<green>➤ AVERAGE ➤ <dark_gray>(" + power + ")";
+        if (power >= 4) return "<gray>➤ BELOW AVERAGE ➤ <dark_gray>(" + power + ")";
+        if (power >= 2) return "<gray>▸ WEAK ▸ <dark_gray>(" + power + ")";
+        return "<gray>▸ VERY WEAK ▸ <dark_gray>(" + power + ")";
     }
 
     // =========================
@@ -208,7 +208,7 @@ public final class ReactorCommand {
 
         if (pending == null) {
             player.sendMessage(MessageUtil.parse(msg("pending_frame_magnet",
-                    "<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!")));
+                    "<red>First press SHIFT+RMB on the magnet frame!")));
             return;
         }
 
@@ -219,7 +219,7 @@ public final class ReactorCommand {
         // =========================
         if (loc.getBlock().getType() != Material.LODESTONE) {
             player.sendMessage(MessageUtil.parse(msg("magnet_lodestone_missing",
-                    "<red>Магнитный камень (LODESTONE) не найден!")));
+                    "<red>The lodestone (LODESTONE) was not found!")));
             ReactorManager.clearPendingAssembly(player);
             return;
         }
@@ -228,7 +228,7 @@ public final class ReactorCommand {
         // CHECK IF ALREADY ACTIVE
         // =========================
         if (MagnetManager.isActive(loc)) {
-            player.sendMessage(MessageUtil.parse("<yellow>Магнит уже активен на этом месте!"));
+            player.sendMessage(MessageUtil.parse("<yellow>A magnet is already active at this place!"));
             ReactorManager.clearPendingAssembly(player);
             return;
         }

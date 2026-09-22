@@ -90,23 +90,23 @@ public class ReactorListener implements Listener {
         ReactorManager reactor = ReactorManager.getInstance();
         if (reactor == null) return;
 
-        // Check: part of a reactor?
-        Location reactorCenter = ReactorStructure.findCenter(clicked.getLocation());
-        if (reactorCenter != null && reactor.getReactorLocation() != null) {
+        // Check: part of a reactor (multi-reactor support)
+        ReactorManager clickedReactor = ReactorManager.getReactorForBlock(clicked.getLocation());
+        if (clickedReactor != null) {
             player.sendMessage(MessageUtil.parse(msg("reactor_stats_click",
-                    "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% mPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%")
-                    .replace("%id%", String.valueOf(reactor.getReactorId()))
-                    .replace("%temp%", String.valueOf(reactor.getCoreTemp()))
-                    .replace("%press%", String.format("%.3f", reactor.getShieldPress()))
-                    .replace("%spin%", String.format("%.2f", reactor.getCoreSpin()))
-                    .replace("%shield%", reactor.getCoreShInt() + "%")));
+                    "<dark_gray>[<red>D.F.C<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% MPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%")
+                    .replace("%id%", String.valueOf(clickedReactor.getReactorId()))
+                    .replace("%temp%", String.valueOf(clickedReactor.getCoreTemp()))
+                    .replace("%press%", String.format("%.3f", clickedReactor.getShieldPress()))
+                    .replace("%spin%", String.format("%.2f", clickedReactor.getCoreSpin()))
+                    .replace("%shield%", clickedReactor.getCoreShInt() + "%")));
             return;
         }
 
         // Check: an active magnet?
         if (MagnetStructure.isActive(clicked.getLocation())) {
             player.sendMessage(MessageUtil.parse(msg("magnet_already_active",
-                    "<yellow>Магнит уже активен на этом месте!")));
+                    "<yellow>A magnet is already active at this place!")));
             return;
         }
 
@@ -118,11 +118,11 @@ public class ReactorListener implements Listener {
                     ? msg("lightning_status_on", "<green>✔ On")
                     : msg("lightning_status_off", "<red>❌ Off"));
             player.sendMessage(MessageUtil.parse(msg("lightning_status_click",
-                    "<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Активна <dark_gray>| <white>%coords% <dark_gray>[%status%<dark_gray>]")
+                    "<dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Active <dark_gray>| <white>%coords% <dark_gray>[%status%<dark_gray>]")
                     .replace("%coords%", coords(lightningCenter))
                     .replace("%status%", status)));
             player.sendMessage(MessageUtil.parse(msg("lightning_status_hint",
-                    "<dark_gray>┃ <gray>SHIFT+ПКМ по рамке — включить/выключить")));
+                    "<dark_gray>┃ <gray>SHIFT+RMB on the frame — toggle on/off")));
             return;
         }
 
@@ -154,22 +154,21 @@ public class ReactorListener implements Listener {
             LightningManager.disassemble(lightningCenter);
             if (player != null) {
                 player.sendMessage(MessageUtil.parse(msg("lightning_broken",
-                        "<yellow>⚡ Структура молний разрушена и деактивирована! <dark_gray>[<gray>%coords%<dark_gray>]")
+                        "<yellow>⚡ Lightning structure destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]")
                         .replace("%coords%", coords(lightningCenter))));
             }
             return;
         }
 
         // =========================
-        // ⚛ REACTOR: any block inside the structure → damage report
+        // ⚛ REACTOR: any block inside a structure → damage report
         // (the reactor stays up in uncontrolled mode — no teardown here)
         // =========================
-        ReactorManager reactor = ReactorManager.getInstance();
+        ReactorManager reactor = ReactorManager.getReactorForBlock(loc);
         if (reactor == null) return;
 
         Location reactorLoc = reactor.getReactorLocation();
         if (reactorLoc == null) return;
-        if (!isWithinStructure(reactorLoc, loc)) return;
 
         // Anchor-relative cell of the broken block
         int dx = loc.getBlockX() - reactorLoc.getBlockX();
@@ -205,31 +204,27 @@ public class ReactorListener implements Listener {
         Block block = e.getBlock();
         Location loc = LocationUtil.normalize(block.getLocation());
 
-        ReactorManager reactor = ReactorManager.getInstance();
-        if (reactor == null) return;
+        // Block inside an ACTIVE reactor → repair report for that reactor
+        ReactorManager reactor = ReactorManager.getReactorForBlock(loc);
+        if (reactor != null) {
+            Location reactorLoc = reactor.getReactorLocation();
+            int dx = loc.getBlockX() - reactorLoc.getBlockX();
+            int dy = loc.getBlockY() - reactorLoc.getBlockY();
+            int dz = loc.getBlockZ() - reactorLoc.getBlockZ();
 
-        Location reactorLoc = reactor.getReactorLocation();
-
-        // No active reactor: block placement may re-validate the structure
-        if (reactorLoc == null) {
-            if (isReactorBlock(block.getType())) {
-                reactor.validateStructure();
+            ReactorDamageTracker.Category cat = ReactorDamageTracker.categoryOf(dx, dy, dz);
+            if (cat == null) {
+                cat = ReactorDamageTracker.Category.STRUCTURE;
             }
+            reactor.addRepair(cat);
             return;
         }
 
-        if (!isWithinStructure(reactorLoc, loc)) return;
-
-        // Anchor-relative cell of the placed block
-        int dx = loc.getBlockX() - reactorLoc.getBlockX();
-        int dy = loc.getBlockY() - reactorLoc.getBlockY();
-        int dz = loc.getBlockZ() - reactorLoc.getBlockZ();
-
-        ReactorDamageTracker.Category cat = ReactorDamageTracker.categoryOf(dx, dy, dz);
-        if (cat == null) {
-            cat = ReactorDamageTracker.Category.STRUCTURE;
+        // No reactor here: block placement may re-validate the (single) reactor
+        ReactorManager first = ReactorManager.getInstance();
+        if (first != null && isReactorBlock(block.getType())) {
+            first.validateStructure();
         }
-        reactor.addRepair(cat);
     }
 
 
@@ -243,7 +238,7 @@ public class ReactorListener implements Listener {
         Location frameLoc = LocationUtil.normalize(frame.getLocation());
         if (frameLoc == null) {
             player.sendMessage(MessageUtil.parse(msg("frame_error",
-                    "<dark_red>❌ <red>Не удалось определить позицию рамки!")));
+                    "<dark_red>❌ <red>Failed to resolve the frame position!")));
             return;
         }
 
@@ -265,7 +260,7 @@ public class ReactorListener implements Listener {
 
         if (lightningErr != null || reactorErr != null) {
             player.sendMessage(MessageUtil.parse(msg("template_errors_header",
-                    "<dark_red>⚠ <red>Ошибка загрузки NBT-шаблонов структур:")));
+                    "<dark_red>⚠ <red>Failed to load the structure NBT templates:")));
             if (lightningErr != null)
                 player.sendMessage(MessageUtil.parse(msg("template_error_line",
                                 "  <dark_gray>• <white>%structure%<dark_gray>: <red>%error%")
@@ -277,7 +272,7 @@ public class ReactorListener implements Listener {
                         .replace("%structure%", StructuresMessages.structureName("darkfusionreactor"))
                         .replace("%error%", reactorErr)));
             player.sendMessage(MessageUtil.parse(msg("template_errors_hint",
-                    "<gray>Проверьте консоль сервера для деталей.")));
+                    "<gray>Check the server console for details.")));
         }
 
         // =========================
@@ -299,12 +294,12 @@ public class ReactorListener implements Listener {
                     LightningManager.setEnabled(center, !enabled);
                     player.sendMessage(MessageUtil.parse(msg(enabled
                             ? "lightning_toggled_off" : "lightning_toggled_on",
-                            enabled ? "<red>❌ <white>Структура молний выключена!"
-                                    : "<green>✔ <white>Структура молний включена!")));
+                            enabled ? "<red>❌ <white>Lightning structure turned off!"
+                                    : "<green>✔ <white>Lightning structure turned on!")));
                     return;
                 }
                 player.sendMessage(MessageUtil.parse(msg("lightning_detected",
-                        "<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Обнаружена структура молний — сборка...")));
+                        "<dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Lightning structure detected — assembling...")));
                 LightningManager.assemble(center, frame, player);
                 return;
             }
@@ -327,13 +322,13 @@ public class ReactorListener implements Listener {
                     Location existing = reactor.getReactorLocation();
                     if (existing != null && existing.equals(center)) {
                         player.sendMessage(MessageUtil.parse(msg("reactor_already_active",
-                                "<yellow>Реактор уже активен на этом месте!")));
+                                "<yellow>The reactor is already active at this place!")));
                         return;
                     }
                 }
                 ReactorManager.setPendingAssembly(player, center, frame, "dark_synthesis");
                 player.sendMessage(MessageUtil.parse(msg("reactor_detected",
-                        "<dark_gray>[<red>Реактор<dark_gray>] <gray>Обнаружен реактор — сборка...")));
+                        "<dark_gray>[<red>Reactor<dark_gray>] <gray>Reactor detected — assembling...")));
                 ReactorCommand.assembleDarkSynthesis(player);
                 return;
             }
@@ -350,12 +345,12 @@ public class ReactorListener implements Listener {
         if (attachedLoc != null && attachedLoc.getBlock().getType() == Material.LODESTONE) {
             if (MagnetManager.isActive(attachedLoc)) {
                 player.sendMessage(MessageUtil.parse(msg("magnet_already_active",
-                        "<yellow>Магнит уже активен на этом месте!")));
+                        "<yellow>A magnet is already active at this place!")));
                 return;
             }
             ReactorManager.setPendingAssembly(player, attachedLoc, frame, "magnet");
             player.sendMessage(MessageUtil.parse(msg("magnet_detected",
-                    "<dark_gray>[<aqua>Магнит<dark_gray>] <gray>Обнаружен магнит — сборка...")));
+                    "<dark_gray>[<aqua>Magnet<dark_gray>] <gray>Magnet detected — assembling...")));
             ReactorCommand.assembleMagnet(player);
             return;
         }
@@ -371,7 +366,7 @@ public class ReactorListener implements Listener {
         if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Materials.WAXED_COPPER_GRATE) {
             if (BatteryManager.isActive(attachedLoc2)) {
                 player.sendMessage(MessageUtil.parse(msg("battery_already_active",
-                        "<yellow>Батарея уже собрана на этом месте!")));
+                        "<yellow>A battery is already assembled at this place!")));
                 return;
             }
             BatteryManager.assemble(attachedLoc2, player);
@@ -384,7 +379,7 @@ public class ReactorListener implements Listener {
         if (attachedLoc2 != null && attachedLoc2.getBlock().getType() == Material.REDSTONE_LAMP) {
             if (LightManager.isActive(attachedLoc2)) {
                 player.sendMessage(MessageUtil.parse(msg("lamp_already_active",
-                        "<yellow>Лампочка уже собрана на этом месте!")));
+                        "<yellow>A lamp is already assembled at this place!")));
                 return;
             }
             LightManager.assemble(attachedLoc2, player);
@@ -405,14 +400,14 @@ public class ReactorListener implements Listener {
             if (GeneratorManager.hasNearbyCable(generatorLoc)) {
                 if (GeneratorManager.isAssembled(generatorLoc)) {
                     player.sendMessage(MessageUtil.parse(msg("generator_already_active",
-                            "<yellow>Генератор уже собран на этом месте!")));
+                            "<yellow>A generator is already assembled at this place!")));
                     return;
                 }
                 GeneratorManager.assembleFromFrame(player, generatorLoc);
                 return;
             } else {
                 player.sendMessage(MessageUtil.parse(msg("generator_no_cable",
-                        "<dark_red>❌ <red>Нет кабеля рядом с плавильной печью!")));
+                        "<dark_red>❌ <red>No cable near the electric furnace!")));
                 return;
             }
         }
@@ -428,31 +423,31 @@ public class ReactorListener implements Listener {
 
         if (best == null) {
             player.sendMessage(MessageUtil.parse(msg("not_loaded",
-                    "<gray>NBT-шаблоны структур не загружены — проверьте консоль сервера.")));
+                    "<gray>Structure NBT templates are not loaded — check the server console.")));
             return;
         }
 
         player.sendMessage(MessageUtil.parse(msg("closest_match",
-                        "<gray>Больше всего похоже на: <yellow>%name% <gray>— совпадение <yellow>%percent%%")
+                        "<gray>Closest match: <yellow>%name% <gray>— <yellow>%percent%%<gray> match")
                 .replace("%name%", best.template().getDisplayName())
                 .replace("%percent%", String.valueOf(best.result().percent()))));
 
         if (best.result().fixes().isEmpty()) {
             player.sendMessage(MessageUtil.parse(msg("no_fixes_needed",
-                    "<gray>Критичных отличий не найдено — проверьте положение рамки.")));
+                    "<gray>No critical mismatches found — check the frame position.")));
             return;
         }
 
         int limit = Math.min(best.result().fixes().size(), 15);
         player.sendMessage(MessageUtil.parse(msg("fixes_header",
-                        "<gray>Чтобы собрать, нужно (%count% шт.):")
+                        "<gray>To assemble you need (%count% pcs.):")
                 .replace("%count%", String.valueOf(best.result().fixes().size()))));
         for (StructureTemplate.Fix fix : best.result().fixes().subList(0, limit)) {
             player.sendMessage(MessageUtil.parse("<dark_gray> • <gray>" + StructureTemplate.formatFix(fix, best.result().center())));
         }
         if (best.result().fixes().size() > limit) {
             player.sendMessage(MessageUtil.parse(msg("fixes_more",
-                            "<dark_gray> • <gray>...и ещё %count% исправлений")
+                            "<dark_gray> • <gray>...and %count% more fixes")
                     .replace("%count%", String.valueOf(best.result().fixes().size() - limit))));
         }
     }
