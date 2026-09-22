@@ -1177,6 +1177,7 @@ messages:
     pending_frame_reactor: "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"
     pending_frame_magnet: "<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!"
     magnet_lodestone_missing: "<red>Магнитный камень (LODESTONE) не найден!"
+    frame_missing: "<gray>Рамка не найдена над центральной лампой!"
     lightning_broken: "<yellow>⚡ Структура молний разрушена и деактивирована! <dark_gray>[<gray>%coords%<dark_gray>]"
     # Failed assembly
     not_recognized: "<red>❌ Error: Structure not recognized!"
@@ -1230,6 +1231,7 @@ messages_en:
     pending_frame_reactor: "<red>First press SHIFT+RMB on the reactor frame!"
     pending_frame_magnet: "<red>First press SHIFT+RMB on the magnet frame!"
     magnet_lodestone_missing: "<red>The lodestone (LODESTONE) was not found!"
+    frame_missing: "<gray>The item frame is missing above the central bulb!"
     lightning_broken: "<yellow>⚡ Lightning structure destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]"
     # Failed assembly
     not_recognized: "<red>❌ Error: Structure not recognized!"

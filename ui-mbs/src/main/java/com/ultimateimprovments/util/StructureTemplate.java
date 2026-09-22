@@ -332,12 +332,14 @@ public class StructureTemplate {
                 throw new IOException("Missing or invalid 'size' in structure file");
             }
 
-            // Compute top-center offset — all NBT block positions are relative to
+            // Compute the anchor offset — all NBT block positions are relative to
             // the bottom-north-west origin (0,0,0), but we need them relative to the
-            // top-center of the structure (where the item frame / connection point is).
-            int topCenterX = size[0] / 2;
-            int topCenterY = size[1] - 1;
-            int topCenterZ = size[2] / 2;
+            // anchor cell (where the item frame / connection point is). By default
+            // that is the top-center cell; per-template ANCHOR_ADJUSTMENTS shift it.
+            int[] anchorAdj = ANCHOR_ADJUSTMENTS.getOrDefault(name, new int[]{0, 0, 0});
+            int topCenterX = size[0] / 2 + anchorAdj[0];
+            int topCenterY = size[1] - 1 + anchorAdj[1];
+            int topCenterZ = size[2] / 2 + anchorAdj[2];
 
             // Extract palette
             List<Object> paletteList = (List<Object>) root.get("palette");
@@ -519,6 +521,21 @@ public class StructureTemplate {
 
     /** Stores loading errors per template name (e.g. "reactor" → "Missing 'size'"). */
     private static final Map<String, String> templateErrors = new LinkedHashMap<>();
+
+    /**
+     * Per-template anchor adjustments relative to the top-center cell.
+     * The anchor is the template cell where the item frame is placed:
+     * all template offsets (and the runtime ReactorStructure key checks) are
+     * relative to it.
+     * <p>
+     * darkfusionreactor: the frame stands on the TOP FACE of the central top
+     * copper bulb — 0.5 blocks above it, one block below the control bulbs —
+     * i.e. in the free cell directly above the top-center bulb
+     * (template cell (5, 9, 4) for the 10×11×9 template).
+     */
+    private static final Map<String, int[]> ANCHOR_ADJUSTMENTS = Map.of(
+            "darkfusionreactor", new int[]{ 0, -1, 0 }
+    );
 
     /** Wall and standing sign materials of every wood type (interchangeable when matching). */
     private static final Set<Material> SIGN_TYPES = buildSignTypes();

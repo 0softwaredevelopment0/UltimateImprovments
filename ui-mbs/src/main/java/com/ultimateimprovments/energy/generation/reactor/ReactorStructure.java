@@ -2,11 +2,12 @@ package com.ultimateimprovments.energy.generation.reactor;
 
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.Materials;
+import com.ultimateimprovments.util.StructureTemplate;
+import com.ultimateimprovments.util.StructuresMessages;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 
@@ -14,47 +15,71 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reactor structure validation.
+ * Reactor structure validation — key functional blocks of the
+ * <b>Dark Fusion Reactor</b> (NBT template {@code darkfusionreactor.nbt}, 10×11×9).
  *
- * The reactor is a 5×6×6 structure (NBT-based).
- * The item frame goes ON THE TOP FACE of the upper core (polished_blackstone).
- * Center = frame position. All offsets are relative to the frame.
- * This class checks for the KEY functional blocks (not all blocks)
- * so the structure can be validated even with minor decoration differences.
+ * <p><b>Anchor:</b> the item frame stands on the TOP FACE of the central top copper
+ * bulb (template cell (5, 8, 4)) — 0.5 blocks above it, one block below the roof
+ * control bulbs, surrounded by the copper ring of the roof plate. The frame cell
+ * is template cell (5, 9, 4); all offsets below are relative to it:
+ * {@code offset = templatePos − (5, 9, 4)}.</p>
+ *
+ * <p>Key blocks (all verified against the NBT template):</p>
+ * <ul>
+ *   <li>Central top bulb (5,8,4) → (0,−1,0) — the block the frame is attached to</li>
+ *   <li>Tower mid bulbs (2,4,4)/(8,4,4) → (∓3,−5,0)</li>
+ *   <li>Roof control bulbs (y=9): x=1 → (−4,0,−4..4), x=3 → (−2,0,−4..2)</li>
+ *   <li>Fuel barrels: floor (5,0,4) → (0,−9,0), sides (1,4,4)/(9,4,4) → (∓4,−5,0)</li>
+ *   <li>Central grate (5,7,4) → (0,−2,0) — under the lightning-rod column</li>
+ *   <li>Levers (y=9): x=0 → (−5,0,−4..4), x=2 → (−3,0,−4..2)</li>
+ *   <li>Stats signs: wall (0,1..2,2..5) → (−5,−8..−7,−2..1), roof (1|3,10,·) → (−4|−2,1,·)</li>
+ *   <li>Floor slab (y=0) → 9×9 at y=−9</li>
+ * </ul>
+ *
+ * <p>This class checks the KEY functional blocks (not every block) so the structure
+ * can be validated even with minor decoration differences. Full cell-by-cell
+ * validation is done by the NBT template (see {@code ReactorCommand.validateReactorByTemplate});
+ * this validator is the fallback when the template is not loaded.</p>
  */
 public class ReactorStructure {
 
     // =========================
     // KEY FUNCTIONAL BLOCKS
-    // (relative to structure center = item frame block position)
+    // (relative to the anchor = item frame cell above the central top bulb)
     // =========================
 
-    // Cooling bulb (right side of reactor top)
-    private static final int[] BULB_COOL  = { 1, 0, -2 };
-    // Heating bulb (left side of reactor top)
-    private static final int[] BULB_HEAT  = { -1, 0, -2 };
-    // Shell integrity indicator (opposite heating bulb at Z=+2)
-    private static final int[] BULB_SH_INT  = { -1, 0, 2 };
-    // Case integrity indicator (opposite cooling bulb at Z=+2)
-    private static final int[] BULB_CASE_INT = { 1, 0, 2 };
-    // Diamond barrel (fuel input) at Y=-3
-    private static final int[] DIAMOND_BARREL = { 0, -3, -2 };
-    // Gold barrel (fuel input) at Y=-3
-    private static final int[] GOLD_BARREL = { 0, -3, 2 };
-    // Lever at Y=0 (heating control)
-    private static final int[] LEVER = { -1, 0, -3 };
-    // Cooling lever at Y=0
-    private static final int[] LEVER_COOL = { 1, 0, -3 };
-    // 3 wall signs on south face at Y=-4
-    private static final int[][] WALL_SIGNS = {
-        { -1, -4, -3 },
-        {  0, -4, -3 },
-        {  1, -4, -3 }
+    /** Central top bulb — the block the item frame is attached to. */
+    private static final int[] CENTRAL_BULB = { 0, -1, 0 };
+
+    /** Tower mid bulbs (inside the two parallel towers, y=4). */
+    private static final int[] BULB_WEST = { -3, -5, 0 };
+    private static final int[] BULB_EAST = {  3, -5, 0 };
+
+    /** Roof control bulbs (y=9): row x=1 (5 pcs) + row x=3 (4 pcs). */
+    private static final int[][] ROOF_BULBS = {
+            { -4, 0, -4 }, { -4, 0, -2 }, { -4, 0, 0 }, { -4, 0, 2 }, { -4, 0, 4 },
+            { -2, 0, -4 }, { -2, 0, -2 }, { -2, 0, 0 }, { -2, 0, 2 }
     };
-    // Upper core block at Y=-1 (polished blackstone)
-    private static final int[] UPPER_CORE = { 0, -1, 0 };
-    // Lower core block at Y=-5 (polished blackstone)
-    private static final int[] LOWER_CORE = { 0, -5, 0 };
+
+    /** Fuel barrels: center floor + two side barrels at mid-height. */
+    private static final int[] BARREL_FLOOR = {  0, -9, 0 };
+    private static final int[] BARREL_WEST  = { -4, -5, 0 };
+    private static final int[] BARREL_EAST  = {  4, -5, 0 };
+
+    /** Central grate under the lightning-rod column (5,7,4). */
+    private static final int[] FLOOR_GRATE = { 0, -2, 0 };
+
+    /** Levers (y=9): 5 on the front edge (x=0) + 4 between the bulb rows (x=2). */
+    private static final int[][] LEVERS = {
+            { -5, 0, -4 }, { -5, 0, -2 }, { -5, 0, 0 }, { -5, 0, 2 }, { -5, 0, 4 },
+            { -3, 0, -4 }, { -3, 0, -2 }, { -3, 0, 0 }, { -3, 0, 2 }
+    };
+
+    /** Stats signs on the front wall (y=1..2): Power Stats, Shield Stats, etc. */
+    private static final int[][] WALL_SIGNS = {
+            { -5, -8, -2 }, { -5, -8, -1 }, { -5, -8, 0 }, { -5, -8, 1 },
+            { -5, -7, -1 }, { -5, -7, 0 }, { -5, -7, 1 }
+    };
 
     // =========================
     // CHECK KEY BLOCKS ONLY (requires item frame)
@@ -75,50 +100,40 @@ public class ReactorStructure {
 
         Location base = LocationUtil.normalize(center);
 
-        // =========================
-        // 1. COPPER BULBS
-        // =========================
-        if (!isBlock(base, BULB_COOL,  Materials.WAXED_COPPER_BULB)) return false;
-        if (!isBlock(base, BULB_HEAT,  Materials.WAXED_COPPER_BULB)) return false;
-        // Integrity bulbs (required — opposite heat/cool bulbs)
-        if (!isBlock(base, BULB_SH_INT,  Materials.WAXED_COPPER_BULB)) return false;
-        if (!isBlock(base, BULB_CASE_INT, Materials.WAXED_COPPER_BULB)) return false;
+        // 1. Central bulb (frame attachment point)
+        if (!isBlock(base, CENTRAL_BULB, Materials.WAXED_COPPER_BULB)) return false;
 
-        // =========================
-        // 2. BARRELS (fuel input)
-        // =========================
-        if (!isBlock(base, DIAMOND_BARREL, Material.BARREL)) return false;
-        if (!isBlock(base, GOLD_BARREL,    Material.BARREL))    return false;
+        // 2. Tower mid bulbs
+        if (!isBlock(base, BULB_WEST, Materials.WAXED_COPPER_BULB)) return false;
+        if (!isBlock(base, BULB_EAST, Materials.WAXED_COPPER_BULB)) return false;
 
-        // =========================
-        // 2.5. CORE BLOCKS (upper and lower — polished blackstone)
-        // =========================
-        if (!isBlock(base, UPPER_CORE, Material.POLISHED_BLACKSTONE)) return false;
-        if (!isBlock(base, LOWER_CORE, Material.POLISHED_BLACKSTONE)) return false;
-
-        // =========================
-        // 3. LEVERS (optional — heating/cooling controlled by bulb redstone)
-        // =========================
-        if (!isBlockOrAir(base, LEVER, Material.LEVER)) return false;
-        if (!isBlockOrAir(base, LEVER_COOL, Material.LEVER)) return false;
-
-        // =========================
-        // 4. WALL SIGNS (south face)
-        // =========================
-        for (int[] pos : WALL_SIGNS) {
-            if (!isAnyWallSign(base, pos[0], pos[1], pos[2])) return false;
+        // 3. Roof control bulbs
+        for (int[] pos : ROOF_BULBS) {
+            if (!isBlock(base, pos, Materials.WAXED_COPPER_BULB)) return false;
         }
 
-        // =========================
-        // 5. STRUCTURE CHECK: verify the chamber walls exist
-        //    (check that there's a solid wall perimeter at Y=-2)
-        // =========================
-        if (!hasSolidWalls(base, -2)) return false;
-        if (!hasSolidFloor(base))     return false;
+        // 4. Fuel barrels
+        if (!isBlock(base, BARREL_FLOOR, Material.BARREL)) return false;
+        if (!isBlock(base, BARREL_WEST,  Material.BARREL)) return false;
+        if (!isBlock(base, BARREL_EAST,  Material.BARREL)) return false;
 
-        // =========================
-        // 6. ITEM FRAME on top of upper core (attached to block at 0,-1,0)
-        // =========================
+        // 5. Central grate under the rod column
+        if (!isBlock(base, FLOOR_GRATE, Materials.WAXED_COPPER_GRATE)) return false;
+
+        // 6. Levers
+        for (int[] pos : LEVERS) {
+            if (!isBlock(base, pos, Material.LEVER)) return false;
+        }
+
+        // 7. Stats signs on the front wall
+        for (int[] pos : WALL_SIGNS) {
+            if (!isAnySign(base, pos[0], pos[1], pos[2])) return false;
+        }
+
+        // 8. Floor slab: the whole 9×9 at y=-9 must be solid (no holes)
+        if (!hasSolidFloor(base)) return false;
+
+        // 9. Item frame on top of the central bulb
         if (requireFrame && !hasItemFrame(base)) return false;
 
         return true;
@@ -126,8 +141,8 @@ public class ReactorStructure {
 
     // =========================
     // FIND STRUCTURE CENTER (with validation)
-    // Uses BARREL as anchor.
-    // Barrel is at rel (0, -3, -2) from center, so center = (dx, dy+3, dz+2).
+    // Uses the side fuel barrels as anchor: they sit at (∓4,-5,0) relative to
+    // the anchor, i.e. 8 blocks apart on X. center = (wx+4, wy+5, wz).
     // =========================
     public static Location findCenter(Location entityLoc) {
         Location center = locateCenter(entityLoc);
@@ -139,8 +154,8 @@ public class ReactorStructure {
 
     // =========================
     // LOCATE CENTER (without full validation — barrel search only)
-    // Finds the diamond barrel and computes the center, but does NOT validate the whole structure.
-    // Needed for the assembly menu: show the reactor option,
+    // Finds a side fuel barrel and computes the anchor, but does NOT validate
+    // the whole structure. Needed for the assembly menu: show the reactor option,
     // with full validation happening on button click.
     // =========================
     public static Location locateCenter(Location entityLoc) {
@@ -151,16 +166,15 @@ public class ReactorStructure {
         World world = base.getWorld();
         int bx = base.getBlockX(), by = base.getBlockY(), bz = base.getBlockZ();
 
-        // Scan ±5 in X/Z, -7 to +3 in Y for barrel (diamond fuel barrel)
-        for (int x = bx - 5; x <= bx + 5; x++) {
-            for (int y = by - 7; y <= by + 3; y++) {
-                for (int z = bz - 5; z <= bz + 5; z++) {
-                    if (world.getBlockAt(x, y, z).getType() == Material.BARREL) {
-                        // Barrel at rel (0, -3, -2) → center = (x, y+3, z+2)
-                        // Verify that there's another barrel at (x, y, z+4) for gold
-                        if (world.getBlockAt(x, y, z + 4).getType() == Material.BARREL) {
-                            return new Location(world, x, y + 3, z + 2);
-                        }
+        // Scan ±8 in X/Z, -10 to +2 in Y for a barrel with a partner 8 blocks east
+        for (int x = bx - 8; x <= bx + 8; x++) {
+            for (int y = by - 10; y <= by + 2; y++) {
+                for (int z = bz - 8; z <= bz + 8; z++) {
+                    if (world.getBlockAt(x, y, z).getType() != Material.BARREL) continue;
+                    // Partner barrel 8 blocks east (the opposite side barrel)
+                    if (world.getBlockAt(x + 8, y, z).getType() == Material.BARREL) {
+                        // Anchor = (west barrel offset (-4,-5,0)) + (4, 5, 0)
+                        return new Location(world, x + 4, y + 5, z);
                     }
                 }
             }
@@ -170,8 +184,10 @@ public class ReactorStructure {
     }
 
     // =========================
-    // DETAILED VALIDATION WITH ERRORS
-    // Returns list of problems found. Empty list = valid structure.
+    // DETAILED VALIDATION WITH ERRORS (legacy fallback)
+    // Returns list of fix instructions. Empty list = valid structure.
+    // Used only when the NBT template is unavailable — the template check
+    // (cell-by-cell) is the primary validator.
     // =========================
     public static List<String> getValidationErrors(Location center) {
 
@@ -184,267 +200,74 @@ public class ReactorStructure {
 
         Location base = LocationUtil.normalize(center);
 
-        // =========================
-        // 1. COPPER BULBS
-        // =========================
-        checkBlockDetailed(errors, base, BULB_COOL, Materials.WAXED_COPPER_BULB,
-                "<gold>[1] Cooling bulb <yellow>(1, 0, -2)"
-                        + "<gray> — must be WAXED_COPPER_BULB at <white>"
-                        + locStr(base, BULB_COOL));
+        check(errors, base, CENTRAL_BULB, Materials.WAXED_COPPER_BULB);
+        check(errors, base, BULB_WEST, Materials.WAXED_COPPER_BULB);
+        check(errors, base, BULB_EAST, Materials.WAXED_COPPER_BULB);
 
-        checkBlockDetailed(errors, base, BULB_HEAT, Materials.WAXED_COPPER_BULB,
-                "<gold>[2] Heating bulb <yellow>(-1, 0, -2)"
-                        + "<gray> — must be WAXED_COPPER_BULB at <white>"
-                        + locStr(base, BULB_HEAT));
+        for (int[] pos : ROOF_BULBS) {
+            check(errors, base, pos, Materials.WAXED_COPPER_BULB);
+        }
 
-        checkBlockDetailed(errors, base, BULB_SH_INT, Materials.WAXED_COPPER_BULB,
-                "<gold>[3] Shell integrity bulb <yellow>(-1, 0, 2)"
-                        + "<gray> — must be WAXED_COPPER_BULB at <white>"
-                        + locStr(base, BULB_SH_INT));
+        check(errors, base, BARREL_FLOOR, Material.BARREL);
+        check(errors, base, BARREL_WEST, Material.BARREL);
+        check(errors, base, BARREL_EAST, Material.BARREL);
+        check(errors, base, FLOOR_GRATE, Materials.WAXED_COPPER_GRATE);
 
-        checkBlockDetailed(errors, base, BULB_CASE_INT, Materials.WAXED_COPPER_BULB,
-                "<gold>[4] Case integrity bulb <yellow>(1, 0, 2)"
-                        + "<gray> — must be WAXED_COPPER_BULB at <white>"
-                        + locStr(base, BULB_CASE_INT));
+        for (int[] pos : LEVERS) {
+            check(errors, base, pos, Material.LEVER);
+        }
 
-        // =========================
-        // 2. BARRELS (fuel input)
-        // =========================
-        checkBlockDetailed(errors, base, DIAMOND_BARREL, Material.BARREL,
-                "<gold>[5] Diamond barrel (fuel input) <yellow>(0, -3, -2)"
-                        + "<gray> — must be BARREL at <white>"
-                        + locStr(base, DIAMOND_BARREL));
-
-        checkBlockDetailed(errors, base, GOLD_BARREL, Material.BARREL,
-                "<gold>[6] Gold barrel (fuel input) <yellow>(0, -3, 2)"
-                        + "<gray> — must be BARREL at <white>"
-                        + locStr(base, GOLD_BARREL));
-
-        // =========================
-        // 2.5. CORE BLOCKS (upper and lower — polished blackstone)
-        // =========================
-        checkBlockDetailed(errors, base, UPPER_CORE, Material.POLISHED_BLACKSTONE,
-                "<gold>[5.5] Upper core <yellow>(0, -1, 0)"
-                        + "<gray> — must be POLISHED_BLACKSTONE at <white>"
-                        + locStr(base, UPPER_CORE));
-
-        checkBlockDetailed(errors, base, LOWER_CORE, Material.POLISHED_BLACKSTONE,
-                "<gold>[5.6] Lower core <yellow>(0, -5, 0)"
-                        + "<gray> — must be POLISHED_BLACKSTONE at <white>"
-                        + locStr(base, LOWER_CORE));
-
-        // =========================
-        // 3. LEVERS (optional)
-        // =========================
-        checkBlockDetailedOptional(errors, base, LEVER, Material.LEVER,
-                "<gold>[7] Heating lever <yellow>(-1, 0, -3)"
-                        + "<gray> — optional, but must be LEVER at <white>"
-                        + locStr(base, LEVER));
-
-        checkBlockDetailedOptional(errors, base, LEVER_COOL, Material.LEVER,
-                "<gold>[7.2] Cooling lever <yellow>(1, 0, -3)"
-                        + "<gray> — optional, but must be LEVER at <white>"
-                        + locStr(base, LEVER_COOL));
-
-        // =========================
-        // 4. WALL SIGNS (south face)
-        // =========================
-        for (int i = 0; i < WALL_SIGNS.length; i++) {
-            int[] pos = WALL_SIGNS[i];
-            int dx = pos[0], dy = pos[1], dz = pos[2];
-            Material actual = getBlock(base, dx, dy, dz);
-            if (!isAnyWallSign(actual)) {
-                String side = switch (i) {
-                    case 0 -> "left";
-                    case 1 -> "center";
-                    case 2 -> "right";
-                    default -> "";
-                };
-                errors.add("<gold>[8." + (i + 1) + "] Wall sign (" + side + ") <yellow>("
-                        + dx + ", " + dy + ", " + dz + ")"
-                        + "<gray> — not found at <white>" + locStr(base, pos)
-                        + "<gray>. Current block: <white>" + actual
-                        + "<gray>. Place any wall sign (OAK/DARK_OAK/BIRCH/...)");
+        for (int[] pos : WALL_SIGNS) {
+            Material actual = getBlock(base, pos[0], pos[1], pos[2]);
+            if (!isAnySign(actual)) {
+                errors.add(StructureTemplate.formatFixRelative(
+                        new StructureTemplate.Fix(pos[0], pos[1], pos[2], Material.ACACIA_WALL_SIGN, actual)));
             }
         }
 
-        // =========================
-        // 5. STRUCTURE CHECK: walls at Y=-2
-        // =========================
-        checkSolidWallsDetailed(errors, base);
-
-        // =========================
-        // 6. FLOOR CHECK
-        // =========================
         checkSolidFloorDetailed(errors, base);
 
-        // =========================
-        // 7. ITEM FRAME
-        // =========================
         if (!hasItemFrame(base)) {
-            errors.add("<gold>[11] ItemFrame <yellow>(0, 0, 0)"
-                    + "<gray> — not found on top of core <white>"
-                    + locStr(base, new int[]{0, 0, 0})
-                    + "<gray>. Place the item frame ON THE TOP FACE of the center block (polished blackstone)");
+            errors.add("<red>[frame] " + StructuresMessages.get("frame_missing",
+                    "<gray>Рамка не найдена над центральной лампой!"));
         }
 
         return errors;
     }
 
     // =========================
-    // DETAILED CHECK HELPERS
+    // CHECK HELPERS
     // =========================
-    private static String locStr(Location base, int[] pos) {
-        return "<white>[" + (base.getBlockX() + pos[0])
-                + " " + (base.getBlockY() + pos[1])
-                + " " + (base.getBlockZ() + pos[2]) + "]";
-    }
 
-    private static void checkBlockDetailed(List<String> errors, Location base, int[] pos,
-                                            Material expected, String desc) {
+    private static void check(List<String> errors, Location base, int[] pos, Material expected) {
         Material actual = getBlock(base, pos[0], pos[1], pos[2]);
         if (actual != expected) {
-            errors.add(desc
-                    + "<gray>. Сейчас: <white>" + actual
-                    + "<gray>. Нужно: <white>" + expected
-                    + "<gray>. " + getBlockAdvice(expected));
-        }
-    }
-
-    private static void checkBlockDetailedOptional(List<String> errors, Location base, int[] pos,
-                                                    Material expected, String desc) {
-        Material actual = getBlock(base, pos[0], pos[1], pos[2]);
-        if (actual != expected && actual != Material.AIR) {
-            errors.add(desc
-                    + "<gray>. Сейчас: <white>" + actual
-                    + "<gray>. Нужно: <white>" + expected + "<gray> или <white>AIR");
-        }
-    }
-
-    private static void checkSolidWallsDetailed(List<String> errors, Location base) {
-        int relY = -2;
-        int[][] checkPositions = {
-                { -2, relY, -2 }, {  0, relY, -2 }, {  2, relY, -2 },
-                { -2, relY,  2 }, {  0, relY,  2 }, {  2, relY,  2 },
-                { -2, relY,  0 },
-                {  2, relY,  0 },
-        };
-
-        String[] wallNames = {
-                "north wall (corner)", "north wall (center)", "north wall (corner)",
-                "south wall (corner)", "south wall (center)", "south wall (corner)",
-                "west wall (center)",
-                "east wall (center)",
-        };
-
-        for (int i = 0; i < checkPositions.length; i++) {
-            int dx = checkPositions[i][0], dy = checkPositions[i][1], dz = checkPositions[i][2];
-            Material mat = getBlock(base, dx, dy, dz);
-            if (mat == Material.GLASS) continue;
-            if (mat == Material.AIR) {
-                errors.add("<gold>[9." + (i + 1) + "] Reactor wall (" + wallNames[i] + ") <yellow>("
-                        + dx + ", " + dy + ", " + dz + ")"
-                        + "<gray> — empty (AIR) at <white>" + locStr(base, checkPositions[i])
-                        + "<gray>. Place any solid block");
-                continue;
-            }
-            if (isCopperBlock(mat)) continue;
-            if (mat == Materials.WAXED_CHISELED_COPPER) continue;
-            if (mat == Material.DIAMOND_BLOCK) continue;
-            if (mat == Material.GOLD_BLOCK) continue;
-            if (mat == Material.BARREL) continue;
-            if (mat == Material.END_ROD) continue;
-            errors.add("<gold>[9." + (i + 1) + "] Reactor wall (" + wallNames[i] + ") <yellow>("
-                    + dx + ", " + dy + ", " + dz + ")"
-                    + "<gray> — invalid block <white>" + mat + "<gray> at <white>"
-                    + locStr(base, checkPositions[i])
-                    + "<gray>. Allowed: copper blocks, glass, WAXED_CHISELED_COPPER");
+            errors.add(StructureTemplate.formatFixRelative(
+                    new StructureTemplate.Fix(pos[0], pos[1], pos[2], expected, actual)));
         }
     }
 
     private static void checkSolidFloorDetailed(List<String> errors, Location base) {
-        int[][] floorPositions = {
-                { -2, -5, -2 }, { -1, -5, -2 }, { 0, -5, -2 }, { 1, -5, -2 }, { 2, -5, -2 },
-                { -2, -5,  0 }, {  0, -5,  0 }, {  2, -5,  0 },
-                { -2, -5,  2 }, {  0, -5,  2 }, {  2, -5,  2 },
-        };
-
-        for (int i = 0; i < floorPositions.length; i++) {
-            int dx = floorPositions[i][0], dy = floorPositions[i][1], dz = floorPositions[i][2];
-            Material mat = getBlock(base, dx, dy, dz);
-            if (mat == Material.AIR) {
-                errors.add("<gold>[10." + (i + 1) + "] Reactor floor <yellow>("
-                        + dx + ", " + dy + ", " + dz + ")"
-                        + "<gray> — empty (AIR) at <white>" + locStr(base, floorPositions[i])
-                        + "<gray>. Fill the reactor floor with any solid blocks");
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dz = -4; dz <= 4; dz++) {
+                Material mat = getBlock(base, dx, -9, dz);
+                if (mat == Material.AIR) {
+                    errors.add(StructureTemplate.formatFixRelative(
+                            new StructureTemplate.Fix(dx, -9, dz, Material.WAXED_COPPER_BLOCK, Material.AIR)));
+                }
             }
         }
-    }
-
-    private static String getBlockAdvice(Material expected) {
-        return switch (expected) {
-            case WAXED_COPPER_BULB -> "<green>Tip: waxed copper bulb (WAXED_COPPER_BULB)";
-            case BARREL -> "<green>Tip: barrel (BARREL) — fuel goes inside";
-            case LEVER -> "<green>Tip: lever (LEVER)";
-            case WAXED_CHISELED_COPPER -> "<green>Tip: waxed chiseled copper (WAXED_CHISELED_COPPER)";
-            case POLISHED_BLACKSTONE -> "<green>Tip: polished blackstone (POLISHED_BLACKSTONE)";
-            default -> "";
-        };
-    }
-
-    // =========================
-    // CHECK SOLID WALLS
-    // =========================
-    private static boolean hasSolidWalls(Location base, int relY) {
-
-        // The 5x5 interior is at rel X=-2..2, Z=-2..2
-        // Walls are at Z=-2, Z=+2, X=-2, X=+2
-        // Check corners and midpoints of each wall
-        int[][] checkPositions = {
-            // North wall (Z=-2)
-            { -2, relY, -2 }, {  0, relY, -2 }, {  2, relY, -2 },
-            // South wall (Z=+2)
-            { -2, relY,  2 }, {  0, relY,  2 }, {  2, relY,  2 },
-            // West wall (X=-2) — middle
-            { -2, relY,  0 },
-            // East wall (X=+2) — middle
-            {  2, relY,  0 },
-        };
-
-        for (int[] pos : checkPositions) {
-            Material mat = getBlock(base, pos[0], pos[1], pos[2]);
-            if (mat == Material.GLASS) continue; // glass windows allowed
-            if (mat == Material.AIR) return false;
-            if (isCopperBlock(mat)) continue;
-            // Allow waxed chiseled copper, diamond, gold, end rods inside
-            if (mat == Materials.WAXED_CHISELED_COPPER) continue;
-            if (mat == Material.DIAMOND_BLOCK) continue;
-            if (mat == Material.GOLD_BLOCK) continue;
-            if (mat == Material.BARREL) continue;
-            if (mat == Material.END_ROD) continue;
-            return false;
-        }
-
-        return true;
     }
 
     // =========================
     // CHECK SOLID FLOOR
     // =========================
     private static boolean hasSolidFloor(Location base) {
-
-        // 5x5 interior floor at Y=-5: rel X=-2..2, Z=-2..2
-        int[][] floorPositions = {
-            { -2, -5, -2 }, { -1, -5, -2 }, { 0, -5, -2 }, { 1, -5, -2 }, { 2, -5, -2 },
-            { -2, -5,  0 }, {  0, -5,  0 }, {  2, -5,  0 },
-            { -2, -5,  2 }, {  0, -5,  2 }, {  2, -5,  2 },
-        };
-
-        for (int[] pos : floorPositions) {
-            Material mat = getBlock(base, pos[0], pos[1], pos[2]);
-            if (mat == Material.AIR) return false;
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dz = -4; dz <= 4; dz++) {
+                if (getBlock(base, dx, -9, dz) == Material.AIR) return false;
+            }
         }
-
         return true;
     }
 
@@ -474,39 +297,24 @@ public class ReactorStructure {
         return getBlock(base, pos[0], pos[1], pos[2]) == expected;
     }
 
-    private static boolean isBlockOrAir(Location base, int[] pos, Material expected) {
-        Material actual = getBlock(base, pos[0], pos[1], pos[2]);
-        return actual == expected || actual == Material.AIR;
+    // =========================
+    // IS ANY SIGN (wall or standing, any wood type)
+    // =========================
+    private static boolean isAnySign(Material mat) {
+        return mat == Material.OAK_WALL_SIGN || mat == Material.OAK_SIGN
+            || mat == Material.DARK_OAK_WALL_SIGN || mat == Material.DARK_OAK_SIGN
+            || mat == Material.BIRCH_WALL_SIGN || mat == Material.BIRCH_SIGN
+            || mat == Material.SPRUCE_WALL_SIGN || mat == Material.SPRUCE_SIGN
+            || mat == Material.JUNGLE_WALL_SIGN || mat == Material.JUNGLE_SIGN
+            || mat == Material.ACACIA_WALL_SIGN || mat == Material.ACACIA_SIGN
+            || mat == Material.CHERRY_WALL_SIGN || mat == Material.CHERRY_SIGN
+            || mat == Material.MANGROVE_WALL_SIGN || mat == Material.MANGROVE_SIGN
+            || mat == Material.CRIMSON_WALL_SIGN || mat == Material.CRIMSON_SIGN
+            || mat == Material.WARPED_WALL_SIGN || mat == Material.WARPED_SIGN
+            || mat == Material.PALE_OAK_WALL_SIGN || mat == Material.PALE_OAK_SIGN;
     }
 
-    // =========================
-    // IS COPPER BLOCK
-    // =========================
-    private static boolean isCopperBlock(Material mat) {
-        return mat == Materials.WAXED_CUT_COPPER
-            || mat == Materials.WAXED_CHISELED_COPPER
-            || mat == Materials.WAXED_COPPER_BLOCK
-            || mat == Materials.WAXED_CUT_COPPER_STAIRS;
-    }
-
-    // =========================
-    // IS ANY SIGN
-    // =========================
-    private static boolean isAnyWallSign(Material mat) {
-        return mat == Material.OAK_WALL_SIGN
-            || mat == Material.DARK_OAK_WALL_SIGN
-            || mat == Material.BIRCH_WALL_SIGN
-            || mat == Material.SPRUCE_WALL_SIGN
-            || mat == Material.JUNGLE_WALL_SIGN
-            || mat == Material.ACACIA_WALL_SIGN
-            || mat == Material.CHERRY_WALL_SIGN
-            || mat == Material.MANGROVE_WALL_SIGN
-            || mat == Material.CRIMSON_WALL_SIGN
-            || mat == Material.WARPED_WALL_SIGN
-            || mat == Material.PALE_OAK_WALL_SIGN;
-    }
-
-    private static boolean isAnyWallSign(Location base, int dx, int dy, int dz) {
-        return isAnyWallSign(getBlock(base, dx, dy, dz));
+    private static boolean isAnySign(Location base, int dx, int dy, int dz) {
+        return isAnySign(getBlock(base, dx, dy, dz));
     }
 }

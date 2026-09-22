@@ -487,8 +487,9 @@ public class ReactorListener implements Listener {
         int dy = Math.abs(reactorLoc.getBlockY() - checkLoc.getBlockY());
         int dz = Math.abs(reactorLoc.getBlockZ() - checkLoc.getBlockZ());
 
-        // Structure is 5x6x6 from Y=-5 to Y=0 relative to frame
-        return dx <= 3 && dy <= 5 && dz <= 3;
+        // DFC is 10×11×9: X −5..4, Y −9..0, Z −4..4 relative to the anchor
+        // (the frame cell above the central top bulb)
+        return dx <= 5 && dy <= 9 && dz <= 4;
     }
 
     // =========================
