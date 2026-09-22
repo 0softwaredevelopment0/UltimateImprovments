@@ -86,6 +86,15 @@ public class ReactorConfig {
     private int shieldParticleRodCount;      // total END_ROD particles per tick
     private int shieldParticleDustCount;     // DUST particles in the core per tick
 
+    // Fuel system — consumption by core spin (100% = 1 gold ingot + 1 diamond / 10s)
+    private double fuelSpinMin;              // below this spin nothing is consumed
+    private double fuelWorkSpin;             // working point: base rate (95 000 RPS)
+    private double fuelOverSpin;             // over-spin threshold (100 000 RPS)
+    private double fuelBaseRate;             // %/s at the working point (5 = 1 unit / 10s)
+    private double fuelMinRate;              // 1% floor
+    private double fuelOverPer10k;           // +1% per 10 000 RPS above over-spin
+    private double fuelNoFuelSpinDecay;      // RPS lost per second when out of fuel
+
     // =========================
     // LASERS (roof controls)
     // Power Laser #1/#2 heat the core at power_laser_heat_rate C*/sec each
@@ -155,6 +164,13 @@ public class ReactorConfig {
         shieldParticleRodSpeed = cfg.getDouble("reactor.shield_particle_rod_speed", 0.8);
         shieldParticleRodCount = cfg.getInt("reactor.shield_particle_rod_count", 16);
         shieldParticleDustCount = cfg.getInt("reactor.shield_particle_dust_count", 16);
+        fuelSpinMin = cfg.getDouble("reactor.fuel_spin_min", 1000);
+        fuelWorkSpin = cfg.getDouble("reactor.fuel_work_spin", 95000);
+        fuelOverSpin = cfg.getDouble("reactor.fuel_over_spin", 100000);
+        fuelBaseRate = cfg.getDouble("reactor.fuel_base_rate", 5.0);
+        fuelMinRate = cfg.getDouble("reactor.fuel_min_rate", 1.0);
+        fuelOverPer10k = cfg.getDouble("reactor.fuel_over_per_10k", 1.0);
+        fuelNoFuelSpinDecay = cfg.getDouble("reactor.fuel_no_fuel_spin_decay", 500.0);
     }
 
     // =========================
@@ -215,4 +231,11 @@ public class ReactorConfig {
     public double getShieldParticleRodSpeed() { return shieldParticleRodSpeed; }
     public int getShieldParticleRodCount() { return shieldParticleRodCount; }
     public int getShieldParticleDustCount() { return shieldParticleDustCount; }
+    public double getFuelSpinMin() { return fuelSpinMin; }
+    public double getFuelWorkSpin() { return fuelWorkSpin; }
+    public double getFuelOverSpin() { return fuelOverSpin; }
+    public double getFuelBaseRate() { return fuelBaseRate; }
+    public double getFuelMinRate() { return fuelMinRate; }
+    public double getFuelOverPer10k() { return fuelOverPer10k; }
+    public double getFuelNoFuelSpinDecay() { return fuelNoFuelSpinDecay; }
 }

@@ -299,18 +299,19 @@ public class ReactorDisplay {
                 .replace("%spin%", spinPct), 0);
 
         // =========================
-        // FUEL STATS — status + fill of the two side fuel barrels
+        // FUEL STATS — status, average fill of both barrels (F), consumption (M)
         // =========================
-        boolean fuel = reactor.hasBarrelFuelPublic();
+        boolean fueled = reactor.hasBarrelFuelPublic();
+        String fuelM = String.format("%.1f", reactor.getFuelConsumptionPct());
         setSign(base, SIGN_FUEL, 0, msg("signs.fuel_stats_title", "=| Fuel Stats |="), 2);
         setSign(base, SIGN_FUEL, 1, color + msg("signs.fuel_stats_status", "S: %status%")
-                .replace("%status%", fuel
+                .replace("%status%", fueled
                         ? msg("signs.status_fueled", "Fueled")
                         : msg("signs.status_empty", "Empty")), 2);
         setSign(base, SIGN_FUEL, 2, color + msg("signs.fuel_stats_f", "F: %f%%")
-                .replace("%f%", fuel ? "100" : "0"), 2);
+                .replace("%f%", String.valueOf(reactor.getFuelFillPercent())), 2);
         setSign(base, SIGN_FUEL, 3, color + msg("signs.fuel_stats_m", "M: %m%%")
-                .replace("%m%", "0"), 2);
+                .replace("%m%", fuelM), 2);
 
         // =========================
         // FUSION STATS — recipe status + progress
@@ -325,7 +326,7 @@ public class ReactorDisplay {
         setSign(base, SIGN_FUSION, 2, color + msg("signs.fusion_stats_p", "P: %p%%")
                 .replace("%p%", String.valueOf(recipeInt)), 5);
         setSign(base, SIGN_FUSION, 3, color + msg("signs.fusion_stats_f", "F: %f%%")
-                .replace("%f%", fuel ? "100" : "0"), 5);
+                .replace("%f%", fueled ? "100" : "0"), 5);
 
         // =========================
         // SHIELD STRESS — heat %, pressure %, spin % (live from the shield)

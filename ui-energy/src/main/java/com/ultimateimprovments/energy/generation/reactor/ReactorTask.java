@@ -93,6 +93,13 @@ public class ReactorTask extends BukkitRunnable {
         }
 
         // =========================
+        // FUEL TICK (every 1s — spin-driven consumption)
+        // =========================
+        if (tick % INTENSITY_DOWN_INTERVAL == 0) {
+            reactor.tickFuel();
+        }
+
+        // =========================
         // INTENSITY RECOVERY (every 3s)
         // =========================
         if (tick % INTENSITY_UP_INTERVAL == 0) {

@@ -103,10 +103,10 @@ public final class ReactorCommand {
         reactor.setReactorLocation(pending.center());
 
         // =========================
-        // NAME THE FUEL BARRELS
+        // NAME THE FUEL BARRELS (west = gold, east = diamond)
         // =========================
-        nameBarrel(pending.center(), -4, -5, 0, "<gold>Топливо: <aqua>Алмазные блоки");
-        nameBarrel(pending.center(), 4, -5, 0, "<gold>Топливо: <yellow>Золотые блоки");
+        nameBarrel(pending.center(), -4, -5, 0, "<yellow>Golden fuel");
+        nameBarrel(pending.center(), 4, -5, 0, "<dark_aqua>Diamond fuel");
 
         player.sendMessage(MessageUtil.parse(msg("reactor_assembled",
                 "<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: %id%)")
