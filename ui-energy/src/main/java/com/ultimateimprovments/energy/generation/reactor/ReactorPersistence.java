@@ -33,14 +33,16 @@ public class ReactorPersistence {
                  self_destruct,
                  reactor_wear, energy_generated,
                  laser_started, laser_p1, laser_p2, laser_stab, laser_absorber,
-                 fusion_particles, fusion_collected)
+                 fusion_particles, fusion_collected,
+                 case_broken, case_temp, case_press, case_int)
                 VALUES (?, ?, ?, ?, ?,
                         ?, ?, ?, ?,
                         ?, ?, ?,
                         ?,
                         ?, ?,
                         ?, ?, ?, ?, ?,
-                        ?, ?)
+                        ?, ?,
+                        ?, ?, ?, ?)
             """)) {
 
             ps.setString(1, id);
@@ -66,6 +68,10 @@ public class ReactorPersistence {
             ps.setDouble(20, lp.length > 3 ? lp[3] : 0);
             ps.setDouble(21, state.getFusionParticles());
             ps.setDouble(22, state.getFusionCollected());
+            ps.setInt(23, state.isCaseBroken() ? 1 : 0);
+            ps.setInt(24, state.getCaseTemp());
+            ps.setDouble(25, state.getCasePress());
+            ps.setInt(26, state.getCaseIntegrity());
 
             ps.executeUpdate();
 
@@ -117,6 +123,14 @@ public class ReactorPersistence {
                     state.setFusionCollected(rs.getDouble("fusion_collected"));
                 } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load fusion state: " + e.getMessage());
+                }
+                try {
+                    state.setCaseBroken(rs.getInt("case_broken") == 1);
+                    state.setCaseTemp(rs.getInt("case_temp"));
+                    state.setCasePress(rs.getDouble("case_press"));
+                    state.setCaseIntegrity(rs.getInt("case_int"));
+                } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load case state: " + e.getMessage());
                 }
 
                 try { state.setReactorWear(rs.getInt("reactor_wear")); } catch (Exception e) {

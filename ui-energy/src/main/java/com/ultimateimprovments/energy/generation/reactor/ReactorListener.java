@@ -494,7 +494,7 @@ public class ReactorListener implements Listener {
     }
 
     // =========================
-    // SIGN CLICK → STATS
+    // SIGN CLICK → STATS / GLASS REPAIR
     // =========================
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onSignClick(PlayerInteractEvent e) {
@@ -504,17 +504,36 @@ public class ReactorListener implements Listener {
         Block block = e.getClickedBlock();
         if (block == null) return;
 
-        Material type = block.getType();
-        if (!isAnyWallSign(type)) return;
-
         Player player = e.getPlayer();
         ReactorManager reactor = ReactorManager.getInstance();
         if (reactor == null || !reactor.isValid()) return;
 
-        Location signLoc = block.getLocation();
         Location reactorLoc = reactor.getReactorLocation();
         if (reactorLoc == null) return;
-        if (!signLoc.getWorld().equals(reactorLoc.getWorld())) return;
+        if (!block.getLocation().getWorld().equals(reactorLoc.getWorld())) return;
+
+        Location clickedLoc = block.getLocation();
+
+        // =========================
+        // GLASS REPAIR — right-click a broken glass position with glass in hand
+        // =========================
+        if (reactor.isCaseBroken()
+                && player.getInventory().getItemInMainHand().getType() == Material.GLASS
+                && isWithinStructure(reactorLoc, clickedLoc)
+                && block.getType() == Material.AIR) {
+            e.setCancelled(true);
+            if (reactor.getCase().repair(reactorLoc)) {
+                ItemStack hand = player.getInventory().getItemInMainHand();
+                if (hand.getAmount() > 1) hand.setAmount(hand.getAmount() - 1);
+                else player.getInventory().setItemInMainHand(null);
+            }
+            return;
+        }
+
+        Material type = block.getType();
+        if (!isAnyWallSign(type)) return;
+
+        Location signLoc = block.getLocation();
 
         // Check if sign is within reactor structure bounds
         if (!isWithinStructure(reactorLoc, signLoc)) return;
