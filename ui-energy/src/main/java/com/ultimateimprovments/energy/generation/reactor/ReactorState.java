@@ -14,8 +14,9 @@ public class ReactorState {
     private String reactorId;
 
     // Core parameters
-    private int coreTemp;
-    private int corePress;
+    private int coreTemp;          // Core temperature, C* [-273 .. 2,000,000,000]
+    private double shieldPress;    // Shield pressure, MPa (≈10.01 at working temp 10M C*)
+    private double spin;           // Core spin, RPS (0.95x of the ten-million multiplier)
     private int coreShInt = 100;
     private int coreCaseTemp;
     private int coreCasePress;
@@ -62,7 +63,8 @@ public class ReactorState {
 
     // Display (smooth)
     private double displayCoreTemp;
-    private double displayCorePress;
+    private double displayShieldPress;
+    private double displaySpin;
     private double displayCoreShInt = 100;
     private double displayCoreCaseTemp;
     private double displayCoreCasePress;
@@ -102,9 +104,11 @@ public class ReactorState {
     public void addCoreTemp(int val) { coreTemp += val; }
     public void subtractCoreTemp(int val) { coreTemp -= val; }
 
-    public int getCorePress() { return corePress; }
-    public void setCorePress(int val) { corePress = val; }
-    public void addCorePress(int val) { corePress += val; }
+    public double getShieldPress() { return shieldPress; }
+    public void setShieldPress(double val) { shieldPress = Math.max(0, val); }
+
+    public double getSpin() { return spin; }
+    public void setSpin(double val) { spin = Math.max(0, val); }
 
     public int getCoreShInt() { return coreShInt; }
     public void setCoreShInt(int val) { coreShInt = Math.max(0, Math.min(100, val)); }
@@ -201,8 +205,10 @@ public class ReactorState {
     // =========================
     public double getDisplayCoreTemp() { return displayCoreTemp; }
     public void setDisplayCoreTemp(double val) { displayCoreTemp = val; }
-    public double getDisplayCorePress() { return displayCorePress; }
-    public void setDisplayCorePress(double val) { displayCorePress = val; }
+    public double getDisplayShieldPress() { return displayShieldPress; }
+    public void setDisplayShieldPress(double val) { displayShieldPress = val; }
+    public double getDisplaySpin() { return displaySpin; }
+    public void setDisplaySpin(double val) { displaySpin = val; }
     public double getDisplayCoreShInt() { return displayCoreShInt; }
     public void setDisplayCoreShInt(double val) { displayCoreShInt = val; }
     public double getDisplayCoreCaseTemp() { return displayCoreCaseTemp; }
@@ -222,7 +228,7 @@ public class ReactorState {
     // INT DISPLAY GETTERS
     // =========================
     public int getDisplayCoreTempInt() { return (int) Math.round(displayCoreTemp); }
-    public int getDisplayCorePressInt() { return (int) Math.round(displayCorePress); }
+    public int getDisplayShieldPressInt() { return (int) Math.round(displayShieldPress); }
     public int getDisplayCoreShIntInt() { return (int) Math.round(displayCoreShInt); }
     public int getDisplayCoreCaseTempInt() { return (int) Math.round(displayCoreCaseTemp); }
     public int getDisplayCoreCasePressInt() { return (int) Math.round(displayCoreCasePress); }
@@ -234,7 +240,8 @@ public class ReactorState {
     // =========================
     public void resetAll() {
         coreTemp = 0;
-        corePress = 0;
+        shieldPress = 0;
+        spin = 0;
         coreShInt = 100;
         coreCaseTemp = 0;
         coreCasePress = 0;
@@ -259,7 +266,8 @@ public class ReactorState {
         noFuelWarnTick = 0;
 
         displayCoreTemp = 0;
-        displayCorePress = 0;
+        displayShieldPress = 0;
+        displaySpin = 0;
         displayCoreShInt = 100;
         displayCoreCaseTemp = 0;
         displayCoreCasePress = 0;

@@ -28,12 +28,12 @@ public class ReactorPersistence {
              PreparedStatement ps = con.prepareStatement("""
                 INSERT OR REPLACE INTO reactors
                 (reactor_id, world, x, y, z,
-                 core_temp, core_press, core_sh_int,
+                 core_temp, shield_press, spin, core_sh_int,
                  core_case_temp, core_case_press, core_case_int,
                  recipe_time, self_destruct,
                  reactor_wear, energy_generated)
                 VALUES (?, ?, ?, ?, ?,
-                        ?, ?, ?,
+                        ?, ?, ?, ?,
                         ?, ?, ?,
                         ?, ?,
                         ?, ?)
@@ -45,15 +45,16 @@ public class ReactorPersistence {
             ps.setInt(4, loc.getBlockY());
             ps.setInt(5, loc.getBlockZ());
             ps.setInt(6, state.getCoreTemp());
-            ps.setInt(7, state.getCorePress());
-            ps.setInt(8, state.getCoreShInt());
-            ps.setInt(9, state.getCoreCaseTemp());
-            ps.setInt(10, state.getCoreCasePress());
-            ps.setInt(11, state.getCoreCaseInt());
-            ps.setInt(12, state.getRecipeTime());
-            ps.setInt(13, state.isSelfDestruct() ? 1 : 0);
-            ps.setInt(14, state.getReactorWear());
-            ps.setLong(15, state.getEnergyGenerated());
+            ps.setDouble(7, state.getShieldPress());
+            ps.setDouble(8, state.getSpin());
+            ps.setInt(9, state.getCoreShInt());
+            ps.setInt(10, state.getCoreCaseTemp());
+            ps.setInt(11, state.getCoreCasePress());
+            ps.setInt(12, state.getCoreCaseInt());
+            ps.setInt(13, state.getRecipeTime());
+            ps.setInt(14, state.isSelfDestruct() ? 1 : 0);
+            ps.setInt(15, state.getReactorWear());
+            ps.setLong(16, state.getEnergyGenerated());
 
             ps.executeUpdate();
 
@@ -89,8 +90,13 @@ public class ReactorPersistence {
 
                 state.setReactorLocation(loc);
                 state.setCoreTemp(rs.getInt("core_temp"));
-                state.setCorePress(rs.getInt("core_press"));
                 state.setCoreShInt(rs.getInt("core_sh_int"));
+                try { state.setShieldPress(rs.getDouble("shield_press")); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load shield_press: " + e.getMessage());
+                }
+                try { state.setSpin(rs.getDouble("spin")); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load spin: " + e.getMessage());
+                }
                 state.setCoreCaseTemp(rs.getInt("core_case_temp"));
                 state.setCoreCasePress(rs.getInt("core_case_press"));
                 state.setCoreCaseInt(rs.getInt("core_case_int"));

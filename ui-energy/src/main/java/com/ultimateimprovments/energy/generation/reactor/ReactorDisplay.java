@@ -1,24 +1,44 @@
 package com.ultimateimprovments.energy.generation.reactor;
 
 import com.ultimateimprovments.util.Materials;
+import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.StructuresMessages;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.block.data.type.CopperBulb;
 
 /**
- * Manages the reactor's visual effects, sounds and sign updates.
+ * Manages the reactor's visual effects, sounds and sign updates for the
+ * Dark Fusion Reactor (DFC, 10×11×9).
  * <p>
- * Extracted from {@link ReactorManager} to reduce class size (~1400 → ~700 lines).
+ * The stats wall (front glass, x=−5 relative to the anchor) holds 7 signs:
+ * Power Stats, Shield Stats, Fuel Stats, Fusion Stats (row y=−8),
+ * Shield Stress, Core Stats, Case Stats (row y=−7).
+ * The plugin rewrites their value lines every second; titles come from the
+ * config ({@code structures.signs.*}, RU/EN tabs).
  */
 public class ReactorDisplay {
 
     private final ReactorManager reactor;
 
     // =========================
+    // SIGN OFFSETS (relative to the anchor — frame cell above the central bulb)
+    // =========================
+    private static final int[] SIGN_POWER  = { -5, -8, -2 };
+    private static final int[] SIGN_SHIELD = { -5, -8, -1 };
+    private static final int[] SIGN_FUEL   = { -5, -8,  0 };
+    private static final int[] SIGN_FUSION = { -5, -8,  1 };
+    private static final int[] SIGN_STRESS = { -5, -7, -1 };
+    private static final int[] SIGN_CORE   = { -5, -7,  0 };
+    private static final int[] SIGN_CASE   = { -5, -7,  1 };
+
+    // =========================
     // SMOOTHED DISPLAY VALUES (interpolated toward actual values)
     // =========================
     private double displayCoreTemp;
-    private double displayCorePress;
+    private double displayShieldPress;
+    private double displaySpin;
     private double displayCoreShInt = 100;
     private double displayCoreCaseTemp;
     private double displayCoreCasePress;
@@ -38,26 +58,35 @@ public class ReactorDisplay {
     private int integrityWarnTick;
     private int soundTick;
 
+    // Cached sign text — signs are only rewritten when the content changes
+    private final String[][] signCache = new String[7][4];
+
     public ReactorDisplay(ReactorManager reactor) {
         this.reactor = reactor;
     }
 
     // =========================
     // SMOOTH DISPLAY TICK (every tick)
-    // Interpolates display values toward actual values for smooth sign updates.
     // =========================
     public void tickSmoothDisplay() {
         displayCoreTemp += (reactor.getCoreTemp() - displayCoreTemp) * SMOOTHING_FACTOR;
-        displayCorePress += (reactor.getCorePress() - displayCorePress) * SMOOTHING_FACTOR;
+        displayShieldPress += (reactor.getShieldPress() - displayShieldPress) * SMOOTHING_FACTOR;
+        displaySpin += (reactor.getCoreSpin() - displaySpin) * SMOOTHING_FACTOR;
         displayCoreShInt += (reactor.getCoreShInt() - displayCoreShInt) * SMOOTHING_FACTOR;
         displayCoreCaseTemp += (reactor.getCoreCaseTemp() - displayCoreCaseTemp) * SMOOTHING_FACTOR;
         displayCoreCasePress += (reactor.getCoreCasePress() - displayCoreCasePress) * SMOOTHING_FACTOR;
         displayCoreCaseInt += (reactor.getCoreCaseInt() - displayCoreCaseInt) * SMOOTHING_FACTOR;
         displayRecipeTime += (reactor.getRecipeTime() - displayRecipeTime) * SMOOTHING_FACTOR;
+        displayReactorWork();
+    }
 
+    private void displayReactorWork() {
         displayReactorWear += (reactor.getReactorWear() - displayReactorWear) * SMOOTHING_FACTOR;
 
-        double rawEnergyRate = reactor.getCoreTemp() > 1000 ? (double) reactor.getCoreTemp() * 0.9 * 20.0 : 0.0;
+        double workMult = reactor.getCoreWorkTemp() > 0
+                ? (double) reactor.getCoreTemp() / reactor.getCoreWorkTemp() : 0.0;
+        double rawEnergyRate = workMult > 0.0001
+                ? workMult * reactor.getEnergyRate() * 20.0 : 0.0;
         displayEnergyRate += (rawEnergyRate - displayEnergyRate) * SMOOTHING_FACTOR;
     }
 
@@ -68,7 +97,6 @@ public class ReactorDisplay {
         Location base = reactor.getReactorLocation();
         if (base == null) return;
 
-        // Beep when any integrity is damaged
         if (reactor.getCoreShInt() < 100 || reactor.getCoreCaseInt() < 100) {
             base.getWorld().playSound(
                     base, Sound.BLOCK_NOTE_BLOCK_PLING,
@@ -79,34 +107,33 @@ public class ReactorDisplay {
 
     // =========================
     // VISUAL TICK (every tick — particles)
-    // Core chamber center: Y=-3 (midpoint between upper WAXED_CHISELED_COPPER at Y=-1
-    // and lower WAXED_CHISELED_COPPER at Y=-5), X=0, Z=0.
+    // Core chamber center: (0.5, −5.5, 0.5) — middle of the twin towers.
     // =========================
     public void tickVisual() {
         Location base = reactor.getReactorLocation();
         if (base == null) return;
 
-        // Core center: (0.5, -2.5, 0.5) — midpoint between upper core (Y=-1) and lower core (Y=-5)
-        Location coreCenter = base.clone().add(0.5, -2.5, 0.5);
+        Location coreCenter = base.clone().add(0.5, -5.5, 0.5);
 
-        int coreTemp = reactor.getCoreTemp();
+        double workMult = reactor.getCoreWorkTemp() > 0
+                ? (double) reactor.getCoreTemp() / reactor.getCoreWorkTemp() : 0.0;
         boolean meltdown = reactor.isMeltdownCountdown();
         int meltdownTimer = reactor.getMeltdownTimer();
 
         // =========================
-        // CORE TEMPERATURE PARTICLES
+        // CORE TEMPERATURE PARTICLES (color by the ten-million multiplier)
         // =========================
         Particle.DustOptions color;
 
-        if (coreTemp <= 999) {
+        if (workMult <= 0.0001) {
             color = new Particle.DustOptions(Color.fromRGB(128, 128, 128), 1.25f);
-        } else if (coreTemp <= 1499) {
+        } else if (workMult <= 0.15) {
             color = new Particle.DustOptions(Color.fromRGB(128, 0, 0), 1.25f);
-        } else if (coreTemp <= 1999) {
+        } else if (workMult <= 0.3) {
             color = new Particle.DustOptions(Color.RED, 1.25f);
-        } else if (coreTemp <= 2999) {
+        } else if (workMult <= 0.6) {
             color = new Particle.DustOptions(Color.ORANGE, 1.25f);
-        } else if (coreTemp <= 3999) {
+        } else if (workMult <= 1.0) {
             color = new Particle.DustOptions(Color.YELLOW, 1.25f);
         } else {
             color = new Particle.DustOptions(Color.WHITE, 1.25f);
@@ -117,38 +144,30 @@ public class ReactorDisplay {
         );
 
         // =========================
-        // HIGH TEMP EFFECTS
+        // HIGH TEMP EFFECTS (near the working point and above)
         // =========================
-        if (coreTemp >= 1000 && coreTemp <= 4999) {
-            Location diamondLoc = base.clone().add(0, -2, -2);
-            if (diamondLoc.getBlock().getType() == Material.DIAMOND_BLOCK) {
-                base.getWorld().spawnParticle(
-                        Particle.END_ROD,
-                        coreCenter.clone().add(0, 0, 1),
-                        1, 0, 0, -1.5, 0.1
-                );
-                base.getWorld().spawnParticle(
-                        Particle.LAVA,
-                        coreCenter.clone().add(0, 0, -0.4),
-                        1, 0, 0, 0, 0
-                );
-                base.getWorld().spawnParticle(
-                        Particle.SCRAPE,
-                        coreCenter.clone().add(0, 0, 1),
-                        1, 0, 0, 2, 1
-                );
-                base.getWorld().spawnParticle(
-                        Particle.COPPER_FIRE_FLAME,
-                        coreCenter.clone().add(0, 0, 2.4),
-                        1, 0, 0, 0, 0.01f
-                );
-            }
+        if (workMult > 0.0001 && workMult <= 0.5) {
+            base.getWorld().spawnParticle(
+                    Particle.END_ROD,
+                    coreCenter.clone().add(0, 0, 1),
+                    1, 0, 0, -1.5, 0.1
+            );
+            base.getWorld().spawnParticle(
+                    Particle.LAVA,
+                    coreCenter.clone().add(0, 0, -0.4),
+                    1, 0, 0, 0, 0
+            );
+            base.getWorld().spawnParticle(
+                    Particle.COPPER_FIRE_FLAME,
+                    coreCenter.clone().add(0, 0, 2.4),
+                    1, 0, 0, 0, 0.01f
+            );
         }
 
         // =========================
         // BEACON HUM SOUND AT HIGH TEMP
         // =========================
-        if (coreTemp >= 1000 && !meltdown) {
+        if (workMult > 0.0001 && !meltdown) {
             base.getWorld().playSound(
                     coreCenter,
                     Sound.BLOCK_BEACON_POWER_SELECT,
@@ -164,17 +183,15 @@ public class ReactorDisplay {
             if (progress < 0) progress = 0;
             if (progress > 1) progress = 1;
 
-            int smokeCount = 8 + (int)(progress * 56);     // 8 → 64
-            int fireCount  = 2 + (int)(progress * 14);     // 2 → 16
+            int smokeCount = 8 + (int) (progress * 56);
+            int fireCount = 2 + (int) (progress * 14);
 
-            // Escalating smoke (at normal smoke position, 2.5 blocks above core)
             Location smokePos = coreCenter.clone().add(0, 2.5, 0);
             base.getWorld().spawnParticle(
                     Particle.CAMPFIRE_SIGNAL_SMOKE,
                     smokePos, smokeCount, 0.5, 0.5, 0.5, 0.15
             );
 
-            // Escalating fire
             base.getWorld().spawnParticle(
                     Particle.LAVA, coreCenter, fireCount, 0.3, 0.3, 0.3, 0
             );
@@ -182,19 +199,15 @@ public class ReactorDisplay {
                     Particle.FLAME, coreCenter, fireCount, 0.3, 0.3, 0.3, 0.05
             );
 
-            // Escalating hum
             float volume = 0.5f + progress * 4.0f;
-            float pitch  = 0.5f + progress * 0.8f;
+            float pitch = 0.5f + progress * 0.8f;
             base.getWorld().playSound(
                     coreCenter,
                     Sound.BLOCK_BEACON_AMBIENT,
                     SoundCategory.MASTER, volume, pitch
             );
 
-            // =========================
-            // SPARK PARTICLES AROUND CORE
-            // =========================
-            int sparkCount = 2 + (int)(progress * 8);  // 2 → 10
+            int sparkCount = 2 + (int) (progress * 8);
             base.getWorld().spawnParticle(
                     Particle.ELECTRIC_SPARK,
                     coreCenter, sparkCount, 1.0, 1.0, 1.0, 0
@@ -203,7 +216,7 @@ public class ReactorDisplay {
     }
 
     // =========================
-    // UPDATE DISPLAYS (signs)
+    // UPDATE DISPLAYS (7 stats signs, every second)
     // =========================
     public void updateDisplays() {
         Location base = reactor.getReactorLocation();
@@ -211,81 +224,160 @@ public class ReactorDisplay {
 
         displayTick++;
 
+        // Sign rewrite once per second (20 ticks) — smooth values keep ticking
+        if (displayTick % 20 != 0) return;
+
         boolean selfDestruct = reactor.isSelfDestructActive() || reactor.isMeltdownCountdown();
         boolean meltdownCdown = reactor.isMeltdownCountdown();
 
-        // =========================
-        // SELF-DESTRUCT: all lines empty, line 2 shows "No signal"
-        // =========================
+        int tInt = (int) Math.round(displayCoreTemp);
+        String press = String.format("%.3f", displayShieldPress);
+        String spin = String.format("%.2f", displaySpin);
+        int shIntInt = (int) Math.round(displayCoreShInt);
+        int caseTempInt = (int) Math.round(displayCoreCaseTemp);
+        String casePress = String.format("%.3f", displayCoreCasePress / 1000.0);
+        int caseIntInt = (int) Math.round(displayCoreCaseInt);
+        int recipeInt = (int) Math.round(displayRecipeTime);
+
+        // Flash red-white when any integrity is below 100%
+        boolean flashing = shIntInt < 100 || caseIntInt < 100;
+        String color = (flashing && (displayTick % 10 < 5)) ? "<red>" : "<white>";
+
         if (selfDestruct) {
             String blank = " ";
-            String noSignal = "<red>НЕТ СИГНАЛА";
+            String noSignal = "<red>NO SIGNAL";
             String meltdownLine = meltdownCdown
-                    ? "<red>Взрыв неизбежен!"
+                    ? "<red>DETONATION!"
                     : noSignal;
 
-            setSignText(base, 0, -4, -3, 0, blank);
-            setSignText(base, 0, -4, -3, 1, meltdownLine);
-            setSignText(base, 0, -4, -3, 2, blank);
-            setSignText(base, 0, -4, -3, 3, blank);
-
-            setSignText(base, -1, -4, -3, 0, blank);
-            setSignText(base, -1, -4, -3, 1, meltdownLine);
-            setSignText(base, -1, -4, -3, 2, blank);
-            setSignText(base, -1, -4, -3, 3, blank);
-
-            setSignText(base, 1, -4, -3, 0, blank);
-            setSignText(base, 1, -4, -3, 1, meltdownLine);
-            setSignText(base, 1, -4, -3, 2, blank);
-            setSignText(base, 1, -4, -3, 3, blank);
+            int[][] all = { SIGN_POWER, SIGN_SHIELD, SIGN_FUEL, SIGN_FUSION,
+                    SIGN_STRESS, SIGN_CORE, SIGN_CASE };
+            for (int i = 0; i < all.length; i++) {
+                setSignLine(base, all[i], 0, blank, i);
+                setSignLine(base, all[i], 1, meltdownLine, i);
+                setSignLine(base, all[i], 2, blank, i);
+                setSignLine(base, all[i], 3, blank, i);
+            }
             return;
         }
 
-        int displayCoreTempInt = (int) Math.round(displayCoreTemp);
-        int displayCorePressInt = (int) Math.round(displayCorePress);
-        int displayCoreShIntInt = (int) Math.round(displayCoreShInt);
-        int displayCoreCaseTempInt = (int) Math.round(displayCoreCaseTemp);
-        int displayCoreCasePressInt = (int) Math.round(displayCoreCasePress);
-        int displayCoreCaseIntInt = (int) Math.round(displayCoreCaseInt);
-        int displayRecipeTimeInt = (int) Math.round(displayRecipeTime);
-
-        // Flash all text red-white when any integrity is below 100%
-        boolean flashing = displayCoreShIntInt < 100 || displayCoreCaseIntInt < 100;
-        String color = (flashing && (displayTick % 10 < 5)) ? "<red>" : "<white>";
-
         // =========================
-        // CENTER SIGN — CORE DATA
+        // CORE STATS — T (C*), P (MPa), S (RPS)
         // =========================
-        setSignText(base, 0, -4, -3, 0, color + "Данные ядра");
-        setSignText(base, 0, -4, -3, 1, color + "T: " + displayCoreTempInt + " C*");
-        setSignText(base, 0, -4, -3, 2, color + "P: " + displayCorePressInt + " kPa");
-        setSignText(base, 0, -4, -3, 3, color + "I: " + displayCoreShIntInt + " %");
+        setSign(base, SIGN_CORE, 0, msg("signs.core_stats_title", "=| Core Stats |="), 3);
+        setSign(base, SIGN_CORE, 1, color + msg("signs.core_stats_temp", "T: %temp% C*")
+                .replace("%temp%", String.valueOf(tInt)), 3);
+        setSign(base, SIGN_CORE, 2, color + msg("signs.core_stats_press", "P: %press% mPa")
+                .replace("%press%", press), 3);
+        setSign(base, SIGN_CORE, 3, color + msg("signs.core_stats_spin", "S: %spin% RPS")
+                .replace("%spin%", spin), 3);
 
         // =========================
-        // LEFT SIGN — CASE DATA
+        // CASE STATS — case T, case P (MPa), case integrity
         // =========================
-        setSignText(base, -1, -4, -3, 0, color + "Данные корпуса");
-        setSignText(base, -1, -4, -3, 1, color + "T: " + displayCoreCaseTempInt + " C*");
-        setSignText(base, -1, -4, -3, 2, color + "P: " + displayCoreCasePressInt + " kPa");
-        setSignText(base, -1, -4, -3, 3, color + "I: " + displayCoreCaseIntInt + " %");
+        setSign(base, SIGN_CASE, 0, msg("signs.case_stats_title", "=| Case Stats |="), 4);
+        setSign(base, SIGN_CASE, 1, color + msg("signs.case_stats_temp", "T: %temp% C*")
+                .replace("%temp%", String.valueOf(caseTempInt)), 4);
+        setSign(base, SIGN_CASE, 2, color + msg("signs.case_stats_press", "P: %press% mPa")
+                .replace("%press%", casePress), 4);
+        setSign(base, SIGN_CASE, 3, color + msg("signs.case_stats_int", "I: %int%%")
+                .replace("%int%", String.valueOf(caseIntInt)), 4);
 
         // =========================
-        // RIGHT SIGN — RECIPE DATA
+        // SHIELD STATS — magnet status, shell integrity, shield status
         // =========================
-        setSignText(base, 1, -4, -3, 0, color + "Данные рецепта");
-        setSignText(base, 1, -4, -3, 1, color + "P: " + displayRecipeTimeInt + " %");
+        String shieldStatus = shIntInt >= 100
+                ? msg("signs.status_stable", "Stable")
+                : msg("signs.status_unstable", "Unstable");
+        setSign(base, SIGN_SHIELD, 0, msg("signs.shield_stats_title", "=| Shield Stats |="), 1);
+        setSign(base, SIGN_SHIELD, 1, color + msg("signs.shield_stats_magnet", "M: %status%")
+                .replace("%status%", msg("signs.status_offline", "Offline")), 1);
+        setSign(base, SIGN_SHIELD, 2, color + msg("signs.shield_stats_int", "I: %int%%")
+                .replace("%int%", String.valueOf(shIntInt)), 1);
+        setSign(base, SIGN_SHIELD, 3, color + msg("signs.shield_stats_status", "S: %status%")
+                .replace("%status%", shieldStatus), 1);
 
-        if (displayRecipeTimeInt <= 0) {
-            setSignText(base, 1, -4, -3, 2, color + "S: Бездействует");
-        } else if (displayRecipeTimeInt < reactor.getRecipeTimeMax()) {
-            setSignText(base, 1, -4, -3, 2, color + "S: Готовится");
-        } else {
-            setSignText(base, 1, -4, -3, 2, color + "S: Завершён");
+        // =========================
+        // POWER STATS — laser powers (0% until the laser system), spin %, cooling
+        // =========================
+        String spinPct = String.valueOf(Math.min(100, (int) Math.round(displaySpin / 0.95 * 100)));
+        setSign(base, SIGN_POWER, 0, msg("signs.power_stats_title", "=| Power Stats |="), 0);
+        setSign(base, SIGN_POWER, 1, color + msg("signs.power_stats_p1p2", "P1/P2: %p1%/%p2%%")
+                .replace("%p1%", "0").replace("%p2%", "0"), 0);
+        setSign(base, SIGN_POWER, 2, color + msg("signs.power_stats_spin", "S: %spin%%")
+                .replace("%spin%", spinPct), 0);
+        setSign(base, SIGN_POWER, 3, color + msg("signs.power_stats_cool", "C: %cool%%")
+                .replace("%cool%", String.valueOf(caseIntInt)), 0);
+
+        // =========================
+        // FUEL STATS — status + fill of the two side fuel barrels
+        // =========================
+        boolean fuel = reactor.hasBarrelFuelPublic();
+        setSign(base, SIGN_FUEL, 0, msg("signs.fuel_stats_title", "=| Fuel Stats |="), 2);
+        setSign(base, SIGN_FUEL, 1, color + msg("signs.fuel_stats_status", "S: %status%")
+                .replace("%status%", fuel
+                        ? msg("signs.status_fueled", "Fueled")
+                        : msg("signs.status_empty", "Empty")), 2);
+        setSign(base, SIGN_FUEL, 2, color + msg("signs.fuel_stats_f", "F: %f%%")
+                .replace("%f%", fuel ? "100" : "0"), 2);
+        setSign(base, SIGN_FUEL, 3, color + msg("signs.fuel_stats_m", "M: %m%%")
+                .replace("%m%", "0"), 2);
+
+        // =========================
+        // FUSION STATS — recipe status + progress
+        // =========================
+        String fusionStatus;
+        if (recipeInt <= 0) fusionStatus = msg("signs.status_idle", "Idle");
+        else if (recipeInt < reactor.getRecipeTimeMax()) fusionStatus = msg("signs.status_running", "Running");
+        else fusionStatus = msg("signs.status_done", "Done");
+        setSign(base, SIGN_FUSION, 0, msg("signs.fusion_stats_title", "=| Fusion Stats |="), 5);
+        setSign(base, SIGN_FUSION, 1, color + msg("signs.fusion_stats_status", "S: %status%")
+                .replace("%status%", fusionStatus), 5);
+        setSign(base, SIGN_FUSION, 2, color + msg("signs.fusion_stats_p", "P: %p%%")
+                .replace("%p%", String.valueOf(recipeInt)), 5);
+        setSign(base, SIGN_FUSION, 3, color + msg("signs.fusion_stats_f", "F: %f%%")
+                .replace("%f%", fuel ? "100" : "0"), 5);
+
+        // =========================
+        // SHIELD STRESS — heat %, pressure %, spin %
+        // =========================
+        String heatPct = String.valueOf(Math.min(100,
+                (int) Math.round(Math.max(0, displayCoreTemp) * 100.0 / Math.max(1, reactor.getCoreWorkTemp()))));
+        String pressPct = String.valueOf(Math.min(100,
+                (int) Math.round(displayShieldPress * 100.0 / 10.01)));
+        setSign(base, SIGN_STRESS, 0, msg("signs.stress_title", "=| Shield Stress |="), 6);
+        setSign(base, SIGN_STRESS, 1, color + msg("signs.stress_h", "H: %h%%")
+                .replace("%h%", heatPct), 6);
+        setSign(base, SIGN_STRESS, 2, color + msg("signs.stress_p", "P: %p%%")
+                .replace("%p%", pressPct), 6);
+        setSign(base, SIGN_STRESS, 3, color + msg("signs.stress_s", "S: %s%%")
+                .replace("%s%", spinPct), 6);
+    }
+
+    // =========================
+    // SIGN WRITE WITH CACHE
+    // =========================
+    private void setSign(Location base, int[] off, int line, String text, int cacheIdx) {
+        setSignLine(base, off, line, text, cacheIdx);
+    }
+
+    private void setSignLine(Location base, int[] off, int line, String text, int cacheIdx) {
+        if (signCache[cacheIdx][line] != null && signCache[cacheIdx][line].equals(text)) return;
+        signCache[cacheIdx][line] = text;
+
+        Block block = base.clone().add(off[0], off[1], off[2]).getBlock();
+        var state = block.getState();
+        if (state instanceof Sign signState) {
+            signState.line(line, MessageUtil.parse(text));
+            signState.update(true, false);
         }
+    }
 
-        // Reactor wear
-        int displayWear = (int) Math.round(displayReactorWear);
-        setSignText(base, 1, -4, -3, 3, color + "W: " + displayWear + " %");
+    // =========================
+    // LOCALIZED MESSAGE
+    // =========================
+    private static String msg(String key, String def) {
+        return StructuresMessages.get(key, def);
     }
 
     // =========================
@@ -312,23 +404,12 @@ public class ReactorDisplay {
     }
 
     // =========================
-    // HELPER: SET SIGN TEXT
-    // =========================
-    private void setSignText(Location base, int dx, int dy, int dz, int line, String text) {
-        Block block = base.clone().add(dx, dy, dz).getBlock();
-        var state = block.getState();
-        if (state instanceof org.bukkit.block.Sign signState) {
-            signState.line(line, com.ultimateimprovments.util.MessageUtil.parse(text));
-            signState.update(true, false);
-        }
-    }
-
-    // =========================
     // RESET DISPLAY VALUES
     // =========================
     public void resetDisplay() {
         displayCoreTemp = 0;
-        displayCorePress = 0;
+        displayShieldPress = 0;
+        displaySpin = 0;
         displayCoreShInt = 100;
         displayCoreCaseTemp = 0;
         displayCoreCasePress = 0;
@@ -341,14 +422,18 @@ public class ReactorDisplay {
         prevCooling = false;
         integrityWarnTick = 0;
         soundTick = 0;
+        for (int i = 0; i < signCache.length; i++) {
+            signCache[i] = new String[4];
+        }
     }
 
     // =========================
-    // INTEGRITY INDICATOR UPDATE
+    // INTEGRITY INDICATOR UPDATE — side barrels glow bulbs
+    // (old positions were part of the legacy geometry; kept as no-op-safe)
     // =========================
     public void updateIntegrityBulbs(Location base) {
-        setBulbLit(base, -1, 0, 2, reactor.getCoreShInt() < 100);
-        setBulbLit(base, 1, 0, 2, reactor.getCoreCaseInt() < 100);
+        setBulbLit(base, -3, -5, 0, reactor.getCoreShInt() < 100);
+        setBulbLit(base, 3, -5, 0, reactor.getCoreCaseInt() < 100);
     }
 
     // =========================
@@ -358,7 +443,8 @@ public class ReactorDisplay {
 
     // Smoothed display values for command output
     public int getDisplayCoreTemp() { return (int) Math.round(displayCoreTemp); }
-    public int getDisplayCorePress() { return (int) Math.round(displayCorePress); }
+    public double getDisplayShieldPress() { return displayShieldPress; }
+    public double getDisplayCoreSpin() { return displaySpin; }
     public int getDisplayCoreShInt() { return (int) Math.round(displayCoreShInt); }
     public int getDisplayCoreCaseTemp() { return (int) Math.round(displayCoreCaseTemp); }
     public int getDisplayCoreCasePress() { return (int) Math.round(displayCoreCasePress); }

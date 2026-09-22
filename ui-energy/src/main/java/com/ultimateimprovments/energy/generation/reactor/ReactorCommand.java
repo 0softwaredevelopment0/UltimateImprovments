@@ -115,8 +115,11 @@ public final class ReactorCommand {
                 "<dark_gray>┃ <gray>Температура ядра: <white>%temp% C*")
                 .replace("%temp%", String.valueOf(reactor.getCoreTemp()))));
         player.sendMessage(MessageUtil.parse(msg("reactor_info_pressure",
-                "<dark_gray>┃ <gray>Давление: <white>%press% kPa")
-                .replace("%press%", String.valueOf(reactor.getCorePress()))));
+                "<dark_gray>┃ <gray>Давление щита: <white>%press% mPa")
+                .replace("%press%", String.format("%.3f", reactor.getShieldPress()))));
+        player.sendMessage(MessageUtil.parse(msg("reactor_info_spin",
+                "<dark_gray>┃ <gray>Спин ядра: <white>%spin% RPS")
+                .replace("%spin%", String.format("%.2f", reactor.getCoreSpin()))));
         player.sendMessage(MessageUtil.parse(msg("reactor_info_shield",
                 "<dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%")
                 .replace("%shield%", reactor.getCoreShInt() + "%")));

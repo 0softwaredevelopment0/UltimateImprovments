@@ -94,10 +94,11 @@ public class ReactorListener implements Listener {
         Location reactorCenter = ReactorStructure.findCenter(clicked.getLocation());
         if (reactorCenter != null && reactor.getReactorLocation() != null) {
             player.sendMessage(MessageUtil.parse(msg("reactor_stats_click",
-                    "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% <dark_gray>| <white>I=%shield%%")
+                    "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% mPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%")
                     .replace("%id%", String.valueOf(reactor.getReactorId()))
                     .replace("%temp%", String.valueOf(reactor.getCoreTemp()))
-                    .replace("%press%", String.valueOf(reactor.getCorePress()))
+                    .replace("%press%", String.format("%.3f", reactor.getShieldPress()))
+                    .replace("%spin%", String.format("%.2f", reactor.getCoreSpin()))
                     .replace("%shield%", reactor.getCoreShInt() + "%")));
             return;
         }
