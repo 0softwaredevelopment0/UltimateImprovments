@@ -1,48 +1,113 @@
 package com.ultimateimprovments.util;
 
 import com.ultimateimprovments.mbs.UIMBS;
-import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.zip.GZIPInputStream;
 
 /**
  * Loads and matches Minecraft NBT structure files (.nbt) against the live world.
  * <p>
+ * Matching is <b>exact and full</b>: every cell of the template must match the world,
+ * including cells that must be AIR (interior chambers and the space above the top face).
+ * Block orientation (stairs, trapdoors, levers, signs) is ignored — only the material type counts.
+ * Wall signs of any wood type match each other.
+ * <p>
+ * When no exact match exists, {@link #bestMatch(Location, int)} finds the candidate
+ * center with the fewest mismatched cells and reports the match percentage together
+ * with concrete fix instructions (place/break/replace with coordinates).
+ * <p>
  * Usage:
  * <pre>
- *   StructureTemplate tmpl = StructureTemplate.loadFromNbt(plugin.getResource("NBT-Files/lightning_str.nbt"), "lightning");
- *   Location center = tmpl.findMatch(frameLocation, 5);
+ *   Location center = tmpl.findMatch(frameLocation, 5);          // exact match
+ *   MatchResult best = tmpl.bestMatch(frameLocation, 5);         // closest candidate
  * </pre>
  */
 public class StructureTemplate {
 
-    /** A single required block relative to the structure center. */
+    /** A single template cell relative to the structure center (top-center of the template). */
     public record BlockEntry(int dx, int dy, int dz, Material material) {}
 
+    /** One mismatch found while checking a candidate position. */
+    public record Fix(int dx, int dy, int dz, Material expected, Material actual) {}
+
+    /** Result of checking one candidate center position against a template. */
+    public record MatchResult(boolean matched, int total, int mismatches, Location center, List<Fix> fixes) {
+
+        /** Percentage of matching cells (0..100). */
+        public int percent() {
+            return total == 0 ? 100 : Math.max(0, Math.round((total - mismatches) * 100f / total));
+        }
+    }
+
+    /** The template whose shape is closest to what the player actually built. */
+    public record BestCandidate(StructureTemplate template, MatchResult result) {}
+
     private final String name;
+    private final String displayName;
+
+    /** Required solid blocks (non-air template cells). */
     private final List<BlockEntry> blocks = new ArrayList<>();
+    /** Cells that must be AIR in the world (interior chambers, space above the top face). */
+    private final List<BlockEntry> airBlocks = new ArrayList<>();
 
     /** Bounding-box of the structure (relative to center). Used for quick bounds check. */
     private int minX, maxX, minY, maxY, minZ, maxZ;
 
     public StructureTemplate(String name) {
+        this(name, name);
+    }
+
+    public StructureTemplate(String name, String displayName) {
         this.name = name;
+        this.displayName = displayName;
         minX = minY = minZ = Integer.MAX_VALUE;
         maxX = maxY = maxZ = Integer.MIN_VALUE;
     }
 
     public String getName() { return name; }
-    public List<BlockEntry> getBlocks() { return Collections.unmodifiableList(blocks); }
+    /** Human-readable Russian name (used in player messages). */
+    public String getDisplayName() { return displayName; }
+    public List<BlockEntry> getBlocks() { return java.util.Collections.unmodifiableList(blocks); }
+    public List<BlockEntry> getAirBlocks() { return java.util.Collections.unmodifiableList(airBlocks); }
+
+    /** Total number of checked cells (solid + required-air). */
+    public int totalCells() { return blocks.size() + airBlocks.size(); }
 
     private void addBlock(int dx, int dy, int dz, Material material) {
         blocks.add(new BlockEntry(dx, dy, dz, material));
+        trackBounds(dx, dy, dz);
+    }
+
+    private void addAir(int dx, int dy, int dz) {
+        airBlocks.add(new BlockEntry(dx, dy, dz, Material.AIR));
+        trackBounds(dx, dy, dz);
+    }
+
+    private void trackBounds(int dx, int dy, int dz) {
         if (dx < minX) minX = dx;
         if (dx > maxX) maxX = dx;
         if (dy < minY) minY = dy;
@@ -56,8 +121,37 @@ public class StructureTemplate {
     // =========================
 
     /**
+     * Check the whole structure at the given candidate center.
+     * Every template cell (solid AND air) is compared with the world.
+     */
+    public MatchResult checkAt(Location center) {
+        if (center == null || center.getWorld() == null || totalCells() == 0) {
+            return new MatchResult(false, Math.max(1, totalCells()), Math.max(1, totalCells()), center, List.of());
+        }
+
+        World world = center.getWorld();
+        int cx = center.getBlockX(), cy = center.getBlockY(), cz = center.getBlockZ();
+
+        List<Fix> fixes = new ArrayList<>();
+        for (BlockEntry b : blocks) {
+            Material actual = world.getBlockAt(cx + b.dx(), cy + b.dy(), cz + b.dz()).getType();
+            if (!materialMatches(b.material(), actual)) {
+                fixes.add(new Fix(b.dx(), b.dy(), b.dz(), b.material(), actual));
+            }
+        }
+        for (BlockEntry b : airBlocks) {
+            Material actual = world.getBlockAt(cx + b.dx(), cy + b.dy(), cz + b.dz()).getType();
+            if (actual != Material.AIR) {
+                fixes.add(new Fix(b.dx(), b.dy(), b.dz(), Material.AIR, actual));
+            }
+        }
+
+        return new MatchResult(fixes.isEmpty(), totalCells(), fixes.size(), center, List.copyOf(fixes));
+    }
+
+    /**
      * Scan within {@code radius} blocks of {@code origin} to find a position
-     * where EVERY block in this template matches the world.
+     * where EVERY template cell (solid and air) matches the world.
      *
      * @param origin  the reference location (usually the item frame position)
      * @param radius  search radius in blocks
@@ -69,40 +163,138 @@ public class StructureTemplate {
         World world = origin.getWorld();
         int fx = origin.getBlockX(), fy = origin.getBlockY(), fz = origin.getBlockZ();
 
-        // Pre-fetch the first block for a quick rejection (anchor)
+        // Quick reject: check the first solid block (anchor) first
         BlockEntry first = blocks.get(0);
 
-        // Scan all candidate center positions within the radius
         for (int cx = fx - radius; cx <= fx + radius; cx++) {
             for (int cy = fy - radius; cy <= fy + radius; cy++) {
                 for (int cz = fz - radius; cz <= fz + radius; cz++) {
 
-                    // Quick reject: check the first block (anchor) first
-                    Material anchor = world.getBlockAt(
-                            cx + first.dx(), cy + first.dy(), cz + first.dz()
-                    ).getType();
-                    if (anchor != first.material()) continue;
+                    Material anchor = world.getBlockAt(cx + first.dx(), cy + first.dy(), cz + first.dz()).getType();
+                    if (!materialMatches(first.material(), anchor)) continue;
 
-                    // Check ALL remaining template blocks
-                    boolean allMatch = true;
-                    for (BlockEntry entry : blocks) {
-                        Material actual = world.getBlockAt(
-                                cx + entry.dx(), cy + entry.dy(), cz + entry.dz()
-                        ).getType();
-                        if (actual != entry.material()) {
-                            allMatch = false;
-                            break;
-                        }
-                    }
-
-                    if (allMatch) {
-                        return new Location(world, cx, cy, cz);
-                    }
+                    MatchResult r = checkAt(new Location(world, cx, cy, cz));
+                    if (r.matched()) return new Location(world, cx, cy, cz);
                 }
             }
         }
 
         return null;
+    }
+
+    /**
+     * Scan within {@code radius} blocks of {@code origin} and return the candidate
+     * position with the FEWEST mismatches against this template (even if it does not match).
+     *
+     * @return the best {@link MatchResult}, or {@code null} if the template is empty
+     */
+    public MatchResult bestMatch(Location origin, int radius) {
+        if (origin == null || origin.getWorld() == null || totalCells() == 0) return null;
+
+        World world = origin.getWorld();
+        int fx = origin.getBlockX(), fy = origin.getBlockY(), fz = origin.getBlockZ();
+
+        MatchResult best = null;
+
+        // Cheap pruning sample: the first few solid blocks. If more of them are
+        // already mismatched than the best candidate's TOTAL mismatches, this
+        // position can never win — skip the expensive full check.
+        List<BlockEntry> sample = blocks.size() > 12 ? blocks.subList(0, 12) : blocks;
+
+        for (int cx = fx - radius; cx <= fx + radius; cx++) {
+            for (int cy = fy - radius; cy <= fy + radius; cy++) {
+                for (int cz = fz - radius; cz <= fz + radius; cz++) {
+
+                    if (best != null) {
+                        int sampleMismatch = 0;
+                        for (BlockEntry b : sample) {
+                            Material actual = world.getBlockAt(cx + b.dx(), cy + b.dy(), cz + b.dz()).getType();
+                            if (!materialMatches(b.material(), actual)) sampleMismatch++;
+                        }
+                        if (sampleMismatch >= best.mismatches()) continue;
+                    }
+
+                    MatchResult r = checkAt(new Location(world, cx, cy, cz));
+                    if (r.matched()) return r; // exact match — nothing better exists
+
+                    if (best == null || r.mismatches() < best.mismatches()) {
+                        best = r;
+                    }
+                }
+            }
+        }
+
+        return best;
+    }
+
+    /**
+     * Across ALL loaded templates find the one whose shape is closest to what
+     * stands near {@code origin} (fewest mismatched cells).
+     */
+    public static BestCandidate findBestCandidate(Location origin, int radius) {
+        BestCandidate best = null;
+        for (StructureTemplate t : templates.values()) {
+            MatchResult r = t.bestMatch(origin, radius);
+            if (r == null) continue;
+            if (best == null || r.mismatches() < best.result().mismatches()) {
+                best = new BestCandidate(t, r);
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Material comparison used everywhere in this class: exact match,
+     * except wall signs of different wood types which are interchangeable.
+     */
+    private static boolean materialMatches(Material expected, Material actual) {
+        if (expected == actual) return true;
+        if (SIGN_TYPES.contains(expected) && SIGN_TYPES.contains(actual)) return true;
+        return false;
+    }
+
+    // =========================
+    // FIX FORMATTING (Russian, for player messages)
+    // =========================
+
+    /**
+     * Format one mismatch as a concrete instruction with ABSOLUTE coordinates.
+     * Example: {@code поставить waxed copper bulb в [120, 65, -34]}
+     */
+    public static String formatFix(Fix f, Location base) {
+        if (base == null || base.getWorld() == null) {
+            return formatFixRelative(f);
+        }
+        String where = "<white>[" + (base.getBlockX() + f.dx())
+                + " " + (base.getBlockY() + f.dy())
+                + " " + (base.getBlockZ() + f.dz()) + "]";
+
+        if (f.expected() == Material.AIR) {
+            return "<red>сломать</red> <gray>" + blockName(f.actual()) + " <gray>в " + where;
+        }
+        if (f.actual() == Material.AIR) {
+            return "<green>поставить</green> <yellow>" + blockName(f.expected()) + " <gray>в " + where;
+        }
+        return "<yellow>заменить</yellow> <gray>" + blockName(f.actual())
+                + " <yellow>→ " + blockName(f.expected()) + " <gray>в " + where;
+    }
+
+    /** Same as {@link #formatFix(Fix, Location)} but with offsets relative to the center. */
+    public static String formatFixRelative(Fix f) {
+        String where = "<white>[" + f.dx() + ", " + f.dy() + ", " + f.dz() + "]";
+        if (f.expected() == Material.AIR) {
+            return "<red>сломать</red> <gray>" + blockName(f.actual()) + " <gray>в " + where;
+        }
+        if (f.actual() == Material.AIR) {
+            return "<green>поставить</green> <yellow>" + blockName(f.expected()) + " <gray>в " + where;
+        }
+        return "<yellow>заменить</yellow> <gray>" + blockName(f.actual())
+                + " <yellow>→ " + blockName(f.expected()) + " <gray>в " + where;
+    }
+
+    private static String blockName(Material m) {
+        if (m == null) return "?";
+        return m.name().toLowerCase(Locale.ROOT).replace('_', ' ');
     }
 
     // =========================
@@ -169,8 +361,8 @@ public class StructureTemplate {
                     ConsoleLogger.warn(
                             "[Structure] Unknown material in palette[" + i + "]: " + blockName
                     );
-                    // Use a placeholder — but this will cause matching to fail,
-                    // which is correct since we don't know what block this is.
+                    // Unknown blocks become AIR: they will be required to be air.
+                    // Matching against real builds will fail with a clear fix message.
                     mat = Material.AIR;
                 }
                 palette[i] = mat;
@@ -185,7 +377,7 @@ public class StructureTemplate {
                 throw new IOException("Missing 'blocks' in structure file");
             }
 
-            StructureTemplate tmpl = new StructureTemplate(name);
+            StructureTemplate tmpl = new StructureTemplate(name, displayNameFor(name));
 
             for (Object obj : blocksList) {
                 Map<String, Object> blockEntry = (Map<String, Object>) obj;
@@ -196,19 +388,24 @@ public class StructureTemplate {
                 if (state < 0 || state >= paletteSize) continue;
 
                 Material mat = palette[state];
-                if (mat == Material.AIR || mat == Material.STRUCTURE_VOID) continue; // skip air/void
+                if (mat == Material.STRUCTURE_VOID) continue; // void = not checked at all
 
                 // Shift from NBT origin to top-center offset
                 int dx = pos[0] - topCenterX;
                 int dy = pos[1] - topCenterY;
                 int dz = pos[2] - topCenterZ;
-                tmpl.addBlock(dx, dy, dz, mat);
+
+                if (mat == Material.AIR) {
+                    tmpl.addAir(dx, dy, dz); // air cells ARE checked — must be empty
+                } else {
+                    tmpl.addBlock(dx, dy, dz, mat);
+                }
             }
 
             ConsoleLogger.info(
                     "[Structure] Loaded template '" + name + "' with "
-                            + tmpl.blocks.size() + " non-air blocks, size "
-                            + size[0] + "×" + size[1] + "×" + size[2]
+                            + tmpl.blocks.size() + " solid + " + tmpl.airBlocks.size()
+                            + " air cells, size " + size[0] + "×" + size[1] + "×" + size[2]
             );
 
             return tmpl;
@@ -318,6 +515,30 @@ public class StructureTemplate {
     /** Stores loading errors per template name (e.g. "reactor" → "Missing 'size'"). */
     private static final Map<String, String> templateErrors = new LinkedHashMap<>();
 
+    /** Russian display names for known templates (auto-loaded files fall back to their file name). */
+    private static final Map<String, String> DISPLAY_NAMES = Map.of(
+            "reactor", "Реактор тёмного синтеза",
+            "lightning", "Громоотвод (структура молний)"
+    );
+
+    private static String displayNameFor(String name) {
+        return DISPLAY_NAMES.getOrDefault(name, name);
+    }
+
+    /** Wall sign materials of every wood type (interchangeable when matching). */
+    private static final Set<Material> SIGN_TYPES = buildSignTypes();
+
+    private static Set<Material> buildSignTypes() {
+        Set<Material> set = new HashSet<>();
+        for (String wood : Arrays.asList(
+                "oak", "dark_oak", "birch", "spruce", "jungle", "acacia",
+                "cherry", "mangrove", "bamboo", "crimson", "warped", "pale_oak")) {
+            Material m = Material.matchMaterial(wood + "_wall_sign", false);
+            if (m != null) set.add(m);
+        }
+        return set;
+    }
+
     /**
      * Get the loading error for a specific template, or null if it loaded successfully.
      */
@@ -326,19 +547,84 @@ public class StructureTemplate {
     }
 
     /**
-     * Load all NBT structure files bundled in the plugin resources.
+     * Load ALL .nbt structure files bundled in the plugin resources
+     * (auto-discovery: any new .nbt file added to NBT-Files/ is picked up
+     * on the next start / template reload without code changes).
      * Call this once during plugin startup (or reload).
      */
     public static void initAll() {
         templates.clear();
         templateErrors.clear();
 
-        loadTemplate("reactor",   "NBT-Files/reactorcore1.nbt");
-        loadTemplate("lightning", "NBT-Files/lightning_str.nbt");
+        int count = 0;
+        try {
+            File source = findCodeSourceLocation();
+            if (source != null && source.isFile()) {
+                count = loadFromJar(source);
+            } else if (source != null && source.isDirectory()) {
+                count = loadFromClassesDirectory(source.toPath());
+            } else {
+                ConsoleLogger.warn("[Structure] Could not locate plugin code source — no templates loaded");
+            }
+        } catch (Exception e) {
+            ConsoleLogger.error("[Structure] Failed to scan NBT-Files: " + e.getMessage());
+        }
 
-        ConsoleLogger.info(
-                "[Structure] Loaded " + templates.size() + " structure templates"
-        );
+        ConsoleLogger.info("[Structure] Loaded " + templates.size() + " structure templates");
+    }
+
+    private static File findCodeSourceLocation() {
+        try {
+            return new File(UIMBS.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /** Load every NBT-Files/*.nbt entry from the plugin JAR. */
+    private static int loadFromJar(File jarFile) throws IOException {
+        int count = 0;
+        try (JarFile jar = new JarFile(jarFile)) {
+            Enumeration<JarEntry> entries = jar.entries();
+            List<String> paths = new ArrayList<>();
+            while (entries.hasMoreElements()) {
+                JarEntry e = entries.nextElement();
+                String n = e.getName();
+                if (!e.isDirectory() && n.startsWith("NBT-Files/") && n.endsWith(".nbt")) {
+                    paths.add(n);
+                }
+            }
+            for (String path : paths) {
+                String fileName = path.substring(path.lastIndexOf('/') + 1);
+                loadTemplate(templateName(fileName), path);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** Load every *.nbt from build/resources/main/NBT-Files (IDE / exploded run). */
+    private static int loadFromClassesDirectory(Path classesDir) throws IOException {
+        Path dir = classesDir.resolve("NBT-Files");
+        if (!Files.isDirectory(dir)) return 0;
+
+        int count = 0;
+        List<Path> files = new ArrayList<>();
+        try (var stream = Files.walk(dir)) {
+            stream.filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".nbt")).forEach(files::add);
+        }
+        for (Path p : files) {
+            String fileName = p.getFileName().toString();
+            loadTemplate(templateName(fileName), "NBT-Files/" + fileName);
+            count++;
+        }
+        return count;
+    }
+
+    private static String templateName(String fileName) {
+        String n = fileName;
+        if (n.endsWith(".nbt")) n = n.substring(0, n.length() - 4);
+        return n;
     }
 
     private static void loadTemplate(String name, String resourcePath) {
