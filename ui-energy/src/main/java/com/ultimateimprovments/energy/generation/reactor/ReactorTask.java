@@ -44,6 +44,11 @@ public class ReactorTask extends BukkitRunnable {
         reactor.tickMeltdownCountdown();
 
         // =========================
+        // CONTROLLED SHUTDOWN CHECK (every tick while the structure is damaged)
+        // =========================
+        reactor.checkControlledShutdown();
+
+        // =========================
         // SOUND TICK (every 10 ticks)
         // =========================
         if (tick % SOUND_INTERVAL == 0) {

@@ -34,7 +34,8 @@ public class ReactorPersistence {
                  reactor_wear, energy_generated,
                  laser_started, laser_p1, laser_p2, laser_stab, laser_absorber,
                  fusion_particles, fusion_collected,
-                 case_broken, case_temp, case_press, case_int)
+                 case_broken, case_temp, case_press, case_int,
+                 structure_damaged)
                 VALUES (?, ?, ?, ?, ?,
                         ?, ?, ?, ?,
                         ?, ?, ?,
@@ -42,7 +43,8 @@ public class ReactorPersistence {
                         ?, ?,
                         ?, ?, ?, ?, ?,
                         ?, ?,
-                        ?, ?, ?, ?)
+                        ?, ?, ?, ?,
+                        ?)
             """)) {
 
             ps.setString(1, id);
@@ -72,6 +74,7 @@ public class ReactorPersistence {
             ps.setInt(24, state.getCaseTemp());
             ps.setDouble(25, state.getCasePress());
             ps.setInt(26, state.getCaseIntegrity());
+            ps.setInt(27, state.isStructureDamaged() ? 1 : 0);
 
             ps.executeUpdate();
 
@@ -141,6 +144,9 @@ public class ReactorPersistence {
                 }
                 try { state.setLaserStarted(rs.getInt("laser_started") == 1); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load laser_started: " + e.getMessage());
+                }
+                try { state.setStructureDamaged(rs.getInt("structure_damaged") == 1); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load structure_damaged: " + e.getMessage());
                 }
                 try {
                     state.setLaserPowers(new double[] {

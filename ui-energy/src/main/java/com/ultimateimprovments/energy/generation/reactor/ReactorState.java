@@ -60,6 +60,12 @@ public class ReactorState {
     private boolean laserStarted;
     private double[] laserPowers = new double[4];
 
+    private boolean structureDamaged;
+    private int damageWarnTick;
+
+    public boolean isStructureDamaged() { return structureDamaged; }
+    public void setStructureDamaged(boolean val) { structureDamaged = val; }
+
     // Tick counters
     private int pressTick;
     private int recipeTick;

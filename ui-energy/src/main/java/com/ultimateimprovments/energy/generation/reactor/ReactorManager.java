@@ -9,6 +9,7 @@ import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.StructuresMessages;
 
 import org.bukkit.*;
 import org.bukkit.block.Barrel;
@@ -41,6 +42,15 @@ public class ReactorManager {
     private final ReactorFuel fuel;
     private final ReactorFusion fusion;
     private final ReactorCase caseSys;
+
+    // =========================
+    // DAMAGE STATE (block-level tracking: glass / signs / bulbs / structure)
+    // A damaged reactor keeps running uncontrolled: lasers, sensors and sign
+    // panels are dead, the core coasts on its own decay — to shut it down you
+    // must cool it to 0 C* with the Stabilization Laser (or ride it out).
+    // =========================
+    private boolean structureDamaged = false;
+    private int damageWarnTick = 0;
 
     public static ReactorManager getInstance() {
         return instance;
@@ -299,6 +309,7 @@ public class ReactorManager {
         s.setReactorWear(r.reactorWear);
         s.setEnergyGenerated(r.energyGenerated);
         s.setLaserStarted(r.lasers.isStarted());
+        s.setStructureDamaged(r.structureDamaged);
         s.setLaserPowers(new double[] {
                 r.lasers.getPower(ReactorLasers.LASER_P1),
                 r.lasers.getPower(ReactorLasers.LASER_P2),
@@ -333,6 +344,7 @@ public class ReactorManager {
             instance.reactorWear = state.getReactorWear();
             instance.energyGenerated = state.getEnergyGenerated();
             instance.lasers.setStarted(state.isLaserStarted());
+            instance.structureDamaged = state.isStructureDamaged();
             // If the reactor was started before the restart, its shield was already
             // formed — otherwise the lasers would stay locked behind the WORKING gate.
             if (state.isLaserStarted()) {
@@ -399,6 +411,12 @@ public class ReactorManager {
     // =========================
     public void validateStructure() {
         if (reactorLocation == null) return;
+        if (structureDamaged) {
+            // A damaged structure is intentionally incomplete — do not tear the
+            // reactor down while it is running uncontrolled. Recovery happens
+            // through block repairs (addRepair) or a controlled shutdown.
+            return;
+        }
         boolean wasValid = valid;
         valid = ReactorStructure.isValid(reactorLocation, false);
         if (!valid && wasValid) {
@@ -417,9 +435,14 @@ public class ReactorManager {
         // West tower bulb = heater, east tower bulb = cooler (DFC 10×11×9 geometry)
         // =========================
         // LASERS — roof controls, per-tick ramp + smooth heating/cooling
+        // Damaged structure: the core can no longer be controlled — no lasers,
+        // no heat injection, no cooling; only the Stabilization Laser keeps
+        // working so the reactor can be shut down down to 0 C*.
         // =========================
-        lasers.tick(base);
-        shield.tick(base);
+        if (!structureDamaged) {
+            lasers.tick(base);
+            shield.tick(base);
+        }
 
         boolean heating = lasers.isHeating();
         boolean cooling = lasers.isCooling();
@@ -452,6 +475,18 @@ public class ReactorManager {
             display.setIntegrityWarnTick(0);
             if (coreShInt < 100) broadcast("<dark_red>⚠ <red>Целостность оболочки ядра нарушена!");
             if (caseSys.isBroken()) broadcast("<dark_red>⚠ <red>Стекло корпуса разбито!");
+        }
+
+        // =========================
+        // DAMAGE STATE WARNING (every 5 seconds while damaged)
+        // =========================
+        if (structureDamaged) {
+            damageWarnTick++;
+            if (damageWarnTick >= 100) {
+                damageWarnTick = 0;
+                broadcast(StructuresMessages.get("damage_uncontrolled",
+                        "<gold>❕ <white>Структура реактора повреждена — управление потеряно! Охладите ядро до <yellow>0 C*"));
+            }
         }
 
         // =========================
@@ -500,7 +535,11 @@ public class ReactorManager {
         // NATURAL TEMP DECAY — passive cooling 1 C*/tick (proportional cap
         // max(1, T/divisor) only applies above the working temperature)
         // =========================
-        if (coreTemp > coreTempMin) {
+        if (structureDamaged) {
+            // Damaged structure: plain 1 C*/tick passive decay — the proportional
+            // cap belongs to the sensors/cooling system, which are dead.
+            coreTemp = Math.max(coreTempMin, coreTemp - 1);
+        } else if (coreTemp > coreTempMin) {
             int decay = coreTemp > coreWorkTemp
                     ? Math.max(1, coreTemp / tempDecayDivisor)
                     : 1;
@@ -514,10 +553,11 @@ public class ReactorManager {
         prevShInt = coreShInt;
 
         // =========================
-        // ENERGY GENERATION
+        // ENERGY GENERATION (capped at 50% while the structure is damaged)
         // =========================
         if (coreTemp > coreWorkTemp / 100) {
-            double energyPerTick = ((double) coreTemp / coreWorkTemp) * energyRate;
+            double damageCap = structureDamaged ? 0.5 : 1.0;
+            double energyPerTick = ((double) coreTemp / coreWorkTemp) * energyRate * damageCap;
             energyRemainder += energyPerTick;
             int toGenerate = (int) energyRemainder;
             if (toGenerate > 0) {
@@ -594,6 +634,7 @@ public class ReactorManager {
     // =========================
     public void tickPressure() {
         if (!enabled || !valid || reactorLocation == null) return;
+        if (structureDamaged) return; // sensors are dead — pressure readouts frozen
 
         Location base = reactorLocation;
         Location coreCenter = base.clone().add(0.5, -5.5, 0.5);
@@ -623,6 +664,11 @@ public class ReactorManager {
     // =========================
     public void tickIntensityDown() {
         if (!enabled || !valid) return;
+        if (structureDamaged) {
+            // Sensors are dead — integrity decay/readouts frozen (keep the advancement check)
+            Bukkit.getScheduler().runTask(Main.getInstance(), this::checkDfcUnstable);
+            return;
+        }
 
         if (coreTemp >= shIntDecayTempThreshold && coreShInt > 0) {
             coreShInt = Math.max(0, coreShInt - shellIntDecayRate);
@@ -654,6 +700,7 @@ public class ReactorManager {
     // =========================
     public void tickFusion() {
         if (!enabled || !valid || reactorLocation == null) return;
+        if (structureDamaged) return; // sensors dead: no particle tracking, no case readouts
         fusion.tick(reactorLocation);
         caseSys.tick(reactorLocation);
     }
@@ -708,6 +755,7 @@ public class ReactorManager {
     // =========================
     public void tickMeltdownCountdown() {
         if (!meltdownCountdown || !enabled || !valid || reactorLocation == null) return;
+        if (structureDamaged) return; // sensor panels are dead — the core burns until it coasts to 0
 
         meltdownTimer--;
         if (meltdownTimer > 0 && meltdownTimer % 20 == 0) {
@@ -732,6 +780,7 @@ public class ReactorManager {
     // SMOOTH DISPLAY TICK (every tick)
     // =========================
     public void tickSmoothDisplay() {
+        if (structureDamaged) return; // sign panels are broken — nothing to smooth
         display.tickSmoothDisplay();
     }
 
@@ -739,6 +788,7 @@ public class ReactorManager {
     // VISUAL TICK (every tick - particles)
     // =========================
     public void tickVisual() {
+        if (structureDamaged) return; // sign panels are broken — no sensor-driven visuals
         display.tickVisual();
     }
 
@@ -815,9 +865,29 @@ public class ReactorManager {
         energyGenerated = 0;
         energyRemainder = 0;
         noFuelWarnTick = 0;
+        structureDamaged = false;
+        damageWarnTick = 0;
 
         display.resetDisplay();
 
+        saveToDb();
+    }
+
+    // =========================
+    // CORE SHUTDOWN — damaged structure, cooled to 0 C* (controlled stop)
+    // =========================
+    public void checkControlledShutdown() {
+        if (!structureDamaged || coreTemp > coreTempMin) return;
+
+        structureDamaged = false;
+        damageWarnTick = 0;
+        lasers.reset();
+        shield.reset();
+        coreShInt = 100;
+        shieldPress = 0;
+        spin = 0;
+        broadcast(StructuresMessages.get("damage_shutdown_complete",
+                "<green>✔ <white>Ядро охлаждено до <yellow>0 C* <white>— реактор остановлен и обесточен."));
         saveToDb();
     }
 
@@ -891,6 +961,8 @@ public class ReactorManager {
         fuel.reset();
         fusion.reset();
         caseSys.reset();
+        structureDamaged = false;
+        damageWarnTick = 0;
         coreShInt = 100;
         selfDestruct = false;
         sdText = 0;
@@ -928,6 +1000,9 @@ public class ReactorManager {
     public double getCoreCasePress() { return caseSys.getPress(); }
     public int getCoreCaseInt() { return caseSys.getIntegrity(); }
     public boolean isCaseBroken() { return caseSys.isBroken(); }
+
+    /** Whether the structure is damaged (uncontrolled-core mode). */
+    public boolean isStructureDamaged() { return structureDamaged; }
 
     public boolean isSelfDestruct() { return selfDestruct; }
     public boolean isMeltdownCountdown() { return meltdownCountdown; }
@@ -983,6 +1058,7 @@ public class ReactorManager {
 
     /** Broadcast to nearby players (used by the laser system). */
     public void broadcastRaw(String message) {
+        message = MessageUtil.PREFIX + "<dark_gray>[<yellow>DFC<dark_gray>] " + message;
         broadcast(message);
     }
 
@@ -994,6 +1070,7 @@ public class ReactorManager {
 
     /** Fuel tick (every second): consumption by spin + spin decay when dry. */
     public void tickFuel() {
+        if (structureDamaged) return; // spin is unmanaged while the structure is damaged
         if (!enabled || !valid || reactorLocation == null) return;
         fuel.ensureNamed(reactorLocation);
         fuel.tick(reactorLocation);
@@ -1039,7 +1116,7 @@ public class ReactorManager {
     // HELPER: BROADCAST
     // =========================
     private void broadcast(String message) {
-        String prefix = "<dark_red>Р.Т.С <dark_gray>» <white>";
+        String prefix = MessageUtil.PREFIX + "<dark_gray>[<yellow>DFC<dark_gray>] ";
         Player[] online = Bukkit.getOnlinePlayers().toArray(new Player[0]);
         for (Player player : online) {
             if (reactorLocation != null
@@ -1048,5 +1125,82 @@ public class ReactorManager {
                 player.sendMessage(MessageUtil.parse(prefix + message));
             }
         }
+    }
+
+    // =========================
+    // DAMAGE / REPAIR REPORTS (localized Attention! messages, [UI][DFC] prefix)
+    // =========================
+
+    /** Localized category name for the damage report placeholders. */
+    private static String catName(ReactorDamageTracker.Category cat) {
+        return switch (cat) {
+            case GLASS -> StructuresMessages.get("damage_cat_glass", "Case glass");
+            case SIGN -> StructuresMessages.get("damage_cat_sign", "Sign panel");
+            case BULB -> StructuresMessages.get("damage_cat_bulb", "Control bulb");
+            case STRUCTURE -> StructuresMessages.get("damage_cat_structure", "Structure");
+        };
+    }
+
+    /**
+     * Block-level damage report from the listener: one cell of the given
+     * category was broken inside the structure.
+     */
+    public void addDamage(ReactorDamageTracker.Category cat) {
+        if (reactorLocation == null) return;
+
+        ReactorDamageTracker.Snapshot snap = ReactorDamageTracker.scan(reactorLocation);
+        if (snap == null) return;
+
+        boolean wasDamaged = structureDamaged;
+        structureDamaged = true;
+        damageWarnTick = 0;
+
+        // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
+        int[] c = ReactorDamageTracker.count(reactorLocation, cat);
+        String body = StructuresMessages.get("damage_report",
+                "<gold>Attention! <white>%cat% damage detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>")
+                .replace("%cat%", catName(cat))
+                .replace("%left%", String.valueOf(c[0]))
+                .replace("%total%", String.valueOf(c[1]));
+        if (!wasDamaged) {
+            broadcast(StructuresMessages.get("damage_uncontrolled",
+                            "<gold>❕ <white>Структура реактора повреждена — управление потеряно! Охладите ядро до <yellow>0 C*"));
+        }
+        broadcast(body);
+        saveToDb();
+    }
+
+    /**
+     * Block-level repair report from the listener: a cell of the given category
+     * was restored. When every tracked template cell matches the world again,
+     * the structure counts as repaired.
+     */
+    public void addRepair(ReactorDamageTracker.Category cat) {
+        if (reactorLocation == null) return;
+
+        ReactorDamageTracker.Snapshot snap = ReactorDamageTracker.scan(reactorLocation);
+        if (snap == null) return;
+
+        // Case auto-repair: player restored glass into a broken case
+        if (cat == ReactorDamageTracker.Category.GLASS && caseSys.isBroken()) {
+            caseSys.checkAutoRepair(reactorLocation);
+        }
+
+        // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
+        int[] c = ReactorDamageTracker.count(reactorLocation, cat);
+        String body = StructuresMessages.get("repair_report",
+                "<gold>Attention! <white>%cat% repair detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>")
+                .replace("%cat%", catName(cat))
+                .replace("%left%", String.valueOf(c[0]))
+                .replace("%total%", String.valueOf(c[1]));
+        broadcast(body);
+
+        if (snap.allPresent() && structureDamaged) {
+            structureDamaged = false;
+            damageWarnTick = 0;
+            broadcast(StructuresMessages.get("structure_repaired",
+                    "<green>✔ <white>Структура реактора полностью восстановлена — управление возвращено."));
+        }
+        saveToDb();
     }
 }

@@ -248,6 +248,11 @@ public class DatabaseInit {
                 // Column already exists — this is fine
             }
             try {
+                st.execute("ALTER TABLE reactors ADD COLUMN structure_damaged INTEGER DEFAULT 0");
+            } catch (Exception ignored) {
+                // Column already exists — this is fine
+            }
+            try {
                 st.execute("ALTER TABLE reactors ADD COLUMN laser_p1 REAL DEFAULT 0");
             } catch (Exception ignored) {
                 // Column already exists — this is fine

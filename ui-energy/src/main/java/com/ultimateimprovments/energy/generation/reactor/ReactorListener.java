@@ -161,31 +161,27 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // ⚛ REACTOR: check reactor blocks
+        // ⚛ REACTOR: any block inside the structure → damage report
+        // (the reactor stays up in uncontrolled mode — no teardown here)
         // =========================
-        if (!isReactorBlock(block.getType())) {
-            return;
-        }
-
         ReactorManager reactor = ReactorManager.getInstance();
-
         if (reactor == null) return;
 
         Location reactorLoc = reactor.getReactorLocation();
-
         if (reactorLoc == null) return;
+        if (!isWithinStructure(reactorLoc, loc)) return;
 
-        // Check if broken block is within reactor structure
-        if (!isWithinStructure(reactorLoc, loc)) {
-            return;
-        }
+        // Anchor-relative cell of the broken block
+        int dx = loc.getBlockX() - reactorLoc.getBlockX();
+        int dy = loc.getBlockY() - reactorLoc.getBlockY();
+        int dz = loc.getBlockZ() - reactorLoc.getBlockZ();
 
-        reactor.setReactorLocation(null);
-        if (player != null) {
-            player.sendMessage(MessageUtil.parse(msg("reactor_broken",
-                    "<red>❕ Реактор разрушен и деактивирован! <dark_gray>[<gray>%coords%<dark_gray>]")
-                    .replace("%coords%", coords(reactorLoc))));
+        ReactorDamageTracker.Category cat = ReactorDamageTracker.categoryOf(dx, dy, dz);
+        if (cat == null) {
+            // Item frame cell or decoration outside the NBT template — treat as structure damage too
+            cat = ReactorDamageTracker.Category.STRUCTURE;
         }
+        reactor.addDamage(cat);
     }
 
     // =========================
@@ -209,20 +205,31 @@ public class ReactorListener implements Listener {
         Block block = e.getBlock();
         Location loc = LocationUtil.normalize(block.getLocation());
 
-        if (!isReactorBlock(block.getType())) {
+        ReactorManager reactor = ReactorManager.getInstance();
+        if (reactor == null) return;
+
+        Location reactorLoc = reactor.getReactorLocation();
+
+        // No active reactor: block placement may re-validate the structure
+        if (reactorLoc == null) {
+            if (isReactorBlock(block.getType())) {
+                reactor.validateStructure();
+            }
             return;
         }
 
-        ReactorManager reactor = ReactorManager.getInstance();
+        if (!isWithinStructure(reactorLoc, loc)) return;
 
-        if (reactor == null) return;
+        // Anchor-relative cell of the placed block
+        int dx = loc.getBlockX() - reactorLoc.getBlockX();
+        int dy = loc.getBlockY() - reactorLoc.getBlockY();
+        int dz = loc.getBlockZ() - reactorLoc.getBlockZ();
 
-        // If we already have a valid reactor, re-validate the structure
-        if (reactor.getReactorLocation() != null) {
-            reactor.validateStructure();
+        ReactorDamageTracker.Category cat = ReactorDamageTracker.categoryOf(dx, dy, dz);
+        if (cat == null) {
+            cat = ReactorDamageTracker.Category.STRUCTURE;
         }
-        // Note: Reactor is no longer auto-activated on block place.
-        // Player must use SHIFT+RMB on the item frame to open the assembly menu.
+        reactor.addRepair(cat);
     }
 
 
