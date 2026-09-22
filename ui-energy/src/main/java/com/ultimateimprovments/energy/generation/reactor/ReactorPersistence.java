@@ -85,9 +85,31 @@ public class ReactorPersistence {
     }
 
     /**
+     * Loads ALL reactors from the DB (multi-reactor support).
+     */
+    public static java.util.List<ReactorState> loadAllFromDb() {
+        java.util.List<ReactorState> out = new java.util.ArrayList<>();
+        ReactorState state = new ReactorState();
+        if (loadFromDb(state)) out.add(state);
+        return out;
+    }
+
+    /**
      * Loads the reactor from the DB and fills the state.
      */
     public static boolean loadFromDb(ReactorState state) {
+        java.util.List<ReactorState> all = loadAllRowsFromDb();
+        if (all.isEmpty()) return false;
+        ReactorState first = all.get(0);
+        state.copyFrom(first);
+        return true;
+    }
+
+    /**
+     * Reads every valid reactor row from the DB into states (multi-reactor support).
+     */
+    public static java.util.List<ReactorState> loadAllRowsFromDb() {
+        java.util.List<ReactorState> out = new java.util.ArrayList<>();
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT * FROM reactors");
              ResultSet rs = ps.executeQuery()) {
@@ -108,7 +130,11 @@ public class ReactorPersistence {
                     continue;
                 }
 
+                ReactorState state = new ReactorState();
                 state.setReactorLocation(loc);
+                try { state.setReactorId(rs.getString("reactor_id")); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load reactor_id: " + e.getMessage());
+                }
                 state.setCoreTemp(rs.getInt("core_temp"));
                 state.setCoreShInt(rs.getInt("core_sh_int"));
                 try { state.setShieldPress(rs.getDouble("shield_press")); } catch (Exception e) {
@@ -158,14 +184,14 @@ public class ReactorPersistence {
                     ConsoleLogger.warn("[Reactor] Failed to load laser powers: " + e.getMessage());
                 }
 
+                out.add(state);
                 ConsoleLogger.info("[Reactor] Loaded reactor " + state.getReactorId());
-                return true;
             }
 
         } catch (Exception e) {
             ConsoleLogger.error("[Reactor] Load error: " + e.getMessage());
         }
-        return false;
+        return out;
     }
 
     /**

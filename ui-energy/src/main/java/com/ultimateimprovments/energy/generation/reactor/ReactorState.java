@@ -66,6 +66,38 @@ public class ReactorState {
     public boolean isStructureDamaged() { return structureDamaged; }
     public void setStructureDamaged(boolean val) { structureDamaged = val; }
 
+    /** Copies all fields from another state (used by persistence load). */
+    public void copyFrom(ReactorState o) {
+        reactorLocation = o.reactorLocation;
+        valid = o.valid;
+        reactorId = o.reactorId;
+        coreTemp = o.coreTemp;
+        shieldPress = o.shieldPress;
+        spin = o.spin;
+        coreShInt = o.coreShInt;
+        coreCaseTemp = o.coreCaseTemp;
+        coreCasePress = o.coreCasePress;
+        coreCaseInt = o.coreCaseInt;
+        fusionParticles = o.fusionParticles;
+        fusionCollected = o.fusionCollected;
+        caseBroken = o.caseBroken;
+        caseTemp = o.caseTemp;
+        casePress = o.casePress;
+        caseIntegrity = o.caseIntegrity;
+        selfDestruct = o.selfDestruct;
+        energyGenerated = o.energyGenerated;
+        energyRemainder = o.energyRemainder;
+        reactorWear = o.reactorWear;
+        selfDestructActive = o.selfDestructActive;
+        selfDestructChatTimer = o.selfDestructChatTimer;
+        finalMeltdownActive = o.finalMeltdownActive;
+        meltdownCountdown = o.meltdownCountdown;
+        meltdownTimer = o.meltdownTimer;
+        laserStarted = o.laserStarted;
+        laserPowers = o.laserPowers == null ? new double[4] : o.laserPowers.clone();
+        structureDamaged = o.structureDamaged;
+    }
+
     // Tick counters
     private int pressTick;
     private int recipeTick;
@@ -111,6 +143,7 @@ public class ReactorState {
 
     public boolean isValid() { return valid && reactorLocation != null; }
     public String getReactorId() { return reactorId; }
+    public void setReactorId(String val) { reactorId = val; }
     public void setValid(boolean valid) { this.valid = valid; }
 
     // =========================

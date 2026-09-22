@@ -36,6 +36,9 @@ public class ReactorManager {
     // =========================
     private static ReactorManager instance;
 
+    /** Registry of all active reactors (multi-reactor support). */
+    private static java.util.List<ReactorManager> reactors;
+
     private final ReactorDisplay display;
     private final ReactorLasers lasers;
     private final ReactorShield shield;
@@ -56,12 +59,54 @@ public class ReactorManager {
     private boolean coreEmergencyStopped = false;
 
     public static ReactorManager getInstance() {
-        return instance;
+        // Kept for compatibility: the first (or only) reactor.
+        return (reactors == null || reactors.isEmpty()) ? instance : reactors.get(0);
+    }
+
+    /** All active reactors (multi-reactor support). */
+    public static java.util.List<ReactorManager> getReactors() {
+        return reactors == null ? java.util.List.of() : reactors;
+    }
+
+    /** Finds an active reactor whose anchor is exactly at the given center. */
+    public static ReactorManager getAt(Location center) {
+        if (center == null) return null;
+        Location n = LocationUtil.normalize(center);
+        for (ReactorManager r : getReactors()) {
+            if (r.reactorLocation != null && r.reactorLocation.equals(n)) return r;
+        }
+        return null;
+    }
+
+    /**
+     * Finds the reactor whose structure contains the given block location
+     * (DFC bounds: X ±5, Y −9..0, Z ±4 relative to the anchor).
+     */
+    public static ReactorManager getReactorForBlock(Location loc) {
+        if (loc == null || loc.getWorld() == null) return null;
+        for (ReactorManager r : getReactors()) {
+            Location rl = r.reactorLocation;
+            if (rl == null || !loc.getWorld().equals(rl.getWorld())) continue;
+            int dx = Math.abs(rl.getBlockX() - loc.getBlockX());
+            int dy = Math.abs(rl.getBlockY() - loc.getBlockY());
+            int dz = Math.abs(rl.getBlockZ() - loc.getBlockZ());
+            if (dx <= 5 && dy <= 9 && dz <= 4) return r;
+        }
+        return null;
+    }
+
+    /** Creates a fresh unregistered reactor instance (for a NEW assembly). */
+    public static ReactorManager createPending() {
+        ReactorManager r = new ReactorManager();
+        r.cfg = ReactorConfig.getInstance();
+        r.copyConfig();
+        return r;
     }
 
     public static void init() {
         if (instance != null) return; // prevent double-init
         instance = new ReactorManager();
+        reactors = new java.util.ArrayList<>();
         ReactorConfig.init();
         instance.cfg = ReactorConfig.getInstance();
         instance.copyConfig();
@@ -74,6 +119,7 @@ public class ReactorManager {
             saveAll();
             instance.setReactorLocation(null);
             instance = null;
+            if (reactors != null) reactors.clear();
         }
     }
 
@@ -284,10 +330,11 @@ public class ReactorManager {
     // DATABASE PERSISTENCE
     // =========================
     public static void saveAll() {
-        ReactorManager r = instance;
-        if (r == null) return;
-        ReactorState state = buildState(r);
-        ReactorPersistence.saveAll(state);
+        for (ReactorManager r : getReactors()) {
+            try { r.saveToDb(); } catch (Exception e) {
+                ConsoleLogger.error("[Reactor] Save error: " + e.getMessage());
+            }
+        }
     }
 
     public void saveToDb() {
@@ -297,6 +344,7 @@ public class ReactorManager {
 
     private static ReactorState buildState(ReactorManager r) {
         ReactorState s = new ReactorState();
+        s.setReactorId(r.reactorId);
         s.setReactorLocation(r.reactorLocation);
         s.setCoreTemp(r.coreTemp);
         s.setShieldPress(r.shieldPress);
@@ -322,45 +370,60 @@ public class ReactorManager {
     }
 
     public static void loadAll() {
-        if (instance == null) return;
-        ReactorState state = new ReactorState();
-        if (ReactorPersistence.loadFromDb(state)) {
-            instance.reactorLocation = state.getReactorLocation();
-            instance.valid = state.isValid();
-            instance.reactorId = state.getReactorId();
-            instance.coreTemp = state.getCoreTemp();
-            instance.shieldPress = state.getShieldPress();
-            instance.spin = state.getSpin();
-            instance.fusion.setParticles(state.getFusionParticles());
-            instance.fusion.setCollected(state.getFusionCollected());
-            instance.caseSys.setState(state.isCaseBroken()
-                    ? ReactorCase.State.BROKEN : ReactorCase.State.OK);
-            instance.caseSys.setTemp(state.getCaseTemp());
-            instance.caseSys.setPress(state.getCasePress());
-            instance.caseSys.setIntegrity(state.getCaseIntegrity());
-            if (instance.caseSys.isBroken()) {
-                instance.caseSys.repair(instance.reactorLocation);
-                instance.caseSys.setState(ReactorCase.State.BROKEN);
+        if (instance == null || reactors == null) return;
+        // Track existing locations so a second DB row for the same reactor is not loaded twice
+        for (ReactorState st : ReactorPersistence.loadAllFromDb()) {
+            Location loc = st.getReactorLocation();
+            if (loc == null) continue;
+
+            boolean exists = false;
+            for (ReactorManager r : reactors) {
+                if (r.reactorLocation != null && r.reactorLocation.equals(loc)) { exists = true; break; }
             }
-            instance.coreShInt = state.getCoreShInt();
-            instance.selfDestruct = state.isSelfDestruct();
-            instance.reactorWear = state.getReactorWear();
-            instance.energyGenerated = state.getEnergyGenerated();
-            instance.lasers.setStarted(state.isLaserStarted());
-            instance.structureDamaged = state.isStructureDamaged();
-            // If the reactor was started before the restart, its shield was already
-            // formed — otherwise the lasers would stay locked behind the WORKING gate.
-            if (state.isLaserStarted()) {
-                instance.shield.setState(ReactorShield.State.WORKING);
-                instance.shield.setIntegrity(100);
-            }
-            double[] lp = state.getLaserPowers();
-            if (lp != null && lp.length >= 4) {
-                instance.lasers.setPower(ReactorLasers.LASER_P1, lp[0]);
-                instance.lasers.setPower(ReactorLasers.LASER_P2, lp[1]);
-                instance.lasers.setPower(ReactorLasers.LASER_STAB, lp[2]);
-                instance.lasers.setPower(ReactorLasers.LASER_ABSORBER, lp[3]);
-            }
+            if (exists) continue;
+
+            ReactorManager r = new ReactorManager();
+            r.cfg = ReactorConfig.getInstance();
+            r.copyConfig();
+            reactors.add(r);
+            r.applyLoadedState(st);
+        }
+    }
+
+    /** Applies a DB-loaded state to this reactor instance (used by loadAll). */
+    private void applyLoadedState(ReactorState state) {
+        reactorLocation = state.getReactorLocation();
+        valid = state.isValid();
+        reactorId = state.getReactorId();
+        coreTemp = state.getCoreTemp();
+        shieldPress = state.getShieldPress();
+        spin = state.getSpin();
+        fusion.setParticles(state.getFusionParticles());
+        fusion.setCollected(state.getFusionCollected());
+        caseSys.setState(state.isCaseBroken() ? ReactorCase.State.BROKEN : ReactorCase.State.OK);
+        caseSys.setTemp(state.getCaseTemp());
+        caseSys.setPress(state.getCasePress());
+        caseSys.setIntegrity(state.getCaseIntegrity());
+        if (caseSys.isBroken()) {
+            caseSys.repair(reactorLocation);
+            caseSys.setState(ReactorCase.State.BROKEN);
+        }
+        coreShInt = state.getCoreShInt();
+        selfDestruct = state.isSelfDestruct();
+        reactorWear = state.getReactorWear();
+        energyGenerated = state.getEnergyGenerated();
+        lasers.setStarted(state.isLaserStarted());
+        structureDamaged = state.isStructureDamaged();
+        if (state.isLaserStarted()) {
+            shield.setState(ReactorShield.State.WORKING);
+            shield.setIntegrity(100);
+        }
+        double[] lp = state.getLaserPowers();
+        if (lp != null && lp.length >= 4) {
+            lasers.setPower(ReactorLasers.LASER_P1, lp[0]);
+            lasers.setPower(ReactorLasers.LASER_P2, lp[1]);
+            lasers.setPower(ReactorLasers.LASER_STAB, lp[2]);
+            lasers.setPower(ReactorLasers.LASER_ABSORBER, lp[3]);
         }
     }
 
@@ -383,9 +446,14 @@ public class ReactorManager {
             Location normalized = LocationUtil.normalize(loc);
             this.reactorLocation = normalized;
             this.valid = true;
-            this.reactorId = "REACTOR-" + normalized.getBlockX()
+            this.reactorId = "REACTOR-" + normalized.getWorld().getName() + "-"
+                    + normalized.getBlockX()
                     + "-" + normalized.getBlockY()
                     + "-" + normalized.getBlockZ();
+            // Register in the multi-reactor registry (multi-reactor support)
+            if (reactors != null && !reactors.contains(this)) {
+                reactors.add(this);
+            }
             // Marker entity for reactor identification
             StructureMarker.place(normalized, "reactor", UUID.randomUUID());
             saveToDb();
@@ -399,8 +467,9 @@ public class ReactorManager {
                     CableNetwork.removeNode(coreLoc);
                 }
             }
-            if (reactorId != null) {
-                deleteFromDb(reactorId);
+            String oldId = this.reactorId;
+            if (oldId != null) {
+                deleteFromDb(oldId);
             }
             this.reactorLocation = null;
             this.valid = false;
@@ -461,7 +530,7 @@ public class ReactorManager {
             lasers.reset();
             shield.setState(ReactorShield.State.OFFLINE);
             broadcast(StructuresMessages.get("core_emergency_shutdown",
-                    "<dark_red>⚠ <red>Целостность оболочки ядра критическая — ядро аварийно отключено! Перезапустите реактор."));
+                    "<dark_red>⚠ <red>Core shell integrity critical — emergency core shutdown! Restart the reactor."));
             saveToDb();
         }
 
@@ -472,11 +541,11 @@ public class ReactorManager {
         // BROADCAST STATE CHANGES
         // =========================
         if (heating != display.wasHeating()) {
-            broadcast(heating ? "<gold>🔥 <yellow>Нагрев включён" : "<gray>🔥 <white>Нагрев выключен");
+            broadcast(heating ? "<gold>🔥 <yellow>Heating enabled" : "<gray>🔥 <white>Heating disabled");
             display.setHeating(heating);
         }
         if (cooling != display.wasCooling()) {
-            broadcast(cooling ? "<aqua>❄ <dark_aqua>Охлаждение включено" : "<gray>❄ <white>Охлаждение выключено");
+            broadcast(cooling ? "<aqua>❄ <dark_aqua>Cooling enabled" : "<gray>❄ <white>Cooling disabled");
             display.setCooling(cooling);
         }
 
@@ -494,8 +563,8 @@ public class ReactorManager {
         display.setIntegrityWarnTick(warnTick);
         if (warnTick >= 200) {
             display.setIntegrityWarnTick(0);
-            if (coreShInt < 100) broadcast("<dark_red>⚠ <red>Целостность оболочки ядра нарушена!");
-            if (caseSys.isBroken()) broadcast("<dark_red>⚠ <red>Стекло корпуса разбито!");
+            if (coreShInt < 100) broadcast("<dark_red>⚠ <red>Core shell integrity compromised!");
+            if (caseSys.isBroken()) broadcast("<dark_red>⚠ <red>Case glass is broken!");
         }
 
         // =========================
@@ -506,7 +575,7 @@ public class ReactorManager {
             if (damageWarnTick >= 100) {
                 damageWarnTick = 0;
                 broadcast(StructuresMessages.get("damage_uncontrolled",
-                        "<gold>❕ <white>Структура реактора повреждена — управление потеряно! Охладите ядро до <yellow>0 C*"));
+                        "<gold>❕ <white>Reactor structure damaged — control lost! Cool the core down to <yellow>0 C*"));
             }
         }
 
@@ -570,7 +639,7 @@ public class ReactorManager {
         // =========================
         // INTEGRITY THRESHOLD WARNINGS (75%, 50%, 25%)
         // =========================
-        checkIntegrityThreshold(prevShInt, coreShInt, "оболочки ядра");
+        checkIntegrityThreshold(prevShInt, coreShInt, "Core shell");
         prevShInt = coreShInt;
 
         // =========================
@@ -646,7 +715,7 @@ public class ReactorManager {
             meltdownCountdown = true;
             meltdownTimer = 200; // 10 seconds
             selfDestruct = true;
-            broadcast("<dark_red>☠ <red>Целостность разрушена! <white>10<red> секунд до детонации...");
+            broadcast("<dark_red>☠ <red>Integrity destroyed! <white>10<red>s to detonation...");
         }
     }
 
@@ -765,9 +834,9 @@ public class ReactorManager {
                 finalMeltdownActive = true;
                 meltdownCountdown = true;
                 meltdownTimer = wearFinalMeltdownDuration * 20;
-                broadcast("<dark_red>☠ <red>Взрыв неизбежен! <white>" + wearFinalMeltdownDuration + "<red> сек до детонации...");
+                broadcast("<dark_red>☠ <red>Explosion inevitable! <white>" + wearFinalMeltdownDuration + "<red>s to detonation...");
             } else if (selfDestructChatTimer > 0) {
-                broadcast("<dark_red>☠ <red>Детонация через <white>" + selfDestructChatTimer + "<red> сек...");
+                broadcast("<dark_red>☠ <red>Detonation in <white>" + selfDestructChatTimer + "<red>s...");
             }
         }
     }
@@ -781,7 +850,7 @@ public class ReactorManager {
 
         meltdownTimer--;
         if (meltdownTimer > 0 && meltdownTimer % 20 == 0) {
-            broadcast("<dark_red>☠ <red>Взрыв неизбежен! <white>" + (meltdownTimer / 20) + "<red> сек...");
+            broadcast("<dark_red>☠ <red>Explosion inevitable! <white>" + (meltdownTimer / 20) + "<red>s...");
         }
         if (meltdownTimer <= 0) {
             meltdownCountdown = false;
@@ -829,8 +898,8 @@ public class ReactorManager {
         selfDestructActive = true;
         selfDestructChatTimer = wearChatCountdown;
         finalMeltdownActive = false;
-        broadcast("<dark_red>☠ <red>Критический износ реактора! <white>" + wearChatCountdown + "<red> сек до детонации...");
-        broadcast("<dark_red>☠ <red>Протокол самоуничтожения инициирован.");
+        broadcast("<dark_red>☠ <red>Critical reactor wear! <white>" + wearChatCountdown + "<red>s to detonation...");
+        broadcast("<dark_red>☠ <red>Self-destruct protocol initiated.");
 
         // 🏆 Advancement: dfc_self_destruct — self-destruction
         if (!advDfcSelfDestructGranted) {
@@ -845,7 +914,7 @@ public class ReactorManager {
     private void checkIntegrityThreshold(int prevVal, int currVal, String name) {
         if (currVal < prevVal) {
             if (currVal == 75 || currVal == 50 || currVal == 25) {
-                broadcast("<dark_red>⚠ <red>Целостность " + name + ": <white>" + currVal + "%");
+                broadcast("<dark_red>⚠ <red>" + name + " integrity: <white>" + currVal + "%");
             }
         }
     }
@@ -909,7 +978,7 @@ public class ReactorManager {
         shieldPress = 0;
         spin = 0;
         broadcast(StructuresMessages.get("damage_shutdown_complete",
-                "<green>✔ <white>Ядро охлаждено до <yellow>0 C* <white>— реактор остановлен и обесточен."));
+                "<green>✔ <white>Core cooled to <yellow>0 C* <white>— reactor stopped and powered down."));
         saveToDb();
     }
 
@@ -942,7 +1011,7 @@ public class ReactorManager {
         base.getWorld().spawnParticle(Particle.ELECTRIC_SPARK, coreCenter, 100, 3.0, 3.0, 3.0, 0.5);
         base.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, coreCenter, 64, 0, 0, 0, 0.1);
 
-        broadcast("<dark_red>☠ <red>Расплавление! Ядро реактора разрушено!");
+        broadcast("<dark_red>☠ <red>Meltdown! The reactor core is destroyed!");
 
         // 🏆 Advancement: explode_dfc — reactor explosion
         if (!advExplodeDfcGranted) {
@@ -1122,7 +1191,7 @@ public class ReactorManager {
         if (coreEmergencyStopped) {
             coreEmergencyStopped = false;
             broadcast(StructuresMessages.get("core_restart_after_shutdown",
-                    "<green>✔ <white>Ядро перезапущено после аварийного отключения."));
+                    "<green>✔ <white>Core restarted after the emergency shutdown."));
         }
         shield.start();
     }
@@ -1189,7 +1258,7 @@ public class ReactorManager {
             structureDamaged = true;
             damageWarnTick = 0;
             broadcast(StructuresMessages.get("damage_uncontrolled",
-                            "<gold>❕ <white>Структура реактора повреждена — управление потеряно! Охладите ядро до <yellow>0 C*"));
+                            "<gold>❕ <white>Reactor structure damaged — control lost! Cool the core down to <yellow>0 C*"));
         }
 
         // Remaining/total of the AFFECTED category (glass → glass cells, etc.)
@@ -1241,7 +1310,7 @@ public class ReactorManager {
             structureDamaged = false;
             damageWarnTick = 0;
             broadcast(StructuresMessages.get("structure_repaired",
-                    "<green>✔ <white>Структура реактора полностью восстановлена — управление возвращено."));
+                    "<green>✔ <white>Reactor structure fully restored — control returned."));
         } else if (cat == ReactorDamageTracker.Category.STRUCTURE
                 && snap.structPresent() >= snap.structTotal() && structureDamaged) {
             // All "control" cells are back — control returns even if some
@@ -1249,7 +1318,7 @@ public class ReactorManager {
             structureDamaged = false;
             damageWarnTick = 0;
             broadcast(StructuresMessages.get("structure_repaired",
-                    "<green>✔ <white>Структура реактора полностью восстановлена — управление возвращено."));
+                    "<green>✔ <white>Reactor structure fully restored — control returned."));
         }
         saveToDb();
     }

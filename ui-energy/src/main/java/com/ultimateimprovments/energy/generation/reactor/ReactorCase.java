@@ -146,7 +146,7 @@ public class ReactorCase {
                 brokenWarnTick = 0;
                 ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
                         "case_broken_reminder",
-                        "<dark_red>⚠ <red>Стекло корпуса разбито! Почините его (ПКМ стеклом)."));
+                        "<dark_red>⚠ <red>Case glass broken! Repair it with glass."));
             }
         }
     }
@@ -188,9 +188,9 @@ public class ReactorCase {
             default -> "case_broken_integrity";
         };
         String def = switch (reason) {
-            case "temp" -> "<dark_red>💥 <red>Стекло корпуса расплавлено! (T = 10 000 C*)";
-            case "pressure" -> "<dark_red>💥 <red>Стекло корпуса лопнуло от давления! (15 МПа)";
-            default -> "<dark_red>💥 <red>Стекло корпуса разбито! Целостность 0%";
+            case "temp" -> "<dark_red>💥 <red>Case glass melted! (T = 10 000 C*)";
+            case "pressure" -> "<dark_red>💥 <red>Case glass shattered by pressure! (15 MPa)";
+            default -> "<dark_red>💥 <red>Case glass broken! Integrity 0%";
         };
         ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(msgKey, def));
 
@@ -219,7 +219,7 @@ public class ReactorCase {
         Location core = base.clone().add(0.5, -5.5, 0.5);
         base.getWorld().playSound(core, Sound.BLOCK_GLASS_PLACE, SoundCategory.MASTER, 2.0f, 1.0f);
         ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                "case_repaired", "<green>✔ <white>Стекло корпуса восстановлено! Целостность 100%"));
+                "case_repaired", "<green>✔ <white>Case glass restored! Integrity 100%"));
 
         ReactorManager.getInstance().saveToDb();
         return true;
@@ -246,7 +246,7 @@ public class ReactorCase {
         Location core = base.clone().add(0.5, -5.5, 0.5);
         base.getWorld().playSound(core, Sound.BLOCK_GLASS_PLACE, SoundCategory.MASTER, 2.0f, 1.0f);
         ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                "case_repaired", "<green>✔ <white>Стекло корпуса восстановлено! Целостность 100%"));
+                "case_repaired", "<green>✔ <white>Case glass restored! Integrity 100%"));
         ReactorManager.getInstance().saveToDb();
     }
 
