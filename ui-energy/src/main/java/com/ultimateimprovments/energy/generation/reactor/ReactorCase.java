@@ -35,37 +35,47 @@ public class ReactorCase {
 
     public enum State { OK, BROKEN }
 
-    /** Glass wall offsets relative to the anchor (parsed from darkfusionreactor.nbt). */
-    public static final int[][] GLASS = {
-            { -3, -9, -4 }, { -3, -9, 4 }, { -2, -9, -4 }, { -2, -9, 4 },
-            { -1, -9, -4 }, { -1, -9, 4 }, { 0, -9, -4 }, { 0, -9, 4 },
-            { 1, -9, -4 }, { 1, -9, 4 }, { 2, -9, -4 }, { 2, -9, 4 },
-            { 3, -9, -4 }, { 3, -9, 4 },
-            { -3, -8, -4 }, { -3, -8, 4 }, { -2, -8, -4 }, { -2, -8, 4 },
-            { -1, -8, -4 }, { -1, -8, 4 }, { 0, -8, -4 }, { 0, -8, 4 },
-            { 1, -8, -4 }, { 1, -8, 4 }, { 2, -8, -4 }, { 2, -8, 4 },
-            { 3, -8, -4 }, { 3, -8, 4 },
-            { -3, -7, -4 }, { -3, -7, 4 }, { -2, -7, -4 }, { -2, -7, 4 },
-            { -1, -7, -4 }, { -1, -7, 4 }, { 0, -7, -4 }, { 0, -7, 4 },
-            { 1, -7, -4 }, { 1, -7, 4 }, { 2, -7, -4 }, { 2, -7, 4 },
-            { 3, -7, -4 }, { 3, -7, 4 },
-            { -3, -6, -4 }, { -3, -6, 4 }, { -2, -6, -4 }, { -2, -6, 4 },
-            { -1, -6, -4 }, { -1, -6, 4 }, { 0, -6, -4 }, { 0, -6, 4 },
-            { 1, -6, -4 }, { 1, -6, 4 }, { 2, -6, -4 }, { 2, -6, 4 },
-            { 3, -6, -4 }, { 3, -6, 4 },
-            { -3, -5, -4 }, { -3, -5, 4 }, { -2, -5, -4 }, { -2, -5, 4 },
-            { -1, -5, -4 }, { -1, -5, 4 }, { 0, -5, -4 }, { 0, -5, 4 },
-            { 1, -5, -4 }, { 1, -5, 4 }, { 2, -5, -4 }, { 2, -5, 4 },
-            { 3, -5, -4 }, { 3, -5, 4 },
-            { -3, -4, -4 }, { -3, -4, 4 }, { -2, -4, -4 }, { -2, -4, 4 },
-            { -1, -4, -4 }, { -1, -4, 4 }, { 0, -4, -4 }, { 0, -4, 4 },
-            { 1, -4, -4 }, { 1, -4, 4 }, { 2, -4, -4 }, { 2, -4, 4 },
-            { 3, -4, -4 }, { 3, -4, 4 },
-            { -3, -3, -4 }, { -3, -3, 4 }, { -2, -3, -4 }, { -2, -3, 4 },
-            { -1, -3, -4 }, { -1, -3, 4 }, { 0, -3, -4 }, { 0, -3, 4 },
-            { 1, -3, -4 }, { 1, -3, 4 }, { 2, -3, -4 }, { 2, -3, 4 },
-            { 3, -3, -4 }, { 3, -3, 4 }
-    };
+    /**
+     * Glass wall offsets relative to the anchor — 98 cells, parsed from
+     * darkfusionreactor.nbt (template y 1..7 → dy −8..−2). The old hardcoded
+     * table was shifted one block down (dy −9..−3), so shatter/repair/
+     * auto-repair operated on cells that are not glass in the template and
+     * missed the real ones.
+     */
+    public static final int[][] GLASS = loadGlassFromTemplate();
+
+    /** Builds the glass table from the NBT template (fallback: hardcoded ring). */
+    private static int[][] loadGlassFromTemplate() {
+        try {
+            com.ultimateimprovments.util.StructureTemplate tmpl =
+                    com.ultimateimprovments.util.StructureTemplate.get("darkfusionreactor");
+            if (tmpl == null) {
+                com.ultimateimprovments.util.StructureTemplate.initAll();
+                tmpl = com.ultimateimprovments.util.StructureTemplate.get("darkfusionreactor");
+            }
+            if (tmpl != null) {
+                java.util.List<int[]> list = new java.util.ArrayList<>();
+                for (com.ultimateimprovments.util.StructureTemplate.BlockEntry b : tmpl.getBlocks()) {
+                    if (b.material() == Material.GLASS) {
+                        list.add(new int[]{ b.dx(), b.dy(), b.dz() });
+                    }
+                }
+                if (!list.isEmpty()) return list.toArray(new int[0][]);
+            }
+        } catch (Exception | LinkageError ignored) {
+            // fall through to the static fallback
+        }
+        // Static fallback (NBT unavailable): the full glass ring, dy −8..−2
+        java.util.List<int[]> list = new java.util.ArrayList<>();
+        for (int dy = -8; dy <= -2; dy++) {
+            for (int dx = -3; dx <= 3; dx++) {
+                list.add(new int[]{ dx, dy, -4 });
+                list.add(new int[]{ dx, dy, 4 });
+            }
+        }
+        return list.toArray(new int[0][]);
+    }
+;
 
     private final ReactorManager reactor;
     private final Random random = new Random();

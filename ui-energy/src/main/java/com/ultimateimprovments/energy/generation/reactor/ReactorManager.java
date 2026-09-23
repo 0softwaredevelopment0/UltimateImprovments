@@ -797,8 +797,8 @@ public class ReactorManager {
         if (structureDamaged) return; // sensors are dead — pressure readouts frozen
 
         Location base = reactorLocation;
-        // 2 blocks above the geometric center — matches the core visuals
-        Location coreCenter = base.clone().add(0.5, -3.5, 0.5);
+        // Above the core chamber, matches the core visuals
+        Location coreCenter = base.clone().add(0.5, -4.5, 0.5);
 
         int particleCount;
         int radAmount;
@@ -1076,9 +1076,12 @@ public class ReactorManager {
         return display.isBulbPowered(base, dx, dy, dz);
     }
 
-    /** Broadcast to nearby players (used by the laser system). */
+    /**
+     * Broadcast to nearby players — the [UI][DFC] prefix is added exactly once
+     * by {@link #broadcast(String)} (this used to prepend it a second time,
+     * producing "[UI] [DFC] [UI] [DFC] ...").
+     */
     public void broadcastRaw(String message) {
-        message = MessageUtil.PREFIX + "<dark_gray>[<yellow>DFC<dark_gray>] " + message;
         broadcast(message);
     }
 

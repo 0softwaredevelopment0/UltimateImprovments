@@ -76,21 +76,23 @@ public class ReactorFuel {
     }
 
     /**
-     * Consumption % for the given spin: 100% at 0 RPS falling linearly to the
-     * base rate (5%) at the 95 000 RPS working point, 1% floor above it,
-     * +1% per 10 000 RPS over 100 000.
+     * Consumption % for the given spin (100% = 1 gold + 1 diamond per 10s):
+     * nothing below fuel_spin_min, a linear fall from 100% to the base rate
+     * (5%) between spin_min and the working point, a smooth dip to the 1%
+     * floor by 100 000 RPS, then +1% per 10 000 RPS of over-spin.
      */
     static double consumptionForSpin(double spin, ReactorConfig cfg) {
+        double spinMin = cfg.getFuelSpinMin();          // 1000
         double workSpin = cfg.getFuelWorkSpin();        // 95000
         double overSpin = cfg.getFuelOverSpin();        // 100000
-        double base = cfg.getFuelBaseRate();            // 5 %/s at workSpin
+        double base = cfg.getFuelBaseRate();            // 5% at workSpin
         double min = cfg.getFuelMinRate();              // 1 %
         double per10k = cfg.getFuelOverPer10k();        // 1 % per 10k above overSpin
 
-        if (spin <= 0) return 100;
+        if (spin < spinMin) return 0;
         if (spin <= workSpin) {
-            // Fall from 100% (at 0 spin) to the base rate (at the working point)
-            double f = spin / Math.max(1, workSpin);
+            // Fall from 100% (at spin_min) to the base rate (at the working point)
+            double f = (spin - spinMin) / Math.max(1, workSpin - spinMin);
             return base + (100.0 - base) * (1.0 - f);
         }
         if (spin <= overSpin) {

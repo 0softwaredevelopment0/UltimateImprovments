@@ -79,7 +79,7 @@ public class HelpSubCommand implements SubCommand {
         put("togglefly", "Toggle fly");
         put("toggleautocraft", "Toggle autocraft");
         put("togglebind", "Toggle bind");
-        put("toggleradview", "Toggle radiation view");
+        put("viewrad", "Toggle radiation view");
         put("unlock", "Unlock book or sign");
         put("askpos", "Request player's coordinates (dialog)");
         put("enchant", "Enchant manager (give/take/check, custom AoE)");

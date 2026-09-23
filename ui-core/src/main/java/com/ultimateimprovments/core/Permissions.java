@@ -44,6 +44,7 @@ public final class Permissions {
     public static final String CMD_SWAPJAR = "ui.command.swapjar";
     public static final String CMD_PLUGIN = "ui.command.plugin";
     public static final String CMD_PLUGINS = "ui.command.plugins";
+    public static final String CMD_ADDONS = "ui.command.addons";
     public static final String CMD_HELP = "ui.command.help";
 
     // ═══════════ Commands: player ═══════════
@@ -68,7 +69,7 @@ public final class Permissions {
     public static final String CMD_TOGGLESB = "ui.command.togglesb";
     public static final String CMD_TOGGLEPING = "ui.command.toggleping";
     public static final String CMD_TOGGLEBIND = "ui.command.togglebind";
-    public static final String CMD_TOGGLERADVIEW = "ui.command.toggleradview";
+    public static final String CMD_VIEWRAD = "ui.command.viewrad";
     public static final String CMD_VANISH = "ui.command.vanish";
     public static final String CMD_NOTES = "ui.command.notes";
     public static final String CMD_UNLOCK = "ui.command.unlock";
@@ -207,6 +208,7 @@ public final class Permissions {
                 new Permission(CMD_SWAPJAR, "Swap plugin jar", PermissionDefault.FALSE),
                 new Permission(CMD_PLUGIN, "Manage other plugins", PermissionDefault.FALSE),
                 new Permission(CMD_PLUGINS, "List plugins", PermissionDefault.FALSE),
+                new Permission(CMD_ADDONS, "List UltimateImprovments addons (/ui addons)", PermissionDefault.FALSE),
                 new Permission(CMD_HELP, "Show command help", PermissionDefault.FALSE),
 
                 // ── Commands: player ──
@@ -231,7 +233,7 @@ public final class Permissions {
                 new Permission(CMD_TOGGLESB, "Toggle per-player scoreboard", PermissionDefault.FALSE),
                 new Permission(CMD_TOGGLEPING, "Toggle ping sound", PermissionDefault.FALSE),
                 new Permission(CMD_TOGGLEBIND, "Toggle wireless redstone binding", PermissionDefault.FALSE),
-                new Permission(CMD_TOGGLERADVIEW, "Toggle radiation display", PermissionDefault.FALSE),
+                new Permission(CMD_VIEWRAD, "Toggle radiation display", PermissionDefault.FALSE),
                 new Permission(CMD_VANISH, "Vanish players", PermissionDefault.FALSE),
                 new Permission(CMD_NOTES, "Open notes GUI", PermissionDefault.FALSE),
                 new Permission(CMD_UNLOCK, "Unlock books and signs", PermissionDefault.FALSE),
