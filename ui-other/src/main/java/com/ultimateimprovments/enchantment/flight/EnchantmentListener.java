@@ -7,10 +7,14 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -179,6 +183,86 @@ public class EnchantmentListener implements Listener {
         }
     }
 
+    // ─────────────────────────────────────────────────────────────
+    //  FALL DAMAGE — vanilla skips fall damage while allowFlight is on,
+    //  so a player with the Flight chestplate could dive-bomb from build
+    //  limit for free. We track the accumulated fall distance ourselves and
+    //  apply the vanilla fall-damage formula on landing: 1 HP per block
+    //  beyond the 3-block safe distance, halved by Feather Falling IV,
+    //  never applied in water/creative-like/slow-falling.
+    // ─────────────────────────────────────────────────────────────
+
+    /** Accumulated fall distance (in blocks) per player since they left the ground. */
+    private static final java.util.Map<UUID, Float> FALL_DISTANCE = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** Fall distance (blocks) that vanilla considers safe. */
+    private static final float SAFE_FALL_DISTANCE = 3.0f;
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onFallDamage(EntityDamageEvent event) {
+        // Vanilla never fires FALL for allowFlight players — this handler only
+        // protects against double-dipping if a future version changes that.
+        if (event.getEntityType() != EntityType.PLAYER) return;
+        if (event.getCause() != EntityDamageEvent.DamageCause.FALL) return;
+        Player player = (Player) event.getEntity();
+        FALL_DISTANCE.remove(player.getUniqueId());
+    }
+
+    /** Tracks the fall and applies the accumulated damage on landing (called from the drain tick). */
+    private static void tickFallDamage() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            try {
+                UUID uuid = player.getUniqueId();
+
+                // Skip players whose flight is not from this charm: creative-like
+                // modes and other plugins' flight keep full vanilla behaviour.
+                if (!GRANTED_FLIGHT.contains(uuid)
+                        || player.getGameMode() == GameMode.CREATIVE
+                        || player.getGameMode() == GameMode.SPECTATOR) {
+                    FALL_DISTANCE.remove(uuid);
+                    continue;
+                }
+
+                // Reset the counter in water, on ladders, while gliding and with
+                // slow falling — the same cases vanilla ignores fall distance.
+                if (player.isInWater()
+                        || player.isClimbing()
+                        || player.isGliding()
+                        || player.hasPotionEffect(org.bukkit.potion.PotionEffectType.SLOW_FALLING)) {
+                    FALL_DISTANCE.remove(uuid);
+                    continue;
+                }
+
+                if (player.isOnGround() || player.isInWater()) {
+                    float distance = FALL_DISTANCE.remove(uuid);
+                    if (distance > SAFE_FALL_DISTANCE) {
+                        double damage = Math.floor(distance - SAFE_FALL_DISTANCE);
+                        if (damage > 0) {
+                            DamageSource source = DamageSource.builder(DamageType.FALL)
+                                    .withCausingEntity(player)
+                                    .withDirectEntity(player)
+                                    .build();
+                            player.damage(damage, source);
+                        }
+                    }
+                    continue;
+                }
+
+                // Airborne: accumulate. While actively flying upward/hovering the
+                // distance does not grow (only real downward motion counts), so
+                // the counter tracks net downward travel.
+                double yVelocity = player.getVelocity().getY();
+                if (yVelocity < -0.05) {
+                    float current = FALL_DISTANCE.getOrDefault(uuid, 0.0f);
+                    FALL_DISTANCE.put(uuid, current + (float) Math.abs(yVelocity));
+                }
+            } catch (Exception e) {
+                ConsoleLogger.warn("[Flight] Fall-damage tick error for " + player.getName()
+                        + ": " + e.getMessage());
+            }
+        }
+    }
+
     /** Periodic failsafe sweep of every online player. */
     private static void sweepAllPlayers() {
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -247,7 +331,8 @@ public class EnchantmentListener implements Listener {
                 SWEEP_INTERVAL_TICKS, SWEEP_INTERVAL_TICKS);
         Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::drainFlightIntegrity,
                 INTEGRITY_DRAIN_INTERVAL_TICKS, INTEGRITY_DRAIN_INTERVAL_TICKS);
+        Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::tickFallDamage, 1L, 1L);
         ConsoleLogger.info("[Flight] Listener registered (flight sweep every "
-                + (SWEEP_INTERVAL_TICKS / 20.0) + "s, 1 integrity-use/s while flying).");
+                + (SWEEP_INTERVAL_TICKS / 20.0) + "s, 1 integrity-use/s while flying, fall damage on landing).");
     }
 }
