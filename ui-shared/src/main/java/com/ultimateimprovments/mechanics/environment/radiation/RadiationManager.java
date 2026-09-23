@@ -317,9 +317,12 @@ public class RadiationManager implements Listener {
 
             // =========================
             // THE END — RADIATION UNDER OPEN SKY
+            // NOTE: the End has no skylight engine (getLightFromSky() is always
+            // 0 there), so "under open sky" means: no block above the player up
+            // to the max build height (checked with an upward block ray trace).
             // =========================
             if (player.getWorld().getEnvironment() == World.Environment.THE_END
-                    && player.getLocation().getBlock().getLightFromSky() >= 15) {
+                    && hasNoBlocksAbove(player)) {
                 rad += endRad;
             }
 
@@ -516,5 +519,24 @@ public class RadiationManager implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
         return meta.getPersistentDataContainer().has(key, PersistentDataType.BYTE);
+    }
+
+    /**
+     * True if nothing solid is above the player up to the max build height.
+     * Used instead of the skylight check in dimensions without a skylight
+     * engine (the End): an upward block ray trace from the eyes; passable
+     * blocks (grass, torches, ...) and liquids do not count as cover.
+     */
+    private boolean hasNoBlocksAbove(Player player) {
+        Location eye = player.getEyeLocation();
+        double topY = player.getWorld().getMaxHeight();
+        if (eye.getY() >= topY) return true; // already above the build limit
+        org.bukkit.util.RayTraceResult hit = player.getWorld().rayTraceBlocks(
+                eye,
+                new org.bukkit.util.Vector(0, 1, 0), // straight up
+                topY - eye.getY(),                    // up to the build limit
+                org.bukkit.FluidCollisionMode.NEVER,
+                true);                                // ignore passable blocks
+        return hit == null;
     }
 }
