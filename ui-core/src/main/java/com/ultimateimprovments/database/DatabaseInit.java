@@ -101,9 +101,26 @@ public class DatabaseInit {
             st.execute("""
                 CREATE TABLE IF NOT EXISTS player_radiation (
                     uuid TEXT PRIMARY KEY,
-                    radiation INTEGER DEFAULT 0
+                    radiation REAL DEFAULT 0
                 );
             """);
+
+            // Radiation is a smooth fractional value now — rebuild the table if
+            // the old INTEGER column is still there (data is preserved).
+            try (java.sql.Statement mig = con.createStatement();
+                 java.sql.ResultSet chk = mig.executeQuery(
+                     "SELECT type FROM pragma_table_info('player_radiation') WHERE name='radiation'")) {
+                if (chk.next() && "INTEGER".equalsIgnoreCase(chk.getString("type"))) {
+                    st.execute("CREATE TABLE player_radiation_new ("
+                        + "uuid TEXT PRIMARY KEY, radiation REAL DEFAULT 0)");
+                    st.execute("INSERT INTO player_radiation_new (uuid, radiation) "
+                        + "SELECT uuid, radiation FROM player_radiation");
+                    st.execute("DROP TABLE player_radiation");
+                    st.execute("ALTER TABLE player_radiation_new RENAME TO player_radiation");
+                }
+            } catch (Exception ignored) {
+                // Best-effort migration; type affinity tolerates both anyway
+            }
 
             // =========================
             // ⚛ REACTORS

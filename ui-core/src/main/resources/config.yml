@@ -3137,7 +3137,9 @@ vanish:
 radiation:
   # Whether radiation mechanics are enabled
   enabled: true
-  # Natural radiation decay rate per tick
+  # Natural radiation decay per second, scaled by the current level:
+  # decay = natural_decay * (radiation / 100). 1 = 1/sec at 100 rad, so the
+  # value fades smoothly and proportionally instead of stepping down by 1.
   natural_decay: 1
   # Whether radiation effects are applied to players
   effects_enabled: true
