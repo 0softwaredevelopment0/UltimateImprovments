@@ -14,7 +14,7 @@ import org.bukkit.scheduler.BukkitTask;
 /**
  * Dimension-driven gravity: instead of hooking teleport/join/death events
  * (which miss entry/exit paths like rockets or plugins), a periodic task
- * checks every online player's dimension twice a second.
+ * checks every online player's dimension every 2 seconds.
  * <ul>
  *   <li>in the space dimension → the gravity attribute is set to the
  *       configured low value ({@code space.gravity}, default 0.01 vs the
@@ -43,8 +43,7 @@ public class SpaceGravityListener {
         if (running) return;
         running = true;
 
-        // Dimension check twice a second — fast enough to feel instant,
-        // cheap enough to never matter
+        // Dimension check every 2 seconds (40 ticks)
         task = new BukkitRunnable() {
             @Override
             public void run() {
@@ -57,7 +56,7 @@ public class SpaceGravityListener {
                     }
                 }
             }
-        }.runTaskTimer(plugin, 10L, 10L);
+        }.runTaskTimer(plugin, 40L, 40L);
     }
 
     public static void stop() {
