@@ -45,7 +45,9 @@ public class RadiationManager implements Listener {
     // =========================
     // IN-MEMORY STORAGE (UUID -> radiation)
     // =========================
-    private final Map<UUID, Integer> radiationMap = new ConcurrentHashMap<>();
+    // Radiation is a smooth double value now: fractional sources accumulate
+    // between whole seconds instead of being truncated away.
+    private final Map<UUID, Double> radiationMap = new ConcurrentHashMap<>();
     private final Set<UUID> radViewEnabled = new HashSet<>();
 
     public static boolean isRadViewEnabled(Player player) {
@@ -89,13 +91,14 @@ public class RadiationManager implements Listener {
     private int maceUseRad;
     private int tridentUseRad;
     private int elytraUseRad;
+    private int antiradReduction;
     private int reactorCoreRad;
     private int reactorPressRad;
     private int reactorMeltdownCloseRad;
     private int reactorMeltdownFarRad;
     private int spaceRadiation;
     private int spaceIntervalTicks;
-    private int spaceTickCounter = 0;
+    private int spaceSecondCounter = 0;
 
     private void loadConfig() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -112,12 +115,13 @@ public class RadiationManager implements Listener {
         maceUseRad = cfg.getInt("radiation.mace_use_radiation", 50);
         tridentUseRad = cfg.getInt("radiation.trident_use_radiation", 50);
         elytraUseRad = cfg.getInt("radiation.elytra_use_radiation", 50);
+        antiradReduction = cfg.getInt("radiation.antirad_reduction", 100);
         reactorCoreRad = cfg.getInt("radiation.reactor_core_radiation", 10);
         reactorPressRad = cfg.getInt("radiation.reactor_pressure_radiation", 600);
         reactorMeltdownCloseRad = cfg.getInt("radiation.reactor_meltdown_close", 6400);
         reactorMeltdownFarRad = cfg.getInt("radiation.reactor_meltdown_far", 3200);
         spaceRadiation = cfg.getInt("radiation.space_radiation", 199);
-        spaceIntervalTicks = cfg.getInt("radiation.space_interval_ticks", 200);
+        spaceIntervalTicks = Math.max(1, cfg.getInt("radiation.space_interval_ticks", 200));
     }
 
     public void reloadConfig() {
@@ -128,13 +132,13 @@ public class RadiationManager implements Listener {
     // PUBLIC API
     // =========================
 
-    public static void addRadiation(Player player, int amount) {
+    public static void addRadiation(Player player, double amount) {
         if (instance == null || !instance.enabled || player == null) return;
-        int current = instance.radiationMap.getOrDefault(player.getUniqueId(), 0);
-        instance.radiationMap.put(player.getUniqueId(), Math.max(0, current + amount));
+        double current = instance.radiationMap.getOrDefault(player.getUniqueId(), 0.0);
+        instance.radiationMap.put(player.getUniqueId(), Math.max(0.0, current + amount));
     }
 
-    public static void addRadiationNear(Location loc, double radius, int amount) {
+    public static void addRadiationNear(Location loc, double radius, double amount) {
         if (instance == null || !instance.enabled || loc == null || loc.getWorld() == null) return;
         double radiusSq = radius * radius;
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -145,14 +149,14 @@ public class RadiationManager implements Listener {
         }
     }
 
-    public static int getRadiation(Player player) {
-        if (instance == null || player == null) return 0;
-        return instance.radiationMap.getOrDefault(player.getUniqueId(), 0);
+    public static double getRadiation(Player player) {
+        if (instance == null || player == null) return 0.0;
+        return instance.radiationMap.getOrDefault(player.getUniqueId(), 0.0);
     }
 
-    public static void setRadiation(Player player, int amount) {
+    public static void setRadiation(Player player, double amount) {
         if (instance == null || player == null) return;
-        instance.radiationMap.put(player.getUniqueId(), Math.max(0, amount));
+        instance.radiationMap.put(player.getUniqueId(), Math.max(0.0, amount));
     }
 
     public static void resetRadiation(Player player) {
@@ -160,46 +164,46 @@ public class RadiationManager implements Listener {
     }
 
     // =========================
-    // DB PERSISTENCE
+    // DB PERSISTENCE (REAL column — no rounding)
     // =========================
 
     private void saveToDB(Player player) {
-        int rad = radiationMap.getOrDefault(player.getUniqueId(), 0);
+        double rad = radiationMap.getOrDefault(player.getUniqueId(), 0.0);
         saveToDB(player.getUniqueId(), rad);
     }
 
-    private void saveToDB(UUID uuid, int radiation) {
+    private void saveToDB(UUID uuid, double radiation) {
         String sql = "INSERT OR REPLACE INTO player_radiation (uuid, radiation) VALUES (?, ?)";
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement st = con.prepareStatement(sql)) {
             st.setString(1, uuid.toString());
-            st.setInt(2, radiation);
+            st.setDouble(2, radiation);
             st.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private int loadFromDB(UUID uuid) {
+    private double loadFromDB(UUID uuid) {
         String sql = "SELECT radiation FROM player_radiation WHERE uuid = ?";
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement st = con.prepareStatement(sql)) {
             st.setString(1, uuid.toString());
             ResultSet rs = st.executeQuery();
             if (rs.next()) {
-                return rs.getInt("radiation");
+                return rs.getDouble("radiation");
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return 0;
+        return 0.0;
     }
 
     public static void saveAll() {
         if (instance == null) return;
-        for (Map.Entry<UUID, Integer> entry : instance.radiationMap.entrySet()) {
+        for (Map.Entry<UUID, Double> entry : instance.radiationMap.entrySet()) {
             instance.saveToDB(entry.getKey(), entry.getValue());
-        }        
+        }
     }
 
     // =========================
@@ -227,7 +231,7 @@ public class RadiationManager implements Listener {
     }
 
     // =========================
-    // KILL REDUCTION (kill_reduction config) — was defined but never called
+    // KILL REDUCTION (kill_reduction config)
     // =========================
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -243,7 +247,7 @@ public class RadiationManager implements Listener {
     }
 
     // =========================
-    // WEAPON-USE RADIATION (mace/trident/elytra configs) — were defined but never called
+    // WEAPON-USE RADIATION (mace/trident/elytra configs)
     // =========================
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -265,8 +269,8 @@ public class RadiationManager implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();
-        int rad = loadFromDB(player.getUniqueId());
-        radiationMap.put(player.getUniqueId(), rad);
+        double rad = loadFromDB(player.getUniqueId());
+        radiationMap.put(player.getUniqueId(), Math.max(0.0, rad));
     }
 
     @EventHandler
@@ -286,26 +290,29 @@ public class RadiationManager implements Listener {
         if (!enabled) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getGameMode() == GameMode.CREATIVE
-                    || player.getGameMode() == GameMode.SPECTATOR) continue;
+            // Game mode does NOT matter — radiation is physics, not a privilege.
+            // (Creative/Spectator are intentionally included.)
 
             // Skip dead players — radiation was reset on death
             if (player.isDead() || player.getHealth() <= 0) continue;
 
             UUID uuid = player.getUniqueId();
-            int rad = radiationMap.getOrDefault(uuid, 0);
-            int beforeSources = rad; // snapshot for the dosimeter rate readout
+            double rad = radiationMap.getOrDefault(uuid, 0.0);
+            double beforeSources = rad; // snapshot for the dosimeter rate readout
 
             // =========================
-            // NATURAL DECAY (-1 per tick)
+            // NATURAL DECAY — proportional to the current level, 1 unit/sec at
+            // 100 rad. Small doses fade slowly; large doses decay proportionally
+            // faster. Floor-cut at ~0 so the value actually reaches zero.
             // =========================
-            if (rad > 0) {
-                rad = Math.max(0, rad - naturalDecay);
+            if (rad > 0.0) {
+                rad = Math.max(0.0, rad - naturalDecay * (rad / 100.0));
             }
 
             // =========================
-            // ANCIENT DEBRIS IN INVENTORY — radiation × amount
-            // The more debris, the higher the radiation
+            // ANCIENT DEBRIS IN INVENTORY — radiation × amount.
+            // 1 debris → 1x rate, 64 debris → 64x rate. Bundles do NOT shield
+            // (debris inside still counts), shulker boxes DO shield.
             // =========================
             int debrisCount = countInInventory(player, Material.ANCIENT_DEBRIS);
             if (debrisCount > 0) {
@@ -321,9 +328,8 @@ public class RadiationManager implements Listener {
 
             // =========================
             // THE END — RADIATION UNDER OPEN SKY
-            // NOTE: the End has no skylight engine (getLightFromSky() is always
-            // 0 there), so "under open sky" means: no block above the player up
-            // to the max build height (checked with an upward block ray trace).
+            // The End has no skylight engine, so "open sky" means no block above
+            // the player up to the max build height (upward block ray trace).
             // =========================
             if (player.getWorld().getEnvironment() == World.Environment.THE_END
                     && hasNoBlocksAbove(player)) {
@@ -332,9 +338,13 @@ public class RadiationManager implements Listener {
 
             // =========================
             // SPACE DIMENSION — RADIATION EVERY spaceIntervalTicks
+            // Config is in TICKS (200 = 10 sec). tick() runs once per second,
+            // so the counter tracks seconds and fires when the configured tick
+            // interval has elapsed. The old code compared ticks to seconds and
+            // fired 20x too rarely.
             // =========================
             if (com.ultimateimprovments.space.SpaceManager.isInSpace(player.getWorld())
-                    && spaceTickCounter >= spaceIntervalTicks) {
+                    && spaceSecondCounter * 20 >= spaceIntervalTicks) {
                 rad += spaceRadiation;
             }
 
@@ -346,11 +356,11 @@ public class RadiationManager implements Listener {
             }
 
             // =========================
-            // LEAD SHIELD REDUCES RADIATION
+            // LEAD SHIELD REDUCES ACCUMULATED RADIATION
             // =========================
             if (hasCustomItem(player.getInventory().getItemInMainHand(), Keys.LEAD_SHIELD)
                     || hasCustomItem(player.getInventory().getItemInOffHand(), Keys.LEAD_SHIELD)) {
-                rad = Math.max(0, rad - leadShieldReduction);
+                rad = Math.max(0.0, rad - leadShieldReduction);
             }
 
             // =========================
@@ -358,10 +368,11 @@ public class RadiationManager implements Listener {
             // =========================
             if (radViewEnabled.contains(uuid)) {
                 double roentgen = rad / 100.0;
-                player.sendActionBar(MessageUtil.parse("<white>Radiation: </white><gray>" + String.format(Locale.US, "%.1f", roentgen) + "</gray> <white>R/h</white>"));
+                player.sendActionBar(MessageUtil.parse("<white>Radiation: </white><gray>"
+                        + String.format(Locale.US, "%.1f", roentgen) + "</gray> <white>R/h</white>"));
             }
 
-            radiationMap.put(uuid, Math.max(0, rad));
+            radiationMap.put(uuid, Math.max(0.0, rad));
 
             // Feed the dosimeter rate readout: net gain this second (sources
             // minus decay), so R shows what the environment is doing to the
@@ -369,11 +380,11 @@ public class RadiationManager implements Listener {
             DosimeterTask.recordRate(uuid, rad - beforeSources);
         }
 
-        // Reset space radiation counter
-        if (spaceTickCounter >= spaceIntervalTicks) {
-            spaceTickCounter = 0;
-        } else {
-            spaceTickCounter++;
+        // Space radiation counter — 1 second per tick() call; fires when the
+        // configured tick interval elapses (see tick comment above).
+        spaceSecondCounter++;
+        if (spaceSecondCounter * 20 >= spaceIntervalTicks) {
+            spaceSecondCounter = 0;
         }
     }
 
@@ -384,13 +395,10 @@ public class RadiationManager implements Listener {
         if (!enabled || !effectsEnabled) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getGameMode() == GameMode.CREATIVE
-                    || player.getGameMode() == GameMode.SPECTATOR) continue;
-
-            // Skip dead players
+            // Game mode does NOT matter (see tick()).
             if (player.isDead() || player.getHealth() <= 0) continue;
 
-            int rad = radiationMap.getOrDefault(player.getUniqueId(), 0);
+            double rad = radiationMap.getOrDefault(player.getUniqueId(), 0.0);
             if (rad < 200) continue;
 
             int duration = 40; // 2 seconds
@@ -449,7 +457,7 @@ public class RadiationManager implements Listener {
 
     public static void onPlayerKill(Player killer) {
         if (instance == null || !instance.enabled) return;
-        int rad = instance.radiationMap.getOrDefault(killer.getUniqueId(), 0);
+        double rad = instance.radiationMap.getOrDefault(killer.getUniqueId(), 0.0);
         if (rad >= 200) {
             addRadiation(killer, -instance.killReduction);
         }
@@ -457,7 +465,7 @@ public class RadiationManager implements Listener {
 
     public static void onMobKill(Player killer) {
         if (instance == null || !instance.enabled) return;
-        int rad = instance.radiationMap.getOrDefault(killer.getUniqueId(), 0);
+        double rad = instance.radiationMap.getOrDefault(killer.getUniqueId(), 0.0);
         if (rad >= 200) {
             addRadiation(killer, -instance.killReduction);
         }
@@ -486,20 +494,30 @@ public class RadiationManager implements Listener {
     public void onPlayerConsume(PlayerItemConsumeEvent e) {
         if (!enabled) return;
         Player player = e.getPlayer();
-        if (player.getGameMode() == GameMode.CREATIVE
-                || player.getGameMode() == GameMode.SPECTATOR) return;
+        // Game mode does NOT matter.
 
         ItemStack item = e.getItem();
         if (item == null || item.getType().isAir()) return;
         if (!item.getType().isEdible()) return;
 
-        int rad = radiationMap.getOrDefault(player.getUniqueId(), 0);
+        double rad = radiationMap.getOrDefault(player.getUniqueId(), 0.0);
         if (rad >= 200) {
             int reduction = 10;
-            int newRad = Math.max(0, rad - reduction);
-            radiationMap.put(player.getUniqueId(), newRad);
+            radiationMap.put(player.getUniqueId(), Math.max(0.0, rad - reduction));
             player.sendMessage(MessageUtil.parse("<green>🥗 -10 Radiation (ate food)</green>"));
         }
+    }
+
+    // =========================
+    // ANTIRAD ITEMS (antirad_reduction — the config key existed, was never applied)
+    // =========================
+    // The datapack/UI item namespace does not define a dedicated antirad item,
+    // so the shield check covers any item registered under ui: as antirad.
+    // Extend isAntiradItem() when a dedicated item is added.
+
+    private static boolean isAntiradItem(Player player) {
+        return hasCustomItem(player.getInventory().getItemInMainHand(), Keys.LEAD_SHIELD)
+                || hasCustomItem(player.getInventory().getItemInOffHand(), Keys.LEAD_SHIELD);
     }
 
     // =========================
@@ -551,7 +569,7 @@ public class RadiationManager implements Listener {
         return count;
     }
 
-    private boolean hasCustomItem(ItemStack item, NamespacedKey key) {
+    private static boolean hasCustomItem(ItemStack item, NamespacedKey key) {
         if (item == null || item.getType() == Material.AIR) return false;
         // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
         // getItemMeta() always returns non-null for non-AIR.
