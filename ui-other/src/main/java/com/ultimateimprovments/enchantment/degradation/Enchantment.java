@@ -1,7 +1,7 @@
 package com.ultimateimprovments.enchantment.degradation;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
  * Effect: while a cursed item of the plugin's Integrity system sits in ANY player
  * inventory slot, every second it loses INTEGRITY exactly as if it had been used
  * {@code level} times (level 5 → spent as much as after 5 uses). The drain goes
- * through {@code ItemIntegrityAPI.decreaseItemIntegrity}, so the Integrity system
+ * through {@code ItemIntegrityAPI.decreaseItemIntegrity}, so the vanilla durability
  * updates the lore, sends low-integrity warnings and breaks the item when it hits 0.
  * <p>
  * Max level: 255<br>
@@ -223,7 +223,7 @@ public final class Enchantment {
      */
     public static boolean isValidTool(@Nullable ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
-        return IntegrityManager.getMaxDurability(item) > 0;
+        return ItemDurabilityUtil.getMaxDurability(item) > 0;
     }
 
     /**

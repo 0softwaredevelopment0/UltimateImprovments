@@ -572,31 +572,9 @@ messages:
   
   features:
     integrity:
-      on_break:
-        # Chat message for features integrity (message)
-        message: "<dark_red>❌</dark_red> <red>Your item</red> <white>%item%</white> <red>broke!</red>"
-      anvil_repair:
-        # Chat message for features integrity (repair_message)
-        repair_message: "<green>🔧</green> <white>Integrity restored to</white> <yellow>%current%%</yellow><white>!</white>"
-        # Chat message for features integrity (combine_message)
-        combine_message: "<green>🔗</green> <white>Items combined! Integrity:</white> <yellow>%current%%</yellow><white></white>"
-        material_craft:
-          # Chat message for features integrity (message)
-          message: "<green>🔨</green> <white>New item created! Integrity:</white> <yellow>%current%%</yellow> <white>(+%bonus%% from materials)</white>"
-      mending_xp:
-        # Chat message for features integrity (message)
-        message: "<aqua>✨</aqua> <white>Repair restored</white> <yellow>%amount%%</yellow> <white>integrity!</white>"
       low_integrity_warning:
         # Chat message for features integrity (message)
         message: "<yellow>⚠</yellow> <white>Your item</white> <yellow>%item%</yellow> <white>has</white> <red>%pct%%</red> <white>integrity remaining!</white>"
-      xp_integrity:
-        # Chat message for features integrity (message)
-        message: "<green>✨</green> <white>Mending restored</white> <yellow>%amount%%</yellow> <white>integrity to your Mending items!</white>"
-        # Action bar message for features integrity (action_bar) — shown instead of chat
-        action_bar: "<green>✨ Mending: +</green><yellow>%amount%%</yellow>"
-      # Chat message for features integrity (silk_touch_message)
-      silk_touch_message: "<aqua>✨</aqua> <white>Repair restored</white> <yellow>%amount%%</yellow> <white>integrity!</white>"
-  
     creative_item_validator:
       # Chat message for features creative_item_validator (message)
       message: "<red>This item contains too much data!</red>"
@@ -1952,31 +1930,9 @@ messages_en:
   
   features:
     integrity:
-      on_break:
-        # Chat message for features integrity (message)
-        message: "<dark_red>❌</dark_red> <red>Your item</red> <white>%item%</white> <red>broke!</red>"
-      anvil_repair:
-        # Chat message for features integrity (repair_message)
-        repair_message: "<green>🔧</green> <white>Integrity restored to</white> <yellow>%current%%</yellow><white>!</white>"
-        # Chat message for features integrity (combine_message)
-        combine_message: "<green>🔗</green> <white>Items combined! Integrity:</white> <yellow>%current%%</yellow><white></white>"
-        material_craft:
-          # Chat message for features integrity (message)
-          message: "<green>🔨</green> <white>New item created! Integrity:</white> <yellow>%current%%</yellow> <white>(+%bonus%% from materials)</white>"
-      mending_xp:
-        # Chat message for features integrity (message)
-        message: "<aqua>✨</aqua> <white>Repair restored</white> <yellow>%amount%%</yellow> <white>integrity!</white>"
       low_integrity_warning:
         # Chat message for features integrity (message)
         message: "<yellow>⚠</yellow> <white>Your item</white> <yellow>%item%</yellow> <white>has</white> <red>%pct%%</red> <white>integrity remaining!</white>"
-      xp_integrity:
-        # Chat message for features integrity (message)
-        message: "<green>✨</green> <white>Mending restored</white> <yellow>%amount%%</yellow> <white>integrity to your Mending items!</white>"
-        # Action bar message for features integrity (action_bar) — shown instead of chat
-        action_bar: "<green>✨ Mending: +</green><yellow>%amount%%</yellow>"
-      # Chat message for features integrity (silk_touch_message)
-      silk_touch_message: "<aqua>✨</aqua> <white>Repair restored</white> <yellow>%amount%%</yellow> <white>integrity!</white>"
-  
     creative_item_validator:
       # Chat message for features creative_item_validator (message)
       message: "<red>This item contains too much data!</red>"
@@ -3053,112 +3009,37 @@ features:
         haste_multiplier: 0.3
 
   integrity:
-    # Whether item integrity is enabled
+    # Thin durability layer on top of VANILLA durability. The old custom
+    # integrity backend (PDC counters, lore scanner, anvil/mending interception)
+    # was removed — anvil, grindstone and Mending now behave exactly like vanilla.
+    # Remaining optional features:
     enabled: true
-
-    # How often integrity is checked, in ticks
-    interval_ticks: 20
-
-    # Global multiplier for integrity loss
-    cost_multiplier: 1.0
-
-    gradient:
-      # Color of the integrity gradient at 100%
-      high_color: "#006600"
-      # Color of the integrity gradient at 0%
-      low_color: "#990000"
-
-    # Lore line showing the integrity value
+    # Integrity % lore line (computed from the vanilla damage component)
     lore_text: "<i:false><white>Integrity:</white>"
-
     on_break:
       # Whether a sound plays when an item breaks
       play_sound: true
-
-      # Whether a message is sent when an item breaks
-      send_message: true
-
-      # Sound played when an item breaks
-      sound: ENTITY_ITEM_BREAK
-
       # Volume of the break sound
       sound_volume: 2.0
-
       # Pitch of the break sound
       sound_pitch: 1.0
-
-    logging:
-      # Whether integrity initialization is logged
-      log_init: false
-
-      # Whether item break events are logged
-      log_break: false
-
-      # Whether integrity errors are logged
-      log_errors: true
-
-    anvil_repair:
-      # Whether anvil integrity repair is enabled
-      enabled: true
-      # Integrity restored per anvil repair
-      integrity_multiplier: 0.25
-      # Whether combining items in an anvil restores integrity
-      combine_enabled: true
-      # Bonus integrity when combining two items
-      combine_bonus: 0.1
-
-      material_craft:
-        # Whether crafting with materials restores integrity
-        enabled: true
-        # Integrity restored per material used in crafting
-        integrity_per_material: 10.0
-
-    mending_xp:
-      # Whether mending repairs integrity
-      enabled: true
-      # Integrity restored per mending repair
-      integrity_multiplier: 0.5
-
-    combine:
-      # Whether combining items affects integrity
-      enabled: true
-      # Integrity lost when combining items
-      loss_rate: 0.0
-
-    xp_integrity:
-      # XP is spent on repairing EVERY Mending item (both hands and worn armor)
-      # and does not raise the player's level while any repair happened.
-      enabled: true
-      # Integrity restored per XP point collected
-      integrity_per_xp: 0.1
-      # Action bar text shown when XP repairs Mending items (instead of chat)
-      action_bar: "<green>✨ Mending: +</green><yellow>%amount%%</yellow>"
-
     low_integrity_warning:
-      # Whether low-integrity warnings are enabled
-      enabled: true
       thresholds:
         - 75
         - 50
         - 25
         - 10
         - 5
-
     unbreaking:
-      # Whether the Unbreaking enchantment protects integrity
-      enabled: true
-
+      # When enabled, CUSTOM wear (enchants/sunburn) also passes through the
+      # vanilla (level+1) Unbreaking chance roll. When disabled (default),
+      # Unbreaking applies only to vanilla damage — exactly like vanilla.
+      enabled: false
     piercing:
-      # Whether piercing arrows cost extra integrity
+      # Extra vanilla armor damage on hits with a PIERCING weapon
       enabled: true
-      # Extra integrity cost when shot by piercing arrows
+      # Extra durability points per hit
       extra_integrity_cost: 0.5
-
-    # Items that never receive integrity
-    blacklist: []
-
-    # Items that always receive integrity
-    whitelist: []
 
   creative_item_validator:
     # Whether creative item validation is enabled

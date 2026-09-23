@@ -13,68 +13,52 @@ import org.bukkit.inventory.ItemStack;
 /**
  * 🎯 PiercingListener — handler for the PIERCING enchantment.
  * <p>
- * In vanilla, PIERCING on crossbows pierces entities,
- * but does NOT ignore armor. This listener:
- * <ul>
- *   <li>Does NOT let PIERCING ignore armor (protection works as usual)</li>
- *   <li>Adds +extraCost% to the target's armor integrity cost on hit</li>
- *   <li>Unbreaking is checked against the final cost (not ignored)</li>
- * </ul>
+ * Extra vanilla armor wear on hits: when a player hits a target with a
+ * weapon that has PIERCING (or shoots through blocks), the target's armor
+ * takes the normal vanilla damage plus
+ * {@code features.integrity.piercing.extra_integrity_cost} extra points.
+ * <p>
+ * Armor is NOT ignored — protection works exactly like vanilla.
  */
 public class PiercingListener implements Listener {
 
-    private static boolean enabled = true;
+    private static boolean reloadPending;
 
     public static void init(Main plugin) {
-        var listener = new PiercingListener();
+        reloadPending = false;
         reloadConfig();
-        plugin.getServer().getPluginManager().registerEvents(listener, plugin);
+        plugin.getServer().getPluginManager().registerEvents(new PiercingListener(), plugin);
     }
 
     public static void reloadConfig() {
-        enabled = IntegrityManager.isPiercingEnabled();
-    }
-
-    /**
-     * When a player hits with a PIERCING weapon:
-     * - Armor is NOT ignored (protection works as in vanilla)
-     * - Sets a flag that the next armor damage should get +extraCost%
-     * - In decreaseIntegrity() the flag is checked and extraCost is added BEFORE Unbreaking
-     * <p>
-     * If the hit is WITHOUT PIERCING — the flag is reset so regular hits
-     * do not get a bonus from a previous PIERCING hit in the same tick.
-     */
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onEntityDamage(EntityDamageByEntityEvent e) {
-        if (e.isCancelled()) return;
-        if (!enabled) return;
-        if (!(e.getEntity() instanceof Player victim)) return;
-
-        // Check whether the attacker has PIERCING on their weapon
-        ItemStack weapon = getWeapon(e.getDamager());
-        if (weapon == null || weapon.getType() == Material.AIR) {
-            // No weapon — not PIERCING, reset the flag
-            IntegrityManager.setPiercingActive(false);
-            return;
-        }
-
-        if (weapon.containsEnchantment(Enchantment.PIERCING)) {
-            // Set the flag — the next armor damage gets +extraCost%
-            IntegrityManager.setPiercingActive(true);
-        } else {
-            // Weapon without PIERCING — reset the flag
-            IntegrityManager.setPiercingActive(false);
+        reloadPending = true;
+        // The actual values are re-read from the config by ItemDurabilityUtil;
+        // if it has already reloaded after this call, the flag is cleared there.
+        if (ItemDurabilityUtil.isPiercingEnabled()) {
+            reloadPending = false;
         }
     }
 
-    /**
-     * Gets the attacker's weapon (if the attacker is a player).
-     */
-    private ItemStack getWeapon(org.bukkit.entity.Entity damager) {
-        if (damager instanceof Player attacker) {
-            return attacker.getInventory().getItemInMainHand();
+    static boolean isReloadPending() { return reloadPending; }
+    static void setReloaded() { reloadPending = false; }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onHit(EntityDamageByEntityEvent event) {
+        if (!ItemDurabilityUtil.isEnabled() || !ItemDurabilityUtil.isPiercingEnabled()) return;
+        if (!(event.getEntity() instanceof Player target)) return;
+        if (!(event.getDamager() instanceof Player attacker)) return;
+
+        ItemStack weapon = attacker.getInventory().getItemInMainHand();
+        if (weapon == null || weapon.getType() == Material.AIR) return;
+        if (weapon.getEnchantmentLevel(Enchantment.PIERCING) <= 0) return;
+
+        int extra = (int) Math.round(ItemDurabilityUtil.getPiercingExtraCost());
+        if (extra <= 0) return;
+
+        // Extra vanilla armor damage on every armor piece (armor is NOT ignored)
+        for (ItemStack armor : target.getInventory().getArmorContents()) {
+            if (armor == null || armor.getType() == Material.AIR) continue;
+            ItemDurabilityUtil.decreaseItemIntegrity(armor, extra, target);
         }
-        // For mobs/projectiles we do not check PIERCING (vanilla handles it)
-        return null;
     }
 }

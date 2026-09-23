@@ -1,7 +1,7 @@
 package com.ultimateimprovments.mechanics.environment.sunburn;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.util.ConsoleLogger;
 
@@ -194,7 +194,7 @@ public class SunburnManager implements Listener {
     // =========================
 
     private void degradeHelmet(Player player, ItemStack helmet) {
-        if (IntegrityManager.isEnabled() && ItemIntegrityAPI.hasItemIntegrity(helmet)) {
+        if (ItemDurabilityUtil.isEnabled() && ItemIntegrityAPI.hasItemIntegrity(helmet)) {
             double remaining = ItemIntegrityAPI.decreaseItemIntegrity(helmet, helmetIntegrityLoss, player);
 
             if (remaining <= 0) {

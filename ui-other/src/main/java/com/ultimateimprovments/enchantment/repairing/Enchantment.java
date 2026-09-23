@@ -1,7 +1,7 @@
 package com.ultimateimprovments.enchantment.repairing;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  * inventory slot, it restores {@code level × 0.1%} of its integrity every
  * {@code level} seconds (level 1 → 0.1% every 1s, level 255 → 25.5% every 255s).
  * The cooldown keeps the average repair rate flat at 0.1%/s across all levels. The
- * repair goes through {@code ItemIntegrityAPI.increaseItemIntegrityPercent}, so the
+ * repair goes through {@code ItemIntegrityAPI.increaseItemIntegrityPercent}, so the vanilla durability
  * Integrity system updates the lore and the vanilla durability bar automatically.
  * Integrity never exceeds 100%.
  * <p>
@@ -262,7 +262,7 @@ public final class Enchantment {
      */
     public static boolean isValidTool(@Nullable ItemStack item) {
         if (item == null || item.getType() == Material.AIR) return false;
-        return IntegrityManager.getMaxDurability(item) > 0;
+        return ItemDurabilityUtil.getMaxDurability(item) > 0;
     }
 
     /**
