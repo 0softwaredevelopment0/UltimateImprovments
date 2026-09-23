@@ -59,6 +59,15 @@ public class EnchantmentListener implements Listener {
     /** Players this plugin granted flight to via the Flight charm. */
     private static final Set<UUID> GRANTED_FLIGHT = ConcurrentHashMap.newKeySet();
 
+    /**
+     * Players currently considered flying: {@code isFlying()} is true now, or
+     * they WERE flying and are still airborne. Covers the hover desync: a
+     * player hanging motionless in the air can still be in the flight state
+     * while {@code isFlying()} reports false — the chestplate must keep
+     * draining until they actually land (or lose flight/the charm).
+     */
+    private static final Set<UUID> FLIGHT_ACTIVE = ConcurrentHashMap.newKeySet();
+
     // ─────────────────────────────────────────────────────────────
     //  EVENTS
     // ─────────────────────────────────────────────────────────────
@@ -71,6 +80,7 @@ public class EnchantmentListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
         GRANTED_FLIGHT.remove(event.getPlayer().getUniqueId());
+        FLIGHT_ACTIVE.remove(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -183,14 +193,39 @@ public class EnchantmentListener implements Listener {
     /**
      * While a player is actively flying with the Flight chestplate, the
      * chestplate loses 1 use of integrity per second — flight is no longer free.
+     * "Actively flying" also covers hovering: were flying and still airborne,
+     * even when {@code isFlying()} desyncs to false while hanging in the air.
      */
     private static void drainFlightIntegrity() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             try {
-                if (!player.isFlying()) continue;
+                UUID uuid = player.getUniqueId();
+
+                // Update the flight-state tracker:
+                //  - flying right now → active;
+                //  - landed, lost flight, or falling fast (flight toggled off
+                //    mid-air → a normal fall, not flight) → not active;
+                //  - still airborne after flying with ~zero fall speed
+                //    (hover desync) → stays active.
+                if (player.isFlying()) {
+                    FLIGHT_ACTIVE.add(uuid);
+                } else if (player.isOnGround()
+                        || !player.getAllowFlight()
+                        || player.getVelocity().getY() < -0.5) {
+                    FLIGHT_ACTIVE.remove(uuid);
+                }
+
+                if (!FLIGHT_ACTIVE.contains(uuid)) continue;
+
                 ItemStack chest = player.getInventory().getChestplate();
-                if (chest == null || chest.getType() == Material.AIR) continue;
-                if (com.ultimateimprovments.enchantment.flight.Enchantment.getLevel(chest) <= 0) continue;
+                if (chest == null || chest.getType() == Material.AIR) {
+                    FLIGHT_ACTIVE.remove(uuid);
+                    continue;
+                }
+                if (com.ultimateimprovments.enchantment.flight.Enchantment.getLevel(chest) <= 0) {
+                    FLIGHT_ACTIVE.remove(uuid);
+                    continue;
+                }
 
                 ItemIntegrityAPI.decreaseItemIntegrity(chest, 1, player);
             } catch (Exception e) {
