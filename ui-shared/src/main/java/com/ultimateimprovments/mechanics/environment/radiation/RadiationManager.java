@@ -20,6 +20,8 @@ import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.BundleContents;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -500,14 +502,44 @@ public class RadiationManager implements Listener {
     private int countInInventory(Player player, Material material) {
         int count = 0;
         for (ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material) {
+            if (item == null) continue;
+            if (item.getType() == material) {
                 count += item.getAmount();
             }
+            // Bundles are NOT shielding: debris inside a bundle still radiates.
+            count += countInBundle(item, material);
+            // Shulker boxes (any color) and any other container items DO shield:
+            // their contents are not scanned.
         }
         for (ItemStack item : player.getInventory().getExtraContents()) {
             if (item != null && item.getType() == material) {
                 count += item.getAmount();
             }
+            if (item != null) {
+                count += countInBundle(item, material);
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Counts {@code material} inside a bundle's BUNDLE_CONTENTS component.
+     * Recurses for nested bundles — a bundle in a bundle is still not shielding.
+     */
+    private int countInBundle(ItemStack item, Material material) {
+        if (item.getType() != Material.BUNDLE
+                && !item.getType().getKey().getKey().endsWith("_bundle")) {
+            return 0;
+        }
+        BundleContents contents = item.getData(DataComponentTypes.BUNDLE_CONTENTS);
+        if (contents == null) return 0;
+        int count = 0;
+        for (ItemStack inner : contents.contents()) {
+            if (inner == null) continue;
+            if (inner.getType() == material) {
+                count += inner.getAmount();
+            }
+            count += countInBundle(inner, material);
         }
         return count;
     }
