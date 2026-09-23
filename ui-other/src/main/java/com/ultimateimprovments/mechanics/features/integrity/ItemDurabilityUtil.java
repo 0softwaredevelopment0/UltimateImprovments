@@ -3,6 +3,7 @@ package com.ultimateimprovments.mechanics.features.integrity;
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -67,6 +68,7 @@ public final class ItemDurabilityUtil {
     private static boolean onBreakPlaySound = true;
     private static double onBreakSoundVolume = 2.0;
     private static double onBreakSoundPitch = 1.0;
+    private static java.util.List<Integer> warnThresholds = new java.util.ArrayList<>();
 
     /** Marker of items migrated from the old integrity system (PDC data already removed). */
     private static NamespacedKey MIGRATED_TAG;
@@ -91,6 +93,7 @@ public final class ItemDurabilityUtil {
         onBreakPlaySound = cfg.getBoolean("on_break.play_sound", true);
         onBreakSoundVolume = cfg.getDouble("on_break.sound_volume", 2.0);
         onBreakSoundPitch = cfg.getDouble("on_break.sound_pitch", 1.0);
+        warnThresholds = cfg.getIntegerList("low_integrity_warning.thresholds");
     }
 
     public static boolean isEnabled() { return enabled; }
@@ -245,6 +248,8 @@ public final class ItemDurabilityUtil {
 
         if (after >= max) {
             breakItem(item);
+        } else {
+            warnOnWear(owner, item, max, before, after);
         }
         return getItemIntegrityPercent(item);
     }
@@ -279,6 +284,52 @@ public final class ItemDurabilityUtil {
         if (meta == null) return;
         meta.setUnbreakable(unbreakable);
         item.setItemMeta(meta);
+    }
+
+    // =========================
+    // LOW DURABILITY WARNING (threshold crossing, migrated from the old IIS)
+    // =========================
+
+    /**
+     * Warns the owner when a wear event crosses a warning threshold downward
+     * (e.g. drops below 50%). Stateless: a hit crossing several thresholds at
+     * once produces one message; repairs re-arm the thresholds naturally.
+     *
+     * @param beforeDamage vanilla damage before the wear
+     * @param afterDamage  vanilla damage after the wear
+     */
+    public static void warnOnWear(Player owner, ItemStack item, int max,
+                                  int beforeDamage, int afterDamage) {
+        if (owner == null || warnThresholds == null || warnThresholds.isEmpty()) return;
+        if (max <= 0 || beforeDamage >= max) return;
+
+        double pctBefore = 100.0 * (1.0 - (double) Math.min(beforeDamage, max) / max);
+        double pctAfter = 100.0 * (1.0 - (double) Math.min(afterDamage, max) / max);
+
+        for (int threshold : warnThresholds) {
+            if (pctBefore > threshold && pctAfter <= threshold) {
+                String msg = com.ultimateimprovments.config.MessagesManager.getString(
+                        "features.integrity.low_integrity_warning.message",
+                        "<yellow>⚠</yellow> <white>Your item</white> <yellow>%item%</yellow> <white>has</white> <red>%pct%%</red> <white>durability remaining!</white>")
+                        .replace("%item%", item.getType().name().toLowerCase().replace('_', ' '))
+                        .replace("%pct%", String.format("%.0f", pctAfter));
+                owner.sendMessage(MessageUtil.parse(msg));
+                break; // one message per hit even if several thresholds were crossed
+            }
+        }
+    }
+
+    /**
+     * Warns the owner when a wear event crosses a warning threshold downward.
+     * Convenience overload for vanilla damage events: the delta is added to
+     * the item's current vanilla damage.
+     */
+    public static void warnOnWear(Player owner, ItemStack item, int damageDelta) {
+        if (owner == null || item == null || item.getType() == Material.AIR || damageDelta <= 0) return;
+        int max = getMaxDurability(item);
+        if (max <= 0) return;
+        int before = getVanillaDamage(item);
+        warnOnWear(owner, item, max, before, Math.min(max, before + damageDelta));
     }
 
     // =========================
