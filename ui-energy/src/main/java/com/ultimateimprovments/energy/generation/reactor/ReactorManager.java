@@ -379,6 +379,13 @@ public class ReactorManager {
         s.setEnergyGenerated(r.energyGenerated);
         s.setLaserStarted(r.lasers.isStarted());
         s.setStructureDamaged(r.structureDamaged);
+        s.setShieldState(r.shield.getState().name());
+        s.setShieldIntegrity(r.shield.getIntegrity());
+        s.setShieldFailCountdown(r.shield.getFailCountdown());
+        s.setSelfdestructPhase(r.selfdestructPhase.name());
+        s.setSelfdestructTicks(r.selfdestructTicks);
+        s.setSelfdestructDone(r.selfdestructDone);
+        s.setCoreEmergencyStopped(r.coreEmergencyStopped);
         s.setLaserPowers(new double[] {
                 r.lasers.getPower(ReactorLasers.LASER_P1),
                 r.lasers.getPower(ReactorLasers.LASER_P2),
@@ -429,9 +436,30 @@ public class ReactorManager {
         energyGenerated = state.getEnergyGenerated();
         lasers.setStarted(state.isLaserStarted());
         structureDamaged = state.isStructureDamaged();
-        if (state.isLaserStarted()) {
-            shield.setState(ReactorShield.State.WORKING);
-            shield.setIntegrity(100);
+        coreEmergencyStopped = state.isCoreEmergencyStopped();
+        selfdestructDone = state.isSelfdestructDone();
+        selfdestructPhase = parseSelfdestructPhase(state.getSelfdestructPhase());
+        selfdestructTicks = state.getSelfdestructTicks();
+
+        // Shield: restore the exact phase + integrity + detonation countdown
+        try {
+            shield.setState(ReactorShield.State.valueOf(state.getShieldState()));
+        } catch (Exception e) {
+            shield.setState(state.isLaserStarted()
+                    ? ReactorShield.State.WORKING : ReactorShield.State.OFFLINE);
+        }
+        shield.setIntegrity(state.getShieldIntegrity());
+        shield.restoreFailCountdown(state.getShieldFailCountdown());
+        if (shield.getState() == ReactorShield.State.WORKING && state.isLaserStarted()) {
+            // legacy rows (pre-shield columns): keep the old full-restore behaviour
+            shield.setIntegrity(Math.max(shield.getIntegrity(), 100));
+        }
+
+        // Self-destruct overpower finale: re-arm the forced 1000% ramp
+        if (selfdestructPhase == SelfdestructPhase.FINALE) {
+            lasers.beginOverpower();
+        } else if (selfdestructPhase == SelfdestructPhase.TIMED) {
+            lasers.setControlLocked(true);
         }
         double[] lp = state.getLaserPowers();
         if (lp != null && lp.length >= 4) {
@@ -444,6 +472,16 @@ public class ReactorManager {
 
     public static void deleteFromDb(String reactorId) {
         ReactorPersistence.deleteFromDb(reactorId);
+    }
+
+    /** Parses a persisted self-destruct phase name, NONE on any mismatch. */
+    private static SelfdestructPhase parseSelfdestructPhase(String name) {
+        if (name == null) return SelfdestructPhase.NONE;
+        try {
+            return SelfdestructPhase.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            return SelfdestructPhase.NONE;
+        }
     }
 
     // =========================

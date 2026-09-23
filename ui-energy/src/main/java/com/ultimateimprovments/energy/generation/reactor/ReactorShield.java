@@ -128,6 +128,9 @@ public class ReactorShield {
     /** Shield failure countdown (ticks until the detonation), 0 = not failing. */
     public int getFailCountdown() { return Math.max(0, failCountdown); }
 
+    /** Restores the persisted detonation countdown (used by DB load). */
+    public void restoreFailCountdown(int ticks) { failCountdown = Math.max(0, ticks); }
+
     /** Whether the shield is in the failure (detonation countdown) state. */
     public boolean isFailed() { return state == State.FAILED; }
 
