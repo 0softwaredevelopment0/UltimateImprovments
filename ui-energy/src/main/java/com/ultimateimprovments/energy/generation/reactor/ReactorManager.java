@@ -69,6 +69,8 @@ public class ReactorManager {
     private int selfdestructTicks;        // ticks in the current phase
     private boolean selfdestructDone;     // completed — not rolled again
     private int selfdestructWarnTicks;    // legacy debounce (unused after the single T-10s warning)
+    private boolean selfdestructJustRolled; // one-tick latch: the protocol armed → dfc_self_destruct grant
+    private boolean fusionDebrisJustCrafted; // one-tick latch: debris crafted → power_of_fusion grant
 
     /** Seconds remaining in the timed phase (for the sign timer). */
     public int getSelfdestructSecondsLeft() {
@@ -157,6 +159,7 @@ public class ReactorManager {
         if (Math.random() * 100.0 < cfg.getSelfdestructChance()) {
             selfdestructPhase = SelfdestructPhase.SENSORS_DOWN;
             selfdestructTicks = 0;
+            selfdestructJustRolled = true;
             display.resetSignCache();
             broadcast(StructuresMessages.get("sensor_no_signal",
                     "<red>Cannot receive any data from sensors: <gray>No signal"));
@@ -330,6 +333,18 @@ public class ReactorManager {
             if (reactorLocation != null
                     && player.getWorld().equals(reactorLocation.getWorld())
                     && player.getLocation().distanceSquared(reactorLocation) <= 225) {
+                grantAdvancement(player, key);
+            }
+        }
+    }
+
+    /** Grants to every online player within {@code radius} blocks of the reactor center. */
+    private void grantAdvancementNear(String key, double radius) {
+        if (reactorLocation == null) return;
+        double radiusSq = radius * radius;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (player.getWorld().equals(reactorLocation.getWorld())
+                    && player.getLocation().distanceSquared(reactorLocation) <= radiusSq) {
                 grantAdvancement(player, key);
             }
         }
@@ -609,6 +624,22 @@ public class ReactorManager {
             advStartDfcGranted = true;
             Bukkit.getScheduler().runTask(Main.getInstance(), () ->
                 grantAdvancementAll("datapack/start_dfc"));
+        }
+
+        // 🏆 Advancement: dfc_self_destruct — the protocol just armed
+        if (selfdestructJustRolled) {
+            selfdestructJustRolled = false;
+            Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                grantAdvancementNear("datapack/dfc_self_destruct",
+                        cfg.getSelfdestructAdvRadius()));
+        }
+
+        // 🏆 Advancement: power_of_fusion — the fusion completed one ancient debris
+        if (fusionDebrisJustCrafted) {
+            fusionDebrisJustCrafted = false;
+            Bukkit.getScheduler().runTask(Main.getInstance(), () ->
+                grantAdvancementNear("datapack/power_of_fusion",
+                        cfg.getSelfdestructAdvRadius()));
         }
 
         // =========================
@@ -1087,6 +1118,11 @@ public class ReactorManager {
     public boolean hasBarrelFuel() {
         if (reactorLocation == null) return false;
         return fuel.hasFuel(reactorLocation);
+    }
+
+    /** Called by the fusion system right after one ancient debris is crafted. */
+    public void onFusionDebrisCrafted() {
+        fusionDebrisJustCrafted = true;
     }
 
     /** Called by the laser startup pulse — ignites the shield formation. */

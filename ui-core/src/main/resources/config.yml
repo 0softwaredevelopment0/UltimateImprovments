@@ -2571,6 +2571,16 @@ reactor:
   selfdestruct_no_signal_sec: 5
   selfdestruct_timed_sec: 60
   selfdestruct_overpower_rate: 10.0
+  # Advancement grant radius (blocks from the reactor center) for the
+  # self-destruct and fusion-completion advancements
+  selfdestruct_adv_radius: 20.0
+  # Content Absorber valve cooling: heat drain carried by the collected fusion
+  # particles — quadratic, cool = absorber_cool_rate × (valve% / 100)² C* per sec
+  # (100% valve ≈ stab_cool_rate). No particle flow — no cooling. An open valve
+  # vents containment: absorber_rad_per_sec radiation per second at 100% within
+  # 5 blocks of the reactor.
+  absorber_cool_rate: 9500.0
+  absorber_rad_per_sec: 40.0
   # Laser beam particles: END_ROD speed (blocks/tick) and total count per tick
   shield_particle_rod_speed: 0.35
   shield_particle_rod_count: 16
