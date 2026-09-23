@@ -344,9 +344,9 @@ public class AdminMenuGUI implements Listener {
                 "<gray>Find nearby entities.</gray>"), Keys.RADAR));
 
         // 10. Lead Ingot
-        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.IRON_INGOT,
-                "<gray>Lead Ingot *</gray>",
-                "<gray>Radiation shielding material.</gray>"), Keys.LEAD_INGOT));
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.NETHERITE_INGOT,
+                "<white>Lead Ingot *</white>",
+                "<gray>Used to craft a Lead Shield.</gray>"), Keys.LEAD_INGOT));
 
         // 11. Lead Shield
         CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.SHIELD,
@@ -430,9 +430,7 @@ public class AdminMenuGUI implements Listener {
             ));
             elytraChest.setItemMeta(ecMeta);
         }
-        CUSTOM_ITEMS.add(elytraChest);
-
-        // 23. Totem with charges
+        CUSTOM_ITEMS.add(elytraChest);        // 23. Totem with charges
         ItemStack totem = new ItemStack(Material.TOTEM_OF_UNDYING);
         ItemMeta totemMeta = totem.getItemMeta();
         if (totemMeta != null) {
@@ -440,11 +438,17 @@ public class AdminMenuGUI implements Listener {
             var pdc = totemMeta.getPersistentDataContainer();
             pdc.set(Keys.TOTEM_CHARGE, PersistentDataType.INTEGER, 5);
             totemMeta.lore(List.of(
-                    MessageUtil.parse("<!italic><white>Charge: <gray>5</gray></white>")
+                MessageUtil.parse("<!italic><white>Charge: <gray>5</gray></white>")
             ));
             totem.setItemMeta(totemMeta);
         }
         CUSTOM_ITEMS.add(totem);
+
+        // 24. Dosimeter — radiation readout (clock base, same build as the recipe result)
+        CUSTOM_ITEMS.add(com.ultimateimprovments.mechanics.crafting.DosimeterCraftListener.createDosimeter());
+
+        // 25. Lead Ingot — corrected material is above (NETHERITE_INGOT); the craft result
+        // would not match an IRON_INGOT version, so this one must stay netherite-based.
     }
 
     private static ItemStack createNamedItem(Material material, String name, String lore) {
@@ -582,11 +586,11 @@ public class AdminMenuGUI implements Listener {
         UUID uuid = player.getUniqueId();
         if (!openMenus.containsKey(uuid)) return;
 
+        // Dragging into the GUI is blocked; the cursor item itself is kept —
+        // it is a real picked-up item from the ITEMS tab.
         for (int slot : e.getRawSlots()) {
             if (slot < 54) {
                 e.setCancelled(true);
-                player.setItemOnCursor(null);
-                player.updateInventory();
                 return;
             }
         }
@@ -603,10 +607,10 @@ public class AdminMenuGUI implements Listener {
         MenuState state = openMenus.get(uuid);
         if (state == null) return;
 
-        // 🛡 Block ALL clicks + clear cursor + force synchronization
+        // Cancel the vanilla behaviour so the menu items NEVER move.
+        // NOTE: we deliberately do NOT clear the cursor here — the cursor is
+        // how items are picked up from the ITEMS tab.
         e.setCancelled(true);
-        player.setItemOnCursor(null);
-        player.updateInventory();
 
         // Only process clicks in the top inventory
         if (e.getClickedInventory() != e.getView().getTopInventory()) return;
@@ -642,24 +646,34 @@ public class AdminMenuGUI implements Listener {
                 return;
             }
 
-            // Item click — left click only and only if NOT protected, give to the player
+            // Item click — pick the item up ON THE CURSOR without removing it
+            // from the menu (the click is cancelled, so the slot keeps its item
+            // and can be clicked any number of times).
             if (slot >= CONTENT_START && slot <= CONTENT_END && e.isLeftClick() && !isProtectedItem) {
                 if (clicked != null && clicked.getType() != Material.BLACK_STAINED_GLASS_PANE) {
-                    HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(clicked.clone());
-                    if (!leftover.isEmpty()) {
-                        player.getWorld().dropItemNaturally(player.getLocation(), leftover.get(0));
+                    ItemStack cursor = e.getCursor();
+                    if (cursor != null && cursor.getType() != Material.AIR) {
+                        // Cursor busy — only allow stacking the SAME item type.
+                        if (cursor.isSimilar(clicked)) {
+                            int free = cursor.getMaxStackSize() - cursor.getAmount();
+                            if (free > 0) {
+                                int transfer = Math.min(free, clicked.getAmount());
+                                cursor.setAmount(cursor.getAmount() + transfer);
+                                e.setCursor(cursor);
+                                player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 1.5f);
+                            }
+                        }
+                        return; // different item on the cursor — nothing happens
                     }
-                    player.sendMessage(MessageUtil.parse(
-                            "<green>✔ Получен предмет: </green><white>" +
-                                    net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-                                            .serialize(clicked.getItemMeta().displayName()) + "</white>"));
+                    e.setCursor(clicked.clone());
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 1.5f);
                 }
                 return;
             }
         }
 
-        // Close — left click only
+        // Close — left click only (drop nothing: the cursor item is a real
+        // copy, it stays with the player and goes to the inventory on close).
         if (slot == SLOT_CLOSE && e.isLeftClick()) {
             player.closeInventory();
             openMenus.remove(uuid);
