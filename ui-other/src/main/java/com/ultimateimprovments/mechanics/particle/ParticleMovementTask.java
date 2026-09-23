@@ -94,11 +94,6 @@ public class ParticleMovementTask extends BukkitRunnable {
 
         // Spawn END_ROD particles
         spawnParticleVisual(data);
-
-        // Update Marker entity position
-        if (data.entity != null && !data.entity.isDead()) {
-            data.entity.teleport(data.location);
-        }
     }
 
     // =========================
@@ -369,8 +364,5 @@ public class ParticleMovementTask extends BukkitRunnable {
             world.spawnParticle(Particle.END_ROD, data.location, 15, 0.3, 0.3, 0.3, 0.02);
         }
         data.dead = true;
-        if (data.entity != null && !data.entity.isDead()) {
-            data.entity.remove();
-        }
     }
 }

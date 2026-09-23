@@ -50,7 +50,6 @@ public class UIMBS extends JavaPlugin {
         StructureMarker.loadFromDatabase();
         StructureChunkTracker.load();
         StructureChunkTracker.loadTrackedChunks();
-        StructureMarker.migrateLegacyMarkers();
 
         ConsoleLogger.success("[UI-MBS] Multi-block structures enabled!");
     }
