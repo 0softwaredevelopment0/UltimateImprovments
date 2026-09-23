@@ -3,6 +3,7 @@ package com.ultimateimprovments.chat;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.api.CheckBridge;
 
+import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlaceholderResolver;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -167,6 +168,26 @@ public class ChatManager implements Listener {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         Player player = event.getPlayer();
+
+        // MUTE CHECK — enforced even when the custom chat is disabled
+        // (chat.enabled: false): previously it sat behind the enabled gate,
+        // so a muted player could keep talking with the vanilla chat.
+        // PunishJoinListener.isMuted() reads the DB-backed mute cache (refreshed
+        // on login/join and when /ui punish mute is issued). Async event → DB
+        // lookups are safe here.
+        if (com.ultimateimprovments.punish.PunishJoinListener.isMuted(player)) {
+            event.setCancelled(true);
+            PunishmentManager.PunishmentRecord mute =
+                    com.ultimateimprovments.punish.PunishJoinListener.getMuteRecord(player);
+            String duration = mute != null
+                    ? (mute.expiresAt == 0 ? "permanent"
+                       : PunishmentManager.formatRemaining(Math.max(0, mute.expiresAt - System.currentTimeMillis())))
+                    : "";
+            player.sendMessage(MessageUtil.parse(
+                    "<red>⛔ You are muted!</red>"
+                            + (duration.isEmpty() ? "" : " <gray>Time remaining:</gray> <white>" + duration + "</white>")));
+            return;
+        }
 
         if (!enabled) return;
 

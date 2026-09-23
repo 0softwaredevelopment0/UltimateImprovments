@@ -1,7 +1,6 @@
 package com.ultimateimprovments.punish;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.server.AccessListCheckTask;
 import com.ultimateimprovments.whitelist.BlacklistManager;
 import com.ultimateimprovments.whitelist.OpWhitelistManager;
 import com.ultimateimprovments.whitelist.WhitelistManager;
@@ -47,8 +46,9 @@ public class UIPunish extends JavaPlugin {
         BlacklistManager.init(main);
         OpWhitelistManager.init(main);
 
-        // Start periodic access list check (interval from access_control.check_interval_ticks)
-        AccessListCheckTask.start(main);
+        // NOTE: the periodic AccessListCheckTask is started by UI-Other
+        // (initPostModuleSystems) — starting it here too only recreated the
+        // task with a new id on every enable (double kicks/deops on one pass).
 
         // Clean old kicks async
         Bukkit.getScheduler().runTaskAsynchronously(main, PunishmentManager::deleteOldKicks);
@@ -58,7 +58,7 @@ public class UIPunish extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        AccessListCheckTask.stop();
+        // AccessListCheckTask is owned by UI-Other — do not stop it here.
         org.bukkit.event.HandlerList.unregisterAll(this);
         getLogger().info("UI-Punish disabled!");
         instance = null;
