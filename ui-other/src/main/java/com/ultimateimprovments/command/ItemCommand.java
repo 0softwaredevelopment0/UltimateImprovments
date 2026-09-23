@@ -1,38 +1,39 @@
 package com.ultimateimprovments.command;
 
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
-import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
-import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.util.MessageUtil;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 
 /**
- * Handles /ui item command — item integrity management.
+ * Handles /ui item command — vanilla durability management.
+ * <p>
+ * Values are plain vanilla durability points: the item's real damage
+ * component is the single source of truth (the vanilla durability bar is
+ * the only visual indicator — no custom lore is written).
  */
 public class ItemCommand {
 
     public static boolean execute(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item int <set|add|list> [value]</white>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item dura <info|set|add|unbreakable> [value]</white>"));
             return true;
         }
 
-        if (args[1].equalsIgnoreCase("int")) {
-            return handleIntegrity(player, args);
+        if (args[1].equalsIgnoreCase("dura") || args[1].equalsIgnoreCase("int")) {
+            return handleDurability(player, args);
         }
 
         player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Unknown subcommand: </red><white>" + args[1] + "</white>"));
-        player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/ui item int set|add|list</white>"));
+        player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/ui item dura info|set|add|unbreakable</white>"));
         return true;
     }
 
-    private static boolean handleIntegrity(Player player, String[] args) {
+    private static boolean handleDurability(Player player, String[] args) {
         if (args.length < 3) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item int set|add|list</white>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item dura <info|set|add|unbreakable> [value]</white>"));
             return true;
         }
 
@@ -42,116 +43,91 @@ public class ItemCommand {
             return true;
         }
 
-        if (!ItemIntegrityAPI.hasItemIntegrity(heldItem)) {
-            ItemIntegrityAPI.initializeItemIntegrity(heldItem);
-            if (!ItemIntegrityAPI.hasItemIntegrity(heldItem)) {
-                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>This item does not have an integrity system!</red>"));
-                return true;
-            }
+        if (ItemDurabilityUtil.getMaxDurability(heldItem) <= 0) {
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>This item has no durability!</red>"));
+            return true;
         }
 
         switch (args[2].toLowerCase()) {
-            case "list" -> handleList(player, heldItem);
+            case "info", "list" -> handleInfo(player, heldItem);
             case "set" -> handleSet(player, heldItem, args);
             case "add" -> handleAdd(player, heldItem, args);
             case "unbreakable" -> handleUnbreakable(player, heldItem, args);
             default -> {
                 player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Unknown subcommand: </red><white>" + args[2] + "</white>"));
-                player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/ui item int set|add|list</white>"));
+                player.sendMessage(MessageUtil.parse("<red>Usage: </red><white>/ui item dura info|set|add|unbreakable</white>"));
             }
         }
         return true;
     }
 
-    private static void handleList(Player player, ItemStack heldItem) {
-        // getItemIntegrityPercent already returns % (0.0–100.0) — the source of truth
-        double current = ItemIntegrityAPI.getItemIntegrityPercent(heldItem);
-        double pctCurrent = Math.max(0.0, current);
+    private static void handleInfo(Player player, ItemStack heldItem) {
+        int max = ItemDurabilityUtil.getMaxDurability(heldItem);
+        int damage = ItemDurabilityUtil.getVanillaDamage(heldItem);
         String itemName = heldItem.hasItemMeta() && heldItem.getItemMeta().hasDisplayName()
                 ? heldItem.getItemMeta().getDisplayName()
                 : heldItem.getType().name().toLowerCase().replace("_", " ");
-        if (itemName.length() > 0) {
+        if (!itemName.isEmpty()) {
             itemName = itemName.substring(0, 1).toUpperCase() + itemName.substring(1);
         }
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
-        player.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Item Integrity Information</white>"));
+        player.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Item Durability Information</white>"));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
         player.sendMessage(MessageUtil.parse("<gray>Item: </gray><white>" + itemName + "</white>"));
-        player.sendMessage(MessageUtil.parse("<gray>Current: </gray><green>" + ItemDurabilityUtil.formatPercent(pctCurrent) + "%</green>"));
-        player.sendMessage(MessageUtil.parse("<gray>Max:    </gray><green>" + ItemDurabilityUtil.formatPercent(Math.max(0.0, ItemIntegrityAPI.getItemMaxIntegrityPercent(heldItem))) + "%</green>"));
+        player.sendMessage(MessageUtil.parse("<gray>Remaining: </gray><green>" + (max - damage) + "</green><gray>/" + max + "</gray>"));
+        player.sendMessage(MessageUtil.parse("<gray>Unbreakable: </gray><white>" + ItemDurabilityUtil.isUnbreakable(heldItem) + "</white>"));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
     }
 
     private static void handleSet(Player player, ItemStack heldItem, String[] args) {
         if (args.length < 4) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item int set </white><gray><value></gray>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item dura set </white><gray><remaining></gray>"));
             return;
         }
         try {
-            double value = Double.parseDouble(args[3]);
-            if (value < 0 || value > 100) {
-                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Value must be between 0 and 100!</red>"));
+            int remaining = Integer.parseInt(args[3]);
+            int max = ItemDurabilityUtil.getMaxDurability(heldItem);
+            if (remaining < 0 || remaining > max) {
+                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Value must be between 0 and </red><yellow>" + max + "</yellow><red>!</red>"));
                 return;
             }
-            double actual = Math.max(0.0, ItemIntegrityAPI.setItemIntegrity(heldItem, value));
-            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item integrity set to </white><yellow>" + ItemDurabilityUtil.formatPercent(actual) + "%</yellow>"));
+            ItemDurabilityUtil.setItemIntegrity(heldItem, 100.0 * remaining / max);
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Durability set to </white><yellow>" + remaining + "</yellow><gray>/" + max + "</gray>"));
         } catch (NumberFormatException e) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format! Use a decimal number (e.g.: 75.500)</red>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format!</red>"));
         }
     }
 
     private static void handleUnbreakable(Player player, ItemStack heldItem, String[] args) {
-        boolean setUnbreakable;
-        if (args.length >= 4) {
-            setUnbreakable = Boolean.parseBoolean(args[3]);
-        } else {
-            // Toggle: if the tag exists — remove it, otherwise — add it
-            ItemMeta meta = heldItem.getItemMeta();
-            if (meta == null) {
-                player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Cannot modify item meta!</red>"));
-                return;
-            }
-            boolean hasTag = meta.getPersistentDataContainer()
-                    .has(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE);
-            setUnbreakable = !hasTag;
-        }
+        boolean setUnbreakable = args.length >= 4
+                ? Boolean.parseBoolean(args[3])
+                : !ItemDurabilityUtil.isUnbreakable(heldItem);
 
-        ItemMeta meta = heldItem.getItemMeta();
-        if (meta == null) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Cannot modify item meta!</red>"));
-            return;
-        }
-
+        ItemDurabilityUtil.setVanillaUnbreakable(heldItem, setUnbreakable);
         if (setUnbreakable) {
-            meta.getPersistentDataContainer().set(Keys.INTEGRITY_UNBREAKABLE, PersistentDataType.BYTE, (byte) 1);
-            heldItem.setItemMeta(meta);
-            // Force 100% integrity (the API will update the lore itself)
-            ItemIntegrityAPI.setItemIntegrity(heldItem, 100.0);
-            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item is now </white><aqua>Unbreakable</aqua><white>! Integrity locked at 100%.</white>"));
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item is now </white><aqua>Unbreakable</aqua><white>!</white>"));
         } else {
-            meta.getPersistentDataContainer().remove(Keys.INTEGRITY_UNBREAKABLE);
-            heldItem.setItemMeta(meta);
-            ItemDurabilityUtil.updateItemLore(heldItem);
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item is no longer </white><aqua>Unbreakable</aqua><white>.</white>"));
         }
     }
 
     private static void handleAdd(Player player, ItemStack heldItem, String[] args) {
         if (args.length < 4) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item int add </white><gray><value></gray>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Usage: </red><white>/ui item dura add </white><gray><points></gray>"));
             return;
         }
         try {
-            double value = Double.parseDouble(args[3]);
-            if (value <= 0) {
+            int points = Integer.parseInt(args[3]);
+            if (points <= 0) {
                 player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Value must be greater than 0!</red>"));
                 return;
             }
-            // The actual value is returned by the API itself — we don't recalculate locally
-            double newVal = Math.max(0.0, ItemIntegrityAPI.increaseItemIntegrityPercent(heldItem, value));
-            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Added </white><yellow>" + ItemDurabilityUtil.formatPercent(value) + "%</yellow><white>. Current: </white><yellow>" + ItemDurabilityUtil.formatPercent(newVal) + "%</yellow>"));
+            int max = ItemDurabilityUtil.getMaxDurability(heldItem);
+            ItemDurabilityUtil.increaseItemIntegrity(heldItem, points);
+            int damage = ItemDurabilityUtil.getVanillaDamage(heldItem);
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Repaired </white><yellow>" + points + "</yellow><white>. Remaining: </white><yellow>" + (max - damage) + "</yellow><gray>/" + max + "</gray>"));
         } catch (NumberFormatException e) {
-            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format! Use a decimal number (e.g.: 25.500)</red>"));
+            player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format!</red>"));
         }
     }
 }

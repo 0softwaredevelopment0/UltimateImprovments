@@ -571,10 +571,7 @@ messages:
     kick_message: "<dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>"
   
   features:
-    integrity:
-      low_integrity_warning:
-        # Chat message for features integrity (message)
-        message: "<yellow>⚠</yellow> <white>Your item</white> <yellow>%item%</yellow> <white>has</white> <red>%pct%%</red> <white>integrity remaining!</white>"
+    integrity: {}
     creative_item_validator:
       # Chat message for features creative_item_validator (message)
       message: "<red>This item contains too much data!</red>"
@@ -1929,10 +1926,7 @@ messages_en:
     kick_message: "<dark_red>❌</dark_red> <red>Packet too large!</red>\\n<gray>Please reconnect to the server.</gray>"
   
   features:
-    integrity:
-      low_integrity_warning:
-        # Chat message for features integrity (message)
-        message: "<yellow>⚠</yellow> <white>Your item</white> <yellow>%item%</yellow> <white>has</white> <red>%pct%%</red> <white>integrity remaining!</white>"
+    integrity: {}
     creative_item_validator:
       # Chat message for features creative_item_validator (message)
       message: "<red>This item contains too much data!</red>"
@@ -3014,8 +3008,6 @@ features:
     # was removed — anvil, grindstone and Mending now behave exactly like vanilla.
     # Remaining optional features:
     enabled: true
-    # Integrity % lore line (computed from the vanilla damage component)
-    lore_text: "<i:false><white>Integrity:</white>"
     on_break:
       # Whether a sound plays when an item breaks
       play_sound: true
