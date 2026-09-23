@@ -1,23 +1,15 @@
 package com.ultimateimprovments.structure;
 
 import com.ultimateimprovments.database.DatabaseManager;
-import com.ultimateimprovments.mbs.UIMBS;
 import com.ultimateimprovments.util.ConsoleLogger;
 
-import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Marker;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.*;
-
 /**
  * 🏷 Structure marker registry with FULL SQLite persistence.
  * <p>
@@ -34,16 +26,12 @@ import java.util.*;
  *   <li>{@link #saveAll()} — full re-save (every 10 minutes and on shutdown);</li>
  *   <li>{@link #loadFromDatabase()} restores the cache at startup.</li>
  * </ul>
- * Marker entities are no longer spawned; on the first run after an update old
- * markers are imported into the DB and removed from the world ({@link #migrateLegacyMarkers}).
+ * Marker entities are never spawned — the DB is the only source of truth.
  * <p>
  * ⚠️ The cache key includes the world UUID — critical for multi-world setups!
  * Two different worlds with the same x,y,z will NOT collide.
  */
 public class StructureMarker {
-
-    private static final NamespacedKey TYPE_KEY = new NamespacedKey("ui", "structure_type");
-    private static final NamespacedKey ID_KEY = new NamespacedKey("ui", "structure_id");
 
     // ════════════════════════════════════════
     // CACHE: world_uid:x:y:z → {type, uuid, worldUid}
@@ -222,64 +210,6 @@ public class StructureMarker {
             }
         } catch (Exception e) {
             ConsoleLogger.warn("[StructureMarker] Failed to save to DB: " + e.getMessage());
-        }
-    }
-
-    // ════════════════════════════════════════
-    // MIGRATE LEGACY MARKERS — one-time import of old Marker entities into the DB
-    // (first run after update: the DB is still empty, data lives in the Markers)
-    // Imports only if the table is empty; in any case removes found Markers.
-    // ════════════════════════════════════════
-    public static void migrateLegacyMarkers() {
-        boolean dbHasData = hasDataInDb();
-        int imported = 0;
-        int removed = 0;
-
-        for (World world : UIMBS.getInstance().getServer().getWorlds()) {
-            String worldUid = world.getUID().toString();
-            for (Chunk chunk : world.getLoadedChunks()) {
-                for (Entity entity : chunk.getEntities()) {
-                    if (!(entity instanceof Marker marker)) continue;
-                    if (!marker.isValid() || marker.isDead()) continue;
-
-                    PersistentDataContainer pdc = marker.getPersistentDataContainer();
-                    String type = pdc.get(TYPE_KEY, PersistentDataType.STRING);
-                    String uuidStr = pdc.get(ID_KEY, PersistentDataType.STRING);
-                    if (type == null || uuidStr == null) {
-                        // Marker without our data — leave it alone
-                        continue;
-                    }
-
-                    UUID uuid;
-                    try {
-                        uuid = UUID.fromString(uuidStr);
-                    } catch (IllegalArgumentException e) {
-                        marker.remove();
-                        removed++;
-                        continue;
-                    }
-
-                    Location loc = marker.getLocation();
-                    String fk = fullKey(worldUid, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-
-                    if (!dbHasData && !byPosition.containsKey(fk)) {
-                        StructureData data = new StructureData(type, uuid, worldUid);
-                        byPosition.put(fk, data);
-                        byUuid.computeIfAbsent(uuid, k -> new HashSet<>()).add(fk);
-                        persistOne(data, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-                        imported++;
-                    }
-
-                    // Remove the old Marker entity — the system is fully DB-based now
-                    marker.remove();
-                    removed++;
-                }
-            }
-        }
-
-        if (imported > 0 || removed > 0) {
-            ConsoleLogger.info("[StructureMarker] Legacy marker migration: imported "
-                    + imported + " to DB, removed " + removed + " entity(ies).");
         }
     }
 
@@ -482,17 +412,6 @@ public class StructureMarker {
 
     private static String fullKey(String worldUid, int x, int y, int z) {
         return worldUid + ":" + x + "," + y + "," + z;
-    }
-
-    /** Whether the structure_markers table has any rows. */
-    private static boolean hasDataInDb() {
-        try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement st = con.prepareStatement("SELECT COUNT(*) FROM structure_markers");
-             ResultSet rs = st.executeQuery()) {
-            return rs.next() && rs.getInt(1) > 0;
-        } catch (Exception e) {
-            return true; // on error assume data exists — do not run migration
-        }
     }
 
     /** Immediate write of a single entry (INSERT OR REPLACE). */

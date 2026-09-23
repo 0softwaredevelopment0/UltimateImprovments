@@ -275,11 +275,6 @@ public class MagnetManager extends BukkitRunnable {
 
         addParticleEffect(cluster.center, cluster.blockKeys.size());
 
-        ConsoleLogger.info(
-                "[Magnet] Activated cluster #" + cluster.id
-                        + " with " + connected.size() + " blocks"
-                        + " at center " + cluster.center
-        );
     }
 
     // =========================
@@ -417,11 +412,6 @@ public class MagnetManager extends BukkitRunnable {
         }
         player.sendMessage(MessageUtil.parse("<dark_gray>┃ <gray>Radius: <white>" + magnetRadius + " <gray>blocks (min. " + MagnetConfig.getMinRadius() + ")"));
 
-        ConsoleLogger.info(
-                "[Magnet] Activated cluster #" + cluster.id
-                        + " with " + connected.size() + " blocks"
-                        + " at center " + cluster.center
-        );
     }
 
     /**
@@ -478,10 +468,6 @@ public class MagnetManager extends BukkitRunnable {
         if (cluster.center != null && cluster.center.getWorld() != null) {
             addParticleEffect(cluster.center, cluster.blockKeys.size());
         }
-        ConsoleLogger.info(
-                "[Magnet] Deactivated cluster #" + cluster.id
-                        + " (" + cluster.power + " blocks)"
-        );
     }
 
     // =========================
@@ -503,8 +489,6 @@ public class MagnetManager extends BukkitRunnable {
             breaker.sendMessage(MessageUtil.parse("<dark_red>\u26a0</dark_red> <red>Magnet deactivated (block broken)!</red>"));
         }
 
-        ConsoleLogger.info("[Magnet] Deactivated cluster #" + cluster.id
-                + " due to block break at " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
         return true;
     }
 
@@ -545,10 +529,6 @@ public class MagnetManager extends BukkitRunnable {
             UUID uuid = findUuidFromNeighbor(loc, neighborKeys);
             if (uuid != null) StructureMarker.place(loc, "magnet", uuid);
 
-            ConsoleLogger.info(
-                    "[Magnet] Cluster #" + cluster.id + " expanded: "
-                            + cluster.blockKeys.size() + " blocks"
-            );
         } else {
             Iterator<MagnetCluster> it = adjacentClusters.iterator();
             MagnetCluster primary = it.next();
@@ -571,10 +551,6 @@ public class MagnetManager extends BukkitRunnable {
             locationToCluster.put(key, primary);
             if (primaryUuid != null) StructureMarker.place(loc, "magnet", primaryUuid);
 
-            ConsoleLogger.info(
-                    "[Magnet] Clusters merged into #" + primary.id
-                            + ": " + primary.blockKeys.size() + " blocks"
-            );
         }
     }
 

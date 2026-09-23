@@ -5,7 +5,6 @@ import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.energy.machines.assembler.ItemCreatorRecipe;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
@@ -18,7 +17,6 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Marker;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -54,8 +52,6 @@ public class ParticleAcceleratorManager implements Listener {
     public static final NamespacedKey PARTICLE_ID_KEY = new NamespacedKey("ui", "particle_id");
     /** PDC key on the accelerator block item — stores the block type string ("particle_ring", "particle_engine", etc.). */
     public static final NamespacedKey PARTICLE_BLOCK_KEY = new NamespacedKey("ui", "particle_block");
-    /** PDC key on the sensor Marker — stores the last particle speed. */
-    private static final NamespacedKey SENSOR_LAST_SPEED_KEY = new NamespacedKey("ui", "sensor_last_speed");
 
     // =========================
     // ENGINE CONFIG
@@ -180,7 +176,6 @@ public class ParticleAcceleratorManager implements Listener {
     // =========================
     public static class ParticleData {
         public final UUID id;
-        public Marker entity;
         public Location location;
         public final String itemName;
         public final Material sourceMaterial;
@@ -209,8 +204,8 @@ public class ParticleAcceleratorManager implements Listener {
 
     public static void removeParticle(UUID id) {
         ParticleData data = activeParticles.remove(id);
-        if (data != null && data.entity != null && !data.entity.isDead()) {
-            data.entity.remove();
+        if (data != null) {
+            data.dead = true;
         }
     }
 
@@ -278,18 +273,11 @@ public class ParticleAcceleratorManager implements Listener {
         Material sourceMat = item.getType();
 
         Location spawnLoc = normLoc.clone().add(0.5, 0.5, 0.5);
-        Marker marker = world.spawn(spawnLoc, Marker.class);
-        marker.setPersistent(false);
 
-        PersistentDataContainer pdc = marker.getPersistentDataContainer();
-        pdc.set(PARTICLE_ID_KEY, PersistentDataType.STRING, id.toString());
-
+        // No Marker entity — the particle is purely coordinate-driven.
+        // Movement/collision logic works on data.location only.
         ParticleData data = new ParticleData(id, spawnLoc, sourceMat, path);
-        data.entity = marker;
         activeParticles.put(id, data);
-
-        ConsoleLogger.info("[ParticleAccelerator] Created particle " + id.toString().substring(0, 8)
-                + " from " + sourceMat.name() + " at " + normLoc.getBlockX() + " " + normLoc.getBlockY() + " " + normLoc.getBlockZ());
 
         return data;
     }
@@ -465,17 +453,14 @@ public class ParticleAcceleratorManager implements Listener {
         ItemStack item = e.getItemInHand();
         if (item != null && item.hasItemMeta()) {
             var pdc = item.getItemMeta().getPersistentDataContainer();
-            // Check if it's a legitimate particle block (crafted in Item Creator or from /ui menu)
+            // Check if it's a legitimate particle block (crafted in a Crafter or from /ui menu)
             if (pdc.has(PARTICLE_BLOCK_KEY, PersistentDataType.STRING)) {
                 String blockType = pdc.get(PARTICLE_BLOCK_KEY, PersistentDataType.STRING);
-                ConsoleLogger.info("[ParticleAccelerator] Placed " + blockType + " (" + type.name() + ") at "
-                        + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
+                if (blockType == null) return; // corrupt PDC
             }
             // If no PDC tag, the player placed a vanilla block that happens to match. Don't register.
             // This prevents accidental registration of vanilla TUFF_BRICKS as engine blocks.
             if (!pdc.has(PARTICLE_BLOCK_KEY, PersistentDataType.STRING)) {
-                ConsoleLogger.info("[ParticleAccelerator] Vanilla " + type.name() + " placed at "
-                        + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + " — NOT registered as accelerator block.");
                 return;
             }
         } else {
@@ -542,14 +527,11 @@ public class ParticleAcceleratorManager implements Listener {
             Location pLoc = LocationUtil.normalize(p.location);
             if (pLoc != null && pLoc.equals(loc)) {
                 p.dead = true;
-                if (p.entity != null && !p.entity.isDead()) p.entity.remove();
                 return true;
             }
             return false;
         });
 
-        ConsoleLogger.info("[ParticleAccelerator] Broken " + type.name() + " at "
-                + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ());
     }
 
     /**
@@ -658,15 +640,9 @@ public class ParticleAcceleratorManager implements Listener {
     // SHUTDOWN
     // =========================
     public static void shutdown() {
-        for (ParticleData p : activeParticles.values()) {
-            if (p.entity != null && !p.entity.isDead()) {
-                p.entity.remove();
-            }
-        }
         activeParticles.clear();
         engineEnergy.clear();
         sensorLastSpeed.clear();
-        ConsoleLogger.info("[ParticleAccelerator] Shutdown complete.");
     }
 
     // =========================

@@ -20,22 +20,17 @@ import org.bukkit.event.world.WorldLoadEvent;
 /**
  * World-load listener — rebuilds managers from the {@link StructureMarker} cache.
  * <p>
- * Previously chunks were scanned for Marker entities to restore the cache — that
- * mechanism is FULLY replaced by storing structure data in SQLite
- * ({@link StructureMarker#loadFromDatabase()} at startup). Now the cache is always
- * complete, and ChunkLoadEvent is not needed: manager rebuilds happen from the cache.
+ * Structure data lives in SQLite ({@link StructureMarker#loadFromDatabase()} at
+ * startup), so the cache is always complete and ChunkLoadEvent is not needed:
+ * manager rebuilds happen from the cache.
  */
 public class StructureChunkListener implements Listener {
 
     // ════════════════════════════════════════
     // WORLD LOAD — when a new world loads, rebuild the managers
-    // (and clean up that world's legacy Markers if any remain)
     // ════════════════════════════════════════
     @EventHandler
     public void onWorldLoad(WorldLoadEvent e) {
-        // Remove outdated Marker entities (idempotent; writes nothing to the DB
-        // if data already exists — only removes entities)
-        StructureMarker.migrateLegacyMarkers();
         rebuildAllManagers();
     }
 

@@ -126,8 +126,6 @@ public class LightningManager implements Listener {
         center = LocationUtil.normalize(center);
         if (activeStructures.containsKey(center)) {
             activeStructures.put(center, enabled);
-            ConsoleLogger.info(
-                "[Lightning] Structure at " + center + " " + (enabled ? "enabled" : "disabled"));
         }
     }
 
@@ -187,15 +185,11 @@ public class LightningManager implements Listener {
                 player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_gray>┃ <gray>SHIFT+RMB on the frame toggles it on/off, RMB shows status"));
             }
 
-            ConsoleLogger.info(
-                "[Lightning] Structure assembled at " + center
-                + " by " + (player != null ? player.getName() : "unknown"));
         } catch (Exception e) {
             if (player != null) {
                 player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>Error checking structure!"));
             }
             ConsoleLogger.error("[Lightning] Assembly error: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
