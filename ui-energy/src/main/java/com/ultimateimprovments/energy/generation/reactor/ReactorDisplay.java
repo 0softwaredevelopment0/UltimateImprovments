@@ -72,7 +72,7 @@ public class ReactorDisplay {
         displaySpin += (reactor.getCoreSpin() - displaySpin) * SMOOTHING_FACTOR;
         displayCoreShInt += (reactor.getShield().getIntegrity() - displayCoreShInt) * SMOOTHING_FACTOR;
         displayCoreCaseTemp += (reactor.getCoreCaseTemp() - displayCoreCaseTemp) * SMOOTHING_FACTOR;
-        displayCoreCasePress += (reactor.getCoreCasePress() * 1000.0 - displayCoreCasePress) * SMOOTHING_FACTOR;
+        displayCoreCasePress += (reactor.getCoreCasePress() / 1000.0 - displayCoreCasePress) * SMOOTHING_FACTOR;
         displayCoreCaseInt += (reactor.getCoreCaseInt() - displayCoreCaseInt) * SMOOTHING_FACTOR;
         displayReactorWork();
     }
@@ -264,10 +264,9 @@ public class ReactorDisplay {
         String spin = String.format("%.2f", displaySpin);
         int shIntInt = (int) Math.round(displayCoreShInt);
         int caseTempInt = (int) Math.round(displayCoreCaseTemp);
-        // Case pressure is stored in kPa internally (ReactorCase.pressureTarget);
-        // the sign shows MPa — 1000 kPa = 1 MPa (a raw value printed as "MPa"
-        // once showed 12 000.000 "MPa" — three orders of magnitude off).
-        String casePress = String.format("%.3f", displayCoreCasePress / 1000.0);
+        // Case pressure display value is already in MPa (converted from
+        // the kPa internal unit at the smoothing step).
+        String casePress = String.format("%.3f", displayCoreCasePress);
         int caseIntInt = (int) Math.round(displayCoreCaseInt);
 
         // Flash red-white only when it is actually a problem: shield must be
@@ -284,7 +283,7 @@ public class ReactorDisplay {
         setSign(base, SIGN_CORE, 0, msg("signs.core_stats_title", "=| Core Stats |="), 3);
         setSign(base, SIGN_CORE, 1, color + msg("signs.core_stats_temp", "T: %temp% C*")
                 .replace("%temp%", String.valueOf(tInt)), 3);
-        setSign(base, SIGN_CORE, 2, color + msg("signs.core_stats_press", "P: %press% mPa")
+        setSign(base, SIGN_CORE, 2, color + msg("signs.core_stats_press", "P: %press% MPa")
                 .replace("%press%", press), 3);
         setSign(base, SIGN_CORE, 3, color + msg("signs.core_stats_spin", "S: %spin% RPS")
                 .replace("%spin%", spin), 3);
@@ -296,7 +295,7 @@ public class ReactorDisplay {
         setSign(base, SIGN_CASE, 0, msg("signs.case_stats_title", "=| Case Stats |="), 4);
         setSign(base, SIGN_CASE, 1, color + msg("signs.case_stats_temp", "T: %temp% C*")
                 .replace("%temp%", String.valueOf(caseTempInt)), 4);
-        setSign(base, SIGN_CASE, 2, color + msg("signs.case_stats_press", "P: %press% mPa")
+        setSign(base, SIGN_CASE, 2, color + msg("signs.case_stats_press", "P: %press% MPa")
                 .replace("%press%", casePress), 4);
         setSign(base, SIGN_CASE, 3, caseBroken
                 ? "<red>" + msg("signs.case_stats_broken", "Broken — repair!")
@@ -548,7 +547,7 @@ public class ReactorDisplay {
     public double getDisplayCoreSpin() { return displaySpin; }
     public int getDisplayCoreShInt() { return (int) Math.round(displayCoreShInt); }
     public int getDisplayCoreCaseTemp() { return (int) Math.round(displayCoreCaseTemp); }
-    public int getDisplayCoreCasePress() { return (int) Math.round(displayCoreCasePress / 1000.0); }
+    public int getDisplayCoreCasePress() { return (int) Math.round(displayCoreCasePress); }
     public int getDisplayCoreCaseInt() { return (int) Math.round(displayCoreCaseInt); }
     public int getDisplayEnergyRate() { return (int) Math.round(displayEnergyRate); }
 
