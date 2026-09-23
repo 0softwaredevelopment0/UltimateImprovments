@@ -43,8 +43,38 @@ public class ReactorState {
     private boolean structureDamaged;
     private int damageWarnTick;
 
+    // Shield (full restore — no loss on restart)
+    private String shieldState = "OFFLINE";   // OFFLINE / CREATING / WORKING / FAILED
+    private double shieldIntegrity;            // 0..100 %
+    private int shieldFailCountdown;           // ticks until the detonation (FAILED)
+
+    // Self-destruct protocol (full restore — no loss on restart)
+    private String selfdestructPhase = "NONE"; // NONE / SENSORS_DOWN / TIMED / FINALE
+    private int selfdestructTicks;
+    private boolean selfdestructDone;
+
+    // Emergency core shutdown latch (shield integrity below the critical threshold)
+    private boolean coreEmergencyStopped;
+
     public boolean isStructureDamaged() { return structureDamaged; }
     public void setStructureDamaged(boolean val) { structureDamaged = val; }
+
+    public String getShieldState() { return shieldState; }
+    public void setShieldState(String val) { shieldState = val == null ? "OFFLINE" : val; }
+    public double getShieldIntegrity() { return shieldIntegrity; }
+    public void setShieldIntegrity(double val) { shieldIntegrity = Math.max(0, Math.min(100, val)); }
+    public int getShieldFailCountdown() { return shieldFailCountdown; }
+    public void setShieldFailCountdown(int val) { shieldFailCountdown = Math.max(0, val); }
+
+    public String getSelfdestructPhase() { return selfdestructPhase; }
+    public void setSelfdestructPhase(String val) { selfdestructPhase = val == null ? "NONE" : val; }
+    public int getSelfdestructTicks() { return selfdestructTicks; }
+    public void setSelfdestructTicks(int val) { selfdestructTicks = Math.max(0, val); }
+    public boolean isSelfdestructDone() { return selfdestructDone; }
+    public void setSelfdestructDone(boolean val) { selfdestructDone = val; }
+
+    public boolean isCoreEmergencyStopped() { return coreEmergencyStopped; }
+    public void setCoreEmergencyStopped(boolean val) { coreEmergencyStopped = val; }
 
     /** Copies all fields from another state (used by persistence load). */
     public void copyFrom(ReactorState o) {
@@ -68,6 +98,13 @@ public class ReactorState {
         laserStarted = o.laserStarted;
         laserPowers = o.laserPowers == null ? new double[4] : o.laserPowers.clone();
         structureDamaged = o.structureDamaged;
+        shieldState = o.shieldState;
+        shieldIntegrity = o.shieldIntegrity;
+        shieldFailCountdown = o.shieldFailCountdown;
+        selfdestructPhase = o.selfdestructPhase;
+        selfdestructTicks = o.selfdestructTicks;
+        selfdestructDone = o.selfdestructDone;
+        coreEmergencyStopped = o.coreEmergencyStopped;
     }
 
     // Tick counters
@@ -261,5 +298,12 @@ public class ReactorState {
         integrityWarnTick = 0;
         laserStarted = false;
         laserPowers = new double[4];
+        shieldState = "OFFLINE";
+        shieldIntegrity = 0;
+        shieldFailCountdown = 0;
+        selfdestructPhase = "NONE";
+        selfdestructTicks = 0;
+        selfdestructDone = false;
+        coreEmergencyStopped = false;
     }
 }

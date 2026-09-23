@@ -257,6 +257,14 @@ public class DatabaseInit {
             }
             try {
                 st.execute("ALTER TABLE reactors ADD COLUMN laser_absorber REAL DEFAULT 0");
+                // Shield / self-destruct / emergency latch — full state restore
+                st.execute("ALTER TABLE reactors ADD COLUMN shield_state TEXT DEFAULT 'OFFLINE'");
+                st.execute("ALTER TABLE reactors ADD COLUMN shield_integrity REAL DEFAULT 0");
+                st.execute("ALTER TABLE reactors ADD COLUMN shield_fail_countdown INTEGER DEFAULT 0");
+                st.execute("ALTER TABLE reactors ADD COLUMN selfdestruct_phase TEXT DEFAULT 'NONE'");
+                st.execute("ALTER TABLE reactors ADD COLUMN selfdestruct_ticks INTEGER DEFAULT 0");
+                st.execute("ALTER TABLE reactors ADD COLUMN selfdestruct_done INTEGER DEFAULT 0");
+                st.execute("ALTER TABLE reactors ADD COLUMN core_emergency_stopped INTEGER DEFAULT 0");
             } catch (Exception ignored) {
                 // Column already exists — this is fine
             }

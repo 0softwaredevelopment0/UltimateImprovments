@@ -34,7 +34,10 @@ public class ReactorPersistence {
                  laser_started, laser_p1, laser_p2, laser_stab, laser_absorber,
                  fusion_particles, fusion_collected,
                  case_broken, case_temp, case_press, case_int,
-                 structure_damaged)
+                 structure_damaged,
+                 shield_state, shield_integrity, shield_fail_countdown,
+                 selfdestruct_phase, selfdestruct_ticks, selfdestruct_done,
+                 core_emergency_stopped)
                 VALUES (?, ?, ?, ?, ?,
                         ?, ?, ?,
                         ?, ?, ?,
@@ -42,6 +45,9 @@ public class ReactorPersistence {
                         ?, ?, ?, ?, ?,
                         ?, ?,
                         ?, ?, ?, ?,
+                        ?,
+                        ?, ?, ?,
+                        ?, ?, ?,
                         ?)
             """)) {
 
@@ -70,6 +76,13 @@ public class ReactorPersistence {
             ps.setDouble(22, state.getCasePress());
             ps.setInt(23, state.getCaseIntegrity());
             ps.setInt(24, state.isStructureDamaged() ? 1 : 0);
+            ps.setString(25, state.getShieldState());
+            ps.setDouble(26, state.getShieldIntegrity());
+            ps.setInt(27, state.getShieldFailCountdown());
+            ps.setString(28, state.getSelfdestructPhase());
+            ps.setInt(29, state.getSelfdestructTicks());
+            ps.setInt(30, state.isSelfdestructDone() ? 1 : 0);
+            ps.setInt(31, state.isCoreEmergencyStopped() ? 1 : 0);
 
             ps.executeUpdate();
 
@@ -163,6 +176,23 @@ public class ReactorPersistence {
                 }
                 try { state.setStructureDamaged(rs.getInt("structure_damaged") == 1); } catch (Exception e) {
                     ConsoleLogger.warn("[Reactor] Failed to load structure_damaged: " + e.getMessage());
+                }
+                try {
+                    state.setShieldState(rs.getString("shield_state"));
+                    state.setShieldIntegrity(rs.getDouble("shield_integrity"));
+                    state.setShieldFailCountdown(rs.getInt("shield_fail_countdown"));
+                } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load shield state: " + e.getMessage());
+                }
+                try {
+                    state.setSelfdestructPhase(rs.getString("selfdestruct_phase"));
+                    state.setSelfdestructTicks(rs.getInt("selfdestruct_ticks"));
+                    state.setSelfdestructDone(rs.getInt("selfdestruct_done") == 1);
+                } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load self-destruct state: " + e.getMessage());
+                }
+                try { state.setCoreEmergencyStopped(rs.getInt("core_emergency_stopped") == 1); } catch (Exception e) {
+                    ConsoleLogger.warn("[Reactor] Failed to load core_emergency_stopped: " + e.getMessage());
                 }
                 try {
                     state.setLaserPowers(new double[] {
