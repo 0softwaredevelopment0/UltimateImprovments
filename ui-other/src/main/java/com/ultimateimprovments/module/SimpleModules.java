@@ -76,6 +76,7 @@ import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseListener
 import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseManager;
 import com.ultimateimprovments.mechanics.features.creativeitem.CreativeItemValidator;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
+import com.ultimateimprovments.mechanics.features.integrity.LowDurabilityWarningListener;
 import com.ultimateimprovments.mechanics.features.integrity.PiercingListener;
 import com.ultimateimprovments.mechanics.features.items.AutoCraftManager;
 import com.ultimateimprovments.mechanics.features.items.ChestplateFlightListener;
@@ -562,6 +563,7 @@ public final class SimpleModules {
                 Main main = (Main) plugin;
                 ItemDurabilityUtil.init(main);
                 PiercingListener.init(main);
+                LowDurabilityWarningListener.init(main);
             }
 
             @Override
