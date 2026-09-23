@@ -88,7 +88,7 @@ public class EnchantmentListener implements Listener {
             BlockBreakListener.scheduleStoneReplacement(block, brokenType);
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
-            // which IntegrityListener redirects to decreaseItemIntegrity(item, 1, player))
+            // which the durability system maps to 1 vanilla durability point)
             ItemIntegrityAPI.decreaseItemIntegrity(tool, 1, player);
 
             // Tool broke from integrity loss — stop, as vanilla would

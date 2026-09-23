@@ -1,7 +1,7 @@
 package com.ultimateimprovments.enchantment.degradation;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
@@ -94,9 +94,9 @@ public final class EnchantmentListener {
         if (level <= 0) return;
 
         // The curse works on items of the Integrity system (anything with durability).
-        if (IntegrityManager.getMaxDurability(item) <= 0) return;
+        if (ItemDurabilityUtil.getMaxDurability(item) <= 0) return;
         // Integrity disabled in config → there is no integrity to drain.
-        if (!IntegrityManager.isEnabled()) return;
+        if (!ItemDurabilityUtil.isEnabled()) return;
 
         // Spend integrity exactly as if the item had been used `level` times.
         ItemIntegrityAPI.decreaseItemIntegrity(item, level, player);

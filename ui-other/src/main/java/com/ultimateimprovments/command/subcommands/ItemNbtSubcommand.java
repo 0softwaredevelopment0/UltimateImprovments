@@ -3,7 +3,6 @@ package com.ultimateimprovments.command.subcommands;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.command.SubCommand;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlayerDataIO;
 
@@ -1140,12 +1139,8 @@ public final class ItemNbtSubcommand implements SubCommand {
         return true;
     }
 
-    /** /ui itemnbt durability <value> — disabled while integrity mechanic is on. */
+    /** /ui itemnbt durability <value> — vanilla durability editing. */
     private static boolean durability(Player p, ItemStack item, String[] args) {
-        if (IntegrityManager.isEnabled()) {
-            p.sendMessage(MessageUtil.parse("<red>❌ Durability editing is disabled while the Integrity mechanic is enabled.</red>"));
-            return true;
-        }
         if (args.length < 3) {
             p.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui itemnbt durability <value></white>"));
             return true;

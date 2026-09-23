@@ -1,6 +1,6 @@
 package com.ultimateimprovments.command;
 
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.util.MessageUtil;
@@ -77,8 +77,8 @@ public class ItemCommand {
         player.sendMessage(MessageUtil.parse("<gold>  ✦ </gold><white>Item Integrity Information</white>"));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
         player.sendMessage(MessageUtil.parse("<gray>Item: </gray><white>" + itemName + "</white>"));
-        player.sendMessage(MessageUtil.parse("<gray>Current: </gray><green>" + IntegrityManager.formatPercent(pctCurrent) + "%</green>"));
-        player.sendMessage(MessageUtil.parse("<gray>Max:    </gray><green>" + IntegrityManager.formatPercent(Math.max(0.0, ItemIntegrityAPI.getItemMaxIntegrityPercent(heldItem))) + "%</green>"));
+        player.sendMessage(MessageUtil.parse("<gray>Current: </gray><green>" + ItemDurabilityUtil.formatPercent(pctCurrent) + "%</green>"));
+        player.sendMessage(MessageUtil.parse("<gray>Max:    </gray><green>" + ItemDurabilityUtil.formatPercent(Math.max(0.0, ItemIntegrityAPI.getItemMaxIntegrityPercent(heldItem))) + "%</green>"));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════════════════</gold>"));
     }
 
@@ -94,7 +94,7 @@ public class ItemCommand {
                 return;
             }
             double actual = Math.max(0.0, ItemIntegrityAPI.setItemIntegrity(heldItem, value));
-            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item integrity set to </white><yellow>" + IntegrityManager.formatPercent(actual) + "%</yellow>"));
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item integrity set to </white><yellow>" + ItemDurabilityUtil.formatPercent(actual) + "%</yellow>"));
         } catch (NumberFormatException e) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format! Use a decimal number (e.g.: 75.500)</red>"));
         }
@@ -131,7 +131,7 @@ public class ItemCommand {
         } else {
             meta.getPersistentDataContainer().remove(Keys.INTEGRITY_UNBREAKABLE);
             heldItem.setItemMeta(meta);
-            IntegrityManager.updateItemLore(heldItem);
+            ItemDurabilityUtil.updateItemLore(heldItem);
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Item is no longer </white><aqua>Unbreakable</aqua><white>.</white>"));
         }
     }
@@ -149,7 +149,7 @@ public class ItemCommand {
             }
             // The actual value is returned by the API itself — we don't recalculate locally
             double newVal = Math.max(0.0, ItemIntegrityAPI.increaseItemIntegrityPercent(heldItem, value));
-            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Added </white><yellow>" + IntegrityManager.formatPercent(value) + "%</yellow><white>. Current: </white><yellow>" + IntegrityManager.formatPercent(newVal) + "%</yellow>"));
+            player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Added </white><yellow>" + ItemDurabilityUtil.formatPercent(value) + "%</yellow><white>. Current: </white><yellow>" + ItemDurabilityUtil.formatPercent(newVal) + "%</yellow>"));
         } catch (NumberFormatException e) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Invalid number format! Use a decimal number (e.g.: 25.500)</red>"));
         }

@@ -24,7 +24,6 @@ import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.energy.generation.reactor.ReactorListener;
 import com.ultimateimprovments.energy.generation.reactor.ReactorManager;
 import com.ultimateimprovments.energy.machines.furnace.ElectricFurnaceManager;
-import com.ultimateimprovments.energy.machines.workbench.EnergyCraftingListener;
 import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.hook.PluginHook;
@@ -43,7 +42,6 @@ import com.ultimateimprovments.mechanics.crafting.BlazingSwordCraftListener;
 import com.ultimateimprovments.mechanics.crafting.ChunkLoaderCraftListener;
 import com.ultimateimprovments.mechanics.crafting.ElectricTridentCraftListener;
 import com.ultimateimprovments.mechanics.crafting.ConcreteBucketCraftListener;
-import com.ultimateimprovments.mechanics.crafting.EnderChestCraftListener;
 import com.ultimateimprovments.mechanics.crafting.EntityLocatorCraftListener;
 import com.ultimateimprovments.mechanics.crafting.GlassSwordCraftListener;
 import com.ultimateimprovments.mechanics.crafting.HealthMeterCraftListener;
@@ -77,9 +75,8 @@ import com.ultimateimprovments.mechanics.features.blocks.TerracotaSpeedManager;
 import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseListener;
 import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseManager;
 import com.ultimateimprovments.mechanics.features.creativeitem.CreativeItemValidator;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityCombineListener;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityListener;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
+import com.ultimateimprovments.mechanics.features.integrity.PiercingListener;
 import com.ultimateimprovments.mechanics.features.items.AutoCraftManager;
 import com.ultimateimprovments.mechanics.features.items.ChestplateFlightListener;
 import com.ultimateimprovments.mechanics.features.items.ExpBottleUpgradeListener;
@@ -273,7 +270,6 @@ public final class SimpleModules {
                 MobFinderCraftListener.init();
                 PortableRadarCraftListener.init();
                 MetalDetectorCraftListener.init();
-                EnderChestCraftListener.init();
                 ConcreteBucketCraftListener.init();
                 ChunkLoaderCraftListener.init();
                 StructureIntegrityCraftListener.init();
@@ -296,16 +292,12 @@ public final class SimpleModules {
                 pm.registerEvents(new MobFinderCraftListener(), main);
                 pm.registerEvents(new PortableRadarCraftListener(), main);
                 pm.registerEvents(new MetalDetectorCraftListener(), main);
-                pm.registerEvents(new EnderChestCraftListener(), main);
                 pm.registerEvents(new ScannerItemListener(), main);
                 pm.registerEvents(new MetalDetectorListener(), main);
                 pm.registerEvents(new ConcreteBucketCraftListener(), main);
                 pm.registerEvents(new ChunkLoaderCraftListener(), main);
                 pm.registerEvents(new ChunkLoaderItemListener(), main);
                 pm.registerEvents(new StructureIntegrityCraftListener(), main);
-                // Gates the custom recipes to the vanilla Crafter block
-                // (was imported but never registered — the gate never fired).
-                pm.registerEvents(new EnergyCraftingListener(), main);
                 ConcreteBucketManager.init(main);
 
                 ConsoleLogger.info("[CraftingModule] ✔ Recipes initialized.");
@@ -563,19 +555,18 @@ public final class SimpleModules {
             }
         });
 
-        // Integrity
+        // Durability (thin vanilla layer)
         mm.register(new SimpleModule("Integrity", "mechanics/features/integrity", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 Main main = (Main) plugin;
-                IntegrityManager.init(main);
-                main.getServer().getPluginManager().registerEvents(new IntegrityListener(), main);
-                main.getServer().getPluginManager().registerEvents(new IntegrityCombineListener(), main);
+                ItemDurabilityUtil.init(main);
+                PiercingListener.init(main);
             }
 
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
-                IntegrityManager.reloadConfig();
+                ItemDurabilityUtil.reloadConfig();
             }
         });
 
@@ -1476,7 +1467,7 @@ public final class SimpleModules {
                 // Movement task every tick
                 movementTask = new ParticleMovementTask().runTaskTimer(main, 20L, 1L);
 
-                // Register crafting recipes (Item Assembler only)
+                // Register crafting recipes
                 ParticleRingCraftListener.init();
                 main.getServer().getPluginManager().registerEvents(new ParticleRingCraftListener(), main);
 

@@ -1,33 +1,20 @@
 package com.ultimateimprovments.mechanics.features.integrity;
 
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * 🧰 ItemIntegrityAPI — a single facade for working with item integrity.
+ * 🧰 ItemIntegrityAPI — compatibility facade for working with item integrity.
  * <p>
- * Units are baked into the method names to avoid confusion and accidental
- * editing of the wrong system (vanilla durability vs integrity):
- * <ul>
- *   <li>{@code setItemIntegrity} — sets an exact integrity % (0.0–100.0)</li>
- *   <li>{@code decreaseItemIntegrity / increaseItemIntegrity} — changes by
- *       «X uses» (int): as much integrity as would be spent over X actions
- *       that consume durability (block mining, attack, etc.)</li>
- *   <li>{@code decreaseItemIntegrityPercent / increaseItemIntegrityPercent} —
- *       changes by exactly X% (double)</li>
- * </ul>
+ * The old custom integrity backend (PDC counters + lore scanner) was removed;
+ * all state now lives in <b>vanilla durability</b> ({@link ItemDurabilityUtil}).
+ * Every method keeps its old name and signature so the call sites (commands,
+ * custom enchantments, sunburn) work unchanged — only the semantics underneath
+ * changed: the vanilla {@code damage} data component is the single source of
+ * truth, so anvil/grindstone/Mending behave exactly like vanilla.
  * <p>
- * <b>Important for correct output and synchronization:</b>
- * <ul>
- *   <li>All write methods return the <b>actual</b> item integrity
- *       (0.0–100.0) <i>after</i> the operation — the source of truth for messages,
- *       no need to recompute the value on the command side.</li>
- *   <li>All write methods update the item lore immediately so the tooltip
- *       shows the up-to-date value without waiting for the next tick.</li>
- * </ul>
- * All low-level PDC and vanilla durability work stays in
- * {@link IntegrityManager} — here only high-level operations.
+ * All write methods return the <b>actual</b> integrity % (0.0–100.0)
+ * <i>after</i> the operation.
  */
 public final class ItemIntegrityAPI {
 
@@ -37,115 +24,58 @@ public final class ItemIntegrityAPI {
     // READ
     // =========================
 
-    /** Whether the item is registered in the integrity system. */
+    /** Whether the item participates in the durability system (has vanilla durability). */
     public static boolean hasItemIntegrity(ItemStack item) {
-        return IntegrityManager.hasIntegrity(item);
+        return ItemDurabilityUtil.hasItemIntegrity(item);
     }
 
     /**
-     * The item's current integrity in % (0.0–100.0),
-     * or -1 if the item isn't in the integrity system.
+     * The item's current integrity in % (0.0–100.0) computed from vanilla
+     * damage, or 100.0 for items without durability.
      */
     public static double getItemIntegrityPercent(ItemStack item) {
-        return IntegrityManager.getCurrentIntegrity(item);
+        return ItemDurabilityUtil.getItemIntegrityPercent(item);
     }
 
-    /**
-     * The item's max integrity in % (always 100.0),
-     * or -1 if the item isn't in the integrity system.
-     */
+    /** The item's max integrity in % (always 100.0), or -1 if the item has no durability. */
     public static double getItemMaxIntegrityPercent(ItemStack item) {
-        return IntegrityManager.getMaxIntegrity(item);
+        return ItemDurabilityUtil.getItemMaxIntegrityPercent(item);
     }
 
-    /** Guarantees the item is initialized in the system (100%) and updates the lore right away. */
+    /** No-op kept for API compatibility (plus one-time legacy PDC/lore migration). */
     public static void initializeItemIntegrity(ItemStack item) {
-        IntegrityManager.ensureInitialized(item);
-        refreshLore(item);
+        ItemDurabilityUtil.initializeItemIntegrity(item);
     }
 
     // =========================
     // WRITE
     // =========================
 
-    /**
-     * Sets the item's integrity to the given percentage (0.0 – 100.0).
-     * Returns the actual integrity after setting.
-     */
+    /** Sets the item's integrity to the given percentage (0.0 – 100.0). */
     public static double setItemIntegrity(ItemStack item, double percent) {
-        IntegrityManager.setCurrentIntegrity(item, percent);
-        refreshLore(item);
-        return IntegrityManager.getCurrentIntegrity(item);
+        return ItemDurabilityUtil.setItemIntegrity(item, percent);
     }
 
     /**
      * Decreases integrity as if the item was used {@code iterations} times
-     * with actions consuming durability (1 iteration = 1 use).
-     * If the item broke earlier — the remaining iterations are skipped.
-     * Returns the actual integrity after the deduction.
+     * (1 iteration = 1 vanilla durability point). Returns the actual % after.
      */
     public static double decreaseItemIntegrity(ItemStack item, int iterations, Player owner) {
-        if (item == null || iterations <= 0) return IntegrityManager.getCurrentIntegrity(item);
-        for (int i = 0; i < iterations; i++) {
-            if (item.getAmount() <= 0) break; // the item broke — nothing left to spend
-            IntegrityManager.decreaseIntegrity(item, 1, owner);
-        }
-        refreshLore(item);
-        return IntegrityManager.getCurrentIntegrity(item);
+        return ItemDurabilityUtil.decreaseItemIntegrity(item, iterations, owner);
     }
 
-    /**
-     * Increases integrity by as much as {@code iterations} durability-consuming
-     * actions would have spent (mirror of {@link #decreaseItemIntegrity}).
-     * The result can't exceed 100%. Returns the actual integrity after repair.
-     */
+    /** Increases integrity by as much as N uses would spend. Returns the actual % after repair. */
     public static double increaseItemIntegrity(ItemStack item, int iterations) {
-        if (item == null || iterations <= 0) return IntegrityManager.getCurrentIntegrity(item);
-        int maxDura = IntegrityManager.getMaxDurability(item);
-        if (maxDura <= 0) return IntegrityManager.getCurrentIntegrity(item);
-        double costPerUse = 100.0 * IntegrityManager.getCostMultiplier() / maxDura;
-        IntegrityManager.increaseIntegrity(item, costPerUse * iterations);
-        refreshLore(item);
-        return IntegrityManager.getCurrentIntegrity(item);
+        return ItemDurabilityUtil.increaseItemIntegrity(item, iterations);
     }
 
-    /**
-     * Decreases integrity by exactly the given percentage (double, 0.0 – 100.0).
-     * At 0 the item breaks as usual.
-     * Returns the actual integrity after the deduction (0 if it broke).
-     */
+    /** Decreases integrity by exactly X% (double). At 0 the item breaks as usual. */
     public static double decreaseItemIntegrityPercent(ItemStack item, double percent, Player owner) {
-        IntegrityManager.decreaseIntegrityPercent(item, percent, owner);
-        refreshLore(item);
-        return IntegrityManager.getCurrentIntegrity(item);
+        return ItemDurabilityUtil.decreaseItemIntegrityPercent(item, percent, owner);
     }
 
-    /**
-     * Increases integrity by exactly the given percentage (double, 0.0 – 100.0).
-     * The result can't exceed 100%. Returns the actual integrity after repair.
-     */
+    /** Increases integrity by exactly X% (double). Returns the actual % after repair. */
     public static double increaseItemIntegrityPercent(ItemStack item, double percent) {
-        IntegrityManager.increaseIntegrity(item, percent);
-        refreshLore(item);
-        return IntegrityManager.getCurrentIntegrity(item);
-    }
-
-    // =========================
-    // HELPERS
-    // =========================
-
-    /**
-     * Updates the integrity lore right after a change (without waiting for a tick).
-     * <p>
-     * The update itself is content-aware: {@link IntegrityManager#updateItemLore}
-     * rewrites the item meta only if the lore actually differs (value + lore
-     * content comparison), so unchanged data causes no writes.
-     * In the tick scanner {@code IntegrityManager.run()} meta is rewritten only
-     * on an actual lore change.
-     */
-    private static void refreshLore(ItemStack item) {
-        if (item == null || item.getType() == Material.AIR) return;
-        if (item.getAmount() <= 0) return; // broken item — no lore needed
-        IntegrityManager.updateItemLore(item);
+        return ItemDurabilityUtil.increaseItemIntegrityPercent(item, percent);
     }
 }

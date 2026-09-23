@@ -2,7 +2,7 @@ package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.CommandErrors;
 
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityManager;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Material;
@@ -54,8 +54,8 @@ public final class ItemSubcommand {
         player.sendMessage(MessageUtil.parse("<gold>  ✦ <white>Информация о целостности"));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════"));
         player.sendMessage(MessageUtil.parse("<gray>Предмет: <white>" + name));
-        player.sendMessage(MessageUtil.parse("<gray>Текущая: <green>" + IntegrityManager.formatPercent(pct) + "%"));
-        player.sendMessage(MessageUtil.parse("<gray>Макс:    <green>" + IntegrityManager.formatPercent(Math.max(0.0, ItemIntegrityAPI.getItemMaxIntegrityPercent(held))) + "%"));
+        player.sendMessage(MessageUtil.parse("<gray>Текущая: <green>" + ItemDurabilityUtil.formatPercent(pct) + "%"));
+        player.sendMessage(MessageUtil.parse("<gray>Макс:    <green>" + ItemDurabilityUtil.formatPercent(Math.max(0.0, ItemIntegrityAPI.getItemMaxIntegrityPercent(held))) + "%"));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════"));
     }
 
@@ -65,7 +65,7 @@ public final class ItemSubcommand {
             double value = Double.parseDouble(args[3]);
             if (value < 0 || value > 100) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Значение должно быть от 0 до 100!")); return; }
             double actual = Math.max(0.0, ItemIntegrityAPI.setItemIntegrity(held, value));
-            player.sendMessage(MessageUtil.parse("<green>✔ <white>Целостность установлена на <yellow>" + IntegrityManager.formatPercent(actual) + "%"));
+            player.sendMessage(MessageUtil.parse("<green>✔ <white>Целостность установлена на <yellow>" + ItemDurabilityUtil.formatPercent(actual) + "%"));
         } catch (NumberFormatException e) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Неверный формат числа!"));
         }
@@ -78,7 +78,7 @@ public final class ItemSubcommand {
             if (value <= 0) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Значение должно быть больше 0!")); return; }
             // The actual value is returned by the API itself — we don't recalculate locally
             double newVal = Math.max(0.0, ItemIntegrityAPI.increaseItemIntegrityPercent(held, value));
-            player.sendMessage(MessageUtil.parse("<green>✔ <white>Добавлено <yellow>" + IntegrityManager.formatPercent(value) + "%<white>. Текущая: <yellow>" + IntegrityManager.formatPercent(newVal) + "%"));
+            player.sendMessage(MessageUtil.parse("<green>✔ <white>Добавлено <yellow>" + ItemDurabilityUtil.formatPercent(value) + "%<white>. Текущая: <yellow>" + ItemDurabilityUtil.formatPercent(newVal) + "%"));
         } catch (NumberFormatException e) {
             player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Неверный формат числа!"));
         }
