@@ -75,6 +75,10 @@ public final class ReactorDamageTracker {
 
         if (tmpl != null) {
             for (StructureTemplate.BlockEntry b : tmpl.getBlocks()) {
+                // The template index contains solid cells only (air cells and
+                // levers are skipped by the parser) — anything outside these
+                // cells is NOT part of the tracked structure and must never
+                // trigger damage/repair reports.
                 String key = b.dx() + "," + b.dy() + "," + b.dz();
                 Material m = b.material();
                 Category cat;

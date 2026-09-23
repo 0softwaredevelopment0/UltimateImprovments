@@ -259,7 +259,7 @@ public class ReactorState {
     public int getDisplayShieldPressInt() { return (int) Math.round(displayShieldPress); }
     public int getDisplayCoreShIntInt() { return (int) Math.round(displayCoreShInt); }
     public int getDisplayCoreCaseTempInt() { return (int) Math.round(displayCoreCaseTemp); }
-    public int getDisplayCoreCasePressInt() { return (int) Math.round(displayCoreCasePress); }
+    public int getDisplayCoreCasePressInt() { return (int) Math.round(displayCoreCasePress / 1000.0); }
     public int getDisplayCoreCaseIntInt() { return (int) Math.round(displayCoreCaseInt); }
 
     // =========================

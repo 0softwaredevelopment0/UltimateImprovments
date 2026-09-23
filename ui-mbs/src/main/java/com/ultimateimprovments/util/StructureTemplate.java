@@ -250,6 +250,9 @@ public class StructureTemplate {
     private static boolean materialMatches(Material expected, Material actual) {
         if (expected == actual) return true;
         if (SIGN_TYPES.contains(expected) && SIGN_TYPES.contains(actual)) return true;
+        // Levers are ignored everywhere (see the parser): any world block at a
+        // lever template cell counts as a match, and a lever never mismatches.
+        if (expected == Material.LEVER || actual == Material.LEVER) return true;
         return false;
     }
 
@@ -396,6 +399,10 @@ public class StructureTemplate {
 
                 Material mat = palette[state];
                 if (mat == Material.STRUCTURE_VOID) continue; // void = not checked at all
+                // Levers are interaction devices (redstone control of the lamps):
+                // ignored everywhere — not required at assembly, not tracked as
+                // structure blocks by the damage/repair system.
+                if (mat == Material.LEVER) continue;
 
                 // Shift from NBT origin to top-center offset
                 int dx = pos[0] - topCenterX;

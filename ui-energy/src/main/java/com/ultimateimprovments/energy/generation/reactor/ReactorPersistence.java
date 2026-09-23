@@ -60,7 +60,7 @@ public class ReactorPersistence {
             ps.setDouble(7, state.getShieldPress());
             ps.setDouble(8, state.getSpin());
             ps.setInt(9, state.getCoreCaseTemp());
-            ps.setInt(10, state.getCoreCasePress());
+            ps.setInt(10, (int) Math.round(state.getCoreCasePress() / 1000.0)); // kPa → MPa
             ps.setInt(11, state.getCoreCaseInt());
             ps.setLong(12, state.getEnergyGenerated());
             ps.setInt(13, state.isLaserStarted() ? 1 : 0);
@@ -151,7 +151,7 @@ public class ReactorPersistence {
                     ConsoleLogger.warn("[Reactor] Failed to load spin: " + e.getMessage());
                 }
                 state.setCoreCaseTemp(rs.getInt("core_case_temp"));
-                state.setCoreCasePress(rs.getInt("core_case_press"));
+                state.setCoreCasePress(rs.getInt("core_case_press") * 1000); // MPa → kPa
                 state.setCoreCaseInt(rs.getInt("core_case_int"));
                 try {
                     state.setFusionParticles(rs.getDouble("fusion_particles"));

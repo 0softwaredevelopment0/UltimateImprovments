@@ -161,7 +161,10 @@ public class ReactorListener implements Listener {
         }
 
         // =========================
-        // ⚛ REACTOR: any block inside a structure → damage report
+        // ⚛ REACTOR: a template cell inside a structure → damage report.
+        // Air cells and non-structure blocks (the interior, decorations around
+        // the reactor) are ignored — the reactor reacts to its OWN blocks only.
+        // Levers are never tracked (control devices, not structure).
         // (the reactor stays up in uncontrolled mode — no teardown here)
         // =========================
         ReactorManager reactor = ReactorManager.getReactorForBlock(loc);
@@ -177,8 +180,8 @@ public class ReactorListener implements Listener {
 
         ReactorDamageTracker.Category cat = ReactorDamageTracker.categoryOf(dx, dy, dz);
         if (cat == null) {
-            // Item frame cell or decoration outside the NBT template — treat as structure damage too
-            cat = ReactorDamageTracker.Category.STRUCTURE;
+            // Not a template cell (air space, lever, decoration) — not our block
+            return;
         }
         reactor.addDamage(cat);
     }
@@ -204,7 +207,10 @@ public class ReactorListener implements Listener {
         Block block = e.getBlock();
         Location loc = LocationUtil.normalize(block.getLocation());
 
-        // Block inside an ACTIVE reactor → repair report for that reactor
+        // Block inside an ACTIVE reactor → repair report for that reactor.
+        // Only template cells count: placing blocks into the air cells (or any
+        // non-structure position) inside the bounds is NOT a repair and must
+        // not spam reports. Levers are ignored as well.
         ReactorManager reactor = ReactorManager.getReactorForBlock(loc);
         if (reactor != null) {
             Location reactorLoc = reactor.getReactorLocation();
@@ -214,7 +220,7 @@ public class ReactorListener implements Listener {
 
             ReactorDamageTracker.Category cat = ReactorDamageTracker.categoryOf(dx, dy, dz);
             if (cat == null) {
-                cat = ReactorDamageTracker.Category.STRUCTURE;
+                return; // not a tracked structure cell — ignore silently
             }
             reactor.addRepair(cat);
             return;

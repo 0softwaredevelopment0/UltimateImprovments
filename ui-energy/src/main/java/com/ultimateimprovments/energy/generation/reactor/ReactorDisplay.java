@@ -72,7 +72,7 @@ public class ReactorDisplay {
         displaySpin += (reactor.getCoreSpin() - displaySpin) * SMOOTHING_FACTOR;
         displayCoreShInt += (reactor.getShield().getIntegrity() - displayCoreShInt) * SMOOTHING_FACTOR;
         displayCoreCaseTemp += (reactor.getCoreCaseTemp() - displayCoreCaseTemp) * SMOOTHING_FACTOR;
-        displayCoreCasePress += (reactor.getCoreCasePress() - displayCoreCasePress) * SMOOTHING_FACTOR;
+        displayCoreCasePress += (reactor.getCoreCasePress() * 1000.0 - displayCoreCasePress) * SMOOTHING_FACTOR;
         displayCoreCaseInt += (reactor.getCoreCaseInt() - displayCoreCaseInt) * SMOOTHING_FACTOR;
         displayReactorWork();
     }
@@ -259,7 +259,10 @@ public class ReactorDisplay {
         String spin = String.format("%.2f", displaySpin);
         int shIntInt = (int) Math.round(displayCoreShInt);
         int caseTempInt = (int) Math.round(displayCoreCaseTemp);
-        String casePress = String.format("%.3f", displayCoreCasePress);
+        // Case pressure is stored in kPa internally (ReactorCase.pressureTarget);
+        // the sign shows MPa — 1000 kPa = 1 MPa (a raw value printed as "MPa"
+        // once showed 12 000.000 "MPa" — three orders of magnitude off).
+        String casePress = String.format("%.3f", displayCoreCasePress / 1000.0);
         int caseIntInt = (int) Math.round(displayCoreCaseInt);
 
         // Flash red-white when any integrity is below 100%
@@ -532,7 +535,7 @@ public class ReactorDisplay {
     public double getDisplayCoreSpin() { return displaySpin; }
     public int getDisplayCoreShInt() { return (int) Math.round(displayCoreShInt); }
     public int getDisplayCoreCaseTemp() { return (int) Math.round(displayCoreCaseTemp); }
-    public int getDisplayCoreCasePress() { return (int) Math.round(displayCoreCasePress); }
+    public int getDisplayCoreCasePress() { return (int) Math.round(displayCoreCasePress / 1000.0); }
     public int getDisplayCoreCaseInt() { return (int) Math.round(displayCoreCaseInt); }
     public int getDisplayEnergyRate() { return (int) Math.round(displayEnergyRate); }
 
