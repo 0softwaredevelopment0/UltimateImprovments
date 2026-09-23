@@ -58,6 +58,11 @@ public class UIOther extends JavaPlugin {
         // re-enable (running flag survives the plugin cycle).
         com.ultimateimprovments.space.SpaceOxygenListener.stop();
         com.ultimateimprovments.space.SpaceRadiationListener.stop();
+        // Stop the dimension-driven gravity task (see SpaceGravityListener).
+        com.ultimateimprovments.space.SpaceGravityListener.stop();
+        // Cancel still-running rocket lifts; the launching map is static and
+        // survived re-enables.
+        com.ultimateimprovments.space.SpaceRocketManager.shutdown();
         ConsoleLogger.success("[UI-Other] Disabled!");
     }
 
@@ -121,8 +126,8 @@ public class UIOther extends JavaPlugin {
 
         com.ultimateimprovments.space.SpaceManager.createTable();
         com.ultimateimprovments.space.SpaceManager.init(main);
-        getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.space.SpaceGravityListener(), this);
+        com.ultimateimprovments.space.SpaceGravityListener.reloadConfig();
+        com.ultimateimprovments.space.SpaceGravityListener.start(main);
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.space.SpaceRocketManager(), this);
         com.ultimateimprovments.space.SpaceRocketManager.registerRecipe(main);
