@@ -100,7 +100,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean toggleRadView(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>")); return true; }
-        if (!player.hasPermission("ui.command.toggleradview")) { CommandErrors.noPermission(player); return true; }
+        if (!player.hasPermission("ui.command.viewrad")) { CommandErrors.noPermission(player); return true; }
         RadiationManager.toggleRadView(player);
         if (RadiationManager.isRadViewEnabled(player)) {
             player.sendMessage(MessageUtil.parse("<green>☢</green> <white>Radiation display: </white><green>ON</green>"));

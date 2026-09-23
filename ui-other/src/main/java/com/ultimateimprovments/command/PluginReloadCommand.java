@@ -15,7 +15,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 
-import java.util.List;/**
+import java.util.List;
+/**
      * Dispatcher of /ui commands.
      * <p>
      * All subcommands are registered in {@link SubCommandRegistry}.
@@ -129,8 +130,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("expsplit", ExpSplitSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("togglebind",
                 (s, a) -> { MiscSubcommand.toggleBind(s); return true; }));
-        registry.register(LegacySubCommandAdapter.of("toggleradview",
-                (s, a) -> { MiscSubcommand.toggleRadView(s); return true; }));
+        registry.register(LegacySubCommandAdapter.of("viewrad",
+                (s, a) -> { MiscSubcommand.toggleRadView(s); return true; },
+                null, List.of("toggleradview")));
         registry.register(LegacySubCommandAdapter.of("fly",
                 (s, a) -> { MiscSubcommand.fly(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("sudo", SudoSubcommand::execute,
