@@ -112,7 +112,9 @@ public class ReactorCase {
         if (state == State.OK) {
             press = Math.max(0, press + (target - press) * cfg.getCasePressFollowRate());
         } else {
-            // Broken: pressure vented — jitters around ~0
+            // Broken: pressure vented — small jitter around ~0 (kPa scale!
+            // the old 0.15 was 150 Pa — effectively zero anyway, but the
+            // display rounded 0.0..0.15 kPa to MPa as 0.000..0.0002).
             jitterPress += (0 - jitterPress) * 0.3;
             press = Math.max(0, random.nextDouble() * 0.15 + jitterPress);
         }
@@ -121,7 +123,8 @@ public class ReactorCase {
         // INTEGRITY — decays above the safe thresholds (like the shield)
         // =========================
         if (state == State.OK) {
-            boolean over = temp >= cfg.getCaseIntDecayTemp() || press >= cfg.getCaseIntDecayPress();
+            boolean over = temp >= cfg.getCaseIntDecayTemp()
+                    || press >= cfg.getCaseIntDecayPress() * 1000.0; // config MPa → kPa
             if (over && integrity > 0) {
                 double ratePerTick = cfg.getCaseIntDecayRate() / 20.0;
                 caseIntRemainder += ratePerTick;
@@ -151,11 +154,18 @@ public class ReactorCase {
         }
     }
 
-    /** Case pressure target, MPa — scales with the case temperature. */
+    /**
+     * Case pressure target in <b>kPa</b> — scales with the case temperature:
+     * 12 000 kPa at the 10 000 C* melting point (= 12 MPa, just below the
+     * 15 MPa burst threshold). The case temperature is 10000 C* vs the core's
+     * 10M C*, so the case pressure scale is 1000× the core pressure scale —
+     * keep the kPa unit everywhere internally and convert to MPa only for
+     * the display.
+     */
     static double pressureTarget(int temp, ReactorConfig cfg) {
         double maxTemp = Math.max(1, cfg.getCaseTempMax());
         double t = Math.max(0, temp) / maxTemp;
-        return t * cfg.getCasePressMax();
+        return t * cfg.getCasePressMax() * 1000.0;
     }
 
     // =========================
@@ -276,7 +286,8 @@ public class ReactorCase {
     }
 
     public double getPress() { return press; }
-    public void setPress(double val) { press = Math.max(0, Math.min(15, val)); }
+    /** Sets press, clamped to 0..case_press_max (kPa). */
+    public void setPress(double val) { press = Math.max(0, Math.min(15000, val)); }
 
     public int getIntegrity() { return integrity; }
     public void setIntegrity(int val) {

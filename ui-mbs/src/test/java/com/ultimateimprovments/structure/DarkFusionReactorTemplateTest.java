@@ -34,10 +34,11 @@ class DarkFusionReactorTemplateTest {
 
         assertEquals("darkfusionreactor", t.getName());
 
-        // Every cell of the 10×11×9 template must be part of the check:
-        // 990 total = 455 solid + 535 required air (nothing dropped, air included)
-        assertEquals(990, t.totalCells());
-        assertEquals(455, t.getBlocks().size());
+        // Every cell except the levers must be part of the check. The 9 lever
+        // cells are dropped by the parser (interaction devices — ignored
+        // everywhere), so: 455 solid − 9 levers = 446 blocks + 535 air = 981.
+        assertEquals(981, t.totalCells());
+        assertEquals(446, t.getBlocks().size());
         assertEquals(535, t.getAirBlocks().size());
 
         // Anchor: the item frame stands 0.5 above the central top bulb —
@@ -70,12 +71,14 @@ class DarkFusionReactorTemplateTest {
     void statefulBlocksMatchByMaterialOnly() throws Exception {
         StructureTemplate t = load();
 
-        // All stateful blocks (stairs, levers, barrels, signs, rods, bars, grate)
+        // All stateful blocks (stairs, barrels, signs, rods, bars, grate)
         // keep their plain Material in the template — state/properties are dropped
         // by the parser, so matching is by material only.
         assertTrue(t.getBlocks().stream().anyMatch(b ->
                 b.material() == Material.WAXED_CUT_COPPER_STAIRS));
-        assertTrue(t.getBlocks().stream().anyMatch(b -> b.material() == Material.LEVER));
+        // Levers are NOT in the template: dropped by the parser (ignored
+        // everywhere — assembly, damage tracking, validation fallback).
+        assertTrue(t.getBlocks().stream().noneMatch(b -> b.material() == Material.LEVER));
         assertTrue(t.getBlocks().stream().anyMatch(b -> b.material() == Material.BARREL));
         assertTrue(t.getBlocks().stream().anyMatch(b -> b.material() == Material.ACACIA_WALL_SIGN));
         assertTrue(t.getBlocks().stream().anyMatch(b -> b.material() == Material.ACACIA_SIGN));

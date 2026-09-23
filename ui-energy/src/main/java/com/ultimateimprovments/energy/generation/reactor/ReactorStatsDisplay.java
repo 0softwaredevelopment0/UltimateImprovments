@@ -76,7 +76,7 @@ public final class ReactorStatsDisplay {
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Integrity:   <white>" + reactor.getDisplayCoreShInt() + " %"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_aqua>═[ <aqua>Case data <dark_aqua>]═"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Temperature: <white>" + reactor.getDisplayCoreCaseTemp() + " C*"));
-        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Pressure:    <white>" + String.format("%.3f", reactor.getDisplayCoreCasePress() / 1000.0) + " MPa"));
+        player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Pressure:    <white>" + String.format("%.3f", (double) reactor.getDisplayCoreCasePress() / 1000.0) + " MPa"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Integrity:   <white>" + reactor.getDisplayCoreCaseInt() + " %"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <dark_purple>═[ <light_purple>Fusion data <dark_purple>]═"));
         player.sendMessage(MessageUtil.parse("<dark_gray>│ <gray>Speed:      <white>" + String.format("%.0f", reactor.getFusion().getSpeedPct()) + " %"));

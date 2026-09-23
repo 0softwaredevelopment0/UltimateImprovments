@@ -69,11 +69,8 @@ public class ReactorStructure {
     /** Central grate under the lightning-rod column (5,7,4). */
     private static final int[] FLOOR_GRATE = { 0, -2, 0 };
 
-    /** Levers (y=9): 5 on the front edge (x=0) + 4 between the bulb rows (x=2). */
-    private static final int[][] LEVERS = {
-            { -5, 0, -4 }, { -5, 0, -2 }, { -5, 0, 0 }, { -5, 0, 2 }, { -5, 0, 4 },
-            { -3, 0, -4 }, { -3, 0, -2 }, { -3, 0, 0 }, { -3, 0, 2 }
-    };
+    // Levers are NOT part of the structure (no validation, no damage tracking):
+    // they are player-side control devices wired to the control bulbs.
 
     /** Stats signs on the front wall (y=1..2): Power Stats, Shield Stats, etc. */
     private static final int[][] WALL_SIGNS = {
@@ -120,10 +117,9 @@ public class ReactorStructure {
         // 5. Central grate under the rod column
         if (!isBlock(base, FLOOR_GRATE, Materials.WAXED_COPPER_GRATE)) return false;
 
-        // 6. Levers
-        for (int[] pos : LEVERS) {
-            if (!isBlock(base, pos, Material.LEVER)) return false;
-        }
+        // 6. Levers — NOT validated: they are interaction devices, the reactor
+        //    works regardless of where/if they are placed (any player can wire
+        //    their own switches to the control bulbs).
 
         // 7. Stats signs on the front wall
         for (int[] pos : WALL_SIGNS) {
@@ -212,10 +208,6 @@ public class ReactorStructure {
         check(errors, base, BARREL_WEST, Material.BARREL);
         check(errors, base, BARREL_EAST, Material.BARREL);
         check(errors, base, FLOOR_GRATE, Materials.WAXED_COPPER_GRATE);
-
-        for (int[] pos : LEVERS) {
-            check(errors, base, pos, Material.LEVER);
-        }
 
         for (int[] pos : WALL_SIGNS) {
             Material actual = getBlock(base, pos[0], pos[1], pos[2]);
