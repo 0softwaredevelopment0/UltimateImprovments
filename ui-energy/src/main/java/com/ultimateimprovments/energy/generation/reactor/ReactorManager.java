@@ -575,22 +575,23 @@ public class ReactorManager {
         // West tower bulb = heater, east tower bulb = cooler (DFC 10×11×9 geometry)
         // =========================
         // LASERS — roof controls, per-tick ramp + smooth heating/cooling
-        // Damaged structure: the core can no longer be controlled — no heat,
-        // no power ramp; ONLY the Stabilization Laser keeps working so the
-        // reactor can be shut down by cooling it to 0 C* (cooldown mode).
+        // Damaged structure: CONTROL is lost (lamps and sensors are dead) but
+        // the core keeps RUNNING — the lasers hold their last power and keep
+        // heating/cooling, the shield keeps taking stress. The only shutdown
+        // path is the natural/absorber cooling down to 0 C*
+        // (see checkControlledShutdown).
         // =========================
-        if (!structureDamaged) {
-            lasers.tick(base);
-            shield.tick(base);
-        } else if (coreTemp > coreTempMin) {
-            lasers.tickCooldownMode(base);
-        }
+        lasers.tick(base);
+        shield.tick(base);
 
         // =========================
         // EMERGENCY CORE SHUTDOWN — shield integrity below the critical
         // threshold (25% by default): the core shuts itself off, lasers reset.
+        // Needs working control systems — never fires on a damaged structure
+        // (sensors dead: the uncontrolled core cannot save itself).
         // =========================
         if (!coreEmergencyStopped
+                && !structureDamaged
                 && !isSelfdestructActive()
                 && shield.getState() == ReactorShield.State.WORKING
                 && shield.getIntegrity() > 0
@@ -800,7 +801,6 @@ public class ReactorManager {
     // =========================
     public void tickPressure() {
         if (!enabled || !valid || reactorLocation == null) return;
-        if (structureDamaged) return; // sensors are dead — pressure readouts frozen
 
         Location base = reactorLocation;
         // Above the core chamber, matches the core visuals
@@ -829,7 +829,8 @@ public class ReactorManager {
     // =========================
     public void tickFusion() {
         if (!enabled || !valid || reactorLocation == null) return;
-        if (structureDamaged) return; // sensors dead: no particle tracking, no case readouts
+        // Damaged structure: fusion KEEPS running (control lost ≠ frozen) —
+        // the case keeps heating and the glass can still melt.
         fusion.tick(reactorLocation);
         caseSys.tick(reactorLocation);
     }
@@ -845,7 +846,6 @@ public class ReactorManager {
     // SMOOTH DISPLAY TICK (every tick)
     // =========================
     public void tickSmoothDisplay() {
-        if (structureDamaged) return; // sign panels are broken — nothing to smooth
         display.tickSmoothDisplay();
     }
 
@@ -853,7 +853,6 @@ public class ReactorManager {
     // VISUAL TICK (every tick - particles)
     // =========================
     public void tickVisual() {
-        if (structureDamaged) return; // sign panels are broken — no sensor-driven visuals
         display.tickVisual();
     }
 
@@ -919,7 +918,10 @@ public class ReactorManager {
     // structure, lasers reset first — does NOT tear the reactor down.)
     // =========================
     public void checkControlledShutdown() {
-        if (!structureDamaged || coreTemp > coreTempMin) return;
+        // Shutdown = the uncontrolled core cooled down to 0 C* (passive decay
+        // and/or the Stab Laser holding its last power). Then the damaged
+        // reactor powers down and disassembles.
+        if (!structureDamaged || coreTemp > 0) return;
 
         structureDamaged = false;
         damageWarnTick = 0;
@@ -1108,7 +1110,7 @@ public class ReactorManager {
 
     /** Fuel tick (every second): consumption by spin + spin decay when dry. */
     public void tickFuel() {
-        if (structureDamaged) return; // spin is unmanaged while the structure is damaged
+        // Damaged structure: fuel keeps burning (processes continue)
         if (!enabled || !valid || reactorLocation == null) return;
         fuel.ensureNamed(reactorLocation);
         fuel.tick(reactorLocation);
