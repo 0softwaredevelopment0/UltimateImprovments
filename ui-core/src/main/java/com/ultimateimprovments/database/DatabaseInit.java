@@ -1,6 +1,7 @@
 package com.ultimateimprovments.database;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.ConsoleLogger;
 import java.sql.Connection;
 import java.sql.Statement;
 
@@ -411,9 +412,29 @@ public class DatabaseInit {
                     inspector_z INTEGER NOT NULL DEFAULT 0,
                     inspector_yaw FLOAT NOT NULL DEFAULT 0,
                     inspector_pitch FLOAT NOT NULL DEFAULT 0,
-                    started_at INTEGER NOT NULL DEFAULT 0
+                    started_at INTEGER NOT NULL DEFAULT 0,
+                    suspect_state TEXT
                 );
             """);
+
+            // Migration: suspect_state for checks created before this version.
+            try {
+                java.sql.ResultSet cols = con.createStatement().executeQuery(
+                        "PRAGMA table_info(active_checks)");
+                boolean hasState = false;
+                while (cols.next()) {
+                    if ("suspect_state".equalsIgnoreCase(cols.getString("name"))) {
+                        hasState = true;
+                        break;
+                    }
+                }
+                cols.close();
+                if (!hasState) {
+                    st.execute("ALTER TABLE active_checks ADD COLUMN suspect_state TEXT");
+                }
+            } catch (Exception e) {
+                ConsoleLogger.warn("[DB] active_checks suspect_state migration: " + e.getMessage());
+            }
 
         // =========================
         // 🔑 CODE PANEL KEYS

@@ -107,7 +107,9 @@ public class CheckManager {
         inspector.teleport(suspect.getLocation());
 
         // Freeze suspect (saving the pre-freeze state)
-        instance.frozenStates.put(suspectId, PlayerState.capture(suspect));
+        PlayerState preFreeze = PlayerState.capture(suspect);
+        instance.frozenStates.put(suspectId, preFreeze);
+        persistFrozenState(suspectId, preFreeze);
         PlayerState.freeze(suspect);
 
         // Save inspector name for rejoin/restart
@@ -174,6 +176,7 @@ public class CheckManager {
 
         // Clear title, unfreeze, complete messages
         clearCheckTitle(suspect);
+        clearPersistedFrozenState(suspectId);
         if (suspect.isOnline()) {
             PlayerState.restore(suspect, instance.frozenStates.remove(suspectId));
             suspect.sendMessage("");
@@ -224,6 +227,7 @@ public class CheckManager {
         // If the suspect is online — unfreeze
         Player suspect = Bukkit.getPlayer(suspectId);
         clearCheckTitle(suspect);
+        clearPersistedFrozenState(suspectId);
         if (suspect != null && suspect.isOnline()) {
             PlayerState.restore(suspect, instance.frozenStates.remove(suspectId));
             suspect.sendMessage("");
@@ -259,6 +263,7 @@ public class CheckManager {
 
         Player suspect = Bukkit.getPlayer(suspectId);
         clearCheckTitle(suspect);
+        clearPersistedFrozenState(suspectId);
         if (suspect != null && suspect.isOnline()) {
             PlayerState.restore(suspect, instance.frozenStates.remove(suspectId));
             suspect.sendMessage("");
@@ -287,7 +292,18 @@ public class CheckManager {
         Player suspect = Bukkit.getPlayer(suspectId);
         clearCheckTitle(suspect);
 
-        // Freeze state stays in memory + DB so it can resume on rejoin.
+        // RESTORE the real pre-freeze state BEFORE the player data is saved to
+        // disk on quit. Otherwise the frozen body (invulnerable=true, walkSpeed=0,
+        // ADVENTURE) lands in player.dat and — worse — rejoinCheck captures the
+        // frozen state as the "original", so after the check the player stays
+        // immortal with zero speed forever. The freeze is re-applied on rejoin.
+        PlayerState preFreeze = instance.frozenStates.remove(suspectId);
+        if (suspect != null && suspect.isOnline()) {
+            PlayerState.restore(suspect, preFreeze);
+        }
+        // Keep the snapshot in the DB row so the freeze can resume on rejoin.
+        persistFrozenState(suspectId, preFreeze);
+
         // Notify the inspector
         Player inspector = Bukkit.getPlayer(inspectorId);
         if (inspector != null && inspector.isOnline()) {
@@ -314,8 +330,15 @@ public class CheckManager {
         UUID storedSuspect = instance.activeChecks.get(inspectorId);
         if (storedSuspect == null || !storedSuspect.equals(suspectId)) return;
 
-        // Freeze the suspect (save the fresh state)
-        instance.frozenStates.put(suspectId, PlayerState.capture(suspect));
+        // Freeze the suspect (save the fresh state). The saved state MUST come
+        // from the DB row (the real pre-check state captured at startCheck),
+        // never from the live player — after a quit the live player was already
+        // restored and re-frozen, so capturing it again would store garbage.
+        PlayerState saved = loadPersistedFrozenState(suspectId);
+        if (saved == null) {
+            saved = PlayerState.capture(suspect); // legacy row without a snapshot
+        }
+        instance.frozenStates.put(suspectId, saved);
         PlayerState.freeze(suspect);
 
         // Restore the title
@@ -448,6 +471,52 @@ public class CheckManager {
             st.executeUpdate();
         } catch (Exception e) {
             ConsoleLogger.warn("[CheckManager] Failed to remove persisted check: " + e.getMessage());
+        }
+    }
+
+    // =========================
+    // FROZEN-STATE PERSISTENCE — the real pre-freeze state lives in the DB, so
+    // the unfreeze survives restarts and the suspect can never relog into a
+    // frozen body that later becomes their "restored" state.
+    // =========================
+
+    private static void persistFrozenState(UUID suspectId, PlayerState state) {
+        String serialized = state != null ? state.serialize() : null;
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "UPDATE active_checks SET suspect_state = ? WHERE suspect_uuid = ?")) {
+            st.setString(1, serialized);
+            st.setString(2, suspectId.toString());
+            st.executeUpdate();
+        } catch (Exception e) {
+            ConsoleLogger.warn("[CheckManager] Failed to persist frozen state: " + e.getMessage());
+        }
+    }
+
+    private static PlayerState loadPersistedFrozenState(UUID suspectId) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "SELECT suspect_state FROM active_checks WHERE suspect_uuid = ?")) {
+            st.setString(1, suspectId.toString());
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    return PlayerState.deserialize(rs.getString("suspect_state"));
+                }
+            }
+        } catch (Exception e) {
+            ConsoleLogger.warn("[CheckManager] Failed to load frozen state: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private static void clearPersistedFrozenState(UUID suspectId) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "UPDATE active_checks SET suspect_state = NULL WHERE suspect_uuid = ?")) {
+            st.setString(1, suspectId.toString());
+            st.executeUpdate();
+        } catch (Exception e) {
+            ConsoleLogger.warn("[CheckManager] Failed to clear frozen state: " + e.getMessage());
         }
     }
 
