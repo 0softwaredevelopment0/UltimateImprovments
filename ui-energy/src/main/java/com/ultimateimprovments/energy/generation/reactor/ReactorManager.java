@@ -55,6 +55,114 @@ public class ReactorManager {
     private boolean structureDamaged = false;
     private int damageWarnTick = 0;
 
+    // =========================
+    // SELF-DESTRUCT PROTOCOL (DFC): 1% chance on startup.
+    // Phase 1 — sensors go dark for 5s (No signal screen).
+    // Phase 2 — 60s timed countdown, the core runs normally but the control
+    //           bulbs are locked; the signs show the protocol screen.
+    // Phase 3 — overpower finale: Power Lasers ramp to 1000%, burning the
+    //           shield to 0% (report stage) — the sequence then completes.
+    // =========================
+    public enum SelfdestructPhase { NONE, SENSORS_DOWN, TIMED, FINALE }
+
+    private SelfdestructPhase selfdestructPhase = SelfdestructPhase.NONE;
+    private int selfdestructTicks;        // ticks in the current phase
+    private boolean selfdestructDone;     // completed — not rolled again
+    private int selfdestructWarnTicks;    // legacy debounce (unused after the single T-10s warning)
+
+    /** Seconds remaining in the timed phase (for the sign timer). */
+    public int getSelfdestructSecondsLeft() {
+        return selfdestructPhase == SelfdestructPhase.TIMED
+                ? Math.max(0, (selfdestructCfg().getSelfdestructTimedSec() * 20
+                        - selfdestructTicks + 19) / 20)
+                : 0;
+    }
+
+    private static ReactorConfig selfdestructCfg() { return ReactorConfig.getInstance(); }
+
+    public boolean isSelfdestructActive() { return selfdestructPhase != SelfdestructPhase.NONE; }
+    public boolean isSelfdestructFinale() { return selfdestructPhase == SelfdestructPhase.FINALE; }
+    public SelfdestructPhase getSelfdestructPhase() { return selfdestructPhase; }
+
+    /** T-10s warning is sent once per second for the last 10 seconds of the timed phase. */
+    private static final int SELFDESTRUCT_WARN_WINDOW = 10;
+
+    private void tickSelfdestruct() {
+        ReactorConfig cfg = ReactorConfig.getInstance();
+        switch (selfdestructPhase) {
+            case SENSORS_DOWN -> {
+                selfdestructTicks++;
+                if (selfdestructTicks >= cfg.getSelfdestructNoSignalSec() * 20) {
+                    beginTimedSelfdestruct();
+                }
+            }
+            case TIMED -> {
+                selfdestructTicks++;
+                int total = cfg.getSelfdestructTimedSec() * 20;
+                int leftTicks = total - selfdestructTicks;
+                // ONE warning at exactly 10 seconds left — no spam
+                if (leftTicks == SELFDESTRUCT_WARN_WINDOW * 20) {
+                    broadcast(StructuresMessages.get("selfdestruct_final_warn",
+                            "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."));
+                }
+                if (selfdestructTicks >= total) {
+                    // The timed phase runs out — the overpower finale begins
+                    selfdestructPhase = SelfdestructPhase.FINALE;
+                    selfdestructTicks = 0;
+                    lasers.beginOverpower();
+                    broadcast(StructuresMessages.get("selfdestruct_finale",
+                            "<dark_red>☠ <red>Self-destruct finale: the Power Lasers are running at 1000%!"));
+                }
+            }
+            case FINALE -> {
+                // Report stage reached (shield burned to 0% → detonation
+                // countdown): the self-destruct sequence is complete.
+                if (shield.isFailed()) {
+                    onSelfdestructReportStage();
+                }
+            }
+            case NONE -> { /* not armed */ }
+        }
+    }
+
+    /** Phase 1 → Phase 2 transition: the protocol screen replaces No signal. */
+    private void beginTimedSelfdestruct() {
+        selfdestructPhase = SelfdestructPhase.TIMED;
+        selfdestructTicks = 0;
+        selfdestructWarnTicks = -1;
+        display.resetSignCache();
+        lasers.setControlLocked(true);
+        broadcast(StructuresMessages.get("selfdestruct_protocol",
+                "<dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00."));
+    }
+
+    /**
+     * Report stage reached (shield 0% → detonation countdown): the self-destruct
+     * sequence is complete and disarms itself — the shield detonation proceeds
+     * on its own countdown.
+     */
+    public void onSelfdestructReportStage() {
+        if (selfdestructPhase == SelfdestructPhase.NONE || selfdestructDone) return;
+        selfdestructPhase = SelfdestructPhase.NONE;
+        selfdestructDone = true;
+        broadcast(StructuresMessages.get("selfdestruct_complete",
+                "<dark_red>☠ <red>Self-destruct sequence complete — the core is beyond saving."));
+        saveToDb();
+    }
+
+    /** Rolls the 1% self-destruct chance at startup. */
+    private void rollSelfdestruct() {
+        ReactorConfig cfg = ReactorConfig.getInstance();
+        if (selfdestructDone || isSelfdestructActive()) return;
+        if (Math.random() * 100.0 < cfg.getSelfdestructChance()) {
+            selfdestructPhase = SelfdestructPhase.SENSORS_DOWN;
+            selfdestructTicks = 0;
+            display.resetSignCache();
+            broadcast(StructuresMessages.get("sensor_no_signal",
+                    "<red>Cannot receive any data from sensors: <gray>No signal"));
+        }
+    }
+
     /** Emergency core shutdown latch (shield integrity fell below the critical threshold). */
     private boolean coreEmergencyStopped = false;
     public static ReactorManager getInstance() {
@@ -430,6 +538,8 @@ public class ReactorManager {
         // threshold (25% by default): the core shuts itself off, lasers reset.
         // =========================
         if (!coreEmergencyStopped
+                && !isSelfdestructActive()
+                && shield.getState() == ReactorShield.State.WORKING
                 && shield.getIntegrity() > 0
                 && shield.getIntegrity() < cfg.getShieldIntegrityShutdownPercent()
                 && !shield.isFailed()) {
@@ -475,16 +585,16 @@ public class ReactorManager {
         }
 
         // =========================
-        // DAMAGE STATE WARNING (every 5 seconds while damaged)
+        // DAMAGE STATE WARNING — removed (spam). While the structure is damaged
+        // the signs show the No signal screen and a single message announces it.
         // =========================
-        if (structureDamaged) {
-            damageWarnTick++;
-            if (damageWarnTick >= 100) {
-                damageWarnTick = 0;
-                broadcast(StructuresMessages.get("damage_uncontrolled",
-                        "<gold>❕ <white>Reactor structure damaged — control lost! Cool the core down to <yellow>0 C*"));
-            }
-        }
+
+        // =========================
+        // SELF-DESTRUCT STATE MACHINE
+        // 1% chance at startup: 5s of No signal → 60s timed countdown →
+        // overpower finale (Power Lasers at 1000%) until the report stage.
+        // =========================
+        tickSelfdestruct();
 
         // =========================
         // SHIELD PRESSURE & CORE SPIN
@@ -717,6 +827,10 @@ public class ReactorManager {
         energyRemainder = 0;
         structureDamaged = false;
         damageWarnTick = 0;
+        selfdestructPhase = SelfdestructPhase.NONE;
+        selfdestructTicks = 0;
+        selfdestructDone = false;
+        selfdestructWarnTicks = -1;
 
         display.resetDisplay();
 
@@ -724,20 +838,21 @@ public class ReactorManager {
     }
 
     // =========================
-    // CORE SHUTDOWN — damaged structure, cooled to 0 C* (controlled stop)
+    // CORE SHUTDOWN — damaged structure, cooled to 0 C* (controlled stop).
+    // A damaged reactor cannot be run again: the teardown disassembles it and
+    // it must be re-assembled from scratch. (A normal shutdown — intact
+    // structure, lasers reset first — does NOT tear the reactor down.)
     // =========================
     public void checkControlledShutdown() {
         if (!structureDamaged || coreTemp > coreTempMin) return;
 
         structureDamaged = false;
         damageWarnTick = 0;
-        lasers.reset();
-        shield.reset();
-        shieldPress = 0;
-        spin = 0;
         broadcast(StructuresMessages.get("damage_shutdown_complete",
                 "<green>✔ <white>Core cooled to <yellow>0 C* <white>— reactor stopped and powered down."));
         saveToDb();
+        // Teardown — the damaged reactor disassembles and leaves the registry
+        setReactorLocation(null);
     }
 
     // =========================
@@ -813,6 +928,10 @@ public class ReactorManager {
         structureDamaged = false;
         damageWarnTick = 0;
         coreEmergencyStopped = false;
+        selfdestructPhase = SelfdestructPhase.NONE;
+        selfdestructTicks = 0;
+        selfdestructDone = false;
+        selfdestructWarnTicks = -1;
         energyGenerated = 0;
         energyRemainder = 0;
         prevShInt = 100;
@@ -900,6 +1019,15 @@ public class ReactorManager {
     public ReactorFusion getFusion() { return fusion; }
     public ReactorCase getCase() { return caseSys; }
 
+    // =========================
+    // SENSOR DEAD — the signs show the No signal screen instead of readings
+    // (self-destruct phase 1, damaged structure, shield detonation countdown).
+    // =========================
+    public boolean isSensorsDead() {
+        return structureDamaged
+                || selfdestructPhase == SelfdestructPhase.SENSORS_DOWN                || shield.isFailed();
+    }
+
     /** Fuel tick (every second): consumption by spin + spin decay when dry. */
     public void tickFuel() {
         if (structureDamaged) return; // spin is unmanaged while the structure is damaged
@@ -931,6 +1059,7 @@ public class ReactorManager {
                     "<green>✔ <white>Core restarted after the emergency shutdown."));
         }
         shield.start();
+        rollSelfdestruct();
     }
 
     /** Shield breach detonation — tears down the reactor. */
@@ -939,8 +1068,7 @@ public class ReactorManager {
     }
 
     // Smoothed display values (delegated to ReactorDisplay)
-    public int getDisplayCoreTemp() { return display.getDisplayCoreTemp(); }
-    public double getDisplayShieldPress() { return display.getDisplayShieldPress(); }
+    public int getDisplayCoreTemp() { return display.getDisplayCoreTemp(); }    public double getDisplayShieldPress() { return display.getDisplayShieldPress(); }
     public double getDisplayCoreSpin() { return display.getDisplayCoreSpin(); }
     public int getDisplayCoreShInt() { return display.getDisplayCoreShInt(); }
     public int getDisplayCoreCaseTemp() { return display.getDisplayCoreCaseTemp(); }
@@ -995,6 +1123,8 @@ public class ReactorManager {
             damageWarnTick = 0;
             broadcast(StructuresMessages.get("damage_uncontrolled",
                             "<gold>❕ <white>Reactor structure damaged — control lost! Cool the core down to <yellow>0 C*"));
+            broadcast(StructuresMessages.get("sensor_no_signal",
+                            "<red>Cannot receive any data from sensors: <gray>No signal"));
         }
 
         // Remaining/total of the AFFECTED category (glass → glass cells, etc.)

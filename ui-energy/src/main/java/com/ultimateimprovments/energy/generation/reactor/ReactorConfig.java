@@ -55,6 +55,14 @@ public class ReactorConfig {
     private int shieldIntegrityShutdownPercent; // emergency core shutdown threshold
     private int shieldParticleDustCount;     // DUST particles in the core per tick
 
+    // Self-destruct protocol — 1% chance on startup, 5s of dead sensors (No
+    // signal), a timed countdown with locked control bulbs, then the overpower
+    // finale: the Power Lasers run at 1000% and burn the shield at %/sec.
+    private double selfdestructChance;       // % (1)
+    private int selfdestructNoSignalSec;     // phase 1 duration (5)
+    private int selfdestructTimedSec;        // phase 2 countdown (60)
+    private double selfdestructOverpowerRate; // shield %/sec burn at 1000% (10)
+
     // Fuel system — consumption by core spin (100% = 1 gold ingot + 1 diamond / 10s)
     private double fuelSpinMin;              // below this spin nothing is consumed
     private double fuelWorkSpin;             // working point: base rate (95 000 RPS)
@@ -94,6 +102,11 @@ public class ReactorConfig {
     private int powerLaserHeatRate;
     private int stabCoolRate;
 
+    public double getSelfdestructChance() { return selfdestructChance; }
+    public int getSelfdestructNoSignalSec() { return selfdestructNoSignalSec; }
+    public int getSelfdestructTimedSec() { return selfdestructTimedSec; }
+    public double getSelfdestructOverpowerRate() { return selfdestructOverpowerRate; }
+
     private void load() {
         FileConfiguration cfg = Main.getInstance().getConfig();
 
@@ -121,6 +134,10 @@ public class ReactorConfig {
         shieldParticleRodCount = cfg.getInt("reactor.shield_particle_rod_count", 16);
         shieldIntegrityShutdownPercent = cfg.getInt("reactor.shield_integrity_shutdown_percent", 25);
         shieldParticleDustCount = cfg.getInt("reactor.shield_particle_dust_count", 16);
+        selfdestructChance = cfg.getDouble("reactor.selfdestruct_chance", 1.0);
+        selfdestructNoSignalSec = cfg.getInt("reactor.selfdestruct_no_signal_sec", 5);
+        selfdestructTimedSec = cfg.getInt("reactor.selfdestruct_timed_sec", 60);
+        selfdestructOverpowerRate = cfg.getDouble("reactor.selfdestruct_overpower_rate", 10.0);
         fuelSpinMin = cfg.getDouble("reactor.fuel_spin_min", 1000);
         fuelWorkSpin = cfg.getDouble("reactor.fuel_work_spin", 95000);
         fuelOverSpin = cfg.getDouble("reactor.fuel_over_spin", 100000);
