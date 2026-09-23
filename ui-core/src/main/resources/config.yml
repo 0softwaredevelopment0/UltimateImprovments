@@ -3178,6 +3178,11 @@ radiation:
   space_radiation: 199
   # Space radiation interval in ticks (200 = 10 seconds)
   space_interval_ticks: 200
+
+  # Dosimeter readout conversion: 1 internal radiation point = X mSv.
+  # D (absorbed dose) and R (rate per tick) on the dosimeter action bar are
+  # shown in mSv using this factor.
+  dosimeter_ms_per_unit: 1.0
 sunburn:
   # Master toggle - enable/disable the entire sunburn system
   enabled: true

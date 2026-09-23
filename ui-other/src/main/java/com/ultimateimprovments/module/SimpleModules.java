@@ -267,6 +267,7 @@ public final class SimpleModules {
                 EntityLocatorCraftListener.init();
                 LeadIngotCraftListener.init();
                 LeadShieldCraftListener.init();
+                com.ultimateimprovments.mechanics.crafting.DosimeterCraftListener.init();
                 HealthMeterCraftListener.init();
                 OreFinderCraftListener.init();
                 MobFinderCraftListener.init();
@@ -289,6 +290,7 @@ public final class SimpleModules {
                 pm.registerEvents(new EntityLocatorCraftListener(), main);
                 pm.registerEvents(new LeadIngotCraftListener(), main);
                 pm.registerEvents(new LeadShieldCraftListener(), main);
+                pm.registerEvents(new com.ultimateimprovments.mechanics.crafting.DosimeterCraftListener(), main);
                 pm.registerEvents(new HealthMeterCraftListener(), main);
                 pm.registerEvents(new OreFinderCraftListener(), main);
                 pm.registerEvents(new MobFinderCraftListener(), main);
@@ -317,6 +319,10 @@ public final class SimpleModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 RadiationManager.init();
+                double msPerUnit = ((Main) plugin).getConfig()
+                        .getDouble("radiation.dosimeter_ms_per_unit", 1.0);
+                com.ultimateimprovments.mechanics.environment.radiation.DosimeterTask
+                        .init((Main) plugin, msPerUnit);
             }
         });
 
