@@ -210,8 +210,49 @@ public class ReactorDisplay {
         // Sign rewrite once per second (20 ticks) — smooth values keep ticking
         if (displayTick % 20 != 0) return;
 
-        boolean selfDestruct = reactor.isMeltdownCountdown();
-        boolean meltdownCdown = reactor.isMeltdownCountdown();
+        // =========================
+        // SENSOR-DEAD SCREENS (4 red lines instead of readings):
+        // — shield detonation countdown / damaged structure: No signal
+        // — self-destruct phase 1 (5s): No signal; phase 2 (60s): the protocol
+        //   screen with the T-min:sec timer.
+        // =========================
+        if (reactor.isSensorsDead() || reactor.isSelfdestructActive()) {
+            var sd = reactor.getSelfdestructPhase();
+            var shieldState = reactor.getShield().getState();
+
+            // Protocol screen during the timed phase (and its 5s No signal before it
+            // is only shown while the shield is up — after the burn the detonation
+            // screen takes over)
+            if (sd == ReactorManager.SelfdestructPhase.TIMED
+                    || sd == ReactorManager.SelfdestructPhase.FINALE) {
+                int sec = reactor.getSelfdestructSecondsLeft();
+                String dots = "<red>........................................";
+                int[][] all = { SIGN_POWER, SIGN_SHIELD, SIGN_FUEL, SIGN_FUSION,
+                        SIGN_STRESS, SIGN_CORE, SIGN_CASE };
+                for (int i = 0; i < all.length; i++) {
+                    setSignLine(base, all[i], 0, "<red>Self-destruct", i);
+                    setSignLine(base, all[i], 1, "<red>protocol:", i);
+                    setSignLine(base, all[i], 2,
+                            "<red>T-<white>" + (sd == ReactorManager.SelfdestructPhase.FINALE
+                                    ? "0:00" : String.format("%d:%02d", sec / 60, sec % 60)), i);
+                    setSignLine(base, all[i], 3, dots, i);
+                }
+                updateRoofLaserSignsDead(base);
+                return;
+            }
+
+            String dots = "<red>........................................";
+            int[][] all = { SIGN_POWER, SIGN_SHIELD, SIGN_FUEL, SIGN_FUSION,
+                    SIGN_STRESS, SIGN_CORE, SIGN_CASE };
+            for (int i = 0; i < all.length; i++) {
+                setSignLine(base, all[i], 0, dots, i);
+                setSignLine(base, all[i], 1, "<red>No signal", i);
+                setSignLine(base, all[i], 2, "<red>Please, stand by", i);
+                setSignLine(base, all[i], 3, dots, i);
+            }
+            updateRoofLaserSignsDead(base);
+            return;
+        }
 
         int tInt = (int) Math.round(displayCoreTemp);
         String press = String.format("%.3f", displayShieldPress);
@@ -224,24 +265,6 @@ public class ReactorDisplay {
         // Flash red-white when any integrity is below 100%
         boolean flashing = shIntInt < 100 || caseIntInt < 100;
         String color = (flashing && (displayTick % 10 < 5)) ? "<red>" : "<white>";
-
-        if (selfDestruct) {
-            String blank = " ";
-            String noSignal = "<red>NO SIGNAL";
-            String meltdownLine = meltdownCdown
-                    ? "<red>DETONATION!"
-                    : noSignal;
-
-            int[][] all = { SIGN_POWER, SIGN_SHIELD, SIGN_FUEL, SIGN_FUSION,
-                    SIGN_STRESS, SIGN_CORE, SIGN_CASE };
-            for (int i = 0; i < all.length; i++) {
-                setSignLine(base, all[i], 0, blank, i);
-                setSignLine(base, all[i], 1, meltdownLine, i);
-                setSignLine(base, all[i], 2, blank, i);
-                setSignLine(base, all[i], 3, blank, i);
-            }
-            return;
-        }
 
         // =========================
         // CORE STATS — T (C*), P (MPa), S (RPS)
@@ -381,6 +404,21 @@ public class ReactorDisplay {
                 ? msg("signs.status_running", "Running")
                 : msg("signs.status_no_startup", "No startup");
         setRoofSignPower(base, -4, 4, startupText, 15);
+    }
+
+    // =========================
+    // ROOF LASER SIGNS — sensor-dead mode: the power readouts go dark too
+    // =========================
+    private void updateRoofLaserSignsDead(Location base) {
+        int[][] powerSigns = {
+                { -4, -4 }, { -4, -2 }, { -4, 0 }, { -4, 2 },
+                { -2, -4 }, { -2, -2 }, { -2, 0 }, { -2, 2 }
+        };
+        for (int i = 0; i < powerSigns.length; i++) {
+            setRoofSignPower(base, powerSigns[i][0], powerSigns[i][1],
+                    "<red>×", 7 + i);
+        }
+        setRoofSignPower(base, -4, 4, "<red>Off", 15);
     }
 
     private void setRoofSignPower(Location base, int dx, int dz, String powerText, int cacheIdx) {

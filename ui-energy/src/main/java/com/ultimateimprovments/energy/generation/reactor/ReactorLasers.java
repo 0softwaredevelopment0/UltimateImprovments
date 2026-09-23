@@ -43,6 +43,21 @@ public class ReactorLasers {
     private boolean started;
     private boolean prevStartupPowered;
 
+    // =========================
+    // OVERPOWER MODE (self-destruct finale): the Power Lasers are forced to
+    // 1000% (beyond their normal 100% limit — not a normal situation), control
+    // bulbs are locked and the shield burns. Reaching the report stage (shield
+    // 0% → detonation countdown) completes the self-destruct sequence.
+    // =========================
+    private static final int OVERPOWER_RAMP_TICKS = 40; // ~2s ramp 0 → 1000%
+    private boolean overpowerMode;
+    private int overpowerRampTicks;
+
+    /** Control bulbs locked (self-destruct timed phase) — the ±5% lamps are dead. */
+    private boolean controlLocked;
+    public void setControlLocked(boolean val) { controlLocked = val; }
+    public boolean isControlLocked() { return controlLocked; }
+
     /** Laser powers in %: P1, P2 (0..100), Stab (0..200), Absorber valve (0..100). */
     private final double[] power = new double[4];
 
@@ -74,6 +89,15 @@ public class ReactorLasers {
 
         if (!started) return;
 
+        // =========================
+        // SELF-DESTRUCT OVERPOWER — control bulbs are locked, the Power Lasers
+        // ramp to 1000% and burn the shield into the report stage.
+        // =========================
+        if (overpowerMode) {
+            tickOverpower();
+            return;
+        }
+
         // Lasers are operational only when the shield is fully formed (WORKING):
         // before that they ramp their power (signs show it) but do not heat/cool.
         if (reactor.getShield().getState() != ReactorShield.State.WORKING) {
@@ -82,11 +106,13 @@ public class ReactorLasers {
         }
 
         // =========================
-        // POWER RAMP — ±5%/sec while the +5/−5 lamp is powered
+        // POWER RAMP — ±5%/sec while the +5/−5 lamp is powered.
+        // Self-destruct: the control bulbs are locked (dead) — no ramp.
         // =========================
         double rampPerTick = cfg.getLaserRampRate() / 20.0;
         double[] max = { 100, 100, 200, 100 };
         for (int i = 0; i < 4; i++) {
+            if (controlLocked) break;
             if (isLampPowered(base, LAMP_PLUS[i])) {
                 power[i] = Math.min(max[i], power[i] + rampPerTick);
             }
@@ -148,7 +174,47 @@ public class ReactorLasers {
         }
     }
 
-    /** Ramps laser power (no heating/cooling) — used before the shield is WORKING. */
+    /**
+     * Overpower tick (self-destruct finale): the control bulbs are ignored,
+     * Power Laser #1/#2 ramp to 1000% and heat without a fuel check; while the
+     * burn phase is active they also damage the shield directly.
+     */
+    private void tickOverpower() {
+        ReactorConfig cfg = ReactorConfig.getInstance();
+
+        // The shield must be formed — during CREATING the lasers still hold off
+        if (reactor.getShield().getState() != ReactorShield.State.WORKING) return;
+
+        if (overpowerRampTicks < OVERPOWER_RAMP_TICKS) {
+            overpowerRampTicks++;
+            power[LASER_P1] = Math.min(1000, power[LASER_P1] + 1000.0 / OVERPOWER_RAMP_TICKS);
+            power[LASER_P2] = Math.min(1000, power[LASER_P2] + 1000.0 / OVERPOWER_RAMP_TICKS);
+        }
+
+        // 1000% heating — the fuel check is deliberately skipped (not a normal situation)
+        double heatPerTick = (power[LASER_P1] + power[LASER_P2]) / 100.0
+                * cfg.getPowerLaserHeatRate() / 20.0;
+        double delta = heatPerTick + tempRemainder;
+        int intPart = (int) delta;
+        tempRemainder = delta - intPart;
+        if (intPart != 0) {
+            reactor.applyCoreTempDelta(intPart);
+        }
+
+        // While the burn phase is active the lasers damage the shield directly
+        // (independent of the stress model) — report stage in ~10s at the default rate
+        if (reactor.isSelfdestructFinale()) {
+            reactor.getShield().applyOverpowerDamage(cfg.getSelfdestructOverpowerRate() / 20.0);
+        }
+    }
+
+    /** Enters the overpower mode (self-destruct finale). Irreversible until reset. */
+    public void beginOverpower() {
+        overpowerMode = true;
+        overpowerRampTicks = 0;
+    }
+
+    public boolean isOverpowerMode() { return overpowerMode; }
     private void rampOnly(Location base) {
         ReactorConfig cfg = ReactorConfig.getInstance();
         double rampPerTick = cfg.getLaserRampRate() / 20.0;
@@ -180,6 +246,9 @@ public class ReactorLasers {
         prevStartupPowered = false;
         for (int i = 0; i < power.length; i++) power[i] = 0;
         tempRemainder = 0;
+        overpowerMode = false;
+        overpowerRampTicks = 0;
+        controlLocked = false;
     }
 
     // =========================

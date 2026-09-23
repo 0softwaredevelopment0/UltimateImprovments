@@ -1187,6 +1187,12 @@ messages:
     core_emergency_shutdown: "<dark_red>⚠ <red>Целостность оболочки ядра критическая — ядро аварийно отключено! Перезапустите реактор."
     core_restart_after_shutdown: "<green>✔ <white>Ядро перезапущено после аварийного отключения."
     structure_repaired: "<green>✔ <white>Структура реактора полностью восстановлена — управление возвращено."
+    sensor_no_signal: "<red>Не удаётся получить данные с датчиков: <gray>No signal"
+    selfdestruct_protocol: "<dark_red>☠ <red>Протокол самоуничтожения активирован! Взрыв через T-1:00."
+    selfdestruct_final_warn: "<dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-%sec%s, удачи."
+    selfdestruct_finale: "<dark_red>☠ <red>Финал самоуничтожения: силовые лазеры работают на 1000%!"
+    selfdestruct_complete: "<dark_red>☠ <red>Протокол самоуничтожения выполнен — ядро не спасти."
+    shield_failure: "<dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-10s, удачи."
     pending_frame_reactor: "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"
     pending_frame_magnet: "<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!"
     magnet_lodestone_missing: "<red>Магнитный камень (LODESTONE) не найден!"
@@ -1306,6 +1312,12 @@ messages_en:
     core_emergency_shutdown: "<dark_red>⚠ <red>Core shell integrity critical — emergency core shutdown! Restart the reactor."
     core_restart_after_shutdown: "<green>✔ <white>Core restarted after the emergency shutdown."
     structure_repaired: "<green>✔ <white>Reactor structure fully restored — control returned."
+    sensor_no_signal: "<red>Cannot receive any data from sensors: <gray>No signal"
+    selfdestruct_protocol: "<dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00."
+    selfdestruct_final_warn: "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-%sec%s, good luck."
+    selfdestruct_finale: "<dark_red>☠ <red>Self-destruct finale: the Power Lasers are running at 1000%!"
+    selfdestruct_complete: "<dark_red>☠ <red>Self-destruct sequence complete — the core is beyond saving."
+    shield_failure: "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."
     pending_frame_reactor: "<red>First press SHIFT+RMB on the reactor frame!"
     pending_frame_magnet: "<red>First press SHIFT+RMB on the magnet frame!"
     magnet_lodestone_missing: "<red>The lodestone (LODESTONE) was not found!"
@@ -2551,6 +2563,14 @@ reactor:
   shield_explosion_radius: 10
   # Emergency core shutdown when the shield integrity drops below this % (restart via startup pulse)
   shield_integrity_shutdown_percent: 25
+  # Self-destruct protocol: % chance rolled at every reactor startup, seconds of
+  # dead sensors (No signal screen), timed countdown seconds (control bulbs
+  # locked, core keeps running), and the overpower finale shield burn %/sec
+  # (Power Lasers forced to 1000% until the shield reaches the report stage)
+  selfdestruct_chance: 1.0
+  selfdestruct_no_signal_sec: 5
+  selfdestruct_timed_sec: 60
+  selfdestruct_overpower_rate: 10.0
   # Laser beam particles: END_ROD speed (blocks/tick) and total count per tick
   shield_particle_rod_speed: 0.35
   shield_particle_rod_count: 16

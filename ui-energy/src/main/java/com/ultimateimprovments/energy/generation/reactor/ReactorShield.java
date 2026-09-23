@@ -111,13 +111,9 @@ public class ReactorShield {
             }
 
             case FAILED -> {
+                // Silent countdown — the signs show the detonation screen and a
+                // single T-10s warning was broadcast at the moment of failure.
                 failCountdown--;
-                if (failCountdown > 0 && failCountdown % 20 == 0) {
-                    ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                            "shield_failure_countdown",
-                            "<dark_red>☠ <red>Shield failure! <white>%sec%<red>s to explosion...")
-                            .replace("%sec%", String.valueOf(failCountdown / 20)));
-                }
                 if (failCountdown <= 0) {
                     detonate(base, cfg);
                 }
@@ -144,6 +140,27 @@ public class ReactorShield {
         integrity = Math.max(integrity, 1);
         ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
                 "shield_creating", "<gold>⚡ <yellow>Forming the shield..."));
+    }
+
+    // =========================
+    // OVERPOWER DAMAGE — self-destruct finale: the lasers run at 1000% and
+    // burn the shield directly (independent of the stress model).
+    // Fractional parts accumulate so odd per-tick rates still add up exactly.
+    // =========================
+    private double overpowerRemainder;
+
+    public void applyOverpowerDamage(double perTick) {
+        if (state != State.WORKING && state != State.CREATING) return;
+        double v = integrity - perTick + overpowerRemainder;
+        int whole = (int) Math.floor(v);
+        overpowerRemainder = v - whole;
+        if (whole > 0) {
+            integrity -= whole;
+            if (integrity <= 0) {
+                integrity = 0;
+                startFailure(ReactorConfig.getInstance());
+            }
+        }
     }
 
     // =========================
@@ -249,7 +266,8 @@ public class ReactorShield {
         state = State.FAILED;
         failCountdown = cfg.getShieldFailureCountdown() * 20;
         ReactorManager.getInstance().broadcastRaw(StructuresMessages.get(
-                "shield_failure", "<dark_red>☠ <red>Shield destroyed! Core failure imminent."));
+                "shield_failure",
+                "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."));
     }
 
     /** Shield breach detonation: primed creeper (fuse 0) + radius from config. */
@@ -281,6 +299,7 @@ public class ReactorShield {
         stressPress = 0;
         stressSpin = 0;
         decayRemainder = 0;
+        overpowerRemainder = 0;
         recoveryTick = 0;
         failCountdown = 0;
     }
