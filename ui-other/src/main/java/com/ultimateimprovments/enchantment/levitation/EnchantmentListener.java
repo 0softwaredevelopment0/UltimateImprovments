@@ -35,8 +35,9 @@ public final class EnchantmentListener {
     static final long SWEEP_INTERVAL_TICKS = 2L;
 
     /** Target upward velocity while the jump key is held (blocks/tick).
-     *  ~0.15 blocks/tick every 2 ticks with 0.08/tick gravity ≈ 2.2 blocks/sec — smooth. */
-    private static final double JETPACK_Y = 0.15;
+     *  2× the old 0.15 (the old toss felt too weak): ~0.30 blocks/tick every
+     *  2 ticks with 0.08/tick gravity ≈ 4.4–6 blocks/sec — a real jetpack lift. */
+    private static final double JETPACK_Y = 0.30;
 
     private EnchantmentListener() {}
 
