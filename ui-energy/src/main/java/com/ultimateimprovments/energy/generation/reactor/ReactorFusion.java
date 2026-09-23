@@ -8,6 +8,8 @@ import org.bukkit.block.Block;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
+import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
+
 /**
  * DFC fusion system — ancient debris forms inside the core.
  * <p>
@@ -41,6 +43,10 @@ public class ReactorFusion {
     private double spawnRemainder;
     /** Collected particles counter toward the next ancient debris. */
     private double collected;
+    /** Fractional C* remainder for the smooth valve cooling. */
+    private double coolRemainder;
+    /** Fractional radiation accumulator (rad per tick from the open valve). */
+    private double radAccumulator;
 
     public ReactorFusion(ReactorManager reactor) {
         this.reactor = reactor;
@@ -73,7 +79,8 @@ public class ReactorFusion {
         double collectBudget = collectPerTick + collectRemainder;
         int collectedNow = (int) collectBudget;
         collectRemainder = Math.max(0, collectBudget - collectedNow);
-        if (collectedNow > 0 && particles > 0) {
+        boolean particleFlow = collectedNow > 0 && particles > 0;
+        if (particleFlow) {
             int taken = (int) Math.min(collectedNow, particles);
             particles -= taken;
             collected += taken;
@@ -83,7 +90,35 @@ public class ReactorFusion {
             while (collected >= perDebris) {
                 if (!depositDebris(base)) break; // barrel full — hold the counter
                 collected -= perDebris;
+                reactor.onFusionDebrisCrafted();
             }
+        }
+
+        // =========================
+        // 5. VALVE COOLING — the more the Content Absorber valve is open, the
+        // more heat it drains from the core: quadratic k × valve%² C*/sec.
+        // Heat is carried away by the flowing particles — no flow, no cooling.
+        // An open valve vents fusion products out of the containment: radiation
+        // leaks around the reactor proportionally to the opening.
+        // =========================
+        if (absorber > 0 && particleFlow) {
+            double coolPerTick = (absorber * absorber / 10000.0)
+                    * cfg.getAbsorberCoolRate() / 20.0;
+            double delta = -coolPerTick + coolRemainder;
+            int intPart = (int) delta;
+            coolRemainder = delta - intPart;
+            if (intPart != 0) {
+                reactor.applyCoreTempDelta(intPart);
+            }
+
+            radAccumulator += (absorber / 100.0) * cfg.getAbsorberRadPerSec() / 20.0;
+            int rad = (int) radAccumulator;
+            if (rad > 0) {
+                radAccumulator -= rad;
+                RadiationManager.addRadiationNear(base, 5.0, rad);
+            }
+        } else {
+            coolRemainder = 0;
         }
     }
 
@@ -151,6 +186,8 @@ public class ReactorFusion {
         particles = 0;
         spawnRemainder = 0;
         collected = 0;
+        coolRemainder = 0;
+        radAccumulator = 0;
     }
 
     // =========================

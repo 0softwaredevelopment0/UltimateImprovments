@@ -62,6 +62,14 @@ public class ReactorConfig {
     private int selfdestructNoSignalSec;     // phase 1 duration (5)
     private int selfdestructTimedSec;        // phase 2 countdown (60)
     private double selfdestructOverpowerRate; // shield %/sec burn at 1000% (10)
+    private double selfdestructAdvRadius;    // advancement grant radius from the center (20)
+
+    // Content Absorber valve cooling — quadratic heat drain carried by the
+    // collected fusion particles: cool = k × valve%² per second, but only while
+    // particles are actually flowing into the absorber. Vented particles also
+    // leak radiation around the reactor.
+    private double absorberCoolRate;         // C*/sec at 100% valve (≈ stab_cool_rate)
+    private double absorberRadPerSec;        // rad per second at 100% valve
 
     // Fuel system — consumption by core spin (100% = 1 gold ingot + 1 diamond / 10s)
     private double fuelSpinMin;              // below this spin nothing is consumed
@@ -106,6 +114,9 @@ public class ReactorConfig {
     public int getSelfdestructNoSignalSec() { return selfdestructNoSignalSec; }
     public int getSelfdestructTimedSec() { return selfdestructTimedSec; }
     public double getSelfdestructOverpowerRate() { return selfdestructOverpowerRate; }
+    public double getSelfdestructAdvRadius() { return selfdestructAdvRadius; }
+    public double getAbsorberCoolRate() { return absorberCoolRate; }
+    public double getAbsorberRadPerSec() { return absorberRadPerSec; }
 
     private void load() {
         FileConfiguration cfg = Main.getInstance().getConfig();
@@ -138,6 +149,9 @@ public class ReactorConfig {
         selfdestructNoSignalSec = cfg.getInt("reactor.selfdestruct_no_signal_sec", 5);
         selfdestructTimedSec = cfg.getInt("reactor.selfdestruct_timed_sec", 60);
         selfdestructOverpowerRate = cfg.getDouble("reactor.selfdestruct_overpower_rate", 10.0);
+        selfdestructAdvRadius = cfg.getDouble("reactor.selfdestruct_adv_radius", 20.0);
+        absorberCoolRate = cfg.getDouble("reactor.absorber_cool_rate", 9500.0);
+        absorberRadPerSec = cfg.getDouble("reactor.absorber_rad_per_sec", 40.0);
         fuelSpinMin = cfg.getDouble("reactor.fuel_spin_min", 1000);
         fuelWorkSpin = cfg.getDouble("reactor.fuel_work_spin", 95000);
         fuelOverSpin = cfg.getDouble("reactor.fuel_over_spin", 100000);

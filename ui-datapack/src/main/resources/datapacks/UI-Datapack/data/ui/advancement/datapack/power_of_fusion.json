@@ -5,9 +5,9 @@
       "count": 1
     },
     "title": {
-      "text": "We did it!",
+      "text": "The power of fusion",
       "type": "text",
-      "color": "dark_green",
+      "color": "white",
       "bold": false,
       "italic": false,
       "underlined": false,
@@ -15,7 +15,7 @@
       "obfuscated": false
     },
     "description": {
-      "text": "Finish the DFC recipe, was it worth the 8 minutes it took?",
+      "text": "Be near DFC while the fusion process is completed.",
       "type": "text",
       "color": "gray",
       "bold": false,
@@ -24,7 +24,7 @@
       "strikethrough": false,
       "obfuscated": false
     },
-    "frame": "task",
+    "frame": "goal",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false
