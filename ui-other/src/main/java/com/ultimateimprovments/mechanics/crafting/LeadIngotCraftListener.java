@@ -83,6 +83,16 @@ public class LeadIngotCraftListener implements Listener {
 
         CraftingInventory inv = e.getInventory();
 
+        // Defense in depth: verify the matrix actually matches the full
+        // pattern (8 iron ring + 1 netherite center, nothing missing).
+        // PrepareItemCraftEvent only fires for full matches, but a malicious
+        // client or another plugin could present a stale/partial grid —
+        // never hand out the result for anything but the exact layout.
+        if (!isFullLeadIngotMatrix(inv.getMatrix())) {
+            inv.setResult(null);
+            return;
+        }
+
         ItemStack result = new ItemStack(Material.NETHERITE_INGOT);
         ItemMeta meta = result.getItemMeta();
         if (meta == null) return;
@@ -100,6 +110,22 @@ public class LeadIngotCraftListener implements Listener {
 
         result.setItemMeta(meta);
         inv.setResult(result);
+    }
+
+    /**
+     * True when the matrix is exactly the lead-ingot pattern: netherite ingot
+     * in the center, one iron ingot in each of the 8 ring slots, no extra items.
+     */
+    private static boolean isFullLeadIngotMatrix(ItemStack[] matrix) {
+        if (matrix == null || matrix.length < 9) return false;
+        for (int i = 0; i < 9; i++) {
+            ItemStack item = matrix[i];
+            boolean isCenter = (i == 4);
+            if (item == null || item.getType() == Material.AIR) return false;
+            Material expected = isCenter ? Material.NETHERITE_INGOT : Material.IRON_INGOT;
+            if (item.getType() != expected) return false;
+        }
+        return true;
     }
 
     // =========================
