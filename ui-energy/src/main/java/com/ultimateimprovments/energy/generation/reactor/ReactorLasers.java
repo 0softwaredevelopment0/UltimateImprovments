@@ -143,38 +143,6 @@ public class ReactorLasers {
     }
 
     /**
-     * Cooldown mode (damaged structure): only the Stabilization Laser works —
-     * its power lamps stay functional so the core can be cooled to 0 C*.
-     * No startup, no Power Lasers, no Absorber.
-     */
-    public void tickCooldownMode(Location base) {
-        ReactorConfig cfg = ReactorConfig.getInstance();
-        double rampPerTick = cfg.getLaserRampRate() / 20.0;
-
-        // Only the Stab Laser ramps (its +/− lamps), everything else drains off
-        for (int i = 0; i < power.length; i++) {
-            if (i != LASER_STAB) {
-                power[i] = 0;
-                continue;
-            }
-            if (isLampPowered(base, LAMP_PLUS[i])) {
-                power[i] = Math.min(200, power[i] + rampPerTick);
-            }
-            if (isLampPowered(base, LAMP_MINUS[i])) {
-                power[i] = Math.max(0, power[i] - rampPerTick);
-            }
-        }
-
-        double coolPerTick = power[LASER_STAB] / 100.0 * cfg.getStabCoolRate() / 20.0;
-        double delta = -coolPerTick + tempRemainder;
-        int intPart = (int) delta;
-        tempRemainder = delta - intPart;
-        if (intPart != 0) {
-            reactor.applyCoreTempDelta(intPart);
-        }
-    }
-
-    /**
      * Overpower tick (self-destruct finale): the control bulbs are ignored,
      * Power Laser #1/#2 ramp to 1000% and heat without a fuel check; while the
      * burn phase is active they also damage the shield directly.
