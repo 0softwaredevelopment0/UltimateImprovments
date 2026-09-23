@@ -37,6 +37,26 @@ public class UIPunish extends JavaPlugin {
                     com.ultimateimprovments.command.subcommands.PunishSubcommand::execute,
                     com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.tc(
                             (s, a) -> com.ultimateimprovments.command.subcommands.PunishSubcommand.tabComplete(a))));
+
+            // Access-list commands live in this module too. They lost their
+            // registration in the multi-module refactor (the CommandScanner only
+            // scans the UI-Core JAR), so /ui whitelist, /ui blacklist and
+            // /ui opwhitelist answered "unknown command".
+            registry.register(com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.of(
+                    "whitelist",
+                    com.ultimateimprovments.command.subcommands.WhitelistSubcommand::execute,
+                    com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.tc(
+                            (s, a) -> com.ultimateimprovments.command.subcommands.WhitelistSubcommand.tabComplete(a))));
+            registry.register(com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.of(
+                    "blacklist",
+                    com.ultimateimprovments.command.subcommands.BlacklistSubcommand::execute,
+                    com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.tc(
+                            (s, a) -> com.ultimateimprovments.command.subcommands.BlacklistSubcommand.tabComplete(a))));
+            registry.register(com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.of(
+                    "opwhitelist",
+                    com.ultimateimprovments.command.subcommands.OpWhitelistSubcommand::execute,
+                    com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.tc(
+                            (s, a) -> com.ultimateimprovments.command.subcommands.OpWhitelistSubcommand.tabComplete(a))));
         } else {
             getLogger().severe("SubCommandRegistry not available — /ui punish is not registered!");
         }
