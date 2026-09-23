@@ -234,7 +234,10 @@ public class EnchantmentListener implements Listener {
                 }
 
                 if (player.isOnGround() || player.isInWater()) {
-                    float distance = FALL_DISTANCE.remove(uuid);
+                    // Map#remove returns null when nothing was accumulated —
+                    // unbox safely (standing on the ground is the common case).
+                    Float accumulated = FALL_DISTANCE.remove(uuid);
+                    float distance = accumulated != null ? accumulated : 0.0f;
                     if (distance > SAFE_FALL_DISTANCE) {
                         double damage = Math.floor(distance - SAFE_FALL_DISTANCE);
                         if (damage > 0) {
