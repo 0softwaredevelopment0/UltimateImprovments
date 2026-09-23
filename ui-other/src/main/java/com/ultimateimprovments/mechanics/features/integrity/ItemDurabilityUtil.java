@@ -199,7 +199,10 @@ public final class ItemDurabilityUtil {
         dmg.setDamage(Math.max(0, Math.min(max, damage)));
         item.setItemMeta(meta);
 
-        if (clamped <= 0) breakItem(item);
+        if (clamped <= 0) {
+            breakItem(item, null);
+            return 0.0;
+        }
         return clamped;
     }
 
@@ -247,7 +250,8 @@ public final class ItemDurabilityUtil {
         item.setItemMeta(meta);
 
         if (after >= max) {
-            breakItem(item);
+            breakItem(item, owner);
+            return 0.0;
         } else {
             warnOnWear(owner, item, max, before, after);
         }
@@ -336,7 +340,14 @@ public final class ItemDurabilityUtil {
     // BREAK
     // =========================
 
-    private static void breakItem(ItemStack item) {
+    /**
+     * Breaks the item the way the old integrity system (and every consumer of
+     * this API) expects: the stack is destroyed via {@code setAmount(0)} so
+     * enchantment sweeps (aoe/veinminer/treecapitator/degradation) that poll
+     * {@code getAmount() <= 0} actually stop, and the break sound plays at the
+     * owner's location (not world spawn).
+     */
+    private static void breakItem(ItemStack item, Player owner) {
         int max = getMaxDurability(item);
         if (max > 0) {
             ItemMeta meta = item.getItemMeta();
@@ -345,10 +356,10 @@ public final class ItemDurabilityUtil {
                 item.setItemMeta(meta);
             }
         }
-        if (onBreakPlaySound) {
+        item.setAmount(0);
+        if (onBreakPlaySound && owner != null) {
             try {
-                var world = Bukkit.getWorlds().get(0);
-                world.playSound(world.getSpawnLocation(),
+                owner.getWorld().playSound(owner.getLocation(),
                         Sound.ENTITY_ITEM_BREAK,
                         org.bukkit.SoundCategory.PLAYERS,
                         (float) onBreakSoundVolume, (float) onBreakSoundPitch);
