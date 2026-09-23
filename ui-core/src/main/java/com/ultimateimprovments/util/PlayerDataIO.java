@@ -13,9 +13,11 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,24 +73,11 @@ public final class PlayerDataIO {
      * Returns null if the player has no data file at all.
      */
     public static File locate(UUID uuid) {
-        List<File> candidates = new ArrayList<>();
-
-        for (World world : Bukkit.getWorlds()) {
-            candidates.add(dataFile(world.getWorldFolder(), uuid));
-        }
-
-        // Multiverse: worlds that are not currently loaded still have their folders
-        // under the world container. Scan one level deep.
-        File container = Bukkit.getWorldContainer();
-        File[] children = container.listFiles(File::isDirectory);
-        if (children != null) {
-            for (File dir : children) {
-                candidates.add(dataFile(dir, uuid));
-            }
-        }
-
+        // All candidate playerdata folders (main world, loaded worlds,
+        // world-container children — covers unloaded Multiverse worlds).
         File firstExisting = null;
-        for (File candidate : candidates) {
+        for (File folder : playerdataFolders()) {
+            File candidate = new File(folder, uuid + ".dat");
             if (!candidate.isFile()) continue;
             if (firstExisting == null) firstExisting = candidate;
             if (hasInventoryData(candidate)) return candidate;
@@ -100,6 +89,104 @@ public final class PlayerDataIO {
     /** Returns {@code <worldFolder>/playerdata/<uuid>.dat}. */
     private static File dataFile(File worldFolder, UUID uuid) {
         return new File(worldFolder, "playerdata" + File.separator + uuid + ".dat");
+    }
+
+    /**
+     * Resolves a player name to the UUID of an existing playerdata file.
+     *
+     * <p>Order of resolution:</p>
+     * <ol>
+     *   <li>Online player ({@link Bukkit#getPlayerExact});</li>
+     *   <li>Bukkit caches: {@code getOfflinePlayerIfCached} / {@code usercache.json}</li>
+     *       — but only if a data file with that UUID actually exists</li>
+     *       (never a fake offline-mode UUID);</li>
+     *   <li>Scan of every {@code playerdata/*.dat}: the NBT root is checked for
+     *       {@code bukkit.lastKnownName} (written by Paper on every logout) —
+     *       case-insensitive match. Also accepts {@code <uuid>.dat} where the
+     *       name itself is a UUID.</li>
+     * </ol>
+     *
+     * @return the UUID, or null when no known player with that name has a data file
+     */
+    public static UUID resolveUuidByName(String name) {
+        if (name == null || name.isBlank()) return null;
+
+        // 1) Online — trivially correct
+        Player online = Bukkit.getPlayerExact(name);
+        if (online != null) return online.getUniqueId();
+
+        // Name given as a raw UUID — use it directly
+        try {
+            return UUID.fromString(name);
+        } catch (IllegalArgumentException ignored) {
+            // not a UUID — continue with name lookup
+        }
+
+        // 2) Bukkit caches (usercache.json / banned / ops / whitelist).
+        //    getOfflinePlayer(name) is intentionally NOT used: for unknown names it
+        //    fabricates a Mode-OFFLINE UUID that can never match a .dat file.
+        OfflinePlayer cached = Bukkit.getOfflinePlayerIfCached(name);
+        if (cached != null) {
+            UUID id = cached.getUniqueId();
+            if (locate(id) != null) return id;
+        }
+
+        // 3) Scan playerdata files for bukkit.lastKnownName
+        for (File dir : playerdataFolders()) {
+            File[] files = dir.listFiles((d, fn) -> fn != null && fn.toLowerCase().endsWith(".dat"));
+            if (files == null) continue;
+            for (File file : files) {
+                UUID id = uuidFromFileName(file.getName());
+                if (id == null) continue;
+                if (matchesLastKnownName(file, name)) return id;
+            }
+        }
+        return null;
+    }
+
+    /** Parses {@code <uuid>.dat} (also accepts the {@code -backup} suffix). */
+    private static UUID uuidFromFileName(String fileName) {
+        String base = fileName.endsWith(".dat") ? fileName.substring(0, fileName.length() - 4) : fileName;
+        if (base.endsWith("-backup")) base = base.substring(0, base.length() - 7);
+        try {
+            return UUID.fromString(base);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /** True if the file root carries {@code bukkit.lastKnownName} equal (ci) to the name. */
+    private static boolean matchesLastKnownName(File file, String name) {
+        try {
+            CompoundTag tag = NbtIo.readCompressed(file.toPath(), NbtAccounter.unlimitedHeap());
+            if (!tag.contains("bukkit")) return false;
+            Tag bukkitTag = tag.get("bukkit");
+            if (!(bukkitTag instanceof CompoundTag bukkit)) return false;
+            return bukkit.contains("lastKnownName")
+                    && name.equalsIgnoreCase(bukkit.getString("lastKnownName").orElse(""));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Every {@code playerdata} folder to consider: the main world and all loaded
+     * worlds, then one level of directories under the world container
+     * (covers unloaded Multiverse worlds).
+     */
+    private static List<File> playerdataFolders() {
+        List<File> folders = new ArrayList<>();
+        for (World world : Bukkit.getWorlds()) {
+            folders.add(new File(world.getWorldFolder(), "playerdata"));
+        }
+        File container = Bukkit.getWorldContainer();
+        File[] children = container.listFiles(File::isDirectory);
+        if (children != null) {
+            for (File dir : children) {
+                folders.add(new File(dir, "playerdata"));
+            }
+        }
+        return folders;
     }
 
     /** True if the file root contains Inventory or EnderItems tags. */

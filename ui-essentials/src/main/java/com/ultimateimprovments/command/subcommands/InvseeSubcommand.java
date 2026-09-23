@@ -4,6 +4,7 @@ import com.ultimateimprovments.command.CommandErrors;
 
 import com.ultimateimprovments.command.SubCommand;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.PlayerDataIO;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
@@ -73,17 +74,19 @@ public class InvseeSubcommand implements SubCommand {
         }
 
         // ── Offline: edit the .dat file ──
-        @SuppressWarnings("deprecation")
-        OfflinePlayer offline = Bukkit.getOfflinePlayer(args[1]);
-        UUID uuid = offline.getUniqueId();
-
-        if (!OfflineInvEditor.hasDataFile(uuid)) {
+        // Resolve via caches + playerdata scan; getOfflinePlayer(name) would
+        // fabricate a fake offline UUID for names missing from the cache, which
+        // can never match a real <uuid>.dat file.
+        UUID uuid = PlayerDataIO.resolveUuidByName(args[1]);
+        if (uuid == null || !OfflineInvEditor.hasDataFile(uuid)) {
             player.sendMessage(MessageUtil.parse(
                     "<red>❌ No data file found for player</red> <yellow>" + args[1] + "</yellow><red>.</red>"));
             return true;
         }
 
-        String targetName = offline.getName() != null ? offline.getName() : args[1];
+        @SuppressWarnings("deprecation")
+        OfflinePlayer offline = Bukkit.getOfflinePlayerIfCached(args[1]);
+        String targetName = (offline != null && offline.getName() != null) ? offline.getName() : args[1];
         OfflineInvEditor.open(player, uuid, targetName, ender);
         return true;
     }
