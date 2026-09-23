@@ -45,6 +45,7 @@ import com.ultimateimprovments.mechanics.crafting.ConcreteBucketCraftListener;
 import com.ultimateimprovments.mechanics.crafting.EntityLocatorCraftListener;
 import com.ultimateimprovments.mechanics.crafting.GlassSwordCraftListener;
 import com.ultimateimprovments.mechanics.crafting.HealthMeterCraftListener;
+import com.ultimateimprovments.mechanics.crafting.HeavyCoreCraftListener;
 import com.ultimateimprovments.mechanics.crafting.LeadIngotCraftListener;
 import com.ultimateimprovments.mechanics.crafting.LeadShieldCraftListener;
 import com.ultimateimprovments.mechanics.crafting.MetalDetectorCraftListener;
@@ -276,6 +277,7 @@ public final class SimpleModules {
                 ConcreteBucketCraftListener.init();
                 ChunkLoaderCraftListener.init();
                 StructureIntegrityCraftListener.init();
+                HeavyCoreCraftListener.init();
                 RecipeRegistry.init();
 
                 // Register craft event listeners
