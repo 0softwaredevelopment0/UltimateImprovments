@@ -33,10 +33,8 @@
   "parent": "ui:datapack/blowed_by_echest",
   "criteria": {
     "1": {
-      "trigger": "minecraft:recipe_crafted",
-      "conditions": {
-        "recipe_id": "minecraft:dosimeter"
-      }
+      "trigger": "minecraft:impossible",
+      "conditions": {}
     }
   },
   "requirements": [
