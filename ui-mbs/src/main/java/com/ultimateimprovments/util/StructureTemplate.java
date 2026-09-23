@@ -229,14 +229,22 @@ public class StructureTemplate {
 
     /**
      * Across ALL loaded templates find the one whose shape is closest to what
-     * stands near {@code origin} (fewest mismatched cells).
+     * stands near {@code origin} — compared by MATCH PERCENT, not by absolute
+     * mismatch count. A tiny 100-cell template with 27 wrong cells (73%) must
+     * NOT beat a 981-cell reactor with 28 wrong cells (97%): the reactor is
+     * clearly the structure the player almost built, and only the percent
+     * comparison reveals that (with the fix list below it).
+     * Ties are broken by the smaller absolute mismatch count.
      */
     public static BestCandidate findBestCandidate(Location origin, int radius) {
         BestCandidate best = null;
         for (StructureTemplate t : templates.values()) {
             MatchResult r = t.bestMatch(origin, radius);
             if (r == null) continue;
-            if (best == null || r.mismatches() < best.result().mismatches()) {
+            if (best == null
+                    || r.percent() > best.result().percent()
+                    || (r.percent() == best.result().percent()
+                        && r.mismatches() < best.result().mismatches())) {
                 best = new BestCandidate(t, r);
             }
         }
@@ -645,6 +653,11 @@ public class StructureTemplate {
     private static String templateName(String fileName) {
         String n = fileName;
         if (n.endsWith(".nbt")) n = n.substring(0, n.length() - 4);
+        // lightning_str.nbt → "lightning": the listener (ReactorListener) and the
+        // config display names (structures.names.lightning) reference the short
+        // name; without this the template loaded under "lightning_str" and every
+        // get("lightning") returned null.
+        if (n.equals("lightning_str")) n = "lightning";
         return n;
     }
 
