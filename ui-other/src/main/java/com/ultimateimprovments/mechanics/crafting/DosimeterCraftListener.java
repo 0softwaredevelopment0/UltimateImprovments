@@ -93,5 +93,26 @@ public class DosimeterCraftListener implements Listener {
         if (!sr.getKey().equals(RECIPE_KEY)) return;
 
         e.getInventory().setResult(createDosimeter());
+
+        // "Dosimetry Measurements" — grant on the successful prepare (the
+        // Crafter-only gate allows the craft; the vanilla recipe_crafted
+        // trigger can't match a plugin recipe, so we award it here).
+        if (e.getView() != null && e.getView().getPlayer() instanceof org.bukkit.entity.Player player) {
+            grantAdvancement(player);
+        }
+    }
+
+    /** Awards the craft_dosimeter datapack advancement (criteria "1"). */
+    private void grantAdvancement(org.bukkit.entity.Player player) {
+        try {
+            var adv = Bukkit.getAdvancement(new NamespacedKey("ui", "datapack/craft_dosimeter"));
+            if (adv == null) return; // datapack not loaded
+            var progress = player.getAdvancementProgress(adv);
+            if (!progress.isDone()) {
+                progress.awardCriteria("1");
+            }
+        } catch (Exception ignored) {
+            // Never break the craft over an advancement.
+        }
     }
 }
