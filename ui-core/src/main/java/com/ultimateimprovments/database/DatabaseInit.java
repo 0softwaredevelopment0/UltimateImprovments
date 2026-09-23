@@ -750,6 +750,24 @@ public class DatabaseInit {
             ON punishments(hw_id);
         """);
 
+        // Schema drift on old databases: hw_id/ip_address/expires_at/active were
+        // added over time, but pre-migration punishments tables lack them. Every
+        // ban/mute INSERT then fails with SQLITE_ERROR and ALL punish commands
+        // silently break ("Failed to ban/mute"). Each column migrates in its own
+        // try/catch — a duplicate-column error on a newer DB just skips it.
+        String[][] punishmentCols = {
+            {"ip_address", "TEXT DEFAULT ''"},
+            {"hw_id", "TEXT DEFAULT ''"},
+            {"expires_at", "INTEGER DEFAULT 0"},
+            {"active", "INTEGER DEFAULT 1"},
+            {"punished_by", "TEXT DEFAULT ''"}
+        };
+        for (String[] col : punishmentCols) {
+            try {
+                st.execute("ALTER TABLE punishments ADD COLUMN " + col[0] + " " + col[1]);
+            } catch (Exception ignored) { /* already exists */ }
+        }
+
         // =========================
         // ⚠ WARNS — warnings
         // =========================

@@ -5,3 +5,4 @@ api-version: '26.2'
 depend: [UI-Core]
 description: 'Punishment system: ban, mute, kick, jail, freeze, whitelist, blacklist'
 author: rizer001
+addon-for: UI-Core

@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Blunting — sharpness reversed. A REAL data-driven enchantment
+ * Curse of Blunting — sharpness reversed. A REAL data-driven enchantment
  * ({@code ui:blunting}, registered by the UI-Datapack) with a PDC failsafe.
  * <p>
  * Every level REDUCES the melee attack damage dealt with the held weapon by

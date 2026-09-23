@@ -174,6 +174,24 @@ public class PunishmentManager {
      */
     public static PunishmentRecord getActivePunishment(PunishType type, String uuid,
                                                         String ip, String hwId) {
+        return getActivePunishment(type, uuid, null, ip, hwId);
+    }
+
+    /**
+     * Same as above with an explicit fallback player name: when the uuid lookup
+     * (real or legacy {@code offline:<name>}) misses, records are also matched
+     * by LOWER(player_name) — covers punishments issued before the uuid was
+     * resolvable or under a slightly different name casing.
+     *
+     * @param type         the punishment type
+     * @param uuid         the player UUID (may be a legacy offline: pseudo-uuid)
+     * @param fallbackName the player name to match when the uuid misses (may be null)
+     * @param ip           the player IP (may be null)
+     * @param hwId         the player HW ID (may be null)
+     * @return the punishment record or null
+     */
+    public static PunishmentRecord getActivePunishment(PunishType type, String uuid, String fallbackName,
+                                                        String ip, String hwId) {
         long now = System.currentTimeMillis();
 
         StringBuilder sql = new StringBuilder("""
@@ -184,6 +202,12 @@ public class PunishmentManager {
                     player_uuid = ?
                 """);
 
+        // Legacy entries stored under offline:<name> pseudo-uuids, or issued
+        // under a different name casing — match by name as a fallback.
+        boolean nameFallback = fallbackName != null && !fallbackName.isEmpty();
+        if (nameFallback) {
+            sql.append(" OR LOWER(player_name) = ?");
+        }
         if (ip != null && !ip.isEmpty()) {
             sql.append(" OR ip_address = ?");
         }
@@ -199,6 +223,9 @@ public class PunishmentManager {
             st.setString(3, uuid);
 
             int idx = 4;
+            if (nameFallback) {
+                st.setString(idx++, fallbackName.toLowerCase());
+            }
             if (ip != null && !ip.isEmpty()) {
                 st.setString(idx++, ip);
             }

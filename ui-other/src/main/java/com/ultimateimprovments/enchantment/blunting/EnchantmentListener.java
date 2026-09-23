@@ -11,7 +11,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Listener: Blunting — the damage-reduction engine (sharpness reversed).
+ * Listener: Curse of Blunting — the damage-reduction engine (sharpness reversed).
  * <p>
  * When an entity is MELEE-attacked (direct {@link EntityDamageByEntityEvent},
  * no projectiles / explosions) while holding a Blunting weapon, the final
@@ -44,6 +44,6 @@ public class EnchantmentListener implements Listener {
             }
         }
 
-        Bukkit.getLogger().finest("[Blunting] Level " + level + " reduced damage by " + reduction);
+        Bukkit.getLogger().finest("[CurseOfBlunting] Level " + level + " reduced damage by " + reduction);
     }
 }

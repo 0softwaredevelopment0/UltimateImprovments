@@ -104,6 +104,24 @@ public final class PunishSubcommand {
     }
 
     // =========================
+    // TARGET RESOLUTION
+    // =========================
+    /**
+     * Resolves a target name to the UUID string used for storing/checking
+     * punishments. Online players → their real UUID. Offline targets → the
+     * resolver scans Bukkit caches and playerdata files (bukkit.lastKnownName);
+     * only when nothing is found does it fall back to the legacy
+     * {@code offline:<name>} pseudo-UUID (matched later by player_name).
+     * The old code ALWAYS used the pseudo-UUID for offline targets, so a
+     * ban/mute issued while the player was offline never matched the real
+     * UUID on login — the punishment silently never applied.
+     */
+    private static String resolveTargetUuid(String targetName) {
+        java.util.UUID resolved = com.ultimateimprovments.util.PlayerDataIO.resolveUuidByName(targetName);
+        return resolved != null ? resolved.toString() : "offline:" + targetName.toLowerCase();
+    }
+
+    // =========================
     // BAN
     // =========================
     private static boolean handleBan(CommandSender sender, String[] args) {
@@ -132,7 +150,7 @@ public final class PunishSubcommand {
             name = target.getName();
         } else {
             // Offline player — use the input names
-            uuid = "offline:" + targetName.toLowerCase();
+            uuid = resolveTargetUuid(targetName);
             name = targetName;
         }
 
@@ -233,7 +251,7 @@ public final class PunishSubcommand {
             uuid = target.getUniqueId().toString();
             name = target.getName();
         } else {
-            uuid = "offline:" + targetName.toLowerCase();
+            uuid = resolveTargetUuid(targetName);
             name = targetName;
         }
 
@@ -394,7 +412,7 @@ public final class PunishSubcommand {
             uuid = target.getUniqueId().toString();
             name = target.getName();
         } else {
-            uuid = "offline:" + targetName.toLowerCase();
+            uuid = resolveTargetUuid(targetName);
             name = targetName;
         }
 
@@ -585,7 +603,7 @@ public final class PunishSubcommand {
         if (target != null) {
             uuid = target.getUniqueId().toString();
         } else {
-            uuid = "offline:" + targetName.toLowerCase();
+            uuid = resolveTargetUuid(targetName);
         }
 
         boolean ok = PunishmentManager.unpunish(PunishmentManager.PunishType.BAN, uuid, null, null, targetName);
@@ -630,7 +648,7 @@ public final class PunishSubcommand {
                     "<green>🔊 You have been unmuted!</green>"
             ));
         } else {
-            uuid = "offline:" + targetName.toLowerCase();
+            uuid = resolveTargetUuid(targetName);
         }
 
         boolean ok = PunishmentManager.unpunish(PunishmentManager.PunishType.MUTE, uuid, null, null, targetName);

@@ -36,15 +36,17 @@ public class PunishJoinListener implements Listener {
         String ip = e.getAddress() != null ? e.getAddress().getHostAddress() : "";
         String hwId = PunishmentManager.computeHwId(ip, player.getName());
 
-        // Check the ban
-        PunishmentManager.PunishmentRecord ban = PunishmentManager.getActiveBan(uuid, ip, hwId);
+        // Check the ban (name fallback catches legacy offline: entries)
+        PunishmentManager.PunishmentRecord ban = PunishmentManager.getActivePunishment(
+                PunishmentManager.PunishType.BAN, uuid, player.getName(), ip, hwId);
         if (ban != null) {
             e.disallow(PlayerLoginEvent.Result.KICK_BANNED, buildBanMessage(ban));
             return;
         }
 
         // Check whether the mute expired (to remove it on join)
-        PunishmentManager.PunishmentRecord mute = PunishmentManager.getActiveMute(uuid, ip, hwId);
+        PunishmentManager.PunishmentRecord mute = PunishmentManager.getActivePunishment(
+                PunishmentManager.PunishType.MUTE, uuid, player.getName(), ip, hwId);
         if (mute != null) {
             if (mute.isExpired()) {
                 PunishmentManager.unpunishById(mute.id);
@@ -68,7 +70,8 @@ public class PunishJoinListener implements Listener {
         String ip = player.getAddress() != null ? player.getAddress().getAddress().getHostAddress() : "";
         String hwId = PunishmentManager.computeHwId(ip, player.getName());
 
-        PunishmentManager.PunishmentRecord mute = PunishmentManager.getActiveMute(uuid.toString(), ip, hwId);
+        PunishmentManager.PunishmentRecord mute = PunishmentManager.getActivePunishment(
+                PunishmentManager.PunishType.MUTE, uuid.toString(), player.getName(), ip, hwId);
         if (mute != null) {
             if (mute.isExpired()) {
                 PunishmentManager.unpunishById(mute.id);
