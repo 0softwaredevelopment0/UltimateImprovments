@@ -4,19 +4,20 @@
 		"color": "red"
 	},
 	"supported_items": "#ui:degradation_enchantable",
+	"primary_items": "#ui:degradation_enchantable",
 	"weight": 1,
 	"max_level": 255,
 	"min_cost": {
-	  "base": 25,
-	  "per_level_above_first": 5
+		"base": 30,
+		"per_level_above_first": 20
 	},
 	"max_cost": {
-	  "base": 50,
-	  "per_level_above_first": 5
+		"base": 30,
+		"per_level_above_first": 20
 	},
 	"anvil_cost": 8,
 	"slots": [
-	  "any"
+		"any"
 	],
 	"effects": {}
 }

@@ -1,21 +1,22 @@
 {
-  "description": {
-    "text": "Repairing"
-  },
-  "supported_items": "#ui:repairing_enchantable",
-  "weight": 5,
-  "max_level": 255,
-  "min_cost": {
-    "base": 1,
-    "per_level_above_first": 1
-  },
-  "max_cost": {
-    "base": 25,
-    "per_level_above_first": 25
-  },
-  "anvil_cost": 1,
-  "slots": [
-    "any"
-  ],
-  "effects": {}
+	"description": {
+		"text": "Repairing"
+	},
+	"supported_items": "#ui:repairing_enchantable",
+	"primary_items": "#ui:repairing_enchantable",
+	"weight": 1,
+	"max_level": 255,
+	"min_cost": {
+		"base": 30,
+		"per_level_above_first": 20
+	},
+	"max_cost": {
+		"base": 30,
+		"per_level_above_first": 20
+	},
+	"anvil_cost": 1,
+	"slots": [
+		"any"
+	],
+	"effects": {}
 }

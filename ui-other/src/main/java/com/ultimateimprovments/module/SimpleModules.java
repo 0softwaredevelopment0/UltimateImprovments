@@ -985,6 +985,66 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
+    // BLUNTING / VULNERABILITY / DISAPPEARANCE ENCHANTMENTS
+    // --------------------------------------------------------------------------
+
+    public static void registerCurseTrioEnchantments(ModuleManager mm) {
+        // Blunting: REAL data-driven enchantment (ui:blunting, registered by
+        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Sharpness
+        // reversed — the held weapon deals level × 0.5 LESS melee damage.
+        mm.register(new SimpleModule("BluntingEnchantment", "enchantment/blunting", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Damage-reduction listener (melee hits with a blunted weapon)
+                main.getServer().getPluginManager().registerEvents(new com.ultimateimprovments.enchantment.blunting.EnchantmentListener(), main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.blunting.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[Blunting] Levels: 1-255 | Weapons+tools (copper incl.) | −" + "0.5 dmg per level");
+            }
+        });
+
+        // Vulnerability: REAL data-driven curse (ui:vulnerability, registered by
+        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Protection
+        // reversed — the wearer takes level × 0.75 MORE damage.
+        mm.register(new SimpleModule("VulnerabilityEnchantment", "enchantment/vulnerability", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Damage-amplification listener (any damage to the wearer)
+                main.getServer().getPluginManager().registerEvents(new com.ultimateimprovments.enchantment.vulnerability.EnchantmentListener(), main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.vulnerability.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[Vulnerability] Levels: 1-255 | Armor (copper incl.) | +0.75 dmg taken per level");
+            }
+        });
+
+        // Disappearance: REAL data-driven curse (ui:disappearance, registered by
+        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. The item rolls a
+        // level × 0.001% vanish chance every second (255 → 0.255%/s).
+        mm.register(new SimpleModule("DisappearanceEnchantment", "enchantment/disappearance", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Vanish engine (per-second roll, silent removal)
+                com.ultimateimprovments.enchantment.disappearance.EnchantmentListener.register(main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.disappearance.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[Disappearance] Levels: 1-255 | Any durability item | Vanish: level × 0.001% per second");
+            }
+        });
+    }
+
+    // --------------------------------------------------------------------------
     // FLIGHT ENCHANTMENT (registered after TreeCapitatorEnchantment)
     // --------------------------------------------------------------------------
 

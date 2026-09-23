@@ -3,19 +3,20 @@
 		"text": "AutoSmelt"
 	},
 	"supported_items": "#ui:autosmelt_enchantable",
-	"weight": 5,
+	"primary_items": "#ui:autosmelt_enchantable",
+	"weight": 1,
 	"max_level": 1,
 	"min_cost": {
-	  "base": 1,
-	  "per_level_above_first": 1
+		"base": 30,
+		"per_level_above_first": 20
 	},
 	"max_cost": {
-	  "base": 25,
-	  "per_level_above_first": 25
+		"base": 30,
+		"per_level_above_first": 20
 	},
 	"anvil_cost": 1,
 	"slots": [
-	  "mainhand"
+		"mainhand"
 	],
 	"effects": {}
 }

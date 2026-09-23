@@ -1,9 +1,10 @@
 {
 	"description": {
-		"text": "Igniting"
+		"text": "Blunting",
+		"color": "red"
 	},
-	"supported_items": "#ui:igniting_enchantable",
-	"primary_items": "#ui:igniting_enchantable",
+	"supported_items": "#ui:blunting_enchantable",
+	"primary_items": "#ui:blunting_enchantable",
 	"weight": 1,
 	"max_level": 255,
 	"min_cost": {
@@ -14,9 +15,9 @@
 		"base": 30,
 		"per_level_above_first": 20
 	},
-	"anvil_cost": 1,
+	"anvil_cost": 8,
 	"slots": [
-		"armor"
+		"mainhand"
 	],
 	"effects": {}
 }
