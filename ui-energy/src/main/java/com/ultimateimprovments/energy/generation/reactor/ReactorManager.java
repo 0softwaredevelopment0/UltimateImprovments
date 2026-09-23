@@ -649,7 +649,13 @@ public class ReactorManager {
         display.setIntegrityWarnTick(warnTick);
         if (warnTick >= 200) {
             display.setIntegrityWarnTick(0);
-            if (shield.getIntegrity() < 100) broadcast("<dark_red>⚠ <red>Shield integrity compromised!");
+            // Warn only while the shield is actually operating — an OFFLINE
+            // shield (no startup yet, integrity 0) is its normal state and
+            // must not spam "Shield integrity compromised!"
+            var shieldState = shield.getState();
+            boolean shieldActive = shieldState == ReactorShield.State.CREATING
+                    || shieldState == ReactorShield.State.WORKING;
+            if (shieldActive && shield.getIntegrity() < 100) broadcast("<dark_red>⚠ <red>Shield integrity compromised!");
             if (caseSys.isBroken()) broadcast("<dark_red>⚠ <red>Case glass is broken!");
         }
 

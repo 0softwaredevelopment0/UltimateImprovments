@@ -92,7 +92,12 @@ public class ReactorDisplay {
         Location base = reactor.getReactorLocation();
         if (base == null) return;
 
-        if (reactor.getCoreShInt() < 100 || reactor.getCoreCaseInt() < 100) {
+        // Warning pings only while the shield is actually operating: an
+        // OFFLINE shield (no startup yet, integrity 0) is its normal state.
+        var shieldState = reactor.getShield().getState();
+        boolean shieldActive = shieldState == ReactorShield.State.CREATING
+                || shieldState == ReactorShield.State.WORKING;
+        if ((shieldActive && reactor.getCoreShInt() < 100) || reactor.getCoreCaseInt() < 100) {
             base.getWorld().playSound(
                     base, Sound.BLOCK_NOTE_BLOCK_PLING,
                     SoundCategory.MASTER, 1.0f, 1.5f
@@ -265,8 +270,12 @@ public class ReactorDisplay {
         String casePress = String.format("%.3f", displayCoreCasePress / 1000.0);
         int caseIntInt = (int) Math.round(displayCoreCaseInt);
 
-        // Flash red-white when any integrity is below 100%
-        boolean flashing = shIntInt < 100 || caseIntInt < 100;
+        // Flash red-white only when it is actually a problem: shield must be
+        // operating (OFFLINE/0% is its normal state before startup).
+        var shieldState = reactor.getShield().getState();
+        boolean shieldProblem = (shieldState == ReactorShield.State.CREATING
+                || shieldState == ReactorShield.State.WORKING) && shIntInt < 100;
+        boolean flashing = shieldProblem || caseIntInt < 100;
         String color = (flashing && (displayTick % 10 < 5)) ? "<red>" : "<white>";
 
         // =========================
@@ -520,7 +529,11 @@ public class ReactorDisplay {
     // (old positions were part of the legacy geometry; kept as no-op-safe)
     // =========================
     public void updateIntegrityBulbs(Location base) {
-        setBulbLit(base, -3, -5, 0, reactor.getCoreShInt() < 100);
+        // Glow bulbs only for a real problem — shield must be operating
+        var shieldState = reactor.getShield().getState();
+        boolean shieldActive = shieldState == ReactorShield.State.CREATING
+                || shieldState == ReactorShield.State.WORKING;
+        setBulbLit(base, -3, -5, 0, shieldActive && reactor.getCoreShInt() < 100);
         setBulbLit(base, 3, -5, 0, reactor.getCoreCaseInt() < 100);
     }
 
