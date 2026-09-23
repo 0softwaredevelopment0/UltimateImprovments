@@ -276,6 +276,7 @@ public class RadiationManager implements Listener {
         saveToDB(player);
         radiationMap.remove(player.getUniqueId());
         radViewEnabled.remove(player.getUniqueId());
+        DosimeterTask.clearRate(player.getUniqueId());
     }
 
     // =========================
@@ -293,6 +294,7 @@ public class RadiationManager implements Listener {
 
             UUID uuid = player.getUniqueId();
             int rad = radiationMap.getOrDefault(uuid, 0);
+            int beforeSources = rad; // snapshot for the dosimeter rate readout
 
             // =========================
             // NATURAL DECAY (-1 per tick)
@@ -360,6 +362,11 @@ public class RadiationManager implements Listener {
             }
 
             radiationMap.put(uuid, Math.max(0, rad));
+
+            // Feed the dosimeter rate readout: net gain this second (sources
+            // minus decay), so R shows what the environment is doing to the
+            // player right now, not the stored dose.
+            DosimeterTask.recordRate(uuid, rad - beforeSources);
         }
 
         // Reset space radiation counter
