@@ -1,0 +1,23 @@
+{
+  "values": [
+    "ui:aoe",
+    "ui:attack_aoe",
+    "ui:autosmelt",
+    "ui:blunting",
+    "ui:container_stealing",
+    "ui:degradation",
+    "ui:disappearance",
+    "ui:flight",
+    "ui:igniting",
+    "ui:item_stealing",
+    "ui:levitation",
+    "ui:magnet",
+    "ui:repairing",
+    "ui:self_destruct",
+    "ui:treecapitator",
+    "ui:veinminer",
+    "ui:vulnerability",
+    "minecraft:wind_burst",
+    "minecraft:mending"
+  ]
+}
