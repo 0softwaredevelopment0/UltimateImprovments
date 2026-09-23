@@ -1,6 +1,5 @@
 package com.ultimateimprovments.mechanics.crafting;
 
-import com.ultimateimprovments.energy.machines.assembler.AssemblerChecker;
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
@@ -81,7 +80,6 @@ public class LeadIngotCraftListener implements Listener {
         Recipe recipe = e.getRecipe();
         if (!(recipe instanceof ShapedRecipe sr)) return;
         if (!sr.getKey().equals(RECIPE_KEY)) return;
-        if (!AssemblerChecker.isAssemblerCraft(e)) return;
 
         CraftingInventory inv = e.getInventory();
 
@@ -106,13 +104,25 @@ public class LeadIngotCraftListener implements Listener {
 
     // =========================
     // UNCRAFT PROTECTION
-    // If any ingredient has the isLeadIngot PDC and the recipe is NOT lead_ingot → block
+    // If any ingredient has the isLeadIngot PDC and the recipe does NOT
+    // legitimately consume lead ingots → block (uncrafting a lead ingot into
+    // its netherite value must be impossible).
+    // LEGITIMATE consumers are listed in LEAD_INGOT_CONSUMERS — recipes that
+    // use the Lead Ingot as a designed ingredient (e.g. the Dosimeter sensor).
     // =========================
+    /** Recipe keys that may consume a Lead Ingot without being blocked. */
+    private static final java.util.Set<String> LEAD_INGOT_CONSUMERS = java.util.Set.of(
+            "dosimeter"
+    );
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onUncraftProtection(PrepareItemCraftEvent e) {
         // Skip our own recipe — it is legitimate
         Recipe recipe = e.getRecipe();
-        if (recipe instanceof ShapedRecipe sr && sr.getKey().equals(RECIPE_KEY)) return;
+        if (recipe instanceof ShapedRecipe sr) {
+            if (sr.getKey().equals(RECIPE_KEY)) return;
+            if (LEAD_INGOT_CONSUMERS.contains(sr.getKey().getKey())) return;
+        }
 
         CraftingInventory inv = e.getInventory();
         ItemStack[] matrix = inv.getMatrix();
@@ -142,6 +152,13 @@ public class LeadIngotCraftListener implements Listener {
     // =========================
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCrafterCraft(CrafterCraftEvent e) {
+        // Legitimate consumers are allowed to auto-craft in the Crafter
+        Recipe recipe = e.getRecipe();
+        if (recipe instanceof org.bukkit.Keyed keyed
+                && LEAD_INGOT_CONSUMERS.contains(keyed.getKey().getKey())) {
+            return;
+        }
+
         // Check all Crafter matrix slots for the LEAD_INGOT PDC
         if (!(e.getBlock().getState() instanceof Crafter crafter)) return;
         Inventory inv = crafter.getInventory();
