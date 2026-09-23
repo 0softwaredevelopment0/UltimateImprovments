@@ -148,9 +148,10 @@ public final class ItemDurabilityUtil {
         return getMaxDurability(item) > 0 ? 100.0 : -1;
     }
 
-    /** One-time legacy migration — drops the old PDC integrity data if present. */
+    /** One-time legacy migration — drops the old PDC integrity data and lore if present. */
     public static void initializeItemIntegrity(ItemStack item) {
         migrateLegacyItem(item);
+        stripLegacyIntegrityLore(item);
     }
 
     // =========================
@@ -369,11 +370,11 @@ public final class ItemDurabilityUtil {
         }
     }
 
-    // =========================
-    // LEGACY LORE CLEANUP
-    // =========================
-
-    /** Removes the old "Integrity: N%" lore line (migration helper). */
+    /**
+     * Removes the old "Integrity: N%" lore line wherever the item shows up
+     * (pickup, craft, hotbar swap, click in an open inventory — see
+     * {@link IntegrityLoreCleanupListener}).
+     */
     private static void removeIntegrityLore(ItemMeta meta) {
         if (!meta.hasLore() || meta.lore() == null) return;
         List<net.kyori.adventure.text.Component> lore = new ArrayList<>(meta.lore());
@@ -384,5 +385,30 @@ public final class ItemDurabilityUtil {
         } else {
             meta.lore(lore);
         }
+    }
+
+    // =========================
+    // INTEGRITY LORE MIGRATION
+    // =========================
+
+    /**
+     * Strips the legacy integrity lore line from the item if present.
+     * Returns true if the meta was changed (caller must write it back).
+     * Runs for every item passing through the cleanup listener — even items
+     * without vanilla durability can carry the old lore (e.g. renamed books).
+     */
+    public static boolean stripLegacyIntegrityLore(ItemStack item) {
+        if (item == null || item.getType() == Material.AIR) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        if (!meta.hasLore()) return false;
+        int before = meta.lore() != null ? meta.lore().size() : 0;
+        removeIntegrityLore(meta);
+        int after = meta.lore() != null ? meta.lore().size() : 0;
+        if (after != before) {
+            item.setItemMeta(meta);
+            return true;
+        }
+        return false;
     }
 }
