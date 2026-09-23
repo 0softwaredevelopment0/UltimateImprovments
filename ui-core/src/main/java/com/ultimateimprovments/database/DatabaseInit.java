@@ -275,16 +275,30 @@ public class DatabaseInit {
             }
             try {
                 st.execute("ALTER TABLE reactors ADD COLUMN laser_absorber REAL DEFAULT 0");
-                // Shield / self-destruct / emergency latch — full state restore
-                st.execute("ALTER TABLE reactors ADD COLUMN shield_state TEXT DEFAULT 'OFFLINE'");
-                st.execute("ALTER TABLE reactors ADD COLUMN shield_integrity REAL DEFAULT 0");
-                st.execute("ALTER TABLE reactors ADD COLUMN shield_fail_countdown INTEGER DEFAULT 0");
-                st.execute("ALTER TABLE reactors ADD COLUMN selfdestruct_phase TEXT DEFAULT 'NONE'");
-                st.execute("ALTER TABLE reactors ADD COLUMN selfdestruct_ticks INTEGER DEFAULT 0");
-                st.execute("ALTER TABLE reactors ADD COLUMN selfdestruct_done INTEGER DEFAULT 0");
-                st.execute("ALTER TABLE reactors ADD COLUMN core_emergency_stopped INTEGER DEFAULT 0");
             } catch (Exception ignored) {
                 // Column already exists — this is fine
+            }
+            // Shield / self-destruct / emergency latch — full state restore.
+            // Each column migrates independently: one try/catch around a batch
+            // stops on the FIRST existing column and leaves the rest missing
+            // (an old DB that already had laser_absorber threw on it, so
+            // shield_state etc. were never added -> "no column named
+            // shield_state" on every save).
+            String[][] reactorCols = {
+                {"shield_state", "TEXT DEFAULT 'OFFLINE'"},
+                {"shield_integrity", "REAL DEFAULT 0"},
+                {"shield_fail_countdown", "INTEGER DEFAULT 0"},
+                {"selfdestruct_phase", "TEXT DEFAULT 'NONE'"},
+                {"selfdestruct_ticks", "INTEGER DEFAULT 0"},
+                {"selfdestruct_done", "INTEGER DEFAULT 0"},
+                {"core_emergency_stopped", "INTEGER DEFAULT 0"}
+            };
+            for (String[] col : reactorCols) {
+                try {
+                    st.execute("ALTER TABLE reactors ADD COLUMN " + col[0] + " " + col[1]);
+                } catch (Exception ignored) {
+                    // Column already exists — fine, try the next one
+                }
             }
 
         // =========================
