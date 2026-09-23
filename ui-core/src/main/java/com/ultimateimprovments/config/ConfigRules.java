@@ -277,11 +277,9 @@ final class ConfigRules {
             stringList("features.sudo.dangerous_commands"),
 
             bool("features.integrity.enabled"),
-            notBlank("features.integrity.lore_text", 256),
             bool("features.integrity.on_break.play_sound"),
             dbl("features.integrity.on_break.sound_volume", 0, 2),
             dbl("features.integrity.on_break.sound_pitch", 0.5, 2),
-            intList("features.integrity.low_integrity_warning.thresholds"),
             bool("features.integrity.unbreaking.enabled"),
             bool("features.integrity.piercing.enabled"),
             dbl("features.integrity.piercing.extra_integrity_cost", 0, 100),
