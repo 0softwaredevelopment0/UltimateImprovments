@@ -27,25 +27,30 @@ import java.util.function.Consumer;
  *       ({@code /ui rep give/set}), report verdicts (confirmed → −N) and
  *       punishments (warn/mute/ban → −N each; every value is a config toggle,
  *       0 disables the source).</li>
- *   <li><b>Status</b> — a Discord-style named status issued separately by a
- *       moderator, independent of the numeric scale: Online, Idle,
- *       Do Not Disturb, Invisible (+ {@code NONE} when nothing is set).</li>
+ *   <li><b>Status</b> — a Discord Account Standing status issued separately
+ *       by a moderator, independent of the numeric scale: All good, Limited,
+ *       Very limited, At risk, Suspended (+ {@code NONE} when nothing is set).</li>
  * </ol>
  * All DB work is asynchronous; chat output is marshalled back to the main thread.
  */
 public final class ReputationManager {
 
     // =========================================================================
-    // STATUS SCALE (Discord statuses)
+    // STATUS SCALE (Discord Account Standing)
     // =========================================================================
 
-    /** Discord-style statuses for the second (status) scale. */
+    /**
+     * Discord Account Standing statuses for the second (status) scale:
+     * All good → Limited → Very limited → At risk → Suspended.
+     * Issued separately by a moderator, independent of the numeric scale.
+     */
     public enum Status {
         NONE("None", "<dark_gray>—"),
-        ONLINE("Online", "<green>●"),
-        IDLE("Idle", "<yellow>◑"),
-        DND("Do Not Disturb", "<red>⛔"),
-        INVISIBLE("Invisible", "<gray>◌");
+        ALL_GOOD("All good", "<green>✔"),
+        LIMITED("Limited", "<yellow>⚠"),
+        VERY_LIMITED("Very limited", "<gold>⚠"),
+        AT_RISK("At risk", "<red>⛔"),
+        SUSPENDED("Suspended", "<dark_red>☠");
 
         private final String display;
         private final String icon;
@@ -69,11 +74,12 @@ public final class ReputationManager {
         /** Parses a config/argument value into a status (null if unknown). */
         public static Status fromString(String s) {
             if (s == null) return null;
-            return switch (s.toLowerCase()) {
-                case "online", "1" -> ONLINE;
-                case "idle", "2" -> IDLE;
-                case "dnd", "donotdisturb", "do_not_disturb", "3" -> DND;
-                case "invisible", "invis", "4" -> INVISIBLE;
+            return switch (s.toLowerCase().replace("_", "").replace(" ", "")) {
+                case "allgood", "good", "1" -> ALL_GOOD;
+                case "limited", "2" -> LIMITED;
+                case "verylimited", "3" -> VERY_LIMITED;
+                case "atrisk", "risk", "4" -> AT_RISK;
+                case "suspended", "5" -> SUSPENDED;
                 case "none", "reset", "clear", "0" -> NONE;
                 default -> null;
             };
