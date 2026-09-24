@@ -547,6 +547,27 @@ public class ReportManager implements Listener {
                 } catch (Exception e) {
                     ConsoleLogger.warn("[Reports] Failed to save verdict: " + e.getMessage());
                 }
+
+                // Reputation hook: a confirmed report lowers the reported
+                // player's numeric reputation (config: reputation.report_confirmed,
+                // 0 = off). The reported uuid is read from the report row.
+                if (finalVerdictOption.equals("confirmed")) {
+                    try (Connection con = DatabaseManager.getConnection();
+                         PreparedStatement ps = con.prepareStatement(
+                                 "SELECT reported_uuid FROM reports WHERE id = ?")) {
+                        ps.setInt(1, session.reportId);
+                        ResultSet rs = ps.executeQuery();
+                        if (rs.next()) {
+                            String reportedUuid = rs.getString("reported_uuid");
+                            if (reportedUuid != null && !reportedUuid.isEmpty()) {
+                                com.ultimateimprovments.reputation.ReputationManager.changeBySource(
+                                        reportedUuid, session.modName, "report", session.conclusion);
+                            }
+                        }
+                    } catch (Exception e) {
+                        ConsoleLogger.warn("[Reports] Reputation hook failed: " + e.getMessage());
+                    }
+                }
             });
 
             // Notify the reporter (if online)

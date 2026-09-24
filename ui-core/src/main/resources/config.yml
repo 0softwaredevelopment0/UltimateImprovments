@@ -1059,6 +1059,44 @@ messages:
       # Confirmation message shown to the player
       remove_confirm: "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/ui reports remove confirm</yellow><white> to confirm.</white>"
   
+  reputation:
+    # /ui rep view header
+    view:
+      header: "<gray>═══ <white>Репутация — </white><yellow>%player%</yellow> <gray>═══</gray>"
+      rep: "<gray>Репутация:</gray> %color%%rep%</reset>"
+      status: "<gray>Статус:</gray> %status%"
+    # Discord-style statuses (issued by staff, second scale)
+    status:
+      none: "<dark_gray>— Не задан"
+      online: "<green>● Online"
+      idle: "<yellow>◑ Idle"
+      dnd: "<red>⛔ Не беспокоить"
+      invisible: "<gray>◌ Невидимый"
+    give: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white>: </white><green>+%amount%</green> <gray>(теперь %new%)</gray>"
+    taken: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white>: </white><red>%amount%</red> <gray>(теперь %new%)</gray>"
+    set: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white> установлена на </white><green>%new%</green>"
+    status_set: "<green>✔</green> <white>Статус </white><yellow>%player%</yellow><white>: </white>%status%"
+    notify:
+      give: "<green>▲</green> <gray>Репутация </gray><yellow>%player%</yellow><gray>: +%amount%</gray> <dark_gray>(%actor%)</dark_gray>"
+      take: "<red>▼</red> <gray>Репутация </gray><yellow>%player%</yellow><gray>: %amount%</gray> <dark_gray>(%actor%)</dark_gray>"
+      set: "<white>◆</white> <gray>Репутация </gray><yellow>%player%</yellow><gray>: %old% → %new%</gray> <dark_gray>(%actor%)</dark_gray>"
+      status: "<white>◆</white> <gray>Статус </gray><yellow>%player%</yellow><gray>: %status%</gray> <dark_gray>(%actor%)</dark_gray>"
+    top:
+      header: "<gray>═══ <white>Топ репутации</white> ═══</gray>"
+      row: "%place% <yellow>%player%</yellow><gray>:</gray> <white>%rep%</white>"
+      empty: "<gray>Записей репутации ещё нет.</gray>"
+    history:
+      header: "<gray>═══ <white>История репутации — </white><yellow>%player%</yellow> <gray>═══</gray>"
+      row: "<dark_gray>#%id%</dark_gray> %arrow%%amount%</reset> <gray>— %actor% (%source%)</gray><dark_gray> — %reason%</dark_gray>"
+      empty: "<gray>Изменений не зафиксировано.</gray>"
+    errors:
+      unknown_player: "<red>❌ Игрок </red><yellow>%player%</yellow> <red>не найден!</red>"
+      invalid_amount: "<red>❌ Значение должно быть целым числом (±N)!</red>"
+      zero_amount: "<red>❌ Значение не может быть нулём!</red>"
+      too_large: "<red>❌ Разовое изменение ограничено ±100!</red>"
+      unknown_status: "<red>❌ Неизвестный статус! Доступны: </red><white>online, idle, dnd, invisible, none</white>"
+    usage: "<red>❌ Использование: </red><white>/ui rep [игрок] | give <игрок> <±N> [причина] | set <игрок> <N> | status <игрок> <online|idle|dnd|invisible|none> | top [лимит] | history [игрок]</white>"
+
   suicide:
     messages:
       # Title text shown to the player
@@ -1708,6 +1746,44 @@ messages_en:
       # Chat message for codepanel help (example4)
       example4: "<gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
   
+  reputation:
+    # /ui rep view header
+    view:
+      header: "<gray>═══ <white>Reputation — </white><yellow>%player%</yellow> <gray>═══</gray>"
+      rep: "<gray>Reputation:</gray> %color%%rep%</reset>"
+      status: "<gray>Status:</gray> %status%"
+    # Discord-style statuses (issued by staff, second scale)
+    status:
+      none: "<dark_gray>— None"
+      online: "<green>● Online"
+      idle: "<yellow>◑ Idle"
+      dnd: "<red>⛔ Do Not Disturb"
+      invisible: "<gray>◌ Invisible"
+    give: "<green>✔</green> <white>Reputation </white><yellow>%player%</yellow><white>: </white><green>+%amount%</green> <gray>(now %new%)</gray>"
+    taken: "<green>✔</green> <white>Reputation </white><yellow>%player%</yellow><white>: </white><red>%amount%</red> <gray>(now %new%)</gray>"
+    set: "<green>✔</green> <white>Reputation of </white><yellow>%player%</yellow><white> set to </white><green>%new%</green>"
+    status_set: "<green>✔</green> <white>Status of </white><yellow>%player%</yellow><white>: </white>%status%"
+    notify:
+      give: "<green>▲</green> <gray>Reputation </gray><yellow>%player%</yellow><gray>: +%amount%</gray> <dark_gray>(%actor%)</dark_gray>"
+      take: "<red>▼</red> <gray>Reputation </gray><yellow>%player%</yellow><gray>: %amount%</gray> <dark_gray>(%actor%)</dark_gray>"
+      set: "<white>◆</white> <gray>Reputation </gray><yellow>%player%</yellow><gray>: %old% → %new%</gray> <dark_gray>(%actor%)</dark_gray>"
+      status: "<white>◆</white> <gray>Status </gray><yellow>%player%</yellow><gray>: %status%</gray> <dark_gray>(%actor%)</dark_gray>"
+    top:
+      header: "<gray>═══ <white>Reputation Top</white> ═══</gray>"
+      row: "%place% <yellow>%player%</yellow><gray>:</gray> <white>%rep%</white>"
+      empty: "<gray>No reputation records yet.</gray>"
+    history:
+      header: "<gray>═══ <white>Reputation History — </white><yellow>%player%</yellow> <gray>═══</gray>"
+      row: "<dark_gray>#%id%</dark_gray> %arrow%%amount%</reset> <gray>— %actor% (%source%)</gray><dark_gray> — %reason%</dark_gray>"
+      empty: "<gray>No changes recorded.</gray>"
+    errors:
+      unknown_player: "<red>❌ Player </red><yellow>%player%</yellow> <red>not found!</red>"
+      invalid_amount: "<red>❌ Amount must be an integer (±N)!</red>"
+      zero_amount: "<red>❌ Amount must not be zero!</red>"
+      too_large: "<red>❌ Single change is limited to ±100!</red>"
+      unknown_status: "<red>❌ Unknown status! Available: </red><white>online, idle, dnd, invisible, none</white>"
+    usage: "<red>❌ Usage: </red><white>/ui rep [player] | give <player> <±N> [reason] | set <player> <N> | status <player> <online|idle|dnd|invisible|none> | top [limit] | history [player]</white>"
+
   suicide:
     messages:
       # Chat message for suicide (cooldown_message)
@@ -3977,6 +4053,19 @@ heal_feed:
   heal_amount: 0
   # Hunger restored by /ui feed (0 = full)
   feed_amount: 0
+
+# =========================
+# ⭐ REPUTATION — staff-issued, two scales
+# =========================
+# Scale 1: numeric reputation (/ui rep give/set).
+# Scale 2: Discord-style status (/ui rep status online|idle|dnd|invisible|none).
+reputation:
+  # Confirmed report verdict lowers the reported player's rep by this much (0 = off)
+  report_confirmed: -5
+  # Punishments lower the rep (0 = off for that type)
+  punish_warn: -1
+  punish_mute: -3
+  punish_ban: -10
 
 # =========================
 # ✨ ENCHANT — advanced enchantment manager (/ui enchant)
