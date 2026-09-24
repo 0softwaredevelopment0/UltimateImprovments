@@ -82,6 +82,10 @@ public final class UIEssentials extends JavaPlugin {
             // Reports
             registry.register(LegacySubCommandAdapter.of("report", ReportSubcommand::execute,
                     LegacySubCommandAdapter.tc((s, a) -> ReportSubcommand.tabComplete(a))));
+
+            // Reputation (two-scale: numeric + Discord-style status)
+            registry.register(LegacySubCommandAdapter.of("rep", RepSubcommand::execute,
+                    LegacySubCommandAdapter.tc((s, a) -> RepSubcommand.tabComplete(s, a))));
             registry.register(LegacySubCommandAdapter.of("reports", ReportsSubcommand::execute,
                     LegacySubCommandAdapter.tc((s, a) -> ReportsSubcommand.tabComplete(a))));
             registry.register(LegacySubCommandAdapter.of("modreport", ModReportSubcommand::execute));

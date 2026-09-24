@@ -151,6 +151,19 @@ public class PunishmentManager {
 
             ConsoleLogger.info("[Punish] " + type.name() + " " + targetName
                     + " by " + punisher + " reason: " + reason);
+
+            // Reputation hook: warn/mute/ban lower the numeric reputation
+            // (config-toggled amounts; 0 disables the source).
+            String repSource = switch (type) {
+                case WARN -> "punish_warn";
+                case MUTE -> "punish_mute";
+                case BAN -> "punish_ban";
+                default -> null;
+            };
+            if (repSource != null) {
+                com.ultimateimprovments.reputation.ReputationManager.changeBySource(
+                        targetUuid, targetName, repSource, reason);
+            }
             return true;
         } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[Punish] Failed to punish " + targetName, e);

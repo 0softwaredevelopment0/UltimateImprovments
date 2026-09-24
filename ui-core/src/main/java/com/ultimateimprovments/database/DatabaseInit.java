@@ -1060,6 +1060,59 @@ public class DatabaseInit {
             VALUES ('enabled', 'false');
         """);
 
+        // =========================
+        // ⭐ REPUTATION — numeric rep + Discord-style status (staff-issued)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS player_reputation (
+                player_uuid TEXT PRIMARY KEY,
+                rep INTEGER NOT NULL DEFAULT 0,
+                status TEXT NOT NULL DEFAULT 'NONE',
+                updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_player_reputation_rep
+            ON player_reputation(rep DESC);
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS reputation_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                target_uuid TEXT NOT NULL,
+                target_name TEXT NOT NULL DEFAULT '',
+                actor_uuid TEXT NOT NULL DEFAULT '',
+                actor_name TEXT NOT NULL DEFAULT '',
+                amount INTEGER NOT NULL DEFAULT 0,
+                source TEXT NOT NULL DEFAULT 'manual',
+                reason TEXT NOT NULL DEFAULT '',
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+        """);
+
+        st.execute("""
+            CREATE INDEX IF NOT EXISTS idx_reputation_log_target
+            ON reputation_log(target_uuid);
+        """);
+
+        // Schema drift on old databases: columns were added over time; each
+        // column migrates in its own try/catch — a duplicate-column error on a
+        // newer DB just skips it (same pattern as punishments).
+        String[][] reputationCols = {
+            {"status", "TEXT NOT NULL DEFAULT 'NONE'"},
+            {"target_name", "TEXT NOT NULL DEFAULT ''"},
+            {"actor_uuid", "TEXT NOT NULL DEFAULT ''"},
+            {"actor_name", "TEXT NOT NULL DEFAULT ''"},
+            {"source", "TEXT NOT NULL DEFAULT 'manual'"},
+            {"reason", "TEXT NOT NULL DEFAULT ''"}
+        };
+        for (String[] col : reputationCols) {
+            try {
+                st.execute("ALTER TABLE reputation_log ADD COLUMN " + col[0] + " " + col[1]);
+            } catch (Exception ignored) { /* already exists */ }
+        }
+
         // Initialize the latest_commit_sha and installed_tag rows if missing
         st.execute("""
             INSERT OR IGNORE INTO updater_state (key, value)

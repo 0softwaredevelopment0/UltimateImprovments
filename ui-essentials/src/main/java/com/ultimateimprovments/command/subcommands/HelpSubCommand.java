@@ -164,6 +164,18 @@ public class HelpSubCommand implements SubCommand {
                 .u("sign", "unlock the sign crafting");
 
         // ── Admin / moderation ──
+        cmd("rep", "Reputation: numeric scale + Discord-style status (staff-issued)")
+                .u("[player]", "view your or another player's reputation and status")
+                .u("give <player> <±N> [reason]", "change reputation (staff)")
+                .u("set <player> <N>", "set an absolute value (admin)")
+                .u("status <player> <online|idle|dnd|invisible|none>", "issue a Discord-style status (moderator)")
+                .u("top [limit]", "top players by reputation")
+                .u("history [player]", "last reputation changes")
+                .sub("give", "<player> <±N> [reason]", "change reputation (staff)")
+                .sub("set", "<player> <N>", "set an absolute value (admin)")
+                .sub("status", "<player> <online|idle|dnd|invisible|none>", "issue a Discord-style status")
+                .sub("top", "[limit]", "top players by reputation")
+                .sub("history", "[player]", "last reputation changes");
         cmd("punish", "Punishment system")
                 .u("ban <player> <reason> [-time:<N>s|m|h|d] [-permanent] [-ip] [-hw]", "ban a player")
                 .u("mute <player> <reason> [-time:...] [-permanent] [-ip] [-hw]", "mute a player")
