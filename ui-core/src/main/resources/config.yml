@@ -1065,13 +1065,14 @@ messages:
       header: "<gray>═══ <white>Репутация — </white><yellow>%player%</yellow> <gray>═══</gray>"
       rep: "<gray>Репутация:</gray> %color%%rep%</reset>"
       status: "<gray>Статус:</gray> %status%"
-    # Discord-style statuses (issued by staff, second scale)
+    # Discord Account Standing statuses (issued by staff, second scale)
     status:
       none: "<dark_gray>— Не задан"
-      online: "<green>● Online"
-      idle: "<yellow>◑ Idle"
-      dnd: "<red>⛔ Не беспокоить"
-      invisible: "<gray>◌ Невидимый"
+      all_good: "<green>✔ All good"
+      limited: "<yellow>⚠ Limited"
+      very_limited: "<gold>⚠ Very limited"
+      at_risk: "<red>⛔ At risk"
+      suspended: "<dark_red>☠ Suspended"
     give: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white>: </white><green>+%amount%</green> <gray>(теперь %new%)</gray>"
     taken: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white>: </white><red>%amount%</red> <gray>(теперь %new%)</gray>"
     set: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white> установлена на </white><green>%new%</green>"
@@ -1094,8 +1095,8 @@ messages:
       invalid_amount: "<red>❌ Значение должно быть целым числом (±N)!</red>"
       zero_amount: "<red>❌ Значение не может быть нулём!</red>"
       too_large: "<red>❌ Разовое изменение ограничено ±100!</red>"
-      unknown_status: "<red>❌ Неизвестный статус! Доступны: </red><white>online, idle, dnd, invisible, none</white>"
-    usage: "<red>❌ Использование: </red><white>/ui rep [игрок] | give <игрок> <±N> [причина] | set <игрок> <N> | status <игрок> <online|idle|dnd|invisible|none> | top [лимит] | history [игрок]</white>"
+      unknown_status: "<red>❌ Неизвестный статус! Доступны: </red><white>allgood, limited, verylimited, atrisk, suspended, none</white>"
+    usage: "<red>❌ Использование: </red><white>/ui rep [игрок] | give <игрок> <±N> [причина] | set <игрок> <N> | status <игрок> <allgood|limited|verylimited|atrisk|suspended|none> | top [лимит] | history [игрок]</white>"
 
   suicide:
     messages:
@@ -1752,13 +1753,14 @@ messages_en:
       header: "<gray>═══ <white>Reputation — </white><yellow>%player%</yellow> <gray>═══</gray>"
       rep: "<gray>Reputation:</gray> %color%%rep%</reset>"
       status: "<gray>Status:</gray> %status%"
-    # Discord-style statuses (issued by staff, second scale)
+    # Discord Account Standing statuses (issued by staff, second scale)
     status:
       none: "<dark_gray>— None"
-      online: "<green>● Online"
-      idle: "<yellow>◑ Idle"
-      dnd: "<red>⛔ Do Not Disturb"
-      invisible: "<gray>◌ Invisible"
+      all_good: "<green>✔ All good"
+      limited: "<yellow>⚠ Limited"
+      very_limited: "<gold>⚠ Very limited"
+      at_risk: "<red>⛔ At risk"
+      suspended: "<dark_red>☠ Suspended"
     give: "<green>✔</green> <white>Reputation </white><yellow>%player%</yellow><white>: </white><green>+%amount%</green> <gray>(now %new%)</gray>"
     taken: "<green>✔</green> <white>Reputation </white><yellow>%player%</yellow><white>: </white><red>%amount%</red> <gray>(now %new%)</gray>"
     set: "<green>✔</green> <white>Reputation of </white><yellow>%player%</yellow><white> set to </white><green>%new%</green>"
@@ -1781,8 +1783,8 @@ messages_en:
       invalid_amount: "<red>❌ Amount must be an integer (±N)!</red>"
       zero_amount: "<red>❌ Amount must not be zero!</red>"
       too_large: "<red>❌ Single change is limited to ±100!</red>"
-      unknown_status: "<red>❌ Unknown status! Available: </red><white>online, idle, dnd, invisible, none</white>"
-    usage: "<red>❌ Usage: </red><white>/ui rep [player] | give <player> <±N> [reason] | set <player> <N> | status <player> <online|idle|dnd|invisible|none> | top [limit] | history [player]</white>"
+      unknown_status: "<red>❌ Unknown status! Available: </red><white>allgood, limited, verylimited, atrisk, suspended, none</white>"
+    usage: "<red>❌ Usage: </red><white>/ui rep [player] | give <player> <±N> [reason] | set <player> <N> | status <player> <allgood|limited|verylimited|atrisk|suspended|none> | top [limit] | history [player]</white>"
 
   suicide:
     messages:

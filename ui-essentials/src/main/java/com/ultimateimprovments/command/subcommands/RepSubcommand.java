@@ -19,13 +19,15 @@ import java.util.UUID;
  * /ui rep — two-scale reputation system:
  * <ul>
  *   <li>numeric reputation (integer, staff-issued);</li>
- *   <li>Discord-style status (issued separately by a moderator).</li>
+ *   <li>Account Standing status — Discord account standings (All good,
+ *       Limited, Very limited, At risk, Suspended), issued separately by a
+ *       moderator.</li>
  * </ul>
  * <pre>
  *   /ui rep [player]              — view rep + status (all players)
  *   /ui rep give &lt;player&gt; &lt;±N&gt; [reason] — change rep (ui.command.rep.give)
  *   /ui rep set &lt;player&gt; &lt;N&gt;      — absolute set (ui.command.rep.set)
- *   /ui rep status &lt;player&gt; &lt;status&gt;    — Discord status (ui.command.rep.status)
+ *   /ui rep status &lt;player&gt; &lt;allgood|limited|verylimited|atrisk|suspended|none&gt; — Account Standing (ui.command.rep.status)
  *   /ui rep top [limit]           — top by numeric rep
  *   /ui rep history [player]      — last changes (own for players, any for staff)
  * </pre>
@@ -220,7 +222,7 @@ public final class RepSubcommand {
         Status status = Status.fromString(args[3]);
         if (status == null) {
             sender.sendMessage(MessageUtil.parse(msg("reputation.errors.unknown_status",
-                    "<red>❌ Unknown status! Available: </red><white>online, idle, dnd, invisible, none</white>")));
+                    "<red>❌ Unknown status! Available: </red><white>allgood, limited, verylimited, atrisk, suspended, none</white>")));
             return;
         }
         UUID uuid = PlayerDataIO.resolveUuidByName(name);
@@ -391,7 +393,7 @@ public final class RepSubcommand {
             }
         } else if (args.length == 4 && args[1].equalsIgnoreCase("status")) {
             String token = args[3].toLowerCase(Locale.ROOT);
-            for (String s : List.of("online", "idle", "dnd", "invisible", "none")) {
+            for (String s : List.of("allgood", "limited", "verylimited", "atrisk", "suspended", "none")) {
                 if (s.startsWith(token)) out.add(s);
             }
         }
