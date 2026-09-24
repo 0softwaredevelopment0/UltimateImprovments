@@ -16,9 +16,8 @@ import org.bukkit.inventory.ItemStack;
  * <b>diamonds</b> (named "Golden fuel" / "Diamond fuel" on assembly).
  * Consumption follows the core spin (RPS):
  * <ul>
- *   <li>below {@code fuel_spin_min} — nothing is consumed</li>
- *   <li>at the 95 000 RPS working point — {@code fuel_base_rate}% per second
- *       (100% = 1 gold ingot + 1 diamond per 10s), falling linearly down to
+ *   <li>below {@code fuel_spin_min} — nothing is consumed</li>     *   <li>at the 95 000 RPS working point — {@code fuel_base_rate}% (100%
+ *       = 1 gold ingot + 1 diamond per 10s), falling linearly down to
  *       the 1% floor at the minimum spin</li>
  *   <li>between 95k and 100k — smooth dip back to 1%</li>
  *   <li>above 100 000 RPS — consumption grows again: +1% per 10 000 RPS</li>
@@ -64,8 +63,8 @@ public class ReactorFuel {
             return;
         }
 
-        // Smooth consumption: pct/100 units per second
-        fuelRemainder += consumptionPct / 100.0;
+        // Smooth consumption: 100% = 1 unit per 10s → pct/1000 units per second
+        fuelRemainder += consumptionPct / 1000.0;
         while (fuelRemainder >= 1) {
             fuelRemainder -= 1;
             if (!consumeUnit(base)) {
