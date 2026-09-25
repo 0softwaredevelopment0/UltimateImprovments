@@ -138,8 +138,8 @@ public class HelpSubCommand implements SubCommand {
         cmd("suicide", "Commit suicide").u("", "kills your character");
         cmd("forcesuicide", "Force-suicide a player").u("<player>", "");
         cmd("expsplit", "Split experience").u("<player>", "splits your XP with a player");
-        cmd("togglespeed", "Toggle speed").u("", "");
-        cmd("togglefly", "Toggle fly (legacy)").u("", "");
+        cmd("showspeed", "Minecart speed display").u("<on|off>", "");
+        cmd("elytraboost", "Elytra boost on jump").u("<on|off>", "default: off");
         cmd("vanish", "Vanish a player").u("[player]", "");
         cmd("notes", "Open your notes").u("", "personal notepad GUI");
 
@@ -240,7 +240,18 @@ public class HelpSubCommand implements SubCommand {
                 .u("add <player>", "whitelist for maintenance")
                 .u("remove <player>", "");
         cmd("protection", "Protection block admin ops").u("", "admin utilities");
-        cmd("plugin", "Plugin management").u("list|enable|disable|reload ...", "");
+        cmd("plugin", "Plugin management (other plugins)")
+                .u("status <name>", "full plugin info (API, load, depends, libraries)")
+                .u("enable <name>", "enable a plugin (confirmed)")
+                .u("disable <name>", "disable a plugin (confirmed)")
+                .u("restart <name>", "restart a plugin (confirmed)");
+        cmd("addon", "UltimateImprovments addon management")
+                .u("list [page]", "paginated addon list (10 per page) with load errors")
+                .u("status <addon>", "addon details: version, modules, load errors")
+                .u("enable <addon>", "enable an addon (real onEnable, confirmed)")
+                .u("disable <addon>", "disable an addon (real onDisable, confirmed)")
+                .u("restart <addon>", "restart an addon (confirmed)");
+        cmd("lang", "View or switch the UI language").u("[ru|en]", "applies to every addon");
         cmd("swapjar", "Swap the plugin JAR").u("", "hot-swap after an update");
         cmd("menu", "Open the admin menu").u("", "");
         cmd("cmdblocklist", null);
@@ -270,11 +281,12 @@ public class HelpSubCommand implements SubCommand {
         cmd("msg", "Private message (overrides /msg)").u("<player> <text>", "");
 
         // ── Toggles / UI ──
-        cmd("togglebb", "Toggle the bossbar").u("", "");
-        cmd("togglesb", "Toggle the scoreboard").u("", "");
-        cmd("toggleping", "Toggle the ping display").u("", "");
-        cmd("toggleautocraft", "Toggle autocraft").u("", "");
-        cmd("togglebind", "Toggle bind mode").u("", "");
+        cmd("bossbar", "Show or hide the bossbar").u("<on|off>", "");
+        cmd("scoreboard", "Show or hide the scoreboard").u("<on|off>", "");
+        cmd("pingsound", "Toggle the chat ping sound").u("<on|off>", "");
+        cmd("wirelessbind", "Wireless redstone bind mode").u("<on|off>", "default: off");
+        cmd("craftrecipe", "Free-craft any recipe (admin)")
+                .u("<recipe>", "result goes to your inventory, no resources");
         cmd("viewrad", "Toggle the radiation view").u("", "shows radiation sources around you");
 
         // ── World / structures ──

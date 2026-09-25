@@ -1,7 +1,6 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.CommandErrors;
-
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
@@ -9,26 +8,31 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * /ui plugin &lt;name&gt; on|off|restart — manage other plugins.<br>
- * Shows a warning with clickable confirm/cancel buttons.
+ * /ui plugin &lt;restart|disable|enable|status&gt; &lt;name&gt; — manage other plugins.
+ * <p>
+ * The FIRST argument is the ACTION, the second is the plugin. Lifecycle actions
+ * require a confirmation (hot disable/enable can crash third-party plugins).
+ * {@code status} works for any plugin; UltimateImprovments family plugins should
+ * use {@code /ui addon status} instead (there the module statistics live).
  * <p>
  * Usage:
  * <ul>
- *   <li>{@code /ui plugin <name> on} — enable the plugin</li>
- *   <li>{@code /ui plugin <name> off} — disable the plugin</li>
- *   <li>{@code /ui plugin <name> restart} — restart the plugin (disable + enable)</li>
- *   <li>{@code /ui plugin confirm} — confirm a pending action</li>
- *   <li>{@code /ui plugin cancel} — cancel a pending action</li>
+ *   <li>{@code /ui plugin status <name>} — full info: name, description, version,
+ *       API version, authors, load type, loadBefore, depend, softdepend, libraries</li>
+ *   <li>{@code /ui plugin enable|disable|restart <name>} — with confirmation</li>
+ *   <li>{@code /ui plugin confirm|cancel}</li>
  * </ul>
- * <p>
- * Requires the permission: {@code ui.command.plugin}.
  */
 public final class PluginSubcommand {
 
@@ -37,7 +41,7 @@ public final class PluginSubcommand {
     /** Permission required to use this command. */
     private static final String PERMISSION = "ui.command.plugin";
 
-    /** Pending actions keyed by player UUID. Console uses a sentinel UUID. */
+    /** Pending actions keyed by sender UUID (console = sentinel UUID). */
     private static final UUID CONSOLE_UUID = new UUID(0, 0);
     private static final Map<UUID, PendingAction> pendingActions = new ConcurrentHashMap<>();
 
@@ -57,179 +61,170 @@ public final class PluginSubcommand {
             return true;
         }
 
+        // args[0] = "plugin"; args[1] = action; args[2] = plugin name
         if (args.length < 2) {
             usage(sender);
             return true;
         }
 
-        return switch (args[1].toLowerCase()) {
+        return switch (args[1].toLowerCase(Locale.ROOT)) {
             case "confirm" -> handleConfirm(sender);
-            case "cancel"  -> handleCancel(sender);
-            default        -> handlePluginAction(sender, args);
+            case "cancel" -> handleCancel(sender);
+            case "status" -> handleStatus(sender, args);
+            case "enable", "disable", "restart" -> handleAction(sender, args);
+            default -> {
+                sender.sendMessage(MessageUtil.parse(
+                        "<dark_red>❌</dark_red> <red>Invalid action: </red><white>" + args[1]
+                                + "</white><gray>. Use enable, disable, restart or status.</gray>"));
+                yield true;
+            }
         };
     }
 
     // ==========================================================================
-    // INITIAL ACTION: /ui plugin <name> <on|off|restart>
+    // STATUS — full plugin.yml dump
     // ==========================================================================
 
-    private static boolean handlePluginAction(CommandSender sender, String[] args) {
+    private static boolean handleStatus(CommandSender sender, String[] args) {
         if (args.length < 3) {
-            usage(sender);
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_red>❌</dark_red> <red>Usage: </red><white>/ui plugin status <name></white>"));
             return true;
         }
-
-        String pluginName = args[1];
-        String action = args[2].toLowerCase();
-
-        // Check whether such a plugin exists
+        String pluginName = args[2];
         Plugin target = Bukkit.getPluginManager().getPlugin(pluginName);
         if (target == null) {
             sender.sendMessage(MessageUtil.parse(
                     "<dark_red>❌</dark_red> <red>Plugin not found: </red><white>" + pluginName + "</white>"));
             return true;
         }
-
-        // Info — read-only, available for any plugin including UltimateImprovments
-        if (action.equals("info")) {
-            return handleInfo(sender, target);
-        }
-
-        if (!action.equals("on") && !action.equals("off") && !action.equals("restart")) {
+        if (target.getName().equalsIgnoreCase("UI-Core")
+                || target.getName().startsWith("UI-")) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>Invalid action: </red><white>" + action
-                    + "</white><gray>. Use on, off, restart, or info.</gray>"));
-            return true;
+                    "  <yellow>ℹ UltimateImprovments family plugin — use</yellow> <white>/ui addon status "
+                            + target.getName() + "</white> <yellow>for the module statistics.</yellow>"));
         }
 
-        // Do not allow disabling our own plugin
-        if (target.getName().equals("UltimateImprovments")) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>Cannot manage UltimateImprovments itself. Use </red><white>/ui reload</white><red> instead.</red>"));
-            return true;
-        }
-
-        // Check whether the plugin is already in the target state
-        boolean isEnabled = target.isEnabled();
-        if (action.equals("on") && isEnabled) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<yellow>⚠</yellow> <white>" + pluginName + "</white> <gray>is already enabled.</gray>"));
-            return true;
-        }
-        if (action.equals("off") && !isEnabled) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<yellow>⚠</yellow> <white>" + pluginName + "</white> <gray>is already disabled.</gray>"));
-            return true;
-        }
-
-        // Store the pending action
-        UUID uuid = sender instanceof Player player ? player.getUniqueId() : CONSOLE_UUID;
-        pendingActions.put(uuid, new PendingAction(pluginName, action, System.currentTimeMillis()));
-
-        // Start the background cleanup of expired actions (only once)
-        startCleanupTask();
-
-        // Show the warning with clickable buttons
-        String actionDisplay = switch (action) {
-            case "on" -> "ENABLE";
-            case "off" -> "DISABLE";
-            case "restart" -> "RESTART";
-            default -> action.toUpperCase();
-        };
-
-        sender.sendMessage(MessageUtil.parse(""));
-        sender.sendMessage(MessageUtil.parse(
-                "<dark_red>⚠</dark_red> <red>WARNING: You are about to </red><yellow>" + actionDisplay
-                + "</yellow> <red>this plugin:</red>"));
-        sender.sendMessage(MessageUtil.parse(
-                "  <white>" + pluginName + "</white> <dark_gray>(v" + target.getDescription().getVersion() + ")</dark_gray>"));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>State: </gray>" + (isEnabled ? "<green>ENABLED</green>" : "<red>DISABLED</red>")));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>Description: </gray><white>" + target.getDescription().getDescription() + "</white>"));
-        sender.sendMessage(MessageUtil.parse(""));
-        sender.sendMessage(MessageUtil.parse(
-                "<red>Are you sure you want to proceed? Disabling or restarting a plugin may crash the server</red>"));
-        sender.sendMessage(MessageUtil.parse(
-                "<red>or cause data loss. Only proceed if you know what you are doing.</red>"));
-        sender.sendMessage(MessageUtil.parse(""));
-        sender.sendMessage(MessageUtil.parse(
-                "<click:run_command:/ui plugin confirm><dark_green>[</dark_green><green>✔ Confirm</green><dark_green>]</dark_green></click>"
-                + " <dark_gray>|</dark_gray> "
-                + "<click:run_command:/ui plugin cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
-        sender.sendMessage(MessageUtil.parse(""));
-
-        ConsoleLogger.info("[PLUGIN] Pending " + action + " for " + pluginName + " by " + sender.getName());
-        return true;
-    }
-
-    // ==========================================================================
-    // INFO: /ui plugin <name> info
-    // ==========================================================================
-
-    private static boolean handleInfo(CommandSender sender, Plugin target) {
-        var desc = target.getDescription();
-
-        String authors = desc.getAuthors().isEmpty()
-                ? "<gray>N/A</gray>"
-                : "<white>" + String.join("</white><gray>, </gray><white>", desc.getAuthors()) + "</white>";
-
-        String depend = desc.getDepend().isEmpty()
-                ? "<gray>none</gray>"
-                : "<white>" + String.join("</white><gray>, </gray><white>", desc.getDepend()) + "</white>";
-
-        String softDepend = desc.getSoftDepend().isEmpty()
-                ? "<gray>none</gray>"
-                : "<white>" + String.join("</white><gray>, </gray><white>", desc.getSoftDepend()) + "</white>";
-
-        String website = desc.getWebsite() != null
-                ? "<click:open_url:" + desc.getWebsite() + "><aqua><u>" + desc.getWebsite() + "</u></aqua></click>"
-                : "<gray>N/A</gray>";
-
-        String apiVersion = desc.getAPIVersion() != null
-                ? "<white>" + desc.getAPIVersion() + "</white>"
-                : "<gray>N/A</gray>";
-
-        String mainClass = desc.getMain() != null
-                ? "<white>" + desc.getMain() + "</white>"
-                : "<gray>N/A</gray>";
+        PluginDescriptionFile desc = target.getDescription();
+        String state = target.isEnabled()
+                ? "<green>● Enabled</green>"
+                : "<red>● Disabled</red>";
 
         sender.sendMessage(MessageUtil.parse(""));
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"));
         sender.sendMessage(MessageUtil.parse(
                 "  <gold>📦</gold> <yellow>" + target.getName() + "</yellow> "
-                + "<dark_gray>v</dark_gray><white>" + desc.getVersion() + "</white>"));
+                        + "<dark_gray>v</dark_gray><white>" + desc.getVersion() + "</white>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"));
+                "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"));
+        sender.sendMessage(MessageUtil.parse("  <gray>State:</gray> " + state));
+        sender.sendMessage(MessageUtil.parse("  <gray>Description:</gray> <white>"
+                + (desc.getDescription() != null ? desc.getDescription() : "—") + "</white>"));
+        sender.sendMessage(MessageUtil.parse("  <gray>Version:</gray> <white>" + desc.getVersion() + "</white>"));
+        sender.sendMessage(MessageUtil.parse("  <gray>API version:</gray> " + orNone(desc.getAPIVersion())));
+        sender.sendMessage(MessageUtil.parse("  <gray>Authors:</gray> " + orNone(
+                desc.getAuthors().isEmpty() ? null : String.join(", ", desc.getAuthors()))));
+        sender.sendMessage(MessageUtil.parse("  <gray>Load (ORDER):</gray> " + orNone(
+                desc.getLoad() != null ? desc.getLoad().name() : null)));
+        sender.sendMessage(MessageUtil.parse("  <gray>LoadBefore:</gray> " + orNone(
+                desc.getLoadBefore().isEmpty() ? null : String.join(", ", desc.getLoadBefore()))));
+        sender.sendMessage(MessageUtil.parse("  <gray>Depend:</gray> " + orNone(
+                desc.getDepend().isEmpty() ? null : String.join(", ", desc.getDepend()))));
+        sender.sendMessage(MessageUtil.parse("  <gray>SoftDepend:</gray> " + orNone(
+                desc.getSoftDepend().isEmpty() ? null : String.join(", ", desc.getSoftDepend()))));
+        sender.sendMessage(MessageUtil.parse("  <gray>Libraries:</gray> " + orNone(
+                desc.getLibraries().isEmpty() ? null : String.join(", ", desc.getLibraries()))));
+        sender.sendMessage(MessageUtil.parse("  <gray>Main class:</gray> " + orNone(desc.getMain())));
         sender.sendMessage(MessageUtil.parse(
-                "  <gray>State:</gray> " + (target.isEnabled() ? "<green>● Enabled</green>" : "<red>● Disabled</red>")));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>Description:</gray> <white>"
-                + (desc.getDescription() != null ? desc.getDescription() : "No description") + "</white>"));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>Authors:</gray> " + authors));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>Website:</gray> " + website));
-        sender.sendMessage(MessageUtil.parse(""));
-        sender.sendMessage(MessageUtil.parse(
-                "  <dark_gray>──</dark_gray> <gray>Technical</gray> <dark_gray>────────────────────</dark_gray>"));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>Main class:</gray> " + mainClass));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>API version:</gray> " + apiVersion));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>Depend:</gray> " + depend));
-        sender.sendMessage(MessageUtil.parse(
-                "  <gray>SoftDepend:</gray> " + softDepend));
-        sender.sendMessage(MessageUtil.parse(
-                "  <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"));
+                "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"));
         sender.sendMessage(MessageUtil.parse(""));
         return true;
     }
 
+    private static String orNone(String value) {
+        return value == null || value.isBlank()
+                ? "<gray>none</gray>"
+                : "<white>" + value + "</white>";
+    }
+
     // ==========================================================================
-    // CONFIRM: /ui plugin confirm
+    // ACTION — enable/disable/restart with confirmation
+    // ==========================================================================
+
+    private static boolean handleAction(CommandSender sender, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_red>❌</dark_red> <red>Usage: </red><white>/ui plugin " + args[1] + " <name></white>"));
+            return true;
+        }
+        String action = args[1].toLowerCase(Locale.ROOT);
+        String pluginName = args[2];
+
+        Plugin target = Bukkit.getPluginManager().getPlugin(pluginName);
+        if (target == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_red>❌</dark_red> <red>Plugin not found: </red><white>" + pluginName + "</white>"));
+            return true;
+        }
+        if (target.getName().equalsIgnoreCase("UI-Core")) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_red>❌</dark_red> <red>Cannot manage the UI core here. Use </red><white>/ui reload</white><red> instead.</red>"));
+            return true;
+        }
+
+        boolean isEnabled = target.isEnabled();
+        if (action.equals("enable") && isEnabled) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠</yellow> <white>" + target.getName() + "</white> <gray>is already enabled.</gray>"));
+            return true;
+        }
+        if (action.equals("disable") && !isEnabled) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠</yellow> <white>" + target.getName() + "</white> <gray>is already disabled.</gray>"));
+            return true;
+        }
+
+        UUID uuid = sender instanceof Player player ? player.getUniqueId() : CONSOLE_UUID;
+        pendingActions.put(uuid, new PendingAction(target.getName(), action, System.currentTimeMillis()));
+        startCleanupTask();
+
+        String actionDisplay = switch (action) {
+            case "enable" -> "ENABLE";
+            case "disable" -> "DISABLE";
+            case "restart" -> "RESTART";
+            default -> action.toUpperCase(Locale.ROOT);
+        };
+
+        sender.sendMessage(MessageUtil.parse(""));
+        sender.sendMessage(MessageUtil.parse(
+                "<dark_red>⚠</dark_red> <red>You are about to </red><yellow>" + actionDisplay
+                        + "</yellow> <red>this plugin:</red>"));
+        sender.sendMessage(MessageUtil.parse(
+                "  <white>" + target.getName() + "</white> <dark_gray>(v"
+                        + target.getDescription().getVersion() + ")</dark_gray>"));
+        sender.sendMessage(MessageUtil.parse(
+                "  <gray>State: </gray>" + (isEnabled ? "<green>ENABLED</green>" : "<red>DISABLED</red>")));
+        sender.sendMessage(MessageUtil.parse(
+                "  <gray>Description: </gray><white>" + target.getDescription().getDescription() + "</white>"));
+        sender.sendMessage(MessageUtil.parse(""));
+        sender.sendMessage(MessageUtil.parse(
+                "<red>Disabling or restarting a plugin may crash it or leave stale listeners.</red>"));
+        sender.sendMessage(MessageUtil.parse(
+                "<red>Only proceed if you know what you are doing.</red>"));
+        sender.sendMessage(MessageUtil.parse(""));
+        sender.sendMessage(MessageUtil.parse(
+                "<click:run_command:/ui plugin confirm><dark_green>[</dark_green><green>✔ Confirm</green><dark_green>]</dark_green></click>"
+                        + " <dark_gray>|</dark_gray> "
+                        + "<click:run_command:/ui plugin cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
+        sender.sendMessage(MessageUtil.parse(""));
+
+        ConsoleLogger.info("[PLUGIN] Pending " + action + " for " + target.getName() + " by " + sender.getName());
+        return true;
+    }
+
+    // ==========================================================================
+    // CONFIRM
     // ==========================================================================
 
     private static boolean handleConfirm(CommandSender sender) {
@@ -238,73 +233,73 @@ public final class PluginSubcommand {
 
         if (pending == null) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>No pending plugin action. Use </red><white>/ui plugin <name> <on|off|restart></white><red> first.</red>"));
+                    "<dark_red>❌</dark_red> <red>No pending plugin action. Use </red>"
+                            + "<white>/ui plugin <enable|disable|restart> <name></white><red> first.</red>"));
             return true;
         }
-
-        // Check whether the confirmation window has expired
-        if (System.currentTimeMillis() - pending.createdAt > TIMEOUT_MS) {
+        if (System.currentTimeMillis() - pending.createdAt() > TIMEOUT_MS) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>Confirmation timeout expired (30s). Use </red><white>/ui plugin <name> <on|off|restart></white><red> again.</red>"));
+                    "<dark_red>❌</dark_red> <red>Confirmation timeout expired (30s). Run the command again.</red>"));
             return true;
         }
 
-        Plugin target = Bukkit.getPluginManager().getPlugin(pending.pluginName);
+        Plugin target = Bukkit.getPluginManager().getPlugin(pending.pluginName());
         if (target == null) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>Plugin </red><white>" + pending.pluginName + "</white> <red>no longer exists!</red>"));
+                    "<dark_red>❌</dark_red> <red>Plugin </red><white>" + pending.pluginName()
+                            + "</white> <red>no longer exists!</red>"));
             return true;
         }
 
         try {
-            switch (pending.action) {
-                case "on" -> {
+            switch (pending.action()) {
+                case "enable" -> {
                     Bukkit.getPluginManager().enablePlugin(target);
                     sender.sendMessage(MessageUtil.parse(
-                            "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName
-                            + "</yellow> <white>enabled.</white>"));
-                    ConsoleLogger.info("[PLUGIN] " + sender.getName() + " enabled " + pending.pluginName);
+                            "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
+                                    + "</yellow> <white>enabled.</white>"));
+                    ConsoleLogger.info("[PLUGIN] " + sender.getName() + " enabled " + pending.pluginName());
                 }
-                case "off" -> {
+                case "disable" -> {
                     Bukkit.getPluginManager().disablePlugin(target);
                     sender.sendMessage(MessageUtil.parse(
-                            "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName
-                            + "</yellow> <white>disabled.</white>"));
-                    ConsoleLogger.info("[PLUGIN] " + sender.getName() + " disabled " + pending.pluginName);
+                            "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
+                                    + "</yellow> <white>disabled.</white>"));
+                    ConsoleLogger.info("[PLUGIN] " + sender.getName() + " disabled " + pending.pluginName());
                 }
                 case "restart" -> {
-                    String name = pending.pluginName;
                     Bukkit.getPluginManager().disablePlugin(target);
-                    Plugin reEnabled = Bukkit.getPluginManager().getPlugin(name);
-                    if (reEnabled != null) {
-                        Bukkit.getPluginManager().enablePlugin(reEnabled);
-                    }
-                    boolean success = reEnabled != null && Bukkit.getPluginManager().getPlugin(name).isEnabled();
+                    Plugin again = Bukkit.getPluginManager().getPlugin(pending.pluginName());
+                    if (again != null) Bukkit.getPluginManager().enablePlugin(again);
+                    Plugin now = Bukkit.getPluginManager().getPlugin(pending.pluginName());
+                    boolean success = now != null && now.isEnabled();
                     if (success) {
                         sender.sendMessage(MessageUtil.parse(
-                                "<green>✔</green> <white>Plugin </white><yellow>" + name
-                                + "</yellow> <white>restarted.</white>"));
+                                "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
+                                        + "</yellow> <white>restarted.</white>"));
                     } else {
                         sender.sendMessage(MessageUtil.parse(
-                                "<dark_red>⚠</dark_red> <red>Plugin </red><white>" + name
-                                + "</white> <red>was disabled but could not be re-enabled! Check console for errors.</red>"));
+                                "<dark_red>⚠</dark_red> <red>Plugin </red><white>" + pending.pluginName()
+                                        + "</white> <red>was disabled but could not be re-enabled! Check console.</red>"));
                     }
-                    ConsoleLogger.info("[PLUGIN] " + sender.getName() + " restarted " + name + " (success=" + success + ")");
+                    ConsoleLogger.info("[PLUGIN] " + sender.getName() + " restarted "
+                            + pending.pluginName() + " (success=" + success + ")");
+                }
+                default -> {
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable t) {
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_red>❌</dark_red> <red>Failed to </red><white>" + pending.action
-                    + "</white> <red>plugin: </red><white>" + e.getMessage() + "</white>"));
-            ConsoleLogger.error("[PLUGIN] Failed to " + pending.action + " " + pending.pluginName + ": " + e.getMessage());
-            e.printStackTrace();
+                    "<dark_red>❌</dark_red> <red>Failed to </red><white>" + pending.action()
+                            + "</white> <red>plugin: </red><white>" + t.getMessage() + "</white>"));
+            ConsoleLogger.error("[PLUGIN] Failed to " + pending.action() + " "
+                    + pending.pluginName() + ": " + t.getMessage());
         }
-
         return true;
     }
 
     // ==========================================================================
-    // CANCEL: /ui plugin cancel
+    // CANCEL
     // ==========================================================================
 
     private static boolean handleCancel(CommandSender sender) {
@@ -316,11 +311,11 @@ public final class PluginSubcommand {
                     "<dark_red>❌</dark_red> <red>No pending plugin action to cancel.</red>"));
             return true;
         }
-
         sender.sendMessage(MessageUtil.parse(
-                "<green>✔</green> <gray>Action cancelled: </gray><white>" + removed.action
-                + " " + removed.pluginName + "</white>"));
-        ConsoleLogger.info("[PLUGIN] " + sender.getName() + " cancelled " + removed.action + " for " + removed.pluginName);
+                "<green>✔</green> <gray>Action cancelled: </gray><white>" + removed.action()
+                        + " " + removed.pluginName() + "</white>"));
+        ConsoleLogger.info("[PLUGIN] " + sender.getName() + " cancelled " + removed.action()
+                + " for " + removed.pluginName());
         return true;
     }
 
@@ -330,23 +325,49 @@ public final class PluginSubcommand {
 
     private static void usage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
-                "<dark_red>❌</dark_red> <red>Usage: </red><white>/ui plugin <name> <on|off|restart|info></white>"));
+                "<dark_red>❌</dark_red> <red>Usage: </red><white>/ui plugin <enable|disable|restart|status> <name></white>"));
+        sender.sendMessage(MessageUtil.parse("  <gray>Examples:</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <gray>Examples:</gray>"));
+                "  <white>/ui plugin status WorldEdit</white> <gray>— full plugin info</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/ui plugin WorldEdit on</white> <gray>— enable WorldEdit</gray>"));
+                "  <white>/ui plugin enable Essentials</white> <gray>— enable a plugin</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/ui plugin LuckPerms off</white> <gray>— disable LuckPerms</gray>"));
+                "  <white>/ui plugin disable LuckPerms</white> <gray>— disable a plugin</gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <white>/ui plugin Essentials restart</white> <gray>— restart Essentials</gray>"));
-        sender.sendMessage(MessageUtil.parse(
-                "  <white>/ui plugin Essentials info</white> <gray>— show plugin info</gray>"));
+                "  <white>/ui plugin restart Vault</white> <gray>— restart a plugin (with confirmation)</gray>"));
     }
 
-    /**
-     * Starts the background cleanup task (once).
-     * Runs every 5 seconds, removes expired entries and notifies their owners.
-     */
+    /** Tab-complete for the LegacySubCommandAdapter consumer. */
+    public static List<String> tabComplete(CommandSender sender, String[] args) {
+        // args[0] = "plugin"
+        if (args.length == 2) {
+            return List.of("enable", "disable", "restart", "status");
+        }
+        if (args.length == 3) {
+            if (args[1].equalsIgnoreCase("status")) {
+                List<String> names = new ArrayList<>();
+                for (Plugin p : Bukkit.getPluginManager().getPlugins()) {
+                    if (!p.getName().equalsIgnoreCase("UI-Core")) names.add(p.getName());
+                }
+                return names;
+            }
+            // lifecycle: suggest only plugins in the opposite state
+            String action = args[1].toLowerCase(Locale.ROOT);
+            List<String> names = new ArrayList<>();
+            for (Plugin p : Bukkit.getPluginManager().getPlugins()) {
+                boolean enabled = p.isEnabled();
+                boolean relevant = switch (action) {
+                    case "enable" -> !enabled;
+                    case "disable", "restart" -> enabled;
+                    default -> false;
+                };
+                if (relevant && !p.getName().equalsIgnoreCase("UI-Core")) names.add(p.getName());
+            }
+            return names;
+        }
+        return List.of();
+    }
+
     private static void startCleanupTask() {
         if (cleanupTask != null && !cleanupTask.isCancelled()) return;
 
@@ -354,46 +375,25 @@ public final class PluginSubcommand {
             long now = System.currentTimeMillis();
 
             pendingActions.entrySet().removeIf(entry -> {
-                if (now - entry.getValue().createdAt > TIMEOUT_MS) {
-                    UUID uuid = entry.getKey();
-                    PendingAction expired = entry.getValue();
-
-                    // Notify the player if online
-                    if (!uuid.equals(CONSOLE_UUID)) {
-                        Player player = Bukkit.getPlayer(uuid);
-                        if (player != null && player.isOnline()) {
-                            player.sendMessage(MessageUtil.parse(
-                                    "<dark_red>⏰</dark_red> <red>Confirmation expired: </red><yellow>"
-                                    + expired.action + " " + expired.pluginName
-                                    + "</yellow> <gray>(30s timeout)</gray>"));
-                        }
-                    }
-
-                    ConsoleLogger.info("[PLUGIN] Pending " + expired.action + " for "
-                            + expired.pluginName + " expired (timeout)");
-                    return true; // remove
+                if (now - entry.getValue().createdAt() > TIMEOUT_MS) {
+                    ConsoleLogger.info("[PLUGIN] Pending " + entry.getValue().action()
+                            + " for " + entry.getValue().pluginName() + " expired (timeout)");
+                    return true;
                 }
                 return false;
             });
 
-            // If there are no more pending actions — cancel the task
             if (pendingActions.isEmpty() && cleanupTask != null) {
                 cleanupTask.cancel();
                 cleanupTask = null;
             }
-        }, 100L, 100L); // first run after 5s, then every 5s
+        }, 100L, 100L);
     }
 
-    /**
-     * Clears all pending actions. Called on plugin reload.
-     */
+    /** Clears all pending actions. Called on plugin reload. */
     public static void clearPendingActions() {
         pendingActions.clear();
     }
-
-    // ==========================================================================
-    // INNER — PendingAction record
-    // ==========================================================================
 
     private record PendingAction(String pluginName, String action, long createdAt) {}
 }

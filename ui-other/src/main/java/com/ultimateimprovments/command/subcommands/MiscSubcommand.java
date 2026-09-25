@@ -9,7 +9,6 @@ import com.ultimateimprovments.mechanics.features.items.NotesGUI;
 import com.ultimateimprovments.mechanics.features.player.VanishManager;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
 import com.ultimateimprovments.mechanics.features.player.ElytraBoostManager;
-import com.ultimateimprovments.mechanics.features.items.AutoCraftManager;
 import com.ultimateimprovments.mechanics.features.world.MinecartSpeedManager;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
@@ -64,14 +63,20 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // TOGGLESPEED
+    // SHOWSPEED — minecart speed display, /ui showspeed <on|off>
     // =========================
-    public static boolean toggleSpeed(CommandSender sender) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.togglespeed")) { CommandErrors.noPermission(player); return true; }
+    private static final String PERM_SHOWSPEED = "ui.command.showspeed";
+
+    public static boolean showSpeed(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
+        if (!player.hasPermission(PERM_SHOWSPEED)) { CommandErrors.noPermission(player); return true; }
+        Boolean want = parseOnOff(args);
+        if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui showspeed"))); return true; }
         UUID uuid = player.getUniqueId();
-        MinecartSpeedManager.toggleSpeedDisplay(uuid);
-        if (MinecartSpeedManager.isSpeedDisplayEnabled(uuid)) {
+        if (MinecartSpeedManager.isSpeedDisplayEnabled(uuid) != want) {
+            MinecartSpeedManager.toggleSpeedDisplay(uuid);
+        }
+        if (want) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_enabled", "<green>⚡</green> <white>Speed display: </white><green>ON</green>")));
         } else {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_disabled", "<red>⚡</red> <white>Speed display: </white><red>OFF</red>")));
@@ -80,17 +85,24 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // TOGGLEFLY
+    // ELYTRABOOST — elytra boost on jump, /ui elytraboost <on|off> (default OFF)
     // =========================
-    public static boolean toggleFly(CommandSender sender) {
+    private static final String PERM_ELYTRABOOST = "ui.command.elytraboost";
+
+    public static boolean elytraBoost(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.togglefly")) { CommandErrors.noPermission(player); return true; }
+        if (!player.hasPermission(PERM_ELYTRABOOST)) { CommandErrors.noPermission(player); return true; }
+        Boolean want = parseOnOff(args);
+        if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui elytraboost"))); return true; }
         UUID uuid = player.getUniqueId();
-        ElytraBoostManager.toggleFlyEnabled(uuid);
-        if (ElytraBoostManager.isFlyEnabled(uuid)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.fly_enabled", "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>")));
+        boolean nowEnabled = ElytraBoostManager.isFlyEnabled(uuid);
+        if (nowEnabled != want) {
+            ElytraBoostManager.toggleFlyEnabled(uuid);
+        }
+        if (want) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.elytra_enabled", "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>")));
         } else {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.fly_disabled", "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>")));
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.elytra_disabled", "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>")));
         }
         return true;
     }
@@ -111,24 +123,27 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // TOGGLEAUTOCRAFT
+    // (toggleautocraft removed — replaced by /ui craftrecipe)
     // =========================
-    public static boolean toggleAutoCraft(CommandSender sender) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.autocraft")) { CommandErrors.noPermission(player); return true; }
-        AutoCraftManager.toggleAutoCraft(player);
-        return true;
-    }
 
     // =========================
-    // TOGGLEBB — bossbar per-player
+    // BOSSBAR — /ui bossbar <on|off> (default ON; config gate: bossbar.enabled)
     // =========================
-    public static boolean toggleBossBar(CommandSender sender) {
+    private static final String PERM_BOSSBAR = "ui.command.bossbar";
+
+    public static boolean bossbar(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.togglebb")) { CommandErrors.noPermission(player); return true; }
-        UUID uuid = player.getUniqueId();
-        boolean enabled = PlayerSettingsDB.toggleBossbar(uuid);
-        if (enabled) {
+        if (!player.hasPermission(PERM_BOSSBAR)) { CommandErrors.noPermission(player); return true; }
+        Boolean want = parseOnOff(args);
+        if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui bossbar"))); return true; }
+        if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("bossbar.enabled", false)) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.feature_disabled_in_config",
+                    "<yellow>⚠ %feature% is disabled in the config (%key%: false) — enable it there first.</yellow>")
+                    .replace("%feature%", "BossBar").replace("%key%", "bossbar.enabled")));
+            return true;
+        }
+        PlayerSettingsDB.setBossbarEnabled(player.getUniqueId(), want);
+        if (want) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>BossBar: </white><green>ON</green>"));
         } else {
             player.sendMessage(MessageUtil.parse("<red>❌</red> <white>BossBar: </white><red>OFF</red>"));
@@ -137,14 +152,23 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // TOGGLEPING — ping sound per-player
+    // PINGSOUND — /ui pingsound <on|off> (default ON; config gate: chat_ping.enabled)
     // =========================
-    public static boolean togglePing(CommandSender sender) {
+    private static final String PERM_PINGSOUND = "ui.command.pingsound";
+
+    public static boolean pingsound(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.toggleping")) { CommandErrors.noPermission(player); return true; }
-        UUID uuid = player.getUniqueId();
-        boolean enabled = PlayerSettingsDB.togglePing(uuid);
-        if (enabled) {
+        if (!player.hasPermission(PERM_PINGSOUND)) { CommandErrors.noPermission(player); return true; }
+        Boolean want = parseOnOff(args);
+        if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui pingsound"))); return true; }
+        if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("chat_ping.enabled", true)) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.feature_disabled_in_config",
+                    "<yellow>⚠ %feature% is disabled in the config (%key%: false) — enable it there first.</yellow>")
+                    .replace("%feature%", "Ping sound").replace("%key%", "chat_ping.enabled")));
+            return true;
+        }
+        PlayerSettingsDB.setPingEnabled(player.getUniqueId(), want);
+        if (want) {
             player.sendMessage(MessageUtil.parse("<green>🔔</green> <white>Ping sound: </white><green>ON</green>"));
         } else {
             player.sendMessage(MessageUtil.parse("<red>🔕</red> <white>Ping sound: </white><red>OFF</red>"));
@@ -153,14 +177,23 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // TOGGLESB — scoreboard per-player
+    // SCOREBOARD — /ui scoreboard <on|off> (default ON; config gate: scoreboard.enabled)
     // =========================
-    public static boolean toggleScoreboard(CommandSender sender) {
+    private static final String PERM_SCOREBOARD = "ui.command.scoreboard";
+
+    public static boolean scoreboard(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.togglesb")) { CommandErrors.noPermission(player); return true; }
-        UUID uuid = player.getUniqueId();
-        boolean enabled = PlayerSettingsDB.toggleScoreboard(uuid);
-        if (enabled) {
+        if (!player.hasPermission(PERM_SCOREBOARD)) { CommandErrors.noPermission(player); return true; }
+        Boolean want = parseOnOff(args);
+        if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui scoreboard"))); return true; }
+        if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("scoreboard.enabled", false)) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.feature_disabled_in_config",
+                    "<yellow>⚠ %feature% is disabled in the config (%key%: false) — enable it there first.</yellow>")
+                    .replace("%feature%", "Scoreboard").replace("%key%", "scoreboard.enabled")));
+            return true;
+        }
+        PlayerSettingsDB.setScoreboardEnabled(player.getUniqueId(), want);
+        if (want) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Scoreboard: </white><green>ON</green>"));
         } else {
             player.sendMessage(MessageUtil.parse("<red>❌</red> <white>Scoreboard: </white><red>OFF</red>"));
@@ -169,25 +202,38 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // TOGGLEBIND — enable/disable wireless redstone binding
+    // WIRELESSBIND — /ui wirelessbind <on|off> (default OFF)
     // =========================
-    public static boolean toggleBind(CommandSender sender) {
+    private static final String PERM_WIRELESSBIND = "ui.command.wirelessbind";
+
+    public static boolean wirelessbind(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
             return true;
         }
-        if (!player.hasPermission("ui.command.togglebind")) {
+        if (!player.hasPermission(PERM_WIRELESSBIND)) {
             CommandErrors.noPermission(player);
             return true;
         }
-        UUID uuid = player.getUniqueId();
-        boolean enabled = PlayerSettingsDB.toggleWirelessBind(uuid);
-        if (enabled) {
+        Boolean want = parseOnOff(args);
+        if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui wirelessbind"))); return true; }
+        PlayerSettingsDB.setWirelessBindEnabled(player.getUniqueId(), want);
+        if (want) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Wireless redstone binding: </white><green>ON</green>"));
         } else {
             player.sendMessage(MessageUtil.parse("<red>❌</red> <white>Wireless redstone binding: </white><red>OFF</red>"));
         }
         return true;
+    }
+
+    /** Parses args[1] as on/off. Returns null when missing/invalid. */
+    private static Boolean parseOnOff(String[] args) {
+        if (args.length < 2) return null;
+        return switch (args[1].toLowerCase()) {
+            case "on", "enable", "true", "1" -> Boolean.TRUE;
+            case "off", "disable", "false", "0" -> Boolean.FALSE;
+            default -> null;
+        };
     }
 
     // =========================

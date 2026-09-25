@@ -40,6 +40,9 @@ public class UIOther extends JavaPlugin {
         com.ultimateimprovments.module.SimpleModules.initPostCoreSubsystems();
         initPostModuleSystems();
 
+        // Report module statistics to the addon registry (fed to /ui addon status).
+        reportModuleStats(mm);
+
         ConsoleLogger.success("[UI-Other] All features enabled!");
     }
 
@@ -64,6 +67,29 @@ public class UIOther extends JavaPlugin {
         // survived re-enables.
         com.ultimateimprovments.space.SpaceRocketManager.shutdown();
         ConsoleLogger.success("[UI-Other] Disabled!");
+    }
+
+    /**
+     * Feeds this addon's module counters + failures into AddonRegistry so
+     * {@code /ui addon status UI-Other} and the load-error counters stay truthful.
+     */
+    private void reportModuleStats(ModuleManager mm) {
+        try {
+            var modules = mm.getModules();
+            int total = modules.size();
+            int loaded = 0;
+            for (var m : modules) {
+                if (m.isEnabled()) {
+                    loaded++;
+                } else {
+                    com.ultimateimprovments.addon.AddonRegistry.reportError(getName(),
+                            "module " + m.getName() + " failed: " + m.getDisableReason());
+                }
+            }
+            com.ultimateimprovments.addon.AddonRegistry.reportModules(getName(), loaded, total);
+        } catch (Throwable t) {
+            ConsoleLogger.warn("[UI-Other] Module stats report failed: " + t.getMessage());
+        }
     }
 
     private void registerAllModules(ModuleManager mm) {

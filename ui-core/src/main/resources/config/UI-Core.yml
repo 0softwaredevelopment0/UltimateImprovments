@@ -76,16 +76,60 @@ messages:
     timeout_retry_hint: <gray>Check internet connection or try again later.</gray>
     check_error: <red>❌ Error checking for updates!</red>
   general:
-    player_only: <red>❌ Only players can use this command!</red>
-    no_permission: <red>❌ You don't have permission to use UltimateImprovments commands!</red>
-    unknown_command: <red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray>
-      for the command list.</gray>
-    no_args: '<white>Running <yellow>UltimateImprovments <gray>v<white>%version%</white>
+    player_only: <red>❌ Только для игроков!</red>
+    no_permission: <red>❌ У вас нет прав на команды UltimateImprovments!</red>
+    unknown_command: <red>❌ Неизвестная команда! </red><gray>Используйте </gray><white>/ui help</white><gray>
+      для списка команд.</gray>
+    no_args: '<white>Запущен <yellow>UltimateImprovments <gray>v<white>%version%</white>
 
-      <white>Type <yellow>/ui help <white>to view commands list.</white>'
-    structure_player_only: '<red>❌ Error: </red><gray>Only players can use this command.</gray>'
-    structure_no_permission: <red>❌ You don't have permission to manage structures!</red>
-    unknown_subcommand: '<red>❌ Unknown subcommand: </red><white>%subcommand%</white>'
+      <white>Введите <yellow>/ui help <white>для списка команд.</white>'
+    structure_player_only: '<red>❌ Ошибка: </red><gray>Только для игроков.</gray>'
+    structure_no_permission: <red>❌ Нет прав на управление структурами!</red>
+    unknown_subcommand: '<red>❌ Неизвестная подкоманда: </red><white>%subcommand%</white>'
+    on_off_usage: '<red>❌ Использование: </red><white>/%cmd% <on|off></white>'
+  addon:
+    list_header: <gold>════ <white>Аддоны UltimateImprovments</white> <gold>════
+    list_summary: '<gray>Загружено: </gray><green>%loaded%</green><gray> — без ошибок загрузки</gray>'
+    list_summary_errors: '<gray>Загружено: </gray><green>%loaded%</green><gray> — ошибок: </gray><red>%errors%</red><gray> (см. /ui addon status</gray>'
+    list_empty: '<yellow>Аддоны не найдены. Положите jar с</yellow> <white>addon-for UI-Core</white> <yellow>в plugin.yml в папку plugins.</yellow>'
+    list_page_footer: <dark_gray>Страница %page%/%pages% — /ui addon list <page></dark_gray>
+    row_ok: <green>✔</green>
+    row_errors: <yellow>⚠</yellow>
+    row_disabled: <gray>○</gray>
+    row_missing: <dark_red>✖</dark_red>
+    status_usage: '<red>❌ Использование: </red><white>/ui addon status <аддон></white>'
+    status_not_installed: '<red>✖ %addon%</red> <gray>— jar зарегистрирован, но не загружен.</gray>'
+    status_name: <gold>🧩 %name%</gold> <dark_gray>v%version%</dark_gray>
+    status_row: '<gray>%label%:</gray> %value%'
+    status_modules: '<gray>Модули:</gray> %value%'
+    status_errors_header: '<red>Ошибки загрузки (%count%):</red>'
+    status_error_row: '  <dark_red>•</dark_red> <red>%error%</red>'
+    status_no_errors: <green>Ошибок загрузки нет.</green>
+    state_enabled: <green>включён</green>
+    state_disabled: <red>выключен</red>
+    modules_unknown: <dark_gray>нет данных (аддон не сообщает статистику)</dark_gray>
+    not_found: '<red>❌ Аддон не найден: </red><white>%addon%</white>'
+    core_protected: '<red>❌ Ядро нельзя управлять здесь. Используйте</red> <white>/ui reload</white><red>.</red>'
+    already_enabled: <yellow>⚠ %addon% уже включён.</yellow>
+    already_disabled: <yellow>⚠ %addon% уже выключен.</yellow>
+    action_usage: '<red>❌ Использование: </red><white>/ui addon %action% <аддон></white>'
+    confirm_header: <yellow>⚠</yellow> <red>Вы собираетесь </red><yellow>%action%</yellow> <red>аддон:</red>
+    confirm_row: '  <white>%addon%</white> <dark_gray>v%version%</dark_gray>'
+    confirm_warning: '  <red>Горячее выключение/включение может уронить аддон или оставить лишние слушатели. Продолжайте, только если понимаете последствия.</red>'
+    no_pending: <red>❌ Нет ожидающего действия.</red>
+    confirm_expired: <red>❌ Время подтверждения истекло — выполните команду заново.</red>
+    action_cancelled: <green>✔</green> <white>Действие отменено.</white>
+    action_done: <green>✔</green> <white>Аддон </white><yellow>%addon%</yellow> <white>%verb%.</white>
+    action_done_with_errors: '<yellow>⚠</yellow> <white>Аддон </white><yellow>%addon%</yellow> <white>%verb%, но есть</white> <red>%errors% ошибок загрузки</red><white> — см.</white> <white>/ui addon status %addon%</white>'
+    action_not_enabled: <red>⚠ %addon% не удалось включить! Проверьте консоль.</red>
+    action_failed: '<red>❌ Не удалось %action% %addon%: %error%</red>'
+    unknown_subcommand: '<red>❌ Неизвестная подкоманда. Доступно: list, status, enable, disable, restart.</red>'
+  craftrecipe:
+    usage: '<red>❌ Использование: </red><white>/ui craftrecipe <рецепт></white> <gray>(Tab — список всех)</gray>'
+    not_found: '<red>❌ Рецепт не найден: </red><white>%recipe%</white> <gray>(Tab — список всех)</gray>'
+    no_result: <red>❌ У рецепта нет результата.</red>
+    success: <green>✔</green> <white>Создано </white><yellow>%item%</yellow><white> ×%amount% (без ресурсов).</white>
+    inventory_full: <yellow>⚠ Инвентарь полон! Поместилось только</yellow> <white>%given%/%total%</white> <yellow>— ничего не выпало.</yellow>
   vote:
     errors:
       player_only: <red>❌ Only players can use this command!</red>
@@ -406,16 +450,60 @@ messages_en:
     timeout_retry_hint: <gray>Check internet connection or try again later.</gray>
     check_error: <red>❌ Error checking for updates!</red>
   general:
-    player_only: <red>❌ Only players can use this command!</red>
-    no_permission: <red>❌ You don't have permission to use UltimateImprovments commands!</red>
-    unknown_command: <red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray>
-      for the command list.</gray>
-    no_args: '<white>Running <yellow>UltimateImprovments <gray>v<white>%version%</white>
+    player_only: <red>❌ Только для игроков!</red>
+    no_permission: <red>❌ У вас нет прав на команды UltimateImprovments!</red>
+    unknown_command: <red>❌ Неизвестная команда! </red><gray>Используйте </gray><white>/ui help</white><gray>
+      для списка команд.</gray>
+    no_args: '<white>Запущен <yellow>UltimateImprovments <gray>v<white>%version%</white>
 
-      <white>Type <yellow>/ui help <white>to view commands list.</white>'
-    structure_player_only: '<red>❌ Error: </red><gray>Only players can use this command.</gray>'
-    structure_no_permission: <red>❌ You don't have permission to manage structures!</red>
-    unknown_subcommand: '<red>❌ Unknown subcommand: </red><white>%subcommand%</white>'
+      <white>Введите <yellow>/ui help <white>для списка команд.</white>'
+    structure_player_only: '<red>❌ Ошибка: </red><gray>Только для игроков.</gray>'
+    structure_no_permission: <red>❌ Нет прав на управление структурами!</red>
+    unknown_subcommand: '<red>❌ Неизвестная подкоманда: </red><white>%subcommand%</white>'
+    on_off_usage: '<red>❌ Использование: </red><white>/%cmd% <on|off></white>'
+  addon:
+    list_header: <gold>════ <white>Аддоны UltimateImprovments</white> <gold>════
+    list_summary: '<gray>Загружено: </gray><green>%loaded%</green><gray> — без ошибок загрузки</gray>'
+    list_summary_errors: '<gray>Загружено: </gray><green>%loaded%</green><gray> — ошибок: </gray><red>%errors%</red><gray> (см. /ui addon status</gray>'
+    list_empty: '<yellow>Аддоны не найдены. Положите jar с</yellow> <white>addon-for UI-Core</white> <yellow>в plugin.yml в папку plugins.</yellow>'
+    list_page_footer: <dark_gray>Страница %page%/%pages% — /ui addon list <page></dark_gray>
+    row_ok: <green>✔</green>
+    row_errors: <yellow>⚠</yellow>
+    row_disabled: <gray>○</gray>
+    row_missing: <dark_red>✖</dark_red>
+    status_usage: '<red>❌ Использование: </red><white>/ui addon status <аддон></white>'
+    status_not_installed: '<red>✖ %addon%</red> <gray>— jar зарегистрирован, но не загружен.</gray>'
+    status_name: <gold>🧩 %name%</gold> <dark_gray>v%version%</dark_gray>
+    status_row: '<gray>%label%:</gray> %value%'
+    status_modules: '<gray>Модули:</gray> %value%'
+    status_errors_header: '<red>Ошибки загрузки (%count%):</red>'
+    status_error_row: '  <dark_red>•</dark_red> <red>%error%</red>'
+    status_no_errors: <green>Ошибок загрузки нет.</green>
+    state_enabled: <green>включён</green>
+    state_disabled: <red>выключен</red>
+    modules_unknown: <dark_gray>нет данных (аддон не сообщает статистику)</dark_gray>
+    not_found: '<red>❌ Аддон не найден: </red><white>%addon%</white>'
+    core_protected: '<red>❌ Ядро нельзя управлять здесь. Используйте</red> <white>/ui reload</white><red>.</red>'
+    already_enabled: <yellow>⚠ %addon% уже включён.</yellow>
+    already_disabled: <yellow>⚠ %addon% уже выключен.</yellow>
+    action_usage: '<red>❌ Использование: </red><white>/ui addon %action% <аддон></white>'
+    confirm_header: <yellow>⚠</yellow> <red>Вы собираетесь </red><yellow>%action%</yellow> <red>аддон:</red>
+    confirm_row: '  <white>%addon%</white> <dark_gray>v%version%</dark_gray>'
+    confirm_warning: '  <red>Горячее выключение/включение может уронить аддон или оставить лишние слушатели. Продолжайте, только если понимаете последствия.</red>'
+    no_pending: <red>❌ Нет ожидающего действия.</red>
+    confirm_expired: <red>❌ Время подтверждения истекло — выполните команду заново.</red>
+    action_cancelled: <green>✔</green> <white>Действие отменено.</white>
+    action_done: <green>✔</green> <white>Аддон </white><yellow>%addon%</yellow> <white>%verb%.</white>
+    action_done_with_errors: '<yellow>⚠</yellow> <white>Аддон </white><yellow>%addon%</yellow> <white>%verb%, но есть</white> <red>%errors% ошибок загрузки</red><white> — см.</white> <white>/ui addon status %addon%</white>'
+    action_not_enabled: <red>⚠ %addon% не удалось включить! Проверьте консоль.</red>
+    action_failed: '<red>❌ Не удалось %action% %addon%: %error%</red>'
+    unknown_subcommand: '<red>❌ Неизвестная подкоманда. Доступно: list, status, enable, disable, restart.</red>'
+  craftrecipe:
+    usage: '<red>❌ Использование: </red><white>/ui craftrecipe <рецепт></white> <gray>(Tab — список всех)</gray>'
+    not_found: '<red>❌ Рецепт не найден: </red><white>%recipe%</white> <gray>(Tab — список всех)</gray>'
+    no_result: <red>❌ У рецепта нет результата.</red>
+    success: <green>✔</green> <white>Создано </white><yellow>%item%</yellow><white> ×%amount% (без ресурсов).</white>
+    inventory_full: <yellow>⚠ Инвентарь полон! Поместилось только</yellow> <white>%given%/%total%</white> <yellow>— ничего не выпало.</yellow>
   vote:
     errors:
       player_only: <red>❌ Only players can use this command!</red>
