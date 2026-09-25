@@ -5,7 +5,7 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-26%2B-orange)](https://www.oracle.com/java/)
 [![Server](https://img.shields.io/badge/Paper-26.2%2B-green)](https://papermc.io/)
-[![Version](https://img.shields.io/badge/Version-1.8.2-brightgreen)](https://github.com/rizer001-Development/UltimateImprovments/releases)
+[![Version](https://img.shields.io/badge/Version-1.8.3-brightgreen)](https://github.com/rizer001-Development/UltimateImprovments/releases)
 ![Development status](https://img.shields.io/badge/status-Stable-green)
 
 **Author:** [rizer001](https://github.com/rizer001)
@@ -87,6 +87,22 @@ End-crystal turrets: configure via Shift+RMB, whitelist/blacklist targets, fires
 ## Modular Architecture
 
 Every feature is a **module** that can be toggled on/off at runtime via `/ui modules`. If one module fails, the rest keep running. Essential modules (Core, Database, Auth, Crafting, Energy, Reactor, ...) are always on; the rest are optional.
+
+### Addon system
+
+**UI-Core is the main (mandatory) part** of UltimateImprovments. Everything else — the bundled `UI-*` plugins and any third-party plugin — is an **addon**. A plugin is recognized as an addon by a marker in its `plugin.yml`:
+
+```yaml
+addon-for: UI-Core
+# or a list: addon-for: [UI-Core, Other-Host]
+```
+Addons must also declare `depend: [UI-Core]` so they load after Core. Core discovers addons automatically (plugin enable events + a startup pass), keeps a registry, and `/ui addons` shows every addon with its status:
+
+```
+/ui addons
+```
+
+Requires the `ui.command.addons` permission (included in `ui.admin` / `ui.*`).
 
 ---
 
