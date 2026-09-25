@@ -108,22 +108,9 @@ public class PluginStartup {
         ConsoleLogger.info("[Init] Core modules ready.");
 
         // /ui addon — part of the addon system (Core = main, rest = addons).
-        // Registered with the legacy "addons" alias for old habit compatibility.
         try {
-            com.ultimateimprovments.command.SubCommandRegistry registry =
-                    com.ultimateimprovments.command.SubCommandRegistry.getInstance();
-            com.ultimateimprovments.command.subcommands.AddonSubcommand impl =
-                    new com.ultimateimprovments.command.subcommands.AddonSubcommand();
-            registry.register(impl);
-            registry.register(new com.ultimateimprovments.command.SubCommand() {
-                @Override public boolean execute(org.bukkit.command.CommandSender s, String[] a) {
-                    return impl.execute(s, a);
-                }
-                @Override public java.util.List<String> tabComplete(org.bukkit.command.CommandSender s, String[] a) {
-                    return impl.tabComplete(s, a);
-                }
-                @Override public String getName() { return "addons"; }
-            });
+            com.ultimateimprovments.command.SubCommandRegistry.getInstance()
+                    .register(new com.ultimateimprovments.command.subcommands.AddonSubcommand());
         } catch (Exception e) {
             ConsoleLogger.warn("[Addons] Failed to register /ui addon: " + e.getMessage());
         }

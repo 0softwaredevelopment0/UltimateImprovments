@@ -123,8 +123,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
         registry.register(LegacySubCommandAdapter.of("wirelessbind",
                 (s, a) -> { MiscSubcommand.wirelessbind(s, a); return true; },
-                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); }),
-                List.of("togglebind")));
+                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
         // ── Free craft: /ui craftrecipe <recipe> ──
         registry.register(LegacySubCommandAdapter.of("craftrecipe",
                 CraftRecipeSubcommand::execute,
