@@ -1,0 +1,24 @@
+{
+  "name": "ultimateimprovments",
+  "version": "1.0.0",
+  "description": "**A modular, feature-packed Minecraft plugin for Paper 26.2+ (Java 26)**",
+  "main": "scan_cyrillic.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rizer001-Development/UltimateImprovments.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rizer001-Development/UltimateImprovments/issues"
+  },
+  "homepage": "https://github.com/rizer001-Development/UltimateImprovments#readme",
+  "dependencies": {
+    "ssh2": "^1.17.0"
+  }
+}
