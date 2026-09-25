@@ -90,7 +90,10 @@ public class OpWhitelistManager implements Listener {
      * and the tables are empty. After the migration the JSON file is deleted.
      */
     private static void migrateFromJson(Connection con) {
-        java.io.File jsonFile = new java.io.File(Main.getInstance().getDataFolder(), "op-whitelist.json");
+        // Shared family folder (op-whitelist.json is migrated out of legacy
+        // plugin folders by UltimateDirs on startup).
+        java.io.File jsonFile = new java.io.File(
+                com.ultimateimprovments.core.UltimateDirs.base(), "op-whitelist.json");
         if (!jsonFile.exists()) return;
 
         // Check whether the DB already has data

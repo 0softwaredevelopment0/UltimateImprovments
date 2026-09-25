@@ -1,5 +1,7 @@
 package com.ultimateimprovments.core;
 
+import com.ultimateimprovments.addon.AddonRegistry;
+import com.ultimateimprovments.command.CommandOutcomeTracker;
 import com.ultimateimprovments.database.DatabaseManager;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -33,9 +35,18 @@ public class PluginShutdown {
             mm.shutdownAll();
         }
 
+        // Persist any pending per-addon config edits (dirty TOML files).
+        try { com.ultimateimprovments.config.AddonConfigManager.saveAll(); }
+        catch (Exception e) { ConsoleLogger.warn("[Config] Save on shutdown: " + e.getMessage()); }
+
         // Close database
         try { DatabaseManager.close(); }
         catch (Exception e) { ConsoleLogger.warn("[DB] Close: " + e.getMessage()); }
+
+        // Reset the addon registry so a /ui reload re-discovers addons cleanly.
+        AddonRegistry.clear();
+        // Drop the /ui outcome listener (re-registered by the command logger).
+        CommandOutcomeTracker.clearListener();
 
         PluginStartup.resetStartupFlag();
         ConsoleLogger.success("[PLUGIN] UI-Core disabled.");

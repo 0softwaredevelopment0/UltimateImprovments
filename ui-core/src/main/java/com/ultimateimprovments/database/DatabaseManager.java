@@ -1,6 +1,7 @@
 package com.ultimateimprovments.database;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.UltimateDirs;
 
 import java.io.File;
 import java.sql.*;
@@ -28,21 +29,22 @@ public class DatabaseManager {
             }
 
             Main plugin = Main.getInstance();
-            File dataFolder = plugin.getDataFolder();
-            dbFile = new File(dataFolder, "database.db");
+
+            // ONE shared database for the whole UI-* family, in the shared folder
+            // plugins/UltimateImprovments/ (see UltimateDirs).
+            dbFile = UltimateDirs.databaseFile();
 
             // ═══════════════════════════════════════════════
-            // MIGRATION: if the plugin was renamed (MC-Plugin → UltimateImprovments)
-            // and there is no new DB, but one exists in the MC-Plugin folder — copy it
+            // MIGRATION: legacy single-plugin database (MC-Plugin → UltimateImprovments)
             // ═══════════════════════════════════════════════
             if (!dbFile.exists()) {
                 File oldDbFile = new File(
-                        dataFolder.getParentFile(),
+                        UltimateDirs.baseParent(),
                         "MC-Plugin" + File.separator + "database.db"
                 );
                 if (oldDbFile.exists()) {
                     try {
-                        dataFolder.mkdirs();
+                        dbFile.getParentFile().mkdirs();
                         java.nio.file.Files.copy(
                                 oldDbFile.toPath(),
                                 dbFile.toPath(),

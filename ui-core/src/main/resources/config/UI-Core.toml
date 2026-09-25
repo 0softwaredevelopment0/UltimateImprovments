@@ -1,0 +1,11 @@
+# UI-Core settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+prefix = "<white>[<green>UI<white>] <reset>"
+plugin_version = "1.8.128"
+
+[reputation]
+report_confirmed = -5
+punish_warn = -1
+punish_mute = -3
+punish_ban = -10

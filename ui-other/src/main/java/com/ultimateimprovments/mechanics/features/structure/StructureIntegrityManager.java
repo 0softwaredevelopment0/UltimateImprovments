@@ -488,7 +488,7 @@ public class StructureIntegrityManager {
      * into SQLite. Runs once at startup after loadData().
      */
     private void migrateOldDat() {
-        File oldDat = new File(plugin.getDataFolder(), "structure_integrity.dat");
+        File oldDat = new File(com.ultimateimprovments.core.UltimateDirs.base(), "structure_integrity.dat");
         if (!oldDat.exists()) return;
 
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(oldDat))) {

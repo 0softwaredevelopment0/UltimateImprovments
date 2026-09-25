@@ -1,0 +1,18 @@
+# UI-Datapack settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+[datapack]
+enabled = true
+mode = "override"
+restart_to_apply = false
+warn_if_not_loaded = true
+auto_enable = false
+
+[datapack.modules]
+enchantments = true
+advancements = true
+custom_recipes = true
+vanilla_recipes = true
+loot_tables = true
+worldgen = true
+dimension_limits = true

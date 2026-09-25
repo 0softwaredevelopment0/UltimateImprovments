@@ -1,0 +1,12 @@
+# UI-Chat messages (RU)
+# Edit values below; the file is reloaded by /ui reload.
+
+lang = "en"
+
+[chat_ping]
+notification = "<gray>🔔 You were pinged by</gray> <white>%sender%</white>"
+
+[chat_filter]
+message = "<dark_red>❌</dark_red> <red>Your message was flagged for prohibited content!</red>"
+violation_highlight = "<gray>→ </gray><white>%message%</white>"
+violation_match = "<gray>└</gray> <white>Match:</white> %source%"

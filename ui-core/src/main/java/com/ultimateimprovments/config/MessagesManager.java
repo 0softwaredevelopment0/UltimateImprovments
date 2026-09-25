@@ -45,24 +45,33 @@ public class MessagesManager {
     }
 
     /**
-     * Returns a string from the {@code messages:} section ({@code messages_en:} is absent
-     * from the DB — usually falls back to messages). Accepts a path WITHOUT the section
-     * prefix: if an existing class call site invokes
-     * {@code getString("auth.gui.register", default)}, the method internally reads
-     * {@code config.getString("messages.auth.gui.register")}.
+     * Returns a string for the CURRENT language ({@code messages.lang}, "ru"/"en"),
+     * with fallback to the other language and then to {@code def}.
      * <p>
-     * If the Russian variant is missing in the config — tries the English fallback.
+     * Accepts a path WITHOUT the section prefix: a call site invoking
+     * {@code getString("auth.gui.register", default)} reads
+     * {@code messages.auth.gui.register} (ru) or {@code messages_en.auth.gui.register} (en).
+     * Messages are routed by {@link CompositeConfig} to the owning addon's TOML file.
      */
     public static String getString(String path, String def) {
         if (plugin == null) return def;
         FileConfiguration config = plugin.getConfig();
-        // 1. Russian (primary)
-        String value = config.getString(MESSAGES_KEY + "." + path, null);
+        boolean ru = isRuLang(config);
+        String primary = ru ? MESSAGES_KEY : MESSAGES_EN_KEY;
+        String fallback = ru ? MESSAGES_EN_KEY : MESSAGES_KEY;
+        // 1. Current language
+        String value = config.getString(primary + "." + path, null);
         if (value != null) return value;
-        // 2. English fallback
-        value = config.getString(MESSAGES_EN_KEY + "." + path, null);
+        // 2. Other language fallback
+        value = config.getString(fallback + "." + path, null);
         if (value != null) return value;
         return def;
+    }
+
+    /** Reads the effective language: per-addon override → global {@code messages.lang}. */
+    private static boolean isRuLang(FileConfiguration config) {
+        String lang = config.getString("messages.lang", "en");
+        return "ru".equalsIgnoreCase(lang);
     }
 
     /**
@@ -75,18 +84,42 @@ public class MessagesManager {
     }
 
     /**
-     * Writes a value into the messages section and saves config.yml.
-     * Used by the plugin core, e.g. for dynamic localization in GUIs.
+     * Writes a value into the RU messages section and saves the owning addon's
+     * TOML (routing happens in {@link CompositeConfig}#set). Used by the plugin
+     * core, e.g. for dynamic localization in GUIs.
      */
     public static void setString(String path, String value) {
         if (plugin == null) return;
         FileConfiguration config = plugin.getConfig();
         config.set(MESSAGES_KEY + "." + path, value);
         try {
-            config.save(new File(plugin.getDataFolder(), "config.yml"));
+            plugin.saveConfig();
         } catch (Exception e) {
-            FileLogger.logError("Messages", "Failed to save config.yml: " + e.getMessage());
+            FileLogger.logError("Messages", "Failed to save config: " + e.getMessage());
         }
+    }
+
+    /**
+     * Sets the global UI language ("ru" or "en") in the core config and persists it.
+     * @return the previously active language
+     */
+    public static String setLanguage(String lang) {
+        FileConfiguration config = plugin.getConfig();
+        String previous = currentLanguage();
+        String normalized = "ru".equalsIgnoreCase(lang) ? "ru" : "en";
+        config.set("messages.lang", normalized);
+        try {
+            plugin.saveConfig();
+        } catch (Exception e) {
+            FileLogger.logError("Messages", "Failed to save language: " + e.getMessage());
+        }
+        return previous;
+    }
+
+    /** @return the currently active UI language ("ru" or "en"). */
+    public static String currentLanguage() {
+        if (plugin == null) return "en";
+        return "ru".equalsIgnoreCase(plugin.getConfig().getString("messages.lang", "en")) ? "ru" : "en";
     }
 
     /**
@@ -97,9 +130,9 @@ public class MessagesManager {
         return plugin != null && plugin.getConfig().isSet(MESSAGES_KEY);
     }
 
-    /** For backward compatibility. Always returns {@code "config.yml#messages"}. */
+    /** For backward compatibility. Now points at the per-addon TOML layout. */
     public static String getMessagesFileName() {
-        return "config.yml#" + MESSAGES_KEY;
+        return "configs/UI-<Addon>.toml#" + MESSAGES_KEY;
     }
 
     // ============================================================
@@ -127,10 +160,10 @@ public class MessagesManager {
         }
         if (migrated) {
             try {
-                config.save(new File(dataFolder, "config.yml"));
+                plugin.saveConfig();
                 plugin.reloadConfig();
             } catch (Exception e) {
-                FileLogger.logError("Messages", "Failed to save config.yml after migration: " + e.getMessage());
+                FileLogger.logError("Messages", "Failed to save config after migration: " + e.getMessage());
             }
         }
     }
