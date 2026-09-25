@@ -1,69 +1,620 @@
-# UI-Essentials settings (auto-generated from config.yml)
-# Edit values below; the file is reloaded by /ui reload.
+# UltimateImprovments — UI-Essentials configuration.
+# This single file holds the addon's settings AND its messages (RU + EN).
+# Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# Every value can be edited; the file is re-read by /ui reload.
+# Missing keys are auto-repaired from the bundled defaults on startup.
 
+# ==================================================================
+# SETTINGS
+# ==================================================================
+
+
+# /ui home: number of homes and related limits.
 [home]
+# Maximum homes per player (without extra permissions).
+# Default: 10
 max_homes = 10
+# Minimum value.
+# Default: 1
 name_min_length = 1
+# Maximum value.
+# Default: 16
 name_max_length = 16
+# Maximum value.
+# Default: 160
 description_max_length = 160
+# Default: "legit"
 mode = "legit"
 
+# Player report command toggles.
 [report]
+# Default: "3d"
 expire_time = "3d"
 
+# /ui endersee — inspect other players' ender chests.
 [endersee]
+# Enable the /ui endersee command.
+# Default: false
 enabled = false
 
+# /ui heal and /ui feed behaviour and amounts.
 [heal_feed]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Hearts restored by /ui heal.
+# Default: 0
 heal_amount = 0
+# Food points restored by /ui feed.
+# Default: 0
 feed_amount = 0
 
+# Spawn command/location settings.
 [spawn]
+# Default: "legit"
 mode = "legit"
 
+# Random teleport (/ui rtp): radius, cooldown and world rules.
 [rtp]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Cooldown.
+# Default: 60
 cooldown_seconds = 60
+# Maximum value.
+# Default: 50
 max_attempts = 50
+# Default: "square"
 shape = "square"
+# World name.
+# Default: ["world"]
 worlds = ["world"]
+# Radius in blocks.
+# Default: 5
 safe_search_radius = 5
+# Default: ["MAGMA_BLOCK", "CACTUS", "FIRE", "SWEET_BERRY_BUSH", "POWDER_SNOW", "CAMPFIRE", "SOUL_CAMPFIRE", "BEDROCK", "WITHER_ROSE", "POINTED_DRIPSTONE"]
 avoid_blocks = ["MAGMA_BLOCK", "CACTUS", "FIRE", "SWEET_BERRY_BUSH", "POWDER_SNOW", "CAMPFIRE", "SOUL_CAMPFIRE", "BEDROCK", "WITHER_ROSE", "POINTED_DRIPSTONE"]
+# Default: []
 only_surface = []
 
+# radius section.
 [rtp.radius]
+# Minimum value.
+# Default: 500
 min = 500
+# Maximum value.
+# Default: 10000
 max = 10000
 
+# height section.
 [rtp.height]
+# Minimum value.
+# Default: 0
 min = 0
+# Maximum value.
+# Default: 255
 max = 255
 
+# avoid section.
 [rtp.avoid]
+# Default: true
 liquid = true
+# Default: true
 void = true
 
+# /ui near — shows nearby players (staff utility).
 [near]
+# Enable the /ui near command.
+# Default: false
 enabled = false
+# Radius in blocks.
+# Default: 128
 max_radius = 128
 
+# Fake/troll commands aimed at suspected hackers.
 [troll]
+# Enable the fake troll commands.
+# Default: true
 enabled = true
 
+# forceop section.
 [troll.forceop]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Permission node.
+# Default: ""
 permission = ""
+# Message text (MiniMessage).
+# Default: ["<white>[<gold>Server</gold>] Made <aqua>%player%</aqua> a server operator</white>", "<green>✔ You are now a server operator!</green>"]
 messages = ["<white>[<gold>Server</gold>] Made <aqua>%player%</aqua> a server operator</white>", "<green>✔ You are now a server operator!</green>"]
+# Default: "<gold>⚡ You are now OP!</gold>"
 actionbar = "<gold>⚡ You are now OP!</gold>"
+# Sound name (minecraft:...).
+# Default: "ENTITY_EXPERIENCE_ORB_PICKUP"
 sound = "ENTITY_EXPERIENCE_ORB_PICKUP"
+# Default: true
 log_to_console = true
 
+# crash section.
 [troll.crash]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Permission node.
+# Default: ""
 permission = ""
+# Message text (MiniMessage).
+# Default: ["<dark_red><bold>⚠ SERVER ERROR</bold></dark_red>", "<gray>java.lang.OutOfMemoryError: Java heap space</gray>", "<gray>    at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:932)</gray>", "<dark_gray>[<red>Server closed</red>]</dark_gray>"]
 messages = ["<dark_red><bold>⚠ SERVER ERROR</bold></dark_red>", "<gray>java.lang.OutOfMemoryError: Java heap space</gray>", "<gray>    at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:932)</gray>", "<dark_gray>[<red>Server closed</red>]</dark_gray>"]
+# Delay.
+# Default: 2
 delay_seconds = 2
+# Message text (MiniMessage).
+# Default: "Server closed"
 kick_message = "Server closed"
+# Sound name (minecraft:...).
+# Default: "ENTITY_GENERIC_EXPLODE"
 sound = "ENTITY_GENERIC_EXPLODE"
+# Default: true
 log_to_console = true
+
+# ==================================================================
+# MESSAGES — RUSSIAN (active when lang = "ru")
+# ==================================================================
+
+
+# home section.
+# Placeholders: %min%, %max%, %length%, %name%, %world%, %x%, %y%, %z%, %used%, %player%, %num%, %count%
+[messages.home]
+# Default: <red>❌ Only players can use this command!</red>
+player_only = "<red>❌ Only players can use this command!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to save home points!</red>
+no_permission_sethome = "<red>❌ You don't have permission to save home points!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to view home points!</red>
+no_permission_home = "<red>❌ You don't have permission to view home points!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to delete home points!</red>
+no_permission_delhome = "<red>❌ You don't have permission to delete home points!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to view the home list!</red>
+no_permission_listhomes = "<red>❌ You don't have permission to view the home list!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to view other players' homes!</red>
+no_permission_ophomels = "<red>❌ You don't have permission to view other players' homes!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to delete other players' homes!</red>
+no_permission_opdelhome = "<red>❌ You don't have permission to delete other players' homes!</red>"
+# Default: <red>❌ Usage: </red><white>/ui sethome <name></white>
+usage_sethome = "<red>❌ Usage: </red><white>/ui sethome <name></white>"
+# Default: <red>❌ Usage: </red><white>/ui home <name></white>
+usage_home = "<red>❌ Usage: </red><white>/ui home <name></white>"
+# Default: <red>❌ Usage: </red><white>/ui delhome <name></white>
+usage_delhome = "<red>❌ Usage: </red><white>/ui delhome <name></white>"
+# Default: <red>❌ Usage: </red><white>/ui ophomels <player></white>
+usage_ophomels = "<red>❌ Usage: </red><white>/ui ophomels <player></white>"
+# Default: <red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>
+usage_opdelhome = "<red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>"
+# Length.
+# Default: <red>❌ Home name must be between %min% and %max% characters!</red>
+name_length_error = "<red>❌ Home name must be between %min% and %max% characters!</red>"
+# Length.
+# Default: <gray> Current length: </gray><white>%length%</white><gray> characters.</gray>
+name_current_length = "<gray> Current length: </gray><white>%length%</white><gray> characters.</gray>"
+# Limit.
+# Default: <red>❌ You have reached the limit of</red> <yellow>%max%</yellow> <red>home points!</red>
+limit_reached = "<red>❌ You have reached the limit of</red> <yellow>%max%</yellow> <red>home points!</red>"
+# Limit.
+# Default: <gray> Use </gray><white>/ui delhome <name></white><gray> to remove unwanted ones.</gray>
+limit_hint = "<gray> Use </gray><white>/ui delhome <name></white><gray> to remove unwanted ones.</gray>"
+# Default: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>
+save_success = "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>"
+# World name.
+# Default: <gray>World:</gray> <white>%world%</white>
+save_info_world = "<gray>World:</gray> <white>%world%</white>"
+# Default: <gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>
+save_info_coords = "<gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>"
+# Default: <gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>
+save_info_used = "<gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>"
+# Default: <red>❌ Error saving home!</red>
+save_error = "<red>❌ Error saving home!</red>"
+# Default: <yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not found.</white>
+not_found = "<yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not found.</white>"
+# Default: <gray> Use </gray><white>/ui sethome %name%</white><gray> to save it.</gray>
+not_found_hint = "<gray> Use </gray><white>/ui sethome %name%</white><gray> to save it.</gray>"
+# Default: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>
+delete_success = "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>"
+# Default: <red>❌ Error deleting home!</red>
+delete_error = "<red>❌ Error deleting home!</red>"
+# Default: <red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>
+not_found_del = "<red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>"
+# Default: <yellow>ℹ</yellow> <white>You have no saved home points.</white>
+no_homes = "<yellow>ℹ</yellow> <white>You have no saved home points.</white>"
+# Default: <gray> Use </gray><white>/ui sethome <name></white><gray> to save one.</gray>
+no_homes_hint = "<gray> Use </gray><white>/ui sethome <name></white><gray> to save one.</gray>"
+# Default: <yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow> <white>has no saved homes.</white>
+no_homes_player = "<yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow> <white>has no saved homes.</white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red> <yellow>%name%</yellow><red>!</red>
+not_found_player = "<red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red> <yellow>%name%</yellow><red>!</red>"
+# Default: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>of player</white> <yellow>%player%</yello…
+delete_op_success = "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>of player</white> <yellow>%player%</yellow> <white>deleted.</white>"
+# Default: <gold>═══════════════════════════════════</gold>
+info_header = "<gold>═══════════════════════════════════</gold>"
+# Display name (MiniMessage).
+# Default: <gold>  ✦ </gold><white>Home: </white><yellow>%name%</yellow>
+info_name = "<gold>  ✦ </gold><white>Home: </white><yellow>%name%</yellow>"
+# World name.
+# Default: <gray>World: </gray><white>%world%</white>
+info_world = "<gray>World: </gray><white>%world%</white>"
+# Default: <gray>X: </gray><white>%x%</white>
+info_x = "<gray>X: </gray><white>%x%</white>"
+# Default: <gray>Y: </gray><white>%y%</white>
+info_y = "<gray>Y: </gray><white>%y%</white>"
+# Default: <gray>Z: </gray><white>%z%</white>
+info_z = "<gray>Z: </gray><white>%z%</white>"
+# Title text (MiniMessage).
+# Default: <gold>  ✦ </gold><white>Your Homes </white><gray>(%used%/%max%)</gray>
+list_title = "<gold>  ✦ </gold><white>Your Homes </white><gray>(%used%/%max%)</gray>"
+# Display name (MiniMessage).
+# Default: <gray>┌─ </gray><yellow>%num%. </yellow><white>%name%</white>
+list_entry_name = "<gray>┌─ </gray><yellow>%num%. </yellow><white>%name%</white>"
+# World name.
+# Default: <gray>│ </gray><gray>World: </gray><white>%world%</white>
+list_entry_world = "<gray>│ </gray><gray>World: </gray><white>%world%</white>"
+# Default: <gray>│ </gray><gray>X: </gray><white>%x%</white> <gray>Y: </gray><white>%y%</white> <gray>Z: </gray><white>%…
+list_entry_coords = "<gray>│ </gray><gray>X: </gray><white>%x%</white> <gray>Y: </gray><white>%y%</white> <gray>Z: </gray><white>%z%</white>"
+# Default: <gray>│</gray>
+list_entry_sep = "<gray>│</gray>"
+# Title text (MiniMessage).
+# Default: <gold>  ✦ </gold><white>Player's Homes </white><yellow>%player%</yellow> <gray>(%count%)</gray>
+op_list_title = "<gold>  ✦ </gold><white>Player's Homes </white><yellow>%player%</yellow> <gray>(%count%)</gray>"
+
+# misc section.
+# Placeholders: %player%
+[messages.misc]
+# Permission node.
+# Default: <red>❌ You don't have permission to use vanish!</red>
+vanish_no_permission = "<red>❌ You don't have permission to use vanish!</red>"
+# Default: <red>❌ Usage: </red><white>/ui vanish <nick></white>
+vanish_usage = "<red>❌ Usage: </red><white>/ui vanish <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>
+vanish_player_not_found = "<red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>"
+# Master switch (true = feature on).
+# Default: <green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>is now hidden (vanished).</white>
+vanish_enabled = "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>is now hidden (vanished).</white>"
+# Default: <gray>Player is offline — vanish will apply on next login.</gray>
+vanish_offline_hint = "<gray>Player is offline — vanish will apply on next login.</gray>"
+# Default: <red>❌</red> <white>Player</white> <yellow>%player%</yellow> <white>is no longer hidden.</white>
+vanish_disabled = "<red>❌</red> <white>Player</white> <yellow>%player%</yellow> <white>is no longer hidden.</white>"
+# Default: <red>❌ Only players can use notes!</red>
+notes_player_only = "<red>❌ Only players can use notes!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to use notes!</red>
+notes_no_permission = "<red>❌ You don't have permission to use notes!</red>"
+# Speed.
+# Default: <red>❌ Only players can use this command!</red>
+speed_player_only = "<red>❌ Only players can use this command!</red>"
+# Speed.
+# Default: <red>❌ You don't have permission!</red>
+speed_no_permission = "<red>❌ You don't have permission!</red>"
+# Master switch (true = feature on).
+# Default: <green>⚡</green> <white>Speed display: </white><green>ON</green>
+speed_enabled = "<green>⚡</green> <white>Speed display: </white><green>ON</green>"
+# Speed.
+# Default: <red>⚡</red> <white>Speed display: </white><red>OFF</red>
+speed_disabled = "<red>⚡</red> <white>Speed display: </white><red>OFF</red>"
+# Master switch (true = feature on).
+# Default: <green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>
+fly_enabled = "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>"
+# Default: <red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>
+fly_disabled = "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>"
+
+# rtp section.
+# Placeholders: %player%, %seconds%, %coords%
+[messages.rtp]
+# Default: <red>❌ Only players can use this command!</red>
+player_only = "<red>❌ Only players can use this command!</red>"
+# Default: <red>❌ Random teleport is disabled on this server.</red>
+disabled = "<red>❌ Random teleport is disabled on this server.</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to teleport other players!</red>
+no_permission_other = "<red>❌ You don't have permission to teleport other players!</red>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>
+player_not_found = "<red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>"
+# World name.
+# Default: <red>❌ Random teleport is not allowed in this world.</red>
+world_not_allowed = "<red>❌ Random teleport is not allowed in this world.</red>"
+# Cooldown.
+# Default: <red>❌ Please wait </red><yellow>%seconds%</yellow><red> seconds before using RTP again.</red>
+cooldown = "<red>❌ Please wait </red><yellow>%seconds%</yellow><red> seconds before using RTP again.</red>"
+# Default: <red>❌ Could not find a safe location to teleport. Try again.</red>
+no_location = "<red>❌ Could not find a safe location to teleport. Try again.</red>"
+# Default: <red>❌ Teleport failed! Try again.</red>
+teleport_failed = "<red>❌ Teleport failed! Try again.</red>"
+# Default: <green>✔</green> <white>Random teleport complete!</white>
+success = "<green>✔</green> <white>Random teleport complete!</white>"
+# Default: <green>✔</green> <white>You have been randomly teleported to:</white> <yellow>%coords%</yellow>
+success_coords = "<green>✔</green> <white>You have been randomly teleported to:</white> <yellow>%coords%</yellow>"
+# Default: <gray>Teleported </gray><yellow>%player%</yellow> <gray>→</gray> <white>%coords%</white>
+teleported_other = "<gray>Teleported </gray><yellow>%player%</yellow> <gray>→</gray> <white>%coords%</white>"
+# Default: <red>❌ Usage: </red><white>/ui rtp [player]</white>
+usage = "<red>❌ Usage: </red><white>/ui rtp [player]</white>"
+
+# near section.
+# Placeholders: %radius%, %count%, %num%, %player%, %distance%
+[messages.near]
+# Default: <red>❌ Only players can use this command!</red>
+player_only = "<red>❌ Only players can use this command!</red>"
+# Default: <red>❌ This command is disabled on this server.</red>
+disabled = "<red>❌ This command is disabled on this server.</red>"
+# Radius in blocks.
+# Default: <red>❌ Invalid radius! Usage: </red><white>/ui near [radius]</white>
+invalid_radius = "<red>❌ Invalid radius! Usage: </red><white>/ui near [radius]</white>"
+# Default: <gray>No players found within </gray><yellow>%radius%</yellow><gray> blocks.</gray>
+no_players = "<gray>No players found within </gray><yellow>%radius%</yellow><gray> blocks.</gray>"
+# Default: <gray>Players within </gray><yellow>%radius%</yellow><gray> blocks (</gray><yellow>%count%</yellow><gray>):</…
+header = "<gray>Players within </gray><yellow>%radius%</yellow><gray> blocks (</gray><yellow>%count%</yellow><gray>):</gray>"
+# Default:   <gray>%num%.</gray> <white>%player%</white> <gray>—</gray> <yellow>%distance%</yellow>
+entry = "  <gray>%num%.</gray> <white>%player%</white> <gray>—</gray> <yellow>%distance%</yellow>"
+# Default: 1 block
+block = "1 block"
+# Default: %distance% blocks
+blocks = "%distance% blocks"
+
+# report section.
+# Placeholders: %player%, %verdict%, %name%
+[messages.report]
+# Default: <green>✔</green> <white>Report on player </white><yellow>%player%</yellow> <white>has been submitted!</white>
+success = "<green>✔</green> <white>Report on player </white><yellow>%player%</yellow> <white>has been submitted!</white>"
+# Default: <yellow>⚠</yellow> <white>A report has been filed against you!</white>
+reported_notification = "<yellow>⚠</yellow> <white>A report has been filed against you!</white>"
+# Default: <green>✔</green> <white>Your report has been reviewed! Verdict: </white><yellow>%verdict%</yellow>
+reporter_notified = "<green>✔</green> <white>Your report has been reviewed! Verdict: </white><yellow>%verdict%</yellow>"
+# Default: <yellow>✦</yellow> <white>You have no active reports.</white>
+no_active_report = "<yellow>✦</yellow> <white>You have no active reports.</white>"
+
+# errors section.
+# Placeholders: %player%
+[messages.report.errors]
+# Default: <red>❌ You already have an active report! Wait for moderation.</red>
+already_pending = "<red>❌ You already have an active report! Wait for moderation.</red>"
+# Default: <red>❌ Player <yellow>%player%</yellow> <red>has never joined the server!</red>
+never_joined = "<red>❌ Player <yellow>%player%</yellow> <red>has never joined the server!</red>"
+# Default: <red>❌ You cannot report yourself!</red>
+self_report = "<red>❌ You cannot report yourself!</red>"
+# Default: <red>❌ Database error while creating report!</red>
+db_error = "<red>❌ Database error while creating report!</red>"
+
+# moderation section.
+# Placeholders: %name%, %verdict%
+[messages.report.moderation]
+# Default: <green>✔</green> <white>Enter conclusion for report </white><yellow>%name%</yellow>
+enter_conclusion = "<green>✔</green> <white>Enter conclusion for report </white><yellow>%name%</yellow>"
+# Default: <gray>Type text or </gray><red>cancel</red><gray> to abort.</gray>
+type_or_cancel = "<gray>Type text or </gray><red>cancel</red><gray> to abort.</gray>"
+# Default: <green>✔</green> <white>Conclusion saved. Choose a verdict:</white>
+verdict_prompt = "<green>✔</green> <white>Conclusion saved. Choose a verdict:</white>"
+# Default: <yellow>✦</yellow> <gray>Moderation cancelled.</gray>
+cancelled = "<yellow>✦</yellow> <gray>Moderation cancelled.</gray>"
+# Default: <green>✔</green> <white>Verdict </white><yellow>%verdict%</yellow> <white>saved for report </white><yellow>%n…
+verdict_saved = "<green>✔</green> <white>Verdict </white><yellow>%verdict%</yellow> <white>saved for report </white><yellow>%name%</yellow>"
+
+# verdict section.
+[messages.report.verdict]
+# Default: Confirmed
+confirmed = "Confirmed"
+# Default: Rejected
+rejected = "Rejected"
+# Default: Closed
+closed = "Closed"
+
+# admin section.
+# Placeholders: %name%
+[messages.report.admin]
+# Default: <yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/ui reports rem…
+remove_confirm = "<yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>? Type </white><yellow>/ui reports remove confirm</yellow><white> to confirm.</white>"
+
+# ==================================================================
+# MESSAGES — ENGLISH (active when lang = "en")
+# ==================================================================
+
+
+# home section.
+# Placeholders: %min%, %max%, %length%, %name%, %world%, %x%, %y%, %z%, %used%, %player%, %num%, %count%
+[messages_en.home]
+# Default: <red>❌ Only players can use this command!</red>
+player_only = "<red>❌ Only players can use this command!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to save home points!</red>
+no_permission_sethome = "<red>❌ You don't have permission to save home points!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to view home points!</red>
+no_permission_home = "<red>❌ You don't have permission to view home points!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to delete home points!</red>
+no_permission_delhome = "<red>❌ You don't have permission to delete home points!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to view the home list!</red>
+no_permission_listhomes = "<red>❌ You don't have permission to view the home list!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to view other players' homes!</red>
+no_permission_ophomels = "<red>❌ You don't have permission to view other players' homes!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to delete other players' homes!</red>
+no_permission_opdelhome = "<red>❌ You don't have permission to delete other players' homes!</red>"
+# Default: <red>❌ Usage: </red><white>/ui sethome <name></white>
+usage_sethome = "<red>❌ Usage: </red><white>/ui sethome <name></white>"
+# Default: <red>❌ Usage: </red><white>/ui home <name></white>
+usage_home = "<red>❌ Usage: </red><white>/ui home <name></white>"
+# Default: <red>❌ Usage: </red><white>/ui delhome <name></white>
+usage_delhome = "<red>❌ Usage: </red><white>/ui delhome <name></white>"
+# Default: <red>❌ Usage: </red><white>/ui ophomels <player></white>
+usage_ophomels = "<red>❌ Usage: </red><white>/ui ophomels <player></white>"
+# Default: <red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>
+usage_opdelhome = "<red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>"
+# Length.
+# Default: <red>❌ Home name must be between %min% and %max% characters!</red>
+name_length_error = "<red>❌ Home name must be between %min% and %max% characters!</red>"
+# Length.
+# Default: <gray> Current length: </gray><white>%length%</white><gray> characters.</gray>
+name_current_length = "<gray> Current length: </gray><white>%length%</white><gray> characters.</gray>"
+# Limit.
+# Default: <red>❌ You have reached the limit of</red> <yellow>%max%</yellow> <red>home points!</red>
+limit_reached = "<red>❌ You have reached the limit of</red> <yellow>%max%</yellow> <red>home points!</red>"
+# Limit.
+# Default: <gray> Use </gray><white>/ui delhome <name></white><gray> to remove unwanted ones.</gray>
+limit_hint = "<gray> Use </gray><white>/ui delhome <name></white><gray> to remove unwanted ones.</gray>"
+# Default: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>
+save_success = "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>"
+# World name.
+# Default: <gray>World:</gray> <white>%world%</white>
+save_info_world = "<gray>World:</gray> <white>%world%</white>"
+# Default: <gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>
+save_info_coords = "<gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>"
+# Default: <gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>
+save_info_used = "<gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>"
+# Default: <red>❌ Error saving home!</red>
+save_error = "<red>❌ Error saving home!</red>"
+# Default: <yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not found.</white>
+not_found = "<yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not found.</white>"
+# Default: <gray> Use </gray><white>/ui sethome %name%</white><gray> to save it.</gray>
+not_found_hint = "<gray> Use </gray><white>/ui sethome %name%</white><gray> to save it.</gray>"
+# Default: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>
+delete_success = "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>"
+# Default: <red>❌ Error deleting home!</red>
+delete_error = "<red>❌ Error deleting home!</red>"
+# Default: <red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>
+not_found_del = "<red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>"
+# Default: <yellow>ℹ</yellow> <white>You have no saved home points.</white>
+no_homes = "<yellow>ℹ</yellow> <white>You have no saved home points.</white>"
+# Default: <gray> Use </gray><white>/ui sethome <name></white><gray> to save one.</gray>
+no_homes_hint = "<gray> Use </gray><white>/ui sethome <name></white><gray> to save one.</gray>"
+# Default: <yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow> <white>has no saved homes.</white>
+no_homes_player = "<yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow> <white>has no saved homes.</white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red> <yellow>%name%</yellow><red>!</red>
+not_found_player = "<red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red> <yellow>%name%</yellow><red>!</red>"
+# Default: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>of player</white> <yellow>%player%</yello…
+delete_op_success = "<green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>of player</white> <yellow>%player%</yellow> <white>deleted.</white>"
+# Default: <gold>═══════════════════════════════════</gold>
+info_header = "<gold>═══════════════════════════════════</gold>"
+# Display name (MiniMessage).
+# Default: <gold>  ✦ </gold><white>Home: </white><yellow>%name%</yellow>
+info_name = "<gold>  ✦ </gold><white>Home: </white><yellow>%name%</yellow>"
+# World name.
+# Default: <gray>World: </gray><white>%world%</white>
+info_world = "<gray>World: </gray><white>%world%</white>"
+# Default: <gray>X: </gray><white>%x%</white>
+info_x = "<gray>X: </gray><white>%x%</white>"
+# Default: <gray>Y: </gray><white>%y%</white>
+info_y = "<gray>Y: </gray><white>%y%</white>"
+# Default: <gray>Z: </gray><white>%z%</white>
+info_z = "<gray>Z: </gray><white>%z%</white>"
+# Title text (MiniMessage).
+# Default: <gold>  ✦ </gold><white>Your Homes </white><gray>(%used%/%max%)</gray>
+list_title = "<gold>  ✦ </gold><white>Your Homes </white><gray>(%used%/%max%)</gray>"
+# Display name (MiniMessage).
+# Default: <gray>┌─ </gray><yellow>%num%. </yellow><white>%name%</white>
+list_entry_name = "<gray>┌─ </gray><yellow>%num%. </yellow><white>%name%</white>"
+# World name.
+# Default: <gray>│ </gray><gray>World: </gray><white>%world%</white>
+list_entry_world = "<gray>│ </gray><gray>World: </gray><white>%world%</white>"
+# Default: <gray>│ </gray><gray>X: </gray><white>%x%</white> <gray>Y: </gray><white>%y%</white> <gray>Z: </gray><white>%…
+list_entry_coords = "<gray>│ </gray><gray>X: </gray><white>%x%</white> <gray>Y: </gray><white>%y%</white> <gray>Z: </gray><white>%z%</white>"
+# Default: <gray>│</gray>
+list_entry_sep = "<gray>│</gray>"
+# Title text (MiniMessage).
+# Default: <gold>  ✦ </gold><white>Player's Homes </white><yellow>%player%</yellow> <gray>(%count%)</gray>
+op_list_title = "<gold>  ✦ </gold><white>Player's Homes </white><yellow>%player%</yellow> <gray>(%count%)</gray>"
+
+# misc section.
+# Placeholders: %player%
+[messages_en.misc]
+# Permission node.
+# Default: <red>❌ You don't have permission to use vanish!</red>
+vanish_no_permission = "<red>❌ You don't have permission to use vanish!</red>"
+# Default: <red>❌ Usage: </red><white>/ui vanish <nick></white>
+vanish_usage = "<red>❌ Usage: </red><white>/ui vanish <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>
+vanish_player_not_found = "<red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>"
+# Master switch (true = feature on).
+# Default: <green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>is now hidden (vanished).</white>
+vanish_enabled = "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>is now hidden (vanished).</white>"
+# Default: <gray>Player is offline — vanish will apply on next login.</gray>
+vanish_offline_hint = "<gray>Player is offline — vanish will apply on next login.</gray>"
+# Default: <red>❌</red> <white>Player</white> <yellow>%player%</yellow> <white>is no longer hidden.</white>
+vanish_disabled = "<red>❌</red> <white>Player</white> <yellow>%player%</yellow> <white>is no longer hidden.</white>"
+# Default: <red>❌ Only players can use notes!</red>
+notes_player_only = "<red>❌ Only players can use notes!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to use notes!</red>
+notes_no_permission = "<red>❌ You don't have permission to use notes!</red>"
+# Speed.
+# Default: <red>❌ Only players can use this command!</red>
+speed_player_only = "<red>❌ Only players can use this command!</red>"
+# Speed.
+# Default: <red>❌ You don't have permission!</red>
+speed_no_permission = "<red>❌ You don't have permission!</red>"
+# Master switch (true = feature on).
+# Default: <green>⚡</green> <white>Speed display: </white><green>ON</green>
+speed_enabled = "<green>⚡</green> <white>Speed display: </white><green>ON</green>"
+# Speed.
+# Default: <red>⚡</red> <white>Speed display: </white><red>OFF</red>
+speed_disabled = "<red>⚡</red> <white>Speed display: </white><red>OFF</red>"
+# Master switch (true = feature on).
+# Default: <green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>
+fly_enabled = "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>"
+# Default: <red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>
+fly_disabled = "<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>"
+
+# report section.
+# Placeholders: %player%, %verdict%, %name%
+[messages_en.report]
+# Default: <green>✔</green> <white>Report on player </white><yellow>%player%</yellow> <white>submitted!</white>
+success = "<green>✔</green> <white>Report on player </white><yellow>%player%</yellow> <white>submitted!</white>"
+# Default: <yellow>⚠</yellow> <white>A report has been filed against you!</white>
+reported_notification = "<yellow>⚠</yellow> <white>A report has been filed against you!</white>"
+# Default: <green>✔</green> <white>Your report has been reviewed! Verdict: </white><yellow>%verdict%</yellow>
+reporter_notified = "<green>✔</green> <white>Your report has been reviewed! Verdict: </white><yellow>%verdict%</yellow>"
+# Default: <yellow>✦</yellow> <white>You have no active reports.</white>
+no_active_report = "<yellow>✦</yellow> <white>You have no active reports.</white>"
+# Minimum value.
+# Default: []
+admin = []
+
+# errors section.
+# Placeholders: %player%
+[messages_en.report.errors]
+# Default: <red>❌ You already have an active report! Wait for moderation.</red>
+already_pending = "<red>❌ You already have an active report! Wait for moderation.</red>"
+# Default: <red>❌ Player <yellow>%player%</yellow> <red>has never joined the server!</red>
+never_joined = "<red>❌ Player <yellow>%player%</yellow> <red>has never joined the server!</red>"
+# Default: <red>❌ You cannot report yourself!</red>
+self_report = "<red>❌ You cannot report yourself!</red>"
+# Default: <red>❌ Database error while creating report!</red>
+db_error = "<red>❌ Database error while creating report!</red>"
+
+# moderation section.
+# Placeholders: %name%, %verdict%
+[messages_en.report.moderation]
+# Default: <green>✔</green> <white>Write a conclusion for report </white><yellow>%name%</yellow>
+enter_conclusion = "<green>✔</green> <white>Write a conclusion for report </white><yellow>%name%</yellow>"
+# Default: <gray>Write text or </gray><red>cancel</red><gray> to abort.</gray>
+type_or_cancel = "<gray>Write text or </gray><red>cancel</red><gray> to abort.</gray>"
+# Default: <green>✔</green> <white>Conclusion saved. Choose a verdict:</white>
+verdict_prompt = "<green>✔</green> <white>Conclusion saved. Choose a verdict:</white>"
+# Default: <yellow>✦</yellow> <gray>Moderation cancelled.</gray>
+cancelled = "<yellow>✦</yellow> <gray>Moderation cancelled.</gray>"
+# Default: <green>✔</green> <white>Verdict </white><yellow>%verdict%</yellow> <white>saved for report </white><yellow>%n…
+verdict_saved = "<green>✔</green> <white>Verdict </white><yellow>%verdict%</yellow> <white>saved for report </white><yellow>%name%</yellow>"
+
+# verdict section.
+[messages_en.report.verdict]
+# Default: Confirmed
+confirmed = "Confirmed"
+# Default: Rejected
+rejected = "Rejected"
+# Default: Closed
+closed = "Closed"

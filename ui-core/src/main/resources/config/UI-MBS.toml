@@ -1,57 +1,136 @@
-# UI-MBS settings (auto-generated from config.yml)
-# Edit values below; the file is reloaded by /ui reload.
+# UltimateImprovments — UI-MBS configuration.
+# This single file holds the addon's settings AND its messages (RU + EN).
+# Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# Every value can be edited; the file is re-read by /ui reload.
+# Missing keys are auto-repaired from the bundled defaults on startup.
 
+# ==================================================================
+# SETTINGS
+# ==================================================================
+
+
+# Nuclear reactor: fuel, heat, explosions and energy output.
 [reactor]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 2000000000
 core_temp_max = 2000000000
+# Minimum value.
+# Default: -273
 core_temp_min = -273
+# Default: 10000000
 core_work_temp = 10000000
+# Default: 0.02
 press_follow_rate = 0.02
+# Default: 0.01
 spin_follow_rate = 0.01
+# Energy amount.
+# Default: 100
 energy_rate = 100
+# Default: 5.0
 laser_ramp_rate = 5.0
+# Power.
+# Default: 5000
 power_laser_heat_rate = 5000
+# Default: 9500
 stab_cool_rate = 9500
+# Default: 5.0
 shield_build_rate = 5.0
+# Default: 400000
 shield_stress_heat_per = 400000
+# Default: 0.5
 shield_stress_press_per = 0.5
+# Default: 35000
 shield_stress_spin_per = 35000
+# Default: 0.333
 shield_decay_base = 0.333
+# Default: 5
 shield_recovery_every_sec = 5
+# Default: 1.0
 shield_recovery_rate = 1.0
+# Default: 10
 shield_failure_countdown = 10
+# Radius in blocks.
+# Default: 10
 shield_explosion_radius = 10
+# Default: 25
 shield_integrity_shutdown_percent = 25
+# Chance (0.0-1.0 or percent, see the value).
+# Default: 1.0
 selfdestruct_chance = 1.0
+# Default: 5
 selfdestruct_no_signal_sec = 5
+# Default: 60
 selfdestruct_timed_sec = 60
+# Power.
+# Default: 10.0
 selfdestruct_overpower_rate = 10.0
+# Radius in blocks.
+# Default: 20.0
 selfdestruct_adv_radius = 20.0
+# Default: 9500.0
 absorber_cool_rate = 9500.0
+# Default: 40.0
 absorber_rad_per_sec = 40.0
+# Speed.
+# Default: 0.35
 shield_particle_rod_speed = 0.35
+# Default: 16
 shield_particle_rod_count = 16
+# Default: 16
 shield_particle_dust_count = 16
+# Minimum value.
+# Default: 1000
 fuel_spin_min = 1000
+# Default: 95000
 fuel_work_spin = 95000
+# Default: 100000
 fuel_over_spin = 100000
+# Default: 5.0
 fuel_base_rate = 5.0
+# Minimum value.
+# Default: 1.0
 fuel_min_rate = 1.0
+# Default: 1.0
 fuel_over_per_10k = 1.0
+# Default: 500.0
 fuel_no_fuel_spin_decay = 500.0
+# Minimum value.
+# Default: 1000000
 fusion_temp_min = 1000000
+# Default: 10000000
 fusion_temp_work = 10000000
+# Default: 15000000
 fusion_temp_peak = 15000000
+# Default: 25000000
 fusion_temp_end = 25000000
+# Default: 20
 fusion_particles_per_sec = 20
+# Default: 21.0
 fusion_absorb_rate = 21.0
+# Default: 10000
 fusion_debris_per = 10000
+# Default: 15
 case_heat_rate = 15
+# Minimum value.
+# Default: -273
 case_temp_min = -273
+# Maximum value.
+# Default: 10000
 case_temp_max = 10000
+# Maximum value.
+# Default: 15.0
 case_press_max = 15.0
+# Default: 0.02
 case_press_follow_rate = 0.02
+# Default: 8000
 case_int_decay_temp = 8000
+# Default: 12.0
 case_int_decay_press = 12.0
+# Default: 1.0
 case_int_decay_rate = 1.0
+# Radius in blocks.
+# Default: 10
 meltdown_explosion_radius = 10

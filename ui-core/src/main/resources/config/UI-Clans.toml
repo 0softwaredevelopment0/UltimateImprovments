@@ -1,18 +1,46 @@
-# UI-Clans settings (auto-generated from config.yml)
-# Edit values below; the file is reloaded by /ui reload.
+# UltimateImprovments — UI-Clans configuration.
+# This single file holds the addon's settings AND its messages (RU + EN).
+# Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# Every value can be edited; the file is re-read by /ui reload.
+# Missing keys are auto-repaired from the bundled defaults on startup.
 
+# ==================================================================
+# SETTINGS
+# ==================================================================
+
+
+# Clans: creation cost, limits and mechanics.
 [clan]
+# Minimum value.
+# Default: 2
 name_min_length = 2
+# Maximum value.
+# Default: 32
 name_max_length = 32
+# Timeout.
+# Default: 30
 confirm_timeout = 30
+# Cooldown.
+# Default: 10
 request_cooldown_seconds = 10
+# Default: 3600
 request_expire_seconds = 3600
 
+# home section.
 [clan.home]
+# Default: "legit"
 mode = "legit"
+# Cooldown.
+# Default: 0
 tp_cooldown_seconds = 0
 
+# dependent section.
 [clan.dependent]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 86400
 invite_expire_seconds = 86400
+# Cooldown.
+# Default: 60
 invite_cooldown_seconds = 60

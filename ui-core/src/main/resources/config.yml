@@ -1065,6 +1065,13 @@ messages:
       header: "<gray>═══ <white>Репутация — </white><yellow>%player%</yellow> <gray>═══</gray>"
       rep: "<gray>Репутация:</gray> %color%%rep%</reset>"
       status: "<gray>Статус:</gray> %status%"
+      # Native dialog window (/ui rep): title, body lines, Close button
+      dialog:
+        title: "<gold>✦</gold> <white>Репутация — </white><yellow>%player%</yellow>"
+        header: "<dark_gray>Account Standing</dark_gray>"
+        rep: "<gray>Репутация: </gray>%color%%rep%</reset>"
+        status: "<gray>Статус: </gray>%status%"
+        close: "<red>✖ Закрыть</red>"
     # Discord Account Standing statuses (issued by staff, second scale)
     status:
       none: "<dark_gray>— Не задан"
@@ -1753,6 +1760,13 @@ messages_en:
       header: "<gray>═══ <white>Reputation — </white><yellow>%player%</yellow> <gray>═══</gray>"
       rep: "<gray>Reputation:</gray> %color%%rep%</reset>"
       status: "<gray>Status:</gray> %status%"
+      # Native dialog window (/ui rep): title, body lines, Close button
+      dialog:
+        title: "<gold>✦</gold> <white>Reputation — </white><yellow>%player%</yellow>"
+        header: "<dark_gray>Account Standing</dark_gray>"
+        rep: "<gray>Reputation: </gray>%color%%rep%</reset>"
+        status: "<gray>Status: </gray>%status%"
+        close: "<red>✖ Close</red>"
     # Discord Account Standing statuses (issued by staff, second scale)
     status:
       none: "<dark_gray>— None"

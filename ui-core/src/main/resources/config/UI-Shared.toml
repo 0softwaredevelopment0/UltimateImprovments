@@ -1,34 +1,80 @@
-# UI-Shared settings (auto-generated from config.yml)
-# Edit values below; the file is reloaded by /ui reload.
+# UltimateImprovments — UI-Shared configuration.
+# This single file holds the addon's settings AND its messages (RU + EN).
+# Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# Every value can be edited; the file is re-read by /ui reload.
+# Missing keys are auto-repaired from the bundled defaults on startup.
 
+# ==================================================================
+# SETTINGS
+# ==================================================================
+
+
+# Radiation zones: damage, protection suits and effects.
 [radiation]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 1
 natural_decay = 1
+# Master switch (true = feature on).
+# Default: true
 effects_enabled = true
+# Default: 2
 ancient_debris_radiation = 2
+# Default: 2
 basalt_deltas_radiation = 2
+# Default: 2
 end_radiation = 2
+# Default: 2
 lead_shield_reduction = 2
+# Default: 100
 antirad_reduction = 100
+# Default: 100
 kill_reduction = 100
+# Default: true
 death_reset = true
+# Default: 50
 mace_use_radiation = 50
+# Default: 50
 trident_use_radiation = 50
+# Default: 50
 elytra_use_radiation = 50
+# Default: 10
 reactor_core_radiation = 10
+# Default: 600
 reactor_pressure_radiation = 600
+# Default: 6400
 reactor_meltdown_close = 6400
+# Default: 3200
 reactor_meltdown_far = 3200
+# Default: 199
 space_radiation = 199
+# Interval in ticks (20 ticks = 1 second).
+# Default: 200
 space_interval_ticks = 200
+# Default: 1.0
 dosimeter_ms_per_unit = 1.0
 
+# Space dimension: oxygen, effects and environment.
 [space]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: false
 debug = false
+# Cooldown.
+# Default: 100
 teleport_cooldown_ticks = 100
+# Delay.
+# Default: 60
 rocket_launch_delay_ticks = 60
+# Default: 0.01
 gravity = 0.01
+# Damage.
+# Default: 1
 oxygen_damage_per_second = 1
+# Default: true
 meteor_space_only = true
+# World name.
+# Default: ["world"]
 space_entry_worlds = ["world"]

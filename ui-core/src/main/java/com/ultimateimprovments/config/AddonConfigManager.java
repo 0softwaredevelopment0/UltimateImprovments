@@ -254,14 +254,17 @@ public final class AddonConfigManager {
 
     /**
      * Reads a raw value from the owning addon's config.
-     * Falls back to the bundled fragment when the key is missing on disk.
+     * Falls back to the bundled commented TOML template when the key is missing on disk.
      */
     public static Object get(String key) {
         String addon = addonOfKey(key);
         FileConfiguration cfg = loaded.get(addon);
         if (cfg == null) return null;
         if (cfg.isSet(key)) return cfg.get(key);
-        return bundledFragmentValue(addon, key);
+        Main plugin = Main.getInstance();
+        if (plugin == null) return null;
+        CommentedTomlTemplate tmpl = CommentedTomlTemplate.loadResource(plugin, "config/" + addon + ".toml");
+        return tmpl == null ? null : tmpl.toBukkit().get(key);
     }
 
     /** Set + immediate persist into the owning addon's TOML. */
@@ -280,7 +283,9 @@ public final class AddonConfigManager {
     /**
      * Loads (or creates) the in-memory view of one addon TOML. When the file is
      * unreadable its contents are salvaged ({@link TomlCrashSalvage}); if it still
-     * cannot be parsed the file is backed up and regenerated from the bundle.
+     * cannot be parsed the file is backed up and regenerated from the bundled
+     * commented TOML template. Comments in the file are preserved on every write
+     * (see {@link CommentedTomlTemplate}).
      */
     private static FileConfiguration loadAddonToml(String addon, File toml) {
         TomlCrashSalvage.salvageFile(toml, m -> ConsoleLogger.warn("[ConfigSalvage/" + addon + "] " + m));
@@ -293,7 +298,7 @@ public final class AddonConfigManager {
                 if (map != null) flattenInto(map, "", view);
             } catch (Exception e) {
                 ConsoleLogger.warn("[Config/" + addon + "] unreadable (" + e.getMessage()
-                        + ") — backing up and regenerating");
+                        + ") — backing up and regenerating from the commented TOML template");
                 backupFile(toml);
                 generateFromBundle(addon, toml);
                 if (toml.exists()) {
@@ -307,8 +312,8 @@ public final class AddonConfigManager {
                 }
             }
         }
-        // Repair: fill missing keys from the bundled fragment so new plugin versions
-        // add new settings/messages even when the file already exists on disk.
+        // Repair: fill missing keys from the bundled commented TOML template so new
+        // plugin versions add new settings/messages even when the file already exists.
         int repaired = repairFromBundle(addon, view);
         if (repaired > 0) {
             writeAddonToml(addon, toml, view);
@@ -316,10 +321,13 @@ public final class AddonConfigManager {
         return view;
     }
 
-    /** Fills missing keys from the bundled fragment. @return number of added keys. */
+    /** Fills missing keys from the bundled commented TOML template. @return number of added keys. */
     private static int repairFromBundle(String addon, YamlConfiguration view) {
-        FileConfiguration ref = bundledFragment(addon);
-        if (ref == null) return 0;
+        Main plugin = Main.getInstance();
+        if (plugin == null) return 0;
+        CommentedTomlTemplate tmpl = CommentedTomlTemplate.loadResource(plugin, "config/" + addon + ".toml");
+        if (tmpl == null) return 0;
+        FileConfiguration ref = tmpl.toBukkit();
         int added = 0;
         for (String path : ref.getKeys(true)) {
             if (ref.isConfigurationSection(path)) continue;
@@ -331,54 +339,40 @@ public final class AddonConfigManager {
         return added;
     }
 
-    /** Writes the in-memory view back to {@code configs/<addon>.toml}. */
+    /** Writes the in-memory view back to {@code configs/<addon>.toml}, preserving comments. */
     private static void writeAddonToml(String addon, File toml, FileConfiguration view) {
         try {
             Map<String, Object> root = TomlConfigManager.sectionToMap(view);
             // internal markers must not leak into the file
             root.remove(DIRTY_KEY);
-            new com.moandjiezana.toml.TomlWriter().write(root, toml);
+            CommentedTomlTemplate onDisk = CommentedTomlTemplate.parse(toml);
+            Main plugin = Main.getInstance();
+            CommentedTomlTemplate bundled = plugin == null ? null
+                    : CommentedTomlTemplate.loadResource(plugin, "config/" + addon + ".toml");
+            CommentedTomlTemplate.write(toml, root, onDisk, bundled);
         } catch (Exception e) {
             ConsoleLogger.warn("[Config/" + addon + "] Failed to save " + toml.getName()
                     + ": " + e.getMessage());
         }
     }
 
-    /** Creates the initial {@code configs/<addon>.toml} from the bundled fragments. */
+    /** Creates the initial {@code configs/<addon>.toml} as a verbatim copy of the bundled template. */
     private static void generateFromBundle(String addon, File toml) {
-        YamlConfiguration merged = new YamlConfiguration();
-        FileConfiguration base = bundledFragment(addon);
-        if (base != null) {
-            // The main fragment already carries settings + messages (RU) + messages_en (EN).
-            for (String path : base.getKeys(true)) {
-                if (!base.isConfigurationSection(path)) merged.set(path, base.get(path));
+        Main plugin = Main.getInstance();
+        if (plugin != null) {
+            CommentedTomlTemplate tmpl = CommentedTomlTemplate.loadResource(plugin, "config/" + addon + ".toml");
+            if (tmpl != null && tmpl.writeTo(toml)) {
+                ConsoleLogger.info("[Config] Generated " + UltimateDirs.CONFIGS + "/" + toml.getName()
+                        + " (from the commented template)");
+                return;
             }
         }
-        toml.getParentFile().mkdirs();
-        writeAddonToml(addon, toml, merged);
-        ConsoleLogger.info("[Config] Generated " + UltimateDirs.CONFIGS + "/" + toml.getName());
-    }
-
-    /** Loads the bundled resource fragment {@code config/<Addon>.yml} (or null). */
-    private static FileConfiguration bundledFragment(String name) {
-        Main plugin = Main.getInstance();
-        if (plugin == null) return null;
-        String res = "config/" + name + ".yml";
-        try (InputStream in = plugin.getResource(res)) {
-            if (in == null) return null;
-            return org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(in, StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            ConsoleLogger.warn("[Config] Failed to load bundled fragment " + res + ": " + e.getMessage());
-            return null;
+        ConsoleLogger.warn("[Config] No bundled TOML template for " + addon + " — generating an empty file");
+        try {
+            toml.getParentFile().mkdirs();
+            new com.moandjiezana.toml.TomlWriter().write(new LinkedHashMap<>(), toml);
+        } catch (Exception ignored) {
         }
-    }
-
-    /** Single-key lookup in the bundled fragment (fallback for missing disk keys). */
-    private static Object bundledFragmentValue(String addon, String key) {
-        FileConfiguration ref = bundledFragment(addon);
-        if (ref == null) return null;
-        return ref.get(key);
     }
 
     private static void backupFile(File file) {
