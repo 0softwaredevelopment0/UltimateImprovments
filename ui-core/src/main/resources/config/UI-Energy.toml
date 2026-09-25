@@ -1,0 +1,53 @@
+# UI-Energy settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+[energy]
+
+[energy.generator]
+enabled = true
+energy_per_fuel = 100
+fuel_burn_ticks = 100
+log = false
+
+[energy.electric_furnace]
+enabled = true
+energy_per_smelt = 100
+cooldown_ms = 1000
+
+[energy.cable]
+enabled = true
+max_energy = 0
+log = false
+
+[energy.cable.blink]
+enabled = true
+off_ticks = 10
+on_ticks = 10
+
+[energy.battery]
+max_energy = 100000
+discharge_per_tick = 10
+
+[energy.battery.smooth_charge]
+enabled = true
+charge_multiplier = 2.0
+discharge_multiplier = 0.5
+
+[energy.battery.visual]
+particles_enabled = true
+
+[energy.battery_drain]
+enabled = true
+transfer_per_tick = 5
+log = false
+
+[energy.balancer]
+enabled = true
+include_batteries = false
+max_transfer = 25
+log = false
+
+[energy_crafting]
+enabled = true
+energy_per_craft = 100
+workbench_search_radius = 3

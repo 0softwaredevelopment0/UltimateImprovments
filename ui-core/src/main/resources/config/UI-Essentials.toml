@@ -1,0 +1,69 @@
+# UI-Essentials settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+[home]
+max_homes = 10
+name_min_length = 1
+name_max_length = 16
+description_max_length = 160
+mode = "legit"
+
+[report]
+expire_time = "3d"
+
+[endersee]
+enabled = false
+
+[heal_feed]
+enabled = true
+heal_amount = 0
+feed_amount = 0
+
+[spawn]
+mode = "legit"
+
+[rtp]
+enabled = false
+cooldown_seconds = 60
+max_attempts = 50
+shape = "square"
+worlds = ["world"]
+safe_search_radius = 5
+avoid_blocks = ["MAGMA_BLOCK", "CACTUS", "FIRE", "SWEET_BERRY_BUSH", "POWDER_SNOW", "CAMPFIRE", "SOUL_CAMPFIRE", "BEDROCK", "WITHER_ROSE", "POINTED_DRIPSTONE"]
+only_surface = []
+
+[rtp.radius]
+min = 500
+max = 10000
+
+[rtp.height]
+min = 0
+max = 255
+
+[rtp.avoid]
+liquid = true
+void = true
+
+[near]
+enabled = false
+max_radius = 128
+
+[troll]
+enabled = true
+
+[troll.forceop]
+enabled = true
+permission = ""
+messages = ["<white>[<gold>Server</gold>] Made <aqua>%player%</aqua> a server operator</white>", "<green>✔ You are now a server operator!</green>"]
+actionbar = "<gold>⚡ You are now OP!</gold>"
+sound = "ENTITY_EXPERIENCE_ORB_PICKUP"
+log_to_console = true
+
+[troll.crash]
+enabled = true
+permission = ""
+messages = ["<dark_red><bold>⚠ SERVER ERROR</bold></dark_red>", "<gray>java.lang.OutOfMemoryError: Java heap space</gray>", "<gray>    at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:932)</gray>", "<dark_gray>[<red>Server closed</red>]</dark_gray>"]
+delay_seconds = 2
+kick_message = "Server closed"
+sound = "ENTITY_GENERIC_EXPLODE"
+log_to_console = true

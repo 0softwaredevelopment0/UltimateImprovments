@@ -1,0 +1,57 @@
+# UI-MBS settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+[reactor]
+enabled = true
+core_temp_max = 2000000000
+core_temp_min = -273
+core_work_temp = 10000000
+press_follow_rate = 0.02
+spin_follow_rate = 0.01
+energy_rate = 100
+laser_ramp_rate = 5.0
+power_laser_heat_rate = 5000
+stab_cool_rate = 9500
+shield_build_rate = 5.0
+shield_stress_heat_per = 400000
+shield_stress_press_per = 0.5
+shield_stress_spin_per = 35000
+shield_decay_base = 0.333
+shield_recovery_every_sec = 5
+shield_recovery_rate = 1.0
+shield_failure_countdown = 10
+shield_explosion_radius = 10
+shield_integrity_shutdown_percent = 25
+selfdestruct_chance = 1.0
+selfdestruct_no_signal_sec = 5
+selfdestruct_timed_sec = 60
+selfdestruct_overpower_rate = 10.0
+selfdestruct_adv_radius = 20.0
+absorber_cool_rate = 9500.0
+absorber_rad_per_sec = 40.0
+shield_particle_rod_speed = 0.35
+shield_particle_rod_count = 16
+shield_particle_dust_count = 16
+fuel_spin_min = 1000
+fuel_work_spin = 95000
+fuel_over_spin = 100000
+fuel_base_rate = 5.0
+fuel_min_rate = 1.0
+fuel_over_per_10k = 1.0
+fuel_no_fuel_spin_decay = 500.0
+fusion_temp_min = 1000000
+fusion_temp_work = 10000000
+fusion_temp_peak = 15000000
+fusion_temp_end = 25000000
+fusion_particles_per_sec = 20
+fusion_absorb_rate = 21.0
+fusion_debris_per = 10000
+case_heat_rate = 15
+case_temp_min = -273
+case_temp_max = 10000
+case_press_max = 15.0
+case_press_follow_rate = 0.02
+case_int_decay_temp = 8000
+case_int_decay_press = 12.0
+case_int_decay_rate = 1.0
+meltdown_explosion_radius = 10

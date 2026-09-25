@@ -46,6 +46,7 @@ public final class Permissions {
     public static final String CMD_PLUGINS = "ui.command.plugins";
     public static final String CMD_ADDONS = "ui.command.addons";
     public static final String CMD_HELP = "ui.command.help";
+    public static final String CMD_LANG = "ui.command.lang";
 
     // ═══════════ Commands: player ═══════════
     public static final String CMD_HOME = "ui.command.home";
@@ -210,6 +211,7 @@ public final class Permissions {
                 new Permission(CMD_PLUGINS, "List plugins", PermissionDefault.FALSE),
                 new Permission(CMD_ADDONS, "List UltimateImprovments addons (/ui addons)", PermissionDefault.FALSE),
                 new Permission(CMD_HELP, "Show command help", PermissionDefault.FALSE),
+                new Permission(CMD_LANG, "View or switch the UI language (/ui lang)", PermissionDefault.OP),
 
                 // ── Commands: player ──
                 new Permission(CMD_HOME, "Teleport to your home", PermissionDefault.FALSE),

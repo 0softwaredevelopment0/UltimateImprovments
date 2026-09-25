@@ -1,0 +1,121 @@
+# UI-Chat settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+[chat_ping]
+enabled = true
+ping_style = "<underlined><color:#FFAA00>@%s</color></underlined>"
+sound_name = "ENTITY_EXPERIENCE_ORB_PICKUP"
+sound_volume = 0.5
+sound_pitch = 1.5
+
+[chat_filter]
+enabled = false
+words = ["*блять*", "*блят*", "*хуй*", "*пизда*", "*еба*", "*пидр*", "*таврь*", "*нахуй*", "*нахер*", "*нах"]
+regex_patterns = [".*(?<!\\p{L})(?:бля(?:дь|ть|т)|бляд(?:ь|и|ина)|еб(?:ать|ан|лан|уч)|хуй|хуйня|пизд(?:а|ец|еть)|муд(?:ак|ила)|гандон)(?!\\p{L}).*\n", ".*(?<!\\p{L})(?:долбо(?:еб|ёб)|идиот|дебил|кретин|имбецил|придурок)(?!\\p{L}).*\n", ".*п[^а-яёa-z0-9]{0,3}и[^а-яёa-z0-9]{0,3}д[^а-яёa-z0-9]{0,3}(?:а|о)?[^а-яёa-z0-9]{0,3}р.*\n", ".*х[^а-яёa-z0-9]{0,3}у[^а-яёa-z0-9]{0,3}й.*\n", ".*[А-ЯЁA-Z]{15,}.*\n", ".*(.)\\1{8,}.*\n", ".*ж[^а-яёa-z0-9]{0,3}[иi1і][^а-яёa-z0-9]{0,3}р(?:н(?:ы(?:й|е|х|м)?|ая|ое)?|уха|ок|дяй)? .*\n"]
+
+[chat]
+enabled = true
+mode = "channels"
+format = "<green>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+player_minimessage = true
+message_placeholders = true
+bypass_permission = ""
+
+[chat.channels]
+
+[chat.channels.local]
+radius = 100
+format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+[chat.channels.global]
+format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+[chat.channels.world]
+format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+[chat.channels.private]
+format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+[chat.channels.admin]
+format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+[chat.channels.check]
+format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+
+[chat.channels.console]
+enabled = true
+whitelist = []
+
+[chat.channels.console.access_control]
+enabled = true
+
+[chat.channels.console.access_control.units]
+
+[chat.channels.console.access_control.units.1]
+enabled = true
+mode = "blacklist"
+regexes = "None"
+condition = "all"
+
+[chat.channels.console.access_control.units.1.wildcards]
+1 = "*rm -rf /*"
+
+[chat.channels.console.access_control.units.1.custom_deny_msg]
+enabled = false
+message = "<red>This is blocked by the server.</red>"
+
+[chat.channels.linux]
+enabled = false
+whitelist = []
+
+[chat.channels.linux.access_control]
+enabled = true
+
+[chat.channels.linux.access_control.units]
+
+[chat.channels.linux.access_control.units.1]
+enabled = true
+mode = "blacklist"
+regexes = "None"
+condition = "all"
+
+[chat.channels.linux.access_control.units.1.wildcards]
+1 = "*rm -rf /*"
+
+[chat.channels.linux.access_control.units.1.custom_deny_msg]
+enabled = false
+message = "<red>This is blocked by the server.</red>"
+
+[chat.access_control]
+enabled = false
+
+[chat.access_control.units]
+
+[chat.access_control.units.1]
+enabled = true
+mode = "blacklist"
+regexes = "None"
+condition = "all"
+
+[chat.access_control.units.1.wildcards]
+1 = "*badword*"
+
+[chat.access_control.units.1.custom_deny_msg]
+enabled = false
+message = "<red>Message blocked by chat access control.</red>"
+
+[auto_broadcast]
+enabled = true
+
+[auto_broadcast.sections]
+
+[auto_broadcast.sections.example]
+enabled = true
+cooldown_ticks = 2400
+conditions = "is-op=false, is-gamemode=survival, online-above=1"
+messages = ["<gold>✦ <white>Добро пожаловать на <yellow>%server_name%</yellow>! Онлайн: <aqua>%online%</aqua></white></gold>", "<green>☀ <white>Не забудь заглянуть в <yellow>/ui help</yellow> — там много полезного!</white></green>"]
+
+[ojm]
+enabled = false
+join = "<white>[<green>+<white>] <player> <green>joined the game"
+leave = "<white>[<red>-<white>] <player> <red>left the game"

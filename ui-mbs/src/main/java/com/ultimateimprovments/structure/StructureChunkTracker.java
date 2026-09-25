@@ -198,7 +198,10 @@ public class StructureChunkTracker {
     // MIGRATION — import from the old JSON
     // ════════════════════════════════════════
     private static void migrateFromJson(Connection con) {
-        java.io.File jsonFile = new java.io.File(UIMBS.getInstance().getDataFolder(), "structure-chunks.json");
+        // Shared family folder (structure-chunks.json is migrated out of legacy
+        // plugin folders by UltimateDirs on startup).
+        java.io.File jsonFile = new java.io.File(
+                com.ultimateimprovments.core.UltimateDirs.base(), "structure-chunks.json");
         if (!jsonFile.exists()) return;
 
         // Check whether the DB already has data

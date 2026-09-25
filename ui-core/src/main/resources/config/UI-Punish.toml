@@ -1,0 +1,8 @@
+# UI-Punish settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+[maintenance]
+enabled = true
+
+[access_control]
+check_interval_ticks = 20

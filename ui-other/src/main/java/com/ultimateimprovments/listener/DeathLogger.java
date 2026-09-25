@@ -79,7 +79,9 @@ public class DeathLogger implements Listener {
 
         if (enabled) {
             if (logFile == null) {
-                logFile = new File(plugin.getDataFolder(), "deaths.log");
+                // Shared family folder (deaths.log is migrated out of legacy
+                // plugin folders by UltimateDirs on startup).
+                logFile = new File(com.ultimateimprovments.core.UltimateDirs.base(), "deaths.log");
                 try {
                     if (logFile.getParentFile() != null) {
                         logFile.getParentFile().mkdirs();

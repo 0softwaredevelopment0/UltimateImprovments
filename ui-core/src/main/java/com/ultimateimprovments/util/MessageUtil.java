@@ -43,29 +43,17 @@ public class MessageUtil {
     }
 
     /**
-     * Raw message from config with per-language section selection.
-     * <p>
-     * Language comes from {@code messages.lang} in config.yml ("en" or "ru").
-     * For "en" the primary section is {@code messages_en} with fallback to
-     * {@code messages}; for "ru" — the reverse. This makes every message that
-     * goes through this method follow the server language setting and stay
-     * editable in both RU/EN tabs of the config.
+     * Raw message with per-language section selection — delegates to
+     * {@link com.ultimateimprovments.config.MessagesManager#getString}, which
+     * resolves the language ({@code messages.lang}) and routes the key to the
+     * owning addon's TOML file.
      *
      * @param path  path WITHOUT the section prefix (e.g. {@code structures.fix_place})
-     * @param def   fallback when the key is missing in both sections
+     * @param def   fallback when the key is missing in both languages
      * @return the raw MiniMessage string (not parsed)
      */
     public static String raw(String path, String def) {
-        Main plugin = Main.getInstance();
-        if (plugin == null) return def;
-        FileConfiguration config = plugin.getConfig();
-        boolean ru = "ru".equalsIgnoreCase(config.getString("messages.lang", "en"));
-        String primary = ru ? "messages" : "messages_en";
-        String fallback = ru ? "messages_en" : "messages";
-        String value = config.getString(primary + "." + path, null);
-        if (value != null) return value;
-        value = config.getString(fallback + "." + path, null);
-        return value != null ? value : def;
+        return com.ultimateimprovments.config.MessagesManager.getString(path, def);
     }
 
     /**

@@ -1,0 +1,616 @@
+# UI-Other settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+[codepanel]
+max_length = 10
+enter_cooldown = 3
+
+[codepanel.sounds]
+digit = "UI_BUTTON_CLICK"
+backspace = "BLOCK_DISPENSER_FAIL"
+enter = "ENTITY_EXPERIENCE_ORB_PICKUP"
+success = "ENTITY_PLAYER_LEVELUP"
+fail = "BLOCK_ANVIL_LAND"
+
+[features]
+
+[features.antimatter]
+enabled = true
+explosion_radius = 5
+break_blocks = true
+set_fire = true
+
+[features.attributes]
+enabled = true
+attack_damage = 0.1
+sneak_speed = 1.0
+attack_speed = 3.5
+interval_ticks = 200
+
+[features.beacon]
+enabled = true
+glowing = true
+blindness = true
+regeneration_amplifier = 4
+resistance_amplifier = 4
+interval_ticks = 5
+
+[features.blockdmg]
+enabled = true
+dripstone_damage = 1
+endrod_damage = 1
+interval_ticks = 5
+
+[features.boostedcobweb]
+enabled = true
+
+[features.block_collapse]
+enabled = false
+rate = 1.0
+interval_ticks = 20
+save_interval_seconds = 600
+lore_enabled = true
+lore_interval_ticks = 100
+log_block_actions = false
+default_heaviness = 5.0
+heaviness_overrides = "None"
+
+[features.block_collapse.scan]
+enabled = true
+delay_seconds = 1
+interval_seconds = 1
+area = 16
+max_mspt = 50.0
+
+[features.deathbell]
+enabled = true
+lightning = true
+
+[features.dragonegg]
+enabled = false
+world = "world_the_end"
+x = 0
+y = 142
+z = 0
+interval_ticks = 1728000
+spawn_chance = 1.0
+
+[features.enderchest]
+enabled = true
+explosion_chance = 0.001
+explosion_power = 10.0
+damage = 1
+
+[features.enderchest.quick_close]
+enabled = true
+threshold_ms = 1000
+damage = 1
+
+[features.enderchest.quick_close.look_away]
+enabled = true
+angle_threshold = 45.0
+explosion_damage = 20
+
+[features.entitylocator]
+enabled = true
+scan_radius = 12
+interval_ticks = 20
+
+[features.exp_bottle_upgrade]
+enabled = true
+max_multiplier = 100
+anvil_cost_amount = 1
+item_name = "<i:false><yellow>Experience bottle <gold>x{level}</gold></yellow>"
+item_lore = ["<i:false><gray>Gives <aqua>{level}</aqua> times more experience.</gray>", "<i:false><dark_gray>{level} + {level} = <aqua>x{next}</aqua> on an anvil.</dark_gray>"]
+
+[features.glassbreak]
+enabled = true
+damage = 1
+
+[features.magnet]
+enabled = true
+interval_ticks = 1
+item_y_boost = 0.05
+
+[features.magnet.radius]
+min = 3
+max = 15
+
+[features.magnet.force]
+base = 0.01
+distance_multiplier = 0.3
+max = 1
+max_speed = 0.5
+
+[features.magnet.force_curve]
+power_exponent = 0.5
+power_normalize = 20.0
+
+[features.magnet.distance_curve]
+type = "smoothstep"
+min_factor = 0.0
+
+[features.magnet.particles]
+center_max = 50
+blocks_max = 30
+crit_max = 25
+portal_max = 15
+
+[features.modeprotect]
+enabled = false
+worlds = ["world", "world_nether", "world_the_end"]
+bypass_permission = "ui.gmprotect.bypass"
+
+[features.shieldslowness]
+enabled = true
+slowness_amplifier = 255
+slowness_duration = 20
+
+[features.terracotaspeed]
+enabled = true
+speed_amplifier = 4
+interval_ticks = 5
+
+[features.minecart_speed]
+enabled = true
+base_max_speed = 8.0
+max_speed_limit = 999999999
+acceleration_factor = 1.005
+deceleration_factor = 0.998
+thrust_per_tick = 0.06
+collision_min_speed = 15.0
+interval_ticks = 1
+
+[features.minecart_speed.hopper_smelt]
+enabled = true
+min_speed = 50.0
+
+[features.unbreakable_breaker]
+enabled = true
+
+[features.unbreakable_breaker.blocks]
+
+[features.unbreakable_breaker.blocks.BEDROCK]
+enabled = true
+max_damage = 100
+min_tool_tier = "-"
+require_haste = false
+drop_block = true
+break_naturally = true
+play_effects = true
+efficiency_multiplier = 0.5
+haste_multiplier = 0.3
+
+[features.unbreakable_breaker.blocks.BEDROCK.damage]
+netherite_pickaxe = 4.0
+diamond_pickaxe = 2.5
+iron_pickaxe = 1.0
+copper_pickaxe = 0.7
+wooden_pickaxe = 0.5
+golden_pickaxe = 0.4
+default = 0.3
+
+[features.unbreakable_breaker.blocks.BARRIER]
+enabled = true
+max_damage = 80.0
+min_tool_tier = "-"
+require_haste = false
+drop_block = true
+break_naturally = true
+play_effects = true
+efficiency_multiplier = 0.5
+haste_multiplier = 0.3
+
+[features.unbreakable_breaker.blocks.BARRIER.damage]
+netherite_pickaxe = 4.0
+diamond_pickaxe = 2.5
+iron_pickaxe = 1.0
+copper_pickaxe = 0.7
+wooden_pickaxe = 0.5
+golden_pickaxe = 0.4
+default = 0.3
+
+[features.integrity]
+enabled = true
+
+[features.integrity.on_break]
+play_sound = true
+sound_volume = 2.0
+sound_pitch = 1.0
+
+[features.integrity.low_integrity_warning]
+thresholds = [75, 50, 25, 10, 5]
+
+[features.integrity.unbreaking]
+enabled = false
+
+[features.integrity.piercing]
+enabled = true
+extra_integrity_cost = 0.5
+
+[features.creative_item_validator]
+enabled = true
+bypass_permission = "ui.creative.bypass"
+max_item_bytes = 10240
+max_pdc_keys = 30
+max_lore_lines = 50
+max_lore_chars = 1000
+max_name_chars = 200
+max_enchantments = 40
+
+[features.shulker_protection]
+enabled = true
+
+[features.leash]
+enabled = true
+max_distance = 10
+pull_back_interval = 2
+prevent_break = true
+hard_stop = true
+
+[features.container_trigger]
+enabled = false
+interval_ticks = 1
+triggers = []
+
+[features.waypoint]
+enabled = true
+interval_ticks = 200
+
+[features.sudo]
+enabled = true
+session_minutes = 15
+attempt_cooldown_seconds = 10
+dangerous_commands = ["ui punish", "ui power", "ui chgop", "ui op", "ui deop", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maintenance", "lp", "luckperms", "op", "deop", "stop", "restart"]
+
+[brand_spoof]
+enabled = true
+custom_brand = "Paper"
+
+[vanish]
+vanished_players = []
+
+[sunburn]
+enabled = true
+check_interval = 80
+fire_ticks = 80
+extinguish_when_safe = true
+helmet_degrade_interval = 80
+helmet_integrity_loss = 1
+included_worlds = ["world"]
+
+[netherite_upgrade]
+
+[netherite_upgrade.base_values]
+block_break_speed = 1
+
+[netherite_upgrade.base_values.armor]
+helmet = 3
+chestplate = 8
+leggings = 6
+boots = 3
+
+[netherite_upgrade.base_values.weapons]
+sword = 8
+mace = 5
+
+[auth]
+enabled = true
+min_password_length = 1
+max_password_length = 32
+session_duration_minutes = 60
+login_timeout_seconds = 60
+max_wrong_attempts = 5
+request_cooldown_seconds = 5
+max_accounts_per_ip = 3
+
+[auth.check_ip]
+enabled = true
+
+[auth.check_duplicate_name]
+enabled = true
+
+[auth.2fa]
+
+[auth.2fa.github]
+enabled = false
+client_id = ""
+client_secret = ""
+port = 8080
+public_url = ""
+
+[void_protection]
+enabled = true
+worlds = ["pocketworld"]
+
+[void_protection.target]
+world = "pocketworld"
+x = 0
+y = 1
+z = 0
+yaw = 0.0
+pitch = 0.0
+
+[death_logger]
+enabled = false
+log_to_console = true
+
+[power]
+intercept_commands = true
+request_timeout = 30
+countdown_duration = 10
+
+[power.actionbar]
+enabled = true
+
+[power.bossbar]
+enabled = true
+color = "RED"
+style = "SOLID"
+
+[power.countdown_sound]
+enabled = true
+name = "BLOCK_NOTE_BLOCK_PLING"
+volume = 1.0
+pitch_base = 1.2
+pitch_max = 2.0
+
+[power.countdown_sound.beep_speedup]
+enabled = true
+min_per_second = 1
+max_per_second = 6
+
+[suicide]
+countdown_duration = 10
+cooldown_seconds = 10
+confirm_timeout = 30
+
+[suicide.sounds]
+warning = "BLOCK_NOTE_BLOCK_PLING"
+tick = "BLOCK_NOTE_BLOCK_PLING"
+finish = "ENTITY_LIGHTNING_BOLT_THUNDER"
+
+[suicide.bossbar]
+color = "RED"
+style = "SOLID"
+
+[packet_guard]
+enabled = true
+bypass_permission = "ui.packetguard.bypass"
+max_packet_size = 7000000
+log = true
+log_inject = false
+
+[proxy_server]
+enabled = true
+log_commands = true
+no_permission_message = "<red>❌ You don't have permission to switch servers!</red>"
+
+[redstone_guard]
+enabled = true
+mspt_threshold = 50.0
+chunk_iterations_limit = 10
+
+[emergency_entity_kill]
+enabled = true
+entity_limit = 1000
+mspt_threshold = 50.0
+kill_worlds = []
+log = true
+broadcast_to_all = false
+notification_cooldown_ms = 30000
+
+[server_overload_warning]
+enabled = true
+high_mspt = 40.0
+critical_mspt = 50.0
+notify_cooldown_seconds = 30
+
+[bot_protection]
+enabled = true
+rejoin_cooldown_seconds = 3
+priority_session_duration = 10
+
+[bot_protection.queue]
+max_joins_per_window = 2
+window_seconds = 1
+notify_ops = true
+priority_max_joins_per_window = 5
+
+[changedimmension]
+default_world = "pocketworld"
+cooldown_seconds = 10
+
+[changedimmension.dialog]
+title = "<gold>✦ Change Dimension</gold>"
+body = "<white>Where do you want to teleport?</white>"
+world_label = "<gray>World Name</gray>"
+tp_button = "<green>✔ Teleport</green>"
+return_button = "<aqua>↩ Return back</aqua>"
+cancel_button = "<red>✖ Cancel</red>"
+
+[changedimmension.worlds]
+
+[changedimmension.worlds.pocketworld]
+x = 0
+y = 1
+z = 0
+yaw = 0.0
+pitch = 0.0
+
+[motd]
+enabled = true
+line1 = "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient> <dark_gray>•</dark_gray> <white>1.21.4</white>"
+line2 = "<gray>✧ Welcome to the server! ✧</gray>"
+icon_enabled = true
+
+[motd.player_list]
+enabled = false
+lines = ["<gradient:#00AAFF:#FF55FF>✧ UltimateImprovments ✧</gradient>", "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"]
+
+[motd.online_counter]
+
+[motd.online_counter.current_online]
+mode = "normal"
+value = 0
+scale = 50
+percent = 20
+add = 5
+min = 10
+max = 100
+update_interval_ticks = 100
+
+[motd.online_counter.max_online]
+mode = "normal"
+value = 100
+scale = 50
+percent = 0
+add = 0
+min = 50
+max = 500
+update_interval_ticks = 100
+
+[tab]
+enabled = true
+update_interval_ticks = 20
+hide_spectators = true
+header = ["<gradient:#00AAFF:#FF55FF>  ✦ UltimateImprovments ✦  </gradient>", "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"]
+footer = ["<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>", "<gray>  Online: <white>%online%</white><gray>/%max_players%  •  TPS: <white>%tps%</white></gray>", "<gray>  Discord: <aqua>discord.gg/ultimateimprovments</aqua></gray>"]
+
+[tab.player_list]
+objective_enabled = true
+update_interval_ticks = 0
+format = ""
+objective_prefix = ""
+objective_suffix = " <dark_gray>[</dark_gray>%player_ping_color%%player_ping%<dark_gray>ms] </dark_gray>"
+
+[tab.sort]
+mode = "none"
+
+[scoreboard]
+enabled = true
+update_interval_ticks = 20
+
+[scoreboard.boards]
+
+[scoreboard.boards.default]
+title = "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient>"
+lines = ["", "<gray>Online: <white>%online%</white><gray>/%max_players%</gray>", "<gray>TPS: <white>%tps%</white></gray>", "", "<gray>Your ping: <white>%player_ping%ms</white></gray>", "<gray>World: <white>%world_name%</white></gray>", "", "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"]
+
+[scoreboard.boards.default.condition]
+type = "always"
+worlds = []
+permission = ""
+
+[bossbar]
+enabled = true
+format = "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient> <dark_gray>|</dark_gray> <gray>Online: <white>%online%</white></gray>"
+color = "YELLOW"
+style = "SOLID"
+progress_mode = "increase_decrease"
+static_value = 0.5
+progress_speed = 0.01
+progress_increasing = true
+update_interval_ticks = 20
+
+[wireless_redstone]
+enabled = true
+
+[structure_integrity]
+enabled = true
+stress_max = 1000.0
+stress_threshold = 100.0
+stress_per_open_close = 1.0
+stress_decay_per_second = 0.03333
+base_degradation_rate = 0.1
+degradation_exponent = 2.0
+degradation_time_exponent = 0.01
+integrity_recovery_per_second = 0.01666
+explosion_power = 10.0
+explosion_damage = 8192.0
+explosion_damage_radius = 12
+
+[economy]
+enabled = true
+default_balance = 100.0
+primary_currency = "coins"
+
+[economy.income]
+enabled = false
+
+[economy.income.blocks]
+
+[economy.income.mobs]
+
+[enchant]
+enabled = true
+max_level = 255
+permission = "ui.command.enchant"
+custom_enchantments = ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing"]
+
+[meteor]
+enabled = true
+world = "world"
+count_per_spawn = 1
+fall_duration_ticks = 60
+sphere_radius = 2
+explosion_power = 8.0
+max_active = 10
+display_blocks = ["CRACKED_DEEPSLATE_BRICKS", "CRACKED_DEEPSLATE_TILES", "CHISELED_DEEPSLATE", "MAGMA_BLOCK"]
+
+[meteor.interval]
+min = 30
+max = 90
+
+[meteor.spawn_radius]
+min = 30
+max = 120
+
+[meteor.height]
+min = -64
+max = 320
+
+[meteor.core_ores]
+DEEPSLATE_DIAMOND_ORE = 1.0
+DEEPSLATE_IRON_ORE = 1.0
+DEEPSLATE_GOLD_ORE = 1.0
+DEEPSLATE_EMERALD_ORE = 1.0
+DEEPSLATE_LAPIS_ORE = 1.0
+DEEPSLATE_REDSTONE_ORE = 1.0
+DEEPSLATE_COAL_ORE = 1.0
+DEEPSLATE_COPPER_ORE = 1.0
+
+[particle_accelerator]
+enabled = true
+collision_recipes = ["{'material_a': 'GOLD_INGOT', 'material_b': 'DIAMOND', 'speed_min_pct': 5.0, 'speed_max_pct': 10.0, 'result': 'EMERALD'}", "{'material_a': 'DIAMOND', 'material_b': 'EMERALD', 'speed_min_pct': 10.0, 'speed_max_pct': 15.0, 'result': 'NETHERITE_SCRAP'}"]
+
+[block_friction]
+BLUE_ICE = 0.989
+
+[protection]
+enabled = true
+
+[protection.block]
+material = "LODESTONE"
+
+[protection.radius]
+default = 5
+min = 1
+max = 64
+
+[protection.integrity]
+starting_value = 100.0
+loss_per_break_attempt = 0.1
+loss_per_explosion_block = 0.1
+
+[protection.points]
+fuel_multiplier = 0.1
+radius_upgrade_base_cost = 1
+repair_base_cost = 1
+
+[protection.crafting]
+workbench_allowed = false
+crafter_allowed = true
+
+[protection.admin]
+give_allowed = true

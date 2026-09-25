@@ -73,14 +73,19 @@ public final class ReloadSubcommand {
                             new PluginShutdown(plugin).shutdownPlugin();
 
                             ConsoleLogger.info("[Reload] Reloading config...");
-                            // Битый YAML: reloadConfig() в Paper-26 молча глотает ошибку парсинга,
-                            // поэтому спасаем файл заранее — «синтаксический краш → игнор секции»:
-                            // удаляются только сломанные секции (с бэкапом), остальное сохраняется,
-                            // а дефолты удалённых секций допишет ConfigRepairManager при старте.
-                            ConfigCrashSalvage.salvage(plugin);
+                            // Composite per-addon backend: AddonConfigManager.init() salvages broken
+                            // TOML lines, repairs missing keys from the bundled fragments and rebuilds
+                            // the CompositeConfig routing (configs/UI-<Addon>.toml files).
                             plugin.reloadConfig();
 
                             ConsoleLogger.info("[Reload] Starting up plugins (sync)...");
+                            // Clear the JAR file caches of the disabled UI-* classloaders.
+                            // After /ui updatejar or /ui swapjar the on-disk JAR was replaced;
+                            // if the old (cached) jar handle is reopened — e.g. while reading
+                            // plugin.yml — the JVM throws a fatal ZipError from the cached
+                            // central directory. Dropping the caches makes the JVM re-read
+                            // the fresh JAR from disk.
+                            com.ultimateimprovments.core.PluginStartup.clearJarFileCaches();
                             new PluginStartup(plugin).startupPlugin();
                             // Re-enable in load order (dependencies before dependents)
                             for (org.bukkit.plugin.Plugin p : family) {

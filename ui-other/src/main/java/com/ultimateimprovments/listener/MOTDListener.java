@@ -51,7 +51,7 @@ public class MOTDListener implements Listener {
      * Can be called again to reload (e.g. on /ui reload).
      */
     public void loadIcon() {
-        File iconFile = new File(Main.getInstance().getDataFolder(), "server-icon.png");
+        File iconFile = new File(com.ultimateimprovments.core.UltimateDirs.base(), "server-icon.png");
         if (!iconFile.exists()) {
             this.iconLoaded = false;
             this.cachedIcon = null;

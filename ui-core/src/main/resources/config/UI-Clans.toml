@@ -1,0 +1,18 @@
+# UI-Clans settings (auto-generated from config.yml)
+# Edit values below; the file is reloaded by /ui reload.
+
+[clan]
+name_min_length = 2
+name_max_length = 32
+confirm_timeout = 30
+request_cooldown_seconds = 10
+request_expire_seconds = 3600
+
+[clan.home]
+mode = "legit"
+tp_cooldown_seconds = 0
+
+[clan.dependent]
+enabled = true
+invite_expire_seconds = 86400
+invite_cooldown_seconds = 60

@@ -1,0 +1,304 @@
+home:
+  max_homes: 10
+  name_min_length: 1
+  name_max_length: 16
+  description_max_length: 160
+  mode: legit
+report:
+  expire_time: 3d
+endersee:
+  enabled: false
+heal_feed:
+  enabled: true
+  heal_amount: 0
+  feed_amount: 0
+spawn:
+  mode: legit
+rtp:
+  enabled: false
+  cooldown_seconds: 60
+  max_attempts: 50
+  radius:
+    min: 500
+    max: 10000
+  shape: square
+  worlds:
+  - world
+  height:
+    min: 0
+    max: 255
+  safe_search_radius: 5
+  avoid_blocks:
+  - MAGMA_BLOCK
+  - CACTUS
+  - FIRE
+  - SWEET_BERRY_BUSH
+  - POWDER_SNOW
+  - CAMPFIRE
+  - SOUL_CAMPFIRE
+  - BEDROCK
+  - WITHER_ROSE
+  - POINTED_DRIPSTONE
+  only_surface: []
+  avoid:
+    liquid: true
+    void: true
+near:
+  enabled: false
+  max_radius: 128
+troll:
+  enabled: true
+  forceop:
+    enabled: true
+    permission: ''
+    messages:
+    - <white>[<gold>Server</gold>] Made <aqua>%player%</aqua> a server operator</white>
+    - <green>✔ You are now a server operator!</green>
+    actionbar: <gold>⚡ You are now OP!</gold>
+    sound: ENTITY_EXPERIENCE_ORB_PICKUP
+    log_to_console: true
+  crash:
+    enabled: true
+    permission: ''
+    messages:
+    - <dark_red><bold>⚠ SERVER ERROR</bold></dark_red>
+    - '<gray>java.lang.OutOfMemoryError: Java heap space</gray>'
+    - <gray>    at net.minecraft.server.MinecraftServer.run(MinecraftServer.java:932)</gray>
+    - <dark_gray>[<red>Server closed</red>]</dark_gray>
+    delay_seconds: 2
+    kick_message: Server closed
+    sound: ENTITY_GENERIC_EXPLODE
+    log_to_console: true
+messages:
+  lang: en
+  home:
+    player_only: <red>❌ Only players can use this command!</red>
+    no_permission_sethome: <red>❌ You don't have permission to save home points!</red>
+    no_permission_home: <red>❌ You don't have permission to view home points!</red>
+    no_permission_delhome: <red>❌ You don't have permission to delete home points!</red>
+    no_permission_listhomes: <red>❌ You don't have permission to view the home list!</red>
+    no_permission_ophomels: <red>❌ You don't have permission to view other players'
+      homes!</red>
+    no_permission_opdelhome: <red>❌ You don't have permission to delete other players'
+      homes!</red>
+    usage_sethome: '<red>❌ Usage: </red><white>/ui sethome <name></white>'
+    usage_home: '<red>❌ Usage: </red><white>/ui home <name></white>'
+    usage_delhome: '<red>❌ Usage: </red><white>/ui delhome <name></white>'
+    usage_ophomels: '<red>❌ Usage: </red><white>/ui ophomels <player></white>'
+    usage_opdelhome: '<red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>'
+    name_length_error: <red>❌ Home name must be between %min% and %max% characters!</red>
+    name_current_length: '<gray> Current length: </gray><white>%length%</white><gray>
+      characters.</gray>'
+    limit_reached: <red>❌ You have reached the limit of</red> <yellow>%max%</yellow>
+      <red>home points!</red>
+    limit_hint: <gray> Use </gray><white>/ui delhome <name></white><gray> to remove
+      unwanted ones.</gray>
+    save_success: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>
+    save_info_world: <gray>World:</gray> <white>%world%</white>
+    save_info_coords: <gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>
+    save_info_used: <gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>
+    save_error: <red>❌ Error saving home!</red>
+    not_found: <yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not
+      found.</white>
+    not_found_hint: <gray> Use </gray><white>/ui sethome %name%</white><gray> to save
+      it.</gray>
+    delete_success: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>
+    delete_error: <red>❌ Error deleting home!</red>
+    not_found_del: <red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>
+    no_homes: <yellow>ℹ</yellow> <white>You have no saved home points.</white>
+    no_homes_hint: <gray> Use </gray><white>/ui sethome <name></white><gray> to save
+      one.</gray>
+    no_homes_player: <yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow>
+      <white>has no saved homes.</white>
+    not_found_player: <red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red>
+      <yellow>%name%</yellow><red>!</red>
+    delete_op_success: <green>✔</green> <white>Home</white> <yellow>%name%</yellow>
+      <white>of player</white> <yellow>%player%</yellow> <white>deleted.</white>
+    info_header: <gold>═══════════════════════════════════</gold>
+    info_name: '<gold>  ✦ </gold><white>Home: </white><yellow>%name%</yellow>'
+    info_world: '<gray>World: </gray><white>%world%</white>'
+    info_x: '<gray>X: </gray><white>%x%</white>'
+    info_y: '<gray>Y: </gray><white>%y%</white>'
+    info_z: '<gray>Z: </gray><white>%z%</white>'
+    list_title: <gold>  ✦ </gold><white>Your Homes </white><gray>(%used%/%max%)</gray>
+    list_entry_name: <gray>┌─ </gray><yellow>%num%. </yellow><white>%name%</white>
+    list_entry_world: '<gray>│ </gray><gray>World: </gray><white>%world%</white>'
+    list_entry_coords: '<gray>│ </gray><gray>X: </gray><white>%x%</white> <gray>Y:
+      </gray><white>%y%</white> <gray>Z: </gray><white>%z%</white>'
+    list_entry_sep: <gray>│</gray>
+    op_list_title: <gold>  ✦ </gold><white>Player's Homes </white><yellow>%player%</yellow>
+      <gray>(%count%)</gray>
+  misc:
+    vanish_no_permission: <red>❌ You don't have permission to use vanish!</red>
+    vanish_usage: '<red>❌ Usage: </red><white>/ui vanish <nick></white>'
+    vanish_player_not_found: <red>❌ Player</red> <yellow>%player%</yellow> <red>not
+      found!</red>
+    vanish_enabled: <green>✔</green> <white>Player</white> <yellow>%player%</yellow>
+      <white>is now hidden (vanished).</white>
+    vanish_offline_hint: <gray>Player is offline — vanish will apply on next login.</gray>
+    vanish_disabled: <red>❌</red> <white>Player</white> <yellow>%player%</yellow>
+      <white>is no longer hidden.</white>
+    notes_player_only: <red>❌ Only players can use notes!</red>
+    notes_no_permission: <red>❌ You don't have permission to use notes!</red>
+    speed_player_only: <red>❌ Only players can use this command!</red>
+    speed_no_permission: <red>❌ You don't have permission!</red>
+    speed_enabled: '<green>⚡</green> <white>Speed display: </white><green>ON</green>'
+    speed_disabled: '<red>⚡</red> <white>Speed display: </white><red>OFF</red>'
+    fly_enabled: '<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>'
+    fly_disabled: '<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>'
+  rtp:
+    player_only: <red>❌ Only players can use this command!</red>
+    disabled: <red>❌ Random teleport is disabled on this server.</red>
+    no_permission_other: <red>❌ You don't have permission to teleport other players!</red>
+    player_not_found: <red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>
+    world_not_allowed: <red>❌ Random teleport is not allowed in this world.</red>
+    cooldown: <red>❌ Please wait </red><yellow>%seconds%</yellow><red> seconds before
+      using RTP again.</red>
+    no_location: <red>❌ Could not find a safe location to teleport. Try again.</red>
+    teleport_failed: <red>❌ Teleport failed! Try again.</red>
+    success: <green>✔</green> <white>Random teleport complete!</white>
+    success_coords: <green>✔</green> <white>You have been randomly teleported to:</white>
+      <yellow>%coords%</yellow>
+    teleported_other: <gray>Teleported </gray><yellow>%player%</yellow> <gray>→</gray>
+      <white>%coords%</white>
+    usage: '<red>❌ Usage: </red><white>/ui rtp [player]</white>'
+  near:
+    player_only: <red>❌ Only players can use this command!</red>
+    disabled: <red>❌ This command is disabled on this server.</red>
+    invalid_radius: '<red>❌ Invalid radius! Usage: </red><white>/ui near [radius]</white>'
+    no_players: <gray>No players found within </gray><yellow>%radius%</yellow><gray>
+      blocks.</gray>
+    header: <gray>Players within </gray><yellow>%radius%</yellow><gray> blocks (</gray><yellow>%count%</yellow><gray>):</gray>
+    entry: '  <gray>%num%.</gray> <white>%player%</white> <gray>—</gray> <yellow>%distance%</yellow>'
+    block: 1 block
+    blocks: '%distance% blocks'
+  report:
+    success: <green>✔</green> <white>Report on player </white><yellow>%player%</yellow>
+      <white>has been submitted!</white>
+    reported_notification: <yellow>⚠</yellow> <white>A report has been filed against
+      you!</white>
+    reporter_notified: '<green>✔</green> <white>Your report has been reviewed! Verdict:
+      </white><yellow>%verdict%</yellow>'
+    no_active_report: <yellow>✦</yellow> <white>You have no active reports.</white>
+    errors:
+      already_pending: <red>❌ You already have an active report! Wait for moderation.</red>
+      never_joined: <red>❌ Player <yellow>%player%</yellow> <red>has never joined
+        the server!</red>
+      self_report: <red>❌ You cannot report yourself!</red>
+      db_error: <red>❌ Database error while creating report!</red>
+    moderation:
+      enter_conclusion: <green>✔</green> <white>Enter conclusion for report </white><yellow>%name%</yellow>
+      type_or_cancel: <gray>Type text or </gray><red>cancel</red><gray> to abort.</gray>
+      verdict_prompt: <green>✔</green> <white>Conclusion saved. Choose a verdict:</white>
+      cancelled: <yellow>✦</yellow> <gray>Moderation cancelled.</gray>
+      verdict_saved: <green>✔</green> <white>Verdict </white><yellow>%verdict%</yellow>
+        <white>saved for report </white><yellow>%name%</yellow>
+    verdict:
+      confirmed: Confirmed
+      rejected: Rejected
+      closed: Closed
+    admin:
+      remove_confirm: <yellow>⚠</yellow> <white>Delete </white><yellow>%name%</yellow><white>?
+        Type </white><yellow>/ui reports remove confirm</yellow><white> to confirm.</white>
+messages_en:
+  home:
+    player_only: <red>❌ Only players can use this command!</red>
+    no_permission_sethome: <red>❌ You don't have permission to save home points!</red>
+    no_permission_home: <red>❌ You don't have permission to view home points!</red>
+    no_permission_delhome: <red>❌ You don't have permission to delete home points!</red>
+    no_permission_listhomes: <red>❌ You don't have permission to view the home list!</red>
+    no_permission_ophomels: <red>❌ You don't have permission to view other players'
+      homes!</red>
+    no_permission_opdelhome: <red>❌ You don't have permission to delete other players'
+      homes!</red>
+    usage_sethome: '<red>❌ Usage: </red><white>/ui sethome <name></white>'
+    usage_home: '<red>❌ Usage: </red><white>/ui home <name></white>'
+    usage_delhome: '<red>❌ Usage: </red><white>/ui delhome <name></white>'
+    usage_ophomels: '<red>❌ Usage: </red><white>/ui ophomels <player></white>'
+    usage_opdelhome: '<red>❌ Usage: </red><white>/ui opdelhome <player> <home_name></white>'
+    name_length_error: <red>❌ Home name must be between %min% and %max% characters!</red>
+    name_current_length: '<gray> Current length: </gray><white>%length%</white><gray>
+      characters.</gray>'
+    limit_reached: <red>❌ You have reached the limit of</red> <yellow>%max%</yellow>
+      <red>home points!</red>
+    limit_hint: <gray> Use </gray><white>/ui delhome <name></white><gray> to remove
+      unwanted ones.</gray>
+    save_success: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>saved!</white>
+    save_info_world: <gray>World:</gray> <white>%world%</white>
+    save_info_coords: <gray>Coordinates:</gray> <white>%x% / %y% / %z%</white>
+    save_info_used: <gray>Used:</gray> <white>%used%<gray>/%max%</gray></white>
+    save_error: <red>❌ Error saving home!</red>
+    not_found: <yellow>ℹ</yellow> <white>Home</white> <yellow>%name%</yellow> <white>not
+      found.</white>
+    not_found_hint: <gray> Use </gray><white>/ui sethome %name%</white><gray> to save
+      it.</gray>
+    delete_success: <green>✔</green> <white>Home</white> <yellow>%name%</yellow> <white>deleted.</white>
+    delete_error: <red>❌ Error deleting home!</red>
+    not_found_del: <red>❌ Home</red> <yellow>%name%</yellow> <red>not found!</red>
+    no_homes: <yellow>ℹ</yellow> <white>You have no saved home points.</white>
+    no_homes_hint: <gray> Use </gray><white>/ui sethome <name></white><gray> to save
+      one.</gray>
+    no_homes_player: <yellow>ℹ</yellow> <white>Player</white> <yellow>%player%</yellow>
+      <white>has no saved homes.</white>
+    not_found_player: <red>❌ Player</red> <yellow>%player%</yellow><red> has no home</red>
+      <yellow>%name%</yellow><red>!</red>
+    delete_op_success: <green>✔</green> <white>Home</white> <yellow>%name%</yellow>
+      <white>of player</white> <yellow>%player%</yellow> <white>deleted.</white>
+    info_header: <gold>═══════════════════════════════════</gold>
+    info_name: '<gold>  ✦ </gold><white>Home: </white><yellow>%name%</yellow>'
+    info_world: '<gray>World: </gray><white>%world%</white>'
+    info_x: '<gray>X: </gray><white>%x%</white>'
+    info_y: '<gray>Y: </gray><white>%y%</white>'
+    info_z: '<gray>Z: </gray><white>%z%</white>'
+    list_title: <gold>  ✦ </gold><white>Your Homes </white><gray>(%used%/%max%)</gray>
+    list_entry_name: <gray>┌─ </gray><yellow>%num%. </yellow><white>%name%</white>
+    list_entry_world: '<gray>│ </gray><gray>World: </gray><white>%world%</white>'
+    list_entry_coords: '<gray>│ </gray><gray>X: </gray><white>%x%</white> <gray>Y:
+      </gray><white>%y%</white> <gray>Z: </gray><white>%z%</white>'
+    list_entry_sep: <gray>│</gray>
+    op_list_title: <gold>  ✦ </gold><white>Player's Homes </white><yellow>%player%</yellow>
+      <gray>(%count%)</gray>
+  misc:
+    vanish_no_permission: <red>❌ You don't have permission to use vanish!</red>
+    vanish_usage: '<red>❌ Usage: </red><white>/ui vanish <nick></white>'
+    vanish_player_not_found: <red>❌ Player</red> <yellow>%player%</yellow> <red>not
+      found!</red>
+    vanish_enabled: <green>✔</green> <white>Player</white> <yellow>%player%</yellow>
+      <white>is now hidden (vanished).</white>
+    vanish_offline_hint: <gray>Player is offline — vanish will apply on next login.</gray>
+    vanish_disabled: <red>❌</red> <white>Player</white> <yellow>%player%</yellow>
+      <white>is no longer hidden.</white>
+    notes_player_only: <red>❌ Only players can use notes!</red>
+    notes_no_permission: <red>❌ You don't have permission to use notes!</red>
+    speed_player_only: <red>❌ Only players can use this command!</red>
+    speed_no_permission: <red>❌ You don't have permission!</red>
+    speed_enabled: '<green>⚡</green> <white>Speed display: </white><green>ON</green>'
+    speed_disabled: '<red>⚡</red> <white>Speed display: </white><red>OFF</red>'
+    fly_enabled: '<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>'
+    fly_disabled: '<red>✦</red> <white>Elytra boost on jump: </white><red>OFF</red>'
+  report:
+    success: <green>✔</green> <white>Report on player </white><yellow>%player%</yellow>
+      <white>submitted!</white>
+    reported_notification: <yellow>⚠</yellow> <white>A report has been filed against
+      you!</white>
+    reporter_notified: '<green>✔</green> <white>Your report has been reviewed! Verdict:
+      </white><yellow>%verdict%</yellow>'
+    no_active_report: <yellow>✦</yellow> <white>You have no active reports.</white>
+    errors:
+      already_pending: <red>❌ You already have an active report! Wait for moderation.</red>
+      never_joined: <red>❌ Player <yellow>%player%</yellow> <red>has never joined
+        the server!</red>
+      self_report: <red>❌ You cannot report yourself!</red>
+      db_error: <red>❌ Database error while creating report!</red>
+    moderation:
+      enter_conclusion: <green>✔</green> <white>Write a conclusion for report </white><yellow>%name%</yellow>
+      type_or_cancel: <gray>Write text or </gray><red>cancel</red><gray> to abort.</gray>
+      verdict_prompt: <green>✔</green> <white>Conclusion saved. Choose a verdict:</white>
+      cancelled: <yellow>✦</yellow> <gray>Moderation cancelled.</gray>
+      verdict_saved: <green>✔</green> <white>Verdict </white><yellow>%verdict%</yellow>
+        <white>saved for report </white><yellow>%name%</yellow>
+    verdict:
+      confirmed: Confirmed
+      rejected: Rejected
+      closed: Closed
+    admin: null
