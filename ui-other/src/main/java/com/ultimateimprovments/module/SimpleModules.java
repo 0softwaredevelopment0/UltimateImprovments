@@ -80,7 +80,6 @@ import com.ultimateimprovments.mechanics.features.integrity.IntegrityLoreCleanup
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.mechanics.features.integrity.LowDurabilityWarningListener;
 import com.ultimateimprovments.mechanics.features.integrity.PiercingListener;
-import com.ultimateimprovments.mechanics.features.items.AutoCraftManager;
 import com.ultimateimprovments.mechanics.features.items.ChestplateFlightListener;
 import com.ultimateimprovments.mechanics.features.items.ExpBottleUpgradeListener;
 import com.ultimateimprovments.mechanics.features.items.NetheriteUpgradeListener;
@@ -210,8 +209,6 @@ public final class SimpleModules {
 
                 BlockFrictionListener.init();
                 pm.registerEvents(new BlockFrictionListener(), main);
-
-                AutoCraftManager.init(main);
             }
         });
     }
@@ -989,7 +986,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerCurseTrioEnchantments(ModuleManager mm) {
-        // Blunting: REAL data-driven enchantment (ui:blunting, registered by
+        // Curse of Blunting: REAL data-driven enchantment (ui:blunting, registered by
         // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Sharpness
         // reversed — the held weapon deals level × 0.5 LESS melee damage.
         mm.register(new SimpleModule("BluntingEnchantment", "enchantment/blunting", false) {
@@ -1003,7 +1000,7 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.blunting.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Blunting] Levels: 1-255 | Weapons+tools (copper incl.) | −" + "0.5 dmg per level");
+                ConsoleLogger.info("[CurseOfBlunting] Levels: 1-255 | Weapons+tools (copper incl.) | −" + "0.5 dmg per level");
             }
         });
 

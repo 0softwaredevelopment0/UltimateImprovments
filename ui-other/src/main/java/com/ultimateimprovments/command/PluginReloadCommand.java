@@ -105,21 +105,34 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("notes",
                 (s, a) -> { MiscSubcommand.notes(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("setrad", RadiationSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("togglespeed",
-                (s, a) -> { MiscSubcommand.toggleSpeed(s); return true; }));
-        registry.register(LegacySubCommandAdapter.of("togglefly",
-                (s, a) -> { MiscSubcommand.toggleFly(s); return true; }));
-        registry.register(LegacySubCommandAdapter.of("toggleautocraft",
-                (s, a) -> { MiscSubcommand.toggleAutoCraft(s); return true; }));
-        registry.register(LegacySubCommandAdapter.of("togglebb",
-                (s, a) -> { MiscSubcommand.toggleBossBar(s); return true; }));
-        registry.register(LegacySubCommandAdapter.of("togglesb",
-                (s, a) -> { MiscSubcommand.toggleScoreboard(s); return true; }));
-        registry.register(LegacySubCommandAdapter.of("toggleping",
-                (s, a) -> { MiscSubcommand.togglePing(s); return true; }));
+        // ── Renamed toggles (old names removed): on|off with dedicated permissions ──
+        registry.register(LegacySubCommandAdapter.of("showspeed",
+                (s, a) -> { MiscSubcommand.showSpeed(s, a); return true; },
+                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
+        registry.register(LegacySubCommandAdapter.of("elytraboost",
+                (s, a) -> { MiscSubcommand.elytraBoost(s, a); return true; },
+                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
+        registry.register(LegacySubCommandAdapter.of("bossbar",
+                (s, a) -> { MiscSubcommand.bossbar(s, a); return true; },
+                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
+        registry.register(LegacySubCommandAdapter.of("scoreboard",
+                (s, a) -> { MiscSubcommand.scoreboard(s, a); return true; },
+                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
+        registry.register(LegacySubCommandAdapter.of("pingsound",
+                (s, a) -> { MiscSubcommand.pingsound(s, a); return true; },
+                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
+        registry.register(LegacySubCommandAdapter.of("wirelessbind",
+                (s, a) -> { MiscSubcommand.wirelessbind(s, a); return true; },
+                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); }),
+                List.of("togglebind")));
+        // ── Free craft: /ui craftrecipe <recipe> ──
+        registry.register(LegacySubCommandAdapter.of("craftrecipe",
+                CraftRecipeSubcommand::execute,
+                tc((s, a) -> CraftRecipeSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("swapjar", SwapJarSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("meteor", MeteorSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("plugin", PluginSubcommand::execute));
+        registry.register(LegacySubCommandAdapter.of("plugin", PluginSubcommand::execute,
+                tc((s, a) -> PluginSubcommand.tabComplete(s, a))));
         registry.register(LegacySubCommandAdapter.of("redstone", RedstoneSubcommand::execute,
                 tc((s, a) -> RedstoneSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("repstatus",
@@ -128,8 +141,6 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("uncheck",
                 (s, a) -> { CheckSubcommand.uncheck(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("expsplit", ExpSplitSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("togglebind",
-                (s, a) -> { MiscSubcommand.toggleBind(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("viewrad",
                 (s, a) -> { MiscSubcommand.toggleRadView(s); return true; },
                 null, List.of("toggleradview")));

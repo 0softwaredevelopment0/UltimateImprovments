@@ -64,12 +64,13 @@ public final class Permissions {
     public static final String CMD_GOD_OTHER = "ui.command.god.other";
     public static final String CMD_HEAL = "ui.command.heal";
     public static final String CMD_FEED = "ui.command.feed";
-    public static final String CMD_TOGGLESPEED = "ui.command.togglespeed";
-    public static final String CMD_TOGGLEFLY = "ui.command.togglefly";
-    public static final String CMD_TOGGLEBB = "ui.command.togglebb";
-    public static final String CMD_TOGGLESB = "ui.command.togglesb";
-    public static final String CMD_TOGGLEPING = "ui.command.toggleping";
-    public static final String CMD_TOGGLEBIND = "ui.command.togglebind";
+    public static final String CMD_SHOWSPEED = "ui.command.showspeed";
+    public static final String CMD_ELYTRABOOST = "ui.command.elytraboost";
+    public static final String CMD_BOSSBAR = "ui.command.bossbar";
+    public static final String CMD_SCOREBOARD = "ui.command.scoreboard";
+    public static final String CMD_PINGSOUND = "ui.command.pingsound";
+    public static final String CMD_WIRELESSBIND = "ui.command.wirelessbind";
+    public static final String CMD_CRAFTRECIPE = "ui.command.craftrecipe";
     public static final String CMD_VIEWRAD = "ui.command.viewrad";
     public static final String CMD_VANISH = "ui.command.vanish";
     public static final String CMD_NOTES = "ui.command.notes";
@@ -161,7 +162,6 @@ public final class Permissions {
 
     // ═══════════ Features and modifiers ═══════════
     public static final String UI_ALERTS = "ui.alerts";
-    public static final String UI_AUTOCRAFT = "ui.autocraft";
     public static final String UI_SHOW_BRAND = "ui.show.brand";
     public static final String UI_SUDO = "ui.sudo";
     public static final String UI_ANTICHEAT_BYPASS = "ui.anticheat.bypass";
@@ -229,12 +229,13 @@ public final class Permissions {
                 new Permission(CMD_GOD_OTHER, "Toggle god mode for other players", PermissionDefault.FALSE),
                 new Permission(CMD_HEAL, "Heal yourself", PermissionDefault.FALSE),
                 new Permission(CMD_FEED, "Feed yourself", PermissionDefault.FALSE),
-                new Permission(CMD_TOGGLESPEED, "Toggle speed display", PermissionDefault.FALSE),
-                new Permission(CMD_TOGGLEFLY, "Toggle elytra boost on jump", PermissionDefault.FALSE),
-                new Permission(CMD_TOGGLEBB, "Toggle per-player boss bar", PermissionDefault.FALSE),
-                new Permission(CMD_TOGGLESB, "Toggle per-player scoreboard", PermissionDefault.FALSE),
-                new Permission(CMD_TOGGLEPING, "Toggle ping sound", PermissionDefault.FALSE),
-                new Permission(CMD_TOGGLEBIND, "Toggle wireless redstone binding", PermissionDefault.FALSE),
+                new Permission(CMD_SHOWSPEED, "Toggle the minecart speed display (/ui showspeed <on|off>)", PermissionDefault.FALSE),
+                new Permission(CMD_ELYTRABOOST, "Toggle the elytra boost on jump (/ui elytraboost <on|off>)", PermissionDefault.FALSE),
+                new Permission(CMD_BOSSBAR, "Show or hide your BossBar (/ui bossbar <on|off>)", PermissionDefault.TRUE),
+                new Permission(CMD_SCOREBOARD, "Show or hide your scoreboard (/ui scoreboard <on|off>)", PermissionDefault.TRUE),
+                new Permission(CMD_PINGSOUND, "Toggle the chat ping sound (/ui pingsound <on|off>)", PermissionDefault.TRUE),
+                new Permission(CMD_WIRELESSBIND, "Toggle wireless redstone bind mode (/ui wirelessbind <on|off>)", PermissionDefault.FALSE),
+                new Permission(CMD_CRAFTRECIPE, "Free-craft any recipe without resources (/ui craftrecipe)", PermissionDefault.OP),
                 new Permission(CMD_VIEWRAD, "Toggle radiation display", PermissionDefault.FALSE),
                 new Permission(CMD_VANISH, "Vanish players", PermissionDefault.FALSE),
                 new Permission(CMD_NOTES, "Open notes GUI", PermissionDefault.FALSE),
@@ -326,7 +327,6 @@ public final class Permissions {
 
                 // ── Features and modifiers ──
                 new Permission(UI_ALERTS, "Receive server alerts", PermissionDefault.FALSE),
-                new Permission(UI_AUTOCRAFT, "Use auto-crafting", PermissionDefault.FALSE),
                 new Permission(UI_SHOW_BRAND, "Show the server brand", PermissionDefault.FALSE),
                 new Permission(UI_SUDO, "Protected by sudo mode (dangerous commands require sudo)", PermissionDefault.FALSE),
                 new Permission(UI_ANTICHEAT_BYPASS, "Bypass anti-cheat checks", PermissionDefault.FALSE),
