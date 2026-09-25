@@ -1,6 +1,7 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.CommandErrors;
+import com.ultimateimprovments.command.RepDialogScreen;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.reputation.ReputationManager;
 import com.ultimateimprovments.reputation.ReputationManager.Status;
@@ -77,11 +78,8 @@ public final class RepSubcommand {
     // =========================================================================
 
     private static void showSelf(Player p, String uuid, String name) {
-        ReputationManager.get(uuid, data -> {
-            p.sendMessage(MessageUtil.parse(header(name)));
-            p.sendMessage(MessageUtil.parse(lineRep(data.rep())));
-            p.sendMessage(MessageUtil.parse(lineStatus(data.status())));
-        });
+        ReputationManager.get(uuid, data ->
+                RepDialogScreen.open(p, name, data.rep(), data.status()));
     }
 
     private static void viewOther(CommandSender sender, String name) {
@@ -94,9 +92,14 @@ public final class RepSubcommand {
         }
         String targetName = displayName(uuid, name);
         ReputationManager.get(uuid.toString(), data -> {
-            sender.sendMessage(MessageUtil.parse(header(targetName)));
-            sender.sendMessage(MessageUtil.parse(lineRep(data.rep())));
-            sender.sendMessage(MessageUtil.parse(lineStatus(data.status())));
+            if (sender instanceof Player viewer) {
+                RepDialogScreen.open(viewer, targetName, data.rep(), data.status());
+            } else {
+                // Console — no screen, print to chat
+                sender.sendMessage(MessageUtil.parse(header(targetName)));
+                sender.sendMessage(MessageUtil.parse(lineRep(data.rep())));
+                sender.sendMessage(MessageUtil.parse(lineStatus(data.status())));
+            }
         });
     }
 
@@ -107,7 +110,7 @@ public final class RepSubcommand {
     }
 
     private static String lineRep(int rep) {
-        String color = rep >= 50 ? "<green>" : rep >= 10 ? "<yellow>" : rep >= 0 ? "<white>" : "<red>";
+        String color = RepDialogScreen.repColor(rep);
         return msg("reputation.view.rep", "<gray>Reputation:</gray> " + color + "%rep%</gray>")
                 .replace("%rep%", String.valueOf(rep));
     }

@@ -242,6 +242,12 @@ messages:
       header: <gray>═══ <white>Репутация — </white><yellow>%player%</yellow> <gray>═══</gray>
       rep: <gray>Репутация:</gray> %color%%rep%</reset>
       status: <gray>Статус:</gray> %status%
+      dialog:
+        title: <gold>✦</gold> <white>Репутация — </white><yellow>%player%</yellow>
+        header: <dark_gray>Account Standing</dark_gray>
+        rep: '<gray>Репутация: </gray>%color%%rep%</reset>'
+        status: '<gray>Статус: </gray>%status%'
+        close: <red>✖ Закрыть</red>
     status:
       none: <dark_gray>— Не задан
       all_good: <green>✔ All good
