@@ -1,121 +1,299 @@
-# UI-Chat settings (auto-generated from config.yml)
-# Edit values below; the file is reloaded by /ui reload.
+# UltimateImprovments — UI-Chat configuration.
+# This single file holds the addon's settings AND its messages (RU + EN).
+# Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# Every value can be edited; the file is re-read by /ui reload.
+# Missing keys are auto-repaired from the bundled defaults on startup.
 
+# ==================================================================
+# SETTINGS
+# ==================================================================
+
+
+# Sound ping when someone mentions your name in chat.
 [chat_ping]
+# Master switch: play a sound when your name is mentioned.
+# Default: true
 enabled = true
+# Default: "<underlined><color:#FFAA00>@%s</color></underlined>"
 ping_style = "<underlined><color:#FFAA00>@%s</color></underlined>"
+# Sound name (minecraft:...).
+# Default: "ENTITY_EXPERIENCE_ORB_PICKUP"
 sound_name = "ENTITY_EXPERIENCE_ORB_PICKUP"
+# Sound name (minecraft:...).
+# Default: 0.5
 sound_volume = 0.5
+# Sound name (minecraft:...).
+# Default: 1.5
 sound_pitch = 1.5
 
+# Chat word filter (regex-based blocking).
 [chat_filter]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Default: ["*блять*", "*блят*", "*хуй*", "*пизда*", "*еба*", "*пидр*", "*таврь*", "*нахуй*", "*нахер*", "*нах"]
 words = ["*блять*", "*блят*", "*хуй*", "*пизда*", "*еба*", "*пидр*", "*таврь*", "*нахуй*", "*нахер*", "*нах"]
+# Default: [".*(?<!\\p{L})(?:бля(?:дь|ть|т)|бляд(?:ь|и|ина)|еб(?:ать|ан|лан|уч)|хуй|хуйня|пизд(?:а|ец|еть)|муд(?:ак|ила)|гандон)(?!\\p{L}).*\n", ".*(?<!\\p{L})(?:долбо(?:еб|ёб)|идиот|дебил|кретин|имбецил|придурок)(?!\\p{L}).*\n", ".*п[^а-яёa-z0-9]{0,3}и[^а-яёa-z0-9]{0,3}д[^а-яёa-z0-9]{0,3}(?:а|о)?[^а-яёa-z0-9]{0,3}р.*\n", ".*х[^а-яёa-z0-9]{0,3}у[^а-яёa-z0-9]{0,3}й.*\n", ".*[А-ЯЁA-Z]{15,}.*\n", ".*(.)\\1{8,}.*\n", ".*ж[^а-яёa-z0-9]{0,3}[иi1і][^а-яёa-z0-9]{0,3}р(?:н(?:ы(?:й|е|х|м)?|ая|ое)?|уха|ок|дяй)? .*\n"]
 regex_patterns = [".*(?<!\\p{L})(?:бля(?:дь|ть|т)|бляд(?:ь|и|ина)|еб(?:ать|ан|лан|уч)|хуй|хуйня|пизд(?:а|ец|еть)|муд(?:ак|ила)|гандон)(?!\\p{L}).*\n", ".*(?<!\\p{L})(?:долбо(?:еб|ёб)|идиот|дебил|кретин|имбецил|придурок)(?!\\p{L}).*\n", ".*п[^а-яёa-z0-9]{0,3}и[^а-яёa-z0-9]{0,3}д[^а-яёa-z0-9]{0,3}(?:а|о)?[^а-яёa-z0-9]{0,3}р.*\n", ".*х[^а-яёa-z0-9]{0,3}у[^а-яёa-z0-9]{0,3}й.*\n", ".*[А-ЯЁA-Z]{15,}.*\n", ".*(.)\\1{8,}.*\n", ".*ж[^а-яёa-z0-9]{0,3}[иi1і][^а-яёa-z0-9]{0,3}р(?:н(?:ы(?:й|е|х|м)?|ая|ое)?|уха|ок|дяй)? .*\n"]
 
+# Chat formatting: formats, channels, colors, cooldowns, links.
 [chat]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: "channels"
 mode = "channels"
+# Format string (MiniMessage).
+# Default: "<green>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%mes…"
 format = "<green>ᴄᴜᴄᴇ <dark_gray>» <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
+# Minimum value.
+# Default: true
 player_minimessage = true
+# Message text (MiniMessage).
+# Default: true
 message_placeholders = true
+# Permission node.
+# Default: ""
 bypass_permission = ""
 
+# channels section.
 [chat.channels]
 
+# local section.
 [chat.channels.local]
+# Radius in blocks.
+# Default: 100
 radius = 100
+# Format string (MiniMessage).
+# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>L<dark_gray>] <reset>%luckperms_prefix%<white…"
 format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>L<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
+# global section.
 [chat.channels.global]
+# Format string (MiniMessage).
+# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>G<dark_gray>] <reset>%luckperms_prefix%<white…"
 format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>G<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
+# world section.
 [chat.channels.world]
+# Format string (MiniMessage).
+# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>W<dark_gray>] <reset>%luckperms_prefix%<white…"
 format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>W<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
+# private section.
 [chat.channels.private]
+# Format string (MiniMessage).
+# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white…"
 format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>P<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
+# admin section.
 [chat.channels.admin]
+# Format string (MiniMessage).
+# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white…"
 format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<white>A<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
+# check section.
 [chat.channels.check]
+# Format string (MiniMessage).
+# Default: "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%…"
 format = "<green>ᴄʜᴀᴛ <dark_gray>»<dark_gray> [<red>C<dark_gray>] <reset>%luckperms_prefix%<white>%player_name%<gray>: <white>%message%"
 
+# console section.
 [chat.channels.console]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Whitelist.
+# Default: []
 whitelist = []
 
+# access control section.
 [chat.channels.console.access_control]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# units section.
 [chat.channels.console.access_control.units]
 
-[chat.channels.console.access_control.units.1]
+# 1 section.
+[chat.channels.console.access_control.units."1"]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: "blacklist"
 mode = "blacklist"
-regexes = "None"
+# Default: []
+regexes = []
+# Default: "all"
 condition = "all"
 
-[chat.channels.console.access_control.units.1.wildcards]
+# wildcards section.
+[chat.channels.console.access_control.units."1".wildcards]
+# Default: "*rm -rf /*"
 1 = "*rm -rf /*"
 
-[chat.channels.console.access_control.units.1.custom_deny_msg]
+# custom deny msg section.
+[chat.channels.console.access_control.units."1".custom_deny_msg]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Message text (MiniMessage).
+# Default: "<red>This is blocked by the server.</red>"
 message = "<red>This is blocked by the server.</red>"
 
+# linux section.
 [chat.channels.linux]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Whitelist.
+# Default: []
 whitelist = []
 
+# access control section.
 [chat.channels.linux.access_control]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# units section.
 [chat.channels.linux.access_control.units]
 
-[chat.channels.linux.access_control.units.1]
+# 1 section.
+[chat.channels.linux.access_control.units."1"]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: "blacklist"
 mode = "blacklist"
-regexes = "None"
+# Default: []
+regexes = []
+# Default: "all"
 condition = "all"
 
-[chat.channels.linux.access_control.units.1.wildcards]
+# wildcards section.
+[chat.channels.linux.access_control.units."1".wildcards]
+# Default: "*rm -rf /*"
 1 = "*rm -rf /*"
 
-[chat.channels.linux.access_control.units.1.custom_deny_msg]
+# custom deny msg section.
+[chat.channels.linux.access_control.units."1".custom_deny_msg]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Message text (MiniMessage).
+# Default: "<red>This is blocked by the server.</red>"
 message = "<red>This is blocked by the server.</red>"
 
+# access control section.
 [chat.access_control]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
 
+# units section.
 [chat.access_control.units]
 
-[chat.access_control.units.1]
+# 1 section.
+[chat.access_control.units."1"]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: "blacklist"
 mode = "blacklist"
-regexes = "None"
+# Default: []
+regexes = []
+# Default: "all"
 condition = "all"
 
-[chat.access_control.units.1.wildcards]
+# wildcards section.
+[chat.access_control.units."1".wildcards]
+# Default: "*badword*"
 1 = "*badword*"
 
-[chat.access_control.units.1.custom_deny_msg]
+# custom deny msg section.
+[chat.access_control.units."1".custom_deny_msg]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Message text (MiniMessage).
+# Default: "<red>Message blocked by chat access control.</red>"
 message = "<red>Message blocked by chat access control.</red>"
 
+# Automatic broadcast messages shown on a timer.
 [auto_broadcast]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# sections section.
 [auto_broadcast.sections]
 
+# example section.
 [auto_broadcast.sections.example]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Cooldown.
+# Default: 2400
 cooldown_ticks = 2400
+# Default: "is-op=false, is-gamemode=survival, online-above=1"
 conditions = "is-op=false, is-gamemode=survival, online-above=1"
+# Message text (MiniMessage).
+# Default: ["<gold>✦ <white>Добро пожаловать на <yellow>%server_name%</yellow>! Онлайн: <aqua>%online%</aqua></white></gold>", "<green>☀ <white>Не забудь заглянуть в <yellow>/ui help</yellow> — там много полезного!</white></green>"]
 messages = ["<gold>✦ <white>Добро пожаловать на <yellow>%server_name%</yellow>! Онлайн: <aqua>%online%</aqua></white></gold>", "<green>☀ <white>Не забудь заглянуть в <yellow>/ui help</yellow> — там много полезного!</white></green>"]
 
+# OJM (chat/join message) module settings.
 [ojm]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Default: "<white>[<green>+<white>] <player> <green>joined the game"
 join = "<white>[<green>+<white>] <player> <green>joined the game"
+# Default: "<white>[<red>-<white>] <player> <red>left the game"
 leave = "<white>[<red>-<white>] <player> <red>left the game"
+
+# ==================================================================
+# MESSAGES — RUSSIAN (active when lang = "ru")
+# ==================================================================
+
+
+# chat ping section.
+# Placeholders: %sender%
+[messages.chat_ping]
+# Default: <gray>🔔 You were pinged by</gray> <white>%sender%</white>
+notification = "<gray>🔔 You were pinged by</gray> <white>%sender%</white>"
+
+# chat filter section.
+# Placeholders: %message%, %source%
+[messages.chat_filter]
+# Message text (MiniMessage).
+# Default: <dark_red>❌</dark_red> <red>Your message was flagged for prohibited content!</red>
+message = "<dark_red>❌</dark_red> <red>Your message was flagged for prohibited content!</red>"
+# Default: <gray>→ </gray><white>%message%</white>
+violation_highlight = "<gray>→ </gray><white>%message%</white>"
+# Default: <gray>└</gray> <white>Match:</white> %source%
+violation_match = "<gray>└</gray> <white>Match:</white> %source%"
+
+# ==================================================================
+# MESSAGES — ENGLISH (active when lang = "en")
+# ==================================================================
+
+
+# chat ping section.
+# Placeholders: %sender%
+[messages_en.chat_ping]
+# Default: <gray>🔔 You were pinged by</gray> <white>%sender%</white>
+notification = "<gray>🔔 You were pinged by</gray> <white>%sender%</white>"
+
+# chat filter section.
+# Placeholders: %message%, %source%
+[messages_en.chat_filter]
+# Message text (MiniMessage).
+# Default: <dark_red>❌</dark_red> <red>Your message was flagged for prohibited content!</red>
+message = "<dark_red>❌</dark_red> <red>Your message was flagged for prohibited content!</red>"
+# Default: <gray>→ </gray><white>%message%</white>
+violation_highlight = "<gray>→ </gray><white>%message%</white>"
+# Default: <gray>└</gray> <white>Match:</white> %source%
+violation_match = "<gray>└</gray> <white>Match:</white> %source%"

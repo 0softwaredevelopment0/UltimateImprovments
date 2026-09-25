@@ -1,385 +1,908 @@
-# UI-Anticheat settings (auto-generated from config.yml)
-# Edit values below; the file is reloaded by /ui reload.
+# UltimateImprovments — UI-Anticheat configuration.
+# This single file holds the addon's settings AND its messages (RU + EN).
+# Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# Every value can be edited; the file is re-read by /ui reload.
+# Missing keys are auto-repaired from the bundled defaults on startup.
 
+# ==================================================================
+# SETTINGS
+# ==================================================================
+
+
+# Anti-cheat: detection modules, thresholds and punishments.
 [anticheat]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Permission node.
+# Default: "ui.anticheat.bypass"
 bypass_permission = "ui.anticheat.bypass"
+# Cooldown.
+# Default: 100
 action_cooldown_ms = 100
 
+# actions section.
 [anticheat.actions]
 
+# log section.
 [anticheat.actions.log]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# notify section.
 [anticheat.actions.notify]
+# Default: 1.0
 vl_threshold = 1.0
 
+# setback section.
 [anticheat.actions.setback]
+# Default: 1.0
 vl_threshold = 1.0
 
+# packet section.
 [anticheat.packet]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: false
 log_inject = false
 
+# combat section.
 [anticheat.combat]
 
+# killaura section.
 [anticheat.combat.killaura]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 90.0
 max_angle_snap = 90.0
+# Maximum value.
+# Default: 180.0
 max_attack_angle = 180.0
+# Default: true
 check_multi_target = true
 
+# aimbot section.
 [anticheat.combat.aimbot]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 3.0
 max_angle_for_perfect = 3.0
+# Maximum value.
+# Default: 30.0
 max_rotation_speed = 30.0
+# Maximum value.
+# Default: 0.5
 max_tracking_stddev = 0.5
+# Minimum value.
+# Default: 5
 min_tracking_samples = 5
 
+# fightbot section.
 [anticheat.combat.fightbot]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Interval in ticks (20 ticks = 1 second).
+# Default: 0.95
 max_interval_consistency = 0.95
 
+# forcefield section.
 [anticheat.combat.forcefield]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 90.0
 max_attack_angle = 90.0
 
+# aimassist section.
 [anticheat.combat.aimassist]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Minimum value.
+# Default: 0.85
 min_consistency = 0.85
 
+# fastbow section.
 [anticheat.combat.fastbow]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Interval in ticks (20 ticks = 1 second).
+# Default: 1100
 min_bow_interval_ms = 1100
 
+# velocity section.
 [anticheat.combat.velocity]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Minimum value.
+# Default: 0.1
 min_velocity_threshold = 0.1
+# Minimum value.
+# Default: 0.05
 min_expected_movement = 0.05
 
+# reach section.
 [anticheat.combat.reach]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 3.01
 max_reach = 3.01
+# Maximum value.
+# Default: 5.0
 max_reach_creative = 5.0
+# Default: 0.5
 ping_compensation = 0.5
 
+# criticals section.
 [anticheat.combat.criticals]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
 
+# autoclicker section.
 [anticheat.combat.autoclicker]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 20
 max_cps = 20
+# Maximum value.
+# Default: 0.95
 max_click_consistency = 0.95
 
+# backtrack section.
 [anticheat.combat.backtrack]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 6.0
 max_distance = 6.0
 
+# arrowdmg section.
 [anticheat.combat.arrowdmg]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 3.2
 max_arrow_speed = 3.2
+# Maximum value.
+# Default: 6.0
 max_arrow_speed_creative = 6.0
+# Maximum value.
+# Default: 3.5
 max_crossbow_speed = 3.5
 
+# movement section.
 [anticheat.movement]
 
+# flight section.
 [anticheat.movement.flight]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 20
 max_air_ticks = 20
+# Maximum value.
+# Default: 0.1
 max_hover_y = 0.1
+# Maximum value.
+# Default: 0.5
 max_horizontal_speed = 0.5
+# Default: 0.42
 jump_velocity = 0.42
 
+# glide section.
 [anticheat.movement.glide]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: -0.05
 max_glide_speed = -0.05
+# Minimum value.
+# Default: 20
 min_glide_ticks = 20
 
+# fastfall section.
 [anticheat.movement.fastfall]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: -3.92
 max_fall_speed = -3.92
 
+# speed section.
 [anticheat.movement.speed]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 0.4
 max_speed_ground = 0.4
+# Maximum value.
+# Default: 0.4
 max_speed_air = 0.4
+# Minimum value.
+# Default: 0.05
 min_jump_height = 0.05
+# Speed.
+# Default: 1.3
 sprint_jump_speed_multiplier = 1.3
 
+# alljumps section.
 [anticheat.movement.alljumps]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Minimum value.
+# Default: 0.42
 min_jump_velocity = 0.42
+# Maximum value.
+# Default: 0
 max_air_jumps = 0
 
+# clip section.
 [anticheat.movement.clip]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 10.0
 max_clip_distance = 10.0
+# Default: true
 check_passable_blocks = true
 
+# teleport section.
 [anticheat.movement.teleport]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 20.0
 max_horizontal_distance = 20.0
+# Distance in blocks.
+# Default: 100.0
 max_vertical_distance = 100.0
 
+# nofall section.
 [anticheat.movement.nofall]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 3.0
 min_fall_distance = 3.0
 
+# spider section.
 [anticheat.movement.spider]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Minimum value.
+# Default: 0.1
 min_climb_speed = 0.1
+# Minimum value.
+# Default: 10
 min_climb_ticks = 10
 
+# jesus section.
 [anticheat.movement.jesus]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Minimum value.
+# Default: 15
 min_water_walk_ticks = 15
 
+# fastladder section.
 [anticheat.movement.fastladder]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 0.25
 max_climb_speed_up = 0.25
+# Maximum value.
+# Default: -0.15
 max_climb_speed_down = -0.15
 
+# timer section.
 [anticheat.movement.timer]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 60
 max_packets_per_second = 60
+# Default: 1000
 window_ms = 1000
 
+# blink section.
 [anticheat.movement.blink]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 2000
 max_silence_ms = 2000
+# Distance in blocks.
+# Default: 3.0
 min_jump_distance = 3.0
 
+# step section.
 [anticheat.movement.step]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 0.6
 max_step_height = 0.6
 
+# derp section.
 [anticheat.movement.derp]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Minimum value.
+# Default: -90.0
 min_pitch = -90.0
+# Maximum value.
+# Default: 90.0
 max_pitch = 90.0
+# Maximum value.
+# Default: 180.0
 max_yaw_delta = 180.0
 
+# fasteat section.
 [anticheat.movement.fasteat]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Minimum value.
+# Default: 1500
 min_eat_time_ms = 1500
 
+# foodsprint section.
 [anticheat.movement.foodsprint]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
 
+# groundspoof section.
 [anticheat.movement.groundspoof]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 2.0
 min_fall_distance = 2.0
+# Minimum value.
+# Default: 5
 min_spoof_ticks = 5
 
+# movementspoof section.
 [anticheat.movement.movementspoof]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 0.001
 min_micro_distance = 0.001
+# Minimum value.
+# Default: 20
 min_repeat_count = 20
 
+# elytra section.
 [anticheat.movement.elytra]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 2.0
 max_elytra_speed = 2.0
+# Maximum value.
+# Default: 0.1
 max_glide_up_speed = 0.1
+# Default: 1000
 boost_check_window_ms = 1000
+# Maximum value.
+# Default: 3.5
 riptide_max_speed = 3.5
+# Limit.
+# Default: 2.0
 riptide_climb_limit = 2.0
 
+# verticalmotion section.
 [anticheat.movement.verticalmotion]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 0.05
 max_ascent_speed = 0.05
+# Default: 0.42
 jump_velocity = 0.42
+# Speed.
+# Default: 0.3
 water_ascent_speed = 0.3
+# Speed.
+# Default: 0.25
 ladder_climb_speed = 0.25
+# Speed.
+# Default: 2.0
 riptide_ascent_speed = 2.0
 
+# entitymovement section.
 [anticheat.movement.entitymovement]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 1.0
 max_entity_speed = 1.0
 
+# world section.
 [anticheat.world]
 
+# fastplace section.
 [anticheat.world.fastplace]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 8
 max_blocks_per_second = 8
 
+# blockreach section.
 [anticheat.world.blockreach]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 5.5
 max_reach = 5.5
+# Maximum value.
+# Default: 6.5
 max_reach_creative = 6.5
+# Default: 0.5
 ping_compensation = 0.5
 
+# liquids section.
 [anticheat.world.liquids]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 6.0
 max_distance = 6.0
 
+# scaffold section.
 [anticheat.world.scaffold]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 50
 max_place_speed_ms = 50
+# Default: false
 require_look_down = false
 
+# tower section.
 [anticheat.world.tower]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 5
 max_blocks_per_second = 5
+# Maximum value.
+# Default: 1.0
 max_y_per_block = 1.0
 
+# xray section.
 [anticheat.world.xray]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Minimum value.
+# Default: 0.3
 min_ore_ratio = 0.3
+# Minimum value.
+# Default: 50
 min_total_blocks = 50
 
+# ghosthand section.
 [anticheat.world.ghosthand]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 6
 max_ray_distance = 6
+# Default: true
 check_occluding = true
 
+# fastbreak section.
 [anticheat.world.fastbreak]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 8
 max_breaks_per_second = 8
 
+# bedbreaker section.
 [anticheat.world.bedbreaker]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 2
 max_beds_per_second = 2
 
+# airplace section.
 [anticheat.world.airplace]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 5.0
 max_trace_distance = 5.0
 
+# misc section.
 [anticheat.misc]
 
+# regen section.
 [anticheat.misc.regen]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Interval in ticks (20 ticks = 1 second).
+# Default: 2500
 min_regen_interval_ms = 2500
+# Minimum value.
+# Default: 1.0
 min_heal_amount = 1.0
 
+# noswing section.
 [anticheat.misc.noswing]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Delay.
+# Default: 500
 max_swing_delay_ms = 500
 
+# autorespawn section.
 [anticheat.misc.autorespawn]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Delay.
+# Default: 100
 min_respawn_delay_ms = 100
 
+# inventorymove section.
 [anticheat.misc.inventorymove]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Distance in blocks.
+# Default: 0.1
 min_move_distance = 0.1
 
+# autoloot section.
 [anticheat.misc.autoloot]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 20
 max_clicks_per_second = 20
 
+# portalinventory section.
 [anticheat.misc.portalinventory]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
 
+# extrainventory section.
 [anticheat.misc.extrainventory]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 40
 max_survival_slot = 40
 
+# antihunger section.
 [anticheat.misc.antihunger]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 10.0
 max_vl = 10.0
+# Default: 0.5
 vl_decay = 0.5
+# Maximum value.
+# Default: 100
 max_sprint_ticks_without_hunger_loss = 100
+# Maximum value.
+# Default: 5
 max_jumps_without_hunger_loss = 5
+# Minimum value.
+# Default: 0.4
 min_jump_height_for_exhaustion = 0.4

@@ -1,53 +1,118 @@
-# UI-Energy settings (auto-generated from config.yml)
-# Edit values below; the file is reloaded by /ui reload.
+# UltimateImprovments — UI-Energy configuration.
+# This single file holds the addon's settings AND its messages (RU + EN).
+# Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# Every value can be edited; the file is re-read by /ui reload.
+# Missing keys are auto-repaired from the bundled defaults on startup.
 
+# ==================================================================
+# SETTINGS
+# ==================================================================
+
+
+# Energy system: production, transfer limits and per-machine behaviour.
 [energy]
 
+# generator section.
 [energy.generator]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Energy amount.
+# Default: 100
 energy_per_fuel = 100
+# Default: 100
 fuel_burn_ticks = 100
+# Default: false
 log = false
 
+# electric furnace section.
 [energy.electric_furnace]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Energy amount.
+# Default: 100
 energy_per_smelt = 100
+# Cooldown.
+# Default: 1000
 cooldown_ms = 1000
 
+# cable section.
 [energy.cable]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 0
 max_energy = 0
+# Default: false
 log = false
 
+# blink section.
 [energy.cable.blink]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 10
 off_ticks = 10
+# Default: 10
 on_ticks = 10
 
+# battery section.
 [energy.battery]
+# Maximum value.
+# Default: 100000
 max_energy = 100000
+# Default: 10
 discharge_per_tick = 10
 
+# smooth charge section.
 [energy.battery.smooth_charge]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 2.0
 charge_multiplier = 2.0
+# Default: 0.5
 discharge_multiplier = 0.5
 
+# visual section.
 [energy.battery.visual]
+# Master switch (true = feature on).
+# Default: true
 particles_enabled = true
 
+# battery drain section.
 [energy.battery_drain]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 5
 transfer_per_tick = 5
+# Default: false
 log = false
 
+# balancer section.
 [energy.balancer]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: false
 include_batteries = false
+# Maximum value.
+# Default: 25
 max_transfer = 25
+# Default: false
 log = false
 
+# Energy cost of the crafting-related energy features.
 [energy_crafting]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Energy amount.
+# Default: 100
 energy_per_craft = 100
+# Radius in blocks.
+# Default: 3
 workbench_search_radius = 3

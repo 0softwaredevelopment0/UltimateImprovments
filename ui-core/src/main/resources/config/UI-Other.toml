@@ -1,616 +1,3125 @@
-# UI-Other settings (auto-generated from config.yml)
-# Edit values below; the file is reloaded by /ui reload.
+# UltimateImprovments — UI-Other configuration.
+# This single file holds the addon's settings AND its messages (RU + EN).
+# Language: the global switch is messages.lang in UI-Core.toml ("en" or "ru").
+# Every value can be edited; the file is re-read by /ui reload.
+# Missing keys are auto-repaired from the bundled defaults on startup.
 
+# ==================================================================
+# SETTINGS
+# ==================================================================
+
+
+# codepanel section.
 [codepanel]
+# Maximum value.
+# Default: 10
 max_length = 10
+# Cooldown.
+# Default: 3
 enter_cooldown = 3
 
+# sounds section.
 [codepanel.sounds]
+# Default: "UI_BUTTON_CLICK"
 digit = "UI_BUTTON_CLICK"
+# Default: "BLOCK_DISPENSER_FAIL"
 backspace = "BLOCK_DISPENSER_FAIL"
+# Default: "ENTITY_EXPERIENCE_ORB_PICKUP"
 enter = "ENTITY_EXPERIENCE_ORB_PICKUP"
+# Default: "ENTITY_PLAYER_LEVELUP"
 success = "ENTITY_PLAYER_LEVELUP"
+# Default: "BLOCK_ANVIL_LAND"
 fail = "BLOCK_ANVIL_LAND"
 
+# Mechanics feature toggles and parameters (UI-Other umbrella).
 [features]
 
+# antimatter section.
 [features.antimatter]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Radius in blocks.
+# Default: 5
 explosion_radius = 5
+# Default: true
 break_blocks = true
+# Default: true
 set_fire = true
 
+# attributes section.
 [features.attributes]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Damage.
+# Default: 0.1
 attack_damage = 0.1
+# Speed.
+# Default: 1.0
 sneak_speed = 1.0
+# Speed.
+# Default: 3.5
 attack_speed = 3.5
+# Interval in ticks (20 ticks = 1 second).
+# Default: 200
 interval_ticks = 200
 
+# beacon section.
 [features.beacon]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: true
 glowing = true
+# Default: true
 blindness = true
+# Default: 4
 regeneration_amplifier = 4
+# Default: 4
 resistance_amplifier = 4
+# Interval in ticks (20 ticks = 1 second).
+# Default: 5
 interval_ticks = 5
 
+# blockdmg section.
 [features.blockdmg]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Damage.
+# Default: 1
 dripstone_damage = 1
+# Damage.
+# Default: 1
 endrod_damage = 1
+# Interval in ticks (20 ticks = 1 second).
+# Default: 5
 interval_ticks = 5
 
+# boostedcobweb section.
 [features.boostedcobweb]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# block collapse section.
 [features.block_collapse]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Default: 1.0
 rate = 1.0
+# Interval in ticks (20 ticks = 1 second).
+# Default: 20
 interval_ticks = 20
+# Interval in ticks (20 ticks = 1 second).
+# Default: 600
 save_interval_seconds = 600
+# Master switch (true = feature on).
+# Default: true
 lore_enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
 lore_interval_ticks = 100
+# Default: false
 log_block_actions = false
+# Default: 5.0
 default_heaviness = 5.0
-heaviness_overrides = "None"
+# Default: []
+heaviness_overrides = []
 
+# scan section.
 [features.block_collapse.scan]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Delay.
+# Default: 1
 delay_seconds = 1
+# Interval in ticks (20 ticks = 1 second).
+# Default: 1
 interval_seconds = 1
+# Default: 16
 area = 16
+# Maximum value.
+# Default: 50.0
 max_mspt = 50.0
 
+# deathbell section.
 [features.deathbell]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: true
 lightning = true
 
+# dragonegg section.
 [features.dragonegg]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# World name.
+# Default: "world_the_end"
 world = "world_the_end"
+# Default: 0
 x = 0
+# Default: 142
 y = 142
+# Default: 0
 z = 0
+# Interval in ticks (20 ticks = 1 second).
+# Default: 1728000
 interval_ticks = 1728000
+# Chance (0.0-1.0 or percent, see the value).
+# Default: 1.0
 spawn_chance = 1.0
 
+# enderchest section.
 [features.enderchest]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Chance (0.0-1.0 or percent, see the value).
+# Default: 0.001
 explosion_chance = 0.001
+# Power.
+# Default: 10.0
 explosion_power = 10.0
+# Damage.
+# Default: 1
 damage = 1
 
+# quick close section.
 [features.enderchest.quick_close]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 1000
 threshold_ms = 1000
+# Damage.
+# Default: 1
 damage = 1
 
+# look away section.
 [features.enderchest.quick_close.look_away]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 45.0
 angle_threshold = 45.0
+# Damage.
+# Default: 20
 explosion_damage = 20
 
+# entitylocator section.
 [features.entitylocator]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Radius in blocks.
+# Default: 12
 scan_radius = 12
+# Interval in ticks (20 ticks = 1 second).
+# Default: 20
 interval_ticks = 20
 
+# exp bottle upgrade section.
 [features.exp_bottle_upgrade]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 100
 max_multiplier = 100
+# Amount.
+# Default: 1
 anvil_cost_amount = 1
+# Display name (MiniMessage).
+# Default: "<i:false><yellow>Experience bottle <gold>x{level}</gold></yellow>"
 item_name = "<i:false><yellow>Experience bottle <gold>x{level}</gold></yellow>"
+# Default: ["<i:false><gray>Gives <aqua>{level}</aqua> times more experience.</gray>", "<i:false><dark_gray>{level} + {level} = <aqua>x{next}</aqua> on an anvil.</dark_gray>"]
 item_lore = ["<i:false><gray>Gives <aqua>{level}</aqua> times more experience.</gray>", "<i:false><dark_gray>{level} + {level} = <aqua>x{next}</aqua> on an anvil.</dark_gray>"]
 
+# glassbreak section.
 [features.glassbreak]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Damage.
+# Default: 1
 damage = 1
 
+# magnet section.
 [features.magnet]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 1
 interval_ticks = 1
+# Default: 0.05
 item_y_boost = 0.05
 
+# radius section.
 [features.magnet.radius]
+# Minimum value.
+# Default: 3
 min = 3
+# Maximum value.
+# Default: 15
 max = 15
 
+# force section.
 [features.magnet.force]
+# Default: 0.01
 base = 0.01
+# Distance in blocks.
+# Default: 0.3
 distance_multiplier = 0.3
+# Maximum value.
+# Default: 1
 max = 1
+# Maximum value.
+# Default: 0.5
 max_speed = 0.5
 
+# force curve section.
 [features.magnet.force_curve]
+# Power.
+# Default: 0.5
 power_exponent = 0.5
+# Power.
+# Default: 20.0
 power_normalize = 20.0
 
+# distance curve section.
 [features.magnet.distance_curve]
+# Default: "smoothstep"
 type = "smoothstep"
+# Minimum value.
+# Default: 0.0
 min_factor = 0.0
 
+# particles section.
 [features.magnet.particles]
+# Maximum value.
+# Default: 50
 center_max = 50
+# Maximum value.
+# Default: 30
 blocks_max = 30
+# Maximum value.
+# Default: 25
 crit_max = 25
+# Maximum value.
+# Default: 15
 portal_max = 15
 
+# modeprotect section.
 [features.modeprotect]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# World name.
+# Default: ["world", "world_nether", "world_the_end"]
 worlds = ["world", "world_nether", "world_the_end"]
+# Permission node.
+# Default: "ui.gmprotect.bypass"
 bypass_permission = "ui.gmprotect.bypass"
 
+# shieldslowness section.
 [features.shieldslowness]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 255
 slowness_amplifier = 255
+# Duration.
+# Default: 20
 slowness_duration = 20
 
+# terracotaspeed section.
 [features.terracotaspeed]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Speed.
+# Default: 4
 speed_amplifier = 4
+# Interval in ticks (20 ticks = 1 second).
+# Default: 5
 interval_ticks = 5
 
+# minecart speed section.
 [features.minecart_speed]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 8.0
 base_max_speed = 8.0
+# Limit.
+# Default: 999999999
 max_speed_limit = 999999999
+# Default: 1.005
 acceleration_factor = 1.005
+# Default: 0.998
 deceleration_factor = 0.998
+# Default: 0.06
 thrust_per_tick = 0.06
+# Minimum value.
+# Default: 15.0
 collision_min_speed = 15.0
+# Interval in ticks (20 ticks = 1 second).
+# Default: 1
 interval_ticks = 1
 
+# hopper smelt section.
 [features.minecart_speed.hopper_smelt]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Minimum value.
+# Default: 50.0
 min_speed = 50.0
 
+# unbreakable breaker section.
 [features.unbreakable_breaker]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# blocks section.
 [features.unbreakable_breaker.blocks]
 
+# BEDROCK section.
 [features.unbreakable_breaker.blocks.BEDROCK]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 100
 max_damage = 100
+# Minimum value.
+# Default: "-"
 min_tool_tier = "-"
+# Default: false
 require_haste = false
+# Default: true
 drop_block = true
+# Default: true
 break_naturally = true
+# Default: true
 play_effects = true
+# Default: 0.5
 efficiency_multiplier = 0.5
+# Default: 0.3
 haste_multiplier = 0.3
 
+# damage section.
 [features.unbreakable_breaker.blocks.BEDROCK.damage]
+# Default: 4.0
 netherite_pickaxe = 4.0
+# Default: 2.5
 diamond_pickaxe = 2.5
+# Default: 1.0
 iron_pickaxe = 1.0
+# Default: 0.7
 copper_pickaxe = 0.7
+# Default: 0.5
 wooden_pickaxe = 0.5
+# Default: 0.4
 golden_pickaxe = 0.4
+# Default: 0.3
 default = 0.3
 
+# BARRIER section.
 [features.unbreakable_breaker.blocks.BARRIER]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 80.0
 max_damage = 80.0
+# Minimum value.
+# Default: "-"
 min_tool_tier = "-"
+# Default: false
 require_haste = false
+# Default: true
 drop_block = true
+# Default: true
 break_naturally = true
+# Default: true
 play_effects = true
+# Default: 0.5
 efficiency_multiplier = 0.5
+# Default: 0.3
 haste_multiplier = 0.3
 
+# damage section.
 [features.unbreakable_breaker.blocks.BARRIER.damage]
+# Default: 4.0
 netherite_pickaxe = 4.0
+# Default: 2.5
 diamond_pickaxe = 2.5
+# Default: 1.0
 iron_pickaxe = 1.0
+# Default: 0.7
 copper_pickaxe = 0.7
+# Default: 0.5
 wooden_pickaxe = 0.5
+# Default: 0.4
 golden_pickaxe = 0.4
+# Default: 0.3
 default = 0.3
 
+# integrity section.
 [features.integrity]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# on break section.
 [features.integrity.on_break]
+# Sound name (minecraft:...).
+# Default: true
 play_sound = true
+# Sound name (minecraft:...).
+# Default: 2.0
 sound_volume = 2.0
+# Sound name (minecraft:...).
+# Default: 1.0
 sound_pitch = 1.0
 
+# low integrity warning section.
 [features.integrity.low_integrity_warning]
+# Default: [75, 50, 25, 10, 5]
 thresholds = [75, 50, 25, 10, 5]
 
+# unbreaking section.
 [features.integrity.unbreaking]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
 
+# piercing section.
 [features.integrity.piercing]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Cost.
+# Default: 0.5
 extra_integrity_cost = 0.5
 
+# creative item validator section.
 [features.creative_item_validator]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Permission node.
+# Default: "ui.creative.bypass"
 bypass_permission = "ui.creative.bypass"
+# Maximum value.
+# Default: 10240
 max_item_bytes = 10240
+# Maximum value.
+# Default: 30
 max_pdc_keys = 30
+# Maximum value.
+# Default: 50
 max_lore_lines = 50
+# Maximum value.
+# Default: 1000
 max_lore_chars = 1000
+# Maximum value.
+# Default: 200
 max_name_chars = 200
+# Maximum value.
+# Default: 40
 max_enchantments = 40
 
+# shulker protection section.
 [features.shulker_protection]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# leash section.
 [features.leash]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Distance in blocks.
+# Default: 10
 max_distance = 10
+# Interval in ticks (20 ticks = 1 second).
+# Default: 2
 pull_back_interval = 2
+# Default: true
 prevent_break = true
+# Default: true
 hard_stop = true
 
+# container trigger section.
 [features.container_trigger]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Interval in ticks (20 ticks = 1 second).
+# Default: 1
 interval_ticks = 1
+# Default: []
 triggers = []
 
+# waypoint section.
 [features.waypoint]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 200
 interval_ticks = 200
 
+# sudo section.
 [features.sudo]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Minimum value.
+# Default: 15
 session_minutes = 15
+# Cooldown.
+# Default: 10
 attempt_cooldown_seconds = 10
+# Command.
+# Default: ["ui punish", "ui power", "ui chgop", "ui op", "ui deop", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maintenance", "lp", "luckperms", "op", "deop", "stop", "restart"]
 dangerous_commands = ["ui punish", "ui power", "ui chgop", "ui op", "ui deop", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maintenance", "lp", "luckperms", "op", "deop", "stop", "restart"]
 
+# Server brand (mod name) shown in the client's F3 screen.
 [brand_spoof]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: "Paper"
 custom_brand = "Paper"
 
+# Vanish feature (hidden players).
 [vanish]
+# Default: []
 vanished_players = []
 
+# Sunburn mechanic: players burn in daylight under conditions.
 [sunburn]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 80
 check_interval = 80
+# Default: 80
 fire_ticks = 80
+# Default: true
 extinguish_when_safe = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 80
 helmet_degrade_interval = 80
+# Default: 1
 helmet_integrity_loss = 1
+# World name.
+# Default: ["world"]
 included_worlds = ["world"]
 
+# Custom netherite upgrade recipe options.
 [netherite_upgrade]
 
+# base values section.
 [netherite_upgrade.base_values]
+# Speed.
+# Default: 1
 block_break_speed = 1
 
+# armor section.
 [netherite_upgrade.base_values.armor]
+# Default: 3
 helmet = 3
+# Default: 8
 chestplate = 8
+# Default: 6
 leggings = 6
+# Default: 3
 boots = 3
 
+# weapons section.
 [netherite_upgrade.base_values.weapons]
+# Default: 8
 sword = 8
+# Default: 5
 mace = 5
 
+# Authentication (registration/login) system options.
 [auth]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Minimum value.
+# Default: 1
 min_password_length = 1
+# Maximum value.
+# Default: 32
 max_password_length = 32
+# Duration.
+# Default: 60
 session_duration_minutes = 60
+# Timeout.
+# Default: 60
 login_timeout_seconds = 60
+# Maximum value.
+# Default: 5
 max_wrong_attempts = 5
+# Cooldown.
+# Default: 5
 request_cooldown_seconds = 5
+# Maximum value.
+# Default: 3
 max_accounts_per_ip = 3
 
+# check ip section.
 [auth.check_ip]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# check duplicate name section.
 [auth.check_duplicate_name]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
-[auth.2fa]
+# 2fa section.
+[auth."2fa"]
 
-[auth.2fa.github]
+# github section.
+[auth."2fa".github]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Default: ""
 client_id = ""
+# Default: ""
 client_secret = ""
+# Default: 8080
 port = 8080
+# URL.
+# Default: ""
 public_url = ""
 
+# Saves players who fall into the void (configurable teleport).
 [void_protection]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# World name.
+# Default: ["pocketworld"]
 worlds = ["pocketworld"]
 
+# target section.
 [void_protection.target]
+# World name.
+# Default: "pocketworld"
 world = "pocketworld"
+# Default: 0
 x = 0
+# Default: 1
 y = 1
+# Default: 0
 z = 0
+# Default: 0.0
 yaw = 0.0
+# Default: 0.0
 pitch = 0.0
 
+# Logs recent deaths so admins can inspect them.
 [death_logger]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Default: true
 log_to_console = true
 
+# Power/jump mechanics parameters.
 [power]
+# Command.
+# Default: true
 intercept_commands = true
+# Timeout.
+# Default: 30
 request_timeout = 30
+# Duration.
+# Default: 10
 countdown_duration = 10
 
+# actionbar section.
 [power.actionbar]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# bossbar section.
 [power.bossbar]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Color.
+# Default: "RED"
 color = "RED"
+# Default: "SOLID"
 style = "SOLID"
 
+# countdown sound section.
 [power.countdown_sound]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Display name (MiniMessage).
+# Default: "BLOCK_NOTE_BLOCK_PLING"
 name = "BLOCK_NOTE_BLOCK_PLING"
+# Default: 1.0
 volume = 1.0
+# Default: 1.2
 pitch_base = 1.2
+# Maximum value.
+# Default: 2.0
 pitch_max = 2.0
 
+# beep speedup section.
 [power.countdown_sound.beep_speedup]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Minimum value.
+# Default: 1
 min_per_second = 1
+# Maximum value.
+# Default: 6
 max_per_second = 6
 
+# /kill-style suicide command behaviour.
 [suicide]
+# Duration.
+# Default: 10
 countdown_duration = 10
+# Cooldown.
+# Default: 10
 cooldown_seconds = 10
+# Timeout.
+# Default: 30
 confirm_timeout = 30
 
+# sounds section.
 [suicide.sounds]
+# Default: "BLOCK_NOTE_BLOCK_PLING"
 warning = "BLOCK_NOTE_BLOCK_PLING"
+# Default: "BLOCK_NOTE_BLOCK_PLING"
 tick = "BLOCK_NOTE_BLOCK_PLING"
+# Default: "ENTITY_LIGHTNING_BOLT_THUNDER"
 finish = "ENTITY_LIGHTNING_BOLT_THUNDER"
 
+# bossbar section.
 [suicide.bossbar]
+# Color.
+# Default: "RED"
 color = "RED"
+# Default: "SOLID"
 style = "SOLID"
 
+# Rejects illegal/oversized packets from clients.
 [packet_guard]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Permission node.
+# Default: "ui.packetguard.bypass"
 bypass_permission = "ui.packetguard.bypass"
+# Maximum value.
+# Default: 7000000
 max_packet_size = 7000000
+# Default: true
 log = true
+# Default: false
 log_inject = false
 
+# Proxy-related settings (forwarding, IP handling).
 [proxy_server]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Command.
+# Default: true
 log_commands = true
+# Message text (MiniMessage).
+# Default: "<red>❌ You don't have permission to switch servers!</red>"
 no_permission_message = "<red>❌ You don't have permission to switch servers!</red>"
 
+# Redstone lag protection (limits per area/time).
 [redstone_guard]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 50.0
 mspt_threshold = 50.0
+# Limit.
+# Default: 10
 chunk_iterations_limit = 10
 
+# Emergency cleanup of excessive entities.
 [emergency_entity_kill]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Limit.
+# Default: 1000
 entity_limit = 1000
+# Default: 50.0
 mspt_threshold = 50.0
+# World name.
+# Default: []
 kill_worlds = []
+# Default: true
 log = true
+# Default: false
 broadcast_to_all = false
+# Cooldown.
+# Default: 30000
 notification_cooldown_ms = 30000
 
+# Warns staff when the server is overloaded (TPS drop).
 [server_overload_warning]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 40.0
 high_mspt = 40.0
+# Default: 50.0
 critical_mspt = 50.0
+# Cooldown.
+# Default: 30
 notify_cooldown_seconds = 30
 
+# Blocks bot-like joins/behaviour.
 [bot_protection]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Cooldown.
+# Default: 3
 rejoin_cooldown_seconds = 3
+# Duration.
+# Default: 10
 priority_session_duration = 10
 
+# queue section.
 [bot_protection.queue]
+# Maximum value.
+# Default: 2
 max_joins_per_window = 2
+# Default: 1
 window_seconds = 1
+# Default: true
 notify_ops = true
+# Maximum value.
+# Default: 5
 priority_max_joins_per_window = 5
 
+# /ui chgdim world switching: cooldowns and permissions.
 [changedimmension]
+# World name.
+# Default: "pocketworld"
 default_world = "pocketworld"
+# Cooldown.
+# Default: 10
 cooldown_seconds = 10
 
+# dialog section.
 [changedimmension.dialog]
+# Title text (MiniMessage).
+# Default: "<gold>✦ Change Dimension</gold>"
 title = "<gold>✦ Change Dimension</gold>"
+# Default: "<white>Where do you want to teleport?</white>"
 body = "<white>Where do you want to teleport?</white>"
+# World name.
+# Default: "<gray>World Name</gray>"
 world_label = "<gray>World Name</gray>"
+# Default: "<green>✔ Teleport</green>"
 tp_button = "<green>✔ Teleport</green>"
+# Default: "<aqua>↩ Return back</aqua>"
 return_button = "<aqua>↩ Return back</aqua>"
+# Default: "<red>✖ Cancel</red>"
 cancel_button = "<red>✖ Cancel</red>"
 
+# worlds section.
 [changedimmension.worlds]
 
+# pocketworld section.
 [changedimmension.worlds.pocketworld]
+# Default: 0
 x = 0
+# Default: 1
 y = 1
+# Default: 0
 z = 0
+# Default: 0.0
 yaw = 0.0
+# Default: 0.0
 pitch = 0.0
 
+# Server MOTD (server list icon and text).
 [motd]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient> <dark_gray>•</dark_gray> <white>…"
 line1 = "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient> <dark_gray>•</dark_gray> <white>1.21.4</white>"
+# Default: "<gray>✧ Welcome to the server! ✧</gray>"
 line2 = "<gray>✧ Welcome to the server! ✧</gray>"
+# Master switch (true = feature on).
+# Default: true
 icon_enabled = true
 
+# player list section.
 [motd.player_list]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
+# Default: ["<gradient:#00AAFF:#FF55FF>✧ UltimateImprovments ✧</gradient>", "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"]
 lines = ["<gradient:#00AAFF:#FF55FF>✧ UltimateImprovments ✧</gradient>", "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"]
 
+# online counter section.
 [motd.online_counter]
 
+# current online section.
 [motd.online_counter.current_online]
+# Default: "normal"
 mode = "normal"
+# Default: 0
 value = 0
+# Default: 50
 scale = 50
+# Default: 20
 percent = 20
+# Default: 5
 add = 5
+# Minimum value.
+# Default: 10
 min = 10
+# Maximum value.
+# Default: 100
 max = 100
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
 update_interval_ticks = 100
 
+# max online section.
 [motd.online_counter.max_online]
+# Default: "normal"
 mode = "normal"
+# Default: 100
 value = 100
+# Default: 50
 scale = 50
+# Default: 0
 percent = 0
+# Default: 0
 add = 0
+# Minimum value.
+# Default: 50
 min = 50
+# Maximum value.
+# Default: 500
 max = 500
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
 update_interval_ticks = 100
 
+# Tab-list header/footer customization.
 [tab]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 20
 update_interval_ticks = 20
+# Default: true
 hide_spectators = true
+# Default: ["<gradient:#00AAFF:#FF55FF>  ✦ UltimateImprovments ✦  </gradient>", "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"]
 header = ["<gradient:#00AAFF:#FF55FF>  ✦ UltimateImprovments ✦  </gradient>", "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"]
+# Default: ["<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>", "<gray>  Online: <white>%online%</white><gray>/%max_players%  •  TPS: <white>%tps%</white></gray>", "<gray>  Discord: <aqua>discord.gg/ultimateimprovments</aqua></gray>"]
 footer = ["<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>", "<gray>  Online: <white>%online%</white><gray>/%max_players%  •  TPS: <white>%tps%</white></gray>", "<gray>  Discord: <aqua>discord.gg/ultimateimprovments</aqua></gray>"]
 
+# player list section.
 [tab.player_list]
+# Master switch (true = feature on).
+# Default: true
 objective_enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 0
 update_interval_ticks = 0
+# Format string (MiniMessage).
+# Default: ""
 format = ""
+# Default: ""
 objective_prefix = ""
+# Default: " <dark_gray>[</dark_gray>%player_ping_color%%player_ping%<dark_gray>ms] </dark_gray>"
 objective_suffix = " <dark_gray>[</dark_gray>%player_ping_color%%player_ping%<dark_gray>ms] </dark_gray>"
 
+# sort section.
 [tab.sort]
+# Default: "none"
 mode = "none"
 
+# Sidebar scoreboard (stats display).
 [scoreboard]
+# Master switch: show the sidebar scoreboard.
+# Default: true
 enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 20
 update_interval_ticks = 20
 
+# boards section.
 [scoreboard.boards]
 
+# default section.
 [scoreboard.boards.default]
+# Title text (MiniMessage).
+# Default: "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient>"
 title = "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient>"
+# Default: ["", "<gray>Online: <white>%online%</white><gray>/%max_players%</gray>", "<gray>TPS: <white>%tps%</white></gray>", "", "<gray>Your ping: <white>%player_ping%ms</white></gray>", "<gray>World: <white>%world_name%</white></gray>", "", "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"]
 lines = ["", "<gray>Online: <white>%online%</white><gray>/%max_players%</gray>", "<gray>TPS: <white>%tps%</white></gray>", "", "<gray>Your ping: <white>%player_ping%ms</white></gray>", "<gray>World: <white>%world_name%</white></gray>", "", "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"]
 
+# condition section.
 [scoreboard.boards.default.condition]
+# Default: "always"
 type = "always"
+# World name.
+# Default: []
 worlds = []
+# Permission node.
+# Default: ""
 permission = ""
 
+# Server boss bar shown to all players.
 [bossbar]
+# Master switch: show the server boss bar.
+# Default: true
 enabled = true
+# Format string (MiniMessage).
+# Default: "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient> <dark_gray>|</dark_gray> <gray>O…"
 format = "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient> <dark_gray>|</dark_gray> <gray>Online: <white>%online%</white></gray>"
+# Color.
+# Default: "YELLOW"
 color = "YELLOW"
+# Default: "SOLID"
 style = "SOLID"
+# Default: "increase_decrease"
 progress_mode = "increase_decrease"
+# Default: 0.5
 static_value = 0.5
+# Speed.
+# Default: 0.01
 progress_speed = 0.01
+# Default: true
 progress_increasing = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 20
 update_interval_ticks = 20
 
+# Wireless redstone transmitters/receivers.
 [wireless_redstone]
+# Enable wireless redstone transmitters/receivers.
+# Default: true
 enabled = true
 
+# Multi-block structure integrity checks and decay.
 [structure_integrity]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 1000.0
 stress_max = 1000.0
+# Default: 100.0
 stress_threshold = 100.0
+# Default: 1.0
 stress_per_open_close = 1.0
+# Default: 0.03333
 stress_decay_per_second = 0.03333
+# Default: 0.1
 base_degradation_rate = 0.1
+# Default: 2.0
 degradation_exponent = 2.0
+# Default: 0.01
 degradation_time_exponent = 0.01
+# Default: 0.01666
 integrity_recovery_per_second = 0.01666
+# Power.
+# Default: 10.0
 explosion_power = 10.0
+# Damage.
+# Default: 8192.0
 explosion_damage = 8192.0
+# Radius in blocks.
+# Default: 12
 explosion_damage_radius = 12
 
+# Server economy: starting balance and income sources.
 [economy]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Default: 100.0
 default_balance = 100.0
+# Default: "coins"
 primary_currency = "coins"
 
+# income section.
 [economy.income]
+# Master switch (true = feature on).
+# Default: false
 enabled = false
 
+# blocks section.
 [economy.income.blocks]
 
+# mobs section.
 [economy.income.mobs]
 
+# Custom enchantments: global parameters.
 [enchant]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# Maximum value.
+# Default: 255
 max_level = 255
+# Permission node.
+# Default: "ui.command.enchant"
 permission = "ui.command.enchant"
+# Default: ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing"]
 custom_enchantments = ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing"]
 
+# Meteor events: spawn chance, size, loot.
 [meteor]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
+# World name.
+# Default: "world"
 world = "world"
+# Default: 1
 count_per_spawn = 1
+# Duration.
+# Default: 60
 fall_duration_ticks = 60
+# Radius in blocks.
+# Default: 2
 sphere_radius = 2
+# Power.
+# Default: 8.0
 explosion_power = 8.0
+# Maximum value.
+# Default: 10
 max_active = 10
+# Default: ["CRACKED_DEEPSLATE_BRICKS", "CRACKED_DEEPSLATE_TILES", "CHISELED_DEEPSLATE", "MAGMA_BLOCK"]
 display_blocks = ["CRACKED_DEEPSLATE_BRICKS", "CRACKED_DEEPSLATE_TILES", "CHISELED_DEEPSLATE", "MAGMA_BLOCK"]
 
+# interval section.
 [meteor.interval]
+# Minimum value.
+# Default: 30
 min = 30
+# Maximum value.
+# Default: 90
 max = 90
 
+# spawn radius section.
 [meteor.spawn_radius]
+# Minimum value.
+# Default: 30
 min = 30
+# Maximum value.
+# Default: 120
 max = 120
 
+# height section.
 [meteor.height]
+# Minimum value.
+# Default: -64
 min = -64
+# Maximum value.
+# Default: 320
 max = 320
 
+# core ores section.
 [meteor.core_ores]
+# Default: 1.0
 DEEPSLATE_DIAMOND_ORE = 1.0
+# Default: 1.0
 DEEPSLATE_IRON_ORE = 1.0
+# Default: 1.0
 DEEPSLATE_GOLD_ORE = 1.0
+# Default: 1.0
 DEEPSLATE_EMERALD_ORE = 1.0
+# Default: 1.0
 DEEPSLATE_LAPIS_ORE = 1.0
+# Default: 1.0
 DEEPSLATE_REDSTONE_ORE = 1.0
+# Default: 1.0
 DEEPSLATE_COAL_ORE = 1.0
+# Default: 1.0
 DEEPSLATE_COPPER_ORE = 1.0
 
+# Particle accelerator machine parameters.
 [particle_accelerator]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
-collision_recipes = ["{'material_a': 'GOLD_INGOT', 'material_b': 'DIAMOND', 'speed_min_pct': 5.0, 'speed_max_pct': 10.0, 'result': 'EMERALD'}", "{'material_a': 'DIAMOND', 'material_b': 'EMERALD', 'speed_min_pct': 10.0, 'speed_max_pct': 15.0, 'result': 'NETHERITE_SCRAP'}"]
+# Default: [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
+collision_recipes = [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
 
+# Custom block friction behaviour.
 [block_friction]
+# Default: 0.989
 BLUE_ICE = 0.989
 
+# Protection block: radius, points, fuel.
 [protection]
+# Master switch (true = feature on).
+# Default: true
 enabled = true
 
+# block section.
 [protection.block]
+# Material name (minecraft:...).
+# Default: "LODESTONE"
 material = "LODESTONE"
 
+# radius section.
 [protection.radius]
+# Default: 5
 default = 5
+# Minimum value.
+# Default: 1
 min = 1
+# Maximum value.
+# Default: 64
 max = 64
 
+# integrity section.
 [protection.integrity]
+# Default: 100.0
 starting_value = 100.0
+# Default: 0.1
 loss_per_break_attempt = 0.1
+# Default: 0.1
 loss_per_explosion_block = 0.1
 
+# points section.
 [protection.points]
+# Default: 0.1
 fuel_multiplier = 0.1
+# Radius in blocks.
+# Default: 1
 radius_upgrade_base_cost = 1
+# Cost.
+# Default: 1
 repair_base_cost = 1
 
+# crafting section.
 [protection.crafting]
+# Default: false
 workbench_allowed = false
+# Default: true
 crafter_allowed = true
 
+# admin section.
 [protection.admin]
+# Default: true
 give_allowed = true
+
+# ==================================================================
+# MESSAGES — RUSSIAN (active when lang = "ru")
+# ==================================================================
+
+
+# auth section.
+# Placeholders: %remaining%, %min%, %max%, %count%, %limit%, %seconds%
+[messages.auth]
+
+# gui section.
+[messages.auth.gui]
+# Default: Register
+register = "Register"
+# Default: Enter password
+login = "Enter password"
+# Default: Change password
+change_password = "Change password"
+# Default: Account logout
+logout = "Account logout"
+
+# messages section.
+# Placeholders: %remaining%, %min%, %max%, %count%, %limit%, %seconds%
+[messages.auth.messages]
+# Default: <green>✔ Registration successful!</green>
+success_register = "<green>✔ Registration successful!</green>"
+# Default: <green>✔ You have successfully logged in!</green>
+success_login = "<green>✔ You have successfully logged in!</green>"
+# Default: <red>❌ Incorrect password! Try again.</red>
+wrong_password = "<red>❌ Incorrect password! Try again.</red>"
+# Default: <red>❌ Incorrect password!</red>
+wrong_password_short = "<red>❌ Incorrect password!</red>"
+# Default: <red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>
+wrong_password_remaining = "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>"
+# Default: <red>❌ Password must be at least 4 characters!</red>
+short_password = "<red>❌ Password must be at least 4 characters!</red>"
+# Default: <red>❌ Password must not exceed 32 characters!</red>
+long_password = "<red>❌ Password must not exceed 32 characters!</red>"
+# Default: <red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>
+password_too_short = "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>"
+# Default: <red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>
+password_too_long = "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>"
+# Default: <red>❌ Please authenticate first! Enter your password in the opened window.</red>
+need_auth = "<red>❌ Please authenticate first! Enter your password in the opened window.</red>"
+# Default: <red>❌</red> <white>Your IP address has changed. Please log in again.</white>
+ip_changed = "<red>❌</red> <white>Your IP address has changed. Please log in again.</white>"
+# Display name (MiniMessage).
+# Default: <yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different nam…
+duplicate_name_kick = "<yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different name.</white>"
+# Maximum value.
+# Default: <red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<whit…
+max_accounts_per_ip = "<red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<white>Maximum:</white> <yellow>%limit%</yellow> <white>accounts per IP.</white>"
+# Default: <yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>
+enter_password_hint = "<yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>
+enter_new_password_hint = "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Enter your password to log out.</gray>
+enter_logout_password_hint = "<yellow>✦</yellow> <gray>Enter your password to log out.</gray>"
+# Default: <red>❌ Enter your password in the item name field!</red>
+enter_password_field = "<red>❌ Enter your password in the item name field!</red>"
+# Default: <red>❌ Enter your current password in the item name field!</red>
+enter_current_password = "<red>❌ Enter your current password in the item name field!</red>"
+# Default: <red>❌ Enter a new password in the item name field!</red>
+enter_new_password_field = "<red>❌ Enter a new password in the item name field!</red>"
+# Default: <red>❌ Enter your password in the item name field!</red>
+enter_password_field_generic = "<red>❌ Enter your password in the item name field!</red>"
+# Default: <red>❌ You are not registered yet! First, create a password.</red>
+not_registered = "<red>❌ You are not registered yet! First, create a password.</red>"
+# Default: <yellow>✦</yellow> <gray>Password change cancelled.</gray>
+password_change_cancelled = "<yellow>✦</yellow> <gray>Password change cancelled.</gray>"
+# Default: <red>❌ You cannot close the password change window!</red>
+cannot_close_change_password = "<red>❌ You cannot close the password change window!</red>"
+# Default: <red>❌ You cannot close the authorization window! Please enter your password.</red>
+cannot_close_auth = "<red>❌ You cannot close the authorization window! Please enter your password.</red>"
+# Default: <yellow>✦</yellow> <gray>Account logout cancelled.</gray>
+logout_cancelled = "<yellow>✦</yellow> <gray>Account logout cancelled.</gray>"
+# Default: <yellow>✦</yellow> <gray>Opening authorization window...</gray>
+opening_auth_window = "<yellow>✦</yellow> <gray>Opening authorization window...</gray>"
+# Default: <red>❌ Error opening authorization window! Report to an administrator.</red>
+auth_window_error = "<red>❌ Error opening authorization window! Report to an administrator.</red>"
+# Default: <red>❌ Error checking password! Please try again.</red>
+auth_check_error = "<red>❌ Error checking password! Please try again.</red>"
+# Default: <red>❌ Password change error! Please try again.</red>
+change_password_error = "<red>❌ Password change error! Please try again.</red>"
+# Default: <green>✔</green> <white>Password successfully changed!</white>
+password_changed = "<green>✔</green> <white>Password successfully changed!</white>"
+# Default: <gray>Enjoy your game! Session active for 1 hour.</gray>
+session_active = "<gray>Enjoy your game! Session active for 1 hour.</gray>"
+# Message text (MiniMessage).
+# Default: <green>✔</green> <white>You have been force authorized by an administrator!</white>
+force_login_message = "<green>✔</green> <white>You have been force authorized by an administrator!</white>"
+# Limit.
+# Default: <red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>
+rate_limit = "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
+# Default: <gray>Try again: </gray><gold>/ui auth login <password></gold>
+try_again_hint = "<gray>Try again: </gray><gold>/ui auth login <password></gold>"
+# Default: <gold>✦</gold> <white>You are already logged in!</white>
+already_authenticated = "<gold>✦</gold> <white>You are already logged in!</white>"
+# Title text (MiniMessage).
+# Default: <gold>✦</gold> <white>Please log in to continue.</white>
+login_title = "<gold>✦</gold> <white>Please log in to continue.</white>"
+# Title text (MiniMessage).
+# Default: <gold>✦</gold> <white>Choose a password to register.</white>
+register_title = "<gold>✦</gold> <white>Choose a password to register.</white>"
+# Default: <gray>Use: </gray><gold>/ui auth logout <password></gold>
+logout_usage = "<gray>Use: </gray><gold>/ui auth logout <password></gold>"
+
+# protection section.
+# Placeholders: %radius%, %value%, %points%, %r%, %cost%, %name%, %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
+[messages.protection]
+# Message text (MiniMessage).
+# Default: <green>✔</green> <white>Блок защиты установлен. Shift+RMB — открыть GUI.</white>
+placed_message = "<green>✔</green> <white>Блок защиты установлен. Shift+RMB — открыть GUI.</white>"
+# Master switch (true = feature on).
+# Default: <green>✔</green> <white>Блок защиты ВКЛЮЧЁН!</white>
+block_enabled = "<green>✔</green> <white>Блок защиты ВКЛЮЧЁН!</white>"
+# Default: <red>❌</red> <white>Блок защиты ВЫКЛЮЧЕН.</white>
+block_disabled = "<red>❌</red> <white>Блок защиты ВЫКЛЮЧЕН.</white>"
+# Whitelist.
+# Default: <red>Этот Блок защиты вам не принадлежит!</red>
+not_whitelisted = "<red>Этот Блок защиты вам не принадлежит!</red>"
+# Default: <red>Территория под защитой!</red> <gray>Этот блок принадлежит другому игроку.</gray>
+cant_break = "<red>Территория под защитой!</red> <gray>Этот блок принадлежит другому игроку.</gray>"
+# Default: <red>Территория под защитой! Установка блоков запрещена.</red>
+cant_place = "<red>Территория под защитой! Установка блоков запрещена.</red>"
+# Default: <red>Территория под защитой! Взаимодействие запрещено.</red>
+cant_interact = "<red>Территория под защитой! Взаимодействие запрещено.</red>"
+# Default: <gray>Возьмите в руку топливо, чтобы получить очки.</gray>
+fuel_hint = "<gray>Возьмите в руку топливо, чтобы получить очки.</gray>"
+# Default: <red>Этот предмет не переплавляется и не даёт очков!</red>
+fuel_not_burnable = "<red>Этот предмет не переплавляется и не даёт очков!</red>"
+# Default: <green>✔</green> <white>Получено <gold>%points%</gold> очков.</white>
+fuel_acquired = "<green>✔</green> <white>Получено <gold>%points%</gold> очков.</white>"
+# Radius in blocks.
+# Default: <green>✔</green> <white>Радиус увеличен до </white><aqua>%r%</aqua>
+radius_upgraded = "<green>✔</green> <white>Радиус увеличен до </white><aqua>%r%</aqua>"
+# Default: <red>Недостаточно очков! Нужно: </red><gold>%cost%</gold>
+not_enough_points = "<red>Недостаточно очков! Нужно: </red><gold>%cost%</gold>"
+# Radius in blocks.
+# Default: <yellow>Радиус уже максимальный.</yellow>
+radius_max = "<yellow>Радиус уже максимальный.</yellow>"
+# Default: <yellow>Целостность уже максимальная.</yellow>
+integrity_full = "<yellow>Целостность уже максимальная.</yellow>"
+# Default: <green>✔</green> <white>Целостность восстановлена.</white>
+repaired = "<green>✔</green> <white>Целостность восстановлена.</white>"
+# Default: <yellow>Блок защиты снят и удалён из БД.</yellow>
+broken = "<yellow>Блок защиты снят и удалён из БД.</yellow>"
+# Whitelist.
+# Default: <green>✔</green> <white>Игрок <yellow>%name%</yellow> добавлен в whitelist.</white>
+whitelist_added = "<green>✔</green> <white>Игрок <yellow>%name%</yellow> добавлен в whitelist.</white>"
+# Whitelist.
+# Default: <yellow>Игрок удалён из whitelist.</yellow>
+whitelist_removed = "<yellow>Игрок удалён из whitelist.</yellow>"
+
+# gui section.
+[messages.protection.gui]
+# Title text (MiniMessage).
+# Default: <white>Блок защиты — GUI</white>
+main_title = "<white>Блок защиты — GUI</white>"
+# Title text (MiniMessage).
+# Default: <white>Блок защиты — Whitelist</white>
+whitelist_title = "<white>Блок защиты — Whitelist</white>"
+# Title text (MiniMessage).
+# Default: <white>Блок защиты — Добавить игрока</white>
+addplayer_title = "<white>Блок защиты — Добавить игрока</white>"
+
+# hologram section.
+# Placeholders: %radius%, %value%
+[messages.protection.hologram]
+# Master switch (true = feature on).
+# Default: <white>Блок защиты <green>✔</green></white>
+title_enabled = "<white>Блок защиты <green>✔</green></white>"
+# Title text (MiniMessage).
+# Default: <white>Блок защиты <red>❌</red></white>
+title_disabled = "<white>Блок защиты <red>❌</red></white>"
+# Radius in blocks.
+# Default: <gray>Радиус: <white>%radius%</white></gray>
+radius = "<gray>Радиус: <white>%radius%</white></gray>"
+# Default: <gray>Целостность: <white>%value%%</white></gray>
+integrity = "<gray>Целостность: <white>%value%%</white></gray>"
+# Default: <gray>Очки: <gold>%value%</gold></gray>
+points = "<gray>Очки: <gold>%value%</gold></gray>"
+
+# item section.
+[messages.protection.item]
+# Display name (MiniMessage).
+# Default: <white>Блок защиты</white>
+name = "<white>Блок защиты</white>"
+# Default: <gray>Защищает территорию вокруг установки.</gray>
+lore_line_1 = "<gray>Защищает территорию вокруг установки.</gray>"
+# Default: <gray>Shift+RMB — открыть GUI.</gray>
+lore_line_2 = "<gray>Shift+RMB — открыть GUI.</gray>"
+# Default: <gray>RMB с топливом — получить очки.</gray>
+lore_line_3 = "<gray>RMB с топливом — получить очки.</gray>"
+# Default: <dark_gray>Recipe: see crafting menu (crafter only)</dark_gray>
+lore_line_4 = "<dark_gray>Recipe: see crafting menu (crafter only)</dark_gray>"
+
+# admin section.
+# Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
+[messages.protection.admin]
+# Default: <red>❌ Authorization system is disabled in config!</red>
+system_disabled = "<red>❌ Authorization system is disabled in config!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth forcelogin|resetauth|chgpass|delsession|logout <nick></white>
+usage = "<red>❌ Usage: </red><white>/ui auth forcelogin|resetauth|chgpass|delsession|logout <nick></white>"
+# Command.
+# Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
+unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
+# Default: <red>❌ Only players can use this command!</red>
+player_only = "<red>❌ Only players can use this command!</red>"
+# Default: <red>❌ You are not logged in!</red>
+not_authenticated = "<red>❌ You are not logged in!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to force log in!</red>
+forcelogin_no_permission = "<red>❌ You don't have permission to force log in!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>
+forcelogin_usage = "<red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+forcelogin_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+forcelogin_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>
+forcelogin_success = "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>"
+# Default: <red>❌ Failed to authorize player</red> <yellow>%player%</yellow>
+forcelogin_fail = "<red>❌ Failed to authorize player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to reset authorization!</red>
+resetauth_no_permission = "<red>❌ You don't have permission to reset authorization!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth resetauth <nick></white>
+resetauth_usage = "<red>❌ Usage: </red><white>/ui auth resetauth <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+resetauth_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+resetauth_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</…
+resetauth_success = "<green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</white>"
+# Default: <red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>
+resetauth_fail = "<red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to reset sessions!</red>
+delsession_no_permission = "<red>❌ You don't have permission to reset sessions!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth delsession <nick></white>
+delsession_usage = "<red>❌ Usage: </red><white>/ui auth delsession <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+delsession_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+delsession_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>
+delsession_success = "<green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>"
+# Default: <gray>They will need to enter their password again on next login.</gray>
+delsession_info = "<gray>They will need to enter their password again on next login.</gray>"
+# Default: <red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>
+delsession_fail = "<red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to change passwords!</red>
+chgpass_no_permission = "<red>❌ You don't have permission to change passwords!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>
+chgpass_usage = "<red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>"
+# Default: <green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green…
+chgpass_success = "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
+# Default: <gray>Session reset — player must log in again.</gray>
+chgpass_session_reset = "<gray>Session reset — player must log in again.</gray>"
+# Default: <red>❌ Failed to change password of player</red> <yellow>%player%</yellow>
+chgpass_fail = "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red…
+kick_resetauth = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gra…
+kick_delsession = "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>"
+# Timeout.
+# Default: <red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>
+kick_timeout = "<red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>"
+# Default: <red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>
+kick_too_many_attempts = "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>"
+# Default: <green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password …
+kick_logout = "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>"
+# Display name (MiniMessage).
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
+kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n"
+
+# codepanel section.
+# Placeholders: %seconds%, %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%, %entity%
+[messages.codepanel]
+
+# messages section.
+# Placeholders: %seconds%
+[messages.codepanel.messages]
+# Default: <dark_green>✔</dark_green> <green>Success:</green> <gray>Correct code!</gray>
+success = "<dark_green>✔</dark_green> <green>Success:</green> <gray>Correct code!</gray>"
+# Default: <dark_red>❌</dark_red> <red>Error:</red> <gray>Incorrect code!</gray>
+error = "<dark_red>❌</dark_red> <red>Error:</red> <gray>Incorrect code!</gray>"
+# Default: <dark_red>❌</dark_red> <red>Error:</red> <gray>No keys found in the database!</gray>
+no_config = "<dark_red>❌</dark_red> <red>Error:</red> <gray>No keys found in the database!</gray>"
+# Default: <red>Code panel is reloading, try again later...</red>
+reloading = "<red>Code panel is reloading, try again later...</red>"
+# Cooldown.
+# Default: <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before entering again!</red>
+cooldown = "<red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before entering again!</red>"
+# Default: <red>❌ You don't have access to this code!</red>
+no_access = "<red>❌ You don't have access to this code!</red>"
+# Default: <red>❌ Incorrect code!</red>
+wrong_code = "<red>❌ Incorrect code!</red>"
+# Default: <gray>✖ Code entry cancelled.</gray>
+cancelled = "<gray>✖ Code entry cancelled.</gray>"
+
+# key section.
+# Placeholders: %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%
+[messages.codepanel.key]
+# Permission node.
+# Default: <red>❌ You don't have permission to manage code panel keys!</red>
+no_permission = "<red>❌ You don't have permission to manage code panel keys!</red>"
+# Command.
+# Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
+unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
+# Permission node.
+# Default: <red>❌ You don't have permission to add keys!</red>
+no_permission_add = "<red>❌ You don't have permission to add keys!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to list keys!</red>
+no_permission_list = "<red>❌ You don't have permission to list keys!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to remove keys!</red>
+no_permission_remove = "<red>❌ You don't have permission to remove keys!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to modify keys!</red>
+no_permission_modify = "<red>❌ You don't have permission to modify keys!</red>"
+# Default: <red>❌ Usage: </red><white>/ui codepane key add <name> <code> [flags]</white>
+usage_add = "<red>❌ Usage: </red><white>/ui codepane key add <name> <code> [flags]</white>"
+# Default: <red>❌ Usage: </red><white>/ui codepane key remove <name></white>
+usage_remove = "<red>❌ Usage: </red><white>/ui codepane key remove <name></white>"
+# Default: <red>❌ Usage: </red><white>/ui codepane key modify <name> <new_code> [flags]</white>
+usage_modify = "<red>❌ Usage: </red><white>/ui codepane key modify <name> <new_code> [flags]</white>"
+# Default: <red>❌ Duplicate flag: %flag%! Use each flag only once.</red>
+duplicate_flag = "<red>❌ Duplicate flag: %flag%! Use each flag only once.</red>"
+# Default: <red>❌ attempts must be >= 1</red>
+invalid_attempts = "<red>❌ attempts must be >= 1</red>"
+# Format string (MiniMessage).
+# Default: <red>❌ Invalid attempts format: %value%</red>
+invalid_attempts_format = "<red>❌ Invalid attempts format: %value%</red>"
+# Format string (MiniMessage).
+# Default: <red>❌ Invalid time format: </red><gray>%value%</gray><red> (use Ns, Nm, Nh, Nd)</red>
+invalid_time_format = "<red>❌ Invalid time format: </red><gray>%value%</gray><red> (use Ns, Nm, Nh, Nd)</red>"
+# Default: <yellow>⚠</yellow> <gray>Unknown flag: </gray><white>%flag%</white>
+unknown_flag = "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>%flag%</white>"
+# Default: <red>❌ Key</red> <yellow>%name%</yellow> <red>already exists!</red>
+already_exists = "<red>❌ Key</red> <yellow>%name%</yellow> <red>already exists!</red>"
+# Default: <red>❌ Error adding key to database!</red>
+db_add_error = "<red>❌ Error adding key to database!</red>"
+# Default: <green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>added to database!</white>
+add_success = "<green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>added to database!</white>"
+# Default: <red>❌ Key</red> <yellow>%name%</yellow> <red>not found!</red>
+key_not_found = "<red>❌ Key</red> <yellow>%name%</yellow> <red>not found!</red>"
+# Default: <red>❌ Key</red> <yellow>%name%</yellow> <red>not found in database!</red>
+db_not_found = "<red>❌ Key</red> <yellow>%name%</yellow> <red>not found in database!</red>"
+# Default: <green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>removed from database.</white>
+remove_success = "<green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>removed from database.</white>"
+# Default: <green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>modified in database.</white>
+modify_success = "<green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>modified in database.</white>"
+# Default: <yellow>ℹ</yellow> <white>No keys in the database.</white>
+no_keys = "<yellow>ℹ</yellow> <white>No keys in the database.</white>"
+# Default: <gray>Code:</gray> <white>%code%</white>
+info_code = "<gray>Code:</gray> <white>%code%</white>"
+# Command.
+# Default: <gray>Commands:</gray> <white>%commands%</white>
+info_commands = "<gray>Commands:</gray> <white>%commands%</white>"
+# Whitelist.
+# Default: <gray>Whitelist:</gray> <green>%players%</green>
+info_whitelist = "<gray>Whitelist:</gray> <green>%players%</green>"
+# Blacklist.
+# Default: <gray>Blacklist:</gray> <red>%players%</red>
+info_blacklist = "<gray>Blacklist:</gray> <red>%players%</red>"
+# Default: <gray>Attempts:</gray> %color%%remaining%<gray>/%max%</gray>
+info_attempts = "<gray>Attempts:</gray> %color%%remaining%<gray>/%max%</gray>"
+# Default: <gray>Expires:</gray> <red>expired</red>
+info_expired = "<gray>Expires:</gray> <red>expired</red>"
+# Default: <gray>Expires:</gray> <white>%duration%</white>
+info_expires_in = "<gray>Expires:</gray> <white>%duration%</white>"
+# Maximum value.
+# Default: <gray>Max attempts:</gray> <white>%max%</white>
+info_max_attempts = "<gray>Max attempts:</gray> <white>%max%</white>"
+# Default: <gray>Expires at:</gray> <white>%date%</white>
+info_expires_at = "<gray>Expires at:</gray> <white>%date%</white>"
+
+# help section.
+# Placeholders: %entity%
+[messages.codepanel.help]
+# Default: <gold>=== <white>Code Panel Key Management</white> ===
+header = "<gold>=== <white>Code Panel Key Management</white> ==="
+# Default: <yellow>/ui codepane key add <gray><name> <code> [flags]</gray></yellow>
+add = "<yellow>/ui codepane key add <gray><name> <code> [flags]</gray></yellow>"
+# Default: <gray> Add a new key</gray>
+add_desc = "<gray> Add a new key</gray>"
+# Default: <yellow>/ui codepane key list</yellow>
+list = "<yellow>/ui codepane key list</yellow>"
+# Default: <gray> List all keys</gray>
+list_desc = "<gray> List all keys</gray>"
+# Default: <yellow>/ui codepane key remove <gray><name></gray></yellow>
+remove = "<yellow>/ui codepane key remove <gray><name></gray></yellow>"
+# Default: <gray> Remove a key</gray>
+remove_desc = "<gray> Remove a key</gray>"
+# Default: <yellow>/ui codepane key modify <gray><name> <new_code> [flags]</gray></yellow>
+modify = "<yellow>/ui codepane key modify <gray><name> <new_code> [flags]</gray></yellow>"
+# Default: <gray> Modify a key</gray>
+modify_desc = "<gray> Modify a key</gray>"
+# Permission node.
+# Default: <gray>Required permissions:</gray>
+permissions_header = "<gray>Required permissions:</gray>"
+# Default: <gray>ui.command.codepane.key — base</gray>
+perm_base = "<gray>ui.command.codepane.key — base</gray>"
+# Default: <gray> ui.command.codepane.key.add — add</gray>
+perm_add = "<gray> ui.command.codepane.key.add — add</gray>"
+# Default: <gray> ui.command.codepane.key.list — list</gray>
+perm_list = "<gray> ui.command.codepane.key.list — list</gray>"
+# Default: <gray> ui.command.codepane.key.remove — remove</gray>
+perm_remove = "<gray> ui.command.codepane.key.remove — remove</gray>"
+# Default: <gray> ui.command.codepane.key.modify — modify</gray>
+perm_modify = "<gray> ui.command.codepane.key.modify — modify</gray>"
+# Default: <gray>Flags:</gray>
+flags_header = "<gray>Flags:</gray>"
+# Default: <gray> attempts:<N>     — delete key after N successful uses</gray>
+flag_attempts = "<gray> attempts:<N>     — delete key after N successful uses</gray>"
+# Default: <gray> time:<N>s|m|h|d  — delete key after N seconds/minutes/hours/days</gray>
+flag_time = "<gray> time:<N>s|m|h|d  — delete key after N seconds/minutes/hours/days</gray>"
+# Whitelist.
+# Default: <gray>whitelist:<name1,name2...>  — allow only these players</gray>
+flag_whitelist = "<gray>whitelist:<name1,name2...>  — allow only these players</gray>"
+# Whitelist.
+# Default: <gray>whitelist:(<name1,name2...>)  — same, but in parentheses</gray>
+flag_whitelist_parens = "<gray>whitelist:(<name1,name2...>)  — same, but in parentheses</gray>"
+# Blacklist.
+# Default: <gray>blacklist:<name1,name2...>  — block these players</gray>
+flag_blacklist = "<gray>blacklist:<name1,name2...>  — block these players</gray>"
+# Blacklist.
+# Default: <gray>blacklist:(<name1,name2...>)  — same, but in parentheses</gray>
+flag_blacklist_parens = "<gray>blacklist:(<name1,name2...>)  — same, but in parentheses</gray>"
+# Command.
+# Default: <gray>command:(<cmd with spaces>),(<cmd 2>)  — commands separated by commas</gray>
+flag_command = "<gray>command:(<cmd with spaces>),(<cmd 2>)  — commands separated by commas</gray>"
+# Command.
+# Default: <gray>  %entity% — replaced with player's nickname</gray>
+flag_command_entity = "<gray>  %entity% — replaced with player's nickname</gray>"
+# Default: <gray>Examples:</gray>
+examples_header = "<gray>Examples:</gray>"
+# Default: <gray> /ui codepane key add mydoor 1234 attempts:3 time:1h</gray>
+example1 = "<gray> /ui codepane key add mydoor 1234 attempts:3 time:1h</gray>"
+# Default: <gray> /ui codepane key add admin 7777 whitelist:Steve,Alex</gray>
+example2 = "<gray> /ui codepane key add admin 7777 whitelist:Steve,Alex</gray>"
+# Default: <gray> /ui codepane key add warp 4321 command:(say %entity% got access)</gray>
+example3 = "<gray> /ui codepane key add warp 4321 command:(say %entity% got access)</gray>"
+# Default: <gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>
+example4 = "<gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
+
+# changedimmension section.
+# Placeholders: %world%, %seconds%
+[messages.changedimmension]
+
+# messages section.
+# Placeholders: %world%, %seconds%
+[messages.changedimmension.messages]
+# Default: <green>✔</green> <white>Teleportation to</white> <yellow>%world%</yellow> <white>completed!</white>
+success = "<green>✔</green> <white>Teleportation to</white> <yellow>%world%</yellow> <white>completed!</white>"
+# Default: <yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/ui chgdim</white> <gray>again.</gray>
+return_info = "<yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/ui chgdim</white> <gray>again.</gray>"
+# Default: <green>✔</green> <white>You have returned to your starting point!</white>
+return_success = "<green>✔</green> <white>You have returned to your starting point!</white>"
+# Default: <dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>
+return_error = "<dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>"
+# Permission node.
+# Default: <dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>
+no_permission = "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>"
+# World name.
+# Default: <dark_red>❌</dark_red> <red>World</red> <yellow>%world%</yellow> <red>not found!</red>
+world_not_found = "<dark_red>❌</dark_red> <red>World</red> <yellow>%world%</yellow> <red>not found!</red>"
+# Default: <dark_red>❌</dark_red> <red>Only players can use this command!</red>
+player_only = "<dark_red>❌</dark_red> <red>Only players can use this command!</red>"
+# World name.
+# Default: <dark_red>❌</dark_red> <red>Default world not configured in config!</red>
+no_default_world = "<dark_red>❌</dark_red> <red>Default world not configured in config!</red>"
+# Cooldown.
+# Default: <dark_red>❌</dark_red> <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before using this again…
+cooldown = "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before using this again!</red>"
+# World name.
+# Default: <red>❌ Worlds not configured in config!</red>
+worlds_not_configured = "<red>❌ Worlds not configured in config!</red>"
+# World name.
+# Default: <yellow>✦</yellow> <gray>Enter world name in the field, then click</gray> <green>✔</green>
+enter_world_name_hint = "<yellow>✦</yellow> <gray>Enter world name in the field, then click</gray> <green>✔</green>"
+# World name.
+# Default: <red>❌ Enter world name in the rename field!</red>
+enter_world_name_field = "<red>❌ Enter world name in the rename field!</red>"
+# World name.
+# Default: <red>❌ World name contains only invalid characters!</red>
+invalid_world_name = "<red>❌ World name contains only invalid characters!</red>"
+# World name.
+# Default: <red>❌ World</red> <yellow>%world%</yellow> <red>not configured!</red>
+world_not_configured = "<red>❌ World</red> <yellow>%world%</yellow> <red>not configured!</red>"
+# Default: <red>❌ No saved return point!</red>
+no_return_point = "<red>❌ No saved return point!</red>"
+
+# power section.
+# Placeholders: %action%, %seconds%, %unit%, %by_player%, %reason%, %by%, %from%
+[messages.power]
+# Message text (MiniMessage).
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/ui pow…
+stop_message = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/ui power off</white>"
+# Message text (MiniMessage).
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/ui …
+restart_message = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/ui power reboot</white>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>%action% in</red> <white>%seconds%</white> <red>seconds!…
+countdown_broadcast = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>%action% in</red> <white>%seconds%</white> <red>seconds!</red>"
+# Default: <red>Server %action% in</red> <white>%seconds%</white> <red>%unit%...</red>
+countdown_seconds = "<red>Server %action% in</red> <white>%seconds%</white> <red>%unit%...</red>"
+# Default: shutting down
+action_stop = "shutting down"
+# Default: restarting
+action_restart = "restarting"
+# Title text (MiniMessage).
+# Default: Shutdown
+action_stop_title = "Shutdown"
+# Title text (MiniMessage).
+# Default: Restart
+action_restart_title = "Restart"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% was cancelled</red> <white>%by_player%</…
+cancelled_by_player = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% was cancelled</red> <white>%by_player%</white><red>.</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% was automatically cancelled: %reason%</r…
+cancelled_auto = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% was automatically cancelled: %reason%</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% cancelled%by%%from%.</red>
+cancelled_console = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% cancelled%by%%from%.</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action%...</red>
+executing = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action%...</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>
+direct_stop = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>
+direct_restart = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>"
+
+# actionbar section.
+# Placeholders: %action%, %seconds%
+[messages.power.actionbar]
+# Format string (MiniMessage).
+# Default: <red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</yellow> <white>seconds</white>
+format = "<red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</yellow> <white>seconds</white>"
+
+# bossbar section.
+# Placeholders: %action%, %seconds%
+[messages.power.bossbar]
+# Default: <red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>seconds</red>
+text = "<red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>seconds</red>"
+
+# packet guard section.
+[messages.packet_guard]
+# Message text (MiniMessage).
+# Default: <dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>
+kick_message = "<dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>"
+
+# bot protection section.
+# Placeholders: %count%, %seconds%
+[messages.bot_protection]
+# Default: <red>❌ Server overloaded! You are in queue: position
+queue_full = "<red>❌ Server overloaded! You are in queue: position"
+# Default: <yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>player(s) tried to connect in</re…
+queue_notify_op = "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>player(s) tried to connect in</red> <yellow>%seconds%s</yellow><red>. Queue enabled.</red>"
+# Cooldown.
+# Default: <red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>
+rejoin_cooldown = "<red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>"
+
+# maintenance section.
+# Placeholders: %time%
+[messages.maintenance]
+# Message text (MiniMessage).
+# Default: <red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>
+kick_message = "<red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>"
+
+# messages section.
+# Placeholders: %time%
+[messages.maintenance.messages]
+# Master switch (true = feature on).
+# Default: <red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>
+enabled = "<red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>"
+# Default: <green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>
+disabled = "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>"
+# Default: <yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>
+scheduled_enable = "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>"
+# Default: <yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>
+scheduled_disable = "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>"
+
+# meteor section.
+# Placeholders: %sub%, %count%
+[messages.meteor]
+# Default: <red>❌ Usage: </red><white>/ui meteor spawn [count]</white>
+usage = "<red>❌ Usage: </red><white>/ui meteor spawn [count]</white>"
+# Default: <red>❌ Unknown meteor subcommand: </red><white>%sub%</white>
+unknown_sub = "<red>❌ Unknown meteor subcommand: </red><white>%sub%</white>"
+# Permission node.
+# Default: <red>❌ You don't have permission to spawn meteors!</red>
+no_permission = "<red>❌ You don't have permission to spawn meteors!</red>"
+# Default: <red>❌ Invalid count!</red>
+invalid_count = "<red>❌ Invalid count!</red>"
+# Default: <red>❌ Meteor module is disabled in config.yml!</red>
+module_disabled = "<red>❌ Meteor module is disabled in config.yml!</red>"
+# Default: <red>❌ Meteor module is not initialized!</red>
+module_not_init = "<red>❌ Meteor module is not initialized!</red>"
+# Default: <green>✔</green> <white>Spawned </white><yellow>%count%</yellow><white> meteor(s)!</white>
+spawned = "<green>✔</green> <white>Spawned </white><yellow>%count%</yellow><white> meteor(s)!</white>"
+
+# economy section.
+# Placeholders: %amount%, %player%, %currency%, %balance%, %sender%
+[messages.economy]
+# Message text (MiniMessage).
+# Default: <gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>
+forced_message_body = "<gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>"
+# Message text (MiniMessage).
+# Default: <red>Cannot be cancelled!</red>
+forced_message_nocancel = "<red>Cannot be cancelled!</red>"
+
+# messages section.
+# Placeholders: %amount%, %player%, %currency%, %balance%
+[messages.economy.messages]
+# Default: <green>+</green> <yellow>%amount%</yellow> <white>received!</white>
+received = "<green>+</green> <yellow>%amount%</yellow> <white>received!</white>"
+# Default: <green>✔</green> <white>Gave </white><yellow>%amount%</yellow> <white>to </white><yellow>%player%</yellow>
+gave = "<green>✔</green> <white>Gave </white><yellow>%amount%</yellow> <white>to </white><yellow>%player%</yellow>"
+# Default: <green>✔</green> <white>Removed </white><yellow>%amount%</yellow> <white>from </white><yellow>%player%</yello…
+removed = "<green>✔</green> <white>Removed </white><yellow>%amount%</yellow> <white>from </white><yellow>%player%</yellow>"
+# Default: <green>✔</green> <white>Set </white><yellow>%player%</yellow><white>'s </white><gold>%currency%</gold> <white…
+set = "<green>✔</green> <white>Set </white><yellow>%player%</yellow><white>'s </white><gold>%currency%</gold> <white>balance to </white><yellow>%amount%</yellow>"
+# Default: <red>❌ </red><yellow>%player%</yellow> <red>only has </red><gold>%balance%</gold>
+insufficient_funds = "<red>❌ </red><yellow>%player%</yellow> <red>only has </red><gold>%balance%</gold>"
+# Default: <gray>No balances found.</gray>
+no_balances = "<gray>No balances found.</gray>"
+# Default: <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>
+balance_header = "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+# Title text (MiniMessage).
+# Default:   <gold>💰</gold> <yellow>%player%</yellow> <gray>— Balances</gray>
+balance_title = "  <gold>💰</gold> <yellow>%player%</yellow> <gray>— Balances</gray>"
+# Default:   <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>
+balance_separator = "  <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+# Default:   <gray>•</gray> <white>%currency%</white><gray>: </gray><gold>%amount%</gold>
+balance_entry = "  <gray>•</gray> <white>%currency%</white><gray>: </gray><gold>%amount%</gold>"
+
+# suicide section.
+# Placeholders: %sender%, %target%
+[messages.suicide]
+
+# messages section.
+# Placeholders: %sender%, %target%
+[messages.suicide.messages]
+# Title text (MiniMessage).
+# Default: <dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>
+forced_title = "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>"
+# Default: <gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>
+forced_body = "<gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>"
+# Default: <red>Cannot be cancelled!</red>
+forced_nocancel = "<red>Cannot be cancelled!</red>"
+# Default: <green>✔</green> <white>Player</white> <yellow>%target%</yellow> <white>has been force-suicided.</white>
+forced_sender_success = "<green>✔</green> <white>Player</white> <yellow>%target%</yellow> <white>has been force-suicided.</white>"
+
+# structures section.
+# Placeholders: %structure%, %error%, %id%, %temp%, %press%, %spin%, %shield%, %coords%, %status%, %cat%, %left%, %total%, %sec%, %name%, %percent%, %count%, %block%, %expected%, %int%, %stress%, %p1%, %p2%, %stab%, %cool%, %f%, %s%, %p%, %h%
+[messages.structures]
+# Default: <dark_red>❌ <red>Не удалось определить позицию рамки!
+frame_error = "<dark_red>❌ <red>Не удалось определить позицию рамки!"
+# Default: <dark_red>⚠ <red>Ошибка загрузки NBT-шаблонов структур:
+template_errors_header = "<dark_red>⚠ <red>Ошибка загрузки NBT-шаблонов структур:"
+# Default:   <dark_gray>• <white>%structure%<dark_gray>: <red>%error%
+template_error_line = "  <dark_gray>• <white>%structure%<dark_gray>: <red>%error%"
+# Default: <gray>Проверьте консоль сервера для деталей.
+template_errors_hint = "<gray>Проверьте консоль сервера для деталей."
+# Default: <red>❌ <white>Структура молний выключена!
+lightning_toggled_off = "<red>❌ <white>Структура молний выключена!"
+# Default: <green>✔ <white>Структура молний включена!
+lightning_toggled_on = "<green>✔ <white>Структура молний включена!"
+# Default: <dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Обнаружена структура молний — сборка...
+lightning_detected = "<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Обнаружена структура молний — сборка..."
+# Default: <yellow>Реактор уже активен на этом месте!
+reactor_already_active = "<yellow>Реактор уже активен на этом месте!"
+# Default: <dark_gray>[<red>Реактор<dark_gray>] <gray>Обнаружен реактор — сборка...
+reactor_detected = "<dark_gray>[<red>Реактор<dark_gray>] <gray>Обнаружен реактор — сборка..."
+# Default: <yellow>Магнит уже активен на этом месте!
+magnet_already_active = "<yellow>Магнит уже активен на этом месте!"
+# Default: <dark_gray>[<aqua>Магнит<dark_gray>] <gray>Обнаружен магнит — сборка...
+magnet_detected = "<dark_gray>[<aqua>Магнит<dark_gray>] <gray>Обнаружен магнит — сборка..."
+# Default: <yellow>Батарея уже собрана на этом месте!
+battery_already_active = "<yellow>Батарея уже собрана на этом месте!"
+# Default: <yellow>Лампочка уже собрана на этом месте!
+lamp_already_active = "<yellow>Лампочка уже собрана на этом месте!"
+# Default: <yellow>Генератор уже собран на этом месте!
+generator_already_active = "<yellow>Генератор уже собран на этом месте!"
+# Default: <dark_red>❌ <red>Нет кабеля рядом с плавильной печью!
+generator_no_cable = "<dark_red>❌ <red>Нет кабеля рядом с плавильной печью!"
+# Default: <dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%…
+reactor_stats_click = "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% MPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%"
+# Default: <dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Активна <dark_gray>| <white>%coords% <dark_gray>[%status%<dark…
+lightning_status_click = "<dark_gray>[<yellow>⚡ Молнии<dark_gray>] <gray>Активна <dark_gray>| <white>%coords% <dark_gray>[%status%<dark_gray>]"
+# Default: <dark_gray>┃ <gray>SHIFT+ПКМ по рамке — включить/выключить
+lightning_status_hint = "<dark_gray>┃ <gray>SHIFT+ПКМ по рамке — включить/выключить"
+# Default: <green>✔ On
+lightning_status_on = "<green>✔ On"
+# Default: <red>❌ Off
+lightning_status_off = "<red>❌ Off"
+# Default: <red>❕ Реактор разрушен и деактивирован! <dark_gray>[<gray>%coords%<dark_gray>]
+reactor_broken = "<red>❕ Реактор разрушен и деактивирован! <dark_gray>[<gray>%coords%<dark_gray>]"
+# Damage.
+# Default: Стекло корпуса
+damage_cat_glass = "Стекло корпуса"
+# Damage.
+# Default: Панель табличек
+damage_cat_sign = "Панель табличек"
+# Damage.
+# Default: Лампа управления
+damage_cat_bulb = "Лампа управления"
+# Damage.
+# Default: Структура
+damage_cat_structure = "Структура"
+# Damage.
+# Default: <gold>Attention! <white>%cat% повреждена! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>
+damage_report = "<gold>Attention! <white>%cat% повреждена! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
+# Default: <gold>Attention! <white>%cat% полностью разрушена! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>
+failure_report = "<gold>Attention! <white>%cat% полностью разрушена! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
+# Default: <gold>Attention! <white>%cat% восстановлена! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>
+repair_report = "<gold>Attention! <white>%cat% восстановлена! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
+# Damage.
+# Default: <gold>❕ <white>Структура реактора повреждена — управление потеряно! Охладите ядро до <yellow>0 C*
+damage_uncontrolled = "<gold>❕ <white>Структура реактора повреждена — управление потеряно! Охладите ядро до <yellow>0 C*"
+# Damage.
+# Default: <green>✔ <white>Ядро охлаждено до <yellow>0 C* <white>— реактор остановлен и обесточен.
+damage_shutdown_complete = "<green>✔ <white>Ядро охлаждено до <yellow>0 C* <white>— реактор остановлен и обесточен."
+# Default: <dark_red>⚠ <red>Целостность оболочки ядра критическая — ядро аварийно отключено! Перезапустите реактор.
+core_emergency_shutdown = "<dark_red>⚠ <red>Целостность оболочки ядра критическая — ядро аварийно отключено! Перезапустите реактор."
+# Default: <green>✔ <white>Ядро перезапущено после аварийного отключения.
+core_restart_after_shutdown = "<green>✔ <white>Ядро перезапущено после аварийного отключения."
+# Default: <green>✔ <white>Структура реактора полностью восстановлена — управление возвращено.
+structure_repaired = "<green>✔ <white>Структура реактора полностью восстановлена — управление возвращено."
+# Default: <red>Не удаётся получить данные с датчиков: <gray>No signal
+sensor_no_signal = "<red>Не удаётся получить данные с датчиков: <gray>No signal"
+# Default: <dark_red>☠ <red>Протокол самоуничтожения активирован! Взрыв через T-1:00.
+selfdestruct_protocol = "<dark_red>☠ <red>Протокол самоуничтожения активирован! Взрыв через T-1:00."
+# Default: <dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-%sec%s, удачи.
+selfdestruct_final_warn = "<dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-%sec%s, удачи."
+# Default: <dark_red>☠ <red>Финал самоуничтожения: силовые лазеры работают на 1000%!
+selfdestruct_finale = "<dark_red>☠ <red>Финал самоуничтожения: силовые лазеры работают на 1000%!"
+# Default: <dark_red>☠ <red>Протокол самоуничтожения выполнен — ядро не спасти.
+selfdestruct_complete = "<dark_red>☠ <red>Протокол самоуничтожения выполнен — ядро не спасти."
+# Default: <dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-10s, удачи.
+shield_failure = "<dark_red>Опасность! <white>Оболочка ядра скомпрометирована, детонация ядра через T-10s, удачи."
+# Default: <red>Сначала нажмите SHIFT+ПКМ по рамке реактора!
+pending_frame_reactor = "<red>Сначала нажмите SHIFT+ПКМ по рамке реактора!"
+# Default: <red>Сначала нажмите SHIFT+ПКМ по рамке на магните!
+pending_frame_magnet = "<red>Сначала нажмите SHIFT+ПКМ по рамке на магните!"
+# Default: <red>Магнитный камень (LODESTONE) не найден!
+magnet_lodestone_missing = "<red>Магнитный камень (LODESTONE) не найден!"
+# Default: <gray>Рамка не найдена над центральной лампой!
+frame_missing = "<gray>Рамка не найдена над центральной лампой!"
+# Default: <yellow>⚡ Структура молний разрушена и деактивирована! <dark_gray>[<gray>%coords%<dark_gray>]
+lightning_broken = "<yellow>⚡ Структура молний разрушена и деактивирована! <dark_gray>[<gray>%coords%<dark_gray>]"
+# Default: <red>❌ Error: Structure not recognized!
+not_recognized = "<red>❌ Error: Structure not recognized!"
+# Default: <gray>NBT-шаблоны структур не загружены — проверьте консоль сервера.
+not_loaded = "<gray>NBT-шаблоны структур не загружены — проверьте консоль сервера."
+# Default: <gray>Больше всего похоже на: <yellow>%name% <gray>— совпадение <yellow>%percent%%
+closest_match = "<gray>Больше всего похоже на: <yellow>%name% <gray>— совпадение <yellow>%percent%%"
+# Default: <gray>Критичных отличий не найдено — проверьте положение рамки.
+no_fixes_needed = "<gray>Критичных отличий не найдено — проверьте положение рамки."
+# Default: <gray>Чтобы собрать, нужно (%count% шт.):
+fixes_header = "<gray>Чтобы собрать, нужно (%count% шт.):"
+# Default: <dark_gray> • <gray>...и ещё %count% исправлений
+fixes_more = "<dark_gray> • <gray>...и ещё %count% исправлений"
+# Default: <green>поставить</green> <yellow>%block% <gray>в %coords%
+fix_place = "<green>поставить</green> <yellow>%block% <gray>в %coords%"
+# Default: <red>сломать</red> <gray>%block% <gray>в %coords%
+fix_break = "<red>сломать</red> <gray>%block% <gray>в %coords%"
+# Default: <yellow>заменить</yellow> <gray>%block% <yellow>→ %expected% <gray>в %coords%
+fix_replace = "<yellow>заменить</yellow> <gray>%block% <yellow>→ %expected% <gray>в %coords%"
+# Default: <dark_red>❌ <red>Структура реактора собрана неверно! <gray>Что нужно исправить:
+reactor_invalid_header = "<dark_red>❌ <red>Структура реактора собрана неверно! <gray>Что нужно исправить:"
+# Default: <gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+reactor_separator = "<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# Default: <green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: %id%)
+reactor_assembled = "<green>✔ <white>Реактор тёмного синтеза собран! <dark_gray>(ID: %id%)"
+# Default: <dark_gray>┃ <gray>Температура ядра: <white>%temp% C*
+reactor_info_line = "<dark_gray>┃ <gray>Температура ядра: <white>%temp% C*"
+# Default: <dark_gray>┃ <gray>Давление щита: <white>%press% MPa
+reactor_info_pressure = "<dark_gray>┃ <gray>Давление щита: <white>%press% MPa"
+# Default: <dark_gray>┃ <gray>Спин ядра: <white>%spin% RPS
+reactor_info_spin = "<dark_gray>┃ <gray>Спин ядра: <white>%spin% RPS"
+# Default: <gold>⚡ <yellow>Стартап ядра выполнен! Лазеры активны.
+reactor_startup = "<gold>⚡ <yellow>Стартап ядра выполнен! Лазеры активны."
+# Default: <dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%
+reactor_info_shield = "<dark_gray>┃ <gray>Целостность оболочки: <white>%shield%%"
+# Default: <dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бо…
+reactor_info_fuel = "<dark_gray>┃ <gray>Топливо: <aqua>алмазные блоки <gray>→ левая бочка, <yellow>золотые блоки <gray>→ правая бочка"
+
+# names section.
+[messages.structures.names]
+# Default: <red>Реактор тёмного синтеза</red>
+darkfusionreactor = "<red>Реактор тёмного синтеза</red>"
+# Default: <yellow>Громоотвод</yellow>
+lightning = "<yellow>Громоотвод</yellow>"
+
+# signs section.
+# Placeholders: %temp%, %press%, %spin%, %int%, %status%, %stress%, %p1%, %p2%, %stab%, %cool%, %f%, %s%, %p%, %h%
+[messages.structures.signs]
+# Title text (MiniMessage).
+# Default: =| Статы Ядра |=
+core_stats_title = "=| Статы Ядра |="
+# Default: T: %temp% C*
+core_stats_temp = "T: %temp% C*"
+# Default: P: %press% MPa
+core_stats_press = "P: %press% MPa"
+# Default: S: %spin% RPS
+core_stats_spin = "S: %spin% RPS"
+# Title text (MiniMessage).
+# Default: =| Статы Корпуса |=
+case_stats_title = "=| Статы Корпуса |="
+# Default: T: %temp% C*
+case_stats_temp = "T: %temp% C*"
+# Default: P: %press% MPa
+case_stats_press = "P: %press% MPa"
+# Default: I: %int%%
+case_stats_int = "I: %int%%"
+# Default: Broken — repair!
+case_stats_broken = "Broken — repair!"
+# Title text (MiniMessage).
+# Default: =| Статы Щита |=
+shield_stats_title = "=| Статы Щита |="
+# Default: M: %status%
+shield_stats_magnet = "M: %status%"
+# Default: I: %int%%
+shield_stats_int = "I: %int%%"
+# Default: S: %stress%%
+shield_stats_status = "S: %stress%%"
+# Power.
+# Default: =| Статы Питания |=
+power_stats_title = "=| Статы Питания |="
+# Power.
+# Default: P1/P2: %p1%/%p2%%
+power_stats_p1p2 = "P1/P2: %p1%/%p2%%"
+# Power.
+# Default: Stab: %stab%%
+power_stats_stab = "Stab: %stab%%"
+# Power.
+# Default: C: %cool%%
+power_stats_cool = "C: %cool%%"
+# Title text (MiniMessage).
+# Default: =| Статы Топлива |=
+fuel_stats_title = "=| Статы Топлива |="
+# Default: S: %status%
+fuel_stats_status = "S: %status%"
+# Default: F: %f%%
+fuel_stats_f = "F: %f%%"
+# Default: S: %s%%
+fuel_stats_s = "S: %s%%"
+# Title text (MiniMessage).
+# Default: =| Статы Синтеза |=
+fusion_stats_title = "=| Статы Синтеза |="
+# Default: S: %status%
+fusion_stats_status = "S: %status%"
+# Default: P: %p%
+fusion_stats_p = "P: %p%"
+# Speed.
+# Default: S: %s%%
+fusion_stats_speed = "S: %s%%"
+# Title text (MiniMessage).
+# Default: =| Нагрузка Щита |=
+stress_title = "=| Нагрузка Щита |="
+# Default: H: %h%%
+stress_h = "H: %h%%"
+# Default: P: %p%%
+stress_p = "P: %p%%"
+# Default: S: %s%%
+stress_s = "S: %s%%"
+# Default: Стабильно
+status_stable = "Стабильно"
+# Default: Нестабильно
+status_unstable = "Нестабильно"
+# Default: Создание
+status_creating = "Создание"
+# Default: Работает
+status_working = "Работает"
+# Default: Отказ
+status_failed = "Отказ"
+# Default: Оффлайн
+status_offline = "Оффлайн"
+# Default: Есть топливо
+status_fueled = "Есть топливо"
+# Default: Пусто
+status_empty = "Пусто"
+# Default: Yes
+status_fuel_yes = "Yes"
+# Default: No
+status_fuel_no = "No"
+# Default: Offline
+status_fusion_offline = "Offline"
+# Default: Online
+status_fusion_online = "Online"
+# Default: Full
+status_fusion_full = "Full"
+# Default: Ожидание
+status_idle = "Ожидание"
+# Default: Работает
+status_running = "Работает"
+# Default: Готово
+status_done = "Готово"
+# Default: Нет стартапа
+status_no_startup = "Нет стартапа"
+# Default: Ожидание
+status_standby = "Ожидание"
+
+# ==================================================================
+# MESSAGES — ENGLISH (active when lang = "en")
+# ==================================================================
+
+
+# structures section.
+# Placeholders: %structure%, %error%, %id%, %temp%, %press%, %spin%, %shield%, %coords%, %status%, %cat%, %left%, %total%, %sec%, %name%, %percent%, %count%, %block%, %expected%, %int%, %stress%, %p1%, %p2%, %stab%, %cool%, %f%, %s%, %p%, %h%
+[messages_en.structures]
+# Default: <dark_red>❌ <red>Could not determine the frame position!
+frame_error = "<dark_red>❌ <red>Could not determine the frame position!"
+# Default: <dark_red>⚠ <red>Failed to load some structure templates:
+template_errors_header = "<dark_red>⚠ <red>Failed to load some structure templates:"
+# Default:   <dark_gray>• <white>%structure%<dark_gray>: <red>%error%
+template_error_line = "  <dark_gray>• <white>%structure%<dark_gray>: <red>%error%"
+# Default: <gray>Check the server console for details.
+template_errors_hint = "<gray>Check the server console for details."
+# Default: <red>❌ <white>Lightning structure disabled!
+lightning_toggled_off = "<red>❌ <white>Lightning structure disabled!"
+# Default: <green>✔ <white>Lightning structure enabled!
+lightning_toggled_on = "<green>✔ <white>Lightning structure enabled!"
+# Default: <dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Lightning structure detected — assembling...
+lightning_detected = "<dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Lightning structure detected — assembling..."
+# Default: <yellow>The reactor is already active at this place!
+reactor_already_active = "<yellow>The reactor is already active at this place!"
+# Default: <dark_gray>[<red>Reactor<dark_gray>] <gray>Reactor detected — assembling...
+reactor_detected = "<dark_gray>[<red>Reactor<dark_gray>] <gray>Reactor detected — assembling..."
+# Default: <yellow>The magnet is already active at this place!
+magnet_already_active = "<yellow>The magnet is already active at this place!"
+# Default: <dark_gray>[<aqua>Magnet<dark_gray>] <gray>Magnet detected — assembling...
+magnet_detected = "<dark_gray>[<aqua>Magnet<dark_gray>] <gray>Magnet detected — assembling..."
+# Default: <yellow>The battery is already assembled at this place!
+battery_already_active = "<yellow>The battery is already assembled at this place!"
+# Default: <yellow>The lamp is already assembled at this place!
+lamp_already_active = "<yellow>The lamp is already assembled at this place!"
+# Default: <yellow>The generator is already assembled at this place!
+generator_already_active = "<yellow>The generator is already assembled at this place!"
+# Default: <dark_red>❌ <red>No cable near the blast furnace!
+generator_no_cable = "<dark_red>❌ <red>No cable near the blast furnace!"
+# Default: <dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%…
+reactor_stats_click = "<dark_gray>[<red>Р.Т.С<dark_gray>] <gray>ID: <white>%id% <dark_gray>| <white>T=%temp% <dark_gray>| <white>P=%press% MPa <dark_gray>| <white>S=%spin% RPS <dark_gray>| <white>I=%shield%%"
+# Default: <dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Active <dark_gray>| <white>%coords% <dark_gray>[%status%<da…
+lightning_status_click = "<dark_gray>[<yellow>⚡ Lightning<dark_gray>] <gray>Active <dark_gray>| <white>%coords% <dark_gray>[%status%<dark_gray>]"
+# Default: <dark_gray>┃ <gray>SHIFT+RMB on the frame — toggle on/off
+lightning_status_hint = "<dark_gray>┃ <gray>SHIFT+RMB on the frame — toggle on/off"
+# Default: <green>✔ On
+lightning_status_on = "<green>✔ On"
+# Default: <red>❌ Off
+lightning_status_off = "<red>❌ Off"
+# Default: <red>❕ Reactor destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]
+reactor_broken = "<red>❕ Reactor destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]"
+# Damage.
+# Default: Case glass
+damage_cat_glass = "Case glass"
+# Damage.
+# Default: Sign panel
+damage_cat_sign = "Sign panel"
+# Damage.
+# Default: Control bulb
+damage_cat_bulb = "Control bulb"
+# Damage.
+# Default: Structure
+damage_cat_structure = "Structure"
+# Damage.
+# Default: <gold>Attention! <white>%cat% damage detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>
+damage_report = "<gold>Attention! <white>%cat% damage detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
+# Default: <gold>Attention! <white>%cat% failure detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>
+failure_report = "<gold>Attention! <white>%cat% failure detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
+# Default: <gold>Attention! <white>%cat% repair detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>
+repair_report = "<gold>Attention! <white>%cat% repair detected! <dark_gray>(<green>%left%<gray>/<white>%total%<dark_gray>"
+# Damage.
+# Default: <gold>❕ <white>Reactor structure damaged — control lost! Cool the core down to <yellow>0 C*
+damage_uncontrolled = "<gold>❕ <white>Reactor structure damaged — control lost! Cool the core down to <yellow>0 C*"
+# Damage.
+# Default: <green>✔ <white>Core cooled to <yellow>0 C* <white>— reactor stopped and powered down.
+damage_shutdown_complete = "<green>✔ <white>Core cooled to <yellow>0 C* <white>— reactor stopped and powered down."
+# Default: <dark_red>⚠ <red>Core shell integrity critical — emergency core shutdown! Restart the reactor.
+core_emergency_shutdown = "<dark_red>⚠ <red>Core shell integrity critical — emergency core shutdown! Restart the reactor."
+# Default: <green>✔ <white>Core restarted after the emergency shutdown.
+core_restart_after_shutdown = "<green>✔ <white>Core restarted after the emergency shutdown."
+# Default: <green>✔ <white>Reactor structure fully restored — control returned.
+structure_repaired = "<green>✔ <white>Reactor structure fully restored — control returned."
+# Default: <red>Cannot receive any data from sensors: <gray>No signal
+sensor_no_signal = "<red>Cannot receive any data from sensors: <gray>No signal"
+# Default: <dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00.
+selfdestruct_protocol = "<dark_red>☠ <red>Self-destruct protocol engaged! Detonation in T-1:00."
+# Default: <dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-%sec%s, good luck.
+selfdestruct_final_warn = "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-%sec%s, good luck."
+# Default: <dark_red>☠ <red>Self-destruct finale: the Power Lasers are running at 1000%!
+selfdestruct_finale = "<dark_red>☠ <red>Self-destruct finale: the Power Lasers are running at 1000%!"
+# Default: <dark_red>☠ <red>Self-destruct sequence complete — the core is beyond saving.
+selfdestruct_complete = "<dark_red>☠ <red>Self-destruct sequence complete — the core is beyond saving."
+# Default: <dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck.
+shield_failure = "<dark_red>Danger! <white>Core shield has been compromised, core detonation estimated in T-10s, good luck."
+# Default: <red>First press SHIFT+RMB on the reactor frame!
+pending_frame_reactor = "<red>First press SHIFT+RMB on the reactor frame!"
+# Default: <red>First press SHIFT+RMB on the magnet frame!
+pending_frame_magnet = "<red>First press SHIFT+RMB on the magnet frame!"
+# Default: <red>The lodestone (LODESTONE) was not found!
+magnet_lodestone_missing = "<red>The lodestone (LODESTONE) was not found!"
+# Default: <gray>The item frame is missing above the central bulb!
+frame_missing = "<gray>The item frame is missing above the central bulb!"
+# Default: <yellow>⚡ Lightning structure destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]
+lightning_broken = "<yellow>⚡ Lightning structure destroyed and deactivated! <dark_gray>[<gray>%coords%<dark_gray>]"
+# Default: <red>❌ Error: Structure not recognized!
+not_recognized = "<red>❌ Error: Structure not recognized!"
+# Default: <gray>Structure templates are not loaded — check the server console.
+not_loaded = "<gray>Structure templates are not loaded — check the server console."
+# Default: <gray>Closest structure: <yellow>%name% <gray>— match <yellow>%percent%%
+closest_match = "<gray>Closest structure: <yellow>%name% <gray>— match <yellow>%percent%%"
+# Default: <gray>No critical differences found — check the frame position.
+no_fixes_needed = "<gray>No critical differences found — check the frame position."
+# Default: <gray>To assemble, you need (%count%):
+fixes_header = "<gray>To assemble, you need (%count%):"
+# Default: <dark_gray> • <gray>...and %count% more fixes
+fixes_more = "<dark_gray> • <gray>...and %count% more fixes"
+# Default: <green>place</green> <yellow>%block% <gray>at %coords%
+fix_place = "<green>place</green> <yellow>%block% <gray>at %coords%"
+# Default: <red>break</red> <gray>%block% <gray>at %coords%
+fix_break = "<red>break</red> <gray>%block% <gray>at %coords%"
+# Default: <yellow>replace</yellow> <gray>%block% <yellow>→ %expected% <gray>at %coords%
+fix_replace = "<yellow>replace</yellow> <gray>%block% <yellow>→ %expected% <gray>at %coords%"
+# Default: <dark_red>❌ <red>Reactor structure is incorrect! <gray>What to fix:
+reactor_invalid_header = "<dark_red>❌ <red>Reactor structure is incorrect! <gray>What to fix:"
+# Default: <gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+reactor_separator = "<gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# Default: <green>✔ <white>Dark Fusion Reactor assembled! <dark_gray>(ID: %id%)
+reactor_assembled = "<green>✔ <white>Dark Fusion Reactor assembled! <dark_gray>(ID: %id%)"
+# Default: <dark_gray>┃ <gray>Core temp: <white>%temp% C*
+reactor_info_line = "<dark_gray>┃ <gray>Core temp: <white>%temp% C*"
+# Default: <dark_gray>┃ <gray>Shield pressure: <white>%press% MPa
+reactor_info_pressure = "<dark_gray>┃ <gray>Shield pressure: <white>%press% MPa"
+# Default: <dark_gray>┃ <gray>Core spin: <white>%spin% RPS
+reactor_info_spin = "<dark_gray>┃ <gray>Core spin: <white>%spin% RPS"
+# Default: <gold>⚡ <yellow>Core startup complete! Lasers are active.
+reactor_startup = "<gold>⚡ <yellow>Core startup complete! Lasers are active."
+# Default: <dark_gray>┃ <gray>Shell integrity: <white>%shield%%
+reactor_info_shield = "<dark_gray>┃ <gray>Shell integrity: <white>%shield%%"
+# Default: <dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel
+reactor_info_fuel = "<dark_gray>┃ <gray>Fuel: <aqua>diamond blocks <gray>→ left barrel, <yellow>gold blocks <gray>→ right barrel"
+
+# names section.
+[messages_en.structures.names]
+# Default: <red>Dark Fusion Reactor</red>
+darkfusionreactor = "<red>Dark Fusion Reactor</red>"
+# Default: <yellow>Lightning Rod</yellow>
+lightning = "<yellow>Lightning Rod</yellow>"
+
+# signs section.
+# Placeholders: %temp%, %press%, %spin%, %int%, %status%, %stress%, %p1%, %p2%, %stab%, %cool%, %f%, %s%, %p%, %h%
+[messages_en.structures.signs]
+# Title text (MiniMessage).
+# Default: =| Core Stats |=
+core_stats_title = "=| Core Stats |="
+# Default: T: %temp% C*
+core_stats_temp = "T: %temp% C*"
+# Default: P: %press% MPa
+core_stats_press = "P: %press% MPa"
+# Default: S: %spin% RPS
+core_stats_spin = "S: %spin% RPS"
+# Title text (MiniMessage).
+# Default: =| Case Stats |=
+case_stats_title = "=| Case Stats |="
+# Default: T: %temp% C*
+case_stats_temp = "T: %temp% C*"
+# Default: P: %press% MPa
+case_stats_press = "P: %press% MPa"
+# Default: I: %int%%
+case_stats_int = "I: %int%%"
+# Default: Broken — repair!
+case_stats_broken = "Broken — repair!"
+# Title text (MiniMessage).
+# Default: =| Shield Stats |=
+shield_stats_title = "=| Shield Stats |="
+# Default: M: %status%
+shield_stats_magnet = "M: %status%"
+# Default: I: %int%%
+shield_stats_int = "I: %int%%"
+# Default: S: %stress%%
+shield_stats_status = "S: %stress%%"
+# Power.
+# Default: =| Power Stats |=
+power_stats_title = "=| Power Stats |="
+# Power.
+# Default: P1/P2: %p1%/%p2%%
+power_stats_p1p2 = "P1/P2: %p1%/%p2%%"
+# Power.
+# Default: Stab: %stab%%
+power_stats_stab = "Stab: %stab%%"
+# Power.
+# Default: C: %cool%%
+power_stats_cool = "C: %cool%%"
+# Title text (MiniMessage).
+# Default: =| Fuel Stats |=
+fuel_stats_title = "=| Fuel Stats |="
+# Default: S: %status%
+fuel_stats_status = "S: %status%"
+# Default: F: %f%%
+fuel_stats_f = "F: %f%%"
+# Default: S: %s%%
+fuel_stats_s = "S: %s%%"
+# Title text (MiniMessage).
+# Default: =| Fusion Stats |=
+fusion_stats_title = "=| Fusion Stats |="
+# Default: S: %status%
+fusion_stats_status = "S: %status%"
+# Default: P: %p%
+fusion_stats_p = "P: %p%"
+# Speed.
+# Default: S: %s%%
+fusion_stats_speed = "S: %s%%"
+# Title text (MiniMessage).
+# Default: =| Shield Stress |=
+stress_title = "=| Shield Stress |="
+# Default: H: %h%%
+stress_h = "H: %h%%"
+# Default: P: %p%%
+stress_p = "P: %p%%"
+# Default: S: %s%%
+stress_s = "S: %s%%"
+# Default: Stable
+status_stable = "Stable"
+# Default: Unstable
+status_unstable = "Unstable"
+# Default: Creating
+status_creating = "Creating"
+# Default: Working
+status_working = "Working"
+# Default: Failed
+status_failed = "Failed"
+# Default: Offline
+status_offline = "Offline"
+# Default: Fueled
+status_fueled = "Fueled"
+# Default: Empty
+status_empty = "Empty"
+# Default: Yes
+status_fuel_yes = "Yes"
+# Default: No
+status_fuel_no = "No"
+# Default: Offline
+status_fusion_offline = "Offline"
+# Default: Online
+status_fusion_online = "Online"
+# Default: Full
+status_fusion_full = "Full"
+# Default: Idle
+status_idle = "Idle"
+# Default: Running
+status_running = "Running"
+# Default: Done
+status_done = "Done"
+# Default: No startup
+status_no_startup = "No startup"
+# Default: Standby
+status_standby = "Standby"
+
+# check section.
+# Placeholders: %inspector%, %suspect%
+[messages_en.check]
+# Command.
+# Default: <red>❌ <white>You are under check! Commands are disabled.</white>
+commands_blocked = "<red>❌ <white>You are under check! Commands are disabled.</white>"
+
+# start section.
+[messages_en.check.start]
+# Default: <red>❌ You cannot check yourself!</red>
+cannot_check_self = "<red>❌ You cannot check yourself!</red>"
+# Default: <red>❌ You already have an active check!</red>
+already_checking = "<red>❌ You already have an active check!</red>"
+# Default: <red>❌ This player is already being checked!</red>
+already_checked = "<red>❌ This player is already being checked!</red>"
+
+# end section.
+[messages_en.check.end]
+# Default: <red>❌ You are not checking this player!</red>
+not_checking = "<red>❌ You are not checking this player!</red>"
+# Default: <red>❌ You don't have an active check!</red>
+no_active = "<red>❌ You don't have an active check!</red>"
+
+# title section.
+[messages_en.check.title]
+# Title text (MiniMessage).
+# Default: <red>Verification
+title = "<red>Verification"
+# Title text (MiniMessage).
+# Default: <white>All instructions are in the chat
+subtitle = "<white>All instructions are in the chat"
+
+# suspect section.
+# Placeholders: %inspector%
+[messages_en.check.suspect]
+# Default: <gray>━━━━━━━━━━━━━━━━━━━━━
+separator = "<gray>━━━━━━━━━━━━━━━━━━━━━"
+# Default: <white>Inspector: <yellow>%inspector%
+inspector = "<white>Inspector: <yellow>%inspector%"
+# Default: Unknown
+unknown_inspector = "Unknown"
+# Default: <gray>You cannot move or interact with anything
+no_move = "<gray>You cannot move or interact with anything"
+# Default: <gray>until the check is complete.
+until_done = "<gray>until the check is complete."
+# Default: <gray>If you have any prohibited modifications —
+mod_info = "<gray>If you have any prohibited modifications —"
+# Default: <gray>disable them now. It is in your best interest.
+disable_now = "<gray>disable them now. It is in your best interest."
+# Default: <green>✔ <white><bold>CHECK COMPLETE!
+completed = "<green>✔ <white><bold>CHECK COMPLETE!"
+# Default: <yellow>⚠ <white><bold>CHECK INTERRUPTED!
+interrupted = "<yellow>⚠ <white><bold>CHECK INTERRUPTED!"
+# Default: <white>Inspector disconnected.
+inspector_left = "<white>Inspector disconnected."
+# Default: <dark_red>❌ <red><bold>VERIFICATION RESUMED
+resumed = "<dark_red>❌ <red><bold>VERIFICATION RESUMED"
+# Default: <gray>Your check was paused while you were offline.
+paused_note = "<gray>Your check was paused while you were offline."
+# Default: <gray>It has now resumed. You are still frozen.
+frozen_note = "<gray>It has now resumed. You are still frozen."
+
+# inspector section.
+# Placeholders: %suspect%
+[messages_en.check.inspector]
+# Default: <green>✔</green> <white>Check started for</white> <yellow>%suspect%</yellow><white>.</white>
+started = "<green>✔</green> <white>Check started for</white> <yellow>%suspect%</yellow><white>.</white>"
+# Default: <gray>Use </gray><white>/ui uncheck %suspect%</white><gray> when finished.</gray>
+howto = "<gray>Use </gray><white>/ui uncheck %suspect%</white><gray> when finished.</gray>"
+# Default: <green>✔</green> <white>Check ended for</white> <yellow>%suspect%</yellow><white>.</white>
+ended = "<green>✔</green> <white>Check ended for</white> <yellow>%suspect%</yellow><white>.</white>"
+# Default: <gray>You have been teleported back to your original location.</gray>
+returned = "<gray>You have been teleported back to your original location.</gray>"
+# Default: <yellow>⚠</yellow> <white>Checked player</white> <yellow>%suspect%</yellow> <white>disconnected. Check will r…
+suspect_left = "<yellow>⚠</yellow> <white>Checked player</white> <yellow>%suspect%</yellow> <white>disconnected. Check will resume on rejoin.</white>"
+# Default: <green>✔</green> <white>Player</white> <yellow>%suspect%</yellow> <white>rejoined — check resumed automatical…
+rejoined = "<green>✔</green> <white>Player</white> <yellow>%suspect%</yellow> <white>rejoined — check resumed automatically.</white>"
+# Default: <gray>Teleported to suspect's new location.</gray>
+teleported = "<gray>Teleported to suspect's new location.</gray>"
+
+# auth section.
+# Placeholders: %remaining%, %min%, %max%, %count%, %limit%, %seconds%, %subcommand%, %player%, %password%, %attempts%, %details%
+[messages_en.auth]
+
+# gui section.
+[messages_en.auth.gui]
+# Default: Register
+register = "Register"
+# Default: Enter password
+login = "Enter password"
+# Default: Change password
+change_password = "Change password"
+# Default: Account logout
+logout = "Account logout"
+
+# messages section.
+# Placeholders: %remaining%, %min%, %max%, %count%, %limit%, %seconds%
+[messages_en.auth.messages]
+# Title text (MiniMessage).
+# Default: <dark_gray>Register</dark_gray>
+register_title = "<dark_gray>Register</dark_gray>"
+# Title text (MiniMessage).
+# Default: <dark_gray>Enter password</dark_gray>
+login_title = "<dark_gray>Enter password</dark_gray>"
+# Default: <green>✔ Registration successful!</green>
+success_register = "<green>✔ Registration successful!</green>"
+# Default: <green>✔ You have successfully logged in!</green>
+success_login = "<green>✔ You have successfully logged in!</green>"
+# Default: <red>❌ Incorrect password! Try again.</red>
+wrong_password = "<red>❌ Incorrect password! Try again.</red>"
+# Default: <red>❌ Incorrect password!</red>
+wrong_password_short = "<red>❌ Incorrect password!</red>"
+# Default: <red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>
+wrong_password_remaining = "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>"
+# Default: <red>❌ Password must be at least 4 characters!</red>
+short_password = "<red>❌ Password must be at least 4 characters!</red>"
+# Default: <red>❌ Password must not exceed 32 characters!</red>
+long_password = "<red>❌ Password must not exceed 32 characters!</red>"
+# Default: <red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>
+password_too_short = "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>"
+# Default: <red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>
+password_too_long = "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>"
+# Default: <red>❌ Please authenticate first! Enter your password in the opened window.</red>
+need_auth = "<red>❌ Please authenticate first! Enter your password in the opened window.</red>"
+# Default: <red>❌</red> <white>Your IP address has changed. Please log in again.</white>
+ip_changed = "<red>❌</red> <white>Your IP address has changed. Please log in again.</white>"
+# Display name (MiniMessage).
+# Default: <yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different nam…
+duplicate_name_kick = "<yellow>❌ A player with this name is already on the server!</yellow>\\n<white>Please join with a different name.</white>"
+# Maximum value.
+# Default: <red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<whit…
+max_accounts_per_ip = "<red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\\n<white>Maximum:</white> <yellow>%limit%</yellow> <white>accounts per IP.</white>"
+# Default: <yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>
+enter_password_hint = "<yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>
+enter_new_password_hint = "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Enter your password to log out.</gray>
+enter_logout_password_hint = "<yellow>✦</yellow> <gray>Enter your password to log out.</gray>"
+# Default: <red>❌ Enter your password in the item name field!</red>
+enter_password_field = "<red>❌ Enter your password in the item name field!</red>"
+# Default: <red>❌ Enter your current password in the item name field!</red>
+enter_current_password = "<red>❌ Enter your current password in the item name field!</red>"
+# Default: <red>❌ Enter a new password in the item name field!</red>
+enter_new_password_field = "<red>❌ Enter a new password in the item name field!</red>"
+# Default: <red>❌ Enter your password in the item name field!</red>
+enter_password_field_generic = "<red>❌ Enter your password in the item name field!</red>"
+# Default: <red>❌ You are not registered yet! First, create a password.</red>
+not_registered = "<red>❌ You are not registered yet! First, create a password.</red>"
+# Default: <yellow>✦</yellow> <gray>Password change cancelled.</gray>
+password_change_cancelled = "<yellow>✦</yellow> <gray>Password change cancelled.</gray>"
+# Default: <red>❌ You cannot close the password change window!</red>
+cannot_close_change_password = "<red>❌ You cannot close the password change window!</red>"
+# Default: <red>❌ You cannot close the authorization window! Please enter your password.</red>
+cannot_close_auth = "<red>❌ You cannot close the authorization window! Please enter your password.</red>"
+# Default: <yellow>✦</yellow> <gray>Account logout cancelled.</gray>
+logout_cancelled = "<yellow>✦</yellow> <gray>Account logout cancelled.</gray>"
+# Default: <yellow>✦</yellow> <gray>Opening authorization window...</gray>
+opening_auth_window = "<yellow>✦</yellow> <gray>Opening authorization window...</gray>"
+# Default: <red>❌ Error opening authorization window! Report to an administrator.</red>
+auth_window_error = "<red>❌ Error opening authorization window! Report to an administrator.</red>"
+# Default: <red>❌ Error checking password! Please try again.</red>
+auth_check_error = "<red>❌ Error checking password! Please try again.</red>"
+# Default: <red>❌ Password change error! Please try again.</red>
+change_password_error = "<red>❌ Password change error! Please try again.</red>"
+# Default: <green>✔</green> <white>Password successfully changed!</white>
+password_changed = "<green>✔</green> <white>Password successfully changed!</white>"
+# Default: <gray>Enjoy your game! Session active for 1 hour.</gray>
+session_active = "<gray>Enjoy your game! Session active for 1 hour.</gray>"
+# Message text (MiniMessage).
+# Default: <green>✔</green> <white>You have been force authorized by an administrator!</white>
+force_login_message = "<green>✔</green> <white>You have been force authorized by an administrator!</white>"
+# Limit.
+# Default: <red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>
+rate_limit = "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
+
+# admin section.
+# Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
+[messages_en.auth.admin]
+# Default: <red>❌ Authorization system is disabled in config!</red>
+system_disabled = "<red>❌ Authorization system is disabled in config!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>
+usage = "<red>❌ Usage: </red><white>/ui auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"
+# Command.
+# Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
+unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
+# Default: <red>❌ Only players can use this command!</red>
+player_only = "<red>❌ Only players can use this command!</red>"
+# Default: <red>❌ You are not logged in!</red>
+not_authenticated = "<red>❌ You are not logged in!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to force log in!</red>
+forcelogin_no_permission = "<red>❌ You don't have permission to force log in!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>
+forcelogin_usage = "<red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+forcelogin_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+forcelogin_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>
+forcelogin_success = "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>"
+# Default: <red>❌ Failed to authorize player</red> <yellow>%player%</yellow>
+forcelogin_fail = "<red>❌ Failed to authorize player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to reset authorization!</red>
+resetauth_no_permission = "<red>❌ You don't have permission to reset authorization!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth resetauth <nick></white>
+resetauth_usage = "<red>❌ Usage: </red><white>/ui auth resetauth <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+resetauth_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+resetauth_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</…
+resetauth_success = "<green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</white>"
+# Default: <red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>
+resetauth_fail = "<red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to reset sessions!</red>
+delsession_no_permission = "<red>❌ You don't have permission to reset sessions!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth delsession <nick></white>
+delsession_usage = "<red>❌ Usage: </red><white>/ui auth delsession <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+delsession_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+delsession_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>
+delsession_success = "<green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>"
+# Default: <gray>They will need to enter their password again on next login.</gray>
+delsession_info = "<gray>They will need to enter their password again on next login.</gray>"
+# Default: <red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>
+delsession_fail = "<red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to change passwords!</red>
+chgpass_no_permission = "<red>❌ You don't have permission to change passwords!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>
+chgpass_usage = "<red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>"
+# Default: <green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green…
+chgpass_success = "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
+# Default: <gray>Session reset — player must log in again.</gray>
+chgpass_session_reset = "<gray>Session reset — player must log in again.</gray>"
+# Default: <red>❌ Failed to change password of player</red> <yellow>%player%</yellow>
+chgpass_fail = "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red…
+kick_resetauth = "<yellow>✦</yellow> UltimateImprovments\\n\\n<red>❌ Your registration has been deleted by an administrator!</red>\\n<gray>On next login you will need to register again.</gray>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gra…
+kick_delsession = "<yellow>✦</yellow> UltimateImprovments\\n\\n<red>❌ Your session has been reset by an administrator!</red>\\n<gray>On next login you will need to enter your password again.</gray>"
+# Timeout.
+# Default: <red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>
+kick_timeout = "<red>⏱ Login timeout!</red>\\n<gray>You did not log in within %seconds% seconds.</gray>"
+# Default: <red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>
+kick_too_many_attempts = "<red>❌ Too many incorrect attempts!</red>\\n<gray>You entered the wrong password %attempts% times.</gray>"
+# Default: <green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password …
+kick_logout = "<green>✔</green> You have successfully logged out!\\n<gray>On next login you will need to enter your password again.</gray>"
+# Display name (MiniMessage).
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
+kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\\n\\n%details%\\n\\n"
+
+# codepanel section.
+# Placeholders: %seconds%, %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%, %entity%
+[messages_en.codepanel]
+
+# messages section.
+# Placeholders: %seconds%
+[messages_en.codepanel.messages]
+# Default: <dark_green>✔</dark_green> <green>Success:</green> <gray>Correct code!</gray>
+success = "<dark_green>✔</dark_green> <green>Success:</green> <gray>Correct code!</gray>"
+# Default: <dark_red>❌</dark_red> <red>Error:</red> <gray>Incorrect code!</gray>
+error = "<dark_red>❌</dark_red> <red>Error:</red> <gray>Incorrect code!</gray>"
+# Default: <dark_red>❌</dark_red> <red>Error:</red> <gray>No keys found in the database!</gray>
+no_config = "<dark_red>❌</dark_red> <red>Error:</red> <gray>No keys found in the database!</gray>"
+# Default: <red>Code panel is reloading, try again later...</red>
+reloading = "<red>Code panel is reloading, try again later...</red>"
+# Cooldown.
+# Default: <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before entering again!</red>
+cooldown = "<red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before entering again!</red>"
+# Default: <red>❌ You don't have access to this code!</red>
+no_access = "<red>❌ You don't have access to this code!</red>"
+# Default: <red>❌ Incorrect code!</red>
+wrong_code = "<red>❌ Incorrect code!</red>"
+# Default: <gray>✖ Code entry cancelled.</gray>
+cancelled = "<gray>✖ Code entry cancelled.</gray>"
+
+# key section.
+# Placeholders: %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%
+[messages_en.codepanel.key]
+# Permission node.
+# Default: <red>❌ You don't have permission to manage code panel keys!</red>
+no_permission = "<red>❌ You don't have permission to manage code panel keys!</red>"
+# Command.
+# Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
+unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
+# Permission node.
+# Default: <red>❌ You don't have permission to add keys!</red>
+no_permission_add = "<red>❌ You don't have permission to add keys!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to list keys!</red>
+no_permission_list = "<red>❌ You don't have permission to list keys!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to remove keys!</red>
+no_permission_remove = "<red>❌ You don't have permission to remove keys!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to modify keys!</red>
+no_permission_modify = "<red>❌ You don't have permission to modify keys!</red>"
+# Default: <red>❌ Usage: </red><white>/ui codepane key add <name> <code> [flags]</white>
+usage_add = "<red>❌ Usage: </red><white>/ui codepane key add <name> <code> [flags]</white>"
+# Default: <red>❌ Usage: </red><white>/ui codepane key remove <name></white>
+usage_remove = "<red>❌ Usage: </red><white>/ui codepane key remove <name></white>"
+# Default: <red>❌ Usage: </red><white>/ui codepane key modify <name> <new_code> [flags]</white>
+usage_modify = "<red>❌ Usage: </red><white>/ui codepane key modify <name> <new_code> [flags]</white>"
+# Default: <red>❌ Duplicate flag: %flag%! Use each flag only once.</red>
+duplicate_flag = "<red>❌ Duplicate flag: %flag%! Use each flag only once.</red>"
+# Default: <red>❌ attempts must be >= 1</red>
+invalid_attempts = "<red>❌ attempts must be >= 1</red>"
+# Format string (MiniMessage).
+# Default: <red>❌ Invalid attempts format: %value%</red>
+invalid_attempts_format = "<red>❌ Invalid attempts format: %value%</red>"
+# Format string (MiniMessage).
+# Default: <red>❌ Invalid time format: </red><gray>%value%</gray><red> (use Ns, Nm, Nh, Nd)</red>
+invalid_time_format = "<red>❌ Invalid time format: </red><gray>%value%</gray><red> (use Ns, Nm, Nh, Nd)</red>"
+# Default: <yellow>⚠</yellow> <gray>Unknown flag: </gray><white>%flag%</white>
+unknown_flag = "<yellow>⚠</yellow> <gray>Unknown flag: </gray><white>%flag%</white>"
+# Default: <red>❌ Key</red> <yellow>%name%</yellow> <red>already exists!</red>
+already_exists = "<red>❌ Key</red> <yellow>%name%</yellow> <red>already exists!</red>"
+# Default: <red>❌ Error adding key to database!</red>
+db_add_error = "<red>❌ Error adding key to database!</red>"
+# Default: <green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>added to database!</white>
+add_success = "<green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>added to database!</white>"
+# Default: <red>❌ Key</red> <yellow>%name%</yellow> <red>not found!</red>
+key_not_found = "<red>❌ Key</red> <yellow>%name%</yellow> <red>not found!</red>"
+# Default: <red>❌ Key</red> <yellow>%name%</yellow> <red>not found in database!</red>
+db_not_found = "<red>❌ Key</red> <yellow>%name%</yellow> <red>not found in database!</red>"
+# Default: <green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>removed from database.</white>
+remove_success = "<green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>removed from database.</white>"
+# Default: <green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>modified in database.</white>
+modify_success = "<green>✔</green> <white>Key</white> <yellow>%name%</yellow> <white>modified in database.</white>"
+# Default: <yellow>ℹ</yellow> <white>No keys in the database.</white>
+no_keys = "<yellow>ℹ</yellow> <white>No keys in the database.</white>"
+# Default: <gray>Code:</gray> <white>%code%</white>
+info_code = "<gray>Code:</gray> <white>%code%</white>"
+# Command.
+# Default: <gray>Commands:</gray> <white>%commands%</white>
+info_commands = "<gray>Commands:</gray> <white>%commands%</white>"
+# Whitelist.
+# Default: <gray>Whitelist:</gray> <green>%players%</green>
+info_whitelist = "<gray>Whitelist:</gray> <green>%players%</green>"
+# Blacklist.
+# Default: <gray>Blacklist:</gray> <red>%players%</red>
+info_blacklist = "<gray>Blacklist:</gray> <red>%players%</red>"
+# Default: <gray>Attempts:</gray> %color%%remaining%<gray>/%max%</gray>
+info_attempts = "<gray>Attempts:</gray> %color%%remaining%<gray>/%max%</gray>"
+# Default: <gray>Expires:</gray> <red>expired</red>
+info_expired = "<gray>Expires:</gray> <red>expired</red>"
+# Default: <gray>Expires:</gray> <white>%duration%</white>
+info_expires_in = "<gray>Expires:</gray> <white>%duration%</white>"
+# Maximum value.
+# Default: <gray>Max attempts:</gray> <white>%max%</white>
+info_max_attempts = "<gray>Max attempts:</gray> <white>%max%</white>"
+# Default: <gray>Expires at:</gray> <white>%date%</white>
+info_expires_at = "<gray>Expires at:</gray> <white>%date%</white>"
+
+# help section.
+# Placeholders: %entity%
+[messages_en.codepanel.help]
+# Default: <gold>=== <white>Code Panel Key Management</white> ===</gold>
+header = "<gold>=== <white>Code Panel Key Management</white> ===</gold>"
+# Default: <yellow>/ui codepane key add <gray><name> <code> [flags]</gray></yellow>
+add = "<yellow>/ui codepane key add <gray><name> <code> [flags]</gray></yellow>"
+# Default: <gray> Add a new key</gray>
+add_desc = "<gray> Add a new key</gray>"
+# Default: <yellow>/ui codepane key list</yellow>
+list = "<yellow>/ui codepane key list</yellow>"
+# Default: <gray> List all keys</gray>
+list_desc = "<gray> List all keys</gray>"
+# Default: <yellow>/ui codepane key remove <gray><name></gray></yellow>
+remove = "<yellow>/ui codepane key remove <gray><name></gray></yellow>"
+# Default: <gray> Remove a key</gray>
+remove_desc = "<gray> Remove a key</gray>"
+# Default: <yellow>/ui codepane key modify <gray><name> <new_code> [flags]</gray></yellow>
+modify = "<yellow>/ui codepane key modify <gray><name> <new_code> [flags]</gray></yellow>"
+# Default: <gray> Modify a key</gray>
+modify_desc = "<gray> Modify a key</gray>"
+# Permission node.
+# Default: <gray>Required permissions:</gray>
+permissions_header = "<gray>Required permissions:</gray>"
+# Default: <gray>ui.command.codepane.key — base</gray>
+perm_base = "<gray>ui.command.codepane.key — base</gray>"
+# Default: <gray> ui.command.codepane.key.add — add</gray>
+perm_add = "<gray> ui.command.codepane.key.add — add</gray>"
+# Default: <gray> ui.command.codepane.key.list — list</gray>
+perm_list = "<gray> ui.command.codepane.key.list — list</gray>"
+# Default: <gray> ui.command.codepane.key.remove — remove</gray>
+perm_remove = "<gray> ui.command.codepane.key.remove — remove</gray>"
+# Default: <gray> ui.command.codepane.key.modify — modify</gray>
+perm_modify = "<gray> ui.command.codepane.key.modify — modify</gray>"
+# Default: <gray>Flags:</gray>
+flags_header = "<gray>Flags:</gray>"
+# Default: <gray> attempts:<N>     — delete key after N successful uses</gray>
+flag_attempts = "<gray> attempts:<N>     — delete key after N successful uses</gray>"
+# Default: <gray> time:<N>s|m|h|d  — delete key after N seconds/minutes/hours/days</gray>
+flag_time = "<gray> time:<N>s|m|h|d  — delete key after N seconds/minutes/hours/days</gray>"
+# Whitelist.
+# Default: <gray>whitelist:<name1,name2...>  — allow only these players</gray>
+flag_whitelist = "<gray>whitelist:<name1,name2...>  — allow only these players</gray>"
+# Whitelist.
+# Default: <gray>whitelist:(<name1,name2...>)  — same, but in parentheses</gray>
+flag_whitelist_parens = "<gray>whitelist:(<name1,name2...>)  — same, but in parentheses</gray>"
+# Blacklist.
+# Default: <gray>blacklist:<name1,name2...>  — block these players</gray>
+flag_blacklist = "<gray>blacklist:<name1,name2...>  — block these players</gray>"
+# Blacklist.
+# Default: <gray>blacklist:(<name1,name2...>)  — same, but in parentheses</gray>
+flag_blacklist_parens = "<gray>blacklist:(<name1,name2...>)  — same, but in parentheses</gray>"
+# Command.
+# Default: <gray>command:(<cmd with spaces>),(<cmd 2>)  — commands separated by commas</gray>
+flag_command = "<gray>command:(<cmd with spaces>),(<cmd 2>)  — commands separated by commas</gray>"
+# Command.
+# Default: <gray>  %entity% — replaced with player's nickname</gray>
+flag_command_entity = "<gray>  %entity% — replaced with player's nickname</gray>"
+# Default: <gray>Examples:</gray>
+examples_header = "<gray>Examples:</gray>"
+# Default: <gray> /ui codepane key add mydoor 1234 attempts:3 time:1h</gray>
+example1 = "<gray> /ui codepane key add mydoor 1234 attempts:3 time:1h</gray>"
+# Default: <gray> /ui codepane key add admin 7777 whitelist:Steve,Alex</gray>
+example2 = "<gray> /ui codepane key add admin 7777 whitelist:Steve,Alex</gray>"
+# Default: <gray> /ui codepane key add warp 4321 command:(say %entity% got access)</gray>
+example3 = "<gray> /ui codepane key add warp 4321 command:(say %entity% got access)</gray>"
+# Default: <gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>
+example4 = "<gray> /ui codepane key add warp 4321 command:(say %entity%),(mvwarp spawn)</gray>"
+
+# suicide section.
+# Placeholders: %seconds%, %timeout%, %sender%, %target%
+[messages_en.suicide]
+
+# messages section.
+# Placeholders: %seconds%, %timeout%, %sender%, %target%
+[messages_en.suicide.messages]
+# Cooldown.
+# Default: <dark_red>❌</dark_red> <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before using this again…
+cooldown_message = "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before using this again!</red>"
+# Default: <dark_red>❌</dark_red> <red>You already have a countdown running!</red>
+already_running = "<dark_red>❌</dark_red> <red>You already have a countdown running!</red>"
+# Title text (MiniMessage).
+# Default: <dark_red>☠</dark_red> <red>WARNING!</red>
+warning_title = "<dark_red>☠</dark_red> <red>WARNING!</red>"
+# Default: <white>You are about to commit suicide!</white>
+warning_text = "<white>You are about to commit suicide!</white>"
+# Default: <red>⚠ This cannot be undone after confirmation!</red>
+warning_no_cancel = "<red>⚠ This cannot be undone after confirmation!</red>"
+# Default: <yellow>Type</yellow> <white>/ui suicide</white> <yellow>again to confirm and start the countdown.</yellow>
+warning_confirm_hint = "<yellow>Type</yellow> <white>/ui suicide</white> <yellow>again to confirm and start the countdown.</yellow>"
+# Default: <gray>If you change your mind — just wait</gray> <yellow>%timeout%</yellow> <gray>seconds and the request wil…
+warning_cancel_hint = "<gray>If you change your mind — just wait</gray> <yellow>%timeout%</yellow> <gray>seconds and the request will expire.</gray>"
+# Timeout.
+# Default: <yellow>ℹ</yellow> <white>Suicide request cancelled (timed out).</white>
+timeout_message = "<yellow>ℹ</yellow> <white>Suicide request cancelled (timed out).</white>"
+# Title text (MiniMessage).
+# Default: <dark_red>☠</dark_red> <red>Countdown started!</red>
+confirmed_title = "<dark_red>☠</dark_red> <red>Countdown started!</red>"
+# Default: <red>Cannot be cancelled!</red>
+confirmed_no_cancel = "<red>Cannot be cancelled!</red>"
+# Default: <red><bold>☠</bold></red> <white>Suicide in</white> <yellow><bold>%seconds%</bold></yellow> <white>seconds</w…
+timer_actionbar = "<red><bold>☠</bold></red> <white>Suicide in</white> <yellow><bold>%seconds%</bold></yellow> <white>seconds</white>"
+# Default: <dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Suicide in</red> <yellow>%seconds%</yellow> <red>seconds…
+timer_chat = "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>Suicide in</red> <yellow>%seconds%</yellow> <red>seconds...</red>"
+# Message text (MiniMessage).
+# Default: <dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>You have committed suicide...</red>
+death_message = "<dark_gray>[<dark_red>☠</dark_red>]</dark_gray> <red>You have committed suicide...</red>"
+# Title text (MiniMessage).
+# Default: <dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>
+forced_title = "<dark_red>☠</dark_red> <red>FORCE SUICIDE!</red>"
+# Default: <gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>
+forced_body = "<gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>"
+# Default: <red>Cannot be cancelled!</red>
+forced_nocancel = "<red>Cannot be cancelled!</red>"
+# Default: <green>✔</green> <white>Player</white> <yellow>%target%</yellow> <white>has been force-suicided.</white>
+forced_sender_success = "<green>✔</green> <white>Player</white> <yellow>%target%</yellow> <white>has been force-suicided.</white>"
+
+# bossbar section.
+# Placeholders: %seconds%
+[messages_en.suicide.bossbar]
+# Title text (MiniMessage).
+# Default: <dark_red>☠</dark_red> <red>Suicide in</red> <yellow>%seconds%</yellow> <red>seconds</red>
+title = "<dark_red>☠</dark_red> <red>Suicide in</red> <yellow>%seconds%</yellow> <red>seconds</red>"
+
+# changedimmension section.
+# Placeholders: %world%, %seconds%
+[messages_en.changedimmension]
+
+# messages section.
+# Placeholders: %world%, %seconds%
+[messages_en.changedimmension.messages]
+# Default: <green>✔</green> <white>Teleportation to</white> <yellow>%world%</yellow> <white>completed!</white>
+success = "<green>✔</green> <white>Teleportation to</white> <yellow>%world%</yellow> <white>completed!</white>"
+# Default: <yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/ui chgdim</white> <gray>again.</gray>
+return_info = "<yellow>ℹ</yellow> <gray>To return, simply type</gray> <white>/ui chgdim</white> <gray>again.</gray>"
+# Default: <green>✔</green> <white>You have returned to your starting point!</white>
+return_success = "<green>✔</green> <white>You have returned to your starting point!</white>"
+# Default: <dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>
+return_error = "<dark_red>❌</dark_red> <red>Error: Return point corrupted!</red>"
+# Permission node.
+# Default: <dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>
+no_permission = "<dark_red>❌</dark_red> <red>You do not have permission to use this command!</red>"
+# World name.
+# Default: <dark_red>❌</dark_red> <red>World</red> <yellow>%world%</yellow> <red>not found!</red>
+world_not_found = "<dark_red>❌</dark_red> <red>World</red> <yellow>%world%</yellow> <red>not found!</red>"
+# Default: <dark_red>❌</dark_red> <red>Only players can use this command!</red>
+player_only = "<dark_red>❌</dark_red> <red>Only players can use this command!</red>"
+# World name.
+# Default: <dark_red>❌</dark_red> <red>Default world not configured in config!</red>
+no_default_world = "<dark_red>❌</dark_red> <red>Default world not configured in config!</red>"
+# Cooldown.
+# Default: <dark_red>❌</dark_red> <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before using this again…
+cooldown = "<dark_red>❌</dark_red> <red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds before using this again!</red>"
+# World name.
+# Default: <red>❌ Worlds not configured in config!</red>
+worlds_not_configured = "<red>❌ Worlds not configured in config!</red>"
+# World name.
+# Default: <yellow>✦</yellow> <gray>Enter world name in the field, then click</gray> <green>✔</green>
+enter_world_name_hint = "<yellow>✦</yellow> <gray>Enter world name in the field, then click</gray> <green>✔</green>"
+# World name.
+# Default: <red>❌ Enter world name in the rename field!</red>
+enter_world_name_field = "<red>❌ Enter world name in the rename field!</red>"
+# World name.
+# Default: <red>❌ World name contains only invalid characters!</red>
+invalid_world_name = "<red>❌ World name contains only invalid characters!</red>"
+# World name.
+# Default: <red>❌ World</red> <yellow>%world%</yellow> <red>not configured!</red>
+world_not_configured = "<red>❌ World</red> <yellow>%world%</yellow> <red>not configured!</red>"
+# Default: <red>❌ No saved return point!</red>
+no_return_point = "<red>❌ No saved return point!</red>"
+
+# power section.
+# Placeholders: %action%, %seconds%, %unit%, %by_player%, %reason%, %by%, %from%
+[messages_en.power]
+# Message text (MiniMessage).
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/ui pow…
+stop_message = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /stop command is disabled. Use:</red> <white>/ui power off</white>"
+# Message text (MiniMessage).
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/ui …
+restart_message = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>The /restart command is disabled. Use:</red> <white>/ui power reboot</white>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>%action% in</red> <white>%seconds%</white> <red>seconds!…
+countdown_broadcast = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>%action% in</red> <white>%seconds%</white> <red>seconds!</red>"
+# Default: <red>Server %action% in</red> <white>%seconds%</white> <red>%unit%...</red>
+countdown_seconds = "<red>Server %action% in</red> <white>%seconds%</white> <red>%unit%...</red>"
+# Default: shutting down
+action_stop = "shutting down"
+# Default: restarting
+action_restart = "restarting"
+# Title text (MiniMessage).
+# Default: Shutdown
+action_stop_title = "Shutdown"
+# Title text (MiniMessage).
+# Default: Restart
+action_restart_title = "Restart"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% was cancelled</red> <white>%by_player%</…
+cancelled_by_player = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% was cancelled</red> <white>%by_player%</white><red>.</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% was automatically cancelled: %reason%</r…
+cancelled_auto = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% was automatically cancelled: %reason%</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% cancelled%by%%from%.</red>
+cancelled_console = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action% cancelled%by%%from%.</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action%...</red>
+executing = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server %action%...</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>
+direct_stop = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server shutting down (console command)...</red>"
+# Default: <dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>
+direct_restart = "<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>Server restarting (console command)...</red>"
+
+# actionbar section.
+# Placeholders: %action%, %seconds%
+[messages_en.power.actionbar]
+# Format string (MiniMessage).
+# Default: <red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</yellow> <white>seconds</white>
+format = "<red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</yellow> <white>seconds</white>"
+
+# bossbar section.
+# Placeholders: %action%, %seconds%
+[messages_en.power.bossbar]
+# Default: <red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>seconds</red>
+text = "<red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>seconds</red>"
+
+# packet guard section.
+[messages_en.packet_guard]
+# Message text (MiniMessage).
+# Default: <dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>
+kick_message = "<dark_red>❌</dark_red> <red>Packet too large!</red>\\n<gray>Please reconnect to the server.</gray>"
+
+# bot protection section.
+# Placeholders: %count%, %seconds%
+[messages_en.bot_protection]
+# Default: <red>❌ Server is overloaded! You are in queue: position
+queue_full = "<red>❌ Server is overloaded! You are in queue: position"
+# Default: <yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>players attempted to join within<…
+queue_notify_op = "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>players attempted to join within</red> <yellow>%seconds%s</yellow><red>. Queue enabled.</red>"
+# Cooldown.
+# Default: <red>❌ You left too recently! Please wait</red> <yellow>%seconds%</yellow> <red>seconds before reconnecting.<…
+rejoin_cooldown = "<red>❌ You left too recently! Please wait</red> <yellow>%seconds%</yellow> <red>seconds before reconnecting.</red>"
+
+# maintenance section.
+# Placeholders: %time%
+[messages_en.maintenance]
+# Message text (MiniMessage).
+# Default: <red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>
+kick_message = "<red>⛏ Server is currently under maintenance!</red>\\n<gray>Please come back later.</gray>"
+
+# messages section.
+# Placeholders: %time%
+[messages_en.maintenance.messages]
+# Master switch (true = feature on).
+# Default: <red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>
+enabled = "<red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>"
+# Default: <green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>
+disabled = "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>"
+# Default: <yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>
+scheduled_enable = "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>"
+# Default: <yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>
+scheduled_disable = "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>"
