@@ -343,6 +343,12 @@ messages_en:
       header: <gray>═══ <white>Reputation — </white><yellow>%player%</yellow> <gray>═══</gray>
       rep: <gray>Reputation:</gray> %color%%rep%</reset>
       status: <gray>Status:</gray> %status%
+      dialog:
+        title: <gold>✦</gold> <white>Reputation — </white><yellow>%player%</yellow>
+        header: <dark_gray>Account Standing</dark_gray>
+        rep: '<gray>Reputation: </gray>%color%%rep%</reset>'
+        status: '<gray>Status: </gray>%status%'
+        close: <red>✖ Close</red>
     status:
       none: <dark_gray>— None
       all_good: <green>✔ All good
