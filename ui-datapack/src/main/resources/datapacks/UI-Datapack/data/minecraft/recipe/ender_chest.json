@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "ender_chest",
+  "category": "misc",
+  "pattern": [
+    "ONO",
+    "NSN",
+    "ONO"
+  ],
+  "key": {
+    "N": [
+      "minecraft:netherite_ingot"
+    ],
+    "S": [
+      "minecraft:black_shulker_box"
+    ],
+    "O": [
+      "minecraft:obsidian"
+    ]
+  },
+  "result": {
+    "id": "minecraft:ender_chest",
+    "count": 1
+  }
+}

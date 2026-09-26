@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "ender_eye",
+  "category": "misc",
+  "pattern": [
+    "BBB",
+    "BPB",
+    "BBB"
+  ],
+  "key": {
+    "B": [
+      "minecraft:blaze_powder"
+    ],
+    "P": [
+      "minecraft:ender_pearl"
+    ]
+  },
+  "result": {
+    "id": "minecraft:ender_eye",
+    "count": 1
+  }
+}

@@ -1,7 +1,0 @@
-name: UI-Anticheat
-version: ${project.version}
-main: com.ultimateimprovments.module.UIAntiCheat
-api-version: '26.2'
-description: 'Advanced anti-cheat system for UltimateImprovements'
-author: rizer001
-depend: [UI-Core]

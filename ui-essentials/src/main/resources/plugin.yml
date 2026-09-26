@@ -5,3 +5,4 @@ api-version: '26.2'
 description: 'Essential commands: home, teleport, heal, reports, NBT editor, and more'
 author: rizer001
 depend: [UI-Core]
+addon-for: UI-Core

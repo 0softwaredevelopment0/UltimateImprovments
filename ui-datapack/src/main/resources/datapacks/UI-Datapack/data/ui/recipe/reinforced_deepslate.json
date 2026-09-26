@@ -1,13 +1,13 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "building",
+  "category": "misc",
   "key": {
     "O": "minecraft:obsidian",
-    "S": "minecraft:netherite_scrap"
+    "C": "minecraft:cobbled_deepslate"
   },
   "pattern": [
     "OOO",
-    "OSO",
+    "OCO",
     "OOO"
   ],
   "result": {

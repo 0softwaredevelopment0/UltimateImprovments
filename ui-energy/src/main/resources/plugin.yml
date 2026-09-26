@@ -5,3 +5,4 @@ api-version: '26.2'
 depend: [UI-Core, UI-Shared, UI-MBS]
 description: 'Energy system: generators, cables, reactors, batteries, machines'
 author: rizer001
+addon-for: UI-Core

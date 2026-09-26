@@ -34,7 +34,13 @@ public class UIChat extends JavaPlugin {
         // ChatManager — channels, format, pings
         ChatManager.init();
 
-        // ChatFilter
+        // ChatFilter — unregister the previous instance first: onEnable can run
+        // again after /ui reload while the old listener is still registered
+        // (UIChat.onDisable does not unregister it), which duplicated every
+        // filter check and sent the warning twice.
+        if (chatFilterManager != null) {
+            HandlerList.unregisterAll(chatFilterManager);
+        }
         chatFilterManager = new ChatFilterManager();
         getServer().getPluginManager().registerEvents(chatFilterManager, main);
 
@@ -59,6 +65,11 @@ public class UIChat extends JavaPlugin {
 
         // Shutdown features
         ChatManager.shutdown();
+        // CmdLogger listeners live under UI-Core's handle and it also holds the
+        // /ui outcome listener — release both on disable.
+        CmdLogger.shutdown();
+        // OJM listener also lives under UI-Core's handle.
+        OjmManager.shutdown();
 
         chatFilterManager = null;
 

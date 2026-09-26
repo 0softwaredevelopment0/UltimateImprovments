@@ -286,6 +286,17 @@ public class ConfigRepairManager {
     // HELPER METHODS (from ConfigIntegrityValidator)
     // =========================
 
+    /**
+     * TOML-repair helper: returns the paths present in {@code reference} but
+     * missing from {@code config} (leaf-level, dotted Bukkit paths).
+     * Used by {@link TomlConfigManager} to fill config.toml from the bundled
+     * config.yml reference.
+     */
+    public static List<String> findMissing(FileConfiguration config, FileConfiguration reference) {
+        Set<String> requiredPaths = collectAllPaths(reference);
+        return findMissingPaths(config, requiredPaths);
+    }
+
     private static FileConfiguration loadDefaultResource(Main plugin, String resourcePath) {
         try (InputStream in = plugin.getResource(resourcePath)) {
             if (in == null) return null;

@@ -9,8 +9,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipFile;
 
@@ -166,9 +169,19 @@ public class DatapackInstaller {
             }
 
             targetFolder.mkdirs();
-            copyFromJar(plugin, "datapacks/UI-Datapack/", targetFolder);
+            int copied = copyFromJar(plugin, "datapacks/UI-Datapack/", targetFolder);
+            if (copied == 0) {
+                // Nothing was extracted — don't leave an empty folder behind.
+                try {
+                    deleteRecursively(targetFolder);
+                } catch (Exception ignored) {
+                    // best effort
+                }
+                throw new java.io.IOException(
+                        "UI-Datapack extraction copied 0 files — no JAR contains 'datapacks/UI-Datapack'");
+            }
 
-            ConsoleLogger.success("[Datapack] Installed to " + targetFolder.getAbsolutePath());
+            ConsoleLogger.success("[Datapack] Installed " + copied + " files to " + targetFolder.getAbsolutePath());
         }
 
         ConsoleLogger.info("[Datapack] Loaded parts: " + DatapackModules.describe());
@@ -290,19 +303,80 @@ public class DatapackInstaller {
     }
 
     /**
-     * Resolves the plugin's own JAR file via the class code source.
-     * {@code JavaPlugin.getFile()} is protected, so it cannot be used directly.
+     * Resolves the source holding the bundled UI-Datapack resources (a JAR file
+     * or an exploded classes directory).
+     * <p>
+     * Priority:
+     * <ol>
+     *   <li>The code source of {@link DatapackInstaller} itself — always the
+     *       UI-Datapack addon JAR. Callers pass the Core plugin, whose JAR
+     *       contains no datapack resources (this used to install an empty
+     *       folder).</li>
+     *   <li>The code source of the passed plugin (legacy fallback).</li>
+     *   <li>Any JAR in the plugins folder containing the datapack.</li>
+     * </ol>
      */
-    private static File getPluginJar(JavaPlugin plugin) {
-        try {
-            var location = plugin.getClass().getProtectionDomain().getCodeSource().getLocation();
-            if (location != null) {
-                return new File(location.toURI());
+    private static File findDatapackSource(JavaPlugin plugin) {
+        for (File candidate : codeSourceCandidates(DatapackInstaller.class, plugin.getClass())) {
+            if (hasDatapackResources(candidate)) return candidate;
+        }
+
+        File pluginsFolder = Bukkit.getPluginsFolder();
+        File[] jars = pluginsFolder == null ? null
+                : pluginsFolder.listFiles((dir, name) -> name.endsWith(".jar"));
+        if (jars != null) {
+            for (File jar : jars) {
+                if (hasDatapackResources(jar)) return jar;
             }
-        } catch (Exception e) {
-            ConsoleLogger.warn("[Datapack] Failed to resolve plugin JAR: " + e.getMessage());
         }
         return null;
+    }
+
+    /** Code-source locations of the given classes, plus exploded resources dirs. */
+    private static List<File> codeSourceCandidates(Class<?>... classes) {
+        LinkedHashSet<File> out = new LinkedHashSet<>();
+        for (Class<?> clazz : classes) {
+            File loc = codeSourceLocation(clazz);
+            if (loc == null) continue;
+            out.add(loc);
+            // Exploded dev layout: build/classes/java/main → build/resources/main
+            if (loc.isDirectory()) {
+                File dir = loc;
+                for (int i = 0; i < 3 && dir != null; i++) {
+                    File res = new File(dir, "resources/main");
+                    if (res.isDirectory()) out.add(res);
+                    dir = dir.getParentFile();
+                }
+            }
+        }
+        return List.copyOf(out);
+    }
+
+    private static File codeSourceLocation(Class<?> clazz) {
+        try {
+            var location = clazz.getProtectionDomain().getCodeSource().getLocation();
+            return location == null ? null : new File(location.toURI());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Whether the file (JAR) or directory (exploded classes) contains the datapack. */
+    private static boolean hasDatapackResources(File file) {
+        if (file == null) return false;
+        try {
+            if (file.isFile()) {
+                try (ZipFile zip = new ZipFile(file)) {
+                    return zip.getEntry("datapacks/UI-Datapack/pack.mcmeta") != null;
+                }
+            }
+            if (file.isDirectory()) {
+                return new File(file, "datapacks/UI-Datapack/pack.mcmeta").isFile();
+            }
+        } catch (Exception ignored) {
+            // Not readable — treat as not containing the datapack
+        }
+        return false;
     }
 
     private void deleteRecursively(File dir) throws Exception {
@@ -323,14 +397,37 @@ public class DatapackInstaller {
         }
     }
 
-    private void copyFromJar(JavaPlugin plugin, String resourcePath, File targetDir) throws Exception {
+    /**
+     * Copies the bundled datapack resources into the target directory.
+     *
+     * @return the number of files copied
+     */
+    private int copyFromJar(JavaPlugin plugin, String resourcePath, File targetDir) throws Exception {
 
-        File jar = getPluginJar(plugin);
-        if (jar == null || !jar.isFile()) {
-            throw new java.io.IOException("Cannot locate the UI-Datapack plugin JAR (code source: " + jar + ")");
+        File source = findDatapackSource(plugin);
+        if (source == null) {
+            throw new java.io.IOException(
+                    "UI-Datapack resources not found — no JAR or classes directory contains '" + resourcePath + "'");
         }
 
-        try (ZipFile zip = new ZipFile(jar)) {
+        if (source.isDirectory()) {
+            // Exploded classes/resources directory (dev servers)
+            Path root = source.toPath().resolve(resourcePath);
+            if (!Files.isDirectory(root)) return 0;
+            List<Path> files;
+            try (var walk = Files.walk(root)) {
+                files = walk.filter(Files::isRegularFile).toList();
+            }
+            int copied = 0;
+            for (Path file : files) {
+                String relative = root.relativize(file).toString().replace('\\', '/');
+                if (copyResource(targetDir, relative, Files.newInputStream(file))) copied++;
+            }
+            return copied;
+        }
+
+        int copied = 0;
+        try (ZipFile zip = new ZipFile(source)) {
 
             var entries = zip.entries();
 
@@ -344,26 +441,33 @@ public class DatapackInstaller {
 
                 if (relative.isEmpty()) continue;
 
-                // Skip disabled datapack parts (config: datapack.modules.*)
-                if (!DatapackModules.isPathEnabled(relative)) {
-                    ConsoleLogger.info("[Datapack] Skipping (disabled part): " + relative);
-                    continue;
-                }
-
-                File outFile = new File(targetDir, relative);
-
                 if (entry.isDirectory()) {
-                    outFile.mkdirs();
+                    new File(targetDir, relative).mkdirs();
                     continue;
                 }
 
-                outFile.getParentFile().mkdirs();
-
-                try (var in = zip.getInputStream(entry);
-                     var out = new FileOutputStream(outFile)) {
-                    in.transferTo(out);
-                }
+                if (copyResource(targetDir, relative, zip.getInputStream(entry))) copied++;
             }
+        }
+        return copied;
+    }
+
+    /** Writes one datapack file, honoring the datapack.modules.* toggles. */
+    private boolean copyResource(File targetDir, String relative, InputStream in) throws Exception {
+        try (in) {
+            // Skip disabled datapack parts (config: datapack.modules.*)
+            if (!DatapackModules.isPathEnabled(relative)) {
+                ConsoleLogger.info("[Datapack] Skipping (disabled part): " + relative);
+                return false;
+            }
+
+            File outFile = new File(targetDir, relative);
+            outFile.getParentFile().mkdirs();
+
+            try (var out = new FileOutputStream(outFile)) {
+                in.transferTo(out);
+            }
+            return true;
         }
     }
 }

@@ -5,3 +5,4 @@ api-version: '26.2'
 depend: [UI-Core]
 description: 'Weapons, turrets, and projectile system'
 author: rizer001
+addon-for: UI-Core

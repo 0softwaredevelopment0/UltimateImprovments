@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "netherite_upgrade_duplicating",
+  "category": "misc",
+  "pattern": [
+    "NSN",
+    "NUN",
+    "NNN"
+  ],
+  "key": {
+    "N": [
+      "minecraft:netherrack"
+    ],
+    "S": [
+      "minecraft:netherite_scrap"
+    ],
+    "U": [
+      "minecraft:netherite_upgrade_smithing_template"
+    ]
+  },
+  "result": {
+    "id": "minecraft:netherite_upgrade_smithing_template",
+    "count": 2
+  }
+}

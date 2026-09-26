@@ -82,6 +82,26 @@ public class SubCommandRegistry {
      * @return true if the command was handled
      */
     public boolean dispatch(CommandSender sender, String[] args) {
+        // Outcome tracking for the command logger: the /ui dispatcher never
+        // throws — failures (no permission, unknown subcommand, usage errors)
+        // are reported through CommandOutcomeTracker so the logger shows the
+        // real outcome instead of an unconditional "runs correctly".
+        String fullCommand = ("ui " + String.join(" ", args)).trim();
+        CommandOutcomeTracker.begin(sender, fullCommand);
+        try {
+            return dispatchInner(sender, args);
+        } catch (Throwable t) {
+            // A real exception in a subcommand: mark FAILED (the logger reports
+            // it), then rethrow so Paper fires its ServerExceptionEvent as usual.
+            CommandOutcomeTracker.markFailed(sender, rootThrowableMessage(t));
+            throw t;
+        } finally {
+            CommandOutcomeTracker.end(sender, fullCommand);
+        }
+    }
+
+    /** Inner dispatch without outcome tracking. */
+    private boolean dispatchInner(CommandSender sender, String[] args) {
         // Each subcommand checks its own ui.command.<name> permission itself.
         // There is no global ui gate anymore — otherwise player-granted point permissions would not work.
         if (args.length == 0) {
@@ -97,13 +117,31 @@ public class SubCommandRegistry {
         SubCommand cmd = findCommand(sub);
 
         if (cmd == null) {
+            CommandOutcomeTracker.markUnknown(sender, sub);
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
                     "general.unknown_command",
                     "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>")));
             return true;
         }
 
-        return cmd.execute(sender, args);
+        boolean handled = cmd.execute(sender, args);
+        // A subcommand returning false means "not handled" — wrong usage,
+        // missing target, etc. Report it as a failed outcome.
+        if (!handled) CommandOutcomeTracker.markFailed(sender, "invalid usage or wrong arguments");
+        return handled;
+    }
+
+    /** Deepest non-empty message from the throwable chain. */
+    private static String rootThrowableMessage(Throwable t) {
+        String message = null;
+        Throwable cause = t;
+        while (cause != null) {
+            if (cause.getMessage() != null && !cause.getMessage().isBlank()) {
+                message = cause.getMessage();
+            }
+            cause = cause.getCause();
+        }
+        return message != null ? message : t.getClass().getSimpleName();
     }
 
     /**

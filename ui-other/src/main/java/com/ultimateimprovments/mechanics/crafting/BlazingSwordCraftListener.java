@@ -1,6 +1,5 @@
 package com.ultimateimprovments.mechanics.crafting;
 
-import com.ultimateimprovments.energy.machines.assembler.AssemblerChecker;
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
@@ -27,8 +26,7 @@ import java.util.List;
  * <p>
  * Follows the standard custom-item pattern: the recipe is registered globally
  * (so it appears in the recipe book / crafting preview), the result carries the
- * {@code is_blazing_sword} PDC, and the actual craft is finalized only inside
- * the Item Assembler (Crafter). Max durability is raised to 1024 via the
+ * {@code is_blazing_sword} PDC, and the final result is applied on craft. Max durability is raised to 1024 via the
  * {@code max_damage} component ({@link Damageable}).
  */
 public class BlazingSwordCraftListener implements Listener {
@@ -117,7 +115,6 @@ public class BlazingSwordCraftListener implements Listener {
         Recipe recipe = e.getRecipe();
         if (!(recipe instanceof ShapedRecipe sr)) return;
         if (!sr.getKey().equals(RECIPE_KEY)) return;
-        if (!AssemblerChecker.isAssemblerCraft(e)) return;
 
         CraftingInventory inv = e.getInventory();
         inv.setResult(createSword());

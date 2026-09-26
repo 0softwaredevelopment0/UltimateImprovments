@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "mace",
+  "category": "misc",
+  "pattern": [
+    " H ",
+    " R ",
+    " R "
+  ],
+  "key": {
+    "H": [
+      "minecraft:heavy_core"
+    ],
+    "R": [
+      "minecraft:breeze_rod"
+    ]
+  },
+  "result": {
+    "id": "minecraft:mace",
+    "count": 1
+  }
+}
