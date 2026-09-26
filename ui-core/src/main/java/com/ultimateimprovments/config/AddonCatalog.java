@@ -43,7 +43,7 @@ public final class AddonCatalog {
         // ── UI-Datapack ──
         route("UI-Datapack", "datapack");
         // ── UI-Shared ──
-        route("UI-Shared", "space", "radiation");
+        route("UI-Shared", "space", "radiation", "hazmat");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
                 "features", "brand_spoof", "vanish", "sunburn", "netherite_upgrade",

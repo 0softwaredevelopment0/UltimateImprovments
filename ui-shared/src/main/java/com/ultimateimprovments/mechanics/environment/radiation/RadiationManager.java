@@ -1,6 +1,5 @@
 package com.ultimateimprovments.mechanics.environment.radiation;
 
-import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.DatabaseManager;
 import com.ultimateimprovments.util.MessageUtil;
@@ -23,8 +22,6 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.BundleContents;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -85,13 +82,11 @@ public class RadiationManager implements Listener {
     private int ancientDebrisRad;
     private int basaltDeltasRad;
     private int endRad;
-    private int leadShieldReduction;
     private int killReduction;
     private boolean deathReset;
     private int maceUseRad;
     private int tridentUseRad;
     private int elytraUseRad;
-    private int antiradReduction;
     private int reactorCoreRad;
     private int reactorPressRad;
     private int reactorMeltdownCloseRad;
@@ -109,13 +104,11 @@ public class RadiationManager implements Listener {
         ancientDebrisRad = cfg.getInt("radiation.ancient_debris_radiation", 2);
         basaltDeltasRad = cfg.getInt("radiation.basalt_deltas_radiation", 2);
         endRad = cfg.getInt("radiation.end_radiation", 2);
-        leadShieldReduction = cfg.getInt("radiation.lead_shield_reduction", 2);
         killReduction = cfg.getInt("radiation.kill_reduction", 100);
         deathReset = cfg.getBoolean("radiation.death_reset", true);
         maceUseRad = cfg.getInt("radiation.mace_use_radiation", 50);
         tridentUseRad = cfg.getInt("radiation.trident_use_radiation", 50);
         elytraUseRad = cfg.getInt("radiation.elytra_use_radiation", 50);
-        antiradReduction = cfg.getInt("radiation.antirad_reduction", 100);
         reactorCoreRad = cfg.getInt("radiation.reactor_core_radiation", 10);
         reactorPressRad = cfg.getInt("radiation.reactor_pressure_radiation", 600);
         reactorMeltdownCloseRad = cfg.getInt("radiation.reactor_meltdown_close", 6400);
@@ -281,6 +274,7 @@ public class RadiationManager implements Listener {
         radiationMap.remove(player.getUniqueId());
         radViewEnabled.remove(player.getUniqueId());
         DosimeterTask.clearRate(player.getUniqueId());
+        HazmatManager.handleQuit(player.getUniqueId());
     }
 
     // =========================
@@ -356,11 +350,14 @@ public class RadiationManager implements Listener {
             }
 
             // =========================
-            // LEAD SHIELD REDUCES ACCUMULATED RADIATION
+            // HAZMAT SUIT — reduces INCOMING radiation by a percentage
+            // (radiation is not removed, only weakened: rad *= 1 - protection).
+            // Protection level comes from the worn hazmat pieces (0..0.8);
+            // the manager scans the armor on its own 2-second cadence.
             // =========================
-            if (hasCustomItem(player.getInventory().getItemInMainHand(), Keys.LEAD_SHIELD)
-                    || hasCustomItem(player.getInventory().getItemInOffHand(), Keys.LEAD_SHIELD)) {
-                rad = Math.max(0.0, rad - leadShieldReduction);
+            double protection = com.ultimateimprovments.mechanics.environment.radiation.HazmatManager.getProtection(player);
+            if (protection > 0.0) {
+                rad = Math.max(0.0, rad * (1.0 - protection));
             }
 
             // =========================
@@ -508,17 +505,12 @@ public class RadiationManager implements Listener {
         }
     }
 
-    // =========================
-    // ANTIRAD ITEMS (antirad_reduction — the config key existed, was never applied)
-    // =========================
-    // The datapack/UI item namespace does not define a dedicated antirad item,
-    // so the shield check covers any item registered under ui: as antirad.
-    // Extend isAntiradItem() when a dedicated item is added.
-
-    private static boolean isAntiradItem(Player player) {
-        return hasCustomItem(player.getInventory().getItemInMainHand(), Keys.LEAD_SHIELD)
-                || hasCustomItem(player.getInventory().getItemInOffHand(), Keys.LEAD_SHIELD);
-    }
+    /*
+     * ANTIRAD ITEMS — removed together with the Lead Shield.
+     * The legacy config key radiation.antirad_reduction is still read above
+     * so old on-disk configs do not trigger repair warnings, but nothing
+     * consumes it. Hazmat armor (HazmatManager) is the replacement.
+     */
 
     // =========================
     // HELPER METHODS
@@ -567,15 +559,6 @@ public class RadiationManager implements Listener {
             count += countInBundle(inner, material);
         }
         return count;
-    }
-
-    private static boolean hasCustomItem(ItemStack item, NamespacedKey key) {
-        if (item == null || item.getType() == Material.AIR) return false;
-        // In Paper 1.21.4+ hasItemMeta() returns false for fresh items.
-        // getItemMeta() always returns non-null for non-AIR.
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return false;
-        return meta.getPersistentDataContainer().has(key, PersistentDataType.BYTE);
     }
 
     /**
