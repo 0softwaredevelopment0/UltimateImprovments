@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages generator blocks.
- * Generators are now single-block (BLAST_FURNACE with PDC tag), crafted in Item Creator.
+ * Generators are single-block (BLAST_FURNACE with PDC tag).
  * No more item frame required.
  */
 public class GeneratorManager implements Listener {
@@ -72,7 +72,7 @@ public class GeneratorManager implements Listener {
         }
     }
 
-    /** Creates a generator item (BLAST_FURNACE with PDC) for the Item Creator recipe. */
+    /** Creates a generator item (BLAST_FURNACE with PDC). */
     public static ItemStack createGeneratorItem() {
         ItemStack item = new ItemStack(Materials.BLAST_FURNACE);
         ItemMeta meta = item.getItemMeta();

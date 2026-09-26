@@ -36,16 +36,23 @@
   },
   "parent": "ui:datapack/craft_echo_shard",
   "criteria": {
-    "1": {
+    "workbench": {
       "trigger": "minecraft:recipe_crafted",
       "conditions": {
-        "recipe_id": "minecraft:antimatter"
+        "recipe_id": "ui-core:antimatter"
+      }
+    },
+    "crafter": {
+      "trigger": "minecraft:crafter_recipe_crafted",
+      "conditions": {
+        "recipe_id": "ui-core:antimatter"
       }
     }
   },
   "requirements": [
     [
-      "1"
+      "workbench",
+      "crafter"
     ]
   ],
   "rewards": {

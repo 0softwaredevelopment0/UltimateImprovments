@@ -32,16 +32,23 @@
   },
   "parent": "ui:datapack/craft_nethered_block",
   "criteria": {
-    "1": {
+    "workbench": {
       "trigger": "minecraft:recipe_crafted",
       "conditions": {
-        "recipe_id": "minecraft:shoker"
+        "recipe_id": "ui-core:shoker"
+      }
+    },
+    "crafter": {
+      "trigger": "minecraft:crafter_recipe_crafted",
+      "conditions": {
+        "recipe_id": "ui-core:shoker"
       }
     }
   },
   "requirements": [
     [
-      "1"
+      "workbench",
+      "crafter"
     ]
   ],
   "rewards": {

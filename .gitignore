@@ -37,3 +37,6 @@ scan_cyrillic.py
 build/
 *.class
 node_modules/
+
+# Runtime logs (do not commit)
+ui-mbs/logs/

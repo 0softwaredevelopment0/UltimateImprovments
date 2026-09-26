@@ -5,3 +5,4 @@ api-version: '26.2'
 depend: [UI-Core]
 description: 'Shared utilities: structures, recipes, magnet, radiation, lightning'
 author: rizer001
+addon-for: UI-Core

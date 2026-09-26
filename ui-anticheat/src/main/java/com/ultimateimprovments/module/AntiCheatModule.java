@@ -24,15 +24,20 @@ public class AntiCheatModule extends PluginModule {
     protected void onInit(JavaPlugin plugin) throws Exception {
         boolean enabled = plugin.getConfig().getBoolean("anticheat.enabled", false);
 
-        // Diagnostics: check whether config.yml has duplicate anticheat: sections
-        checkForDuplicates(plugin);
-
-        // 🔧 Automatically clean up duplicate anticheat: sections
+        // Diagnostics + duplicate cleanup: legacy YAML backend only. The TOML
+        // backend (config.toml) cannot have duplicate sections by design
+        // (toml4j map model), so this whole block is skipped there.
         File configFile = new File(plugin.getDataFolder(), "config.yml");
-        if (configFile.exists() && YamlDuplicateCleaner.cleanDuplicates(configFile, "config.yml")) {
-            plugin.reloadConfig();
-            enabled = plugin.getConfig().getBoolean("anticheat.enabled", false);
-            ConsoleLogger.info("[AntiCheat] Config cleaned, re-read: anticheat.enabled = " + enabled);
+        if (!new File(plugin.getDataFolder(), com.ultimateimprovments.config.TomlConfigManager.CONFIG_TOML).exists()
+                && configFile.exists()) {
+            checkForDuplicates(plugin);
+
+            // 🔧 Automatically clean up duplicate anticheat: sections
+            if (YamlDuplicateCleaner.cleanDuplicates(configFile, "config.yml")) {
+                plugin.reloadConfig();
+                enabled = plugin.getConfig().getBoolean("anticheat.enabled", false);
+                ConsoleLogger.info("[AntiCheat] Config cleaned, re-read: anticheat.enabled = " + enabled);
+            }
         }
 
         AntiCheatManager.init();

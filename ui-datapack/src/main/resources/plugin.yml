@@ -4,5 +4,6 @@ description: UltimateImprovments — bundled datapack installer
 main: com.ultimateimprovments.datapack.UIDatapack
 api-version: '26.2'
 author: rizer001
+addon-for: UI-Core
 load: STARTUP
 depend: [UI-Core]

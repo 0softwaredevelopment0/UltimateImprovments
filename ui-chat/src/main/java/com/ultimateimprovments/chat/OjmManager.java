@@ -24,11 +24,26 @@ public final class OjmManager implements Listener {
     private static String joinMsg = "";
     private static String leaveMsg = "";
 
+    private static OjmManager instance;
+
     private OjmManager() {}
 
     public static void init(Main plugin) {
+        // Listeners are registered under the UI-Core plugin handle, so
+        // UIChat's own HandlerList.unregisterAll(this) does not remove them —
+        // drop the previous instance explicitly (matters after /ui reload).
+        shutdown();
         reload();
-        plugin.getServer().getPluginManager().registerEvents(new OjmManager(), plugin);
+        instance = new OjmManager();
+        plugin.getServer().getPluginManager().registerEvents(instance, plugin);
+    }
+
+    /** Unregisters the join/quit listener. */
+    public static void shutdown() {
+        if (instance != null) {
+            org.bukkit.event.HandlerList.unregisterAll(instance);
+            instance = null;
+        }
     }
 
     /** Reads the ojm section from the config. Called on startup and on /ui reload. */

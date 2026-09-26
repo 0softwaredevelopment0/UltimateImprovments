@@ -32,16 +32,23 @@
   },
   "parent": "ui:datapack/high_temperatures",
   "criteria": {
-    "1": {
+    "workbench": {
       "trigger": "minecraft:recipe_crafted",
       "conditions": {
-        "recipe_id": "minecraft:plasma_cannon"
+        "recipe_id": "ui-core:plasma_cannon"
+      }
+    },
+    "crafter": {
+      "trigger": "minecraft:crafter_recipe_crafted",
+      "conditions": {
+        "recipe_id": "ui-core:plasma_cannon"
       }
     }
   },
   "requirements": [
     [
-      "1"
+      "workbench",
+      "crafter"
     ]
   ],
   "rewards": {

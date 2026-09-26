@@ -32,16 +32,23 @@
   },
   "parent": "ui:datapack/craft_locator",
   "criteria": {
-    "1": {
+    "workbench": {
       "trigger": "minecraft:recipe_crafted",
       "conditions": {
-        "recipe_id": "minecraft:healthmeter"
+        "recipe_id": "ui-core:health_meter"
+      }
+    },
+    "crafter": {
+      "trigger": "minecraft:crafter_recipe_crafted",
+      "conditions": {
+        "recipe_id": "ui-core:health_meter"
       }
     }
   },
   "requirements": [
     [
-      "1"
+      "workbench",
+      "crafter"
     ]
   ],
   "rewards": {

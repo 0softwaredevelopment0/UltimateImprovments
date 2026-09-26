@@ -31,16 +31,23 @@
   },
   "parent": "ui:datapack/start",
   "criteria": {
-    "1": {
+    "workbench": {
       "trigger": "minecraft:recipe_crafted",
       "conditions": {
-        "recipe_id": "ultimateimprovments:ender_chest"
+        "recipe_id": "minecraft:ender_chest"
+      }
+    },
+    "crafter": {
+      "trigger": "minecraft:crafter_recipe_crafted",
+      "conditions": {
+        "recipe_id": "minecraft:ender_chest"
       }
     }
   },
   "requirements": [
     [
-      "1"
+      "workbench",
+      "crafter"
     ]
   ],
   "rewards": {

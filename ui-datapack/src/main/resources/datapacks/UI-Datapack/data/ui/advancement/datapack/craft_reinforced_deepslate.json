@@ -1,0 +1,56 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:reinforced_deepslate",
+      "count": 1
+    },
+    "title": {
+      "text": "It looks pretty sturdy...",
+      "type": "text",
+      "color": "white",
+      "bold": false,
+      "italic": false,
+      "underlined": false,
+      "strikethrough": false,
+      "obfuscated": false
+    },
+    "description": {
+      "text": "Craft a reinforced deepslate",
+      "type": "text",
+      "color": "gray",
+      "bold": false,
+      "italic": false,
+      "underlined": false,
+      "strikethrough": false,
+      "obfuscated": false
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "ui:datapack/weaks_to_strongs",
+  "criteria": {
+    "workbench": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "ui:reinforced_deepslate"
+      }
+    },
+    "crafter": {
+      "trigger": "minecraft:crafter_recipe_crafted",
+      "conditions": {
+        "recipe_id": "ui:reinforced_deepslate"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "workbench",
+      "crafter"
+    ]
+  ],
+  "rewards": {
+    "experience": 1
+  }
+}

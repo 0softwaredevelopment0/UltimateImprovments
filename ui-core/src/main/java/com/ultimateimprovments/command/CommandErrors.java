@@ -24,6 +24,7 @@ public final class CommandErrors {
      */
     public static void noPermission(CommandSender sender) {
         if (sender == null || !(sender instanceof org.bukkit.entity.Player)) return;
+        CommandOutcomeTracker.markDenied(sender);
         sender.sendMessage(MessageUtil.parse(NO_PERMISSION));
     }
 }

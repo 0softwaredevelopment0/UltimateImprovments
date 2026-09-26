@@ -1,6 +1,5 @@
 package com.ultimateimprovments.mechanics.crafting;
 
-import com.ultimateimprovments.energy.machines.assembler.AssemblerChecker;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
@@ -70,7 +69,6 @@ public class ParticleEngineCraftListener implements Listener {
         Recipe recipe = e.getRecipe();
         if (!(recipe instanceof ShapedRecipe sr)) return;
         if (!sr.getKey().equals(RECIPE_KEY)) return;
-        if (!AssemblerChecker.isAssemblerCraft(e)) return;
 
         e.getInventory().setResult(createEngineItem());
     }

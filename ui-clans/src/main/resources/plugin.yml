@@ -5,3 +5,4 @@ api-version: '26.2'
 depend: [UI-Core]
 description: 'Clan system with dependent clans, friendly fire control, and clan homes'
 author: rizer001
+addon-for: UI-Core

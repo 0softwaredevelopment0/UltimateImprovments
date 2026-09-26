@@ -4,5 +4,6 @@ description: UltimateImprovments — multi-block structures (NBT templates, mark
 main: com.ultimateimprovments.mbs.UIMBS
 api-version: '26.2'
 author: rizer001
+addon-for: UI-Core
 load: STARTUP
 depend: [UI-Core]

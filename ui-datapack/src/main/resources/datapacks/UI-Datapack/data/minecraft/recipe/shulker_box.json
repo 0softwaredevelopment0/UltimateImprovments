@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "show_notification": true,
+  "group": "shulker_box",
+  "category": "misc",
+  "pattern": [
+    "SSS",
+    "SCS",
+    "SSS"
+  ],
+  "key": {
+    "S": [
+      "minecraft:shulker_shell"
+    ],
+    "C": [
+      "minecraft:barrel"
+    ]
+  },
+  "result": {
+    "id": "minecraft:shulker_box",
+    "count": 1
+  }
+}

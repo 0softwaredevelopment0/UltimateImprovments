@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Set;
 import java.util.UUID;
@@ -32,13 +33,14 @@ public class SpaceOxygenListener implements Listener {
     private static final Set<UUID> oxygenDeaths = ConcurrentHashMap.newKeySet();
 
     private static boolean running = false;
+    private static BukkitTask task;
 
     public static void start(Main plugin) {
         if (running) return;
         running = true;
 
         // Check every second (20 ticks)
-        new BukkitRunnable() {
+        task = new BukkitRunnable() {
             @Override
             public void run() {
                 if (!SpaceManager.isEnabled() || SpaceManager.getSpaceWorld() == null) return;
@@ -61,6 +63,10 @@ public class SpaceOxygenListener implements Listener {
     }
 
     public static void stop() {
+        if (task != null) {
+            try { task.cancel(); } catch (Exception ignored) {}
+            task = null;
+        }
         running = false;
         oxygenDeaths.clear();
     }

@@ -1,6 +1,5 @@
 package com.ultimateimprovments.mechanics.crafting;
 
-import com.ultimateimprovments.energy.machines.assembler.AssemblerChecker;
 import com.ultimateimprovments.core.Keys;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
@@ -27,8 +26,7 @@ import java.util.List;
  * <p>
  * Follows the standard custom-item pattern: the recipe is registered globally
  * (so it appears in the recipe book / crafting preview), the result carries the
- * {@code is_electric_trident} PDC, and the actual craft is finalized inside any
- * Crafter block (via {@link AssemblerChecker}). Max durability is raised to 512
+ * {@code is_electric_trident} PDC, and the final result is applied on craft. Max durability is raised to 512
  * via the {@code max_damage} component ({@link Damageable}).
  */
 public class ElectricTridentCraftListener implements Listener {
@@ -108,7 +106,7 @@ public class ElectricTridentCraftListener implements Listener {
         recipe.setIngredient('D', Material.NETHERITE_SCRAP);
         recipe.setIngredient('C', Material.COPPER_INGOT);
         recipe.setIngredient('R', Material.REDSTONE_BLOCK);
-        recipe.setIngredient('S', Material.STICK);
+        recipe.setIngredient('S', Material.TRIDENT);
 
         plugin.getServer().addRecipe(recipe);
         RecipeRegistry.registerRecipe(RECIPE_KEY);
@@ -122,7 +120,6 @@ public class ElectricTridentCraftListener implements Listener {
         Recipe recipe = e.getRecipe();
         if (!(recipe instanceof ShapedRecipe sr)) return;
         if (!sr.getKey().equals(RECIPE_KEY)) return;
-        if (!AssemblerChecker.isAssemblerCraft(e)) return;
 
         CraftingInventory inv = e.getInventory();
         inv.setResult(createTrident());

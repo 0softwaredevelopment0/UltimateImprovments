@@ -29,7 +29,7 @@
             {
               "function": "minecraft:set_name",
               "name": {
-                "text": "Item assembler",
+                "text": "Crafter",
                 "type": "text",
                 "color": "white",
                 "bold": false,

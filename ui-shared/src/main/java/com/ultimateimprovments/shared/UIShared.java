@@ -2,10 +2,6 @@ package com.ultimateimprovments.shared;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.crafting.RecipeRegistry;
-import com.ultimateimprovments.space.SpaceGravityListener;
-import com.ultimateimprovments.space.SpaceManager;
-import com.ultimateimprovments.space.SpaceOxygenListener;
-import com.ultimateimprovments.space.SpaceRadiationListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -24,16 +20,12 @@ public class UIShared extends JavaPlugin {
         }
 
         // Structure data is owned by UI-MBS — no longer loaded here.
+        // Space system is owned by UI-Other (it registers the same listeners and
+        // tasks; initializing it here too duplicated every listener and the
+        // oxygen damage task ran twice per second).
 
         // Recipe reload listener
         Bukkit.getPluginManager().registerEvents(new RecipeRegistry(), main);
-
-        // Space system
-        SpaceManager.createTable();
-        SpaceManager.init(main);
-        Bukkit.getPluginManager().registerEvents(new SpaceGravityListener(), main);
-        Bukkit.getPluginManager().registerEvents(new SpaceOxygenListener(), main);
-        Bukkit.getPluginManager().registerEvents(new SpaceRadiationListener(), main);
 
         getLogger().info("UI-Shared enabled!");
     }
