@@ -315,7 +315,6 @@ final class ConfigRules {
             integer("radiation.ancient_debris_radiation", 0, Integer.MAX_VALUE),
             integer("radiation.basalt_deltas_radiation", 0, Integer.MAX_VALUE),
             integer("radiation.end_radiation", 0, Integer.MAX_VALUE),
-            integer("radiation.lead_shield_reduction", 0, Integer.MAX_VALUE),
             integer("radiation.kill_reduction", 0, Integer.MAX_VALUE),
             bool("radiation.death_reset"),
             integer("radiation.mace_use_radiation", 0, Integer.MAX_VALUE),
@@ -325,6 +324,11 @@ final class ConfigRules {
             integer("radiation.reactor_pressure_radiation", 0, Integer.MAX_VALUE),
             integer("radiation.reactor_meltdown_close", 0, Integer.MAX_VALUE),
             integer("radiation.reactor_meltdown_far", 0, Integer.MAX_VALUE),
+
+            bool("hazmat.enabled"),
+            integer("hazmat.scan_interval_ticks", 1, 1200),
+            dbl("hazmat.protection_per_piece", 0, 1),
+            dbl("hazmat.full_suit_bonus", 0, 1),
 
             bool("auth.enabled"),
             integer("auth.min_password_length", 1, 32, "Мин. длина пароля"),

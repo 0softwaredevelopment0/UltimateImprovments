@@ -3243,10 +3243,6 @@ radiation:
   # Radiation in the End dimension
   end_radiation: 2
 
-  # Radiation reduction from a lead shield
-  lead_shield_reduction: 2
-  # Radiation reduction from antirad items
-  antirad_reduction: 100
   # Radiation reduction on kill
   kill_reduction: 100
   # Whether radiation resets on death
@@ -3277,6 +3273,21 @@ radiation:
   # D (absorbed dose) and R (rate per tick) on the dosimeter action bar are
   # shown in mSv using this factor.
   dosimeter_ms_per_unit: 1.0
+
+# Hazmat suit: radiation protection armor (leather base, lead ingot in the
+# recipe). Each worn piece reduces incoming radiation by protection_per_piece
+# (a fraction, e.g. 0.2 = -20%); the full set adds full_suit_bonus on top.
+hazmat:
+  # Whether hazmat radiation protection is enabled
+  enabled: true
+  # How often (in ticks) equipped pieces are re-scanned (40 = 2 seconds)
+  scan_interval_ticks: 40
+  # Radiation reduction per worn hazmat piece (0.2 = -20% incoming radiation)
+  protection_per_piece: 0.2
+  # Extra reduction when the full set (all 4 pieces) is worn (0.0 = none;
+  # 0.2 + full_suit_bonus 0.2 = full set caps at -80% total)
+  full_suit_bonus: 0.0
+
 sunburn:
   # Master toggle - enable/disable the entire sunburn system
   enabled: true

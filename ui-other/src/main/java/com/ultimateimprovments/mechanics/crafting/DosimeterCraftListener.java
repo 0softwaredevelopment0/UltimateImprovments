@@ -56,7 +56,7 @@ public class DosimeterCraftListener implements Listener {
         recipe.setIngredient('C', Material.CLOCK);
         recipe.setIngredient('R', Material.REDSTONE_BLOCK);
         // Sensor: the custom Lead Ingot (ExactChoice — vanilla ingots don't match)
-        recipe.setIngredient('S', new org.bukkit.inventory.RecipeChoice.ExactChoice(LeadShieldCraftListener.createLeadIngotStack()));
+        recipe.setIngredient('S', new org.bukkit.inventory.RecipeChoice.ExactChoice(LeadIngotCraftListener.createLeadIngotStack()));
         recipe.setIngredient('I', Material.IRON_INGOT);
 
         plugin.getServer().addRecipe(recipe);

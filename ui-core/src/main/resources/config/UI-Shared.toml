@@ -25,10 +25,6 @@ ancient_debris_radiation = 2
 basalt_deltas_radiation = 2
 # Default: 2
 end_radiation = 2
-# Default: 2
-lead_shield_reduction = 2
-# Default: 100
-antirad_reduction = 100
 # Default: 100
 kill_reduction = 100
 # Default: true
@@ -54,6 +50,19 @@ space_radiation = 199
 space_interval_ticks = 200
 # Default: 1.0
 dosimeter_ms_per_unit = 1.0
+
+# Hazmat suit: radiation protection armor (leather base, lead ingot in the recipe).
+[hazmat]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 40
+scan_interval_ticks = 40
+# Default: 0.2
+protection_per_piece = 0.2
+# Default: 0.0
+full_suit_bonus = 0.0
 
 # Space dimension: oxygen, effects and environment.
 [space]

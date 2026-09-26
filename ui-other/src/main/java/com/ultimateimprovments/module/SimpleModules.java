@@ -46,8 +46,8 @@ import com.ultimateimprovments.mechanics.crafting.EntityLocatorCraftListener;
 import com.ultimateimprovments.mechanics.crafting.GlassSwordCraftListener;
 import com.ultimateimprovments.mechanics.crafting.HealthMeterCraftListener;
 import com.ultimateimprovments.mechanics.crafting.HeavyCoreCraftListener;
+import com.ultimateimprovments.mechanics.crafting.HazmatCraftListener;
 import com.ultimateimprovments.mechanics.crafting.LeadIngotCraftListener;
-import com.ultimateimprovments.mechanics.crafting.LeadShieldCraftListener;
 import com.ultimateimprovments.mechanics.crafting.MetalDetectorCraftListener;
 import com.ultimateimprovments.mechanics.crafting.MobFinderCraftListener;
 import com.ultimateimprovments.mechanics.crafting.MultimeterCraftListener;
@@ -264,7 +264,7 @@ public final class SimpleModules {
                 AntimatterCraftListener.init();
                 EntityLocatorCraftListener.init();
                 LeadIngotCraftListener.init();
-                LeadShieldCraftListener.init();
+                HazmatCraftListener.init();
                 com.ultimateimprovments.mechanics.crafting.DosimeterCraftListener.init();
                 HealthMeterCraftListener.init();
                 OreFinderCraftListener.init();
@@ -288,7 +288,6 @@ public final class SimpleModules {
                 pm.registerEvents(new AntimatterCraftListener(), main);
                 pm.registerEvents(new EntityLocatorCraftListener(), main);
                 pm.registerEvents(new LeadIngotCraftListener(), main);
-                pm.registerEvents(new LeadShieldCraftListener(), main);
                 pm.registerEvents(new com.ultimateimprovments.mechanics.crafting.DosimeterCraftListener(), main);
                 pm.registerEvents(new HealthMeterCraftListener(), main);
                 pm.registerEvents(new OreFinderCraftListener(), main);
@@ -318,10 +317,18 @@ public final class SimpleModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 RadiationManager.init();
+                com.ultimateimprovments.mechanics.environment.radiation.HazmatManager.init((Main) plugin);
                 double msPerUnit = ((Main) plugin).getConfig()
                         .getDouble("radiation.dosimeter_ms_per_unit", 1.0);
                 com.ultimateimprovments.mechanics.environment.radiation.DosimeterTask
                         .init((Main) plugin, msPerUnit);
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                RadiationManager.getInstance().reloadConfig();
+                com.ultimateimprovments.mechanics.environment.radiation.HazmatManager
+                        .reloadConfig((Main) plugin);
             }
         });
 

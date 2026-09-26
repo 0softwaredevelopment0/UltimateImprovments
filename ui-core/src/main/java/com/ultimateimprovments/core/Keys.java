@@ -17,8 +17,13 @@ public class Keys {
     // Auth GUI items
     public static NamespacedKey AUTH_GUI;
     public static NamespacedKey CHGDIM_GUI;
-    public static NamespacedKey LEAD_SHIELD;
     public static NamespacedKey DOSIMETER;
+
+    // Hazmat suit (radiation protection armor)
+    public static NamespacedKey HAZMAT_HELMET;
+    public static NamespacedKey HAZMAT_CHESTPLATE;
+    public static NamespacedKey HAZMAT_LEGGINGS;
+    public static NamespacedKey HAZMAT_BOOTS;
 
     // Scanner items
     public static NamespacedKey HEALTH_METER;
@@ -96,8 +101,11 @@ public class Keys {
         RADAR = new NamespacedKey(plugin, "isRadar");
         METAL_DETECTOR = new NamespacedKey(plugin, "isMetalDetector");
         LEAD_INGOT = new NamespacedKey(plugin, "isLeadIngot");
-        LEAD_SHIELD = new NamespacedKey(plugin, "isLeadShield");
         DOSIMETER = new NamespacedKey(plugin, "isDosimeter");
+        HAZMAT_HELMET = new NamespacedKey(plugin, "isHazmatHelmet");
+        HAZMAT_CHESTPLATE = new NamespacedKey(plugin, "isHazmatChestplate");
+        HAZMAT_LEGGINGS = new NamespacedKey(plugin, "isHazmatLeggings");
+        HAZMAT_BOOTS = new NamespacedKey(plugin, "isHazmatBoots");
         CONCRETE_BUCKET = new NamespacedKey(plugin, "is_concrete_bucket");
         CHESTPLATE_FLIGHT = new NamespacedKey(plugin, "chestplate_flight");
         NETHERITE_UPGRADE = new NamespacedKey(plugin, "netherite_upgrade");
