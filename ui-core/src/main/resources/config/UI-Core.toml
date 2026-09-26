@@ -21,6 +21,11 @@ plugin_version = "1.8.3-alpha.4"
 # Master switch (true = feature on).
 # Default: false
 enabled = false
+# Default: "join"
+mode = "join"
+# Interval in ticks (20 ticks = 1 second).
+# Default: 2000
+interval_ticks = 2000
 # Default: true
 notify_console = true
 
