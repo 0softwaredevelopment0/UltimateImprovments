@@ -3,6 +3,25 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.3-beta.2] — since 1.8.3-alpha.4 (2026-09-27)
+
+### Fixed
+- **`ConcurrentModificationException` in the unbreakable breaker sweep** —
+  the per-tick maintenance task called `cleanup()` (which mutates the map)
+  while iterating `activeBreaks` with its iterator open; the first session
+  reset inside the sweep (player looked away / died / went offline) threw a
+  CME and spammed the console. The sweep now removes entries via
+  `iterator.remove()` and cleans the reverse map directly.
+
+### Changed
+- **Unbreakable breaker sessions reset on death, gamemode change, quit and
+  shutdown** — accumulated damage no longer survives dying, switching
+  gamemode (any source: client command, `/gamemode`, plugin API) or a
+  plugin disable / `/ui reload` / server stop. The new
+  `UnbreakableBreakerManager.shutdown()` cancels the tick task,
+  unregisters listeners and clears all in-memory sessions (sessions were
+  never persisted — this just makes it explicit).
+
 ## [1.8.3-alpha.4] — since 1.8.3-alpha.3 (2026-09-27)
 
 ### Fixed
