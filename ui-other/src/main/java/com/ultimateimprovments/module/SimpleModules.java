@@ -714,6 +714,11 @@ public final class SimpleModules {
             }
 
             @Override
+            protected void onDisable(JavaPlugin plugin) {
+                UnbreakableBreakerManager.shutdown();
+            }
+
+            @Override
             protected void onReloadConfig(JavaPlugin plugin) {
                 UnbreakableBreakerManager.reloadConfig();
             }
