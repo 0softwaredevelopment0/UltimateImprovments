@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  * inventory slot, it restores {@code level × 0.1%} of its integrity every
  * {@code level} seconds (level 1 → 0.1% every 1s, level 255 → 25.5% every 255s).
  * The cooldown keeps the average repair rate flat at 0.1%/s across all levels. The
- * repair goes through {@code ItemIntegrityAPI.increaseItemIntegrityPercent}, so the vanilla durability
+ * repair goes through {@code ItemDurabilityUtil.increaseItemIntegrityPercent}, so the vanilla durability
  * Integrity system updates the lore and the vanilla durability bar automatically.
  * Integrity never exceeds 100%.
  * <p>

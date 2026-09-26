@@ -1,7 +1,7 @@
 package com.ultimateimprovments.enchantment.veinminer;
 
 import com.ultimateimprovments.listener.BlockBreakListener;
-import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -28,7 +28,7 @@ import java.util.Set;
  * Every extra block consumed:
  * <ul>
  *   <li>drops naturally with the tool (respects Silk Touch / Fortune);</li>
- *   <li>consumes 1 unit of tool integrity ({@link ItemIntegrityAPI#decreaseItemIntegrity})
+ *   <li>consumes 1 unit of tool durability ({@link ItemDurabilityUtil#decreaseItemIntegrity})
  *       — the same cost as breaking one block by hand.</li>
  * </ul>
  * Sneaking disables VeinMiner for precise single-block mining (same as AoE).
@@ -89,7 +89,7 @@ public class EnchantmentListener implements Listener {
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
             // which the durability system maps to 1 vanilla durability point)
-            ItemIntegrityAPI.decreaseItemIntegrity(tool, 1, player);
+            ItemDurabilityUtil.decreaseItemIntegrity(tool, 1, player);
 
             // Tool broke from integrity loss — stop, as vanilla would
             if (tool.getAmount() <= 0) break;

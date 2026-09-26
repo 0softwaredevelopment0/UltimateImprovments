@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
  * Effect: while a cursed item of the plugin's Integrity system sits in ANY player
  * inventory slot, every second it loses INTEGRITY exactly as if it had been used
  * {@code level} times (level 5 → spent as much as after 5 uses). The drain goes
- * through {@code ItemIntegrityAPI.decreaseItemIntegrity}, so the vanilla durability
+ * through {@code ItemDurabilityUtil.decreaseItemIntegrity}, so the vanilla durability
  * updates the lore, sends low-integrity warnings and breaks the item when it hits 0.
  * <p>
  * Max level: 255<br>

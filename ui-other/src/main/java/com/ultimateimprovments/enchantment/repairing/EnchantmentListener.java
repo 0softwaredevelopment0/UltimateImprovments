@@ -2,7 +2,6 @@ package com.ultimateimprovments.enchantment.repairing;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
-import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -19,8 +18,8 @@ import org.bukkit.inventory.PlayerInventory;
  * (level 1 → 0.1% every 1s, level 255 → 25.5% every 255s). The per-item cooldown
  * (tracked in the {@code ui:repairing_last_repair} PDC key) keeps the average
  * repair rate flat at 0.1%/s regardless of level. The repair is applied through
- * {@link ItemIntegrityAPI#increaseItemIntegrityPercent}, so the Integrity system
- * updates the lore and the vanilla durability bar automatically, and integrity
+ * {@link ItemDurabilityUtil#increaseItemIntegrityPercent}, so the vanilla durability
+ * system updates the lore and the vanilla durability bar automatically, and integrity
  * never exceeds 100%.
  * <p>
  * Scope: the player's own inventory — storage slots, armor, offhand, main hand
@@ -115,7 +114,7 @@ public final class EnchantmentListener {
         if (last > 0 && now - last < Enchantment.getCooldownMillis(level)) return;
 
         // Restore level × 0.1% of the item's integrity (capped at 100% by the system).
-        ItemIntegrityAPI.increaseItemIntegrityPercent(item, Enchantment.getRepairPercent(level));
+        ItemDurabilityUtil.increaseItemIntegrityPercent(item, Enchantment.getRepairPercent(level));
         Enchantment.setLastRepairMillis(item, now);
     }
 
