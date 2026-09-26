@@ -135,17 +135,18 @@ public final class Enchantment {
     }
 
     /**
-     * Percent of max integrity restored per repair tick: {@code level × 0.1}.
-     * Level 1 → 0.1%, level 255 → 25.5%.
+     * Durability POINTS restored per repair tick: exactly {@code level}.
+     * Level 1 → 1 point every second, level 255 → 255 points every 255s.
      */
-    public static double getRepairPercent(int level) {
-        return level * 0.1;
+    public static int getRepairPoints(int level) {
+        return Math.max(1, level);
     }
 
     /**
      * Repair cooldown in milliseconds: {@code level} seconds.
-     * Level 1 → 1s, level 255 → 255s. Combined with {@link #getRepairPercent}
-     * this keeps the average repair rate flat at 0.1%/s across all levels.
+     * Level 1 → 1s, level 255 → 255s. Combined with {@link #getRepairPoints}
+     * this restores exactly {@code level} points every {@code level} seconds
+     * (1 point per second average on every item, regardless of its max durability).
      */
     public static long getCooldownMillis(int level) {
         return level * 1000L;

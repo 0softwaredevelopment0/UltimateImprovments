@@ -1274,9 +1274,9 @@ public final class SimpleModules {
 
     public static void registerRepairingEnchantment(ModuleManager mm) {
         // Repairing: REAL data-driven enchantment (ui:repairing, registered by
-        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Every second an
-        // enchanted item with durability restores level × 0.1% of its integrity
-        // (level 1 → 0.1%/s, level 255 → 25.5%/s) while in a player's inventory.
+        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Every `level`
+        // seconds an enchanted item with durability restores exactly `level`
+        // durability POINTS while in a player's inventory.
         mm.register(new SimpleModule("RepairingEnchantment", "enchantment/repairing", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -1289,7 +1289,7 @@ public final class SimpleModules {
                 com.ultimateimprovments.enchantment.repairing.EnchantmentSyncListener.register(main);
 
                 ConsoleLogger.info("[Repairing] Levels: 1-255 | Item: any with durability | Restores "
-                        + "level × 0.1% integrity every level seconds (0.1%/s average) while in a player's inventory");
+                        + "exactly `level` durability points every `level` seconds while in a player's inventory");
             }
         });
     }
