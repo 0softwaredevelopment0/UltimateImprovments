@@ -16,6 +16,7 @@ import org.bukkit.event.block.Action;
 
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -322,6 +323,12 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         cleanup(e.getPlayer().getUniqueId());
+    }
+
+    /** Death also ends the session: the damage accumulated on the block is reset. */
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent e) {
+        cleanup(e.getEntity().getUniqueId());
     }
 
     private void cleanup(UUID uuid) {
