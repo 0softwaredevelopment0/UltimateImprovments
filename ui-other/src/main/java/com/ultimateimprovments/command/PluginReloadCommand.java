@@ -77,7 +77,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(new CmdLogSubcommand());
         registry.register(new TurretSubcommand());
         registry.register(LegacySubCommandAdapter.of("reload",
-                (s, a) -> ReloadSubcommand.execute(s)));
+                (s, a) -> ReloadSubcommand.execute(s, a),
+                tc((s, a) -> a.length == 2 ? ReloadSubcommand.tabCompleteTargets(a.length >= 2 ? a[1] : "") : List.of())));
 
         // ── Legacy adapters with tab-complete ──
         registry.register(LegacySubCommandAdapter.of("money", EconomySubcommand::execute,

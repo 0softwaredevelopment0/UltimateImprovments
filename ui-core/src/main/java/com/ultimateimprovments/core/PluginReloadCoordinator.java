@@ -106,4 +106,35 @@ public final class PluginReloadCoordinator {
                     "<yellow>⚠ <gray>Some systems may be in a partial state — a server restart is recommended."));
         }
     }
+
+    /**
+     * Core-only reload for {@code /ui reload UI-Core} (or {@code core}): restarts
+     * just the core subsystems (listeners/tasks unregister, module shutdown,
+     * reloadConfig, startup) WITHOUT disabling the other family plugins —
+     * {@code PluginShutdown}/{@code PluginStartup} only touch UI-Core-owned state.
+     * Runs under the UI-Core handle on the main thread, same recovery rules.
+     */
+    public static void runCoreOnlyPhase(Main plugin, CommandSender sender, long startMillis) {
+        try {
+            ConsoleLogger.info("[Reload] Restarting core subsystems (core-only reload)...");
+            new PluginShutdown(plugin).shutdownPlugin();
+
+            ConsoleLogger.info("[Reload] Reloading config...");
+            plugin.reloadConfig();
+
+            PluginStartup.clearJarFileCaches();
+            new PluginStartup(plugin).startupPlugin();
+
+            long time = System.currentTimeMillis() - startMillis;
+            sender.sendMessage(MessageUtil.parse("<dark_green>✔ <green>Success: <gray>UI-Core reloaded (addons untouched)."));
+            sender.sendMessage(MessageUtil.parse("<dark_green>✔ <green>Success: <gray>Reload time: <yellow>" + time + "ms"));
+            ConsoleLogger.info("[ULTIMATEIMPROVMENTS] Core-only reload complete in " + time + "ms");
+        } catch (Exception e) {
+            sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error: <gray>Core reload failed! Check console."));
+            ConsoleLogger.error("[ULTIMATEIMPROVMENTS] Core-only reload failed: " + e.getMessage());
+            e.printStackTrace();
+            sender.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠ <gray>Core subsystems may be in a partial state — a server restart is recommended."));
+        }
+    }
 }
