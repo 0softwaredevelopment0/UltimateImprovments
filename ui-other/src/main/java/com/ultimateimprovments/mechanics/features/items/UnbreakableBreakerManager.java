@@ -17,6 +17,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -119,6 +120,24 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         reloadConfig();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         instance.runTaskTimer(plugin, 20L, 1L); // every tick — for smooth crack animation
+    }
+
+    /**
+     * Full shutdown (plugin disable / server stop): cancels the tick task,
+     * unregisters listeners and drops all in-memory sessions. Sessions are
+n     * never persisted anywhere, so a restart always starts everyone clean.
+     */
+    public static void shutdown() {
+        if (instance == null) return;
+        try {
+            instance.cancel();
+        } catch (IllegalStateException ignored) {
+            // task was never scheduled
+        }
+        org.bukkit.event.HandlerList.unregisterAll(instance);
+        instance.activeBreaks.clear();
+        instance.locationToPlayer.clear();
+        instance = null;
     }
 
     public static void reloadConfig() {
@@ -329,6 +348,16 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
         cleanup(e.getEntity().getUniqueId());
+    }
+
+    /**
+     * Gamemode switch ends the session too: any gamemode change (command from
+     * the client, /gamemode, plugin API) fires this server-side event, and a
+     * creative/other-mode switch should not keep the old survival progress.
+     */
+    @EventHandler
+    public void onGameModeChange(PlayerGameModeChangeEvent e) {
+        cleanup(e.getPlayer().getUniqueId());
     }
 
     private void cleanup(UUID uuid) {
