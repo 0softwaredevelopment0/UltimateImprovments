@@ -218,12 +218,26 @@ public final class ItemDurabilityUtil {
         return decreaseItemIntegrityPercent(item, 100.0 * iterations / max, owner);
     }
 
-    /** Increases integrity by as much as N durability points. Returns the actual % after repair. */
+    /**
+     * Repairs the item by exactly {@code points} vanilla durability points.
+     * Works directly on the {@code damage} component (no % roundtrip, so no
+     * floating-point truncation — a 3-point repair always restores exactly 3
+     * points, even on items with a large max durability). Returns the actual
+     * integrity % after the repair.
+     */
     public static double increaseItemIntegrity(ItemStack item, int iterations) {
         if (item == null || iterations <= 0) return getItemIntegrityPercent(item);
         int max = getMaxDurability(item);
         if (max <= 0) return getItemIntegrityPercent(item);
-        return increaseItemIntegrityPercent(item, 100.0 * iterations / max);
+
+        ItemMeta meta = item.getItemMeta();
+        if (!(meta instanceof Damageable dmg)) return getItemIntegrityPercent(item);
+        int before = dmg.hasDamage() ? dmg.getDamage() : 0;
+        int after = Math.max(0, before - Math.min(iterations, before));
+        if (after == before) return getItemIntegrityPercent(item);
+        dmg.setDamage(after);
+        item.setItemMeta(meta);
+        return getItemIntegrityPercent(item);
     }
 
     /** Decreases integrity by exactly X% (double). At 0 the item breaks as usual. */

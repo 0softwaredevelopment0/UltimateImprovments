@@ -14,13 +14,13 @@ import org.bukkit.inventory.PlayerInventory;
  * <p>
  * Every {@value #SWEEP_INTERVAL_TICKS} ticks (1 second) every online player's
  * inventory is scanned. Each enchanted item that belongs to the plugin's Integrity
- * system restores {@code level × 0.1%} of its integrity every {@code level} seconds
- * (level 1 → 0.1% every 1s, level 255 → 25.5% every 255s). The per-item cooldown
- * (tracked in the {@code ui:repairing_last_repair} PDC key) keeps the average
- * repair rate flat at 0.1%/s regardless of level. The repair is applied through
- * {@link ItemDurabilityUtil#increaseItemIntegrityPercent}, so the vanilla durability
- * system updates the lore and the vanilla durability bar automatically, and integrity
- * never exceeds 100%.
+ * system restores exactly {@code level} durability POINTS every {@code level} seconds
+ * (level 1 → 1 point every 1s, level 255 → 255 points every 255s). The per-item
+ * cooldown (tracked in the {@code ui:repairing_last_repair} PDC key) keeps the average
+ * repair rate flat at 1 point/s regardless of level. The repair is applied through
+ * {@link ItemDurabilityUtil#increaseItemIntegrity} directly on the vanilla
+ * {@code damage} component — the vanilla durability bar updates automatically, and
+ * integrity never exceeds 100%.
  * <p>
  * Scope: the player's own inventory — storage slots, armor, offhand, main hand
  * and the cursor. Items stored in chests/containers are NOT touched.
@@ -108,13 +108,14 @@ public final class EnchantmentListener {
         if (!ItemDurabilityUtil.isEnabled()) return;
 
         // Cooldown: level seconds between repairs (level 1 → 1s, level 255 → 255s),
-        // so the average repair rate stays flat at 0.1%/s regardless of level.
+        // so the repair restores exactly level points every level seconds.
         long now = System.currentTimeMillis();
         long last = Enchantment.getLastRepairMillis(item);
         if (last > 0 && now - last < Enchantment.getCooldownMillis(level)) return;
 
-        // Restore level × 0.1% of the item's integrity (capped at 100% by the system).
-        ItemDurabilityUtil.increaseItemIntegrityPercent(item, Enchantment.getRepairPercent(level));
+        // Restore exactly `level` durability POINTS (capped at the item's damage —
+        // no over-repair beyond full). Returns the actual % after the repair.
+        ItemDurabilityUtil.increaseItemIntegrity(item, Enchantment.getRepairPoints(level));
         Enchantment.setLastRepairMillis(item, now);
     }
 

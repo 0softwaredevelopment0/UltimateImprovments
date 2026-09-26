@@ -25,6 +25,11 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   god flag can no longer leave a permanently immortal player.
 
 ### Changed
+- **Repairing now repairs REAL durability points** — the repair restores exactly
+  `level` vanilla durability points every `level` seconds (lvl 1 → 1 point/s).
+  Previously it repaired `level × 0.1%` of the item's max durability, which was
+  truncated to 0 points on items with a large max (elytra: `floor(432 × 0.001) = 0`)
+  — the meta was rewritten every second, but no damage was ever removed.
 - **`/ui reload` accepts a target**: `/ui reload` / `/ui reload all` keep the
   proven full-family cycle; `/ui reload <addon>` disables and re-enables a
   single UI-* plugin (e.g. `/ui reload other`); `/ui reload core` restarts

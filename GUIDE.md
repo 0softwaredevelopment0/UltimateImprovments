@@ -215,7 +215,7 @@ All custom enchantments work like vanilla ones (applied via anvil/enchant comman
 | **Magnet** (`ui:magnet`) | Attracts nearby items to the player. |
 | **Igniting** (`ui:igniting`) | Sets hit targets on fire. |
 | **Levitation** (`ui:levitation`) | Launches hit targets into the air. |
-| **Repairing** (`ui:repairing`) | Restores item integrity every 1 sec; cooldown and amount scale with level (lvl 1 = 0.1%, lvl 255 = 25.5%). |
+| **Repairing** (`ui:repairing`) | Restores exactly `level` durability points every `level` seconds (lvl 1 = 1 point/s, lvl 255 = 255 points every 255s). |
 | **Self-Destruct** (`ui:self_destruct`) | 30s timer (shown in the lore as `<red>Self-destruct: <white><sec><gray>s`); the item can't be moved/dropped; after the timer — 19 damage and the item is destroyed. No sounds/particles for the victim. |
 | **Degradation** (`ui:degradation`) | Item degrades over time. |
 | **Item Stealing** (`ui:item_stealing`) | Steals items from hit targets. |
