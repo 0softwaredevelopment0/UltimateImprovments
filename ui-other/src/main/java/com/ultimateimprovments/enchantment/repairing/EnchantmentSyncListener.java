@@ -83,7 +83,14 @@ public class EnchantmentSyncListener implements Listener {
     //  SWEEP
     // ─────────────────────────────────────────────────────────────
 
-    /** Syncs every item in the player's inventory (slots, armor, offhand, cursor). */
+    /**
+     * Syncs every item in the player's inventory (slots, armor, offhand, cursor).
+     * <p>
+     * Armor is read by ABSOLUTE slot index (36–39) via {@code inv.getItem()}: the
+     * array from {@code getArmorContents()} holds COPIES, so PDC writes into those
+     * copies were silently lost (same root cause as the repair sweep — the
+     * elytra/armor never got its PDC mirror synced).
+     */
     public static void syncInventory(Player player) {
         if (player == null || !player.isOnline()) return;
 
@@ -93,13 +100,13 @@ public class EnchantmentSyncListener implements Listener {
         for (ItemStack item : inv.getStorageContents()) {
             Enchantment.syncItem(item);
         }
-        // Armor + offhand
-        for (ItemStack item : inv.getArmorContents()) {
-            Enchantment.syncItem(item);
+        // Armor (absolute slots 36-39: boots, leggings, chestplate/elytra, helmet)
+        for (int i = 0; i < 4; i++) {
+            Enchantment.syncItem(inv.getItem(36 + i));
         }
+        // Offhand, main hand, cursor (open inventory screen)
         Enchantment.syncItem(inv.getItemInOffHand());
         Enchantment.syncItem(inv.getItemInMainHand());
-        // Cursor (open inventory screen)
         Enchantment.syncItem(player.getOpenInventory().getCursor());
     }
 

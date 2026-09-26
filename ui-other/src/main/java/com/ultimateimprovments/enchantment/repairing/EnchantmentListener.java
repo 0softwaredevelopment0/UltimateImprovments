@@ -41,6 +41,14 @@ public final class EnchantmentListener {
     private static final int KIND_MAINHAND = 3;
     private static final int KIND_CURSOR = 4;
 
+    /**
+     * Absolute base slot of the armor region: 36=boots, 37=leggings,
+     * 38=chestplate (elytra), 39=helmet. Armor MUST be read through these
+     * slots: {@link PlayerInventory#getArmorContents()} returns COPIES, so any
+     * mutation of those copies (repair, PDC write) is silently lost.
+     */
+    static final int ARMOR_SLOT_BASE = 36;
+
     /** A location of an item inside a player's inventory. */
     private record RepairSlot(int kind, int index) {}
 
@@ -120,10 +128,12 @@ public final class EnchantmentListener {
         PlayerInventory inv = player.getInventory();
         return switch (slot.kind()) {
             case KIND_STORAGE -> inv.getItem(slot.index());
-            case KIND_ARMOR -> {
-                ItemStack[] armor = inv.getArmorContents();
-                yield slot.index() < armor.length ? armor[slot.index()] : null;
-            }
+            // Armor: read by ABSOLUTE slot index — getArmorContents() returns
+            // copies, so a repair written into a copy would be silently lost
+            // (this is why the elytra/armor never repaired). inv.getItem()
+            // returns a live mirror: meta writes persist without a set-back,
+            // exactly like the storage path above.
+            case KIND_ARMOR -> inv.getItem(ARMOR_SLOT_BASE + slot.index());
             case KIND_OFFHAND -> inv.getItemInOffHand();
             case KIND_MAINHAND -> inv.getItemInMainHand();
             case KIND_CURSOR -> player.getOpenInventory().getCursor();
