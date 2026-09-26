@@ -3049,7 +3049,10 @@ features:
         # Maximum damage BEDROCK can take before breaking
         max_damage: 100
 
-        # Minimum tool tier required to damage BEDROCK
+        # Minimum tool tier required to damage BEDROCK.
+        # "-" = no tier gate: any pickaxe works AND the bare hand works (lowest damage).
+        # A concrete tier (wooden/golden/stone/iron/diamond/netherite) = the MINIMUM
+        # pickaxe tier; the bare hand is still allowed at the lowest damage rate.
         min_tool_tier: "-"
 
         # Whether Haste is required to break BEDROCK
