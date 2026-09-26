@@ -22,11 +22,10 @@ import java.util.List;
  * ⚠ Dosimeter — custom radiation-measuring item (clock base).
  * <p>
  * While held in the main hand OR off hand, shows an action bar:
- * {@code D: <dose> mSv  R: <rate> mSv/t}. Custom plugin recipe (medium
- * Custom plugin recipe (medium difficulty):
+ * {@code D: <dose> mSv  R: <rate> mSv/t}. Custom plugin recipe (medium difficulty):
  * <pre>
  *   G S G      G = gold ingot (frame)
- *   R C R      S = Lead Ingot (sensor, custom item)
+ *   R C R      S = emerald (sensor)
  *   G I G      R = redstone block (readout)
  *              C = clock (core)   I = iron ingot (base)
  * </pre>
@@ -55,8 +54,8 @@ public class DosimeterCraftListener implements Listener {
         recipe.setIngredient('G', Material.GOLD_INGOT);
         recipe.setIngredient('C', Material.CLOCK);
         recipe.setIngredient('R', Material.REDSTONE_BLOCK);
-        // Sensor: the custom Lead Ingot (ExactChoice — vanilla ingots don't match)
-        recipe.setIngredient('S', new org.bukkit.inventory.RecipeChoice.ExactChoice(LeadIngotCraftListener.createLeadIngotStack()));
+        // Sensor: an emerald (radiation-sensitive crystal)
+        recipe.setIngredient('S', Material.EMERALD);
         recipe.setIngredient('I', Material.IRON_INGOT);
 
         plugin.getServer().addRecipe(recipe);
