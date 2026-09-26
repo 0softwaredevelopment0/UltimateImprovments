@@ -70,10 +70,6 @@ public final class AddonConfigManager {
             loaded.put(addon, loadAddonToml(addon, toml));
         }
 
-        // Migrate user edits from a legacy monolithic config (if present) on top
-        // of the generated files, then persist them into the per-addon files.
-        migrateLegacyMonolith();
-
         ConsoleLogger.info("[Config] Addon configs in " + UltimateDirs.CONFIGS + ": "
                 + files.size() + " file(s)");
         initialized = true;
@@ -82,106 +78,6 @@ public final class AddonConfigManager {
     /** Whether {@link #init()} has run (composite config layer is active). */
     public static boolean isInitialized() {
         return initialized;
-    }
-
-    /**
-     * One-time migration of a legacy monolithic config ({@code config.toml} or
-     * {@code config.yml} inside the shared folder) into the per-addon files.
-     * Every root section is moved into the owning addon's TOML, message sections
-     * are routed by group. The legacy file is renamed to {@code *.migrated}
-     * (user data is never deleted). Runs inside {@link #init()} after loading.
-     */
-    private static synchronized void migrateLegacyMonolith() {
-        File legacyToml = UltimateDirs.file(TomlConfigManager.CONFIG_TOML);
-        File legacyYml = UltimateDirs.file(TomlConfigManager.CONFIG_YML);
-        File source = legacyToml.exists() ? legacyToml : (legacyYml.exists() ? legacyYml : null);
-        if (source == null) return;
-
-        YamlConfiguration legacy = new YamlConfiguration();
-        boolean parsed = false;
-        if (source.getName().endsWith(".toml")) {
-            try (InputStream in = new java.io.FileInputStream(source)) {
-                com.moandjiezana.toml.Toml toml = new com.moandjiezana.toml.Toml()
-                        .read(new InputStreamReader(in, StandardCharsets.UTF_8));
-                Map<String, Object> map = toml.toMap();
-                if (map != null) flattenInto(map, "", legacy);
-                parsed = true;
-            } catch (Exception e) {
-                ConsoleLogger.warn("[Config] Legacy config.toml unreadable: " + e.getMessage());
-            }
-        } else {
-            try {
-                legacy.load(source);
-                parsed = true;
-            } catch (Exception e) {
-                ConsoleLogger.warn("[Config] Legacy config.yml unreadable: " + e.getMessage());
-            }
-        }
-        if (!parsed) return;
-
-        int moved = 0;
-        for (String root : legacy.getKeys(false)) {
-            // Message sections are routed by their group (2nd segment).
-            if (root.equals("messages") || root.equals("messages_en")) {
-                org.bukkit.configuration.ConfigurationSection section = legacy.getConfigurationSection(root);
-                if (section == null) continue;
-                for (String group : section.getKeys(false)) {
-                    if (group.equalsIgnoreCase("lang")) {
-                        viewOf(AddonCatalog.CORE).set("messages.lang", section.get(group));
-                        moved++;
-                        continue;
-                    }
-                    String targetAddon = AddonCatalog.addonOfMsgGroup(group);
-                    org.bukkit.configuration.ConfigurationSection groupSection = section.getConfigurationSection(group);
-                    if (groupSection == null) continue;
-                    FileConfiguration targetView = viewOf(targetAddon);
-                    for (String path : groupSection.getKeys(true)) {
-                        if (!groupSection.isConfigurationSection(path)) {
-                            // En section keeps its prefix; ru is written as messages.<group>...
-                            String prefix = root.equals("messages") ? "messages" : "messages_en";
-                            targetView.set(prefix + "." + group + "." + path, groupSection.get(path));
-                            moved++;
-                        }
-                    }
-                }
-                continue;
-            }
-
-            String addon = AddonCatalog.addonOfRootKey(root);
-            FileConfiguration view = viewOf(addon);
-            org.bukkit.configuration.ConfigurationSection section = legacy.getConfigurationSection(root);
-            if (section != null) {
-                for (String path : section.getKeys(true)) {
-                    if (!section.isConfigurationSection(path)) {
-                        view.set(root + "." + path, section.get(path));
-                        moved++;
-                    }
-                }
-            } else {
-                view.set(root, legacy.get(root));
-                moved++;
-            }
-        }
-
-        if (moved == 0) return;
-
-        // Persist every touched file and retire the legacy monolith (never deleted).
-        for (PerAddonFile f : files) {
-            FileConfiguration cfg = loaded.get(f.addon);
-            if (cfg != null && cfg.getBoolean(DIRTY_KEY, false)) {
-                writeAddonToml(f.addon, f.toml, cfg);
-                cfg.set(DIRTY_KEY, null);
-            }
-        }
-        File retired = new File(source.getParentFile(), source.getName() + ".migrated");
-        try {
-            java.nio.file.Files.move(source.toPath(), retired.toPath(),
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-            ConsoleLogger.warn("[Config] Could not retire legacy config: " + e.getMessage());
-        }
-        ConsoleLogger.info("[Config] Migrated " + moved + " key(s) from " + source.getName()
-                + " into configs/UI-<Addon>.toml");
     }
 
     /** Re-reads every per-addon TOML file (called by {@code /ui reload}). */
