@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
@@ -70,6 +71,38 @@ public class EnchantmentListener implements Listener {
         World world = block.getWorld();
         Location loc = block.getLocation().add(0.5, 0.5, 0.5);
         for (ItemStack item : result) {
+            world.dropItemNaturally(loc, item);
+        }
+    }
+
+    /**
+     * Smelts drops of blocks broken by the area enchants (AoE / VeinMiner /
+     * TreeCapitator). {@code breakNaturally()} does NOT fire BlockBreakEvent,
+     * so the origin-only listener above never sees those drops — which made
+     * combined AutoSmelt+AoE smelt just ONE block of the whole area.
+     * <p>
+     * Runs at MONITOR after the area enchants (they break at LOW) and replaces
+     * the freshly spawned item entities with their smelted versions.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onAreaDrops(BlockDropItemEvent event) {
+        if (!(event.getPlayer().getInventory().getItemInMainHand() instanceof ItemStack tool) || tool.getType() == Material.AIR)
+            return;
+        if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.getLevel(tool) <= 0) return;
+        if (tool.containsEnchantment(org.bukkit.enchantments.Enchantment.SILK_TOUCH)) return;
+        if (event.getItems().isEmpty()) return;
+
+        List<ItemStack> smelted = smeltDrops(event.getItems().stream()
+                .map(org.bukkit.entity.Item::getItemStack)
+                .toList());
+        if (smelted.isEmpty()) return; // nothing smeltable → leave vanilla drops
+
+        World world = event.getBlock().getWorld();
+        Location loc = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
+        for (org.bukkit.entity.Item entity : event.getItems()) {
+            entity.remove();
+        }
+        for (ItemStack item : smelted) {
             world.dropItemNaturally(loc, item);
         }
     }

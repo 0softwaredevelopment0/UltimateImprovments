@@ -72,7 +72,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── SubCommand implementations (newer) ──
         registry.register(new ItemNbtSubcommand());
         registry.register(new ClanSubcommand());
-        registry.register(new ClearChatSubcommand());
+        registry.register(new ClearSubcommand()); // /ui clear <chat|attributes> — replaces /ui clearchat
         registry.register(new ChatChannelSubcommand());
         registry.register(new CmdLogSubcommand());
         registry.register(new TurretSubcommand());
