@@ -105,6 +105,10 @@ public final class Permissions {
     public static final String CMD_DEOP = "ui.command.deop";
     public static final String CMD_BROADCAST = "ui.command.broadcast";
     public static final String CMD_CLEARCHAT = "ui.command.clearchat";
+    /** /ui clear chat <player|all> — clears the chat window (replaces /ui clearchat). */
+    public static final String CMD_CLEAR_CHAT = "ui.command.clear.chat";
+    /** /ui clear attributes <player|UUID|all> — resets entity attributes to base values. */
+    public static final String CMD_CLEAR_ATTRIBUTES = "ui.command.clear.attributes";
     public static final String CMD_EXECCHAT = "ui.command.execchat";
     public static final String CMD_BLACKLIST = "ui.command.blacklist";
     public static final String CMD_OPWHITELIST = "ui.command.opwhitelist";
@@ -269,7 +273,9 @@ public final class Permissions {
                 new Permission(CMD_OP, "Grant operator status", PermissionDefault.FALSE),
                 new Permission(CMD_DEOP, "Revoke operator status", PermissionDefault.FALSE),
                 new Permission(CMD_BROADCAST, "Broadcast a message to the server", PermissionDefault.FALSE),
-                new Permission(CMD_CLEARCHAT, "Clear the chat for a player or everyone", PermissionDefault.FALSE),
+                new Permission(CMD_CLEARCHAT, "Clear the chat for a player or everyone (legacy, use ui.command.clear.chat)", PermissionDefault.FALSE),
+                new Permission(CMD_CLEAR_CHAT, "Clear the chat window (/ui clear chat <player|all>)", PermissionDefault.FALSE),
+                new Permission(CMD_CLEAR_ATTRIBUTES, "Reset entity attributes to base values (/ui clear attributes)", PermissionDefault.FALSE),
                 new Permission(CMD_EXECCHAT, "Send a chat message or run a command as another player", PermissionDefault.FALSE),
                 new Permission(CMD_BLACKLIST, "Manage the blacklist", PermissionDefault.FALSE),
                 new Permission(CMD_OPWHITELIST, "Manage the operator whitelist", PermissionDefault.FALSE),
