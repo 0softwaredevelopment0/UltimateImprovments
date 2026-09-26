@@ -347,6 +347,25 @@ public final class MiscSubcommand {
 
         target.setInvulnerable(enable);
 
+        // Guarantees the flag is really gone from the player's persisted data
+        // (player.dat / entity NBT — what `/data get entity <nick> Invulnerable`
+        // shows), not just from the live entity object. setInvulnerable(false)
+        // clears the NBT "Invulnerable" tag on the entity; saveData() persists
+        // the cleared value to player.dat immediately, so a broken "god off"
+        // can never leave a permanently immortal player after relogs/restarts.
+        if (!enable && target instanceof org.bukkit.craftbukkit.entity.CraftPlayer craftPlayer) {
+            try {
+                net.minecraft.server.level.ServerPlayer nmsPlayer = craftPlayer.getHandle();
+                // Direct NBT write — the Bukkit-API equivalent of
+                // `data merge entity <player> {Invulnerable:0b}`
+                nmsPlayer.setInvulnerable(false);
+                craftPlayer.saveData();
+            } catch (Throwable t) {
+                org.bukkit.Bukkit.getLogger().warning("[God] NBT Invulnerable reset failed for "
+                        + target.getName() + ": " + t.getMessage());
+            }
+        }
+
         String state = enable ? "<green>ON</green>" : "<red>OFF</red>";
         String msg = "<green>✔</green> <white>God mode for</white> <yellow>" + target.getName() + "</yellow> <white>:</white> " + state;
         sender.sendMessage(MessageUtil.parse(msg));
