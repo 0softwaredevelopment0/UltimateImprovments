@@ -32,6 +32,11 @@ public class AntiCheatManager {
     private final Map<CheckCategory, List<AbstractCheck>> checksByCategory = new EnumMap<>(CheckCategory.class);
     private final Map<String, AbstractCheck> checksByName = new ConcurrentHashMap<>();
 
+    // Listener-registered checks — kept here so shutdown() can unregister them.
+    // They are registered under the CORE plugin (Main.getInstance()), so
+    // HandlerList.unregisterAll(plugin) from this addon would NOT remove them.
+    private final List<org.bukkit.event.Listener> registeredListeners = new ArrayList<>();
+
     // Global enabled flag (runtime toggle) — OFF by default
     private volatile boolean globalEnabled = false;
     private static final String CONFIG_ENABLED_PATH = "anticheat.enabled";
@@ -67,8 +72,9 @@ public class AntiCheatManager {
         checksByName.put(check.getName(), check);
 
         // Register as listener if it implements Listener
-        if (check instanceof Listener) {
-            Bukkit.getPluginManager().registerEvents((Listener) check, Main.getInstance());
+        if (check instanceof Listener listener) {
+            Bukkit.getPluginManager().registerEvents(listener, Main.getInstance());
+            registeredListeners.add(listener);
         }
 
         check.onInit();
@@ -176,6 +182,13 @@ public class AntiCheatManager {
     public static void shutdown() {
         if (instance == null) return;
         instance.stopDecayTask();
+        // Unregister check listeners FIRST — they outlive this addon (registered
+        // under the core plugin) and would otherwise NPE on every player event
+        // once ExemptionManager/AntiCheatManager singletons are cleared below.
+        for (org.bukkit.event.Listener listener : instance.registeredListeners) {
+            org.bukkit.event.HandlerList.unregisterAll(listener);
+        }
+        instance.registeredListeners.clear();
         instance.playerDataMap.clear();
         instance.checksByName.clear();
         instance.checksByCategory.clear();
