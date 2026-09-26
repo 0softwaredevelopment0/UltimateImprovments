@@ -27,8 +27,8 @@ public final class DatapackModules {
     /** Install mode: {@code datapack.mode} (override | ignore | check-override). */
     public static final String MODE_KEY = "datapack.mode";
 
-    /** Auto-restart after install if the datapack isn't loaded: {@code datapack.restart_to_apply}. */
-    public static final String RESTART_KEY = "datapack.restart_to_apply";
+    /** Reload the server after install if the datapack isn't loaded: {@code datapack.reload_to_apply}. */
+    public static final String RELOAD_KEY = "datapack.reload_to_apply";
 
     /** Warn if the datapack couldn't be enabled: {@code datapack.warn_if_not_loaded}. */
     public static final String WARN_KEY = "datapack.warn_if_not_loaded";
@@ -93,7 +93,7 @@ public final class DatapackModules {
     private static final Map<String, Boolean> CACHE = new HashMap<>();
     private static boolean masterEnabled = true;
     private static String mode = MODE_OVERRIDE;
-    private static boolean restartToApply = false;
+    private static boolean reloadToApply = false;
     private static boolean warnIfNotLoaded = true;
     private static boolean autoEnable = false;
 
@@ -113,7 +113,7 @@ public final class DatapackModules {
         if (mode == null || !mode.equals(MODE_IGNORE) && !mode.equals(MODE_CHECK_OVERRIDE)) {
             mode = MODE_OVERRIDE;
         }
-        restartToApply = cfg.getBoolean(RESTART_KEY, false);
+        reloadToApply = cfg.getBoolean(RELOAD_KEY, false);
         warnIfNotLoaded = cfg.getBoolean(WARN_KEY, true);
         autoEnable = cfg.getBoolean(AUTO_ENABLE_KEY, false);
         for (String part : ORDER) {
@@ -141,9 +141,9 @@ public final class DatapackModules {
         return mode;
     }
 
-    /** Whether the server should auto-restart after install if the datapack isn't loaded. */
-    public static boolean isRestartToApply() {
-        return restartToApply;
+    /** Whether the server should auto-reload after install if the datapack isn't loaded. */
+    public static boolean isReloadToApply() {
+        return reloadToApply;
     }
 
     /** Whether to warn in the console if the datapack couldn't be enabled. */

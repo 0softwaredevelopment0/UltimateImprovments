@@ -5267,9 +5267,10 @@ datapack:
   #   check-override  — check the world datapack list (level.dat); only reinstall if UI-Datapack
   #                     is NOT enabled there. If it is already enabled — skip.
   mode: override
-  # If the datapack is not enabled in the world after install, restart the server
+  # If the datapack is not enabled in the world after install, reload the server
   # automatically so it gets loaded (40 ticks delay). false = only warn.
-  restart_to_apply: false
+  # A built-in guard prevents reload loops (Bukkit.reload restarts all plugins).
+  reload_to_apply: false
   # Print a console warning (with possible causes and how to enable) if the
   # datapack is not enabled in the world / could not be enabled.
   warn_if_not_loaded: true
