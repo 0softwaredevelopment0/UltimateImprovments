@@ -20,15 +20,16 @@ import org.bukkit.inventory.ShapedRecipe;
 /**
  * ☢ Hazmat suit recipes — replacement for the removed Lead Shield.
  * <p>
- * Each piece mirrors the vanilla GOLD-armor shape, but the material is
- * leather and exactly ONE slot is the custom Lead Ingot (ExactChoice):
+ * Each piece uses the EXACT vanilla GOLD-armor shape (gold ingots), with
+ * ONE gold slot replaced by the custom Lead Ingot (ExactChoice). Every
+ * shape is written out explicitly per piece:
  * <pre>
- *   Helmet      LPL / L L          (4 leather + 1 lead ingot)
- *   Chestplate  L.L / LPL / LLL    (7 leather + 1 lead ingot)
- *   Leggings    LPL / L.L / L.L    (6 leather + 1 lead ingot)
- *   Boots       P.L / L.L          (3 leather + 1 lead ingot)
+ *   Helmet      GPG / G G          (4 gold + 1 lead ingot)
+ *   Chestplate  G G / GPG / GGG    (7 gold + 1 lead ingot)
+ *   Leggings    GPG / G G / G G    (6 gold + 1 lead ingot)
+ *   Boots       G G / P G          (3 gold + 1 lead ingot)
  * </pre>
- * (P = Lead Ingot, L = leather, . = empty)
+ * (G = gold ingot, P = Lead Ingot, . = empty)
  * <p>
  * CRAFT ONLY IN THE CRAFTER: the recipes are registered globally so they
  * show in the recipe book, but {@link PrepareItemCraftEvent} sets the result
@@ -58,21 +59,21 @@ public class HazmatCraftListener implements Listener {
         LEGGINGS_KEY = new NamespacedKey(plugin, "hazmat_leggings");
         BOOTS_KEY = new NamespacedKey(plugin, "hazmat_boots");
 
-        // Helmet (gold-armor shape: 2 rows) — lead in the top middle
+        // Helmet — vanilla gold-helmet shape, lead replaces the TOP-CENTER gold
         registerRecipe(HELMET_KEY, HazmatManager.createPiece(Material.LEATHER_HELMET),
-                new String[]{"LPL", "L L"});
+                new String[]{"GPG", "G G"});
 
-        // Chestplate (gold-armor shape: 3 rows, empty top middle) — lead in the center
+        // Chestplate — vanilla gold-chestplate shape, lead in the CENTER
         registerRecipe(CHESTPLATE_KEY, HazmatManager.createPiece(Material.LEATHER_CHESTPLATE),
-                new String[]{"L L", "LPL", "LLL"});
+                new String[]{"G G", "GPG", "GGG"});
 
-        // Leggings (gold-armor shape: 3 rows, empty middle column) — lead in the top middle
+        // Leggings — vanilla gold-leggings shape, lead replaces the TOP-CENTER gold
         registerRecipe(LEGGINGS_KEY, HazmatManager.createPiece(Material.LEATHER_LEGGINGS),
-                new String[]{"LPL", "L L", "L L"});
+                new String[]{"GPG", "G G", "G G"});
 
-        // Boots (gold-armor shape: 2 rows, empty middle column) — lead in the top left
+        // Boots — vanilla gold-boots shape, lead replaces the BOTTOM-LEFT gold
         registerRecipe(BOOTS_KEY, HazmatManager.createPiece(Material.LEATHER_BOOTS),
-                new String[]{"PL ", "L L"});
+                new String[]{"G G", "P G"});
 
         Bukkit.getPluginManager().registerEvents(new HazmatCraftListener(), plugin);
         ConsoleLogger.info("[HazmatCraft] ✔ Hazmat suit recipes registered (Crafter only).");
@@ -93,7 +94,7 @@ public class HazmatCraftListener implements Listener {
         // Lead slot: the custom Lead Ingot (ExactChoice — a plain netherite
         // ingot does NOT match, the PDC-tagged item is required).
         recipe.setIngredient('P', new RecipeChoice.ExactChoice(LeadIngotCraftListener.createLeadIngotStack()));
-        recipe.setIngredient('L', Material.LEATHER);
+        recipe.setIngredient('G', Material.GOLD_INGOT);
 
         Bukkit.addRecipe(recipe);
         RecipeRegistry.registerRecipe(key);
