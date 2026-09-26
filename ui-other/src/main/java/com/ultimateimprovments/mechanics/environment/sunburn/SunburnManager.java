@@ -2,7 +2,6 @@ package com.ultimateimprovments.mechanics.environment.sunburn;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
-import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.*;
@@ -194,8 +193,8 @@ public class SunburnManager implements Listener {
     // =========================
 
     private void degradeHelmet(Player player, ItemStack helmet) {
-        if (ItemDurabilityUtil.isEnabled() && ItemIntegrityAPI.hasItemIntegrity(helmet)) {
-            double remaining = ItemIntegrityAPI.decreaseItemIntegrity(helmet, helmetIntegrityLoss, player);
+        if (ItemDurabilityUtil.isEnabled() && ItemDurabilityUtil.hasItemIntegrity(helmet)) {
+            double remaining = ItemDurabilityUtil.decreaseItemIntegrity(helmet, helmetIntegrityLoss, player);
 
             if (remaining <= 0) {
                 player.getInventory().setHelmet(null);

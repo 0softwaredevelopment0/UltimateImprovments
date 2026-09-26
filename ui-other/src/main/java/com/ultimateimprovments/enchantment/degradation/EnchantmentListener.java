@@ -2,7 +2,6 @@ package com.ultimateimprovments.enchantment.degradation;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
-import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -17,7 +16,7 @@ import org.bukkit.inventory.PlayerInventory;
  * inventory is scanned. Each cursed item that belongs to the plugin's Integrity
  * system loses integrity exactly as if it had been used {@code level} times
  * (level 5 → the item is spent as much as after 5 uses). The damage is applied
- * through {@link ItemIntegrityAPI#decreaseItemIntegrity}, so the Integrity system
+ * through {@link ItemDurabilityUtil#decreaseItemIntegrity}, so the vanilla durability
  * handles the lore update, the low-integrity warnings and the final break (with
  * its own sound &amp; message) when integrity reaches 0.
  * <p>
@@ -99,7 +98,7 @@ public final class EnchantmentListener {
         if (!ItemDurabilityUtil.isEnabled()) return;
 
         // Spend integrity exactly as if the item had been used `level` times.
-        ItemIntegrityAPI.decreaseItemIntegrity(item, level, player);
+        ItemDurabilityUtil.decreaseItemIntegrity(item, level, player);
 
         // The Integrity system breaks the item itself (setAmount(0)) when integrity
         // hits 0 — clear the slot so the empty stack doesn't linger.

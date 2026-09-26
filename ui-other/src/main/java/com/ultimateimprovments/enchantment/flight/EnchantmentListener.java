@@ -1,7 +1,7 @@
 package com.ultimateimprovments.enchantment.flight;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.mechanics.features.integrity.ItemIntegrityAPI;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.mechanics.security.auth.AuthPlayerState;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
@@ -314,7 +314,7 @@ public class EnchantmentListener implements Listener {
                     continue;
                 }
 
-                ItemIntegrityAPI.decreaseItemIntegrity(chest, 1, player);
+                ItemDurabilityUtil.decreaseItemIntegrity(chest, 1, player);
             } catch (Exception e) {
                 ConsoleLogger.warn("[Flight] Integrity drain error for " + player.getName() + ": " + e.getMessage());
             }
