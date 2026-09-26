@@ -501,7 +501,8 @@ public class RadiationManager implements Listener {
         if (rad >= 200) {
             int reduction = 10;
             radiationMap.put(player.getUniqueId(), Math.max(0.0, rad - reduction));
-            player.sendMessage(MessageUtil.parse("<green>🥗 -10 Radiation (ate food)</green>"));
+            // Action bar, not chat: eating is frequent and a chat line per meal is spam.
+            player.sendActionBar(MessageUtil.parse("<green>🥗 -10 Radiation (ate food)</green>"));
         }
     }
 
