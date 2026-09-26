@@ -989,27 +989,6 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // ENCHANT TABLE BRIDGE (all UI charms via the level-30 button)
-    // --------------------------------------------------------------------------
-
-    public static void registerEnchantTableBridge(ModuleManager mm) {
-        // Bridge between the vanilla enchanting table and ALL UI data-driven
-        // enchantments: the level-30 button always yields every registered ui:* charm
-        // at level 1 (data-driven min/max cost windows make table offers unreliable,
-        // so the table itself is fixed up in code). Buttons 1-2 stay vanilla.
-        mm.register(new SimpleModule("EnchantTableBridge", "enchantment/table", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-
-                com.ultimateimprovments.enchantment.table.EnchantTableListener.register(main);
-
-                ConsoleLogger.info("[EnchantTable] UI charms (level 1) offered on the level-30 button");
-            }
-        });
-    }
-
-    // --------------------------------------------------------------------------
     // BLUNTING / VULNERABILITY / DISAPPEARANCE ENCHANTMENTS
     // --------------------------------------------------------------------------
 
