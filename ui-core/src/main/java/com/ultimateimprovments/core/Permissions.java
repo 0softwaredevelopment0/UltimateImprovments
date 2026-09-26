@@ -69,6 +69,12 @@ public final class Permissions {
     public static final String CMD_BOSSBAR = "ui.command.bossbar";
     public static final String CMD_SCOREBOARD = "ui.command.scoreboard";
     public static final String CMD_PINGSOUND = "ui.command.pingsound";
+    /** Unbreakable breaker: may damage/break ANY configured unbreakable block. */
+    public static final String BREAKER_USE = "ui.breaker.use";
+    /** Unbreakable breaker: per-block use — ui.breaker.use.<material> (lowercase, e.g. ui.breaker.use.bedrock). */
+    public static final String BREAKER_USE_BLOCK = "ui.breaker.use.";
+    /** Unbreakable breaker: ignores the min_tool_tier gate (any tool incl. hand deals full damage). */
+    public static final String BREAKER_BYPASS_TIER = "ui.breaker.bypasstier";
     public static final String CMD_WIRELESSBIND = "ui.command.wirelessbind";
     public static final String CMD_CRAFTRECIPE = "ui.command.craftrecipe";
     public static final String CMD_VIEWRAD = "ui.command.viewrad";
@@ -238,6 +244,9 @@ public final class Permissions {
                 new Permission(CMD_BOSSBAR, "Show or hide your BossBar (/ui bossbar <on|off>)", PermissionDefault.TRUE),
                 new Permission(CMD_SCOREBOARD, "Show or hide your scoreboard (/ui scoreboard <on|off>)", PermissionDefault.TRUE),
                 new Permission(CMD_PINGSOUND, "Toggle the chat ping sound (/ui pingsound <on|off>)", PermissionDefault.TRUE),
+                new Permission(BREAKER_USE, "Damage and break ANY configured unbreakable block", PermissionDefault.FALSE),
+                new Permission(BREAKER_USE_BLOCK + "<material>", "Damage and break ONLY this configured unbreakable block (e.g. ui.breaker.use.bedrock)", PermissionDefault.FALSE),
+                new Permission(BREAKER_BYPASS_TIER, "Ignore the unbreakable breaker min_tool_tier gate (any tool incl. hand deals full damage)", PermissionDefault.FALSE),
                 new Permission(CMD_WIRELESSBIND, "Toggle wireless redstone bind mode (/ui wirelessbind <on|off>)", PermissionDefault.FALSE),
                 new Permission(CMD_CRAFTRECIPE, "Free-craft any recipe without resources (/ui craftrecipe)", PermissionDefault.OP),
                 new Permission(CMD_VIEWRAD, "Toggle radiation display", PermissionDefault.FALSE),

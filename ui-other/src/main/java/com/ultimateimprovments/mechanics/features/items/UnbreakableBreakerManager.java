@@ -42,6 +42,24 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
 
     private static UnbreakableBreakerManager instance;
 
+    /**
+     * Permissions (registered in {@code Permissions} — in code, not plugin.yml):
+     * <ul>
+     *   <li>{@code ui.breaker.use} — may damage/break ANY configured unbreakable block;</li>
+     *   <li>{@code ui.breaker.use.<material>} (lowercase, e.g. {@code ui.breaker.use.bedrock})
+     *       — may damage/break ONLY that configured block (checked for every configured block,
+     *       so a moderator can whitelist specific blocks per player/group);</li>
+     *   <li>{@code ui.breaker.bypasstier} — ignores the {@code min_tool_tier} gate (any tool,
+     *       including the hand, deals full configured damage); does NOT bypass the pickaxe-only
+     *       tool restriction for damage bonuses.</li>
+     * </ul>
+     * A player without {@code use} or the matching {@code use.<material>} permission is
+     * rejected before any damage/session logic runs.
+     */
+    private static final String PERM_USE = "ui.breaker.use";
+    private static final String PERM_USE_BLOCK = "ui.breaker.use.";
+    private static final String PERM_BYPASS_TIER = "ui.breaker.bypasstier";
+
     // ========== BLOCK SETTINGS (from config) ==========
 
     /**
@@ -191,9 +209,9 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
                 continue;
             }
 
-            // Is the player holding a suitable tool?
+            // Is the player holding a suitable tool? (bypasstier skips the gate)
             ItemStack tool = player.getInventory().getItemInMainHand();
-            if (!isValidTool(tool, brk.config)) {
+            if (!isValidTool(tool, brk.config) && !player.hasPermission(PERM_BYPASS_TIER)) {
                 sendCrackProgress(player, brk.blockLoc, 0.0f);
                 cleanup(uuid);
                 continue;
@@ -225,8 +243,15 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         if (player.getGameMode() == GameMode.CREATIVE
                 || player.getGameMode() == GameMode.SPECTATOR) return;
 
+        // Permission gate: global use OR per-block use.<material>
+        if (!mayBreak(player, block.getType())) {
+            player.sendActionBar(com.ultimateimprovments.util.MessageUtil.parse("<red>❌ You can't break this block!"));
+            e.setCancelled(true);
+            return;
+        }
+
         ItemStack tool = player.getInventory().getItemInMainHand();
-        if (!isValidTool(tool, config)) {
+        if (!isValidTool(tool, config) && !player.hasPermission(PERM_BYPASS_TIER)) {
             player.sendActionBar(com.ultimateimprovments.util.MessageUtil.parse("<red>❌ That's the wrong tool for this block!"));
             e.setCancelled(true);
             return;
@@ -358,6 +383,16 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
     private boolean isBreakable(Material type) {
         BlockConfig config = blockConfigs.get(type);
         return config != null && config.enabled();
+    }
+
+    /**
+     * Whether the player may break THIS block at all: either the global
+     * {@code ui.breaker.use} permission or the per-block
+     * {@code ui.breaker.use.<material>} permission is required.
+     */
+    private boolean mayBreak(Player player, Material type) {
+        return player.hasPermission(PERM_USE)
+                || player.hasPermission(PERM_USE_BLOCK + type.name().toLowerCase(Locale.ROOT));
     }
 
     /**
