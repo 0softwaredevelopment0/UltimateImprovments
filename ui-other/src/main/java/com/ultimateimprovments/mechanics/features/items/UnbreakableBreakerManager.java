@@ -212,7 +212,8 @@ n     * never persisted anywhere, so a restart always starts everyone clean.
 
             Player player = Bukkit.getPlayer(uuid);
             if (player == null || !player.isOnline()) {
-                cleanup(uuid);
+                iterator.remove();
+                instance.locationToPlayer.remove(brk.blockLoc);
                 continue;
             }
 
@@ -220,12 +221,14 @@ n     * never persisted anywhere, so a restart always starts everyone clean.
             Block target = player.getTargetBlockExact(5);
             if (target == null || !isBreakable(target.getType())) {
                 sendCrackProgress(player, brk.blockLoc, 0.0f);
-                cleanup(uuid);
+                iterator.remove();
+                instance.locationToPlayer.remove(brk.blockLoc);
                 continue;
             }
             if (!normalizeLoc(target.getLocation()).equals(brk.blockLoc)) {
                 sendCrackProgress(player, brk.blockLoc, 0.0f);
-                cleanup(uuid);
+                iterator.remove();
+                instance.locationToPlayer.remove(brk.blockLoc);
                 continue;
             }
 
@@ -233,7 +236,8 @@ n     * never persisted anywhere, so a restart always starts everyone clean.
             ItemStack tool = player.getInventory().getItemInMainHand();
             if (!isValidTool(tool, brk.config) && !player.hasPermission(PERM_BYPASS_TIER)) {
                 sendCrackProgress(player, brk.blockLoc, 0.0f);
-                cleanup(uuid);
+                iterator.remove();
+                instance.locationToPlayer.remove(brk.blockLoc);
                 continue;
             }
 
