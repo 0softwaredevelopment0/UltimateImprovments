@@ -72,9 +72,12 @@ public abstract class AbstractCheck implements Listener {
 
     /**
      * Checks whether the player is exempt from this check.
+     * Null-safe: after the anti-cheat is shut down (e.g. plugin reload) the
+     * manager singleton is gone — treat as "not exempt" instead of throwing.
      */
     protected boolean isExempted(Player player) {
-        return ExemptionManager.getInstance().isExempted(player, name);
+        ExemptionManager em = ExemptionManager.getInstance();
+        return em != null && em.isExempted(player, name);
     }
 
     // =========================
@@ -85,7 +88,9 @@ public abstract class AbstractCheck implements Listener {
      * Adds VL and returns the result.
      */
     protected CheckResult flag(Player player, double vl, String message) {
-        PlayerData data = AntiCheatManager.getInstance().getPlayerData(player);
+        AntiCheatManager acm = AntiCheatManager.getInstance();
+        if (acm == null) return CheckResult.passed();
+        PlayerData data = acm.getPlayerData(player);
         if (data == null) return CheckResult.passed();
         data.addVl(name, vl);
         return CheckResult.flagged(vl, message);
