@@ -12,8 +12,8 @@
 # Default: "<white>[<green>UI<white>] <reset>"
 prefix = "<white>[<green>UI<white>] <reset>"
 # Internal marker, do not edit.
-# Default: "1.8.3"
-plugin_version = "1.8.3"
+# Default: "1.8.3-beta.1"
+plugin_version = "1.8.3-beta.1"
 
 
 # Reputation auto-penalties (staff-issued numeric scale).

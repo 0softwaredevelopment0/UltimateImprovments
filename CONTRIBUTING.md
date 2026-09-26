@@ -24,7 +24,7 @@ Discussions are the preferred channel for:
 Found a bug? Please [open an Issue](https://github.com/rizer001-Development/UltimateImprovments/issues/new) with:
 
 - **Server version** (e.g. `Paper 26.2`)
-- **Plugin version** (e.g. `1.8.3`)
+- **Plugin version** (e.g. `1.8.3-beta.1`)
 - **Steps to reproduce** the problem
 - **Console error** (if any)
 

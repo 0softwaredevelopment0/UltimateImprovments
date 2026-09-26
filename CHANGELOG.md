@@ -3,7 +3,11 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — since 1.8.3 (2026-09-26)
+## [1.8.3-beta.1] — since 1.8.3 (2026-09-26)
+
+> New version format: `version.subversion.patch-<channel>.<number>` with channels
+> Nightly → Snapshot → Alpha → Beta → Release (from bleeding edge to stable).
+> This is the first pre-release on the new format.
 
 ### Added
 - **Hazmat suit** — new radiation protection armor, replacement for the removed Lead Shield:
@@ -48,7 +52,7 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
 - `Scripts/build/package_jars.sh` — builds all addon JARs, gzips them and
   packs a distribution tar (added right before 1.8.3 was tagged).
 
-## [1.8.3] — 2026-09-26
+## [1.8.3] (Release) — 2026-09-26
 
 ### Changed
 - Family version unified to **1.8.3** across all 12 addons (Gradle
