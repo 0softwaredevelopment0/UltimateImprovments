@@ -346,7 +346,7 @@ public class AdminMenuGUI implements Listener {
         // 10. Lead Ingot
         CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.NETHERITE_INGOT,
                 "<white>Lead Ingot *</white>",
-                "<gray>Used to craft the Dosimeter and the Hazmat suit.</gray>"), Keys.LEAD_INGOT));
+                "<gray>Used to craft the Hazmat suit.</gray>"), Keys.LEAD_INGOT));
 
         // 11. Hazmat suit (helmet, chestplate, leggings, boots)
         CUSTOM_ITEMS.add(com.ultimateimprovments.mechanics.environment.radiation.HazmatManager.createPiece(Material.LEATHER_HELMET));

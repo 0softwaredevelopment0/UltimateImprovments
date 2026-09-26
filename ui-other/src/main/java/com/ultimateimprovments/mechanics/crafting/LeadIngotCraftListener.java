@@ -34,7 +34,7 @@ public class LeadIngotCraftListener implements Listener {
 
     // =========================
     // CREATE LEAD INGOT ITEMSTACK (for ExactChoice in dependent recipes:
-    // Dosimeter sensor, Hazmat suit pieces)
+    // Hazmat suit pieces)
     // =========================
     public static ItemStack createLeadIngotStack() {
         ItemStack ingot = new ItemStack(Material.NETHERITE_INGOT);
@@ -42,8 +42,7 @@ public class LeadIngotCraftListener implements Listener {
         if (ingotMeta == null) return ingot;
         ingotMeta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
         ingotMeta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Used to craft the Dosimeter</gray>"),
-                MessageUtil.parse("<i:false><gray>and the Hazmat suit.</gray>")
+                MessageUtil.parse("<i:false><gray>Used to craft the Hazmat suit.</gray>")
         ));
         ingotMeta.getPersistentDataContainer().set(
                 Keys.LEAD_INGOT,
@@ -67,8 +66,7 @@ public class LeadIngotCraftListener implements Listener {
         meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
 
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Used to craft the Dosimeter</gray>"),
-                MessageUtil.parse("<i:false><gray>and the Hazmat suit.</gray>")
+                MessageUtil.parse("<i:false><gray>Used to craft the Hazmat suit.</gray>")
         ));
 
         meta.getPersistentDataContainer().set(
@@ -122,8 +120,7 @@ public class LeadIngotCraftListener implements Listener {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
         meta.lore(List.of(
-                MessageUtil.parse("<i:false><gray>Used to craft the Dosimeter</gray>"),
-                MessageUtil.parse("<i:false><gray>and the Hazmat suit.</gray>")
+                MessageUtil.parse("<i:false><gray>Used to craft the Hazmat suit.</gray>")
         ));
 
         meta.getPersistentDataContainer().set(
@@ -158,14 +155,13 @@ public class LeadIngotCraftListener implements Listener {
     // legitimately consume lead ingots → block (uncrafting a lead ingot into
     // its netherite value must be impossible).
     // LEGITIMATE consumers are listed in LEAD_INGOT_CONSUMERS — recipes that
-    // use the Lead Ingot as a designed ingredient (e.g. the Dosimeter sensor).
+    // use the Lead Ingot as a designed ingredient (the Hazmat suit pieces).
     // =========================
     /**
      * Recipe keys that may consume a Lead Ingot without being blocked:
-     * the Dosimeter sensor and the four Hazmat suit pieces.
+     * the four Hazmat suit pieces.
      */
     private static final java.util.Set<String> LEAD_INGOT_CONSUMERS = java.util.Set.of(
-            "dosimeter",
             "hazmat_helmet",
             "hazmat_chestplate",
             "hazmat_leggings",
