@@ -3322,11 +3322,20 @@ hazmat:
 join_invulnerable_reset:
   # Defensive fix for the "immortal player" bug: a stale god-mode flag
   # (Invulnerable: 1b in player NBT/player.dat) makes a player permanently
-  # immune to ALL damage after relogs/restarts. When enabled, every player
-  # on join gets the flag forced back to 0b (NMS write + saveData).
+  # immune to ALL damage after relogs/restarts. When enabled, the flag is
+  # forced back to 0b (NMS write + saveData) on a schedule.
   # DISABLED by default — enable only if you actually hit the bug or want
   # the guarantee. (The /ui god off command already clears it properly.)
   enabled: false
+
+  # Reset mode:
+  #   join  — reset on every player join (interval_ticks is IGNORED in this mode)
+  #   timed — reset every interval_ticks for ALL online players
+  #           (the join listener also stays active in timed mode)
+  mode: "join"
+
+  # Timed-mode period in ticks (2000 = 100 seconds). Min 20. Ignored in join mode.
+  interval_ticks: 2000
 
   # Log every reset to the console (so you can see who had the stale flag)
   notify_console: true
