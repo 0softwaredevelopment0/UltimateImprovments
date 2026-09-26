@@ -12,9 +12,12 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipFile;
 
 public class DatapackInstaller {
@@ -75,10 +78,22 @@ public class DatapackInstaller {
             }
         }
 
-        // 2. Fallback: read level-name from server.toml
+        // 2. Fallback: read level-name from server.properties (Paper/Spigot standard),
+        // then server.toml (rare custom setups)
         String levelName = "world";
-        Path tomlPath = Path.of("server.toml");
-        if (Files.isRegularFile(tomlPath)) {
+        Path propsPath = Path.of("server.properties");
+        if (Files.isRegularFile(propsPath)) {
+            try {
+                java.util.Properties props = new java.util.Properties();
+                props.load(Files.newInputStream(propsPath));
+                String p = props.getProperty("level-name");
+                if (p != null && !p.isBlank()) levelName = p.trim();
+            } catch (Exception e) {
+                ConsoleLogger.warn("[Datapack] Failed to read server.properties: " + e.getMessage());
+            }
+        } else {
+            Path tomlPath = Path.of("server.toml");
+            if (Files.isRegularFile(tomlPath)) {
             try {
                 com.moandjiezana.toml.Toml toml = new com.moandjiezana.toml.Toml().read(tomlPath.toFile());
                 Map<String, Object> root = toml.toMap();
@@ -91,6 +106,7 @@ public class DatapackInstaller {
                 }
             } catch (Exception e) {
                 ConsoleLogger.warn("[Datapack] Failed to read server.toml: " + e.getMessage());
+            }
             }
         }
 
@@ -194,7 +210,7 @@ public class DatapackInstaller {
      * Verifies the datapack is enabled in the world after install.
      * If it isn't: tries {@code /datapack enable} (config: {@code datapack.auto_enable}),
      * warns (config: {@code datapack.warn_if_not_loaded}) and/or
-     * auto-restarts the server (config: {@code datapack.restart_to_apply}).
+     * auto-reloads the server (config: {@code datapack.reload_to_apply}).
      */
     private void checkLoaded(JavaPlugin plugin, boolean loadedBeforeInstall) {
         boolean loaded = loadedBeforeInstall || isLoadedInWorld(findWorldRoot());
@@ -234,7 +250,7 @@ public class DatapackInstaller {
             if (nowLoaded) {
                 ConsoleLogger.success("[Datapack] UI-Datapack is now enabled in the world.");
                 ConsoleLogger.info("[Datapack] A /reload or server restart is required for the datapack to take effect.");
-                maybeRestart(plugin);
+                maybeReload(plugin);
             } else {
                 ConsoleLogger.warn("[Datapack] /datapack enable did not help — the datapack is still not enabled in the world.");
                 warnNotLoaded(plugin);
@@ -260,19 +276,49 @@ public class DatapackInstaller {
             ConsoleLogger.warn("");
         }
 
-        maybeRestart(plugin);
+        maybeReload(plugin);
     }
 
-    /** Schedules a server restart if {@code datapack.restart_to_apply} is enabled. */
-    private void maybeRestart(JavaPlugin plugin) {
-        if (!DatapackModules.isRestartToApply()) return;
-        ConsoleLogger.warn("[Datapack] datapack.restart_to_apply: true — restarting the server to load the datapack...");
+    /**
+     * Schedules a server reload if {@code datapack.reload_to_apply} is enabled.
+     * <p>
+     * <b>Reload-loop guard:</b> {@code Bukkit.reload()} restarts all plugins, so this
+     * installer runs again on the reload — without a guard that would loop forever.
+     * A marker file in the plugin data folder records the reload; it is only honored
+     * for a short window (10 minutes), so a genuine later change still reloads.
+     */
+    private void maybeReload(JavaPlugin plugin) {
+        if (!DatapackModules.isReloadToApply()) return;
+
+        File marker = new File(plugin.getDataFolder(), "reload-marker.tmp");
+        if (marker.isFile()) {
+            try {
+                long ageMs = System.currentTimeMillis() - marker.lastModified();
+                if (ageMs < RELOAD_MARKER_TTL_MS) {
+                    ConsoleLogger.warn("[Datapack] Reload was just triggered for this datapack state — "
+                            + "skipping to avoid a reload loop.");
+                    return;
+                }
+            } catch (Exception ignored) {
+                // Unreadable marker — fall through and reload once more.
+            }
+        }
+
+        try {
+            plugin.getDataFolder().mkdirs();
+            Files.writeString(marker.toPath(),
+                    "reason=datapack-not-enabled\ntriggered=" + Instant.now() + "\nnonce=" + UUID.randomUUID());
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Datapack] Could not write reload marker (" + e.getMessage()
+                    + ") — proceeding without loop protection.");
+        }
+
+        ConsoleLogger.warn("[Datapack] datapack.reload_to_apply: true — reloading the server to load the datapack...");
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             try {
-                Bukkit.getServer().restart();
+                Bukkit.reload();
             } catch (Throwable t) {
-                ConsoleLogger.warn("[Datapack] restart() unavailable, using shutdown(): " + t.getMessage());
-                Bukkit.getServer().shutdown();
+                ConsoleLogger.warn("[Datapack] reload() failed: " + t.getMessage());
             }
         }, 80L);
     }
@@ -301,6 +347,9 @@ public class DatapackInstaller {
             return false;
         }
     }
+
+    /** Marker older than this is stale — allow a fresh reload (ms). */
+    private static final long RELOAD_MARKER_TTL_MS = 10 * 60 * 1000L;
 
     /**
      * Resolves the source holding the bundled UI-Datapack resources (a JAR file

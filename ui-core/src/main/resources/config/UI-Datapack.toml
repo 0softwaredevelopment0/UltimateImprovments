@@ -17,7 +17,7 @@ enabled = true
 # Default: "override"
 mode = "override"
 # Default: false
-restart_to_apply = false
+reload_to_apply = false
 # Default: true
 warn_if_not_loaded = true
 # Default: false
