@@ -145,6 +145,8 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 null, List.of("toggleradview")));
         registry.register(LegacySubCommandAdapter.of("fly",
                 (s, a) -> { MiscSubcommand.fly(s, a); return true; }));
+        registry.register(LegacySubCommandAdapter.of("god",
+                (s, a) -> { MiscSubcommand.god(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("sudo", SudoSubcommand::execute,
                 tc((s, a) -> SudoSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("execchat", ExecChatSubcommand::execute,
