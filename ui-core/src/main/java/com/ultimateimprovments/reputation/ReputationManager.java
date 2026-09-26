@@ -60,16 +60,23 @@ public final class ReputationManager {
             this.icon = icon;
         }
 
-        /** Localized display name (messages.reputation.status.<key>). */
+        /**
+         * Localized display name (messages.reputation.status.<key>).
+         * The message holds ONLY the text (e.g. "All good") — the icon is
+         * prepended by {@link #fullMini()}, so overriding the message never
+         * duplicates the icon.
+         */
         public String display() {
-            return MessagesManager.getString("reputation.status." + name().toLowerCase(), display);
+            return MessagesManager.getString("reputation.status." + name().toLowerCase() + ".name", display);
         }
 
-        /** Colored icon in miniMessage. */
-        public String iconMini() { return icon; }
+        /** Colored icon in miniMessage (messages.reputation.status.<key>.icon, overridable). */
+        public String iconMini() {
+            return MessagesManager.getString("reputation.status." + name().toLowerCase() + ".icon", icon);
+        }
 
-        /** Icon + display name in one miniMessage string. */
-        public String fullMini() { return icon + " " + display(); }
+        /** Icon + display name in one miniMessage string: exactly one icon, then the text. */
+        public String fullMini() { return iconMini() + " " + display(); }
 
         /** Parses a config/argument value into a status (null if unknown). */
         public static Status fromString(String s) {

@@ -483,20 +483,60 @@ close = "<red>✖ Закрыть</red>"
 
 # Account Standing status names (Discord-style scale).
 [messages.reputation.status]
-# Default: <dark_gray>— Не задан
-none = "<dark_gray>— Не задан"
-# Default: <green>✔ All good
-all_good = "<green>✔ All good"
-# Limit.
-# Default: <yellow>⚠ Limited
-limited = "<yellow>⚠ Limited"
-# Limit.
-# Default: <gold>⚠ Very limited
-very_limited = "<gold>⚠ Very limited"
-# Default: <red>⛔ At risk
-at_risk = "<red>⛔ At risk"
-# Default: <dark_red>☠ Suspended
-suspended = "<dark_red>☠ Suspended"
+
+# none section.
+[messages.reputation.status.none]
+# Icon configuration.
+# Default: <dark_gray>—
+icon = "<dark_gray>—"
+# Display name (MiniMessage).
+# Default: Не задан
+name = "Не задан"
+
+# all good section.
+[messages.reputation.status.all_good]
+# Icon configuration.
+# Default: <green>✔
+icon = "<green>✔"
+# Display name (MiniMessage).
+# Default: All good
+name = "All good"
+
+# limited section.
+[messages.reputation.status.limited]
+# Icon configuration.
+# Default: <yellow>⚠
+icon = "<yellow>⚠"
+# Display name (MiniMessage).
+# Default: Limited
+name = "Limited"
+
+# very limited section.
+[messages.reputation.status.very_limited]
+# Icon configuration.
+# Default: <gold>⚠
+icon = "<gold>⚠"
+# Display name (MiniMessage).
+# Default: Very limited
+name = "Very limited"
+
+# at risk section.
+[messages.reputation.status.at_risk]
+# Icon configuration.
+# Default: <red>⛔
+icon = "<red>⛔"
+# Display name (MiniMessage).
+# Default: At risk
+name = "At risk"
+
+# suspended section.
+[messages.reputation.status.suspended]
+# Icon configuration.
+# Default: <dark_red>☠
+icon = "<dark_red>☠"
+# Display name (MiniMessage).
+# Default: Suspended
+name = "Suspended"
 
 # notify section.
 # Placeholders: %player%, %amount%, %actor%, %old%, %new%, %status%
@@ -613,20 +653,60 @@ close = "<red>✖ Close</red>"
 
 # Account Standing status names (Discord-style scale).
 [messages_en.reputation.status]
-# Default: <dark_gray>— None
-none = "<dark_gray>— None"
-# Default: <green>✔ All good
-all_good = "<green>✔ All good"
-# Limit.
-# Default: <yellow>⚠ Limited
-limited = "<yellow>⚠ Limited"
-# Limit.
-# Default: <gold>⚠ Very limited
-very_limited = "<gold>⚠ Very limited"
-# Default: <red>⛔ At risk
-at_risk = "<red>⛔ At risk"
-# Default: <dark_red>☠ Suspended
-suspended = "<dark_red>☠ Suspended"
+
+# none section.
+[messages_en.reputation.status.none]
+# Icon configuration.
+# Default: <dark_gray>—
+icon = "<dark_gray>—"
+# Display name (MiniMessage).
+# Default: None
+name = "None"
+
+# all good section.
+[messages_en.reputation.status.all_good]
+# Icon configuration.
+# Default: <green>✔
+icon = "<green>✔"
+# Display name (MiniMessage).
+# Default: All good
+name = "All good"
+
+# limited section.
+[messages_en.reputation.status.limited]
+# Icon configuration.
+# Default: <yellow>⚠
+icon = "<yellow>⚠"
+# Display name (MiniMessage).
+# Default: Limited
+name = "Limited"
+
+# very limited section.
+[messages_en.reputation.status.very_limited]
+# Icon configuration.
+# Default: <gold>⚠
+icon = "<gold>⚠"
+# Display name (MiniMessage).
+# Default: Very limited
+name = "Very limited"
+
+# at risk section.
+[messages_en.reputation.status.at_risk]
+# Icon configuration.
+# Default: <red>⛔
+icon = "<red>⛔"
+# Display name (MiniMessage).
+# Default: At risk
+name = "At risk"
+
+# suspended section.
+[messages_en.reputation.status.suspended]
+# Icon configuration.
+# Default: <dark_red>☠
+icon = "<dark_red>☠"
+# Display name (MiniMessage).
+# Default: Suspended
+name = "Suspended"
 
 # notify section.
 # Placeholders: %player%, %amount%, %actor%, %old%, %new%, %status%

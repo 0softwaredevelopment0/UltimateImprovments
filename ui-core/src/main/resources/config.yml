@@ -1072,14 +1072,27 @@ messages:
         rep: "<gray>Репутация: </gray>%color%%rep%</reset>"
         status: "<gray>Статус: </gray>%status%"
         close: "<red>✖ Закрыть</red>"
-    # Discord Account Standing statuses (issued by staff, second scale)
+    # Discord Account Standing statuses (issued by staff, second scale).
+    # <key>.icon = the single leading icon; <key>.name = the status text (no icon here!).
     status:
-      none: "<dark_gray>— Не задан"
-      all_good: "<green>✔ All good"
-      limited: "<yellow>⚠ Limited"
-      very_limited: "<gold>⚠ Very limited"
-      at_risk: "<red>⛔ At risk"
-      suspended: "<dark_red>☠ Suspended"
+      none:
+        icon: "<dark_gray>—"
+        name: "Не задан"
+      all_good:
+        icon: "<green>✔"
+        name: "All good"
+      limited:
+        icon: "<yellow>⚠"
+        name: "Limited"
+      very_limited:
+        icon: "<gold>⚠"
+        name: "Very limited"
+      at_risk:
+        icon: "<red>⛔"
+        name: "At risk"
+      suspended:
+        icon: "<dark_red>☠"
+        name: "Suspended"
     give: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white>: </white><green>+%amount%</green> <gray>(теперь %new%)</gray>"
     taken: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white>: </white><red>%amount%</red> <gray>(теперь %new%)</gray>"
     set: "<green>✔</green> <white>Репутация </white><yellow>%player%</yellow><white> установлена на </white><green>%new%</green>"
@@ -1767,14 +1780,27 @@ messages_en:
         rep: "<gray>Reputation: </gray>%color%%rep%</reset>"
         status: "<gray>Status: </gray>%status%"
         close: "<red>✖ Close</red>"
-    # Discord Account Standing statuses (issued by staff, second scale)
+    # Discord Account Standing statuses (issued by staff, second scale).
+    # <key>.icon = the single leading icon; <key>.name = the status text (no icon here!).
     status:
-      none: "<dark_gray>— None"
-      all_good: "<green>✔ All good"
-      limited: "<yellow>⚠ Limited"
-      very_limited: "<gold>⚠ Very limited"
-      at_risk: "<red>⛔ At risk"
-      suspended: "<dark_red>☠ Suspended"
+      none:
+        icon: "<dark_gray>—"
+        name: "None"
+      all_good:
+        icon: "<green>✔"
+        name: "All good"
+      limited:
+        icon: "<yellow>⚠"
+        name: "Limited"
+      very_limited:
+        icon: "<gold>⚠"
+        name: "Very limited"
+      at_risk:
+        icon: "<red>⛔"
+        name: "At risk"
+      suspended:
+        icon: "<dark_red>☠"
+        name: "Suspended"
     give: "<green>✔</green> <white>Reputation </white><yellow>%player%</yellow><white>: </white><green>+%amount%</green> <gray>(now %new%)</gray>"
     taken: "<green>✔</green> <white>Reputation </white><yellow>%player%</yellow><white>: </white><red>%amount%</red> <gray>(now %new%)</gray>"
     set: "<green>✔</green> <white>Reputation of </white><yellow>%player%</yellow><white> set to </white><green>%new%</green>"
