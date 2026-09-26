@@ -5169,7 +5169,7 @@ troll:
     log_to_console: true
 
 # Version of the plugin this config was generated for (auto-managed)
-plugin_version: "1.8.3-alpha.3"
+plugin_version: "1.8.3-alpha.4"
 
 # ============================================================================
 # AUTO BROADCAST — АВТО-БРОАДКАСТЫ (auto_broadcast)
