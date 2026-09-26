@@ -3319,6 +3319,18 @@ hazmat:
   # 0.2 + full_suit_bonus 0.2 = full set caps at -80% total)
   full_suit_bonus: 0.0
 
+join_invulnerable_reset:
+  # Defensive fix for the "immortal player" bug: a stale god-mode flag
+  # (Invulnerable: 1b in player NBT/player.dat) makes a player permanently
+  # immune to ALL damage after relogs/restarts. When enabled, every player
+  # on join gets the flag forced back to 0b (NMS write + saveData).
+  # DISABLED by default — enable only if you actually hit the bug or want
+  # the guarantee. (The /ui god off command already clears it properly.)
+  enabled: false
+
+  # Log every reset to the console (so you can see who had the stale flag)
+  notify_console: true
+
 sunburn:
   # Master toggle - enable/disable the entire sunburn system
   enabled: true

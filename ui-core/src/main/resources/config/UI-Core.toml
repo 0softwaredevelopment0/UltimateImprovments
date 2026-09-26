@@ -16,6 +16,14 @@ prefix = "<white>[<green>UI<white>] <reset>"
 plugin_version = "1.8.3-alpha.4"
 
 
+# join invulnerable reset section.
+[join_invulnerable_reset]
+# Master switch (true = feature on).
+# Default: false
+enabled = false
+# Default: true
+notify_console = true
+
 # Reputation auto-penalties (staff-issued numeric scale).
 [reputation]
 # Rep penalty for a CONFIRMED report verdict (0 disables).

@@ -415,6 +415,19 @@ public final class SimpleModules {
             }
         });
 
+        // Join Invulnerable Reset (defensive immortal-player fix; disabled by default)
+        mm.register(new SimpleModule("JoinInvulnerableReset", "mechanics/features/join_invulnerable_reset", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                com.ultimateimprovments.mechanics.features.player.JoinInvulnerableReset.init((Main) plugin);
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                com.ultimateimprovments.mechanics.features.player.JoinInvulnerableReset.reloadConfig();
+            }
+        });
+
         // Beacon
         mm.register(new SimpleModule("Beacon", "mechanics/features/beacon", false) {
             @Override
