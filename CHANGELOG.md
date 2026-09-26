@@ -3,6 +3,54 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.3-alpha.4] — since 1.8.3-alpha.3 (2026-09-27)
+
+### Fixed
+- **Repairing never repaired armor** (including the elytra) — the sweep and the
+  PDC-failsafe sync read armor via `getArmorContents()`, which returns detached
+  copies, so repairs and PDC writes were silently lost. Armor is now read by
+  absolute slot index 36–39 through `inv.getItem()` (live mirror).
+- **AutoSmelt smelted only one block of an area** — combined with AoE /
+  VeinMiner / TreeCapitator, extra blocks are broken via `breakNaturally()`
+  (which fires no BlockBreakEvent), so the origin-only listener never saw their
+  drops. A new MONITOR `BlockDropItemEvent` handler re-smelts the freshly
+  spawned item entities from area breaks.
+- **Account Standing showed a doubled icon** (e.g. "✔ ✔ All good") — the status
+  message already contained the icon and `fullMini()` prepended it again. The
+  message schema is now `<key>.icon` (single icon) + `<key>.name` (text only).
+- **`/ui god` was never registered** — the registration was lost in the
+  UI-Essentials module split, so the command failed with "Unknown command".
+  It is re-registered, and `god off` now also persists the cleared
+  `Invulnerable` flag to player.dat (NMS write + `saveData()`), so a stale
+  god flag can no longer leave a permanently immortal player.
+
+### Changed
+- **`/ui reload` accepts a target**: `/ui reload` / `/ui reload all` keep the
+  proven full-family cycle; `/ui reload <addon>` disables and re-enables a
+  single UI-* plugin (e.g. `/ui reload other`); `/ui reload core` restarts
+  only the core subsystems without touching addons. Tab-complete and a shared
+  "reload in progress" guard included.
+- **Unbreakable breaker hand breaking** — with `min_tool_tier: "-"` the bare
+  hand now works too (at the lowest `damage.default` rate); a concrete tier
+  stays a strict minimum for pickaxes (weaker tiers and the hand are rejected).
+- **Removed the `ItemIntegrityAPI` compatibility facade** — all remaining
+  callers (enchants + sunburn) use `ItemDurabilityUtil` directly; the old
+  custom integrity system is now fully gone at the code level.
+
+### Added
+- **Unbreakable breaker permissions**:
+  - `ui.breaker.use` — damage/break ANY configured unbreakable block;
+  - `ui.breaker.use.<material>` (e.g. `ui.breaker.use.bedrock`) — damage/break
+    ONLY that block (per-block whitelist for groups);
+  - `ui.breaker.bypasstier` — ignore the `min_tool_tier` gate (any tool
+    including the hand deals full configured damage).
+- **`/ui clear <chat|attributes>`** command:
+  - `/ui clear chat <player|all>` — port of the removed `/ui clearchat`
+    (permissions `ui.command.clear.chat`);
+  - `/ui clear attributes <player|UUID|all>` — resets every attribute of a
+    player or any living entity (by UUID) to its default base value and strips
+    runtime modifiers (permission `ui.command.clear.attributes`).
+
 ## [1.8.3-alpha.3] — since 1.8.3 (2026-09-26)
 
 > Re-release of the alpha line with the reload/anticheat stability fixes below.
