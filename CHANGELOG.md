@@ -3,6 +3,10 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.3-alpha.3] — since 1.8.3 (2026-09-26)
+
+> Re-release of the alpha line with the reload/anticheat stability fixes below.
+
 ## [1.8.3-alpha.2] — since 1.8.3 (2026-09-26)
 
 > New version format: `version.subversion.patch-<channel>.<number>` with channels
