@@ -360,8 +360,22 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
         return config != null && config.enabled();
     }
 
+    /**
+     * Tool/hand validation for dealing damage to the block.
+     * <ul>
+     *   <li>{@code min_tool_tier: "-"} — ANY tool is allowed (no tier gate), and the
+     *       bare HAND is allowed too (it deals {@code damage.default});</li>
+     *   <li>any concrete tier (WOODEN/GOLD/STONE/IRON/DIAMOND/NETHERITE) is a MINIMUM
+     *       tier for PICKAXES — pickaxes of that tier or higher deal their configured
+     *       damage, and the bare HAND is still allowed at the lowest damage rate.</li>
+     *   <li>non-pickaxe TOOLS (axe, shovel, sword, ...) are always rejected — only the
+     *       empty hand bypasses the pickaxe requirement.</li>
+     * </ul>
+     */
     private boolean isValidTool(ItemStack tool, BlockConfig config) {
-        if (tool == null || tool.getType() == Material.AIR) return false;
+        boolean isHand = tool == null || tool.getType() == Material.AIR;
+        if (isHand) return true; // the hand is always allowed ("-" or min-tier), at the lowest damage
+
         String name = tool.getType().name();
         if (!name.endsWith("_PICKAXE")) return false;
         if ("-".equals(config.minToolTier())) return true;
@@ -379,7 +393,7 @@ public class UnbreakableBreakerManager extends BukkitRunnable implements Listene
     }
 
     private double getToolDamage(ItemStack tool, BlockConfig config) {
-        if (tool == null) return config.defaultDamage();
+        if (tool == null || tool.getType() == Material.AIR) return config.defaultDamage(); // hand = lowest rate
         String name = tool.getType().name();
 
         // Look for an exact tool match
