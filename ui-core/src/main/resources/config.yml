@@ -1133,7 +1133,7 @@ messages:
   # PUNISHMENT MESSAGES
   # =========================
   punishment:
-    discord_url: "https://dsc.gg/rizer001-development"
+    discord_url: "https://dsc.gg/softwaredev"
 
     ban:
       - "<red>This account has been banned!"
@@ -2446,7 +2446,7 @@ messages_en:
   # PUNISHMENT MESSAGES
   # =========================
   punishment:
-    discord_url: "https://dsc.gg/rizer001-development"
+    discord_url: "https://dsc.gg/softwaredev"
 
     ban:
       - "<red>This account has been banned!"
