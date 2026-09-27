@@ -61,7 +61,8 @@ sneak_speed = 1.0
 # Speed.
 # Default: 3.5
 attack_speed = 3.5
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 200
 interval_ticks = 200
 
@@ -578,7 +579,8 @@ triggers = []
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 200
 interval_ticks = 200
 
@@ -611,6 +613,8 @@ custom_brand = "Paper"
 vanished_players = []
 
 # Armor effects: configurable potion effects for worn armor sets (units).
+# While a unit's rule holds, its effect is re-applied every interval_ticks and
+# each application lasts interval_ticks + 40 ticks, so it stays up continuously.
 [armor_effects]
 # Master switch (true = feature on).
 # Default: true
@@ -634,8 +638,8 @@ effect = "fire_resistance"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: true
@@ -661,8 +665,8 @@ effect = "speed"
 amplifier = 1
 # Duration.
 # Default: 60
-duration_ticks = 60
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 50
 interval_ticks = 50
 # Default: false
@@ -674,6 +678,8 @@ ambient = false
 icon = true
 
 # Armor trim effects: potion effects by TRIM MATERIAL and matching piece count (units).
+# While a unit's rule holds, its effect is re-applied every interval_ticks and
+# each application lasts interval_ticks + 40 ticks, so it stays up continuously.
 [armor_trim_effects]
 # Master switch (true = feature on).
 # Default: true
@@ -697,8 +703,8 @@ effect = "fire_resistance"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -724,8 +730,8 @@ effect = "resistance"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -751,8 +757,8 @@ effect = "absorption"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -778,8 +784,8 @@ effect = "haste"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -805,8 +811,8 @@ effect = "hero_of_the_village"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -832,8 +838,8 @@ effect = "regeneration"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -859,8 +865,8 @@ effect = "water_breathing"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -886,8 +892,8 @@ effect = "night_vision"
 amplifier = 0
 # Duration.
 # Default: 400
-duration_ticks = 400
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 200
 interval_ticks = 200
 # Default: false
@@ -913,8 +919,8 @@ effect = "speed"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -940,8 +946,8 @@ effect = "strength"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
@@ -967,8 +973,8 @@ effect = "slow_falling"
 amplifier = 0
 # Duration.
 # Default: 120
-duration_ticks = 120
-# Interval in ticks (20 ticks = 1 second).
+# Check period in ticks: the effect is re-applied every N ticks while the rule
+# holds (min 20 = 1 s; the application itself lasts N+40 ticks so it never flickers).
 # Default: 100
 interval_ticks = 100
 # Default: false
