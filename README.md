@@ -140,12 +140,12 @@ All commands start with `/ui`. The full list is in the in-game help (`/ui help`,
 ## Building from Source
 
 ```bash
-git clone https://github.com/rizer001-Development/UltimateImprovments.git
+git clone https://github.com/0softwaredevelopment0/UltimateImprovments.git
 cd UltimateImprovments
 ./gradlew build
 ```
 
-The built JAR will be in `build/libs/UltimateImprovments-<version>.jar`. Requires JDK 26+.
+The built JARs will be in `build/libs/UltimateImprovments-<version>.jar`. Requires JDK 26+.
 
 ---
 
