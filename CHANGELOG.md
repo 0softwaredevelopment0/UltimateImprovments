@@ -78,6 +78,21 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   `iterator.remove()` and cleans the reverse map directly.
 
 ### Changed
+- **Flight is incompatible with Repairing** — if any worn armor piece (or a
+  chest-slot elytra) carries the Repairing charm, the flight is revoked and
+  not granted while the piece stays on: a repair would offset the whole
+  durability price of flight. Normal (non-charm) repairs are unaffected.
+- **Attack AoE has no damage falloff and caps at radius 10** — every cleaved
+  target takes the same force as the original hit; the radius equals the
+  charm level capped at 10 (the level where the old falloff formula would
+  have reached zero anyway).
+- **Container Stealing: levels 1-10 and a steal roll** — level N = N×10%
+  chance the charm works (level 10 = always). On a failed roll the break is
+  fully vanilla: the container drops empty and its contents spill out —
+  nothing is ever destroyed. Shulker boxes are excluded (vanilla already
+  keeps their contents; stealing them would double-preserve the loot).
+- **Lava Walker costs boots durability** — every created obsidian block costs
+  the boots 1 integrity use (a max-radius 31×31 sweep can cost 961 uses).
 - **Flight now strains the whole armor set** — while actively flying, every
   worn armor piece loses 1 use of integrity per second (previously only the
   charming chestplate paid, the rest of the set flew for free).

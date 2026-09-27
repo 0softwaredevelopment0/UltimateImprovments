@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.Inventory;
@@ -36,6 +37,13 @@ import java.io.StringReader;
  * applies the item's BlockEntityTag to the placed block).
  * <p>
  * Enderechests are not {@link Container} block states, so they are never affected.
+ * Shulker boxes are deliberately EXCLUDED too: they already keep their contents
+ * when broken by hand, and stealing them would double-preserve the loot.
+ * <p>
+ * <b>Steal roll:</b> the steal is a CHANCE — level N = N×10% (level 1 → 10%,
+ * level 10 → 100%). On a failed roll the break behaves VANILLA: the container
+ * drops empty and all its contents spill out. No contents are ever destroyed
+ * by this charm.
  */
 public class EnchantmentListener implements Listener {
 
@@ -59,16 +67,27 @@ public class EnchantmentListener implements Listener {
         ItemStack tool = player.getInventory().getItemInMainHand();
         if (tool == null || tool.getType() == Material.AIR) return;
 
-        if (Enchantment.getLevel(tool) <= 0) return;
+        int level = Enchantment.getLevel(tool);
+        if (level <= 0) return;
 
         Block block = event.getBlock();
         Material blockType = block.getType();
         if (blockType == Material.AIR || !blockType.isItem()) return;
 
-        // Capture the state NOW (the container still holds its items), but act
-        // only next tick, when no other plugin can cancel the break anymore.
         BlockState state = block.getState();
         if (!(state instanceof Container)) return;
+
+        // Shulker boxes are excluded: vanilla already keeps their contents on
+        // break, and a steal would double-preserve the loot.
+        if (state instanceof ShulkerBox) return;
+
+        // Steal roll: level N = N×10% chance the charm works. A failed roll →
+        // vanilla behavior (empty container drop + spilled contents), nothing
+        // is ever destroyed.
+        if (java.util.concurrent.ThreadLocalRandom.current().nextInt(100) >= level * 10) return;
+
+        // Capture the state NOW (the container still holds its items), but act
+        // only next tick, when no other plugin can cancel the break anymore.
 
         event.setDropItems(false);
         com.ultimateimprovments.core.Main.getInstance().getServer().getScheduler().runTask(

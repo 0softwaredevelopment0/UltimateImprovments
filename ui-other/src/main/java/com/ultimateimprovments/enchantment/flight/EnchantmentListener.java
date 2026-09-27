@@ -284,11 +284,31 @@ public class EnchantmentListener implements Listener {
      * is the same engine, it no longer flies for free. "Actively flying" also
      * covers hovering: were flying and still airborne, even when
      * {@code isFlying()} desyncs to false while hanging in the air.
+     * <p>
+     * Flight is INCOMPATIBLE with Repairing: any worn piece carrying the
+     * Repairing charm revokes the flight (a repair would offset the whole
+     * durability price).
      */
     private static void drainFlightIntegrity() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             try {
                 UUID uuid = player.getUniqueId();
+
+                // Flight is INCOMPATIBLE with Repairing: a Repairing book on
+                // any worn piece would offset the whole durability price and
+                // make flight free. If any armor piece carries the charm, the
+                // flight is revoked (and not granted again while it stays).
+                if (hasRepairingOnArmor(player)) {
+                    if (GRANTED_FLIGHT.remove(uuid)
+                            && player.getGameMode() != GameMode.CREATIVE
+                            && player.getGameMode() != GameMode.SPECTATOR) {
+                        player.setAllowFlight(false);
+                        player.setFlying(false);
+                    }
+                    FLIGHT_ACTIVE.remove(uuid);
+                    FALL_DISTANCE.remove(uuid);
+                    continue;
+                }
 
                 // Update the flight-state tracker:
                 //  - flying right now → active;
@@ -339,6 +359,20 @@ public class EnchantmentListener implements Listener {
                         + ": " + e.getMessage());
             }
         }
+    }
+
+    /** True when any worn armor piece (4 slots + chest-slot elytra) carries the Repairing charm. */
+    private static boolean hasRepairingOnArmor(Player player) {
+        var inv = player.getInventory();
+        ItemStack[] pieces = {
+                inv.getHelmet(), inv.getChestplate(), inv.getLeggings(), inv.getBoots()};
+        for (ItemStack piece : pieces) {
+            if (piece != null && piece.getType() != Material.AIR
+                    && com.ultimateimprovments.enchantment.repairing.Enchantment.getLevel(piece) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // ─────────────────────────────────────────────────────────────
