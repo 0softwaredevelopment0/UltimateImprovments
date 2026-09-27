@@ -177,7 +177,11 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   sets (leather/copper/chainmail/iron/golden/diamond/netherite families):
   rule FULL or COUNT (1–3 pieces), per-rule effect/amplifier/duration/interval,
   particles and ambient/icon toggles. Configured under the `armor_effects`
-  section (UI-Other).
+  section (UI-Other). Default scheme: every unit is FULL-set — weak armor
+  grants BUFFS (leather Speed I, copper Haste I, chainmail Jump Boost I,
+  golden Regeneration I), strong armor pays with DEBUFFS (iron Hunger I,
+  diamond Slowness I, netherite Slowness I + Weakness I); all units run
+  40/40 ticks, particles off, icon on.
 
 ### Fixed
 - **Offline invsee/endersee failed with "No data file found"** — resolving an

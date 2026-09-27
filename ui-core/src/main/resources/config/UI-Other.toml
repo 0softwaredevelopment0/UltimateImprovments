@@ -613,6 +613,11 @@ vanished_players = []
 # Armor effects: configurable potion effects for worn armor sets (units).
 # Per unit: duration_ticks = how long one application lasts (ticks),
 # check_interval_ticks = how often the effect is re-applied (ticks, min 20).
+# Default scheme (every unit is FULL-set): WEAK armor grants buffs —
+#   leather = Speed I, copper = Haste I, chainmail = Jump Boost I,
+#   golden = Regeneration I;
+# STRONG armor pays with debuffs — iron = Hunger I, diamond = Slowness I,
+# netherite = Slowness I + Weakness I.
 [armor_effects]
 # Master switch (true = feature on).
 # Default: true
@@ -621,17 +626,17 @@ enabled = true
 # units section.
 [armor_effects.units]
 
-# fire resistance netherite section.
-[armor_effects.units.fire_resistance_netherite]
+# speed leather section.
+[armor_effects.units.speed_leather]
 # Material name (minecraft:...).
-# Default: ["netherite"]
-materials = ["netherite"]
+# Default: ["leather"]
+materials = ["leather"]
 # Default: "FULL"
 rule = "FULL"
 # Default: 1
 count = 1
-# Default: "fire_resistance"
-effect = "fire_resistance"
+# Default: "speed"
+effect = "speed"
 # Default: 0
 amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
@@ -644,29 +649,213 @@ duration_ticks = 40
 # values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
-# Default: true
-particles = true
+# Default: false
+particles = false
 # Default: false
 ambient = false
 # Icon configuration.
 # Default: true
 icon = true
 
-# speed three iron section.
-[armor_effects.units.speed_three_iron]
+# haste copper section.
+[armor_effects.units.haste_copper]
+# Material name (minecraft:...).
+# Default: ["copper"]
+materials = ["copper"]
+# Default: "FULL"
+rule = "FULL"
+# Default: 1
+count = 1
+# Default: "haste"
+effect = "haste"
+# Default: 0
+amplifier = 0
+# How long ONE application of the effect lasts, in ticks.
+# Default: 40
+duration_ticks = 40
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
+# Default: 40
+check_interval_ticks = 40
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
+# jump boost chainmail section.
+[armor_effects.units.jump_chainmail]
+# Material name (minecraft:...).
+# Default: ["chainmail"]
+materials = ["chainmail"]
+# Default: "FULL"
+rule = "FULL"
+# Default: 1
+count = 1
+# Default: "jump_boost"
+effect = "jump_boost"
+# Default: 0
+amplifier = 0
+# How long ONE application of the effect lasts, in ticks.
+# Default: 40
+duration_ticks = 40
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
+# Default: 40
+check_interval_ticks = 40
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
+# regeneration golden section.
+[armor_effects.units.regen_golden]
+# Material name (minecraft:...).
+# Default: ["golden"]
+materials = ["golden"]
+# Default: "FULL"
+rule = "FULL"
+# Default: 1
+count = 1
+# Default: "regeneration"
+effect = "regeneration"
+# Default: 0
+amplifier = 0
+# How long ONE application of the effect lasts, in ticks.
+# Default: 40
+duration_ticks = 40
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
+# Default: 40
+check_interval_ticks = 40
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
+# hunger iron section.
+[armor_effects.units.hunger_iron]
 # Material name (minecraft:...).
 # Default: ["iron"]
 materials = ["iron"]
-# Default: "COUNT"
-rule = "COUNT"
-# Default: 3
-count = 3
-# Default: "speed"
-effect = "speed"
+# Default: "FULL"
+rule = "FULL"
+# Default: 1
+count = 1
+# Default: "hunger"
+effect = "hunger"
+# Default: 0
+amplifier = 0
+# How long ONE application of the effect lasts, in ticks.
+# Default: 40
+duration_ticks = 40
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
+# Default: 40
+check_interval_ticks = 40
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
+# slowness diamond section.
+[armor_effects.units.slowness_diamond]
+# Material name (minecraft:...).
+# Default: ["diamond"]
+materials = ["diamond"]
+# Default: "FULL"
+rule = "FULL"
+# Default: 1
+count = 1
+# Default: "slowness"
+effect = "slowness"
+# Default: 0
+amplifier = 0
+# How long ONE application of the effect lasts, in ticks.
+# Default: 40
+duration_ticks = 40
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
+# Default: 40
+check_interval_ticks = 40
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
+# slowness netherite section.
+[armor_effects.units.slowness_netherite]
+# Material name (minecraft:...).
+# Default: ["netherite"]
+materials = ["netherite"]
+# Default: "FULL"
+rule = "FULL"
+# Default: 1
+count = 1
+# Default: "slowness"
+effect = "slowness"
 # Default: 1
 amplifier = 1
-# Duration.
-# Default: 60
+# How long ONE application of the effect lasts, in ticks.
+# Default: 40
+duration_ticks = 40
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
+# Default: 40
+check_interval_ticks = 40
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
+# weakness netherite section.
+[armor_effects.units.weakness_netherite]
+# Material name (minecraft:...).
+# Default: ["netherite"]
+materials = ["netherite"]
+# Default: "FULL"
+rule = "FULL"
+# Default: 1
+count = 1
+# Default: "weakness"
+effect = "weakness"
+# Default: 0
+amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
