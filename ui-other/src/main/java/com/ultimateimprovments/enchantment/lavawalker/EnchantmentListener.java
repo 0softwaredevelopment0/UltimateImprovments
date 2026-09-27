@@ -251,18 +251,18 @@ public class EnchantmentListener implements Listener {
     /** Registers the listener, restores persisted melts and starts the melt sweep + autosave. */
     public static void register(Main plugin) {
         Bukkit.getPluginManager().registerEvents(new EnchantmentListener(), plugin);
-        MeltStore.load(plugin);
+        MeltStore.load();
         Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::meltTick,
                 MELT_SWEEP_TICKS, MELT_SWEEP_TICKS);
         MeltStore.startAutosave(plugin);
         ConsoleLogger.info("[LavaWalker] Listener registered (melt sweep every "
                 + (MELT_SWEEP_TICKS / 20.0) + "s, melt delay 20-45s, radius cap "
-                + Enchantment.MAX_RADIUS + ", melts persist across restarts).");
+                + Enchantment.MAX_RADIUS + ", melts persist in SQLite).");
     }
 
     /** Final synchronous save of the melt registry (async tasks do not survive disable). */
-    public static void shutdown(Main plugin) {
-        MeltStore.saveNow(plugin);
+    public static void shutdown() {
+        MeltStore.saveNow();
     }
 
     /** Random melt delay between MELT_MIN_TICKS and MELT_MAX_TICKS. */
