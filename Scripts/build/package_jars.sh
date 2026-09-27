@@ -3,8 +3,11 @@
 #
 # Pipeline:
 #   1. ./gradlew build           (skipped with --no-build)
-#   2. gzip every UI-*.jar       (originals in build/libs stay untouched)
-#   3. tar the *.jar.gz files    -> build/distribution/UltimateImprovments-<version>-jars.tar
+#   2. tar the UI-*.jar files    -> build/distribution/UltimateImprovments-<version>-jars.tar
+#
+# Note: NO gzip stage. JARs are already ZIP archives (DEFLATE-compressed inside),
+# so gzipping them shrinks the archive by only ~2-5% while taking minutes of CPU.
+# A plain tar of the .jar files is the right trade-off.
 #
 # Usage (from anywhere):
 #   Scripts/build/package_jars.sh [--no-build]
@@ -30,19 +33,12 @@ CORE_JAR="$(ls build/libs/UI-Core-*-all.jar | head -n1)"
 VERSION="$(sed -E 's/.*UI-Core-(.*)-all\.jar/\1/' "$CORE_JAR")"
 
 STAGE="build/distribution"
-PAYLOAD="$STAGE/gz"
 rm -rf "$STAGE"
-mkdir -p "$PAYLOAD"
-
-echo "[package] Gzipping JARs (version $VERSION)..."
-for jar in build/libs/UI-*-all.jar; do
-  name="$(basename "$jar")"
-  gzip -9 -c "$jar" > "$PAYLOAD/$name.gz"
-done
+mkdir -p "$STAGE"
 
 TAR="$STAGE/UltimateImprovments-$VERSION-jars.tar"
-echo "[package] Creating $TAR ..."
-tar -cf "$TAR" -C "$PAYLOAD" .
+echo "[package] Creating $TAR (version $VERSION, no gzip — JARs are already compressed)..."
+tar -cf "$TAR" -C build/libs UI-*-all.jar
 
 # Show the result
 echo "[package] Done:"
