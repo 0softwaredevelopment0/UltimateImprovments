@@ -10,6 +10,7 @@
     "ui:flight",
     "ui:igniting",
     "ui:item_stealing",
+    "ui:lava_walker",
     "ui:levitation",
     "ui:magnet",
     "ui:repairing",
