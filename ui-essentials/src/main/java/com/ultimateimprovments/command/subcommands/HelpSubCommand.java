@@ -77,7 +77,10 @@ public class HelpSubCommand implements SubCommand {
                 .u("<command>", "detailed help for a command")
                 .u("<command> <subcommand>", "detailed help for a subcommand");
         cmd("reload", "Reload the plugin configuration")
-                .u("", "reload config.yml, messages and modules");
+                .u("", "reload the per-addon TOML configs, messages and modules");
+        cmd("config", "Config management (backup & regenerate)")
+                .u("regen UI-<Addon>.toml", "back up the live config as configs/UI-<Addon>-broken-<N>.toml and regenerate it from the bundled template (confirmed; gated by ui.command.configregen + config.commands.enabled)")
+                .u("confirm | cancel", "confirm or cancel a pending regeneration");
         cmd("checkver", "Check for plugin updates")
                 .u("", "compare the current version with the latest release");
         cmd("updatejar", "Download & install the plugin update")

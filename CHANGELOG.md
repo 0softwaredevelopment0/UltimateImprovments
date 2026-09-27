@@ -6,6 +6,16 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
 ## [1.8.3-beta.3] — since 1.8.3-beta.2 (2026-09-27)
 
 ### Added
+- **`/ui config regen UI-<Addon>.toml`** — manual config recovery: backs up
+  the live per-addon config as `configs/UI-<Addon>-broken-<N>.toml` (numbered
+  1, 2, 3, ...; the automatic recovery now uses the same numbered scheme
+  instead of overwriting a single `.broken` file) and regenerates the file
+  from the bundled template. Triple-gated: the `ui.command.configregen`
+  permission (default FALSE), the `config.commands.enabled` config flag
+  (default `false`), and an explicit confirmation step with 60 s expiry.
+  Tab completion lists all regenerable config files; `/ui reload` applies
+  the result. The automatic parse-failure backups also land in the same
+  numbered scheme.
 - **`lava_walker` charm (Lava Walker)** — Frost Walker for LAVA, levels 1-255,
   boots only. Lava under the wearer's feet temporarily turns into obsidian:
   radius = level (1 → 1×1, 2 → 3×3, ... hard-capped at 16 → 31×31); created

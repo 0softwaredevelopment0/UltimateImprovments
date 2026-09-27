@@ -122,6 +122,14 @@ public class PluginStartup {
             ConsoleLogger.warn("[Lang] Failed to register /ui lang: " + e.getMessage());
         }
 
+        // /ui config — config management (regen with confirmation + permission gate).
+        try {
+            com.ultimateimprovments.command.SubCommandRegistry.getInstance()
+                    .register(new com.ultimateimprovments.command.subcommands.ConfigSubcommand());
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Config] Failed to register /ui config: " + e.getMessage());
+        }
+
         // Addon discovery: Core is the mandatory host, everything else is an
         // addon recognized by the plugin.yml marker (addon-for: UI-Core).
         // Addons enable AFTER Core (depend: [UI-Core]) and register themselves

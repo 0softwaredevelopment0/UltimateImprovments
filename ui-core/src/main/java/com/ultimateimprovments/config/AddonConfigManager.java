@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -273,11 +274,92 @@ public final class AddonConfigManager {
 
     private static void backupFile(File file) {
         try {
-            File backup = new File(file.getParentFile(), file.getName() + ".broken");
+            File backup = nextBrokenBackupFile(file.getName());
             java.nio.file.Files.move(file.toPath(), backup.toPath(),
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception ignored) {
+            ConsoleLogger.warn("[Config] Backed up " + file.getName() + " as " + backup.getName());
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Config] Failed to back up " + file.getName() + ": " + e.getMessage());
         }
+    }
+
+    // ========================================================================
+    // BACKUPS + MANUAL REGENERATION (/ui config regen)
+    // ========================================================================
+
+    /**
+     * Builds the next numbered broken-backup file for the given config file
+     * name: {@code UI-<Addon>-broken-<N>.toml} where N is the smallest free
+     * number (1, 2, 3, ...). The backup lives next to the config, inside
+     * {@code configs/}.
+     */
+    static File nextBrokenBackupFile(String configFileName) {
+        String base = configFileName.endsWith(".toml")
+                ? configFileName.substring(0, configFileName.length() - ".toml".length())
+                : configFileName;
+        for (int n = 1; n < 10_000; n++) {
+            File candidate = new File(UltimateDirs.configsDir(), base + "-broken-" + n + ".toml");
+            if (!candidate.exists()) return candidate;
+        }
+        // Practically unreachable — fall back to overwrite of the last slot.
+        return new File(UltimateDirs.configsDir(), base + "-broken-9999.toml");
+    }
+
+    /** {@code UI-<Addon>-broken-<N>} name the NEXT backup of this addon would get (for UI hints). */
+    public static String brokenBackupName(String addon) {
+        return nextBrokenBackupFile(addon + ".toml").getName();
+    }
+
+    /** @return the live config file of the addon inside {@code configs/}. */
+    public static File configFileOf(String addon) {
+        return UltimateDirs.addonConfigToml(addon);
+    }
+
+    /**
+     * Resolves a config file name ({@code UI-<Addon>.toml}) to its addon.
+     *
+     * @return the addon name, or {@code null} when the file does not belong to
+     *         any known addon
+     */
+    public static String addonForConfigFileName(String fileName) {
+        if (fileName == null || !fileName.toLowerCase(Locale.ROOT).endsWith(".toml")) return null;
+        String base = fileName.substring(0, fileName.length() - ".toml".length());
+        for (String addon : AddonCatalog.catalog()) {
+            if (addon.equalsIgnoreCase(base)) return addon;
+        }
+        return null;
+    }
+
+    /** All addons that can be regenerated via {@code /ui config regen} (any catalog addon). */
+    public static List<String> regenerableAddons() {
+        return AddonCatalog.catalog();
+    }
+
+    /**
+     * Manually backs up the addon's live config as a numbered broken backup
+     * and regenerates the file from the bundled template (like the automatic
+     * recovery does). The in-memory view is reloaded afterwards.
+     *
+     * @return the backup file name (inside {@code configs/})
+     * @throws java.io.IOException when the backup or regeneration fails
+     */
+    public static String backupAndRegenerate(String addon) throws java.io.IOException {
+        File toml = UltimateDirs.addonConfigToml(addon);
+        if (!toml.exists()) {
+            throw new java.io.IOException(addon + ".toml does not exist — nothing to regenerate");
+        }
+        File backup = nextBrokenBackupFile(toml.getName());
+        try {
+            java.nio.file.Files.copy(toml.toPath(), backup.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            ConsoleLogger.warn("[Config] Backed up " + toml.getName() + " as " + backup.getName());
+        } catch (java.io.IOException e) {
+            throw new java.io.IOException("backup failed: " + e.getMessage(), e);
+        }
+        // Regenerate: verbatim template copy + fresh in-memory load.
+        generateFromBundle(addon, toml);
+        loaded.put(addon, loadAddonToml(addon, toml));
+        return backup.getName();
     }
 
     /** Recursively flattens a TOML map into the Bukkit view (dotted paths). */
