@@ -191,7 +191,7 @@ public final class TrimEffectsManager {
             }
 
             // --- count rule ---
-            String ruleName = u.getString("count_rule", "EXACT").trim().toUpperCase(Locale.ROOT);
+            String ruleName = u.getString("count_rule", "MIN").trim().toUpperCase(Locale.ROOT);
             final CountRule rule;
             final int minCount;
             switch (ruleName) {

@@ -687,8 +687,10 @@ enabled = true
 # Material name (minecraft:...).
 # Default: ["netherite"]
 materials = ["netherite"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "fire_resistance"
 effect = "fire_resistance"
 # Default: 0
@@ -712,8 +714,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["iron"]
 materials = ["iron"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "resistance"
 effect = "resistance"
 # Default: 0
@@ -737,8 +741,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["diamond"]
 materials = ["diamond"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "absorption"
 effect = "absorption"
 # Default: 0
@@ -762,8 +768,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["gold"]
 materials = ["gold"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "haste"
 effect = "haste"
 # Default: 0
@@ -787,8 +795,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["emerald"]
 materials = ["emerald"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "hero_of_the_village"
 effect = "hero_of_the_village"
 # Default: 0
@@ -812,8 +822,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["amethyst"]
 materials = ["amethyst"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "regeneration"
 effect = "regeneration"
 # Default: 0
@@ -837,8 +849,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["copper"]
 materials = ["copper"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "water_breathing"
 effect = "water_breathing"
 # Default: 0
@@ -862,8 +876,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["lapis"]
 materials = ["lapis"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "night_vision"
 effect = "night_vision"
 # Default: 0
@@ -887,8 +903,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["quartz"]
 materials = ["quartz"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "speed"
 effect = "speed"
 # Default: 0
@@ -912,8 +930,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["redstone"]
 materials = ["redstone"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "strength"
 effect = "strength"
 # Default: 0
@@ -937,8 +957,10 @@ icon = false
 # Material name (minecraft:...).
 # Default: ["resin"]
 materials = ["resin"]
-# Default: "EXACT"
-count_rule = "EXACT"
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 1
+count = 1
 # Default: "slow_falling"
 effect = "slow_falling"
 # Default: 0

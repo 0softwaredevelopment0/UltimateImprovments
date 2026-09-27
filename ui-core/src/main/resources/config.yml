@@ -3418,12 +3418,16 @@ armor_trim_effects:
   # When the rule stops holding, the effect simply expires naturally —
   # it is never force-removed (several units may grant the same effect).
   #
-  # DEFAULT SET: one unit per trim material, EXACT rule (min 1 piece, each
-  # extra piece = +1 effect level), all cosmetic flags off.
+  # DEFAULT SET: one unit per trim material, MIN rule with count 1 — 1+ piece
+  # activates the effect at its base level and the level does NOT grow with
+  # more pieces (anti-abuse: no full-set level IV stacking). If you want the
+  # level to scale with the piece count, switch a unit to count_rule: EXACT.
+  # All cosmetic flags are off.
   units:
     netherite_trim:
       materials: [netherite]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: fire_resistance
       amplifier: 0
       duration_ticks: 120
@@ -3433,7 +3437,8 @@ armor_trim_effects:
       icon: false
     iron_trim:
       materials: [iron]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: resistance
       amplifier: 0
       duration_ticks: 120
@@ -3443,7 +3448,8 @@ armor_trim_effects:
       icon: false
     diamond_trim:
       materials: [diamond]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: absorption
       amplifier: 0
       duration_ticks: 120
@@ -3453,7 +3459,8 @@ armor_trim_effects:
       icon: false
     gold_trim:
       materials: [gold]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: haste
       amplifier: 0
       duration_ticks: 120
@@ -3463,7 +3470,8 @@ armor_trim_effects:
       icon: false
     emerald_trim:
       materials: [emerald]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: hero_of_the_village
       amplifier: 0
       duration_ticks: 120
@@ -3473,7 +3481,8 @@ armor_trim_effects:
       icon: false
     amethyst_trim:
       materials: [amethyst]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: regeneration
       amplifier: 0
       duration_ticks: 120
@@ -3483,7 +3492,8 @@ armor_trim_effects:
       icon: false
     copper_trim:
       materials: [copper]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: water_breathing
       amplifier: 0
       duration_ticks: 120
@@ -3493,7 +3503,8 @@ armor_trim_effects:
       icon: false
     lapis_trim:
       materials: [lapis]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: night_vision
       amplifier: 0
       # night_vision flashes when < 10s remain — keep duration >= 400 ticks
@@ -3504,7 +3515,8 @@ armor_trim_effects:
       icon: false
     quartz_trim:
       materials: [quartz]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: speed
       amplifier: 0
       duration_ticks: 120
@@ -3514,7 +3526,8 @@ armor_trim_effects:
       icon: false
     redstone_trim:
       materials: [redstone]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: strength
       amplifier: 0
       duration_ticks: 120
@@ -3524,7 +3537,8 @@ armor_trim_effects:
       icon: false
     resin_trim:
       materials: [resin]
-      count_rule: EXACT
+      count_rule: MIN
+      count: 1
       effect: slow_falling
       amplifier: 0
       duration_ticks: 120
