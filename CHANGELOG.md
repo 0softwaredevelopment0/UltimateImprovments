@@ -6,6 +6,16 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
 ## [1.8.3-beta.2] — since 1.8.3-alpha.4 (2026-09-27)
 
 ### Fixed
+- **Container Stealing emptied the container it stole** — breaking a container
+  with the charm dropped a plain empty container item while the contents were
+  stored in a plugin-only PDC blob that was never read back (breaking it again
+  spilled nothing, placing the stolen container gave an empty chest: the items
+  vanished). The dropped container now carries its contents in vanilla
+  block-state NBT (`BlockStateMeta` snapshot of the broken block — same format
+  as ctrl+pick-block), so the item tooltip preview shows the stored items and
+  placing the container restores them natively, surviving restarts and
+  datapack outages. Containers stolen before the fix still restore their
+  contents from the legacy PDC blob when placed.
 - **`ConcurrentModificationException` in the unbreakable breaker sweep** —
   the per-tick maintenance task called `cleanup()` (which mutates the map)
   while iterating `activeBreaks` with its iterator open; the first session
