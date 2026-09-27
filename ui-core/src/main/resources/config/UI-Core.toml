@@ -603,8 +603,8 @@ unknown_status = "<red>❌ Неизвестный статус! Доступны
 # Placeholders: %punisher%, %reason%, %duration%, %discord_url%, %player%
 [messages.punishment]
 # URL.
-# Default: https://dsc.gg/rizer001-development
-discord_url = "https://dsc.gg/rizer001-development"
+# Default: https://dsc.gg/softwaredev
+discord_url = "https://dsc.gg/softwaredev"
 # Default: ["<red>This account has been banned!", "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 ban = ["<red>This account has been banned!", "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 # Default: ["<red>This account has been kicked!", "<gray>Kicked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
@@ -1164,8 +1164,8 @@ time_left = "<gray>┃ </gray><gray>Time left: </gray><gold>%duration%</gold>"
 # Placeholders: %punisher%, %reason%, %duration%, %discord_url%, %player%
 [messages_en.punishment]
 # URL.
-# Default: https://dsc.gg/rizer001-development
-discord_url = "https://dsc.gg/rizer001-development"
+# Default: https://dsc.gg/softwaredev
+discord_url = "https://dsc.gg/softwaredev"
 # Default: ["<red>This account has been banned!", "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 ban = ["<red>This account has been banned!", "<gray>Banned by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>Time remaining <dark_gray>»</dark_gray> <white>%duration%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 # Default: ["<red>This account has been kicked!", "<gray>Kicked by <dark_gray>»</dark_gray> <white>%punisher%</white>", "<gray>Reason <dark_gray>»</dark_gray> <reset>%reason%</reset>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]

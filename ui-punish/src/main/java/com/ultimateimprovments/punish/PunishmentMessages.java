@@ -180,6 +180,6 @@ public final class PunishmentMessages {
      * Returns the Discord appeal URL from the config.
      */
     public static String getDiscordUrl() {
-        return getConfig().getString(path("discord_url"), "https://dsc.gg/rizer001-development");
+        return getConfig().getString(path("discord_url"), "https://dsc.gg/softwaredev");
     }
 }
