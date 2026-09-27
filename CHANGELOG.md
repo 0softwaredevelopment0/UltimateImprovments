@@ -144,7 +144,9 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   stays up continuously; a shorter duration deliberately turns the effect
   off between checks (warned in the log). The check-period key is named
   `check_interval_ticks` (the old `interval_ticks` still works as a legacy
-  fallback when the new key is absent).
+  fallback when the new key is absent) and has no hard minimum — values
+  below 20 ticks are allowed but pointless (the check heartbeat runs once
+  per second), the config comments warn against them.
 - **`auth.2fa.github.*` keys never worked** — the `2fa` TOML key segment is
   not a bare key, and toml4j keeps quoted header segments with their quotes,
   so the `[auth."2fa".github]` template section never matched the runtime

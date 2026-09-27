@@ -51,10 +51,12 @@ import java.util.UUID;
  * configured). With {@code duration_ticks >= check_interval_ticks} the refresh
  * lands before the previous application expires and the effect stays up
  * continuously; with a shorter duration the effect deliberately turns off
- * between checks. {@code check_interval_ticks} is clamped to at least 20 ticks
- * (1 second) — more frequent checks would only waste performance.
- * Defaults: 40 / 40. Legacy units may still use the old {@code interval_ticks}
- * key — it is honored when {@code check_interval_ticks} is absent.
+ * between checks. There is no hard minimum for {@code check_interval_ticks},
+ * but values below 20 ticks make no sense: the internal heartbeat checks once
+ * per second, so smaller values cannot check more often and only waste
+ * performance. Defaults: 40 / 40. Legacy units may still use the old
+ * {@code interval_ticks} key — it is honored when {@code check_interval_ticks}
+ * is absent.
  * <p>
  * <b>Level scaling:</b> under the EXACT rule the effect LEVEL equals the number
  * of worn pieces carrying a matching trim material (1 piece → amplifier 0,
@@ -235,10 +237,10 @@ public final class TrimEffectsManager {
             int durationTicks = Math.max(1, u.getInt("duration_ticks", 40));
             int checkIntervalTicks;
             if (u.isSet("check_interval_ticks")) {
-                checkIntervalTicks = Math.max(20, u.getInt("check_interval_ticks", 40));
+                checkIntervalTicks = Math.max(1, u.getInt("check_interval_ticks", 40));
             } else {
                 // legacy key from the pre-rename units
-                checkIntervalTicks = Math.max(20, u.getInt("interval_ticks", 40));
+                checkIntervalTicks = Math.max(1, u.getInt("interval_ticks", 40));
             }
             if (durationTicks < checkIntervalTicks) {
                 ConsoleLogger.warn("[TrimEffects] Unit '" + id + "': duration_ticks (" + durationTicks

@@ -637,9 +637,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: true
@@ -668,9 +670,11 @@ amplifier = 1
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -708,9 +712,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -737,9 +743,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -766,9 +774,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -795,9 +805,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -824,9 +836,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -853,9 +867,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -882,9 +898,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -913,9 +931,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -942,9 +962,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -971,9 +993,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
@@ -1000,9 +1024,11 @@ amplifier = 0
 # How long ONE application of the effect lasts, in ticks.
 # Default: 40
 duration_ticks = 40
-# How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
-# before the previous application expires, so the effect never flickers.
+# How often the check re-applies the effect while the rule holds, in ticks.
+# With duration_ticks >= check_interval_ticks the refresh lands before the
+# previous application expires, so the effect never flickers.
+# Do NOT set below 20: the check heartbeat runs once per second, so smaller
+# values cannot check more often and only waste performance.
 # Default: 40
 check_interval_ticks = 40
 # Default: false
