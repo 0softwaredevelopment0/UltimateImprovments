@@ -39,7 +39,21 @@ import java.io.StringReader;
  */
 public class EnchantmentListener implements Listener {
 
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    /**
+     * MONITOR priority (not NORMAL): the contents are cleared and the vanilla
+     * drops suppressed BEFORE other plugins run — otherwise a protection
+     * plugin could cancel the break AFTER we emptied the container, and the
+     * cleared items would be gone for good. At MONITOR we run last; if a
+     * plugin cancels the event, BlockBreakEvent#setDropItems is moot and our
+     * snapshot is simply discarded (the container keeps its items — but the
+     * wipe below must only happen when the break is final).
+     * <p>
+     * Safety model: the wipe + snapshot happen on the NEXT tick, and only if
+     * the event was not cancelled meanwhile — protection plugins run at HIGH
+     * or HIGHEST, i.e. BEFORE the MONITOR handler. So by the time we act, the
+     * break decision is final and the wipe can never lose items.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
         ItemStack tool = player.getInventory().getItemInMainHand();
@@ -48,31 +62,39 @@ public class EnchantmentListener implements Listener {
         if (Enchantment.getLevel(tool) <= 0) return;
 
         Block block = event.getBlock();
-        BlockState state = block.getState();
-        if (!(state instanceof Container container)) return;
-
         Material blockType = block.getType();
         if (blockType == Material.AIR || !blockType.isItem()) return;
 
-        // 1. Snapshot the whole block (contents included) into vanilla item NBT.
-        //    getState() returns a snapshot of THIS break moment, taken before anything
-        //    is cleared — so the items are captured as-is. For a double chest only the
-        //    broken half's own slots are stored (the other half stays a live container).
-        ItemStack stored = new ItemStack(blockType);
-        BlockStateMeta meta = (BlockStateMeta) stored.getItemMeta();
-        meta.setBlockState(state);
-        stored.setItemMeta(meta);
+        // Capture the state NOW (the container still holds its items), but act
+        // only next tick, when no other plugin can cancel the break anymore.
+        BlockState state = block.getState();
+        if (!(state instanceof Container)) return;
 
-        // 2. Empty the REAL world container so nothing spills when it breaks
-        //    (the snapshot above already carries the items).
-        container.getInventory().clear();
-        container.update(true, true);
-
-        // 3. Suppress the vanilla drops entirely and drop our single container item.
         event.setDropItems(false);
-        World world = block.getWorld();
-        Location loc = block.getLocation().add(0.5, 0.5, 0.5);
-        world.dropItemNaturally(loc, stored);
+        com.ultimateimprovments.core.Main.getInstance().getServer().getScheduler().runTask(
+                com.ultimateimprovments.core.Main.getInstance(), () -> {
+                    if (block.getType() != blockType) return; // replaced meanwhile
+
+                    BlockState currentState = block.getState();
+                    if (!(currentState instanceof Container currentContainer)) return;
+
+                    // 1. Snapshot the whole block (contents included) into vanilla item NBT.
+                    ItemStack stored = new ItemStack(blockType);
+                    BlockStateMeta meta = (BlockStateMeta) stored.getItemMeta();
+                    meta.setBlockState(currentState);
+                    stored.setItemMeta(meta);
+
+                    // 2. Empty the REAL world container so nothing spills when it breaks
+                    //    (the snapshot above already carries the items).
+                    currentContainer.getInventory().clear();
+                    currentContainer.update(true, true);
+
+                    // 3. Drop our single container item (the block itself breaks right after,
+                    //    vanilla suppresses the (now empty) container drop via setDropItems(false)).
+                    World world = block.getWorld();
+                    Location loc = block.getLocation().add(0.5, 0.5, 0.5);
+                    world.dropItemNaturally(loc, stored);
+                });
     }
 
     /**
