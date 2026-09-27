@@ -285,20 +285,23 @@ public class EnchantmentListener implements Listener {
      * covers hovering: were flying and still airborne, even when
      * {@code isFlying()} desyncs to false while hanging in the air.
      * <p>
-     * Flight is INCOMPATIBLE with Repairing: any worn piece carrying the
-     * Repairing charm revokes the flight (a repair would offset the whole
-     * durability price).
+     * Flight is INCOMPATIBLE with Repairing on the CHEST slot only (the piece
+     * paying the flight engine's own drain); other pieces may carry Repairing.
      */
     private static void drainFlightIntegrity() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             try {
                 UUID uuid = player.getUniqueId();
 
-                // Flight is INCOMPATIBLE with Repairing: a Repairing book on
-                // any worn piece would offset the whole durability price and
-                // make flight free. If any armor piece carries the charm, the
-                // flight is revoked (and not granted again while it stays).
-                if (hasRepairingOnArmor(player)) {
+                // Flight is INCOMPATIBLE with Repairing on the CHEST slot
+                // specifically: that is the piece paying the flight engine's
+                // own drain — a repair on it would keep the engine immortal.
+                // Repairing on OTHER pieces is fine (they still take real
+                // damage from flight, the player just keeps them patched —
+                // and the chestplate itself visibly wears down).
+                ItemStack flightChest = player.getInventory().getChestplate();
+                if (flightChest != null && flightChest.getType() != Material.AIR
+                        && com.ultimateimprovments.enchantment.repairing.Enchantment.getLevel(flightChest) > 0) {
                     if (GRANTED_FLIGHT.remove(uuid)
                             && player.getGameMode() != GameMode.CREATIVE
                             && player.getGameMode() != GameMode.SPECTATOR) {
@@ -359,20 +362,6 @@ public class EnchantmentListener implements Listener {
                         + ": " + e.getMessage());
             }
         }
-    }
-
-    /** True when any worn armor piece (4 slots + chest-slot elytra) carries the Repairing charm. */
-    private static boolean hasRepairingOnArmor(Player player) {
-        var inv = player.getInventory();
-        ItemStack[] pieces = {
-                inv.getHelmet(), inv.getChestplate(), inv.getLeggings(), inv.getBoots()};
-        for (ItemStack piece : pieces) {
-            if (piece != null && piece.getType() != Material.AIR
-                    && com.ultimateimprovments.enchantment.repairing.Enchantment.getLevel(piece) > 0) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // ─────────────────────────────────────────────────────────────
