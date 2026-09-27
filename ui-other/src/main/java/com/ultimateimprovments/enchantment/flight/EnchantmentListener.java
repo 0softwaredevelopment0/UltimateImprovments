@@ -278,10 +278,11 @@ public class EnchantmentListener implements Listener {
     }
 
     /**
-     * While a player is actively flying with the Flight chestplate, the
-     * chestplate loses 1 use of integrity per second — flight is no longer free.
-     * "Actively flying" also covers hovering: were flying and still airborne,
-     * even when {@code isFlying()} desyncs to false while hanging in the air.
+     * While a player is actively flying with the Flight charm, the whole worn
+     * armor set loses 1 use of integrity per second per piece — flight is no
+     * longer free. "Actively flying" also covers hovering: were flying and
+     * still airborne, even when {@code isFlying()} desyncs to false while
+     * hanging in the air.
      */
     private static void drainFlightIntegrity() {
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -300,9 +301,7 @@ public class EnchantmentListener implements Listener {
                         || !player.getAllowFlight()
                         || player.getVelocity().getY() < -0.5) {
                     FLIGHT_ACTIVE.remove(uuid);
-                }
-
-                if (!FLIGHT_ACTIVE.contains(uuid)) continue;
+                }                if (!FLIGHT_ACTIVE.contains(uuid)) continue;
 
                 ItemStack chest = player.getInventory().getChestplate();
                 if (chest == null || chest.getType() == Material.AIR) {
@@ -314,9 +313,16 @@ public class EnchantmentListener implements Listener {
                     continue;
                 }
 
-                ItemDurabilityUtil.decreaseItemIntegrity(chest, 1, player);
+                // Full set cost: while actively flying, EVERY worn armor piece
+                // loses 1 use of integrity per second (the charm needs a chest-
+                // plate to exist, but flying strains the whole set).
+                for (ItemStack piece : player.getInventory().getArmorContents()) {
+                    if (piece == null || piece.getType() == Material.AIR) continue;
+                    ItemDurabilityUtil.decreaseItemIntegrity(piece, 1, player);
+                }
             } catch (Exception e) {
-                ConsoleLogger.warn("[Flight] Integrity drain error for " + player.getName() + ": " + e.getMessage());
+                ConsoleLogger.warn("[Flight] Integrity drain error for " + player.getName()
+                        + ": " + e.getMessage());
             }
         }
     }
