@@ -131,6 +131,17 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   them to UI-Core, so fresh installs missed the keys).
 
 ### Fixed
+- **Armor/trim effects were granted once and then disappeared** — the
+  per-unit refresh counter counted 1-second heartbeat calls as ticks, so
+  `interval_ticks: 100` meant a re-apply every 100 SECONDS instead of every
+  5: an effect lasted its 120-tick duration and was then missing for ~94
+  seconds ("one-shot" feel). The counter now converts the tick period to
+  whole seconds (`interval_ticks / 20`, min 1 s) and the check re-applies
+  the effect on schedule. The application duration is derived from the
+  period itself (`interval_ticks + 40` ticks of jitter guard), so the
+  effect is refreshed BEFORE it expires and stays up continuously while
+  the rule holds; `duration_ticks` is gone from the config (period in
+  ticks, clamped to min 20, is now the only knob).
 - **`auth.2fa.github.*` keys never worked** — the `2fa` TOML key segment is
   not a bare key, and toml4j keeps quoted header segments with their quotes,
   so the `[auth."2fa".github]` template section never matched the runtime

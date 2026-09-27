@@ -38,12 +38,18 @@ import java.util.UUID;
  *       count: 1                  # only for MIN (1-4); ignored for EXACT
  *       effect: fire_resistance
  *       amplifier: 0              # strength at level 1 (0 = effect level I)
- *       duration_ticks: 120
- *       interval_ticks: 100
+ *       interval_ticks: 100       # check period in ticks (min 20 = 1 s)
  *       particles: true
  *       ambient: false
  *       icon: true
  * </pre>
+ * <p>
+ * <b>Effect duration:</b> there is no separate duration setting. While the
+ * rule holds, the check re-applies the effect every {@code interval_ticks} and
+ * each application lasts {@code interval_ticks + GAP_MARGIN_TICKS} (a 2-second
+ * guard against scheduler jitter), so the effect is refreshed BEFORE it can
+ * expire and stays up continuously. The period is clamped to at least 20 ticks
+ * (1 second) — more frequent checks would only waste performance.
  * <p>
  * <b>Level scaling:</b> under the EXACT rule the effect LEVEL equals the number
  * of worn pieces carrying a matching trim material (1 piece → amplifier 0,
@@ -53,16 +59,23 @@ import java.util.UUID;
  * <p>
  * Every second (via {@link TrimEffectsTask}) each online player is scanned:
  * the 4 armor slots are read, pieces are grouped by trim material, and every
- * unit whose rule currently holds (re-)applies its effect with
- * {@code duration_ticks}. When the rule stops holding the effect simply
- * expires naturally (no forceful removal — several units may grant the same
- * effect type, so the manager never strips what another unit has given).
+ * unit whose check period has elapsed re-applies its effect (see the duration
+ * note above). When the rule stops holding the effect simply expires naturally
+ * (no forceful removal — several units may grant the same effect type, so the
+ * manager never strips what another unit has given).
  * Materials and effects are resolved through the Paper registries
  * ({@link Registry#TRIM_MATERIAL}, {@link Registry#POTION_EFFECT_TYPE}), so
  * custom datapack-added trim materials work in the config too. Malformed
  * units are logged and skipped — one broken unit never kills the feature.
  */
 public final class TrimEffectsManager {
+
+    /**
+     * Extra ticks added on top of the check period when applying the effect, so
+     * consecutive applications overlap slightly and the effect never flickers
+     * off between two checks (scheduler jitter guard).
+     */
+    static final int GAP_MARGIN_TICKS = 40;
 
     /** Count rule: level grows with matching pieces (EXACT) or a fixed activation threshold (MIN). */
     public enum CountRule { EXACT, MIN }
@@ -75,14 +88,13 @@ public final class TrimEffectsManager {
         final int minCount;        // only meaningful for MIN
         final PotionEffectType effect;
         final int amplifier;       // 0-based, at level 1
-        final int durationTicks;
-        final int intervalTicks;
+        final int intervalTicks;   // check period in ticks (effect refresh period)
         final boolean particles;
         final boolean ambient;
         final boolean icon;
 
         Unit(String id, List<TrimMaterial> materials, CountRule rule, int minCount,
-             PotionEffectType effect, int amplifier, int durationTicks,
+             PotionEffectType effect, int amplifier,
              int intervalTicks, boolean particles, boolean ambient, boolean icon) {
             this.id = id;
             this.materials = materials;
@@ -90,7 +102,6 @@ public final class TrimEffectsManager {
             this.minCount = minCount;
             this.effect = effect;
             this.amplifier = amplifier;
-            this.durationTicks = durationTicks;
             this.intervalTicks = intervalTicks;
             this.particles = particles;
             this.ambient = ambient;
@@ -98,8 +109,8 @@ public final class TrimEffectsManager {
         }
     }
 
-    /** Per-player schedule bookkeeping for one applied unit. */
-    private record AppliedUnit(int ticksLeft) {}
+    /** Per-player schedule bookkeeping for one applied unit (counts down in 1 s heartbeats). */
+    private record AppliedUnit(int secondsLeft) {}
 
     private static TrimEffectsManager instance;
 
@@ -221,14 +232,13 @@ public final class TrimEffectsManager {
             }
 
             int amplifier = Math.max(0, u.getInt("amplifier", 0));
-            int durationTicks = Math.max(1, u.getInt("duration_ticks", 120));
             int intervalTicks = Math.max(20, u.getInt("interval_ticks", 100));
             boolean particles = u.getBoolean("particles", false);
             boolean ambient = u.getBoolean("ambient", false);
             boolean icon = u.getBoolean("icon", false);
 
             units.add(new Unit(id, materials, rule, minCount, effect,
-                    amplifier, durationTicks, intervalTicks, particles, ambient, icon));
+                    amplifier, intervalTicks, particles, ambient, icon));
         }
 
         ConsoleLogger.info("[TrimEffects] Config loaded: " + units.size() + " unit(s) valid, "
@@ -302,11 +312,11 @@ public final class TrimEffectsManager {
 
                 if (holds) {
                     AppliedUnit pending = playerSchedule.get(unit.id);
-                    if (pending == null || pending.ticksLeft() <= 0) {
+                    if (pending == null || pending.secondsLeft() <= 0) {
                         applyEffect(player, unit, levelAmplifier);
-                        playerSchedule.put(unit.id, new AppliedUnit(unit.intervalTicks));
+                        playerSchedule.put(unit.id, new AppliedUnit(secondsPerHeartbeat(unit.intervalTicks)));
                     } else {
-                        playerSchedule.put(unit.id, new AppliedUnit(pending.ticksLeft() - 1));
+                        playerSchedule.put(unit.id, new AppliedUnit(pending.secondsLeft() - 1));
                     }
                 } else {
                     // Rule stopped holding — let the effect expire naturally.
@@ -345,17 +355,28 @@ public final class TrimEffectsManager {
         return trim == null ? null : trim.getMaterial();
     }
 
+    /** Converts a tick period into whole 1-second heartbeats (never below 1). */
+    private static int secondsPerHeartbeat(int ticks) {
+        return Math.max(1, ticks / 20);
+    }
+
+    /** Effect application lasts the full check period + a 2 s jitter guard, so refreshes overlap. */
+    private static int applicationDurationTicks(int intervalTicks) {
+        return intervalTicks + GAP_MARGIN_TICKS;
+    }
+
     private void applyEffect(Player player, Unit unit, int levelAmplifier) {
         PotionEffect current = player.getPotionEffect(unit.effect);
+        int duration = applicationDurationTicks(unit.intervalTicks);
         // Do not downgrade: skip if a stronger or equal amplifier is already active
         // for at least as long as this application would last.
         if (current != null
                 && current.getAmplifier() >= levelAmplifier
                 && current.getDuration() != -1
-                && current.getDuration() >= Math.min(unit.durationTicks, unit.intervalTicks)) {
+                && current.getDuration() >= duration) {
             return;
         }
-        player.addPotionEffect(new PotionEffect(unit.effect, unit.durationTicks,
+        player.addPotionEffect(new PotionEffect(unit.effect, duration,
                 levelAmplifier, unit.ambient, unit.particles, unit.icon));
     }
 

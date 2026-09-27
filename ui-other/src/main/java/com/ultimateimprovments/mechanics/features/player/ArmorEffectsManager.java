@@ -36,8 +36,7 @@ import java.util.UUID;
  *       count: 1                # only for COUNT (1-3); ignored for FULL
  *       effect: fire_resistance
  *       amplifier: 0            # 0 = effect level I
- *       duration_ticks: 120     # re-applied every `interval_ticks` while the rule holds
- *       interval_ticks: 100
+ *       interval_ticks: 100     # check period in ticks (min 20 = 1 s)
  *       particles: true         # show particle effects
  *       ambient: false          # beacon-style translucent swirls
  *       icon: true              # show the effect icon in the HUD
@@ -47,18 +46,24 @@ import java.util.UUID;
  *       count: 3
  *       effect: speed
  *       amplifier: 1
- *       duration_ticks: 60
  *       interval_ticks: 50
  *       particles: false
  *       ambient: false
  *       icon: true
  * </pre>
  * <p>
- * Every {@code interval_ticks} each online player is scanned: for every unit
- * whose rule currently holds, the effect is (re-)applied with
- * {@code duration_ticks}. When the rule stops holding the effect simply
- * expires naturally (no forceful removal — several units may grant the same
- * effect type, so the manager never strips what another unit has given).
+ * <b>Effect duration:</b> there is no separate duration setting. While the
+ * rule holds, the check re-applies the effect every {@code interval_ticks} and
+ * each application lasts {@code interval_ticks + GAP_MARGIN_TICKS} (a 2-second
+ * guard against scheduler jitter), so the effect is refreshed BEFORE it can
+ * expire and stays up continuously. The period is clamped to at least 20 ticks
+ * (1 second) — more frequent checks would only waste performance.
+ * <p>
+ * The scan itself runs every second (fixed heartbeat): each player's armor is
+ * checked for every unit whose whole-second countdown has elapsed. When the
+ * rule stops holding the effect simply expires naturally (no forceful removal —
+ * several units may grant the same effect type, so the manager never strips
+ * what another unit has given).
  * <p>
  * A piece matches a unit's material family when the item material name
  * starts with {@code <family>_} and ends with {@code _HELMET/_CHESTPLATE/
@@ -68,6 +73,13 @@ import java.util.UUID;
  */
 public final class ArmorEffectsManager {
 
+    /**
+     * Extra ticks added on top of the check period when applying the effect, so
+     * consecutive applications overlap slightly and the effect never flickers
+     * off between two checks (scheduler jitter guard).
+     */
+    static final int GAP_MARGIN_TICKS = 40;
+
     /** One configured unit: material families + effect + schedule. */
     public static final class Unit {
         final String id;
@@ -76,14 +88,13 @@ public final class ArmorEffectsManager {
         final int minCount;
         final PotionEffectType effect;
         final int amplifier;       // 0-based
-        final int durationTicks;
-        final int intervalTicks;
+        final int intervalTicks;   // check period in ticks (effect refresh period)
         final boolean particles;
         final boolean ambient;
         final boolean icon;
 
         Unit(String id, List<String> families, boolean fullSetRule, int minCount,
-             PotionEffectType effect, int amplifier, int durationTicks,
+             PotionEffectType effect, int amplifier,
              int intervalTicks, boolean particles, boolean ambient, boolean icon) {
             this.id = id;
             this.families = families;
@@ -91,7 +102,6 @@ public final class ArmorEffectsManager {
             this.minCount = minCount;
             this.effect = effect;
             this.amplifier = amplifier;
-            this.durationTicks = durationTicks;
             this.intervalTicks = intervalTicks;
             this.particles = particles;
             this.ambient = ambient;
@@ -99,8 +109,8 @@ public final class ArmorEffectsManager {
         }
     }
 
-    /** Per-player schedule bookkeeping for one applied unit. */
-    private record AppliedUnit(Unit unit, int ticksLeft) {}
+    /** Per-player schedule bookkeeping for one applied unit (counts down in 1 s heartbeats). */
+    private record AppliedUnit(Unit unit, int secondsLeft) {}
 
     private static ArmorEffectsManager instance;
 
@@ -213,14 +223,13 @@ public final class ArmorEffectsManager {
             }
 
             int amplifier = Math.max(0, u.getInt("amplifier", 0));
-            int durationTicks = Math.max(1, u.getInt("duration_ticks", 120));
             int intervalTicks = Math.max(20, u.getInt("interval_ticks", 100));
             boolean particles = u.getBoolean("particles", true);
             boolean ambient = u.getBoolean("ambient", false);
             boolean icon = u.getBoolean("icon", true);
 
             units.add(new Unit(id, families, fullSetRule, minCount, effect,
-                    amplifier, durationTicks, intervalTicks, particles, ambient, icon));
+                    amplifier, intervalTicks, particles, ambient, icon));
         }
 
         ConsoleLogger.info("[ArmorEffects] Config loaded: " + units.size() + " unit(s) valid, "
@@ -264,11 +273,11 @@ public final class ArmorEffectsManager {
 
                 if (holds) {
                     AppliedUnit pending = playerSchedule.get(unit.id);
-                    if (pending == null || pending.ticksLeft() <= 0) {
+                    if (pending == null || pending.secondsLeft() <= 0) {
                         applyEffect(player, unit);
-                        playerSchedule.put(unit.id, new AppliedUnit(unit, unit.intervalTicks));
+                        playerSchedule.put(unit.id, new AppliedUnit(unit, secondsPerHeartbeat(unit.intervalTicks)));
                     } else {
-                        playerSchedule.put(unit.id, new AppliedUnit(unit, pending.ticksLeft() - 1));
+                        playerSchedule.put(unit.id, new AppliedUnit(unit, pending.secondsLeft() - 1));
                     }
                 } else {
                     // Rule stopped holding — let the effect expire naturally.
@@ -305,17 +314,28 @@ public final class ArmorEffectsManager {
         return unit.families.contains(family);
     }
 
+    /** Converts a tick period into whole 1-second heartbeats (never below 1). */
+    private static int secondsPerHeartbeat(int ticks) {
+        return Math.max(1, ticks / 20);
+    }
+
+    /** Effect application lasts the full check period + a 2 s jitter guard, so refreshes overlap. */
+    private static int applicationDurationTicks(int intervalTicks) {
+        return intervalTicks + GAP_MARGIN_TICKS;
+    }
+
     private void applyEffect(Player player, Unit unit) {
         PotionEffect current = player.getPotionEffect(unit.effect);
+        int duration = applicationDurationTicks(unit.intervalTicks);
         // Do not downgrade: skip if a stronger or equal amplifier is already active
         // for at least as long as this application would last.
         if (current != null
                 && current.getAmplifier() >= unit.amplifier
                 && current.getDuration() != -1
-                && current.getDuration() >= Math.min(unit.durationTicks, unit.intervalTicks)) {
+                && current.getDuration() >= duration) {
             return;
         }
-        player.addPotionEffect(new PotionEffect(unit.effect, unit.durationTicks,
+        player.addPotionEffect(new PotionEffect(unit.effect, duration,
                 unit.amplifier, unit.ambient, unit.particles, unit.icon));
     }
 
