@@ -682,15 +682,13 @@ enabled = true
 # units section.
 [armor_trim_effects.units]
 
-# fire resistance netherite trim section.
-[armor_trim_effects.units.fire_resistance_netherite_trim]
+# netherite trim section.
+[armor_trim_effects.units.netherite_trim]
 # Material name (minecraft:...).
 # Default: ["netherite"]
 materials = ["netherite"]
 # Default: "EXACT"
 count_rule = "EXACT"
-# Default: 1
-count = 1
 # Default: "fire_resistance"
 effect = "fire_resistance"
 # Default: 0
@@ -701,40 +699,263 @@ duration_ticks = 120
 # Interval in ticks (20 ticks = 1 second).
 # Default: 100
 interval_ticks = 100
-# Default: true
-particles = true
-# Default: false
-ambient = false
-# Icon configuration.
-# Default: true
-icon = true
-
-# speed two emerald trim section.
-[armor_trim_effects.units.speed_two_emerald_trim]
-# Material name (minecraft:...).
-# Default: ["emerald"]
-materials = ["emerald"]
-# Default: "MIN"
-count_rule = "MIN"
-# Default: 2
-count = 2
-# Default: "speed"
-effect = "speed"
-# Default: 0
-amplifier = 0
-# Duration.
-# Default: 60
-duration_ticks = 60
-# Interval in ticks (20 ticks = 1 second).
-# Default: 50
-interval_ticks = 50
 # Default: false
 particles = false
 # Default: false
 ambient = false
 # Icon configuration.
-# Default: true
-icon = true
+# Default: false
+icon = false
+
+# iron trim section.
+[armor_trim_effects.units.iron_trim]
+# Material name (minecraft:...).
+# Default: ["iron"]
+materials = ["iron"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "resistance"
+effect = "resistance"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# diamond trim section.
+[armor_trim_effects.units.diamond_trim]
+# Material name (minecraft:...).
+# Default: ["diamond"]
+materials = ["diamond"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "absorption"
+effect = "absorption"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# gold trim section.
+[armor_trim_effects.units.gold_trim]
+# Material name (minecraft:...).
+# Default: ["gold"]
+materials = ["gold"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "haste"
+effect = "haste"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# emerald trim section.
+[armor_trim_effects.units.emerald_trim]
+# Material name (minecraft:...).
+# Default: ["emerald"]
+materials = ["emerald"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "hero_of_the_village"
+effect = "hero_of_the_village"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# amethyst trim section.
+[armor_trim_effects.units.amethyst_trim]
+# Material name (minecraft:...).
+# Default: ["amethyst"]
+materials = ["amethyst"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "regeneration"
+effect = "regeneration"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# copper trim section.
+[armor_trim_effects.units.copper_trim]
+# Material name (minecraft:...).
+# Default: ["copper"]
+materials = ["copper"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "water_breathing"
+effect = "water_breathing"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# lapis trim section.
+[armor_trim_effects.units.lapis_trim]
+# Material name (minecraft:...).
+# Default: ["lapis"]
+materials = ["lapis"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "night_vision"
+effect = "night_vision"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 400
+duration_ticks = 400
+# Interval in ticks (20 ticks = 1 second).
+# Default: 200
+interval_ticks = 200
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# quartz trim section.
+[armor_trim_effects.units.quartz_trim]
+# Material name (minecraft:...).
+# Default: ["quartz"]
+materials = ["quartz"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "speed"
+effect = "speed"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# redstone trim section.
+[armor_trim_effects.units.redstone_trim]
+# Material name (minecraft:...).
+# Default: ["redstone"]
+materials = ["redstone"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "strength"
+effect = "strength"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
+
+# resin trim section.
+[armor_trim_effects.units.resin_trim]
+# Material name (minecraft:...).
+# Default: ["resin"]
+materials = ["resin"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: "slow_falling"
+effect = "slow_falling"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: false
+icon = false
 
 # Sunburn mechanic: players burn in daylight under conditions.
 [sunburn]
