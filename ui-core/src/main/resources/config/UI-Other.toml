@@ -611,8 +611,8 @@ custom_brand = "Paper"
 vanished_players = []
 
 # Armor effects: configurable potion effects for worn armor sets (units).
-# While a unit's rule holds, its effect is re-applied every interval_ticks and
-# each application lasts duration_ticks (defaults 40/40 = continuous refresh).
+# Per unit: duration_ticks = how long one application lasts (ticks),
+# check_interval_ticks = how often the effect is re-applied (ticks, min 20).
 [armor_effects]
 # Master switch (true = feature on).
 # Default: true
@@ -638,9 +638,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: true
 particles = true
 # Default: false
@@ -668,9 +669,10 @@ amplifier = 1
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -680,8 +682,8 @@ ambient = false
 icon = true
 
 # Armor trim effects: potion effects by TRIM MATERIAL and matching piece count (units).
-# While a unit's rule holds, its effect is re-applied every interval_ticks and
-# each application lasts duration_ticks (defaults 40/40 = continuous refresh).
+# Per unit: duration_ticks = how long one application lasts (ticks),
+# check_interval_ticks = how often the effect is re-applied (ticks, min 20).
 [armor_trim_effects]
 # Master switch (true = feature on).
 # Default: true
@@ -707,9 +709,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -735,9 +738,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -763,9 +767,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -791,9 +796,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -819,9 +825,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -847,9 +854,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -875,9 +883,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -905,9 +914,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -933,9 +943,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -961,9 +972,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false
@@ -989,9 +1001,10 @@ amplifier = 0
 # Default: 40
 duration_ticks = 40
 # How often the check re-applies the effect while the rule holds, in ticks
-# (min 20 = 1 s). With duration_ticks >= interval_ticks the effect never flickers.
+# (min 20 = 1 s). With duration_ticks >= check_interval_ticks the refresh lands
+# before the previous application expires, so the effect never flickers.
 # Default: 40
-interval_ticks = 40
+check_interval_ticks = 40
 # Default: false
 particles = false
 # Default: false

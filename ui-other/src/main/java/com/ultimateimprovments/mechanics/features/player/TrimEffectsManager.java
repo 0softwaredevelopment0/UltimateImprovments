@@ -39,20 +39,22 @@ import java.util.UUID;
  *       effect: fire_resistance
  *       amplifier: 0              # strength at level 1 (0 = effect level I)
  *       duration_ticks: 40        # how long ONE application lasts
- *       interval_ticks: 40        # how often the check re-applies (min 20 = 1 s)
+ *       check_interval_ticks: 40  # how often the check re-applies (min 20 = 1 s)
  *       particles: true
  *       ambient: false
  *       icon: true
  * </pre>
  * <p>
  * <b>Duration vs check period:</b> each application lasts {@code duration_ticks};
- * the check re-applies the effect every {@code interval_ticks} (whole-second
+ * the check re-applies the effect every {@code check_interval_ticks} (whole-second
  * granularity, rounded down — the effect is never checked LESS often than
- * configured). With {@code duration_ticks >= interval_ticks} the refresh lands
- * before the previous application expires and the effect stays up continuously;
- * with a shorter duration the effect deliberately turns off between checks.
- * {@code interval_ticks} is clamped to at least 20 ticks (1 second) — more
- * frequent checks would only waste performance. Defaults: 40 / 40.
+ * configured). With {@code duration_ticks >= check_interval_ticks} the refresh
+ * lands before the previous application expires and the effect stays up
+ * continuously; with a shorter duration the effect deliberately turns off
+ * between checks. {@code check_interval_ticks} is clamped to at least 20 ticks
+ * (1 second) — more frequent checks would only waste performance.
+ * Defaults: 40 / 40. Legacy units may still use the old {@code interval_ticks}
+ * key — it is honored when {@code check_interval_ticks} is absent.
  * <p>
  * <b>Level scaling:</b> under the EXACT rule the effect LEVEL equals the number
  * of worn pieces carrying a matching trim material (1 piece → amplifier 0,
@@ -85,14 +87,14 @@ public final class TrimEffectsManager {
         final PotionEffectType effect;
         final int amplifier;       // 0-based, at level 1
         final int durationTicks;   // potion effect length per application
-        final int intervalTicks;   // check/re-apply period in ticks
+        final int checkIntervalTicks; // how often the check re-applies, in ticks
         final boolean particles;
         final boolean ambient;
         final boolean icon;
 
         Unit(String id, List<TrimMaterial> materials, CountRule rule, int minCount,
              PotionEffectType effect, int amplifier, int durationTicks,
-             int intervalTicks, boolean particles, boolean ambient, boolean icon) {
+             int checkIntervalTicks, boolean particles, boolean ambient, boolean icon) {
             this.id = id;
             this.materials = materials;
             this.rule = rule;
@@ -100,7 +102,7 @@ public final class TrimEffectsManager {
             this.effect = effect;
             this.amplifier = amplifier;
             this.durationTicks = durationTicks;
-            this.intervalTicks = intervalTicks;
+            this.checkIntervalTicks = checkIntervalTicks;
             this.particles = particles;
             this.ambient = ambient;
             this.icon = icon;
@@ -231,17 +233,23 @@ public final class TrimEffectsManager {
 
             int amplifier = Math.max(0, u.getInt("amplifier", 0));
             int durationTicks = Math.max(1, u.getInt("duration_ticks", 40));
-            int intervalTicks = Math.max(20, u.getInt("interval_ticks", 40));
-            if (durationTicks < intervalTicks) {
+            int checkIntervalTicks;
+            if (u.isSet("check_interval_ticks")) {
+                checkIntervalTicks = Math.max(20, u.getInt("check_interval_ticks", 40));
+            } else {
+                // legacy key from the pre-rename units
+                checkIntervalTicks = Math.max(20, u.getInt("interval_ticks", 40));
+            }
+            if (durationTicks < checkIntervalTicks) {
                 ConsoleLogger.warn("[TrimEffects] Unit '" + id + "': duration_ticks (" + durationTicks
-                        + ") < interval_ticks (" + intervalTicks + ") — the effect will turn off between checks.");
+                        + ") < check_interval_ticks (" + checkIntervalTicks + ") — the effect will turn off between checks.");
             }
             boolean particles = u.getBoolean("particles", false);
             boolean ambient = u.getBoolean("ambient", false);
             boolean icon = u.getBoolean("icon", false);
 
             units.add(new Unit(id, materials, rule, minCount, effect,
-                    amplifier, durationTicks, intervalTicks, particles, ambient, icon));
+                    amplifier, durationTicks, checkIntervalTicks, particles, ambient, icon));
         }
 
         ConsoleLogger.info("[TrimEffects] Config loaded: " + units.size() + " unit(s) valid, "
@@ -317,7 +325,7 @@ public final class TrimEffectsManager {
                     AppliedUnit pending = playerSchedule.get(unit.id);
                     if (pending == null || pending.secondsLeft() <= 0) {
                         applyEffect(player, unit, levelAmplifier);
-                        playerSchedule.put(unit.id, new AppliedUnit(secondsPerHeartbeat(unit.intervalTicks)));
+                        playerSchedule.put(unit.id, new AppliedUnit(secondsPerHeartbeat(unit.checkIntervalTicks)));
                     } else {
                         playerSchedule.put(unit.id, new AppliedUnit(pending.secondsLeft() - 1));
                     }

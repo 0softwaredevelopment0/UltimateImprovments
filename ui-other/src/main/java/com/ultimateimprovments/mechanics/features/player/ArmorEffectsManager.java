@@ -37,7 +37,7 @@ import java.util.UUID;
  *       effect: fire_resistance
  *       amplifier: 0            # 0 = effect level I
  *       duration_ticks: 40      # how long ONE application lasts
- *       interval_ticks: 40      # how often the check re-applies (min 20 = 1 s)
+ *       check_interval_ticks: 40 # how often the check re-applies (min 20 = 1 s)
  *       particles: true         # show particle effects
  *       ambient: false          # beacon-style translucent swirls
  *       icon: true              # show the effect icon in the HUD
@@ -48,20 +48,22 @@ import java.util.UUID;
  *       effect: speed
  *       amplifier: 1
  *       duration_ticks: 40
- *       interval_ticks: 40
+ *       check_interval_ticks: 40
  *       particles: false
  *       ambient: false
  *       icon: true
  * </pre>
  * <p>
  * <b>Duration vs check period:</b> each application lasts {@code duration_ticks};
- * the check re-applies the effect every {@code interval_ticks} (whole-second
+ * the check re-applies the effect every {@code check_interval_ticks} (whole-second
  * granularity, rounded down — the effect is never checked LESS often than
- * configured). With {@code duration_ticks >= interval_ticks} the refresh lands
- * before the previous application expires and the effect stays up continuously;
- * with a shorter duration the effect deliberately turns off between checks.
- * {@code interval_ticks} is clamped to at least 20 ticks (1 second) — more
- * frequent checks would only waste performance. Defaults: 40 / 40.
+ * configured). With {@code duration_ticks >= check_interval_ticks} the refresh
+ * lands before the previous application expires and the effect stays up
+ * continuously; with a shorter duration the effect deliberately turns off
+ * between checks. {@code check_interval_ticks} is clamped to at least 20 ticks
+ * (1 second) — more frequent checks would only waste performance.
+ * Defaults: 40 / 40. Legacy units may still use the old {@code interval_ticks}
+ * key — it is honored when {@code check_interval_ticks} is absent.
  * <p>
  * The scan itself runs every second (fixed heartbeat): each player's armor is
  * checked for every unit whose whole-second countdown has elapsed. When the
@@ -86,14 +88,14 @@ public final class ArmorEffectsManager {
         final PotionEffectType effect;
         final int amplifier;       // 0-based
         final int durationTicks;   // potion effect length per application
-        final int intervalTicks;   // check/re-apply period in ticks
+        final int checkIntervalTicks; // how often the check re-applies, in ticks
         final boolean particles;
         final boolean ambient;
         final boolean icon;
 
         Unit(String id, List<String> families, boolean fullSetRule, int minCount,
              PotionEffectType effect, int amplifier, int durationTicks,
-             int intervalTicks, boolean particles, boolean ambient, boolean icon) {
+             int checkIntervalTicks, boolean particles, boolean ambient, boolean icon) {
             this.id = id;
             this.families = families;
             this.fullSetRule = fullSetRule;
@@ -101,7 +103,7 @@ public final class ArmorEffectsManager {
             this.effect = effect;
             this.amplifier = amplifier;
             this.durationTicks = durationTicks;
-            this.intervalTicks = intervalTicks;
+            this.checkIntervalTicks = checkIntervalTicks;
             this.particles = particles;
             this.ambient = ambient;
             this.icon = icon;
@@ -223,17 +225,23 @@ public final class ArmorEffectsManager {
 
             int amplifier = Math.max(0, u.getInt("amplifier", 0));
             int durationTicks = Math.max(1, u.getInt("duration_ticks", 40));
-            int intervalTicks = Math.max(20, u.getInt("interval_ticks", 40));
-            if (durationTicks < intervalTicks) {
+            int checkIntervalTicks;
+            if (u.isSet("check_interval_ticks")) {
+                checkIntervalTicks = Math.max(20, u.getInt("check_interval_ticks", 40));
+            } else {
+                // legacy key from the pre-rename units
+                checkIntervalTicks = Math.max(20, u.getInt("interval_ticks", 40));
+            }
+            if (durationTicks < checkIntervalTicks) {
                 ConsoleLogger.warn("[ArmorEffects] Unit '" + id + "': duration_ticks (" + durationTicks
-                        + ") < interval_ticks (" + intervalTicks + ") — the effect will turn off between checks.");
+                        + ") < check_interval_ticks (" + checkIntervalTicks + ") — the effect will turn off between checks.");
             }
             boolean particles = u.getBoolean("particles", true);
             boolean ambient = u.getBoolean("ambient", false);
             boolean icon = u.getBoolean("icon", true);
 
             units.add(new Unit(id, families, fullSetRule, minCount, effect,
-                    amplifier, durationTicks, intervalTicks, particles, ambient, icon));
+                    amplifier, durationTicks, checkIntervalTicks, particles, ambient, icon));
         }
 
         ConsoleLogger.info("[ArmorEffects] Config loaded: " + units.size() + " unit(s) valid, "
@@ -259,7 +267,7 @@ public final class ArmorEffectsManager {
 
     /**
      * Scans all online players. A unit whose rule holds (re-)applies its
-     * effect every {@code intervalTicks}; a unit whose rule no longer holds
+     * effect every {@code checkIntervalTicks}; a unit whose rule no longer holds
      * is dropped from the schedule (its effect expires on its own).
      */
     public void tick() {
@@ -279,7 +287,7 @@ public final class ArmorEffectsManager {
                     AppliedUnit pending = playerSchedule.get(unit.id);
                     if (pending == null || pending.secondsLeft() <= 0) {
                         applyEffect(player, unit);
-                        playerSchedule.put(unit.id, new AppliedUnit(unit, secondsPerHeartbeat(unit.intervalTicks)));
+                        playerSchedule.put(unit.id, new AppliedUnit(unit, secondsPerHeartbeat(unit.checkIntervalTicks)));
                     } else {
                         playerSchedule.put(unit.id, new AppliedUnit(unit, pending.secondsLeft() - 1));
                     }
