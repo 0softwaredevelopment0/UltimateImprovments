@@ -40,7 +40,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * (20–45 s). A task running every {@link #MELT_SWEEP_TICKS} ticks reverts due
  * blocks to their EXACT original lava state (a source stays a source, a flow
  * keeps its level — the charm never multiplies lava sources) — except the
- * block(s) a player is currently standing on/in.
+ * block(s) a player is currently standing on/in. The restored block gets a
+ * forced physics update, so the lava starts flowing right away instead of
+ * hanging frozen until an unrelated block update.
  * Only blocks THIS charm created are tracked; natural and player-placed
  * obsidian are never touched. The registry is in-memory: after a server restart
  * the timers are gone and the obsidian simply stays (a normal solid block).
@@ -218,7 +220,11 @@ public class EnchantmentListener implements Listener {
 
             // Restore the ORIGINAL lava state: a source stays a source, a flow
             // level 1-7 comes back as that same flow — no free new sources.
-            block.setBlockData(melt.lavaData(), false);
+            // applyPhysics = true is REQUIRED: it notifies the neighbors and
+            // schedules the liquid tick, so the lava immediately re-evaluates
+            // its flow. Without the update the restored lava can sit frozen
+            // (visibly still) until something touches it.
+            block.setBlockData(melt.lavaData(), true);
         }
     }
 
