@@ -78,6 +78,13 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   `iterator.remove()` and cleans the reverse map directly.
 
 ### Changed
+- **Flight now strains the whole armor set** — while actively flying, every
+  worn armor piece loses 1 use of integrity per second (previously only the
+  charming chestplate paid, the rest of the set flew for free).
+- **Levitation now has an integrity cost** — actively boosting (jump key
+  held) drains 1 use per second from the charming chestplate; releasing the
+  key is free. Cheaper than Flight, fitting its lower value. Previously
+  the jetpack was entirely free.
 - **Armor charms can now be applied to the elytra** — Flight, Levitation,
   Igniting and the Curse of Vulnerability accept the elytra in addition to
   their armor pieces: the enchanting table / anvil / `/ui enchant` take it
