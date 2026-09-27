@@ -15,6 +15,12 @@ prefix = "<white>[<green>UI<white>] <reset>"
 # Default: "1.8.3-beta.3"
 plugin_version = "1.8.3-beta.3"
 
+# Master switch for the /ui config commands (e.g. /ui config regen).
+# Disabled by default so a stray permission grant cannot wipe config edits.
+[config]
+# Default: false
+commands_enabled = false
+
 
 # join invulnerable reset section.
 [join_invulnerable_reset]
