@@ -7,6 +7,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
 
@@ -18,8 +19,8 @@ import org.bukkit.potion.PotionEffectType;
  * to the charm level (level 5 → 5 seconds = 100 fire ticks).
  * <p>
  * Works for ANY armored entity — player or mob — and for ANY armor piece
- * (helmet, chestplate, leggings, boots). The highest charm level among the worn
- * pieces is used.
+ * (helmet, chestplate, leggings, boots) or the elytra (chest slot). The highest
+ * charm level among the worn pieces is used.
  * <p>
  * It's plain ignition: water / rain still extinguishes it, Fire Resistance protects
  * the attacker. The attacker must be a {@link LivingEntity} (projectiles don't burn).
@@ -74,6 +75,13 @@ public class EnchantmentListener implements Listener {
         for (ItemStack item : equipment.getArmorContents()) {
             if (item == null || item.getType().isAir()) continue;
             int lvl = com.ultimateimprovments.enchantment.igniting.Enchantment.getLevel(item);
+            if (lvl > max) max = lvl;
+        }
+
+        // The elytra occupies the CHEST slot but is NOT part of getArmorContents().
+        ItemStack chestItem = equipment.getItem(EquipmentSlot.CHEST);
+        if (chestItem != null && !chestItem.getType().isAir()) {
+            int lvl = com.ultimateimprovments.enchantment.igniting.Enchantment.getLevel(chestItem);
             if (lvl > max) max = lvl;
         }
         return max;

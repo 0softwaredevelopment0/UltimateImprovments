@@ -212,14 +212,15 @@ public final class Enchantment {
     }
 
     /**
-     * Checks if the material can accept the Igniting enchantment.
+     * Checks if the material can accept the Igniting enchantment (armor pieces and the elytra).
      */
     public static boolean isValidToolType(@NotNull Material material) {
         String name = material.name();
         return name.endsWith("_HELMET")
                 || name.endsWith("_CHESTPLATE")
                 || name.endsWith("_LEGGINGS")
-                || name.endsWith("_BOOTS");
+                || name.endsWith("_BOOTS")
+                || material == Material.ELYTRA;
     }
 
     // ─────────────────────────────────────────────────────────────

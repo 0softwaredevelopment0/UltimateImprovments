@@ -206,11 +206,11 @@ public final class Enchantment {
     }
 
     /**
-     * Checks if the material can accept the Levitation enchantment.
+     * Checks if the material can accept the Levitation enchantment (chestplates and the elytra).
      */
     public static boolean isValidToolType(@NotNull Material material) {
         String name = material.name();
-        return name.endsWith("_CHESTPLATE");
+        return name.endsWith("_CHESTPLATE") || material == Material.ELYTRA;
     }
 
     // ─────────────────────────────────────────────────────────────
