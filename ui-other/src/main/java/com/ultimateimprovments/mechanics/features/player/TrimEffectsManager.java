@@ -223,9 +223,9 @@ public final class TrimEffectsManager {
             int amplifier = Math.max(0, u.getInt("amplifier", 0));
             int durationTicks = Math.max(1, u.getInt("duration_ticks", 120));
             int intervalTicks = Math.max(20, u.getInt("interval_ticks", 100));
-            boolean particles = u.getBoolean("particles", true);
+            boolean particles = u.getBoolean("particles", false);
             boolean ambient = u.getBoolean("ambient", false);
-            boolean icon = u.getBoolean("icon", true);
+            boolean icon = u.getBoolean("icon", false);
 
             units.add(new Unit(id, materials, rule, minCount, effect,
                     amplifier, durationTicks, intervalTicks, particles, ambient, icon));

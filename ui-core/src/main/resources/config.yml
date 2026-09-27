@@ -3411,35 +3411,127 @@ armor_trim_effects:
   #                  piece adds +1 (EXACT rule)
   # duration_ticks - how long one application lasts (it is refreshed regularly)
   # interval_ticks - how often the effect is re-applied while the rule holds (min 20)
-  # particles      - show swirling particles around the player
-  # ambient        - beacon-style translucent particles (usually false for armor)
-  # icon           - show the effect icon in the HUD
+  # particles      - show swirling particles around the player (default false)
+  # ambient        - beacon-style translucent particles (default false)
+  # icon           - show the effect icon in the HUD (default false)
   #
   # When the rule stops holding, the effect simply expires naturally —
   # it is never force-removed (several units may grant the same effect).
+  #
+  # DEFAULT SET: one unit per trim material, EXACT rule (min 1 piece, each
+  # extra piece = +1 effect level), all cosmetic flags off.
   units:
-    fire_resistance_netherite_trim:
+    netherite_trim:
       materials: [netherite]
       count_rule: EXACT
-      count: 1                  # ignored for EXACT
       effect: fire_resistance
       amplifier: 0
       duration_ticks: 120
       interval_ticks: 100
-      particles: true
-      ambient: false
-      icon: true
-    speed_two_emerald_trim:
-      materials: [emerald]
-      count_rule: MIN
-      count: 2
-      effect: speed
-      amplifier: 0
-      duration_ticks: 60
-      interval_ticks: 50
       particles: false
       ambient: false
-      icon: true
+      icon: false
+    iron_trim:
+      materials: [iron]
+      count_rule: EXACT
+      effect: resistance
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
+    diamond_trim:
+      materials: [diamond]
+      count_rule: EXACT
+      effect: absorption
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
+    gold_trim:
+      materials: [gold]
+      count_rule: EXACT
+      effect: haste
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
+    emerald_trim:
+      materials: [emerald]
+      count_rule: EXACT
+      effect: hero_of_the_village
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
+    amethyst_trim:
+      materials: [amethyst]
+      count_rule: EXACT
+      effect: regeneration
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
+    copper_trim:
+      materials: [copper]
+      count_rule: EXACT
+      effect: water_breathing
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
+    lapis_trim:
+      materials: [lapis]
+      count_rule: EXACT
+      effect: night_vision
+      amplifier: 0
+      # night_vision flashes when < 10s remain — keep duration >= 400 ticks
+      duration_ticks: 400
+      interval_ticks: 200
+      particles: false
+      ambient: false
+      icon: false
+    quartz_trim:
+      materials: [quartz]
+      count_rule: EXACT
+      effect: speed
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
+    redstone_trim:
+      materials: [redstone]
+      count_rule: EXACT
+      effect: strength
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
+    resin_trim:
+      materials: [resin]
+      count_rule: EXACT
+      effect: slow_falling
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: false
+      ambient: false
+      icon: false
 
 sunburn:
   # Master toggle - enable/disable the entire sunburn system
