@@ -46,7 +46,7 @@ public final class AddonCatalog {
         route("UI-Shared", "space", "radiation", "hazmat");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
-                "features", "brand_spoof", "vanish", "sunburn", "netherite_upgrade",
+                "features", "brand_spoof", "vanish", "sunburn", "armor_effects", "netherite_upgrade",
                 "auth", "void_protection", "death_logger", "power", "suicide",
                 "packet_guard", "proxy_server", "redstone_guard", "emergency_entity_kill",
                 "server_overload_warning", "bot_protection", "changedimmension", "motd",
