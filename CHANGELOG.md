@@ -5,7 +5,19 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
 
 ## [1.8.3-beta.2] — since 1.8.3-alpha.4 (2026-09-27)
 
+### Added
+- **`armor_effects` feature** — configurable potion effects for wearing armor
+  sets (leather/copper/chainmail/iron/golden/diamond/netherite families):
+  rule FULL or COUNT (1–3 pieces), per-rule effect/amplifier/duration/interval,
+  particles and ambient/icon toggles. Configured under the `armor_effects`
+  section (UI-Other).
+
 ### Fixed
+- **Offline invsee/endersee failed with "No data file found"** — resolving an
+  offline player's UUID now falls back to `usercache.json` (both key orders,
+  server root and world container) and a `.dat` scan by `bukkit.lastKnownName`,
+  with a diagnostic warning listing what was searched when the player still
+  cannot be resolved.
 - **Container Stealing emptied the container it stole** — breaking a container
   with the charm dropped a plain empty container item while the contents were
   stored in a plugin-only PDC blob that was never read back (breaking it again
