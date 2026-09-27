@@ -3389,6 +3389,58 @@ armor_effects:
       ambient: false
       icon: true
 
+armor_trim_effects:
+  # Master toggle - enable/disable the entire armor trim effects system
+  enabled: true
+
+  # Units: each unit grants ONE potion effect based on the TRIM MATERIAL
+  # (the ingot/crystal used in the smithing table - the trim COLOR), not the
+  # trim pattern (the shape). The trim pattern on the pieces is irrelevant.
+  # You can define any number of units; all matching units work in parallel.
+  #
+  # materials      - trim MATERIALS this unit applies to (amethyst, copper,
+  #                  diamond, emerald, gold, iron, lapis, netherite, quartz,
+  #                  redstone, resin). Counted across the 4 armor slots.
+  # count_rule     - EXACT = the effect level equals the number of matching
+  #                  pieces (1 piece -> level I, 2 -> level II, 3 -> III, 4 -> IV);
+  #                  MIN = the effect activates at `count`+ matching pieces
+  #                  (and stays at `count`+1 ... 4 with no level growth)
+  # count          - minimum matching pieces for MIN rule (1-4); ignored for EXACT
+  # effect         - potion effect key (fire_resistance, speed, strength, ...)
+  # amplifier      - effect strength at level 1, 0 = level I; each extra matching
+  #                  piece adds +1 (EXACT rule)
+  # duration_ticks - how long one application lasts (it is refreshed regularly)
+  # interval_ticks - how often the effect is re-applied while the rule holds (min 20)
+  # particles      - show swirling particles around the player
+  # ambient        - beacon-style translucent particles (usually false for armor)
+  # icon           - show the effect icon in the HUD
+  #
+  # When the rule stops holding, the effect simply expires naturally —
+  # it is never force-removed (several units may grant the same effect).
+  units:
+    fire_resistance_netherite_trim:
+      materials: [netherite]
+      count_rule: EXACT
+      count: 1                  # ignored for EXACT
+      effect: fire_resistance
+      amplifier: 0
+      duration_ticks: 120
+      interval_ticks: 100
+      particles: true
+      ambient: false
+      icon: true
+    speed_two_emerald_trim:
+      materials: [emerald]
+      count_rule: MIN
+      count: 2
+      effect: speed
+      amplifier: 0
+      duration_ticks: 60
+      interval_ticks: 50
+      particles: false
+      ambient: false
+      icon: true
+
 sunburn:
   # Master toggle - enable/disable the entire sunburn system
   enabled: true

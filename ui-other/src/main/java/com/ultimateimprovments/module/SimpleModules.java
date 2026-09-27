@@ -368,6 +368,31 @@ public final class SimpleModules {
             }
         });
 
+        // ArmorTrimEffects
+        mm.register(new SimpleModule("ArmorTrimEffects", "mechanics/features/player/armor_trim_effects", false) {
+            private Object task;
+
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.init();
+                task = new com.ultimateimprovments.mechanics.features.player.TrimEffectsTask()
+                        .runTaskTimer(plugin, 20L, 20L); // 1s heartbeat, manager owns unit intervals
+                ConsoleLogger.info("[ArmorTrimEffects] Configurable potion effects for armor TRIM materials.");
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                if (task instanceof org.bukkit.scheduler.BukkitTask bt) bt.cancel();
+                task = null;
+                com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.shutdown();
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.reloadConfig();
+            }
+        });
+
         // Lightning
         mm.register(new SimpleModule("Lightning", "mechanics/environment/lightning", false) {
             @Override
