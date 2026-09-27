@@ -1350,7 +1350,7 @@ public final class SimpleModules {
 
             @Override
             protected void onDisable(JavaPlugin plugin) {
-                com.ultimateimprovments.enchantment.lavawalker.EnchantmentListener.shutdown((Main) plugin);
+                com.ultimateimprovments.enchantment.lavawalker.EnchantmentListener.shutdown();
             }
         });
     }
