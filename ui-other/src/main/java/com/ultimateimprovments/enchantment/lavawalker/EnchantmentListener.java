@@ -17,7 +17,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -77,9 +76,6 @@ public class EnchantmentListener implements Listener {
      *  Package-visible: {@link MeltStore} loads it at start and snapshots it for autosave. */
     static final Map<BlockPos, MeltEntry> MELTING = new ConcurrentHashMap<>();
 
-    /** Blocks a player is currently standing on/in — the melt sweep skips those. */
-    private static final Map<UUID, Set<BlockPos>> STANDING_ON = new ConcurrentHashMap<>();
-
     /** Immutable block position key (world name + coordinates). Package-visible for {@link MeltStore}. */
     record BlockPos(String world, int x, int y, int z) {
         static BlockPos of(Block block) {
@@ -138,9 +134,7 @@ public class EnchantmentListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
-        UUID uuid = event.getPlayer().getUniqueId();
-        LAST_POS.remove(uuid);
-        STANDING_ON.remove(uuid);
+        LAST_POS.remove(event.getPlayer().getUniqueId());
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -169,13 +163,42 @@ public class EnchantmentListener implements Listener {
         int feetY = feet.getY();
         int feetZ = feet.getZ();
 
-        // Shield both center-column layers from melting while the player is there.
-        STANDING_ON.put(player.getUniqueId(), Set.of(
-                new BlockPos(world.getName(), feetX, feetY - 1, feetZ),
-                new BlockPos(world.getName(), feetX, feetY, feetZ)));
+        // NEVER place obsidian inside the player's own hitbox (feet or head).
+        // The ground layer keeps the center column (the player stands on it —
+        // that is the point), but the player's own feet/head blocks must never
+        // be replaced: placing a solid block into them suffocates the player
+        // (vanilla suffocation damage) and traps them until the melt frees them.
+        int headY = feetY + 1;
+        convertLayer(world, feetX, feetZ, feetY - 1, radius, feetX, feetZ, false);
+        convertLayer(world, feetX, feetZ, feetY, radius, feetX, feetZ, true);
+        convertLayer(world, feetX, feetZ, headY, radius, feetX, feetZ, true);
+    }
 
-        convertLayer(world, feetX, feetZ, feetY - 1, radius);
-        convertLayer(world, feetX, feetZ, feetY, radius);
+    /**
+     * Converts every LAVA block of a horizontal square layer into registered
+     * melting obsidian.
+     *
+     * @param skipCenter when true the center column is NOT converted (used for
+     *                   the player's own feet/head layers — a solid block there
+     *                   would suffocate and trap the player)
+     */
+    private static void convertLayer(World world, int centerX, int centerZ, int y, int radius,
+                                     int playerX, int playerZ, boolean skipCenter) {
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (skipCenter && centerX + dx == playerX && centerZ + dz == playerZ) continue;
+
+                Block target = world.getBlockAt(centerX + dx, y, centerZ + dz);
+                if (target.getType() != Material.LAVA) continue;
+
+                // Capture the EXACT lava state (source vs flow/fall level) so the
+                // melt restores it verbatim instead of always a full source.
+                BlockData lavaData = target.getBlockData();
+
+                target.setType(Material.OBSIDIAN, false);
+                MELTING.put(BlockPos.of(target), new MeltEntry(now() + meltDelay(), lavaData));
+            }
+        }
     }
 
     /** Converts every LAVA block of a horizontal square layer into registered melting obsidian. */
@@ -219,8 +242,8 @@ public class EnchantmentListener implements Listener {
                 continue;
             }
 
-            if (isStandingOn(pos)) {
-                MELTING.put(pos, new MeltEntry(now + MELT_RETRY_TICKS, melt.lavaData())); // player on it — retry in 5 s
+            if (isOccupiedByPlayer(pos)) {
+                MELTING.put(pos, new MeltEntry(now + MELT_RETRY_TICKS, melt.lavaData())); // player there — retry in 5 s
                 continue;
             }
 
@@ -236,10 +259,24 @@ public class EnchantmentListener implements Listener {
         }
     }
 
-    /** True when any online player is currently standing on/in the given block. */
-    private static boolean isStandingOn(BlockPos pos) {
-        for (Set<BlockPos> positions : STANDING_ON.values()) {
-            if (positions.contains(pos)) return true;
+    /**
+     * LIVE occupancy check: true when any online player's bounding box currently
+     * occupies the block (standing on it, standing in it, or head inside it).
+     * Replaces the old stale STANDING_ON map, which remembered only the last
+     * conversion center: a player could walk off, the map still shielded the
+     * block forever, and conversely a plate could melt under a player who
+     * walked onto it from the side.
+     */
+    private static boolean isOccupiedByPlayer(BlockPos pos) {
+        World world = Bukkit.getWorld(pos.world());
+        if (world == null) return false;
+
+        for (org.bukkit.entity.Player player : world.getPlayers()) {
+            org.bukkit.util.BoundingBox box = player.getBoundingBox();
+            if (box.contains(pos.x() + 0.5, pos.y() + 0.5, pos.z() + 0.5)
+                    || box.contains(pos.x() + 0.5, pos.y() + 1.5, pos.z() + 0.5)) {
+                return true;
+            }
         }
         return false;
     }

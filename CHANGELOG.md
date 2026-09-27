@@ -38,6 +38,23 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   section (UI-Other).
 
 ### Fixed
+- **Lava Walker could suffocate the player it helped** — the conversion swept
+  the player's own feet and head layers, placing solid obsidian INSIDE the
+  player (vanilla suffocation damage + trapped until the melt). The feet and
+  head blocks of the converting player are now skipped; only the block they
+  stand ON is converted.
+- **Lava Walker melt could trap or lag behind the player** — the "don't melt
+  under a player" check used a stale cache of the last conversion center: a
+  player could walk off and the block stayed un-melted forever, or a plate
+  melted under a player who walked onto it from the side. The sweep now does
+  a live bounding-box occupancy check of all players in the world.
+- **Container Stealing bypassed protection plugins** — the listener ran at
+  NORMAL priority and wiped the container contents immediately: a protection
+  plugin (WorldGuard, etc.) running later could cancel the break, leaving a
+  LOOTED container in place. The listener now runs at MONITOR (after all
+  protection checks) and performs the snapshot/wipe/drop on the next tick,
+  when the break decision is final — a cancelled break keeps the container
+  fully intact.
 - **Offline invsee/endersee failed with "No data file found"** — resolving an
   offline player's UUID now falls back to `usercache.json` (both key orders,
   server root and world container) and a `.dat` scan by `bukkit.lastKnownName`,
