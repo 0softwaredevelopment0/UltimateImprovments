@@ -97,11 +97,13 @@ public final class PlayerDataIO {
      * <p>Order of resolution:</p>
      * <ol>
      *   <li>Online player ({@link Bukkit#getPlayerExact});</li>
-     *   <li>Bukkit caches: {@code getOfflinePlayerIfCached} / {@code usercache.json}</li>
-     *       — but only if a data file with that UUID actually exists</li>
-     *       (never a fake offline-mode UUID);</li>
+     *   <li>Bukkit offline-player cache — but only if a data file with that
+     *       UUID actually exists (never a fake offline-mode UUID);</li>
+     *   <li>{@code usercache.json} (server root / world container) — Paper writes
+     *       every player who ever joined into this file, so it resolves names even
+     *       when the runtime cache misses;</li>
      *   <li>Scan of every {@code playerdata/*.dat}: the NBT root is checked for
-     *       {@code bukkit.lastKnownName} (written by Paper on every logout) —
+     *       {@code bukkit.lastKnownName} (written by Paper on logout) —
      *       case-insensitive match. Also accepts {@code <uuid>.dat} where the
      *       name itself is a UUID.</li>
      * </ol>
@@ -122,7 +124,7 @@ public final class PlayerDataIO {
             // not a UUID — continue with name lookup
         }
 
-        // 2) Bukkit caches (usercache.json / banned / ops / whitelist).
+        // 2) Bukkit offline-player cache.
         //    getOfflinePlayer(name) is intentionally NOT used: for unknown names it
         //    fabricates a Mode-OFFLINE UUID that can never match a .dat file.
         OfflinePlayer cached = Bukkit.getOfflinePlayerIfCached(name);
@@ -131,15 +133,78 @@ public final class PlayerDataIO {
             if (locate(id) != null) return id;
         }
 
-        // 3) Scan playerdata files for bukkit.lastKnownName
+        // 3) usercache.json — the authoritative name→UUID map for everyone who
+        //    ever joined, independent of Bukkit's in-memory cache state.
+        UUID fromUsercache = resolveFromUsercache(name);
+        if (fromUsercache != null && locate(fromUsercache) != null) return fromUsercache;
+
+        // 4) Scan playerdata files for bukkit.lastKnownName
+        int datCount = 0;
         for (File dir : playerdataFolders()) {
             File[] files = dir.listFiles((d, fn) -> fn != null && fn.toLowerCase().endsWith(".dat"));
             if (files == null) continue;
+            datCount += files.length;
             for (File file : files) {
                 UUID id = uuidFromFileName(file.getName());
                 if (id == null) continue;
                 if (matchesLastKnownName(file, name)) return id;
             }
+        }
+
+        // Nothing matched — tell the admin WHY, right in the console, so a
+        // layout/cache problem is a one-glance diagnosis instead of a mystery.
+        int folders = playerdataFolders().size();
+        ConsoleLogger.warn("[Inv] Could not resolve offline player '" + name + "': "
+                + folders + " playerdata folder(s), " + datCount + " .dat file(s) scanned, "
+                + "usercache " + (usercacheFile() != null && usercacheFile().isFile() ? "present" : "missing") + ".");
+        return null;
+    }
+
+    /** The usercache.json file (server root first, then the world container). */
+    private static File usercacheFile() {
+        File root = new File("usercache.json");
+        if (root.isFile()) return root;
+        File container = new File(Bukkit.getWorldContainer(), "usercache.json");
+        return container.isFile() ? container : root;
+    }
+
+    /**
+     * Parses {@code usercache.json} (format: {@code [{"name":"...","uuid":"..."}, ...]})
+     * and returns the UUID of the case-insensitive name match. Uses a regex instead
+     * of Gson to keep this class free of extra compile-time dependencies; entries
+     * are written by Paper in name→uuid order (reversed order is handled too).
+     */
+    private static UUID resolveFromUsercache(String name) {
+        File file = usercacheFile();
+        if (!file.isFile()) return null;
+        try {
+            String json = Files.readString(file.toPath());
+            String lower = json.toLowerCase();
+
+            // name first, then uuid (vanilla Paper order)
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                    "\"name\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"uuid\"\\s*:\\s*\"([^\"]+)\"")
+                    .matcher(json);
+            while (m.find()) {
+                if (m.group(1).equalsIgnoreCase(name)) {
+                    try { return UUID.fromString(m.group(2)); } catch (IllegalArgumentException ignored) {}
+                }
+            }
+
+            // reversed order (uuid first) — rare, but cheap to cover
+            m = java.util.regex.Pattern.compile(
+                    "\"uuid\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"name\"\\s*:\\s*\"([^\"]+)\"")
+                    .matcher(json);
+            while (m.find()) {
+                if (m.group(2).equalsIgnoreCase(name)) {
+                    try { return UUID.fromString(m.group(1)); } catch (IllegalArgumentException ignored) {}
+                }
+            }
+            // name not in usercache
+            ConsoleLogger.warn("[Inv] '" + name + "' not found in usercache.json ("
+                    + (lower.contains("\"name\"") ? "has entries" : "empty") + ").");
+        } catch (Exception e) {
+            ConsoleLogger.warn("[Inv] Failed to read " + file.getName() + ": " + e.getMessage());
         }
         return null;
     }
