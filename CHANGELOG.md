@@ -78,10 +78,11 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   `iterator.remove()` and cleans the reverse map directly.
 
 ### Changed
-- **Flight is incompatible with Repairing** — if any worn armor piece (or a
-  chest-slot elytra) carries the Repairing charm, the flight is revoked and
-  not granted while the piece stays on: a repair would offset the whole
-  durability price of flight. Normal (non-charm) repairs are unaffected.
+- **Flight is incompatible with Repairing on the chest slot** — if the worn
+  chestplate (or chest-slot elytra) carries the Repairing charm, the flight is
+  revoked and not granted while it stays on: that is the piece paying the
+  flight engine's own drain. Repairing on other armor pieces is fine — the
+  chestplate itself still visibly wears down.
 - **Attack AoE has no damage falloff and caps at radius 10** — every cleaved
   target takes the same force as the original hit; the radius equals the
   charm level capped at 10 (the level where the old falloff formula would
