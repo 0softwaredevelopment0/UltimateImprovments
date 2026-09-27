@@ -1,12 +1,9 @@
 package com.ultimateimprovments.module;
 
-import com.ultimateimprovments.config.YamlDuplicateCleaner;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.mechanics.security.anticheat.AntiCheatManager;
 import com.ultimateimprovments.mechanics.security.anticheat.nms.PacketHandler;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.*;
 
 /**
  * AntiCheatModule — the modular anti-cheat system.
@@ -23,22 +20,6 @@ public class AntiCheatModule extends PluginModule {
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {
         boolean enabled = plugin.getConfig().getBoolean("anticheat.enabled", false);
-
-        // Diagnostics + duplicate cleanup: legacy YAML backend only. The TOML
-        // backend (config.toml) cannot have duplicate sections by design
-        // (toml4j map model), so this whole block is skipped there.
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        if (!new File(plugin.getDataFolder(), com.ultimateimprovments.config.TomlConfigManager.CONFIG_TOML).exists()
-                && configFile.exists()) {
-            checkForDuplicates(plugin);
-
-            // 🔧 Automatically clean up duplicate anticheat: sections
-            if (YamlDuplicateCleaner.cleanDuplicates(configFile, "config.yml")) {
-                plugin.reloadConfig();
-                enabled = plugin.getConfig().getBoolean("anticheat.enabled", false);
-                ConsoleLogger.info("[AntiCheat] Config cleaned, re-read: anticheat.enabled = " + enabled);
-            }
-        }
 
         AntiCheatManager.init();
         AntiCheatManager acm = AntiCheatManager.getInstance();
@@ -75,35 +56,6 @@ public class AntiCheatModule extends PluginModule {
             ConsoleLogger.info("[AntiCheat] Enabled " + total + " checks (" + active + " active). Packet interception: ACTIVE.");
         } else {
             ConsoleLogger.info("[AntiCheat] Disabled " + total + " checks (config). Use /ui ac toggle on to enable.");
-        }
-    }
-
-    /**
-     * Checks config.yml for duplicate "anticheat:" root sections.
-     * The old ConfigRepairManager (before the fix) could create duplicates,
-     * causing SnakeYAML to take the last occurrence, ignoring the user's edits.
-     */
-    private void checkForDuplicates(JavaPlugin plugin) {
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        if (!configFile.exists()) return;
-
-        int count = 0;
-        try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                // Count lines where "anticheat:" is at the start of the line (possibly indented)
-                if (line.matches("^\\s*anticheat:\\s*$")) {
-                    count++;
-                }
-            }
-        } catch (IOException e) {
-            // ignore
-        }
-
-        if (count > 1) {
-            ConsoleLogger.warn("[AntiCheat] ⚠ Found " + count + " duplicate 'anticheat:' sections in config.yml!");
-            ConsoleLogger.warn("[AntiCheat] ⚠ SnakeYAML uses the LAST one. Your edits to earlier sections are ignored.");
-            ConsoleLogger.warn("[AntiCheat] ⚠ Restart the server with the latest plugin version to auto-clean duplicates.");
         }
     }
 

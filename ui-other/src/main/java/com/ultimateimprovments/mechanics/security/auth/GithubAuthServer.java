@@ -80,12 +80,12 @@ public class GithubAuthServer {
         int port = AuthConfig.getGithubPort();
 
         if (AuthConfig.getGithubClientId().isEmpty() || AuthConfig.getGithubClientSecret().isEmpty()) {
-            ConsoleLogger.warn("[Auth2FA] GitHub 2FA enabled, but auth.2fa.github.client_id / client_secret are empty!");
+            ConsoleLogger.warn("[Auth2FA] GitHub 2FA enabled, but auth.twofa.github.client_id / client_secret are empty!");
             ConsoleLogger.warn("[Auth2FA] Create an OAuth App at https://github.com/settings/developers and fill the config.");
             return;
         }
         if (AuthConfig.getGithubPublicUrl().isBlank()) {
-            ConsoleLogger.warn("[Auth2FA] auth.2fa.github.public_url is empty — using server-ip + port. "
+            ConsoleLogger.warn("[Auth2FA] auth.twofa.github.public_url is empty — using server-ip + port. "
                     + "On most hosts you MUST set the public URL (http://<ip-or-domain>:<port>).");
         }
 

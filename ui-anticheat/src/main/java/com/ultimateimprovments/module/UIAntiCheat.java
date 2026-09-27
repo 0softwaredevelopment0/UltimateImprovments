@@ -1,6 +1,5 @@
 package com.ultimateimprovments.module;
 
-import com.ultimateimprovments.config.YamlDuplicateCleaner;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.mechanics.security.anticheat.AntiCheatListener;
 import com.ultimateimprovments.mechanics.security.anticheat.AntiCheatManager;

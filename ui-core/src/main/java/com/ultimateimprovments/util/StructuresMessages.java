@@ -4,7 +4,7 @@ package com.ultimateimprovments.util;
  * Localized messages for the multi-block structures system (structure assembly,
  * NBT matching diagnostics, reactor/lightning rod flow).
  * <p>
- * All strings live in config.yml under {@code messages.structures.*} (RU tab) and
+ * All strings live in the composite config under {@code messages.structures.*} (RU tab) and
  * {@code messages_en.structures.*} (EN tab). The active section is chosen by
  * {@code messages.lang} ("en" or "ru") via {@link MessageUtil#raw(String, String)}.
  * <p>

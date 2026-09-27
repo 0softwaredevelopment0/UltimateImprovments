@@ -34,7 +34,7 @@ public final class AddonCatalog {
         // ── UI-Combat ──
         route("UI-Combat", "turret");
         // ── UI-Punish ──
-        route("UI-Punish", "access_control");
+        route("UI-Punish", "punish", "maintenance", "blacklist", "opwhitelist", "access_control");
         // ── UI-Essentials ──
         route("UI-Essentials", "home", "spawn", "heal_feed", "report", "rtp", "near",
                 "endersee", "troll");

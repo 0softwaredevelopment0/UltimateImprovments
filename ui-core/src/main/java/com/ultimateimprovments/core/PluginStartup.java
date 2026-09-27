@@ -2,7 +2,6 @@ package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.addon.AddonListener;
 import com.ultimateimprovments.addon.AddonRegistry;
-import com.ultimateimprovments.config.ConfigCrashSalvage;
 import com.ultimateimprovments.config.ConfigIntegrityValidator;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.module.CoreModules;

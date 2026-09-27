@@ -76,23 +76,23 @@ public class AuthConfig {
     // GITHUB 2FA
     // =========================
     public static boolean isGithub2FAEnabled() {
-        return getBool("auth.2fa.github.enabled", false);
+        return getBool("auth.twofa.github.enabled", false);
     }
 
     public static String getGithubClientId() {
-        return getString("auth.2fa.github.client_id", "");
+        return getString("auth.twofa.github.client_id", "");
     }
 
     public static String getGithubClientSecret() {
-        return getString("auth.2fa.github.client_secret", "");
+        return getString("auth.twofa.github.client_secret", "");
     }
 
     public static int getGithubPort() {
-        return Math.max(getInt("auth.2fa.github.port", 8080), 1);
+        return Math.max(getInt("auth.twofa.github.port", 8080), 1);
     }
 
     public static String getGithubPublicUrl() {
-        return getString("auth.2fa.github.public_url", "");
+        return getString("auth.twofa.github.public_url", "");
     }
 
     // =========================

@@ -24,8 +24,7 @@ public class ConfigIntegrityValidator {
     public static void validate(Main plugin) {
         // ── Per-addon TOML backend: duplicates are impossible, missing keys are
         // filled by AddonConfigManager.loadAddonToml(). Only value validation runs.
-        File legacyToml = new File(com.ultimateimprovments.core.UltimateDirs.base(),
-                TomlConfigManager.CONFIG_TOML);
+        File legacyToml = new File(com.ultimateimprovments.core.UltimateDirs.base(), "config.toml");
         if (legacyToml.exists()) {
             // A stray legacy monolithic config.toml from the pre-split layout —
             // keep the file (user data), it is simply no longer read.

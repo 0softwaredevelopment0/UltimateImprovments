@@ -26,7 +26,7 @@ public class MessageUtil {
 
     /**
      * Current plugin prefix used in all plugin messages.
-     * Configurable via the "prefix" key in config.yml (MiniMessage format).
+     * Configurable via the "prefix" key of the composite config (MiniMessage format).
      * Updated by {@link #reloadPrefix()}.
      */
     public static volatile String PREFIX = DEFAULT_PREFIX;

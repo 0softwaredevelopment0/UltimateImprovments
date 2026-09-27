@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 5. On a match — login is allowed; the session lives for 1 hour (auth.session_duration_minutes)
  * <p>
  * Requires an OAuth App at https://github.com/settings/developers and an open port
- * (auth.2fa.github.port) + public_url in the config.
+ * (auth.twofa.github.port) + public_url in the config.
  */
 public class Auth2FA {
 
@@ -48,7 +48,7 @@ public class Auth2FA {
         if (AuthConfig.isGithub2FAEnabled()) {
             GithubAuthServer.init();
         } else {
-            ConsoleLogger.info("[Auth2FA] GitHub 2FA is disabled in config.yml (auth.2fa.github.enabled: false).");
+            ConsoleLogger.info("[Auth2FA] GitHub 2FA is disabled in the config (auth.twofa.github.enabled: false).");
         }
     }
 
