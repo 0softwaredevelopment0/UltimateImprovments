@@ -81,6 +81,9 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
 - **Flight now strains the whole armor set** — while actively flying, every
   worn armor piece loses 1 use of integrity per second (previously only the
   charming chestplate paid, the rest of the set flew for free).
+- **Flight now costs integrity while gliding too** — planning with a
+  charmed elytra drains 1 chestplate use per second, same rate as flying:
+  the glide is the same engine and no longer travels for free.
 - **Levitation now has an integrity cost** — actively boosting (jump key
   held) drains 1 use per second from the charming chestplate; releasing the
   key is free. Cheaper than Flight, fitting its lower value. Previously

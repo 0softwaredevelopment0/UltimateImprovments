@@ -279,10 +279,11 @@ public class EnchantmentListener implements Listener {
 
     /**
      * While a player is actively flying with the Flight charm, the whole worn
-     * armor set loses 1 use of integrity per second per piece — flight is no
-     * longer free. "Actively flying" also covers hovering: were flying and
-     * still airborne, even when {@code isFlying()} desyncs to false while
-     * hanging in the air.
+     * armor set loses 1 use of integrity per second per piece, and GLIDING on
+     * a charmed elytra pays the same 1 use/s from the chestplate — the glide
+     * is the same engine, it no longer flies for free. "Actively flying" also
+     * covers hovering: were flying and still airborne, even when
+     * {@code isFlying()} desyncs to false while hanging in the air.
      */
     private static void drainFlightIntegrity() {
         for (Player player : Bukkit.getOnlinePlayers()) {
@@ -301,7 +302,20 @@ public class EnchantmentListener implements Listener {
                         || !player.getAllowFlight()
                         || player.getVelocity().getY() < -0.5) {
                     FLIGHT_ACTIVE.remove(uuid);
-                }                if (!FLIGHT_ACTIVE.contains(uuid)) continue;
+                }
+
+                // Gliding on a charmed elytra is the SAME engine and pays the
+                // same chestplate rate (checked separately from FLIGHT_ACTIVE —
+                // a gliding player is not in the allowFlight state).
+                ItemStack glideChest = player.isGliding()
+                        ? player.getInventory().getChestplate()
+                        : null;
+                if (glideChest != null && glideChest.getType() != Material.AIR
+                        && com.ultimateimprovments.enchantment.flight.Enchantment.getLevel(glideChest) > 0) {
+                    ItemDurabilityUtil.decreaseItemIntegrity(glideChest, 1, player);
+                }
+
+                if (!FLIGHT_ACTIVE.contains(uuid)) continue;
 
                 ItemStack chest = player.getInventory().getChestplate();
                 if (chest == null || chest.getType() == Material.AIR) {
