@@ -38,18 +38,21 @@ import java.util.UUID;
  *       count: 1                  # only for MIN (1-4); ignored for EXACT
  *       effect: fire_resistance
  *       amplifier: 0              # strength at level 1 (0 = effect level I)
- *       interval_ticks: 100       # check period in ticks (min 20 = 1 s)
+ *       duration_ticks: 40        # how long ONE application lasts
+ *       interval_ticks: 40        # how often the check re-applies (min 20 = 1 s)
  *       particles: true
  *       ambient: false
  *       icon: true
  * </pre>
  * <p>
- * <b>Effect duration:</b> there is no separate duration setting. While the
- * rule holds, the check re-applies the effect every {@code interval_ticks} and
- * each application lasts {@code interval_ticks + GAP_MARGIN_TICKS} (a 2-second
- * guard against scheduler jitter), so the effect is refreshed BEFORE it can
- * expire and stays up continuously. The period is clamped to at least 20 ticks
- * (1 second) — more frequent checks would only waste performance.
+ * <b>Duration vs check period:</b> each application lasts {@code duration_ticks};
+ * the check re-applies the effect every {@code interval_ticks} (whole-second
+ * granularity, rounded down — the effect is never checked LESS often than
+ * configured). With {@code duration_ticks >= interval_ticks} the refresh lands
+ * before the previous application expires and the effect stays up continuously;
+ * with a shorter duration the effect deliberately turns off between checks.
+ * {@code interval_ticks} is clamped to at least 20 ticks (1 second) — more
+ * frequent checks would only waste performance. Defaults: 40 / 40.
  * <p>
  * <b>Level scaling:</b> under the EXACT rule the effect LEVEL equals the number
  * of worn pieces carrying a matching trim material (1 piece → amplifier 0,
@@ -70,13 +73,6 @@ import java.util.UUID;
  */
 public final class TrimEffectsManager {
 
-    /**
-     * Extra ticks added on top of the check period when applying the effect, so
-     * consecutive applications overlap slightly and the effect never flickers
-     * off between two checks (scheduler jitter guard).
-     */
-    static final int GAP_MARGIN_TICKS = 40;
-
     /** Count rule: level grows with matching pieces (EXACT) or a fixed activation threshold (MIN). */
     public enum CountRule { EXACT, MIN }
 
@@ -88,13 +84,14 @@ public final class TrimEffectsManager {
         final int minCount;        // only meaningful for MIN
         final PotionEffectType effect;
         final int amplifier;       // 0-based, at level 1
-        final int intervalTicks;   // check period in ticks (effect refresh period)
+        final int durationTicks;   // potion effect length per application
+        final int intervalTicks;   // check/re-apply period in ticks
         final boolean particles;
         final boolean ambient;
         final boolean icon;
 
         Unit(String id, List<TrimMaterial> materials, CountRule rule, int minCount,
-             PotionEffectType effect, int amplifier,
+             PotionEffectType effect, int amplifier, int durationTicks,
              int intervalTicks, boolean particles, boolean ambient, boolean icon) {
             this.id = id;
             this.materials = materials;
@@ -102,6 +99,7 @@ public final class TrimEffectsManager {
             this.minCount = minCount;
             this.effect = effect;
             this.amplifier = amplifier;
+            this.durationTicks = durationTicks;
             this.intervalTicks = intervalTicks;
             this.particles = particles;
             this.ambient = ambient;
@@ -232,13 +230,18 @@ public final class TrimEffectsManager {
             }
 
             int amplifier = Math.max(0, u.getInt("amplifier", 0));
-            int intervalTicks = Math.max(20, u.getInt("interval_ticks", 100));
+            int durationTicks = Math.max(1, u.getInt("duration_ticks", 40));
+            int intervalTicks = Math.max(20, u.getInt("interval_ticks", 40));
+            if (durationTicks < intervalTicks) {
+                ConsoleLogger.warn("[TrimEffects] Unit '" + id + "': duration_ticks (" + durationTicks
+                        + ") < interval_ticks (" + intervalTicks + ") — the effect will turn off between checks.");
+            }
             boolean particles = u.getBoolean("particles", false);
             boolean ambient = u.getBoolean("ambient", false);
             boolean icon = u.getBoolean("icon", false);
 
             units.add(new Unit(id, materials, rule, minCount, effect,
-                    amplifier, intervalTicks, particles, ambient, icon));
+                    amplifier, durationTicks, intervalTicks, particles, ambient, icon));
         }
 
         ConsoleLogger.info("[TrimEffects] Config loaded: " + units.size() + " unit(s) valid, "
@@ -360,23 +363,17 @@ public final class TrimEffectsManager {
         return Math.max(1, ticks / 20);
     }
 
-    /** Effect application lasts the full check period + a 2 s jitter guard, so refreshes overlap. */
-    private static int applicationDurationTicks(int intervalTicks) {
-        return intervalTicks + GAP_MARGIN_TICKS;
-    }
-
     private void applyEffect(Player player, Unit unit, int levelAmplifier) {
         PotionEffect current = player.getPotionEffect(unit.effect);
-        int duration = applicationDurationTicks(unit.intervalTicks);
         // Do not downgrade: skip if a stronger or equal amplifier is already active
         // for at least as long as this application would last.
         if (current != null
                 && current.getAmplifier() >= levelAmplifier
                 && current.getDuration() != -1
-                && current.getDuration() >= duration) {
+                && current.getDuration() >= unit.durationTicks) {
             return;
         }
-        player.addPotionEffect(new PotionEffect(unit.effect, duration,
+        player.addPotionEffect(new PotionEffect(unit.effect, unit.durationTicks,
                 levelAmplifier, unit.ambient, unit.particles, unit.icon));
     }
 
