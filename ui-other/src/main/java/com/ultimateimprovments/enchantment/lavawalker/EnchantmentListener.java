@@ -73,14 +73,15 @@ public class EnchantmentListener implements Listener {
     /** Last position that triggered a conversion, per player (throttle). */
     private static final Map<UUID, Location> LAST_POS = new ConcurrentHashMap<>();
 
-    /** Melt registry: created block position → entry. Written by conversion, drained by the sweep. */
+    /** Melt registry: created block position → entry. Written by conversion, drained by the sweep.
+     *  Package-visible: {@link MeltStore} loads it at start and snapshots it for autosave. */
     static final Map<BlockPos, MeltEntry> MELTING = new ConcurrentHashMap<>();
 
     /** Blocks a player is currently standing on/in — the melt sweep skips those. */
     private static final Map<UUID, Set<BlockPos>> STANDING_ON = new ConcurrentHashMap<>();
 
-    /** Immutable block position key (world name + coordinates). */
-    private record BlockPos(String world, int x, int y, int z) {
+    /** Immutable block position key (world name + coordinates). Package-visible for {@link MeltStore}. */
+    record BlockPos(String world, int x, int y, int z) {
         static BlockPos of(Block block) {
             return new BlockPos(block.getWorld().getName(), block.getX(), block.getY(), block.getZ());
         }
@@ -92,8 +93,9 @@ public class EnchantmentListener implements Listener {
         }
     }
 
-    /** Melt registry value: due tick + the captured EXACT original lava BlockData. */
-    private record MeltEntry(long dueTick, BlockData lavaData) {}
+    /** Melt registry value: due tick + the captured EXACT original lava BlockData.
+     *  Package-visible for {@link MeltStore}. */
+    record MeltEntry(long dueTick, BlockData lavaData) {}
 
     // ─────────────────────────────────────────────────────────────
     //  EVENTS
@@ -207,16 +209,22 @@ public class EnchantmentListener implements Listener {
             if (melt.dueTick() > now) continue;
 
             BlockPos pos = entry.getKey();
-            MELTING.remove(pos); // safe on ConcurrentHashMap during iteration
 
-            Block block = pos.toBlock();
-            if (block == null) continue;                        // world unloaded → obsidian stays
-            if (block.getType() != Material.OBSIDIAN) continue; // replaced meanwhile → nothing to melt
+            World world = Bukkit.getWorld(pos.world());
+            if (world == null) continue; // world not (yet) loaded — keep the entry, retry next sweep
+
+            Block block = world.getBlockAt(pos.x(), pos.y(), pos.z());
+            if (block.getType() != Material.OBSIDIAN) {           // replaced meanwhile → nothing to melt
+                MELTING.remove(pos); // safe on ConcurrentHashMap during iteration
+                continue;
+            }
 
             if (isStandingOn(pos)) {
                 MELTING.put(pos, new MeltEntry(now + MELT_RETRY_TICKS, melt.lavaData())); // player on it — retry in 5 s
                 continue;
             }
+
+            MELTING.remove(pos);
 
             // Restore the ORIGINAL lava state: a source stays a source, a flow
             // level 1-7 comes back as that same flow — no free new sources.
@@ -240,14 +248,21 @@ public class EnchantmentListener implements Listener {
     //  REGISTRATION
     // ─────────────────────────────────────────────────────────────
 
-    /** Registers the listener and starts the melt sweep. */
+    /** Registers the listener, restores persisted melts and starts the melt sweep + autosave. */
     public static void register(Main plugin) {
         Bukkit.getPluginManager().registerEvents(new EnchantmentListener(), plugin);
+        MeltStore.load(plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::meltTick,
                 MELT_SWEEP_TICKS, MELT_SWEEP_TICKS);
+        MeltStore.startAutosave(plugin);
         ConsoleLogger.info("[LavaWalker] Listener registered (melt sweep every "
                 + (MELT_SWEEP_TICKS / 20.0) + "s, melt delay 20-45s, radius cap "
-                + Enchantment.MAX_RADIUS + ").");
+                + Enchantment.MAX_RADIUS + ", melts persist across restarts).");
+    }
+
+    /** Final synchronous save of the melt registry (async tasks do not survive disable). */
+    public static void shutdown(Main plugin) {
+        MeltStore.saveNow(plugin);
     }
 
     /** Random melt delay between MELT_MIN_TICKS and MELT_MAX_TICKS. */
@@ -255,8 +270,8 @@ public class EnchantmentListener implements Listener {
         return MELT_MIN_TICKS + ThreadLocalRandom.current().nextLong(MELT_MAX_TICKS - MELT_MIN_TICKS + 1);
     }
 
-    /** Current server tick (for melt deadlines). */
-    private static long now() {
+    /** Current server tick (for melt deadlines). Package-visible for {@link MeltStore} tick↔millis conversion. */
+    static long now() {
         return Bukkit.getCurrentTick();
     }
 }

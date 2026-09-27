@@ -15,8 +15,12 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   enchanting-table slot (same min-cost gate as the other charms), available in
   villager trades and mob equipment, NOT in random loot. Sneaking disables the
   conversion; no fire protection is granted — the first step into fresh lava
-  can still ignite you. The melt registry is in-memory: after a restart the
-  obsidian simply stays.
+  can still ignite you. The melt registry persists across restarts
+  (`lava_walker_melts.yml`: position + exact original lava data + wall-clock
+  deadline; autosave every 5 min + save on shutdown), so a melting plate comes
+  back to lava even after a restart — and no longer multiplies lava sources:
+  the melt restores the captured state verbatim with a forced physics update,
+  so the restored lava starts flowing immediately.
 - **`armor_effects` feature** — configurable potion effects for wearing armor
   sets (leather/copper/chainmail/iron/golden/diamond/netherite families):
   rule FULL or COUNT (1–3 pieces), per-rule effect/amplifier/duration/interval,

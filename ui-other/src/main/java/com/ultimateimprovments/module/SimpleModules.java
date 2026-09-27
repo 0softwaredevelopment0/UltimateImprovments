@@ -1337,18 +1337,20 @@ public final class SimpleModules {
         mm.register(new SimpleModule("LavaWalkerEnchantment", "enchantment/lavawalker", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-
-                // 1. Move listener (lava → obsidian conversion) + melt sweep
-                main.getServer().getPluginManager().registerEvents(
-                        new com.ultimateimprovments.enchantment.lavawalker.EnchantmentListener(), main);
+                // 1. Move listener (lava → obsidian conversion) + melt sweep + melt store
+                com.ultimateimprovments.enchantment.lavawalker.EnchantmentListener.register((Main) plugin);
 
                 // 2. PDC failsafe sync listener + periodic scan
-                com.ultimateimprovments.enchantment.lavawalker.EnchantmentSyncListener.register(main);
+                com.ultimateimprovments.enchantment.lavawalker.EnchantmentSyncListener.register((Main) plugin);
 
                 ConsoleLogger.info("[LavaWalker] Levels: 1-255 | Item: boots | Radius: level (cap "
                         + com.ultimateimprovments.enchantment.lavawalker.Enchantment.MAX_RADIUS
-                        + ") | Melt delay: 20-45s (frosted-ice style)");
+                        + ") | Melt delay: 20-45s (frosted-ice style, persists across restarts)");
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                com.ultimateimprovments.enchantment.lavawalker.EnchantmentListener.shutdown((Main) plugin);
             }
         });
     }
