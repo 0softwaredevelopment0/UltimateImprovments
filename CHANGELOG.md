@@ -3,18 +3,9 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.8.3-beta.2] — since 1.8.3-alpha.4 (2026-09-27)
+## [1.8.3-beta.3] — since 1.8.3-beta.2 (2026-09-27)
 
 ### Added
-- **`armor_trim_effects` feature** — configurable potion effects based on the
-  armor TRIM MATERIAL (the smithing-table ingot/crystal, i.e. the trim color),
-  not the trim pattern. Units under `armor_trim_effects` name one or more trim
-  materials (amethyst/copper/diamond/emerald/gold/iron/lapis/netherite/quartz/
-  redstone/resin — registry-resolved, datapack materials work), a count rule
-  (EXACT: effect level = number of matching pieces, 1 → I, 2 → II, 3 → III,
-  4 → IV; MIN: activates at `count` pieces with a fixed level), the effect,
-  amplifier base, duration/interval and particles/ambient/icon flags. Multiple
-  units work in parallel; effects expire naturally when pieces are removed.
 - **`lava_walker` charm (Lava Walker)** — Frost Walker for LAVA, levels 1-255,
   boots only. Lava under the wearer's feet temporarily turns into obsidian:
   radius = level (1 → 1×1, 2 → 3×3, ... hard-capped at 16 → 31×31); created
@@ -28,54 +19,31 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   shared family SQLite database (`lava_walker_melts` table: position + exact
   original lava data + wall-clock deadline; autosave every 5 min + save on
   shutdown), so a melting plate comes back to lava even after a restart — and
-  no longer multiplies lava sources: the melt restores the captured state
-  verbatim with a forced physics update, so the restored lava starts flowing
-  immediately.
-- **`armor_effects` feature** — configurable potion effects for wearing armor
-  sets (leather/copper/chainmail/iron/golden/diamond/netherite families):
-  rule FULL or COUNT (1–3 pieces), per-rule effect/amplifier/duration/interval,
-  particles and ambient/icon toggles. Configured under the `armor_effects`
-  section (UI-Other).
-
-### Fixed
-- **Lava Walker could suffocate the player it helped** — the conversion swept
-  the player's own feet and head layers, placing solid obsidian INSIDE the
-  player (vanilla suffocation damage + trapped until the melt). The feet and
-  head blocks of the converting player are now skipped; only the block they
-  stand ON is converted.
-- **Lava Walker melt could trap or lag behind the player** — the "don't melt
-  under a player" check used a stale cache of the last conversion center: a
-  player could walk off and the block stayed un-melted forever, or a plate
-  melted under a player who walked onto it from the side. The sweep now does
-  a live bounding-box occupancy check of all players in the world.
-- **Container Stealing bypassed protection plugins** — the listener ran at
-  NORMAL priority and wiped the container contents immediately: a protection
-  plugin (WorldGuard, etc.) running later could cancel the break, leaving a
-  LOOTED container in place. The listener now runs at MONITOR (after all
-  protection checks) and performs the snapshot/wipe/drop on the next tick,
-  when the break decision is final — a cancelled break keeps the container
-  fully intact.
-- **Offline invsee/endersee failed with "No data file found"** — resolving an
-  offline player's UUID now falls back to `usercache.json` (both key orders,
-  server root and world container) and a `.dat` scan by `bukkit.lastKnownName`,
-  with a diagnostic warning listing what was searched when the player still
-  cannot be resolved.
-- **Container Stealing emptied the container it stole** — breaking a container
-  with the charm dropped a plain empty container item while the contents were
-  stored in a plugin-only PDC blob that was never read back (breaking it again
-  spilled nothing, placing the stolen container gave an empty chest: the items
-  vanished). The dropped container now carries its contents in vanilla
-  block-state NBT (`BlockStateMeta` snapshot of the broken block — same format
-  as ctrl+pick-block), so the item tooltip preview shows the stored items and
-  placing the container restores them natively, surviving restarts and
-  datapack outages. Containers stolen before the fix still restore their
-  contents from the legacy PDC blob when placed.
-- **`ConcurrentModificationException` in the unbreakable breaker sweep** —
-  the per-tick maintenance task called `cleanup()` (which mutates the map)
-  while iterating `activeBreaks` with its iterator open; the first session
-  reset inside the sweep (player looked away / died / went offline) threw a
-  CME and spammed the console. The sweep now removes entries via
-  `iterator.remove()` and cleans the reverse map directly.
+  the melt restores the captured lava state verbatim (a source stays a source,
+  a flow keeps its level) with a forced physics update, so the restored lava
+  starts flowing immediately. Every created block costs the boots 1 integrity
+  use (a max-radius sweep can cost 961 uses).
+- **`armor_trim_effects` feature** — configurable potion effects based on the
+  armor TRIM MATERIAL (the smithing-table ingot/crystal, i.e. the trim color),
+  not the trim pattern. Units under `armor_trim_effects` name one or more trim
+  materials (amethyst/copper/diamond/emerald/gold/iron/lapis/netherite/quartz/
+  redstone/resin — registry-resolved, datapack materials work), a count rule
+  (EXACT: effect level = number of matching pieces; MIN: activates at `count`
+  pieces with a fixed level), the effect, amplifier base, duration/interval
+  and particles/ambient/icon flags (all default off). The default set covers
+  ALL 11 trim materials with themed effects (netherite → fire_resistance,
+  iron → resistance, diamond → absorption, gold → haste, emerald →
+  hero_of_the_village, amethyst → regeneration, copper → water_breathing,
+  lapis → night_vision, quartz → speed, redstone → strength, resin →
+  slow_falling) under the MIN rule with count 1: the level never grows with
+  more pieces. Multiple units work in parallel; effects expire naturally when
+  pieces are removed.
+- **Armor charms on the elytra** — Flight, Levitation, Igniting and the Curse
+  of Vulnerability accept the elytra in addition to their armor pieces: the
+  enchanting table / anvil / `/ui enchant` take it (datapack item tags), the
+  PDC failsafe syncs the elytra (chest) slot, and Igniting / Vulnerability
+  effects read the elytra there. Flight / Levitation already read the chest
+  slot, so they work on a worn elytra as-is.
 
 ### Changed
 - **Flight is incompatible with Repairing on the chest slot** — if the worn
@@ -104,6 +72,79 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   held) drains 1 use per second from the charming chestplate; releasing the
   key is free. Cheaper than Flight, fitting its lower value. Previously
   the jetpack was entirely free.
+- **`/ui enchant` gains `lava_walker`** in the custom-enchantments config list.
+
+### Fixed
+- **Lava Walker could suffocate the player it helped** — the conversion swept
+  the player's own feet and head layers, placing solid obsidian INSIDE the
+  player (vanilla suffocation damage + trapped until the melt). The feet and
+  head blocks of the converting player are now skipped; only the block they
+  stand ON is converted.
+- **Lava Walker melt could trap or lag behind the player** — the "don't melt
+  under a player" check used a stale cache of the last conversion center: a
+  player could walk off and the block stayed un-melted forever, or a plate
+  melted under a player who walked onto it from the side. The sweep now does
+  a live bounding-box occupancy check of all players in the world.
+- **Lava Walker doubled its own conversion** — the move listener was
+  registered twice in the module init (manually and inside register()),
+  running the conversion pass twice per event. Removed the manual one.
+- **Container Stealing bypassed protection plugins** — the listener ran at
+  NORMAL priority and wiped the container contents immediately: a protection
+  plugin (WorldGuard, etc.) running later could cancel the break, leaving a
+  LOOTED container in place. The listener now runs at MONITOR (after all
+  protection checks) and performs the snapshot/wipe/drop on the next tick,
+  when the break decision is final — a cancelled break keeps the container
+  fully intact.
+- **`ConcurrentModificationException` in the unbreakable breaker sweep** —
+  the per-tick maintenance task called `cleanup()` (which mutates the map)
+  while iterating `activeBreaks` with its iterator open; the first session
+  reset inside the sweep (player looked away / died / went offline) threw a
+  CME and spammed the console. The sweep now removes entries via
+  `iterator.remove()` and cleans the reverse map directly.
+- **Container Stealing emptied the container it stole** — breaking a container
+  with the charm dropped a plain empty container item while the contents were
+  stored in a plugin-only PDC blob that was never read back (breaking it again
+  spilled nothing, placing the stolen container gave an empty chest: the items
+  vanished). The dropped container now carries its contents in vanilla
+  block-state NBT (`BlockStateMeta` snapshot of the broken block — same format
+  as ctrl+pick-block), so the item tooltip preview shows the stored items and
+  placing the container restores them natively, surviving restarts and
+  datapack outages. Containers stolen before the fix still restore their
+  contents from the legacy PDC blob when placed.
+
+## [1.8.3-beta.2] — since 1.8.3-alpha.4 (2026-09-27)
+
+### Added
+- **`armor_effects` feature** — configurable potion effects for wearing armor
+  sets (leather/copper/chainmail/iron/golden/diamond/netherite families):
+  rule FULL or COUNT (1–3 pieces), per-rule effect/amplifier/duration/interval,
+  particles and ambient/icon toggles. Configured under the `armor_effects`
+  section (UI-Other).
+
+### Fixed
+- **Offline invsee/endersee failed with "No data file found"** — resolving an
+  offline player's UUID now falls back to `usercache.json` (both key orders,
+  server root and world container) and a `.dat` scan by `bukkit.lastKnownName`,
+  with a diagnostic warning listing what was searched when the player still
+  cannot be resolved.
+- **Container Stealing emptied the container it stole** — breaking a container
+  with the charm dropped a plain empty container item while the contents were
+  stored in a plugin-only PDC blob that was never read back (breaking it again
+  spilled nothing, placing the stolen container gave an empty chest: the items
+  vanished). The dropped container now carries its contents in vanilla
+  block-state NBT (`BlockStateMeta` snapshot of the broken block — same format
+  as ctrl+pick-block), so the item tooltip preview shows the stored items and
+  placing the container restores them natively, surviving restarts and
+  datapack outages. Containers stolen before the fix still restore their
+  contents from the legacy PDC blob when placed.
+- **`ConcurrentModificationException` in the unbreakable breaker sweep** —
+  the per-tick maintenance task called `cleanup()` (which mutates the map)
+  while iterating `activeBreaks` with its iterator open; the first session
+  reset inside the sweep (player looked away / died / went offline) threw a
+  CME and spammed the console. The sweep now removes entries via
+  `iterator.remove()` and cleans the reverse map directly.
+
+### Changed
 - **Armor charms can now be applied to the elytra** — Flight, Levitation,
   Igniting and the Curse of Vulnerability accept the elytra in addition to
   their armor pieces: the enchanting table / anvil / `/ui enchant` take it
