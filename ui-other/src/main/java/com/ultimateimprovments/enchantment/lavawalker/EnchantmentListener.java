@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -37,7 +38,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * Melt behavior (frosted-ice style): every created obsidian block is registered
  * with a random melt delay of {@link #MELT_MIN_TICKS}–{@link #MELT_MAX_TICKS}
  * (20–45 s). A task running every {@link #MELT_SWEEP_TICKS} ticks reverts due
- * blocks to LAVA — except the block(s) a player is currently standing on/in.
+ * blocks to their EXACT original lava state (a source stays a source, a flow
+ * keeps its level — the charm never multiplies lava sources) — except the
+ * block(s) a player is currently standing on/in.
  * Only blocks THIS charm created are tracked; natural and player-placed
  * obsidian are never touched. The registry is in-memory: after a server restart
  * the timers are gone and the obsidian simply stays (a normal solid block).
@@ -68,8 +71,8 @@ public class EnchantmentListener implements Listener {
     /** Last position that triggered a conversion, per player (throttle). */
     private static final Map<UUID, Location> LAST_POS = new ConcurrentHashMap<>();
 
-    /** Melt registry: created block position → due tick. Written by conversion, drained by the sweep. */
-    static final Map<BlockPos, Long> MELTING = new ConcurrentHashMap<>();
+    /** Melt registry: created block position → entry. Written by conversion, drained by the sweep. */
+    static final Map<BlockPos, MeltEntry> MELTING = new ConcurrentHashMap<>();
 
     /** Blocks a player is currently standing on/in — the melt sweep skips those. */
     private static final Map<UUID, Set<BlockPos>> STANDING_ON = new ConcurrentHashMap<>();
@@ -86,6 +89,9 @@ public class EnchantmentListener implements Listener {
             return w == null ? null : w.getBlockAt(x, y, z);
         }
     }
+
+    /** Melt registry value: due tick + the captured EXACT original lava BlockData. */
+    private record MeltEntry(long dueTick, BlockData lavaData) {}
 
     // ─────────────────────────────────────────────────────────────
     //  EVENTS
@@ -170,14 +176,17 @@ public class EnchantmentListener implements Listener {
 
     /** Converts every LAVA block of a horizontal square layer into registered melting obsidian. */
     private static void convertLayer(World world, int centerX, int centerZ, int y, int radius) {
-        long due = now() + meltDelay();
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 Block target = world.getBlockAt(centerX + dx, y, centerZ + dz);
                 if (target.getType() != Material.LAVA) continue;
 
+                // Capture the EXACT lava state (source vs flow/fall level) so the
+                // melt restores it verbatim instead of always a full source.
+                BlockData lavaData = target.getBlockData();
+
                 target.setType(Material.OBSIDIAN, false);
-                MELTING.put(BlockPos.of(target), due);
+                MELTING.put(BlockPos.of(target), new MeltEntry(now() + meltDelay(), lavaData));
             }
         }
     }
@@ -191,8 +200,9 @@ public class EnchantmentListener implements Listener {
         if (MELTING.isEmpty()) return;
         long now = now();
 
-        for (Map.Entry<BlockPos, Long> entry : MELTING.entrySet()) {
-            if (entry.getValue() > now) continue;
+        for (Map.Entry<BlockPos, MeltEntry> entry : MELTING.entrySet()) {
+            MeltEntry melt = entry.getValue();
+            if (melt.dueTick() > now) continue;
 
             BlockPos pos = entry.getKey();
             MELTING.remove(pos); // safe on ConcurrentHashMap during iteration
@@ -202,11 +212,13 @@ public class EnchantmentListener implements Listener {
             if (block.getType() != Material.OBSIDIAN) continue; // replaced meanwhile → nothing to melt
 
             if (isStandingOn(pos)) {
-                MELTING.put(pos, now + MELT_RETRY_TICKS);       // player is on it — retry in 5 s
+                MELTING.put(pos, new MeltEntry(now + MELT_RETRY_TICKS, melt.lavaData())); // player on it — retry in 5 s
                 continue;
             }
 
-            block.setType(Material.LAVA, false);
+            // Restore the ORIGINAL lava state: a source stays a source, a flow
+            // level 1-7 comes back as that same flow — no free new sources.
+            block.setBlockData(melt.lavaData(), false);
         }
     }
 
