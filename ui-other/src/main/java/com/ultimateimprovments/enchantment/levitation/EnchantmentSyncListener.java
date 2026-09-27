@@ -12,6 +12,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.GrindstoneInventory;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
@@ -92,10 +93,11 @@ public class EnchantmentSyncListener implements Listener {
         for (ItemStack item : inv.getStorageContents()) {
             Enchantment.syncItem(item);
         }
-        // Armor + offhand
+        // Armor + offhand (the elytra sits in the CHEST slot, outside getArmorContents())
         for (ItemStack item : inv.getArmorContents()) {
             Enchantment.syncItem(item);
         }
+        Enchantment.syncItem(inv.getItem(EquipmentSlot.CHEST));
         Enchantment.syncItem(inv.getItemInOffHand());
         Enchantment.syncItem(inv.getItemInMainHand());
         // Cursor (open inventory screen)

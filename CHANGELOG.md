@@ -36,6 +36,13 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   `iterator.remove()` and cleans the reverse map directly.
 
 ### Changed
+- **Armor charms can now be applied to the elytra** — Flight, Levitation,
+  Igniting and the Curse of Vulnerability accept the elytra in addition to
+  their armor pieces: the enchanting table / anvil / `/ui enchant` take it
+  (datapack item tags), the PDC failsafe syncs the elytra (chest) slot, and
+  Igniting / Vulnerability effects now read the elytra there — it is not part
+  of `getArmorContents()`. Flight / Levitation already read the chest slot, so
+  they work on a worn elytra as-is.
 - **Unbreakable breaker sessions reset on death, gamemode change, quit and
   shutdown** — accumulated damage no longer survives dying, switching
   gamemode (any source: client command, `/gamemode`, plugin API) or a
