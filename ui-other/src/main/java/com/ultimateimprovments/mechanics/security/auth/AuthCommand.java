@@ -111,8 +111,7 @@ public class AuthCommand {
         if (manager.is2FAEnabled(uuid)) {
             player.sendMessage(MessageUtil.parse("<green>✔ 2FA enabled"));
             player.sendMessage(MessageUtil.parse("<gray>GitHub account: <white>" + manager.getGithubUsername(uuid)));
-            if (!com.ultimateimprovments.mechanics.security.auth.AuthConfig.isGithub2FAEnabled()) {
-                player.sendMessage(MessageUtil.parse("<red>⚠ GitHub 2FA is disabled in config.yml (auth.2fa.github.enabled: false)"));
+            if (!com.ultimateimprovments.mechanics.security.auth.AuthConfig.isGithub2FAEnabled()) {                    player.sendMessage(MessageUtil.parse("<red>⚠ GitHub 2FA is disabled in the config (auth.twofa.github.enabled: false)"));
             } else {
                 player.sendMessage(MessageUtil.parse("<gray>On login you'll get a clickable GitHub authorization link."));
             }

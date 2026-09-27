@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 /**
- * Validates config.yml values against the rules from {@link ConfigRules}.
+ * Validates composite config values against the rules from {@link ConfigRules}.
  * <p>
  * Extracted from {@link ConfigIntegrityValidator} to reduce class size.
  */

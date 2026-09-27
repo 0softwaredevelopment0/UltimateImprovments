@@ -70,11 +70,23 @@ public final class TurretManager {
         public volatile UUID owner;
     }
 
-    /** Range in blocks along each axis (16x16x16 cube = +-16 from the crystal). */
-    private static final int RANGE = 16;
+    /** Default range in blocks along each axis (16x16x16 cube = +-16 from the crystal). */
+    private static final int DEFAULT_RANGE = 16;
 
-    /** Damage applied every tick while the beam is on the target (i-frames cap it at 2 dmg/s). */
-    private static final double DAMAGE_PER_TICK = 1.0;
+    /** Default damage applied every tick while the beam is on the target (i-frames cap it at 2 dmg/s). */
+    private static final double DEFAULT_DAMAGE_PER_TICK = 1.0;
+
+    /** Configured range (turret.range, clamped to a sane 1..64 window). */
+    private static int range() {
+        int v = com.ultimateimprovments.core.Main.getInstance().getConfig().getInt("turret.range", DEFAULT_RANGE);
+        return Math.max(1, Math.min(64, v));
+    }
+
+    /** Configured per-tick damage (turret.damage_per_tick, clamped to a sane 0..100 window). */
+    private static double damagePerTick() {
+        double v = com.ultimateimprovments.core.Main.getInstance().getConfig().getDouble("turret.damage_per_tick", DEFAULT_DAMAGE_PER_TICK);
+        return Math.max(0.0, Math.min(100.0, v));
+    }
 
     private static TurretManager instance;
 
@@ -291,7 +303,7 @@ public final class TurretManager {
         DamageSource source = DamageSource.builder(DamageType.MOB_ATTACK)
                 .withCausingEntity(crystal)
                 .build();
-        target.damage(DAMAGE_PER_TICK, source);
+        target.damage(damagePerTick(), source);
         // No i-frame bypass: the vanilla 10-tick immunity caps the rate at one
         // landed hit per 0.5s → 2 damage per second, reduced by armor/protection.
     }
@@ -301,7 +313,8 @@ public final class TurretManager {
         LivingEntity best = null;
         double bestDistSq = Double.MAX_VALUE;
 
-        for (Entity entity : crystal.getWorld().getNearbyEntities(origin, RANGE, RANGE, RANGE)) {
+        int range = range();
+        for (Entity entity : crystal.getWorld().getNearbyEntities(origin, range, range, range)) {
             if (!(entity instanceof LivingEntity living)) continue;
             if (living.isDead() || !living.isValid()) continue;
 

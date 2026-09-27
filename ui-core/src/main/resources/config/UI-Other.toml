@@ -1066,11 +1066,11 @@ enabled = true
 # Default: true
 enabled = true
 
-# 2fa section.
-[auth."2fa"]
+# twofa section.
+[auth.twofa]
 
 # github section.
-[auth."2fa".github]
+[auth.twofa.github]
 # Master switch (true = feature on).
 # Default: false
 enabled = false
@@ -2279,26 +2279,6 @@ queue_notify_op = "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%coun
 # Default: <red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>
 rejoin_cooldown = "<red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>"
 
-# maintenance section.
-# Placeholders: %time%
-[messages.maintenance]
-# Message text (MiniMessage).
-# Default: <red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>
-kick_message = "<red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>"
-
-# messages section.
-# Placeholders: %time%
-[messages.maintenance.messages]
-# Master switch (true = feature on).
-# Default: <red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>
-enabled = "<red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>"
-# Default: <green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>
-disabled = "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>"
-# Default: <yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>
-scheduled_enable = "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>"
-# Default: <yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>
-scheduled_disable = "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>"
-
 # meteor section.
 # Placeholders: %sub%, %count%
 [messages.meteor]
@@ -3472,23 +3452,3 @@ queue_notify_op = "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%coun
 # Cooldown.
 # Default: <red>❌ You left too recently! Please wait</red> <yellow>%seconds%</yellow> <red>seconds before reconnecting.<…
 rejoin_cooldown = "<red>❌ You left too recently! Please wait</red> <yellow>%seconds%</yellow> <red>seconds before reconnecting.</red>"
-
-# maintenance section.
-# Placeholders: %time%
-[messages_en.maintenance]
-# Message text (MiniMessage).
-# Default: <red>⛏ Server is currently under maintenance!</red>\n<gray>Please come back later.</gray>
-kick_message = "<red>⛏ Server is currently under maintenance!</red>\\n<gray>Please come back later.</gray>"
-
-# messages section.
-# Placeholders: %time%
-[messages_en.maintenance.messages]
-# Master switch (true = feature on).
-# Default: <red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>
-enabled = "<red>⛏</red> <white>Maintenance mode </white><green>ENABLED</green>"
-# Default: <green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>
-disabled = "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</red>"
-# Default: <yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>
-scheduled_enable = "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>"
-# Default: <yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>
-scheduled_disable = "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>"

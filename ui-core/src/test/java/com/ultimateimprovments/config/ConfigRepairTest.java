@@ -18,20 +18,55 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Integrity checks for the bundled {@code config.yml}:
+ * Integrity checks for the bundled per-addon TOML templates
+ * ({@code config/UI-<Addon>.toml} in ui-core resources):
  * <ul>
- *   <li>Every rule key from {@link ConfigRules} exists in the config (no missing values)</li>
- *   <li>The raw file has no duplicate keys at the same nesting level (SnakeYAML would silently
- *       keep only the last one — user edits in the first copy would be lost)</li>
+ *   <li>Every rule key from {@link ConfigRules} exists in the OWNING addon's
+ *       template (per {@link AddonCatalog} routing) — no missing defaults.</li>
+ *   <li>Every root key routed by {@link AddonCatalog} actually exists in its
+ *       addon template (routing table cannot point at nowhere).</li>
+ *   <li>Each template file has no duplicate keys at the same nesting level
+ *       (toml4j would silently keep only the last one).</li>
  * </ul>
+ * The monolithic config.yml resource was REMOVED: per-addon TOML templates are
+ * the single source of defaults (they bootstrap the server-side
+ * {@code configs/UI-<Addon>.toml} and repair missing keys there).
  */
 class ConfigRepairTest {
 
-    /** Loads the bundled config.yml resource exactly as Bukkit does. */
-    private static YamlConfiguration loadBundledConfig() {
-        InputStream in = ConfigRepairTest.class.getResourceAsStream("/config.yml");
-        assertTrue(in != null, "config.yml resource must exist");
-        return YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
+    /** Cached per-addon views (template → Bukkit view). */
+    private static final Map<String, YamlConfiguration> TEMPLATE_CACHE = new HashMap<>();
+
+    /** Loads one bundled per-addon TOML template as a Bukkit view. */
+    private static synchronized YamlConfiguration loadTemplate(String addon) {
+        return TEMPLATE_CACHE.computeIfAbsent(addon, name -> {
+            InputStream in = ConfigRepairTest.class.getResourceAsStream("/config/" + name + ".toml");
+            assertTrue(in != null, "config/" + name + ".toml resource must exist");
+            YamlConfiguration view = new YamlConfiguration();
+            try {
+                com.moandjiezana.toml.Toml parsed = new com.moandjiezana.toml.Toml()
+                        .read(new InputStreamReader(in, StandardCharsets.UTF_8));
+                flattenInto(parsed.toMap(), "", view);
+            } catch (Exception e) {
+                throw new AssertionError("Failed to parse config/" + name + ".toml: " + e.getMessage(), e);
+            }
+            return view;
+        });
+    }
+
+    /** Recursively flattens a TOML map into dotted Bukkit paths. */
+    private static void flattenInto(Map<String, Object> map, String prefix, YamlConfiguration target) {
+        for (Map.Entry<String, Object> e : map.entrySet()) {
+            String path = prefix.isEmpty() ? e.getKey() : prefix + "." + e.getKey();
+            Object value = e.getValue();
+            if (value instanceof Map<?, ?> nested) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> nestedMap = (Map<String, Object>) nested;
+                flattenInto(nestedMap, path, target);
+            } else {
+                target.set(path, value);
+            }
+        }
     }
 
     // ============================================================
@@ -39,54 +74,85 @@ class ConfigRepairTest {
     // ============================================================
 
     @Test
-    @DisplayName("Every ConfigRules key is present in config.yml")
+    @DisplayName("Every ConfigRules key is present in its owning addon's TOML template")
     void allRuleKeysPresent() {
-        YamlConfiguration config = loadBundledConfig();
-
         List<String> missing = new ArrayList<>();
         for (ConfigRules.Rule rule : ConfigRules.ALL) {
-            if (!config.isSet(rule.key)) {
-                missing.add(rule.key);
+            String addon = AddonCatalog.addonOfRootKey(rootOf(rule.key));
+            YamlConfiguration template = loadTemplate(addon);
+            if (!template.isSet(rule.key)) {
+                missing.add(rule.key + " (expected in " + addon + ".toml)");
             }
         }
-        assertTrue(missing.isEmpty(), "Missing config keys (would be auto-repaired, but should exist in the bundle): " + missing);
+        assertTrue(missing.isEmpty(),
+                "Missing config keys in per-addon templates (runtime would auto-repair empty values): " + missing);
     }
 
     // ============================================================
-    // Duplicate key detection (raw line scan — before YAML parsing)
+    // Routing consistency: every routed root exists in its template
     // ============================================================
+
+    @Test
+    @DisplayName("Every root key routed by AddonCatalog exists in its addon template")
+    void routedRootsExistInTemplates() {
+        List<String> broken = new ArrayList<>();
+        // Reflection over the private routing maps is fragile — instead derive
+        // the routed roots from the rules plus a smoke list of known roots.
+        Set<String> knownRoots = new HashSet<>();
+        for (ConfigRules.Rule rule : ConfigRules.ALL) knownRoots.add(rootOf(rule.key));
+        // Roots exercised by real code paths (spot list; addonOfKey defaults to CORE
+        // for anything unlisted, so a missing root key here is not fatal).
+        knownRoots.addAll(List.of(
+                "features", "vanish", "sunburn", "armor_effects", "armor_trim_effects",
+                "auth", "economy", "enchant", "motd", "tab", "scoreboard", "bossbar",
+                "chat", "chat_ping", "chat_filter", "ojm", "auto_broadcast",
+                "clan", "turret", "home", "spawn", "report", "rtp", "near", "endersee", "troll",
+                "anticheat", "datapack", "space", "radiation", "hazmat", "reactor",
+                "energy", "energy_crafting", "access_control",
+                "prefix", "messages", "messages_en"));
+
+        for (String root : knownRoots) {
+            String addon = AddonCatalog.addonOfRootKey(root);
+            YamlConfiguration template = loadTemplate(addon);
+            if (!template.isSet(root)) {
+                broken.add(root + " routed to " + addon + ".toml but absent there");
+            }
+        }
+        assertTrue(broken.isEmpty(), "Routed roots missing from their templates: " + broken);
+    }
+
+    // ============================================================
+    // Duplicate key detection per template (raw line scan)
+    // ============================================================
+
+    @Test
+    @DisplayName("Per-addon TOML templates have no duplicate keys at the same level")
+    void noDuplicateKeysInTemplates() throws Exception {
+        List<String> allDupes = new ArrayList<>();
+        for (String addon : AddonCatalog.catalog()) {
+            List<String> lines = new ArrayList<>();
+            try (InputStream in = ConfigRepairTest.class.getResourceAsStream("/config/" + addon + ".toml")) {
+                assertTrue(in != null, "config/" + addon + ".toml resource must exist");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+                String line;
+                while ((line = reader.readLine()) != null) lines.add(line);
+            }
+            allDupes.addAll(findRawTomlDuplicates(addon, lines));
+        }
+        assertTrue(allDupes.isEmpty(),
+                "Duplicate keys in per-addon TOML templates (toml4j keeps only the last): " + allDupes);
+    }
 
     /**
-     * Scans the raw file line-by-line: two identical full paths at the same depth
-     * are duplicates. List items and block scalars (|, >) are handled.
+     * Raw duplicate scan for TOML: tracks the current [table.header] path and
+     * flags repeated {@code key = value} lines within the same table.
      */
-    @Test
-    @DisplayName("config.yml has no duplicate keys at the same level")
-    void noDuplicateKeys() throws Exception {
-        List<String> lines;
-        try (InputStream in = ConfigRepairTest.class.getResourceAsStream("/config.yml")) {
-            assertTrue(in != null, "config.yml resource must exist");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-            lines = new ArrayList<>();
-            String line;
-            while ((line = reader.readLine()) != null) lines.add(line);
-        }
-
-        List<String> dupes = findRawDuplicates(lines);
-        assertTrue(dupes.isEmpty(), "Duplicate keys in config.yml (SnakeYAML keeps only the last — first copy is dead): " + dupes);
-    }
-
-    /** Raw duplicate scan: returns human-readable duplicate paths. */
-    static List<String> findRawDuplicates(List<String> lines) {
+    static List<String> findRawTomlDuplicates(String addon, List<String> lines) {
         List<String> dupes = new ArrayList<>();
         Map<String, Integer> seen = new HashMap<>();
-        List<int[]> stack = new ArrayList<>(); // {indent, keyIndex into keys}
-        List<String> keys = new ArrayList<>();
-        boolean inBlockScalar = false;
-        int blockScalarIndent = 0;
-        int listCounter = 0;
-        // list item scope: {indent, fullPathOfItemKey}
-        int[] listItemScope = null;
+        String currentTable = "";
+        String arrayTable = null;
+        int arrayCounter = 0;
 
         for (int i = 0; i < lines.size(); i++) {
             String raw = lines.get(i);
@@ -94,66 +160,26 @@ class ConfigRepairTest {
             String trimmed = raw.trim();
             if (trimmed.isEmpty() || trimmed.startsWith("#")) continue;
 
-            int indent = leadingSpaces(raw);
-
-            // inside block scalar — skip until dedent
-            if (inBlockScalar) {
-                if (indent <= blockScalarIndent) inBlockScalar = false;
-                else continue;
+            if (trimmed.startsWith("[[") && trimmed.endsWith("]]")) {
+                arrayTable = trimmed.substring(2, trimmed.length() - 2).trim();
+                arrayCounter++;
+                continue;
             }
-
-            // list item
-            if (trimmed.startsWith("- ")) {
-                if (trimmed.endsWith("|") || trimmed.endsWith(">")) {
-                    inBlockScalar = true;
-                    blockScalarIndent = indent;
-                    listItemScope = null;
-                } else if (trimmed.matches("^-\\s+\\S[^:]*:\\s.*")) {
-                    // map item in a list: "- key: value" — each item gets unique #N path
-                    listCounter++;
-                    String itemKey = trimmed.replaceFirst("^-\\s+", "").replaceFirst(":.*", "").trim()
-                            .replaceAll("^[\"']|[\"']$", "");
-                    while (!stack.isEmpty() && stack.get(stack.size() - 1)[0] >= indent) stack.remove(stack.size() - 1);
-                    stack.add(new int[]{indent, keys.size()});
-                    keys.add(itemKey);
-                    listItemScope = new int[]{indent, keys.size() - 1};
-                } else {
-                    listItemScope = null;
-                }
+            if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                currentTable = trimmed.substring(1, trimmed.length() - 1).trim();
+                arrayTable = null;
                 continue;
             }
 
-            // "key:" line
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^([^:#]+?)\\s*:").matcher(trimmed);
-            if (!m.find()) continue;
-            String key = m.group(1).trim().replaceAll("^[\"']|[\"']$", "");
-
-            // If inside a list-item map scope, sub-keys are scoped under the item
-            // key with a #N marker so items don't collide with each other.
-            if (listItemScope != null && indent > listItemScope[0]) {
-                String itemPath = buildPath(stack, keys);
-                String full = itemPath + "#" + listCounter + "." + key;
-                if (seen.containsKey(full)) {
-                    dupes.add(full + " (lines " + seen.get(full) + " and " + (i + 1) + ")");
-                } else {
-                    seen.put(full, i + 1);
-                }
-                continue;
-            }
-            listItemScope = null;
-
-            while (!stack.isEmpty() && stack.get(stack.size() - 1)[0] >= indent) stack.remove(stack.size() - 1);
-            stack.add(new int[]{indent, keys.size()});
-            keys.add(key);
-
-            if (trimmed.endsWith("|") || trimmed.endsWith(">")) {
-                inBlockScalar = true;
-                blockScalarIndent = indent;
-            }
-
-            String full = buildPath(stack, keys);
+            int eq = trimmed.indexOf('=');
+            if (eq <= 0) continue;
+            String key = trimmed.substring(0, eq).trim().replaceAll("^[\"']|[\"']$", "");
+            String scope = arrayTable != null
+                    ? arrayTable + "#" + arrayCounter
+                    : currentTable;
+            String full = scope + "." + key;
             if (seen.containsKey(full)) {
-                dupes.add(full + " (lines " + seen.get(full) + " and " + (i + 1) + ")");
+                dupes.add(full + " (" + addon + ".toml, lines " + seen.get(full) + " and " + (i + 1) + ")");
             } else {
                 seen.put(full, i + 1);
             }
@@ -161,19 +187,9 @@ class ConfigRepairTest {
         return dupes;
     }
 
-    /** Builds a dotted path from the current key stack. */
-    private static String buildPath(List<int[]> stack, List<String> keys) {
-        StringBuilder path = new StringBuilder();
-        for (int[] entry : stack) {
-            if (path.length() > 0) path.append('.');
-            path.append(keys.get(entry[1]));
-        }
-        return path.toString();
-    }
-
-    private static int leadingSpaces(String s) {
-        int n = 0;
-        while (n < s.length() && (s.charAt(n) == ' ' || s.charAt(n) == '\t')) n++;
-        return n;
+    /** First path segment of a dotted key. */
+    private static String rootOf(String dottedKey) {
+        int dot = dottedKey.indexOf('.');
+        return dot > 0 ? dottedKey.substring(0, dot) : dottedKey;
     }
 }

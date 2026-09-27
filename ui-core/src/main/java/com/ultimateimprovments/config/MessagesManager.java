@@ -9,22 +9,24 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.io.File;
 
 /**
- * Manages the plugin's messages. Since v26.2 all messages live INSIDE config.yml
- * under the {@code messages:} key (Russian) and {@code messages_en:} (English).
+ * Manages the plugin's messages. Since v26.2 all messages live INSIDE the
+ * composite config (per-addon TOML files routed by {@link AddonCatalog}), not in
+ * separate files. Legacy support: very old plugin versions shipped standalone
+ * messages.yml / messages-en.yml; the {@link #init(Main)} method automatically
+ * migrates those legacy files from dataFolder into the composite config (once
+ * on first run).
  * <p>
- * The old standalone files (messages.yml/messages-en.yml) were consolidated into
- * config.yml at the user's request. The {@link #init(Main)} method automatically
- * migrates the legacy standalone files from dataFolder into config.yml (once on first run).
+ * Typical call site: {@code MessagesManager.getString("auth.gui.register", default)} —
+ * reads {@code messages.auth.gui.register} (no prefix in the path), Russian when the
+ * active language is "ru", English (from {@code messages_en....}) otherwise.
  * <p>
- * The public API ({@link #getString(String, String)}) is UNCHANGED — call sites call
- * {@code MessagesManager.getString("auth.gui.register", default)} and get the
- * string from {@code config.yml: messages.auth.gui.register} (no prefix in the path).
+ * The public API ({@link #getString(String, String)}) is UNCHANGED.
  */
 public class MessagesManager {
 
-    /** Key of the main (Russian) messages section in config.yml. */
+    /** Key of the main (Russian) messages section of the composite config. */
     public static final String MESSAGES_KEY = "messages";
-    /** Key of the English messages section in config.yml. */
+    /** Key of the English messages section of the composite config. */
     public static final String MESSAGES_EN_KEY = "messages_en";
 
     private static Main plugin;
@@ -32,15 +34,17 @@ public class MessagesManager {
     private MessagesManager() {}
 
     /**
-     * Initializes MessagesManager. Messages are read from config.yml — the standalone
-     * messages.yml/messages-en.yml files are NOT needed. Backward compatibility: if old
-     * files from previous plugin versions remain in dataFolder — migrate their content
-     * into config.yml under {@code messages:} and {@code messages_en:} and delete the files.
+     * Initializes MessagesManager. Messages live in the per-addon TOML configs
+     * (routed by {@link AddonCatalog}); the standalone messages.yml/messages-en.yml
+     * files are NOT needed. Backward compatibility: if old files from previous
+     * plugin versions remain in dataFolder — migrate their content into the
+     * composite config under {@code messages:} / {@code messages_en:} and delete
+     * the files.
      */
     public static void init(Main plugin) {
         MessagesManager.plugin = plugin;
         migrateFromStandaloneFiles();
-        ConsoleLogger.info("[Messages] Embedded into config.yml under '" + MESSAGES_KEY
+        ConsoleLogger.info("[Messages] Messages live in the composite config under '" + MESSAGES_KEY
                 + "' and '" + MESSAGES_EN_KEY + "' sections.");
     }
 
@@ -123,8 +127,8 @@ public class MessagesManager {
     }
 
     /**
-     * Always returns {@code true}, because messages now live in config.yml
-     * (the standalone messages.yml file no longer exists). Left for compatibility.
+     * Whether the messages sections exist in the composite config (the standalone
+     * messages.yml file no longer exists). Left for compatibility.
      */
     public static boolean isLoaded() {
         return plugin != null && plugin.getConfig().isSet(MESSAGES_KEY);
@@ -141,7 +145,8 @@ public class MessagesManager {
 
     /**
      * If standalone messages.yml/messages-en.yml from old plugin versions remain in
-     * dataFolder — copy their content into config.yml under the corresponding keys and delete them.
+     * dataFolder — copy their content into the composite config under the corresponding
+     * keys and delete them.
      * <p>
      * For safety: never overwrites existing user keys.
      */
@@ -169,7 +174,7 @@ public class MessagesManager {
     }
 
     /**
-     * Copies keys from a YAML file into the given config.yml section; existing keys
+     * Copies keys from a YAML file into the given config section; existing keys
      * are NOT overwritten. After a successful merge deletes the source file.
      * @return true if something was migrated or the file was processed
      */
@@ -181,7 +186,7 @@ public class MessagesManager {
             int copied = copySectionKeys(sourceSection, config, targetKey);
             if (copied > 0) {
                 ConsoleLogger.info("[Messages] Migrated " + copied + " key(s) from "
-                        + source.getName() + " to config.yml#" + targetKey);
+                        + source.getName() + " to the config#" + targetKey);
             }
             if (!source.delete()) {
                 ConsoleLogger.warn("[Messages] Failed to delete legacy file: " + source.getName());

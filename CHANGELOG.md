@@ -112,6 +112,33 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   datapack outages. Containers stolen before the fix still restore their
   contents from the legacy PDC blob when placed.
 
+### Changed
+- **Config system: the monolithic `config.yml` resource is gone** — every
+  addon and the core now ship their own default TOML template
+  (`config/UI-<Addon>.toml`, 12 files bundled in UI-Core's JAR), which are the
+  single source of defaults: they bootstrap `configs/UI-<Addon>.toml` on first
+  run and auto-repair missing keys on upgrade. No runtime config format or
+  server-side file changes — this is an internal cleanup of the defaults
+  pipeline. Dead monolith-era classes were removed
+  (`ConfigRepairManager`, `ConfigCrashSalvage`, `YamlDuplicateCleaner`
+  callers) and `TomlConfigManager` is now a pure serialization utility.
+- **Turret settings are configurable** — new `turret` section (UI-Combat):
+  `range` (1–64, default 16) and `damage_per_tick` (0–100, default 1.0);
+  defaults match the previous hard-coded constants.
+- **`maintenance` keys routed to UI-Punish** — the `maintenance.enabled` and
+  `messages.maintenance.*` defaults now live in `UI-Punish.toml` where the
+  generator already placed them (previously the runtime routing table sent
+  them to UI-Core, so fresh installs missed the keys).
+
+### Fixed
+- **`auth.2fa.github.*` keys never worked** — the `2fa` TOML key segment is
+  not a bare key, and toml4j keeps quoted header segments with their quotes,
+  so the `[auth."2fa".github]` template section never matched the runtime
+  path `auth.2fa.*` (the feature silently stayed disabled with empty
+  defaults). The key is renamed to `auth.twofa.github.*` (templates,
+  validation rules, code reads); the feature itself was off by default, so
+  no behavior changes for existing setups.
+
 ## [1.8.3-beta.2] — since 1.8.3-alpha.4 (2026-09-27)
 
 ### Added

@@ -3,7 +3,14 @@
 """
 Generates the fully commented English TOML templates consumed by AddonConfigManager.
 
-Source of truth:  ui-core/src/main/resources/config.yml  (settings + messages + messages_en)
+DEPRECATED: this was the one-time generator that split the legacy monolithic
+config.yml into per-addon templates. The monolithic
+ui-core/src/main/resources/config.yml has been REMOVED from the project; the
+generated templates under ui-core/src/main/resources/config/ are now edited
+directly and are the single source of defaults (bundled into UI-Core's JAR).
+Keep this script only as historical reference for the split / comment format.
+
+Legacy source of truth: ui-core/src/main/resources/config.yml (no longer present)
 Output (overwrite): ui-core/src/main/resources/config/UI-<Addon>.toml
                     one file per addon: settings + messages (RU) + messages_en (EN),
                     every table and every settings key commented, defaults shown.
@@ -88,7 +95,7 @@ MSG_GROUP_TO_ADDON = {
     "notes": "UI-Other", "power": "UI-Other", "death_logger": "UI-Other",
     "structures": "UI-Other", "meteor": "UI-Other", "space": "UI-Other",
     "enchant": "UI-Other", "wireless_redstone": "UI-Other",
-    "structure_integrity": "UI-Other", "maintenance": "UI-Other",
+    "structure_integrity": "UI-Other",
 }
 CORE_MSG_GROUPS = {"general", "reputation", "help", "addons", "language", "prefix"}
 
@@ -420,6 +427,11 @@ def main():
     settings = {}
     for section, value in cfg.items():
         settings.setdefault(addon_of_section(str(section)), {})[str(section)] = value
+
+    # UI-Combat owns no settings sections in the legacy monolith (turret state
+    # lives in the DB, tuning constants live in code), but AddonConfigManager
+    # requires a template file for every catalog addon — emit a stub.
+    settings.setdefault("UI-Combat", {})
 
     msgs_ru, msgs_en = {}, {}
     if isinstance(messages, dict):

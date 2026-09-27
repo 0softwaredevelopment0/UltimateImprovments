@@ -3,7 +3,7 @@ package com.ultimateimprovments.config;
 import java.util.List;
 
 /**
- * All validation rules for config.yml.
+ * All validation rules for the composite config (per-addon TOML files).
  * <p>
  * Extracted from {@link ConfigIntegrityValidator} to reduce class size.
  */
@@ -340,11 +340,11 @@ final class ConfigRules {
             integer("auth.request_cooldown_seconds", 0, 3600),
             integer("auth.max_accounts_per_ip", 0, 1000),
             bool("auth.check_duplicate_name.enabled"),
-            bool("auth.2fa.github.enabled"),
-            string("auth.2fa.github.client_id", false, 128),
-            string("auth.2fa.github.client_secret", false, 256),
-            integer("auth.2fa.github.port", 1, 65535, "Порт HTTP-сервера GitHub 2FA"),
-            string("auth.2fa.github.public_url", false, 256),
+            bool("auth.twofa.github.enabled"),
+            string("auth.twofa.github.client_id", false, 128),
+            string("auth.twofa.github.client_secret", false, 256),
+            integer("auth.twofa.github.port", 1, 65535, "Порт HTTP-сервера GitHub 2FA"),
+            string("auth.twofa.github.public_url", false, 256),
 
             bool("void_protection.enabled"),
             stringList("void_protection.worlds"),
