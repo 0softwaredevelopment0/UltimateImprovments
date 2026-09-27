@@ -673,6 +673,69 @@ ambient = false
 # Default: true
 icon = true
 
+# Armor trim effects: potion effects by TRIM MATERIAL and matching piece count (units).
+[armor_trim_effects]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+
+# units section.
+[armor_trim_effects.units]
+
+# fire resistance netherite trim section.
+[armor_trim_effects.units.fire_resistance_netherite_trim]
+# Material name (minecraft:...).
+# Default: ["netherite"]
+materials = ["netherite"]
+# Default: "EXACT"
+count_rule = "EXACT"
+# Default: 1
+count = 1
+# Default: "fire_resistance"
+effect = "fire_resistance"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: true
+particles = true
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
+# speed two emerald trim section.
+[armor_trim_effects.units.speed_two_emerald_trim]
+# Material name (minecraft:...).
+# Default: ["emerald"]
+materials = ["emerald"]
+# Default: "MIN"
+count_rule = "MIN"
+# Default: 2
+count = 2
+# Default: "speed"
+effect = "speed"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 60
+duration_ticks = 60
+# Interval in ticks (20 ticks = 1 second).
+# Default: 50
+interval_ticks = 50
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
 # Sunburn mechanic: players burn in daylight under conditions.
 [sunburn]
 # Master switch (true = feature on).
@@ -1269,8 +1332,8 @@ max_level = 255
 # Permission node.
 # Default: "ui.command.enchant"
 permission = "ui.command.enchant"
-# Default: ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing"]
-custom_enchantments = ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing"]
+# Default: ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing", "lava_walker"]
+custom_enchantments = ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing", "lava_walker"]
 
 # Meteor events: spawn chance, size, loot.
 [meteor]

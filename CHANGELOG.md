@@ -6,6 +6,15 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
 ## [1.8.3-beta.2] — since 1.8.3-alpha.4 (2026-09-27)
 
 ### Added
+- **`armor_trim_effects` feature** — configurable potion effects based on the
+  armor TRIM MATERIAL (the smithing-table ingot/crystal, i.e. the trim color),
+  not the trim pattern. Units under `armor_trim_effects` name one or more trim
+  materials (amethyst/copper/diamond/emerald/gold/iron/lapis/netherite/quartz/
+  redstone/resin — registry-resolved, datapack materials work), a count rule
+  (EXACT: effect level = number of matching pieces, 1 → I, 2 → II, 3 → III,
+  4 → IV; MIN: activates at `count` pieces with a fixed level), the effect,
+  amplifier base, duration/interval and particles/ambient/icon flags. Multiple
+  units work in parallel; effects expire naturally when pieces are removed.
 - **`lava_walker` charm (Lava Walker)** — Frost Walker for LAVA, levels 1-255,
   boots only. Lava under the wearer's feet temporarily turns into obsidian:
   radius = level (1 → 1×1, 2 → 3×3, ... hard-capped at 16 → 31×31); created
