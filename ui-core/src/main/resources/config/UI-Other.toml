@@ -610,6 +610,69 @@ custom_brand = "Paper"
 # Default: []
 vanished_players = []
 
+# Armor effects: configurable potion effects for worn armor sets (units).
+[armor_effects]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+
+# units section.
+[armor_effects.units]
+
+# fire resistance netherite section.
+[armor_effects.units.fire_resistance_netherite]
+# Material name (minecraft:...).
+# Default: ["netherite"]
+materials = ["netherite"]
+# Default: "FULL"
+rule = "FULL"
+# Default: 1
+count = 1
+# Default: "fire_resistance"
+effect = "fire_resistance"
+# Default: 0
+amplifier = 0
+# Duration.
+# Default: 120
+duration_ticks = 120
+# Interval in ticks (20 ticks = 1 second).
+# Default: 100
+interval_ticks = 100
+# Default: true
+particles = true
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
+# speed three iron section.
+[armor_effects.units.speed_three_iron]
+# Material name (minecraft:...).
+# Default: ["iron"]
+materials = ["iron"]
+# Default: "COUNT"
+rule = "COUNT"
+# Default: 3
+count = 3
+# Default: "speed"
+effect = "speed"
+# Default: 1
+amplifier = 1
+# Duration.
+# Default: 60
+duration_ticks = 60
+# Interval in ticks (20 ticks = 1 second).
+# Default: 50
+interval_ticks = 50
+# Default: false
+particles = false
+# Default: false
+ambient = false
+# Icon configuration.
+# Default: true
+icon = true
+
 # Sunburn mechanic: players burn in daylight under conditions.
 [sunburn]
 # Master switch (true = feature on).

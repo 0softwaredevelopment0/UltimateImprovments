@@ -343,6 +343,31 @@ public final class SimpleModules {
             }
         });
 
+        // ArmorEffects
+        mm.register(new SimpleModule("ArmorEffects", "mechanics/features/player/armor_effects", false) {
+            private Object task;
+
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.init();
+                task = new com.ultimateimprovments.mechanics.features.player.ArmorEffectsTask()
+                        .runTaskTimer(plugin, 20L, 20L); // 1s heartbeat, manager owns unit intervals
+                ConsoleLogger.info("[ArmorEffects] Configurable potion effects for armor sets.");
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                if (task instanceof org.bukkit.scheduler.BukkitTask bt) bt.cancel();
+                task = null;
+                com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.shutdown();
+            }
+
+            @Override
+            protected void onReloadConfig(JavaPlugin plugin) {
+                com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.reloadConfig();
+            }
+        });
+
         // Lightning
         mm.register(new SimpleModule("Lightning", "mechanics/environment/lightning", false) {
             @Override
