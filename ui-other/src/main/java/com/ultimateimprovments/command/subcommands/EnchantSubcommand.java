@@ -565,6 +565,18 @@ public final class EnchantSubcommand {
                         }
                         // Repairing requires an item with durability — skip silently
                     }
+                    case "lava_walker" -> {
+                        if (com.ultimateimprovments.enchantment.lavawalker.Enchantment.isValidTool(item)) {
+                            if (isGive) {
+                                com.ultimateimprovments.enchantment.lavawalker.Enchantment.setLevel(item, level);
+                                count++;
+                            } else if (com.ultimateimprovments.enchantment.lavawalker.Enchantment.hasLavaWalker(item)) {
+                                com.ultimateimprovments.enchantment.lavawalker.Enchantment.removeLevel(item);
+                                count++;
+                            }
+                        }
+                        // Lava Walker requires boots — skip silently
+                    }
                     case "container_stealing" -> {
                         if (com.ultimateimprovments.enchantment.containerstealing.Enchantment.isValidTool(item)) {
                             if (isGive) {

@@ -6,6 +6,17 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
 ## [1.8.3-beta.2] — since 1.8.3-alpha.4 (2026-09-27)
 
 ### Added
+- **`lava_walker` charm (Lava Walker)** — Frost Walker for LAVA, levels 1-255,
+  boots only. Lava under the wearer's feet temporarily turns into obsidian:
+  radius = level (1 → 1×1, 2 → 3×3, ... hard-capped at 16 → 31×31); created
+  blocks melt back to lava after a random 20–45 s (frosted-ice style) and the
+  block the player stands on never melts first. Both crust layers (below the
+  feet and at the feet — for wading) are converted. Offered in the third
+  enchanting-table slot (same min-cost gate as the other charms), available in
+  villager trades and mob equipment, NOT in random loot. Sneaking disables the
+  conversion; no fire protection is granted — the first step into fresh lava
+  can still ignite you. The melt registry is in-memory: after a restart the
+  obsidian simply stays.
 - **`armor_effects` feature** — configurable potion effects for wearing armor
   sets (leather/copper/chainmail/iron/golden/diamond/netherite families):
   rule FULL or COUNT (1–3 pieces), per-rule effect/amplifier/duration/interval,

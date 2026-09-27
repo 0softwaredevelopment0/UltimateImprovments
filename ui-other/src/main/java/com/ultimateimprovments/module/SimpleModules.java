@@ -1325,8 +1325,33 @@ public final class SimpleModules {
     }
 
     // --------------------------------------------------------------------------
-    // CONTAINER STEALING ENCHANTMENT (registered after RepairingEnchantment)
+    // LAVA WALKER ENCHANTMENT (registered after ContainerStealingEnchantment)
     // --------------------------------------------------------------------------
+
+    public static void registerLavaWalkerEnchantment(ModuleManager mm) {
+        // Lava Walker: REAL data-driven enchantment (ui:lava_walker, registered by
+        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Frost Walker for
+        // LAVA: lava under the wearer's feet temporarily turns into obsidian,
+        // radius = level (1 → 1×1, 2 → 3×3, ..., hard-capped at 16 → 31×31);
+        // created blocks melt back to lava after 20-45 s (frosted-ice style).
+        mm.register(new SimpleModule("LavaWalkerEnchantment", "enchantment/lavawalker", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                Main main = (Main) plugin;
+
+                // 1. Move listener (lava → obsidian conversion) + melt sweep
+                main.getServer().getPluginManager().registerEvents(
+                        new com.ultimateimprovments.enchantment.lavawalker.EnchantmentListener(), main);
+
+                // 2. PDC failsafe sync listener + periodic scan
+                com.ultimateimprovments.enchantment.lavawalker.EnchantmentSyncListener.register(main);
+
+                ConsoleLogger.info("[LavaWalker] Levels: 1-255 | Item: boots | Radius: level (cap "
+                        + com.ultimateimprovments.enchantment.lavawalker.Enchantment.MAX_RADIUS
+                        + ") | Melt delay: 20-45s (frosted-ice style)");
+            }
+        });
+    }
 
     public static void registerContainerStealingEnchantment(ModuleManager mm) {
         // Container Stealing: REAL data-driven enchantment (ui:container_stealing,
@@ -1343,13 +1368,14 @@ public final class SimpleModules {
                         new com.ultimateimprovments.enchantment.containerstealing.EnchantmentListener(), main);
 
                 // 2. PDC failsafe sync listener + periodic scan
-                com.ultimateimprovments.enchantment.containerstealing.EnchantmentSyncListener.register(main);
-
-                ConsoleLogger.info("[ContainerStealing] Level: 1 | Tools: pickaxe, shovel, axe, hoe | "
+                com.ultimateimprovments.enchantment.containerstealing.EnchantmentSyncListener.register(main);                ConsoleLogger.info("[ContainerStealing] Level: 1 | Tools: pickaxe, shovel, axe, hoe | "
                         + "Breaking a container drops it with its contents inside");
             }
         });
     }
+
+    
+
 
 
     public static void registerProtection(ModuleManager mm) {

@@ -4231,6 +4231,7 @@ enchant:
     - "item_stealing"
     - "repairing"
     - "container_stealing"
+    - "lava_walker"
 
 spawn:
   # Spawn mode: legit or creative
