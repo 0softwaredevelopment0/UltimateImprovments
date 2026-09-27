@@ -27,18 +27,21 @@ import java.util.Collection;
  * Radius = enchantment level: level 1 → 3×3, level 2 → 5×5, level 3 → 7×7, ...
  * i.e. a (2·level+1)³ cube centered on the victim. 🛡 For performance the scan
  * radius is capped at {@value #MAX_SCAN_RADIUS} blocks (65×65×65 cube) — levels
- * above that keep the same radius, same as the block-AoE's 16×16×16 guard.
+ * above that keep the same radius (the cap is 10 — the level where the old
+ * falloff formula would have reached zero anyway).
  * <p>
  * Cleave only hits entities of the SAME type as the victim and only when there
- * is clear line of sight. Damage falls off with distance from the victim:
- * {@code level / 10}% lost per block (level 255 → 25%/block: 100% → 75% → 50% …).
+ * is clear line of sight. No damage falloff: every cleaved target takes the
+ * same force as the original hit.
  * <p>
  * Sneaking disables the AoE for precise single-target attacks.
  */
 public class EnchantmentListener implements Listener {
 
-    /** 🛡 Performance guard: maximum scan radius (block AoE caps at 8; entities are sparse, so 32 is safe). */
-    private static final int MAX_SCAN_RADIUS = 32;
+    /** Balance cap: the cleave radius equals the charm level, capped at 10 —
+     *  the level at which the old falloff formula (level/10 % per block) would
+     *  have reached zero anyway. Beyond 10 the radius simply stops growing. */
+    private static final int MAX_SCAN_RADIUS = 10;
 
     /**
      * Recursion guard — our own {@code target.damage(...)} calls fire
@@ -76,9 +79,8 @@ public class EnchantmentListener implements Listener {
         double damage = event.getDamage();
         if (damage <= 0) return;
 
-        // Damage falloff: every block of distance from the first-hit victim cuts
-        // the cleave by `level / 10`% (level 255 → 25%/block: 100% → 75% → 50% …).
-        int falloffPercent = level / 10;
+        // No damage falloff: every cleaved target takes the SAME force as the
+        // original hit (the balance lives in the radius cap, not in falloff).
 
         // All living entities in the (2·radius+1)³ cube around the victim.
         Collection<Entity> nearby = world.getNearbyEntities(origin, radius, radius, radius);
@@ -96,13 +98,8 @@ public class EnchantmentListener implements Listener {
                 // Anti-abuse: a target hidden behind a block is not cleaved.
                 if (!hasLineOfSight(player, target)) continue;
 
-                // Falloff by whole-block distance from the struck victim.
-                double distanceBlocks = target.getLocation().distance(origin);
-                double multiplier = 1.0 - (falloffPercent / 100.0) * Math.floor(distanceBlocks);
-                if (multiplier <= 0.0) continue;
-
                 // Same force as the original hit — armor and enchantments apply normally.
-                target.damage(damage * multiplier, player);
+                target.damage(damage, player);
             }
         } finally {
             processingAoE = false;

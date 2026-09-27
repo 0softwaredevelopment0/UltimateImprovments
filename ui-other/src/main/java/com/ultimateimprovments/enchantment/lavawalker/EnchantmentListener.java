@@ -169,9 +169,17 @@ public class EnchantmentListener implements Listener {
         // be replaced: placing a solid block into them suffocates the player
         // (vanilla suffocation damage) and traps them until the melt frees them.
         int headY = feetY + 1;
-        convertLayer(world, feetX, feetZ, feetY - 1, radius, feetX, feetZ, false);
-        convertLayer(world, feetX, feetZ, feetY, radius, feetX, feetZ, true);
-        convertLayer(world, feetX, feetZ, headY, radius, feetX, feetZ, true);
+        int created = convertLayer(world, feetX, feetZ, feetY - 1, radius, feetX, feetZ, false)
+                + convertLayer(world, feetX, feetZ, feetY, radius, feetX, feetZ, true)
+                + convertLayer(world, feetX, feetZ, headY, radius, feetX, feetZ, true);
+
+        // Real price: EVERY created obsidian block costs the boots 1 integrity
+        // use (a 31×31 sweep can cost 961 uses — the charm is powerful, it must
+        // be felt on the max radius).
+        if (created > 0 && boots != null && boots.getType() != Material.AIR) {
+            com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil
+                    .decreaseItemIntegrity(boots, created, player);
+        }
     }
 
     /**
@@ -181,9 +189,11 @@ public class EnchantmentListener implements Listener {
      * @param skipCenter when true the center column is NOT converted (used for
      *                   the player's own feet/head layers — a solid block there
      *                   would suffocate and trap the player)
+     * @return the number of created obsidian blocks
      */
-    private static void convertLayer(World world, int centerX, int centerZ, int y, int radius,
-                                     int playerX, int playerZ, boolean skipCenter) {
+    private static int convertLayer(World world, int centerX, int centerZ, int y, int radius,
+                                    int playerX, int playerZ, boolean skipCenter) {
+        int created = 0;
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
                 if (skipCenter && centerX + dx == playerX && centerZ + dz == playerZ) continue;
@@ -197,25 +207,10 @@ public class EnchantmentListener implements Listener {
 
                 target.setType(Material.OBSIDIAN, false);
                 MELTING.put(BlockPos.of(target), new MeltEntry(now() + meltDelay(), lavaData));
+                created++;
             }
         }
-    }
-
-    /** Converts every LAVA block of a horizontal square layer into registered melting obsidian. */
-    private static void convertLayer(World world, int centerX, int centerZ, int y, int radius) {
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                Block target = world.getBlockAt(centerX + dx, y, centerZ + dz);
-                if (target.getType() != Material.LAVA) continue;
-
-                // Capture the EXACT lava state (source vs flow/fall level) so the
-                // melt restores it verbatim instead of always a full source.
-                BlockData lavaData = target.getBlockData();
-
-                target.setType(Material.OBSIDIAN, false);
-                MELTING.put(BlockPos.of(target), new MeltEntry(now() + meltDelay(), lavaData));
-            }
-        }
+        return created;
     }
 
     // ─────────────────────────────────────────────────────────────
