@@ -85,6 +85,19 @@ public final class AddonCatalog {
     }
 
     /**
+     * Resolves an addon by its name, case-insensitively.
+     *
+     * @return the canonical addon name, or {@code null} when unknown
+     */
+    public static String lookup(String addonName) {
+        if (addonName == null) return null;
+        for (String addon : catalog()) {
+            if (addon.equalsIgnoreCase(addonName.trim())) return addon;
+        }
+        return null;
+    }
+
+    /**
      * @return the addon owning the given message group (first segment under
      *         {@code messages.<group>} / {@code messages_en.<group>});
      *         global groups (general, reputation, help, ...) stay with CORE.

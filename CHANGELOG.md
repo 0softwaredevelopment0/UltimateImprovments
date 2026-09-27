@@ -16,6 +16,11 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   Tab completion lists all regenerable config files; `/ui reload` applies
   the result. The automatic parse-failure backups also land in the same
   numbered scheme.
+- **`/ui config reset <addon|all>`** — resets the named addon's config (or
+  ALL addon configs at once) to the bundled defaults: every touched file is
+  backed up to `configs/UI-<Addon>-broken-<N>.toml` first. Gated the same
+  way as regen, with its own `ui.command.configreset` permission (default
+  FALSE) plus the shared `config.commands.enabled` flag and confirmation.
 - **`lava_walker` charm (Lava Walker)** — Frost Walker for LAVA, levels 1-255,
   boots only. Lava under the wearer's feet temporarily turns into obsidian:
   radius = level (1 → 1×1, 2 → 3×3, ... hard-capped at 16 → 31×31); created

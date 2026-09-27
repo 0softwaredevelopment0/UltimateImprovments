@@ -1,8 +1,8 @@
 package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.SubCommand;
+import com.ultimateimprovments.config.AddonCatalog;
 import com.ultimateimprovments.config.AddonConfigManager;
-import com.ultimateimprovments.config.CompositeConfig;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -42,14 +42,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ConfigSubcommand implements SubCommand {
 
-    /** How long a pending regeneration request stays valid, in ms. */
+    /** How long a pending request stays valid, in ms. */
     private static final long CONFIRM_TTL_MS = 60_000L;
 
-    /** sender uuid → pending regeneration target. */
-    private static final Map<UUID, PendingRegen> PENDING = new ConcurrentHashMap<>();
+    /** sender uuid → pending destructive request (regen or reset). */
+    private static final Map<UUID, PendingAction> PENDING = new ConcurrentHashMap<>();
 
-    /** One confirmed-pending regeneration request. */
-    private record PendingRegen(String addon, File configFile, long createdAt) {}
+    /** Kind of a pending destructive action. */
+    private enum ActionKind { REGEN, RESET }
+
+    /** One confirmed-pending request. */
+    private record PendingAction(ActionKind kind, List<String> addons, long createdAt) {}
 
     @Override
     public boolean execute(CommandSender sender, String[] args) {
@@ -61,11 +64,12 @@ public class ConfigSubcommand implements SubCommand {
         String sub = args[1].toLowerCase(Locale.ROOT);
         switch (sub) {
             case "regen" -> handleRegen(sender, args);
+            case "reset" -> handleReset(sender, args);
             case "confirm" -> handleConfirm(sender);
             case "cancel" -> {
                 PENDING.remove(uuid(sender));
                 sender.sendMessage(MessageUtil.parse(
-                        "<green>✔</green> <white>Regeneration cancelled.</white>"));
+                        "<green>✔</green> <white>Cancelled.</white>"));
             }
             default -> usage(sender);
         }
@@ -76,11 +80,17 @@ public class ConfigSubcommand implements SubCommand {
     public List<String> tabComplete(CommandSender sender, String[] args) {
         // /ui config <sub>
         if (args.length == 2) {
-            return filter(List.of("regen", "confirm", "cancel"), args[1]);
+            return filter(List.of("regen", "reset", "confirm", "cancel"), args[1]);
         }
         // /ui config regen <file>
         if (args.length == 3 && "regen".equalsIgnoreCase(args[1])) {
             return filter(brokenConfigFileNames(), args[2]);
+        }
+        // /ui config reset <addon|all>
+        if (args.length == 3 && "reset".equalsIgnoreCase(args[1])) {
+            List<String> options = new ArrayList<>(AddonConfigManager.regenerableAddons());
+            options.add("all");
+            return filter(options, args[2]);
         }
         return List.of();
     }
@@ -90,7 +100,7 @@ public class ConfigSubcommand implements SubCommand {
     // ============================================================
 
     private void handleRegen(CommandSender sender, String[] args) {
-        if (!requireEnabled(sender) || !requirePermission(sender)) return;
+        if (!requireEnabled(sender) || !requirePermission(sender, Permissions.CMD_CONFIG_REGEN)) return;
         if (args.length < 3) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ Usage: </red><white>/ui config regen UI-Other.toml</white>"));
@@ -107,7 +117,7 @@ public class ConfigSubcommand implements SubCommand {
         }
 
         File configFile = AddonConfigManager.configFileOf(addon);
-        PENDING.put(uuid(sender), new PendingRegen(addon, configFile, System.currentTimeMillis()));
+        PENDING.put(uuid(sender), new PendingAction(ActionKind.REGEN, List.of(addon), System.currentTimeMillis()));
 
         sender.sendMessage(MessageUtil.parse(""));
         sender.sendMessage(MessageUtil.parse(
@@ -126,36 +136,96 @@ public class ConfigSubcommand implements SubCommand {
     }
 
     private void handleConfirm(CommandSender sender) {
-        PendingRegen pending = PENDING.remove(uuid(sender));
+        PendingAction pending = PENDING.remove(uuid(sender));
         if (pending == null) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ No pending regeneration. Run </red><white>/ui config regen UI-<Addon>.toml</white><red> first.</red>"));
+                    "<red>❌ No pending action. Run </red><white>/ui config regen UI-<Addon>.toml</white><red> or </red>"
+                            + "<white>/ui config reset <addon|all></white><red> first.</red>"));
             return;
         }
         if (System.currentTimeMillis() - pending.createdAt() > CONFIRM_TTL_MS) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ The pending regeneration expired (60 s). Run the command again.</red>"));
+                    "<red>❌ The pending action expired (60 s). Run the command again.</red>"));
             return;
         }
-        // The flag can be flipped between regen and confirm — re-check.
-        if (!requireEnabled(sender) || !requirePermission(sender)) return;
+        // The flag/permission can be flipped between the request and the confirm — re-check.
+        boolean allowed = switch (pending.kind()) {
+            case REGEN -> requireEnabled(sender) && requirePermission(sender, Permissions.CMD_CONFIG_REGEN);
+            case RESET -> requireEnabled(sender) && requirePermission(sender, Permissions.CMD_CONFIG_RESET);
+        };
+        if (!allowed) return;
 
-        String addon = pending.addon();
-        try {
-            String backup = AddonConfigManager.backupAndRegenerate(addon);
-            sender.sendMessage(MessageUtil.parse(
-                    "<green>✔</green> <white>Regenerated </white><yellow>" + esc(addon) + ".toml</yellow><white>.</white>"));
-            sender.sendMessage(MessageUtil.parse(
-                    "  <gray>Old file backed up as </gray><white>configs/" + esc(backup) + "</white>"));
-            sender.sendMessage(MessageUtil.parse(
-                    "  <gray>Run </gray><white>/ui reload</white><gray> to apply.</gray>"));
-            ConsoleLogger.info("[Config] " + sender.getName() + " regenerated " + addon
-                    + ".toml (backup: " + backup + ")");
-        } catch (Exception e) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Regeneration failed: </red><white>" + esc(e.getMessage()) + "</white>"));
-            ConsoleLogger.warn("[Config] Regeneration of " + addon + ".toml failed: " + e.getMessage());
+        int ok = 0;
+        List<String> failures = new ArrayList<>();
+        for (String addon : pending.addons()) {
+            try {
+                String backup = AddonConfigManager.backupAndRegenerate(addon);
+                ok++;
+                sender.sendMessage(MessageUtil.parse(
+                        "<green>✔</green> <yellow>" + esc(addon) + ".toml</yellow><white> "
+                                + (pending.kind() == ActionKind.REGEN ? "regenerated" : "reset")
+                                + "</white><gray> — backed up as configs/" + esc(backup) + "</gray>"));
+                ConsoleLogger.info("[Config] " + sender.getName()
+                        + (pending.kind() == ActionKind.REGEN ? " regenerated " : " reset ")
+                        + addon + ".toml (backup: " + backup + ")");
+            } catch (Exception e) {
+                failures.add(addon + ": " + e.getMessage());
+                ConsoleLogger.warn("[Config] " + pending.kind() + " of " + addon + ".toml failed: " + e.getMessage());
+            }
         }
+        if (!failures.isEmpty()) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Failed (" + failures.size() + "): </red><white>" + esc(String.join("; ", failures)) + "</white>"));
+        }
+        if (ok > 0) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<gray>Done (" + ok + " file(s)). Run </gray><white>/ui reload</white><gray> to apply.</gray>"));
+        }
+    }
+
+    // ============================================================
+    // RESET (/ui config reset <addon|all>)
+    // ============================================================
+
+    private void handleReset(CommandSender sender, String[] args) {
+        if (!requireEnabled(sender) || !requirePermission(sender, Permissions.CMD_CONFIG_RESET)) return;
+        if (args.length < 3) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Usage: </red><white>/ui config reset UI-Other</white><gray> or </red><white>/ui config reset all</white>"));
+            return;
+        }
+
+        String raw = args[2];
+        List<String> addons;
+        if (raw.equalsIgnoreCase("all")) {
+            addons = AddonConfigManager.regenerableAddons();
+        } else {
+            String addon = AddonCatalog.lookup(raw);
+            if (addon == null) {
+                sender.sendMessage(MessageUtil.parse(
+                        "<red>❌ Unknown addon: </red><white>" + esc(raw)
+                                + "</white><gray>. Tab-complete lists the valid names.</gray>"));
+                return;
+            }
+            addons = List.of(addon);
+        }
+
+        PENDING.put(uuid(sender), new PendingAction(ActionKind.RESET, addons, System.currentTimeMillis()));
+
+        sender.sendMessage(MessageUtil.parse(""));
+        sender.sendMessage(MessageUtil.parse(
+                "<yellow>⚠</yellow> <red>You are about to RESET " + addons.size() + " config(s) to the bundled defaults:</red>"));
+        sender.sendMessage(MessageUtil.parse(
+                "  <white>" + esc(String.join(", ", addons)) + "</white>"));
+        sender.sendMessage(MessageUtil.parse(
+                "  <gray>All current edits are LOST — every file is backed up as</gray>"));
+        sender.sendMessage(MessageUtil.parse(
+                "  <white>configs/UI-<Addon>-broken-<N>.toml</white><gray> first.</gray>"));
+        sender.sendMessage(MessageUtil.parse(""));
+        sender.sendMessage(confirmButton("/ui config confirm")
+                .append(Component.text(" | ", NamedTextColor.DARK_GRAY))
+                .append(cancelButton("/ui config cancel")));
+        sender.sendMessage(MessageUtil.parse(""));
     }
 
     // ============================================================
@@ -170,10 +240,10 @@ public class ConfigSubcommand implements SubCommand {
         return false;
     }
 
-    private boolean requirePermission(CommandSender sender) {
-        if (sender.hasPermission(Permissions.CMD_CONFIG_REGEN)) return true;
+    private boolean requirePermission(CommandSender sender, String permission) {
+        if (sender.hasPermission(permission)) return true;
         sender.sendMessage(MessageUtil.parse(
-                "<red>❌ You need the </red><white>" + Permissions.CMD_CONFIG_REGEN
+                "<red>❌ You need the </red><white>" + permission
                         + "</white><red> permission for this.</red>"));
         return false;
     }
@@ -233,6 +303,9 @@ public class ConfigSubcommand implements SubCommand {
         sender.sendMessage(MessageUtil.parse(
                 "  <white>/ui config regen UI-<Addon>.toml</white> <dark_gray>—</dark_gray>"
                         + " <gray>back up (configs/UI-<Addon>-broken-<N>.toml) and regenerate from the template</gray>"));
+        sender.sendMessage(MessageUtil.parse(
+                "  <white>/ui config reset <addon|all></white> <dark_gray>—</dark_gray>"
+                        + " <gray>reset config(s) to the bundled defaults (backed up first)</gray>"));
         sender.sendMessage(MessageUtil.parse(
                 "  <gray>Available now: </gray><white>" + String.join(", ", brokenConfigFileNames()) + "</white>"));
     }
