@@ -15,7 +15,7 @@ import java.util.List;
  * /ui execchat — send a chat message on behalf of a player.
  * <p>
  * Full input simulation: the text goes through the whole normal chat pipeline
- * (AsyncPlayerChatEvent → filters, mutes, custom chat formatting),
+ * (AsyncChatEvent → filters, mutes, custom chat formatting),
  * and if the text starts with {@code /} — it is executed as a command
  * (the same logic as {@code Player#chat}, where the server itself routes
  * chat and commands).

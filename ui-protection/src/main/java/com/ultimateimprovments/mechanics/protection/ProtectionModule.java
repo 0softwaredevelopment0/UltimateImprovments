@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
@@ -61,7 +61,7 @@ public class ProtectionModule extends PluginModule {
     private static class ChatInputListener implements Listener {
 
         @EventHandler(priority = EventPriority.LOWEST)
-        public void onChat(AsyncPlayerChatEvent e) {
+        public void onChat(AsyncChatEvent e) {
             Player player = e.getPlayer();
             UUID pid = player.getUniqueId();
             // consume now returns the block (previously split into consume+getAwaitingBlock,
@@ -71,7 +71,8 @@ public class ProtectionModule extends PluginModule {
 
             // Player is in the waiting state → capture the message
             e.setCancelled(true);
-            String msg = e.getMessage().trim();
+            String msg = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                    .plainText().serialize(e.message()).trim();
             if (msg.equalsIgnoreCase("cancel")) {
                 player.sendMessage(MessageUtil.parse(
                         "<yellow>Добавление игрока отменено.</yellow>"));

@@ -182,7 +182,7 @@ public final class ProtectionGUI {
     // ADD PLAYER FORM (chat input)
     // <p>
     // Map is ConcurrentHashMap because it is read/written from the
-    // netty thread (AsyncPlayerChatEvent) AND from the main thread
+    // netty thread (AsyncChatEvent) AND from the main thread
     // (openAddPlayerMenu / cancelAwaiting) — HashMap would race and
     // throw ConcurrentModificationException under load.
     // =========================

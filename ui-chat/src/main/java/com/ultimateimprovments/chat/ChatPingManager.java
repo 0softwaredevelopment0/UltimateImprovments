@@ -68,7 +68,7 @@ public class ChatPingManager {
     /**
      * Processes pings in the message.
      * <p>
-     * Called from {@link ChatManager#onPlayerChat(org.bukkit.event.player.AsyncPlayerChatEvent)}
+     * Called from {@link ChatManager#onPlayerChat(io.papermc.paper.event.player.AsyncChatEvent)}
      * AFTER placeholder resolution, but BEFORE the message is sent.
      *
      * @param message  the current text message (with placeholders already resolved)
