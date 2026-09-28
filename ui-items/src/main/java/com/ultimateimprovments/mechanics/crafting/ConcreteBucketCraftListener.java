@@ -35,8 +35,7 @@ public class ConcreteBucketCraftListener implements Listener {
         Main plugin = Main.getInstance();
 
         ItemStack result = new ItemStack(Material.WATER_BUCKET);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket *</white>"));
 
@@ -51,7 +50,7 @@ public class ConcreteBucketCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -87,8 +86,7 @@ public class ConcreteBucketCraftListener implements Listener {
         if (!sr.getKey().equals(RECIPE_KEY)) return;
 
         ItemStack result = new ItemStack(Material.WATER_BUCKET);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Concrete Bucket *</white>"));
         meta.lore(List.of(
@@ -100,7 +98,7 @@ public class ConcreteBucketCraftListener implements Listener {
                 PersistentDataType.BYTE,
                 (byte) 1
         );
-        result.setItemMeta(meta);
+        });
         e.getInventory().setResult(result);
     }
 

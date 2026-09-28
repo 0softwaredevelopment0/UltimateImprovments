@@ -46,8 +46,7 @@ public class EntityLocatorCraftListener implements Listener {
         Main plugin = Main.getInstance();
 
         ItemStack result = new ItemStack(Material.RECOVERY_COMPASS);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Entity Locator *</white>"));
 
@@ -64,7 +63,7 @@ public class EntityLocatorCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -107,8 +106,7 @@ public class EntityLocatorCraftListener implements Listener {
         CraftingInventory inv = e.getInventory();
 
         ItemStack result = new ItemStack(Material.RECOVERY_COMPASS);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><i:false><white>Entity Locator *</white>"));
 
@@ -125,7 +123,7 @@ public class EntityLocatorCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         inv.setResult(result);
     }

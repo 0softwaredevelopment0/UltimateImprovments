@@ -44,8 +44,7 @@ public class PlasmaCannonCraftListener implements Listener {
         Main plugin = Main.getInstance();
 
         ItemStack result = new ItemStack(Material.WARPED_FUNGUS_ON_A_STICK);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Photon cannon *</white>"));
 
@@ -62,7 +61,7 @@ public class PlasmaCannonCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -106,8 +105,7 @@ public class PlasmaCannonCraftListener implements Listener {
         CraftingInventory inv = e.getInventory();
 
         ItemStack result = new ItemStack(Material.WARPED_FUNGUS_ON_A_STICK);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Photon cannon *</white>"));
 
@@ -124,7 +122,7 @@ public class PlasmaCannonCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         inv.setResult(result);
     }

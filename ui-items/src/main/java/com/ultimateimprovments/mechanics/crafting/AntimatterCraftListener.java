@@ -47,8 +47,7 @@ public class AntimatterCraftListener implements Listener {
         Main plugin = Main.getInstance();
 
         ItemStack result = new ItemStack(Material.SPLASH_POTION);
-        PotionMeta meta = (PotionMeta) result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(PotionMeta.class, meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Antimatter Flask *</white>"));
 
@@ -68,7 +67,7 @@ public class AntimatterCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -111,8 +110,7 @@ public class AntimatterCraftListener implements Listener {
         CraftingInventory inv = e.getInventory();
 
         ItemStack result = new ItemStack(Material.SPLASH_POTION);
-        PotionMeta meta = (PotionMeta) result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(PotionMeta.class, meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Antimatter Flask *</white>"));
 
@@ -132,7 +130,7 @@ public class AntimatterCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         inv.setResult(result);
     }

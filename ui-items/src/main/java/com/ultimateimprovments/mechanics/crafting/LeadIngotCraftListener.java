@@ -60,8 +60,7 @@ public class LeadIngotCraftListener implements Listener {
         Main plugin = Main.getInstance();
 
         ItemStack result = new ItemStack(Material.NETHERITE_INGOT);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
 
@@ -75,7 +74,7 @@ public class LeadIngotCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -115,8 +114,7 @@ public class LeadIngotCraftListener implements Listener {
         }
 
         ItemStack result = new ItemStack(Material.NETHERITE_INGOT);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Lead Ingot *</white>"));
         meta.lore(List.of(
@@ -129,7 +127,7 @@ public class LeadIngotCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
         inv.setResult(result);
     }
 

@@ -32,8 +32,7 @@ public class PortableRadarCraftListener implements Listener {
         Main plugin = Main.getInstance();
 
         ItemStack result = new ItemStack(Material.ENDER_EYE);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Portable Radar *</white>"));
 
@@ -47,7 +46,7 @@ public class PortableRadarCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -75,8 +74,7 @@ public class PortableRadarCraftListener implements Listener {
         CraftingInventory inv = e.getInventory();
 
         ItemStack result = new ItemStack(Material.ENDER_EYE);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Portable Radar *</white>"));
         meta.lore(List.of(
@@ -89,7 +87,7 @@ public class PortableRadarCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
         inv.setResult(result);
     }
 }
