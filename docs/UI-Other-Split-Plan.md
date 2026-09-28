@@ -10,12 +10,15 @@
 > - 2026-09-28 — Phase 3a: **UI-Protection** (`063d8b03`) — `mechanics/protection/**`,
 >   `ProtectionSubcommand`, `VoidProtectionListener` (package → `…mechanics.protection`),
 >   `ProtectionModule`, `config/UI-Protection.toml`; routes `protection`/`void_protection`.
-> - Next: **Phase 3b — UI-World + UI-Items** (classify `features/world/*` into world vs
+> - 2026-09-28 — Phase 3b: **UI-Display** (`eeead1d4`) — `display/**` (tab/scoreboard/
+>   boss bar) + `DisplayModules` + `config/UI-Display.toml`. `VanishManager` decoupled
+>   from display via `CoreHooks.isVanished`. (MOTD/brand_spoof/death_logger/
+>   changeddimension still in ui-other; can join a later UI-Display/UI-Misc step.)
+> - Next: **Phase 4 — UI-World + UI-Items** (classify `features/world/*` into world vs
 >   custom-item managers; crafting listeners depend on those). Then UI-Player,
->   UI-Display, UI-Guard, UI-Admin. Notes:
->   - `RecipeRegistry` already lives in ui-shared (crafting is not a blocker).
->   - `VanishManager` is referenced by `TabManager` (display) and `MiscSubcommand`
->     (command) → hoist to ui-core or add a hook before extracting UI-Player.
+>   UI-Guard, UI-Admin. Notes:
+>   - `VanishManager` is still referenced by `VanishListCommand`/`MiscSubcommand`
+>     (both ui-other) → keep in ui-other or hoist before UI-Player.
 >   - `StructureIntegrityManager` is referenced by `MultimeterListener` / `EnderChestManager`
 >     (scanner/items) → keep with UI-Items (or hoist).
 
