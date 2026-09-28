@@ -2,6 +2,7 @@ package com.ultimateimprovments.enchantment.itemstealing;
 
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -14,6 +15,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
@@ -36,15 +38,15 @@ import org.bukkit.util.Vector;
  * <p>
  * <b>Permission:</b> stealing is gated by a LuckPerms-grantable permission
  * ({@value #DEFAULT_STEAL_PERMISSION} by default, configurable in UI-Other.toml);
- * without it the rod never steals.
+ * without it the rod never steals and the player gets a chat message.
  * <p>
- * <b>Feedback:</b> on a successful steal a quiet fishing-rod "yank" is played to every
- * player within {@value #SOUND_RADIUS} blocks of the thief, and the VICTIM alone hears
- * a "pop" (their item was snapped away). On a failed roll a "line snap" is played to
- * the same radius instead. If the thief lacks the steal permission he gets a chat
- * message saying so.
+ * <b>Cost:</b> the rod wears out on every ATTEMPT — 2 durability on a miss, 1 on a
+ * hit. The exact slot the charm rod occupied at the moment of the attempt is damaged,
+ * synchronously in the same tick, so a rod swap cannot dodge the wear.
  * <p>
- * <b>Cost:</b> the rod wears out on every attempt — 2 durability on a miss, 1 on a hit.
+ * <b>Feedback:</b> players within {@value #SOUND_RADIUS} blocks hear the outcome
+ * (a quiet "yank" on success, a "splash" on a miss). The VICTIM alone additionally
+ * hears a "pop" when the item is snapped away, or a "snap" when the yank slips off.
  * <p>
  * Only {@link PlayerFishEvent.State#CAUGHT_ENTITY} is handled — in 26.x that is the
  * state that carries the hooked entity on reel-in; {@code REEL_IN} always fires with
@@ -55,13 +57,13 @@ public class EnchantmentListener implements Listener {
     /** Permission allowing a player to steal with this enchantment (LuckPerms-grantable). */
     private static final String DEFAULT_STEAL_PERMISSION = "ui.enchant.itemstealing.steal";
 
-    /** Radius (blocks) of the steal "yank"/"snap" sounds — everyone inside hears them. */
+    /** Radius (blocks) of the outcome sounds shared with bystanders. */
     private static final double SOUND_RADIUS = 5.0;
 
     /** Volume of the success "yank" — audible but not annoying. */
     private static final float YANK_VOLUME = 0.6f;
 
-    /** Volume of the failed "snap". */
+    /** Volume of the failed "splash". */
     private static final float FAIL_VOLUME = 0.7f;
 
     /** How close to the fisher the thrown item stops homing (blocks). */
@@ -91,11 +93,15 @@ public class EnchantmentListener implements Listener {
         // Can't hook yourself.
         if (victim.equals(fisher)) return;
 
-        // The rod must carry the Item Stealing charm (main hand first, offhand as fallback).
+        // The rod must carry the Item Stealing charm: main hand first, offhand as
+        // fallback. Remember EXACTLY where it was at this moment — the wear is applied
+        // to that same slot, in this same tick, so a swap cannot dodge it.
+        PlayerInventory inv = fisher.getInventory();
+        int heldSlot = inv.getHeldItemSlot();
         boolean mainHand = true;
-        ItemStack rod = fisher.getInventory().getItemInMainHand();
+        ItemStack rod = inv.getItem(heldSlot);
         if (!Enchantment.isValidTool(rod)) {
-            rod = fisher.getInventory().getItemInOffHand();
+            rod = inv.getItemInOffHand();
             mainHand = false;
         }
         if (!Enchantment.isValidTool(rod)) return;
@@ -128,12 +134,16 @@ public class EnchantmentListener implements Listener {
         if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.isCursed(stolen)) return;
 
         // Steal roll: level N = N×10% chance (level 10 = always). The rod wears out
-        // either way — 2 durability on a miss, 1 on a hit. A miss cues a "line snap"
-        // so everyone nearby knows the yank came off empty.
+        // either way — 2 durability on a miss, 1 on a hit — charged on the slot the
+        // rod occupied, right now (same tick).
         boolean success = java.util.concurrent.ThreadLocalRandom.current().nextInt(100) < level * 10;
-        damageRod(fisher, mainHand, rod, success ? 1 : 2);
+        damageRod(fisher, mainHand, heldSlot, rod, success ? 1 : 2);
+
         if (!success) {
-            playRadiusSound(fisher, Sound.ENTITY_ITEM_BREAK, FAIL_VOLUME, 1.5f);
+            // Shared "splash" (the catch failed) + a private "snap" for the victim.
+            playRadiusSound(fisher, Sound.ENTITY_FISHING_BOBBER_SPLASH, FAIL_VOLUME, 1.2f);
+            victim.playSound(victim.getLocation(), Sound.BLOCK_TRIPWIRE_DETACH,
+                    SoundCategory.PLAYERS, 1.0f, 1.2f);
             return;
         }
 
@@ -153,10 +163,8 @@ public class EnchantmentListener implements Listener {
         flying.setPickupDelay(THROW_PICKUP_DELAY);
         flyTo(flying, fisher);
 
-        // The "yank" cue: players within 5 blocks hear the reel snap (quietly).
+        // Shared quiet "yank" + a private "pop" for the victim (their item is gone).
         playRadiusSound(fisher, Sound.ENTITY_FISHING_BOBBER_RETRIEVE, YANK_VOLUME, 1.3f);
-
-        // The victim alone hears a "pop" — their item was just snapped away.
         victim.playSound(victim.getLocation(), Sound.ENTITY_ITEM_PICKUP,
                 SoundCategory.PLAYERS, 1.0f, 1.2f);
 
@@ -187,6 +195,23 @@ public class EnchantmentListener implements Listener {
     }
 
     /**
+     * Wears the rod out by {@code points}. The stack is read from the slot it occupied
+     * when the attempt began and the (possibly broken) result is written back to that
+     * SAME slot immediately — all inside the event tick, so swapping rods cannot avoid
+     * the wear.
+     */
+    private static void damageRod(Player fisher, boolean mainHand, int heldSlot, ItemStack rod, int points) {
+        ItemDurabilityUtil.decreaseItemIntegrity(rod, points, fisher);
+        ItemStack result = rod.getAmount() <= 0 ? null : rod;
+        PlayerInventory inv = fisher.getInventory();
+        if (mainHand) {
+            inv.setItem(heldSlot, result);
+        } else {
+            inv.setItemInOffHand(result);
+        }
+    }
+
+    /**
      * Plays {@code sound} for every player within {@value #SOUND_RADIUS} blocks of the
      * source, so both the fisherman and nearby bystanders hear it.
      */
@@ -198,23 +223,6 @@ public class EnchantmentListener implements Listener {
             if (nearby.getLocation().distanceSquared(loc) <= maxSquared) {
                 nearby.playSound(loc, sound, SoundCategory.PLAYERS, volume, pitch);
             }
-        }
-    }
-
-    /**
-     * Wears the rod out by {@code points} and writes the (possibly broken) stack back
-     * to the hand it came from — never relying on the hand mirror to persist the change.
-     */
-    private static void damageRod(Player fisher, boolean mainHand, ItemStack rod, int points) {
-        com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil
-                .decreaseItemIntegrity(rod, points, fisher);
-        if (rod.getAmount() <= 0) {
-            if (mainHand) fisher.getInventory().setItemInMainHand(null);
-            else fisher.getInventory().setItemInOffHand(null);
-        } else if (mainHand) {
-            fisher.getInventory().setItemInMainHand(rod);
-        } else {
-            fisher.getInventory().setItemInOffHand(rod);
         }
     }
 
