@@ -141,8 +141,8 @@ public final class SwapJarSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "  <gray>New JAR:</gray>     <white>" + newJar.getName() + "</white> <dark_gray>(" + newSize + " KB)</dark_gray>"));
         sender.sendMessage(MessageUtil.parse(
-                "  <gray>Plugin:</gray>      <white>" + plugin.getDescription().getName()
-                + "</white> <dark_gray>v" + plugin.getDescription().getVersion() + "</dark_gray>"));
+                "  <gray>Plugin:</gray>      <white>" + plugin.getPluginMeta().getName()
+                + "</white> <dark_gray>v" + plugin.getPluginMeta().getVersion() + "</dark_gray>"));
         sender.sendMessage(MessageUtil.parse(""));
         sender.sendMessage(MessageUtil.parse(
                 "<red>This will replace the plugin JAR, disable the current plugin,</red>"));
@@ -196,7 +196,7 @@ public final class SwapJarSubcommand {
         PluginManager pm = Bukkit.getPluginManager();
 
         try {
-            String pluginName = plugin.getDescription().getName();
+            String pluginName = plugin.getPluginMeta().getName();
 
             // STEP 1: Disable the plugin FIRST — frees the classloader and file lock
             ConsoleLogger.info("[SwapJar] Disabling plugin: " + pluginName);
@@ -244,20 +244,20 @@ public final class SwapJarSubcommand {
 
             // STEP 7: Enable the new plugin
             ConsoleLogger.info("[SwapJar] Enabling new plugin: " + loaded.getName()
-                    + " v" + loaded.getDescription().getVersion());
+                    + " v" + loaded.getPluginMeta().getVersion());
             pm.enablePlugin(loaded);
 
             sender.sendMessage(MessageUtil.parse(""));
             sender.sendMessage(MessageUtil.parse(
                     "<green>✔</green> <white>Plugin hot-swapped successfully!</white>"));
             sender.sendMessage(MessageUtil.parse(
-                    "  <gray>New version:</gray> <white>" + loaded.getDescription().getVersion() + "</white>"));
+                    "  <gray>New version:</gray> <white>" + loaded.getPluginMeta().getVersion() + "</white>"));
             sender.sendMessage(MessageUtil.parse(""));
 
             try { Files.deleteIfExists(backupFile.toPath()); } catch (Exception ignored) {}
 
             ConsoleLogger.info("[SwapJar] Hot-swap completed: " + pluginName
-                    + " → v" + loaded.getDescription().getVersion());
+                    + " → v" + loaded.getPluginMeta().getVersion());
 
         } catch (InvalidPluginException | UnknownDependencyException e) {
             // Plugin failed to load — restore the backup

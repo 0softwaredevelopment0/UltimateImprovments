@@ -36,7 +36,7 @@ public class UIDatapack extends JavaPlugin {
         // UI-Datapack does not ship its own config.yml.
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Datapack v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Datapack v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("");
 

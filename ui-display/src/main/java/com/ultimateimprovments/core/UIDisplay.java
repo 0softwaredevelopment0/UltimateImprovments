@@ -26,7 +26,7 @@ public class UIDisplay extends JavaPlugin {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Display v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Display v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         ModuleManager mm = ModuleManager.getInstance();

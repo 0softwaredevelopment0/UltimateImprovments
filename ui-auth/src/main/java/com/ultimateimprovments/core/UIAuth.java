@@ -32,7 +32,7 @@ public class UIAuth extends JavaPlugin {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Auth v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Auth v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         ModuleManager mm = ModuleManager.getInstance();

@@ -127,8 +127,8 @@ public class AdminMenuGUI implements Listener {
         inv.setItem(18, createInfoItem(Material.NETHER_STAR,
                 "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient>",
                 Arrays.asList(
-                        "<gray>Версия: <white>" + Main.getInstance().getDescription().getVersion() + "</white></gray>",
-                        "<gray>Авторы: <white>" + String.join(", ", Main.getInstance().getDescription().getAuthors()) + "</white></gray>",
+                        "<gray>Версия: <white>" + Main.getInstance().getPluginMeta().getVersion() + "</white></gray>",
+                        "<gray>Авторы: <white>" + String.join(", ", Main.getInstance().getPluginMeta().getAuthors()) + "</white></gray>",
                         "<gray>Сервер: <white>" + Main.getInstance().getServer().getName() + " " + Main.getInstance().getServer().getVersion() + "</white></gray>",
                         "<gray>API: <white>" + Main.getInstance().getServer().getBukkitVersion() + "</white></gray>"
                 )));

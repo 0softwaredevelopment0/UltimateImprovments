@@ -2,6 +2,7 @@ package com.ultimateimprovments.mechanics.features.world;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -197,19 +198,19 @@ public class MinecartSpeedManager implements Listener {
                     prevPositions.put(uuid, currentLoc.clone());
 
                     if (prevLoc == null || !currentLoc.getWorld().equals(prevLoc.getWorld())) {
-                        player.sendActionBar("\u00a76\u26a1 \u00a7e0.000 \u00a77\u0431\u043b\u043e\u043a/\u0442\u0438\u043a");
+                        player.sendActionBar(MessageUtil.parse("<gold>⚡</gold> <yellow>0.000</yellow> <gray>блок/тик</gray>"));
                         continue;
                     }
 
                     double blocksPerTick = currentLoc.distance(prevLoc);
-                    String msg = "\u00a76\u26a1 \u00a7e" + String.format("%.3f", blocksPerTick) + " \u00a77\u0431\u043b\u043e\u043a/\u0442\u0438\u043a";
+                    String msg = "<gold>⚡</gold> <yellow>" + String.format("%.3f", blocksPerTick) + "</yellow> <gray>блок/тик</gray>";
 
                     // If the player is in a minecart at smelting speed — add a [⚡] indicator
                     if (player.getVehicle() instanceof Minecart && blocksPerTick >= hopperSmeltMinSpeed) {
-                        msg += " \u00a78[\u00a7e\u26a1\u00a78]";
+                        msg += " <dark_gray>[<yellow>⚡</yellow><dark_gray>]</dark_gray>";
                     }
 
-                    player.sendActionBar(msg);
+                    player.sendActionBar(MessageUtil.parse(msg));
                 }
             }
         };

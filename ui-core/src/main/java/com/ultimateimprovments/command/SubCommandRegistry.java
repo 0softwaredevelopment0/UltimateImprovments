@@ -105,7 +105,7 @@ public class SubCommandRegistry {
         // Each subcommand checks its own ui.command.<name> permission itself.
         // There is no global ui gate anymore — otherwise player-granted point permissions would not work.
         if (args.length == 0) {
-            String version = Main.getInstance().getDescription().getVersion();
+            String version = Main.getInstance().getPluginMeta().getVersion();
             String msg = MessagesManager.getString("general.no_args",
                     "<white>Running <yellow>UltimateImprovments <gray>v<white>%version%\n"
                             + "<white>Type <yellow>/ui help <white> to view commands list.");

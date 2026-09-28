@@ -23,7 +23,7 @@ public class UIOther extends JavaPlugin {
         // UI-Other does not ship its own config.yml.
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Other v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Other v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         ModuleManager mm = ModuleManager.getInstance();

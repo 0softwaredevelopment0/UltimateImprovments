@@ -34,7 +34,7 @@ public class UIGuard extends JavaPlugin {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Guard v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Guard v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         ModuleManager mm = ModuleManager.getInstance();

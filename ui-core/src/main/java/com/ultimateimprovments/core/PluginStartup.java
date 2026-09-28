@@ -57,7 +57,7 @@ public class PluginStartup {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UltimateImprovments v" + plugin.getDescription().getVersion());
+        ConsoleLogger.info("  UltimateImprovments v" + plugin.getPluginMeta().getVersion());
         ConsoleLogger.info("  Data: plugins/" + UltimateDirs.DIR_NAME);
         ConsoleLogger.info("===========================================");
         ConsoleLogger.info("");
@@ -165,7 +165,7 @@ public class PluginStartup {
     private void printBanner() {
         ConsoleLogger.info("");
         ConsoleLogger.info("==================================================");
-        ConsoleLogger.info("  UI-Core v" + plugin.getDescription().getVersion());
+        ConsoleLogger.info("  UI-Core v" + plugin.getPluginMeta().getVersion());
         ConsoleLogger.info("  Server: " + plugin.getServer().getName() + " " + plugin.getServer().getVersion());
         ConsoleLogger.info("==================================================");
         ConsoleLogger.info("");
