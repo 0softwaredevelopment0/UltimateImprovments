@@ -415,11 +415,11 @@ public class CheckManager {
             @Override
             public void run() {
                 if (!suspect.isOnline()) return;
-                suspect.sendTitle(
-                        MessageUtil.legacy(msg("title.title", "<red>Verification")),
-                        MessageUtil.legacy(msg("title.subtitle", "<white>All instructions are in the chat")),
-                        0, Integer.MAX_VALUE, 0
-                );
+                suspect.showTitle(net.kyori.adventure.title.Title.title(
+                        MessageUtil.parse(msg("title.title", "<red>Verification")),
+                        MessageUtil.parse(msg("title.subtitle", "<white>All instructions are in the chat")),
+                        net.kyori.adventure.title.Title.Times.times(java.time.Duration.ZERO,
+                                java.time.Duration.ofMillis(50L * Integer.MAX_VALUE), java.time.Duration.ZERO)));
             }
         }.runTask(Main.getInstance());
     }

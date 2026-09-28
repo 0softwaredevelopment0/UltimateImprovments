@@ -13,6 +13,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -200,15 +202,16 @@ public class SunburnManager implements Listener {
                 player.getInventory().setHelmet(null);
             }
         } else {
-            short currentDmg = helmet.getDurability();
             short maxDur = helmet.getType().getMaxDurability();
-
             if (maxDur <= 0) return; // No durability — passive protection
+
+            ItemMeta meta = helmet.getItemMeta();
+            int currentDmg = (meta instanceof Damageable dmg) ? dmg.getDamage() : 0;
 
             if (currentDmg >= maxDur) {
                 player.getInventory().setHelmet(null);
             } else {
-                helmet.setDurability((short) (currentDmg + 1));
+                helmet.editMeta(Damageable.class, dmg -> dmg.setDamage(currentDmg + 1));
             }
         }
     }
