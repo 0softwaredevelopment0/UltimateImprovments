@@ -79,7 +79,7 @@ import java.util.UUID;
  * {@code netherite}). Unknown effect names or malformed units are logged and
  * skipped — a broken unit never kills the whole feature.
  */
-public final class ArmorEffectsManager {
+public final class ArmorEffectsManager implements org.bukkit.event.Listener {
 
     /** One configured unit: material families + effect + schedule. */
     public static final class Unit {
@@ -350,6 +350,33 @@ public final class ArmorEffectsManager {
     // =========================
     // EVENTS
     // =========================
+
+    /**
+     * Modern Paper event: fires the moment a player's armor piece changes
+     * (equip/unequip via any path — click, shift-click, dispenser, hopper,
+     * break). Re-evaluates instantly instead of waiting for the 1s heartbeat,
+     * so effects appear/disappear without a visible delay.
+     */
+    @org.bukkit.event.EventHandler
+    public void onArmorChange(com.destroystokyo.paper.event.player.PlayerArmorChangeEvent event) {
+        evaluate(event.getPlayer());
+    }
+
+    /** Applies (or refreshes) every unit whose rule currently holds for one player. */
+    public void evaluate(Player player) {
+        if (!enabled || units.isEmpty()) return;
+        if (player.isDead() || player.getHealth() <= 0) return;
+        if (player.getGameMode() == org.bukkit.GameMode.SPECTATOR) return;
+
+        Map<String, AppliedUnit> playerSchedule = schedules.computeIfAbsent(
+                player.getUniqueId(), k -> new LinkedHashMap<>());
+        for (Unit unit : units) {
+            if (ruleHolds(player, unit)) {
+                applyEffect(player, unit);
+                playerSchedule.put(unit.id, new AppliedUnit(unit, secondsPerHeartbeat(unit.checkIntervalTicks)));
+            }
+        }
+    }
 
     public void onQuit(java.util.UUID uuid) {
         schedules.remove(uuid);
