@@ -13,5 +13,6 @@ include(
     'ui-datapack',
     'ui-mbs',
     'ui-enchant',
+    'ui-auth',
     'ui-other'
 )

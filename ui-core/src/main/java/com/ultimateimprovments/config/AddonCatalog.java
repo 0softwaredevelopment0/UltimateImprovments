@@ -46,10 +46,12 @@ public final class AddonCatalog {
         route("UI-Shared", "space", "radiation", "hazmat");
         // ── UI-Enchant ──
         route("UI-Enchant", "enchant");
+        // ── UI-Auth ──
+        route("UI-Auth", "auth");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
                 "features", "brand_spoof", "vanish", "sunburn", "armor_effects", "armor_trim_effects", "netherite_upgrade",
-                "auth", "void_protection", "death_logger", "power", "suicide",
+                "void_protection", "death_logger", "power", "suicide",
                 "packet_guard", "proxy_server", "redstone_guard", "emergency_entity_kill",
                 "server_overload_warning", "bot_protection", "changedimmension", "motd",
                 "tab", "scoreboard", "bossbar", "wireless_redstone",
@@ -73,7 +75,8 @@ public final class AddonCatalog {
         routeMsg("UI-Anticheat", "anticheat", "ac");
         routeMsg("UI-Punish", "punish", "maintenance", "blacklist", "opwhitelist", "access_control");
         routeMsg("UI-Enchant", "enchant");
-        routeMsg("UI-Other", "auth", "check", "packet_guard", "bot_protection", "sudo",
+        routeMsg("UI-Auth", "auth");
+        routeMsg("UI-Other", "check", "packet_guard", "bot_protection", "sudo",
                 "codepanel", "protection", "changedimmension", "motd", "tab", "scoreboard",
                 "bossbar", "vanish", "suicide", "economy", "notes", "power", "death_logger",
                 "structures", "meteor", "space", "wireless_redstone",
@@ -120,6 +123,6 @@ public final class AddonCatalog {
                 CORE,
                 "UI-Shared", "UI-MBS", "UI-Datapack", "UI-Chat", "UI-Clans",
                 "UI-Combat", "UI-Punish", "UI-Essentials", "UI-Energy",
-                "UI-Anticheat", "UI-Enchant", "UI-Other");
+                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Other");
     }
 }

@@ -1,0 +1,351 @@
+# UI-Auth — player authentication.
+#
+# Settings under [auth]; messages under [messages.auth.*] (ru) and
+# [messages_en.auth.*] (en). Active language follows messages.lang.
+[auth]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Minimum value.
+# Default: 1
+min_password_length = 1
+# Maximum value.
+# Default: 32
+max_password_length = 32
+# Duration.
+# Default: 60
+session_duration_minutes = 60
+# Timeout.
+# Default: 60
+login_timeout_seconds = 60
+# Maximum value.
+# Default: 5
+max_wrong_attempts = 5
+# Cooldown.
+# Default: 5
+request_cooldown_seconds = 5
+# Maximum value.
+# Default: 3
+max_accounts_per_ip = 3
+
+# check ip section.
+
+[messages.auth]
+
+# gui section.
+
+[messages.auth.gui]
+# Default: Register
+register = "Register"
+# Default: Enter password
+login = "Enter password"
+# Default: Change password
+change_password = "Change password"
+# Default: Account logout
+logout = "Account logout"
+
+# messages section.
+# Placeholders: %remaining%, %min%, %max%, %count%, %limit%, %seconds%
+
+[messages.auth.messages]
+# Default: <green>✔ Registration successful!</green>
+success_register = "<green>✔ Registration successful!</green>"
+# Default: <green>✔ You have successfully logged in!</green>
+success_login = "<green>✔ You have successfully logged in!</green>"
+# Default: <red>❌ Incorrect password! Try again.</red>
+wrong_password = "<red>❌ Incorrect password! Try again.</red>"
+# Default: <red>❌ Incorrect password!</red>
+wrong_password_short = "<red>❌ Incorrect password!</red>"
+# Default: <red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>
+wrong_password_remaining = "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>"
+# Default: <red>❌ Password must be at least 4 characters!</red>
+short_password = "<red>❌ Password must be at least 4 characters!</red>"
+# Default: <red>❌ Password must not exceed 32 characters!</red>
+long_password = "<red>❌ Password must not exceed 32 characters!</red>"
+# Default: <red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>
+password_too_short = "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>"
+# Default: <red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>
+password_too_long = "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>"
+# Default: <red>❌ Please authenticate first! Enter your password in the opened window.</red>
+need_auth = "<red>❌ Please authenticate first! Enter your password in the opened window.</red>"
+# Default: <red>❌</red> <white>Your IP address has changed. Please log in again.</white>
+ip_changed = "<red>❌</red> <white>Your IP address has changed. Please log in again.</white>"
+# Display name (MiniMessage).
+# Default: <yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different nam…
+duplicate_name_kick = "<yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different name.</white>"
+# Maximum value.
+# Default: <red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<whit…
+max_accounts_per_ip = "<red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<white>Maximum:</white> <yellow>%limit%</yellow> <white>accounts per IP.</white>"
+# Default: <yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>
+enter_password_hint = "<yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>
+enter_new_password_hint = "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Enter your password to log out.</gray>
+enter_logout_password_hint = "<yellow>✦</yellow> <gray>Enter your password to log out.</gray>"
+# Default: <red>❌ Enter your password in the item name field!</red>
+enter_password_field = "<red>❌ Enter your password in the item name field!</red>"
+# Default: <red>❌ Enter your current password in the item name field!</red>
+enter_current_password = "<red>❌ Enter your current password in the item name field!</red>"
+# Default: <red>❌ Enter a new password in the item name field!</red>
+enter_new_password_field = "<red>❌ Enter a new password in the item name field!</red>"
+# Default: <red>❌ Enter your password in the item name field!</red>
+enter_password_field_generic = "<red>❌ Enter your password in the item name field!</red>"
+# Default: <red>❌ You are not registered yet! First, create a password.</red>
+not_registered = "<red>❌ You are not registered yet! First, create a password.</red>"
+# Default: <yellow>✦</yellow> <gray>Password change cancelled.</gray>
+password_change_cancelled = "<yellow>✦</yellow> <gray>Password change cancelled.</gray>"
+# Default: <red>❌ You cannot close the password change window!</red>
+cannot_close_change_password = "<red>❌ You cannot close the password change window!</red>"
+# Default: <red>❌ You cannot close the authorization window! Please enter your password.</red>
+cannot_close_auth = "<red>❌ You cannot close the authorization window! Please enter your password.</red>"
+# Default: <yellow>✦</yellow> <gray>Account logout cancelled.</gray>
+logout_cancelled = "<yellow>✦</yellow> <gray>Account logout cancelled.</gray>"
+# Default: <yellow>✦</yellow> <gray>Opening authorization window...</gray>
+opening_auth_window = "<yellow>✦</yellow> <gray>Opening authorization window...</gray>"
+# Default: <red>❌ Error opening authorization window! Report to an administrator.</red>
+auth_window_error = "<red>❌ Error opening authorization window! Report to an administrator.</red>"
+# Default: <red>❌ Error checking password! Please try again.</red>
+auth_check_error = "<red>❌ Error checking password! Please try again.</red>"
+# Default: <red>❌ Password change error! Please try again.</red>
+change_password_error = "<red>❌ Password change error! Please try again.</red>"
+# Default: <green>✔</green> <white>Password successfully changed!</white>
+password_changed = "<green>✔</green> <white>Password successfully changed!</white>"
+# Default: <gray>Enjoy your game! Session active for 1 hour.</gray>
+session_active = "<gray>Enjoy your game! Session active for 1 hour.</gray>"
+# Message text (MiniMessage).
+# Default: <green>✔</green> <white>You have been force authorized by an administrator!</white>
+force_login_message = "<green>✔</green> <white>You have been force authorized by an administrator!</white>"
+# Limit.
+# Default: <red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>
+rate_limit = "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
+# Default: <gray>Try again: </gray><gold>/ui auth login <password></gold>
+try_again_hint = "<gray>Try again: </gray><gold>/ui auth login <password></gold>"
+# Default: <gold>✦</gold> <white>You are already logged in!</white>
+already_authenticated = "<gold>✦</gold> <white>You are already logged in!</white>"
+# Title text (MiniMessage).
+# Default: <gold>✦</gold> <white>Please log in to continue.</white>
+login_title = "<gold>✦</gold> <white>Please log in to continue.</white>"
+# Title text (MiniMessage).
+# Default: <gold>✦</gold> <white>Choose a password to register.</white>
+register_title = "<gold>✦</gold> <white>Choose a password to register.</white>"
+# Default: <gray>Use: </gray><gold>/ui auth logout <password></gold>
+logout_usage = "<gray>Use: </gray><gold>/ui auth logout <password></gold>"
+
+# protection section.
+# Placeholders: %radius%, %value%, %points%, %r%, %cost%, %name%, %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
+
+[messages_en.auth]
+
+# gui section.
+
+[messages_en.auth.gui]
+# Default: Register
+register = "Register"
+# Default: Enter password
+login = "Enter password"
+# Default: Change password
+change_password = "Change password"
+# Default: Account logout
+logout = "Account logout"
+
+# messages section.
+# Placeholders: %remaining%, %min%, %max%, %count%, %limit%, %seconds%
+
+[messages_en.auth.messages]
+# Title text (MiniMessage).
+# Default: <dark_gray>Register</dark_gray>
+register_title = "<dark_gray>Register</dark_gray>"
+# Title text (MiniMessage).
+# Default: <dark_gray>Enter password</dark_gray>
+login_title = "<dark_gray>Enter password</dark_gray>"
+# Default: <green>✔ Registration successful!</green>
+success_register = "<green>✔ Registration successful!</green>"
+# Default: <green>✔ You have successfully logged in!</green>
+success_login = "<green>✔ You have successfully logged in!</green>"
+# Default: <red>❌ Incorrect password! Try again.</red>
+wrong_password = "<red>❌ Incorrect password! Try again.</red>"
+# Default: <red>❌ Incorrect password!</red>
+wrong_password_short = "<red>❌ Incorrect password!</red>"
+# Default: <red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>
+wrong_password_remaining = "<red>❌ Incorrect password! Remaining attempts: </red><yellow>%remaining%</yellow>"
+# Default: <red>❌ Password must be at least 4 characters!</red>
+short_password = "<red>❌ Password must be at least 4 characters!</red>"
+# Default: <red>❌ Password must not exceed 32 characters!</red>
+long_password = "<red>❌ Password must not exceed 32 characters!</red>"
+# Default: <red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>
+password_too_short = "<red>❌ Password must be at least </red><yellow>%min%</yellow><red> characters!</red>"
+# Default: <red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>
+password_too_long = "<red>❌ Password must not exceed </red><yellow>%max%</yellow><red> characters!</red>"
+# Default: <red>❌ Please authenticate first! Enter your password in the opened window.</red>
+need_auth = "<red>❌ Please authenticate first! Enter your password in the opened window.</red>"
+# Default: <red>❌</red> <white>Your IP address has changed. Please log in again.</white>
+ip_changed = "<red>❌</red> <white>Your IP address has changed. Please log in again.</white>"
+# Display name (MiniMessage).
+# Default: <yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different nam…
+duplicate_name_kick = "<yellow>❌ A player with this name is already on the server!</yellow>\\n<white>Please join with a different name.</white>"
+# Maximum value.
+# Default: <red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\n<whit…
+max_accounts_per_ip = "<red>❌</red> <yellow>%count%</yellow> <red>accounts are already registered from your IP address!</red>\\n<white>Maximum:</white> <yellow>%limit%</yellow> <white>accounts per IP.</white>"
+# Default: <yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>
+enter_password_hint = "<yellow>✦</yellow> <gray>Type your password in the name field, then click</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>
+enter_new_password_hint = "<yellow>✦</yellow> <gray>Enter new password in the name field, then click</gray> <green>✔</green>"
+# Default: <yellow>✦</yellow> <gray>Enter your password to log out.</gray>
+enter_logout_password_hint = "<yellow>✦</yellow> <gray>Enter your password to log out.</gray>"
+# Default: <red>❌ Enter your password in the item name field!</red>
+enter_password_field = "<red>❌ Enter your password in the item name field!</red>"
+# Default: <red>❌ Enter your current password in the item name field!</red>
+enter_current_password = "<red>❌ Enter your current password in the item name field!</red>"
+# Default: <red>❌ Enter a new password in the item name field!</red>
+enter_new_password_field = "<red>❌ Enter a new password in the item name field!</red>"
+# Default: <red>❌ Enter your password in the item name field!</red>
+enter_password_field_generic = "<red>❌ Enter your password in the item name field!</red>"
+# Default: <red>❌ You are not registered yet! First, create a password.</red>
+not_registered = "<red>❌ You are not registered yet! First, create a password.</red>"
+# Default: <yellow>✦</yellow> <gray>Password change cancelled.</gray>
+password_change_cancelled = "<yellow>✦</yellow> <gray>Password change cancelled.</gray>"
+# Default: <red>❌ You cannot close the password change window!</red>
+cannot_close_change_password = "<red>❌ You cannot close the password change window!</red>"
+# Default: <red>❌ You cannot close the authorization window! Please enter your password.</red>
+cannot_close_auth = "<red>❌ You cannot close the authorization window! Please enter your password.</red>"
+# Default: <yellow>✦</yellow> <gray>Account logout cancelled.</gray>
+logout_cancelled = "<yellow>✦</yellow> <gray>Account logout cancelled.</gray>"
+# Default: <yellow>✦</yellow> <gray>Opening authorization window...</gray>
+opening_auth_window = "<yellow>✦</yellow> <gray>Opening authorization window...</gray>"
+# Default: <red>❌ Error opening authorization window! Report to an administrator.</red>
+auth_window_error = "<red>❌ Error opening authorization window! Report to an administrator.</red>"
+# Default: <red>❌ Error checking password! Please try again.</red>
+auth_check_error = "<red>❌ Error checking password! Please try again.</red>"
+# Default: <red>❌ Password change error! Please try again.</red>
+change_password_error = "<red>❌ Password change error! Please try again.</red>"
+# Default: <green>✔</green> <white>Password successfully changed!</white>
+password_changed = "<green>✔</green> <white>Password successfully changed!</white>"
+# Default: <gray>Enjoy your game! Session active for 1 hour.</gray>
+session_active = "<gray>Enjoy your game! Session active for 1 hour.</gray>"
+# Message text (MiniMessage).
+# Default: <green>✔</green> <white>You have been force authorized by an administrator!</white>
+force_login_message = "<green>✔</green> <white>You have been force authorized by an administrator!</white>"
+# Limit.
+# Default: <red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>
+rate_limit = "<red>❌ Please wait </red><yellow>%seconds%</yellow> <red>seconds before the next request!</red>"
+
+# admin section.
+# Placeholders: %subcommand%, %player%, %password%, %seconds%, %attempts%, %details%
+
+[messages_en.auth.admin]
+# Default: <red>❌ Authorization system is disabled in config!</red>
+system_disabled = "<red>❌ Authorization system is disabled in config!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>
+usage = "<red>❌ Usage: </red><white>/ui auth login|register|2fa|forcelogin|resetauth|chgpass|delsession|logout</white>"
+# Command.
+# Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
+unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
+# Default: <red>❌ Only players can use this command!</red>
+player_only = "<red>❌ Only players can use this command!</red>"
+# Default: <red>❌ You are not logged in!</red>
+not_authenticated = "<red>❌ You are not logged in!</red>"
+# Permission node.
+# Default: <red>❌ You don't have permission to force log in!</red>
+forcelogin_no_permission = "<red>❌ You don't have permission to force log in!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>
+forcelogin_usage = "<red>❌ Usage: </red><white>/ui auth forcelogin <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+forcelogin_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+forcelogin_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>
+forcelogin_success = "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>force authorized.</white>"
+# Default: <red>❌ Failed to authorize player</red> <yellow>%player%</yellow>
+forcelogin_fail = "<red>❌ Failed to authorize player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to reset authorization!</red>
+resetauth_no_permission = "<red>❌ You don't have permission to reset authorization!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth resetauth <nick></white>
+resetauth_usage = "<red>❌ Usage: </red><white>/ui auth resetauth <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+resetauth_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+resetauth_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</…
+resetauth_success = "<green>✔</green> <white>Registration of player</white> <yellow>%player%</yellow> <white>completely removed.</white>"
+# Default: <red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>
+resetauth_fail = "<red>❌ Failed to delete registration of player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to reset sessions!</red>
+delsession_no_permission = "<red>❌ You don't have permission to reset sessions!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth delsession <nick></white>
+delsession_usage = "<red>❌ Usage: </red><white>/ui auth delsession <nick></white>"
+# Default: <red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>
+delsession_not_registered = "<red>❌ Player</red> <yellow>%player%</yellow> <red>is not registered!</red>"
+# Default: <red>❌ Authorization system is not initialized!</red>
+delsession_not_initialized = "<red>❌ Authorization system is not initialized!</red>"
+# Default: <green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>
+delsession_success = "<green>✔</green> <white>Session of player</white> <yellow>%player%</yellow> <white>reset (logout).</white>"
+# Default: <gray>They will need to enter their password again on next login.</gray>
+delsession_info = "<gray>They will need to enter their password again on next login.</gray>"
+# Default: <red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>
+delsession_fail = "<red>❌ Failed to reset session of player</red> <yellow>%player%</yellow>"
+# Permission node.
+# Default: <red>❌ You don't have permission to change passwords!</red>
+chgpass_no_permission = "<red>❌ You don't have permission to change passwords!</red>"
+# Default: <red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>
+chgpass_usage = "<red>❌ Usage: </red><white>/ui auth chgpass <nick> <new_password></white>"
+# Default: <green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green…
+chgpass_success = "<green>✔</green> <white>Password of player</white> <yellow>%player%</yellow> <white>changed to</white> <green>%password%</green><white>.</white>"
+# Default: <gray>Session reset — player must log in again.</gray>
+chgpass_session_reset = "<gray>Session reset — player must log in again.</gray>"
+# Default: <red>❌ Failed to change password of player</red> <yellow>%player%</yellow>
+chgpass_fail = "<red>❌ Failed to change password of player</red> <yellow>%player%</yellow>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red…
+kick_resetauth = "<yellow>✦</yellow> UltimateImprovments\\n\\n<red>❌ Your registration has been deleted by an administrator!</red>\\n<gray>On next login you will need to register again.</gray>"
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gra…
+kick_delsession = "<yellow>✦</yellow> UltimateImprovments\\n\\n<red>❌ Your session has been reset by an administrator!</red>\\n<gray>On next login you will need to enter your password again.</gray>"
+# Timeout.
+# Default: <red>⏱ Login timeout!</red>\n<gray>You did not log in within %seconds% seconds.</gray>
+kick_timeout = "<red>⏱ Login timeout!</red>\\n<gray>You did not log in within %seconds% seconds.</gray>"
+# Default: <red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>
+kick_too_many_attempts = "<red>❌ Too many incorrect attempts!</red>\\n<gray>You entered the wrong password %attempts% times.</gray>"
+# Default: <green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password …
+kick_logout = "<green>✔</green> You have successfully logged out!\\n<gray>On next login you will need to enter your password again.</gray>"
+# Display name (MiniMessage).
+# Default: <yellow>✦</yellow> UltimateImprovments\n\n%details%\n\n
+kick_duplicate_name = "<yellow>✦</yellow> UltimateImprovments\\n\\n%details%\\n\\n"
+
+# codepanel section.
+# Placeholders: %seconds%, %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%, %entity%
+
+# Auth settings (sub-sections).
+
+[auth.check_ip]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+
+# check duplicate name section.
+
+[auth.check_duplicate_name]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+
+# twofa section.
+
+[auth.twofa]
+
+# github section.
+
+[auth.twofa.github]
+# Master switch (true = feature on).
+# Default: false
+enabled = false
+# Default: ""
+client_id = ""
+# Default: ""
+client_secret = ""
+# Default: 8080
+port = 8080
+# URL.
+# Default: ""
+public_url = ""
+
+# Saves players who fall into the void (configurable teleport).

@@ -118,8 +118,6 @@ import com.ultimateimprovments.mechanics.features.world.WaypointManager;
 import com.ultimateimprovments.mechanics.features.world.WirelessRedstoneManager;
 import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
 import com.ultimateimprovments.mechanics.particle.ParticleMovementTask;
-import com.ultimateimprovments.mechanics.security.auth.AuthListener;
-import com.ultimateimprovments.mechanics.security.auth.AuthManager;
 import com.ultimateimprovments.mechanics.security.botprotect.BotProtectionListener;
 import com.ultimateimprovments.mechanics.security.sudo.SudoCommandInterceptor;
 import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
@@ -382,17 +380,6 @@ public final class SimpleModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 LightningManager.init();
-            }
-        });
-
-        // Auth
-        mm.register(new SimpleModule("Auth", "mechanics/security/auth", true) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                AuthManager.init();
-                main.getServer().getPluginManager().registerEvents(new AuthListener(), main);
-                ConsoleLogger.info("[AuthModule] ✔ Auth system initialized.");
             }
         });
     }

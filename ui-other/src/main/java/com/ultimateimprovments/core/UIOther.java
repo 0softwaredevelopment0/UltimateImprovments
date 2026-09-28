@@ -166,7 +166,6 @@ public class UIOther extends JavaPlugin {
         com.ultimateimprovments.command.GetPosDialogHandler.register(this);
         com.ultimateimprovments.command.SharePosDialogHandler.register(this);
         com.ultimateimprovments.command.ChgDimDialogHandler.register(this);
-        com.ultimateimprovments.mechanics.security.auth.AuthDialogHandler.register(this);
         com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register(this);
         com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler.register(this);
 
