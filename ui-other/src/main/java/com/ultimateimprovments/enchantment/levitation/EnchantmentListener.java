@@ -2,7 +2,7 @@ package com.ultimateimprovments.enchantment.levitation;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
-import com.ultimateimprovments.mechanics.security.auth.AuthPlayerState;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.util.ConsoleLogger;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Input;
@@ -83,8 +83,7 @@ public final class EnchantmentListener {
         UUID uuid = player.getUniqueId();
 
         // Never boost a frozen (pending auth) player.
-        AuthPlayerState auth = AuthPlayerState.getInstance();
-        if (auth != null && auth.isPendingAuth(uuid)) {
+        if (CoreHooks.isPendingAuth(uuid)) {
             BOOSTING.remove(uuid);
             return;
         }

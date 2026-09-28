@@ -1,6 +1,6 @@
 package com.ultimateimprovments.enchantment.aoe;
 
-import com.ultimateimprovments.listener.BlockBreakListener;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.util.LocationUtil;
 import org.bukkit.Location;
@@ -82,11 +82,11 @@ public class EnchantmentListener implements Listener {
             block.breakNaturally(tool, true);
 
             // Count toward the Woodcutter timed challenge (no BlockBreakEvent fires here)
-            com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge.countBroken(player, brokenType);
+            CoreHooks.onBlockBroken(player, brokenType);
 
             // "Ore → stone" mechanic: leave stone instead of ore, like for
             // the block in BlockBreakEvent (otherwise holes remain in the veins)
-            BlockBreakListener.scheduleStoneReplacement(block, brokenType);
+            CoreHooks.scheduleOreStone(block, brokenType);
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
             // which the durability system maps to 1 vanilla durability point)

@@ -26,6 +26,9 @@ public class AuthPlayerState {
 
     public AuthPlayerState() {
         instance = this;
+        // Publish the pending-auth state through the core hook so unrelated addons
+        // (e.g. flight/levitation) can respect the freeze without importing auth.
+        com.ultimateimprovments.core.hooks.CoreHooks.setPendingAuth(this::isPendingAuth);
     }
 
     public static AuthPlayerState getInstance() {

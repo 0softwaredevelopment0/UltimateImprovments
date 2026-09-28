@@ -178,6 +178,9 @@ public final class WoodcutterChallenge implements Listener {
     public static void register(Main plugin) {
         plugin.getServer().getPluginManager().registerEvents(new WoodcutterChallenge(), plugin);
         Bukkit.getScheduler().runTaskTimer(plugin, WoodcutterChallenge::sweep, 20L, 20L);
+        // Expose the counter through the core hook so other addons (enchantments)
+        // can report area-broken blocks without depending on this class.
+        com.ultimateimprovments.core.hooks.CoreHooks.setBlockBreakCounter(WoodcutterChallenge::countBroken);
         ConsoleLogger.info("[WoodcutterChallenge] Registered (timed challenge: The Woodcutter at Full Throttle).");
     }
 }
