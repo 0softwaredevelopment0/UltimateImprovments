@@ -25,12 +25,13 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 
-import org.bukkit.entity.ChestedHorse;
+
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -318,17 +319,24 @@ public class OmniscannerManager implements Listener {
                 String name = target.getName();
                 ItemStack[] contents = target.getInventory().getContents().clone();
                 playerData.add(new PlayerData(name, loc, contents));
-            } else if (entity instanceof ChestedHorse horse) {
-                Inventory inv = horse.getInventory();
-                if (inv != null) {
-                    String displayName = getEntityDisplayName(horse);
-                    ItemStack[] contents = inv.getContents().clone();
-                    mobData.add(new MobInventoryData(displayName, entity.getLocation(), contents));
-                }
             } else {
-                // Regular entities (mobs, animals, etc.)
+                String displayName = getEntityDisplayName(entity);
+
+                // Scan the inventory of ANY inventory-holding entity in range:
+                // chested horses (donkey/mule/llama), chest & hopper minecarts,
+                // chest boats, villagers, etc. Contents are then filtered by the
+                // item whitelist on the async pass.
+                if (entity instanceof InventoryHolder holder) {
+                    Inventory inv = holder.getInventory();
+                    if (inv != null) {
+                        mobData.add(new MobInventoryData(displayName, entity.getLocation(),
+                                inv.getContents().clone()));
+                    }
+                }
+
+                // Also report the entity itself (matched by the EntityType whitelist).
                 entityDataList.add(new EntityData(
-                        "ENTITY", getEntityDisplayName(entity),
+                        "ENTITY", displayName,
                         entity.getType().name().toUpperCase(),
                         entity.getLocation()));
             }
