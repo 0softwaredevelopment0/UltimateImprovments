@@ -10,18 +10,14 @@
 
 
 # Bundled datapack: which custom content is enabled.
+# The pack is registered by UI-Datapack's bootstrapper (Paper DATAPACK_DISCOVERY)
+# BEFORE the worlds load and auto-enabled on every start, so installing/updating the
+# plugin no longer needs a restart or /datapack enable. Changing these toggles still
+# requires a server restart (discovery happens at startup only).
 [datapack]
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Default: "override"
-mode = "override"
-# Default: false
-reload_to_apply = false
-# Default: true
-warn_if_not_loaded = true
-# Default: false
-auto_enable = false
 
 # modules section.
 [datapack.modules]

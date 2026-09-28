@@ -24,23 +24,6 @@ public final class DatapackModules {
     /** Master toggle: {@code datapack.enabled}. */
     public static final String MASTER_KEY = "datapack.enabled";
 
-    /** Install mode: {@code datapack.mode} (override | ignore | check-override). */
-    public static final String MODE_KEY = "datapack.mode";
-
-    /** Reload the server after install if the datapack isn't loaded: {@code datapack.reload_to_apply}. */
-    public static final String RELOAD_KEY = "datapack.reload_to_apply";
-
-    /** Warn if the datapack couldn't be enabled: {@code datapack.warn_if_not_loaded}. */
-    public static final String WARN_KEY = "datapack.warn_if_not_loaded";
-
-    /** Try to auto-enable the datapack via /datapack enable if it's off: {@code datapack.auto_enable}. */
-    public static final String AUTO_ENABLE_KEY = "datapack.auto_enable";
-
-    // Install modes
-    public static final String MODE_OVERRIDE = "override";
-    public static final String MODE_IGNORE = "ignore";
-    public static final String MODE_CHECK_OVERRIDE = "check-override";
-
     /** Config root section: {@code datapack.modules}. */
     public static final String CONFIG_ROOT = "datapack.modules";
 
@@ -92,10 +75,6 @@ public final class DatapackModules {
 
     private static final Map<String, Boolean> CACHE = new HashMap<>();
     private static boolean masterEnabled = true;
-    private static String mode = MODE_OVERRIDE;
-    private static boolean reloadToApply = false;
-    private static boolean warnIfNotLoaded = true;
-    private static boolean autoEnable = false;
 
     // =========================
     // INIT
@@ -109,19 +88,12 @@ public final class DatapackModules {
         // Single config lives in UI-Core (Main.getInstance().getConfig()).
         FileConfiguration cfg = com.ultimateimprovments.core.Main.getInstance().getConfig();
         masterEnabled = cfg.getBoolean(MASTER_KEY, true);
-        mode = cfg.getString(MODE_KEY, MODE_OVERRIDE);
-        if (mode == null || !mode.equals(MODE_IGNORE) && !mode.equals(MODE_CHECK_OVERRIDE)) {
-            mode = MODE_OVERRIDE;
-        }
-        reloadToApply = cfg.getBoolean(RELOAD_KEY, false);
-        warnIfNotLoaded = cfg.getBoolean(WARN_KEY, true);
-        autoEnable = cfg.getBoolean(AUTO_ENABLE_KEY, false);
         for (String part : ORDER) {
             boolean enabled = cfg.getBoolean(CONFIG_ROOT + "." + part, true);
             CACHE.put(part, enabled);
         }
         ConsoleLogger.info("[Datapack] " + (isMasterEnabled()
-                ? "Master: ON | Mode: " + mode + " | Modules: " + describe()
+                ? "Master: ON | Modules: " + describe()
                 : "Master: OFF (datapack.enabled: false) — datapack disabled entirely."));
     }
 
@@ -131,29 +103,6 @@ public final class DatapackModules {
      */
     public static boolean isMasterEnabled() {
         return masterEnabled;
-    }
-
-    /**
-     * @return the install mode: {@value #MODE_OVERRIDE}, {@value #MODE_IGNORE}
-     *         or {@value #MODE_CHECK_OVERRIDE}.
-     */
-    public static String getMode() {
-        return mode;
-    }
-
-    /** Whether the server should auto-reload after install if the datapack isn't loaded. */
-    public static boolean isReloadToApply() {
-        return reloadToApply;
-    }
-
-    /** Whether to warn in the console if the datapack couldn't be enabled. */
-    public static boolean isWarnIfNotLoaded() {
-        return warnIfNotLoaded;
-    }
-
-    /** Whether to try {@code /datapack enable} automatically if the datapack is off. */
-    public static boolean isAutoEnable() {
-        return autoEnable;
     }
 
     /** Human-readable state, e.g. "enchantments ✔, advancements ✘, ...". */

@@ -2,6 +2,7 @@ name: UI-Datapack
 version: '${project.version}'
 description: UltimateImprovments — bundled datapack installer
 main: com.ultimateimprovments.datapack.UIDatapack
+bootstrapper: com.ultimateimprovments.datapack.UIDatapackBootstrap
 api-version: '26.2'
 author: rizer001
 dependencies:
