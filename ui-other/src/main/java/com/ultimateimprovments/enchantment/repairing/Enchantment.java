@@ -29,10 +29,10 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  * <p>
  * Effect: while an enchanted item of the plugin's Integrity system sits in ANY player
- * inventory slot, it restores {@code level × 0.1%} of its integrity every
- * {@code level} seconds (level 1 → 0.1% every 1s, level 255 → 25.5% every 255s).
- * The cooldown keeps the average repair rate flat at 0.1%/s across all levels. The
- * repair goes through {@code ItemDurabilityUtil.increaseItemIntegrityPercent}, so the vanilla durability
+ * inventory slot, it restores {@code level} durability points every second
+ * (level 1 → 1 point/s, level 255 → 255 points/s). The level scales the repair
+ * SPEED, so a higher level is strictly better. The repair goes through
+ * {@code ItemDurabilityUtil.increaseItemIntegrityPercent}, so the vanilla durability
  * Integrity system updates the lore and the vanilla durability bar automatically.
  * Integrity never exceeds 100%.
  * <p>
@@ -52,6 +52,9 @@ public final class Enchantment {
 
     /** Highest level this enchantment can have. */
     public static final int MAX_LEVEL = 255;
+
+    /** Fixed repair interval: 1 second, for every level. */
+    public static final long REPAIR_INTERVAL_MILLIS = 1000L;
 
     private Enchantment() {}
 
@@ -136,20 +139,20 @@ public final class Enchantment {
 
     /**
      * Durability POINTS restored per repair tick: exactly {@code level}.
-     * Level 1 → 1 point every second, level 255 → 255 points every 255s.
+     * Level 1 → 1 point, level 255 → 255 points — restored every second.
      */
     public static int getRepairPoints(int level) {
         return Math.max(1, level);
     }
 
     /**
-     * Repair cooldown in milliseconds: {@code level} seconds.
-     * Level 1 → 1s, level 255 → 255s. Combined with {@link #getRepairPoints}
-     * this restores exactly {@code level} points every {@code level} seconds
-     * (1 point per second average on every item, regardless of its max durability).
+     * Repair cooldown in milliseconds: fixed at {@link #REPAIR_INTERVAL_MILLIS}
+     * (1 second) for every level. The level scales the AMOUNT restored per
+     * second ({@link #getRepairPoints}), not how often the repair happens —
+     * otherwise a higher level would be no better than level 1.
      */
     public static long getCooldownMillis(int level) {
-        return level * 1000L;
+        return REPAIR_INTERVAL_MILLIS;
     }
 
     /** Epoch millis of the last repair, or 0 if the item never repaired. */

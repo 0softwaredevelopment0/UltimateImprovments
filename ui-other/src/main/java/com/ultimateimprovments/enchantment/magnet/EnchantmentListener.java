@@ -27,8 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Listener: Magnet enchantment — attracts dropped items to the player.
  * <p>
  * While a player holds a Magnet tool, every FRESHLY dropped item (pickup delay still
- * active, i.e. items that just came out of a broken block) within {@value #PULL_RADIUS}
- * blocks is pulled toward him at {@value #PULL_SPEED} blocks/second.
+ * active, i.e. items that just came out of a broken block) within {@code level × 2}
+ * blocks (capped at 32) is pulled toward him at {@value #PULL_SPEED} blocks/second.
  * <p>
  * <b>Why pickup-delay-based (not drop events):</b> drops produced by AoE / VeinMiner /
  * TreeCapitator / AutoSmelt are created via {@code breakNaturally()} inside the same
@@ -50,11 +50,9 @@ public class EnchantmentListener implements Listener {
     /** Pull speed per tick (20 ticks/second): 1.0 / 20 = 0.05 blocks/tick. */
     private static final double PULL_PER_TICK = PULL_SPEED / 20.0;
 
-    /** Radius (blocks) around the player in which drops are attracted. */
-    private static final int PULL_RADIUS = 8;
-
-    /** Scan radius covering pull + cleanup in a single getNearbyEntities call. */
-    private static final int CLEANUP_RADIUS = 16;
+    /** Extra scan margin (blocks) beyond the pull radius, so items being pulled
+     *  are still tracked (and cleaned up) when they briefly leave the pull sphere. */
+    private static final int CLEANUP_MARGIN = 8;
 
     /** Once an item is closer than this, vanilla pickup takes over. */
     private static final double STOP_DISTANCE = 1.5;
@@ -97,22 +95,29 @@ public class EnchantmentListener implements Listener {
      */
     private static void updatePlayer(Player player) {
         ItemStack tool = player.getInventory().getItemInMainHand();
-        boolean hasCharm = tool != null && tool.getType() != Material.AIR
-                && com.ultimateimprovments.enchantment.magnet.Enchantment.getLevel(tool) > 0;
+        int level = (tool != null && tool.getType() != Material.AIR)
+                ? com.ultimateimprovments.enchantment.magnet.Enchantment.getLevel(tool)
+                : 0;
 
-        if (!hasCharm) {
+        if (level <= 0) {
             // No Magnet in hand → stop tracking this player's items.
             TRACKED.remove(player.getUniqueId());
             return;
         }
 
+        // Attraction radius grows +2 blocks per level, hard-capped at 32 (level 16).
+        int pullRadius = Math.min(
+                level * com.ultimateimprovments.enchantment.magnet.Enchantment.RADIUS_PER_LEVEL,
+                com.ultimateimprovments.enchantment.magnet.Enchantment.MAX_RADIUS);
+        int scanRadius = pullRadius + CLEANUP_MARGIN;
+
         World world = player.getWorld();
         Location playerLoc = player.getLocation();
         Set<UUID> tracked = TRACKED.computeIfAbsent(player.getUniqueId(), k -> ConcurrentHashMap.newKeySet());
 
-        // One scan covering both the pull radius and the cleanup radius.
+        // One scan covering both the pull radius and the cleanup margin.
         Collection<Entity> nearby = world.getNearbyEntities(
-                playerLoc, CLEANUP_RADIUS, CLEANUP_RADIUS, CLEANUP_RADIUS);
+                playerLoc, scanRadius, scanRadius, scanRadius);
 
         Set<UUID> alive = new HashSet<>();
         for (Entity entity : nearby) {
@@ -124,7 +129,7 @@ public class EnchantmentListener implements Listener {
             alive.add(itemUuid);
 
             double dist = item.getLocation().distance(playerLoc);
-            boolean inPullRange = dist <= PULL_RADIUS;
+            boolean inPullRange = dist <= pullRadius;
             boolean fresh = item.getPickupDelay() > 0;
             boolean alreadyTracked = tracked.contains(itemUuid);
 
@@ -178,6 +183,8 @@ public class EnchantmentListener implements Listener {
         Bukkit.getScheduler().runTaskTimer(plugin, EnchantmentListener::sweep,
                 SWEEP_INTERVAL_TICKS, SWEEP_INTERVAL_TICKS);
         ConsoleLogger.info("[Magnet] Listener registered (pull " + PULL_SPEED
-                + " blk/s, radius " + PULL_RADIUS + ").");
+                + " blk/s, radius = level × "
+                + com.ultimateimprovments.enchantment.magnet.Enchantment.RADIUS_PER_LEVEL
+                + " (max " + com.ultimateimprovments.enchantment.magnet.Enchantment.MAX_RADIUS + ")).");
     }
 }

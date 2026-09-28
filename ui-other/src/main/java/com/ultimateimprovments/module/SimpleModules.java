@@ -1003,7 +1003,7 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.autosmelt.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[AutoSmelt] Level: 1 | Tools: pickaxe, shovel, axe, hoe");
+                ConsoleLogger.info("[AutoSmelt] Levels: 1-10 | level N = N×10% smelt chance | Tools: pickaxe, shovel, axe, hoe");
             }
         });
     }
@@ -1159,7 +1159,7 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.magnet.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Magnet] Level: 1 | Tools: pickaxe, shovel, axe, hoe | Pull: 0.5 blk/s");
+                ConsoleLogger.info("[Magnet] Levels: 1-16 | Tools: pickaxe, shovel, axe, hoe | Radius: level×2 (max 32) | Pull: 1.0 blk/s");
             }
         });
     }
@@ -1319,8 +1319,8 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.itemstealing.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[ItemStealing] Level: 1 | Item: fishing rod | Hooking a player and reeling in "
-                        + "steals the item from his hand (empty hands → normal pull)");
+                ConsoleLogger.info("[ItemStealing] Levels: 1-10 | level N = N×10% steal chance | Item: fishing rod | "
+                        + "A successful roll steals the item from the hooked player's hand (failed roll / empty hands → normal pull)");
             }
         });
     }
@@ -1346,7 +1346,7 @@ public final class SimpleModules {
                 com.ultimateimprovments.enchantment.repairing.EnchantmentSyncListener.register(main);
 
                 ConsoleLogger.info("[Repairing] Levels: 1-255 | Item: any with durability | Restores "
-                        + "exactly `level` durability points every `level` seconds while in a player's inventory");
+                        + "`level` durability points per second, every second (higher level = faster)");
             }
         });
     }
@@ -1397,7 +1397,8 @@ public final class SimpleModules {
                         new com.ultimateimprovments.enchantment.containerstealing.EnchantmentListener(), main);
 
                 // 2. PDC failsafe sync listener + periodic scan
-                com.ultimateimprovments.enchantment.containerstealing.EnchantmentSyncListener.register(main);                ConsoleLogger.info("[ContainerStealing] Level: 1 | Tools: pickaxe, shovel, axe, hoe | "
+                com.ultimateimprovments.enchantment.containerstealing.EnchantmentSyncListener.register(main);
+                ConsoleLogger.info("[ContainerStealing] Levels: 1-10 | level N = N×10% steal chance | Tools: pickaxe, shovel, axe, hoe | "
                         + "Breaking a container drops it with its contents inside");
             }
         });

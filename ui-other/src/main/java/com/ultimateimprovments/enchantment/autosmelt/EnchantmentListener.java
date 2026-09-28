@@ -25,10 +25,12 @@ import java.util.Map;
 /**
  * Listener: AutoSmelt block breaking.
  * <p>
- * When a player breaks a block with an AutoSmelt tool, every drop that has a
- * furnace (or blast furnace) recipe is smelted: raw iron → iron ingot,
- * sand → glass, cobblestone → stone, etc. If the block drops nothing,
- * nothing is smelted.
+ * When a player breaks a block with an AutoSmelt tool, every smeltable drop rolls a
+ * {@code level × 10%} chance to be smelted: raw iron → iron ingot, sand → glass,
+ * cobblestone → stone, etc. The roll is PER DROP, so a single block (or a whole
+ * AoE / VeinMiner / TreeCapitator area) comes out partially smelted — e.g. level 5
+ * turns roughly half of the blocks into ingots and leaves the other half as raw
+ * drops. If the block drops nothing, nothing is smelted.
  * <p>
  * Silk Touch is respected: with a Silk Touch tool the block itself drops,
  * so the drops are NEVER smelted (the ore block would be destroyed).
@@ -49,7 +51,8 @@ public class EnchantmentListener implements Listener {
         if (tool == null || tool.getType() == Material.AIR) return;
 
         // AutoSmelt level (real enchantment, with PDC failsafe fallback)
-        if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.getLevel(tool) <= 0) return;
+        int level = com.ultimateimprovments.enchantment.autosmelt.Enchantment.getLevel(tool);
+        if (level <= 0) return;
 
         // Silk Touch → the block drops as-is; smelting would destroy the ore block.
         if (tool.containsEnchantment(org.bukkit.enchantments.Enchantment.SILK_TOUCH)) return;
@@ -62,57 +65,66 @@ public class EnchantmentListener implements Listener {
         Collection<ItemStack> drops = block.getDrops(tool);
         if (drops.isEmpty()) return; // nothing dropped → nothing to smelt
 
-        // Try to smelt each drop; if none is smeltable — keep vanilla behavior.
-        List<ItemStack> result = smeltDrops(drops);
-        if (result.isEmpty()) return;
+        // Roll the smelt chance per drop; null = nothing smelted.
+        List<ItemStack> result = processDrops(drops, level);
 
-        // Replace vanilla drops with the smelted ones.
+        // Always take over the vanilla drops (even when nothing smelted): this
+        // suppresses the BlockDropItemEvent for THIS block, so the area handler
+        // below — which exists for breakNaturally()/AoE drops — does not roll the
+        // very same block a second time (that would inflate the effective chance).
         event.setDropItems(false);
         World world = block.getWorld();
         Location loc = block.getLocation().add(0.5, 0.5, 0.5);
-        for (ItemStack item : result) {
+        for (ItemStack item : result != null ? result : drops) {
             world.dropItemNaturally(loc, item);
         }
     }
 
     /**
-     * Smelts drops of blocks broken by the area enchants (AoE / VeinMiner /
-     * TreeCapitator). {@code breakNaturally()} does NOT fire BlockBreakEvent,
-     * so the origin-only listener above never sees those drops — which made
-     * combined AutoSmelt+AoE smelt just ONE block of the whole area.
+     * Handles the drops of blocks broken by the AREA enchants (AoE / VeinMiner /
+     * TreeCapitator). {@code breakNaturally()} does NOT fire BlockBreakEvent, so the
+     * origin-only {@link #onBlockBreak(BlockBreakEvent)} never sees those blocks.
      * <p>
-     * Runs at MONITOR after the area enchants (they break at LOW) and replaces
-     * the freshly spawned item entities with their smelted versions.
+     * Runs at MONITOR after the area enchants (they break at LOW): every drop rolls
+     * its own {@code level × 10%} smelt chance and the freshly spawned item entities
+     * are replaced with the mixed (smelted + raw) result — so a big cube comes out
+     * partially smelted. The player's OWN broken block is handled by
+     * {@link #onBlockBreak(BlockBreakEvent)} (which suppresses this event), so no
+     * block is ever rolled twice.
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onAreaDrops(BlockDropItemEvent event) {
+        if (event.getPlayer() == null) return;
         if (!(event.getPlayer().getInventory().getItemInMainHand() instanceof ItemStack tool) || tool.getType() == Material.AIR)
             return;
-        if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.getLevel(tool) <= 0) return;
+        int level = com.ultimateimprovments.enchantment.autosmelt.Enchantment.getLevel(tool);
+        if (level <= 0) return;
         if (tool.containsEnchantment(org.bukkit.enchantments.Enchantment.SILK_TOUCH)) return;
         if (event.getItems().isEmpty()) return;
 
-        List<ItemStack> smelted = smeltDrops(event.getItems().stream()
+        List<ItemStack> processed = processDrops(event.getItems().stream()
                 .map(org.bukkit.entity.Item::getItemStack)
-                .toList());
-        if (smelted.isEmpty()) return; // nothing smeltable → leave vanilla drops
+                .toList(), level);
+        if (processed == null) return; // nothing smelted → leave vanilla drops
 
         World world = event.getBlock().getWorld();
         Location loc = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
         for (org.bukkit.entity.Item entity : event.getItems()) {
             entity.remove();
         }
-        for (ItemStack item : smelted) {
+        for (ItemStack item : processed) {
             world.dropItemNaturally(loc, item);
         }
     }
 
     /**
-     * Smelts every smeltable drop. Returns the final drop list, or {@code null}
-     * (via the caller's isEmpty check) if NOTHING was smelted — in that case the
-     * vanilla drops are left untouched.
+     * Rolls the smelt chance for every drop STACK: each smeltable stack is smelted
+     * with probability {@code level × 10%}, the rest are kept as raw drops. Returns
+     * the mixed drop list, or {@code null} when NOTHING was smelted — in that case
+     * the caller leaves the vanilla drops untouched.
      */
-    private static @NotNull List<ItemStack> smeltDrops(Collection<ItemStack> drops) {
+    private static @Nullable List<ItemStack> processDrops(Collection<ItemStack> drops, int level) {
+        double chance = Math.min(1.0, level * 0.10);
         List<ItemStack> out = new ArrayList<>();
         boolean anySmelted = false;
 
@@ -120,7 +132,9 @@ public class EnchantmentListener implements Listener {
             if (drop == null || drop.getType() == Material.AIR) continue;
 
             ItemStack smelted = smeltResult(drop.getType());
-            if (smelted == null) {
+            if (smelted == null
+                    || java.util.concurrent.ThreadLocalRandom.current().nextDouble() >= chance) {
+                // No recipe, or the roll failed → keep the raw drop.
                 out.add(drop);
                 continue;
             }
@@ -129,7 +143,7 @@ public class EnchantmentListener implements Listener {
             out.addAll(splitStack(smelted, drop.getAmount() * smelted.getAmount()));
         }
 
-        return anySmelted ? out : List.of();
+        return anySmelted ? out : null;
     }
 
     /**
