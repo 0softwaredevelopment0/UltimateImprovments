@@ -50,7 +50,7 @@ public final class AddonRegistry {
         refreshed.addAll(addons.stream().filter(AddonEntry::isInstalled).toList());
 
         for (Plugin plugin : org.bukkit.Bukkit.getPluginManager().getPlugins()) {
-            if (isUiAddon(getPluginJarFile(plugin))
+            if (isUiAddon(plugin)
                     && refreshed.stream().noneMatch(e -> e.getPluginName().equals(plugin.getName()))) {
                 refreshed.add(AddonEntry.loaded(plugin));
             }
@@ -78,21 +78,13 @@ public final class AddonRegistry {
     public static boolean isUiAddon(Plugin plugin) {
         if (plugin == null) return false;
 
-        java.io.File jarPath = getPluginJarFile(plugin);
-        if (jarPath != null && isUiAddon(jarPath)) return true;
-
-        // Fallback: classloader resource (dev runs, shaded deployments)
-        java.io.InputStream raw = plugin.getClass().getClassLoader()
-                .getResourceAsStream("plugin.yml");
-        if (raw == null) return false;
-        try (var reader = new java.io.InputStreamReader(raw, java.nio.charset.StandardCharsets.UTF_8)) {
-            var yaml = new org.bukkit.configuration.file.YamlConfiguration();
-            yaml.load(reader);
-            return markerMatches(yaml);
-        } catch (Throwable t) {
-            // Unreadable JAR / ZipError / broken YAML — not an addon, never propagate
-            return false;
-        }
+        // Paper-plugin loader migration: an addon is identified by membership in
+        // the addon catalog (name-based) instead of the old "addon-for" marker in
+        // plugin.yml. This works for both legacy and paper-plugin.yml plugins.
+        String name = plugin.getName();
+        return name != null
+                && !name.equalsIgnoreCase(com.ultimateimprovments.config.AddonCatalog.CORE)
+                && com.ultimateimprovments.config.AddonCatalog.lookup(name) != null;
     }
 
     /**

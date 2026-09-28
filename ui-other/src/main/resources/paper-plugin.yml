@@ -1,0 +1,65 @@
+name: UI-Other
+version: '${project.version}'
+description: UltimateImprovments — All features add-on
+main: com.ultimateimprovments.core.UIOther
+api-version: '26.2'
+author: rizer001
+dependencies:
+  server:
+    UI-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Shared:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Energy:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Chat:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-MBS:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Punish:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Clans:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Combat:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Anticheat:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Essentials:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Datapack:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    PlaceholderAPI:
+      required: false
+      join-classpath: true
+    LuckPerms:
+      required: false
+      join-classpath: true
+    Vault:
+      required: false
+      join-classpath: true
+permissions:
+  ui.enchant.itemstealing.steal:
+    description: Allows stealing an item from another player with the Item Stealing enchantment
+    default: false

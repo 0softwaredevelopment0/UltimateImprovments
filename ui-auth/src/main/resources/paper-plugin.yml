@@ -1,0 +1,15 @@
+name: UI-Auth
+version: '${project.version}'
+description: UltimateImprovments — player authentication add-on
+main: com.ultimateimprovments.core.UIAuth
+api-version: '26.2'
+author: rizer001
+dependencies:
+  server:
+    UI-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    LuckPerms:
+      required: false
+      join-classpath: true

@@ -1,0 +1,20 @@
+name: UI-Energy
+version: '${project.version}'
+description: 'Energy system: generators, cables, reactors, batteries, machines'
+main: com.ultimateimprovments.energy.UIEnergy
+api-version: '26.2'
+author: rizer001
+dependencies:
+  server:
+    UI-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Shared:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-MBS:
+      load: BEFORE
+      required: true
+      join-classpath: true

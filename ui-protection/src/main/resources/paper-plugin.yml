@@ -1,0 +1,16 @@
+name: UI-Protection
+version: '${project.version}'
+description: UltimateImprovments — block protection + void protection add-on
+main: com.ultimateimprovments.core.UIProtection
+api-version: '26.2'
+author: rizer001
+dependencies:
+  server:
+    UI-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Shared:
+      load: BEFORE
+      required: true
+      join-classpath: true
