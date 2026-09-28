@@ -29,6 +29,8 @@ public final class PlayerModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.init();
+                plugin.getServer().getPluginManager().registerEvents(
+                        com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.getInstance(), plugin);
                 task = new com.ultimateimprovments.mechanics.features.player.ArmorEffectsTask()
                         .runTaskTimer(plugin, 20L, 20L); // 1s heartbeat, manager owns unit intervals
                 ConsoleLogger.info("[ArmorEffects] Configurable potion effects for armor sets.");
@@ -38,6 +40,10 @@ public final class PlayerModules {
             protected void onDisable(JavaPlugin plugin) {
                 if (task instanceof org.bukkit.scheduler.BukkitTask bt) bt.cancel();
                 task = null;
+                if (com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.getInstance() != null) {
+                    org.bukkit.event.HandlerList.unregisterAll(
+                            com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.getInstance());
+                }
                 com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.shutdown();
             }
 
@@ -54,6 +60,8 @@ public final class PlayerModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.init();
+                plugin.getServer().getPluginManager().registerEvents(
+                        com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.getInstance(), plugin);
                 task = new com.ultimateimprovments.mechanics.features.player.TrimEffectsTask()
                         .runTaskTimer(plugin, 20L, 20L); // 1s heartbeat, manager owns unit intervals
                 ConsoleLogger.info("[ArmorTrimEffects] Configurable potion effects for armor TRIM materials.");
@@ -63,6 +71,10 @@ public final class PlayerModules {
             protected void onDisable(JavaPlugin plugin) {
                 if (task instanceof org.bukkit.scheduler.BukkitTask bt) bt.cancel();
                 task = null;
+                if (com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.getInstance() != null) {
+                    org.bukkit.event.HandlerList.unregisterAll(
+                            com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.getInstance());
+                }
                 com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.shutdown();
             }
 

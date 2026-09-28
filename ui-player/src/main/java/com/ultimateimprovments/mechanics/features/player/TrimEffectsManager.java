@@ -75,7 +75,7 @@ import java.util.UUID;
  * custom datapack-added trim materials work in the config too. Malformed
  * units are logged and skipped — one broken unit never kills the feature.
  */
-public final class TrimEffectsManager {
+public final class TrimEffectsManager implements org.bukkit.event.Listener {
 
     /** Count rule: level grows with matching pieces (EXACT) or a fixed activation threshold (MIN). */
     public enum CountRule { EXACT, MIN }
@@ -340,6 +340,46 @@ public final class TrimEffectsManager {
 
         // Drop schedules of players that are gone.
         schedules.keySet().removeIf(uuid -> org.bukkit.Bukkit.getPlayer(uuid) == null);
+    }
+
+    /**
+     * Modern Paper event: fires the moment a player's armor piece changes.
+     * Re-evaluates instantly instead of waiting for the 1s heartbeat.
+     */
+    @org.bukkit.event.EventHandler
+    public void onArmorChange(com.destroystokyo.paper.event.player.PlayerArmorChangeEvent event) {
+        evaluate(event.getPlayer());
+    }
+
+    /** Applies (or refreshes) every trim unit whose rule holds for one player, immediately. */
+    public void evaluate(Player player) {
+        if (!enabled || units.isEmpty()) return;
+        if (player.isDead() || player.getHealth() <= 0) return;
+        if (player.getGameMode() == org.bukkit.GameMode.SPECTATOR) return;
+
+        Map<String, AppliedUnit> playerSchedule = schedules.computeIfAbsent(
+                player.getUniqueId(), k -> new LinkedHashMap<>());
+        Map<TrimMaterial, Integer> materialCounts = countTrimmedPieces(player);
+
+        for (Unit unit : units) {
+            int matching = 0;
+            for (TrimMaterial material : unit.materials) {
+                matching += materialCounts.getOrDefault(material, 0);
+            }
+            boolean holds;
+            int levelAmplifier;
+            if (unit.rule == CountRule.EXACT) {
+                holds = matching >= 1;
+                levelAmplifier = unit.amplifier + (matching - 1);
+            } else {
+                holds = matching >= unit.minCount;
+                levelAmplifier = unit.amplifier;
+            }
+            if (holds) {
+                applyEffect(player, unit, levelAmplifier);
+                playerSchedule.put(unit.id, new AppliedUnit(secondsPerHeartbeat(unit.checkIntervalTicks)));
+            }
+        }
     }
 
     /** Counts worn pieces (4 armor slots) grouped by their trim material. */
