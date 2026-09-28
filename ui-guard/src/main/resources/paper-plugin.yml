@@ -1,8 +1,12 @@
 name: UI-Guard
-version: ${project.version}
+version: '${project.version}'
 description: UltimateImprovments — server guard add-on (packet/proxy/redstone guard, bot protection, overload)
 main: com.ultimateimprovments.core.UIGuard
 api-version: '26.2'
 author: rizer001
-addon-for: UI-Core
-depend: [UI-Core]
+dependencies:
+  server:
+    UI-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true

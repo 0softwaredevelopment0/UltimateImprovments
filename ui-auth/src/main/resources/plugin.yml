@@ -1,9 +1,0 @@
-name: UI-Auth
-version: ${project.version}
-description: UltimateImprovments — player authentication add-on
-main: com.ultimateimprovments.core.UIAuth
-api-version: '26.2'
-author: rizer001
-addon-for: UI-Core
-depend: [UI-Core]
-softdepend: [LuckPerms]

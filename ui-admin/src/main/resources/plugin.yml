@@ -1,9 +1,0 @@
-name: UI-Admin
-version: ${project.version}
-description: UltimateImprovments — economy, op management and updater add-on
-main: com.ultimateimprovments.core.UIAdmin
-api-version: '26.2'
-author: rizer001
-addon-for: UI-Core
-depend: [UI-Core]
-softdepend: [Vault, PlaceholderAPI, LuckPerms]

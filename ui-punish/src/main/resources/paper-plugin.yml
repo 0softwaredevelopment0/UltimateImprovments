@@ -1,0 +1,12 @@
+name: UI-Punish
+version: '${project.version}'
+description: 'Punishment system: ban, mute, kick, jail, freeze, whitelist, blacklist'
+main: com.ultimateimprovments.punish.UIPunish
+api-version: '26.2'
+author: rizer001
+dependencies:
+  server:
+    UI-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true

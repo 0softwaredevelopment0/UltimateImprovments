@@ -1,0 +1,25 @@
+name: UI-Chat
+version: '${project.version}'
+description: UltimateImprovments — Chat system (channels, pings, filter)
+main: com.ultimateimprovments.chat.UIChat
+api-version: '26.2'
+author: rizer001
+dependencies:
+  server:
+    UI-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Punish:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    PlaceholderAPI:
+      required: false
+      join-classpath: true
+    LuckPerms:
+      required: false
+      join-classpath: true
+    Vault:
+      required: false
+      join-classpath: true

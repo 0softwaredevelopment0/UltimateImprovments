@@ -23,7 +23,7 @@ subprojects {
 
     processResources {
         filteringCharset = 'UTF-8'
-        filesMatching('plugin.yml') {
+        filesMatching(['plugin.yml', 'paper-plugin.yml']) {
             expand(project: project)
         }
     }
