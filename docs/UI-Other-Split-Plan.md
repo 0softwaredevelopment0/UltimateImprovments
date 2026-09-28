@@ -1,7 +1,7 @@
 # UI-Other Split Plan (9 addons)
 
 > Internal working plan for decomposing `ui-other` into 9 separate addon JARs.
-> Status: **Phase 0 done** (foundation/decoupling). One family version (see AGENTS.md).
+> Status: **Phase 1 done** (UI-Enchant extracted). One family version (see AGENTS.md).
 > Keep this file updated as phases complete; delete it when `ui-other` is gone.
 >
 > **Progress**
@@ -11,8 +11,16 @@
 >   ore→stone) and decoupled the enchantment package from `features/world`
 >   (WoodcutterChallenge), `listener` (BlockBreakListener ore→stone) and
 >   `security/auth` (AuthPlayerState). Build green.
-> - Next: create the `ui-enchant` Gradle module and move `enchantment/**` +
->   `EnchantSubcommand` + `[enchant]` config (Phase 1).
+> - 2026-09-28 — Phase 1 done: extracted **UI-Enchant**. New Gradle module
+>   `ui-enchant` (JAR), `enchantment/**` + `EnchantSubcommand` moved there,
+>   `EnchantModules` (16 registrars) split out of `SimpleModules` (1765→1314 lines),
+>   `/ui enchant` registered by the addon, config `[enchant]` +
+>   `[messages.enchant]`/`[messages_en.enchant]` moved to bundled
+>   `config/UI-Enchant.toml`, `SimpleModule` hoisted to public ui-core.
+>   `AddonCatalog` routes `enchant` → UI-Enchant. Build green, JAR produced.
+> - Next: **Phase 2 — UI-Auth** (`mechanics/security/auth/**` ~17 files + `[auth]`
+>   config + `AuthPlayerState` already published via `CoreHooks.setPendingAuth`,
+>   but verify the quit-cleanup/dialog wiring in `UIOther.initPostModuleSystems`).
 
 ## 1. Current state (metrics, 2026-09-28)
 
