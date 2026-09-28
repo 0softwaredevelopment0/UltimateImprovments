@@ -79,11 +79,9 @@ public class ChgDimGUI implements Listener {
     }
 
     private static ItemStack tagChgdimItem(ItemStack item) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
+        item.editMeta(meta -> {
             meta.getPersistentDataContainer().set(Keys.CHGDIM_GUI, PersistentDataType.BOOLEAN, true);
-            item.setItemMeta(meta);
-        }
+        });
         return item;
     }
 

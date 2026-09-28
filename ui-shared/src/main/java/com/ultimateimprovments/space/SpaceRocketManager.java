@@ -52,16 +52,14 @@ public class SpaceRocketManager implements Listener {
 
     public static ItemStack createRocket() {
         ItemStack item = new ItemStack(Material.FIREWORK_ROCKET, 1);
-        var meta = item.getItemMeta();
-        if (meta != null) {
+        item.editMeta(meta -> {
             meta.displayName(MessageUtil.parse("<white>Space Rocket</white>"));
             meta.lore(java.util.List.of(
                 MessageUtil.parse("<gray>Right-click to launch into space</gray>"),
                 MessageUtil.parse("<dark_gray>You will be lifted to the sky limit</dark_gray>")
             ));
             meta.getPersistentDataContainer().set(KEY_ROCKET, PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
-        }
+        });
         return item;
     }
 

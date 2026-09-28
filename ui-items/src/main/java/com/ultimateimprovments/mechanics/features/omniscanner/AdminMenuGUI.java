@@ -361,26 +361,22 @@ public class AdminMenuGUI implements Listener {
 
         // 13. Portable Ender Chest (no PDC — works like the ENDER_CHEST block)
         ItemStack echest = new ItemStack(Material.ENDER_CHEST);
-        ItemMeta echestMeta = echest.getItemMeta();
-        if (echestMeta != null) {
+        echest.editMeta(echestMeta -> {
             echestMeta.displayName(MessageUtil.parse("<!italic><white>Portable storage</white>"));
             echestMeta.lore(List.of(MessageUtil.parse("<!italic><gray>Holds a larger number of items</gray>")));
-            echest.setItemMeta(echestMeta);
-        }
+        });
         CUSTOM_ITEMS.add(echest);
 
         // 14. Chunk Loader
         ItemStack cl = new ItemStack(Material.EMERALD_BLOCK);
-        ItemMeta clMeta = cl.getItemMeta();
-        if (clMeta != null) {
+        cl.editMeta(clMeta -> {
             clMeta.displayName(MessageUtil.parse("<!italic><white>Chunkloader</white>"));
             clMeta.lore(List.of(
                     MessageUtil.parse("<!italic><gray>Loads a chunk when placed</gray>"),
                     MessageUtil.parse("<!italic><gray>Break to collect it</gray>")
             ));
             clMeta.getPersistentDataContainer().set(ChunkLoaderItemListener.getChunkLoaderKey(), PersistentDataType.BYTE, (byte) 1);
-            cl.setItemMeta(clMeta);
-        }
+        });
         CUSTOM_ITEMS.add(cl);
 
         // 15. Entity Locator
@@ -407,21 +403,18 @@ public class AdminMenuGUI implements Listener {
 
         // 21. Netherite Upgraded Sword (example of an upgraded netherite item)
         ItemStack netheriteSword = new ItemStack(Material.NETHERITE_SWORD);
-        ItemMeta nsMeta = netheriteSword.getItemMeta();
-        if (nsMeta != null) {
+        netheriteSword.editMeta(nsMeta -> {
             nsMeta.displayName(MessageUtil.parse("<!italic><gradient:#8B4513:#DAA520>✦ Незеритовый меч ✦</gradient>"));
             nsMeta.lore(List.of(
                     MessageUtil.parse("<!italic><gradient:#8B4513:#DAA520>✦ Незерит — ⚔ 10.0 урона</gradient>"),
                     MessageUtil.parse("<!italic><gray>Пример улучшенного предмета</gray>")
             ));
-            netheriteSword.setItemMeta(nsMeta);
-        }
+        });
         CUSTOM_ITEMS.add(netheriteSword);
 
         // 22. Elytra Chestplate
         ItemStack elytraChest = new ItemStack(Material.NETHERITE_CHESTPLATE);
-        ItemMeta ecMeta = elytraChest.getItemMeta();
-        if (ecMeta != null) {
+        elytraChest.editMeta(ecMeta -> {
             ecMeta.displayName(MessageUtil.parse("<!italic><gradient:#00AAFF:#FF55FF>✦ Нагрудник полёта ✦</gradient>"));
             ecMeta.setGlider(true);
             ecMeta.getPersistentDataContainer().set(Keys.CHESTPLATE_FLIGHT, PersistentDataType.DOUBLE, 100.0);
@@ -429,8 +422,7 @@ public class AdminMenuGUI implements Listener {
                     MessageUtil.parse("<!italic><green>Пригоден для полёта</green>"),
                     MessageUtil.parse("<!italic><gray>Пример улучшенного предмета</gray>")
             ));
-            elytraChest.setItemMeta(ecMeta);
-        }
+        });
         CUSTOM_ITEMS.add(elytraChest);        // 23. Totem with charges
         ItemStack totem = new ItemStack(Material.TOTEM_OF_UNDYING);
         ItemMeta totemMeta = totem.getItemMeta();
@@ -464,11 +456,9 @@ public class AdminMenuGUI implements Listener {
 
     /** Marks the item with a PDC key of type PersistentDataType.BYTE (1). */
     private static ItemStack tagPdc(ItemStack item, NamespacedKey key) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
+        item.editMeta(meta -> {
             meta.getPersistentDataContainer().set(key, PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
-        }
+        });
         return item;
     }
 
@@ -557,12 +547,10 @@ public class AdminMenuGUI implements Listener {
 
     private static ItemStack createDivider() {
         ItemStack item = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
+        item.editMeta(meta -> {
             meta.displayName(Component.text(" "));
             meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
-        }
+        });
         return item;
     }
 

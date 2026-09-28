@@ -75,16 +75,14 @@ public class GeneratorManager implements Listener {
     /** Creates a generator item (BLAST_FURNACE with PDC). */
     public static ItemStack createGeneratorItem() {
         ItemStack item = new ItemStack(Materials.BLAST_FURNACE);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
+        item.editMeta(meta -> {
             meta.displayName(MessageUtil.parse("<!italic><gold>✦ Генератор ✦</gold>"));
             meta.lore(List.of(
                     MessageUtil.parse("<!italic><gray>Сжигает топливо для выработки энергии</gray>"),
                     MessageUtil.parse("<!italic><gray>Поставьте и подключите кабель</gray>")
             ));
             meta.getPersistentDataContainer().set(Keys.GENERATOR, PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
-        }
+        });
         return item;
     }
 

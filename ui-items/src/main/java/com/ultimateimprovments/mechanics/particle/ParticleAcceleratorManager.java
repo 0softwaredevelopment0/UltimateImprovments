@@ -566,13 +566,11 @@ public class ParticleAcceleratorManager implements Listener {
 
     private static ItemStack createPdcItem(Material mat, String name, String lore, String blockType) {
         ItemStack item = new ItemStack(mat);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
+        item.editMeta(meta -> {
             meta.displayName(MessageUtil.parse("<!italic>" + name));
             meta.lore(List.of(MessageUtil.parse("<!italic>" + lore)));
             meta.getPersistentDataContainer().set(PARTICLE_BLOCK_KEY, PersistentDataType.STRING, blockType);
-            item.setItemMeta(meta);
-        }
+        });
         return item;
     }
 
