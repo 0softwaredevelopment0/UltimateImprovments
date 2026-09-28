@@ -198,46 +198,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             return true;
         }));
 
-        // ── Active command blocks list: /ui cmdblocklist [page] ──
-        registry.register(LegacySubCommandAdapter.of("cmdblocklist",
-                com.ultimateimprovments.mechanics.features.world.CmdBlockTracker::execute));
-
-        // ── Timed advancement challenges: /ui advancement start <achievement> ──
-        registry.register(LegacySubCommandAdapter.of("advancement", (s, a) -> {
-            if (!(s instanceof Player p)) return false;
-            if (a.length < 2) {
-                p.sendMessage(MessageUtil.parse("<red>Использование: <white>/ui advancement start <название></white>"));
-                return true;
-            }
-            if (a[1].equalsIgnoreCase("start")) {
-                if (a.length < 3) {
-                    p.sendMessage(MessageUtil.parse("<red>Укажи название ачивки: <white>woodcutter, teleport</white>"));
-                    return true;
-                }
-                String challenge = a[2];
-                if (challenge.equalsIgnoreCase("teleport") || challenge.equalsIgnoreCase("let_me_teleport")) {
-                    com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge.start(p, challenge);
-                } else {
-                    com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge.start(p, challenge);
-                }
-                return true;
-            }
-            if (a[1].equalsIgnoreCase("stop")) {
-                boolean stopped = com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge.stop(p)
-                        || com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge.stop(p);
-                if (!stopped) {
-                    p.sendMessage(MessageUtil.parse("<red>✖ <white>You don't have an active challenge.</white>"));
-                }
-                return true;
-            }
-            p.sendMessage(MessageUtil.parse("<red>Неизвестная подкоманда. Доступно: <white>start, stop</white>"));
-            return true;
-        }, tc((s, a) -> {
-            if (a.length == 2) return List.of("start", "stop");
-            if (a.length == 3 && a[1].equalsIgnoreCase("start"))
-                return List.of("woodcutter", "teleport");
-            return List.of();
-        })));
+        // ── /ui cmdblocklist and /ui advancement are registered by the UI-World addon ──
         registry.register(LegacySubCommandAdapter.of("unlock", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (a.length < 2) return false;

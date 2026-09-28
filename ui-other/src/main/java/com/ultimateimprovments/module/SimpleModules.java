@@ -21,7 +21,6 @@ import com.ultimateimprovments.listener.BlockBreakListener;
 import com.ultimateimprovments.listener.BlockPlaceListener;
 import com.ultimateimprovments.listener.FishingListener;
 import com.ultimateimprovments.listener.MOTDListener;
-import com.ultimateimprovments.listener.MultimeterListener;
 import com.ultimateimprovments.listener.PluginHideListener;
 import com.ultimateimprovments.listener.PowerInterceptListener;
 import com.ultimateimprovments.listener.ServerBrandListener;
@@ -62,8 +61,6 @@ import com.ultimateimprovments.mechanics.features.blocks.ContainerTriggerManager
 import com.ultimateimprovments.mechanics.features.blocks.EnderChestManager;
 import com.ultimateimprovments.mechanics.features.blocks.GlassBreakManager;
 import com.ultimateimprovments.mechanics.features.blocks.TerracotaSpeedManager;
-import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseListener;
-import com.ultimateimprovments.mechanics.features.collapse.BlockCollapseManager;
 import com.ultimateimprovments.mechanics.features.creativeitem.CreativeItemValidator;
 import com.ultimateimprovments.mechanics.features.integrity.IntegrityLoreCleanupListener;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
@@ -75,30 +72,15 @@ import com.ultimateimprovments.mechanics.features.items.NetheriteUpgradeListener
 import com.ultimateimprovments.mechanics.features.items.NotesManager;
 import com.ultimateimprovments.mechanics.features.items.TotemChargeListener;
 import com.ultimateimprovments.mechanics.features.items.UnbreakableBreakerManager;
-import com.ultimateimprovments.mechanics.features.movement.BlockFrictionListener;
 import com.ultimateimprovments.mechanics.features.scanner.MetalDetectorListener;
 import com.ultimateimprovments.mechanics.features.scanner.ScannerItemListener;
 import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityListener;
 import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityManager;
 import com.ultimateimprovments.mechanics.features.world.AntimatterManager;
-import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
-import com.ultimateimprovments.mechanics.features.world.CmdBlockTracker;
-import com.ultimateimprovments.mechanics.features.world.EarthCoreListener;
-import com.ultimateimprovments.mechanics.features.world.KaboomListener;
-import com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge;
-import com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge;
-import com.ultimateimprovments.mechanics.features.world.NetheriteKingListener;
-import com.ultimateimprovments.mechanics.features.world.OutOfMemoryListener;
-import com.ultimateimprovments.mechanics.features.world.ServerFreezeListener;
-import com.ultimateimprovments.mechanics.features.world.BeaconManager;
 import com.ultimateimprovments.mechanics.features.world.ChunkLoaderItemListener;
 import com.ultimateimprovments.mechanics.features.world.ConcreteBucketManager;
-import com.ultimateimprovments.mechanics.features.world.DeathBellManager;
-import com.ultimateimprovments.mechanics.features.world.DragonEggManager;
 import com.ultimateimprovments.mechanics.features.world.EntityLocatorManager;
-import com.ultimateimprovments.mechanics.features.world.MinecartSpeedManager;
 import com.ultimateimprovments.mechanics.features.world.WaypointManager;
-import com.ultimateimprovments.mechanics.features.world.WirelessRedstoneManager;
 import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
 import com.ultimateimprovments.mechanics.particle.ParticleMovementTask;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -154,14 +136,11 @@ public final class SimpleModules {
                 var pm = main.getServer().getPluginManager();
                 pm.registerEvents(new BlockPlaceListener(), main);
                 pm.registerEvents(new BlockBreakListener(), main);
-                pm.registerEvents(new MultimeterListener(), main);
                 pm.registerEvents(new PluginHideListener(), main);
                 pm.registerEvents(new ServerBrandListener(), main);
                 pm.registerEvents(new ShulkerBulletListener(), main);
                 pm.registerEvents(FishingListener.getInstance(), main);
 
-                BlockFrictionListener.init();
-                pm.registerEvents(new BlockFrictionListener(), main);
             }
         });
     }
@@ -310,19 +289,6 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerFeatures(ModuleManager mm) {
-        // Beacon
-        mm.register(new SimpleModule("Beacon", "mechanics/features/beacon", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                BeaconManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                BeaconManager.reloadConfig();
-            }
-        });
-
         // BlockDmg
         mm.register(new SimpleModule("BlockDmg", "mechanics/features/block_damage", false) {
             @Override
@@ -335,27 +301,6 @@ public final class SimpleModules {
                 BlockDmgManager.reloadConfig();
             }
         });
-
-        // BlockCollapse
-        mm.register(new PluginModule("BlockCollapse", "mechanics/features/collapse", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                BlockCollapseManager.init(main);
-                main.getServer().getPluginManager().registerEvents(new BlockCollapseListener(), main);
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                BlockCollapseManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                BlockCollapseManager.reload();
-            }
-        });
-
         // BoostedCobweb
         mm.register(new SimpleModule("BoostedCobweb", "mechanics/features/cobweb_boost", false) {
             @Override
@@ -368,20 +313,6 @@ public final class SimpleModules {
                 BoostedCobwebManager.reloadConfig();
             }
         });
-
-        // DragonEgg
-        mm.register(new SimpleModule("DragonEgg", "mechanics/features/dragon_egg", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                DragonEggManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                DragonEggManager.reloadConfig();
-            }
-        });
-
         // EntityLocator
         mm.register(new SimpleModule("EntityLocator", "mechanics/features/entity_locator", false) {
             @Override
@@ -480,80 +411,6 @@ public final class SimpleModules {
                 AntimatterManager.reloadConfig();
             }
         });
-
-        // Beyond Space — reach the block placement limit
-        // Hit, hit, to pieces! — break a bedrock block
-        mm.register(new SimpleModule("BedrockBreak", "mechanics/features/bedrock_break", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                BedrockBreakListener.register((Main) plugin);
-            }
-        });
-
-        // Kaboom! — kill a mob after dealing 1,000 mace damage
-        mm.register(new SimpleModule("Kaboom", "mechanics/features/kaboom", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                KaboomListener.register((Main) plugin);
-            }
-        });
-
-        // Where is the Earth's core here? — reach the lower placement limit
-        mm.register(new SimpleModule("EarthCore", "mechanics/features/earth_core", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                EarthCoreListener.register((Main) plugin);
-            }
-        });
-
-        // The Woodcutter at Full Throttle — timed challenge (7,200 wood in 1 hour)
-        mm.register(new SimpleModule("WoodcutterChallenge", "mechanics/features/woodcutter_challenge", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                WoodcutterChallenge.register((Main) plugin);
-            }
-        });
-
-        // Let me teleport! — timed challenge (60 ender pearl teleports in 1 minute)
-        mm.register(new SimpleModule("EnderPearlChallenge", "mechanics/features/ender_pearl_challenge", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                EnderPearlChallenge.register((Main) plugin);
-            }
-        });
-
-        // A Netherite King — netherite block in inventory
-        mm.register(new SimpleModule("NetheriteKing", "mechanics/features/netherite_king", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                NetheriteKingListener.register((Main) plugin);
-            }
-        });
-
-        // java.lang.OutOfMemoryError — RAM usage at 100%
-        mm.register(new SimpleModule("OutOfMemory", "mechanics/features/out_of_memory", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                OutOfMemoryListener.register((Main) plugin);
-            }
-        });
-
-        // The server has not responding! — main thread frozen 10+ seconds
-        mm.register(new SimpleModule("ServerFreeze", "mechanics/features/server_freeze", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                ServerFreezeListener.register((Main) plugin);
-            }
-        });
-
-        // Active command blocks tracking (for /ui cmdblocklist)
-        mm.register(new SimpleModule("CmdBlockTracker", "mechanics/features/cmdblock_tracker", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                CmdBlockTracker.register((Main) plugin);
-            }
-        });
-
         // DeathLogger — records every player death to deaths.log + console (debug; off by default)
         mm.register(new SimpleModule("DeathLogger", "mechanics/features/death_logger", false) {
             @Override
@@ -584,20 +441,6 @@ public final class SimpleModules {
                 UnbreakableBreakerManager.reloadConfig();
             }
         });
-
-        // DeathBell
-        mm.register(new SimpleModule("DeathBell", "mechanics/features/bell_lightning", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                DeathBellManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                DeathBellManager.reloadConfig();
-            }
-        });
-
         // EnderChest
         mm.register(new SimpleModule("EnderChest", "mechanics/features/ender_chest", false) {
             @Override
@@ -666,46 +509,6 @@ public final class SimpleModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 NotesManager.init();
-            }
-        });
-
-        // MinecartSpeed
-        mm.register(new PluginModule("MinecartSpeed", "mechanics/features/minecart_speed", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                MinecartSpeedManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                MinecartSpeedManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                MinecartSpeedManager.reloadConfig();
-            }
-        });
-
-        // WirelessRedstone
-        mm.register(new PluginModule("WirelessRedstone", "mechanics/features/wireless_redstone", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                WirelessRedstoneManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                WirelessRedstoneManager.restoreAllPowerBlocks();
-                // Reset the singleton + cancel the watcher task, otherwise after
-                // /ui reload the old watcher either stays alive (duplicate),
-                // or init() with its guard won't restart it at all.
-                WirelessRedstoneManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                WirelessRedstoneManager.reloadConfig();
             }
         });
     }

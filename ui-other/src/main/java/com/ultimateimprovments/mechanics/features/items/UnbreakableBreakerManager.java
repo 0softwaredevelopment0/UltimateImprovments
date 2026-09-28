@@ -1,7 +1,7 @@
 package com.ultimateimprovments.mechanics.features.items;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.*;
@@ -383,7 +383,7 @@ n     * never persisted anywhere, so a restart always starts everyone clean.
 
         // Hit, hit, to pieces! — award the achievement for breaking bedrock
         if (blockType == Material.BEDROCK) {
-            BedrockBreakListener.grant(player);
+            CoreHooks.grantBedrockBreak(player);
         }
 
         if (config.playEffects()) {

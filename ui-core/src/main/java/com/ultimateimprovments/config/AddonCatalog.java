@@ -60,14 +60,15 @@ public final class AddonCatalog {
         route("UI-Guard", "packet_guard", "proxy_server", "redstone_guard",
                 "emergency_entity_kill", "server_overload_warning", "bot_protection",
                 "check", "codepanel", "sudo", "maintenance");
+        // ── UI-World ──
+        route("UI-World", "wireless_redstone", "meteor", "block_friction");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
                 "features", "brand_spoof", "sunburn", "netherite_upgrade",
                 "death_logger", "power", "suicide",
                 "changedimmension", "motd",
-                "wireless_redstone",
-                "structure_integrity", "meteor",
-                "particle_accelerator", "block_friction");
+                "structure_integrity",
+                "particle_accelerator");
     }
 
     // Message groups (first segment under messages/messages_en) routed to addons.
@@ -93,9 +94,10 @@ public final class AddonCatalog {
         routeMsg("UI-Player", "vanish");
         routeMsg("UI-Guard", "packet_guard", "bot_protection",
                 "check", "codepanel", "sudo", "maintenance");
+        routeMsg("UI-World", "meteor");
         routeMsg("UI-Other", "changedimmension", "motd",
                 "suicide", "notes", "power", "death_logger",
-                "structures", "meteor", "space", "wireless_redstone",
+                "structures", "space", "wireless_redstone",
                 "structure_integrity");
     }
 
@@ -139,6 +141,6 @@ public final class AddonCatalog {
                 CORE,
                 "UI-Shared", "UI-MBS", "UI-Datapack", "UI-Chat", "UI-Clans",
                 "UI-Combat", "UI-Punish", "UI-Essentials", "UI-Energy",
-                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Admin", "UI-Player", "UI-Guard", "UI-Other");
+                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Admin", "UI-Player", "UI-Guard", "UI-World", "UI-Other");
     }
 }

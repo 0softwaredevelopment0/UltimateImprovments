@@ -22,7 +22,22 @@
 >   `[features.sudo]`, with legacy-key fallback in `SudoManager`), `[maintenance]`
 >   (was in UI-Punish.toml), `[messages.*]` for check/codepanel/maintenance;
 >   `AddonCatalog` routes/routeMsg updated. Argon2 added to `ui-guard` deps.
-> - Next: **UI-World** + **UI-Items** (classify `features/world/*`).
+> - Phase 6a **UI-World** — new `ui-world` module: `features/{collapse,movement}/**`,
+>   world-mechanics subset of `features/world/**` (Beacon, BedrockBreak, CmdBlockTracker,
+>   DeathBell, DragonEgg, EarthCore, EnderPearl/Woodcutter challenges, Kaboom,
+>   MinecartSpeed, NetheriteKing, OutOfMemory, ServerFreeze, Shutdown, TimedChallengeLock,
+>   WirelessRedstone), `module/meteor` registration. Commands `cmdblocklist`/`advancement`
+>   move to `UIWorld`. `CoreHooks` gained `minecartSpeed*`, `grantShutdownToAllOnline`,
+>   `grantBedrockBreak`. Config `[wireless_redstone]`, `[meteor]`, `[block_friction]`,
+>   `[messages.meteor]` → `config/UI-World.toml`.
+>   NOTE: `features/blocks` and `features/structure` intentionally stayed in ui-other —
+>   `EnderChestManager`↔`StructureIntegrityManager` and `MultimeterListener`↔structure
+>   made a clean move impossible without extra hooks. Item managers in `features/world`
+>   (Antimatter, ChunkLoaderItem, ConcreteBucket, EntityLocator, Waypoint) also stay for
+>   UI-Items.
+> - Next: **UI-Items** (crafting + features/items + particle + omniscanner + the item
+>   managers above). Blocked by: `MultimeterListener` couples to UI-Energy + structure;
+>   `AdminMenuGUI` couples to particle/items; needs CoreHooks for particle queries.
 
 ## 1. Current state (metrics, 2026-09-28)
 

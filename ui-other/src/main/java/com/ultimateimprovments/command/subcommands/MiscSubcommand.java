@@ -8,7 +8,6 @@ import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.database.PlayerSettingsDB;
 import com.ultimateimprovments.mechanics.features.items.NotesGUI;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
-import com.ultimateimprovments.mechanics.features.world.MinecartSpeedManager;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -72,8 +71,8 @@ public final class MiscSubcommand {
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui showspeed"))); return true; }
         UUID uuid = player.getUniqueId();
-        if (MinecartSpeedManager.isSpeedDisplayEnabled(uuid) != want) {
-            MinecartSpeedManager.toggleSpeedDisplay(uuid);
+        if (CoreHooks.isMinecartSpeedDisplayEnabled(uuid) != want) {
+            CoreHooks.toggleMinecartSpeedDisplay(uuid);
         }
         if (want) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.speed_enabled", "<green>⚡</green> <white>Speed display: </white><green>ON</green>")));

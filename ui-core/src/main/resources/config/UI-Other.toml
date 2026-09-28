@@ -820,12 +820,6 @@ max = 500
 # Default: 100
 update_interval_ticks = 100
 
-# Tab-list header/footer customization.
-[wireless_redstone]
-# Enable wireless redstone transmitters/receivers.
-# Default: true
-enabled = true
-
 # Multi-block structure integrity checks and decay.
 [structure_integrity]
 # Master switch (true = feature on).
@@ -858,77 +852,6 @@ explosion_damage = 8192.0
 # Default: 12
 explosion_damage_radius = 12
 
-# Server economy: starting balance and income sources.
-[meteor]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# World name.
-# Default: "world"
-world = "world"
-# Default: 1
-count_per_spawn = 1
-# Duration.
-# Default: 60
-fall_duration_ticks = 60
-# Radius in blocks.
-# Default: 2
-sphere_radius = 2
-# Power.
-# Default: 8.0
-explosion_power = 8.0
-# Maximum value.
-# Default: 10
-max_active = 10
-# Default: ["CRACKED_DEEPSLATE_BRICKS", "CRACKED_DEEPSLATE_TILES", "CHISELED_DEEPSLATE", "MAGMA_BLOCK"]
-display_blocks = ["CRACKED_DEEPSLATE_BRICKS", "CRACKED_DEEPSLATE_TILES", "CHISELED_DEEPSLATE", "MAGMA_BLOCK"]
-
-# interval section.
-[meteor.interval]
-# Minimum value.
-# Default: 30
-min = 30
-# Maximum value.
-# Default: 90
-max = 90
-
-# spawn radius section.
-[meteor.spawn_radius]
-# Minimum value.
-# Default: 30
-min = 30
-# Maximum value.
-# Default: 120
-max = 120
-
-# height section.
-[meteor.height]
-# Minimum value.
-# Default: -64
-min = -64
-# Maximum value.
-# Default: 320
-max = 320
-
-# core ores section.
-[meteor.core_ores]
-# Default: 1.0
-DEEPSLATE_DIAMOND_ORE = 1.0
-# Default: 1.0
-DEEPSLATE_IRON_ORE = 1.0
-# Default: 1.0
-DEEPSLATE_GOLD_ORE = 1.0
-# Default: 1.0
-DEEPSLATE_EMERALD_ORE = 1.0
-# Default: 1.0
-DEEPSLATE_LAPIS_ORE = 1.0
-# Default: 1.0
-DEEPSLATE_REDSTONE_ORE = 1.0
-# Default: 1.0
-DEEPSLATE_COAL_ORE = 1.0
-# Default: 1.0
-DEEPSLATE_COPPER_ORE = 1.0
-
 # Particle accelerator machine parameters.
 [particle_accelerator]
 # Master switch (true = feature on).
@@ -936,11 +859,6 @@ DEEPSLATE_COPPER_ORE = 1.0
 enabled = true
 # Default: [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
 collision_recipes = [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
-
-# Custom block friction behaviour.
-[block_friction]
-# Default: 0.989
-BLUE_ICE = 0.989
 
 # changedimmension section.
 # Placeholders: %world%, %seconds%
@@ -1037,24 +955,6 @@ format = "<red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</ye
 [messages.power.bossbar]
 # Default: <red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>seconds</red>
 text = "<red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>seconds</red>"
-
-# packet guard section.
-[messages.meteor]
-# Default: <red>❌ Usage: </red><white>/ui meteor spawn [count]</white>
-usage = "<red>❌ Usage: </red><white>/ui meteor spawn [count]</white>"
-# Default: <red>❌ Unknown meteor subcommand: </red><white>%sub%</white>
-unknown_sub = "<red>❌ Unknown meteor subcommand: </red><white>%sub%</white>"
-# Permission node.
-# Default: <red>❌ You don't have permission to spawn meteors!</red>
-no_permission = "<red>❌ You don't have permission to spawn meteors!</red>"
-# Default: <red>❌ Invalid count!</red>
-invalid_count = "<red>❌ Invalid count!</red>"
-# Default: <red>❌ Meteor module is disabled in config.yml!</red>
-module_disabled = "<red>❌ Meteor module is disabled in config.yml!</red>"
-# Default: <red>❌ Meteor module is not initialized!</red>
-module_not_init = "<red>❌ Meteor module is not initialized!</red>"
-# Default: <green>✔</green> <white>Spawned </white><yellow>%count%</yellow><white> meteor(s)!</white>
-spawned = "<green>✔</green> <white>Spawned </white><yellow>%count%</yellow><white> meteor(s)!</white>"
 
 # economy section.
 # Placeholders: %amount%, %player%, %currency%, %balance%, %sender%
