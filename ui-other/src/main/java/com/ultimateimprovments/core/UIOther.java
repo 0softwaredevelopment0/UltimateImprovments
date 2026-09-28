@@ -52,9 +52,6 @@ public class UIOther extends JavaPlugin {
         com.ultimateimprovments.command.vote.VoteManager.shutdown();
         ModuleManager mm = ModuleManager.getInstance();
         if (mm != null) mm.shutdownAll();
-        // Unfreeze any players still under an anti-cheat check before the plugin
-        // is disabled/reloaded — otherwise they'd be stuck with 0 walk speed.
-        com.ultimateimprovments.mechanics.security.check.CheckManager.shutdown();
         // Reset periodic-task guards, otherwise start() would no-op after a
         // re-enable (running flag survives the plugin cycle).
         com.ultimateimprovments.space.SpaceOxygenListener.stop();
@@ -96,7 +93,6 @@ public class UIOther extends JavaPlugin {
         SimpleModules.registerCoreModules(mm);
         SimpleModules.registerMechanics(mm);
         SimpleModules.registerCrafting(mm);
-        SimpleModules.registerSudo(mm);
         SimpleModules.registerFeatures(mm);
         mm.register(new MeteorModule());
         SimpleModules.registerEconomy(mm);
@@ -128,10 +124,6 @@ public class UIOther extends JavaPlugin {
                 new com.ultimateimprovments.listener.LuckPermsCommandBlocker(), this);
 
         com.ultimateimprovments.server.AccessListCheckTask.start(main);
-        com.ultimateimprovments.mechanics.security.check.CheckManager.init();
-        getServer().getPluginManager().registerEvents(
-                new com.ultimateimprovments.mechanics.security.check.CheckListener(), this);
-
 
         com.ultimateimprovments.space.SpaceManager.createTable();
         com.ultimateimprovments.space.SpaceManager.init(main);
@@ -162,8 +154,6 @@ public class UIOther extends JavaPlugin {
         com.ultimateimprovments.command.GetPosDialogHandler.register(this);
         com.ultimateimprovments.command.SharePosDialogHandler.register(this);
         com.ultimateimprovments.command.ChgDimDialogHandler.register(this);
-        com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler.register(this);
-        com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler.register(this);
 
         // ── Per-player state cleanup on quit ──
         // Several static per-UUID maps (cooldowns, reply targets, code-panel
@@ -171,11 +161,6 @@ public class UIOther extends JavaPlugin {
         // central listener drops all of them in one place.
         getServer().getPluginManager().registerEvents(
                 new com.ultimateimprovments.listener.PlayerQuitCleanupListener(), this);
-
-        // ── Maintenance mode ──
-        // /ui maint reads MaintenanceManager.getInstance(); without init() the
-        // instance is null and every /ui maint invocation threw an NPE.
-        com.ultimateimprovments.maintenance.MaintenanceManager.init();
 
         com.ultimateimprovments.structure.StructureChunkListener.scheduleDelayedRebuild(main);
 

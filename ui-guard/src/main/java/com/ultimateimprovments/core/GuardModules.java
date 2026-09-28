@@ -1,6 +1,14 @@
 package com.ultimateimprovments.core;
 
+import com.ultimateimprovments.maintenance.MaintenanceManager;
 import com.ultimateimprovments.mechanics.security.botprotect.BotProtectionListener;
+import com.ultimateimprovments.mechanics.security.check.CheckListener;
+import com.ultimateimprovments.mechanics.security.check.CheckManager;
+import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCleanupTask;
+import com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler;
+import com.ultimateimprovments.mechanics.security.codepanel.CodePanelSession;
+import com.ultimateimprovments.mechanics.security.sudo.SudoCommandInterceptor;
+import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.PluginModule;
 import com.ultimateimprovments.module.SimpleModule;
@@ -13,7 +21,10 @@ import com.ultimateimprovments.server.RedstoneGuardTask;
 import com.ultimateimprovments.server.ServerOverloadListener;
 import com.ultimateimprovments.server.ServerOverloadWarning;
 import com.ultimateimprovments.util.ConsoleLogger;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -123,5 +134,86 @@ public final class GuardModules {
                 }
             }
         });
+
+        // Check (freeze suspects, inspector instrument panel)
+        mm.register(new SimpleModule("Check", "mechanics/security/check", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                CheckManager.init();
+                JavaPlugin guard = UIGuard.getInstance();
+                guard.getServer().getPluginManager().registerEvents(new CheckListener(), guard);
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                CheckManager.shutdown();
+            }
+        });
+
+        // CodePanel (numeric code doors: dialog + key database)
+        mm.register(new SimpleModule("CodePanel", "mechanics/security/codepanel", false) {
+            private BukkitTask cleanupTask;
+
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                JavaPlugin guard = UIGuard.getInstance();
+                CodePanelDialogHandler.register(guard);
+                guard.getServer().getPluginManager().registerEvents(new CodePanelQuitListener(), guard);
+                cleanupTask = new CodePanelCleanupTask().runTaskTimer(guard, 200L, 400L);
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                if (cleanupTask != null) {
+                    cleanupTask.cancel();
+                    cleanupTask = null;
+                }
+            }
+        });
+
+        // Sudo (GitHub-style sudo mode for dangerous commands)
+        mm.register(new SimpleModule("Sudo", "mechanics/security/sudo", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                if (!SudoManager.isEnabled()) {
+                    ConsoleLogger.info("[SudoModule] Sudo mode is disabled in config (sudo.enabled: false).");
+                    return;
+                }
+                SudoManager.init();
+                JavaPlugin guard = UIGuard.getInstance();
+                guard.getServer().getPluginManager().registerEvents(new SudoCommandInterceptor(), guard);
+                guard.getServer().getPluginManager().registerEvents(new SudoQuitListener(), guard);
+                ConsoleLogger.info("[SudoModule] Sudo mode initialized.");
+            }
+        });
+
+        // Maintenance (whitelist-only join mode)
+        mm.register(new SimpleModule("Maintenance", "maintenance", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                MaintenanceManager.init();
+            }
+        });
+    }
+
+    /**
+     * Clears a player's sudo state on quit (sessions, cooldowns, pending commands).
+     */
+    private static class SudoQuitListener implements Listener {
+        @EventHandler
+        public void onPlayerQuit(PlayerQuitEvent event) {
+            SudoManager manager = SudoManager.getInstance();
+            if (manager != null) {
+                manager.removePlayer(event.getPlayer().getUniqueId());
+            }
+        }
+    }
+
+    /** Drops the per-player code-panel input buffer on quit. */
+    private static class CodePanelQuitListener implements Listener {
+        @EventHandler
+        public void onPlayerQuit(PlayerQuitEvent event) {
+            CodePanelSession.cleanup(event.getPlayer().getUniqueId());
+        }
     }
 }

@@ -2,7 +2,6 @@ package com.ultimateimprovments.listener;
 
 import com.ultimateimprovments.command.AskCordsManager;
 import com.ultimateimprovments.command.MsgCommand;
-import com.ultimateimprovments.mechanics.security.codepanel.CodePanelSession;
 import com.ultimateimprovments.mechanics.features.omniscanner.OmniscannerManager;
 
 import org.bukkit.event.EventHandler;
@@ -29,7 +28,6 @@ public class PlayerQuitCleanupListener implements Listener {
         // ui-other
         MsgCommand.cleanup(id);
         AskCordsManager.cleanup(id);
-        CodePanelSession.cleanup(id);
 
         // ui-shared
         OmniscannerManager.cleanup(id);

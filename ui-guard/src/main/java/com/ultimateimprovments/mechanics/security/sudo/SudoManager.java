@@ -60,20 +60,32 @@ public class SudoManager {
     // CONFIG
     // =========================
     public static boolean isEnabled() {
-        return Main.getInstance().getConfig().getBoolean("features.sudo.enabled", true);
+        return cfg().getBoolean("sudo.enabled",
+                cfg().getBoolean("features.sudo.enabled", true));
     }
 
     public static int getSessionMinutes() {
-        return Math.max(Main.getInstance().getConfig().getInt("features.sudo.session_minutes", 15), 1);
+        return Math.max(cfg().getInt("sudo.session_minutes",
+                cfg().getInt("features.sudo.session_minutes", 15)), 1);
     }
 
     public static int getAttemptCooldownSeconds() {
-        return Math.max(Main.getInstance().getConfig().getInt("features.sudo.attempt_cooldown_seconds", 10), 1);
+        return Math.max(cfg().getInt("sudo.attempt_cooldown_seconds",
+                cfg().getInt("features.sudo.attempt_cooldown_seconds", 10)), 1);
     }
 
     /** List of dangerous commands (prefixes, without a slash). */
     public static List<String> getDangerousCommands() {
-        return Main.getInstance().getConfig().getStringList("features.sudo.dangerous_commands");
+        List<String> commands = cfg().getStringList("sudo.dangerous_commands");
+        if (commands.isEmpty()) {
+            // Legacy key path, kept so existing server configs keep working.
+            commands = cfg().getStringList("features.sudo.dangerous_commands");
+        }
+        return commands;
+    }
+
+    private static org.bukkit.configuration.file.FileConfiguration cfg() {
+        return Main.getInstance().getConfig();
     }
 
     // =========================

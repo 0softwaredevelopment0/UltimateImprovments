@@ -6,6 +6,7 @@ plugins {
 dependencies {
     paperweight.paperDevBundle("26.2.build.+")
     implementation project(':ui-core')
+    implementation 'de.mkammerer:argon2-jvm:2.12'
 
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'

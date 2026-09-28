@@ -1,8 +1,12 @@
 package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.command.SubCommandRegistry;
+import com.ultimateimprovments.command.subcommands.CheckSubcommand;
+import com.ultimateimprovments.command.subcommands.CodePaneSubcommand;
 import com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter;
+import com.ultimateimprovments.command.subcommands.MaintSubcommand;
 import com.ultimateimprovments.command.subcommands.RedstoneSubcommand;
+import com.ultimateimprovments.command.subcommands.SudoSubcommand;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
@@ -17,7 +21,8 @@ import java.util.Set;
 public class UIGuard extends JavaPlugin {
 
     private static final Set<String> OWNED_MODULES = Set.of(
-            "RedstoneGuard", "PacketGuard", "ProxyServer", "BotProtection", "ServerOverload");
+            "RedstoneGuard", "PacketGuard", "ProxyServer", "BotProtection", "ServerOverload",
+            "Check", "CodePanel", "Sudo", "Maintenance");
 
     private static UIGuard instance;
 
@@ -63,9 +68,22 @@ public class UIGuard extends JavaPlugin {
     /** Registers the addon's {@code /ui} subcommands (static utilities). */
     private void registerCommands() {
         try {
-            SubCommandRegistry.getInstance().register(LegacySubCommandAdapter.of("redstone",
+            SubCommandRegistry registry = SubCommandRegistry.getInstance();
+            registry.register(LegacySubCommandAdapter.of("redstone",
                     RedstoneSubcommand::execute,
                     (s, a) -> RedstoneSubcommand.tabComplete(a)));
+            registry.register(LegacySubCommandAdapter.of("check", CheckSubcommand::execute));
+            registry.register(LegacySubCommandAdapter.of("uncheck",
+                    (s, a) -> { CheckSubcommand.uncheck(s, a); return true; }));
+            registry.register(LegacySubCommandAdapter.of("codepane",
+                    CodePaneSubcommand::execute,
+                    (s, a) -> CodePaneSubcommand.tabComplete(a)));
+            registry.register(LegacySubCommandAdapter.of("maint",
+                    MaintSubcommand::execute,
+                    (s, a) -> MaintSubcommand.tabComplete(a)));
+            registry.register(LegacySubCommandAdapter.of("sudo",
+                    SudoSubcommand::execute,
+                    (s, a) -> SudoSubcommand.tabComplete(a)));
         } catch (Exception e) {
             ConsoleLogger.warn("[UI-Guard] Failed to register commands: " + e.getMessage());
         }

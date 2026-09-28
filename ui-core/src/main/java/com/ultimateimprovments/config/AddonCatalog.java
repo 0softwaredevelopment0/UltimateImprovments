@@ -34,7 +34,7 @@ public final class AddonCatalog {
         // ── UI-Combat ──
         route("UI-Combat", "turret");
         // ── UI-Punish ──
-        route("UI-Punish", "punish", "maintenance", "blacklist", "opwhitelist", "access_control");
+        route("UI-Punish", "punish", "blacklist", "opwhitelist", "access_control");
         // ── UI-Essentials ──
         route("UI-Essentials", "home", "spawn", "heal_feed", "report", "rtp", "near",
                 "endersee", "troll");
@@ -58,7 +58,8 @@ public final class AddonCatalog {
         route("UI-Player", "vanish", "armor_effects", "armor_trim_effects");
         // ── UI-Guard ──
         route("UI-Guard", "packet_guard", "proxy_server", "redstone_guard",
-                "emergency_entity_kill", "server_overload_warning", "bot_protection");
+                "emergency_entity_kill", "server_overload_warning", "bot_protection",
+                "check", "codepanel", "sudo", "maintenance");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
                 "features", "brand_spoof", "sunburn", "netherite_upgrade",
@@ -66,7 +67,7 @@ public final class AddonCatalog {
                 "changedimmension", "motd",
                 "wireless_redstone",
                 "structure_integrity", "meteor",
-                "particle_accelerator", "block_friction", "codepanel");
+                "particle_accelerator", "block_friction");
     }
 
     // Message groups (first segment under messages/messages_en) routed to addons.
@@ -83,16 +84,16 @@ public final class AddonCatalog {
         routeMsg("UI-Essentials", "home", "report", "spawn", "rtp", "near", "endersee",
                 "troll", "misc", "invsee");
         routeMsg("UI-Anticheat", "anticheat", "ac");
-        routeMsg("UI-Punish", "punish", "maintenance", "blacklist", "opwhitelist", "access_control");
+        routeMsg("UI-Punish", "punish", "blacklist", "opwhitelist", "access_control");
         routeMsg("UI-Enchant", "enchant");
         routeMsg("UI-Auth", "auth");
         routeMsg("UI-Protection", "protection");
         routeMsg("UI-Display", "tab", "scoreboard", "bossbar");
         routeMsg("UI-Admin", "economy");
         routeMsg("UI-Player", "vanish");
-        routeMsg("UI-Guard", "packet_guard", "bot_protection");
-        routeMsg("UI-Other", "check", "sudo",
-                "codepanel", "changedimmension", "motd",
+        routeMsg("UI-Guard", "packet_guard", "bot_protection",
+                "check", "codepanel", "sudo", "maintenance");
+        routeMsg("UI-Other", "changedimmension", "motd",
                 "suicide", "notes", "power", "death_logger",
                 "structures", "meteor", "space", "wireless_redstone",
                 "structure_integrity");

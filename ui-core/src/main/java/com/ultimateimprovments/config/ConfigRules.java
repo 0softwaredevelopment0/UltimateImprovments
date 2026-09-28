@@ -271,10 +271,10 @@ final class ConfigRules {
 
             bool("features.unbreakable_breaker.enabled"),
 
-            bool("features.sudo.enabled"),
-            integer("features.sudo.session_minutes", 1, 1440, "Длительность sudo-сессии (мин)"),
-            integer("features.sudo.attempt_cooldown_seconds", 1, 3600, "Кулдаун между попытками пароля (сек)"),
-            stringList("features.sudo.dangerous_commands"),
+            bool("sudo.enabled"),
+            integer("sudo.session_minutes", 1, 1440, "Длительность sudo-сессии (мин)"),
+            integer("sudo.attempt_cooldown_seconds", 1, 3600, "Кулдаун между попытками пароля (сек)"),
+            stringList("sudo.dangerous_commands"),
 
             bool("features.integrity.enabled"),
             bool("features.integrity.on_break.play_sound"),
