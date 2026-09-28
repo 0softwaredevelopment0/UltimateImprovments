@@ -31,8 +31,7 @@ public class HealthMeterCraftListener implements Listener {
         Main plugin = Main.getInstance();
 
         ItemStack result = new ItemStack(Material.NAME_TAG);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Health Meter *</white>"));
 
@@ -46,7 +45,7 @@ public class HealthMeterCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -74,8 +73,7 @@ public class HealthMeterCraftListener implements Listener {
         CraftingInventory inv = e.getInventory();
 
         ItemStack result = new ItemStack(Material.NAME_TAG);
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><white>Health Meter *</white>"));
         meta.lore(List.of(
@@ -88,7 +86,7 @@ public class HealthMeterCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
         inv.setResult(result);
     }
 }

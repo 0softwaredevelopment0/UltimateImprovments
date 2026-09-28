@@ -43,8 +43,7 @@ public class ShokerCraftListener implements Listener {
 
         ItemStack result = new ItemStack(Material.WARPED_FUNGUS_ON_A_STICK);
 
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><aqua>Electro Shoker *</aqua>"));
 
@@ -61,7 +60,7 @@ public class ShokerCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         Bukkit.removeRecipe(RECIPE_KEY);
 
@@ -107,8 +106,7 @@ public class ShokerCraftListener implements Listener {
 
         ItemStack result = new ItemStack(Material.WARPED_FUNGUS_ON_A_STICK);
 
-        ItemMeta meta = result.getItemMeta();
-        if (meta == null) return;
+        result.editMeta(meta -> {
 
         meta.displayName(MessageUtil.parse("<i:false><aqua>Electro Shoker *</aqua>"));
 
@@ -125,7 +123,7 @@ public class ShokerCraftListener implements Listener {
                 (byte) 1
         );
 
-        result.setItemMeta(meta);
+        });
 
         inv.setResult(result);
     }
