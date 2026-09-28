@@ -1,25 +1,31 @@
 package com.ultimateimprovments.enchantment.itemstealing;
 
+import com.ultimateimprovments.core.Main;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.Map;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 /**
  * Listener: Item Stealing enchantment — steal, don't pull.
  * <p>
- * When a player hooks another PLAYER with an Item Stealing fishing rod and reels
- * in, the steal rolls a {@code level × 10%} chance. On success the victim is NOT
- * pulled toward the fisher — instead the item he holds in his hand is taken and
- * given to the fisher:
+ * When a player hooks another PLAYER with an Item Stealing fishing rod, the steal
+ * rolls a {@code level × 10%} chance. On success the victim is NOT pulled toward the
+ * fisher — instead the item he holds in his hand is thrown OUT of him and flies
+ * toward the fisher, and only then picked up:
  * <ul>
  *   <li>main hand item first, offhand as fallback;</li>
  *   <li>the whole stack is stolen;</li>
- *   <li>if the fisher's inventory is full, the item drops at his feet.</li>
+ *   <li>the item is spawned as a physical entity flying at the fisher — it is never
+ *       inserted straight into his inventory; if his inventory is full it lands on
+ *       the ground for him (or anyone) to pick up.</li>
  * </ul>
  * On a failed roll (or when the hooked player holds NOTHING in both hands) the
  * vanilla behavior stays: the player is pulled normally.
@@ -29,6 +35,21 @@ import java.util.Map;
  * {@code getCaught() == null}.
  */
 public class EnchantmentListener implements Listener {
+
+    /** How close to the fisher the thrown item stops homing (blocks). */
+    private static final double PICKUP_REACH = 1.5;
+
+    /** Maximum homing speed of the thrown item (blocks/tick). */
+    private static final double MAX_THROW_SPEED = 1.2;
+
+    /** Initial launch speed of the thrown item (blocks/tick). */
+    private static final double LAUNCH_SPEED = 0.6;
+
+    /** Homing gives up after this many ticks (5 s) — the item then just falls. */
+    private static final int MAX_FLIGHT_TICKS = 100;
+
+    /** Pickup delay of the thrown item (ticks) — stops the victim re-grabbing it. */
+    private static final int THROW_PICKUP_DELAY = 20;
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onFish(PlayerFishEvent event) {
@@ -70,22 +91,68 @@ public class EnchantmentListener implements Listener {
         // keeps the vanilla behavior — the player is pulled normally.
         if (java.util.concurrent.ThreadLocalRandom.current().nextInt(100) >= level * 10) return;
 
-        // Take the item away from the victim.
+        // Take the item away from the victim...
         if (fromOffhand) {
             victim.getInventory().setItemInOffHand(null);
         } else {
             victim.getInventory().setItemInMainHand(null);
         }
 
-        // Give it to the fisher; leftovers drop at his feet.
-        Map<Integer, ItemStack> leftovers = fisher.getInventory().addItem(stolen);
-        for (ItemStack left : leftovers.values()) {
-            fisher.getWorld().dropItemNaturally(fisher.getLocation(), left);
-        }
+        // ...and THROW it out of him toward the fisher as a physical item entity.
+        // It is never inserted straight into the fisher's inventory: it flies to
+        // him and only then gets picked up. The pickup delay stops the victim from
+        // instantly re-grabbing it at the launch point.
+        World world = victim.getWorld();
+        Item flying = world.dropItem(victim.getLocation().add(0, 1.2, 0), stolen);
+        flying.setPickupDelay(THROW_PICKUP_DELAY);
+        flyTo(flying, fisher);
 
         // Cancel the pull — the player stays in place, only the item "comes" to us.
         event.setCancelled(true);
         // Make sure the bobber retracts instead of staying stuck in the world.
         event.getHook().remove();
+    }
+
+    /**
+     * Steers a freshly thrown item entity toward {@code target} for a short while,
+     * then releases it to normal physics so the target can pick it up. Gives up
+     * after {@value #MAX_FLIGHT_TICKS} ticks, when the target logs off, or once the
+     * item dies/disappears (picked up, despawned).
+     */
+    private static void flyTo(Item item, Player target) {
+        // Launch immediately (the repeating task's first tick is one tick away),
+        // so the item does not drop at the victim's feet first.
+        Vector launch = target.getLocation().add(0, 1.0, 0).toVector()
+                .subtract(item.getLocation().toVector());
+        if (launch.lengthSquared() > 0.0001) {
+            item.setVelocity(launch.normalize().multiply(LAUNCH_SPEED));
+        }
+
+        new BukkitRunnable() {
+            private int ticks;
+
+            @Override
+            public void run() {
+                if (item.isDead() || !item.isValid() || !target.isOnline()
+                        || ticks++ > MAX_FLIGHT_TICKS) {
+                    cancel();
+                    return;
+                }
+
+                Location from = item.getLocation();
+                Location to = target.getLocation().add(0, 1.0, 0);
+                double distance = from.distance(to);
+                if (distance < PICKUP_REACH) {
+                    // At the target — stop homing and let vanilla pickup take over.
+                    item.setVelocity(new Vector(0, -0.15, 0));
+                    cancel();
+                    return;
+                }
+
+                Vector direction = to.toVector().subtract(from.toVector()).normalize();
+                double speed = Math.min(MAX_THROW_SPEED, 0.35 + distance * 0.04);
+                item.setVelocity(direction.multiply(speed));
+            }
+        }.runTaskTimer(Main.getInstance(), 1L, 1L);
     }
 }
