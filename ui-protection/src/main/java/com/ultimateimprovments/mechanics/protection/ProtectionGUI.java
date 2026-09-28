@@ -22,6 +22,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -159,16 +160,17 @@ public final class ProtectionGUI {
             if (slot >= 44) break;
             OfflinePlayer op = Bukkit.getOfflinePlayer(pid);
             ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-            SkullMeta meta = (SkullMeta) head.getItemMeta();
-            if (meta != null) {
-                meta.setOwningPlayer(op);
+            PlayerProfile profile = op.getName() != null
+                    ? Bukkit.createProfile(pid, op.getName())
+                    : Bukkit.createProfile(pid);
+            head.editMeta(SkullMeta.class, meta -> {
+                meta.setPlayerProfile(profile);
                 meta.displayName(MM.deserialize("<yellow>" + (op.getName() != null ? op.getName() : pid.toString()) + "</yellow>"));
                 meta.lore(List.of(
                         MM.deserialize("<gray>Кликните, чтобы удалить.</gray>")));
                 meta.getPersistentDataContainer().set(
                         Keys.PROTECTION_GUI, PersistentDataType.STRING, "wh:" + pid.toString());
-                head.setItemMeta(meta);
-            }
+            });
             inv.setItem(slot, head);
             slot++;
             if (slot % 9 == 8) slot += 2; // skip the border
