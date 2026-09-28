@@ -9,7 +9,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -286,7 +287,7 @@ public class ChatFilterManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
+    public void onPlayerChat(AsyncChatEvent event) {
         if (!enabled) return;
 
         Player player = event.getPlayer();
@@ -294,7 +295,7 @@ public class ChatFilterManager implements Listener {
         // Skip if player has bypass permission
         if (player.hasPermission("ui.chat.filter.bypass")) return;
 
-        String message = event.getMessage();
+        String message = PlainTextComponentSerializer.plainText().serialize(event.message());
 
         for (int i = 0; i < compiledPatterns.size(); i++) {
             Pattern pattern = compiledPatterns.get(i);

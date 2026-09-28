@@ -7,6 +7,7 @@ import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlaceholderResolver;
 import com.ultimateimprovments.util.ConsoleLogger;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -17,7 +18,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -166,8 +166,9 @@ public class ChatManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
+    public void onPlayerChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
+        String messageText = PlainTextComponentSerializer.plainText().serialize(event.message());
 
         // MUTE CHECK — enforced even when the custom chat is disabled
         // (chat.enabled: false): previously it sat behind the enabled gate,
@@ -222,7 +223,7 @@ public class ChatManager implements Listener {
                 if (format == null || format.isEmpty()) format = staticFormat;
             } else {
                 event.setCancelled(true);
-                String cmd = event.getMessage().trim();
+                String cmd = messageText.trim();
                 if (!cmd.isEmpty()) {
                     AccessControl.Result r = consoleAccessControl.decide(cmd);
                     if (r.isAllowed()) {
@@ -257,7 +258,7 @@ public class ChatManager implements Listener {
                 if (format == null || format.isEmpty()) format = staticFormat;
             } else {
                 event.setCancelled(true);
-                String cmd = event.getMessage().trim();
+                String cmd = messageText.trim();
                 if (cmd.isEmpty()) return;
                 if (cmd.equalsIgnoreCase("^C")) {
                     HostTerminal.interrupt(player);
@@ -282,17 +283,17 @@ public class ChatManager implements Listener {
 
         // Chat-wide access control filters the message content in all normal
         // channels (console/linux are handled above on their command input).
-        AccessControl.Result chatResult = chatAccessControl.decide(event.getMessage());
+        AccessControl.Result chatResult = chatAccessControl.decide(messageText);
         if (!chatResult.isAllowed()) {
             event.setCancelled(true);
-            sendAccessDenied(player, event.getMessage(), chatResult);
+            sendAccessDenied(player, messageText, chatResult);
             return;
         }
 
         // PRIVATE channel renders with the same style as /msg
         // (sender sees "You » target", receiver sees "sender » You").
         if (channel == ChatChannel.PRIVATE) {
-            sendPrivateStyled(player, event.getMessage());
+            sendPrivateStyled(player, messageText);
             event.setCancelled(true);
             return;
         }
@@ -300,7 +301,7 @@ public class ChatManager implements Listener {
         if (format == null || format.isEmpty()) return;
 
         // Build message component
-        String rawMessage = event.getMessage();
+        String rawMessage = messageText;
         if (messagePlaceholders) {
             rawMessage = PlaceholderResolver.resolve(rawMessage, player);
         }
@@ -344,7 +345,7 @@ public class ChatManager implements Listener {
         event.setCancelled(true);
 
         // Determine recipients based on channel
-        java.util.Set<Player> recipients = event.getRecipients();
+        java.util.Set<Player> recipients = new java.util.LinkedHashSet<>(Bukkit.getOnlinePlayers());
         if (mode == Mode.CHANNELS && channel != null) {
             recipients = resolveChannelRecipients(player, channel);
         }

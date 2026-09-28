@@ -10,7 +10,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.sql.Connection;
@@ -474,14 +475,14 @@ public class ReportManager implements Listener {
      * Handles messages from players in moderation mode.
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
+    public void onPlayerChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
         ModerationSession session = modSessions.get(uuid);
         if (session == null) return;
 
         event.setCancelled(true);
-        String text = event.getMessage().trim();
+        String text = PlainTextComponentSerializer.plainText().serialize(event.message()).trim();
 
         if (text.equalsIgnoreCase("cancel")) {
             modSessions.remove(uuid);

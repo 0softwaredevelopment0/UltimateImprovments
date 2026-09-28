@@ -14,7 +14,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -426,7 +426,7 @@ public class OmniscannerGUI implements Listener {
     // ========================================================================
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onChat(AsyncPlayerChatEvent e) {
+    public void onChat(AsyncChatEvent e) {
         Player player = e.getPlayer();
         UUID uuid = player.getUniqueId();
         PendingInput pending = pendingInputs.get(uuid);
@@ -438,7 +438,8 @@ public class OmniscannerGUI implements Listener {
         // Remove from pending immediately so a repeated call can't process it again
         pendingInputs.remove(uuid);
 
-        String msg = e.getMessage().trim();
+        String msg = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+                .plainText().serialize(e.message()).trim();
 
         // Cancel
         if (msg.equalsIgnoreCase("отмена") || msg.equalsIgnoreCase("cancel")) {
