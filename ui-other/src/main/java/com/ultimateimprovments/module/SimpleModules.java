@@ -25,30 +25,6 @@ import com.ultimateimprovments.listener.PluginHideListener;
 import com.ultimateimprovments.listener.PowerInterceptListener;
 import com.ultimateimprovments.listener.ServerBrandListener;
 import com.ultimateimprovments.listener.ShulkerBulletListener;
-import com.ultimateimprovments.mechanics.crafting.AntimatterCraftListener;
-import com.ultimateimprovments.mechanics.crafting.BlazingSwordCraftListener;
-import com.ultimateimprovments.mechanics.crafting.ChunkLoaderCraftListener;
-import com.ultimateimprovments.mechanics.crafting.ElectricTridentCraftListener;
-import com.ultimateimprovments.mechanics.crafting.ConcreteBucketCraftListener;
-import com.ultimateimprovments.mechanics.crafting.EntityLocatorCraftListener;
-import com.ultimateimprovments.mechanics.crafting.GlassSwordCraftListener;
-import com.ultimateimprovments.mechanics.crafting.HealthMeterCraftListener;
-import com.ultimateimprovments.mechanics.crafting.HeavyCoreCraftListener;
-import com.ultimateimprovments.mechanics.crafting.HazmatCraftListener;
-import com.ultimateimprovments.mechanics.crafting.LeadIngotCraftListener;
-import com.ultimateimprovments.mechanics.crafting.MetalDetectorCraftListener;
-import com.ultimateimprovments.mechanics.crafting.MobFinderCraftListener;
-import com.ultimateimprovments.mechanics.crafting.MultimeterCraftListener;
-import com.ultimateimprovments.mechanics.crafting.OreFinderCraftListener;
-import com.ultimateimprovments.mechanics.crafting.ParticleEngineCraftListener;
-import com.ultimateimprovments.mechanics.crafting.ParticleInjectorCraftListener;
-import com.ultimateimprovments.mechanics.crafting.ParticleRingCraftListener;
-import com.ultimateimprovments.mechanics.crafting.ParticleSensorCraftListener;
-import com.ultimateimprovments.mechanics.crafting.PlasmaCannonCraftListener;
-import com.ultimateimprovments.mechanics.crafting.PortableRadarCraftListener;
-import com.ultimateimprovments.mechanics.crafting.RecipeRegistry;
-import com.ultimateimprovments.mechanics.crafting.ShokerCraftListener;
-import com.ultimateimprovments.mechanics.crafting.StructureIntegrityCraftListener;
 import com.ultimateimprovments.mechanics.environment.lightning.LightningManager;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetConfig;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetEventListener;
@@ -62,27 +38,13 @@ import com.ultimateimprovments.mechanics.features.blocks.EnderChestManager;
 import com.ultimateimprovments.mechanics.features.blocks.GlassBreakManager;
 import com.ultimateimprovments.mechanics.features.blocks.TerracotaSpeedManager;
 import com.ultimateimprovments.mechanics.features.creativeitem.CreativeItemValidator;
+import com.ultimateimprovments.mechanics.crafting.StructureIntegrityCraftListener;
 import com.ultimateimprovments.mechanics.features.integrity.IntegrityLoreCleanupListener;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.mechanics.features.integrity.LowDurabilityWarningListener;
 import com.ultimateimprovments.mechanics.features.integrity.PiercingListener;
-import com.ultimateimprovments.mechanics.features.items.ChestplateFlightListener;
-import com.ultimateimprovments.mechanics.features.items.ExpBottleUpgradeListener;
-import com.ultimateimprovments.mechanics.features.items.NetheriteUpgradeListener;
-import com.ultimateimprovments.mechanics.features.items.NotesManager;
-import com.ultimateimprovments.mechanics.features.items.TotemChargeListener;
-import com.ultimateimprovments.mechanics.features.items.UnbreakableBreakerManager;
-import com.ultimateimprovments.mechanics.features.scanner.MetalDetectorListener;
-import com.ultimateimprovments.mechanics.features.scanner.ScannerItemListener;
 import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityListener;
 import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityManager;
-import com.ultimateimprovments.mechanics.features.world.AntimatterManager;
-import com.ultimateimprovments.mechanics.features.world.ChunkLoaderItemListener;
-import com.ultimateimprovments.mechanics.features.world.ConcreteBucketManager;
-import com.ultimateimprovments.mechanics.features.world.EntityLocatorManager;
-import com.ultimateimprovments.mechanics.features.world.WaypointManager;
-import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
-import com.ultimateimprovments.mechanics.particle.ParticleMovementTask;
 import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
@@ -179,66 +141,6 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
     // CRAFTING (registered before Sudo)
     // --------------------------------------------------------------------------
-
-    public static void registerCrafting(ModuleManager mm) {
-        // Crafting (essential — crafting is a key plugin mechanic)
-        mm.register(new SimpleModule("Crafting", "mechanics/crafting", true) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-
-                MultimeterCraftListener.init();
-                PlasmaCannonCraftListener.init();
-                ShokerCraftListener.init();
-                BlazingSwordCraftListener.init();
-                GlassSwordCraftListener.init();
-                ElectricTridentCraftListener.init();
-                AntimatterCraftListener.init();
-                EntityLocatorCraftListener.init();
-                LeadIngotCraftListener.init();
-                HazmatCraftListener.init();
-                com.ultimateimprovments.mechanics.crafting.DosimeterCraftListener.init();
-                HealthMeterCraftListener.init();
-                OreFinderCraftListener.init();
-                MobFinderCraftListener.init();
-                PortableRadarCraftListener.init();
-                MetalDetectorCraftListener.init();
-                ConcreteBucketCraftListener.init();
-                ChunkLoaderCraftListener.init();
-                StructureIntegrityCraftListener.init();
-                HeavyCoreCraftListener.init();
-                RecipeRegistry.init();
-
-                // Register craft event listeners
-                var pm = main.getServer().getPluginManager();
-                pm.registerEvents(new MultimeterCraftListener(), main);
-                pm.registerEvents(new PlasmaCannonCraftListener(), main);
-                pm.registerEvents(new ShokerCraftListener(), main);
-                pm.registerEvents(new BlazingSwordCraftListener(), main);
-                pm.registerEvents(new GlassSwordCraftListener(), main);
-                pm.registerEvents(new ElectricTridentCraftListener(), main);
-                pm.registerEvents(new AntimatterCraftListener(), main);
-                pm.registerEvents(new EntityLocatorCraftListener(), main);
-                pm.registerEvents(new LeadIngotCraftListener(), main);
-                pm.registerEvents(new com.ultimateimprovments.mechanics.crafting.DosimeterCraftListener(), main);
-                pm.registerEvents(new HealthMeterCraftListener(), main);
-                pm.registerEvents(new OreFinderCraftListener(), main);
-                pm.registerEvents(new MobFinderCraftListener(), main);
-                pm.registerEvents(new PortableRadarCraftListener(), main);
-                pm.registerEvents(new MetalDetectorCraftListener(), main);
-                pm.registerEvents(new ScannerItemListener(), main);
-                pm.registerEvents(new MetalDetectorListener(), main);
-                pm.registerEvents(new ConcreteBucketCraftListener(), main);
-                pm.registerEvents(new ChunkLoaderCraftListener(), main);
-                pm.registerEvents(new ChunkLoaderItemListener(), main);
-                pm.registerEvents(new StructureIntegrityCraftListener(), main);
-                ConcreteBucketManager.init(main);
-
-                ConsoleLogger.info("[CraftingModule] ✔ Recipes initialized.");
-            }
-        });
-    }
-
     // --------------------------------------------------------------------------
     // MECHANICS
     // --------------------------------------------------------------------------
@@ -313,19 +215,6 @@ public final class SimpleModules {
                 BoostedCobwebManager.reloadConfig();
             }
         });
-        // EntityLocator
-        mm.register(new SimpleModule("EntityLocator", "mechanics/features/entity_locator", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                EntityLocatorManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                EntityLocatorManager.reloadConfig();
-            }
-        });
-
         // Magnet
         mm.register(new SimpleModule("Magnet", "mechanics/environment/magnet", false) {
             @Override
@@ -353,35 +242,6 @@ public final class SimpleModules {
                 TerracotaSpeedManager.reloadConfig();
             }
         });
-
-        // Waypoint
-        mm.register(new SimpleModule("Waypoint", "mechanics/features/waypoint", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                WaypointManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                WaypointManager.reloadConfig();
-            }
-        });
-
-        // ExpBottleUpgrade — charged experience bottles (anvil x1+x1→x2 etc.)
-        mm.register(new SimpleModule("ExpBottleUpgrade", "mechanics/features/exp_bottle", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                ExpBottleUpgradeListener.loadConfig(main);
-                main.getServer().getPluginManager().registerEvents(new ExpBottleUpgradeListener(), main);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                ExpBottleUpgradeListener.loadConfig((Main) plugin);
-            }
-        });
-
         // Durability (thin vanilla layer)
         mm.register(new SimpleModule("Integrity", "mechanics/features/integrity", false) {
             @Override
@@ -398,19 +258,6 @@ public final class SimpleModules {
                 ItemDurabilityUtil.reloadConfig();
             }
         });
-
-        // Antimatter
-        mm.register(new SimpleModule("Antimatter", "mechanics/features/antimatter", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                AntimatterManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                AntimatterManager.reloadConfig();
-            }
-        });
         // DeathLogger — records every player death to deaths.log + console (debug; off by default)
         mm.register(new SimpleModule("DeathLogger", "mechanics/features/death_logger", false) {
             @Override
@@ -421,24 +268,6 @@ public final class SimpleModules {
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
                 com.ultimateimprovments.listener.DeathLogger.reloadConfig();
-            }
-        });
-
-        // UnbreakableBreaker
-        mm.register(new SimpleModule("UnbreakableBreaker", "mechanics/features/unbreakable_breaker", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                UnbreakableBreakerManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                UnbreakableBreakerManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                UnbreakableBreakerManager.reloadConfig();
             }
         });
         // EnderChest
@@ -501,14 +330,6 @@ public final class SimpleModules {
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
                 ContainerTriggerManager.reloadConfig();
-            }
-        });
-
-        // Notes
-        mm.register(new SimpleModule("Notes", "mechanics/features/notes", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                NotesManager.init();
             }
         });
     }
@@ -625,47 +446,6 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
     // PARTICLE ACCELERATOR (registered before OmniscannerModule)
     // --------------------------------------------------------------------------
-
-    public static void registerParticle(ModuleManager mm) {
-        mm.register(new PluginModule("ParticleAccelerator", "mechanics/particle", false) {
-            private BukkitTask movementTask;
-
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-
-                ParticleAcceleratorManager.init(main);
-
-                // Movement task every tick
-                movementTask = new ParticleMovementTask().runTaskTimer(main, 20L, 1L);
-
-                // Register crafting recipes
-                ParticleRingCraftListener.init();
-                main.getServer().getPluginManager().registerEvents(new ParticleRingCraftListener(), main);
-
-                ParticleEngineCraftListener.init();
-                main.getServer().getPluginManager().registerEvents(new ParticleEngineCraftListener(), main);
-
-                ParticleSensorCraftListener.init();
-                main.getServer().getPluginManager().registerEvents(new ParticleSensorCraftListener(), main);
-
-                ParticleInjectorCraftListener.init();
-                main.getServer().getPluginManager().registerEvents(new ParticleInjectorCraftListener(), main);
-
-                ConsoleLogger.info("[ParticleModule] ✔ Particle accelerator system initialized.");
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                if (movementTask != null) {
-                    movementTask.cancel();
-                    movementTask = null;
-                }
-                ParticleAcceleratorManager.shutdown();
-            }
-        });
-    }
-
     // --------------------------------------------------------------------------
     // BACKGROUND
     // --------------------------------------------------------------------------
@@ -701,19 +481,6 @@ public final class SimpleModules {
         });
 
         // UpdateChecker is registered by the UI-Admin addon (AdminModules).
-
-        // Item enchant listeners (ChestplateFlight / NetheriteUpgrade / TotemCharge)
-        mm.register(new SimpleModule("ItemEnchantListeners", "mechanics/features/items", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                main.getServer().getPluginManager().registerEvents(new ChestplateFlightListener(), main);
-                main.getServer().getPluginManager().registerEvents(new NetheriteUpgradeListener(), main);
-                main.getServer().getPluginManager().registerEvents(new TotemChargeListener(), main);
-                TotemChargeListener.startPeriodicLoreCheck();
-            }
-        });
-
         // AutoBroadcast
         mm.register(new PluginModule("AutoBroadcast", "infrastructure/auto_broadcast", false) {
             @Override

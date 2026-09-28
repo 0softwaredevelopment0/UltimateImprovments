@@ -7,7 +7,7 @@ import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.mechanics.environment.lightning.LightningManager;
 import com.ultimateimprovments.mechanics.environment.magnet.MagnetManager;
-import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -73,7 +73,7 @@ public class StructureChunkListener implements Listener {
         LightManager.rebuildFromMarkers();
         LightningManager.rebuildFromMarkers();
         GeneratorManager.scanExistingGenerators();
-        ParticleAcceleratorManager.scanExistingAccelerators();
+        CoreHooks.scanParticleAccelerators();
         MagnetManager.rebuildFromMarkers();
     }
 }

@@ -148,15 +148,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── Spawn ──
 
         // ── Subcommands with additional logic ──
-        registry.register(LegacySubCommandAdapter.of("menu", (s, a) -> {
-            if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("ui.command.menu")) {
-                CommandErrors.noPermission(p);
-                return true;
-            }
-            com.ultimateimprovments.mechanics.features.omniscanner.AdminMenuGUI.open(p);
-            return true;
-        }));
+        // ── /ui menu is registered by the UI-Items addon ──
         registry.register(LegacySubCommandAdapter.of("suicide", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.suicide")) {

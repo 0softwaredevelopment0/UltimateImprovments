@@ -2,7 +2,6 @@ package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.SimpleModules;
-import com.ultimateimprovments.mechanics.features.omniscanner.OmniscannerModule;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,6 +35,9 @@ public class UIOther extends JavaPlugin {
         registerAllModules(mm);
         mm.initAll();
         com.ultimateimprovments.module.SimpleModules.initPostCoreSubsystems();
+        // UI-Items (chunk loader) splits exp bottles — the helper stays here in ui-other.
+        com.ultimateimprovments.core.hooks.CoreHooks.setExpBottleUser(
+                com.ultimateimprovments.command.subcommands.ExpSplitSubcommand::useBottle);
         initPostModuleSystems();
 
         // Report module statistics to the addon registry (fed to /ui addon status).
@@ -91,7 +93,6 @@ public class UIOther extends JavaPlugin {
         // general listeners that many other modules below depend on.
         SimpleModules.registerCoreModules(mm);
         SimpleModules.registerMechanics(mm);
-        SimpleModules.registerCrafting(mm);
         SimpleModules.registerFeatures(mm);
         SimpleModules.registerEconomy(mm);
         // Custom enchantments are registered by the UI-Enchant addon (EnchantModules).
@@ -101,9 +102,8 @@ public class UIOther extends JavaPlugin {
         SimpleModules.registerDisplay(mm);
         SimpleModules.registerMOTD(mm);
         SimpleModules.registerBackground(mm);
-        SimpleModules.registerParticle(mm);
-        mm.register(new OmniscannerModule());
         SimpleModules.registerStructureIntegrity(mm);
+        // Crafting, item tools, particle and omniscanner live in the UI-Items addon.
     }
 
     private void initPostModuleSystems() {

@@ -2,10 +2,12 @@ package com.ultimateimprovments.core.hooks;
 
 import com.ultimateimprovments.core.Main;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
 import java.util.UUID;
@@ -193,5 +195,97 @@ public final class CoreHooks {
     /** Grants the bedrock-break advancement to the player (no-op when absent). */
     public static void grantBedrockBreak(Player player) {
         if (player != null) bedrockBreakGranter.accept(player);
+    }
+
+    // ── Particle accelerator (installed by the items addon) ──────────────
+
+    /**
+     * Read-only view of the particle-accelerator manager, so ui-other tools
+     * (multimeter, structure chunk listener) do not depend on the items addon.
+     */
+    public interface ParticleAccelerator {
+        Material engineMaterial();
+        Material sensorMaterial();
+        double maxSpeed();
+        int getEngineEnergy(Location loc);
+        boolean canEngineAccelerate(Location loc);
+        double getSensorLastSpeed(Location loc);
+        void scanExistingAccelerators();
+    }
+
+    private static volatile ParticleAccelerator particleAccelerator;
+
+    /** Installed by the items addon at startup. Null disables every query. */
+    public static void setParticleAccelerator(ParticleAccelerator accelerator) {
+        particleAccelerator = accelerator;
+    }
+
+    public static boolean isParticleEngine(Material type) {
+        ParticleAccelerator pa = particleAccelerator;
+        return pa != null && type != null && type == pa.engineMaterial();
+    }
+
+    public static boolean isParticleSensor(Material type) {
+        ParticleAccelerator pa = particleAccelerator;
+        return pa != null && type != null && type == pa.sensorMaterial();
+    }
+
+    public static double particleMaxSpeed() {
+        ParticleAccelerator pa = particleAccelerator;
+        return pa != null ? pa.maxSpeed() : 1.0;
+    }
+
+    public static int particleEngineEnergy(Location loc) {
+        ParticleAccelerator pa = particleAccelerator;
+        return pa != null ? pa.getEngineEnergy(loc) : 0;
+    }
+
+    public static boolean particleCanEngineAccelerate(Location loc) {
+        ParticleAccelerator pa = particleAccelerator;
+        return pa != null && pa.canEngineAccelerate(loc);
+    }
+
+    public static double particleSensorLastSpeed(Location loc) {
+        ParticleAccelerator pa = particleAccelerator;
+        return pa != null ? pa.getSensorLastSpeed(loc) : 0.0;
+    }
+
+    public static void scanParticleAccelerators() {
+        ParticleAccelerator pa = particleAccelerator;
+        if (pa != null) pa.scanExistingAccelerators();
+    }
+
+    // ── Notes GUI (installed by the items addon) ─────────────────────────
+
+    private static volatile Consumer<Player> notesOpener = p -> {};
+
+    /** Installed by the items addon. */
+    public static void setNotesOpener(Consumer<Player> opener) {
+        notesOpener = opener != null ? opener : p -> {};
+    }
+
+    /** Opens the notes GUI for the player (no-op when the items addon is absent). */
+    public static void openNotesGui(Player player) {
+        if (player != null) notesOpener.accept(player);
+    }
+
+    // ── Exp-bottle split (installed by ui-other) ─────────────────────────
+
+    /** Returns true when the item was an exp bottle and its charge was applied. */
+    public interface ExpBottleUser {
+        boolean useBottle(Player player, ItemStack item);
+    }
+
+    private static volatile ExpBottleUser expBottleUser;
+
+    /** Installed by ui-other (owns {@code ExpSplitSubcommand}). */
+    public static void setExpBottleUser(ExpBottleUser user) {
+        expBottleUser = user;
+    }
+
+    /** No-op returning false when the feature is absent. */
+    public static boolean useExpBottle(Player player, ItemStack item) {
+        ExpBottleUser u = expBottleUser;
+        return u != null && u.useBottle(player, item);
     }
 }

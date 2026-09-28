@@ -3,7 +3,7 @@ package com.ultimateimprovments.listener;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.energy.transfer.cable.*;
-import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.LocationUtil;
 import com.ultimateimprovments.util.Materials;
@@ -68,10 +68,10 @@ public class MultimeterListener implements Listener {
         // =========================
         // ⚡ ACCELERATOR ENGINE (TUFF_BRICKS)
         // =========================
-        if (type == ParticleAcceleratorManager.ENGINE && StructureMarker.existsAt(LocationUtil.normalize(block.getLocation()))) {
+        if (CoreHooks.isParticleEngine(type) && StructureMarker.existsAt(LocationUtil.normalize(block.getLocation()))) {
             Location loc = LocationUtil.normalize(block.getLocation());
-            int energy = ParticleAcceleratorManager.getEngineEnergy(loc);
-            boolean canAccel = ParticleAcceleratorManager.canEngineAccelerate(loc);
+            int energy = CoreHooks.particleEngineEnergy(loc);
+            boolean canAccel = CoreHooks.particleCanEngineAccelerate(loc);
             boolean hasRedstone = block.isBlockPowered() || block.isBlockIndirectlyPowered();
 
             player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
@@ -86,10 +86,10 @@ public class MultimeterListener implements Listener {
         // =========================
         // ⚡ SPEED SENSOR (POLISHED_DIORITE)
         // =========================
-        if (type == ParticleAcceleratorManager.SENSOR && StructureMarker.existsAt(LocationUtil.normalize(block.getLocation()))) {
+        if (CoreHooks.isParticleSensor(type) && StructureMarker.existsAt(LocationUtil.normalize(block.getLocation()))) {
             Location loc = LocationUtil.normalize(block.getLocation());
-            double lastSpeed = ParticleAcceleratorManager.getSensorLastSpeed(loc);
-            double speedPct = (lastSpeed / ParticleAcceleratorManager.MAX_SPEED) * 100.0;
+            double lastSpeed = CoreHooks.particleSensorLastSpeed(loc);
+            double speedPct = (lastSpeed / CoreHooks.particleMaxSpeed()) * 100.0;
 
             player.sendMessage(MessageUtil.parse("<gold>=== MULTIMETER ===</gold>"));
             player.sendMessage(MessageUtil.parse("<aqua>Type: </aqua><white>Датчик скорости</white>"));

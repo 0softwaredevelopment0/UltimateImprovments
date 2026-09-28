@@ -1,6 +1,6 @@
 package com.ultimateimprovments.mechanics.features.world;
 
-import com.ultimateimprovments.command.subcommands.ExpSplitSubcommand;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.structure.StructureChunkTracker;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -52,7 +52,7 @@ public class ChunkLoaderItemListener implements Listener {
             return;
         }
 
-        if (ExpSplitSubcommand.useBottle(player, item)) {
+        if (CoreHooks.useExpBottle(player, item)) {
             e.setCancelled(true);
         }
     }
