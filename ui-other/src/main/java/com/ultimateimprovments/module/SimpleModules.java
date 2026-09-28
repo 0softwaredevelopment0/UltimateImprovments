@@ -9,9 +9,6 @@ import com.ultimateimprovments.core.TaskManager;
 import com.ultimateimprovments.database.AsyncAutoSaveManager;
 import com.ultimateimprovments.database.DatabaseInit;
 import com.ultimateimprovments.database.DatabaseManager;
-import com.ultimateimprovments.display.BossBarManager;
-import com.ultimateimprovments.display.ScoreboardManager;
-import com.ultimateimprovments.display.TabManager;
 import com.ultimateimprovments.economy.EconomyManager;
 import com.ultimateimprovments.economy.EconomyPlaceholderExpansion;
 import com.ultimateimprovments.economy.VaultIntegration;
@@ -979,59 +976,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerDisplay(ModuleManager mm) {
-        // Tab
-        mm.register(new PluginModule("Tab", "tab", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                TabManager.init();
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                TabManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                TabManager.reload();
-            }
-        });
-
-        // Scoreboard
-        mm.register(new PluginModule("Scoreboard", "scoreboard", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                ScoreboardManager.init();
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                ScoreboardManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                ScoreboardManager.reload();
-            }
-        });
-
-        // BossBar
-        mm.register(new PluginModule("BossBar", "infrastructure/bossbar", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                BossBarManager.init();
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                BossBarManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                BossBarManager.reload();
-            }
-        });
+        // Tab / Scoreboard / BossBar are registered by the UI-Display addon (DisplayModules).
     }
 
     // --------------------------------------------------------------------------

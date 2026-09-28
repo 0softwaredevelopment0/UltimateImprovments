@@ -28,6 +28,7 @@ public final class CoreHooks {
     }
 
     private static volatile Predicate<UUID> pendingAuth = id -> false;
+    private static volatile Predicate<UUID> vanished = id -> false;
     private static volatile BlockBreakCounter blockBreakCounter;
 
     /** Ore → replacement block left behind when an ore is mined. */
@@ -67,6 +68,16 @@ public final class CoreHooks {
     /** @return true while the player is frozen awaiting authentication. */
     public static boolean isPendingAuth(UUID playerId) {
         return playerId != null && pendingAuth.test(playerId);
+    }
+
+    /** Installed by the vanish feature. Null resets to "nobody vanished". */
+    public static void setVanishedPredicate(Predicate<UUID> predicate) {
+        vanished = predicate != null ? predicate : id -> false;
+    }
+
+    /** @return true while the player is hidden (vanish). */
+    public static boolean isVanished(UUID playerId) {
+        return playerId != null && vanished.test(playerId);
     }
 
     // ── Block-break counters (timed challenges) ──────────────────────────

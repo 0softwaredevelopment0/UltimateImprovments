@@ -1,0 +1,103 @@
+# UI-Display — tab list, scoreboard, boss bar.
+#
+# Active language follows messages.lang.
+[tab]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 20
+update_interval_ticks = 20
+# Default: true
+hide_spectators = true
+# Default: ["<gradient:#00AAFF:#FF55FF>  ✦ UltimateImprovments ✦  </gradient>", "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"]
+header = ["<gradient:#00AAFF:#FF55FF>  ✦ UltimateImprovments ✦  </gradient>", "<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>"]
+# Default: ["<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>", "<gray>  Online: <white>%online%</white><gray>/%max_players%  •  TPS: <white>%tps%</white></gray>", "<gray>  Discord: <aqua>discord.gg/ultimateimprovments</aqua></gray>"]
+footer = ["<dark_gray>  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  </dark_gray>", "<gray>  Online: <white>%online%</white><gray>/%max_players%  •  TPS: <white>%tps%</white></gray>", "<gray>  Discord: <aqua>discord.gg/ultimateimprovments</aqua></gray>"]
+
+# player list section.
+
+[tab.player_list]
+# Master switch (true = feature on).
+# Default: true
+objective_enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 0
+update_interval_ticks = 0
+# Format string (MiniMessage).
+# Default: ""
+format = ""
+# Default: ""
+objective_prefix = ""
+# Default: " <dark_gray>[</dark_gray>%player_ping_color%%player_ping%<dark_gray>ms] </dark_gray>"
+objective_suffix = " <dark_gray>[</dark_gray>%player_ping_color%%player_ping%<dark_gray>ms] </dark_gray>"
+
+# sort section.
+
+[tab.sort]
+# Default: "none"
+mode = "none"
+
+# Sidebar scoreboard (stats display).
+
+[scoreboard]
+# Master switch: show the sidebar scoreboard.
+# Default: true
+enabled = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 20
+update_interval_ticks = 20
+
+# boards section.
+
+[scoreboard.boards]
+
+# default section.
+
+[scoreboard.boards.default]
+# Title text (MiniMessage).
+# Default: "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient>"
+title = "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient>"
+# Default: ["", "<gray>Online: <white>%online%</white><gray>/%max_players%</gray>", "<gray>TPS: <white>%tps%</white></gray>", "", "<gray>Your ping: <white>%player_ping%ms</white></gray>", "<gray>World: <white>%world_name%</white></gray>", "", "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"]
+lines = ["", "<gray>Online: <white>%online%</white><gray>/%max_players%</gray>", "<gray>TPS: <white>%tps%</white></gray>", "", "<gray>Your ping: <white>%player_ping%ms</white></gray>", "<gray>World: <white>%world_name%</white></gray>", "", "<dark_gray>discord.gg/ultimateimprovments</dark_gray>"]
+
+# condition section.
+
+[scoreboard.boards.default.condition]
+# Default: "always"
+type = "always"
+# World name.
+# Default: []
+worlds = []
+# Permission node.
+# Default: ""
+permission = ""
+
+# Server boss bar shown to all players.
+
+[bossbar]
+# Master switch: show the server boss bar.
+# Default: true
+enabled = true
+# Format string (MiniMessage).
+# Default: "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient> <dark_gray>|</dark_gray> <gray>O…"
+format = "<gradient:#00AAFF:#FF55FF>UltimateImprovments</gradient> <dark_gray>|</dark_gray> <gray>Online: <white>%online%</white></gray>"
+# Color.
+# Default: "YELLOW"
+color = "YELLOW"
+# Default: "SOLID"
+style = "SOLID"
+# Default: "increase_decrease"
+progress_mode = "increase_decrease"
+# Default: 0.5
+static_value = 0.5
+# Speed.
+# Default: 0.01
+progress_speed = 0.01
+# Default: true
+progress_increasing = true
+# Interval in ticks (20 ticks = 1 second).
+# Default: 20
+update_interval_ticks = 20
+
+# Wireless redstone transmitters/receivers.

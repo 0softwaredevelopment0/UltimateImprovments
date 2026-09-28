@@ -4,7 +4,7 @@ import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.database.PlayerSettingsDB;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.util.PlaceholderResolver;
-import com.ultimateimprovments.mechanics.features.player.VanishManager;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import net.kyori.adventure.text.Component;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
@@ -367,7 +367,7 @@ public class TabManager extends BukkitRunnable implements Listener {
         // make the client re-add the vanished to the tab list
         List<UUID> vanishedUuids = new ArrayList<>();
         for (Player p : Bukkit.getOnlinePlayers()) {
-            if (p != null && VanishManager.isVanished(p.getUniqueId())) {
+            if (p != null && CoreHooks.isVanished(p.getUniqueId())) {
                 vanishedUuids.add(p.getUniqueId());
             }
         }

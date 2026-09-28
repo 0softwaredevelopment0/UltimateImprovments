@@ -50,13 +50,15 @@ public final class AddonCatalog {
         route("UI-Auth", "auth");
         // ── UI-Protection ──
         route("UI-Protection", "protection", "void_protection");
+        // ── UI-Display ──
+        route("UI-Display", "tab", "scoreboard", "bossbar");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
                 "features", "brand_spoof", "vanish", "sunburn", "armor_effects", "armor_trim_effects", "netherite_upgrade",
                 "death_logger", "power", "suicide",
                 "packet_guard", "proxy_server", "redstone_guard", "emergency_entity_kill",
                 "server_overload_warning", "bot_protection", "changedimmension", "motd",
-                "tab", "scoreboard", "bossbar", "wireless_redstone",
+                "wireless_redstone",
                 "structure_integrity", "economy", "meteor",
                 "particle_accelerator", "block_friction", "codepanel");
     }
@@ -79,9 +81,10 @@ public final class AddonCatalog {
         routeMsg("UI-Enchant", "enchant");
         routeMsg("UI-Auth", "auth");
         routeMsg("UI-Protection", "protection");
+        routeMsg("UI-Display", "tab", "scoreboard", "bossbar");
         routeMsg("UI-Other", "check", "packet_guard", "bot_protection", "sudo",
-                "codepanel", "changedimmension", "motd", "tab", "scoreboard",
-                "bossbar", "vanish", "suicide", "economy", "notes", "power", "death_logger",
+                "codepanel", "changedimmension", "motd",
+                "vanish", "suicide", "economy", "notes", "power", "death_logger",
                 "structures", "meteor", "space", "wireless_redstone",
                 "structure_integrity");
     }
@@ -126,6 +129,6 @@ public final class AddonCatalog {
                 CORE,
                 "UI-Shared", "UI-MBS", "UI-Datapack", "UI-Chat", "UI-Clans",
                 "UI-Combat", "UI-Punish", "UI-Essentials", "UI-Energy",
-                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Other");
+                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Other");
     }
 }

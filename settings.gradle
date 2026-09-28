@@ -15,5 +15,6 @@ include(
     'ui-enchant',
     'ui-auth',
     'ui-protection',
+    'ui-display',
     'ui-other'
 )
