@@ -227,12 +227,10 @@ public class OmniscannerGUI implements Listener {
 
     private static ItemStack createDivider() {
         ItemStack item = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
+        item.editMeta(meta -> {
             meta.displayName(Component.text(" "));
             meta.getPersistentDataContainer().set(Keys.GUI_PROTECTED, PersistentDataType.BYTE, (byte) 1);
-            item.setItemMeta(meta);
-        }
+        });
         return item;
     }
 

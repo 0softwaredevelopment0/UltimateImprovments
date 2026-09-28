@@ -227,13 +227,11 @@ public final class ProtectionGUI {
     // =========================
     private static ItemStack deco(Material material, String name) {
         ItemStack stack = new ItemStack(material);
-        ItemMeta meta = stack.getItemMeta();
-        if (meta != null) {
+        stack.editMeta(meta -> {
             meta.displayName(MM.deserialize(name));
             meta.getPersistentDataContainer().set(
                     Keys.PROTECTION_GUI, PersistentDataType.STRING, "deco");
-            stack.setItemMeta(meta);
-        }
+        });
         return stack;
     }
 
