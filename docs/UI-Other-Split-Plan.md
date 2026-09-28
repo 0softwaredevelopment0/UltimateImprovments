@@ -1,22 +1,23 @@
 # UI-Other Split Plan (9 addons)
 
 > Internal working plan for decomposing `ui-other` into 9 separate addon JARs.
-> Status: **Phase 2 done** (UI-Enchant, UI-Auth extracted). One family version (see AGENTS.md).
-> Keep this file updated as phases complete; delete it when `ui-other` is gone.
+> Status: **Phases 0-2 + 3a done** (UI-Enchant, UI-Auth, UI-Protection extracted).
+> One family version (see AGENTS.md). Update as phases complete; delete when `ui-other` is gone.
 >
 > **Progress**
 > - 2026-09-28 — Phase 0: integrity → ui-shared; `CoreHooks`; enchant decoupled. Green.
-> - 2026-09-28 — Phase 1: **UI-Enchant** extracted (module + `enchantment/**` +
->   `EnchantSubcommand` + `EnchantModules` + `config/UI-Enchant.toml`; `SimpleModule`
->   hoisted to public ui-core). Green, JAR produced.
-> - 2026-09-28 — Phase 2: **UI-Auth** extracted (module + `mechanics/security/auth/**`
->   + `AuthSubcommand` + `AuthModules` + `config/UI-Auth.toml`; `AskCordsManager.cleanup`
->   moved to ui-other's `PlayerQuitCleanupListener` so auth no longer imports ui-other).
->   Green, JAR produced.
-> - Next: **Phase 3 — UI-World + UI-Items** (the big one). Must first classify each
->   `mechanics/features/world/*` file as "world mechanic" vs "custom item" (crafting
->   listeners depend on the item managers); resolve the crafting↔items hotspot before
->   splitting. Then UI-Player, UI-Protection, UI-Display, UI-Guard, UI-Admin.
+> - 2026-09-28 — Phase 1: **UI-Enchant** (`428d95f5`). Phase 2: **UI-Auth** (`bc8f4d2c`).
+> - 2026-09-28 — Phase 3a: **UI-Protection** (`063d8b03`) — `mechanics/protection/**`,
+>   `ProtectionSubcommand`, `VoidProtectionListener` (package → `…mechanics.protection`),
+>   `ProtectionModule`, `config/UI-Protection.toml`; routes `protection`/`void_protection`.
+> - Next: **Phase 3b — UI-World + UI-Items** (classify `features/world/*` into world vs
+>   custom-item managers; crafting listeners depend on those). Then UI-Player,
+>   UI-Display, UI-Guard, UI-Admin. Notes:
+>   - `RecipeRegistry` already lives in ui-shared (crafting is not a blocker).
+>   - `VanishManager` is referenced by `TabManager` (display) and `MiscSubcommand`
+>     (command) → hoist to ui-core or add a hook before extracting UI-Player.
+>   - `StructureIntegrityManager` is referenced by `MultimeterListener` / `EnderChestManager`
+>     (scanner/items) → keep with UI-Items (or hoist).
 
 ## 1. Current state (metrics, 2026-09-28)
 
