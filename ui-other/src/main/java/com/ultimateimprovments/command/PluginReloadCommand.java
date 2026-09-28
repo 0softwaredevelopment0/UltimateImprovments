@@ -129,8 +129,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("meteor", MeteorSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("plugin", PluginSubcommand::execute,
                 tc((s, a) -> PluginSubcommand.tabComplete(s, a))));
-        registry.register(LegacySubCommandAdapter.of("redstone", RedstoneSubcommand::execute,
-                tc((s, a) -> RedstoneSubcommand.tabComplete(a))));
+        // ── /ui redstone is registered by the UI-Guard addon ──
         registry.register(LegacySubCommandAdapter.of("repstatus",
                 (s, a) -> { RepStatusSubcommand.execute(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("check", CheckSubcommand::execute));

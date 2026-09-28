@@ -748,104 +748,6 @@ color = "RED"
 style = "SOLID"
 
 # Rejects illegal/oversized packets from clients.
-[packet_guard]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Permission node.
-# Default: "ui.packetguard.bypass"
-bypass_permission = "ui.packetguard.bypass"
-# Maximum value.
-# Default: 7000000
-max_packet_size = 7000000
-# Default: true
-log = true
-# Default: false
-log_inject = false
-
-# Proxy-related settings (forwarding, IP handling).
-[proxy_server]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Command.
-# Default: true
-log_commands = true
-# Message text (MiniMessage).
-# Default: "<red>❌ You don't have permission to switch servers!</red>"
-no_permission_message = "<red>❌ You don't have permission to switch servers!</red>"
-
-# Redstone lag protection (limits per area/time).
-[redstone_guard]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Default: 50.0
-mspt_threshold = 50.0
-# Limit.
-# Default: 10
-chunk_iterations_limit = 10
-
-# Emergency cleanup of excessive entities.
-[emergency_entity_kill]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Limit.
-# Default: 1000
-entity_limit = 1000
-# Default: 50.0
-mspt_threshold = 50.0
-# World name.
-# Default: []
-kill_worlds = []
-# Default: true
-log = true
-# Default: false
-broadcast_to_all = false
-# Cooldown.
-# Default: 30000
-notification_cooldown_ms = 30000
-
-# Warns staff when the server is overloaded (TPS drop).
-[server_overload_warning]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Default: 40.0
-high_mspt = 40.0
-# Default: 50.0
-critical_mspt = 50.0
-# Cooldown.
-# Default: 30
-notify_cooldown_seconds = 30
-
-# Blocks bot-like joins/behaviour.
-[bot_protection]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Cooldown.
-# Default: 3
-rejoin_cooldown_seconds = 3
-# Duration.
-# Default: 10
-priority_session_duration = 10
-
-# queue section.
-[bot_protection.queue]
-# Maximum value.
-# Default: 2
-max_joins_per_window = 2
-# Default: 1
-window_seconds = 1
-# Default: true
-notify_ops = true
-# Maximum value.
-# Default: 5
-priority_max_joins_per_window = 5
-
-# /ui chgdim world switching: cooldowns and permissions.
 [changedimmension]
 # World name.
 # Default: "pocketworld"
@@ -1345,24 +1247,6 @@ format = "<red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</ye
 text = "<red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>seconds</red>"
 
 # packet guard section.
-[messages.packet_guard]
-# Message text (MiniMessage).
-# Default: <dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>
-kick_message = "<dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>"
-
-# bot protection section.
-# Placeholders: %count%, %seconds%
-[messages.bot_protection]
-# Default: <red>❌ Server overloaded! You are in queue: position
-queue_full = "<red>❌ Server overloaded! You are in queue: position"
-# Default: <yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>player(s) tried to connect in</re…
-queue_notify_op = "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>player(s) tried to connect in</red> <yellow>%seconds%s</yellow><red>. Queue enabled.</red>"
-# Cooldown.
-# Default: <red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>
-rejoin_cooldown = "<red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>"
-
-# meteor section.
-# Placeholders: %sub%, %count%
 [messages.meteor]
 # Default: <red>❌ Usage: </red><white>/ui meteor spawn [count]</white>
 usage = "<red>❌ Usage: </red><white>/ui meteor spawn [count]</white>"
@@ -2305,18 +2189,3 @@ text = "<red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>second
 # packet guard section.
 # enchant section.
 # Item Stealing action-bar feedback (en).
-[messages_en.packet_guard]
-# Message text (MiniMessage).
-# Default: <dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>
-kick_message = "<dark_red>❌</dark_red> <red>Packet too large!</red>\\n<gray>Please reconnect to the server.</gray>"
-
-# bot protection section.
-# Placeholders: %count%, %seconds%
-[messages_en.bot_protection]
-# Default: <red>❌ Server is overloaded! You are in queue: position
-queue_full = "<red>❌ Server is overloaded! You are in queue: position"
-# Default: <yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>players attempted to join within<…
-queue_notify_op = "<yellow>⚠</yellow> <red>Bot protection:</red> <yellow>%count%</yellow> <red>players attempted to join within</red> <yellow>%seconds%s</yellow><red>. Queue enabled.</red>"
-# Cooldown.
-# Default: <red>❌ You left too recently! Please wait</red> <yellow>%seconds%</yellow> <red>seconds before reconnecting.<…
-rejoin_cooldown = "<red>❌ You left too recently! Please wait</red> <yellow>%seconds%</yellow> <red>seconds before reconnecting.</red>"

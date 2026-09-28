@@ -18,5 +18,6 @@ include(
     'ui-display',
     'ui-admin',
     'ui-player',
+    'ui-guard',
     'ui-other'
 )
