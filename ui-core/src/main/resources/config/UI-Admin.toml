@@ -1,0 +1,65 @@
+# UI-Admin — economy, op management, updater.
+#
+# Active language follows messages.lang.
+[economy]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Default: 100.0
+default_balance = 100.0
+# Default: "coins"
+primary_currency = "coins"
+
+# income section.
+
+[economy.income]
+# Master switch (true = feature on).
+# Default: false
+enabled = false
+
+# blocks section.
+
+[economy.income.blocks]
+
+# mobs section.
+
+[economy.income.mobs]
+
+# Custom enchantments: global parameters.
+
+[messages.economy]
+# Message text (MiniMessage).
+# Default: <gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>
+forced_message_body = "<gray>Player </gray><white>%sender%</white><gray> is force-suiciding you.</gray>"
+# Message text (MiniMessage).
+# Default: <red>Cannot be cancelled!</red>
+forced_message_nocancel = "<red>Cannot be cancelled!</red>"
+
+# messages section.
+# Placeholders: %amount%, %player%, %currency%, %balance%
+
+[messages.economy.messages]
+# Default: <green>+</green> <yellow>%amount%</yellow> <white>received!</white>
+received = "<green>+</green> <yellow>%amount%</yellow> <white>received!</white>"
+# Default: <green>✔</green> <white>Gave </white><yellow>%amount%</yellow> <white>to </white><yellow>%player%</yellow>
+gave = "<green>✔</green> <white>Gave </white><yellow>%amount%</yellow> <white>to </white><yellow>%player%</yellow>"
+# Default: <green>✔</green> <white>Removed </white><yellow>%amount%</yellow> <white>from </white><yellow>%player%</yello…
+removed = "<green>✔</green> <white>Removed </white><yellow>%amount%</yellow> <white>from </white><yellow>%player%</yellow>"
+# Default: <green>✔</green> <white>Set </white><yellow>%player%</yellow><white>'s </white><gold>%currency%</gold> <white…
+set = "<green>✔</green> <white>Set </white><yellow>%player%</yellow><white>'s </white><gold>%currency%</gold> <white>balance to </white><yellow>%amount%</yellow>"
+# Default: <red>❌ </red><yellow>%player%</yellow> <red>only has </red><gold>%balance%</gold>
+insufficient_funds = "<red>❌ </red><yellow>%player%</yellow> <red>only has </red><gold>%balance%</gold>"
+# Default: <gray>No balances found.</gray>
+no_balances = "<gray>No balances found.</gray>"
+# Default: <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>
+balance_header = "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+# Title text (MiniMessage).
+# Default:   <gold>💰</gold> <yellow>%player%</yellow> <gray>— Balances</gray>
+balance_title = "  <gold>💰</gold> <yellow>%player%</yellow> <gray>— Balances</gray>"
+# Default:   <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>
+balance_separator = "  <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"
+# Default:   <gray>•</gray> <white>%currency%</white><gray>: </gray><gold>%amount%</gold>
+balance_entry = "  <gray>•</gray> <white>%currency%</white><gray>: </gray><gold>%amount%</gold>"
+
+# suicide section.
+# Placeholders: %sender%, %target%

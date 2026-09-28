@@ -16,5 +16,6 @@ include(
     'ui-auth',
     'ui-protection',
     'ui-display',
+    'ui-admin',
     'ui-other'
 )
