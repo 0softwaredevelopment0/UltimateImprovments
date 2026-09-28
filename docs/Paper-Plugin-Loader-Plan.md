@@ -2,7 +2,8 @@
 
 > Migrate the whole UltimateImprovments family from the legacy Bukkit/Spigot
 > `plugin.yml` to Paper's plugin loader (`paper-plugin.yml`). One family version.
-> Status: **in progress**. Delete when done.
+> Status: **IMPLEMENTED** (`a63dd9d3`); runtime needs in-game verification.
+> Delete when confirmed.
 
 ## Why
 
@@ -90,6 +91,9 @@ graph is acyclic.
   dependencies, so load order + join should work; verify PAPI expansion + Vault economy.
 - The root `src/main/resources/plugin.yml` (old monolithic "UltimateImprovments") is
   not built by `settings.gradle`; leave it untouched.
+- `load: STARTUP` (UI-Core/UI-Datapack/UI-MBS) was dropped — `paper-plugin.yml` has no
+  such key; load order is expressed via dependencies. If UI-Datapack must install the
+  datapack BEFORE worlds load, add a `bootstrapper:` later.
 
 ## Rollback
 
