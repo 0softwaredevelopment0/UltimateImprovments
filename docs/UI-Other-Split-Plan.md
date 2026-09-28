@@ -93,6 +93,16 @@ These are used across the target boundaries. Hoist to `ui-core`/`ui-shared` firs
 - **UIOther.onEnable/initPostModuleSystems**: references `space.*` (UI-Shared), `op`,
   `maintenance`, `structure`, dialog handlers, check/auth/codepanel/sudo. Split this
   bootstrap method per addon; keep shared wiring in core.
+- **Command registration (found during Phase 1 prep)**: `EnchantSubcommand` is NOT a
+  `SubCommand` — it is a static utility registered manually in
+  `ui-other/.../command/PluginReloadCommand.java` (line ~286) via
+  `LegacySubCommandAdapter.of("enchant", EnchantSubcommand::execute, …)`. Phase 1 must
+  move that registration into the UI-Enchant bootstrap (its own adapter) and drop it
+  from `PluginReloadCommand`.
+  `CommandErrors` (`com.ultimateimprovments.command.CommandErrors`) already lives in
+  **ui-core** — fine. `CommandScanner`/`CommandRegistrar`/`ClassScanner` still live in
+  `ui-other/core`; hoist them to ui-core if addons should self-scan, otherwise register
+  each addon's commands manually in its bootstrap (simpler, chosen for Phase 1).
 - **SimpleModules**: split into per-addon registrars (`EnchantModules`, `WorldModules`, …).
   Keep only truly cross-cutting registration in `SimpleModules` (or delete it).
 
