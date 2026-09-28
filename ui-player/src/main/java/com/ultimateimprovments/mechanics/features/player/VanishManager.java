@@ -275,7 +275,7 @@ public class VanishManager implements Listener {
         // Hide from all online players (entity)
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.getUniqueId().equals(player.getUniqueId())) continue;
-            online.hidePlayer(Main.getInstance(), player);
+            online.hideEntity(Main.getInstance(), player);
         }
         // Remove from the tab list (via packet)
         removeFromTabList(player);
@@ -287,7 +287,7 @@ public class VanishManager implements Listener {
         // Show to all online players (entity)
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.getUniqueId().equals(player.getUniqueId())) continue;
-            online.showPlayer(Main.getInstance(), player);
+            online.showEntity(Main.getInstance(), player);
         }
         // Return to the tab list (via packet)
         addToTabList(player);
@@ -303,7 +303,7 @@ public class VanishManager implements Listener {
         // Hide this vanished player from all others
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.getUniqueId().equals(player.getUniqueId())) continue;
-            online.hidePlayer(Main.getInstance(), player);
+            online.hideEntity(Main.getInstance(), player);
         }
         // Remove from all other players' tab lists
         removeFromTabList(player);
@@ -322,7 +322,7 @@ public class VanishManager implements Listener {
             Player vanishedOnline = Bukkit.getPlayer(vanishedUuid);
             if (vanishedOnline != null && vanishedOnline.isOnline()) {
                 // Hide the entity
-                player.hidePlayer(Main.getInstance(), vanishedOnline);
+                player.hideEntity(Main.getInstance(), vanishedOnline);
             }
         }
         // Remove the vanished from the player's tab list

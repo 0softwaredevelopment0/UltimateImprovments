@@ -25,8 +25,8 @@ public class VersionCheckModule extends PluginModule {
 
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {
-        String pluginVersion = plugin.getDescription().getVersion();
-        String apiVersion = plugin.getDescription().getAPIVersion();
+        String pluginVersion = plugin.getPluginMeta().getVersion();
+        String apiVersion = plugin.getPluginMeta().getAPIVersion();
         String serverVersion = Bukkit.getVersion();
         String bukkitVersion = Bukkit.getBukkitVersion();
         String serverName = Bukkit.getServer().getName();

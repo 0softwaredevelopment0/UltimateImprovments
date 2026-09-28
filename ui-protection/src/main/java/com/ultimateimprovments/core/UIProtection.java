@@ -32,7 +32,7 @@ public class UIProtection extends JavaPlugin {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Protection v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Protection v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         ModuleManager mm = ModuleManager.getInstance();

@@ -125,7 +125,7 @@ public class UpdateChecker {
         // ════════════════════════════════════════
         // 1. Plugin's current version (from plugin.yml)
         // ════════════════════════════════════════
-        String currentVersion = plugin.getDescription().getVersion();
+        String currentVersion = plugin.getPluginMeta().getVersion();
         String storedVersion = getStoredTag();  // stores the version of the last installed jar
         ConsoleLogger.info("[Updater] Current version: " + currentVersion);
         ConsoleLogger.info("[Updater] Last installed jar: "
@@ -431,7 +431,7 @@ public class UpdateChecker {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                String currentVersion = plugin.getDescription().getVersion();
+                String currentVersion = plugin.getPluginMeta().getVersion();
                 String storedVersion = getStoredTag();
 
                 // Step 1: get the latest jar from build/libs/
@@ -673,7 +673,7 @@ public class UpdateChecker {
 
                 // Downloading the JAR
                 File tempFile = new File(pluginDir,
-                        plugin.getDescription().getName() + ".jar.update");
+                        plugin.getPluginMeta().getName() + ".jar.update");
 
                 HttpClient client = HttpClient.newHttpClient();
                 HttpRequest downloadRequest = HttpRequest.newBuilder()

@@ -39,7 +39,7 @@ public class UIMBS extends JavaPlugin {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-MBS v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-MBS v" + getPluginMeta().getVersion());
         ConsoleLogger.info("  Multi-Block Structures");
         ConsoleLogger.info("===========================================");
 

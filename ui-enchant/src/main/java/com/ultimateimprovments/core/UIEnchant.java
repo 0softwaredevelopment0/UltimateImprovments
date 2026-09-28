@@ -33,7 +33,7 @@ public class UIEnchant extends JavaPlugin {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Enchant v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Enchant v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         ModuleManager mm = ModuleManager.getInstance();

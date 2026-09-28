@@ -21,7 +21,7 @@ public class UIChat extends JavaPlugin {
         // UI-Chat does not ship its own config.yml.
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Chat v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Chat v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         Main main = Main.getInstance();

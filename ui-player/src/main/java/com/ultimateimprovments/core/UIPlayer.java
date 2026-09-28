@@ -28,7 +28,7 @@ public class UIPlayer extends JavaPlugin {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Player v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Player v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         ModuleManager mm = ModuleManager.getInstance();

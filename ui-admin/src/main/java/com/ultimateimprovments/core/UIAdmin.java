@@ -29,7 +29,7 @@ public class UIAdmin extends JavaPlugin {
 
         ConsoleLogger.info("");
         ConsoleLogger.info("===========================================");
-        ConsoleLogger.info("  UI-Admin v" + getDescription().getVersion());
+        ConsoleLogger.info("  UI-Admin v" + getPluginMeta().getVersion());
         ConsoleLogger.info("===========================================");
 
         ModuleManager mm = ModuleManager.getInstance();

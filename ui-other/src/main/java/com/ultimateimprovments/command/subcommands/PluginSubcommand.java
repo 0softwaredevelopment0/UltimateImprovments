@@ -8,7 +8,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
@@ -105,7 +104,7 @@ public final class PluginSubcommand {
                             + target.getName() + "</white> <yellow>for the module statistics.</yellow>"));
         }
 
-        PluginDescriptionFile desc = target.getDescription();
+        io.papermc.paper.plugin.configuration.PluginMeta desc = target.getPluginMeta();
         String state = target.isEnabled()
                 ? "<green>● Enabled</green>"
                 : "<red>● Disabled</red>";
@@ -126,16 +125,14 @@ public final class PluginSubcommand {
         sender.sendMessage(MessageUtil.parse("  <gray>Authors:</gray> " + orNone(
                 desc.getAuthors().isEmpty() ? null : String.join(", ", desc.getAuthors()))));
         sender.sendMessage(MessageUtil.parse("  <gray>Load (ORDER):</gray> " + orNone(
-                desc.getLoad() != null ? desc.getLoad().name() : null)));
+                desc.getLoadOrder() != null ? desc.getLoadOrder().name() : null)));
         sender.sendMessage(MessageUtil.parse("  <gray>LoadBefore:</gray> " + orNone(
-                desc.getLoadBefore().isEmpty() ? null : String.join(", ", desc.getLoadBefore()))));
+                desc.getLoadBeforePlugins().isEmpty() ? null : String.join(", ", desc.getLoadBeforePlugins()))));
         sender.sendMessage(MessageUtil.parse("  <gray>Depend:</gray> " + orNone(
-                desc.getDepend().isEmpty() ? null : String.join(", ", desc.getDepend()))));
+                desc.getPluginDependencies().isEmpty() ? null : String.join(", ", desc.getPluginDependencies()))));
         sender.sendMessage(MessageUtil.parse("  <gray>SoftDepend:</gray> " + orNone(
-                desc.getSoftDepend().isEmpty() ? null : String.join(", ", desc.getSoftDepend()))));
-        sender.sendMessage(MessageUtil.parse("  <gray>Libraries:</gray> " + orNone(
-                desc.getLibraries().isEmpty() ? null : String.join(", ", desc.getLibraries()))));
-        sender.sendMessage(MessageUtil.parse("  <gray>Main class:</gray> " + orNone(desc.getMain())));
+                desc.getPluginSoftDependencies().isEmpty() ? null : String.join(", ", desc.getPluginSoftDependencies()))));
+        sender.sendMessage(MessageUtil.parse("  <gray>Main class:</gray> " + orNone(desc.getMainClass())));
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</dark_gray>"));
         sender.sendMessage(MessageUtil.parse(""));
@@ -202,11 +199,11 @@ public final class PluginSubcommand {
                         + "</yellow> <red>this plugin:</red>"));
         sender.sendMessage(MessageUtil.parse(
                 "  <white>" + target.getName() + "</white> <dark_gray>(v"
-                        + target.getDescription().getVersion() + ")</dark_gray>"));
+                        + target.getPluginMeta().getVersion() + ")</dark_gray>"));
         sender.sendMessage(MessageUtil.parse(
                 "  <gray>State: </gray>" + (isEnabled ? "<green>ENABLED</green>" : "<red>DISABLED</red>")));
         sender.sendMessage(MessageUtil.parse(
-                "  <gray>Description: </gray><white>" + target.getDescription().getDescription() + "</white>"));
+                "  <gray>Description: </gray><white>" + target.getPluginMeta().getDescription() + "</white>"));
         sender.sendMessage(MessageUtil.parse(""));
         sender.sendMessage(MessageUtil.parse(
                 "<red>Disabling or restarting a plugin may crash it or leave stale listeners.</red>"));

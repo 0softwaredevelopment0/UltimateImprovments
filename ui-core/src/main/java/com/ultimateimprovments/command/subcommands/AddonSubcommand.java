@@ -156,7 +156,7 @@ public class AddonSubcommand implements SubCommand {
         StringBuilder row = new StringBuilder(icon).append(" <white>")
                 .append(entry.getPluginName()).append("</white>");
         if (p != null) {
-            row.append(" <dark_gray>v").append(p.getDescription().getVersion()).append("</dark_gray>");
+            row.append(" <dark_gray>v").append(p.getPluginMeta().getVersion()).append("</dark_gray>");
         }
         if (failed > 0) {
             row.append(" <red>").append(failed).append(" module(s) failed</red>");
@@ -194,7 +194,7 @@ public class AddonSubcommand implements SubCommand {
                     "%addon%", entry.getPluginName()));
             return true;
         }
-        var desc = plugin.getDescription();
+        var desc = plugin.getPluginMeta();
         AddonEntry e = entry != null ? entry : AddonEntry.loaded(plugin);
 
         sender.sendMessage(msg("addon.status_header",
@@ -293,7 +293,7 @@ public class AddonSubcommand implements SubCommand {
         sender.sendMessage(msg("addon.confirm_row",
                 "  <white>%addon%</white> <dark_gray>v%version%</dark_gray>",
                 "%addon%", plugin.getName(),
-                "%version%", plugin.getDescription().getVersion()));
+                "%version%", plugin.getPluginMeta().getVersion()));
         sender.sendMessage(msg("addon.confirm_warning",
                 "  <red>Hot disable/enable may crash the addon or leave stale listeners."
                         + " Only proceed if you know what you are doing.</red>"));
