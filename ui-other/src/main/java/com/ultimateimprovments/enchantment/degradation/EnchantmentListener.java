@@ -38,6 +38,14 @@ public final class EnchantmentListener {
     private static final int KIND_MAINHAND = 3;
     private static final int KIND_CURSOR = 4;
 
+    /**
+     * Absolute base slot of the armor region (36=boots, 37=leggings,
+     * 38=chestplate/elytra, 39=helmet). Armor MUST be read/written through
+     * these slots: {@link PlayerInventory#getArmorContents()} returns COPIES,
+     * so a drain applied to those copies is silently lost (same fix as Repairing).
+     */
+    private static final int ARMOR_SLOT_BASE = 36;
+
     /** A location of an item inside a player's inventory. */
     private record DegradSlot(int kind, int index) {}
 
@@ -60,11 +68,12 @@ public final class EnchantmentListener {
 
     /** Drains integrity from every cursed item in the player's inventory. */
     private static void drainPlayer(Player player) {
-        // Iterate over all five locations: storage, armor, offhand, main hand, cursor.
+        // Storage already covers the hotbar (slots 0-35), so the held item is
+        // drained exactly once here — a separate main-hand call would drain the
+        // same stack twice per sweep. Remaining locations: armor, offhand, cursor.
         drainStorage(player);
         drainArmor(player);
         drainSlot(player, new DegradSlot(KIND_OFFHAND, 0));
-        drainSlot(player, new DegradSlot(KIND_MAINHAND, 0));
         drainSlot(player, new DegradSlot(KIND_CURSOR, 0));
     }
 
@@ -77,9 +86,8 @@ public final class EnchantmentListener {
     }
 
     private static void drainArmor(Player player) {
-        PlayerInventory inv = player.getInventory();
-        ItemStack[] armor = inv.getArmorContents();
-        for (int i = 0; i < armor.length; i++) {
+        // 4 armor slots, addressed by absolute index (see readAt/writeAt).
+        for (int i = 0; i < 4; i++) {
             drainSlot(player, new DegradSlot(KIND_ARMOR, i));
         }
     }
@@ -116,10 +124,9 @@ public final class EnchantmentListener {
         PlayerInventory inv = player.getInventory();
         return switch (slot.kind()) {
             case KIND_STORAGE -> inv.getItem(slot.index());
-            case KIND_ARMOR -> {
-                ItemStack[] armor = inv.getArmorContents();
-                yield slot.index() < armor.length ? armor[slot.index()] : null;
-            }
+            // Armor by ABSOLUTE slot: getArmorContents() returns COPIES, so a
+            // drain written into a copy would be silently lost (armor immune).
+            case KIND_ARMOR -> inv.getItem(ARMOR_SLOT_BASE + slot.index());
             case KIND_OFFHAND -> inv.getItemInOffHand();
             case KIND_MAINHAND -> inv.getItemInMainHand();
             case KIND_CURSOR -> player.getOpenInventory().getCursor();
@@ -132,13 +139,7 @@ public final class EnchantmentListener {
         PlayerInventory inv = player.getInventory();
         switch (slot.kind()) {
             case KIND_STORAGE -> inv.setItem(slot.index(), item);
-            case KIND_ARMOR -> {
-                ItemStack[] armor = inv.getArmorContents();
-                if (slot.index() < armor.length) {
-                    armor[slot.index()] = item;
-                    inv.setArmorContents(armor);
-                }
-            }
+            case KIND_ARMOR -> inv.setItem(ARMOR_SLOT_BASE + slot.index(), item);
             case KIND_OFFHAND -> inv.setItemInOffHand(item);
             case KIND_MAINHAND -> inv.setItemInMainHand(item);
             case KIND_CURSOR -> player.getOpenInventory().setCursor(item);

@@ -49,17 +49,16 @@ public class EnchantmentListener implements Listener {
 
     /**
      * MONITOR priority (not NORMAL): the contents are cleared and the vanilla
-     * drops suppressed BEFORE other plugins run — otherwise a protection
-     * plugin could cancel the break AFTER we emptied the container, and the
-     * cleared items would be gone for good. At MONITOR we run last; if a
-     * plugin cancels the event, BlockBreakEvent#setDropItems is moot and our
-     * snapshot is simply discarded (the container keeps its items — but the
-     * wipe below must only happen when the break is final).
+     * drops suppressed only after every protection plugin has had its say. At
+     * MONITOR we run last, so a cancelled break never loses items (the handler
+     * is {@code ignoreCancelled}) and the snapshot below only happens when the
+     * break decision is final.
      * <p>
-     * Safety model: the wipe + snapshot happen on the NEXT tick, and only if
-     * the event was not cancelled meanwhile — protection plugins run at HIGH
-     * or HIGHEST, i.e. BEFORE the MONITOR handler. So by the time we act, the
-     * break decision is final and the wipe can never lose items.
+     * The snapshot + wipe run INLINE, not on the next tick: by the next tick
+     * the broken block is already AIR, so a deferred task could never capture
+     * the container state. This is the same reason
+     * {@code BlockBreakListener#scheduleStoneReplacement} checks for AIR on the
+     * next tick.
      */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
@@ -86,34 +85,29 @@ public class EnchantmentListener implements Listener {
         // is ever destroyed.
         if (java.util.concurrent.ThreadLocalRandom.current().nextInt(100) >= level * 10) return;
 
-        // Capture the state NOW (the container still holds its items), but act
-        // only next tick, when no other plugin can cancel the break anymore.
-
+        // Break decision is final at MONITOR (ignoreCancelled + last priority):
+        // snapshot and empty the container NOW. A next-tick task would be too
+        // late — the block is already AIR by then and the guard would always
+        // bail, silently destroying the contents.
         event.setDropItems(false);
-        com.ultimateimprovments.core.Main.getInstance().getServer().getScheduler().runTask(
-                com.ultimateimprovments.core.Main.getInstance(), () -> {
-                    if (block.getType() != blockType) return; // replaced meanwhile
 
-                    BlockState currentState = block.getState();
-                    if (!(currentState instanceof Container currentContainer)) return;
+        // 1. Snapshot the whole block (contents included) into vanilla item NBT.
+        ItemStack stored = new ItemStack(blockType);
+        BlockStateMeta meta = (BlockStateMeta) stored.getItemMeta();
+        meta.setBlockState(state);
+        stored.setItemMeta(meta);
 
-                    // 1. Snapshot the whole block (contents included) into vanilla item NBT.
-                    ItemStack stored = new ItemStack(blockType);
-                    BlockStateMeta meta = (BlockStateMeta) stored.getItemMeta();
-                    meta.setBlockState(currentState);
-                    stored.setItemMeta(meta);
+        // 2. Empty the REAL world container so nothing spills when it breaks
+        //    (the snapshot above already carries the items).
+        Container live = (Container) block.getState();
+        live.getInventory().clear();
+        live.update(true, true);
 
-                    // 2. Empty the REAL world container so nothing spills when it breaks
-                    //    (the snapshot above already carries the items).
-                    currentContainer.getInventory().clear();
-                    currentContainer.update(true, true);
-
-                    // 3. Drop our single container item (the block itself breaks right after,
-                    //    vanilla suppresses the (now empty) container drop via setDropItems(false)).
-                    World world = block.getWorld();
-                    Location loc = block.getLocation().add(0.5, 0.5, 0.5);
-                    world.dropItemNaturally(loc, stored);
-                });
+        // 3. Drop our single container item (the block itself breaks right after,
+        //    vanilla suppresses the (now empty) container drop via setDropItems(false)).
+        World world = block.getWorld();
+        Location loc = block.getLocation().add(0.5, 0.5, 0.5);
+        world.dropItemNaturally(loc, stored);
     }
 
     /**

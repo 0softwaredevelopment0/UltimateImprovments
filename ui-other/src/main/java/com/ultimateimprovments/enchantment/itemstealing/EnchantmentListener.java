@@ -59,6 +59,10 @@ public class EnchantmentListener implements Listener {
         // Nothing in the hands → the player is pulled normally (vanilla).
         if (stolen == null || stolen.getType().isAir()) return;
 
+        // Self-Destruct items are inventory-locked (InventoryLockListener) and
+        // must never be yanked out of the victim's hands. Skip the theft.
+        if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.isCursed(stolen)) return;
+
         // Take the item away from the victim.
         if (fromOffhand) {
             victim.getInventory().setItemInOffHand(null);

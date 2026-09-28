@@ -3,6 +3,7 @@ package com.ultimateimprovments.enchantment.selfdestruct;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -20,8 +21,10 @@ import java.util.List;
  * Curse of Self-Destruct — real datapack enchantment with a PDC failsafe.
  * <p>
  * Registers {@code ui:self_destruct} (file {@code data/ui/enchantment/self_destruct.json})
- * as a REAL data-driven curse: red tooltip text (it's in the {@code #minecraft:curse}
- * tag), anvil &amp; book compatibility, {@code /enchant} support. Has exactly ONE level.
+ * as a REAL data-driven curse with red tooltip text (the description JSON sets the
+ * colour; it is deliberately NOT in {@code #minecraft:curse} so the enchanting table
+ * can still offer it), anvil &amp; book compatibility, {@code /enchant} support.
+ * Has exactly ONE level.
  * <p>
  * <b>Failsafe design (same as AoE/Flight/Levitation/...):</b> every item carrying the
  * charm ALSO stores the level (always 1) in the {@code ui:self_destruct_level}
@@ -278,7 +281,8 @@ public final class Enchantment {
         if (lore == null) lore = new ArrayList<>();
 
         lore.removeIf(Enchantment::isCountdownLine);
-        lore.add(MessageUtil.parse("<red>Self-destruct: <white>" + secondsLeft + "<gray>s"));
+        lore.add(MessageUtil.parse("<red>Self-destruct: <white>" + secondsLeft + "<gray>s")
+                .decoration(TextDecoration.ITALIC, false));
 
         meta.lore(lore);
         item.setItemMeta(meta);

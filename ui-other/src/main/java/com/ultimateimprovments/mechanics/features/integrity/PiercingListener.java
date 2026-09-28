@@ -9,6 +9,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 /**
  * 🎯 PiercingListener — handler for the PIERCING enchantment.
@@ -21,6 +22,14 @@ import org.bukkit.inventory.ItemStack;
  * Armor is NOT ignored — protection works exactly like vanilla.
  */
 public class PiercingListener implements Listener {
+
+    /**
+     * Absolute base slot of the armor region (36=boots, 37=leggings,
+     * 38=chestplate/elytra, 39=helmet). Armor MUST be changed through these
+     * slots: {@link PlayerInventory#getArmorContents()} returns COPIES, so
+     * damage applied to those copies is silently lost.
+     */
+    private static final int ARMOR_SLOT_BASE = 36;
 
     private static boolean reloadPending;
 
@@ -55,10 +64,18 @@ public class PiercingListener implements Listener {
         int extra = (int) Math.round(ItemDurabilityUtil.getPiercingExtraCost());
         if (extra <= 0) return;
 
-        // Extra vanilla armor damage on every armor piece (armor is NOT ignored)
-        for (ItemStack armor : target.getInventory().getArmorContents()) {
+        // Extra vanilla armor damage on every armor piece (armor is NOT ignored).
+        // Armor is changed through the ABSOLUTE slots 36-39: getArmorContents()
+        // returns COPIES, so damage written there would be silently discarded
+        // and the Piercing mechanic would do nothing at all.
+        PlayerInventory inv = target.getInventory();
+        for (int slot = ARMOR_SLOT_BASE; slot <= ARMOR_SLOT_BASE + 3; slot++) {
+            ItemStack armor = inv.getItem(slot);
             if (armor == null || armor.getType() == Material.AIR) continue;
             ItemDurabilityUtil.decreaseItemIntegrity(armor, extra, target);
+            if (armor.getAmount() <= 0) {
+                inv.setItem(slot, null);
+            }
         }
     }
 }

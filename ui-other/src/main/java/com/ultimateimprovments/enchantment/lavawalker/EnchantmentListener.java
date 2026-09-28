@@ -173,12 +173,13 @@ public class EnchantmentListener implements Listener {
                 + convertLayer(world, feetX, feetZ, feetY, radius, feetX, feetZ, true)
                 + convertLayer(world, feetX, feetZ, headY, radius, feetX, feetZ, true);
 
-        // Real price: EVERY created obsidian block costs the boots 1 integrity
-        // use (a 31×31 sweep can cost 961 uses — the charm is powerful, it must
-        // be felt on the max radius).
+        // Real price: ONE conversion pass = 1 integrity use of the boots,
+        // independent of the radius (a level-16 31×31 sweep is still a single
+        // pass). Charging per created block would shred any boots in a couple
+        // of steps and make the charm unplayable.
         if (created > 0 && boots != null && boots.getType() != Material.AIR) {
             com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil
-                    .decreaseItemIntegrity(boots, created, player);
+                    .decreaseItemIntegrity(boots, 1, player);
         }
     }
 
