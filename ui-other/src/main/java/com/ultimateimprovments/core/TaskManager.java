@@ -5,9 +5,6 @@ import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCleanupTask
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationTask;
 import com.ultimateimprovments.mechanics.environment.sunburn.SunburnTask;
 import com.ultimateimprovments.listener.FishingListener;
-import com.ultimateimprovments.server.EmergencyEntitiesKill;
-import com.ultimateimprovments.server.RedstoneGuardTask;
-import com.ultimateimprovments.server.ServerOverloadWarning;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -16,9 +13,6 @@ public class TaskManager {
 
     private static TaskManager instance;
 
-    private BukkitTask overloadTask;
-    private BukkitTask redstoneGuardTask;
-    private BukkitTask overloadWarningTask;
     private BukkitTask radiationTask;
     private BukkitTask sunburnTask;
     private BukkitTask fishingTask;
@@ -38,9 +32,6 @@ public class TaskManager {
         if (tasksStarted) return;
         tasksStarted = true;
 
-        overloadTask = new EmergencyEntitiesKill().runTaskTimer(plugin, 20L, 20L);
-        redstoneGuardTask = new RedstoneGuardTask().runTaskTimer(plugin, 1L, 1L);
-        overloadWarningTask = new ServerOverloadWarning().runTaskTimer(plugin, 20L, 20L);
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
         sunburnTask = new SunburnTask().runTaskTimer(plugin, 0L, 1L);
         fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
@@ -55,9 +46,6 @@ public class TaskManager {
     }
 
     private void cancelAll() {
-        if (overloadTask != null) overloadTask.cancel();
-        if (redstoneGuardTask != null) redstoneGuardTask.cancel();
-        if (overloadWarningTask != null) overloadWarningTask.cancel();
         if (radiationTask != null) radiationTask.cancel();
         if (sunburnTask != null) sunburnTask.cancel();
         if (fishingTask != null) {

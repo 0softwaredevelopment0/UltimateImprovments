@@ -85,7 +85,6 @@ import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
 import com.ultimateimprovments.mechanics.features.world.CmdBlockTracker;
 import com.ultimateimprovments.mechanics.features.world.EarthCoreListener;
 import com.ultimateimprovments.mechanics.features.world.KaboomListener;
-import com.ultimateimprovments.mechanics.features.world.ServerOverloadListener;
 import com.ultimateimprovments.mechanics.features.world.WoodcutterChallenge;
 import com.ultimateimprovments.mechanics.features.world.EnderPearlChallenge;
 import com.ultimateimprovments.mechanics.features.world.NetheriteKingListener;
@@ -102,15 +101,8 @@ import com.ultimateimprovments.mechanics.features.world.WaypointManager;
 import com.ultimateimprovments.mechanics.features.world.WirelessRedstoneManager;
 import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
 import com.ultimateimprovments.mechanics.particle.ParticleMovementTask;
-import com.ultimateimprovments.mechanics.security.botprotect.BotProtectionListener;
 import com.ultimateimprovments.mechanics.security.sudo.SudoCommandInterceptor;
 import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
-import com.ultimateimprovments.server.EmergencyEntitiesKill;
-import com.ultimateimprovments.server.PacketGuard;
-import com.ultimateimprovments.server.ProxyServerListener;
-import com.ultimateimprovments.server.RedstoneGuard;
-import com.ultimateimprovments.server.RedstoneGuardListener;
-import com.ultimateimprovments.server.ServerOverloadWarning;
 import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
@@ -553,14 +545,6 @@ public final class SimpleModules {
             }
         });
 
-        // Something's not right here... — online while the server is overloaded
-        mm.register(new SimpleModule("ServerOverload", "mechanics/features/server_overload", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                ServerOverloadListener.register((Main) plugin);
-            }
-        });
-
         // The Woodcutter at Full Throttle — timed challenge (7,200 wood in 1 hour)
         mm.register(new SimpleModule("WoodcutterChallenge", "mechanics/features/woodcutter_challenge", false) {
             @Override
@@ -774,38 +758,7 @@ public final class SimpleModules {
     }
 
     public static void registerProtection(ModuleManager mm) {
-        // RedstoneGuard
-        mm.register(new SimpleModule("RedstoneGuard", "infrastructure/server", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                RedstoneGuard.init(main);
-                main.getServer().getPluginManager().registerEvents(new RedstoneGuardListener(), main);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                RedstoneGuard.reload();
-                EmergencyEntitiesKill.reload();
-                ServerOverloadWarning.reload();
-            }
-        });
-
-        // PacketGuard
-        mm.register(new SimpleModule("PacketGuard", "infrastructure/server", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                PacketGuard.init((Main) plugin);
-            }
-        });
-
-        // ProxyServer
-        mm.register(new SimpleModule("ProxyServer", "infrastructure/server", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                ProxyServerListener.init((Main) plugin);
-            }
-        });
+        // Server guard modules are registered by the UI-Guard addon (GuardModules).
     }
 
     // --------------------------------------------------------------------------
@@ -829,32 +782,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerBotProtection(ModuleManager mm) {
-        mm.register(new PluginModule("BotProtection", "mechanics/security/botprotect", false) {
-            private BotProtectionListener listener;
-
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                this.listener = new BotProtectionListener(main);
-                main.getServer().getPluginManager().registerEvents(listener, main);
-                ConsoleLogger.info("[BotProtection] ✔ Anti-bot system initialized.");
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                if (listener != null) {
-                    HandlerList.unregisterAll(listener);
-                    this.listener = null;
-                }
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                if (listener != null) {
-                    listener.loadConfig();
-                }
-            }
-        });
+        // BotProtection is registered by the UI-Guard addon (GuardModules).
     }
 
     // --------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-package com.ultimateimprovments.mechanics.features.world;
+package com.ultimateimprovments.server;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
