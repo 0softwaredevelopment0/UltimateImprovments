@@ -34,7 +34,6 @@ import com.ultimateimprovments.listener.PluginHideListener;
 import com.ultimateimprovments.listener.PowerInterceptListener;
 import com.ultimateimprovments.listener.ServerBrandListener;
 import com.ultimateimprovments.listener.ShulkerBulletListener;
-import com.ultimateimprovments.listener.VoidProtectionListener;
 import com.ultimateimprovments.mechanics.crafting.AntimatterCraftListener;
 import com.ultimateimprovments.mechanics.crafting.BlazingSwordCraftListener;
 import com.ultimateimprovments.mechanics.crafting.ChunkLoaderCraftListener;
@@ -972,15 +971,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerUtility(ModuleManager mm) {
-
-        // VoidProtection
-        mm.register(new SimpleModule("VoidProtection", "infrastructure/listeners", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                main.getServer().getPluginManager().registerEvents(new VoidProtectionListener(), main);
-            }
-        });
+        // VoidProtection is registered by the UI-Protection addon (ProtectionModules).
     }
 
     // --------------------------------------------------------------------------
