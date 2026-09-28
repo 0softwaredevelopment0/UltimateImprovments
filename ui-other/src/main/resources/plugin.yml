@@ -7,3 +7,7 @@ author: rizer001
 addon-for: UI-Core
 depend: [UI-Core, UI-MBS, UI-Shared, UI-Chat, UI-Clans, UI-Combat, UI-Energy, UI-Punish, UI-Anticheat, UI-Essentials, UI-Datapack]
 softdepend: [PlaceholderAPI, LuckPerms, Vault]
+permissions:
+  ui.enchant.itemstealing.steal:
+    description: Allows stealing an item from another player with the Item Stealing enchantment
+    default: false
