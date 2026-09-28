@@ -83,6 +83,9 @@ public class Main extends JavaPlugin {
         // and carries no useful information (cannot be fixed, only by updating Java).
         suppressPaperConversionErrors();
 
+        // Register /ui via the Paper command API (Brigadier + LifecycleEvents) —
+        // replaces the legacy CommandMap registration.
+        com.ultimateimprovments.command.PaperCommands.register(this);
         new PluginStartup(this).startupPlugin();
     }
 

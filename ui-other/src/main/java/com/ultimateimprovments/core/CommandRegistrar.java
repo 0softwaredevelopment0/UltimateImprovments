@@ -1,7 +1,6 @@
 package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.command.MsgCommand;
-import com.ultimateimprovments.command.PluginReloadCommand;
 import com.ultimateimprovments.command.PowerCommand;
 import com.ultimateimprovments.command.TrollCommand;
 import com.ultimateimprovments.command.VanishListCommand;
@@ -38,9 +37,9 @@ public class CommandRegistrar {
         int registered = 0;
         int total = 0;
 
-        PluginReloadCommand uiCmd = new PluginReloadCommand();
-        total++; registered += register(plugin, "ui", uiCmd, uiCmd) ? 1 : 0; // main command
-        total++; registered += register(plugin, "ultimateimprovments", uiCmd, uiCmd) ? 1 : 0; // alias
+        // /ui and /ultimateimprovments are registered via the Paper command API
+        // (see com.ultimateimprovments.command.PaperCommands). Only the vanilla
+        // overrides + troll commands are still registered through the CommandMap.
 
         // Fake commands to troll hackers (settings in config.yml → troll:)
         TrollCommand trollCmd = new TrollCommand();
