@@ -52,6 +52,8 @@ public final class AddonCatalog {
         route("UI-Protection", "protection", "void_protection");
         // ── UI-Display ──
         route("UI-Display", "tab", "scoreboard", "bossbar");
+        // ── UI-Admin ──
+        route("UI-Admin", "economy");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
                 "features", "brand_spoof", "vanish", "sunburn", "armor_effects", "armor_trim_effects", "netherite_upgrade",
@@ -59,7 +61,7 @@ public final class AddonCatalog {
                 "packet_guard", "proxy_server", "redstone_guard", "emergency_entity_kill",
                 "server_overload_warning", "bot_protection", "changedimmension", "motd",
                 "wireless_redstone",
-                "structure_integrity", "economy", "meteor",
+                "structure_integrity", "meteor",
                 "particle_accelerator", "block_friction", "codepanel");
     }
 
@@ -82,9 +84,10 @@ public final class AddonCatalog {
         routeMsg("UI-Auth", "auth");
         routeMsg("UI-Protection", "protection");
         routeMsg("UI-Display", "tab", "scoreboard", "bossbar");
+        routeMsg("UI-Admin", "economy");
         routeMsg("UI-Other", "check", "packet_guard", "bot_protection", "sudo",
                 "codepanel", "changedimmension", "motd",
-                "vanish", "suicide", "economy", "notes", "power", "death_logger",
+                "vanish", "suicide", "notes", "power", "death_logger",
                 "structures", "meteor", "space", "wireless_redstone",
                 "structure_integrity");
     }
@@ -129,6 +132,6 @@ public final class AddonCatalog {
                 CORE,
                 "UI-Shared", "UI-MBS", "UI-Datapack", "UI-Chat", "UI-Clans",
                 "UI-Combat", "UI-Punish", "UI-Essentials", "UI-Energy",
-                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Other");
+                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Admin", "UI-Other");
     }
 }

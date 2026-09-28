@@ -81,8 +81,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                 tc((s, a) -> a.length == 2 ? ReloadSubcommand.tabCompleteTargets(a.length >= 2 ? a[1] : "") : List.of())));
 
         // ── Legacy adapters with tab-complete ──
-        registry.register(LegacySubCommandAdapter.of("money", EconomySubcommand::execute,
-                tc((s, a) -> EconomySubcommand.tabComplete(a))));
+        // ── /ui money is registered by the UI-Admin addon ──
         registry.register(LegacySubCommandAdapter.of("broadcast", BroadcastSubcommand::execute,
                 tc((s, a) -> BroadcastSubcommand.tabComplete(a)),
                 List.of("bc"))); // /ui bc — compatibility alias
@@ -97,10 +96,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── /ui auth is registered by the UI-Auth addon ──
         registry.register(LegacySubCommandAdapter.of("power", PowerSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("modules", ModulesSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("checkver",
-                (s, a) -> { UpdateSubcommand.checkOnly(s); return true; }));
-        registry.register(LegacySubCommandAdapter.of("updatejar",
-                (s, a) -> { UpdateSubcommand.downloadAndReplace(s); return true; }));
+        // ── /ui checkver and /ui updatejar are registered by the UI-Admin addon ──
         registry.register(LegacySubCommandAdapter.of("vanish",
                 (s, a) -> { MiscSubcommand.vanish(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("notes",
@@ -191,16 +187,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }));
 
         // ── /ui protection is registered by the UI-Protection addon ──
-        // ── OP Manager (new system) ──
-        registry.register(LegacySubCommandAdapter.of("op",
-                (s, a) -> com.ultimateimprovments.op.OpSubcommand.execute(s, a),
-                tc((s, a) -> com.ultimateimprovments.op.OpSubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("deop",
-                (s, a) -> com.ultimateimprovments.op.DeopSubcommand.execute(s, a),
-                tc((s, a) -> com.ultimateimprovments.op.DeopSubcommand.tabComplete(a))));
-        registry.register(LegacySubCommandAdapter.of("oplist",
-                (s, a) -> com.ultimateimprovments.op.OpListSubcommand.execute(s, a),
-                tc((s, a) -> com.ultimateimprovments.op.OpListSubcommand.tabComplete(a))));
+        // ── /ui op, /ui deop, /ui oplist are registered by the UI-Admin addon ──
         registry.register(LegacySubCommandAdapter.of("dont_run_this_command", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.dont_run_this_command")) { CommandErrors.noPermission(p); return false; }

@@ -9,11 +9,6 @@ import com.ultimateimprovments.core.TaskManager;
 import com.ultimateimprovments.database.AsyncAutoSaveManager;
 import com.ultimateimprovments.database.DatabaseInit;
 import com.ultimateimprovments.database.DatabaseManager;
-import com.ultimateimprovments.economy.EconomyManager;
-import com.ultimateimprovments.economy.EconomyPlaceholderExpansion;
-import com.ultimateimprovments.economy.VaultIntegration;
-import com.ultimateimprovments.economy.listeners.IncomeListener;
-import com.ultimateimprovments.economy.listeners.PlayerJoinListener;
 import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.energy.generation.basic.GeneratorManager;
 import com.ultimateimprovments.energy.generation.reactor.ReactorListener;
@@ -91,7 +86,6 @@ import com.ultimateimprovments.mechanics.features.scanner.MetalDetectorListener;
 import com.ultimateimprovments.mechanics.features.scanner.ScannerItemListener;
 import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityListener;
 import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityManager;
-import com.ultimateimprovments.mechanics.features.updater.UpdateChecker;
 import com.ultimateimprovments.mechanics.features.world.AntimatterManager;
 import com.ultimateimprovments.mechanics.features.world.BedrockBreakListener;
 import com.ultimateimprovments.mechanics.features.world.CmdBlockTracker;
@@ -897,35 +891,7 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerEconomy(ModuleManager mm) {
-        // Economy — currency system (core + Vault + PAPI)
-        mm.register(new SimpleModule("Economy", "economy", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                // 1. Core
-                EconomyManager.init();
-
-                // 2. Vault integration (only if Vault is installed)
-                if (PluginHook.check("Vault", "Economy")) {
-                    new VaultIntegration(plugin);
-                }
-
-                // 3. Events
-                var pm = plugin.getServer().getPluginManager();
-                pm.registerEvents(new PlayerJoinListener(), plugin);
-                pm.registerEvents(new IncomeListener(), plugin);
-
-                // 4. PAPI expansion
-                try {
-                    if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-                        new EconomyPlaceholderExpansion().register();
-                        ConsoleLogger.info("[Economy] PlaceholderAPI expansion registered.");
-                    }
-                } catch (NoClassDefFoundError | Exception e) {
-                    ConsoleLogger.info("[Economy] PlaceholderAPI not found — placeholders disabled.");
-                }
-
-            }
-        });
+        // Economy is registered by the UI-Admin addon (AdminModules).
     }
 
     public static void registerProtection(ModuleManager mm) {
@@ -1163,13 +1129,7 @@ public final class SimpleModules {
             }
         });
 
-        // UpdateChecker
-        mm.register(new SimpleModule("UpdateChecker", "updatechecker", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                UpdateChecker.checkAsync();
-            }
-        });
+        // UpdateChecker is registered by the UI-Admin addon (AdminModules).
 
         // Leash
         mm.register(new PluginModule("Leash", "mechanics/features/leash", false) {
