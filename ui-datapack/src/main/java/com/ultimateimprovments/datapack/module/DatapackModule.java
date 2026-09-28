@@ -20,8 +20,8 @@ public final class DatapackModule extends PluginModule {
     @Override
     protected void onInit(JavaPlugin plugin) throws Exception {
         DatapackInstaller.init(plugin);
-        DatapackInstaller.getInstance().install(plugin);
-        // Success is logged inside DatapackInstaller.install()
+        DatapackInstaller.getInstance().reportStatus(plugin);
+        // The pack itself is registered before the worlds by UIDatapackBootstrap.
     }
 
     @Override

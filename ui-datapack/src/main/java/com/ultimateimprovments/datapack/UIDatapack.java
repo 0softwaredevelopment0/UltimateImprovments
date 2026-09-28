@@ -10,15 +10,15 @@ import org.bukkit.plugin.java.JavaPlugin;
  * <p>
  * Owns everything related to the bundled UI-Datapack:
  * <ul>
- *   <li>reads the {@code datapack.*} config (master toggle, install mode,
- *       auto-enable/restart behavior and the {@code datapack.modules.*} parts);</li>
- *   <li>installs the datapack into the world's {@code datapacks/} folder and
- *       verifies it is enabled in the world (the {@link DatapackModule});</li>
+ *   <li>reads the {@code datapack.*} config (master toggle and the
+ *       {@code datapack.modules.*} parts);</li>
+ *   <li>reports the state of the datapack, which is registered <b>before the worlds
+ *       load</b> by {@link UIDatapackBootstrap} through Paper's
+ *       {@code DATAPACK_DISCOVERY} (no restart/reload needed after install);</li>
  *   <li>installs the {@link ModuleManager.DatapackGate} so UI-Other skips plugin
  *       code modules bound to disabled datapack parts.</li>
  * </ul>
- * Loaded at STARTUP (right after UI-Core) so the gate is active before UI-Other
- * registers its modules.
+ * Loaded right after UI-Core so the gate is active before UI-Other registers its modules.
  */
 public class UIDatapack extends JavaPlugin {
 
