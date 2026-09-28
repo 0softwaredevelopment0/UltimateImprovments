@@ -1,7 +1,6 @@
 package com.ultimateimprovments.mechanics.security.auth;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.command.AskCordsManager;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.entity.Player;
@@ -82,7 +81,6 @@ public class AuthListener implements Listener {
         if (auth != null) {
             auth.handleQuit(event.getPlayer());
         }
-        AskCordsManager.cleanup(uuid);
     }
 
     // =========================

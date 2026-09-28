@@ -94,7 +94,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("codepane", CodePaneSubcommand::execute,
                 tc((s, a) -> CodePaneSubcommand.tabComplete(a))));
         registry.register(LegacySubCommandAdapter.of("item", ItemSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("auth", AuthSubcommand::execute));
+        // ── /ui auth is registered by the UI-Auth addon ──
         registry.register(LegacySubCommandAdapter.of("power", PowerSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("modules", ModulesSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("checkver",
