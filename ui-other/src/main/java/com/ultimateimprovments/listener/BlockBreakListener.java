@@ -5,6 +5,7 @@ import com.ultimateimprovments.energy.storage.battery.BatteryManager;
 import com.ultimateimprovments.energy.consumption.light.LightManager;
 import com.ultimateimprovments.energy.transfer.cable.CableNetwork;
 import com.ultimateimprovments.energy.transfer.cable.CableNode;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.structure.StructureMarker;
 import com.ultimateimprovments.util.LocationUtil;
@@ -23,30 +24,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class BlockBreakListener implements Listener {
-
-    private static final Map<Material, Material> ORE_TO_STONE = Map.ofEntries(
-        // Stone ores -> STONE
-        Map.entry(Material.COAL_ORE, Material.STONE),
-        Map.entry(Material.IRON_ORE, Material.STONE),
-        Map.entry(Material.COPPER_ORE, Material.STONE),
-        Map.entry(Material.GOLD_ORE, Material.STONE),
-        Map.entry(Material.REDSTONE_ORE, Material.STONE),
-        Map.entry(Material.LAPIS_ORE, Material.STONE),
-        Map.entry(Material.DIAMOND_ORE, Material.STONE),
-        Map.entry(Material.EMERALD_ORE, Material.STONE),
-        // Deepslate ores -> DEEPSLATE
-        Map.entry(Material.DEEPSLATE_COAL_ORE, Material.DEEPSLATE),
-        Map.entry(Material.DEEPSLATE_IRON_ORE, Material.DEEPSLATE),
-        Map.entry(Material.DEEPSLATE_COPPER_ORE, Material.DEEPSLATE),
-        Map.entry(Material.DEEPSLATE_GOLD_ORE, Material.DEEPSLATE),
-        Map.entry(Material.DEEPSLATE_REDSTONE_ORE, Material.DEEPSLATE),
-        Map.entry(Material.DEEPSLATE_LAPIS_ORE, Material.DEEPSLATE),
-        Map.entry(Material.DEEPSLATE_DIAMOND_ORE, Material.DEEPSLATE),
-        Map.entry(Material.DEEPSLATE_EMERALD_ORE, Material.DEEPSLATE),
-        // Nether ores -> NETHERRACK
-        Map.entry(Material.NETHER_QUARTZ_ORE, Material.NETHERRACK),
-        Map.entry(Material.NETHER_GOLD_ORE, Material.NETHERRACK)
-    );
 
     @EventHandler(ignoreCancelled = true)
     public void onBreak(BlockBreakEvent e) {
@@ -169,18 +146,6 @@ public class BlockBreakListener implements Listener {
      * @param oreType the ore type the block was before breaking
      */
     public static void scheduleStoneReplacement(Block block, Material oreType) {
-        if (block == null || oreType == null) return;
-        Material replacement = ORE_TO_STONE.get(oreType);
-        if (replacement == null) return;
-
-        Material finalReplacement = replacement;
-        Bukkit.getScheduler().runTask(
-            Main.getInstance(),
-            () -> {
-                if (block.getType() == Material.AIR) {
-                    block.setType(finalReplacement, false);
-                }
-            }
-        );
+        CoreHooks.scheduleOreStone(block, oreType);
     }
 }

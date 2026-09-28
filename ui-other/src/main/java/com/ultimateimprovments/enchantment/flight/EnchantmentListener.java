@@ -2,7 +2,7 @@ package com.ultimateimprovments.enchantment.flight;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
-import com.ultimateimprovments.mechanics.security.auth.AuthPlayerState;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -161,8 +161,7 @@ public class EnchantmentListener implements Listener {
         UUID uuid = player.getUniqueId();
 
         // Never grant flight to a frozen (pending auth) player.
-        AuthPlayerState auth = AuthPlayerState.getInstance();
-        if (auth != null && auth.isPendingAuth(uuid)) return;
+        if (CoreHooks.isPendingAuth(uuid)) return;
 
         GameMode gm = player.getGameMode();
         boolean creativeLike = gm == GameMode.CREATIVE || gm == GameMode.SPECTATOR;

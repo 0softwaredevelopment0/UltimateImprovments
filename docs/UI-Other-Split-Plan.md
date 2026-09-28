@@ -1,8 +1,18 @@
 # UI-Other Split Plan (9 addons)
 
 > Internal working plan for decomposing `ui-other` into 9 separate addon JARs.
-> Status: **draft / in progress**. One family version (see AGENTS.md), all addons share it.
+> Status: **Phase 0 done** (foundation/decoupling). One family version (see AGENTS.md).
 > Keep this file updated as phases complete; delete it when `ui-other` is gone.
+>
+> **Progress**
+> - 2026-09-28 — Phase 0 (partial): `mechanics/features/integrity/**` hoisted
+>   `ui-other` → `ui-shared` (same package, no import churn). Added
+>   `ui-core/.../core/hooks/CoreHooks.java` (pendingAuth, block-break counter,
+>   ore→stone) and decoupled the enchantment package from `features/world`
+>   (WoodcutterChallenge), `listener` (BlockBreakListener ore→stone) and
+>   `security/auth` (AuthPlayerState). Build green.
+> - Next: create the `ui-enchant` Gradle module and move `enchantment/**` +
+>   `EnchantSubcommand` + `[enchant]` config (Phase 1).
 
 ## 1. Current state (metrics, 2026-09-28)
 

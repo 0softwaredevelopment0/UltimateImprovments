@@ -1,6 +1,6 @@
 package com.ultimateimprovments.enchantment.veinminer;
 
-import com.ultimateimprovments.listener.BlockBreakListener;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -85,7 +85,7 @@ public class EnchantmentListener implements Listener {
 
             // "Ore → stone" mechanic: leave stone instead of ore, like for
             // the block in BlockBreakEvent (otherwise holes remain in the veins)
-            BlockBreakListener.scheduleStoneReplacement(block, brokenType);
+            CoreHooks.scheduleOreStone(block, brokenType);
 
             // Consume integrity as from breaking 1 block (mirrors PlayerItemDamageEvent
             // which the durability system maps to 1 vanilla durability point)
