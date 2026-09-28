@@ -38,10 +38,13 @@ import org.bukkit.util.Vector;
  * ({@value #DEFAULT_STEAL_PERMISSION} by default, configurable in UI-Other.toml);
  * without it the rod never steals.
  * <p>
- * <b>Feedback:</b> on a successful steal a fishing-rod "yank" is played to every
- * player within {@value #YANK_SOUND_RADIUS} blocks of the thief; on a failed roll a
- * "line snap" is played instead. If the thief lacks the steal permission he gets a
- * chat message saying so.
+ * <b>Feedback:</b> on a successful steal a quiet fishing-rod "yank" is played to every
+ * player within {@value #SOUND_RADIUS} blocks of the thief, and the VICTIM alone hears
+ * a "pop" (their item was snapped away). On a failed roll a "line snap" is played to
+ * the same radius instead. If the thief lacks the steal permission he gets a chat
+ * message saying so.
+ * <p>
+ * <b>Cost:</b> the rod wears out on every attempt — 2 durability on a miss, 1 on a hit.
  * <p>
  * Only {@link PlayerFishEvent.State#CAUGHT_ENTITY} is handled — in 26.x that is the
  * state that carries the hooked entity on reel-in; {@code REEL_IN} always fires with
@@ -52,8 +55,14 @@ public class EnchantmentListener implements Listener {
     /** Permission allowing a player to steal with this enchantment (LuckPerms-grantable). */
     private static final String DEFAULT_STEAL_PERMISSION = "ui.enchant.itemstealing.steal";
 
-    /** Radius (blocks) of the steal "yank" sound — everyone inside hears it. */
-    private static final double YANK_SOUND_RADIUS = 10.0;
+    /** Radius (blocks) of the steal "yank"/"snap" sounds — everyone inside hears them. */
+    private static final double SOUND_RADIUS = 5.0;
+
+    /** Volume of the success "yank" — audible but not annoying. */
+    private static final float YANK_VOLUME = 0.6f;
+
+    /** Volume of the failed "snap". */
+    private static final float FAIL_VOLUME = 0.7f;
 
     /** How close to the fisher the thrown item stops homing (blocks). */
     private static final double PICKUP_REACH = 1.5;
@@ -83,9 +92,11 @@ public class EnchantmentListener implements Listener {
         if (victim.equals(fisher)) return;
 
         // The rod must carry the Item Stealing charm (main hand first, offhand as fallback).
+        boolean mainHand = true;
         ItemStack rod = fisher.getInventory().getItemInMainHand();
         if (!Enchantment.isValidTool(rod)) {
             rod = fisher.getInventory().getItemInOffHand();
+            mainHand = false;
         }
         if (!Enchantment.isValidTool(rod)) return;
         int level = Enchantment.getLevel(rod);
@@ -116,11 +127,13 @@ public class EnchantmentListener implements Listener {
         // must never be yanked out of the victim's hands. Skip the theft.
         if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.isCursed(stolen)) return;
 
-        // Steal roll: level N = N×10% chance (level 10 = always). A failed roll
-        // keeps the vanilla behavior — the player is pulled normally — and cues a
-        // "line snap" so everyone nearby knows the yank came off empty.
-        if (java.util.concurrent.ThreadLocalRandom.current().nextInt(100) >= level * 10) {
-            playRadiusSound(fisher, Sound.ENTITY_ITEM_BREAK, 1.0f, 1.5f);
+        // Steal roll: level N = N×10% chance (level 10 = always). The rod wears out
+        // either way — 2 durability on a miss, 1 on a hit. A miss cues a "line snap"
+        // so everyone nearby knows the yank came off empty.
+        boolean success = java.util.concurrent.ThreadLocalRandom.current().nextInt(100) < level * 10;
+        damageRod(fisher, mainHand, rod, success ? 1 : 2);
+        if (!success) {
+            playRadiusSound(fisher, Sound.ENTITY_ITEM_BREAK, FAIL_VOLUME, 1.5f);
             return;
         }
 
@@ -140,8 +153,12 @@ public class EnchantmentListener implements Listener {
         flying.setPickupDelay(THROW_PICKUP_DELAY);
         flyTo(flying, fisher);
 
-        // The "yank" cue: everyone within 10 blocks of the thief hears the reel snap.
-        playRadiusSound(fisher, Sound.ENTITY_FISHING_BOBBER_RETRIEVE, 1.0f, 1.3f);
+        // The "yank" cue: players within 5 blocks hear the reel snap (quietly).
+        playRadiusSound(fisher, Sound.ENTITY_FISHING_BOBBER_RETRIEVE, YANK_VOLUME, 1.3f);
+
+        // The victim alone hears a "pop" — their item was just snapped away.
+        victim.playSound(victim.getLocation(), Sound.ENTITY_ITEM_PICKUP,
+                SoundCategory.PLAYERS, 1.0f, 1.2f);
 
         // Cancel the pull — the player stays in place, only the item "comes" to us.
         event.setCancelled(true);
@@ -170,17 +187,34 @@ public class EnchantmentListener implements Listener {
     }
 
     /**
-     * Plays {@code sound} for every player within {@value #YANK_SOUND_RADIUS} blocks
-     * of the source, so both the fisherman and bystanders hear it.
+     * Plays {@code sound} for every player within {@value #SOUND_RADIUS} blocks of the
+     * source, so both the fisherman and nearby bystanders hear it.
      */
     private static void playRadiusSound(Player source, Sound sound, float volume, float pitch) {
         World world = source.getWorld();
         Location loc = source.getLocation();
-        double maxSquared = YANK_SOUND_RADIUS * YANK_SOUND_RADIUS;
+        double maxSquared = SOUND_RADIUS * SOUND_RADIUS;
         for (Player nearby : world.getPlayers()) {
             if (nearby.getLocation().distanceSquared(loc) <= maxSquared) {
                 nearby.playSound(loc, sound, SoundCategory.PLAYERS, volume, pitch);
             }
+        }
+    }
+
+    /**
+     * Wears the rod out by {@code points} and writes the (possibly broken) stack back
+     * to the hand it came from — never relying on the hand mirror to persist the change.
+     */
+    private static void damageRod(Player fisher, boolean mainHand, ItemStack rod, int points) {
+        com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil
+                .decreaseItemIntegrity(rod, points, fisher);
+        if (rod.getAmount() <= 0) {
+            if (mainHand) fisher.getInventory().setItemInMainHand(null);
+            else fisher.getInventory().setItemInOffHand(null);
+        } else if (mainHand) {
+            fisher.getInventory().setItemInMainHand(rod);
+        } else {
+            fisher.getInventory().setItemInOffHand(rod);
         }
     }
 
