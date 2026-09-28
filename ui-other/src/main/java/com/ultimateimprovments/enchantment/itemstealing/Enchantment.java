@@ -27,9 +27,10 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Effect: when a player hooks another PLAYER with the enchanted fishing rod, the steal
  * rolls a {@code level × 10%} chance. On success the victim is NOT pulled — instead the
- * item he holds in his hand flies to the fisher (main hand first, offhand as fallback).
- * On a failed roll (or when the victim holds nothing) the vanilla behavior stays: the
- * player is pulled normally.
+ * item he holds in his hand is THROWN out toward the fisher and flies to him (main hand
+ * first, offhand as fallback); the fisher then picks it up normally. On a failed roll
+ * (or when the victim holds nothing) the vanilla behavior stays: the player is pulled
+ * normally.
  * <p>
  * Max level: 10 (level N = N×10% steal chance)<br>
  * Works on: fishing rod

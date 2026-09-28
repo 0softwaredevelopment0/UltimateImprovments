@@ -1320,7 +1320,7 @@ public final class SimpleModules {
                 com.ultimateimprovments.enchantment.itemstealing.EnchantmentSyncListener.register(main);
 
                 ConsoleLogger.info("[ItemStealing] Levels: 1-10 | level N = N×10% steal chance | Item: fishing rod | "
-                        + "A successful roll steals the item from the hooked player's hand (failed roll / empty hands → normal pull)");
+                        + "A successful roll throws the item out of the hooked player toward the fisher (picked up after the throw; failed roll / empty hands → normal pull)");
             }
         });
     }
