@@ -143,10 +143,9 @@ public class OmniscannerManager implements Listener {
     }
 
     private static void setInt(ItemStack item, org.bukkit.NamespacedKey key, int value) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
+        item.editMeta(meta -> {
         meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, value);
-        item.setItemMeta(meta);
+        });
     }
 
     private static Set<String> getSet(ItemStack item, org.bukkit.NamespacedKey key) {

@@ -93,9 +93,9 @@ public class EnchantmentListener implements Listener {
 
         // 1. Snapshot the whole block (contents included) into vanilla item NBT.
         ItemStack stored = new ItemStack(blockType);
-        BlockStateMeta meta = (BlockStateMeta) stored.getItemMeta();
+        stored.editMeta(BlockStateMeta.class, meta -> {
         meta.setBlockState(state);
-        stored.setItemMeta(meta);
+        });
 
         // 2. Empty the REAL world container so nothing spills when it breaks
         //    (the snapshot above already carries the items).

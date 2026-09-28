@@ -46,7 +46,7 @@ public class AuthGUIItems {
     // =========================
     public static ItemStack createInstructionItem(boolean isRegister) {
         ItemStack item = new ItemStack(Material.PAPER);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
 
         meta.displayName(Component.text(" ")
                 .decoration(TextDecoration.ITALIC, false));
@@ -60,13 +60,13 @@ public class AuthGUIItems {
                 Component.text("").decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<gray>Then click </gray><green>✔</green><gray> below</gray>").decoration(TextDecoration.ITALIC, false)
         ));
-        item.setItemMeta(meta);
+        });
         return tagAuthItem(item);
     }
 
     public static ItemStack createLogoutInstructionItem() {
         ItemStack item = new ItemStack(Material.PAPER);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
 
         meta.displayName(Component.text(" ")
                 .decoration(TextDecoration.ITALIC, false));
@@ -78,13 +78,13 @@ public class AuthGUIItems {
                 Component.text("").decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<gray>Then click </gray><red>✔</red><gray> to log out</gray>").decoration(TextDecoration.ITALIC, false)
         ));
-        item.setItemMeta(meta);
+        });
         return tagAuthItem(item);
     }
 
     public static ItemStack createChangePasswordInstructionItem() {
         ItemStack item = new ItemStack(Material.PAPER);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
 
         meta.displayName(Component.text(" ")
                 .decoration(TextDecoration.ITALIC, false));
@@ -100,49 +100,49 @@ public class AuthGUIItems {
                 MessageUtil.parse("<dark_gray>┃</dark_gray> <gray>Or click </gray><red>❌</red><gray> to cancel</gray>").decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<dark_gray>┃</dark_gray> <gray>Press </gray><white>Escape</white><gray> to exit</gray>").decoration(TextDecoration.ITALIC, false)
         ));
-        item.setItemMeta(meta);
+        });
         return tagAuthItem(item);
     }
 
     private static ItemStack createConfirmStar() {
         ItemStack item = new ItemStack(Material.NETHER_STAR);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<green><bold>✔ Confirm</bold></green>").decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
                 MessageUtil.parse("<gray>Click to confirm password</gray>").decoration(TextDecoration.ITALIC, false)
         ));
         meta.setEnchantmentGlintOverride(true);
-        item.setItemMeta(meta);
+        });
         return tagAuthItem(item);
     }
 
     private static ItemStack createLogoutConfirmStar() {
         ItemStack item = new ItemStack(Material.NETHER_STAR);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<red><bold>✔ Logout</bold></red>").decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
                 MessageUtil.parse("<gray>Click to log out of your account</gray>").decoration(TextDecoration.ITALIC, false)
         ));
         meta.setEnchantmentGlintOverride(true);
-        item.setItemMeta(meta);
+        });
         return tagAuthItem(item);
     }
 
     private static ItemStack createChangePasswordConfirmStar() {
         ItemStack item = new ItemStack(Material.NETHER_STAR);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<green><bold>✔ Confirm</bold></green>").decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
                 MessageUtil.parse("<gray>Click to change password</gray>").decoration(TextDecoration.ITALIC, false)
         ));
         meta.setEnchantmentGlintOverride(true);
-        item.setItemMeta(meta);
+        });
         return tagAuthItem(item);
     }
 
     private static ItemStack createChangePasswordButton() {
         ItemStack item = new ItemStack(Material.ANVIL);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<gold><bold>✎ Change Password</bold></gold>").decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
                 MessageUtil.parse("<gray>Click to change password</gray>").decoration(TextDecoration.ITALIC, false),
@@ -152,19 +152,19 @@ public class AuthGUIItems {
                 Component.text("").decoration(TextDecoration.ITALIC, false),
                 MessageUtil.parse("<gray>Then click </gray><gold>✎</gold><gray> here</gray>").decoration(TextDecoration.ITALIC, false)
         ));
-        item.setItemMeta(meta);
+        });
         return tagAuthItem(item);
     }
 
     private static ItemStack createCancelButton() {
         ItemStack item = new ItemStack(Material.BARRIER);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<red><bold>❌ Cancel</bold></red>").decoration(TextDecoration.ITALIC, false));
         meta.lore(List.of(
                 MessageUtil.parse("<gray>Click to cancel password change</gray>").decoration(TextDecoration.ITALIC, false)
         ));
         meta.setEnchantmentGlintOverride(true);
-        item.setItemMeta(meta);
+        });
         return tagAuthItem(item);
     }
 }
