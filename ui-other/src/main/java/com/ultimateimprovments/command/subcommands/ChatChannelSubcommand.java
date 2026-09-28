@@ -5,7 +5,7 @@ import com.ultimateimprovments.chat.ChatManager;
 import com.ultimateimprovments.chat.PlayerChannelManager;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.command.SubCommand;
-import com.ultimateimprovments.mechanics.security.check.CheckManager;
+import com.ultimateimprovments.core.api.CheckBridge;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -131,7 +131,8 @@ public final class ChatChannelSubcommand implements SubCommand {
         // messages go ONLY to the inspector. Requires the base command permission and
         // being actually checked (a normal player or moderator off-check can't enable it).
         if (channel == ChatChannel.CHECK) {
-            if (!CheckManager.isBeingChecked(player)) {
+            CheckBridge bridge = CheckBridge.get();
+            if (bridge == null || !bridge.isBeingChecked(player)) {
                 player.sendMessage(MessageUtil.parse(
                         "<red>\u274c You are not under a check — you can't use the check channel.</red>"));
                 return true;

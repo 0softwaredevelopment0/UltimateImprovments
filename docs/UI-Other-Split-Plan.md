@@ -13,10 +13,16 @@
 > - Phase 5a **UI-Guard** (`249002dd`) — `server/**` + `mechanics/security/botprotect/**`
 >   + `RedstoneSubcommand`; guard tasks moved off `TaskManager` into their modules;
 >   `config/UI-Guard.toml`. (check/codepanel/maintenance/sudo still in ui-other.)
-> - Next: **UI-World** + **UI-Items** (classify `features/world/*`), and a follow-up
->   to move `check`/`codepanel`/`maintenance`/`sudo` into UI-Guard (needs decoupling
->   from `ServiceFacade`, `ChatChannelSubcommand`, `PlayerQuitCleanupListener`,
->   `MaintSubcommand`, sudo dialog/commands).
+> - Phase 5b **UI-Guard tail** — `mechanics/security/{check,codepanel,sudo}`,
+>   `maintenance/**` + subcommands (`check`/`uncheck`/`codepane`/`maint`/`sudo`) moved
+>   to UI-Guard. Decoupled: `ChatChannelSubcommand`→`CheckBridge` (ui-core);
+>   `PlayerQuitCleanupListener`→UI-Guard quit listener; `ServiceFacade.checks()`
+>   removed; `TaskManager` no longer owns `CodePanelCleanupTask`.
+>   Config moved into `config/UI-Guard.toml`: `[codepanel]`, `[sudo]` (was
+>   `[features.sudo]`, with legacy-key fallback in `SudoManager`), `[maintenance]`
+>   (was in UI-Punish.toml), `[messages.*]` for check/codepanel/maintenance;
+>   `AddonCatalog` routes/routeMsg updated. Argon2 added to `ui-guard` deps.
+> - Next: **UI-World** + **UI-Items** (classify `features/world/*`).
 
 ## 1. Current state (metrics, 2026-09-28)
 

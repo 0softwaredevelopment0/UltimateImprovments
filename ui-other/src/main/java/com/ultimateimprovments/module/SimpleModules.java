@@ -101,15 +101,10 @@ import com.ultimateimprovments.mechanics.features.world.WaypointManager;
 import com.ultimateimprovments.mechanics.features.world.WirelessRedstoneManager;
 import com.ultimateimprovments.mechanics.particle.ParticleAcceleratorManager;
 import com.ultimateimprovments.mechanics.particle.ParticleMovementTask;
-import com.ultimateimprovments.mechanics.security.sudo.SudoCommandInterceptor;
-import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -308,40 +303,6 @@ public final class SimpleModules {
                 LightningManager.init();
             }
         });
-    }
-
-    // --------------------------------------------------------------------------
-    // SUDO (GitHub-style, registered after CraftingModule)
-    // --------------------------------------------------------------------------
-
-    public static void registerSudo(ModuleManager mm) {
-        mm.register(new SimpleModule("Sudo", "mechanics/security/sudo", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                Main main = (Main) plugin;
-                if (!main.getConfig().getBoolean("features.sudo.enabled", true)) {
-                    ConsoleLogger.info("[SudoModule] Sudo mode is disabled in config (features.sudo.enabled: false).");
-                    return;
-                }
-                SudoManager.init();
-                main.getServer().getPluginManager().registerEvents(new SudoCommandInterceptor(), main);
-                main.getServer().getPluginManager().registerEvents(new SudoQuitListener(), main);
-                ConsoleLogger.info("[SudoModule] ✔ Sudo mode initialized.");
-            }
-        });
-    }
-
-    /**
-     * Clears a player's sudo state on quit (sessions, cooldowns, pending commands).
-     */
-    private static class SudoQuitListener implements Listener {
-        @EventHandler
-        public void onPlayerQuit(PlayerQuitEvent event) {
-            SudoManager manager = SudoManager.getInstance();
-            if (manager != null) {
-                manager.removePlayer(event.getPlayer().getUniqueId());
-            }
-        }
     }
 
     // --------------------------------------------------------------------------

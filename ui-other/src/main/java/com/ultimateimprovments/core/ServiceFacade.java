@@ -4,7 +4,6 @@ import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
-import com.ultimateimprovments.mechanics.security.check.CheckManager;
 import org.bukkit.entity.Player;
 
 /**
@@ -94,17 +93,6 @@ public final class ServiceFacade {
      */
     public static Main plugin() {
         return Main.getInstance();
-    }
-
-    // ========================================================================
-    // CHECK MANAGER
-    // ========================================================================
-
-    /**
-     * Centralized access to {@link CheckManager}.
-     */
-    public static CheckManager checks() {
-        return CheckManager.getInstance();
     }
 
     // ========================================================================

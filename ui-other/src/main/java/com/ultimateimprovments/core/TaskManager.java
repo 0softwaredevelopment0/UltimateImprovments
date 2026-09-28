@@ -1,7 +1,6 @@
 package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCleanupTask;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationTask;
 import com.ultimateimprovments.mechanics.environment.sunburn.SunburnTask;
 import com.ultimateimprovments.listener.FishingListener;
@@ -16,7 +15,6 @@ public class TaskManager {
     private BukkitTask radiationTask;
     private BukkitTask sunburnTask;
     private BukkitTask fishingTask;
-    private BukkitTask codePanelCleanupTask;
 
     private boolean tasksStarted = false;
 
@@ -35,7 +33,6 @@ public class TaskManager {
         radiationTask = new RadiationTask().runTaskTimer(plugin, 20L, 1L);
         sunburnTask = new SunburnTask().runTaskTimer(plugin, 0L, 1L);
         fishingTask = FishingListener.getInstance().runTaskTimer(plugin, 1L, 1L);
-        codePanelCleanupTask = new CodePanelCleanupTask().runTaskTimer(plugin, 200L, 400L);
 
         ConsoleLogger.info("[TASKS] Started.");
     }
@@ -52,7 +49,6 @@ public class TaskManager {
             fishingTask.cancel();
             resetBukkitRunnableTask(FishingListener.getInstance());
         }
-        if (codePanelCleanupTask != null) codePanelCleanupTask.cancel();
     }
 
     public static void resetBukkitRunnableTask(BukkitRunnable runnable) {
