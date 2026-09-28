@@ -1321,6 +1321,8 @@ public final class SimpleModules {
 
                 ConsoleLogger.info("[ItemStealing] Levels: 1-10 | level N = N×10% steal chance | Item: fishing rod | "
                         + "A successful roll throws the item out of the hooked player toward the fisher (picked up after the throw; failed roll / empty hands → normal pull)");
+                ConsoleLogger.info("[ItemStealing] Permission required to steal: ui.enchant.itemstealing.steal "
+                        + "(toggle enchant.item_stealing_require_permission in UI-Other.toml)");
             }
         });
     }

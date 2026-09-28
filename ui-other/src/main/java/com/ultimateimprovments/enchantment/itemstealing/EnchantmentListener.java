@@ -2,6 +2,8 @@ package com.ultimateimprovments.enchantment.itemstealing;
 
 import com.ultimateimprovments.core.Main;
 import org.bukkit.Location;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -30,11 +32,25 @@ import org.bukkit.util.Vector;
  * On a failed roll (or when the hooked player holds NOTHING in both hands) the
  * vanilla behavior stays: the player is pulled normally.
  * <p>
+ * <b>Permission:</b> stealing is gated by a LuckPerms-grantable permission
+ * ({@value #DEFAULT_STEAL_PERMISSION} by default, configurable in UI-Other.toml);
+ * without it the rod never steals.
+ * <p>
+ * <b>Feedback:</b> on a successful steal a fishing-rod "yank" is played to every
+ * player within {@value #YANK_SOUND_RADIUS} blocks of the thief — everyone nearby
+ * hears the item get snapped away.
+ * <p>
  * Only {@link PlayerFishEvent.State#CAUGHT_ENTITY} is handled — in 26.x that is the
  * state that carries the hooked entity on reel-in; {@code REEL_IN} always fires with
  * {@code getCaught() == null}.
  */
 public class EnchantmentListener implements Listener {
+
+    /** Permission allowing a player to steal with this enchantment (LuckPerms-grantable). */
+    private static final String DEFAULT_STEAL_PERMISSION = "ui.enchant.itemstealing.steal";
+
+    /** Radius (blocks) of the steal "yank" sound — everyone inside hears it. */
+    private static final double YANK_SOUND_RADIUS = 10.0;
 
     /** How close to the fisher the thrown item stops homing (blocks). */
     private static final double PICKUP_REACH = 1.5;
@@ -72,6 +88,10 @@ public class EnchantmentListener implements Listener {
         int level = Enchantment.getLevel(rod);
         if (level <= 0) return;
 
+        // Permission gate: only players with the steal node may use the enchantment
+        // (LuckPerms-grantable; configurable in UI-Other.toml).
+        if (!canSteal(fisher)) return;
+
         // Look for an item in the victim's hands: main hand first, offhand as fallback.
         boolean fromOffhand = false;
         ItemStack stolen = victim.getInventory().getItemInMainHand();
@@ -107,10 +127,49 @@ public class EnchantmentListener implements Listener {
         flying.setPickupDelay(THROW_PICKUP_DELAY);
         flyTo(flying, fisher);
 
+        // The "yank" cue: everyone within 10 blocks of the thief hears the reel snap.
+        playYankSound(fisher);
+
         // Cancel the pull — the player stays in place, only the item "comes" to us.
         event.setCancelled(true);
         // Make sure the bobber retracts instead of staying stuck in the world.
         event.getHook().remove();
+    }
+
+    /**
+     * True when the fisher is allowed to steal. The gate is the permission defined by
+     * {@code enchant.item_stealing_permission} (default
+     * {@value #DEFAULT_STEAL_PERMISSION}); {@code enchant.item_stealing_require_permission}
+     * (default true) turns the check off. A config failure never locks the feature out.
+     */
+    private static boolean canSteal(Player player) {
+        try {
+            var cfg = Main.getInstance().getConfig();
+            if (!cfg.getBoolean("enchant.item_stealing_require_permission", true)) {
+                return true;
+            }
+            String node = cfg.getString("enchant.item_stealing_permission", DEFAULT_STEAL_PERMISSION);
+            if (node == null || node.isBlank()) node = DEFAULT_STEAL_PERMISSION;
+            return player.hasPermission(node);
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * Plays the steal "yank" (the fishing-rod reel) for every player within
+     * {@value #YANK_SOUND_RADIUS} blocks of the thief, so bystanders hear the theft.
+     */
+    private static void playYankSound(Player fisher) {
+        World world = fisher.getWorld();
+        Location loc = fisher.getLocation();
+        double maxSquared = YANK_SOUND_RADIUS * YANK_SOUND_RADIUS;
+        for (Player nearby : world.getPlayers()) {
+            if (nearby.getLocation().distanceSquared(loc) <= maxSquared) {
+                nearby.playSound(loc, Sound.ENTITY_FISHING_BOBBER_RETRIEVE,
+                        SoundCategory.PLAYERS, 1.0f, 1.3f);
+            }
+        }
     }
 
     /**

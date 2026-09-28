@@ -1824,6 +1824,12 @@ max_level = 255
 # Permission node.
 # Default: "ui.command.enchant"
 permission = "ui.command.enchant"
+# Permission required to steal items with the Item Stealing enchantment (grant via LuckPerms).
+# Default: "ui.enchant.itemstealing.steal"
+item_stealing_permission = "ui.enchant.itemstealing.steal"
+# Whether the permission above is required to steal (false = everyone with the enchant can steal).
+# Default: true
+item_stealing_require_permission = true
 # Default: ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing", "lava_walker"]
 custom_enchantments = ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing", "lava_walker"]
 
