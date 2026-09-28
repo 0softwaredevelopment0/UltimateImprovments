@@ -35,9 +35,24 @@
 >   made a clean move impossible without extra hooks. Item managers in `features/world`
 >   (Antimatter, ChunkLoaderItem, ConcreteBucket, EntityLocator, Waypoint) also stay for
 >   UI-Items.
-> - Next: **UI-Items** (crafting + features/items + particle + omniscanner + the item
->   managers above). Blocked by: `MultimeterListener` couples to UI-Energy + structure;
->   `AdminMenuGUI` couples to particle/items; needs CoreHooks for particle queries.
+> - Phase 6b **UI-Items** (`4503c596`) — new `ui-items`: `crafting/**` (minus
+>   `StructureIntegrityCraftListener`, which stays in ui-other), `features/items/**`,
+>   `mechanics/particle/**`, `features/scanner/**`, `features/omniscanner/**`
+>   (AdminMenuGUI + OmniscannerModule) and the item managers from `features/world`
+>   (Antimatter, ConcreteBucket, EntityLocator, Waypoint, ChunkLoaderItem).
+>   `UIItems`/`ItemsModules` own Crafting/EntityLocator/Waypoint/Antimatter/
+>   ExpBottleUpgrade/Notes/UnbreakableBreaker/ParticleAccelerator/ItemEnchantListeners/
+>   Omniscanner; `/ui menu` moves to UI-Items.
+>   **Deps:** ui-items → UI-Core, UI-Shared, **UI-MBS** (structure markers) and
+>   **UI-Energy** (cable/battery) — particle accelerator integrates with both.
+>   **Hooks (CoreHooks):** particle view for MultimeterListener/StructureChunkListener;
+>   `openNotesGui` for MiscSubcommand; `useExpBottle` for ChunkLoaderItemListener
+>   (installed by ui-other, owner of ExpSplitSubcommand). Fixed the double registration
+>   of `StructureIntegrityCraftListener`. Config `[netherite_upgrade]`/`[particle_accelerator]`
+>   → `config/UI-Items.toml`.
+> - After 6b: only `features/blocks`/`features/structure`, environment (radiation/
+>   sunburn/magnet/lightning), omniscanner data, power/broadcast/report and misc remain
+>   in ui-other.
 
 ## 1. Current state (metrics, 2026-09-28)
 

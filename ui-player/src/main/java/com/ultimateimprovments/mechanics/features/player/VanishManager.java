@@ -343,7 +343,7 @@ public class VanishManager implements Listener {
 
         if (isVanished(uuid)) {
             // Cancel the join message
-            event.setJoinMessage(null);
+            event.joinMessage(null);
 
             // Apply vanish (hide from others, disable sounds)
             // 1-tick delay so hiding applies after the spawn
@@ -368,7 +368,7 @@ public class VanishManager implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (isVanished(event.getPlayer().getUniqueId())) {
-            event.setQuitMessage(null);
+            event.quitMessage(null);
         }
     }
 
