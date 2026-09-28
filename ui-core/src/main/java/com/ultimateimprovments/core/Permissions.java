@@ -79,7 +79,7 @@ public final class Permissions {
     public static final String BREAKER_BYPASS_TIER = "ui.breaker.bypasstier";
     public static final String CMD_WIRELESSBIND = "ui.command.wirelessbind";
     public static final String CMD_CRAFTRECIPE = "ui.command.craftrecipe";
-    public static final String CMD_VIEWRAD = "ui.command.viewrad";
+    public static final String CMD_RADVIEW = "ui.command.radview";
     public static final String CMD_VANISH = "ui.command.vanish";
     public static final String CMD_NOTES = "ui.command.notes";
     public static final String CMD_UNLOCK = "ui.command.unlock";
@@ -253,7 +253,7 @@ public final class Permissions {
                 new Permission(BREAKER_BYPASS_TIER, "Ignore the unbreakable breaker min_tool_tier gate (any tool incl. hand deals full damage)", PermissionDefault.FALSE),
                 new Permission(CMD_WIRELESSBIND, "Toggle wireless redstone bind mode (/ui wirelessbind <on|off>)", PermissionDefault.FALSE),
                 new Permission(CMD_CRAFTRECIPE, "Free-craft any recipe without resources (/ui craftrecipe)", PermissionDefault.OP),
-                new Permission(CMD_VIEWRAD, "Toggle radiation display", PermissionDefault.FALSE),
+                new Permission(CMD_RADVIEW, "Admin radiation view overlay (/ui radview on|off)", PermissionDefault.FALSE),
                 new Permission(CMD_VANISH, "Vanish players", PermissionDefault.FALSE),
                 new Permission(CMD_NOTES, "Open notes GUI", PermissionDefault.FALSE),
                 new Permission(CMD_UNLOCK, "Unlock books and signs", PermissionDefault.FALSE),

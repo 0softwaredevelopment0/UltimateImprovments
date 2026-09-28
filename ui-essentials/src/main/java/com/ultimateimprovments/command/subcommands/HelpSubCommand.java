@@ -291,7 +291,7 @@ public class HelpSubCommand implements SubCommand {
         cmd("wirelessbind", "Wireless redstone bind mode").u("<on|off>", "default: off");
         cmd("craftrecipe", "Free-craft any recipe (admin)")
                 .u("<recipe>", "result goes to your inventory, no resources");
-        cmd("viewrad", "Toggle the radiation view").u("", "shows radiation sources around you");
+        cmd("radview", "Admin radiation view").u("on|off", "overrides the dosimeter readout, marks it with *");
 
         // ── World / structures ──
         cmd("redstone", "Blocked redstone chunks").u("list|clear", "lagged chunks management");

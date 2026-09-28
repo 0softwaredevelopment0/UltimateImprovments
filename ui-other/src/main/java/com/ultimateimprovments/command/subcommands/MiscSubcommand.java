@@ -105,16 +105,24 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // TOGGLERADVIEW
+    // RADVIEW — /ui radview <on|off> (admin radiation overlay)
     // =========================
-    public static boolean toggleRadView(CommandSender sender) {
+    private static final String PERM_RADVIEW = "ui.command.radview";
+
+    public static boolean radview(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>")); return true; }
-        if (!player.hasPermission("ui.command.viewrad")) { CommandErrors.noPermission(player); return true; }
-        RadiationManager.toggleRadView(player);
-        if (RadiationManager.isRadViewEnabled(player)) {
-            player.sendMessage(MessageUtil.parse("<green>☢</green> <white>Radiation display: </white><green>ON</green>"));
+        if (!player.hasPermission(PERM_RADVIEW)) { CommandErrors.noPermission(player); return true; }
+        Boolean want = parseOnOff(args);
+        if (want == null) {
+            player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage",
+                    "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui radview")));
+            return true;
+        }
+        RadiationManager.setRadView(player, want);
+        if (want) {
+            player.sendMessage(MessageUtil.parse("<green>☢</green> <white>Admin radiation view: </white><green>ON</green> <gray>(dosimeter readout overridden, marked with <red>*</red>)</gray>"));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>☢</red> <white>Radiation display: </white><red>OFF</red>"));
+            player.sendMessage(MessageUtil.parse("<red>☢</red> <white>Admin radiation view: </white><red>OFF</red>"));
         }
         return true;
     }

@@ -130,9 +130,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("repstatus",
                 (s, a) -> { RepStatusSubcommand.execute(s); return true; }));
         registry.register(LegacySubCommandAdapter.of("expsplit", ExpSplitSubcommand::execute));
-        registry.register(LegacySubCommandAdapter.of("viewrad",
-                (s, a) -> { MiscSubcommand.toggleRadView(s); return true; },
-                null, List.of("toggleradview")));
+        registry.register(LegacySubCommandAdapter.of("radview",
+                (s, a) -> { MiscSubcommand.radview(s, a); return true; },
+                tc((s, a) -> { if (a.length == 2) return List.of("on", "off"); return List.of(); })));
         registry.register(LegacySubCommandAdapter.of("fly",
                 (s, a) -> { MiscSubcommand.fly(s, a); return true; }));
         registry.register(LegacySubCommandAdapter.of("god",
