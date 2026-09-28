@@ -105,14 +105,18 @@ public final class EnchantmentListener {
         }
 
         // Feedback: smoke puff + extinguish + a "pop" for the victim, plus an action bar
-        // telling them a cursed item just vanished.
+        // naming the vanished item(s).
         Location loc = player.getLocation().add(0, 1.0, 0);
         player.getWorld().spawnParticle(Particle.LARGE_SMOKE, loc, 10, 0.3, 0.4, 0.3, 0.01);
         player.playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.5f, 1.4f);
         player.playSound(loc, Sound.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.7f, 1.0f);
-        player.sendActionBar(MessageUtil.parse(MessagesManager.getString(
-                "enchant.disappearance_item_lost",
-                "<dark_red>☠</dark_red> <red>Curse of Disappearance: your item vanished!</red>")));
+        String vanishedItems = doomedStacks.stream()
+                .map(s -> s.getType().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' '))
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
+        String template = MessagesManager.getString(
+                "enchant.disappearance_item_lost", "<red>Vanished: <yellow>%item%");
+        player.sendActionBar(MessageUtil.parse(template.replace("%item%", vanishedItems)));
 
         Bukkit.getLogger().info("[Disappearance] " + player.getName() + " lost "
                 + doomedStacks.size() + " cursed stack(s): "
