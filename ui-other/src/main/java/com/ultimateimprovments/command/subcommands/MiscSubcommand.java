@@ -4,11 +4,10 @@ import com.ultimateimprovments.command.CommandErrors;
 
 import com.ultimateimprovments.command.home.HomeCommand;
 import com.ultimateimprovments.config.MessagesManager;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.database.PlayerSettingsDB;
 import com.ultimateimprovments.mechanics.features.items.NotesGUI;
-import com.ultimateimprovments.mechanics.features.player.VanishManager;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
-import com.ultimateimprovments.mechanics.features.player.ElytraBoostManager;
 import com.ultimateimprovments.mechanics.features.world.MinecartSpeedManager;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
@@ -41,8 +40,8 @@ public final class MiscSubcommand {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_player_not_found", "<red>❌ Player</red> <yellow>%player%</yellow> <red>not found!</red>").replace("%player%", targetName))); return true;
         }
         UUID uuid = target.getUniqueId();
-        VanishManager.toggleVanish(target);
-        boolean isVanished = VanishManager.isVanished(uuid);
+        CoreHooks.toggleVanish(target);
+        boolean isVanished = CoreHooks.isVanished(uuid);
         if (isVanished) {
             sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_enabled", "<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>is now hidden (vanished).</white>").replace("%player%", targetName)));
             if (!target.isOnline()) sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_offline_hint", "<gray>Player is offline — vanish will apply on next login.</gray>")));
@@ -95,9 +94,9 @@ public final class MiscSubcommand {
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui elytraboost"))); return true; }
         UUID uuid = player.getUniqueId();
-        boolean nowEnabled = ElytraBoostManager.isFlyEnabled(uuid);
+        boolean nowEnabled = CoreHooks.isElytraBoostEnabled(uuid);
         if (nowEnabled != want) {
-            ElytraBoostManager.toggleFlyEnabled(uuid);
+            CoreHooks.toggleElytraBoost(uuid);
         }
         if (want) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.elytra_enabled", "<green>✦</green> <white>Elytra boost on jump: </white><green>ON</green>")));

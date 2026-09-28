@@ -76,12 +76,6 @@ import com.ultimateimprovments.mechanics.features.items.NotesManager;
 import com.ultimateimprovments.mechanics.features.items.TotemChargeListener;
 import com.ultimateimprovments.mechanics.features.items.UnbreakableBreakerManager;
 import com.ultimateimprovments.mechanics.features.movement.BlockFrictionListener;
-import com.ultimateimprovments.mechanics.features.player.AttributesManager;
-import com.ultimateimprovments.mechanics.features.player.ElytraBoostManager;
-import com.ultimateimprovments.mechanics.features.player.LeashManager;
-import com.ultimateimprovments.mechanics.features.player.ModeProtectManager;
-import com.ultimateimprovments.mechanics.features.player.ShieldSlownessManager;
-import com.ultimateimprovments.mechanics.features.player.VanishManager;
 import com.ultimateimprovments.mechanics.features.scanner.MetalDetectorListener;
 import com.ultimateimprovments.mechanics.features.scanner.ScannerItemListener;
 import com.ultimateimprovments.mechanics.features.structure.StructureIntegrityListener;
@@ -315,56 +309,6 @@ public final class SimpleModules {
             }
         });
 
-        // ArmorEffects
-        mm.register(new SimpleModule("ArmorEffects", "mechanics/features/player/armor_effects", false) {
-            private Object task;
-
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.init();
-                task = new com.ultimateimprovments.mechanics.features.player.ArmorEffectsTask()
-                        .runTaskTimer(plugin, 20L, 20L); // 1s heartbeat, manager owns unit intervals
-                ConsoleLogger.info("[ArmorEffects] Configurable potion effects for armor sets.");
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                if (task instanceof org.bukkit.scheduler.BukkitTask bt) bt.cancel();
-                task = null;
-                com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                com.ultimateimprovments.mechanics.features.player.ArmorEffectsManager.reloadConfig();
-            }
-        });
-
-        // ArmorTrimEffects
-        mm.register(new SimpleModule("ArmorTrimEffects", "mechanics/features/player/armor_trim_effects", false) {
-            private Object task;
-
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.init();
-                task = new com.ultimateimprovments.mechanics.features.player.TrimEffectsTask()
-                        .runTaskTimer(plugin, 20L, 20L); // 1s heartbeat, manager owns unit intervals
-                ConsoleLogger.info("[ArmorTrimEffects] Configurable potion effects for armor TRIM materials.");
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                if (task instanceof org.bukkit.scheduler.BukkitTask bt) bt.cancel();
-                task = null;
-                com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                com.ultimateimprovments.mechanics.features.player.TrimEffectsManager.reloadConfig();
-            }
-        });
-
         // Lightning
         mm.register(new SimpleModule("Lightning", "mechanics/environment/lightning", false) {
             @Override
@@ -413,32 +357,6 @@ public final class SimpleModules {
     // --------------------------------------------------------------------------
 
     public static void registerFeatures(ModuleManager mm) {
-        // Attributes
-        mm.register(new SimpleModule("Attributes", "mechanics/features/attributes", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                AttributesManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                AttributesManager.reloadConfig();
-            }
-        });
-
-        // Join Invulnerable Reset (defensive immortal-player fix; disabled by default)
-        mm.register(new SimpleModule("JoinInvulnerableReset", "mechanics/features/join_invulnerable_reset", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                com.ultimateimprovments.mechanics.features.player.JoinInvulnerableReset.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                com.ultimateimprovments.mechanics.features.player.JoinInvulnerableReset.reloadConfig();
-            }
-        });
-
         // Beacon
         mm.register(new SimpleModule("Beacon", "mechanics/features/beacon", false) {
             @Override
@@ -536,19 +454,6 @@ public final class SimpleModules {
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
                 MagnetConfig.reloadConfig();
-            }
-        });
-
-        // ModeProtect
-        mm.register(new SimpleModule("ModeProtect", "mechanics/features/mode_protect", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                ModeProtectManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                ModeProtectManager.reloadConfig();
             }
         });
 
@@ -774,19 +679,6 @@ public final class SimpleModules {
             }
         });
 
-        // ShieldSlowness
-        mm.register(new SimpleModule("ShieldSlowness", "mechanics/features/shield_slowness", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                ShieldSlownessManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                ShieldSlownessManager.reloadConfig();
-            }
-        });
-
         // CreativeItemValidator
         mm.register(new PluginModule("CreativeItemValidator", "mechanics/features/creativeitem", false) {
             private CreativeItemValidator listener;
@@ -821,19 +713,6 @@ public final class SimpleModules {
             @Override
             protected void onReloadConfig(JavaPlugin plugin) {
                 ContainerTriggerManager.reloadConfig();
-            }
-        });
-
-        // Vanish
-        mm.register(new SimpleModule("Vanish", "mechanics/features/vanish", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                VanishManager.init();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                VanishManager.reloadConfig();
             }
         });
 
@@ -1131,30 +1010,11 @@ public final class SimpleModules {
 
         // UpdateChecker is registered by the UI-Admin addon (AdminModules).
 
-        // Leash
-        mm.register(new PluginModule("Leash", "mechanics/features/leash", false) {
-            @Override
-            protected void onInit(JavaPlugin plugin) throws Exception {
-                LeashManager.init((Main) plugin);
-            }
-
-            @Override
-            protected void onDisable(JavaPlugin plugin) {
-                LeashManager.shutdown();
-            }
-
-            @Override
-            protected void onReloadConfig(JavaPlugin plugin) {
-                LeashManager.reloadConfig();
-            }
-        });
-
-        // ElytraBoost
-        mm.register(new SimpleModule("ElytraBoost", "mechanics/features/elytra_boost", false) {
+        // Item enchant listeners (ChestplateFlight / NetheriteUpgrade / TotemCharge)
+        mm.register(new SimpleModule("ItemEnchantListeners", "mechanics/features/items", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 Main main = (Main) plugin;
-                ElytraBoostManager.init(main);
                 main.getServer().getPluginManager().registerEvents(new ChestplateFlightListener(), main);
                 main.getServer().getPluginManager().registerEvents(new NetheriteUpgradeListener(), main);
                 main.getServer().getPluginManager().registerEvents(new TotemChargeListener(), main);
