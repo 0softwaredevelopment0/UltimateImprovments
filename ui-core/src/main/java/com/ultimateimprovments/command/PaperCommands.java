@@ -1,25 +1,36 @@
 package com.ultimateimprovments.command;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.ultimateimprovments.core.Main;
-import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.command.CommandSender;
 
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * PaperCommands — registers the {@code /ui} root via the <b>Paper command API</b>
- * ({@link BasicCommand} + {@link LifecycleEvents#COMMANDS}), replacing the legacy
- * {@code CommandMap} registration.
+ * PaperCommands — registers {@code /ui} through the <b>Paper/Brigadier command API</b>
+ * ({@link LifecycleEvents#COMMANDS}).
  * <p>
- * {@link BasicCommand} is Paper's "legacy-style" command: it hands the raw
- * {@code String[]} args and a {@code suggest} callback, which maps 1:1 onto the
- * existing {@link SubCommandRegistry} dispatcher — no Brigadier tree, no
- * greedy-string suggestion quirks. Every existing subcommand handler stays
- * untouched.
+ * The tree is intentionally <b>dynamic</b>:
+ * <pre>
+ *   ui &lt;sub&gt; [args...]
+ * </pre>
+ * {@code <sub>} is a {@code word} argument (with suggestions from
+ * {@link SubCommandRegistry#getAllCommandNames()}) and {@code [args...]} is a
+ * {@code greedyString}. Both route into the untouched {@link SubCommandRegistry}, so all
+ * subcommands and their permissions keep working, and — crucially — subcommands
+ * registered later by addons (after UI-Core's enable) are still resolvable, because
+ * nothing is enumerated at registration time (only suggested at completion time).
+ * <p>
+ * This replaces the previous single {@code BasicCommand} bridge with real Brigadier
+ * argument nodes while preserving byte-for-byte the legacy {@code String[]} contract.
  */
 public final class PaperCommands {
 
@@ -33,32 +44,71 @@ public final class PaperCommands {
         registered = true;
 
         plugin.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            final Commands commands = event.registrar();
-            commands.register(
-                    "ui",
+            LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("ui")
+                    .executes(ctx -> {
+                        dispatch(ctx.getSource().getSender(), new String[0]);
+                        return 1;
+                    });
+
+            root.then(Commands.argument("sub", StringArgumentType.word())
+                    .suggests((ctx, builder) -> suggestSub(ctx.getSource(), builder))
+                    .executes(ctx -> {
+                        dispatch(ctx.getSource().getSender(),
+                                new String[]{ctx.getArgument("sub", String.class)});
+                        return 1;
+                    })
+                    .then(Commands.argument("args", StringArgumentType.greedyString())
+                            .suggests((ctx, builder) -> suggestTail(ctx.getSource(), builder))
+                            .executes(ctx -> {
+                                String sub = ctx.getArgument("sub", String.class);
+                                String rest = ctx.getArgument("args", String.class);
+                                dispatch(ctx.getSource().getSender(), merge(sub, rest));
+                                return 1;
+                            })));
+
+            event.registrar().register(root.build(),
                     "UltimateImprovments — main command",
-                    List.of("ultimateimprovments"),
-                    new UiCommand());
+                    List.of("ultimateimprovments"));
         });
     }
 
-    /** Bridges the Paper command API to the legacy {@link SubCommandRegistry} dispatcher. */
-    private static final class UiCommand implements BasicCommand {
+    private static void dispatch(CommandSender sender, String[] args) {
+        SubCommandRegistry.getInstance().dispatch(sender, args);
+    }
 
-        @Override
-        public void execute(CommandSourceStack source, String[] args) {
-            SubCommandRegistry.getInstance().dispatch(source.getSender(), args);
-        }
+    /** Rebuilds the legacy {@code String[] args} (args[0] = subcommand) from the greedy tail. */
+    private static String[] merge(String sub, String rest) {
+        if (rest == null || rest.isBlank()) return new String[]{sub};
+        String[] parts = rest.trim().split("\\s+");
+        String[] full = new String[parts.length + 1];
+        full[0] = sub;
+        System.arraycopy(parts, 0, full, 1, parts.length);
+        return full;
+    }
 
-        @Override
-        public Collection<String> suggest(CommandSourceStack source, String[] args) {
-            return SubCommandRegistry.getInstance().tabComplete(source.getSender(), args);
+    /** First level: suggest subcommand names/aliases for the typed prefix. */
+    private static CompletableFuture<Suggestions> suggestSub(CommandSourceStack source, SuggestionsBuilder builder) {
+        String partial = builder.getRemaining();
+        for (String name : SubCommandRegistry.getInstance().getAllCommandNames()) {
+            if (name.startsWith(partial.toLowerCase())) builder.suggest(name);
         }
+        return builder.buildFuture();
+    }
 
-        @Override
-        public boolean canUse(CommandSender sender) {
-            // Per-subcommand permissions are checked by the subcommands themselves.
-            return true;
+    /** Tail level: delegate to the subcommand's own tab-complete. */
+    private static CompletableFuture<Suggestions> suggestTail(CommandSourceStack source, SuggestionsBuilder builder) {
+        CommandSender sender = source.getSender();
+        String input = builder.getInput();
+        if (input.startsWith("/")) input = input.substring(1);
+
+        String[] tokens = input.split(" ", -1);
+        String[] args = tokens.length <= 1
+                ? new String[]{""}
+                : Arrays.copyOfRange(tokens, 1, tokens.length);
+
+        for (String suggestion : SubCommandRegistry.getInstance().tabComplete(sender, args)) {
+            if (suggestion != null && !suggestion.isEmpty()) builder.suggest(suggestion);
         }
+        return builder.buildFuture();
     }
 }
