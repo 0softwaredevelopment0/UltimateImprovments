@@ -282,9 +282,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             return true;
         }));
 
-        // ── AoE Enchant ──
-        registry.register(LegacySubCommandAdapter.of("enchant", EnchantSubcommand::execute,
-                tc((s, a) -> EnchantSubcommand.tabComplete(s, a))));
+        // ── /ui enchant is registered by the UI-Enchant addon (it owns the subcommand) ──
         registry.register(LegacySubCommandAdapter.of("vote", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.vote")) { CommandErrors.noPermission(p); return false; }

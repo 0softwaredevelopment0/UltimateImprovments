@@ -1,0 +1,13 @@
+name: UI-Enchant
+version: ${project.version}
+description: UltimateImprovments — custom enchantments add-on
+main: com.ultimateimprovments.core.UIEnchant
+api-version: '26.2'
+author: rizer001
+addon-for: UI-Core
+depend: [UI-Core, UI-Shared]
+softdepend: [UI-Datapack]
+permissions:
+  ui.enchant.itemstealing.steal:
+    description: Allows stealing an item from another player with the Item Stealing enchantment
+    default: false

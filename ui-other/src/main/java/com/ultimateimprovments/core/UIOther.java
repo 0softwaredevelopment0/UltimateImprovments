@@ -102,22 +102,7 @@ public class UIOther extends JavaPlugin {
         SimpleModules.registerFeatures(mm);
         mm.register(new MeteorModule());
         SimpleModules.registerEconomy(mm);
-        SimpleModules.registerAOEEnchantment(mm);
-        SimpleModules.registerAutoSmeltEnchantment(mm);
-        SimpleModules.registerVeinMinerEnchantment(mm);
-        SimpleModules.registerTreeCapitatorEnchantment(mm);
-        SimpleModules.registerFlightEnchantment(mm);
-        SimpleModules.registerMagnetEnchantment(mm);
-        SimpleModules.registerIgnitingEnchantment(mm);
-        SimpleModules.registerLevitationEnchantment(mm);
-        SimpleModules.registerSelfDestructEnchantment(mm);
-        SimpleModules.registerDegradationEnchantment(mm);
-        SimpleModules.registerCurseTrioEnchantments(mm);
-        SimpleModules.registerAttackAoeEnchantment(mm);
-        SimpleModules.registerItemStealingEnchantment(mm);
-        SimpleModules.registerRepairingEnchantment(mm);
-        SimpleModules.registerContainerStealingEnchantment(mm);
-        SimpleModules.registerLavaWalkerEnchantment(mm);
+        // Custom enchantments are registered by the UI-Enchant addon (EnchantModules).
         SimpleModules.registerProtection(mm);
         mm.register(new ProtectionModule());
         SimpleModules.registerUtility(mm);
