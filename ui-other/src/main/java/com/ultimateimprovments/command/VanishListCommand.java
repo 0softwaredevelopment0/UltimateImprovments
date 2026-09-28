@@ -1,7 +1,7 @@
 package com.ultimateimprovments.command;
 
 import com.ultimateimprovments.config.MessagesManager;
-import com.ultimateimprovments.mechanics.features.player.VanishManager;
+import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.util.MessageUtil;
 
 import org.bukkit.Bukkit;
@@ -34,7 +34,7 @@ public class VanishListCommand extends Command {
         int vanishedCount = 0;
 
         for (Player online : Bukkit.getOnlinePlayers()) {
-            if (VanishManager.isVanished(online.getUniqueId())) {
+            if (CoreHooks.isVanished(online.getUniqueId())) {
                 vanishedCount++;
                 if (canSeeVanished) {
                     names.add(MessageUtil.legacy("<gray>" + online.getDisplayName() + "</gray>"));

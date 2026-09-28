@@ -82,6 +82,10 @@ public class ElytraBoostManager implements Listener {
         instance = new ElytraBoostManager();
         plugin.getServer().getPluginManager().registerEvents(instance, plugin);
         loadFlyDisabledFromDb();
+        // Publish the toggle/state through the core hook so other addons (commands)
+        // can control it without importing this class.
+        com.ultimateimprovments.core.hooks.CoreHooks.setElytraBoost(
+                ElytraBoostManager::toggleFlyEnabled, ElytraBoostManager::isFlyEnabled);
         ConsoleLogger.info("[ElytraBoost] ✔ Enabled — press SPACE while gliding to boost.");
     }
 

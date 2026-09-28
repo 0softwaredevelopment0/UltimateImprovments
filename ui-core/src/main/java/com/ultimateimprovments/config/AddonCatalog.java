@@ -54,9 +54,11 @@ public final class AddonCatalog {
         route("UI-Display", "tab", "scoreboard", "bossbar");
         // ── UI-Admin ──
         route("UI-Admin", "economy");
+        // ── UI-Player ──
+        route("UI-Player", "vanish", "armor_effects", "armor_trim_effects");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
-                "features", "brand_spoof", "vanish", "sunburn", "armor_effects", "armor_trim_effects", "netherite_upgrade",
+                "features", "brand_spoof", "sunburn", "netherite_upgrade",
                 "death_logger", "power", "suicide",
                 "packet_guard", "proxy_server", "redstone_guard", "emergency_entity_kill",
                 "server_overload_warning", "bot_protection", "changedimmension", "motd",
@@ -85,9 +87,10 @@ public final class AddonCatalog {
         routeMsg("UI-Protection", "protection");
         routeMsg("UI-Display", "tab", "scoreboard", "bossbar");
         routeMsg("UI-Admin", "economy");
+        routeMsg("UI-Player", "vanish");
         routeMsg("UI-Other", "check", "packet_guard", "bot_protection", "sudo",
                 "codepanel", "changedimmension", "motd",
-                "vanish", "suicide", "notes", "power", "death_logger",
+                "suicide", "notes", "power", "death_logger",
                 "structures", "meteor", "space", "wireless_redstone",
                 "structure_integrity");
     }
@@ -132,6 +135,6 @@ public final class AddonCatalog {
                 CORE,
                 "UI-Shared", "UI-MBS", "UI-Datapack", "UI-Chat", "UI-Clans",
                 "UI-Combat", "UI-Punish", "UI-Essentials", "UI-Energy",
-                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Admin", "UI-Other");
+                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Admin", "UI-Player", "UI-Other");
     }
 }

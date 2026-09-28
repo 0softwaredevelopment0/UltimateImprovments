@@ -3,11 +3,13 @@ package com.ultimateimprovments.core.hooks;
 import com.ultimateimprovments.core.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -29,6 +31,9 @@ public final class CoreHooks {
 
     private static volatile Predicate<UUID> pendingAuth = id -> false;
     private static volatile Predicate<UUID> vanished = id -> false;
+    private static volatile Consumer<OfflinePlayer> vanishToggle = p -> {};
+    private static volatile Predicate<UUID> elytraBoostEnabled = id -> false;
+    private static volatile Consumer<UUID> elytraBoostToggle = id -> {};
     private static volatile BlockBreakCounter blockBreakCounter;
 
     /** Ore → replacement block left behind when an ore is mined. */
@@ -78,6 +83,32 @@ public final class CoreHooks {
     /** @return true while the player is hidden (vanish). */
     public static boolean isVanished(UUID playerId) {
         return playerId != null && vanished.test(playerId);
+    }
+
+    /** Installed by the vanish feature: toggles the vanish state of a player. */
+    public static void setVanishToggler(Consumer<OfflinePlayer> toggler) {
+        vanishToggle = toggler != null ? toggler : p -> {};
+    }
+
+    /** Toggles vanish for the given player (no-op when the feature is absent). */
+    public static void toggleVanish(OfflinePlayer player) {
+        if (player != null) vanishToggle.accept(player);
+    }
+
+    /** Installed by the elytra-boost feature. */
+    public static void setElytraBoost(Consumer<UUID> toggle, Predicate<UUID> enabled) {
+        elytraBoostToggle = toggle != null ? toggle : id -> {};
+        elytraBoostEnabled = enabled != null ? enabled : id -> false;
+    }
+
+    /** @return true while elytra boost is enabled for the player. */
+    public static boolean isElytraBoostEnabled(UUID playerId) {
+        return playerId != null && elytraBoostEnabled.test(playerId);
+    }
+
+    /** Toggles elytra boost for the player (no-op when the feature is absent). */
+    public static void toggleElytraBoost(UUID playerId) {
+        if (playerId != null) elytraBoostToggle.accept(playerId);
     }
 
     // ── Block-break counters (timed challenges) ──────────────────────────

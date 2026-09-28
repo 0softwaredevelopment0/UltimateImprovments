@@ -59,6 +59,7 @@ public class VanishManager implements Listener {
         // Publish vanish state through the core hook so unrelated addons
         // (e.g. the display/tab addon) can respect it without importing this class.
         com.ultimateimprovments.core.hooks.CoreHooks.setVanishedPredicate(VanishManager::isVanished);
+        com.ultimateimprovments.core.hooks.CoreHooks.setVanishToggler(VanishManager::toggleVanish);
         reloadConfig();
         ConsoleLogger.info("[Vanish] Manager initialized. " + vanishedPlayers.size() + " vanished player(s) loaded.");
     }
