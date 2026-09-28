@@ -1,26 +1,27 @@
 # UI-Other Split Plan (9 addons)
 
 > Internal working plan for decomposing `ui-other` into 9 separate addon JARs.
-> Status: **Phases 0-2 + 3a done** (UI-Enchant, UI-Auth, UI-Protection extracted).
-> One family version (see AGENTS.md). Update as phases complete; delete when `ui-other` is gone.
+> Status: **Phases 0-3b + 4a done** (UI-Enchant, UI-Auth, UI-Protection, UI-Display,
+> UI-Admin extracted). One family version (see AGENTS.md). Update as phases complete;
+> delete when `ui-other` is gone.
 >
 > **Progress**
-> - 2026-09-28 — Phase 0: integrity → ui-shared; `CoreHooks`; enchant decoupled. Green.
-> - 2026-09-28 — Phase 1: **UI-Enchant** (`428d95f5`). Phase 2: **UI-Auth** (`bc8f4d2c`).
-> - 2026-09-28 — Phase 3a: **UI-Protection** (`063d8b03`) — `mechanics/protection/**`,
->   `ProtectionSubcommand`, `VoidProtectionListener` (package → `…mechanics.protection`),
->   `ProtectionModule`, `config/UI-Protection.toml`; routes `protection`/`void_protection`.
-> - 2026-09-28 — Phase 3b: **UI-Display** (`eeead1d4`) — `display/**` (tab/scoreboard/
->   boss bar) + `DisplayModules` + `config/UI-Display.toml`. `VanishManager` decoupled
->   from display via `CoreHooks.isVanished`. (MOTD/brand_spoof/death_logger/
->   changeddimension still in ui-other; can join a later UI-Display/UI-Misc step.)
-> - Next: **Phase 4 — UI-World + UI-Items** (classify `features/world/*` into world vs
->   custom-item managers; crafting listeners depend on those). Then UI-Player,
->   UI-Guard, UI-Admin. Notes:
->   - `VanishManager` is still referenced by `VanishListCommand`/`MiscSubcommand`
->     (both ui-other) → keep in ui-other or hoist before UI-Player.
->   - `StructureIntegrityManager` is referenced by `MultimeterListener` / `EnderChestManager`
->     (scanner/items) → keep with UI-Items (or hoist).
+> - 2026-09-28 — Phase 0 (`CoreHooks`, integrity→ui-shared, `SimpleModule`→ui-core).
+> - Phase 1 **UI-Enchant** (`428d95f5`). Phase 2 **UI-Auth** (`bc8f4d2c`).
+>   Phase 3a **UI-Protection** (`063d8b03`). Phase 3b **UI-Display** (`eeead1d4`).
+> - Phase 4a **UI-Admin** (`beca0f3d`) — `economy/**`, `op/**`,
+>   `mechanics/features/updater/**`, `EconomySubcommand`, `UpdateSubcommand`;
+>   `config/UI-Admin.toml`; routes `economy`.
+> - Next: remaining **UI-World**, **UI-Items**, **UI-Player**, **UI-Guard**.
+>   Known couplings:
+>   - `ElytraBoost` module bundles item listeners (ChestplateFlight/NetheriteUpgrade/
+>     TotemCharge) → those belong to UI-Items; split before UI-Player.
+>   - `VanishManager` referenced by `VanishListCommand`/`MiscSubcommand` (ui-other):
+>     `MiscSubcommand` will use CoreHooks (add vanish-toggle + elytra hooks) and
+>     `VanishListCommand` moves to UI-Player.
+>   - `StructureIntegrityManager` referenced by `MultimeterListener`/`EnderChestManager`
+>     → keep with UI-Items.
+>   - `features/world/*` must be classified into world mechanic vs custom-item manager.
 
 ## 1. Current state (metrics, 2026-09-28)
 
