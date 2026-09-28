@@ -1,26 +1,22 @@
 # UI-Other Split Plan (9 addons)
 
 > Internal working plan for decomposing `ui-other` into 9 separate addon JARs.
-> Status: **Phases 0-4b done** (UI-Enchant, UI-Auth, UI-Protection, UI-Display,
-> UI-Admin, UI-Player extracted). One family version (see AGENTS.md). Update as
-> phases complete; delete when `ui-other` is gone.
+> Status: **7 addons extracted** (UI-Enchant, UI-Auth, UI-Protection, UI-Display,
+> UI-Admin, UI-Player, UI-Guard). One family version (see AGENTS.md).
+> Update as phases complete; delete when `ui-other` is gone.
 >
 > **Progress**
 > - 2026-09-28 — Phase 0 (`CoreHooks`, integrity→ui-shared, `SimpleModule`→ui-core).
-> - Phase 1 **UI-Enchant** (`428d95f5`). Phase 2 **UI-Auth** (`bc8f4d2c`).
->   Phase 3a **UI-Protection** (`063d8b03`). Phase 3b **UI-Display** (`eeead1d4`).
->   Phase 4a **UI-Admin** (`beca0f3d`). Phase 4b **UI-Player** (`dfb30816`).
-> - Next: remaining **UI-World**, **UI-Items**, **UI-Guard**.
->   Known couplings:
->   - `ElytraBoost` module's item listeners stay in ui-other as
->     `ItemEnchantListeners` → move to UI-Items.
->   - `StructureIntegrityManager` referenced by `MultimeterListener` / `EnderChestManager`
->     → keep with UI-Items.
->   - `features/world/*` must be classified into world mechanic vs custom-item manager;
->     `mechanics/crafting/*` depends on those managers.
->   - UI-Guard pieces (`codepanel`, `check`, `maintenance`, `sudo`, `server/*`) are wired
->     in `UIOther.initPostModuleSystems`/`onDisable` and `PlayerQuitCleanupListener`
->     (CodePanelSession) → decouple those before extracting.
+> - Phases 1-4b: **UI-Enchant** (`428d95f5`), **UI-Auth** (`bc8f4d2c`),
+>   **UI-Protection** (`063d8b03`), **UI-Display** (`eeead1d4`),
+>   **UI-Admin** (`beca0f3d`), **UI-Player** (`dfb30816`).
+> - Phase 5a **UI-Guard** (`249002dd`) — `server/**` + `mechanics/security/botprotect/**`
+>   + `RedstoneSubcommand`; guard tasks moved off `TaskManager` into their modules;
+>   `config/UI-Guard.toml`. (check/codepanel/maintenance/sudo still in ui-other.)
+> - Next: **UI-World** + **UI-Items** (classify `features/world/*`), and a follow-up
+>   to move `check`/`codepanel`/`maintenance`/`sudo` into UI-Guard (needs decoupling
+>   from `ServiceFacade`, `ChatChannelSubcommand`, `PlayerQuitCleanupListener`,
+>   `MaintSubcommand`, sudo dialog/commands).
 
 ## 1. Current state (metrics, 2026-09-28)
 
