@@ -299,10 +299,9 @@ public final class ItemDurabilityUtil {
     /** Toggles the vanilla unbreakable component on the item. */
     public static void setVanillaUnbreakable(ItemStack item, boolean unbreakable) {
         if (item == null || item.getType() == Material.AIR) return;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
+        item.editMeta(meta -> {
         meta.setUnbreakable(unbreakable);
-        item.setItemMeta(meta);
+        });
     }
 
     // =========================

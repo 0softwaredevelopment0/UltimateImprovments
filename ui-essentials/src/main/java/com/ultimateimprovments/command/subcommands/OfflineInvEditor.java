@@ -157,16 +157,16 @@ public final class OfflineInvEditor implements Listener {
 
     private static ItemStack glass() {
         ItemStack glass = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
-        ItemMeta meta = glass.getItemMeta();
+        glass.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<reset>").decoration(TextDecoration.ITALIC, false));
         meta.setHideTooltip(true);
-        glass.setItemMeta(meta);
+        });
         return glass;
     }
 
     private static ItemStack info(UUID uuid, String name, boolean ender, boolean edit) {
         ItemStack paper = new ItemStack(Material.PAPER);
-        ItemMeta meta = paper.getItemMeta();
+        paper.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<gold>✦ " + name + " (offline)</gold>")
                 .decoration(TextDecoration.ITALIC, false));
         meta.lore(java.util.List.of(
@@ -179,7 +179,7 @@ public final class OfflineInvEditor implements Listener {
                         ? "<green>Editable — changes save on close</green>"
                         : "<gray>Read-only</gray>")
                         .decoration(TextDecoration.ITALIC, false)));
-        paper.setItemMeta(meta);
+        });
         return paper;
     }
 

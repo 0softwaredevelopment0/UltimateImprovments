@@ -374,23 +374,23 @@ public final class InvseeCommand {
 
     private static ItemStack createGlassPane() {
         ItemStack glass = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
-        ItemMeta meta = glass.getItemMeta();
+        glass.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<reset>").decoration(TextDecoration.ITALIC, false));
         meta.setHideTooltip(true);
         // Mark as a placeholder: isPlaceholder() blocks taking it ANY way
         meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BOOLEAN, true);
-        glass.setItemMeta(meta);
+        });
         return glass;
     }
 
     private static ItemStack createPlaceholder(Material type, String displayName) {
         ItemStack item = new ItemStack(type);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<gray>" + displayName + "</gray>")
                 .decoration(TextDecoration.ITALIC, false));
         meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, PersistentDataType.BOOLEAN, true);
         meta.setHideTooltip(true);
-        item.setItemMeta(meta);
+        });
         return item;
     }
 

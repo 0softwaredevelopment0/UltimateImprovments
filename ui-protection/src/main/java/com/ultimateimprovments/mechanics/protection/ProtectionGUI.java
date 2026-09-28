@@ -254,11 +254,11 @@ public final class ProtectionGUI {
 
     private static void fillEmpty(Inventory inv, Material material) {
         ItemStack filler = new ItemStack(material);
-        ItemMeta meta = filler.getItemMeta();
+        filler.editMeta(meta -> {
         meta.displayName(Component.text(" "));
         meta.getPersistentDataContainer().set(
                 Keys.PROTECTION_GUI, PersistentDataType.STRING, "filler");
-        filler.setItemMeta(meta);
+        });
         for (int i = 0; i < inv.getSize(); i++) {
             if (inv.getItem(i) == null) inv.setItem(i, filler);
         }

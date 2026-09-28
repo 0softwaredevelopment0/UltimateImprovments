@@ -130,7 +130,7 @@ public class ChgDimGUI implements Listener {
 
     private static ItemStack createConfirmItem() {
         ItemStack item = new ItemStack(Material.NETHER_STAR);
-        ItemMeta meta = item.getItemMeta();
+        item.editMeta(meta -> {
         meta.displayName(MessageUtil.parse("<green><bold>✔ Teleport</bold></green>")
                 .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
         meta.lore(List.of(
@@ -138,7 +138,7 @@ public class ChgDimGUI implements Listener {
                         .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false)
         ));
         meta.setEnchantmentGlintOverride(true);
-        item.setItemMeta(meta);
+        });
         return tagChgdimItem(item);
     }
 

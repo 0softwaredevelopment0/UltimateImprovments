@@ -238,18 +238,16 @@ public final class Enchantment {
 
     /** Writes the PDC mirror level. */
     private static void setPdcLevel(@NotNull ItemStack item, int level) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
+        item.editMeta(meta -> {
         meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(255, level)));
-        item.setItemMeta(meta);
+        });
     }
 
     /** Removes the PDC mirror key. */
     private static void clearPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
+        item.editMeta(meta -> {
         meta.getPersistentDataContainer().remove(LEVEL_KEY);
-        item.setItemMeta(meta);
+        });
     }
 }
