@@ -145,4 +145,53 @@ public final class CoreHooks {
             }
         });
     }
+
+    // ── Minecart speed display (installed by the world addon) ────────────
+
+    private static volatile Predicate<UUID> minecartSpeedDisplay = id -> false;
+    private static volatile Consumer<UUID> minecartSpeedToggle = id -> {};
+
+    /** Installed by the world feature. Null resets to "disabled for nobody". */
+    public static void setMinecartSpeed(Predicate<UUID> enabled, Consumer<UUID> toggle) {
+        minecartSpeedDisplay = enabled != null ? enabled : id -> false;
+        minecartSpeedToggle = toggle != null ? toggle : id -> {};
+    }
+
+    /** @return true while the speed actionbar is enabled for the player. */
+    public static boolean isMinecartSpeedDisplayEnabled(UUID playerId) {
+        return playerId != null && minecartSpeedDisplay.test(playerId);
+    }
+
+    /** Toggles the speed actionbar (no-op when the feature is absent). */
+    public static void toggleMinecartSpeedDisplay(UUID playerId) {
+        if (playerId != null) minecartSpeedToggle.accept(playerId);
+    }
+
+    // ── Shutdown advancement (installed by the world addon) ──────────────
+
+    private static volatile Runnable shutdownGranter = () -> {};
+
+    /** Installed by the world feature. */
+    public static void setShutdownGranter(Runnable granter) {
+        shutdownGranter = granter != null ? granter : () -> {};
+    }
+
+    /** Grants the shutdown advancement to every online player (no-op when absent). */
+    public static void grantShutdownToAllOnline() {
+        shutdownGranter.run();
+    }
+
+    // ── Bedrock-break challenge (installed by the world addon) ───────────
+
+    private static volatile Consumer<Player> bedrockBreakGranter = p -> {};
+
+    /** Installed by the world feature. */
+    public static void setBedrockBreakGranter(Consumer<Player> granter) {
+        bedrockBreakGranter = granter != null ? granter : p -> {};
+    }
+
+    /** Grants the bedrock-break advancement to the player (no-op when absent). */
+    public static void grantBedrockBreak(Player player) {
+        if (player != null) bedrockBreakGranter.accept(player);
+    }
 }

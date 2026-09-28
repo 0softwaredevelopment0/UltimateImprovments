@@ -2,7 +2,6 @@ package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.SimpleModules;
-import com.ultimateimprovments.module.meteor.MeteorModule;
 import com.ultimateimprovments.mechanics.features.omniscanner.OmniscannerModule;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
@@ -94,7 +93,6 @@ public class UIOther extends JavaPlugin {
         SimpleModules.registerMechanics(mm);
         SimpleModules.registerCrafting(mm);
         SimpleModules.registerFeatures(mm);
-        mm.register(new MeteorModule());
         SimpleModules.registerEconomy(mm);
         // Custom enchantments are registered by the UI-Enchant addon (EnchantModules).
         SimpleModules.registerProtection(mm);
