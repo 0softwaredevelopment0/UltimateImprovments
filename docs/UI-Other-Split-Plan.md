@@ -1,26 +1,22 @@
 # UI-Other Split Plan (9 addons)
 
 > Internal working plan for decomposing `ui-other` into 9 separate addon JARs.
-> Status: **Phase 1 done** (UI-Enchant extracted). One family version (see AGENTS.md).
+> Status: **Phase 2 done** (UI-Enchant, UI-Auth extracted). One family version (see AGENTS.md).
 > Keep this file updated as phases complete; delete it when `ui-other` is gone.
 >
 > **Progress**
-> - 2026-09-28 — Phase 0 (partial): `mechanics/features/integrity/**` hoisted
->   `ui-other` → `ui-shared` (same package, no import churn). Added
->   `ui-core/.../core/hooks/CoreHooks.java` (pendingAuth, block-break counter,
->   ore→stone) and decoupled the enchantment package from `features/world`
->   (WoodcutterChallenge), `listener` (BlockBreakListener ore→stone) and
->   `security/auth` (AuthPlayerState). Build green.
-> - 2026-09-28 — Phase 1 done: extracted **UI-Enchant**. New Gradle module
->   `ui-enchant` (JAR), `enchantment/**` + `EnchantSubcommand` moved there,
->   `EnchantModules` (16 registrars) split out of `SimpleModules` (1765→1314 lines),
->   `/ui enchant` registered by the addon, config `[enchant]` +
->   `[messages.enchant]`/`[messages_en.enchant]` moved to bundled
->   `config/UI-Enchant.toml`, `SimpleModule` hoisted to public ui-core.
->   `AddonCatalog` routes `enchant` → UI-Enchant. Build green, JAR produced.
-> - Next: **Phase 2 — UI-Auth** (`mechanics/security/auth/**` ~17 files + `[auth]`
->   config + `AuthPlayerState` already published via `CoreHooks.setPendingAuth`,
->   but verify the quit-cleanup/dialog wiring in `UIOther.initPostModuleSystems`).
+> - 2026-09-28 — Phase 0: integrity → ui-shared; `CoreHooks`; enchant decoupled. Green.
+> - 2026-09-28 — Phase 1: **UI-Enchant** extracted (module + `enchantment/**` +
+>   `EnchantSubcommand` + `EnchantModules` + `config/UI-Enchant.toml`; `SimpleModule`
+>   hoisted to public ui-core). Green, JAR produced.
+> - 2026-09-28 — Phase 2: **UI-Auth** extracted (module + `mechanics/security/auth/**`
+>   + `AuthSubcommand` + `AuthModules` + `config/UI-Auth.toml`; `AskCordsManager.cleanup`
+>   moved to ui-other's `PlayerQuitCleanupListener` so auth no longer imports ui-other).
+>   Green, JAR produced.
+> - Next: **Phase 3 — UI-World + UI-Items** (the big one). Must first classify each
+>   `mechanics/features/world/*` file as "world mechanic" vs "custom item" (crafting
+>   listeners depend on the item managers); resolve the crafting↔items hotspot before
+>   splitting. Then UI-Player, UI-Protection, UI-Display, UI-Guard, UI-Admin.
 
 ## 1. Current state (metrics, 2026-09-28)
 
