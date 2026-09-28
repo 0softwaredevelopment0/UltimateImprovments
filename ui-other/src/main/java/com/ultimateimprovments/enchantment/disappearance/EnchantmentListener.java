@@ -79,10 +79,6 @@ public final class EnchantmentListener {
             doomed.add(new int[]{2, 0});
             doomedStacks.add(inv.getItemInOffHand());
         }
-        if (roll(inv.getItemInMainHand())) {
-            doomed.add(new int[]{3, 0});
-            doomedStacks.add(inv.getItemInMainHand());
-        }
         ItemStack cursor = player.getOpenInventory().getCursor();
         if (roll(cursor)) {
             doomed.add(new int[]{4, 0});
@@ -101,7 +97,6 @@ public final class EnchantmentListener {
                     inv.setArmorContents(a);
                 }
                 case 2 -> inv.setItemInOffHand(null);
-                case 3 -> inv.setItemInMainHand(null);
                 case 4 -> player.getOpenInventory().setCursor(null);
             }
         }

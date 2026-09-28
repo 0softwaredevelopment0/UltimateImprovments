@@ -5,7 +5,7 @@
 	"supported_items": "#ui:attack_aoe_enchantable",
 	"primary_items": "#ui:attack_aoe_enchantable",
 	"weight": 1,
-	"max_level": 255,
+	"max_level": 10,
 	"min_cost": {
 		"base": 25,
 		"per_level_above_first": 25

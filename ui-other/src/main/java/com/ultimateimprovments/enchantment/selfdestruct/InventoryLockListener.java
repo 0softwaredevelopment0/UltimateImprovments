@@ -16,7 +16,7 @@ import org.bukkit.inventory.PlayerInventory;
 
 /**
  * InventoryLockListener — while an item carries the Curse of Self-Destruct it is
- * STUCK in the player's inventory for the whole 10-second countdown. Every known
+ * STUCK in the player's inventory for the whole 30-second countdown. Every known
  * way of removing it is cancelled:
  * <ul>
  *   <li>{@link InventoryClickEvent} — clicks, shift-clicks, armor swap, anvil /

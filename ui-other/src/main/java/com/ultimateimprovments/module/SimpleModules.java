@@ -979,7 +979,7 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[AoE] Max level: 255 | Radius = level | Tools: pickaxe, shovel, axe, hoe");
+                ConsoleLogger.info("[AoE] Max level: 8 | Radius = level (capped at 8) | Tools: pickaxe, shovel, axe, hoe");
                 ConsoleLogger.info("[AoE] Sneak to disable AoE for precise mining");
             }
         });
@@ -1219,7 +1219,8 @@ public final class SimpleModules {
 
     public static void registerSelfDestructEnchantment(ModuleManager mm) {
         // SelfDestruct: REAL data-driven curse (ui:self_destruct, registered by
-        // the UI-Datapack, max level 1, in the #minecraft:curse tag → red tooltip)
+        // the UI-Datapack, max level 1, NOT in #minecraft:curse so the table can
+        // offer it; the description JSON gives the red tooltip)
         // + PDC mirror failsafe. 30s silent countdown → 19 damage to the holder.
         mm.register(new SimpleModule("SelfDestructEnchantment", "enchantment/selfdestruct", false) {
             @Override
@@ -1247,7 +1248,8 @@ public final class SimpleModules {
 
     public static void registerDegradationEnchantment(ModuleManager mm) {
         // Degradation: REAL data-driven curse (ui:degradation, registered by
-        // the UI-Datapack, levels 1-255, in the #minecraft:curse tag → red tooltip)
+        // the UI-Datapack, levels 1-255, NOT in #minecraft:curse so the table can
+        // offer it; the description JSON gives the red tooltip)
         // + PDC mirror failsafe. Every second a cursed item with durability loses
         // level durability points; when durability runs out the item breaks.
         mm.register(new SimpleModule("DegradationEnchantment", "enchantment/degradation", false) {
@@ -1288,7 +1290,7 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.attackaoe.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[AttackAoE] Levels: 1-255 | Weapons: swords, axes | Radius: "
+                ConsoleLogger.info("[AttackAoE] Levels: 1-10 | Weapons: swords, axes | Radius: "
                         + "(2·level+1)³ cube (level 1 → 3×3, level 2 → 5×5, ...)");
                 ConsoleLogger.info("[AttackAoE] Hit one entity → all entities in the radius take the same damage");
                 ConsoleLogger.info("[AttackAoE] Sneak to disable AoE for precise single-target attacks");
@@ -1368,9 +1370,9 @@ public final class SimpleModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.lavawalker.EnchantmentSyncListener.register((Main) plugin);
 
-                ConsoleLogger.info("[LavaWalker] Levels: 1-255 | Item: boots | Radius: level (cap "
+                ConsoleLogger.info("[LavaWalker] Levels: 1-16 | Item: boots | Radius: level (cap "
                         + com.ultimateimprovments.enchantment.lavawalker.Enchantment.MAX_RADIUS
-                        + ") | Melt delay: 20-45s (frosted-ice style, persists across restarts)");
+                        + ") | 1 durability per conversion pass | Melt delay: 20-45s (frosted-ice style, persists across restarts)");
             }
 
             @Override

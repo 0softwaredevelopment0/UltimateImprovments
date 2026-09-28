@@ -24,6 +24,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 import java.util.Set;
 import java.util.UUID;
@@ -59,6 +60,14 @@ public class EnchantmentListener implements Listener {
 
     /** Raw slot of the chestplate in the player's own inventory (36-39 = armor). */
     private static final int CHESTPLATE_RAW_SLOT = 38;
+
+    /**
+     * Absolute base slot of the armor region (36=boots, 37=leggings,
+     * 38=chestplate/elytra, 39=helmet). Armor durability MUST be changed through
+     * these slots: {@code getArmorContents()} returns COPIES, so a wear applied
+     * to those copies is silently lost (same fix as Repairing).
+     */
+    private static final int ARMOR_SLOT_BASE = 36;
 
     /** Players this plugin granted flight to via the Flight charm. */
     private static final Set<UUID> GRANTED_FLIGHT = ConcurrentHashMap.newKeySet();
@@ -353,9 +362,17 @@ public class EnchantmentListener implements Listener {
                 // Full set cost: while actively flying, EVERY worn armor piece
                 // loses 1 use of integrity per second (the charm needs a chest-
                 // plate to exist, but flying strains the whole set).
-                for (ItemStack piece : player.getInventory().getArmorContents()) {
+                // Armor is changed through the ABSOLUTE slots 36-39:
+                // getArmorContents() returns COPIES, so damage applied there
+                // would be silently discarded and flight would be free.
+                PlayerInventory inv = player.getInventory();
+                for (int slot = ARMOR_SLOT_BASE; slot <= ARMOR_SLOT_BASE + 3; slot++) {
+                    ItemStack piece = inv.getItem(slot);
                     if (piece == null || piece.getType() == Material.AIR) continue;
                     ItemDurabilityUtil.decreaseItemIntegrity(piece, 1, player);
+                    if (piece.getAmount() <= 0) {
+                        inv.setItem(slot, null);
+                    }
                 }
             } catch (Exception e) {
                 ConsoleLogger.warn("[Flight] Integrity drain error for " + player.getName()

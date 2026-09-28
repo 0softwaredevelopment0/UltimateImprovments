@@ -15,8 +15,10 @@ import org.jetbrains.annotations.Nullable;
  * Curse of Degradation — real datapack enchantment with a PDC failsafe.
  * <p>
  * Registers {@code ui:degradation} (file {@code data/ui/enchantment/degradation.json})
- * as a REAL data-driven curse: red tooltip text (it's in the {@code #minecraft:curse}
- * tag), anvil &amp; book compatibility, {@code /enchant} support. Levels 1-255.
+ * as a REAL data-driven curse with red tooltip text (the description JSON sets the
+ * colour; it is deliberately NOT in {@code #minecraft:curse} so the enchanting table
+ * can still offer it), anvil &amp; book compatibility, {@code /enchant} support.
+ * Levels 1-255.
  * <p>
  * <b>Failsafe design (same as AoE/Igniting/SelfDestruct):</b> every item carrying the
  * charm ALSO stores the level in the {@code ui:degradation_level} PDC key — a backup

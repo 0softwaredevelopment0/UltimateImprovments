@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Registers {@code ui:lava_walker} (file {@code data/ui/enchantment/lava_walker.json})
  * as a REAL data-driven enchantment: glint, description with level, anvil &amp; book
- * compatibility, {@code /enchant} support. Levels 1-255. The {@code min_cost.base} of
+ * compatibility, {@code /enchant} support. Levels 1-16. The {@code min_cost.base} of
  * 25 (same as the other charms) keeps the enchanting-table offer in the THIRD slot only.
  * <p>
  * <b>Failsafe design (same as Igniting):</b> every item that carries the enchantment
@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
  * lava after a random 20–45 s (frosted-ice style). No fire protection is granted —
  * the very first step into fresh lava can still light the player on fire.
  * <p>
- * Max level: 255<br>
+ * Max level: 16<br>
  * Works on: boots
  */
 public final class Enchantment {
@@ -46,6 +46,12 @@ public final class Enchantment {
 
     /** Hard cap for the conversion radius: level 16 → 31×31 (961 blocks) per move event. */
     public static final int MAX_RADIUS = 16;
+
+    /**
+     * Highest useful level: the radius is capped at {@link #MAX_RADIUS}, so
+     * levels above 16 change nothing.
+     */
+    public static final int MAX_LEVEL = 16;
 
     private Enchantment() {}
 
@@ -76,13 +82,13 @@ public final class Enchantment {
      * is unavailable, so items keep working even if the datapack dies.
      *
      * @param item the item to check
-     * @return enchantment level (1-255), or 0 if not present
+     * @return enchantment level (1-16), or 0 if not present
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
         if (real != null) {
             int lvl = item.getEnchantmentLevel(real);
-            if (lvl > 0) return Math.max(1, Math.min(255, lvl));
+            if (lvl > 0) return Math.max(1, Math.min(MAX_LEVEL, lvl));
         }
         // Datapack down or enchantment missing → PDC mirror
         return getPdcLevel(item);
@@ -95,10 +101,10 @@ public final class Enchantment {
      * the PDC mirror. No lore is touched.
      *
      * @param item  the item to modify
-     * @param level enchantment level (1-255)
+     * @param level enchantment level (1-16)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
-        if (level < 1 || level > 255) return;
+        if (level < 1 || level > MAX_LEVEL) return;
         if (!isValidTool(item)) return;
 
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
@@ -218,20 +224,20 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror level (1-255) or 0 if absent. */
+    /** Reads the PDC mirror level (1-16) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return 0;
         Integer level = meta.getPersistentDataContainer().get(LEVEL_KEY, PersistentDataType.INTEGER);
-        return level != null ? Math.max(1, Math.min(255, level)) : 0;
+        return level != null ? Math.max(1, Math.min(MAX_LEVEL, level)) : 0;
     }
 
     /** Writes the PDC mirror level. */
     private static void setPdcLevel(@NotNull ItemStack item, int level) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
-        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(255, level)));
+        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(MAX_LEVEL, level)));
         item.setItemMeta(meta);
     }
 
