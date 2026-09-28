@@ -2869,6 +2869,9 @@ item_stealing_victim_stolen = "<red>✘ У вас украли предмет!</
 item_stealing_victim_failed = "<gray>У вас пытались украсть предмет.</gray>"
 # Default: <red>❌ You don't have permission to steal items!</red>
 item_stealing_no_permission = "<red>❌ У вас нет прав на кражу предметов!</red>"
+# Curse of Disappearance triggered (action bar).
+# Default: <dark_red>☠</dark_red> <red>Curse of Disappearance: your item vanished!</red>
+disappearance_item_lost = "<dark_red>☠</dark_red> <red>Проклятие исчезновения: предмет исчез!</red>"
 
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
@@ -3719,6 +3722,9 @@ item_stealing_victim_stolen = "<red>✘ Your item was stolen!</red>"
 item_stealing_victim_failed = "<gray>Someone tried to steal your item.</gray>"
 # Default: <red>❌ You don't have permission to steal items!</red>
 item_stealing_no_permission = "<red>❌ You don't have permission to steal items!</red>"
+# Curse of Disappearance triggered (action bar).
+# Default: <dark_red>☠</dark_red> <red>Curse of Disappearance: your item vanished!</red>
+disappearance_item_lost = "<dark_red>☠</dark_red> <red>Curse of Disappearance: your item vanished!</red>"
 
 [messages_en.packet_guard]
 # Message text (MiniMessage).
