@@ -1,27 +1,26 @@
 # UI-Other Split Plan (9 addons)
 
 > Internal working plan for decomposing `ui-other` into 9 separate addon JARs.
-> Status: **Phases 0-3b + 4a done** (UI-Enchant, UI-Auth, UI-Protection, UI-Display,
-> UI-Admin extracted). One family version (see AGENTS.md). Update as phases complete;
-> delete when `ui-other` is gone.
+> Status: **Phases 0-4b done** (UI-Enchant, UI-Auth, UI-Protection, UI-Display,
+> UI-Admin, UI-Player extracted). One family version (see AGENTS.md). Update as
+> phases complete; delete when `ui-other` is gone.
 >
 > **Progress**
 > - 2026-09-28 — Phase 0 (`CoreHooks`, integrity→ui-shared, `SimpleModule`→ui-core).
 > - Phase 1 **UI-Enchant** (`428d95f5`). Phase 2 **UI-Auth** (`bc8f4d2c`).
 >   Phase 3a **UI-Protection** (`063d8b03`). Phase 3b **UI-Display** (`eeead1d4`).
-> - Phase 4a **UI-Admin** (`beca0f3d`) — `economy/**`, `op/**`,
->   `mechanics/features/updater/**`, `EconomySubcommand`, `UpdateSubcommand`;
->   `config/UI-Admin.toml`; routes `economy`.
-> - Next: remaining **UI-World**, **UI-Items**, **UI-Player**, **UI-Guard**.
+>   Phase 4a **UI-Admin** (`beca0f3d`). Phase 4b **UI-Player** (`dfb30816`).
+> - Next: remaining **UI-World**, **UI-Items**, **UI-Guard**.
 >   Known couplings:
->   - `ElytraBoost` module bundles item listeners (ChestplateFlight/NetheriteUpgrade/
->     TotemCharge) → those belong to UI-Items; split before UI-Player.
->   - `VanishManager` referenced by `VanishListCommand`/`MiscSubcommand` (ui-other):
->     `MiscSubcommand` will use CoreHooks (add vanish-toggle + elytra hooks) and
->     `VanishListCommand` moves to UI-Player.
->   - `StructureIntegrityManager` referenced by `MultimeterListener`/`EnderChestManager`
+>   - `ElytraBoost` module's item listeners stay in ui-other as
+>     `ItemEnchantListeners` → move to UI-Items.
+>   - `StructureIntegrityManager` referenced by `MultimeterListener` / `EnderChestManager`
 >     → keep with UI-Items.
->   - `features/world/*` must be classified into world mechanic vs custom-item manager.
+>   - `features/world/*` must be classified into world mechanic vs custom-item manager;
+>     `mechanics/crafting/*` depends on those managers.
+>   - UI-Guard pieces (`codepanel`, `check`, `maintenance`, `sudo`, `server/*`) are wired
+>     in `UIOther.initPostModuleSystems`/`onDisable` and `PlayerQuitCleanupListener`
+>     (CodePanelSession) → decouple those before extracting.
 
 ## 1. Current state (metrics, 2026-09-28)
 
