@@ -1,0 +1,63 @@
+# UI-Enchant — custom enchantments (charms + curses).
+#
+# Settings live under [enchant]; feedback messages under [messages.enchant] (ru)
+# and [messages_en.enchant] (en). The active language follows messages.lang.
+[enchant]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Maximum value.
+# Default: 255
+max_level = 255
+# Permission node.
+# Default: "ui.command.enchant"
+permission = "ui.command.enchant"
+# Permission required to steal items with the Item Stealing enchantment (grant via LuckPerms).
+# Default: "ui.enchant.itemstealing.steal"
+item_stealing_permission = "ui.enchant.itemstealing.steal"
+# Whether the permission above is required to steal (false = everyone with the enchant can steal).
+# Default: true
+item_stealing_require_permission = true
+# Default: ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing", "lava_walker"]
+custom_enchantments = ["aoe", "autosmelt", "veinminer", "treecapitator", "flight", "magnet", "igniting", "levitation", "self_destruct", "degradation", "attack_aoe", "item_stealing", "repairing", "container_stealing", "lava_walker"]
+
+# Meteor events: spawn chance, size, loot.
+
+[messages.enchant]
+# Default: <green>✔ Item stolen!</green>
+item_stealing_steal_success = "<green>✔ Предмет украден!</green>"
+# Default: <red>✘ The steal failed!</red>
+item_stealing_steal_failed = "<red>✘ Кража не удалась!</red>"
+# Default: <red>✘ Your item was stolen!</red>
+item_stealing_victim_stolen = "<red>✘ У вас украли предмет!</red>"
+# Default: <gray>Someone tried to steal your item.</gray>
+item_stealing_victim_failed = "<gray>У вас пытались украсть предмет.</gray>"
+# Default: <red>❌ You don't have permission to steal items!</red>
+item_stealing_no_permission = "<red>❌ У вас нет прав на кражу предметов!</red>"
+# Curse of Disappearance triggered (action bar). %item% = vanished item name(s).
+# Default: <red>Vanished: <yellow>%item%
+disappearance_item_lost = "<red>Исчезло: <yellow>%item%"
+
+# ==================================================================
+# MESSAGES — ENGLISH (active when lang = "en")
+# ==================================================================
+
+
+# structures section.
+# Placeholders: %structure%, %error%, %id%, %temp%, %press%, %spin%, %shield%, %coords%, %status%, %cat%, %left%, %total%, %sec%, %name%, %percent%, %count%, %block%, %expected%, %int%, %stress%, %p1%, %p2%, %stab%, %cool%, %f%, %s%, %p%, %h%
+
+[messages_en.enchant]
+# Default: <green>✔ Item stolen!</green>
+item_stealing_steal_success = "<green>✔ Item stolen!</green>"
+# Default: <red>✘ The steal failed!</red>
+item_stealing_steal_failed = "<red>✘ The steal failed!</red>"
+# Default: <red>✘ Your item was stolen!</red>
+item_stealing_victim_stolen = "<red>✘ Your item was stolen!</red>"
+# Default: <gray>Someone tried to steal your item.</gray>
+item_stealing_victim_failed = "<gray>Someone tried to steal your item.</gray>"
+# Default: <red>❌ You don't have permission to steal items!</red>
+item_stealing_no_permission = "<red>❌ You don't have permission to steal items!</red>"
+# Curse of Disappearance triggered (action bar). %item% = vanished item name(s).
+# Default: <red>Vanished: <yellow>%item%
+disappearance_item_lost = "<red>Vanished: <yellow>%item%"
+

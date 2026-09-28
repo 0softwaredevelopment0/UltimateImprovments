@@ -12,5 +12,6 @@ include(
     'ui-essentials',
     'ui-datapack',
     'ui-mbs',
+    'ui-enchant',
     'ui-other'
 )
