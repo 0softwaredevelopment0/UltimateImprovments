@@ -61,6 +61,9 @@ public class AdminMenuGUI implements Listener {
         int page = 0;
     }
 
+    /** Players whose menu is being rebuilt — their InventoryCloseEvent must not clear state. */
+    private static final java.util.Set<UUID> REOPENING = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     public static void open(Player player) {
         register();
         MenuState state = new MenuState();
@@ -115,7 +118,13 @@ public class AdminMenuGUI implements Listener {
         }
         inv.setItem(SLOT_CLOSE, createActionItem(Material.OAK_DOOR, "<gray>Закрыть</gray>", ""));
 
+        // Re-opening the menu (tab/page switch) makes Bukkit fire InventoryCloseEvent
+        // for the previous view, which would drop our per-player state. Re-assert it
+        // AFTER openInventory so the freshly opened menu stays protected.
+        REOPENING.add(player.getUniqueId());
         player.openInventory(inv);
+        REOPENING.remove(player.getUniqueId());
+        openMenus.put(player.getUniqueId(), state);
     }
 
     // ========================================================================
@@ -329,17 +338,17 @@ public class AdminMenuGUI implements Listener {
                 "<gray>Scans chunk for ores.</gray>"), Keys.ORE_FINDER));
 
         // 7. Mob Finder
-        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.SPYGLASS,
                 "<white>Mob Finder *</white>",
                 "<gray>Scans chunk for entities.</gray>"), Keys.MOB_FINDER));
 
         // 8. Health Meter
-        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.NAME_TAG,
                 "<white>Health Meter *</white>",
                 "<gray>Check entity health.</gray>"), Keys.HEALTH_METER));
 
         // 9. Portable Radar
-        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.ENDER_EYE,
                 "<white>Portable Radar *</white>",
                 "<gray>Find nearby entities.</gray>"), Keys.RADAR));
 
@@ -355,7 +364,7 @@ public class AdminMenuGUI implements Listener {
         CUSTOM_ITEMS.add(com.ultimateimprovments.mechanics.environment.radiation.HazmatManager.createPiece(Material.LEATHER_BOOTS));
 
         // 12. Concrete Bucket
-        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.BUCKET,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.WATER_BUCKET,
                 "<white>Concrete Bucket *</white>",
                 "<gray>Place instant concrete.</gray>"), Keys.CONCRETE_BUCKET));
 
@@ -380,13 +389,13 @@ public class AdminMenuGUI implements Listener {
         CUSTOM_ITEMS.add(cl);
 
         // 15. Entity Locator
-        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.COMPASS,
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.RECOVERY_COMPASS,
                 "<white>Entity Locator *</white>",
                 "<gray>Points to nearest entity.</gray>"), Keys.LOCATOR));
 
-        // 16. Antimatter
-        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.NETHER_STAR,
-                "<light_purple>Antimatter *</light_purple>",
+        // 16. Antimatter (crafted as a splash potion)
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.SPLASH_POTION,
+                "<light_purple>Antimatter Flask *</light_purple>",
                 "<gray>Dangerous substance.</gray>"), Keys.ANTIMATTER));
 
         // 17. Particle Ring (GLASS — with PDC so it's detected as an accelerator block)
@@ -442,6 +451,26 @@ public class AdminMenuGUI implements Listener {
 
         // 25. Lead Ingot — corrected material is above (NETHERITE_INGOT); the craft result
         // would not match an IRON_INGOT version, so this one must stay netherite-based.
+
+        // 26. Blazing Sword
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.GOLDEN_SWORD,
+                "<gold>Blazing Sword *</gold>",
+                "<gray>Sets struck enemies on fire.</gray>"), Keys.BLAZING_SWORD));
+
+        // 27. Glass Sword
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.DIAMOND_SWORD,
+                "<aqua>Glass Sword *</aqua>",
+                "<gray>A brittle but powerful blade.</gray>"), Keys.GLASS_SWORD));
+
+        // 28. Electric Trident
+        CUSTOM_ITEMS.add(tagPdc(createNamedItem(Material.TRIDENT,
+                "<yellow>Electric Trident *</yellow>",
+                "<gray>Strikes with lightning.</gray>"), Keys.ELECTRIC_TRIDENT));
+
+        // 29. Heavy Core (crafted block item; identified by material alone)
+        CUSTOM_ITEMS.add(createNamedItem(Material.HEAVY_CORE,
+                "<gray>Heavy Core *</gray>",
+                "<gray>Crafted from netherite scrap.</gray>"));
     }
 
     private static ItemStack createNamedItem(Material material, String name, String lore) {
@@ -478,7 +507,7 @@ public class AdminMenuGUI implements Listener {
                 List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
                 if (lore == null) lore = new ArrayList<>();
                 lore.add(Component.empty());
-                lore.add(MessageUtil.parse("<!italic><green>ПКМ — взять в инвентарь</green>"));
+                lore.add(MessageUtil.parse("<!italic><green>ЛКМ/ПКМ — скопировать в курсор</green>"));
                 meta.lore(lore);
                 customItem.setItemMeta(meta);
             }
@@ -635,10 +664,11 @@ public class AdminMenuGUI implements Listener {
                 return;
             }
 
-            // Item click — pick the item up ON THE CURSOR without removing it
-            // from the menu (the click is cancelled, so the slot keeps its item
-            // and can be clicked any number of times).
-            if (slot >= CONTENT_START && slot <= CONTENT_END && e.isLeftClick() && !isProtectedItem) {
+            // Item click — COPY the item onto the cursor without removing it from
+            // the menu (the click is cancelled, so the slot keeps its item and can
+            // be clicked any number of times). Left OR right click.
+            if (slot >= CONTENT_START && slot <= CONTENT_END
+                    && (e.isLeftClick() || e.isRightClick()) && !isProtectedItem) {
                 if (clicked != null && clicked.getType() != Material.BLACK_STAINED_GLASS_PANE) {
                     ItemStack cursor = e.getCursor();
                     if (cursor != null && cursor.getType() != Material.AIR) {
@@ -671,7 +701,10 @@ public class AdminMenuGUI implements Listener {
 
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
-        openMenus.remove(e.getPlayer().getUniqueId());
+        UUID id = e.getPlayer().getUniqueId();
+        // A programmatic rebuild (tab/page switch) closes the old view first — keep state.
+        if (REOPENING.contains(id)) return;
+        openMenus.remove(id);
     }
 
     // ========================================================================
