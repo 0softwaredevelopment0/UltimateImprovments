@@ -15,10 +15,10 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Registers {@code ui:magnet} (file {@code data/ui/enchantment/magnet.json})
  * as a REAL data-driven enchantment: glint, description, anvil &amp; book compatibility,
- * {@code /enchant} support. Has exactly ONE level.
+ * {@code /enchant} support. Levels 1-16.
  * <p>
  * <b>Failsafe design (same as AoE/AutoSmelt/VeinMiner/TreeCapitator/Flight):</b> every item
- * carrying the charm ALSO stores the level (always 1) in the {@code ui:magnet_level} PDC key —
+ * carrying the charm ALSO stores the level in the {@code ui:magnet_level} PDC key —
  * a backup mirror:
  * <ul>
  *   <li><b>Datapack alive:</b> the real enchantment is the source of truth;</li>
@@ -26,12 +26,12 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>Datapack restored:</b> items with PDC but no real charm get it re-applied.</li>
  * </ul>
  * <p>
- * Effect: when a player breaks a block with a Magnet tool, all freshly-dropped items near the
- * player are attracted toward him at a steady speed (0.5 blocks/second) — including drops
- * produced by AoE / VeinMiner / TreeCapitator / AutoSmelt (they are created inside the same
- * {@code BlockBreakEvent}).
+ * Effect: while a player holds a Magnet tool, all freshly-dropped items within
+ * {@code level × 2} blocks (capped at 32) are attracted toward him at a steady speed
+ * (1 block/second) — including drops produced by AoE / VeinMiner / TreeCapitator /
+ * AutoSmelt (they are created inside the same {@code BlockBreakEvent}).
  * <p>
- * Max level: 1<br>
+ * Max level: 16 (radius = level × 2 blocks, up to 32)<br>
  * Works on: pickaxe, shovel, axe, hoe
  */
 public final class Enchantment {
@@ -42,8 +42,14 @@ public final class Enchantment {
     /** PDC mirror key: {@code ui:magnet_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "magnet_level");
 
-    /** The only level this enchantment can have. */
-    public static final int MAX_LEVEL = 1;
+    /** Highest level: attraction radius = level × 2 blocks (16 → 32). */
+    public static final int MAX_LEVEL = 16;
+
+    /** Blocks of attraction radius added per level. */
+    public static final int RADIUS_PER_LEVEL = 2;
+
+    /** Hard cap of the attraction radius in blocks. */
+    public static final int MAX_RADIUS = MAX_LEVEL * RADIUS_PER_LEVEL;
 
     private Enchantment() {}
 
@@ -73,15 +79,16 @@ public final class Enchantment {
      * is unavailable, so tools keep working even if the datapack dies.
      *
      * @param item the tool to check
-     * @return enchantment level (1 if present, 0 if not)
+     * @return enchantment level (1-16, 0 if not present)
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
-        if (real != null && item.containsEnchantment(real)) {
-            return 1;
+        if (real != null) {
+            int lvl = item.getEnchantmentLevel(real);
+            if (lvl > 0) return Math.max(1, Math.min(MAX_LEVEL, lvl));
         }
         // Datapack down or enchantment missing → PDC mirror
-        return getPdcLevel(item) > 0 ? 1 : 0;
+        return getPdcLevel(item);
     }
 
     /**
@@ -92,23 +99,22 @@ public final class Enchantment {
     }
 
     /**
-     * Sets the Magnet enchantment on the given tool.
-     * The enchantment has only ONE level — any level ≥ 1 is clamped to 1.
+     * Sets the Magnet enchantment level on the given tool.
      * Applies the REAL enchantment when the datapack is loaded and always writes
      * the PDC mirror. No lore is touched.
      *
      * @param item  the tool to modify
-     * @param level requested level (clamped to 1)
+     * @param level enchantment level (1-16)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
-        if (level < 1) return;
+        if (level < 1 || level > MAX_LEVEL) return;
         if (!isValidTool(item)) return;
 
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
         if (real != null) {
-            item.addUnsafeEnchantment(real, 1);
+            item.addUnsafeEnchantment(real, level);
         }
-        setPdcLevel(item, 1);
+        setPdcLevel(item, level);
     }
 
     /**
@@ -134,7 +140,7 @@ public final class Enchantment {
      * <p>
      * Idempotent and cheap when nothing changed:
      * <ul>
-     *   <li>real enchantment present → mirror level 1 into PDC;</li>
+     *   <li>real enchantment present → mirror its level into PDC;</li>
      *   <li>PDC present but real enchantment missing (datapack was down) →
      *       re-apply the real enchantment from PDC;</li>
      *   <li>neither present → nothing to do.</li>
@@ -147,15 +153,16 @@ public final class Enchantment {
         if (!isValidTool(item)) return;
 
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
-        boolean hasPdc = getPdcLevel(item) > 0;
+        int pdcLevel = getPdcLevel(item);
 
         if (real != null) {
-            if (item.containsEnchantment(real)) {
-                // Datapack alive: mirror level 1 into PDC (backup).
-                if (!hasPdc) setPdcLevel(item, 1);
-            } else if (hasPdc) {
+            int realLevel = item.getEnchantmentLevel(real);
+            if (realLevel > 0) {
+                // Datapack alive: mirror the real level into PDC (backup).
+                if (realLevel != pdcLevel) setPdcLevel(item, realLevel);
+            } else if (pdcLevel > 0) {
                 // Datapack restored after a crash: re-apply the charm from PDC.
-                item.addUnsafeEnchantment(real, 1);
+                item.addUnsafeEnchantment(real, pdcLevel);
             }
         }
         // Datapack down: leave the item as-is — PDC is the source until it returns.
@@ -178,8 +185,10 @@ public final class Enchantment {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
         if (real == null) return; // datapack down — nothing to mirror from
 
-        if (item.containsEnchantment(real)) {
-            if (getPdcLevel(item) <= 0) setPdcLevel(item, 1);
+        int realLevel = item.getEnchantmentLevel(real);
+        if (realLevel > 0) {
+            int pdcLevel = getPdcLevel(item);
+            if (realLevel != pdcLevel) setPdcLevel(item, realLevel);
         }
     }
 
@@ -222,20 +231,20 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror (1 if present, 0 if absent). */
+    /** Reads the PDC mirror level (1-16) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return 0;
         Integer level = meta.getPersistentDataContainer().get(LEVEL_KEY, PersistentDataType.INTEGER);
-        return level != null && level > 0 ? 1 : 0;
+        return level != null ? Math.max(1, Math.min(MAX_LEVEL, level)) : 0;
     }
 
-    /** Writes the PDC mirror (always 1). */
+    /** Writes the PDC mirror level. */
     private static void setPdcLevel(@NotNull ItemStack item, int level) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
-        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, 1);
+        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(MAX_LEVEL, level)));
         item.setItemMeta(meta);
     }
 

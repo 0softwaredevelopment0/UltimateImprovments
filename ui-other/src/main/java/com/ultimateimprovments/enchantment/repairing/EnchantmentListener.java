@@ -14,13 +14,13 @@ import org.bukkit.inventory.PlayerInventory;
  * <p>
  * Every {@value #SWEEP_INTERVAL_TICKS} ticks (1 second) every online player's
  * inventory is scanned. Each enchanted item that belongs to the plugin's Integrity
- * system restores exactly {@code level} durability POINTS every {@code level} seconds
- * (level 1 → 1 point every 1s, level 255 → 255 points every 255s). The per-item
- * cooldown (tracked in the {@code ui:repairing_last_repair} PDC key) keeps the average
- * repair rate flat at 1 point/s regardless of level. The repair is applied through
- * {@link ItemDurabilityUtil#increaseItemIntegrity} directly on the vanilla
- * {@code damage} component — the vanilla durability bar updates automatically, and
- * integrity never exceeds 100%.
+ * system restores exactly {@code level} durability POINTS every second
+ * (level 1 → 1 point/s, level 255 → 255 points/s). The level scales the repair
+ * SPEED, not the interval — the per-item cooldown (tracked in the
+ * {@code ui:repairing_last_repair} PDC key) is fixed at 1 second. The repair is
+ * applied through {@link ItemDurabilityUtil#increaseItemIntegrity} directly on the
+ * vanilla {@code damage} component — the vanilla durability bar updates automatically,
+ * and integrity never exceeds 100%.
  * <p>
  * Scope: the player's own inventory — storage slots, armor, offhand, main hand
  * and the cursor. Items stored in chests/containers are NOT touched.
@@ -107,8 +107,8 @@ public final class EnchantmentListener {
         // Integrity disabled in config → there is no integrity to restore.
         if (!ItemDurabilityUtil.isEnabled()) return;
 
-        // Cooldown: level seconds between repairs (level 1 → 1s, level 255 → 255s),
-        // so the repair restores exactly level points every level seconds.
+        // Cooldown: fixed 1 second between repairs. The level scales the AMOUNT
+        // restored per second (getRepairPoints), not the interval.
         long now = System.currentTimeMillis();
         long last = Enchantment.getLastRepairMillis(item);
         if (last > 0 && now - last < Enchantment.getCooldownMillis(level)) return;

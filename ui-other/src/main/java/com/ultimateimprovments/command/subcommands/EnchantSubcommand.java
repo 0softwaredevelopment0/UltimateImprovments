@@ -424,7 +424,7 @@ public final class EnchantSubcommand {
                     case "autosmelt" -> {
                         if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.autosmelt.Enchantment.setLevel(item, 1);
+                                com.ultimateimprovments.enchantment.autosmelt.Enchantment.setLevel(item, level);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.hasAutoSmelt(item)) {
                                 com.ultimateimprovments.enchantment.autosmelt.Enchantment.removeLevel(item);
@@ -472,7 +472,7 @@ public final class EnchantSubcommand {
                     case "magnet" -> {
                         if (com.ultimateimprovments.enchantment.magnet.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.magnet.Enchantment.setLevel(item, 1);
+                                com.ultimateimprovments.enchantment.magnet.Enchantment.setLevel(item, level);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.magnet.Enchantment.hasMagnet(item)) {
                                 com.ultimateimprovments.enchantment.magnet.Enchantment.removeLevel(item);
@@ -543,7 +543,7 @@ public final class EnchantSubcommand {
                     case "item_stealing" -> {
                         if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.itemstealing.Enchantment.setLevel(item, 1);
+                                com.ultimateimprovments.enchantment.itemstealing.Enchantment.setLevel(item, level);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.hasItemStealing(item)) {
                                 com.ultimateimprovments.enchantment.itemstealing.Enchantment.removeLevel(item);

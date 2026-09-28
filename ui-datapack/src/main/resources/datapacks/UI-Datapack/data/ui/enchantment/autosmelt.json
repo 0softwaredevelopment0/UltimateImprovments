@@ -5,7 +5,7 @@
 	"supported_items": "#ui:autosmelt_enchantable",
 	"primary_items": "#ui:autosmelt_enchantable",
 	"weight": 1,
-	"max_level": 1,
+	"max_level": 10,
 	"min_cost": {
 		"base": 25,
 		"per_level_above_first": 25

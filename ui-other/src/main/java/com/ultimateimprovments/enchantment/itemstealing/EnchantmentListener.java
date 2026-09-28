@@ -13,15 +13,16 @@ import java.util.Map;
  * Listener: Item Stealing enchantment — steal, don't pull.
  * <p>
  * When a player hooks another PLAYER with an Item Stealing fishing rod and reels
- * in, the victim is NOT pulled toward the fisher. Instead the item he holds in
- * his hand is taken and given to the fisher:
+ * in, the steal rolls a {@code level × 10%} chance. On success the victim is NOT
+ * pulled toward the fisher — instead the item he holds in his hand is taken and
+ * given to the fisher:
  * <ul>
  *   <li>main hand item first, offhand as fallback;</li>
  *   <li>the whole stack is stolen;</li>
  *   <li>if the fisher's inventory is full, the item drops at his feet.</li>
  * </ul>
- * If the hooked player holds NOTHING in both hands, the vanilla behavior stays:
- * the player is pulled normally.
+ * On a failed roll (or when the hooked player holds NOTHING in both hands) the
+ * vanilla behavior stays: the player is pulled normally.
  * <p>
  * Only {@link PlayerFishEvent.State#CAUGHT_ENTITY} is handled — in 26.x that is the
  * state that carries the hooked entity on reel-in; {@code REEL_IN} always fires with
@@ -46,7 +47,9 @@ public class EnchantmentListener implements Listener {
         if (!Enchantment.isValidTool(rod)) {
             rod = fisher.getInventory().getItemInOffHand();
         }
-        if (!Enchantment.isValidTool(rod) || Enchantment.getLevel(rod) <= 0) return;
+        if (!Enchantment.isValidTool(rod)) return;
+        int level = Enchantment.getLevel(rod);
+        if (level <= 0) return;
 
         // Look for an item in the victim's hands: main hand first, offhand as fallback.
         boolean fromOffhand = false;
@@ -62,6 +65,10 @@ public class EnchantmentListener implements Listener {
         // Self-Destruct items are inventory-locked (InventoryLockListener) and
         // must never be yanked out of the victim's hands. Skip the theft.
         if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.isCursed(stolen)) return;
+
+        // Steal roll: level N = N×10% chance (level 10 = always). A failed roll
+        // keeps the vanilla behavior — the player is pulled normally.
+        if (java.util.concurrent.ThreadLocalRandom.current().nextInt(100) >= level * 10) return;
 
         // Take the item away from the victim.
         if (fromOffhand) {

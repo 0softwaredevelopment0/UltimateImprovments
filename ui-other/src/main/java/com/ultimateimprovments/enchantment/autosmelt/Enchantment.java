@@ -15,21 +15,23 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Registers {@code ui:autosmelt} (file {@code data/ui/enchantment/autosmelt.json})
  * as a REAL data-driven enchantment: glint, description, anvil &amp; book compatibility,
- * {@code /enchant} support. Has exactly ONE level.
+ * {@code /enchant} support. Levels 1-10.
  * <p>
  * <b>Failsafe design (same as AoE):</b> every item carrying the charm ALSO stores the
- * level (always 1) in the {@code ui:autosmelt_level} PDC key — a backup mirror:
+ * level in the {@code ui:autosmelt_level} PDC key — a backup mirror:
  * <ul>
  *   <li><b>Datapack alive:</b> the real enchantment is the source of truth;</li>
  *   <li><b>Datapack crashed:</b> {@link #getLevel} falls back to PDC, so tools keep working;</li>
  *   <li><b>Datapack restored:</b> items with PDC but no real charm get it re-applied.</li>
  * </ul>
  * <p>
- * Effect: when a player mines a block with an AutoSmelt tool, the block drops are
- * smelted (if the drop has a furnace recipe) — raw ore becomes ingots, sand becomes
- * glass, etc. Nothing drops → nothing is smelted.
+ * Effect: every smeltable drop of a mined block has a {@code level × 10%} chance to be
+ * smelted (raw ore → ingot, sand → glass, ...). The roll is per drop, so AoE / VeinMiner /
+ * TreeCapitator areas come out partially smelted — e.g. level 5 smelts roughly half of the
+ * blocks and leaves the rest as normal drops. Only the drops of the broken block are
+ * considered; nothing dropped → nothing to smelt.
  * <p>
- * Max level: 1<br>
+ * Max level: 10 (level N = N×10% smelt chance)<br>
  * Works on: pickaxe, shovel, axe, hoe
  */
 public final class Enchantment {
@@ -40,8 +42,8 @@ public final class Enchantment {
     /** PDC mirror key: {@code ui:autosmelt_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "autosmelt_level");
 
-    /** The only level this enchantment can have. */
-    public static final int MAX_LEVEL = 1;
+    /** Highest level: level N = N×10% smelt chance (10 = always smelt). */
+    public static final int MAX_LEVEL = 10;
 
     private Enchantment() {}
 
@@ -71,15 +73,16 @@ public final class Enchantment {
      * is unavailable, so tools keep working even if the datapack dies.
      *
      * @param item the tool to check
-     * @return enchantment level (1 if present, 0 if not)
+     * @return enchantment level (1-10, 0 if not present)
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
-        if (real != null && item.containsEnchantment(real)) {
-            return 1;
+        if (real != null) {
+            int lvl = item.getEnchantmentLevel(real);
+            if (lvl > 0) return Math.max(1, Math.min(MAX_LEVEL, lvl));
         }
         // Datapack down or enchantment missing → PDC mirror
-        return getPdcLevel(item) > 0 ? 1 : 0;
+        return getPdcLevel(item);
     }
 
     /**
@@ -90,23 +93,22 @@ public final class Enchantment {
     }
 
     /**
-     * Sets the AutoSmelt enchantment on the given tool.
-     * The enchantment has only ONE level — any level ≥ 1 is clamped to 1.
+     * Sets the AutoSmelt enchantment level on the given tool.
      * Applies the REAL enchantment when the datapack is loaded and always writes
      * the PDC mirror. No lore is touched.
      *
      * @param item  the tool to modify
-     * @param level requested level (clamped to 1)
+     * @param level enchantment level (1-10)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
-        if (level < 1) return;
+        if (level < 1 || level > MAX_LEVEL) return;
         if (!isValidTool(item)) return;
 
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
         if (real != null) {
-            item.addUnsafeEnchantment(real, 1);
+            item.addUnsafeEnchantment(real, level);
         }
-        setPdcLevel(item, 1);
+        setPdcLevel(item, level);
     }
 
     /**
@@ -132,7 +134,7 @@ public final class Enchantment {
      * <p>
      * Idempotent and cheap when nothing changed:
      * <ul>
-     *   <li>real enchantment present → mirror level 1 into PDC;</li>
+     *   <li>real enchantment present → mirror its level into PDC;</li>
      *   <li>PDC present but real enchantment missing (datapack was down) →
      *       re-apply the real enchantment from PDC;</li>
      *   <li>neither present → nothing to do.</li>
@@ -145,15 +147,16 @@ public final class Enchantment {
         if (!isValidTool(item)) return;
 
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
-        boolean hasPdc = getPdcLevel(item) > 0;
+        int pdcLevel = getPdcLevel(item);
 
         if (real != null) {
-            if (item.containsEnchantment(real)) {
-                // Datapack alive: mirror level 1 into PDC (backup).
-                if (!hasPdc) setPdcLevel(item, 1);
-            } else if (hasPdc) {
+            int realLevel = item.getEnchantmentLevel(real);
+            if (realLevel > 0) {
+                // Datapack alive: mirror the real level into PDC (backup).
+                if (realLevel != pdcLevel) setPdcLevel(item, realLevel);
+            } else if (pdcLevel > 0) {
                 // Datapack restored after a crash: re-apply the charm from PDC.
-                item.addUnsafeEnchantment(real, 1);
+                item.addUnsafeEnchantment(real, pdcLevel);
             }
         }
         // Datapack down: leave the item as-is — PDC is the source until it returns.
@@ -176,8 +179,10 @@ public final class Enchantment {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
         if (real == null) return; // datapack down — nothing to mirror from
 
-        if (item.containsEnchantment(real)) {
-            if (getPdcLevel(item) <= 0) setPdcLevel(item, 1);
+        int realLevel = item.getEnchantmentLevel(real);
+        if (realLevel > 0) {
+            int pdcLevel = getPdcLevel(item);
+            if (realLevel != pdcLevel) setPdcLevel(item, realLevel);
         }
     }
 
@@ -220,20 +225,20 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror (1 if present, 0 if absent). */
+    /** Reads the PDC mirror level (1-10) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return 0;
         Integer level = meta.getPersistentDataContainer().get(LEVEL_KEY, PersistentDataType.INTEGER);
-        return level != null && level > 0 ? 1 : 0;
+        return level != null ? Math.max(1, Math.min(MAX_LEVEL, level)) : 0;
     }
 
-    /** Writes the PDC mirror (always 1). */
+    /** Writes the PDC mirror level. */
     private static void setPdcLevel(@NotNull ItemStack item, int level) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
-        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, 1);
+        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(MAX_LEVEL, level)));
         item.setItemMeta(meta);
     }
 
