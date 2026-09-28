@@ -274,14 +274,12 @@ public class OmniscannerManager implements Listener {
         // =========================
         // Pre-resolve Material sets (main thread)
         // =========================
+        // Whitelist-only scanning: an EMPTY list means "detect nothing".
+        // (Previously empty meant "scan everything", which is the opposite of intent.)
         Set<Material> blockMaterials = resolveMaterials(blockTypes);
         Set<Material> itemMaterials = resolveMaterials(itemTypes);
-        Set<String> upperEntityTypes = entityTypes.isEmpty() ? null
-                : entityTypes.stream().map(String::toUpperCase).collect(Collectors.toSet());
-
-        boolean scanAllBlocks = blockTypes.isEmpty();
-        boolean scanAllItems = itemTypes.isEmpty();
-        boolean scanAllEntities = entityTypes.isEmpty();
+        Set<String> upperEntityTypes = entityTypes.stream()
+                .map(String::toUpperCase).collect(Collectors.toSet());
 
         // =========================
         // Collect chunk snapshots (main thread, fast — one call per chunk)
@@ -347,12 +345,8 @@ public class OmniscannerManager implements Listener {
 
             // =========================
             // 1. Block scanning (via ChunkSnapshot — thread-safe)
-            // Empty list = ALL blocks (except air)
+            // Only blocks whose Material name is whitelisted are reported.
             // =========================
-            if (scanAllBlocks) {
-                ConsoleLogger.info("[Omniscanner] Scanning ALL blocks (empty type list)");
-            }
-
             for (Map.Entry<Long, ChunkSnapshot> entry : snapshots.entrySet()) {
                 long key = entry.getKey();
                 ChunkSnapshot snapshot = entry.getValue();
@@ -375,7 +369,7 @@ public class OmniscannerManager implements Listener {
 
                             Material type = snapshot.getBlockType(bx, by, bz);
                             if (type == Material.AIR) continue;
-                            if (scanAllBlocks || blockMaterials.contains(type)) {
+                            if (blockMaterials.contains(type)) {
                                 double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
                                 results.add(new ScanResult("Блок", type.name(),
                                         new Location(world, wx, by, wz), dist));
@@ -391,12 +385,12 @@ public class OmniscannerManager implements Listener {
             for (EntityData ed : entityDataList) {
                 double dist = center.distance(ed.location);
                 if ("ITEM".equals(ed.type)) {
-                    if (scanAllItems || itemMaterials.contains(Material.valueOf(ed.name))) {
+                    if (itemMaterials.contains(Material.valueOf(ed.name))) {
                         results.add(new ScanResult(ed.category, ed.name, ed.location, dist));
                     }
                 } else {
-                    // Entity
-                    if (scanAllEntities || (upperEntityTypes != null && upperEntityTypes.contains(ed.name))) {
+                    // Entity — matched by EntityType name from the whitelist.
+                    if (upperEntityTypes.contains(ed.name)) {
                         results.add(new ScanResult(ed.category, ed.displayName, ed.location, dist));
                     }
                 }
@@ -407,7 +401,7 @@ public class OmniscannerManager implements Listener {
             // =========================
             for (PlayerData pd : playerData) {
                 for (ItemStack stack : pd.contents) {
-                    if (stack != null && (scanAllItems || itemMaterials.contains(stack.getType()))) {
+                    if (stack != null && itemMaterials.contains(stack.getType())) {
                         double dist = center.distance(pd.location);
                         results.add(new ScanResult("Предмет(игрок:" + pd.name + ")",
                                 stack.getType().name(), pd.location, dist));
@@ -420,7 +414,7 @@ public class OmniscannerManager implements Listener {
             // =========================
             for (MobInventoryData md : mobData) {
                 for (ItemStack stack : md.contents) {
-                    if (stack != null && (scanAllItems || itemMaterials.contains(stack.getType()))) {
+                    if (stack != null && itemMaterials.contains(stack.getType())) {
                         double dist = center.distance(md.location);
                         results.add(new ScanResult("Предмет(моб:" + md.name + ")",
                                 stack.getType().name(), md.location, dist));
@@ -458,7 +452,7 @@ public class OmniscannerManager implements Listener {
                                 Material type = snapshot.getBlockType(bx, by, bz);
                                 if (isContainerType(type)) {
                                     Block block = world.getBlockAt(wx, by, wz);
-                                    scanContainer(block, center, itemMaterials, scanAllItems, containerResults);
+                                    scanContainer(block, center, itemMaterials, containerResults);
                                 }
                             }
                         }
@@ -503,7 +497,7 @@ public class OmniscannerManager implements Listener {
      * Scans a single container's inventory (called from the server thread).
      */
     private static void scanContainer(Block block, Location center, Set<Material> itemMaterials,
-                                       boolean scanAllItems, List<ScanResult> results) {
+                                       List<ScanResult> results) {
         if (!(block.getState() instanceof Container container)) return;
         try {
             Inventory inv = container.getInventory();
@@ -512,7 +506,7 @@ public class OmniscannerManager implements Listener {
                 containerName = "DOUBLE_CHEST";
             }
             for (ItemStack stack : inv.getContents()) {
-                if (stack != null && (scanAllItems || itemMaterials.contains(stack.getType()))) {
+                if (stack != null && itemMaterials.contains(stack.getType())) {
                     double dist = center.distance(block.getLocation().add(0.5, 0.5, 0.5));
                     results.add(new ScanResult("Предмет(" + containerName + ")",
                             stack.getType().name(), block.getLocation(), dist));
@@ -574,7 +568,7 @@ public class OmniscannerManager implements Listener {
      * Converts a list of Material strings into a Material set (only valid ones).
      */
     private static Set<Material> resolveMaterials(Set<String> typeNames) {
-        if (typeNames.isEmpty()) return null;
+        // Never null: an empty whitelist must mean "match nothing" (not "match all").
         Set<Material> materials = new HashSet<>();
         for (String s : typeNames) {
             try {
