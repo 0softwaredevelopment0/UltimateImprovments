@@ -8,13 +8,17 @@
 
 - `ui-core/.../command/PaperCommands.java`: registers the root `ui` (alias
   `ultimateimprovments`) through `getLifecycleManager().registerEventHandler(
-  LifecycleEvents.COMMANDS, ...)`. The tree is
-  `literal("ui") [executes → help] .then(argument("args", greedyString()).suggests(...).executes(...))`.
-- The Brigadier node forwards the raw tail to `SubCommandRegistry.dispatch` /
-  `SubCommandRegistry.tabComplete`, so **all 51 existing subcommand handlers are
-  unchanged** — only the registration moved to Paper's API.
-- Suggestion provider accounts for the greedy-string replacement rule (suggestions
-  are prefixed with the already-typed text up to the last space).
+  LifecycleEvents.COMMANDS, ...)`. The tree is now a **real Brigadier tree**:
+  `literal("ui") [executes → help] .then(argument("sub", word())
+  .suggests(<names/aliases>).then(argument("args", greedyString())
+  .suggests(<registry tab-complete>)))`.
+- The tree is **dynamic on purpose**: `sub` is a `word` (not a literal per name), so
+  subcommands registered by addons *after* UI-Core's enable are still resolvable —
+  nothing is enumerated at registration time. `sub` + the greedy tail are turned back
+  into the legacy `String[]` and forwarded to `SubCommandRegistry.dispatch` /
+  `tabComplete`, so **all subcommand handlers and permissions are unchanged**.
+- `check`/`uncheck` are *not* special-cased with a typed `player` argument: the
+  subcommand set is unknown at registration, so typing stays at the registry level.
 - Registered from `Main.onEnable()` (UI-Core), guarded against re-registration across
   `/ui reload`.
 - Removed the legacy `/ui` + `/ultimateimprovments` registration from
