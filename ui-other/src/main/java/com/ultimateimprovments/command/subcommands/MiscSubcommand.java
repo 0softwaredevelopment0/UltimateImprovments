@@ -6,7 +6,6 @@ import com.ultimateimprovments.command.home.HomeCommand;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.hooks.CoreHooks;
 import com.ultimateimprovments.database.PlayerSettingsDB;
-import com.ultimateimprovments.mechanics.features.items.NotesGUI;
 import com.ultimateimprovments.mechanics.environment.radiation.RadiationManager;
 import com.ultimateimprovments.util.Materials;
 import com.ultimateimprovments.util.MessageUtil;
@@ -56,7 +55,7 @@ public final class MiscSubcommand {
     public static boolean notes(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.notes_player_only", "<red>❌ Only players can use notes!</red>"))); return true; }
         if (!player.hasPermission("ui.command.notes")) { CommandErrors.noPermission(player); return true; }
-        NotesGUI.openMainGUI(player);
+        CoreHooks.openNotesGui(player);
         return true;
     }
 

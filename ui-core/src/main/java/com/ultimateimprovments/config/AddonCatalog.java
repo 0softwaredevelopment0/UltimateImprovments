@@ -62,13 +62,14 @@ public final class AddonCatalog {
                 "check", "codepanel", "sudo", "maintenance");
         // ── UI-World ──
         route("UI-World", "wireless_redstone", "meteor", "block_friction");
+        // ── UI-Items ──
+        route("UI-Items", "netherite_upgrade", "particle_accelerator");
         // ── UI-Other (features umbrella + mechanics) ──
         route("UI-Other",
-                "features", "brand_spoof", "sunburn", "netherite_upgrade",
+                "features", "brand_spoof", "sunburn",
                 "death_logger", "power", "suicide",
                 "changedimmension", "motd",
-                "structure_integrity",
-                "particle_accelerator");
+                "structure_integrity");
     }
 
     // Message groups (first segment under messages/messages_en) routed to addons.
@@ -141,6 +142,6 @@ public final class AddonCatalog {
                 CORE,
                 "UI-Shared", "UI-MBS", "UI-Datapack", "UI-Chat", "UI-Clans",
                 "UI-Combat", "UI-Punish", "UI-Essentials", "UI-Energy",
-                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Admin", "UI-Player", "UI-Guard", "UI-World", "UI-Other");
+                "UI-Anticheat", "UI-Enchant", "UI-Auth", "UI-Protection", "UI-Display", "UI-Admin", "UI-Player", "UI-Guard", "UI-World", "UI-Items", "UI-Other");
     }
 }

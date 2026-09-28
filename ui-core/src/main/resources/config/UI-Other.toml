@@ -589,33 +589,6 @@ helmet_integrity_loss = 1
 # Default: ["world"]
 included_worlds = ["world"]
 
-# Custom netherite upgrade recipe options.
-[netherite_upgrade]
-
-# base values section.
-[netherite_upgrade.base_values]
-# Speed.
-# Default: 1
-block_break_speed = 1
-
-# armor section.
-[netherite_upgrade.base_values.armor]
-# Default: 3
-helmet = 3
-# Default: 8
-chestplate = 8
-# Default: 6
-leggings = 6
-# Default: 3
-boots = 3
-
-# weapons section.
-[netherite_upgrade.base_values.weapons]
-# Default: 8
-sword = 8
-# Default: 5
-mace = 5
-
 # Authentication (registration/login) system options.
 [death_logger]
 # Master switch (true = feature on).
@@ -851,14 +824,6 @@ explosion_damage = 8192.0
 # Radius in blocks.
 # Default: 12
 explosion_damage_radius = 12
-
-# Particle accelerator machine parameters.
-[particle_accelerator]
-# Master switch (true = feature on).
-# Default: true
-enabled = true
-# Default: [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
-collision_recipes = [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
 
 # changedimmension section.
 # Placeholders: %world%, %seconds%

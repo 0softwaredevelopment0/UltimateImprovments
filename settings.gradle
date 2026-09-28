@@ -20,5 +20,6 @@ include(
     'ui-player',
     'ui-guard',
     'ui-world',
+    'ui-items',
     'ui-other'
 )

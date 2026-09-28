@@ -1,0 +1,24 @@
+name: UI-Items
+version: '${project.version}'
+description: UltimateImprovments — custom items add-on (crafting, item tools, particle accelerator)
+main: com.ultimateimprovments.core.UIItems
+api-version: '26.2'
+author: rizer001
+dependencies:
+  server:
+    UI-Core:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Shared:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-MBS:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    UI-Energy:
+      load: BEFORE
+      required: true
+      join-classpath: true

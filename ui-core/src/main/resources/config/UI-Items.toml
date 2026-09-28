@@ -1,0 +1,40 @@
+# UI-Items — custom items (crafting, item tools, particle accelerator, scanner).
+
+# ==================================================================
+# ITEMS / PARTICLES
+# ==================================================================
+
+# Custom netherite upgrade recipe.
+[netherite_upgrade]
+
+# base values section.
+[netherite_upgrade.base_values]
+# Speed.
+# Default: 1
+block_break_speed = 1
+
+# armor section.
+[netherite_upgrade.base_values.armor]
+# Default: 3
+helmet = 3
+# Default: 8
+chestplate = 8
+# Default: 6
+leggings = 6
+# Default: 3
+boots = 3
+
+# weapons section.
+[netherite_upgrade.base_values.weapons]
+# Default: 8
+sword = 8
+# Default: 5
+mace = 5
+
+# Particle accelerator machine.
+[particle_accelerator]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Default: [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
+collision_recipes = [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
