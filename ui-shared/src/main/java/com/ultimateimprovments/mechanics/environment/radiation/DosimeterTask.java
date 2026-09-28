@@ -93,7 +93,11 @@ public class DosimeterTask extends BukkitRunnable {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             try {
-                if (!holdsDosimeter(player)) continue;
+                // Show for dosimeter holders AND for players who enabled the admin
+                // overlay (/ui radview on). The overlay takes precedence: even with a
+                // dosimeter in hand, the admin readout wins and is marked with a red '*'.
+                boolean radView = RadiationManager.isRadViewEnabled(player);
+                if (!radView && !holdsDosimeter(player)) continue;
 
                 // D — absorbed dose: current radiation value in mSv.
                 double doseMs = RadiationManager.getRadiation(player) * msPerUnit;
@@ -101,9 +105,10 @@ public class DosimeterTask extends BukkitRunnable {
                 // R — current rate in mSv/tick.
                 double rateMs = LAST_RATE.getOrDefault(player.getUniqueId(), 0.0) * msPerUnit;
 
+                String star = radView ? "<red>*" : "";
                 player.sendActionBar(MessageUtil.parse(String.format(Locale.US,
-                        "<white>D: <yellow>%.1f<white> mSv R: <yellow>%.2f<white> mSv/t",
-                        doseMs, rateMs)));
+                        "<white>D: <yellow>%.1f<white> mSv R: <yellow>%.2f<white> mSv/t%s",
+                        doseMs, rateMs, star)));
             } catch (Exception ignored) {
                 // Never let a readout error kill the task.
             }

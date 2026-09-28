@@ -52,11 +52,14 @@ public class RadiationManager implements Listener {
         return instance.radViewEnabled.contains(player.getUniqueId());
     }
 
-    public static void toggleRadView(Player player) {
+    /** Admin radiation overlay: {@code /ui radview on|off}. */
+    public static void setRadView(Player player, boolean enabled) {
         if (instance == null || player == null) return;
         UUID uuid = player.getUniqueId();
-        if (!instance.radViewEnabled.remove(uuid)) {
+        if (enabled) {
             instance.radViewEnabled.add(uuid);
+        } else {
+            instance.radViewEnabled.remove(uuid);
         }
     }
 
@@ -360,14 +363,9 @@ public class RadiationManager implements Listener {
                 rad = Math.max(0.0, rad * (1.0 - protection));
             }
 
-            // =========================
-            // TOGGLE RADIATION DISPLAY IN ACTIONBAR (R/h)
-            // =========================
-            if (radViewEnabled.contains(uuid)) {
-                double roentgen = rad / 100.0;
-                player.sendActionBar(MessageUtil.parse("<white>Radiation: </white><gray>"
-                        + String.format(Locale.US, "%.1f", roentgen) + "</gray> <white>R/h</white>"));
-            }
+            // The admin radiation overlay (/ui radview) is rendered by DosimeterTask
+            // in the dosimeter format (with a red '*' marker) so it can override the
+            // dosimeter readout — see DosimeterTask.run().
 
             radiationMap.put(uuid, Math.max(0.0, rad));
 
