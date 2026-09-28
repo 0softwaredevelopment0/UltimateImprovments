@@ -2856,6 +2856,20 @@ status_no_startup = "Нет стартапа"
 # Default: Ожидание
 status_standby = "Ожидание"
 
+# enchant section.
+# Item Stealing action-bar feedback (ru).
+[messages.enchant]
+# Default: <green>✔ Item stolen!</green>
+item_stealing_steal_success = "<green>✔ Предмет украден!</green>"
+# Default: <red>✘ The steal failed!</red>
+item_stealing_steal_failed = "<red>✘ Кража не удалась!</red>"
+# Default: <red>✘ Your item was stolen!</red>
+item_stealing_victim_stolen = "<red>✘ У вас украли предмет!</red>"
+# Default: <gray>Someone tried to steal your item.</gray>
+item_stealing_victim_failed = "<gray>У вас пытались украсть предмет.</gray>"
+# Default: <red>❌ You don't have permission to steal items!</red>
+item_stealing_no_permission = "<red>❌ У вас нет прав на кражу предметов!</red>"
+
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
 # ==================================================================
@@ -3692,6 +3706,20 @@ format = "<red>⚡</red> <white>Server %action% in</white> <yellow>%seconds%</ye
 text = "<red>⚡ Server %action% in</red> <yellow>%seconds%</yellow> <red>seconds</red>"
 
 # packet guard section.
+# enchant section.
+# Item Stealing action-bar feedback (en).
+[messages_en.enchant]
+# Default: <green>✔ Item stolen!</green>
+item_stealing_steal_success = "<green>✔ Item stolen!</green>"
+# Default: <red>✘ The steal failed!</red>
+item_stealing_steal_failed = "<red>✘ The steal failed!</red>"
+# Default: <red>✘ Your item was stolen!</red>
+item_stealing_victim_stolen = "<red>✘ Your item was stolen!</red>"
+# Default: <gray>Someone tried to steal your item.</gray>
+item_stealing_victim_failed = "<gray>Someone tried to steal your item.</gray>"
+# Default: <red>❌ You don't have permission to steal items!</red>
+item_stealing_no_permission = "<red>❌ You don't have permission to steal items!</red>"
+
 [messages_en.packet_guard]
 # Message text (MiniMessage).
 # Default: <dark_red>❌</dark_red> <red>Packet too large!</red>\n<gray>Please reconnect to the server.</gray>

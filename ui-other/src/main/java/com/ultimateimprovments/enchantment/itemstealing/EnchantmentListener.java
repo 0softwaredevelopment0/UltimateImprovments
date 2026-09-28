@@ -144,6 +144,10 @@ public class EnchantmentListener implements Listener {
             playRadiusSound(fisher, Sound.ENTITY_FISHING_BOBBER_SPLASH, FAIL_VOLUME, 1.2f);
             victim.playSound(victim.getLocation(), Sound.BLOCK_TRIPWIRE_DETACH,
                     SoundCategory.PLAYERS, 1.0f, 1.2f);
+            sendActionBar(fisher, "enchant.item_stealing_steal_failed",
+                    "<red>✘ The steal failed!</red>");
+            sendActionBar(victim, "enchant.item_stealing_victim_failed",
+                    "<gray>Someone tried to steal your item.</gray>");
             return;
         }
 
@@ -167,6 +171,11 @@ public class EnchantmentListener implements Listener {
         playRadiusSound(fisher, Sound.ENTITY_FISHING_BOBBER_RETRIEVE, YANK_VOLUME, 1.3f);
         victim.playSound(victim.getLocation(), Sound.ENTITY_ITEM_PICKUP,
                 SoundCategory.PLAYERS, 1.0f, 1.2f);
+
+        sendActionBar(fisher, "enchant.item_stealing_steal_success",
+                "<green>✔ Item stolen!</green>");
+        sendActionBar(victim, "enchant.item_stealing_victim_stolen",
+                "<red>✘ Your item was stolen!</red>");
 
         // Cancel the pull — the player stays in place, only the item "comes" to us.
         event.setCancelled(true);
@@ -209,6 +218,11 @@ public class EnchantmentListener implements Listener {
         } else {
             inv.setItemInOffHand(result);
         }
+    }
+
+    /** Sends a localized action-bar message (key under {@code messages.enchant.*}). */
+    private static void sendActionBar(Player player, String key, String fallback) {
+        player.sendActionBar(MessageUtil.parse(MessagesManager.getString(key, fallback)));
     }
 
     /**
