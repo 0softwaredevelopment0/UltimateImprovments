@@ -190,9 +190,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             return true;
         }));
 
-        // ── Protection Block admin ops ──
-        registry.register(LegacySubCommandAdapter.of("protection",
-                (s, a) -> { ProtectionSubcommand.execute(s, a); return true; }));
+        // ── /ui protection is registered by the UI-Protection addon ──
         // ── OP Manager (new system) ──
         registry.register(LegacySubCommandAdapter.of("op",
                 (s, a) -> com.ultimateimprovments.op.OpSubcommand.execute(s, a),

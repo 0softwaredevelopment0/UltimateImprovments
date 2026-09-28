@@ -14,5 +14,6 @@ include(
     'ui-mbs',
     'ui-enchant',
     'ui-auth',
+    'ui-protection',
     'ui-other'
 )

@@ -4,7 +4,6 @@ import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.SimpleModules;
 import com.ultimateimprovments.module.meteor.MeteorModule;
 import com.ultimateimprovments.mechanics.features.omniscanner.OmniscannerModule;
-import com.ultimateimprovments.mechanics.protection.ProtectionModule;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -104,7 +103,6 @@ public class UIOther extends JavaPlugin {
         SimpleModules.registerEconomy(mm);
         // Custom enchantments are registered by the UI-Enchant addon (EnchantModules).
         SimpleModules.registerProtection(mm);
-        mm.register(new ProtectionModule());
         SimpleModules.registerUtility(mm);
         SimpleModules.registerBotProtection(mm);
         SimpleModules.registerDisplay(mm);

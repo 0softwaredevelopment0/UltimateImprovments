@@ -1,4 +1,4 @@
-package com.ultimateimprovments.listener;
+package com.ultimateimprovments.mechanics.protection;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.config.MessagesManager;
