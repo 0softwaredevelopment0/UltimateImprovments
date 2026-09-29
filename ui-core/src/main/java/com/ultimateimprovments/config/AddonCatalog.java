@@ -93,6 +93,7 @@ public final class AddonCatalog {
         routeMsg("UI-Display", "tab", "scoreboard", "bossbar");
         routeMsg("UI-Admin", "economy");
         routeMsg("UI-Player", "vanish");
+routeMsg("UI-Items", "crafting");
         routeMsg("UI-Guard", "packet_guard", "bot_protection",
                 "check", "codepanel", "sudo", "maintenance");
         routeMsg("UI-World", "meteor");

@@ -1,5 +1,6 @@
 package com.ultimateimprovments.mechanics.crafting;
 
+import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
@@ -46,9 +47,13 @@ public class RecipeRegistry implements Listener {
     // =========================
     // Custom items can only be crafted in any vanilla Crafter block ("assembler").
     // A workbench / 2x2 grid shows the recipe book preview, but the result slot
-    // is cleared so nothing can actually be crafted there.
+    // is cleared so nothing can actually be crafted there — the player gets an
+    // actionbar hint (throttled, the event fires on every slot change).
     // HIGHEST — runs after the per-item prepare handlers, so a handler that
     // re-sets the result cannot resurrect the preview outside the Crafter.
+    private static final java.util.Map<java.util.UUID, Long> LAST_HINT = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long HINT_THROTTLE_MS = 2_000L;
+
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPrepareCraftGate(PrepareItemCraftEvent e) {
         Recipe recipe = e.getRecipe();
@@ -57,7 +62,25 @@ public class RecipeRegistry implements Listener {
 
         if (e.getInventory().getType() != InventoryType.CRAFTER) {
             e.getInventory().setResult(null);
+
+            if (e.getView().getPlayer() instanceof Player player) {
+                long now = System.currentTimeMillis();
+                Long last = LAST_HINT.get(player.getUniqueId());
+                if (last == null || now - last >= HINT_THROTTLE_MS) {
+                    LAST_HINT.put(player.getUniqueId(), now);
+                    player.sendActionBar(MessageUtil.parse(MessagesManager.getString("crafting.crafter_only",
+                            "<gold>✧</gold> <gray>This item can only be crafted in a</gray> <aqua>Crafter</aqua><gray>!</gray>")));
+                }
+            }
         }
+    }
+
+    // =========================
+    // THROTTLE CLEANUP
+    // =========================
+    @EventHandler
+    public void onQuit(org.bukkit.event.player.PlayerQuitEvent e) {
+        LAST_HINT.remove(e.getPlayer().getUniqueId());
     }
 
     // =========================
@@ -93,8 +116,8 @@ public class RecipeRegistry implements Listener {
         if (recipe instanceof Keyed keyed && CUSTOM_RECIPES.contains(keyed.getKey())) {
             e.setCancelled(true);
             if (e.getWhoClicked() instanceof Player player) {
-                player.sendMessage(MessageUtil.parse(
-                        "<gold>✧</gold> <gray>This item can only be crafted in a</gray> <aqua>Crafter</aqua><gray>!</gray>"));
+                player.sendMessage(MessageUtil.parse(MessagesManager.getString("crafting.crafter_only",
+                        "<gold>✧</gold> <gray>This item can only be crafted in a</gray> <aqua>Crafter</aqua><gray>!</gray>")));
             }
         }
     }

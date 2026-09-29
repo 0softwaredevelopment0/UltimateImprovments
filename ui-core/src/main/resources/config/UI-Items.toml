@@ -38,3 +38,15 @@ mace = 5
 enabled = true
 # Default: [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
 collision_recipes = [{ material_a = "GOLD_INGOT", material_b = "DIAMOND", speed_min_pct = 5.0, speed_max_pct = 10.0, result = "EMERALD" }, { material_a = "DIAMOND", material_b = "EMERALD", speed_min_pct = 10.0, speed_max_pct = 15.0, result = "NETHERITE_SCRAP" }]
+
+# ==================================================================
+# MESSAGES
+# ==================================================================
+
+[messages.crafting]
+# Actionbar hint when a player tries to craft a custom item
+# in a workbench / inventory instead of a Crafter block.
+crafter_only = "<gold>✧</gold> <gray>Этот предмет можно скрафтить только в</gray> <aqua>Крафтере</aqua><gray>!</gray>"
+
+[messages_en.crafting]
+crafter_only = "<gold>✧</gold> <gray>This item can only be crafted in a</gray> <aqua>Crafter</aqua><gray>!</gray>"
