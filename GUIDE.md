@@ -1,8 +1,8 @@
 # ✦ Ultimate Improvments — Full Guide
 
-**Version:** 1.9
+**Version:** 1.8.3-alpha.5
 **Core:** Paper 26.2+ (or Leaf fork)
-**Database:** SQLite
+**Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
 
 This is the complete guide: installation, every command, custom items, enchantments, achievements, modules, configuration and more.
@@ -12,7 +12,7 @@ This is the complete guide: installation, every command, custom items, enchantme
 ## 📚 Table of Contents
 
 1. [Installation](#-installation)
-2. [Modules](#-modules)
+2. [Architecture & Modules](#-architecture--modules)
 3. [Commands](#-commands)
 4. [Custom Items & Crafting](#-custom-items--crafting)
 5. [Custom Enchantments](#-custom-enchantments)
@@ -30,24 +30,48 @@ This is the complete guide: installation, every command, custom items, enchantme
 
 ## 🚀 Installation
 
-1. Download the `.jar` from [Releases](https://github.com/rizer001-Development/UltimateImprovments/releases).
-2. Drop it into `plugins/`.
-3. Restart the server **twice** — the first run installs the bundled datapack, the second activates it.
+1. Download the distribution archive `UltimateImprovments-<version>-jars.tar` from
+   [Releases](https://github.com/0softwaredevelopment0/UltimateImprovments/releases)
+   (or grab the individual `UI-*-all.jar` files).
+2. Drop **all** the jars into `plugins/` — the family ships as **21 plugins**
+   (UI-Core + 20 addons). They form one system; a set of just a few of them is
+   not supported.
+3. Restart the server **once**. The bundled datapack is extracted from the
+   UI-Datapack jar and enabled automatically **before worlds load**
+   (Paper bootstrapper) — no `/datapack enable`, no double restart.
 
-> The datapack lives in its own plugin part — **UI-Datapack** (separate `.jar`, depends on UI-Core).
-> Its settings (`datapack.enabled`, `datapack.mode`, `datapack.modules.*`, ...) are configured in `plugins/UI-Datapack/config.yml`.
+> The datapack lives in its own plugin part — **UI-Datapack**. Its settings
+> (`datapack.enabled`, `datapack.modules.*`) are configured in
+> `plugins/UltimateImprovments/configs/UI-Datapack.toml`; changing them
+> requires a restart (pack discovery happens at server startup).
 
-> Multi-block structures (NBT templates, markers, lightning/magnet mechanics, reactor/generator validation) live in their own part — **UI-MBS** (separate `.jar`, depends on UI-Core).
-> Energy-dependent structure mechanics talk to UI-Energy through the `MbsEnergy` API bridge, so UI-MBS never depends on UI-Energy.
+> Multi-block structures (NBT templates, markers, lightning/magnet mechanics,
+> reactor/generator validation) live in **UI-MBS**. Energy-dependent structure
+> mechanics talk to UI-Energy through the `MbsEnergy` API bridge, so UI-MBS
+> never depends on UI-Energy.
 
 > ⚠ Requires **Paper 26.2+** or a compatible fork (Leaf). Not compatible with Spigot/Bukkit.
 > Java **26+** is required.
 
 ---
 
-## 🔌 Modules
+## 🧩 Architecture & Modules
 
-The plugin is built on a modular architecture. Each feature is a module that can be toggled on/off at runtime:
+Ultimate Improvments is a **large collection of gameplay features** shipped as
+one family: **UI-Core** (the mandatory heart: database, config routing, command
+tree, shared systems) plus **20 addons**, each owning its feature domain:
+
+> UI-Shared, UI-Datapack, UI-MBS, UI-Energy, UI-Anticheat, UI-Essentials,
+> UI-Combat, UI-Chat, UI-Clans, UI-Punish, UI-Other, UI-Enchant, UI-Auth,
+> UI-Protection, UI-Display, UI-Admin, UI-Player, UI-Guard, UI-World, UI-Items
+
+Everything runs on the modern **Paper plugin loader** (`paper-plugin.yml`,
+isolated classloaders, explicit dependency graph with `join-classpath`), and
+the `/ui` command tree is registered via Brigadier
+(`LifecycleEvents.COMMANDS`).
+
+On top of that, every feature is a **module** that can be toggled on/off at
+runtime:
 
 ```
 /ui modules                 — list all modules
@@ -55,23 +79,45 @@ The plugin is built on a modular architecture. Each feature is a module that can
 /ui modules disable <name>  — disable a module
 ```
 
-If a module fails to load, the rest keep running. Essential modules (Core, Database, Auth, Crafting, Energy, Reactor, Radiation, Power, Tasks) are always on; everything else is optional.
+If a module fails to load, the rest keep running. Essential modules (Core,
+Database, Auth, Crafting, Energy, Reactor, Radiation, Power, Tasks) are always
+on; everything else is optional.
 
-**Optional modules include:** Datapack, RedstoneGuard, PacketGuard, VoidProtection, ChatFilter, UpdateChecker, Vanish, Notes, Magnet, MinecartSpeed, Lightning, Integrity, Antimatter, Attributes, Beacon, BlockDmg, BoostedCobweb, ContainerTrigger, DeathBell, DragonEgg, EnderChest, EntityLocator, GlassBreak, HealthMeter, Leash, ModeProtect, ShieldSlowness, TerracotaSpeed, UnbreakableBreaker, Waypoint, CreativeItemValidator, WirelessRedstone, ElytraBoost, Electric Furnace, Battery Drain, Battery Multi, Light Multi, Chat, Tab, Scoreboard, BossBar, MOTD, Economy, Punish, BotProtection, ProxyServer, Omniscanner, AntiCheat, StructureIntegrity, ParticleAccelerator, Meteor, AutoBroadcast, **all custom enchantments** (as separate modules), **Turret**, **BeyondSpace/BedrockBreak/Kaboom/EarthCore/ServerOverload/...** (achievement modules), DeathLogger, CmdBlockTracker.
+**Optional modules include:** Datapack, RedstoneGuard, PacketGuard,
+VoidProtection, ChatFilter, UpdateChecker, Vanish, Notes, Magnet, MinecartSpeed,
+Lightning, Integrity, Antimatter, Attributes, Beacon, BlockDmg, BoostedCobweb,
+ContainerTrigger, DeathBell, DragonEgg, EnderChest, EntityLocator, GlassBreak,
+HealthMeter, Leash, ModeProtect, ShieldSlowness, TerracotaSpeed,
+UnbreakableBreaker, Waypoint, CreativeItemValidator, WirelessRedstone,
+ElytraBoost, Electric Furnace, Battery Drain, Battery Multi, Light Multi, Chat,
+Tab, Scoreboard, BossBar, MOTD, Economy, Punish, BotProtection, Omniscanner,
+AntiCheat, StructureIntegrity, ParticleAccelerator, Meteor, AutoBroadcast,
+**all custom enchantments** (as separate modules), **Turret**, **BeyondSpace/
+BedrockBreak/Kaboom/EarthCore/ServerOverload/...** (achievement modules),
+DeathLogger, CmdBlockTracker.
+
+The bundled addon set is registered in the **AddonCatalog**; `/ui addons`
+shows every addon with its status (permission `ui.command.addons`, included in
+`ui.admin` / `ui.*`).
 
 ---
 
 ## ⌨️ Commands
 
-All commands start with `/ui`. Use `/ui help` (paginated, 5 per page, clickable pages) to see them in-game.
+All commands start with `/ui`. Use `/ui help` (paginated, clickable pages) to
+see them in-game. The root `/ui` is a real Brigadier tree with dynamic
+tab-completion for all subcommands.
 
 ### General
 ```
 /ui help                — paginated command list
-/ui reload              — reload the plugin
+/ui reload              — reload the plugin family
 /ui checkver            — check for updates
 /ui updatejar           — download & install update (with backup)
 /ui modules ...         — module management
+/ui addon               — addon status
+/ui config regen <file> — regenerate an addon config from the template
+/ui config reset <addon|all> — reset addon config(s) to defaults
 ```
 
 ### Security & Punishments
@@ -86,6 +132,8 @@ All commands start with `/ui`. Use `/ui help` (paginated, 5 per page, clickable 
 /ui uncheck <player>    — unfreeze
 /ui ac                  — anti-cheat stats
 /ui sudo                — sudo mode (dangerous actions)
+/ui codepane key add|remove|list  — code panel keys
+/ui maint               — maintenance mode
 /ui cmdblocklist        — list active command blocks (#, world, coordinates)
 /ui report <nick> <reason> — report a player
 /ui reports ...         — report management
@@ -129,7 +177,8 @@ All commands start with `/ui`. Use `/ui help` (paginated, 5 per page, clickable 
 /ui pdc ...             — PDC (persistent data) manager
 /ui item int list|set|add — item integrity
 /ui unlock              — unlock book or sign
-/ui togglespeed / togglefly / togglesb / togglebb / toggleping / toggleradview
+/ui togglespeed / togglefly / togglesb / togglebb / toggleping
+/ui radview <on|off>    — admin radiation overlay (dosimeter format in the actionbar)
 ```
 
 ### Technology & Structures
@@ -137,7 +186,6 @@ All commands start with `/ui`. Use `/ui help` (paginated, 5 per page, clickable 
 /ui str dfc assemble|stats        — Dark Fusion Reactor
 /ui str magnet assemble|stats     — Magnet structure
 /ui str lightning enable|disable|stats — Lightning structure
-/ui codepane key add|remove|list  — code panel keys
 /ui turret                        — turret configuration (see Turrets section)
 /ui redstone                      — blocked redstone chunks
 /ui protection                    — protection block admin
@@ -154,7 +202,6 @@ All commands start with `/ui`. Use `/ui help` (paginated, 5 per page, clickable 
 /ui setrad <nick> <n>   — set radiation
 /ui checkrad [nick]     — check radiation
 /ui power off|reboot|confirm|undo — server power
-/ui maint               — maintenance mode
 /ui plugin              — plugin management
 /ui swapjar             — swap plugin jar
 /ui op <nick> / deop <nick> / chgop <nick>
@@ -175,56 +222,76 @@ All commands start with `/ui`. Use `/ui help` (paginated, 5 per page, clickable 
 
 ## 🗡 Custom Items & Crafting
 
-Custom items are crafted in the **Crafter** block (recipe preview is visible in the vanilla workbench and recipe book, but the actual craft only works in the Crafter). All items are given to players via a datapack recipe book.
+Custom items are crafted in the **Crafter** block (recipe preview is visible in
+the vanilla workbench and recipe book, but the actual craft only works in the
+Crafter). Recipes come from the bundled datapack.
 
 | Item | What it does |
 |------|--------------|
-| **Blazing Sword** (`<white>Blazing sword`) | Golden sword, 1024 durability. On hit: sets the target on fire (7s) and deals burn damage over time — armor reduces it. |
-| **Glass Sword** (`<white>Glass sword`) | 1 durability, deals **19 damage** on hit, then shatters. Breaks when used to break a block too. |
-| **Electric Trident** (`<white>Eletric trident`) | Trident, 512 durability. Strikes a single lightning bolt at whatever it hits, plus its normal damage. |
-| **Photon Cannon** (`<white>Photon cannon`) | Long-range projectile weapon. |
-| **Electro Shoker** (`<aqua>Electro Shoker`) | Close-combat projectile weapon. |
+| **Blazing Sword** | Golden sword, 1024 durability. On hit: sets the target on fire (7s) and deals burn damage over time — armor reduces it. |
+| **Glass Sword** | 1 durability, deals **19 damage** on hit, then shatters. Breaks when used to break a block too. |
+| **Electric Trident** | Trident, 512 durability. Strikes a single lightning bolt at whatever it hits, plus its normal damage. |
+| **Photon Cannon** | Long-range projectile weapon. |
+| **Electro Shoker** | Close-combat projectile weapon. |
 | **Antimatter Flask** | Explosive item — devastating blast. |
 | **Multimeter** | Inspect block/energy information. |
 | **Metal Detector / Ore Finder / Mob Finder / Entity Locator** | Scanning tools. |
 | **Health Meter** | Shows mob health. |
 | **Portable Radar** | Nearby entity radar. |
-| **Lead Ingot / Lead Shield / Dosimeter** | Radiation protection and measurement. |
+| **Lead Ingot** | Radiation-crafting material (cannot be un-crafted back); used for the Hazmat Suit and the Dosimeter. |
+| **Hazmat Suit** (4 leather pieces) | Radiation protection: −20% per piece, −80% for the full set. |
+| **Dosimeter** | Shows the radiation level in the actionbar (emerald is the crafting sensor). |
 | **Concrete Bucket** | Place concrete instantly. |
 | **Structure Integrity Indicator** | Shows structure integrity. |
 | **Particle Engine / Injector / Ring / Speed Sensor** | Particle accelerator components. |
-| **Chunk Loader** | Keep chunks loaded. |
+| **Chunk Loader** | Keep chunks loaded (consumes an XP bottle). |
 | **Ender Chest (Портативное хранилище)** | Portable storage. |
 
-The bundled **datapack** also modifies/overrides vanilla recipes (netherite, bookshelves, chainmail, heavy core, etc.) and adds all recipes under the `ui:` namespace.
+The bundled **datapack** also modifies/overrides vanilla recipes (netherite,
+bookshelves, chainmail, heavy core, etc.) and adds all recipes under the `ui:`
+namespace. Custom **enchantments in the enchanting table come exclusively from
+the datapack** (no listeners involved).
 
 ---
 
 ## ✨ Custom Enchantments
 
-All custom enchantments work like vanilla ones (applied via anvil/enchant command), support levels **1–255** and are registered as separate modules. Use `/ui enchant` to give/take/check them.
+Custom enchantments are data-driven (datapack-registered under `ui:`), applied
+in the enchanting table (third slot) or via anvil / `/ui enchant give`. Most
+support levels **1–255**; a few have gameplay caps:
 
-| Enchantment | Effect |
-|-------------|--------|
-| **AoE** (`ui:aoe`) | Area damage around the hit target; damage falls off with distance (per-block falloff %); blocked entities behind walls aren't hit. |
-| **Attack AoE** (`ui:attack_aoe`) | Hits only entities of the same type as the one you attacked. |
-| **Auto Smelt** (`ui:autosmelt`) | Ores smelt automatically when mined. |
-| **Vein Miner** (`ui:veinminer`) | Mine an entire ore vein at once. |
-| **TreeCapitator** (`ui:treecapitator`) | Fells the whole tree. |
-| **Flight** (`ui:flight`) | Allows flying (jetpack-style); consumes item durability/integrity per second while flying. |
-| **Magnet** (`ui:magnet`) | Attracts nearby items to the player. |
-| **Igniting** (`ui:igniting`) | Sets hit targets on fire. |
-| **Levitation** (`ui:levitation`) | Launches hit targets into the air. |
-| **Repairing** (`ui:repairing`) | Restores exactly `level` durability points every `level` seconds (lvl 1 = 1 point/s, lvl 255 = 255 points every 255s). |
-| **Self-Destruct** (`ui:self_destruct`) | 30s timer (shown in the lore as `<red>Self-destruct: <white><sec><gray>s`); the item can't be moved/dropped; after the timer — 19 damage and the item is destroyed. No sounds/particles for the victim. |
-| **Degradation** (`ui:degradation`) | Item degrades over time. |
-| **Item Stealing** (`ui:item_stealing`) | Steals items from hit targets. |
+| Enchantment | Levels | Effect |
+|-------------|--------|--------|
+| **AoE** (`ui:aoe`) | 1–8 | Area damage around the hit target, no falloff; blocked entities behind walls aren't hit. |
+| **Attack AoE** (`ui:attack_aoe`) | 1–10 | Hits entities of the same type as the attacked one; full damage, no falloff, radius = level. |
+| **Auto Smelt** (`ui:autosmelt`) | 1–10 | Level N = N×10% smelt chance rolled per dropped stack (works with AoE/VeinMiner — partial smelting). |
+| **Vein Miner** (`ui:veinminer`) | 1–255 | Mine an entire ore vein at once. |
+| **TreeCapitator** (`ui:treecapitator`) | 1–255 | Fells the whole tree. |
+| **Flight** (`ui:flight`) | 1–255 | Jetpack-style flight; drains 1 integrity use per second from every worn piece (chest pays while gliding too). Incompatible with Repairing on the chest slot. |
+| **Levitation** (`ui:levitation`) | 1–255 | Launches hit targets into the air; boosting drains 1 use/s from the chestplate. |
+| **Magnet** (`ui:magnet`) | 1–16 | Attracts nearby items; radius = 2 blocks × level (cap 32). |
+| **Igniting** (`ui:igniting`) | 1–255 | Sets hit targets on fire (water extinguishes fairly). |
+| **Repairing** (`ui:repairing`) | 1–255 | Restores `level` durability points once per second (higher level = strictly better). |
+| **Lava Walker** (`ui:lava_walker`) | 1–16 | Frost Walker for lava: obsidian crust under the feet, melts back after 20–45 s; 1 integrity per sweep. |
+| **Container Stealing** (`ui:container_stealing`) | 1–10 | Level N = N×10% chance to steal a whole container with its contents on break; failed roll = fully vanilla break. |
+| **Item Stealing** (`ui:item_stealing`) | 1–10 | Level N = N×10% chance to yank the held item from the hit target — the item physically flies to you. Respects the `ui.enchant.itemstealing.steal` permission. |
+| **Self-Destruct** (`ui:self_destruct`) | 1–255 | 30s countdown (shown in the lore); the item locks in the owner's inventory only; then 19 damage and the item is destroyed. |
+| **Degradation** (`ui:degradation`) | 1–255 | Cursed: worn armor degrades over time. |
+| **Blunting** (`ui:blunting`) | 1–255 | Cursed "reverse sharpness": your own melee hits deal 0.5 less damage per level while holding the weapon. |
+| **Vulnerability** (`ui:vulnerability`) | 1–255 | Cursed: wearer takes extra damage. |
+| **Disappearance** (`ui:disappearance`) | 1–255 | Cursed: on a timed sweep the held item vanishes (pop sound + actionbar with the item name). |
+
+Curses deliberately are **not** in the vanilla `#minecraft:curse` tag, so the
+enchanting table can offer them. `/ui enchant` gives/takes/checks any of them.
 
 ---
 
 ## 🏆 Achievements
 
-The plugin ships a **custom achievement tree** in the `ui:` namespace (installed via the datapack), with 5 branches all growing from one root (`ui:datapack/start` — "UltimateImprovments"). All custom achievements are granted through plugin code (progress is stored in vanilla advancement data).
+The plugin ships a **custom achievement tree** in the `ui:` namespace
+(installed via the datapack), with 5 branches all growing from one root
+(`ui:datapack/start` — "UltimateImprovments"). All custom achievements are
+granted through plugin code (progress is stored in vanilla advancement data).
 
 ### Branch: Server
 ```
@@ -264,7 +331,9 @@ Advanced Science (start the DFC) → We did it! (complete a reactor recipe)
 → In the Depths of Hell → Large Microwave (burn inside DFC) → One-time heating
 ```
 
-**Timed challenges** run with `/ui advancement start woodcutter|teleport` (only one active challenge per player at a time; progress shown in the actionbar; stop with `/ui advancement stop`).
+**Timed challenges** run with `/ui advancement start woodcutter|teleport`
+(only one active challenge per player at a time; progress shown in the
+actionbar; stop with `/ui advancement stop`).
 
 ---
 
@@ -297,7 +366,11 @@ End-crystal turrets are a ranged defense system:
 
 - Temporary and permanent punishments, IP and hardware-ID scopes.
 - Ban/mute/warn expiration with countdown.
-- Kick screens and chat notifications are **fully configurable** in `config.yml` under `messages.punishment` (and `messages_en.punishment`) — MiniMessage format, placeholders `%player%`, `%punisher%`, `%reason%`, `%duration%`, `%discord_url%` (the Discord link is clickable in chat).
+- Kick screens and chat notifications are **fully configurable** in
+  `configs/UI-Punish.toml` under `messages.punishment` (and
+  `messages_en.punishment`) — MiniMessage format, placeholders `%player%`,
+  `%punisher%`, `%reason%`, `%duration%`, `%discord_url%` (the Discord link is
+  clickable in chat).
 - Whitelist/blacklist are custom database systems independent of the vanilla whitelist.
 
 ### Anti-cheat & Protection
@@ -337,7 +410,9 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 ### Radiation
 - Levels: Safe → Mild → Moderate → High → Critical → Deadly → Lethal.
 - Sources: ancient debris in inventory, basalt deltas, the End, weapons (mace/trident/elytra), the reactor.
-- Protection: lead shield, antirad; dosimeter shows levels in the actionbar.
+- Protection: **Hazmat Suit** (−20% per piece, −80% full set); eating lowers radiation (−10 rad at ≥ 200, actionbar feedback).
+- **Dosimeter** shows levels in the actionbar; admins get a permanent overlay
+  with `/ui radview <on|off>` (permission `ui.command.radview`).
 
 ### Structures
 - **Magnet** — attracts metallic items (radius scales with structure).
@@ -350,10 +425,12 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 
 - **Custom chat** — per-group/per-world formats, player MiniMessage, pings (`@everyone`, `@nick`, ...), chat filter with wildcard+regex (Cyrillic-aware).
 - **Tab / Scoreboard / BossBar / MOTD** — custom display systems; scoreboard supports gradients (`<gradient>`, `<rainbow>`) and placeholders.
+- **Armor effects & trim effects** — configurable potion effects from worn armor materials and smithing-table trim materials (fully configurable units: effect, level, duration, check interval).
 - **Item integrity** — every item has 0–100% integrity; anvil repair, combining, XP mending; color gradient in lore.
 - **Totem charge** — charged totems (charge via anvil with netherite scrap) save your life once per charge.
 - **Homes, spawn, RTP, dimension teleportation, notes, vanish** (persists across restarts).
 - **Minecart speed** — acceleration on powered rails, collision damage = speed × 20, particles.
+- **Omniscanner** — admin scanner with strict whitelists (blocks/items/entities); also finds items inside entity inventories (minecarts with chests, chested horses, villagers, ...).
 - **Meteor showers**, **auto-broadcast** (conditions: is-op, is-gamemode, height, health, hunger, is-group, online-*, xp-lvl-*), **death bell**, **glass breaking**, **shield slowness**, **terracotta speed**, **boosted cobweb**, **entity locator**, **exp bottle upgrade**, **netherite upgrade**.
 - **World clock / timelines** — `/time` works correctly in all dimensions.
 
@@ -366,6 +443,9 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 | `ui.admin`, `ui.*` | Everything |
 | `ui.command.<name>` | Access to `/ui <name>` |
 | `ui.command.*` | All commands |
+| `ui.command.radview` | Admin radiation overlay (default FALSE) |
+| `ui.command.configregen` / `ui.command.configreset` | Config regen/reset commands (default FALSE, additionally gated by `config.commands_enabled`) |
+| `ui.enchant.itemstealing.steal` | Allows Item Stealing to trigger (default FALSE) |
 | `ui.chat.filter.bypass` | Bypass the chat filter |
 | `ui.packetguard.bypass` | Bypass packet size limits |
 | `ui.gmprotect.bypass` | Bypass game-mode protection |
@@ -373,40 +453,61 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 | `ui.show.brand` | Show the server brand in F3 |
 | `ui.alerts` | Receive server alerts (used by auto-broadcast conditions) |
 
-Permissions are registered **in code** (not in `plugin.yml`) and default to OP-only where it matters.
+Permissions are registered **in code** and default to OP-only where it matters.
 
 ---
 
 ## ⚙️ Configuration
 
-- **`config.yml`** — all settings: auth, reactor, energy, radiation, features, chat, protection, modules, and more. The plugin auto-repairs it: missing keys are appended on startup, and on `InvalidConfigurationException` the file is restored.
-- **Punishment messages** — `messages.punishment` (RU) / `messages_en.punishment` (EN), each message is a YAML list of MiniMessage lines; placeholders `%player%`, `%punisher%`, `%reason%`, `%duration%`, `%discord_url%`.
-- **Auto Broadcast** — `auto_broadcast` section with sections, cooldowns and condition strings.
-- Reload with `/ui reload` — module toggles and most config changes apply without a restart.
+- **Per-addon TOML** — each addon owns
+  `plugins/UltimateImprovments/configs/UI-<Addon>.toml` (UI-Core.toml,
+  UI-Enchant.toml, UI-Guard.toml, ...): the single source of defaults, no
+  monolithic config. Missing keys are auto-repaired from the bundled templates
+  on startup; on a parse failure the broken file is backed up and restored.
+- **Language** — `messages.lang` (`en`/`ru`) in UI-Core.toml; message sections
+  exist in both languages (`messages.*` RU, `messages_en.*` EN).
+- **Punishment messages** — `messages.punishment` / `messages_en.punishment`
+  in UI-Punish.toml, MiniMessage lists with `%player%`, `%punisher%`,
+  `%reason%`, `%duration%`, `%discord_url%` placeholders.
+- **Auto Broadcast** — `[auto_broadcast]` section in its addon's TOML with
+  sections, cooldowns and condition strings.
+- **Armor/trim effects** — units with `duration_ticks` + `check_interval_ticks`
+  (defaults 40/40).
+- **Config recovery** — `/ui config regen <UI-<Addon>.toml>` and
+  `/ui config reset <addon|all>`: numbered backups
+  (`configs/UI-<Addon>-broken-<N>.toml`), triple-gated (permission +
+  `config.commands_enabled` flag + clickable confirmation).
+- Reload with `/ui reload` — module toggles and most config changes apply
+  without a restart (the datapack itself is re-discovered only at startup).
 
 ---
 
 ## 🗄 Database (SQLite)
 
-Stored in the plugin data folder. Main tables: `auth_users`, `auth_sessions`, `cables`, `cable_connections`, `code_panel_keys`, `player_homes`, `player_notes`, `player_radiation`, `updater_state`, `vanished_players`, `magnet_state`, `reactor_state`, `player_settings`, `punishments`, `warns`, `whitelist`, `blacklist`, `reports`.
+One shared database for the whole family: `plugins/UltimateImprovments/database.db`
+(WAL mode). Main tables: `auth_users`, `auth_sessions`, `cables`,
+`cable_connections`, `code_panel_keys`, `player_homes`, `player_notes`,
+`player_radiation`, `updater_state`, `vanished_players`, `magnet_state`,
+`reactor_state`, `player_settings`, `punishments`, `warns`, `whitelist`,
+`blacklist`, `reports`, `lava_walker_melts` and more.
 
 ---
 
 ## 🏗️ Building & Updating
 
 ```bash
-git clone https://github.com/rizer001-Development/UltimateImprovments.git
+git clone https://github.com/0softwaredevelopment0/UltimateImprovments.git
 cd UltimateImprovments
-./gradlew build
+./gradlew distributeJars   # fast: shadow-only, all 21 jars into build/libs/
+./gradlew build            # full build with tests
 ```
 
-The JAR lands in `build/libs/UltimateImprovments-<version>.jar`. Requirements: JDK 26+, Git.
+The jars land in `build/libs/UI-<Addon>-<version>-all.jar`. Requirements: JDK 26+, Git.
 
 **Updating:**
-1. Delete the old datapack in `world/datapacks/`.
-2. Replace the `.jar`.
-3. Run `/ui reload` (or restart).
-4. The config auto-repair adds new sections.
+1. Replace all `UI-*-all.jar` files in `plugins/` with the new version.
+2. Run `/ui reload` (or restart).
+3. The datapack re-extracts itself on server start; config auto-repair adds new sections.
 
 ---
 
@@ -414,8 +515,11 @@ The JAR lands in `build/libs/UltimateImprovments-<version>.jar`. Requirements: J
 
 - **PlaceholderAPI** — all plugin placeholders register through PAPI if installed (`%ui_player_name%`, `%ui_player_world%`, `%ui_server_time%`, `%ui_online%`, ...), with an internal fallback resolver.
 - **Soft-dependencies:** PlaceholderAPI, LuckPerms (wildcard blocking), Vault (economy).
-- **Project layout:** `chat/`, `combat/`, `command/`, `config/`, `core/`, `database/`, `display/`, `economy/`, `enchantment/`, `energy/`, `hook/`, `mechanics/`, `module/`, `punish/`, `report/`, `whitelist/`, and more.
+- **Architecture:** every addon is a Gradle module with `paper-plugin.yml` and
+  an explicit dependency graph (`join-classpath`); cross-addon calls are
+  decoupled through the `CoreHooks` indirection layer; each addon owns its
+  `config/UI-<Addon>.toml` bundle and routes config keys via `AddonCatalog`.
 
 ---
 
-*Build date: 2026-08-18 | Latest version: 1.9*
+*Build date: 2026-09-29 | Latest version: 1.8.3-alpha.5*

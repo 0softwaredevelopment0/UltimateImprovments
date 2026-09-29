@@ -6,7 +6,7 @@ Thanks for your interest in the project! Here's how you can get involved.
 
 ## 💬 Questions & Support
 
-**If you have a question about configuration, commands, or how a feature works — please ask it in [Discussions](https://github.com/rizer001-Development/UltimateImprovments/discussions).**
+**If you have a question about configuration, commands, or how a feature works — please ask it in [Discussions](https://github.com/0softwaredevelopment0/UltimateImprovments/discussions).**
 
 Discussions are the preferred channel for:
 
@@ -21,7 +21,7 @@ Discussions are the preferred channel for:
 
 ## 🐛 Bug Reports
 
-Found a bug? Please [open an Issue](https://github.com/rizer001-Development/UltimateImprovments/issues/new) with:
+Found a bug? Please [open an Issue](https://github.com/0softwaredevelopment0/UltimateImprovments/issues/new) with:
 
 - **Server version** (e.g. `Paper 26.2`)
 - **Plugin version** (e.g. `1.8.3-alpha.5`)
@@ -32,7 +32,7 @@ Found a bug? Please [open an Issue](https://github.com/rizer001-Development/Ulti
 
 ## ✨ Feature Requests
 
-Have an idea? Open an [Issue](https://github.com/rizer001-Development/UltimateImprovments/issues/new) with the label `enhancement` and describe:
+Have an idea? Open an [Issue](https://github.com/0softwaredevelopment0/UltimateImprovments/issues/new) with the label `enhancement` and describe:
 
 - What you'd like to see
 - Why it would be useful
