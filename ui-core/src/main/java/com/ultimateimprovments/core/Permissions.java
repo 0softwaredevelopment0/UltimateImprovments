@@ -221,7 +221,7 @@ public final class Permissions {
                 new Permission(CMD_SWAPJAR, "Swap plugin jar", PermissionDefault.FALSE),
                 new Permission(CMD_PLUGIN, "Manage other plugins", PermissionDefault.FALSE),
                 new Permission(CMD_PLUGINS, "List plugins", PermissionDefault.FALSE),
-                new Permission(CMD_ADDONS, "List UltimateImprovments addons (/ui addons)", PermissionDefault.FALSE),
+                new Permission(CMD_ADDONS, "Manage UltimateImprovments addons (/ui addon)", PermissionDefault.FALSE),
                 new Permission(CMD_HELP, "Show command help", PermissionDefault.FALSE),
                 new Permission(CMD_CONFIG_REGEN, "Regenerate per-addon configs (/ui config regen) — destructive, also gated by config.commands.enabled", PermissionDefault.FALSE),
                 new Permission(CMD_CONFIG_RESET, "Reset per-addon configs to bundled defaults (/ui config reset <addon|all>) — destructive, also gated by config.commands.enabled", PermissionDefault.FALSE),

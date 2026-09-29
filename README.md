@@ -93,10 +93,10 @@ On top of that, every feature is a **module** that can be toggled on/off at runt
 
 ### Addons
 
-Each addon is a regular Paper plugin discovered through the family's **AddonCatalog**; `/ui addons` shows every addon with its status (permission `ui.command.addons`, included in `ui.admin` / `ui.*`):
+Each addon is a regular Paper plugin discovered through the family's **AddonCatalog**; the universal manager `/ui addon` lists every addon with its status (`/ui addon list`, permission `ui.command.addons`, included in `ui.admin` / `ui.*`):
 
 ```
-/ui addons
+/ui addon list
 ```
 
 ---

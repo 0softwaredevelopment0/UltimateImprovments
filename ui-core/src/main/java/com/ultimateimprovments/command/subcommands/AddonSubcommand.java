@@ -31,8 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code /ui addon enable|disable|restart <addon>} — real onEnable/onDisable
  *       with a confirmation step (some plugins crash on hot disable/enable)</li>
  * </ul>
- * There is no fixed addon set: any third-party jar with
- * {@code addon-for: UI-Core} in plugin.yml appears here automatically.
+ * There is no fixed addon set: the bundled addons are listed in the
+ * {@code AddonCatalog}, and any third-party jar discovered by
+ * {@link com.ultimateimprovments.addon.AddonRegistry} appears here too.
  */
 public class AddonSubcommand implements SubCommand {
 
