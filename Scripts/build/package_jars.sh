@@ -2,7 +2,7 @@
 # Packages the UltimateImprovments plugin family into a single distribution archive.
 #
 # Pipeline:
-#   1. ./gradlew build           (skipped with --no-build)
+#   1. ./gradlew distributeJars  (shadow-only jar assembly; skipped with --no-build)
 #   2. tar the UI-*.jar files    -> build/distribution/UltimateImprovments-<version>-jars.tar
 #
 # Note: NO gzip stage. JARs are already ZIP archives (DEFLATE-compressed inside),
@@ -19,8 +19,8 @@ cd "$ROOT"
 if [[ "${1:-}" == "--no-build" ]]; then
   echo "[package] Skipping build (--no-build)"
 else
-  echo "[package] Building..."
-  ./gradlew build -q
+  echo "[package] Building shadow jars..."
+  ./gradlew distributeJars -q
 fi
 
 if ! ls build/libs/UI-*-all.jar >/dev/null 2>&1; then
@@ -33,12 +33,12 @@ CORE_JAR="$(ls build/libs/UI-Core-*-all.jar | head -n1)"
 VERSION="$(sed -E 's/.*UI-Core-(.*)-all\.jar/\1/' "$CORE_JAR")"
 
 STAGE="build/distribution"
-rm -rf "$STAGE"
 mkdir -p "$STAGE"
 
 TAR="$STAGE/UltimateImprovments-$VERSION-jars.tar"
 echo "[package] Creating $TAR (version $VERSION, no gzip — JARs are already compressed)..."
-tar -cf "$TAR" -C build/libs UI-*-all.jar
+# Only the CURRENT version's jars — build/libs keeps jars of older releases.
+tar -cf "$TAR" -C build/libs UI-*-"$VERSION"-all.jar
 
 # Show the result
 echo "[package] Done:"
