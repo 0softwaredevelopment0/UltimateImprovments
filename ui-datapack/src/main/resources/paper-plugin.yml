@@ -3,7 +3,7 @@ version: '${project.version}'
 description: UltimateImprovments — bundled datapack installer
 main: com.ultimateimprovments.datapack.UIDatapack
 bootstrapper: com.ultimateimprovments.datapack.UIDatapackBootstrap
-api-version: '26.2'
+api-version: '26.3'
 author: rizer001
 dependencies:
   server:

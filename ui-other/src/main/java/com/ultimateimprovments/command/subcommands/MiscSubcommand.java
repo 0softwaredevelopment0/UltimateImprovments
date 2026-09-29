@@ -360,10 +360,12 @@ public final class MiscSubcommand {
         // can never leave a permanently immortal player after relogs/restarts.
         if (!enable && target instanceof org.bukkit.craftbukkit.entity.CraftPlayer craftPlayer) {
             try {
-                net.minecraft.server.level.ServerPlayer nmsPlayer = craftPlayer.getHandle();
-                // Direct NBT write — the Bukkit-API equivalent of
-                // `data merge entity <player> {Invulnerable:0b}`
-                nmsPlayer.setInvulnerable(false);
+                // Paper 26.3: NMS Entity#setInvulnerable no longer exists. The
+                // Bukkit setInvulnerable(enable) above already cleared the flag
+                // on the entity handle (the same NBT "Invulnerable" tag);
+                // saveData() persists the cleared value to player.dat
+                // immediately, so a broken "god off" can never leave a
+                // permanently immortal player after relogs/restarts.
                 craftPlayer.saveData();
             } catch (Throwable t) {
                 org.bukkit.Bukkit.getLogger().warning("[God] NBT Invulnerable reset failed for "

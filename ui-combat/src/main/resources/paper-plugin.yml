@@ -2,7 +2,7 @@ name: UI-Combat
 version: '${project.version}'
 description: 'Weapons, turrets, and projectile system'
 main: com.ultimateimprovments.combat.UICombat
-api-version: '26.2'
+api-version: '26.3'
 author: rizer001
 dependencies:
   server:

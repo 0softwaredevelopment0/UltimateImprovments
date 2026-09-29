@@ -2,7 +2,7 @@ name: UI-Essentials
 version: '${project.version}'
 description: 'Essential commands: home, teleport, heal, reports, NBT editor, and more'
 main: com.ultimateimprovments.module.UIEssentials
-api-version: '26.2'
+api-version: '26.3'
 author: rizer001
 dependencies:
   server:

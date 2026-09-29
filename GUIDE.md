@@ -1,7 +1,7 @@
 # ✦ Ultimate Improvments — Full Guide
 
 **Version:** 1.8.3-alpha.5
-**Core:** Paper 26.2+ (or Leaf fork)
+**Core:** Paper 26.3+ (or Leaf fork)
 **Database:** SQLite (one shared `database.db` for the whole family)
 **Author:** [rizer001](https://github.com/rizer001)
 
@@ -50,7 +50,7 @@ This is the complete guide: installation, every command, custom items, enchantme
 > mechanics talk to UI-Energy through the `MbsEnergy` API bridge, so UI-MBS
 > never depends on UI-Energy.
 
-> ⚠ Requires **Paper 26.2+** or a compatible fork (Leaf). Not compatible with Spigot/Bukkit.
+> ⚠ Requires **Paper 26.3+** or a compatible fork (Leaf). Not compatible with Spigot/Bukkit.
 > Java **26+** is required.
 
 ---

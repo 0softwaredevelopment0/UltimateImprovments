@@ -263,7 +263,7 @@ public final class TrimEffectsManager implements org.bukkit.event.Listener {
         if (name.isEmpty()) return null;
         try {
             for (TrimMaterial material : Registry.TRIM_MATERIAL) {
-                if (material.getKey().getKey().equalsIgnoreCase(name)) return material;
+                if (material.key().value().equalsIgnoreCase(name)) return material;
             }
         } catch (Exception e) {
             ConsoleLogger.warn("[TrimEffects] Trim material registry lookup failed: " + e.getMessage());

@@ -23,7 +23,7 @@ Discussions are the preferred channel for:
 
 Found a bug? Please [open an Issue](https://github.com/0softwaredevelopment0/UltimateImprovments/issues/new) with:
 
-- **Server version** (e.g. `Paper 26.2`)
+- **Server version** (e.g. `Paper 26.3`)
 - **Plugin version** (e.g. `1.8.3-alpha.5`)
 - **Steps to reproduce** the problem
 - **Console error** (if any)
@@ -47,7 +47,7 @@ Pull requests are welcome! For non-trivial changes, please open an Issue first t
 1. Fork the repo
 2. Create a feature branch
 3. Make your changes
-4. Test on a Paper 26.2+ server
+4. Test on a Paper 26.3+ server
 5. Open a Pull Request with a clear description
 
 ---
