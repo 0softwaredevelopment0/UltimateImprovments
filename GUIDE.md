@@ -96,9 +96,9 @@ AntiCheat, StructureIntegrity, ParticleAccelerator, Meteor, AutoBroadcast,
 BedrockBreak/Kaboom/EarthCore/ServerOverload/...** (achievement modules),
 DeathLogger, CmdBlockTracker.
 
-The bundled addon set is registered in the **AddonCatalog**; `/ui addons`
-shows every addon with its status (permission `ui.command.addons`, included in
-`ui.admin` / `ui.*`).
+The bundled addon set is registered in the **AddonCatalog**; the universal
+manager `/ui addon` shows every addon with its status (`/ui addon list`,
+permission `ui.command.addons`, included in `ui.admin` / `ui.*`).
 
 ---
 
