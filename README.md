@@ -1,14 +1,14 @@
 # Ultimate Improvments
 
-**A huge collection of gameplay features in a server plugins. For Paper 26.1+ (Java 26) — one core + 20 addon plugins**
+**A huge collection of gameplay features for your server. For Paper 26.2+ (Java 26) — one core + 20 addon plugins**
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-26%2B-orange)](https://www.oracle.com/java/)
-[![Server](https://img.shields.io/badge/Paper-26.1%2B-green)](https://papermc.io/)
+[![Server](https://img.shields.io/badge/Paper-26.2%2B-green)](https://papermc.io/)
 [![Version](https://img.shields.io/badge/Version-1.8.3--alpha.5-brightgreen)](https://github.com/0softwaredevelopment0/UltimateImprovments/releases)
 
 **Author:** [rizer001](https://github.com/rizer001)
-**Server:** Paper 26.1+
+**Server:** Paper 26.2+
 **Database:** SQLite
 **Build:** Gradle (JDK 26)
 
