@@ -70,16 +70,16 @@ final class DatapackPackBootstrap {
                     }
                 }
             } catch (Exception e) {
-                log.warn("[UI-Datapack] Could not read " + configFile + " (" + e.getMessage()
+                log.warn("Could not read " + configFile + " (" + e.getMessage()
                         + ") — using defaults (all parts enabled).");
             }
         } else {
-            log.info("[UI-Datapack] Config not found yet (" + configFile
+            log.info("Config not found yet (" + configFile
                     + ") — using defaults (all parts enabled).");
         }
 
         if (!enabled) {
-            log.info("[UI-Datapack] datapack.enabled=false — the bundled datapack is not registered.");
+            log.info("datapack.enabled=false — the bundled datapack is not registered.");
             return null;
         }
 
@@ -101,7 +101,7 @@ final class DatapackPackBootstrap {
             throw new IOException("UI-Datapack extraction copied 0 files");
         }
 
-        log.info("[UI-Datapack] Extracted " + copied + " datapack file(s) to " + target.getAbsolutePath());
+        log.info("Extracted " + copied + " datapack file(s) to " + target.getAbsolutePath());
         return target.toPath();
     }
 
@@ -135,7 +135,7 @@ final class DatapackPackBootstrap {
                 if (hasDatapack(jar)) return jar;
             }
         }
-        log.warn("[UI-Datapack] Datapack source not found via code source; will rely on discovered pack if any.");
+        log.warn("Datapack source not found via code source; will rely on discovered pack if any.");
         return null;
     }
 
