@@ -300,8 +300,10 @@ public final class TurretManager {
         // Beam follows the victim (client renders the vanilla end crystal ray).
         crystal.setBeamTarget(target.getEyeLocation());
 
+        // Paper 26.3: withDirectEntity is mandatory when causingEntity is set.
         DamageSource source = DamageSource.builder(DamageType.MOB_ATTACK)
                 .withCausingEntity(crystal)
+                .withDirectEntity(crystal)
                 .build();
         target.damage(damagePerTick(), source);
         // No i-frame bypass: the vanilla 10-tick immunity caps the rate at one
