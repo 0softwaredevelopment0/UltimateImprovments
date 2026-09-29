@@ -297,10 +297,12 @@ public final class TurretManager {
             return;
         }
 
-        // Beam aims at the CENTER of the victim's bounding box (the eye level
-        // of mobs sits above the body, so the ray visually flew over them).
+        // Beam aims at the CENTER of the victim's bounding box, shifted ~1 block
+        // down (the hitbox center still floats above the mob's body texture);
+        // clamped to just above the feet so small mobs don't aim into the ground.
         org.bukkit.util.Vector center = target.getBoundingBox().getCenter();
-        crystal.setBeamTarget(new Location(crystal.getWorld(), center.getX(), center.getY(), center.getZ()));
+        double aimY = Math.max(target.getLocation().getY() + 0.2, center.getY() - 1.0);
+        crystal.setBeamTarget(new Location(crystal.getWorld(), center.getX(), aimY, center.getZ()));
 
         // Paper 26.3: withDirectEntity is mandatory when causingEntity is set.
         DamageSource source = DamageSource.builder(DamageType.MOB_ATTACK)
