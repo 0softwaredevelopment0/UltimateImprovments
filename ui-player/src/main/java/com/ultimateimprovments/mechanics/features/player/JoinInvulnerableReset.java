@@ -11,9 +11,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import net.minecraft.server.level.ServerPlayer;
-
 /**
  * 🛡 JoinInvulnerableReset — defensive fix for the "immortal player" bug.
  * <p>
@@ -140,20 +137,21 @@ public class JoinInvulnerableReset implements Listener {
     private void resetIfStale(Player player) {
         if (!player.isInvulnerable()) return; // nothing to fix
 
-        // NMS write — the API equivalent of `data merge entity <player> {Invulnerable:0b}`
-        if (player instanceof CraftPlayer craftPlayer) {
-            try {
-                ServerPlayer nmsPlayer = craftPlayer.getHandle();
-                nmsPlayer.setInvulnerable(false);
+        // Bukkit setInvulnerable(false) writes the same NBT "Invulnerable:0b"
+        // on the entity handle (Paper 26.3 removed the direct NMS setter);
+        // saveData() persists it so the stale flag cannot survive relogs.
+        try {
+            player.setInvulnerable(false);
+            if (player instanceof CraftPlayer craftPlayer) {
                 craftPlayer.saveData();
-                if (notifyConsole) {
-                    ConsoleLogger.warn("[JoinInvulnerableReset] Cleared a stale Invulnerable flag for "
-                            + player.getName() + (timedMode ? " (timed sweep)." : " on join."));
-                }
-            } catch (Throwable t) {
-                ConsoleLogger.error("[JoinInvulnerableReset] Failed to reset Invulnerable for "
-                        + player.getName() + ": " + t.getMessage());
             }
+            if (notifyConsole) {
+                ConsoleLogger.warn("[JoinInvulnerableReset] Cleared a stale Invulnerable flag for "
+                        + player.getName() + (timedMode ? " (timed sweep)." : " on join."));
+            }
+        } catch (Throwable t) {
+            ConsoleLogger.error("[JoinInvulnerableReset] Failed to reset Invulnerable for "
+                    + player.getName() + ": " + t.getMessage());
         }
     }
 }

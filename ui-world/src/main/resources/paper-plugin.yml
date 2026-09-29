@@ -2,7 +2,7 @@ name: UI-World
 version: '${project.version}'
 description: UltimateImprovments — world mechanics add-on (blocks, collapse, friction, meteor, wireless redstone, challenges)
 main: com.ultimateimprovments.core.UIWorld
-api-version: '26.2'
+api-version: '26.3'
 author: rizer001
 dependencies:
   server:

@@ -453,7 +453,9 @@ public final class CrashExecutor {
                         Optional.empty(),
                         ParticleTypes.EXPLOSION,
                         SoundEvents.GENERIC_EXPLODE,
-                        blockParticles
+                        blockParticles,
+                        // Paper 26.3: new record component — old packets always played the sound.
+                        true
                 );
                 send(target, packet);
             }

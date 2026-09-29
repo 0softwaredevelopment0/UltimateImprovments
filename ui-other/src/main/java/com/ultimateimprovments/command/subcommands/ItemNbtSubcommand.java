@@ -28,7 +28,6 @@ import io.papermc.paper.datacomponent.item.JukeboxPlayable;
 import io.papermc.paper.datacomponent.item.LodestoneTracker;
 import io.papermc.paper.datacomponent.item.MapDecorations;
 import io.papermc.paper.datacomponent.item.MapId;
-import io.papermc.paper.datacomponent.item.MapItemColor;
 import io.papermc.paper.datacomponent.item.OminousBottleAmplifier;
 import io.papermc.paper.datacomponent.item.PotDecorations;
 import io.papermc.paper.datacomponent.item.PotionContents;
@@ -269,7 +268,6 @@ public final class ItemNbtSubcommand implements SubCommand {
             case "canplaceon" -> canBreakPlace(player, item, args, false);
             case "enchantable" -> enchantable(player, item, args);
             case "mapid" -> mapId(player, item, args);
-            case "mapcolor" -> mapColor(player, item, args);
             case "mappost" -> mapPost(player, item, args);
             case "mapdeco" -> mapDeco(player, item, args);
             case "writablebook" -> writableBook(player, item, args);
@@ -1218,7 +1216,7 @@ public final class ItemNbtSubcommand implements SubCommand {
         patterns.add(insertAt, new Pattern(dyeColor, patternType));
         item.setData(DataComponentTypes.BANNER_PATTERNS, BannerPatternLayers.bannerPatternLayers(patterns));
         p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Pattern added at index</white> <yellow>" + insertAt
-                + "</yellow><white>: </white><yellow>" + patternType.getKey().getKey()
+                + "</yellow><white>: </white><yellow>" + patternType.key().value()
                 + "</yellow><white> / </white><yellow>" + dyeColor.name().toLowerCase() + "</white>"));
         return true;
     }
@@ -1252,7 +1250,7 @@ public final class ItemNbtSubcommand implements SubCommand {
         patterns.set(idx, new Pattern(dyeColor, patternType));
         item.setData(DataComponentTypes.BANNER_PATTERNS, BannerPatternLayers.bannerPatternLayers(patterns));
         p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Pattern</white> <yellow>" + idx
-                + "</yellow> <white>replaced with</white> <yellow>" + patternType.getKey().getKey()
+                + "</yellow> <white>replaced with</white> <yellow>" + patternType.key().value()
                 + "</yellow><white> / </white><yellow>" + dyeColor.name().toLowerCase() + "</white>"));
         return true;
     }
@@ -1632,8 +1630,12 @@ public final class ItemNbtSubcommand implements SubCommand {
                     + "</yellow><gray>. Use any, mainhand, offhand, hand, feet, legs, chest, head, armor, body or saddle.</gray>"));
             return true;
         }
-        AttributeModifier modifier = new AttributeModifier(UUID.randomUUID(),
-                attribute.getKey().getKey() + "_" + System.nanoTime(), amount, operation, group);
+        // Paper 26.3: UUID-based AttributeModifier constructor is deprecated
+        // for removal — key-based modifiers are the modern storage. A unique
+        // nanoTime suffix keeps repeated adds from colliding on the same key.
+        NamespacedKey modKey = new NamespacedKey("ui",
+                attribute.getKey().getKey().toLowerCase(Locale.ROOT) + "_" + System.nanoTime());
+        AttributeModifier modifier = new AttributeModifier(modKey, amount, operation, group);
         ItemAttributeModifiers old = item.getData(DataComponentTypes.ATTRIBUTE_MODIFIERS);
         ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.itemAttributes();
         if (old != null) {
@@ -2111,35 +2113,6 @@ public final class ItemNbtSubcommand implements SubCommand {
         }
         item.setData(DataComponentTypes.MAP_ID, MapId.mapId(id));
         p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Map ID set to</white> <yellow>" + id + "</yellow><white>.</white>"));
-        return true;
-    }
-
-    /** /ui itemnbt mapcolor <R> <G> <B>|clear — map tint color. */
-    private static boolean mapColor(Player p, ItemStack item, String[] args) {
-        if (args.length < 3) {
-            p.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui itemnbt mapcolor <R> <G> <B>|clear</white>"));
-            return true;
-        }
-        if (args[2].equalsIgnoreCase("clear")) {
-            item.resetData(DataComponentTypes.MAP_COLOR);
-            p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Map color cleared.</white>"));
-            return true;
-        }
-        if (args.length < 5) {
-            p.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui itemnbt mapcolor <R> <G> <B></white>"));
-            return true;
-        }
-        Integer r = parseInt(args[2]);
-        Integer g = parseInt(args[3]);
-        Integer b = parseInt(args[4]);
-        if (r == null || g == null || b == null || r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
-            p.sendMessage(MessageUtil.parse("<red>❌ RGB values must be 0-255.</red>"));
-            return true;
-        }
-        item.setData(DataComponentTypes.MAP_COLOR,
-                MapItemColor.mapItemColor().color(Color.fromRGB(r, g, b)).build());
-        p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Map color set to RGB(</white><yellow>" + r
-                + "</yellow><white>, </white><yellow>" + g + "</yellow><white>, </white><yellow>" + b + "</yellow><white>).</white>"));
         return true;
     }
 
@@ -3039,8 +3012,9 @@ public final class ItemNbtSubcommand implements SubCommand {
     private static Key resolveSoundKey(String input) {
         Sound sound = resolveRegistry(Registry.SOUNDS, input);
         if (sound != null) {
-            NamespacedKey sk = sound.getKey();
-            return Key.key(sk.getNamespace(), sk.getKey());
+            // Paper 26.3: Sound#getKey() is deprecated for removal — use the
+            // Adventure key() accessor.
+            return sound.key();
         }
         // Allow sounds from resource packs that are not in the registry
         return parseResourceKey(input);
@@ -3187,7 +3161,7 @@ public final class ItemNbtSubcommand implements SubCommand {
                 + "<white>/ui itemnbt useremainder <material> [amount]|clear</white>\n"
                 + "<white>/ui itemnbt canbreak|canplaceon <add <block...>|clear|info></white>\n"
                 + "<white>/ui itemnbt enchantable <value>|clear</white>\n"
-                + "<white>/ui itemnbt mapid <id>|clear | mapcolor <R> <G> <B>|clear | mappost <lock|scale|clear></white>\n"
+                + "<white>/ui itemnbt mapid <id>|clear | mappost <lock|scale|clear></white>\n"
                 + "<white>/ui itemnbt mapdeco <add <name> <type> <x> <z> <rot>|remove <name>|clear|info></white>\n"
                 + "<white>/ui itemnbt writablebook <addpage <text>|clearpages|info></white>\n"
                 + "<white>/ui itemnbt suspiciousstew <add <effect> <ticks>|remove <effect>|reset|info></white>\n"
@@ -3218,7 +3192,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             "bookauthor", "booktype", "attribute", "cmdata", "itemmodel", "compass",
             "axltype", "ghsound", "armortrim", "material",
             "tooltipstyle", "itemname", "hidetooltip", "usecooldown", "useremainder",
-            "canbreak", "canplaceon", "enchantable", "mapid", "mapcolor", "mappost", "mapdeco",
+            "canbreak", "canplaceon", "enchantable", "mapid", "mappost", "mapdeco",
             "writablebook", "suspiciousstew", "deathprotection", "jukeboxplayable", "noteblocksound",
             "bundle", "potdecorations", "containerloot", "ominousbottle", "intangibleprojectile",
             "firework", "chargedprojectiles", "container", "recipes", "repairable");
@@ -3388,11 +3362,6 @@ public final class ItemNbtSubcommand implements SubCommand {
             }
             case "mapid" -> {
                 if (args.length == 3) addStartsWith(result, args[2], "0", "1", "10", "100", "1000", "clear");
-            }
-            case "mapcolor" -> {
-                if (args.length == 4) addStartsWith(result, args[3], "0", "32", "64", "128", "192", "255");
-                if (args.length == 5) addStartsWith(result, args[4], "0", "32", "64", "128", "192", "255");
-                if (args.length == 6) addStartsWith(result, args[5], "0", "32", "64", "128", "192", "255");
             }
             case "mappost" -> {
                 if (args.length == 3) addStartsWith(result, args[2], "lock", "scale", "clear");
