@@ -77,8 +77,10 @@ public class BlazingSwordListener implements Listener {
         try {
             // Additional normal damage, attributed to the attacker — reduced by
             // armor and protection enchantments like a regular weapon hit.
+            // Paper 26.3: withDirectEntity is mandatory when causingEntity is set.
             DamageSource extra = DamageSource.builder(DamageType.PLAYER_ATTACK)
                     .withCausingEntity(player)
+                    .withDirectEntity(player)
                     .build();
             victim.damage(EXTRA_DAMAGE, extra);
         } finally {
@@ -111,7 +113,7 @@ public class BlazingSwordListener implements Listener {
 
             Player source = Bukkit.getPlayer(state.attackerId);
             DamageSource.Builder builder = DamageSource.builder(DamageType.PLAYER_ATTACK);
-            if (source != null) builder.withCausingEntity(source);
+            if (source != null) builder.withCausingEntity(source).withDirectEntity(source);
             DamageSource burn = builder.build();
 
             applyingBurn = true;
