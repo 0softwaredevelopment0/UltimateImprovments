@@ -36,7 +36,7 @@
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          { "items": ["minecraft:recovery_compass"] }
+          { "items": ["minecraft:name_tag"], "predicates": { "minecraft:custom_data": "{\"ui-core:isHealthMeter\":1b}" } }
         ]
       }
     }

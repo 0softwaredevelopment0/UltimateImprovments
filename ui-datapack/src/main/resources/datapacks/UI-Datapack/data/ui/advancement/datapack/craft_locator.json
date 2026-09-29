@@ -36,7 +36,7 @@
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          { "items": ["minecraft:recovery_compass"] }
+          { "items": ["minecraft:recovery_compass"], "predicates": { "minecraft:custom_data": "{\"ui-core:isLocator\":1b}" } }
         ]
       }
     }
