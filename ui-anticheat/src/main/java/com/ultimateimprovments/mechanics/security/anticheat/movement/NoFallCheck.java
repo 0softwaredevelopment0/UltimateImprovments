@@ -35,7 +35,7 @@ public class NoFallCheck extends AbstractCheck {
         if (!isEnabled() || isExempted(player)) return;
 
         // If player claims onGround but is falling (Y decreasing significantly)
-        boolean clientOnGround = player.isOnGround();
+        boolean clientOnGround = ((org.bukkit.entity.Entity) player).isOnGround();
         double yDelta = e.getTo().getY() - e.getFrom().getY();
 
         if (!clientOnGround) return;

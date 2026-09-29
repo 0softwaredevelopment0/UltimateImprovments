@@ -89,7 +89,7 @@ public class PlaceholderResolver {
     static {
         // ── Player ──
         BUILTIN.put("player_name",          (p, s) -> p != null ? p.getName() : "?");
-        BUILTIN.put("player_displayname",   (p, s) -> p != null ? p.getDisplayName() : "?");
+        BUILTIN.put("player_displayname",   (p, s) -> p != null ? net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(p.displayName()) : "?");
         BUILTIN.put("player_uuid",          (p, s) -> p != null ? p.getUniqueId().toString() : "?");
         BUILTIN.put("player_ping",          (p, s) -> p != null ? String.valueOf(p.getPing()) : "0");
         BUILTIN.put("player_ping_color",    PlaceholderResolver::resolvePingColor);

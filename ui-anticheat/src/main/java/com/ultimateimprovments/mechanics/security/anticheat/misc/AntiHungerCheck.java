@@ -57,7 +57,7 @@ public class AntiHungerCheck extends AbstractCheck {
         if (!isEnabled() || isExempted(player)) return;
 
         double yDelta = e.getTo().getY() - e.getFrom().getY();
-        boolean onGround = player.isOnGround();
+        boolean onGround = ((org.bukkit.entity.Entity) player).isOnGround();
 
         // ── Detection 1: Sprint-jump with onGround=true ──
         // If the player jumps (yDelta > 0.4) BUT the packet says onGround=true

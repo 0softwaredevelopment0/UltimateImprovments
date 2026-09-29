@@ -94,7 +94,7 @@ public class VerticalMotionCheck extends AbstractCheck {
             effectiveJump += (amp + 1) * 0.1;
         }
         // If player was on ground and yDelta matches jump → legit
-        if (player.isOnGround() && yDelta > 0 && yDelta <= effectiveJump * 1.1) {
+        if (((org.bukkit.entity.Entity) player).isOnGround() && yDelta > 0 && yDelta <= effectiveJump * 1.1) {
             suspiciousAirTicks.put(player.getUniqueId(), 0);
             lastY.put(player.getUniqueId(), e.getTo().getY());
             return;

@@ -57,10 +57,10 @@ public final class HealFeedSubcommand {
         double amount = getHealAmount();
         if (amount <= 0) {
             // Full HP
-            target.setHealth(target.getAttribute(Attribute.MAX_HEALTH).getDefaultValue());
+            target.setHealth(target.getAttribute(Attribute.MAX_HEALTH).getAttribute().getDefaultValue());
         } else {
             double newHealth = Math.min(target.getHealth() + amount,
-                    target.getAttribute(Attribute.MAX_HEALTH).getDefaultValue());
+                    target.getAttribute(Attribute.MAX_HEALTH).getAttribute().getDefaultValue());
             target.setHealth(newHealth);
         }
 

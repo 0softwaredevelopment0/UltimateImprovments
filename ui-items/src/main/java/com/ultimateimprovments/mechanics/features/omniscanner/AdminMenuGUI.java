@@ -77,7 +77,7 @@ public class AdminMenuGUI implements Listener {
 
     private static void buildGUI(Player player, MenuState state) {
         Inventory inv = Bukkit.createInventory(null, 54,
-                MessageUtil.legacy("<!italic><gradient:#00AAFF:#FF55FF>🎛 UltimateImprovments Menu</gradient>"));
+                MessageUtil.parse("<!italic><gradient:#00AAFF:#FF55FF>🎛 UltimateImprovments Menu</gradient>"));
 
         // Top panel
         for (int i = 0; i < 9; i++) {
@@ -678,13 +678,13 @@ public class AdminMenuGUI implements Listener {
                             if (free > 0) {
                                 int transfer = Math.min(free, clicked.getAmount());
                                 cursor.setAmount(cursor.getAmount() + transfer);
-                                e.setCursor(cursor);
+                                e.getView().setCursor(cursor);
                                 player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 1.5f);
                             }
                         }
                         return; // different item on the cursor — nothing happens
                     }
-                    e.setCursor(clicked.clone());
+                    e.getView().setCursor(clicked.clone());
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 1.5f);
                 }
                 return;

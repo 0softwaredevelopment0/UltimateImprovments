@@ -4,7 +4,9 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.command.SubCommand;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.Registries;
 import com.ultimateimprovments.util.PlayerDataIO;
+import com.ultimateimprovments.util.Registries;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.block.BlockPredicate;
@@ -454,7 +456,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             case "placed_on" -> List.of(ItemFlag.HIDE_PLACED_ON);
             case "stored_enchants" -> List.of(ItemFlag.HIDE_STORED_ENCHANTS);
             case "unbreakable" -> List.of(ItemFlag.HIDE_UNBREAKABLE);
-            case "additional_tooltip" -> List.of(ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+            case "additional_tooltip" -> List.of(ItemFlag.HIDE_ATTRIBUTES);
             default -> List.of();
         };
     }
@@ -1201,7 +1203,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             p.sendMessage(MessageUtil.parse("<red>❌ Invalid index: </red><yellow>" + args[3] + "</yellow>"));
             return true;
         }
-        PatternType patternType = resolveRegistry(Registry.BANNER_PATTERN, args[4]);
+        PatternType patternType = resolveRegistry(Registries.bannerPattern(), args[4]);
         DyeColor dyeColor = parseDyeColor(args[5]);
         if (patternType == null) {
             p.sendMessage(MessageUtil.parse("<red>❌ Unknown banner pattern: </red><yellow>" + args[4] + "</yellow>"));
@@ -1216,7 +1218,7 @@ public final class ItemNbtSubcommand implements SubCommand {
         patterns.add(insertAt, new Pattern(dyeColor, patternType));
         item.setData(DataComponentTypes.BANNER_PATTERNS, BannerPatternLayers.bannerPatternLayers(patterns));
         p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Pattern added at index</white> <yellow>" + insertAt
-                + "</yellow><white>: </white><yellow>" + patternType.key().value()
+                + "</yellow><white>: </white><yellow>" + patternKey(patternType)
                 + "</yellow><white> / </white><yellow>" + dyeColor.name().toLowerCase() + "</white>"));
         return true;
     }
@@ -1232,7 +1234,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             p.sendMessage(MessageUtil.parse("<red>❌ Invalid index: </red><yellow>" + args[3] + "</yellow>"));
             return true;
         }
-        PatternType patternType = resolveRegistry(Registry.BANNER_PATTERN, args[4]);
+        PatternType patternType = resolveRegistry(Registries.bannerPattern(), args[4]);
         DyeColor dyeColor = parseDyeColor(args[5]);
         if (patternType == null) {
             p.sendMessage(MessageUtil.parse("<red>❌ Unknown banner pattern: </red><yellow>" + args[4] + "</yellow>"));
@@ -1250,7 +1252,7 @@ public final class ItemNbtSubcommand implements SubCommand {
         patterns.set(idx, new Pattern(dyeColor, patternType));
         item.setData(DataComponentTypes.BANNER_PATTERNS, BannerPatternLayers.bannerPatternLayers(patterns));
         p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Pattern</white> <yellow>" + idx
-                + "</yellow> <white>replaced with</white> <yellow>" + patternType.key().value()
+                + "</yellow> <white>replaced with</white> <yellow>" + patternKey(patternType)
                 + "</yellow><white> / </white><yellow>" + dyeColor.name().toLowerCase() + "</white>"));
         return true;
     }
@@ -1278,7 +1280,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             item.setData(DataComponentTypes.BANNER_PATTERNS, BannerPatternLayers.bannerPatternLayers(patterns));
         }
         p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Pattern removed at index</white> <yellow>" + idx
-                + "</yellow><white> (</white><yellow>" + removed.getPattern().getKey().getKey()
+                + "</yellow><white> (</white><yellow>" + patternKey(removed.getPattern())
                 + "</yellow><white> / </white><yellow>" + removed.getColor().name().toLowerCase() + "</white><white>)</white>"));
         return true;
     }
@@ -1299,7 +1301,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             }
             Pattern pat = patterns.get(idx);
             p.sendMessage(MessageUtil.parse("<dark_gray>┌── Pattern #</dark_gray><yellow>" + idx + "</yellow><dark_gray> ──</dark_gray>"));
-            p.sendMessage(MessageUtil.parse("<dark_gray>│</dark_gray> <aqua>Pattern:</aqua> <white>" + pat.getPattern().getKey().getKey() + "</white>"));
+            p.sendMessage(MessageUtil.parse("<dark_gray>│</dark_gray> <aqua>Pattern:</aqua> <white>" + patternKey(pat.getPattern()) + "</white>"));
             p.sendMessage(MessageUtil.parse("<dark_gray>│</dark_gray> <aqua>Color:</aqua> <white>" + pat.getColor().name().toLowerCase() + "</white>"));
             p.sendMessage(MessageUtil.parse("<dark_gray>└──────────────────</dark_gray>"));
             return true;
@@ -1309,7 +1311,7 @@ public final class ItemNbtSubcommand implements SubCommand {
         for (int i = 0; i < patterns.size(); i++) {
             Pattern pat = patterns.get(i);
             p.sendMessage(MessageUtil.parse("<dark_gray>┃</dark_gray> <yellow>#" + i + "</yellow> <white>"
-                    + pat.getPattern().getKey().getKey() + "</white> <gray>/</gray> <white>"
+                    + patternKey(pat.getPattern()) + "</white> <gray>/</gray> <white>"
                     + pat.getColor().name().toLowerCase() + "</white>"));
         }
         p.sendMessage(MessageUtil.parse("<dark_gray>┗━━━━━━━━━━━━━━━━━━</dark_gray>"));
@@ -1811,7 +1813,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             p.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui itemnbt ghsound <admire|call|dream|feel|ponder|seek|sing|yearn></white>"));
             return true;
         }
-        MusicInstrument instrument = resolveRegistry(Registry.INSTRUMENT, args[2] + "_goat_horn");
+        MusicInstrument instrument = resolveRegistry(Registries.instrument(), args[2] + "_goat_horn");
         if (instrument == null) {
             p.sendMessage(MessageUtil.parse("<red>❌ Unknown goat horn sound: </red><yellow>" + args[2]
                     + "</yellow><gray>. Use admire, call, dream, feel, ponder, seek, sing or yearn.</gray>"));
@@ -1823,6 +1825,7 @@ public final class ItemNbtSubcommand implements SubCommand {
     }
 
     /** /ui itemnbt material <material> — set the item's material (e.g. iron_ingot). */
+    @SuppressWarnings("deprecation")
     private static boolean material(Player p, ItemStack item, String[] args) {
         if (args.length < 3) {
             p.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui itemnbt material <material></white>"));
@@ -1853,8 +1856,8 @@ public final class ItemNbtSubcommand implements SubCommand {
             p.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui itemnbt armortrim set <material> <pattern></white>"));
             return true;
         }
-        TrimMaterial material = resolveRegistry(Registry.TRIM_MATERIAL, args[3]);
-        TrimPattern pattern = resolveRegistry(Registry.TRIM_PATTERN, args[4]);
+        TrimMaterial material = resolveRegistry(Registries.trimMaterial(), args[3]);
+        TrimPattern pattern = resolveRegistry(Registries.trimPattern(), args[4]);
         if (material == null) {
             p.sendMessage(MessageUtil.parse("<red>❌ Unknown trim material: </red><yellow>" + args[3]
                     + "</yellow><gray>. Use amethyst, copper, diamond, emerald, gold, iron, lapis, netherite, quartz, redstone or resin.</gray>"));
@@ -2401,7 +2404,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             p.sendMessage(MessageUtil.parse("<green>✔</green> <white>Jukebox song cleared.</white>"));
             return true;
         }
-        JukeboxSong song = resolveRegistry(Registry.JUKEBOX_SONG, args[2]);
+        JukeboxSong song = resolveRegistry(Registries.jukeboxSong(), args[2]);
         if (song == null) {
             p.sendMessage(MessageUtil.parse("<red>❌ Unknown song: </red><yellow>" + args[2]
                     + "</yellow><gray>. Use a jukebox song key (e.g. thirteen, cat, pigstep).</gray>"));
@@ -3010,14 +3013,24 @@ public final class ItemNbtSubcommand implements SubCommand {
 
     /** Resolves a sound to an adventure Key (registry first, then raw ns:path). */
     private static Key resolveSoundKey(String input) {
-        Sound sound = resolveRegistry(Registry.SOUNDS, input);
+        Sound sound = resolveRegistry(Registries.soundEvent(), input);
         if (sound != null) {
-            // Paper 26.3: Sound#getKey() is deprecated for removal — use the
-            // Adventure key() accessor.
-            return sound.key();
+            // Paper 26.3 deprecates both key accessors on the Sound interface —
+            // the modern path is Registry#getKeyOrThrow.
+            NamespacedKey sk = Registries.soundEvent().getKeyOrThrow(sound);
+            return Key.key(sk.getNamespace(), sk.getKey());
         }
         // Allow sounds from resource packs that are not in the registry
         return parseResourceKey(input);
+    }
+
+    /**
+     * Paper 26.3 deprecates both {@code key()} and {@code getKey()} on the
+     * OldEnum-style PatternType interface — Registry#getKeyOrThrow is the
+     * modern access path.
+     */
+    private static String patternKey(PatternType patternType) {
+        return Registries.bannerPattern().getKeyOrThrow(patternType).getKey();
     }
 
     /** Parses "namespace:path" (bare path → minecraft:) into an adventure Key. */
@@ -3373,7 +3386,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             case "suspiciousstew" -> suspiciousStewTab(result, sender, args);
             case "jukeboxplayable" -> {
                 if (args.length == 3) {
-                    addRegistryKeys(result, Registry.JUKEBOX_SONG, args[2], 50);
+                    addRegistryKeys(result, Registries.jukeboxSong(), args[2], 50);
                     addStartsWith(result, args[2], "clear");
                 }
             }
@@ -3635,7 +3648,7 @@ public final class ItemNbtSubcommand implements SubCommand {
                 }
             } else if (args.length == 5) {
                 // PatternType registry
-                addRegistryKeys(result, Registry.BANNER_PATTERN, args[4], 150);
+                addRegistryKeys(result, Registries.bannerPattern(), args[4], 150);
             } else if (args.length == 6) {
                 // DyeColor
                 String partial = args[5].toLowerCase(Locale.ROOT);

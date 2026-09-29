@@ -153,8 +153,8 @@ public final class InvseeCommand {
     // BUILD INVSEE GUI
     // =========================
     private static void openInvseeGUI(Player viewer, Player target) {
-        String title = MessageUtil.legacy("<dark_gray>" + target.getName() + "'s inventory overview</dark_gray>");
-        Inventory gui = Bukkit.createInventory(null, 54, title);
+        Inventory gui = Bukkit.createInventory(null, 54,
+                MessageUtil.parse("<dark_gray>" + target.getName() + "'s inventory overview</dark_gray>"));
 
         PlayerInventory inv = target.getInventory();
         ItemStack[] storage = inv.getStorageContents(); // 36 slots: 0-8 hotbar, 9-35 inventory

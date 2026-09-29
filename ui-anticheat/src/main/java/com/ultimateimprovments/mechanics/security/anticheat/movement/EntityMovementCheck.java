@@ -49,6 +49,6 @@ public class EntityMovementCheck extends AbstractCheck {
         }
 
         PlayerData data = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
-        data.updatePosition(e.getTo(), player.isOnGround());
+        data.updatePosition(e.getTo(), ((org.bukkit.entity.Entity) player).isOnGround());
     }
 }

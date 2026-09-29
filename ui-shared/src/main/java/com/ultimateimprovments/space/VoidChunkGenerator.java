@@ -1,19 +1,16 @@
 package com.ultimateimprovments.space;
 
-import org.bukkit.World;
 import org.bukkit.generator.ChunkGenerator;
-
-import java.util.Random;
 
 /**
  * Produces completely empty (void) chunks for the space dimension.
+ * <p>
+ * Paper 26.3 deprecated the {@code generateChunkData}/{@code createChunkData}
+ * override pair — an empty generator is now expressed purely by disabling
+ * every vanilla generation stage ({@code shouldGenerate*} below); the base
+ * class then fills the chunk with air on its own.
  */
 public class VoidChunkGenerator extends ChunkGenerator {
-
-    @Override
-    public ChunkData generateChunkData(World world, Random random, int x, int z, BiomeGrid biome) {
-        return createChunkData(world);
-    }
 
     @Override
     public boolean shouldGenerateNoise() { return false; }

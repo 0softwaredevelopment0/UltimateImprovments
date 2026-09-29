@@ -44,7 +44,7 @@ public class AuthDialogHandler implements Listener {
             // Small delay so the client has time to close the dialog
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline()) {
-                    player.kickPlayer(MessageUtil.legacy(kickMsg));
+                    player.kick(MessageUtil.parse(kickMsg));
                 }
             }, 5L);
             ConsoleLogger.info("[AuthDialog] Player " + player.getName() + " cancelled authentication (Exit button).");

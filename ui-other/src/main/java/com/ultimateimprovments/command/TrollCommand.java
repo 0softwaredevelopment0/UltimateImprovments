@@ -118,7 +118,7 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
             @Override
             public void run() {
                 if (player.isOnline()) {
-                    player.kickPlayer(MessageUtil.legacy(kickMessage));
+                    player.kick(MessageUtil.parse(kickMessage));
                 }
             }
         }.runTaskLater(Main.getInstance(), delaySeconds * 20L);

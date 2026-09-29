@@ -37,10 +37,10 @@ public class VanishListCommand extends Command {
             if (CoreHooks.isVanished(online.getUniqueId())) {
                 vanishedCount++;
                 if (canSeeVanished) {
-                    names.add(MessageUtil.legacy("<gray>" + online.getDisplayName() + "</gray>"));
+                    names.add(MessageUtil.legacy("<gray>" + net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(online.displayName()) + "</gray>"));
                 }
             } else {
-                names.add(MessageUtil.legacy("<white>" + online.getDisplayName() + "</white>"));
+                names.add(MessageUtil.legacy("<white>" + net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(online.displayName()) + "</white>"));
             }
         }
 

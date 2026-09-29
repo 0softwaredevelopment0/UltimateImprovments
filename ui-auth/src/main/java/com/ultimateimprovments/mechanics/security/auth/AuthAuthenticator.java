@@ -319,7 +319,7 @@ public class AuthAuthenticator {
         player.sendMessage(MessageUtil.parse("<gray>Click the link to open GitHub:"));
         try {
             player.sendMessage(MessageUtil.parse("<blue><u>" + authUrl + "</u></blue>")
-                    .clickEvent(ClickEvent.openUrl(new java.net.URL(authUrl))));
+                    .clickEvent(ClickEvent.openUrl(java.net.URI.create(authUrl).toURL())));
         } catch (Exception e) {
             player.sendMessage(MessageUtil.parse("<blue><u>" + authUrl + "</u></blue>"));
         }
@@ -425,7 +425,7 @@ public class AuthAuthenticator {
             String kickMsg = MessagesManager.getString("auth.admin.kick_too_many_attempts",
                     "<red>❌ Too many incorrect attempts!</red>\n<gray>You entered the wrong password %attempts% times.</gray>")
                     .replace("%attempts%", String.valueOf(attempts));
-            player.kickPlayer(MessageUtil.legacy(kickMsg));
+            player.kick(MessageUtil.parse(kickMsg));
             return;
         }
 
@@ -611,7 +611,7 @@ public class AuthAuthenticator {
 
                     String kickLogout = MessagesManager.getString("auth.admin.kick_logout",
                             "<green>✔</green> You have successfully logged out!\n<gray>On next login you will need to enter your password again.</gray>");
-                    player.kickPlayer(MessageUtil.legacy(kickLogout));
+                    player.kick(MessageUtil.parse(kickLogout));
 
                     ConsoleLogger.info("[Auth] Player " + player.getName() + " logged out manually.");
                 });

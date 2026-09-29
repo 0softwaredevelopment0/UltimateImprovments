@@ -38,7 +38,7 @@ public class StepCheck extends AbstractCheck {
         if (!isEnabled() || isExempted(player)) return;
 
         double yDelta = e.getTo().getY() - e.getFrom().getY();
-        boolean wasOnGround = player.isOnGround();
+        boolean wasOnGround = ((org.bukkit.entity.Entity) player).isOnGround();
         boolean toGround = e.getTo().getY() % 1 < 0.03;
 
         // Step = going up while on ground (not a jump)
@@ -49,6 +49,6 @@ public class StepCheck extends AbstractCheck {
         }
 
         PlayerData data = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
-        data.updatePosition(e.getTo(), player.isOnGround());
+        data.updatePosition(e.getTo(), ((org.bukkit.entity.Entity) player).isOnGround());
     }
 }

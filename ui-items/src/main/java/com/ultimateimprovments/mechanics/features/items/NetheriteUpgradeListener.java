@@ -14,6 +14,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.view.AnvilView;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
@@ -23,7 +24,6 @@ import org.bukkit.persistence.PersistentDataType;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.*;
 
@@ -184,7 +184,7 @@ public class NetheriteUpgradeListener implements Listener {
 
         event.setResult(result);
         // Cost: 0 experience levels (infinite upgrades), consumes itemCount of scrap
-        setAnvilCost(inv, 0, itemCount);
+        setAnvilCost(event.getView(), 0, itemCount);
     }
 
     /**
@@ -310,16 +310,8 @@ public class NetheriteUpgradeListener implements Listener {
      * repairCost = 0 → free, never becomes "Too Expensive".
      * repairCostAmount = how much scrap is consumed.
      */
-    private void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
-        try {
-            inv.setRepairCost(repairCost);
-            inv.setRepairCostAmount(repairCostAmount);
-        } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            try {
-                Field costField = inv.getClass().getDeclaredField("repairCost");
-                costField.setAccessible(true);
-                costField.set(inv, repairCost);
-            } catch (Exception ignored) {}
-        }
+    private void setAnvilCost(AnvilView view, int repairCost, int repairCostAmount) {
+        view.setRepairCost(repairCost);
+        view.setRepairItemCountCost(repairCostAmount);
     }
 }

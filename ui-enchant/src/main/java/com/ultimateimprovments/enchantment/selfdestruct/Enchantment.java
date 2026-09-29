@@ -2,6 +2,7 @@ package com.ultimateimprovments.enchantment.selfdestruct;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.Registries;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -70,7 +71,7 @@ public final class Enchantment {
      */
     public static @Nullable org.bukkit.enchantments.Enchantment getRegisteredEnchantment() {
         try {
-            return Registry.ENCHANTMENT.get(ENCHANTMENT_KEY);
+            return Registries.enchantment().get(ENCHANTMENT_KEY);
         } catch (Exception e) {
             return null;
         }

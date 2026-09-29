@@ -398,6 +398,9 @@ public final class CrashExecutor {
      * packets in the connection and never flushes them; and each packet must carry its own
      * coordinates (no shared mutable packet — the netty encode would read the last coords).
      */
+    // The deprecated NMS packet constructor is the only way to build this
+    // packet — crash-feeding raw protocol data is inherently NMS territory.
+    @SuppressWarnings("deprecation")
     public static void crashWithChunk(Player target) {
         try {
             ServerPlayer serverPlayer = ((CraftPlayer) target).getHandle();

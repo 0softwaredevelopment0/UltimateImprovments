@@ -157,7 +157,7 @@ public class AntiCheatPacketInterceptor extends ChannelDuplexHandler {
                 Method getOnGround = packet.getClass().getMethod("isOnGround");
                 onGround = (boolean) getOnGround.invoke(packet);
             } catch (Exception e) {
-                onGround = player.isOnGround();
+                onGround = ((org.bukkit.entity.Entity) player).isOnGround();
             }
 
             if (hasPos) {

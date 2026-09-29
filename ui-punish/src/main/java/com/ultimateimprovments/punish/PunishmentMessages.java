@@ -73,7 +73,7 @@ public final class PunishmentMessages {
                 .replace(REASON,   reason)
                 .replace(DURATION, duration)
                 .replace(DISCORD,  discordUrl);
-        return MessageUtil.legacy(msg);
+        return msg; // MiniMessage - callers render via MessageUtil.parse (Paper kick/disallow Component)
     }
 
     // =========================
@@ -82,12 +82,12 @@ public final class PunishmentMessages {
 
     public static String buildKickMessage(String player, String punisher,
                                            String reason, String discordUrl) {
-        String msg = raw("kick")
+        // MiniMessage — callers render it via MessageUtil.parse (Paper kick(Component)).
+        return raw("kick")
                 .replace(PLAYER,   player)
                 .replace(PUNISHER, punisher)
                 .replace(REASON,   reason)
                 .replace(DISCORD,  discordUrl);
-        return MessageUtil.legacy(msg);
     }
 
     // =========================
@@ -126,7 +126,7 @@ public final class PunishmentMessages {
         String msg = raw("whitelist")
                 .replace(PLAYER,  player)
                 .replace(DISCORD, discordUrl);
-        return MessageUtil.legacy(msg);
+        return msg; // MiniMessage - callers render via MessageUtil.parse (Paper kick/disallow Component)
     }
 
     // =========================
@@ -134,10 +134,10 @@ public final class PunishmentMessages {
     // =========================
 
     public static String buildBlacklistKickMessage(String player, String discordUrl) {
-        String msg = raw("blacklist")
+        // MiniMessage — callers render it via MessageUtil.parse (Paper kick(Component)).
+        return raw("blacklist")
                 .replace(PLAYER,  player)
                 .replace(DISCORD, discordUrl);
-        return MessageUtil.legacy(msg);
     }
 
     // =========================
@@ -153,7 +153,7 @@ public final class PunishmentMessages {
         if (discordUrl == null || discordUrl.isEmpty()) return component;
 
         try {
-            URL url = new URL(discordUrl);
+            URL url = java.net.URI.create(discordUrl).toURL();
             return component.replaceText(config -> config
                     .matchLiteral(discordUrl)
                     .replacement(Component.text(discordUrl)

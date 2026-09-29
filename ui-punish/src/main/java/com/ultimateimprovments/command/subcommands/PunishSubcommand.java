@@ -9,6 +9,7 @@ import com.ultimateimprovments.punish.PunishmentManager;
 import com.ultimateimprovments.punish.PunishJoinListener;
 import com.ultimateimprovments.util.AlertBroadcast;
 import com.ultimateimprovments.util.MessageUtil;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -186,12 +187,12 @@ public final class PunishSubcommand {
             PunishmentManager.PunishmentRecord ban = PunishmentManager.getActiveBan(
                     uuid, ip, hwId);
             if (ban != null) {
-                String kickMsg = MessageUtil.legacy(
+                Component kickMsg = MessageUtil.parse(
                         "<red>⛔ You have been banned!</red>\n" +
                         "<gray>Reason:</gray> <white>" + parsed.reason + "</white>\n" +
                         "<dark_gray>By: " + sender.getName() + "</dark_gray>"
                 );
-                target.kickPlayer(kickMsg);
+                target.kick(kickMsg);
             }
         }
 
@@ -199,7 +200,7 @@ public final class PunishSubcommand {
         if (parsed.ip || parsed.hw) {
             for (Player p : PunishmentManager.findPlayersByIpOrHw(ip, hwId)) {
                 if (!p.getName().equalsIgnoreCase(name)) {
-                    p.kickPlayer(MessageUtil.legacy(
+                    p.kick(MessageUtil.parse(
                             "<red>⛔ You have been banned (IP/HW)!</red>\n" +
                             "<gray>Reason:</gray> <white>" + parsed.reason + "</white>"
                     ));

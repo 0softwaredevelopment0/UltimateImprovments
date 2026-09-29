@@ -73,7 +73,7 @@ public class TeleportCheck extends AbstractCheck {
         }
 
         PlayerData data = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
-        data.updatePosition(to, player.isOnGround());
+        data.updatePosition(to, ((org.bukkit.entity.Entity) player).isOnGround());
     }
 
     // Mark a player as server-teleported so the next move events are skipped

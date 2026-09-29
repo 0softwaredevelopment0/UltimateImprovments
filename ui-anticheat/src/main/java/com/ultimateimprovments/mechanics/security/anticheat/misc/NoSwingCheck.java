@@ -37,7 +37,11 @@ public class NoSwingCheck extends AbstractCheck {
         maxSwingDelayMs = getConfigInt("max_swing_delay_ms", 500);
     }
 
-    // Track swings via animation event
+    // Track swings via animation event.
+    // PlayerAnimationEvent is deprecated in Paper 26.3 (packet-level detection
+    // is the modern way) — kept: the packet interceptor (AntiCheatPacketInterceptor)
+    // does not expose arm swings yet.
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.MONITOR)
     public void onSwing(org.bukkit.event.player.PlayerAnimationEvent e) {
         if (e.getAnimationType() != org.bukkit.event.player.PlayerAnimationType.ARM_SWING) return;

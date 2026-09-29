@@ -165,12 +165,12 @@ public class EnchantmentListener implements Listener {
                 while (it.hasNext()) {
                     Recipe recipe = it.next();
                     if (recipe instanceof org.bukkit.inventory.FurnaceRecipe fr) {
-                        if (matchesInput(fr.getInputChoice(), fr.getInput(), type)) {
+                        if (matchesInput(fr.getInputChoice(), type)) {
                             result = fr.getResult();
                             break;
                         }
                     } else if (recipe instanceof org.bukkit.inventory.BlastingRecipe br) {
-                        if (matchesInput(br.getInputChoice(), br.getInput(), type)) {
+                        if (matchesInput(br.getInputChoice(), type)) {
                             result = br.getResult();
                             break;
                         }
@@ -196,7 +196,8 @@ public class EnchantmentListener implements Listener {
      *   <li>unknown choice kinds — conservative {@code false} (never smelt wrongly).</li>
      * </ul>
      */
-    private static boolean matchesInput(RecipeChoice choice, ItemStack plainInput, Material type) {
+    private static boolean matchesInput(RecipeChoice choice, Material type) {
+        if (choice == null) return false;
         if (choice instanceof RecipeChoice.ExactChoice exact) {
             for (ItemStack item : exact.getChoices()) {
                 if (item != null && item.getType() == type) return true;
@@ -209,8 +210,8 @@ public class EnchantmentListener implements Listener {
             }
             return false;
         }
-        // No choice available (plain item input, or an unknown choice kind)
-        return plainInput != null && plainInput.getType() == type;
+        // Unknown choice kind — conservative false (never smelt wrongly).
+        return false;
     }
 
     /**

@@ -20,7 +20,7 @@ public class SuicideDeathListener implements Listener {
         if (!SuicideCommand.consumeSuicideDeath(player.getUniqueId())) {
             return;
         }
-        event.setDeathMessage(MessageUtil.legacy(
+        event.deathMessage(MessageUtil.parse(
                 "<white>" + player.getName() + " committed a suicide</white>"));
     }
 }

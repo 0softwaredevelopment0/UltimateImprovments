@@ -52,7 +52,7 @@ public class NotesGUIListener implements Listener {
             // Save the content
             try {
                 BookMeta newMeta = event.getNewBookMeta();
-                String content = NotesGUI.joinPages(newMeta.getPages());
+                String content = NotesGUI.joinPages(newMeta.pages());
                 NotesDatabase.saveNote(uuid, noteNumber, content);
             } catch (Exception e) {
                 ConsoleLogger.warn("[Notes] Failed to save note: " + e.getMessage());
@@ -208,7 +208,7 @@ public class NotesGUIListener implements Listener {
         // getItemMeta() always returns non-null for WRITABLE_BOOK
         BookMeta meta = (BookMeta) item.getItemMeta();
         return meta != null && meta.hasDisplayName()
-                && meta.getDisplayName().contains("Заметка #");
+                && net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(meta.displayName()).contains("Заметка #");
     }
 
     /** Cancel any WRITABLE_BOOK note items dropping on the ground. */

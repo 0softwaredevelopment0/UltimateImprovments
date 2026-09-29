@@ -44,7 +44,7 @@ public class AllJumpsCheck extends AbstractCheck {
         Player player = e.getPlayer();
         if (!isEnabled() || isExempted(player)) return;
 
-        boolean onGround = player.isOnGround();
+        boolean onGround = ((org.bukkit.entity.Entity) player).isOnGround();
         double yDelta = e.getTo().getY() - e.getFrom().getY();
 
         if (onGround) {

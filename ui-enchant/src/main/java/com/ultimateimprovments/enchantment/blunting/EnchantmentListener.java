@@ -24,6 +24,10 @@ import org.bukkit.inventory.ItemStack;
  */
 public class EnchantmentListener implements Listener {
 
+    // EntityDamageEvent.DamageModifier has no modern replacement (the only way
+    // to scale the pre-armor damage and zero out the armor recalculation in
+    // one handler) — kept deliberately until Paper ships a new damage pipeline.
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
         // Melee hits only: the damager must be the attacker itself, not a projectile.

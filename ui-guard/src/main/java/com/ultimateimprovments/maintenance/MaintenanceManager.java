@@ -275,13 +275,11 @@ public class MaintenanceManager implements Listener {
     // =========================
 
     private void kickNonWhitelisted() {
-        String kickMessage = MessageUtil.legacy(
-                MessagesManager.getString("maintenance.kick_message",
-                        "<red>⛏ Server is currently under maintenance!</red>\\n<gray>Please come back later.</gray>")
-        );
+        String kickMessage = MessagesManager.getString("maintenance.kick_message",
+                "<red>⛏ Server is currently under maintenance!</red>\\n<gray>Please come back later.</gray>");
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!isWhitelisted(player.getUniqueId())) {
-                player.kickPlayer(kickMessage);
+                player.kick(MessageUtil.parse(kickMessage));
             }
         }
     }
@@ -290,6 +288,9 @@ public class MaintenanceManager implements Listener {
     // LOGIN LISTENER
     // =========================
 
+    // PlayerLoginEvent is deprecated in Paper 26.3 (async pre-login is the modern hook) -
+    // migration is a threading change and needs a dedicated tested task.
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerLogin(PlayerLoginEvent event) {
         // Check: is the maintenance feature enabled in config.yml
@@ -302,7 +303,7 @@ public class MaintenanceManager implements Listener {
                 MessagesManager.getString("maintenance.kick_message",
                         "<red>⛏ Server is currently under maintenance!</red>\\n<gray>Please come back later.</gray>")
         );
-        event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, kickMessage);
+        event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, MessageUtil.parse(kickMessage));
     }
 
     // =========================

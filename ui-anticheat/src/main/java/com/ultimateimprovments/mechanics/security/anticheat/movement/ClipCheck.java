@@ -62,7 +62,7 @@ public class ClipCheck extends AbstractCheck {
         }
 
         PlayerData data = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
-        data.updatePosition(to, player.isOnGround());
+        data.updatePosition(to, ((org.bukkit.entity.Entity) player).isOnGround());
     }
 
     private boolean isSolid(Block block) {

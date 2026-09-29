@@ -207,7 +207,7 @@ public final class ClearSubcommand implements SubCommand {
 
             // Remove every modifier (vanilla items re-apply their own on next tick)
             instance.getModifiers().forEach(instance::removeModifier);
-            instance.setBaseValue(attribute.getDefaultValue());
+            instance.setBaseValue(instance.getAttribute().getDefaultValue());
         }
         // Recompute health after max-health reset (clamped to the new max)
         if (entity.getHealth() > entity.getAttribute(Attribute.MAX_HEALTH).getValue()) {

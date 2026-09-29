@@ -22,6 +22,7 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.view.AnvilView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -29,7 +30,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,7 +80,7 @@ public class TotemChargeListener implements Listener {
         result.setItemMeta(resultMeta);
 
         event.setResult(result);
-        setAnvilCost(inv, 0, 1);
+        setAnvilCost(event.getView(), 0, 1);
     }
 
     // =========================
@@ -270,7 +270,7 @@ public class TotemChargeListener implements Listener {
 
         ItemStack cursor = event.getCursor();
         if (cursor != null && fixSingleTotemLore(cursor)) {
-            event.setCursor(cursor);
+            event.getView().setCursor(cursor);
         }
     }
 
@@ -350,16 +350,8 @@ public class TotemChargeListener implements Listener {
     // =========================
     // ANVIL COST
     // =========================
-    private static void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
-        try {
-            inv.setRepairCost(repairCost);
-            inv.setRepairCostAmount(repairCostAmount);
-        } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            try {
-                Field costField = inv.getClass().getDeclaredField("repairCost");
-                costField.setAccessible(true);
-                costField.set(inv, repairCost);
-            } catch (Exception ignored) {}
-        }
+    private static void setAnvilCost(AnvilView view, int repairCost, int repairCostAmount) {
+        view.setRepairCost(repairCost);
+        view.setRepairItemCountCost(repairCostAmount);
     }
 }

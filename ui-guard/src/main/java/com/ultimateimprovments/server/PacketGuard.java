@@ -222,7 +222,7 @@ public class PacketGuard implements Listener {
         // player.kickPlayer() closes the channel itself with our custom message.
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
             if (player.isOnline()) {
-                player.kickPlayer(MessageUtil.legacy(kickMessage));
+                player.kick(MessageUtil.parse(kickMessage));
             }
         });
     }

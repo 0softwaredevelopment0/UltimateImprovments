@@ -73,7 +73,7 @@ public class AccessListCheckTask extends BukkitRunnable {
             // BLACKLIST CHECK
             // =========================
             if (blacklistEnabled && BlacklistManager.isBlacklisted(name)) {
-                player.kickPlayer(MessageUtil.legacy(
+                player.kick(MessageUtil.parse(
                         "<red>⛔ You are blacklisted from this server!</red>"
                 ));
                 continue; // player already kicked
@@ -83,7 +83,7 @@ public class AccessListCheckTask extends BukkitRunnable {
             // WHITELIST CHECK
             // =========================
             if (whitelistEnabled && !WhitelistManager.isWhitelisted(name)) {
-                player.kickPlayer(MessageUtil.legacy(
+                player.kick(MessageUtil.parse(
                         "<red>⛔ You are not whitelisted on this server!</red>\n" +
                         "<gray>Use the UltimateImprovments whitelist system.</gray>"
                 ));

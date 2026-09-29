@@ -171,7 +171,7 @@ public class BotProtectionListener implements Listener {
                 String msg = MessagesManager.getString("bot_protection.queue_full",
                         "<red>❌ Server overloaded! You are in queue: position %position%. Please wait and try again.</red>")
                         .replace("%position%", String.valueOf(position));
-                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.parse(msg));
                 ConsoleLogger.info("[BotProtect] " + name + " priority queued: position #" + position
                         + " (" + priorityCount + " priority joins in " + windowSeconds + "s window)");
 
@@ -201,7 +201,7 @@ public class BotProtectionListener implements Listener {
                 String msg = MessagesManager.getString("bot_protection.rejoin_cooldown",
                         "<red>❌ You left too recently! Wait</red> <yellow>%seconds%</yellow> <red>sec before reconnecting.</red>")
                         .replace("%seconds%", String.valueOf(remaining));
-                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
+                event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.parse(msg));
                 ConsoleLogger.info("[BotProtect] " + name + " rejected: rejoin cooldown (" + remaining + "s remaining)");
 
                 // IMPORTANT: put quitTime back into the cache so the next reconnect
@@ -234,7 +234,7 @@ public class BotProtectionListener implements Listener {
             String msg = MessagesManager.getString("bot_protection.queue_full",
                     "<red>❌ Server overloaded! You are in queue: position %position%. Please wait and try again.</red>")
                     .replace("%position%", String.valueOf(position));
-            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.legacy(msg));
+            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, MessageUtil.parse(msg));
 
             // Mark as under attack
             underAttackUntil.set(now + (windowSeconds * 1000L) + (prioritySessionDuration * 1000L));
