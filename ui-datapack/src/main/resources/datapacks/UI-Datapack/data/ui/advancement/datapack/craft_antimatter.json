@@ -40,7 +40,7 @@
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
-          { "items": ["minecraft:splash_potion"], "predicates": { "minecraft:custom_data": "{\"ui-core:isAntimatter\":1b}" } }
+          { "items": ["minecraft:splash_potion"], "predicates": { "minecraft:custom_data": "{\"PublicBukkitValues\":{\"ui-core:isAntimatter\":1b}}" } }
         ]
       }
     }
