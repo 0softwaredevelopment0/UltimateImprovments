@@ -3,6 +3,106 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.3-alpha.5] — since 1.8.3-beta.3 (2026-09-29)
+
+> **Alpha channel**: the Paper migration in this release has been verified on a
+> test server only.
+
+### Added
+- **9 new addon jars — UI-Other has been split up.** Dedicated addons now ship
+  for enchantments (UI-Enchant), auth (UI-Auth), block protection (UI-Protection),
+  tab/scoreboard/bossbar (UI-Display), economy & op management (UI-Admin),
+  player features (UI-Player), server security (UI-Guard), world mechanics
+  (UI-World) and custom items/crafting (UI-Items). The family now ships
+  **21 jars** (core + 20 addons); cross-addon calls are decoupled through
+  `CoreHooks`, and each addon got its own `config/UI-<Addon>.toml`.
+- **`/ui radview <on|off>`** — admin radiation overlay: draws the dosimeter
+  format (`D: X mSv R: Y mSv/t`) in the action bar even without a dosimeter in
+  hand and overrides it while active; a red `*` marks the admin overlay.
+  Permission `ui.command.radview` (default FALSE). Replaces the old
+  `/ui toggleradview`.
+- **Omniscanner scans entity inventories** — every `InventoryHolder` entity in
+  range (chested horses, minecarts with chest/hopper, boats with chest,
+  villagers, ...) reports its inventory contents on the async pass, filtered by
+  the item whitelist; such entities are also reported by `EntityType`.
+- **Admin menu item audit** — base materials corrected to match the real
+  crafts (Antimatter → splash potion, Concrete Bucket → water bucket, Mob
+  Finder → spyglass, Health Meter → name tag, Portable Radar → ender eye,
+  Entity Locator → recovery compass) and the missing items added: Blazing
+  Sword, Glass Sword, Electric Trident, Heavy Core.
+
+### Changed
+- **The whole family runs on the Paper plugin loader** — every module ships a
+  `paper-plugin.yml` with an explicit dependency graph (`join-classpath`);
+  Argon2 is bundled into UI-Auth/UI-Guard instead of a legacy `libraries`
+  block.
+- **`/ui` is a real Brigadier command tree** (`LifecycleEvents.COMMANDS`) with
+  dynamic suggestions for all 51 subcommands; the `ultimateimprovments` alias
+  is preserved. Vanilla command overrides stay on the legacy `CommandMap`.
+- **The datapack is delivered by a bootstrapper** (`DATAPACK_DISCOVERY`): the
+  pack is extracted from the jar and enabled **before worlds load** on every
+  start — no more `world/datapacks` copies, manual `/datapack enable`,
+  `/datapack reload` or restarts. The legacy override/check-override/ignore
+  modes and `reload_to_apply` are gone.
+- **Legacy API cleanup** — Adventure chat (`AsyncChatEvent`), `getPluginMeta()`,
+  `hideEntity/showEntity`, Adventure titles and action bars, `ItemStack#editMeta`
+  (~92 call sites), Profile API for offline-player skulls (`setPlayerProfile`),
+  `Damageable`-based durability instead of deprecated `get/setDurability`.
+  Display entities (meteor `BlockDisplay`, holograms `TextDisplay`) were
+  audited — already modern.
+- **Armor and trim effects recompute instantly on `PlayerArmorChangeEvent`** —
+  any armor change (click, shift-click, dispenser, hopper, break) re-evaluates
+  the effects instead of waiting up to a second for the heartbeat.
+- **The monolithic `config.yml` is gone** (−11 901 lines): per-addon TOML
+  templates are the single source of defaults, auto-repaired from the bundled
+  templates. Fixed `maintenance` routing on fresh installs, the never-working
+  quoted TOML path (`[auth."2fa".github]` → `auth.twofa.github.*`), and added
+  a `config/UI-Combat.toml` (turret range/damage are now configurable).
+- **Armor/trim effect units**: independent `duration_ticks` and
+  `check_interval_ticks` handles (defaults 40/40); the artificial 20-tick
+  minimum was lifted with an honest warning comment instead.
+- **Rank-based charms** — AutoSmelt 1-10 (N×10% roll per dropped stack,
+  compatible with AoE/VeinMiner partial smelting), Magnet 1-16 (attraction
+  radius = 2×level, cap 32), Item Stealing 1-10 (N×10% steal chance),
+  Repairing repairs `level` durability points once per second.
+- **Charm level caps** — AoE 8, Attack AoE 10, Lava Walker 16 (higher levels
+  were no-ops); datapack `max_level` lowered accordingly.
+- **Lava Walker prices per sweep, not per block** — one conversion pass costs
+  the boots 1 integrity use regardless of radius (was up to 961 for a full
+  31×31 sweep).
+- **Item Stealing plays out physically** — the stolen item is dropped from the
+  victim and homes to the thief, who picks it up manually (nothing is inserted
+  directly). Stealing can be gated behind the `ui.enchant.itemstealing.steal`
+  permission (configurable, default on). The rod loses 2 durability on a failed
+  and 1 on a successful attempt, charged to the slot the rod was actually held
+  in (swap-proof). New sounds for thief/victim/bystanders and bilingual
+  action bars for every outcome.
+- **Disappearance gives feedback** — a pop sound and an action bar listing the
+  vanished item name(s), bilingual (`Vanished: …` / `Исчезло: …`).
+- **`/ui menu` copies to the cursor with LMB and RMB** (was LMB only), lore
+  updated.
+- **Discord invite migrated** to `dsc.gg/softwaredev` (defaults only; existing
+  server configs keep their value).
+
+### Fixed
+- **Container Stealing never triggered** — the container cleanup ran one tick
+  later, when the guard always fired (block already replaced): the container
+  and its contents were silently lost on every successful steal. Back to an
+  inline action on MONITOR.
+- **Flight, Degradation and Piercing never wore armor down** — durability was
+  written into `getArmorContents()` copies and silently lost; absolute armor
+  slots 36-39 are used now (the same bug class as the beta.3 Repairing fix).
+- **Disappearance rolled twice per tick on the main hand** (double vanish
+  chance).
+- **`/ui menu` degraded into a normal inventory after switching tabs** — the
+  reopen fired `InventoryCloseEvent` and dropped the menu state; a reopen
+  guard keeps clicks captured.
+- **Self-Destruct lock no longer blocks chests** — the curse only locks the
+  owner's own inventory; cursed items can be taken out of containers and moved
+  inside them again (taking one into your inventory starts the countdown).
+- **Double `[UI-Datapack]` prefix in bootstrap log messages** removed (the
+  Paper/ComponentLogger already prefixes the plugin name).
+
 ## [1.8.3-beta.3] — since 1.8.3-beta.2 (2026-09-27)
 
 ### Added
@@ -88,6 +188,11 @@ in this file. The format is based on [Keep a Changelog](https://keepachangelog.c
   key is free. Cheaper than Flight, fitting its lower value. Previously
   the jetpack was entirely free.
 - **`/ui enchant` gains `lava_walker`** in the custom-enchantments config list.
+- **Dosimeter sensor is now an emerald** — the dosimeter crafting recipe takes
+  an emerald in the sensor slot `S` instead of the lead ingot.
+- **Food-borne radiation relief is reported in the action bar** — eating food
+  that lowers radiation shows the feedback via `sendActionBar` (−10 rad when
+  the level is ≥ 200 rad) instead of chat spam.
 
 ### Fixed
 - **Lava Walker could suffocate the player it helped** — the conversion swept
