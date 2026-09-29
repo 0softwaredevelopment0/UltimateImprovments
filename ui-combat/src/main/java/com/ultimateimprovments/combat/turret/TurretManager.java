@@ -297,8 +297,10 @@ public final class TurretManager {
             return;
         }
 
-        // Beam follows the victim (client renders the vanilla end crystal ray).
-        crystal.setBeamTarget(target.getEyeLocation());
+        // Beam aims at the CENTER of the victim's bounding box (the eye level
+        // of mobs sits above the body, so the ray visually flew over them).
+        org.bukkit.util.Vector center = target.getBoundingBox().getCenter();
+        crystal.setBeamTarget(new Location(crystal.getWorld(), center.getX(), center.getY(), center.getZ()));
 
         // Paper 26.3: withDirectEntity is mandatory when causingEntity is set.
         DamageSource source = DamageSource.builder(DamageType.MOB_ATTACK)
