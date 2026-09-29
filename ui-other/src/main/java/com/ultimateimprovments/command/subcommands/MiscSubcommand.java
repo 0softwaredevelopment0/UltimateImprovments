@@ -408,7 +408,7 @@ public final class MiscSubcommand {
         }
 
         // Copy pages from the signed book (List<String>) and create a book-and-quill
-        var pages = oldMeta.getPages();
+        var pages = oldMeta.pages();
         ItemStack newBook = new ItemStack(Materials.WRITABLE_BOOK, item.getAmount());
         BookMeta newMeta = (BookMeta) newBook.getItemMeta();
         if (newMeta == null) {
@@ -416,7 +416,7 @@ public final class MiscSubcommand {
             return true;
         }
 
-        newMeta.setPages(pages);
+        newMeta.pages(new java.util.ArrayList<>(pages));
         newBook.setItemMeta(newMeta);
         player.getInventory().setItemInMainHand(newBook);
         player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Book unlocked! You can now edit it.</white>"));

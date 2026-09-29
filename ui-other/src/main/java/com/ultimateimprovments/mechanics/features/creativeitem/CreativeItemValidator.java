@@ -135,7 +135,7 @@ public class CreativeItemValidator implements Listener {
         if (meta == null) return;
 
         if (meta.hasDisplayName()) {
-            String name = meta.getDisplayName();
+            String name = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(meta.displayName());
             if (name.length() > maxNameChars) {
                 blockItem(e, player, cursor, "name=" + name.length() + "/" + maxNameChars);
                 return;
@@ -143,13 +143,15 @@ public class CreativeItemValidator implements Listener {
         }
 
         if (meta.hasLore()) {
-            var lore = meta.getLore();
+            var lore = meta.lore();
             if (lore.size() > maxLoreLines) {
                 blockItem(e, player, cursor, "loreLines=" + lore.size() + "/" + maxLoreLines);
                 return;
             }
             int totalLoreChars = 0;
-            for (String line : lore) totalLoreChars += line.length();
+            for (net.kyori.adventure.text.Component line : lore) {
+                totalLoreChars += net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(line).length();
+            }
             if (totalLoreChars > maxLoreChars) {
                 blockItem(e, player, cursor, "loreChars=" + totalLoreChars + "/" + maxLoreChars);
                 return;

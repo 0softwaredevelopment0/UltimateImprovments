@@ -58,7 +58,7 @@ public class JesusCheck extends AbstractCheck {
 
         // Check if player is not sinking (Y stable or moving horizontally on water)
         double yDelta = e.getTo().getY() - e.getFrom().getY();
-        boolean onGround = player.isOnGround();
+        boolean onGround = ((org.bukkit.entity.Entity) player).isOnGround();
 
         // Frost Walker enchantment check
         if (player.getInventory().getBoots() != null

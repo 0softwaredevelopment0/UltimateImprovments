@@ -29,6 +29,9 @@ public class PunishJoinListener implements Listener {
     // LOGIN — ban check
     // =========================
 
+    // PlayerLoginEvent is deprecated in Paper 26.3 (async pre-login is the modern hook) -
+    // migration is a threading change and needs a dedicated tested task.
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerLogin(PlayerLoginEvent e) {
         Player player = e.getPlayer();
@@ -40,7 +43,7 @@ public class PunishJoinListener implements Listener {
         PunishmentManager.PunishmentRecord ban = PunishmentManager.getActivePunishment(
                 PunishmentManager.PunishType.BAN, uuid, player.getName(), ip, hwId);
         if (ban != null) {
-            e.disallow(PlayerLoginEvent.Result.KICK_BANNED, buildBanMessage(ban));
+            e.disallow(PlayerLoginEvent.Result.KICK_BANNED, MessageUtil.parse(buildBanMessage(ban)));
             return;
         }
 

@@ -102,7 +102,7 @@ public class SpiderCheck extends AbstractCheck {
         double yDelta = e.getTo().getY() - e.getFrom().getY();
 
         // ── Double verification: server isOnGround + block check (spoof protection) ──
-        boolean serverOnGround = player.isOnGround();
+        boolean serverOnGround = ((org.bukkit.entity.Entity) player).isOnGround();
         boolean blockBelow = hasBlockBelow(player.getLocation(), 3);
         boolean actuallyOnGround = serverOnGround && blockBelow;
         boolean groundSpoof = serverOnGround && !blockBelow;

@@ -16,6 +16,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.Team;
 
 import java.util.*;
@@ -199,7 +200,7 @@ public class ScoreboardManager extends BukkitRunnable implements Listener {
         String objName = "sb_" + config.name();
         if (objName.length() > 16) objName = objName.substring(0, 16);
         // Title supports Component (Paper API)
-        Objective objective = board.registerNewObjective(objName, "dummy", MessageUtil.parse(resolvedTitle));
+        Objective objective = board.registerNewObjective(objName, Criteria.DUMMY, MessageUtil.parse(resolvedTitle));
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
         // Hide the red score numbers on the right of sidebar entries.
         // Uses reflection because adventure-scoreboard module is not in compile classpath

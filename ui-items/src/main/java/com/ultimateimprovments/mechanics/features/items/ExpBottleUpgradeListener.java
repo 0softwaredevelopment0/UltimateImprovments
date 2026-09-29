@@ -17,12 +17,12 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.view.AnvilView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -143,7 +143,7 @@ public class ExpBottleUpgradeListener implements Listener {
         // XP cost shown by the anvil (clamped below the "Too Expensive" limit of 40 —
         // the full amount is charged manually in onTakeResult); item consumption is
         // handled there too.
-        setAnvilCost(inv, Math.min(anvilCostAmount, 39), 0);
+        setAnvilCost(event.getView(), Math.min(anvilCostAmount, 39), 0);
     }
 
     // =========================
@@ -236,7 +236,7 @@ public class ExpBottleUpgradeListener implements Listener {
         } else if (shift) {
             player.getInventory().addItem(result);
         } else {
-            event.setCursor(result);
+            event.getView().setCursor(result);
         }
     }
 
@@ -313,16 +313,8 @@ public class ExpBottleUpgradeListener implements Listener {
     /**
      * Sets the anvil cost via the API (with a reflection fallback).
      */
-    private static void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
-        try {
-            inv.setRepairCost(repairCost);
-            inv.setRepairCostAmount(repairCostAmount);
-        } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            try {
-                Field costField = inv.getClass().getDeclaredField("repairCost");
-                costField.setAccessible(true);
-                costField.set(inv, repairCost);
-            } catch (Exception ignored) {}
-        }
+    private static void setAnvilCost(AnvilView view, int repairCost, int repairCostAmount) {
+        view.setRepairCost(repairCost);
+        view.setRepairItemCountCost(repairCostAmount);
     }
 }

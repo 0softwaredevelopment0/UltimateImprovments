@@ -104,7 +104,7 @@ public class OmniscannerGUI implements Listener {
         Player player = state.player;
 
         Inventory inv = Bukkit.createInventory(null, 54,
-                MessageUtil.legacy("<!italic><gradient:#FF6B6B:#FFD93D>🔭 Omniscanner Config</gradient>"));
+                MessageUtil.parse("<!italic><gradient:#FF6B6B:#FFD93D>🔭 Omniscanner Config</gradient>"));
 
         ItemStack scanner = findScannerInHand(player);
         if (scanner == null) {

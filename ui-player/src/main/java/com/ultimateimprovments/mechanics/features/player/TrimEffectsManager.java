@@ -2,6 +2,7 @@ package com.ultimateimprovments.mechanics.features.player;
 
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.Registry;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
@@ -262,8 +263,8 @@ public final class TrimEffectsManager implements org.bukkit.event.Listener {
     private static TrimMaterial resolveTrimMaterial(String name) {
         if (name.isEmpty()) return null;
         try {
-            for (TrimMaterial material : Registry.TRIM_MATERIAL) {
-                if (material.key().value().equalsIgnoreCase(name)) return material;
+            for (TrimMaterial material : Registries.trimMaterial()) {
+                if (Registries.trimMaterial().getKeyOrThrow(material).getKey().equalsIgnoreCase(name)) return material;
             }
         } catch (Exception e) {
             ConsoleLogger.warn("[TrimEffects] Trim material registry lookup failed: " + e.getMessage());

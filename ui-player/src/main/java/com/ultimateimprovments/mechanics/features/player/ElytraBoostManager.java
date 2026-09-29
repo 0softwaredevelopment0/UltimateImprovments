@@ -112,7 +112,7 @@ public class ElytraBoostManager implements Listener {
         if (meta == null || !meta.isGlider()) return;
 
         // Must be in the air
-        if (player.isOnGround()) return;
+        if (((org.bukkit.entity.Entity) player).isOnGround()) return;
 
         double yDelta = event.getTo().getY() - event.getFrom().getY();
         Double prevDelta = lastYDelta.get(player.getUniqueId());

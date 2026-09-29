@@ -457,10 +457,10 @@ public class VanishManager implements Listener {
             if (isVanished(online.getUniqueId())) {
                 vanishedCount++;
                 if (canSeeVanished) {
-                    visibleNames.add("<gray>" + online.getDisplayName() + "<reset>");
+                    visibleNames.add("<gray>" + net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(online.displayName()) + "<reset>");
                 }
             } else {
-                visibleNames.add("<white>" + online.getDisplayName() + "<reset>");
+                visibleNames.add("<white>" + net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(online.displayName()) + "<reset>");
             }
         }
 

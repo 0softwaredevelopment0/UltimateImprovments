@@ -10,11 +10,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.inventory.AnvilInventory;
+import org.bukkit.inventory.view.AnvilView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,7 +104,7 @@ public class ChestplateFlightListener implements Listener {
         result.setItemMeta(meta);
 
         event.setResult(result);
-        setAnvilCost(inv, 0, membraneCount);
+        setAnvilCost(event.getView(), 0, membraneCount);
     }
 
     /**
@@ -145,17 +145,8 @@ public class ChestplateFlightListener implements Listener {
      * repairCost = experience levels (0 = free),
      * repairCostAmount = how many items from slot 2 are consumed (membraneCount).
      */
-    private void setAnvilCost(AnvilInventory inv, int repairCost, int repairCostAmount) {
-        try {
-            inv.setRepairCost(repairCost);
-            inv.setRepairCostAmount(repairCostAmount);
-        } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            // Fallback for older Paper versions
-            try {
-                Field costField = inv.getClass().getDeclaredField("repairCost");
-                costField.setAccessible(true);
-                costField.set(inv, repairCost);
-            } catch (Exception ignored) {}
-        }
+    private void setAnvilCost(AnvilView view, int repairCost, int repairCostAmount) {
+        view.setRepairCost(repairCost);
+        view.setRepairItemCountCost(repairCostAmount);
     }
 }

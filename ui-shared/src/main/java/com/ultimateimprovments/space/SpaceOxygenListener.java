@@ -83,7 +83,7 @@ public class SpaceOxygenListener implements Listener {
 
         if (oxygenDeaths.remove(uuid)) {
             // Custom death message
-            event.setDeathMessage(MessageUtil.legacy(
+            event.deathMessage(MessageUtil.parse(
                 "<white>" + player.getName() + " ran out of oxyden</white>"));
 
             // Grant advancement

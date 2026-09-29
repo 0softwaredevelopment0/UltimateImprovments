@@ -189,6 +189,9 @@ public class WhitelistManager implements Listener {
     // =========================
     // JOIN EVENT
     // =========================
+    // PlayerLoginEvent is deprecated in Paper 26.3 (async pre-login is the modern hook) -
+    // migration is a threading change and needs a dedicated tested task.
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerLogin(PlayerLoginEvent e) {
         if (!enabled) return;
@@ -196,8 +199,8 @@ public class WhitelistManager implements Listener {
         String playerName = e.getPlayer().getName();
         if (!isWhitelisted(playerName)) {
             e.disallow(PlayerLoginEvent.Result.KICK_WHITELIST,
-                    PunishmentMessages.buildWhitelistKickMessage(
-                            playerName, PunishmentMessages.getDiscordUrl()));
+                    MessageUtil.parse(PunishmentMessages.buildWhitelistKickMessage(
+                                playerName, PunishmentMessages.getDiscordUrl())));
         }
     }
 }

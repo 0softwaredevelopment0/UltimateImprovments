@@ -241,7 +241,7 @@ public class EnchantmentListener implements Listener {
                     continue;
                 }
 
-                if (player.isOnGround() || player.isInWater()) {
+                if (((org.bukkit.entity.Entity) player).isOnGround() || player.isInWater()) {
                     // Map#remove returns null when nothing was accumulated —
                     // unbox safely (standing on the ground is the common case).
                     Float accumulated = FALL_DISTANCE.remove(uuid);
@@ -329,7 +329,7 @@ public class EnchantmentListener implements Listener {
                 //    (hover desync) → stays active.
                 if (player.isFlying()) {
                     FLIGHT_ACTIVE.add(uuid);
-                } else if (player.isOnGround()
+                } else if (((org.bukkit.entity.Entity) player).isOnGround()
                         || !player.getAllowFlight()
                         || player.getVelocity().getY() < -0.5) {
                     FLIGHT_ACTIVE.remove(uuid);

@@ -29,6 +29,9 @@ import java.util.List;
  */
 public class EnchantmentListener implements Listener {
 
+    // Material#isInteractable() below is deprecated as unreliable with no
+    // replacement — kept deliberately to preserve the AoE block filter.
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
@@ -49,6 +52,8 @@ public class EnchantmentListener implements Listener {
         if (origin == null || origin.getWorld() == null) return;
 
         // Skip non-solids, fluids, and instant-break blocks
+        // Material#isInteractable() is deprecated as unreliable in Paper 26.3
+        // with no replacement — kept deliberately to preserve the AoE filter.
         if (!targetType.isBlock() || targetType.isAir() || targetType.isInteractable()) return;
 
         World world = origin.getWorld();

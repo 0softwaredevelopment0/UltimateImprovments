@@ -57,7 +57,7 @@ public class SpeedCheck extends AbstractCheck {
         double zDelta = e.getTo().getZ() - e.getFrom().getZ();
         double horizontalDist = Math.sqrt(xDelta * xDelta + zDelta * zDelta);
 
-        boolean onGround = player.isOnGround();
+        boolean onGround = ((org.bukkit.entity.Entity) player).isOnGround();
         double maxSpeed = onGround ? maxSpeedGround : maxSpeedAir;
 
         // ── Sprint-jump without height (ground-speed hack) ──

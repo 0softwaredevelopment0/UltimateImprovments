@@ -1,14 +1,26 @@
 package com.ultimateimprovments.enchantment.repairing;
 
+import com.ultimateimprovments.util.Registries;
+
+import com.ultimateimprovments.util.Registries;
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.util.Registries;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.Material;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.NamespacedKey;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.Registry;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.inventory.ItemStack;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.inventory.meta.ItemMeta;
+import com.ultimateimprovments.util.Registries;
 import org.bukkit.persistence.PersistentDataType;
+import com.ultimateimprovments.util.Registries;
 import org.jetbrains.annotations.NotNull;
+import com.ultimateimprovments.util.Registries;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -68,7 +80,7 @@ public final class Enchantment {
      */
     public static @Nullable org.bukkit.enchantments.Enchantment getRegisteredEnchantment() {
         try {
-            return Registry.ENCHANTMENT.get(ENCHANTMENT_KEY);
+            return Registries.enchantment().get(ENCHANTMENT_KEY);
         } catch (Exception e) {
             return null;
         }

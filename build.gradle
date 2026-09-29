@@ -34,6 +34,8 @@ subprojects {
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
+        // Surface deprecated API usage (Bukkit legacy -> modern Paper rewrites).
+        options.compilerArgs << '-Xlint:deprecation'
     }
 
     // Copy the module's distributable shadow jar (-all) into the root

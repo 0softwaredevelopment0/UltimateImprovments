@@ -23,10 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 3. Vertical ascent — climbing in the air without a jump (yDelta > 0.42)
  * <p>
  * Ground detection uses a DOUBLE check:
- * - server-side {@code player.isOnGround()}
+ * - server-side {@code ((org.bukkit.entity.Entity) player).isOnGround()}
  * - block-based check {@link #hasBlockBelow} — the player counts as on the ground
  * ONLY if there is a solid block below within 1.5 blocks.
- * If {@code player.isOnGround()} returns true but there is no block below —
+ * If {@code ((org.bukkit.entity.Entity) player).isOnGround()} returns true but there is no block below —
  * that's an onGround spoof; the player counts as airborne.
  */
 public class FlightCheck extends AbstractCheck {
@@ -91,7 +91,7 @@ public class FlightCheck extends AbstractCheck {
      * because the server-side position may differ from e.getTo().
      */
     private boolean isActuallyOnGround(Player player) {
-        boolean serverOnGround = player.isOnGround();
+        boolean serverOnGround = ((org.bukkit.entity.Entity) player).isOnGround();
         // Check blocks below the SERVER-side player position (getLocation),
         // not e.getTo() — this reflects where the player actually is more accurately
         boolean blockBelow = hasBlockBelow(player.getLocation(), 3);
@@ -108,7 +108,7 @@ public class FlightCheck extends AbstractCheck {
 
         // ── Double verification: server isOnGround + block check ──
         boolean actuallyOnGround = isActuallyOnGround(player);
-        boolean serverOnGround = player.isOnGround();
+        boolean serverOnGround = ((org.bukkit.entity.Entity) player).isOnGround();
         boolean groundSpoof = serverOnGround && !actuallyOnGround;
 
         // DEBUG (1% chance, or always if ground spoof detected)

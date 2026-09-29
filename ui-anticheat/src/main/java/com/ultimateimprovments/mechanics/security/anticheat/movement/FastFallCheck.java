@@ -36,7 +36,7 @@ public class FastFallCheck extends AbstractCheck {
         if (e.getTo() == null) return;
         Player player = e.getPlayer();
         if (!isEnabled() || isExempted(player)) return;
-        if (player.isOnGround()) return;
+        if (((org.bukkit.entity.Entity) player).isOnGround()) return;
 
         double yDelta = e.getTo().getY() - e.getFrom().getY();
 
@@ -48,6 +48,6 @@ public class FastFallCheck extends AbstractCheck {
         }
 
         PlayerData data = AntiCheatManager.getInstance().getOrCreatePlayerData(player);
-        data.updatePosition(e.getTo(), player.isOnGround());
+        data.updatePosition(e.getTo(), ((org.bukkit.entity.Entity) player).isOnGround());
     }
 }

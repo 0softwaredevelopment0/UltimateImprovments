@@ -5,6 +5,7 @@ import com.ultimateimprovments.database.DatabaseManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.advancement.Advancement;
@@ -149,17 +150,21 @@ public class SpaceManager {
             debugLog("Calling creator.createWorld()...");
             spaceWorld = creator.createWorld();
             if (spaceWorld != null) {
+                // Paper 26.3 deprecated setKeepSpawnInMemory with no direct
+                // replacement — kept: the space world must not retain spawn chunks.
+                //noinspection deprecation
                 spaceWorld.setKeepSpawnInMemory(false);
                 spaceWorld.setAutoSave(true);
-                spaceWorld.setGameRuleValue("doMobSpawning", "false");
-                spaceWorld.setGameRuleValue("doDaylightCycle", "false");
-                spaceWorld.setGameRuleValue("doWeatherCycle", "false");
-                spaceWorld.setGameRuleValue("doFireTick", "false");
-                spaceWorld.setGameRuleValue("doTileDrops", "false");
-                spaceWorld.setGameRuleValue("doEntityDrops", "false");
-                spaceWorld.setGameRuleValue("mobGriefing", "false");
-                spaceWorld.setGameRuleValue("announceAdvancements", "false");
-                spaceWorld.setGameRuleValue("doImmediateRespawn", "true");
+                // Typed GameRule API (setGameRuleValue(String,String) is deprecated for removal).
+                spaceWorld.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+                spaceWorld.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
+                spaceWorld.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
+                spaceWorld.setGameRule(GameRule.DO_FIRE_TICK, false);
+                spaceWorld.setGameRule(GameRule.DO_TILE_DROPS, false);
+                spaceWorld.setGameRule(GameRule.DO_ENTITY_DROPS, false);
+                spaceWorld.setGameRule(GameRule.MOB_GRIEFING, false);
+                spaceWorld.setGameRule(GameRule.ANNOUNCE_ADVANCEMENTS, false);
+                spaceWorld.setGameRule(GameRule.DO_IMMEDIATE_RESPAWN, true);
                 debugLog("World '" + WORLD_NAME + "' created successfully. "
                         + "Environment=" + spaceWorld.getEnvironment()
                         + " maxHeight=" + spaceWorld.getMaxHeight());

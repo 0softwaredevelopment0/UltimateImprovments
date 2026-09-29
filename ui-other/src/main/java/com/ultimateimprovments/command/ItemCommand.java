@@ -65,7 +65,7 @@ public class ItemCommand {
         int max = ItemDurabilityUtil.getMaxDurability(heldItem);
         int damage = ItemDurabilityUtil.getVanillaDamage(heldItem);
         String itemName = heldItem.hasItemMeta() && heldItem.getItemMeta().hasDisplayName()
-                ? heldItem.getItemMeta().getDisplayName()
+                ? net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(heldItem.getItemMeta().displayName())
                 : heldItem.getType().name().toLowerCase().replace("_", " ");
         if (!itemName.isEmpty()) {
             itemName = itemName.substring(0, 1).toUpperCase() + itemName.substring(1);

@@ -53,7 +53,7 @@ public final class SoundUtil {
 
         // 2. Fallback to old enum-style (deprecated but still functional)
         try {
-            @SuppressWarnings("deprecation")
+            @SuppressWarnings({"deprecation", "removal"})
             Sound fromEnum = Sound.valueOf(name);
             return fromEnum;
         } catch (IllegalArgumentException ignored) {

@@ -523,7 +523,7 @@ public class PunishmentManager {
         String message = PunishmentMessages.buildKickMessage(
                 player.getName(), kicker, reason,
                 PunishmentMessages.getDiscordUrl());
-        player.kickPlayer(message);
+        player.kick(MessageUtil.parse(message));
 
         // Log the kick to the DB
         punish(PunishType.KICK, player.getUniqueId().toString(), player.getName(),

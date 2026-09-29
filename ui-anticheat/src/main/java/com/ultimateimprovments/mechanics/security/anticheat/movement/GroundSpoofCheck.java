@@ -44,7 +44,7 @@ public class GroundSpoofCheck extends AbstractCheck {
         Player player = e.getPlayer();
         if (!isEnabled() || isExempted(player)) return;
 
-        boolean clientOnGround = player.isOnGround();
+        boolean clientOnGround = ((org.bukkit.entity.Entity) player).isOnGround();
         double yDelta = e.getTo().getY() - e.getFrom().getY();
 
         // Server-side ground check: ray-cast down from player position

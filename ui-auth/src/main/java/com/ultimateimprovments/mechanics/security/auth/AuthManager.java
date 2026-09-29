@@ -171,7 +171,7 @@ public class AuthManager {
         if (player != null && player.isOnline()) {
             String kickMsg = MessagesManager.getString("auth.admin.kick_resetauth",
                     "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your registration has been deleted by an administrator!</red>\n<gray>On next login you will need to register again.</gray>");
-            player.kickPlayer(MessageUtil.legacy(kickMsg));
+            player.kick(MessageUtil.parse(kickMsg));
         }
         return true;
     }
@@ -205,7 +205,7 @@ public class AuthManager {
         if (player != null && player.isOnline()) {
             String kickMsg = MessagesManager.getString("auth.admin.kick_delsession",
                     "<yellow>✦</yellow> UltimateImprovments\n\n<red>❌ Your session has been reset by an administrator!</red>\n<gray>On next login you will need to enter your password again.</gray>");
-            player.kickPlayer(MessageUtil.legacy(kickMsg));
+            player.kick(MessageUtil.parse(kickMsg));
         }
         return true;
     }

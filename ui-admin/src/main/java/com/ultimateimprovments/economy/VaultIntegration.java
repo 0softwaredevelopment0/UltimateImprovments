@@ -18,7 +18,11 @@ import java.util.UUID;
  * Registered as {@link Economy} in Vault when the module starts.
  * Uses the "coins" currency as the only one (Vault supports only one).<br>
  * Multiple currencies are available only directly via {@link EconomyManager}.
+ * <p>
+ * The String-name Economy methods are deprecated in Vault's API but mandatory
+ * to implement; they all resolve via {@link Bukkit#getOfflinePlayerIfCached}.
  */
+@SuppressWarnings("deprecation")
 public final class VaultIntegration implements Economy {
 
     private static final String NAME = "UltimateImprovments Economy";

@@ -6,6 +6,7 @@ import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 
 import com.ultimateimprovments.util.MessageUtil;
+import com.ultimateimprovments.util.Registries;
 
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -101,20 +102,20 @@ public final class EnchantSubcommand {
         // Vanilla: "sharpness", "minecraft:sharpness", "ui:aoe" (custom UI-Datapack),
         // plus enchantments from other plugins
         try {
-            Enchantment ench = Registry.ENCHANTMENT.get(NamespacedKey.minecraft(key));
+            Enchantment ench = Registries.enchantment().get(NamespacedKey.minecraft(key));
             if (ench != null) return new ResolvedEnchant(null, ench);
         } catch (IllegalArgumentException ignored) {
             // invalid NamespacedKey
         }
         // Custom UI-Datapack enchantments live in the ui: namespace (ui:aoe, ui:autosmelt, ...)
         try {
-            Enchantment ench = Registry.ENCHANTMENT.get(new NamespacedKey("ui", key));
+            Enchantment ench = Registries.enchantment().get(new NamespacedKey("ui", key));
             if (ench != null) return new ResolvedEnchant(null, ench);
         } catch (IllegalArgumentException ignored) {
             // invalid NamespacedKey
         }
         // Fallback: search the REGISTRY by key name (includes custom enchants from other plugins)
-        for (Enchantment ench : Registry.ENCHANTMENT) {
+        for (Enchantment ench : Registries.enchantment()) {
             if (ench.getKey().getKey().equalsIgnoreCase(key)) {
                 return new ResolvedEnchant(null, ench);
             }
@@ -139,7 +140,7 @@ public final class EnchantSubcommand {
         Set<String> names = new java.util.LinkedHashSet<>();
 
         // 1. Registry — vanilla + other plugins
-        for (Enchantment ench : Registry.ENCHANTMENT) {
+        for (Enchantment ench : Registries.enchantment()) {
             NamespacedKey key = ench.getKey();
             names.add(key.getNamespace().equals("minecraft") ? key.getKey() : key.toString());
         }

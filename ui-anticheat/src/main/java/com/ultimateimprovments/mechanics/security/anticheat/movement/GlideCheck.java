@@ -44,7 +44,7 @@ public class GlideCheck extends AbstractCheck {
         Player player = e.getPlayer();
         if (!isEnabled() || isExempted(player)) return;
 
-        boolean onGround = player.isOnGround();
+        boolean onGround = ((org.bukkit.entity.Entity) player).isOnGround();
         if (onGround) {
             glideTickCounters.put(player.getUniqueId(), 0);
             return;

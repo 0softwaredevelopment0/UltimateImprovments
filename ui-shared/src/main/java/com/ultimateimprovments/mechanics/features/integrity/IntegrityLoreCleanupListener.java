@@ -77,7 +77,7 @@ public final class IntegrityLoreCleanupListener implements Listener {
                 ? event.getView().getBottomInventory().getItem(event.getHotbarButton())
                 : null);
         ItemStack cursor = event.getCursor();
-        if (cleanOne(cursor)) event.setCursor(cursor);
+        if (cleanOne(cursor)) event.getView().setCursor(cursor);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

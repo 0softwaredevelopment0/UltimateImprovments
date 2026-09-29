@@ -119,9 +119,9 @@ public final class OfflineInvEditor implements Listener {
 
     private static Inventory buildGui(CompoundTag root, UUID targetUuid, String targetName,
                                       boolean ender, boolean edit) {
-        String title = MessageUtil.legacy("<dark_gray>" + targetName
-                + (ender ? "'s ender chest (offline)" : "'s inventory (offline)") + "</dark_gray>");
-        Inventory gui = Bukkit.createInventory(null, 45, title);
+        Inventory gui = Bukkit.createInventory(null, 45,
+                MessageUtil.parse("<dark_gray>" + targetName
+                    + (ender ? "'s ender chest (offline)" : "'s inventory (offline)") + "</dark_gray>"));
 
         if (ender) {
             org.bukkit.inventory.ItemStack[] enderItems = PlayerDataIO.readEnder(root);

@@ -157,7 +157,7 @@ public class MultimeterListener implements Listener {
             player.sendMessage(MessageUtil.parse("<aqua>Type: Battery</aqua>"));
             player.sendMessage(MessageUtil.parse("<aqua>Energy: </aqua><white>" + node.getEnergy() + "</white>"));
             player.sendMessage(MessageUtil.parse("<aqua>Transfer rate: </aqua><white>" + transferred + " ⚡/tick</white>"));
-            player.sendMessage(MessageUtil.parse("<aqua>Connections: </aqua><white>" + node.getConnections().size() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<aqua>Connections: </aqua><white>" + node.getConnectionKeys().size() + "</white>"));
             return;
         }
 
@@ -172,7 +172,7 @@ public class MultimeterListener implements Listener {
             player.sendMessage(MessageUtil.parse("<yellow>Type: Cable</yellow>"));
             player.sendMessage(MessageUtil.parse("<yellow>Transfer speed: </yellow><white>" + transferred + " ⚡/tick</white>"));
             player.sendMessage(MessageUtil.parse("<yellow>Status: </yellow><white>" + (flowing ? "<green>⚡ FLOWING</green>" : "<gray>IDLE</gray>") + "</white>"));
-            player.sendMessage(MessageUtil.parse("<yellow>Connections: </yellow><white>" + node.getConnections().size() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<yellow>Connections: </yellow><white>" + node.getConnectionKeys().size() + "</white>"));
 
             BlockData bd = block.getBlockData();
 
@@ -204,7 +204,7 @@ public class MultimeterListener implements Listener {
             int transferred = node.getAndResetTransferred();
             player.sendMessage(MessageUtil.parse("<gold>Type: Junction</gold>"));
             player.sendMessage(MessageUtil.parse("<gold>Transfer rate: </gold><white>" + transferred + " ⚡/tick</white>"));
-            player.sendMessage(MessageUtil.parse("<gold>Connections: </gold><white>" + node.getConnections().size() + "</white>"));
+            player.sendMessage(MessageUtil.parse("<gold>Connections: </gold><white>" + node.getConnectionKeys().size() + "</white>"));
             player.sendMessage(MessageUtil.parse("<gold>Mode: </gold><white>Omni-directional</white>"));
             return;
         }

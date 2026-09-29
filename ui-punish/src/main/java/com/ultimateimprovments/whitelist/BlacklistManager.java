@@ -103,11 +103,10 @@ public class BlacklistManager implements Listener {
                 ConsoleLogger.info("[Blacklist] Added: " + lower);
 
                 // If the player is online — kick them
-                @SuppressWarnings("deprecation")
                 Player online = org.bukkit.Bukkit.getPlayerExact(playerName);
                 if (online != null && online.isOnline()) {
-                    online.kickPlayer(PunishmentMessages.buildBlacklistKickMessage(
-                            playerName, PunishmentMessages.getDiscordUrl()));
+                    online.kick(MessageUtil.parse(PunishmentMessages.buildBlacklistKickMessage(
+                            playerName, PunishmentMessages.getDiscordUrl())));
                 }
                 return true;
             }
@@ -178,6 +177,9 @@ public class BlacklistManager implements Listener {
     // =========================
     // JOIN EVENT
     // =========================
+    // PlayerLoginEvent is deprecated in Paper 26.3 (async pre-login is the modern hook) -
+    // migration is a threading change and needs a dedicated tested task.
+    @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerLogin(PlayerLoginEvent e) {
         if (!enabled) return;
@@ -185,8 +187,8 @@ public class BlacklistManager implements Listener {
         String playerName = e.getPlayer().getName();
         if (isBlacklisted(playerName)) {
             e.disallow(PlayerLoginEvent.Result.KICK_BANNED,
-                    PunishmentMessages.buildBlacklistKickMessage(
-                            playerName, PunishmentMessages.getDiscordUrl()));
+                    MessageUtil.parse(PunishmentMessages.buildBlacklistKickMessage(
+                                playerName, PunishmentMessages.getDiscordUrl())));
         }
     }
 }

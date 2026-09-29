@@ -42,7 +42,7 @@ public class AuthListener implements Listener {
                         "<yellow>❌ A player with this name is already on the server!</yellow>\n<white>Please join with a different name.</white>");
                 String dupParsed = MessageUtil.legacy(dupMessage);
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
-                        MessageUtil.legacy("<gold>✦ UltimateImprovments\n" +
+                        MessageUtil.parse("<gold>✦ UltimateImprovments\n" +
                         "<gray>━━━━━━━━━━━━━━━━━━━━━\n\n") +
                         dupParsed + "\n\n" +
                         MessageUtil.legacy("<gray>━━━━━━━━━━━━━━━━━━━━━")

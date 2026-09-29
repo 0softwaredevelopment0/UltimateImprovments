@@ -47,7 +47,7 @@ public class NotesGUI {
     // =========================
     public static void openMainGUI(Player player) {
         UUID uuid = player.getUniqueId();
-        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, GUI_TITLE);
+        Inventory inv = Bukkit.createInventory(null, GUI_SIZE, MessageUtil.parse(GUI_TITLE));
 
         for (int slot = 0; slot < GUI_SIZE; slot++) {
             int noteNumber = slot + 1;
@@ -288,8 +288,12 @@ public class NotesGUI {
         return pages;
     }
 
-    static String joinPages(List<String> pages) {
+    static String joinPages(java.util.List<net.kyori.adventure.text.Component> pages) {
         if (pages == null || pages.isEmpty()) return "";
-        return String.join("", pages);
+        StringBuilder sb = new StringBuilder();
+        for (net.kyori.adventure.text.Component page : pages) {
+            sb.append(net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(page));
+        }
+        return sb.toString();
     }
 }

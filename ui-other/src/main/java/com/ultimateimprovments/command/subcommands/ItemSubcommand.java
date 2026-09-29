@@ -45,7 +45,7 @@ public final class ItemSubcommand {
         int max = ItemDurabilityUtil.getMaxDurability(held);
         int damage = ItemDurabilityUtil.getVanillaDamage(held);
         String name = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
-                ? held.getItemMeta().getDisplayName()
+                ? net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(held.getItemMeta().displayName())
                 : capitalize(held.getType().name().toLowerCase().replace("_", " "));
         player.sendMessage(MessageUtil.parse("<gold>═══════════════════════"));
         player.sendMessage(MessageUtil.parse("<gold>  ✦ <white>Информация о прочности"));

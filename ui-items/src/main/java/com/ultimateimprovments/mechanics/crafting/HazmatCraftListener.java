@@ -93,7 +93,7 @@ public class HazmatCraftListener implements Listener {
         recipe.shape(shape);
         // Lead slot: the custom Lead Ingot (ExactChoice — a plain netherite
         // ingot does NOT match, the PDC-tagged item is required).
-        recipe.setIngredient('P', new RecipeChoice.ExactChoice(LeadIngotCraftListener.createLeadIngotStack()));
+        recipe.setIngredient('P', new RecipeChoice.ExactChoice(new ItemStack[]{LeadIngotCraftListener.createLeadIngotStack()}));
         recipe.setIngredient('G', Material.GOLD_INGOT);
 
         Bukkit.addRecipe(recipe);
