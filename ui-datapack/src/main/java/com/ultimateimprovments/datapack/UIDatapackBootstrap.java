@@ -42,10 +42,10 @@ public class UIDatapackBootstrap implements PluginBootstrap {
                 event.registrar().discoverPack(preparedPack, PACK_ID, configurer -> configurer
                         .autoEnableOnServerStart(true)
                         .position(true, Datapack.Position.TOP));
-                context.getLogger().info("[UI-Datapack] Registered bundled datapack '" + PACK_ID
+                context.getLogger().info("Registered bundled datapack '" + PACK_ID
                         + "' for discovery (auto-enabled on start).");
             } catch (Throwable t) {
-                context.getLogger().error("[UI-Datapack] Failed to register the bundled datapack: "
+                context.getLogger().error("Failed to register the bundled datapack: "
                         + t.getMessage(), t);
             }
         });
