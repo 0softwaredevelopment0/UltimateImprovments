@@ -63,7 +63,7 @@ import java.util.UUID;
  * between checks. There is no hard minimum for {@code check_interval_ticks},
  * but values below 20 ticks make no sense: the internal heartbeat checks once
  * per second, so smaller values cannot check more often and only waste
- * performance. Defaults: 40 / 40. Legacy units may still use the old
+ * performance. Defaults: 50 / 40 (duration longer than the 40-tick check interval - no flicker). Legacy units may still use the old
  * {@code interval_ticks} key — it is honored when {@code check_interval_ticks}
  * is absent.
  * <p>
@@ -226,7 +226,7 @@ public final class ArmorEffectsManager implements org.bukkit.event.Listener {
             }
 
             int amplifier = Math.max(0, u.getInt("amplifier", 0));
-            int durationTicks = Math.max(1, u.getInt("duration_ticks", 40));
+            int durationTicks = Math.max(1, u.getInt("duration_ticks", 50));
             int checkIntervalTicks;
             if (u.isSet("check_interval_ticks")) {
                 checkIntervalTicks = Math.max(1, u.getInt("check_interval_ticks", 40));
