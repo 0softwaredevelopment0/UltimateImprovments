@@ -30,24 +30,19 @@
     "hidden": false
   },
   "parent": "ui:datapack/start",
-  "criteria": {
-    "workbench": {
-      "trigger": "minecraft:recipe_crafted",
+    "criteria": {
+    "obtain": {
+      "trigger": "minecraft:inventory_changed",
       "conditions": {
-        "recipe_id": "minecraft:ender_chest"
-      }
-    },
-    "crafter": {
-      "trigger": "minecraft:crafter_recipe_crafted",
-      "conditions": {
-        "recipe_id": "minecraft:ender_chest"
+        "items": [
+          { "items": ["minecraft:ender_chest"] }
+        ]
       }
     }
   },
   "requirements": [
     [
-      "workbench",
-      "crafter"
+      "obtain"
     ]
   ],
   "rewards": {

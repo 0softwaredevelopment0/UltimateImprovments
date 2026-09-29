@@ -30,24 +30,19 @@
     "hidden": false
   },
   "parent": "ui:datapack/weaks_to_strongs",
-  "criteria": {
-    "workbench": {
-      "trigger": "minecraft:recipe_crafted",
+    "criteria": {
+    "obtain": {
+      "trigger": "minecraft:inventory_changed",
       "conditions": {
-        "recipe_id": "ui:reinforced_deepslate"
-      }
-    },
-    "crafter": {
-      "trigger": "minecraft:crafter_recipe_crafted",
-      "conditions": {
-        "recipe_id": "ui:reinforced_deepslate"
+        "items": [
+          { "items": ["minecraft:reinforced_deepslate"] }
+        ]
       }
     }
   },
   "requirements": [
     [
-      "workbench",
-      "crafter"
+      "obtain"
     ]
   ],
   "rewards": {

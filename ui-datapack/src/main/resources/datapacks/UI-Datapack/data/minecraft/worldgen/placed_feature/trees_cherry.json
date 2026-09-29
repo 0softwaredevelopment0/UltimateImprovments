@@ -34,27 +34,8 @@
     {
       "type": "minecraft:block_predicate_filter",
       "predicate": {
-        "type": "minecraft:any_of",
-        "predicates": [
-          {
-            "type": "minecraft:would_survive",
-            "state": {
-              "Name": "minecraft:cherry_sapling",
-              "Properties": {
-                "stage": "0"
-              }
-            }
-          },
-          {
-            "type": "minecraft:matching_blocks",
-            "blocks": "minecraft:snow_block",
-            "offset": [
-              0,
-              -1,
-              0
-            ]
-          }
-        ]
+        "type": "minecraft:would_survive",
+        "state": "minecraft:cherry_sapling"
       }
     }
   ]
