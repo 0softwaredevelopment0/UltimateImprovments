@@ -30,17 +30,19 @@
     "hidden": false
   },
   "parent": "ui:datapack/end_village_find",
-  "criteria": {
-    "1": {
-      "trigger": "minecraft:recipe_crafted",
+    "criteria": {
+    "obtain": {
+      "trigger": "minecraft:inventory_changed",
       "conditions": {
-        "recipe_id": "minecraft:uncraft_degg"
+        "items": [
+          { "items": ["minecraft:dragon_egg"] }
+        ]
       }
     }
   },
   "requirements": [
     [
-      "1"
+      "obtain"
     ]
   ],
   "rewards": {

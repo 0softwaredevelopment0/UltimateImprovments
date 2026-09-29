@@ -35,24 +35,19 @@
     "hidden": false
   },
   "parent": "ui:datapack/craft_echo_shard",
-  "criteria": {
-    "workbench": {
-      "trigger": "minecraft:recipe_crafted",
+    "criteria": {
+    "obtain": {
+      "trigger": "minecraft:inventory_changed",
       "conditions": {
-        "recipe_id": "ui-core:antimatter"
-      }
-    },
-    "crafter": {
-      "trigger": "minecraft:crafter_recipe_crafted",
-      "conditions": {
-        "recipe_id": "ui-core:antimatter"
+        "items": [
+          { "items": ["minecraft:splash_potion"] }
+        ]
       }
     }
   },
   "requirements": [
     [
-      "workbench",
-      "crafter"
+      "obtain"
     ]
   ],
   "rewards": {

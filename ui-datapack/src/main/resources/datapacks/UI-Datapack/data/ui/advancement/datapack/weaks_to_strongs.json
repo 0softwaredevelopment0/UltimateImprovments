@@ -31,24 +31,19 @@
     "hidden": false
   },
   "parent": "ui:datapack/high_temperatures",
-  "criteria": {
-    "workbench": {
-      "trigger": "minecraft:recipe_crafted",
+    "criteria": {
+    "obtain": {
+      "trigger": "minecraft:inventory_changed",
       "conditions": {
-        "recipe_id": "ui-core:plasma_cannon"
-      }
-    },
-    "crafter": {
-      "trigger": "minecraft:crafter_recipe_crafted",
-      "conditions": {
-        "recipe_id": "ui-core:plasma_cannon"
+        "items": [
+          { "items": ["minecraft:warped_fungus_on_a_stick"] }
+        ]
       }
     }
   },
   "requirements": [
     [
-      "workbench",
-      "crafter"
+      "obtain"
     ]
   ],
   "rewards": {
