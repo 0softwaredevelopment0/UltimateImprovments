@@ -24,7 +24,7 @@ Discussions are the preferred channel for:
 Found a bug? Please [open an Issue](https://github.com/0softwaredevelopment0/UltimateImprovments/issues/new) with:
 
 - **Server version** (e.g. `Paper 26.3`)
-- **Plugin version** (e.g. `1.8.3-alpha.5`)
+- **Plugin version** (e.g. `1.8.3-alpha.6`)
 - **Steps to reproduce** the problem
 - **Console error** (if any)
 
