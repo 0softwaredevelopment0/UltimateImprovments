@@ -1,3 +1,7 @@
+plugins {
+    id 'com.gradleup.shadow' version '9.4.2' apply false
+}
+
 // Root build.gradle — shared config for all subprojects
 group = 'com.ultimateimprovments'
 version = '1.8.3-alpha.5'
@@ -46,4 +50,28 @@ subprojects {
     tasks.named('assemble') {
         finalizedBy 'copyJarToRoot'
     }
+
+    pluginManager.withPlugin('com.gradleup.shadow') {
+        tasks.named('shadowJar') {
+            // sqlite-jdbc ships ~24 MB of native libraries for every platform
+            // imaginable. Only UI-Core uses it directly (DatabaseManager loads
+            // the JDBC driver, and every addon joins UI-Core's classpath via
+            // paper-plugin.yml), so no other module needs to bundle it — it
+            // used to leak into every addon jar transitively through
+            // `implementation project(':ui-core')`.
+            if (project.name != 'ui-core') {
+                dependencies {
+                    exclude(dependency('org.xerial:sqlite-jdbc:.*'))
+                }
+            }
+        }
+    }
+}
+
+// Shadow-only distribution build: compiles every module and collects the
+// -all (shadow) jars into root build/libs, skipping tests/check/jar tasks.
+tasks.register('distributeJars') {
+    group = 'build'
+    description = 'Builds all module shadow jars into root build/libs (no tests).'
+    dependsOn subprojects.collect { ":$it.name:copyJarToRoot" }
 }

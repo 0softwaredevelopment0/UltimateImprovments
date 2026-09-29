@@ -31,5 +31,21 @@ tasks {
         archiveVersion.set(project.version.toString())
         // Exclude Paper dev bundle — only needed at compile time
         configurations = [project.configurations.runtimeClasspath]
+        // Keep only the sqlite native libraries for platforms a Minecraft
+        // server actually runs on (Windows/Linux x86_64, Linux/macOS aarch64).
+        // The full set is ~24 MB uncompressed across 24 OS/arch combos.
+        exclude 'org/sqlite/native/FreeBSD/**'
+        exclude 'org/sqlite/native/Linux-Android/**'
+        exclude 'org/sqlite/native/Linux-Musl/**'
+        exclude 'org/sqlite/native/Linux/arm/**'
+        exclude 'org/sqlite/native/Linux/armv6/**'
+        exclude 'org/sqlite/native/Linux/armv7/**'
+        exclude 'org/sqlite/native/Linux/ppc64/**'
+        exclude 'org/sqlite/native/Linux/riscv64/**'
+        exclude 'org/sqlite/native/Linux/x86/**'
+        exclude 'org/sqlite/native/Mac/x86/**'
+        exclude 'org/sqlite/native/Windows/aarch64/**'
+        exclude 'org/sqlite/native/Windows/armv7/**'
+        exclude 'org/sqlite/native/Windows/x86/**'
     }
 }
