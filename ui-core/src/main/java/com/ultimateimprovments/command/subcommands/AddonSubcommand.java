@@ -8,6 +8,9 @@ import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.util.MessageUtil;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
@@ -129,10 +132,28 @@ public class AddonSubcommand implements SubCommand {
         }
 
         if (totalPages > 1) {
-            sender.sendMessage(msg("addon.list_page_footer",
-                    "<dark_gray>Page %page%/%pages% — /ui addon list <page></dark_gray>",
-                    "%page%", String.valueOf(page),
-                    "%pages%", String.valueOf(totalPages)));
+            // Same clickable [<] / [>] pagination as /ui help.
+            Component footer = MessageUtil.parse(
+                    "<gray>Page <yellow>" + page + "<gray>/" + totalPages + "   ");
+
+            if (page > 1) {
+                footer = footer.append(Component.text("[<]")
+                        .color(NamedTextColor.YELLOW)
+                        .clickEvent(ClickEvent.runCommand("/ui addon list " + (page - 1)))
+                        .hoverEvent(HoverEvent.showText(MessageUtil.parse("<gray>Previous page"))));
+            } else {
+                footer = footer.append(MessageUtil.parse("<dark_gray>[<]"));
+            }
+            footer = footer.append(MessageUtil.parse("  "));
+            if (page < totalPages) {
+                footer = footer.append(Component.text("[>]")
+                        .color(NamedTextColor.YELLOW)
+                        .clickEvent(ClickEvent.runCommand("/ui addon list " + (page + 1)))
+                        .hoverEvent(HoverEvent.showText(MessageUtil.parse("<gray>Next page"))));
+            } else {
+                footer = footer.append(MessageUtil.parse("<dark_gray>[>]"));
+            }
+            sender.sendMessage(footer);
         }
         return true;
     }
