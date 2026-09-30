@@ -26,15 +26,15 @@ import java.util.Locale;
  * </pre>
  * <p>
  * <b>all:</b> Phase 1 (async, here) saves data; Phase 2 (sync,
- * {@link PluginReloadCoordinator} in ui-core) runs the soft cycle: sweep all
- * family listeners/tasks → stop modules → reloadConfig → core startup →
- * re-run every addon's startup in place ({@code SoftReloadable}). Plugins are
- * NEVER disabled: on Paper {@code disablePlugin} closes the JAR and
- * {@code enablePlugin} does not reopen it ("zip file closed" zombies).
+ * {@link PluginReloadCoordinator} in ui-core): core subsystems restart in
+ * place, then every addon gets a REAL hot-reload via
+ * {@code HotReloadEngine}: onDisable → unload → fresh load from the JAR
+ * (new classloader) → onEnable. Plain disable+enable is never used: on Paper
+ * {@code disablePlugin} closes the JAR and {@code enablePlugin} does not
+ * reopen it ("zip file closed" zombies).
  * <p>
- * <b>&lt;addon&gt;:</b> only that addon is swept (listeners/tasks), configs are
- * refreshed and its startup logic re-runs in place under the UI-Core handle.
- * A targeted reload of UI-Core itself re-runs the core startup path
+ * <b>&lt;addon&gt;:</b> that single addon is hot-reloaded the same way. A
+ * targeted reload of UI-Core itself re-runs the core startup path
  * (infrastructure + modules) without touching the other family plugins.
  */
 public final class ReloadSubcommand {
@@ -162,36 +162,27 @@ public final class ReloadSubcommand {
             public void run() {
                 long start = System.currentTimeMillis();
                 try {
-                    if (!(targetPlugin instanceof com.ultimateimprovments.core.SoftReloadable target)) {
-                        sender.sendMessage(MessageUtil.parse(
-                                "<red>❌ <gray>Plugin </gray><yellow>" + name
-                                        + "</yellow><gray> does not support in-place reload. Use </gray>"
-                                        + "<white>/ui reload all</white><gray> or restart the server.</gray>"));
-                        return;
-                    }
-
-                    ConsoleLogger.info("[Reload] [" + name + "] Soft reload (in place, no disable)...");
-                    // Sweep only this addon's listeners/tasks, refresh configs and
-                    // re-run its startup logic. NEVER disablePlugin/enablePlugin:
-                    // on Paper disabling closes the JAR and re-enabling does not
-                    // reopen it ("zip file closed" zombie).
-                    org.bukkit.event.HandlerList.unregisterAll(targetPlugin);
-                    Bukkit.getScheduler().cancelTasks(targetPlugin);
-                    plugin.reloadConfig();
-                    var mm = com.ultimateimprovments.module.ModuleManager.getInstance();
-                    if (mm != null) mm.reloadAllConfigs();
-                    target.softReload();
+                    // REAL hot-reload: onDisable → unload → fresh load from the
+                    // JAR (new classloader) → onEnable. NEVER plain disable+
+                    // enable: on Paper disabling closes the JAR and re-enabling
+                    // does not reopen it ("zip file closed" zombie).
+                    ConsoleLogger.info("[Reload] [" + name + "] Hot-reloading...");
+                    Plugin fresh = com.ultimateimprovments.core.HotReloadEngine.hotReload(targetPlugin, name);
 
                     long time = System.currentTimeMillis() - start;
                     sender.sendMessage(MessageUtil.parse(
                             "<dark_green>✔ <green>Success: <gray>Reloaded </gray><yellow>" + name
-                                    + "</yellow><gray> in <yellow>" + time + "ms"));
-                    ConsoleLogger.info("[ULTIMATEIMPROVMENTS] [" + name + "] Reloaded in " + time + "ms");
+                                    + "</yellow><gray> (v" + fresh.getPluginMeta().getVersion()
+                                    + ") in <yellow>" + time + "ms"));
+                    ConsoleLogger.info("[ULTIMATEIMPROVMENTS] [" + name + "] Hot-reloaded in " + time + "ms");
                 } catch (Exception e) {
                     sender.sendMessage(MessageUtil.parse(
                             "<dark_red>❌ <red>Error: <gray>Reload of " + name + " failed! Check console."));
                     ConsoleLogger.error("[ULTIMATEIMPROVMENTS] [" + name + "] Reload failed: " + e.getMessage());
                     e.printStackTrace();
+                    sender.sendMessage(MessageUtil.parse(
+                            "<yellow>⚠ <gray>The addon may be unloaded now — use </gray><white>/ui reload all</white>"
+                                    + "<gray> or restart the server.</gray>"));
                 } finally {
                     reloadInProgress = false;
                 }

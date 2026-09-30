@@ -251,10 +251,23 @@ public final class PluginSubcommand {
         try {
             switch (pending.action()) {
                 case "enable" -> {
-                    Bukkit.getPluginManager().enablePlugin(target);
-                    sender.sendMessage(MessageUtil.parse(
-                            "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
-                                    + "</yellow> <white>enabled.</white>"));
+                    if (target.isEnabled()) {
+                        sender.sendMessage(MessageUtil.parse(
+                                "<yellow>⚠</yellow> <white>Plugin </white><yellow>" + pending.pluginName()
+                                        + "</yellow> <white>is already enabled.</white>"));
+                    } else if (target instanceof org.bukkit.plugin.java.JavaPlugin) {
+                        // Fresh load from disk: re-enabling the old disabled instance
+                        // would run onEnable against its closed JAR ("zip file closed").
+                        com.ultimateimprovments.core.HotReloadEngine.hotReload(target, "plugin enable");
+                        sender.sendMessage(MessageUtil.parse(
+                                "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
+                                        + "</yellow> <white>enabled.</white>"));
+                    } else {
+                        Bukkit.getPluginManager().enablePlugin(target);
+                        sender.sendMessage(MessageUtil.parse(
+                                "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
+                                        + "</yellow> <white>enabled.</white>"));
+                    }
                     ConsoleLogger.info("[PLUGIN] " + sender.getName() + " enabled " + pending.pluginName());
                 }
                 case "disable" -> {
@@ -265,23 +278,22 @@ public final class PluginSubcommand {
                     ConsoleLogger.info("[PLUGIN] " + sender.getName() + " disabled " + pending.pluginName());
                 }
                 case "restart" -> {
-                    // NEVER disable+enable: on Paper disabling closes the JAR and
-                    // re-enabling does not reopen it ("zip file closed" zombie).
-                    // Restart = in-place soft reload of the plugin's systems.
-                    if (target.isEnabled() && target instanceof com.ultimateimprovments.core.SoftReloadable s) {
-                        org.bukkit.event.HandlerList.unregisterAll(target);
-                        Bukkit.getScheduler().cancelTasks(target);
-                        s.softReload();
+                    // REAL hot-reload: onDisable → unload → fresh load from the JAR
+                    // (new classloader) → onEnable. Plain disable+enable is never
+                    // used: on Paper disabling closes the JAR and re-enabling does
+                    // not reopen it ("zip file closed" zombie).
+                    if (target instanceof org.bukkit.plugin.java.JavaPlugin) {
+                        com.ultimateimprovments.core.HotReloadEngine.hotReload(target, "plugin restart");
                         sender.sendMessage(MessageUtil.parse(
                                 "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
-                                        + "</yellow> <white>restarted (soft reload).</white>"));
+                                        + "</yellow> <white>restarted (hot-reload).</white>"));
                     } else {
                         sender.sendMessage(MessageUtil.parse(
                                 "<dark_red>⚠</dark_red> <red>Plugin </red><white>" + pending.pluginName()
-                                        + "</white> <red>cannot be restarted in place (disabled or no soft-reload support) — restart the server.</red>"));
+                                        + "</white> <red>cannot be hot-reloaded — restart the server.</red>"));
                     }
                     ConsoleLogger.info("[PLUGIN] " + sender.getName() + " restarted "
-                            + pending.pluginName() + " (soft reload)");
+                            + pending.pluginName() + " (hot-reload)");
                 }
                 default -> {
                 }
