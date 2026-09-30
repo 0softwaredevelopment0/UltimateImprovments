@@ -1,23 +1,35 @@
 package com.ultimateimprovments.module;
 
+import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.util.ConsoleLogger;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Check module — checks the core type (Leaf recommended),
- * LuckPerms presence and API-version compatibility with the server.
+ * Check module — checks the server API-version compatibility (minimum required
+ * version, default {@code 26.3}), LuckPerms presence and prints version information.
  * <p>
- * The plugin version is now a universal identifier (format: major.minor.commits),
- * not tied to a Paper/Leaf version. Used by the update checker.
+ * The API-version check reads the ACTUAL runtime server version (Paper
+ * {@code getMinecraftVersion()} with fallbacks to {@code Bukkit.getVersion()} /
+ * {@code Bukkit.getBukkitVersion()}), NOT the api-version declared in plugin.yml —
+ * so editing the plugin's own api-version cannot bypass the check.
+ * <p>
+ * Config: {@code [version_check]} in UI-Core.toml ({@code enabled}, {@code min_api_version}).
  * <p>
  * Non-essential — if the check fails, the plugin still works.
  */
 public class VersionCheckModule extends PluginModule {
 
-    /** Expected server core name. */
-    private static final String EXPECTED_SERVER_NAME = "Leaf";
+    /** Minimum required server API version when the config value is missing or invalid. */
+    private static final String DEFAULT_MIN_API_VERSION = "26.3";
+
+    /** Border line of the warning banner (54 chars, same format as the other banners). */
+    private static final String BANNER_BORDER = "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
 
     public VersionCheckModule() {
         super("VersionCheck", "infrastructure/core", false);
@@ -49,14 +61,9 @@ public class VersionCheckModule extends PluginModule {
         ConsoleLogger.info("");
 
         // =========================
-        // CHECK THE CORE TYPE (Leaf or not)
+        // CHECK THE SERVER API VERSION (minimum required, default 26.3)
         // =========================
-        checkServerSoftware(plugin, serverName, serverVersion);
-
-        // =========================
-        // CHECK API-VERSION COMPATIBILITY WITH THE SERVER
-        // =========================
-        checkApiCompatibility(plugin, apiVersion, serverVersion, bukkitVersion);
+        checkApiVersion(serverName, serverVersion, bukkitVersion);
 
         // =========================
         // CHECK LUCKPERMS PRESENCE
@@ -70,110 +77,79 @@ public class VersionCheckModule extends PluginModule {
     }
 
     // =========================
-    // CORE CHECK
-    // =========================
-
-    private void checkServerSoftware(JavaPlugin plugin, String serverName, String serverVersion) {
-        if (EXPECTED_SERVER_NAME.equalsIgnoreCase(serverName)) {
-            ConsoleLogger.info("[VersionCheck] \u2713 Server software: " + serverName + " (recommended)");
-            return;
-        }
-
-        // Determine whether the server is Paper-compatible
-        boolean isPaper = false;
-        try {
-            Class.forName("io.papermc.paper.configuration.Configuration");
-            isPaper = true;
-        } catch (ClassNotFoundException e) {
-            try {
-                Class.forName("com.destroystokyo.paper.PaperConfig");
-                isPaper = true;
-            } catch (ClassNotFoundException ignored) {}
-        }
-
-        ConsoleLogger.warn("");
-        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        ConsoleLogger.warn("!  SERVER SOFTWARE NOT RECOMMENDED                  !");
-        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        ConsoleLogger.warn("!  Detected:        " + padRight(serverName + " (" + getServerShortVersion(serverVersion) + ")", 33) + "!");
-        ConsoleLogger.warn("!  Recommended:     " + padRight(EXPECTED_SERVER_NAME, 33) + "!");
-        ConsoleLogger.warn("!                                                   !");
-        ConsoleLogger.warn("!  This plugin is designed and tested for Leaf.      !");
-        if (isPaper) {
-            ConsoleLogger.warn("!  While Paper is compatible, some features may     !");
-            ConsoleLogger.warn("!  not work as expected.                             !");
-        } else {
-            ConsoleLogger.warn("!  Your server software may not be compatible!       !");
-            ConsoleLogger.warn("!  Features may be broken or missing entirely.       !");
-        }
-        ConsoleLogger.warn("!                                                   !");
-        ConsoleLogger.warn("!  Download Leaf: https://github.com/Winds-Studio/Leaf!");
-        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        ConsoleLogger.warn("");
-    }
-
-    // =========================
-    // API-VERSION COMPATIBILITY CHECK
+    // API-VERSION CHECK
     // =========================
 
     /**
-     * Compares the api-version from plugin.yml with the server version.
-     * api-version = "26.2" — Paper internal version (26.x = MC 1.21.x).
-     * <p>
-     * The plugin version (plugin_version) is now a universal identifier
-     * of the major.minor.commits format and is NOT used for compatibility checks.
+     * Compares the ACTUAL running server API version with the configured minimum
+     * ({@code version_check.min_api_version}, default {@code 26.3}).
+     * 26.3 and every newer version pass; anything older prints the
+     * UNSUPPORTED API VERSION banner.
      */
-    private void checkApiCompatibility(JavaPlugin plugin, String apiVersion,
-                                        String serverVersion, String bukkitVersion) {
-        if (apiVersion == null) return;
-
-        // Extract the server's Paper version from Bukkit.getVersion()
-        // "git-Paper-26.2 (MC: 1.21.5)" → "26.2"
-        String serverPaperVer = extractServerVersionNumber(serverVersion);
-
-        // Guard: if the server version does not parse as number.number — cannot compare, skip
-        if (!isNumericVersion(serverPaperVer)) {
-            ConsoleLogger.info("[VersionCheck] Cannot parse server version ("
-                    + serverPaperVer + ") — skipping API compatibility check.");
+    private void checkApiVersion(String serverName, String serverVersion, String bukkitVersion) {
+        // Config: [version_check] in UI-Core.toml
+        boolean enabled = true;
+        String minVersion = DEFAULT_MIN_API_VERSION;
+        ConfigurationSection cfg = Main.getInstance().getConfig().getConfigurationSection("version_check");
+        if (cfg != null) {
+            enabled = cfg.getBoolean("enabled", true);
+            String configured = cfg.getString("min_api_version", DEFAULT_MIN_API_VERSION);
+            if (configured != null && isNumericVersion(configured.trim())) {
+                minVersion = normalizeToMajorMinor(configured.trim());
+            }
+        }
+        if (!enabled) {
+            ConsoleLogger.info("[VersionCheck] API version check is disabled in config (version_check.enabled = false).");
             return;
         }
 
-        String serverMajorMinor = getMajorMinor(serverPaperVer);
-        String apiMajorMinor = getMajorMinor(apiVersion);
-
-        if (serverMajorMinor.equals(apiMajorMinor)) {
-            ConsoleLogger.info("[VersionCheck] \u2713 API version " + apiVersion
-                    + " matches server (" + serverPaperVer + ")");
+        // Resolve the ACTUAL runtime server version. The api-version from plugin.yml
+        // is deliberately NOT used here: it can be edited to bypass the check.
+        String serverApi = resolveServerApiVersion(serverVersion, bukkitVersion);
+        if (!isNumericVersion(serverApi)) {
+            ConsoleLogger.info("[VersionCheck] Cannot determine the server API version — skipping the check.");
             return;
         }
 
-        // Check BukkitVersion as a fallback
-        String bukkitMajorMinor = getMajorMinor(bukkitVersion.split("-")[0]);
-        if (bukkitMajorMinor.equals(apiMajorMinor)) {
-            ConsoleLogger.info("[VersionCheck] \u2713 API version " + apiVersion
-                    + " matches Bukkit version (" + bukkitVersion + ")");
+        if (compareVersions(serverApi, minVersion) >= 0) {
+            ConsoleLogger.info("[VersionCheck] \u2713 Server API version: " + serverApi
+                    + " (supported, requires " + minVersion + "+)");
             return;
         }
 
-        // API-version mismatch
-        String mcVersion = extractMcVersion(serverVersion);
-
+        // Unsupported API version
         ConsoleLogger.warn("");
-        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        ConsoleLogger.warn("!  API VERSION MISMATCH!                                        !");
-        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        ConsoleLogger.warn("!                                                                 !");
-        ConsoleLogger.warn("!  Plugin API:        " + padRight(apiVersion, 35) + "!");
-        ConsoleLogger.warn("!  Server version:    " + padRight(serverPaperVer, 35) + "!");
-        if (mcVersion != null) {
-            ConsoleLogger.warn("!  MC version:        " + padRight(mcVersion, 35) + "!");
-        }
-        ConsoleLogger.warn("!                                                                 !");
-        ConsoleLogger.warn("!  The plugin may not work correctly!                             !");
-        ConsoleLogger.warn("!  Update your server or plugin to matching versions.             !");
-        ConsoleLogger.warn("!                                                                 !");
-        ConsoleLogger.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        ConsoleLogger.warn(BANNER_BORDER);
+        ConsoleLogger.warn(bannerLine("UNSUPPORTED API VERSION"));
+        ConsoleLogger.warn(BANNER_BORDER);
+        ConsoleLogger.warn(bannerLine("Detected:        " + serverApi + " (" + serverName + ")"));
+        ConsoleLogger.warn(bannerLine("Required:        " + minVersion + " or newer"));
+        ConsoleLogger.warn(bannerLine(""));
+        ConsoleLogger.warn(bannerLine("This plugin requires API version " + minVersion + " or newer."));
+        ConsoleLogger.warn(bannerLine("Older versions are NOT supported: features may be"));
+        ConsoleLogger.warn(bannerLine("broken or missing entirely."));
+        ConsoleLogger.warn(bannerLine(""));
+        ConsoleLogger.warn(bannerLine("Please update your server software."));
+        ConsoleLogger.warn(BANNER_BORDER);
         ConsoleLogger.warn("");
+    }
+
+    /**
+     * Resolves the ACTUAL API version of the running server at runtime.
+     * Order: Paper {@code getMinecraftVersion()} → version from {@code Bukkit.getVersion()}
+     * → version from {@code Bukkit.getBukkitVersion()}. None of these sources depend
+     * on plugin.yml, so editing the declared api-version cannot bypass the check.
+     */
+    private String resolveServerApiVersion(String serverVersion, String bukkitVersion) {
+        try {
+            String normalized = normalizeToMajorMinor(Bukkit.getServer().getMinecraftVersion());
+            if (normalized != null) return normalized;
+        } catch (Throwable ignored) {
+            // Not a Paper-family server or older API — fall through
+        }
+        String normalized = normalizeToMajorMinor(extractServerVersionNumber(serverVersion));
+        if (normalized != null) return normalized;
+        return normalizeToMajorMinor(bukkitVersion == null ? null : bukkitVersion.split("-")[0]);
     }
 
     // =========================
@@ -219,32 +195,57 @@ public class VersionCheckModule extends PluginModule {
         return sb.toString();
     }
 
-    /** Extracts major.minor from a version (1.21.4 → 1.21, 26.2 → 26.2). */
-    private String getMajorMinor(String version) {
-        if (version == null) return "";
-        String[] parts = version.split("\\.");
-        if (parts.length >= 2) {
-            return parts[0] + "." + parts[1];
-        }
-        return parts[0];
+    /** Formats a banner content line: "!" + content padded to 52 + "!". */
+    private String bannerLine(String content) {
+        return "!" + padRight(content, 52) + "!";
     }
 
-    /** Checks whether a string looks like a numeric version (e.g. "26.2"). */
+    /** Checks whether a string looks like a numeric version (e.g. "26.3"). */
     private boolean isNumericVersion(String version) {
         if (version == null || version.isEmpty()) return false;
         // Must start with a digit and contain a dot
         return version.matches("\\d+\\.\\d+.*");
     }
 
-    /** Extracts the MC version from a Bukkit.getVersion() string like "git-Paper-26.2 (MC: 1.21.5)". */
-    private String extractMcVersion(String version) {
-        if (version == null) return null;
-        int start = version.indexOf("(MC:");
-        if (start == -1) return null;
-        int end = version.indexOf(")", start);
-        if (end == -1) return null;
-        String mcPart = version.substring(start + 4, end).trim();
-        return mcPart.isEmpty() ? null : mcPart;
+    /** Parses the leading numeric parts of a version ("26.2.build.+" → [26, 2]). */
+    private int[] versionParts(String version) {
+        if (version == null) return new int[0];
+        List<Integer> parts = new ArrayList<>();
+        for (String part : version.split("\\.")) {
+            if (!part.matches("\\d+")) break;
+            parts.add(Integer.parseInt(part));
+        }
+        int[] arr = new int[parts.size()];
+        for (int i = 0; i < arr.length; i++) arr[i] = parts.get(i);
+        return arr;
+    }
+
+    /**
+     * Reduces a version to its numeric major.minor prefix ("26.2.build.+" → "26.2").
+     * Returns null if there are fewer than two numeric parts.
+     */
+    private String normalizeToMajorMinor(String version) {
+        int[] parts = versionParts(version);
+        if (parts.length < 2) return null;
+        StringBuilder sb = new StringBuilder();
+        for (int part : parts) {
+            if (sb.length() > 0) sb.append('.');
+            sb.append(part);
+        }
+        return sb.toString();
+    }
+
+    /** Compares two numeric versions: negative if a &lt; b, zero if equal, positive if a &gt; b. */
+    private int compareVersions(String a, String b) {
+        int[] pa = versionParts(a);
+        int[] pb = versionParts(b);
+        int len = Math.max(pa.length, pb.length);
+        for (int i = 0; i < len; i++) {
+            int x = i < pa.length ? pa[i] : 0;
+            int y = i < pb.length ? pb[i] : 0;
+            if (x != y) return Integer.compare(x, y);
+        }
+        return 0;
     }
 
     /** Extracts the Paper/Leaf version from the full Bukkit.getVersion() string ("git-Paper-26.2.build.+..." → "26.2.build.+"). */
@@ -258,22 +259,5 @@ public class VersionCheckModule extends PluginModule {
             return firstPart.substring(lastDash + 1);
         }
         return firstPart;
-    }
-
-    /** Extracts a short version from the full Bukkit.getVersion() string. */
-    private String getServerShortVersion(String version) {
-        // "git-Leaf-123 (MC: 1.21.4)" → "MC: 1.21.4"
-        if (version.contains("(MC:") || version.contains("(MC: ")) {
-            int start = version.indexOf("(MC:");
-            int end = version.indexOf(")", start);
-            if (end > start) {
-                return version.substring(start + 1, end).trim();
-            }
-        }
-        // Fallback: just take the last 10 characters
-        if (version.length() > 20) {
-            return "..." + version.substring(version.length() - 15);
-        }
-        return version;
     }
 }
