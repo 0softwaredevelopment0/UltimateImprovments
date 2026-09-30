@@ -13,18 +13,20 @@ import java.util.List;
 /**
  * Executes the synchronous phase of {@code /ui reload} from the CORE plugin's classloader.
  * <p>
- * <b>Soft reload — plugins are NEVER disabled or re-enabled.</b> On Paper,
- * {@code disablePlugin} closes the plugin's JAR (classloader) and
- * {@code enablePlugin} does NOT reopen it: any class not yet loaded then throws
- * {@code IllegalStateException: zip file closed}, leaving the addon a zombie
- * (broken commands, LuckPerms tab-complete errors). The old disable→enable cycle
- * is what killed the whole family after every reload.
+ * <b>Full hot-reload with real lifecycle events:</b> every addon goes through a
+ * real {@code onDisable}, is unloaded from the PluginManager registries, is
+ * loaded FRESH from its JAR (brand-new classloader — mandatory, because on
+ * Paper {@code disablePlugin} closes the JAR and {@code enablePlugin} does not
+ * reopen it, so re-enabling the same instance leaves a
+ * {@code zip file closed} zombie) and gets a real {@code onEnable}. See
+ * {@link HotReloadEngine}.
  * <p>
- * Instead the cycle is: sweep every listener/task owned by ANY family plugin
- * handle → stop all modules (they share the singleton {@code ModuleManager} in
- * ui-core) → reload config → core startup → re-run every addon's startup logic
- * in place via {@link SoftReloadable#softReload()}. Plugin enable states and
- * classloaders stay untouched, so nothing can turn into a zombie.
+ * UI-Core itself is never unloaded (the engine lives in its classloader and
+ * every addon joins it) — its subsystems restart in place via
+ * {@link PluginShutdown}/{@link PluginStartup}.
+ * <p>
+ * Sequence: core shutdown → config reload → core startup → addons
+ * unload-all (reverse order) → addons load-all (load order).
  */
 public final class PluginReloadCoordinator {
 
@@ -46,20 +48,8 @@ public final class PluginReloadCoordinator {
         }
 
         try {
-            ConsoleLogger.info("[Reload] Soft shutdown (plugins stay enabled, classloaders stay open)...");
-
-            // 1) Global sweep: every listener and task owned by ANY family plugin
-            //    handle, core included. Some addons register listeners under the
-            //    UI-Core handle (e.g. PunishJoinListener), so sweeping only the
-            //    owning addon would leave stale registrations behind.
-            for (Plugin p : family) {
-                org.bukkit.event.HandlerList.unregisterAll(p);
-                Bukkit.getScheduler().cancelTasks(p);
-            }
-
-            // 2) Core subsystems + ALL family modules. Feature modules of every
-            //    addon register into the singleton ModuleManager in ui-core, so
-            //    this one shutdown covers the whole family.
+            // 1) Core subsystems restart in place (never unloaded).
+            ConsoleLogger.info("[Reload] Restarting core subsystems (UI-Core stays loaded)...");
             new PluginShutdown(plugin).shutdownPlugin();
 
             ConsoleLogger.info("[Reload] Reloading config...");
@@ -68,40 +58,26 @@ public final class PluginReloadCoordinator {
             // the CompositeConfig routing (configs/UI-<Addon>.toml files).
             plugin.reloadConfig();
 
-            ConsoleLogger.info("[Reload] Starting up (in place)...");
             PluginStartup.clearJarFileCaches();
             new PluginStartup(plugin).startupPlugin();
 
-            // 3) Re-run every enabled addon's startup logic in place. Plugins that
-            //    are (intentionally) disabled or predate the SoftReloadable
-            //    interface are skipped, not force-enabled.
-            int reloaded = 0;
-            int skipped = 0;
-            List<String> failed = new ArrayList<>();
-            for (Plugin p : family) {
-                if (!p.isEnabled() || !(p instanceof SoftReloadable s)) {
-                    skipped++;
-                    continue;
-                }
-                try {
-                    s.softReload();
-                    reloaded++;
-                } catch (Exception e) {
-                    failed.add(p.getName());
-                    ConsoleLogger.error("[Reload] " + p.getName() + " soft startup failed: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            }
+            // 2) Addons: REAL hot-reload (onDisable → unload → fresh load → onEnable).
+            ConsoleLogger.info("[Reload] Hot-reloading " + family.size()
+                    + " addon(s) with real onDisable/onEnable...");
+            HotReloadEngine.unloadAll(family);
+            List<Plugin> fresh = HotReloadEngine.loadAllInOrder(family);
 
             long time = System.currentTimeMillis() - startMillis;
+            int failed = family.size() - fresh.size();
             sender.sendMessage(MessageUtil.parse("<dark_green>✔ <green>Success: <gray>Reload complete."));
             sender.sendMessage(MessageUtil.parse(
-                    "<dark_green>✔ <green>Success: <gray>Addons reloaded: <yellow>" + reloaded
-                            + "</yellow><gray>, skipped: " + skipped
-                            + (failed.isEmpty() ? "" : ", </gray><red>failed: " + String.join(", ", failed) + "</red>")
+                    "<dark_green>✔ <green>Success: <gray>Addons hot-reloaded: <yellow>" + fresh.size()
+                            + "/" + family.size()
+                            + (failed > 0 ? "</yellow><gray>, failed: </gray><red>" + failed
+                                    + " (see console)</red>" : "")
                             + ", <yellow>" + time + "ms"));
-            ConsoleLogger.info("[ULTIMATEIMPROVMENTS] Reload complete in " + time + "ms"
-                    + " (soft: " + reloaded + " addon(s) restarted in place)");
+            ConsoleLogger.info("[ULTIMATEIMPROVMENTS] Reload complete in " + time + "ms ("
+                    + fresh.size() + "/" + family.size() + " addons hot-reloaded)");
         } catch (Exception e) {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error: <gray>Reload failed! Check console."));
             ConsoleLogger.error("[ULTIMATEIMPROVMENTS] Reload failed: " + e.getMessage());

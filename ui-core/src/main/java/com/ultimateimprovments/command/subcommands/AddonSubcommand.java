@@ -5,6 +5,7 @@ import com.ultimateimprovments.addon.AddonRegistry;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.command.SubCommand;
 import com.ultimateimprovments.config.MessagesManager;
+import com.ultimateimprovments.core.HotReloadEngine;
 import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.util.MessageUtil;
 import net.kyori.adventure.text.Component;
@@ -355,8 +356,16 @@ public class AddonSubcommand implements SubCommand {
         try {
             switch (p.action()) {
                 case "enable" -> {
-                    Bukkit.getPluginManager().enablePlugin(plugin);
-                    reportPostEnable(sender, plugin, entry, "enabled");
+                    if (plugin.isEnabled()) {
+                        sender.sendMessage(msg("addon.action_done",
+                                "<yellow>⚠</yellow> <white>Addon </white><yellow>%addon%</yellow> <white>is already enabled.</white>",
+                                "%addon%", plugin.getName()));
+                    } else {
+                        // Fresh load from disk: re-enabling the old disabled instance
+                        // would run onEnable against its closed JAR ("zip file closed").
+                        HotReloadEngine.hotReload(plugin, "addon enable");
+                        reportPostEnable(sender, Bukkit.getPluginManager().getPlugin(p.addon()), entry, "enabled");
+                    }
                 }
                 case "disable" -> {
                     Bukkit.getPluginManager().disablePlugin(plugin);
@@ -366,19 +375,13 @@ public class AddonSubcommand implements SubCommand {
                             "%addon%", plugin.getName()));
                 }
                 case "restart" -> {
-                    // NEVER disable+enable: on Paper disabling closes the JAR and
-                    // re-enabling does not reopen it ("zip file closed" zombie).
-                    // Restart = in-place soft reload of the addon's systems.
-                    if (plugin.isEnabled() && plugin instanceof com.ultimateimprovments.core.SoftReloadable s) {
-                        org.bukkit.event.HandlerList.unregisterAll(plugin);
-                        Bukkit.getScheduler().cancelTasks(plugin);
-                        s.softReload();
-                        reportPostEnable(sender, plugin, entry, "restarted");
-                    } else {
-                        sender.sendMessage(msg("addon.action_failed",
-                                "<red>❌ Cannot restart %addon% in place (disabled or no soft-reload support) — restart the server.</red>",
-                                "%addon%", plugin.getName()));
-                    }
+                    // REAL hot-reload: onDisable → unload → fresh load from the JAR
+                    // (new classloader) → onEnable. Plain disable+enable is never
+                    // used: on Paper disabling closes the JAR and re-enabling does
+                    // not reopen it ("zip file closed" zombie).
+                    HotReloadEngine.hotReload(plugin, "addon restart");
+                    reportPostEnable(sender, Bukkit.getPluginManager().getPlugin(p.addon()),
+                            entry, "restarted");
                 }
                 default -> {
                 }
