@@ -12,7 +12,7 @@ import java.util.Set;
  * Modules are declared in {@link DisplayModules}. Vanish state is read through
  * {@code CoreHooks.isVanished}, so this addon does not depend on the player addon.
  */
-public class UIDisplay extends JavaPlugin {
+public class UIDisplay extends JavaPlugin implements SoftReloadable {
 
     private static final Set<String> OWNED_MODULES = Set.of("Tab", "Scoreboard", "BossBar");
 
@@ -22,6 +22,36 @@ public class UIDisplay extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Display] Disabling...");
+        HandlerList.unregisterAll(this);
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) {
+            mm.shutdownAll();
+        }
+        instance = null;
+        ConsoleLogger.success("[UI-Display] Disabled!");
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + the same startup
+     * path as onEnable. Never disables the plugin — on Paper that would close
+     * the JAR and re-enabling does not reopen it ("zip file closed" zombie).
+     * Re-registering this addon's modules REPLACES the old instances in the
+     * shared ModuleManager (see ModuleManager.register).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Display] Soft reload (in place)...");
+        HandlerList.unregisterAll(this);
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         ConsoleLogger.info("");
@@ -41,18 +71,6 @@ public class UIDisplay extends JavaPlugin {
         reportModuleStats(mm);
 
         ConsoleLogger.success("[UI-Display] Tab / scoreboard / boss bar enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Display] Disabling...");
-        HandlerList.unregisterAll(this);
-        ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) {
-            mm.shutdownAll();
-        }
-        instance = null;
-        ConsoleLogger.success("[UI-Display] Disabled!");
     }
 
     /** Feeds only this addon's module counters/failures into AddonRegistry. */

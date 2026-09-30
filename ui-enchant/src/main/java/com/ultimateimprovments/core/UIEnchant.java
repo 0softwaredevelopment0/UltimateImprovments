@@ -18,7 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  * {@link EnchantModules}. The datapack content itself lives in UI-Datapack
  * (soft-depend); its {@code DatapackGate} is consulted while the modules register.
  */
-public class UIEnchant extends JavaPlugin {
+public class UIEnchant extends JavaPlugin implements SoftReloadable {
 
     /** Module path prefix owned by this addon. */
     private static final String PATH_PREFIX = "enchantment/";
@@ -29,6 +29,36 @@ public class UIEnchant extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Enchant] Disabling...");
+        HandlerList.unregisterAll(this);
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) {
+            mm.shutdownAll();
+        }
+        instance = null;
+        ConsoleLogger.success("[UI-Enchant] Disabled!");
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + the same startup
+     * path as onEnable. Never disables the plugin — on Paper that would close
+     * the JAR and re-enabling does not reopen it ("zip file closed" zombie).
+     * Re-registering this addon's modules REPLACES the old instances in the
+     * shared ModuleManager (see ModuleManager.register).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Enchant] Soft reload (in place)...");
+        HandlerList.unregisterAll(this);
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         ConsoleLogger.info("");
@@ -50,18 +80,6 @@ public class UIEnchant extends JavaPlugin {
         reportModuleStats(mm);
 
         ConsoleLogger.success("[UI-Enchant] All enchantments enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Enchant] Disabling...");
-        HandlerList.unregisterAll(this);
-        ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) {
-            mm.shutdownAll();
-        }
-        instance = null;
-        ConsoleLogger.success("[UI-Enchant] Disabled!");
     }
 
     /**

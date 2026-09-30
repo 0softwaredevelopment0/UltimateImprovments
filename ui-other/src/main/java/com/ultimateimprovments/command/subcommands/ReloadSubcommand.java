@@ -26,18 +26,16 @@ import java.util.Locale;
  * </pre>
  * <p>
  * <b>all:</b> Phase 1 (async, here) saves data; Phase 2 (sync,
- * {@link PluginReloadCoordinator} in ui-core) runs the full shutdown →
- * reloadConfig → startup cycle. The sync phase must NOT run from an addon's
- * classloader: the cycle disables every other UI-* plugin (including the addon
- * whose subcommand started the reload), which closes its JAR and kills any
- * not-yet-loaded class with {@code zip file closed}. UI-Core is never disabled,
- * so the coordinator runs under its handle.
+ * {@link PluginReloadCoordinator} in ui-core) runs the soft cycle: sweep all
+ * family listeners/tasks → stop modules → reloadConfig → core startup →
+ * re-run every addon's startup in place ({@code SoftReloadable}). Plugins are
+ * NEVER disabled: on Paper {@code disablePlugin} closes the JAR and
+ * {@code enablePlugin} does not reopen it ("zip file closed" zombies).
  * <p>
- * <b>&lt;addon&gt;:</b> the named UI-* plugin is disabled and re-enabled on the main
- * thread under the UI-Core handle ({@code PluginManager.enablePlugin} fires its
- * own onDisable/onEnable). A targeted reload of UI-Core itself re-runs the core
- * startup path (infrastructure + modules) without touching the other family
- * plugins.
+ * <b>&lt;addon&gt;:</b> only that addon is swept (listeners/tasks), configs are
+ * refreshed and its startup logic re-runs in place under the UI-Core handle.
+ * A targeted reload of UI-Core itself re-runs the core startup path
+ * (infrastructure + modules) without touching the other family plugins.
  */
 public final class ReloadSubcommand {
 
@@ -164,11 +162,25 @@ public final class ReloadSubcommand {
             public void run() {
                 long start = System.currentTimeMillis();
                 try {
-                    ConsoleLogger.info("[Reload] [" + name + "] Disabling...");
-                    Bukkit.getPluginManager().disablePlugin(targetPlugin);
+                    if (!(targetPlugin instanceof com.ultimateimprovments.core.SoftReloadable target)) {
+                        sender.sendMessage(MessageUtil.parse(
+                                "<red>❌ <gray>Plugin </gray><yellow>" + name
+                                        + "</yellow><gray> does not support in-place reload. Use </gray>"
+                                        + "<white>/ui reload all</white><gray> or restart the server.</gray>"));
+                        return;
+                    }
 
-                    ConsoleLogger.info("[Reload] [" + name + "] Enabling...");
-                    Bukkit.getPluginManager().enablePlugin(targetPlugin);
+                    ConsoleLogger.info("[Reload] [" + name + "] Soft reload (in place, no disable)...");
+                    // Sweep only this addon's listeners/tasks, refresh configs and
+                    // re-run its startup logic. NEVER disablePlugin/enablePlugin:
+                    // on Paper disabling closes the JAR and re-enabling does not
+                    // reopen it ("zip file closed" zombie).
+                    org.bukkit.event.HandlerList.unregisterAll(targetPlugin);
+                    Bukkit.getScheduler().cancelTasks(targetPlugin);
+                    plugin.reloadConfig();
+                    var mm = com.ultimateimprovments.module.ModuleManager.getInstance();
+                    if (mm != null) mm.reloadAllConfigs();
+                    target.softReload();
 
                     long time = System.currentTimeMillis() - start;
                     sender.sendMessage(MessageUtil.parse(
@@ -180,14 +192,6 @@ public final class ReloadSubcommand {
                             "<dark_red>❌ <red>Error: <gray>Reload of " + name + " failed! Check console."));
                     ConsoleLogger.error("[ULTIMATEIMPROVMENTS] [" + name + "] Reload failed: " + e.getMessage());
                     e.printStackTrace();
-                    if (!targetPlugin.isEnabled()) {
-                        try {
-                            Bukkit.getPluginManager().enablePlugin(targetPlugin);
-                            ConsoleLogger.warn("[Reload] Recovery: re-enabled " + name + " after the failure.");
-                        } catch (Exception reEx) {
-                            ConsoleLogger.error("[Reload] Could not re-enable " + name + ": " + reEx.getMessage());
-                        }
-                    }
                 } finally {
                     reloadInProgress = false;
                 }

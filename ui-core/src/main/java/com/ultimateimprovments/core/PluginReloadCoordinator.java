@@ -13,18 +13,18 @@ import java.util.List;
 /**
  * Executes the synchronous phase of {@code /ui reload} from the CORE plugin's classloader.
  * <p>
- * <b>Why this lives in ui-core:</b> the reload cycle disables every other {@code UI-*}
- * plugin — including the addon whose subcommand started the reload. Disabling a plugin
- * closes its JAR, so ANY class not yet loaded from that JAR throws
- * {@code IllegalStateException: zip file closed} and aborts the reload midway, leaving
- * the whole family disabled. UI-Core itself is never disabled in this cycle
- * ({@code p != plugin}), so running the whole phase here guarantees the executing
- * classloader stays open.
+ * <b>Soft reload — plugins are NEVER disabled or re-enabled.</b> On Paper,
+ * {@code disablePlugin} closes the plugin's JAR (classloader) and
+ * {@code enablePlugin} does NOT reopen it: any class not yet loaded then throws
+ * {@code IllegalStateException: zip file closed}, leaving the addon a zombie
+ * (broken commands, LuckPerms tab-complete errors). The old disable→enable cycle
+ * is what killed the whole family after every reload.
  * <p>
- * Sequence: disable family (reverse load order) → shutdown core subsystems →
- * reload config → reset JarFile caches (post-updatejar safety) → startup core →
- * enable family (load order). On any failure the family plugins are re-enabled
- * so the server is not left half-dead.
+ * Instead the cycle is: sweep every listener/task owned by ANY family plugin
+ * handle → stop all modules (they share the singleton {@code ModuleManager} in
+ * ui-core) → reload config → core startup → re-run every addon's startup logic
+ * in place via {@link SoftReloadable#softReload()}. Plugin enable states and
+ * classloaders stay untouched, so nothing can turn into a zombie.
  */
 public final class PluginReloadCoordinator {
 
@@ -32,29 +32,34 @@ public final class PluginReloadCoordinator {
 
     /**
      * Runs the sync phase. Must be invoked on the main thread from a task scheduled
-     * under the CORE plugin handle (so disabling family plugins cannot cancel it).
+     * under the CORE plugin handle.
      *
-     * @param plugin     the UI-Core plugin instance (never disabled in this cycle)
+     * @param plugin     the UI-Core plugin instance
      * @param sender     receiver of the result messages
      * @param startMillis timestamp when the whole reload started (for the timing report)
      */
     public static void runSyncPhase(Main plugin, CommandSender sender, long startMillis) {
-        // Family snapshot in dependency (load) order.
+        // Family snapshot (dependency load order), core excluded.
         List<Plugin> family = new ArrayList<>();
         for (Plugin p : Bukkit.getPluginManager().getPlugins()) {
             if (p != plugin && p.getName().startsWith("UI-")) family.add(p);
         }
 
         try {
-            ConsoleLogger.info("[Reload] Shutting down plugins (sync)...");
-            // The whole UI-* family must go through a real disable/enable cycle:
-            // feature listeners and tasks are registered under different plugin
-            // handles (UI-Core, UI-Other, UI-MBS, ...), so touching UI-Core alone
-            // leaves stale registrations and dead modules after the reload.
-            // Disable dependents first (reverse load order).
-            for (int i = family.size() - 1; i >= 0; i--) {
-                Bukkit.getPluginManager().disablePlugin(family.get(i));
+            ConsoleLogger.info("[Reload] Soft shutdown (plugins stay enabled, classloaders stay open)...");
+
+            // 1) Global sweep: every listener and task owned by ANY family plugin
+            //    handle, core included. Some addons register listeners under the
+            //    UI-Core handle (e.g. PunishJoinListener), so sweeping only the
+            //    owning addon would leave stale registrations behind.
+            for (Plugin p : family) {
+                org.bukkit.event.HandlerList.unregisterAll(p);
+                Bukkit.getScheduler().cancelTasks(p);
             }
+
+            // 2) Core subsystems + ALL family modules. Feature modules of every
+            //    addon register into the singleton ModuleManager in ui-core, so
+            //    this one shutdown covers the whole family.
             new PluginShutdown(plugin).shutdownPlugin();
 
             ConsoleLogger.info("[Reload] Reloading config...");
@@ -63,45 +68,44 @@ public final class PluginReloadCoordinator {
             // the CompositeConfig routing (configs/UI-<Addon>.toml files).
             plugin.reloadConfig();
 
-            ConsoleLogger.info("[Reload] Starting up plugins (sync)...");
-            // Clear the JAR file caches of the disabled UI-* classloaders.
-            // After /ui updatejar or /ui swapjar the on-disk JAR was replaced;
-            // if the old (cached) jar handle is reopened the JVM can throw a fatal
-            // ZipError from the stale central directory. Dropping the caches makes
-            // the JVM re-read the fresh JAR from disk.
+            ConsoleLogger.info("[Reload] Starting up (in place)...");
             PluginStartup.clearJarFileCaches();
             new PluginStartup(plugin).startupPlugin();
 
-            // Re-enable in load order (dependencies before dependents).
+            // 3) Re-run every enabled addon's startup logic in place. Plugins that
+            //    are (intentionally) disabled or predate the SoftReloadable
+            //    interface are skipped, not force-enabled.
+            int reloaded = 0;
+            int skipped = 0;
+            List<String> failed = new ArrayList<>();
             for (Plugin p : family) {
-                Bukkit.getPluginManager().enablePlugin(p);
+                if (!p.isEnabled() || !(p instanceof SoftReloadable s)) {
+                    skipped++;
+                    continue;
+                }
+                try {
+                    s.softReload();
+                    reloaded++;
+                } catch (Exception e) {
+                    failed.add(p.getName());
+                    ConsoleLogger.error("[Reload] " + p.getName() + " soft startup failed: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
 
             long time = System.currentTimeMillis() - startMillis;
             sender.sendMessage(MessageUtil.parse("<dark_green>✔ <green>Success: <gray>Reload complete."));
-            sender.sendMessage(MessageUtil.parse("<dark_green>✔ <green>Success: <gray>Reload time: <yellow>" + time + "ms"));
-            ConsoleLogger.info("[ULTIMATEIMPROVMENTS] Reload complete in " + time + "ms");
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_green>✔ <green>Success: <gray>Addons reloaded: <yellow>" + reloaded
+                            + "</yellow><gray>, skipped: " + skipped
+                            + (failed.isEmpty() ? "" : ", </gray><red>failed: " + String.join(", ", failed) + "</red>")
+                            + ", <yellow>" + time + "ms"));
+            ConsoleLogger.info("[ULTIMATEIMPROVMENTS] Reload complete in " + time + "ms"
+                    + " (soft: " + reloaded + " addon(s) restarted in place)");
         } catch (Exception e) {
             sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Error: <gray>Reload failed! Check console."));
             ConsoleLogger.error("[ULTIMATEIMPROVMENTS] Reload failed: " + e.getMessage());
             e.printStackTrace();
-
-            // Recovery: never leave the family half-disabled — re-enable everything
-            // that is still off so listeners/tasks come back online.
-            int revived = 0;
-            for (Plugin p : family) {
-                if (!p.isEnabled()) {
-                    try {
-                        Bukkit.getPluginManager().enablePlugin(p);
-                        revived++;
-                    } catch (Exception reEx) {
-                        ConsoleLogger.error("[Reload] Could not re-enable " + p.getName() + ": " + reEx.getMessage());
-                    }
-                }
-            }
-            if (revived > 0) {
-                ConsoleLogger.warn("[Reload] Recovery: re-enabled " + revived + " plugin(s) after the failed reload.");
-            }
             sender.sendMessage(MessageUtil.parse(
                     "<yellow>⚠ <gray>Some systems may be in a partial state — a server restart is recommended."));
         }

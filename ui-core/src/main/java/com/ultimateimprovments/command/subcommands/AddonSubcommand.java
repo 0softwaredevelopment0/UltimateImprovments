@@ -366,11 +366,19 @@ public class AddonSubcommand implements SubCommand {
                             "%addon%", plugin.getName()));
                 }
                 case "restart" -> {
-                    Bukkit.getPluginManager().disablePlugin(plugin);
-                    Plugin again = Bukkit.getPluginManager().getPlugin(p.addon());
-                    if (again != null) Bukkit.getPluginManager().enablePlugin(again);
-                    reportPostEnable(sender, Bukkit.getPluginManager().getPlugin(p.addon()),
-                            entry, "restarted");
+                    // NEVER disable+enable: on Paper disabling closes the JAR and
+                    // re-enabling does not reopen it ("zip file closed" zombie).
+                    // Restart = in-place soft reload of the addon's systems.
+                    if (plugin.isEnabled() && plugin instanceof com.ultimateimprovments.core.SoftReloadable s) {
+                        org.bukkit.event.HandlerList.unregisterAll(plugin);
+                        Bukkit.getScheduler().cancelTasks(plugin);
+                        s.softReload();
+                        reportPostEnable(sender, plugin, entry, "restarted");
+                    } else {
+                        sender.sendMessage(msg("addon.action_failed",
+                                "<red>❌ Cannot restart %addon% in place (disabled or no soft-reload support) — restart the server.</red>",
+                                "%addon%", plugin.getName()));
+                    }
                 }
                 default -> {
                 }

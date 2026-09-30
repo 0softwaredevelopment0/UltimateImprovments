@@ -49,9 +49,16 @@ public class ModuleManager {
     // =========================
 
     public void register(PluginModule module) {
-        if (moduleMap.containsKey(module.getName())) {
-            ConsoleLogger.warn("[ModuleManager] Module '" + module.getName() + "' already registered!");
-            return;
+        // In-place reload support: a module whose name is already registered is
+        // disabled and REPLACED by the new instance instead of being skipped.
+        // On a normal startup every module is registered exactly once, so this
+        // only ever fires during a soft /ui reload, when an addon re-runs its
+        // module registration against the still-alive ModuleManager.
+        PluginModule existing = moduleMap.get(module.getName());
+        if (existing != null) {
+            if (existing.isEnabled()) existing.disable(plugin);
+            modules.remove(existing);
+            ConsoleLogger.info("[ModuleManager] Module '" + module.getName() + "' replaced (in-place reload).");
         }
 
         // Datapack module gating: if a datapack part is disabled, skip the code

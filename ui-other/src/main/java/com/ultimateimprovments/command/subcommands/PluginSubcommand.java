@@ -265,22 +265,23 @@ public final class PluginSubcommand {
                     ConsoleLogger.info("[PLUGIN] " + sender.getName() + " disabled " + pending.pluginName());
                 }
                 case "restart" -> {
-                    Bukkit.getPluginManager().disablePlugin(target);
-                    Plugin again = Bukkit.getPluginManager().getPlugin(pending.pluginName());
-                    if (again != null) Bukkit.getPluginManager().enablePlugin(again);
-                    Plugin now = Bukkit.getPluginManager().getPlugin(pending.pluginName());
-                    boolean success = now != null && now.isEnabled();
-                    if (success) {
+                    // NEVER disable+enable: on Paper disabling closes the JAR and
+                    // re-enabling does not reopen it ("zip file closed" zombie).
+                    // Restart = in-place soft reload of the plugin's systems.
+                    if (target.isEnabled() && target instanceof com.ultimateimprovments.core.SoftReloadable s) {
+                        org.bukkit.event.HandlerList.unregisterAll(target);
+                        Bukkit.getScheduler().cancelTasks(target);
+                        s.softReload();
                         sender.sendMessage(MessageUtil.parse(
                                 "<green>✔</green> <white>Plugin </white><yellow>" + pending.pluginName()
-                                        + "</yellow> <white>restarted.</white>"));
+                                        + "</yellow> <white>restarted (soft reload).</white>"));
                     } else {
                         sender.sendMessage(MessageUtil.parse(
                                 "<dark_red>⚠</dark_red> <red>Plugin </red><white>" + pending.pluginName()
-                                        + "</white> <red>was disabled but could not be re-enabled! Check console.</red>"));
+                                        + "</white> <red>cannot be restarted in place (disabled or no soft-reload support) — restart the server.</red>"));
                     }
                     ConsoleLogger.info("[PLUGIN] " + sender.getName() + " restarted "
-                            + pending.pluginName() + " (success=" + success + ")");
+                            + pending.pluginName() + " (soft reload)");
                 }
                 default -> {
                 }

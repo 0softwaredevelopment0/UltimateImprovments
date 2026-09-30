@@ -6,7 +6,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class UIChat extends JavaPlugin {
+public class UIChat extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UIChat instance;
     private ChatFilterManager chatFilterManager;
@@ -15,6 +15,29 @@ public class UIChat extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Chat] Disabling...");
+        runShutdown();
+        ConsoleLogger.success("[UI-Chat] Disabled!");
+    }
+
+    /**
+     * In-place reload (soft /ui reload): full private shutdown + startup path.
+     * Never disables the plugin — on Paper that would close the JAR and
+     * re-enabling does not reopen it ("zip file closed" zombie).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Chat] Soft reload (in place)...");
+        runShutdown();
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         // Single config lives in UI-Core (Main.getInstance().getConfig());
@@ -35,9 +58,8 @@ public class UIChat extends JavaPlugin {
         ChatManager.init();
 
         // ChatFilter — unregister the previous instance first: onEnable can run
-        // again after /ui reload while the old listener is still registered
-        // (UIChat.onDisable does not unregister it), which duplicated every
-        // filter check and sent the warning twice.
+        // again after /ui reload while the old listener is still registered,
+        // which duplicated every filter check and sent the warning twice.
         if (chatFilterManager != null) {
             HandlerList.unregisterAll(chatFilterManager);
         }
@@ -56,10 +78,7 @@ public class UIChat extends JavaPlugin {
         ConsoleLogger.success("[UI-Chat] Enabled!");
     }
 
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Chat] Disabling...");
-
+    private void runShutdown() {
         // Unregister all listeners
         HandlerList.unregisterAll(this);
 
@@ -72,7 +91,5 @@ public class UIChat extends JavaPlugin {
         OjmManager.shutdown();
 
         chatFilterManager = null;
-
-        ConsoleLogger.success("[UI-Chat] Disabled!");
     }
 }

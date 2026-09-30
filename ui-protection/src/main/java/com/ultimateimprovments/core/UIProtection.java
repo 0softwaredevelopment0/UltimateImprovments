@@ -17,7 +17,7 @@ import java.util.Set;
  * protection listener, plus the {@code /ui protection} command. Modules are
  * declared in {@link ProtectionModules}.
  */
-public class UIProtection extends JavaPlugin {
+public class UIProtection extends JavaPlugin implements SoftReloadable {
 
     /** Modules owned by this addon (path "infrastructure/listeners" is generic). */
     private static final Set<String> OWNED_MODULES = Set.of("Protection", "VoidProtection");
@@ -28,6 +28,36 @@ public class UIProtection extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Protection] Disabling...");
+        HandlerList.unregisterAll(this);
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) {
+            mm.shutdownAll();
+        }
+        instance = null;
+        ConsoleLogger.success("[UI-Protection] Disabled!");
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + the same startup
+     * path as onEnable. Never disables the plugin — on Paper that would close
+     * the JAR and re-enabling does not reopen it ("zip file closed" zombie).
+     * Re-registering this addon's modules REPLACES the old instances in the
+     * shared ModuleManager (see ModuleManager.register).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Protection] Soft reload (in place)...");
+        HandlerList.unregisterAll(this);
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         ConsoleLogger.info("");
@@ -49,18 +79,6 @@ public class UIProtection extends JavaPlugin {
         reportModuleStats(mm);
 
         ConsoleLogger.success("[UI-Protection] Protection enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Protection] Disabling...");
-        HandlerList.unregisterAll(this);
-        ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) {
-            mm.shutdownAll();
-        }
-        instance = null;
-        ConsoleLogger.success("[UI-Protection] Disabled!");
     }
 
     /** Registers {@code /ui protection} (static utility subcommand). */
