@@ -18,7 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  * Energy-dependent behaviour is exposed through the {@code MbsEnergy} API bridge,
  * which UI-Energy registers at startup — UI-MBS never depends on UI-Energy.
  */
-public class UIMBS extends JavaPlugin {
+public class UIMBS extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UIMBS instance;
 
@@ -28,6 +28,31 @@ public class UIMBS extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-MBS] Disabling...");
+        runShutdown();
+        ConsoleLogger.success("[UI-MBS] Disabled!");
+        instance = null;
+    }
+
+    /**
+     * In-place reload (soft /ui reload): saves structure data, then re-runs
+     * the startup path (templates + DB reload). Never disables the plugin —
+     * on Paper that would close the JAR and re-enabling does not reopen it
+     * ("zip file closed" zombie).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-MBS] Soft reload (in place)...");
+        runShutdown();
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         Main main = Main.getInstance();
@@ -54,12 +79,8 @@ public class UIMBS extends JavaPlugin {
         ConsoleLogger.success("[UI-MBS] Multi-block structures enabled!");
     }
 
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-MBS] Disabling...");
+    private void runShutdown() {
         StructureMarker.saveAll();
         StructureChunkTracker.save();
-        instance = null;
-        ConsoleLogger.success("[UI-MBS] Disabled!");
     }
 }

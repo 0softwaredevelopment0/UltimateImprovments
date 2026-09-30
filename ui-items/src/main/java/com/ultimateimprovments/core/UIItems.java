@@ -17,7 +17,7 @@ import java.util.Set;
  * accelerator, scanner items, omniscanner + admin menu).
  * Modules are declared in {@link ItemsModules}.
  */
-public class UIItems extends JavaPlugin {
+public class UIItems extends JavaPlugin implements SoftReloadable {
 
     private static final Set<String> OWNED_MODULES = Set.of(
             "Crafting", "EntityLocator", "Waypoint", "Antimatter", "ExpBottleUpgrade",
@@ -30,6 +30,36 @@ public class UIItems extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Items] Disabling...");
+        HandlerList.unregisterAll(this);
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) {
+            mm.shutdownAll();
+        }
+        instance = null;
+        ConsoleLogger.success("[UI-Items] Disabled!");
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + the same startup
+     * path as onEnable. Never disables the plugin — on Paper that would close
+     * the JAR and re-enabling does not reopen it ("zip file closed" zombie).
+     * Re-registering this addon's modules REPLACES the old instances in the
+     * shared ModuleManager (see ModuleManager.register).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Items] Soft reload (in place)...");
+        HandlerList.unregisterAll(this);
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         ConsoleLogger.info("");
@@ -51,18 +81,6 @@ public class UIItems extends JavaPlugin {
         reportModuleStats(mm);
 
         ConsoleLogger.success("[UI-Items] Custom items enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Items] Disabling...");
-        HandlerList.unregisterAll(this);
-        ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) {
-            mm.shutdownAll();
-        }
-        instance = null;
-        ConsoleLogger.success("[UI-Items] Disabled!");
     }
 
     /** Registers the addon's {@code /ui} subcommands. */

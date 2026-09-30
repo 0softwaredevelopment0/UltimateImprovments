@@ -15,7 +15,7 @@ import java.util.Set;
  * UIAdmin — the admin addon: economy, op management and the updater, plus their
  * {@code /ui} commands. Modules are declared in {@link AdminModules}.
  */
-public class UIAdmin extends JavaPlugin {
+public class UIAdmin extends JavaPlugin implements SoftReloadable {
 
     private static final Set<String> OWNED_MODULES = Set.of("Economy", "UpdateChecker");
 
@@ -25,6 +25,38 @@ public class UIAdmin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Admin] Disabling...");
+        HandlerList.unregisterAll(this);
+        com.ultimateimprovments.op.OpManager.shutdown();
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) {
+            mm.shutdownAll();
+        }
+        instance = null;
+        ConsoleLogger.success("[UI-Admin] Disabled!");
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + the same startup
+     * path as onEnable. Never disables the plugin — on Paper that would close
+     * the JAR and re-enabling does not reopen it ("zip file closed" zombie).
+     * Re-registering this addon's modules REPLACES the old instances in the
+     * shared ModuleManager (see ModuleManager.register).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Admin] Soft reload (in place)...");
+        HandlerList.unregisterAll(this);
+        com.ultimateimprovments.op.OpManager.shutdown();
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         ConsoleLogger.info("");
@@ -47,19 +79,6 @@ public class UIAdmin extends JavaPlugin {
         reportModuleStats(mm);
 
         ConsoleLogger.success("[UI-Admin] Economy / OP / updater enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Admin] Disabling...");
-        HandlerList.unregisterAll(this);
-        com.ultimateimprovments.op.OpManager.shutdown();
-        ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) {
-            mm.shutdownAll();
-        }
-        instance = null;
-        ConsoleLogger.success("[UI-Admin] Disabled!");
     }
 
     /** Registers the addon's {@code /ui} subcommands (static utilities). */

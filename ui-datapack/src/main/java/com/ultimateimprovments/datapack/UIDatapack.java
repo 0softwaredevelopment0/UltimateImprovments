@@ -20,7 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  * </ul>
  * Loaded right after UI-Core so the gate is active before UI-Other registers its modules.
  */
-public class UIDatapack extends JavaPlugin {
+public class UIDatapack extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UIDatapack instance;
 
@@ -30,6 +30,35 @@ public class UIDatapack extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Datapack] Disabling...");
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) {
+            mm.clearDatapackGate();
+            mm.shutdownAll();
+        }
+        ConsoleLogger.success("[UI-Datapack] Disabled!");
+        instance = null;
+    }
+
+    /**
+     * In-place reload (soft /ui reload): re-reads the datapack config and
+     * re-installs the gate + module. Never disables the plugin — on Paper that
+     * would close the JAR and re-enabling does not reopen it ("zip file
+     * closed" zombie). The bundled datapack itself is registered at BOOTSTRAP
+     * (before worlds load) and is not touched by a reload.
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Datapack] Soft reload (in place)...");
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         // Single config lives in UI-Core (Main.getInstance().getConfig());
@@ -56,18 +85,6 @@ public class UIDatapack extends JavaPlugin {
         mm.initAll();
 
         ConsoleLogger.success("[UI-Datapack] All features enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Datapack] Disabling...");
-        ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) {
-            mm.clearDatapackGate();
-            mm.shutdownAll();
-        }
-        ConsoleLogger.success("[UI-Datapack] Disabled!");
-        instance = null;
     }
 
     private void registerModules(ModuleManager mm) {

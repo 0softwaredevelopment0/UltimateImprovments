@@ -6,7 +6,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class UIOther extends JavaPlugin {
+public class UIOther extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UIOther instance;
 
@@ -16,6 +16,56 @@ public class UIOther extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Other] Disabling...");
+        HandlerList.unregisterAll(this);
+        runStaticShutdown();
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) mm.shutdownAll();
+        ConsoleLogger.success("[UI-Other] Disabled!");
+        instance = null;
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + the same startup
+     * path as onEnable. Never disables the plugin — on Paper that would close
+     * the JAR and re-enabling does not reopen it ("zip file closed" zombie).
+     * Re-registering this addon's modules REPLACES the old instances in the
+     * shared ModuleManager (see ModuleManager.register) — the shared manager
+     * itself is NOT shut down here (that is owned by the reload coordinator
+     * for the full cycle and by the real disable otherwise).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Other] Soft reload (in place)...");
+        HandlerList.unregisterAll(this);
+        runStaticShutdown();
+        runStartup();
+    }
+
+    /**
+     * Stops the addon-private static systems whose guards survive a plugin
+     * cycle. Called by both the real disable and the in-place reload — the
+     * start() methods of these systems no-op or double-schedule otherwise.
+     */
+    private void runStaticShutdown() {
+        com.ultimateimprovments.command.vote.VoteManager.shutdown();
+        // Reset periodic-task guards, otherwise start() would no-op after a
+        // re-enable (running flag survives the plugin cycle).
+        com.ultimateimprovments.space.SpaceOxygenListener.stop();
+        com.ultimateimprovments.space.SpaceRadiationListener.stop();
+        // Stop the dimension-driven gravity task (see SpaceGravityListener).
+        com.ultimateimprovments.space.SpaceGravityListener.stop();
+        // Cancel still-running rocket lifts; the launching map is static and
+        // survived re-enables.
+        com.ultimateimprovments.space.SpaceRocketManager.shutdown();
+    }
+
+    private void runStartup() {
         instance = this;
 
         // Single config lives in UI-Core (Main.getInstance().getConfig());
@@ -44,25 +94,6 @@ public class UIOther extends JavaPlugin {
         reportModuleStats(mm);
 
         ConsoleLogger.success("[UI-Other] All features enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Other] Disabling...");
-        HandlerList.unregisterAll(this);
-        com.ultimateimprovments.command.vote.VoteManager.shutdown();
-        ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) mm.shutdownAll();
-        // Reset periodic-task guards, otherwise start() would no-op after a
-        // re-enable (running flag survives the plugin cycle).
-        com.ultimateimprovments.space.SpaceOxygenListener.stop();
-        com.ultimateimprovments.space.SpaceRadiationListener.stop();
-        // Stop the dimension-driven gravity task (see SpaceGravityListener).
-        com.ultimateimprovments.space.SpaceGravityListener.stop();
-        // Cancel still-running rocket lifts; the launching map is static and
-        // survived re-enables.
-        com.ultimateimprovments.space.SpaceRocketManager.shutdown();
-        ConsoleLogger.success("[UI-Other] Disabled!");
     }
 
     /**

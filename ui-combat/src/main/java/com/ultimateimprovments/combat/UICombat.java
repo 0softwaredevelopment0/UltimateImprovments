@@ -12,7 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-public class UICombat extends JavaPlugin {
+public class UICombat extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UICombat instance;
     private BukkitTask gunTask;
@@ -20,6 +20,29 @@ public class UICombat extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        runShutdown();
+        getLogger().info("UI-Combat disabled!");
+        instance = null;
+    }
+
+    /**
+     * In-place reload (soft /ui reload): full private shutdown + startup path.
+     * Never disables the plugin — on Paper that would close the JAR and
+     * re-enabling does not reopen it ("zip file closed" zombie).
+     */
+    @Override
+    public void softReload() {
+        getLogger().info("UI-Combat soft reload (in place)...");
+        runShutdown();
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
         Main main = Main.getInstance();
         if (main == null) {
@@ -50,8 +73,7 @@ public class UICombat extends JavaPlugin {
         getLogger().info("UI-Combat enabled!");
     }
 
-    @Override
-    public void onDisable() {
+    private void runShutdown() {
         if (turretTask != null) {
             turretTask.cancel();
             turretTask = null;
@@ -62,8 +84,6 @@ public class UICombat extends JavaPlugin {
         }
         TurretManager.shutdown();
         org.bukkit.event.HandlerList.unregisterAll(this);
-        getLogger().info("UI-Combat disabled!");
-        instance = null;
     }
 
     public static UICombat getInstance() {

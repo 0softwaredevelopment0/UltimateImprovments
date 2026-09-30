@@ -8,7 +8,7 @@ import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class UIEssentials extends JavaPlugin {
+public final class UIEssentials extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UIEssentials instance;
 
@@ -16,6 +16,30 @@ public final class UIEssentials extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        HandlerList.unregisterAll(this);
+        ConsoleLogger.info("[Essentials] Disabled.");
+        instance = null;
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + startup path.
+     * Never disables the plugin — on Paper that would close the JAR and
+     * re-enabling does not reopen it ("zip file closed" zombie).
+     * Command re-registration is safe: SubCommandRegistry replaces by name.
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[Essentials] Soft reload (in place)...");
+        HandlerList.unregisterAll(this);
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
         // Single config lives in UI-Core (Main.getInstance().getConfig());
         // UI-Essentials does not ship its own config.yml.
@@ -23,12 +47,6 @@ public final class UIEssentials extends JavaPlugin {
         ReportManager.init();
         registerCommands();
         ConsoleLogger.info("[Essentials] Enabled.");
-    }
-
-    @Override
-    public void onDisable() {
-        HandlerList.unregisterAll(this);
-        ConsoleLogger.info("[Essentials] Disabled.");
     }
 
     private void registerCommands() {

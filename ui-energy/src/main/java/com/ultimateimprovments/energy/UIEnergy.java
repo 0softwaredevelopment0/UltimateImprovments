@@ -17,7 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-public class UIEnergy extends JavaPlugin {
+public class UIEnergy extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UIEnergy instance;
 
@@ -33,6 +33,29 @@ public class UIEnergy extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        runShutdown();
+        getLogger().info("UI-Energy disabled!");
+        instance = null;
+    }
+
+    /**
+     * In-place reload (soft /ui reload): full private shutdown + startup path.
+     * Never disables the plugin — on Paper that would close the JAR and
+     * re-enabling does not reopen it ("zip file closed" zombie).
+     */
+    @Override
+    public void softReload() {
+        getLogger().info("UI-Energy soft reload (in place)...");
+        runShutdown();
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
         Main main = Main.getInstance();
         if (main == null) {
@@ -70,8 +93,7 @@ public class UIEnergy extends JavaPlugin {
         getLogger().info("UI-Energy enabled!");
     }
 
-    @Override
-    public void onDisable() {
+    private void runShutdown() {
         if (cableLossTask != null) { cableLossTask.cancel(); cableLossTask = null; }
         if (balancerTask != null) { balancerTask.cancel(); balancerTask = null; }
         if (cableVisualTask != null) { cableVisualTask.cancel(); cableVisualTask = null; }
@@ -89,8 +111,6 @@ public class UIEnergy extends JavaPlugin {
         ElectricFurnaceManager.shutdown();
         com.ultimateimprovments.mbs.api.MbsEnergy.unregister();
         org.bukkit.event.HandlerList.unregisterAll(this);
-        getLogger().info("UI-Energy disabled!");
-        instance = null;
     }
 
     public static UIEnergy getInstance() {

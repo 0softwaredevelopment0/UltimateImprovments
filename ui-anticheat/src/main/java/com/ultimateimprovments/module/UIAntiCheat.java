@@ -12,7 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
 
-public final class UIAntiCheat extends JavaPlugin {
+public final class UIAntiCheat extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UIAntiCheat instance;
 
@@ -20,6 +20,33 @@ public final class UIAntiCheat extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[AntiCheat] Disabling...");
+        PacketHandler.shutdown();
+        AntiCheatManager.shutdown();
+        HandlerList.unregisterAll(this);
+        ConsoleLogger.info("[AntiCheat] Disabled.");
+    }
+
+    /**
+     * In-place reload (soft /ui reload): full private shutdown + startup path.
+     * Never disables the plugin — on Paper that would close the JAR and
+     * re-enabling does not reopen it ("zip file closed" zombie).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[AntiCheat] Soft reload (in place)...");
+        PacketHandler.shutdown();
+        AntiCheatManager.shutdown();
+        HandlerList.unregisterAll(this);
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         // Single config lives in UI-Core (Main.getInstance().getConfig()).
@@ -55,15 +82,6 @@ public final class UIAntiCheat extends JavaPlugin {
         } else {
             ConsoleLogger.info("[AntiCheat] Disabled " + total + " checks. Use /ui ac toggle on to enable.");
         }
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[AntiCheat] Disabling...");
-        PacketHandler.shutdown();
-        AntiCheatManager.shutdown();
-        HandlerList.unregisterAll(this);
-        ConsoleLogger.info("[AntiCheat] Disabled.");
     }
 
     public void reloadAntiCheatConfig() {

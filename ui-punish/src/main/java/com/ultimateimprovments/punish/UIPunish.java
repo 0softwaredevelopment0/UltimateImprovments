@@ -7,12 +7,37 @@ import com.ultimateimprovments.whitelist.WhitelistManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class UIPunish extends JavaPlugin {
+public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core.SoftReloadable {
 
     private static UIPunish instance;
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        // AccessListCheckTask is owned by UI-Other — do not stop it here.
+        org.bukkit.event.HandlerList.unregisterAll(this);
+        getLogger().info("UI-Punish disabled!");
+        instance = null;
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + startup path.
+     * Never disables the plugin — on Paper that would close the JAR and
+     * re-enabling does not reopen it ("zip file closed" zombie). Command
+     * re-registration is safe: SubCommandRegistry replaces by name.
+     */
+    @Override
+    public void softReload() {
+        getLogger().info("UI-Punish soft reload (in place)...");
+        org.bukkit.event.HandlerList.unregisterAll(this);
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
         Main main = Main.getInstance();
         if (main == null) {
@@ -74,14 +99,6 @@ public class UIPunish extends JavaPlugin {
         Bukkit.getScheduler().runTaskAsynchronously(main, PunishmentManager::deleteOldKicks);
 
         getLogger().info("UI-Punish enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        // AccessListCheckTask is owned by UI-Other — do not stop it here.
-        org.bukkit.event.HandlerList.unregisterAll(this);
-        getLogger().info("UI-Punish disabled!");
-        instance = null;
     }
 
     public static UIPunish getInstance() {

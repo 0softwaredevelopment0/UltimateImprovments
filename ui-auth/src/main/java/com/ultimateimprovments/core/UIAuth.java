@@ -17,7 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  * {@link AuthModules}. {@code AuthPlayerState} publishes the pending-auth state
  * to {@code CoreHooks} so unrelated addons can respect the freeze.
  */
-public class UIAuth extends JavaPlugin {
+public class UIAuth extends JavaPlugin implements SoftReloadable {
 
     /** Module path prefix owned by this addon. */
     private static final String PATH_PREFIX = "mechanics/security/auth";
@@ -28,6 +28,36 @@ public class UIAuth extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        runStartup();
+    }
+
+    @Override
+    public void onDisable() {
+        ConsoleLogger.info("[UI-Auth] Disabling...");
+        HandlerList.unregisterAll(this);
+        ModuleManager mm = ModuleManager.getInstance();
+        if (mm != null) {
+            mm.shutdownAll();
+        }
+        instance = null;
+        ConsoleLogger.success("[UI-Auth] Disabled!");
+    }
+
+    /**
+     * In-place reload (soft /ui reload): private cleanup + the same startup
+     * path as onEnable. Never disables the plugin — on Paper that would close
+     * the JAR and re-enabling does not reopen it ("zip file closed" zombie).
+     * Re-registering this addon's modules REPLACES the old instances in the
+     * shared ModuleManager (see ModuleManager.register).
+     */
+    @Override
+    public void softReload() {
+        ConsoleLogger.info("[UI-Auth] Soft reload (in place)...");
+        HandlerList.unregisterAll(this);
+        runStartup();
+    }
+
+    private void runStartup() {
         instance = this;
 
         ConsoleLogger.info("");
@@ -51,18 +81,6 @@ public class UIAuth extends JavaPlugin {
         reportModuleStats(mm);
 
         ConsoleLogger.success("[UI-Auth] Authentication enabled!");
-    }
-
-    @Override
-    public void onDisable() {
-        ConsoleLogger.info("[UI-Auth] Disabling...");
-        HandlerList.unregisterAll(this);
-        ModuleManager mm = ModuleManager.getInstance();
-        if (mm != null) {
-            mm.shutdownAll();
-        }
-        instance = null;
-        ConsoleLogger.success("[UI-Auth] Disabled!");
     }
 
     /**
