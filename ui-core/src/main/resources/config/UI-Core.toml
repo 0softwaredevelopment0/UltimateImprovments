@@ -21,6 +21,18 @@ plugin_version = "1.8.3-alpha.6"
 # Default: false
 commands_enabled = false
 
+# API version compatibility check: warns in the console when the running server's
+# API version is older than the minimum required by the plugin. The check reads the
+# ACTUAL runtime server version (not the api-version from plugin.yml), so editing
+# the plugin's own api-version cannot bypass it.
+[version_check]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# Minimum required server API version ("major.minor" or "major.minor.patch").
+# Default: "26.3"
+min_api_version = "26.3"
+
 
 # join invulnerable reset section.
 [join_invulnerable_reset]
