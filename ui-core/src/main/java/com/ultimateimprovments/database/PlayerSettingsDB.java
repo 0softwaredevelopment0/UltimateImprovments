@@ -17,7 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Table: player_settings
  *   uuid TEXT PRIMARY KEY,
  *   bossbar_enabled INTEGER DEFAULT 1,
- *   scoreboard_enabled INTEGER DEFAULT 1
+ *   scoreboard_enabled INTEGER DEFAULT 1,
+ *   ping_enabled INTEGER DEFAULT 1,
+ *   wireless_bind_enabled INTEGER DEFAULT 1
  */
 public class PlayerSettingsDB {
 
@@ -92,7 +94,7 @@ public class PlayerSettingsDB {
     private static void loadAll() {
         cache.clear();
         try (Connection con = DatabaseManager.getConnection();
-             PreparedStatement ps = con.prepareStatement("SELECT uuid, bossbar_enabled, scoreboard_enabled, ping_enabled FROM player_settings");
+             PreparedStatement ps = con.prepareStatement("SELECT uuid, bossbar_enabled, scoreboard_enabled, ping_enabled, wireless_bind_enabled FROM player_settings");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 try {
