@@ -29,6 +29,21 @@ import java.util.List;
  */
 public class SudoCommandInterceptor implements Listener {
 
+    /**
+     * Command policy: vanilla commands superseded by /ui equivalents
+     * ({@code command_policy.disabled_commands}, default: op/deop/stop/restart)
+     * are answered with error 011 ("command disabled on this server").
+     * Independent of the sudo feature toggle — active whenever ui-guard is.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onDisabledCommand(PlayerCommandPreprocessEvent event) {
+        Player player = event.getPlayer();
+        if (SudoManager.isCommandDisabled(event.getMessage())) {
+            event.setCancelled(true);
+            CommandErrors.commandDisabled(player);
+        }
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         if (!SudoManager.isEnabled()) return;

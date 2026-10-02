@@ -146,6 +146,25 @@ public class SudoManager {
     }
 
     /**
+     * Checks whether a command is disabled by the command policy
+     * ({@code command_policy.disabled_commands}, default: op/deop/stop/restart —
+     * vanilla commands superseded by /ui equivalents). Same prefix matching as
+     * {@link #isDangerous(String)}. Independent of the sudo feature toggle.
+     */
+    public static boolean isCommandDisabled(String message) {
+        List<String> disabled = cfg().getStringList("command_policy.disabled_commands");
+        String normalized = normalize(message);
+        for (String prefix : disabled) {
+            String p = normalize(prefix);
+            if (p.isEmpty()) continue;
+            if (normalized.equals(p) || normalized.startsWith(p + " ")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Base /ui permission(s) for a dangerous command, used by the interceptor
      * for ERROR PRECEDENCE: 002 (no permission for the command itself) must
      * beat 003 (no sudo rights). Returns the base permission node(s) the
@@ -157,15 +176,7 @@ public class SudoManager {
      */
     public List<String> getUiBasePermissions(String message) {
         String normalized = normalize(message);
-        if (!normalized.startsWith("ui ")) {
-            // Bare plugin-managed op commands (op/deop) share the /ui gates.
-            String bare = normalized.split(" ", 2)[0];
-            return switch (bare) {
-                case "op" -> List.of(Permissions.CMD_OP);
-                case "deop" -> List.of(Permissions.CMD_DEOP);
-                default -> List.of();
-            };
-        }
+        if (!normalized.startsWith("ui ")) return List.of();
         String rest = normalized.substring(3).trim();
         if (rest.isEmpty()) return List.of();
         String sub = rest.split(" ", 2)[0];

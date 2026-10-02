@@ -172,17 +172,21 @@ public final class GuardModules {
             }
         });
 
-        // Sudo (GitHub-style sudo mode for dangerous commands)
+        // Sudo (GitHub-style sudo mode for dangerous commands) + command policy
+        // (disabled vanilla commands -> error 011). The interceptor is always
+        // registered: the sudo gates inside it respect sudo.enabled, the
+        // command-policy guard works regardless of the toggle.
         mm.register(new SimpleModule("Sudo", "mechanics/security/sudo", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
+                JavaPlugin guard = UIGuard.getInstance();
+                guard.getServer().getPluginManager().registerEvents(new SudoCommandInterceptor(), guard);
                 if (!SudoManager.isEnabled()) {
-                    ConsoleLogger.info("[SudoModule] Sudo mode is disabled in config (sudo.enabled: false).");
+                    ConsoleLogger.info("[SudoModule] Sudo mode is disabled in config (sudo.enabled: false)"
+                            + " — sudo gates inactive, command policy still active.");
                     return;
                 }
                 SudoManager.init();
-                JavaPlugin guard = UIGuard.getInstance();
-                guard.getServer().getPluginManager().registerEvents(new SudoCommandInterceptor(), guard);
                 guard.getServer().getPluginManager().registerEvents(new SudoQuitListener(), guard);
                 ConsoleLogger.info("[SudoModule] Sudo mode initialized.");
             }
