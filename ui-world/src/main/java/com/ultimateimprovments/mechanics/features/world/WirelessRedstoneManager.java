@@ -11,10 +11,8 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Lightable;
 import org.bukkit.block.data.Powerable;
-import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.block.data.type.Observer;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.block.data.type.RedstoneWire;
@@ -31,6 +29,7 @@ import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.util.Vector;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,7 +45,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * activating B also activates A (with loop protection).
  * <p>
  * Supported blocks: REDSTONE_LAMP, OBSERVER, PISTON/STICKY_PISTON,
- * DISPENSER/DROPPER, REDSTONE_WIRE.
+ * DISPENSER/DROPPER, REDSTONE_WIRE — every wirelessly activated device
+ * performs its real vanilla action: the dispenser/dropper dispenses via the
+ * block-state API, the piston extends/retracts through a real power block
+ * (vanilla movement, no ghost heads), the observer pulses its output for
+ * real, and the lamp additionally emits signal (see below).
  * <p>
  * A wirelessly activated lamp is also a usable SIGNAL SOURCE: the lit
  * property is applied with applyPhysics=false (otherwise the server would
@@ -351,9 +354,13 @@ public class WirelessRedstoneManager implements Listener {
     private void activateDevice(Block block, boolean powered) {
         switch (block.getType()) {
             case REDSTONE_LAMP -> setLampLit(block, powered);
-            case OBSERVER -> triggerObserver(block, powered);
+            case OBSERVER -> {
+                if (powered) pulseObserverNow(block);
+            }
             case PISTON, STICKY_PISTON -> setPistonExtended(block, powered);
-            case DISPENSER, DROPPER -> triggerDispenser(block, powered);
+            case DISPENSER, DROPPER -> {
+                if (powered) triggerDispenser(block);
+            }
             case REDSTONE_WIRE -> setWirePowered(block, powered);
         }
     }
@@ -422,13 +429,9 @@ public class WirelessRedstoneManager implements Listener {
     }
 
     /**
-     * Pulses an observer as if it had detected a block change: its powered
-     * property is driven directly (physics=true, so the output side gets a
-     * real update) and cleared 2 ticks later — the vanilla pulse length.
-     * Only observers that actually watch the given block react: their eyes
-     * side (facing) or their output side points at it. The manager's watcher
-     * task sees the powered flip and propagates the activation to the
-     * observer's own wireless partners as usual.
+     * Pulses an observer as if it had detected a block change — but only when
+     * the observer actually watches the given block: its eyes side (facing)
+     * or its output side points at it. Delegates to {@link #pulseObserverNow}.
      */
     private void pulseObserver(Block observerBlock, Block watched) {
         if (!(observerBlock.getBlockData() instanceof Observer obs)) return;
@@ -437,20 +440,7 @@ public class WirelessRedstoneManager implements Listener {
                 && !observerBlock.getRelative(facing.getOppositeFace()).equals(watched)) {
             return;
         }
-        BlockPos oPos = BlockPos.fromLocation(observerBlock.getLocation());
-        if (!pulsingObservers.add(oPos)) return; // a pulse is already running
-
-        obs.setPowered(true);
-        observerBlock.setBlockData(obs, true);
-        Location oloc = observerBlock.getLocation().clone();
-        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-            pulsingObservers.remove(oPos);
-            Block b = oloc.getBlock();
-            if (b.getType() == Material.OBSERVER && b.getBlockData() instanceof Observer o && o.isPowered()) {
-                o.setPowered(false);
-                b.setBlockData(o, true);
-            }
-        }, 2L);
+        pulseObserverNow(observerBlock);
     }
 
     /**
@@ -468,72 +458,129 @@ public class WirelessRedstoneManager implements Listener {
         }
     }
 
-    private void triggerObserver(Block block, boolean activate) {
-        if (!(block.getBlockData() instanceof Observer obsData)) return;
-        if (!activate) return;
-        BlockFace facing = obsData.getFacing();
-        Block inFront = block.getRelative(facing);
-        Material origType = inFront.getType();
-        Location loc = inFront.getLocation().clone();
+    /**
+     * Drives an observer's powered property directly for the vanilla 2-tick
+     * pulse length (physics=true, so the output side really powers and third
+     * observers watching this one detect the state change). Replaces the old
+     * stone-flicker trick: no world mutation and exactly one pulse instead of
+     * two (place + remove of the probe block). The manager's watcher task
+     * sees the powered flip and propagates it to the observer's own wireless
+     * partners as usual.
+     */
+    private void pulseObserverNow(Block observerBlock) {
+        if (!(observerBlock.getBlockData() instanceof Observer obs)) return;
+        BlockPos oPos = BlockPos.fromLocation(observerBlock.getLocation());
+        if (!pulsingObservers.add(oPos)) return; // a pulse is already running
 
-        if (origType == Material.AIR || origType == Material.CAVE_AIR || origType == Material.VOID_AIR) {
-            inFront.setType(Material.STONE, true);
-            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-                Block b = loc.getBlock();
-                if (b.getType() == Material.STONE) b.setType(Material.AIR, true);
-            }, 2L);
-        } else {
-            BlockData origData = inFront.getBlockData().clone();
-            inFront.setType(Material.STONE, true);
-            Material finalOrig = origType;
-            BlockData finalData = origData;
-            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-                Block b = loc.getBlock();
-                b.setType(finalOrig, false);
-                b.setBlockData(finalData, true);
-            }, 2L);
-        }
+        obs.setPowered(true);
+        observerBlock.setBlockData(obs, true);
+        Location oloc = observerBlock.getLocation().clone();
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            pulsingObservers.remove(oPos);
+            Block b = oloc.getBlock();
+            if (b.getType() == Material.OBSERVER && b.getBlockData() instanceof Observer o && o.isPowered()) {
+                o.setPowered(false);
+                b.setBlockData(o, true);
+            }
+        }, 2L);
     }
 
     private void setPistonExtended(Block block, boolean extended) {
         if (!(block.getBlockData() instanceof Piston piston)) return;
-        if (piston.isExtended() == extended) return;
         BlockPos pistonPos = BlockPos.fromLocation(block.getLocation());
 
         if (extended) {
-            BlockFace facing = piston.getFacing();
-            Block behind = block.getRelative(facing.getOppositeFace());
-            Material prevType = behind.getType();
-            behind.setType(Material.REDSTONE_BLOCK, true);
-            pistonPowerBlocks.put(pistonPos, new RestoreData(BlockPos.fromLocation(behind.getLocation()), prevType));
+            if (pistonPowerBlocks.containsKey(pistonPos)) return; // already powered by us
+            // Power the piston for real: place a redstone block on an adjacent
+            // air block (never on the face it pushes towards), so the vanilla
+            // extension — pushing the blocks in front — runs on its own.
+            Location powerLoc = findPowerSpot(block, piston);
+            Material prevType = powerLoc.getBlock().getType();
+            powerLoc.getBlock().setType(Material.REDSTONE_BLOCK, true);
+            pistonPowerBlocks.put(pistonPos, new RestoreData(BlockPos.fromLocation(powerLoc), prevType));
         } else {
             RestoreData data = pistonPowerBlocks.remove(pistonPos);
-            if (data != null) {
-                Location powerLoc = data.powerBlockPos().toLocation();
-                if (powerLoc != null && powerLoc.getBlock().getType() == Material.REDSTONE_BLOCK) {
-                    powerLoc.getBlock().setType(data.originalType(), true);
-                }
+            if (data == null) return; // not powered by us — real redstone holds it
+            Location powerLoc = data.powerBlockPos().toLocation();
+            if (powerLoc != null && powerLoc.getBlock().getType() == Material.REDSTONE_BLOCK) {
+                // Removing the power block with physics lets the vanilla piston
+                // retract (a sticky piston pulls its block back). The extended
+                // property must NOT be set manually — that leaves a ghost
+                // piston head in the world.
+                powerLoc.getBlock().setType(data.originalType(), true);
             }
-            piston.setExtended(false);
-            block.setBlockData(piston, true);
         }
     }
 
-    private void triggerDispenser(Block block, boolean activate) {
-        if (!(block.getBlockData() instanceof Dispenser dispenser)) return;
-        if (dispenser.isTriggered() == activate) return;
-        dispenser.setTriggered(activate);
-        block.setBlockData(dispenser, false);
-        if (activate) {
-            Location loc = block.getLocation().clone();
-            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
-                Block b = loc.getBlock();
-                Material t = b.getType();
-                if ((t == Material.DISPENSER || t == Material.DROPPER) && b.getBlockData() instanceof Dispenser d) {
-                    if (d.isTriggered()) { d.setTriggered(false); b.setBlockData(d, false); }
-                }
-            }, 1L);
+    /** Adjacent air block to place a redstone block on, excluding the piston's pushing face. */
+    private static Location findPowerSpot(Block piston, Piston data) {
+        BlockFace front = data.getFacing();
+        for (BlockFace face : SIX_FACES) {
+            if (face == front) continue;
+            Block side = piston.getRelative(face);
+            if (side.getType().isAir()) {
+                return side.getLocation();
+            }
         }
+        // Legacy fallback: overwrite the block behind the piston (restored on retract).
+        return piston.getRelative(front.getOppositeFace()).getLocation();
+    }
+
+    /**
+     * Performs a REAL dispense via the block-state API — setting the
+     * triggered property alone never fired the vanilla dispense behavior, so
+     * a wirelessly triggered dispenser/dropper only "clicked" without shooting.
+     * The dispense fires BlockDispenseEvent, so the existing listener sees it
+     * exactly like a vanilla dispense (skipped here — this device was just
+     * marked as skipping by the activation).
+     */
+    private static void triggerDispenser(Block block) {
+        var state = block.getState();
+        if (state instanceof org.bukkit.block.Dispenser dispenser) {
+            dispenser.dispense();
+        } else if (state instanceof org.bukkit.block.Dropper dropper) {
+            dispenseDropper(dropper);
+        }
+    }
+
+    /**
+     * Dropper has no {@code dispense()} in the Bukkit API — simulate the
+     * vanilla behavior: eject the first available stack toward the block's
+     * facing. Fires BlockDispenseEvent first, so protection plugins can
+     * cancel it just like a vanilla dispense.
+     */
+    private static void dispenseDropper(org.bukkit.block.Dropper dropper) {
+        org.bukkit.inventory.Inventory inv = dropper.getInventory();
+        int slot = -1;
+        org.bukkit.inventory.ItemStack stack = null;
+        for (int i = 0; i < inv.getSize(); i++) {
+            org.bukkit.inventory.ItemStack item = inv.getItem(i);
+            if (item != null && !item.getType().isAir()) {
+                slot = i;
+                stack = item;
+                break;
+            }
+        }
+        if (stack == null) return; // nothing to dispense
+
+        Block block = dropper.getBlock();
+        // Dropper shares the Dispenser block data type (Directional + triggered).
+        BlockFace face = ((org.bukkit.block.data.type.Dispenser) block.getBlockData()).getFacing();
+        Vector velocity = new Vector(face.getModX(), face.getModY(), face.getModZ()).multiply(0.3);
+
+        BlockDispenseEvent event = new BlockDispenseEvent(block, stack.clone(), velocity);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) return;
+
+        if (stack.getAmount() > 1) {
+            stack.setAmount(stack.getAmount() - 1);
+        } else {
+            inv.setItem(slot, null);
+        }
+        Location center = block.getLocation().add(0.5D, 0.5D, 0.5D);
+        Location spawnAt = center.add(face.getModX() * 0.7D, face.getModY() * 0.7D, face.getModZ() * 0.7D);
+        org.bukkit.entity.Item dropped = block.getWorld().dropItem(spawnAt, event.getItem());
+        dropped.setVelocity(event.getVelocity());
     }
 
     private void setWirePowered(Block block, boolean powered) {
