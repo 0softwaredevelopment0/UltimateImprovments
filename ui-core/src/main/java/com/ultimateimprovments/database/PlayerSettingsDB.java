@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   bossbar_enabled INTEGER DEFAULT 1,
  *   scoreboard_enabled INTEGER DEFAULT 1,
  *   ping_enabled INTEGER DEFAULT 1,
- *   wireless_bind_enabled INTEGER DEFAULT 1
+ *   wireless_bind_enabled INTEGER DEFAULT 0 (bind is opt-in: /ui wirelessbind on)
  */
 public class PlayerSettingsDB {
 
@@ -59,6 +59,7 @@ public class PlayerSettingsDB {
     public static void init() {
         createTable();
         loadAll();
+        resetWirelessBindDefaultOnce();
     }
 
     private static void createTable() {
@@ -69,7 +70,7 @@ public class PlayerSettingsDB {
                      "bossbar_enabled INTEGER DEFAULT 1," +
                      "scoreboard_enabled INTEGER DEFAULT 1," +
                      "ping_enabled INTEGER DEFAULT 1," +
-                     "wireless_bind_enabled INTEGER DEFAULT 1" +
+                     "wireless_bind_enabled INTEGER DEFAULT 0" +
                      ")")) {
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -77,14 +78,14 @@ public class PlayerSettingsDB {
         }
         // Migrations: tables created before ping/wireless-bind columns existed.
         // CREATE TABLE IF NOT EXISTS does not add columns to an existing table.
-        migrateAddColumn("ping_enabled");
-        migrateAddColumn("wireless_bind_enabled");
+        migrateAddColumn("ping_enabled", 1);
+        migrateAddColumn("wireless_bind_enabled", 0);
     }
 
-    private static void migrateAddColumn(String column) {
+    private static void migrateAddColumn(String column, int defaultValue) {
         try (Connection con = DatabaseManager.getConnection();
              PreparedStatement ps = con.prepareStatement(
-                     "ALTER TABLE player_settings ADD COLUMN " + column + " INTEGER DEFAULT 1")) {
+                     "ALTER TABLE player_settings ADD COLUMN " + column + " INTEGER DEFAULT " + defaultValue)) {
             ps.executeUpdate();
         } catch (SQLException ignored) {
             // Column already exists
@@ -112,13 +113,45 @@ public class PlayerSettingsDB {
         }
     }
 
+    /**
+     * One-time migration: until now the wireless bind default was ON in the
+     * DDL although the documented default was OFF ("default: off" in
+     * /ui wirelessbind and /ui help) — rows auto-created with the old default
+     * armed shift+RMB binding for players who never used the feature. Every
+     * stored value is flipped back to 0 exactly once (guarded by a marker in
+     * ui_state); players who want the bind re-enable it with
+     * {@code /ui wirelessbind on}.
+     */
+    private static void resetWirelessBindDefaultOnce() {
+        final String markerKey = "wireless_bind_default_reset";
+        if ("1".equals(StateStore.get("player_settings", markerKey))) {
+            return;
+        }
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement ps = con.prepareStatement("UPDATE player_settings SET wireless_bind_enabled = 0")) {
+            int rows = ps.executeUpdate();
+            for (PlayerSettings settings : cache.values()) {
+                if (settings.wirelessBindEnabled()) {
+                    cache.put(settings.uuid(), settings.withWirelessBind(false));
+                }
+            }
+            StateStore.put("player_settings", markerKey, "1");
+            if (rows > 0) {
+                ConsoleLogger.info("[PlayerSettings] Wireless bind reset to OFF (default change): "
+                        + rows + " row(s) — players re-enable it with /ui wirelessbind on.");
+            }
+        } catch (SQLException e) {
+            ConsoleLogger.error("[PlayerSettings] Wireless bind default reset failed: " + e.getMessage());
+        }
+    }
+
     // =========================
     // GET / SET
     // =========================
 
     public static PlayerSettings get(UUID uuid) {
         return cache.computeIfAbsent(uuid, u ->
-                new PlayerSettings(u, true, true, true, true));
+                new PlayerSettings(u, true, true, true, false));
     }
 
     public static boolean isBossbarEnabled(UUID uuid) {

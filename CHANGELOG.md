@@ -112,6 +112,28 @@ in this file.
     startup reads the record and restores the region (mirroring the
     entity PDC sweep). The record is deleted after a successful stop;
     restore failures keep it for a retry at the next startup.
+- **Wireless redstone: bind default is now OFF** (ui-world + ui-core):
+  `wireless_bind_enabled` defaulted to ON in the DDL although the
+  documented default was OFF ("/ui wirelessbind", "/ui help") — rows
+  auto-created with the old default armed shift+RMB binding for players
+  who never used the feature. New default is 0 (DDL, migration column,
+  in-code fallback) and a one-time guarded migration flips every stored
+  value back to OFF; players who want the bind re-enable it with
+  `/ui wirelessbind on`.
+
+### Changed
+- **Wireless redstone: a wirelessly activated lamp is now a real signal
+  source** (ui-world): the `lit` property is applied without physics (the
+  server would immediately undo it otherwise) and vanilla lamps never emit
+  power, so a wirelessly lit lamp only glowed — no current, no observer
+  reaction, useless in circuits. Now activating a lamp wirelessly also
+  drives adjacent redstone dust to 15/0 (a real current the rest of the
+  vanilla redstone can read and propagate) and pulses adjacent observers
+  that watch the lamp (their powered property is driven directly for the
+  vanilla 2-tick pulse length, which powers their output side too). The
+  manager's watcher task propagates the observer pulse to its wireless
+  partners as usual; deactivating restores the dust (a foreign signal on
+  the same wire is only interrupted for one update).
 
 ## [1.8.3-alpha.6] — since 1.8.3-alpha.5 (2026-09-30)
 
