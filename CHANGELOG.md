@@ -95,11 +95,23 @@ in this file.
     report to the initiator (previously console-only, the player never
     learned the run had stopped); `/ui stresstest stop` issued by a second
     admin reports to both the original initiator and the stopper;
-    the report duration no longer shows `0.0s` when a run is stopped
+    the     report duration no longer shows `0.0s` when a run is stopped
     during the warmup; the report's `Entities` column is captured before
     the generator cleans up (previously always showed the post-cleanup
     count); and a scheduler rejection of the run task now rolls the whole
     start back instead of leaking the prepared generator.
+  - **entity: drop-abuse protection** — test entities now spawn
+    invulnerable (no death, no loot for players hitting them mid-run)
+    and never despawn on their own (`setRemoveWhenFarAway(false)` +
+    `setPersistent(true)`); the final cleanup removes them via
+    `remove()`, which produces no drops and no death animation.
+  - **block: crash-recovery record in the DB** — the platform snapshot is
+    persisted to `ui_state` (namespace `stresstest`, key `block_region`)
+    BEFORE the first block is modified; if a run is killed hard (crash,
+    kill -9) and the modified region ends up in the world save, the next
+    startup reads the record and restores the region (mirroring the
+    entity PDC sweep). The record is deleted after a successful stop;
+    restore failures keep it for a retry at the next startup.
 
 ## [1.8.3-alpha.6] — since 1.8.3-alpha.5 (2026-09-30)
 

@@ -7,6 +7,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Mob;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
@@ -21,6 +22,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * {@code stresstest.max_entities} cap is reached. Every spawned entity is
  * tagged with the {@link #MARKER} PDC key so leftovers can be swept after a
  * crash ({@link #sweepAllWorlds()}) and are always removed by {@link #stop()}.
+ * Spawned entities are invulnerable (no death, no loot) and do not despawn;
+ * {@code stop()} removes them via {@link Entity#remove()}, which produces no
+ * drops.
  */
 public final class EntityLoad implements StressLoad {
 
@@ -72,6 +76,15 @@ public final class EntityLoad implements StressLoad {
                     ThreadLocalRandom.current().nextDouble(-2.5, 2.5));
             Entity entity = world.spawnEntity(spot, entityType);
             entity.getPersistentDataContainer().set(MARKER, PersistentDataType.BYTE, (byte) 1);
+            // Drop-abuse protection: test entities are invulnerable (no death,
+            // no loot for players hitting them mid-run) and never despawn on
+            // their own. stop() REMOVES them via remove(), which produces no
+            // drops and no death animation.
+            entity.setInvulnerable(true);
+            if (entity instanceof Mob mob) {
+                mob.setRemoveWhenFarAway(false);
+                mob.setPersistent(true);
+            }
             spawned.add(entity);
             work++;
         }
