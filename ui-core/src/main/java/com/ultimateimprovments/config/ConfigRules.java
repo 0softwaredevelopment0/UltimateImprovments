@@ -511,7 +511,9 @@ final class ConfigRules {
 
             bool("server_lockdown.kill_switch"),
             string("server_lockdown.grace_time", true, 16),
-            stringList("server_lockdown.kick_message"),
+            // Note: server_lockdown.kick_message is a MESSAGE (lives under
+            // messages/messages_en.server_lockdown, routed by message group),
+            // so it is intentionally NOT a ConfigRules settings key here.
 
             stringList("command_policy.disabled_commands"),
 

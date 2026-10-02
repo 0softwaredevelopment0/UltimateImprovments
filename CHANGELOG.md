@@ -3,6 +3,28 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-alpha.7] — since 1.8.3-alpha.6 (2026-10-02)
+
+> **Alpha channel**: manual testing pending; not verified on the test server yet.
+
+### Added
+- **`/ui opself` — console-confirmed self-OP** (ui-admin): a player may
+  request operator status for themselves, but OP is only granted after an
+  explicit console decision. Flow: `/ui opself` (player, sudo-gated) →
+  console alert with hints → `/ui opself confirm` or `/ui opself cancel`
+  (console-only subcommands) → the player is told the decision in their
+  language. Requests expire after `op_self.ttl_seconds` (default 60 s) with
+  a notice to the player; a new request is rejected while one is pending;
+  the permission and OP status are re-checked at decision time. The grant
+  deliberately does NOT touch the operator whitelist (it has its own
+  commands). Sudo gate: `"ui opself"` added to `sudo.dangerous_commands`
+  defaults (UI-Guard.toml) and to the interceptor's error-precedence map,
+  so the sudo password dialog opens before the request is sent. New
+  permission `ui.command.opself` (default TRUE — the console confirmation
+  is the real gate) and config toggle `[op_self] enabled` (default true).
+  All texts are configurable in both languages: `[messages.op_self]` (RU)
+  / `[messages_en.op_self]` (EN) in UI-Admin.toml, routed via `AddonCatalog`.
+
 ## [1.8.3-alpha.6] — since 1.8.3-alpha.5 (2026-09-30)
 
 > **Alpha channel**: verified on the test server (Purpur 26.3); broader testing pending.
@@ -102,3 +124,4 @@ in this file.
 - Standalone `CHANGELOG-1.8.3-beta.3.md` removed (superseded by this file).
 
 [1.8.3-alpha.6]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-alpha.5...1.8.3-alpha.6
+[1.8.3-alpha.7]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-alpha.6...1.8.3-alpha.7
