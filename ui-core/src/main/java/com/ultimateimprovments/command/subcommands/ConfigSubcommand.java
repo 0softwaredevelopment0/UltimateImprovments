@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * backup survives), so it is gated behind:
  * <ul>
  *   <li>the {@code ui.command.configregen} permission (default FALSE —
- *       granted via {@code ui.admin} / {@code ui.*});</li>
+ *       granted via {@code ui.*});</li>
  *   <li>the {@code config.commands.enabled} config flag (default
  *       {@code false} — the whole subcommand refuses to run while disabled);</li>
  *   <li>an explicit confirmation step ({@code /ui config confirm} within

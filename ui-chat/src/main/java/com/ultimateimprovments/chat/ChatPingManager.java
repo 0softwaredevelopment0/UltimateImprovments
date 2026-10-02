@@ -1,6 +1,7 @@
 package com.ultimateimprovments.chat;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.database.PlayerSettingsDB;
 import com.ultimateimprovments.util.MessageUtil;
@@ -25,8 +26,8 @@ import java.util.regex.Pattern;
  *   <li>{@code @everyone} — all players (except the sender)</li>
  *   <li>{@code @<nick>} — a specific player (by nick)</li>
  *   <li>{@code @non-op} — all players without OP</li>
- *   <li>{@code @is-admin} — all with the ui.admin or ui.* permission</li>
- *   <li>{@code @is-non-admin} — all without the ui.admin/ui.* permission</li>
+ *   <li>{@code @is-admin} — all with the ui.* permission</li>
+ *   <li>{@code @is-non-admin} — all without the ui.* permission</li>
  * </ul>
  * <p>
  * Pings are processed in the message after placeholder resolution:
@@ -159,7 +160,7 @@ public class ChatPingManager {
             case "is-admin" -> {
                 List<Player> result = new ArrayList<>();
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (!p.equals(sender) && (p.hasPermission("ui.admin") || p.hasPermission("ui.*"))) {
+                    if (!p.equals(sender) && p.hasPermission(Permissions.UI_ALL)) {
                         result.add(p);
                     }
                 }
@@ -168,7 +169,7 @@ public class ChatPingManager {
             case "is-non-admin" -> {
                 List<Player> result = new ArrayList<>();
                 for (Player p : Bukkit.getOnlinePlayers()) {
-                    if (!p.equals(sender) && !p.hasPermission("ui.admin") && !p.hasPermission("ui.*")) {
+                    if (!p.equals(sender) && !p.hasPermission(Permissions.UI_ALL)) {
                         result.add(p);
                     }
                 }
