@@ -136,6 +136,12 @@ public class PluginStartup {
         // via AddonListener; this startup pass catches anything already loaded.
         AddonRegistry.discover();
         plugin.getServer().getPluginManager().registerEvents(new AddonListener(), plugin);
+
+        // One-shot "loaded successfully" alert per session for alert holders
+        // (ui.alerts / OP): at join, plus a sweep of players already online.
+        plugin.getServer().getPluginManager().registerEvents(
+                new com.ultimateimprovments.listener.LoadedAlertListener(), plugin);
+        com.ultimateimprovments.listener.LoadedAlertListener.sweepOnline();
     }
 
     private void loadConfigFile() {

@@ -34,6 +34,10 @@ explosion_power = 8.0
 max_active = 10
 # Default: ["CRACKED_DEEPSLATE_BRICKS", "CRACKED_DEEPSLATE_TILES", "CHISELED_DEEPSLATE", "MAGMA_BLOCK"]
 display_blocks = ["CRACKED_DEEPSLATE_BRICKS", "CRACKED_DEEPSLATE_TILES", "CHISELED_DEEPSLATE", "MAGMA_BLOCK"]
+# Log the periodic scheduler lines to the console: "Next meteor in N minute(s)"
+# and "No players online in '<world>', skipping." (every cycle).
+# Default: false (silent)
+log_scheduler = false
 
 # interval section.
 [meteor.interval]
