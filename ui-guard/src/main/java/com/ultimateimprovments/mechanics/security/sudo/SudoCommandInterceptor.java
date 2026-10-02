@@ -2,11 +2,15 @@ package com.ultimateimprovments.mechanics.security.sudo;
 
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.util.MessageUtil;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.RemoteConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 
 import java.util.List;
 
@@ -33,7 +37,10 @@ public class SudoCommandInterceptor implements Listener {
      * Command policy: vanilla commands superseded by /ui equivalents
      * ({@code command_policy.disabled_commands}, default: op/deop/stop/restart)
      * are answered with error 011 ("command disabled on this server").
-     * Independent of the sudo feature toggle — active whenever ui-guard is.
+     * Blocked for PLAYERS and the CONSOLE/RCON alike — they are unsafe and
+     * have /ui replacements (/ui op|deop, /ui power off|reboot) that also work
+     * from the console. Independent of the sudo feature toggle — active
+     * whenever ui-guard is.
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDisabledCommand(PlayerCommandPreprocessEvent event) {
@@ -41,6 +48,20 @@ public class SudoCommandInterceptor implements Listener {
         if (SudoManager.isCommandDisabled(event.getMessage())) {
             event.setCancelled(true);
             CommandErrors.commandDisabled(player);
+        }
+    }
+
+    /** Console/RCON variant of the command policy (see {@link #onDisabledCommand}). */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onDisabledConsoleCommand(ServerCommandEvent event) {
+        CommandSender sender = event.getSender();
+        if (!(sender instanceof ConsoleCommandSender)
+                && !(sender instanceof RemoteConsoleCommandSender)) {
+            return; // command blocks are not the console executor
+        }
+        if (SudoManager.isCommandDisabled(event.getCommand())) {
+            event.setCancelled(true);
+            CommandErrors.commandDisabled(sender);
         }
     }
 
