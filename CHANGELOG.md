@@ -32,6 +32,19 @@ in this file.
   `ui.alerts` / OP now receive an AlertBroadcast when a request is sent,
   confirmed or denied (texts: `admin_request` / `admin_confirmed` /
   `admin_denied` in both language sections).
+- **Meteor scheduler log toggle** — the periodic console lines
+  "Next meteor in N minute(s) (N ticks)" and "No players online in
+  '<world>', skipping." are now silent by default; set
+  `[meteor] log_scheduler = true` (UI-World.toml) to bring them back.
+  One-off/action warnings (world not found, active limit, force spawn)
+  are unaffected.
+- **"Loaded successfully" alert per session** (ui-core): after a server
+  start, every alerts holder (`ui.alerts` / OP) receives
+  `prefix + "UltimateImprovments loaded successfully!"` exactly once —
+  the first time they are present after startup (join listener +
+  sweep of already-online players at enable). Later joins in the same
+  session stay silent; the in-memory flag resets on server restart.
+  New `LoadedAlertListener`, registered in `PluginStartup`.
 
 ## [1.8.3-alpha.6] — since 1.8.3-alpha.5 (2026-09-30)
 

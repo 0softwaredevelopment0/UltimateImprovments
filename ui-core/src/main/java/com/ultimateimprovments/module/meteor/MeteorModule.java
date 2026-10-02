@@ -100,7 +100,14 @@ public class MeteorModule extends PluginModule {
             }
         }.runTaskLater(plugin, ticks);
 
-        ConsoleLogger.info("[Meteor] Next meteor in " + minutes + " minute(s) (" + ticks + " ticks).");
+        if (schedulerLogging(plugin)) {
+            ConsoleLogger.info("[Meteor] Next meteor in " + minutes + " minute(s) (" + ticks + " ticks).");
+        }
+    }
+
+    /** Periodic scheduler log toggle ({@code meteor.log_scheduler}, default off). */
+    private static boolean schedulerLogging(JavaPlugin plugin) {
+        return plugin.getConfig().getBoolean("meteor.log_scheduler", false);
     }
 
     // ========================================================================
@@ -127,7 +134,9 @@ public class MeteorModule extends PluginModule {
 
         List<Player> players = world.getPlayers();
         if (players.isEmpty()) {
-            ConsoleLogger.info("[Meteor] No players online in '" + worldName + "', skipping.");
+            if (schedulerLogging(Main.getInstance())) {
+                ConsoleLogger.info("[Meteor] No players online in '" + worldName + "', skipping.");
+            }
             return;
         }
         Player target = players.get(random.nextInt(players.size()));
