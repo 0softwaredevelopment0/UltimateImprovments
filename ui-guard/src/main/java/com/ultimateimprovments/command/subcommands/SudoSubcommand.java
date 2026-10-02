@@ -29,7 +29,7 @@ public final class SudoSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.sudo")) {
-            CommandErrors.noPermission(p);
+            CommandErrors.noPermission(p, "ui.command.sudo");
             return true;
         }
         if (!SudoManager.isEnabled()) {
@@ -85,6 +85,12 @@ public final class SudoSubcommand {
     private static boolean handleReenter(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(MessageUtil.parse("<red>❌ Only players can re-enter sudo mode.</red>"));
+            return true;
+        }
+        // Opening the sudo dialog requires the ui.sudo permission: without it a
+        // player cannot use sudo mode at all — denied with error 003.
+        if (!player.hasPermission("ui.sudo")) {
+            CommandErrors.sudoRequired(player, "ui.sudo");
             return true;
         }
         SudoManager manager = SudoManager.getInstance();

@@ -32,7 +32,7 @@ public final class MaintSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.maintenance")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.maintenance");
             return true;
         }
 

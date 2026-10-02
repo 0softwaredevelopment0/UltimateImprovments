@@ -50,7 +50,7 @@ public final class SwapJarSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERMISSION);
             return true;
         }
 

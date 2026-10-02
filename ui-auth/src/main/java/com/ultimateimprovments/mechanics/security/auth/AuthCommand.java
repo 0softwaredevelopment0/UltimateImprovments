@@ -61,7 +61,7 @@ public class AuthCommand {
 
     private static void handle2FA(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return;
         }
 
@@ -354,7 +354,7 @@ public class AuthCommand {
      */
     private static void handleSelfChangePassword(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return;
         }
         if (args.length < 4) {

@@ -24,7 +24,7 @@ public final class LangSubcommand implements SubCommand {
     public boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof org.bukkit.entity.Player player
                 && !player.hasPermission(Permissions.CMD_LANG)) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, Permissions.CMD_LANG);
             return true;
         }
 

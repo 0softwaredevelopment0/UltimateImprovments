@@ -81,11 +81,11 @@ public final class InvseeCommand {
     // =========================
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (!player.hasPermission("ui.command.invsee")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.invsee");
             return true;
         }
         if (args.length < 2) {
@@ -110,11 +110,11 @@ public final class InvseeCommand {
     // =========================
     public static boolean executeEnder(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (!player.hasPermission("ui.command.endersee")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.endersee");
             return true;
         }
         if (args.length < 2) {

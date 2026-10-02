@@ -47,7 +47,7 @@ public final class RepSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERM_VIEW)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERM_VIEW);
             return true;
         }
 
@@ -126,7 +126,7 @@ public final class RepSubcommand {
 
     private static void give(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERM_GIVE)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERM_GIVE);
             return;
         }
         if (args.length < 4) {
@@ -177,7 +177,7 @@ public final class RepSubcommand {
 
     private static void set(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERM_SET)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERM_SET);
             return;
         }
         if (args.length < 4) {
@@ -214,7 +214,7 @@ public final class RepSubcommand {
 
     private static void status(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERM_STATUS)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERM_STATUS);
             return;
         }
         if (args.length < 4) {
@@ -292,7 +292,7 @@ public final class RepSubcommand {
         if (args.length >= 3) {
             // other player — staff only
             if (!(sender instanceof Player p) || !p.hasPermission(PERM_HISTORY_OTHER)) {
-                CommandErrors.noPermission(sender);
+                CommandErrors.noPermission(sender, PERM_HISTORY_OTHER);
                 return;
             }
             name = args[2];

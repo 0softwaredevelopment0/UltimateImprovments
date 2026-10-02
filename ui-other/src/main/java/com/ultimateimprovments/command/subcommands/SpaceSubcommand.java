@@ -18,12 +18,12 @@ public final class SpaceSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 
         if (!player.hasPermission("ui.command.space")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.space");
             return true;
         }
 

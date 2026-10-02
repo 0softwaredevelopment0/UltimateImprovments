@@ -70,11 +70,11 @@ public final class ClanSubcommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>✖ <white>Only players can use this command.</white>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (!player.hasPermission(PERMISSION)) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, PERMISSION);
             return true;
         }
         if (args.length < 2) { sendUsage(player); return true; }
@@ -881,7 +881,7 @@ public final class ClanSubcommand implements SubCommand {
     // ============================================================
 
     private boolean cmdAdmedit(Player player, String[] args) {
-        if (!player.hasPermission(PERMISSION_ADMIN)) { CommandErrors.noPermission(player); return true; }
+        if (!player.hasPermission(PERMISSION_ADMIN)) { CommandErrors.noPermission(player, PERMISSION_ADMIN); return true; }
         if (args.length < 2) {
             player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> <subcmd></yellow>"));
             return true;

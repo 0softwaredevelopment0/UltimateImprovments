@@ -22,13 +22,12 @@ public final class ReportSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only",
-                    "<red>❌ Only players can use this command!</red>")));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 
         if (!player.hasPermission("ui.command.report")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.report");
             return true;
         }
 

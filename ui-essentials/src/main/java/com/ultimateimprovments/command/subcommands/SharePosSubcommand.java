@@ -3,7 +3,6 @@ package com.ultimateimprovments.command.subcommands;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.command.SharePosDialogScreen;
 import com.ultimateimprovments.command.SubCommand;
-import com.ultimateimprovments.util.MessageUtil;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -26,11 +25,11 @@ public final class SharePosSubcommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERMISSION);
             return true;
         }
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 

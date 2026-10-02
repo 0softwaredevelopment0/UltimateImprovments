@@ -30,7 +30,7 @@ public final class WhitelistSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.whitelist")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.whitelist");
             return true;
         }
 

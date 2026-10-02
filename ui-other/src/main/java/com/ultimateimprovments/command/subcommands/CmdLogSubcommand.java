@@ -33,7 +33,7 @@ public final class CmdLogSubcommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(Permissions.CMD_CMDLOG)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, Permissions.CMD_CMDLOG);
             return true;
         }
 

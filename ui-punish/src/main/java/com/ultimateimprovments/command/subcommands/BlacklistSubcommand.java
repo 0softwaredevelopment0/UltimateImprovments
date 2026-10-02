@@ -30,7 +30,7 @@ public final class BlacklistSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.blacklist")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.blacklist");
             return true;
         }
 

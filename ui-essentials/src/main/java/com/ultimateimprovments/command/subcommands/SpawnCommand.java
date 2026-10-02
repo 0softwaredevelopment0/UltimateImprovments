@@ -34,7 +34,7 @@ public final class SpawnCommand {
     // ============================================================
     public static boolean dispatch(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 
@@ -56,7 +56,7 @@ public final class SpawnCommand {
     // ============================================================
     private static boolean executeSetSpawn(Player player, String[] args) {
         if (!player.hasPermission("ui.command.setspawn")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.setspawn");
             return true;
         }
 
@@ -115,7 +115,7 @@ public final class SpawnCommand {
     // ============================================================
     private static void executeSpawn(Player player) {
         if (!player.hasPermission("ui.command.spawn")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.spawn");
             return;
         }
 

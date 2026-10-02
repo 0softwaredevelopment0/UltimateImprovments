@@ -56,7 +56,7 @@ public final class RtpSubcommand {
         if (args.length > 1) {
             // /ui rtp <player>
             if (!sender.hasPermission("ui.command.rtp.other")) {
-                CommandErrors.noPermission(sender);
+                CommandErrors.noPermission(sender, "ui.command.rtp.other");
                 return true;
             }
             target = Bukkit.getPlayerExact(args[1]);
@@ -68,7 +68,7 @@ public final class RtpSubcommand {
         } else {
             // /ui rtp
             if (!(sender instanceof Player player)) {
-                sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+                CommandErrors.playerOnly(sender);
                 return true;
             }
             target = player;

@@ -34,11 +34,11 @@ public final class GetPosSubcommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERMISSION);
             return true;
         }
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 

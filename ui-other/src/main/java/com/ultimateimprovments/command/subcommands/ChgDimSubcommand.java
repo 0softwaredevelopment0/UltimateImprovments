@@ -19,7 +19,7 @@ public final class ChgDimSubcommand {
             return true;
         }
         if (!player.hasPermission("ui.command.chgdim")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.chgdim");
             return true;
         }
         // Open a Custom Screen (Dialog) to enter the world name

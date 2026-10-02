@@ -18,12 +18,11 @@ public final class RepStatusSubcommand {
 
     public static boolean execute(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.repstatus")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.repstatus");
             return true;
         }
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only",
-                    "<red>❌ Only players can use this command!</red>")));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 

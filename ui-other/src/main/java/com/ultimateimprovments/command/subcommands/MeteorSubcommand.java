@@ -39,7 +39,7 @@ public final class MeteorSubcommand {
 
     private static boolean handleSpawn(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.meteor.spawn")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.meteor.spawn");
             return true;
         }
 

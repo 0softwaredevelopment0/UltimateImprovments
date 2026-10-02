@@ -45,7 +45,7 @@ public final class ChatChannelSubcommand implements SubCommand {
         }
 
         if (!player.hasPermission("ui.command.chatchnl")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.chatchnl");
             return true;
         }
 

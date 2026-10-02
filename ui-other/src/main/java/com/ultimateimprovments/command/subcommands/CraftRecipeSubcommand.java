@@ -37,12 +37,11 @@ public final class CraftRecipeSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERMISSION)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERMISSION);
             return true;
         }
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "general.player_only", "<red>❌ Only players can use this command!</red>")));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (args.length < 2) {

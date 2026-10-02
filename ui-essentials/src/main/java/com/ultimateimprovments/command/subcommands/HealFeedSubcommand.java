@@ -37,7 +37,7 @@ public final class HealFeedSubcommand {
             return true;
         }
         if (!sender.hasPermission("ui.command.heal")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.heal");
             return true;
         }
 
@@ -81,7 +81,7 @@ public final class HealFeedSubcommand {
             return true;
         }
         if (!sender.hasPermission("ui.command.feed")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.feed");
             return true;
         }
 

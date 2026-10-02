@@ -56,7 +56,7 @@ public class AddonSubcommand implements SubCommand {
     public boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof org.bukkit.entity.Player player
                 && !player.hasPermission(Permissions.CMD_ADDONS)) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, Permissions.CMD_ADDONS);
             return true;
         }
 

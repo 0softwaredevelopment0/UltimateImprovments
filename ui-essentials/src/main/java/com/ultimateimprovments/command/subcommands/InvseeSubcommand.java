@@ -49,11 +49,11 @@ public class InvseeSubcommand implements SubCommand {
     @Override
     public boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (!player.hasPermission(permission)) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, permission);
             return true;
         }
         if (args.length < 2) {

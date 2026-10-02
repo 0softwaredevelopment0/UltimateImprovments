@@ -89,7 +89,7 @@ public final class ClearSubcommand implements SubCommand {
 
     private boolean clearChat(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERM_CHAT)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERM_CHAT);
             return true;
         }
         if (args.length < 3) {
@@ -135,7 +135,7 @@ public final class ClearSubcommand implements SubCommand {
 
     private boolean clearAttributes(CommandSender sender, String[] args) {
         if (!sender.hasPermission(PERM_ATTRIBUTES)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERM_ATTRIBUTES);
             return true;
         }
         if (args.length < 3) {

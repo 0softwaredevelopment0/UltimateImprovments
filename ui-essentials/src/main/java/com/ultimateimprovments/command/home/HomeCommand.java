@@ -93,7 +93,7 @@ public final class HomeCommand {
             return true;
         }
         if (!player.hasPermission("ui.command.sethome")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.sethome");
             return true;
         }
         if (args.length < 1) {
@@ -145,7 +145,7 @@ public final class HomeCommand {
             return true;
         }
         if (!player.hasPermission("ui.command.home")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.home");
             return true;
         }
         if (args.length < 1) {
@@ -199,7 +199,7 @@ public final class HomeCommand {
             return true;
         }
         if (!player.hasPermission("ui.command.delhome")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.delhome");
             return true;
         }
         if (args.length < 1) {
@@ -231,7 +231,7 @@ public final class HomeCommand {
             return true;
         }
         if (!player.hasPermission("ui.command.listhomes")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.listhomes");
             return true;
         }
 
@@ -275,7 +275,7 @@ public final class HomeCommand {
     // ============================================================
     private static boolean executeOpHomeLs(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.ophomels")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.ophomels");
             return true;
         }
         if (args.length < 1) {
@@ -323,7 +323,7 @@ public final class HomeCommand {
     // ============================================================
     private static boolean executeOpDelHome(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.opdelhome")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.opdelhome");
             return true;
         }
         if (args.length < 2) {

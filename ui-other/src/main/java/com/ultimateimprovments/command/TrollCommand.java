@@ -37,7 +37,7 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<red>Only players can use this command."));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 
@@ -132,7 +132,7 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
     private boolean checkPermission(Player player, String permission) {
         if (permission == null || permission.isEmpty()) return true;
         if (player.hasPermission(permission)) return true;
-        CommandErrors.noPermission(player);
+        CommandErrors.noPermission(player, permission);
         return false;
     }
 
