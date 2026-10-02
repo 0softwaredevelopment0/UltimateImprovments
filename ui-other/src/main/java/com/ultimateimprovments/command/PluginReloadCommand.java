@@ -193,13 +193,24 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── /ui cmdblocklist and /ui advancement are registered by the UI-World addon ──
         registry.register(LegacySubCommandAdapter.of("unlock", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (a.length < 2) return false;
-            return switch (a[1].toLowerCase()) {
+            if (a.length < 2) {
+                p.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui unlock <book|sign></white>"));
+                return false;
+            }
+            boolean handled = switch (a[1].toLowerCase()) {
                 case "book" -> { MiscSubcommand.unlockBook(s); yield true; }
                 case "sign" -> { MiscSubcommand.unlockSign(s); yield true; }
                 default -> false;
             };
-        }));
+            if (!handled) {
+                p.sendMessage(MessageUtil.parse("<red>❌ Usage: </red><white>/ui unlock <book|sign></white>"));
+            }
+            return handled;
+        }, tc((s, a) -> {
+            if (a.length == 2) return List.of("book", "sign");
+            // Empty suggestion so the dispatcher does not fall back to player names.
+            return List.of("");
+        })));
         // ── AskPos: dialog-based coordinate request (formerly askcords; accept/decline removed — all in dialogs) ──
         registry.register(LegacySubCommandAdapter.of("askpos", (s, a) -> {
             if (!(s instanceof Player p)) return false;
