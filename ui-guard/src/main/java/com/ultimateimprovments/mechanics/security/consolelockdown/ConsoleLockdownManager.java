@@ -4,7 +4,7 @@ import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.UIGuard;
 import com.ultimateimprovments.database.StateStore;
-import com.ultimateimprovments.util.Broadcast;
+import com.ultimateimprovments.util.AlertBroadcast;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -158,7 +158,7 @@ public final class ConsoleLockdownManager implements Listener {
         active = true;
         persistActive();
         ConsoleLogger.warn("[ConsoleLockdown] ENABLED — all console commands are now cancelled.");
-        broadcast("console_lockdown.enabled",
+        notifyAdmins("console_lockdown.enabled",
                 "<red>🔒</red> <white>Console lockdown </white><green>ENABLED</green>"
                         + "<gray> — all console commands are cancelled.</gray>");
     }
@@ -169,7 +169,7 @@ public final class ConsoleLockdownManager implements Listener {
         active = false;
         persistActive();
         ConsoleLogger.info("[ConsoleLockdown] DISABLED — console commands work again.");
-        broadcast("console_lockdown.disabled",
+        notifyAdmins("console_lockdown.disabled",
                 "<green>✔</green> <white>Console lockdown </white><red>DISABLED</red>"
                         + "<gray> — console commands work again.</gray>");
     }
@@ -177,7 +177,7 @@ public final class ConsoleLockdownManager implements Listener {
     /** Schedules the lockdown to be enabled at {@code atMillis} (epoch ms). */
     public void scheduleEnable(long atMillis) {
         schedule("on", atMillis);
-        broadcast("console_lockdown.scheduled_on",
+        notifyAdmins("console_lockdown.scheduled_on",
                 "<yellow>⏰</yellow> <white>Console lockdown will be enabled in </white><yellow>%time%</yellow>",
                 atMillis);
     }
@@ -185,7 +185,7 @@ public final class ConsoleLockdownManager implements Listener {
     /** Schedules the lockdown to be disabled at {@code atMillis} (epoch ms). */
     public void scheduleDisable(long atMillis) {
         schedule("off", atMillis);
-        broadcast("console_lockdown.scheduled_off",
+        notifyAdmins("console_lockdown.scheduled_off",
                 "<yellow>⏰</yellow> <white>Console lockdown will be disabled in </white><yellow>%time%</yellow>",
                 atMillis);
     }
@@ -278,14 +278,27 @@ public final class ConsoleLockdownManager implements Listener {
     // MESSAGING / TIME HELPERS
     // =========================
 
-    private void broadcast(String key, String def) {
-        Broadcast.send(MessagesManager.getString(key, def));
+    /**
+     * Notifies ADMINS about lockdown changes (players with the alert
+     * permissions — {@code ui.alerts} etc. — plus a console log line).
+     * Message keys live in both config language sections
+     * ({@code messages.console_lockdown.*} / {@code messages_en.console_lockdown.*}).
+     */
+    private void notifyAdmins(String key, String def) {
+        AlertBroadcast.send(MessagesManager.getString(key, def));
+        ConsoleLogger.info("[ConsoleLockdown] " + plain(def));
     }
 
-    private void broadcast(String key, String def, long atMillis) {
+    private void notifyAdmins(String key, String def, long atMillis) {
         long remaining = Math.max(0L, atMillis - System.currentTimeMillis());
         String msg = MessagesManager.getString(key, def).replace("%time%", formatDuration(remaining));
-        Broadcast.send(msg);
+        AlertBroadcast.send(msg);
+        ConsoleLogger.info("[ConsoleLockdown] " + plain(def).replace("%time%", formatDuration(remaining)));
+    }
+
+    /** Strips MiniMessage tags for the plain console log line. */
+    private static String plain(String miniMessage) {
+        return miniMessage.replaceAll("<[^>]+>", "").replace("🔒", "").trim();
     }
 
     /** Formats a duration in millis as a compact human string (e.g. "1d 2h", "5m 30s"). */

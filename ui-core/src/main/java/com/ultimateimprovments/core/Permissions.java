@@ -8,7 +8,6 @@ import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginManager;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Canonical permission list of UltimateImprovments (previously declared in plugin.yml,
@@ -16,8 +15,7 @@ import java.util.Map;
  *
  * <p>Hierarchy:
  * <ul>
- *   <li>{@code ui.*} — all permissions (wildcard)</li>
- *   <li>{@code ui.admin} — full access (granted to OP by default; includes {@code ui} and {@code ui.*})</li>
+ *   <li>{@code ui.*} — all permissions (top wildcard)</li>
  *   <li>{@code ui.command.*} — all /ui command permissions</li>
  *   <li>{@code ui.command.<name>} — permission for a specific command</li>
  * </ul>
@@ -33,7 +31,6 @@ public final class Permissions {
     // ═══════════ Root ═══════════
     public static final String UI = "ui";
     public static final String UI_ALL = "ui.*";
-    public static final String UI_ADMIN = "ui.admin";
     public static final String UI_COMMAND_ALL = "ui.command.*";
 
     // ═══════════ Commands: utilities ═══════════
@@ -122,7 +119,7 @@ public final class Permissions {
     public static final String CMD_OPWHITELIST = "ui.command.opwhitelist";
     public static final String CMD_WHITELIST = "ui.command.whitelist";
     public static final String CMD_MAINTENANCE = "ui.command.maintenance";
-    /** /ui console lockdown — console lockout control. NEVER granted by default (not a child of ui.admin / ui.command.*). */
+    /** /ui console lockdown — console lockout control. NEVER granted by default (not a child of ui.* / ui.command.*). */
     public static final String CMD_CONSOLE = "ui.command.console";
     public static final String CMD_CHECK = "ui.command.check";
     public static final String CMD_AC = "ui.command.ac";
@@ -211,8 +208,6 @@ public final class Permissions {
                 // ── Root ──
                 new Permission(UI, "Base access to UltimateImprovments commands", PermissionDefault.FALSE),
                 new Permission(UI_ALL, "All UltimateImprovments permissions", PermissionDefault.FALSE),
-                new Permission(UI_ADMIN, "Full access to all UltimateImprovments features",
-                        PermissionDefault.OP, Map.of(UI, true, UI_ALL, true)),
                 new Permission(UI_COMMAND_ALL, "All /ui command permissions", PermissionDefault.FALSE),
 
                 // ── Commands: utilities ──
@@ -296,7 +291,7 @@ public final class Permissions {
                 new Permission(CMD_OPWHITELIST, "Manage the operator whitelist", PermissionDefault.FALSE),
                 new Permission(CMD_WHITELIST, "Manage the whitelist", PermissionDefault.FALSE),
                 new Permission(CMD_MAINTENANCE, "Toggle maintenance mode", PermissionDefault.FALSE),
-                new Permission(CMD_CONSOLE, "Control the console lockdown (/ui console lockdown) — emergency console lockout; deliberately NOT granted by default (no OP, no ui.admin implication)", PermissionDefault.FALSE),
+                new Permission(CMD_CONSOLE, "Control the console lockdown (/ui console lockdown) — emergency console lockout; deliberately NOT granted by default (no OP, no wildcard implication)", PermissionDefault.FALSE),
                 new Permission(CMD_CHECK, "Check players", PermissionDefault.FALSE),
                 new Permission(CMD_AC, "View anti-cheat statistics", PermissionDefault.FALSE),
                 new Permission(CMD_PROTECTION, "Manage protection blocks", PermissionDefault.FALSE),

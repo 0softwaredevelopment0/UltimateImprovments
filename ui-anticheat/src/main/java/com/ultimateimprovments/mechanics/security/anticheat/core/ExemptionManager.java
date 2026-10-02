@@ -1,6 +1,7 @@
 package com.ultimateimprovments.mechanics.security.anticheat.core;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.Permissions;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -111,7 +112,7 @@ public class ExemptionManager {
             case "FastBreak", "FastPlace", "Nuker":
                 return player.getGameMode() == GameMode.CREATIVE;
             case "XRay":
-                return player.hasPermission("ui.admin");
+                return player.hasPermission(Permissions.UI_ALL);
             default:
                 return false;
         }

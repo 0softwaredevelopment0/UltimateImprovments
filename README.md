@@ -93,7 +93,7 @@ On top of that, every feature is a **module** that can be toggled on/off at runt
 
 ### Addons
 
-Each addon is a regular Paper plugin discovered through the family's **AddonCatalog**; the universal manager `/ui addon` lists every addon with its status (`/ui addon list`, permission `ui.command.addons`, included in `ui.admin` / `ui.*`):
+Each addon is a regular Paper plugin discovered through the family's **AddonCatalog**; the universal manager `/ui addon` lists every addon with its status (`/ui addon list`, permission `ui.command.addons`, included in `ui.*`):
 
 ```
 /ui addon list
@@ -122,7 +122,7 @@ All commands start with `/ui`. The full list is in the in-game help (`/ui help`,
 
 | Permission | Description |
 |------------|-------------|
-| `ui.admin` / `ui.*` | All permissions |
+| `ui.*` | All permissions |
 | `ui.command.<name>` | Access to a specific `/ui <name>` command |
 | `ui.command.radview` | Admin radiation overlay (default FALSE) |
 | `ui.command.configregen` / `ui.command.configreset` | Config regen/reset (default FALSE, extra-gated) |

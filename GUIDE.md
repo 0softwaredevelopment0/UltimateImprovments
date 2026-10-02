@@ -98,7 +98,7 @@ DeathLogger, CmdBlockTracker.
 
 The bundled addon set is registered in the **AddonCatalog**; the universal
 manager `/ui addon` shows every addon with its status (`/ui addon list`,
-permission `ui.command.addons`, included in `ui.admin` / `ui.*`).
+permission `ui.command.addons`, included in `ui.*`).
 
 ---
 
@@ -440,7 +440,7 @@ Multi-block structure (iron/copper/redstone blocks, lightning rods, item frame).
 
 | Permission | Description |
 |------------|-------------|
-| `ui.admin`, `ui.*` | Everything |
+| `ui.*` | Everything |
 | `ui.command.<name>` | Access to `/ui <name>` |
 | `ui.command.*` | All commands |
 | `ui.command.radview` | Admin radiation overlay (default FALSE) |
