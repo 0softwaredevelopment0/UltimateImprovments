@@ -120,6 +120,22 @@ in this file.
   in-code fallback) and a one-time guarded migration flips every stored
   value back to OFF; players who want the bind re-enable it with
   `/ui wirelessbind on`.
+- **`/ui unlock` tab-complete + sign/book data loss** (ui-other):
+  - tab-completion was never registered — `/ui ` no longer falls back to
+    suggesting online player names; `book`/`sign` are suggested, and a
+    wrong or missing argument now prints the usage line (previously the
+    command failed silently);
+  - **sign**: `/ui unlock sign` replaced the held sign with a freshly
+    created item, copying back only name/lore/PDC — every other component
+    (the sign text above all) was destroyed. Modern vanilla keeps the
+    sign text AND the waxed flag in the item's block-state data, so the
+    item is now edited in place via `BlockStateMeta` →
+    `Sign#setWaxed(false)`: only the waxed flag flips, everything else is
+    preserved. A sign without block data or already unwaxed reports that
+    there is nothing to unlock;
+  - **book**: `/ui unlock book` (written → writable) preserved only the
+    pages — anvil display name, lore, plugin PDC, enchantments and custom
+    model data are now carried over as well.
 
 ### Changed
 - **Wireless redstone: every linked device now performs its real vanilla

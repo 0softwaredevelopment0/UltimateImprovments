@@ -12,11 +12,12 @@ import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.block.Sign;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
 import java.util.UUID;
 
 public final class MiscSubcommand {
@@ -417,6 +418,14 @@ public final class MiscSubcommand {
         }
 
         newMeta.pages(new java.util.ArrayList<>(pages));
+        // Preserve everything a signed book can carry besides its pages
+        // (anvil display name, lore, plugin PDC, enchantments, custom model
+        // data) — the material changes, the data must not be lost.
+        if (oldMeta.hasDisplayName()) newMeta.displayName(oldMeta.displayName());
+        if (oldMeta.hasLore()) newMeta.lore(oldMeta.lore());
+        oldMeta.getPersistentDataContainer().copyTo(newMeta.getPersistentDataContainer(), true);
+        oldMeta.getEnchants().forEach((ench, level) -> newMeta.addEnchant(ench, level, true));
+        if (oldMeta.hasCustomModelData()) newMeta.setCustomModelData(oldMeta.getCustomModelData());
         newBook.setItemMeta(newMeta);
         player.getInventory().setItemInMainHand(newBook);
         player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Book unlocked! You can now edit it.</white>"));
@@ -424,7 +433,7 @@ public final class MiscSubcommand {
     }
 
     // =========================
-    // UNLOCK SIGN — removes the waxed component from a sign
+    // UNLOCK SIGN — removes the waxed flag from a sign, keeping all other data
     // =========================
     public static boolean unlockSign(CommandSender sender) {
         if (!(sender instanceof Player player)) {
@@ -437,35 +446,32 @@ public final class MiscSubcommand {
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
-        if (item == null || item.getType() == Material.AIR) {
+        if (item == null || item.getType() == Material.AIR || !item.getType().name().endsWith("_SIGN")) {
             player.sendMessage(MessageUtil.parse("<red>❌ You must hold a sign in your hand!</red>"));
             return true;
         }
 
-        String typeName = item.getType().name();
-        if (!typeName.endsWith("_SIGN")) {
-            player.sendMessage(MessageUtil.parse("<red>❌ You must hold a sign in your hand!</red>"));
+        // Modern vanilla keeps the sign text AND the waxed flag in the item's
+        // block-state data, so the item must be edited IN PLACE: flip only the
+        // waxed property. The old implementation replaced the item with a
+        // freshly created one and copied just name/lore/PDC back — every other
+        // component (the sign text above all) was destroyed.
+        if (!(item.getItemMeta() instanceof BlockStateMeta blockMeta)
+                || !(blockMeta.getBlockState() instanceof Sign signState)) {
+            player.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠</yellow> <white>This sign carries no block data — it is already editable.</white>"));
+            return true;
+        }
+        if (!signState.isWaxed()) {
+            player.sendMessage(MessageUtil.parse(
+                    "<yellow>⚠</yellow> <white>This sign is not waxed — nothing to unlock.</white>"));
             return true;
         }
 
-        // Create a new sign without the waxed component (a fresh item has no waxed)
-        ItemStack newSign = new ItemStack(item.getType(), item.getAmount());
-        if (item.hasItemMeta()) {
-            var oldMeta = item.getItemMeta();
-            var newMeta = newSign.getItemMeta();
-            if (newMeta == null) {
-                player.sendMessage(MessageUtil.parse("<red>❌ Failed to create new sign!</red>"));
-                return true;
-            }
-            // Copy display name and lore
-            if (oldMeta.hasDisplayName()) newMeta.displayName(oldMeta.displayName());
-            if (oldMeta.hasLore()) newMeta.lore(oldMeta.lore());
-            // Copy PDC
-            oldMeta.getPersistentDataContainer().copyTo(newMeta.getPersistentDataContainer(), true);
-            newSign.setItemMeta(newMeta);
-        }
-
-        player.getInventory().setItemInMainHand(newSign);
+        signState.setWaxed(false);
+        blockMeta.setBlockState(signState);
+        item.setItemMeta(blockMeta);
+        player.getInventory().setItemInMainHand(item);
         player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Sign unwaxed! You can now edit it after placing.</white>"));
         return true;
     }
