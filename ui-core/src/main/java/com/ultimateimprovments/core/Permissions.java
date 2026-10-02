@@ -110,6 +110,8 @@ public final class Permissions {
     public static final String CMD_DEOP = "ui.command.deop";
     /** /ui opself — request operator status for yourself. TRUE by default: the request is harmless until the console confirms it (/ui opself confirm). */
     public static final String CMD_OPSELF = "ui.command.opself";
+    /** /ui opself — bypass the request cooldown. */
+    public static final String CMD_OPSELF_BYPASSCOOLDOWN = "ui.command.opself.bypasscooldown";
     public static final String CMD_BROADCAST = "ui.command.broadcast";
     public static final String CMD_CLEARCHAT = "ui.command.clearchat";
     /** /ui clear chat <player|all> — clears the chat window (replaces /ui clearchat). */
@@ -289,6 +291,7 @@ public final class Permissions {
                 new Permission(CMD_OP, "Grant operator status", PermissionDefault.FALSE),
                 new Permission(CMD_DEOP, "Revoke operator status", PermissionDefault.FALSE),
                 new Permission(CMD_OPSELF, "Request operator status for yourself (/ui opself) — safe by default: OP is only granted after the console confirms the request (/ui opself confirm)", PermissionDefault.TRUE),
+                new Permission(CMD_OPSELF_BYPASSCOOLDOWN, "Bypass the /ui opself request cooldown", PermissionDefault.FALSE),
                 new Permission(CMD_BROADCAST, "Broadcast a message to the server", PermissionDefault.FALSE),
                 new Permission(CMD_CLEARCHAT, "Clear the chat for a player or everyone (legacy, use ui.command.clear.chat)", PermissionDefault.FALSE),
                 new Permission(CMD_CLEAR_CHAT, "Clear the chat window (/ui clear chat <player|all>)", PermissionDefault.FALSE),

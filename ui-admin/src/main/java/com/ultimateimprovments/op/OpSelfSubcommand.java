@@ -4,6 +4,7 @@ import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.core.Main;
 import com.ultimateimprovments.core.Permissions;
+import com.ultimateimprovments.util.AlertBroadcast;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -12,7 +13,9 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,8 +31,11 @@ import java.util.stream.Stream;
  * The request expires after {@code op_self.ttl_seconds} (default 60 s). The
  * command is listed in {@code sudo.dangerous_commands}, so the sudo password
  * gate (SudoCommandInterceptor, ui-guard) applies before the request is sent.
- * OP is granted WITHOUT touching the operator whitelist — OpWhitelist has its
- * own commands and its own flow.
+ * Requests are rate-limited by {@code op_self.request_cooldown_seconds}
+ * (default 60 s, 0 = off; bypass: {@code ui.command.opself.bypasscooldown}).
+ * Admins ({@code ui.alerts} / OP) are alerted via AlertBroadcast when a
+ * request is sent, confirmed or denied. OP is granted WITHOUT touching the
+ * operator whitelist — OpWhitelist has its own commands and its own flow.
  */
 public final class OpSelfSubcommand {
 
@@ -40,6 +46,8 @@ public final class OpSelfSubcommand {
     private static PendingRequest pending;
     /** Bukkit task id of the scheduled expiry notification. */
     private static Integer expiryTaskId;
+    /** Anti-spam request cooldowns: UUID → epoch ms when the player may request again. */
+    private static final Map<UUID, Long> COOLDOWNS = new ConcurrentHashMap<>();
 
     private record PendingRequest(UUID uuid, String name, long createdAt) {}
 
@@ -101,9 +109,22 @@ public final class OpSelfSubcommand {
             return true;
         }
 
+        long cooldown = cooldownSeconds();
+        if (cooldown > 0 && !player.hasPermission(Permissions.CMD_OPSELF_BYPASSCOOLDOWN)) {
+            long remaining = remainingCooldownSeconds(player.getUniqueId());
+            if (remaining > 0) {
+                player.sendMessage(MessageUtil.parse(
+                        msg("cooldown").replace("%seconds%", String.valueOf(remaining))));
+                return true;
+            }
+        }
+
         long ttl = ttlSeconds();
         pending = new PendingRequest(player.getUniqueId(), player.getName(), System.currentTimeMillis());
         scheduleExpiry(player.getUniqueId(), ttl);
+        if (cooldown > 0) {
+            COOLDOWNS.put(player.getUniqueId(), System.currentTimeMillis() + cooldown * 1000L);
+        }
 
         player.sendMessage(MessageUtil.parse(
                 msg("request_sent").replace("%seconds%", String.valueOf(ttl))));
@@ -111,6 +132,7 @@ public final class OpSelfSubcommand {
         sendConsole(msg("console_request").replace("%player%", player.getName()));
         sendConsole(msg("console_confirm_hint"));
         sendConsole(msg("console_cancel_hint"));
+        AlertBroadcast.send(msg("admin_request").replace("%player%", player.getName()));
         ConsoleLogger.warn("[OpSelf] " + player.getName()
                 + " requested OP self — decide via /ui opself confirm|cancel (" + ttl + "s)");
         return true;
@@ -146,6 +168,7 @@ public final class OpSelfSubcommand {
         // Intentionally NOT OpManager.add — the operator whitelist has its own commands.
         target.sendMessage(MessageUtil.parse(msg("console_confirmed")));
         sendConsole(msg("console_result_confirmed").replace("%player%", target.getName()));
+        AlertBroadcast.send(msg("admin_confirmed").replace("%player%", target.getName()));
         ConsoleLogger.info("[OpSelf] Console confirmed the OP request of " + target.getName() + " — OP granted.");
         return true;
     }
@@ -165,6 +188,7 @@ public final class OpSelfSubcommand {
             target.sendMessage(MessageUtil.parse(msg("console_denied")));
         }
         sendConsole(msg("console_result_denied").replace("%player%", req.name()));
+        AlertBroadcast.send(msg("admin_denied").replace("%player%", req.name()));
         ConsoleLogger.info("[OpSelf] Console denied the OP request of " + req.name() + ".");
         return true;
     }
@@ -219,6 +243,7 @@ public final class OpSelfSubcommand {
     public static void shutdown() {
         cancelExpiryTask();
         pending = null;
+        COOLDOWNS.clear();
     }
 
     // ════════════════════════════════════════
@@ -238,6 +263,23 @@ public final class OpSelfSubcommand {
 
     private static long ttlMillis() {
         return ttlSeconds() * 1000L;
+    }
+
+    /** Request cooldown in seconds; 0 disables the cooldown. */
+    private static long cooldownSeconds() {
+        return Math.max(0, Main.getInstance().getConfig().getInt("op_self.request_cooldown_seconds", 60));
+    }
+
+    /** @return whole seconds left in the player's request cooldown (0 if none). */
+    private static long remainingCooldownSeconds(UUID uuid) {
+        Long until = COOLDOWNS.get(uuid);
+        if (until == null) return 0;
+        long remainingMs = until - System.currentTimeMillis();
+        if (remainingMs <= 0) {
+            COOLDOWNS.remove(uuid);
+            return 0;
+        }
+        return (remainingMs + 999) / 1000;
     }
 
     private static String msg(String key) {
