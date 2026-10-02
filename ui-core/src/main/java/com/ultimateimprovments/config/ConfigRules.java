@@ -509,6 +509,8 @@ final class ConfigRules {
 
             bool("console_lockdown.kill_switch"),
 
+            stringList("command_policy.disabled_commands"),
+
             integer("access_control.check_interval_ticks", 1, 72000),
 
             bool("troll.enabled"),

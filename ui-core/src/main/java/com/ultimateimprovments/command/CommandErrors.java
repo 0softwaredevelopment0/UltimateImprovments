@@ -44,6 +44,8 @@ public final class CommandErrors {
     public static final int ERR_WRONG_EXECUTOR = 4;
     /** 005 — unexpected error while executing the command. */
     public static final int ERR_UNKNOWN_FAILURE = 5;
+    /** 011 — the command is disabled on this server. */
+    public static final int ERR_COMMAND_DISABLED = 11;
 
     private CommandErrors() {}
 
@@ -129,6 +131,18 @@ public final class CommandErrors {
     public static void unknownError(CommandSender sender) {
         send(sender, ERR_UNKNOWN_FAILURE, "general.errors.005",
                 "<red>An unknown error occurred while executing this command. Please report it to the administrator.</red>");
+    }
+
+    // ═══════════ 011 — COMMAND DISABLED ═══════════
+
+    /**
+     * 011: the command is disabled on this server (e.g. vanilla commands
+     * superseded by /ui equivalents: /op|deop|stop|restart — use
+     * /ui op|deop, /ui power off|reboot).
+     */
+    public static void commandDisabled(CommandSender sender) {
+        send(sender, ERR_COMMAND_DISABLED, "general.errors.011",
+                "<red>This command is disabled on this server.</red>");
     }
 
     // ═══════════ COMMAND-SPECIFIC ERRORS (006+) ═══════════

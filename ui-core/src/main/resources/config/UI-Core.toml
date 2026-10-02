@@ -276,6 +276,9 @@ error_004 = "<red>Неверный исполнитель команды. Воз
 # Error 005 — unexpected error.
 # Default: <red>Произошла неизвестная ошибка при выполнении команды. Сообщите администратору.</red>
 error_005 = "<red>Произошла неизвестная ошибка при выполнении команды. Сообщите администратору.</red>"
+# Error 011 — the command is disabled on this server.
+# Default: <red>Эта команда отключена на сервере.</red>
+error_011 = "<red>Эта команда отключена на сервере.</red>"
 
 # vote section.
 # Placeholders: %name%, %arg%, %num%, %time%, %duration%, %answer%, %total%, %display_total%, %title%, %question%, %desc%, %bar%, %count%, %pct%, %remaining%, %answers%, %votes%, %status%
@@ -1003,6 +1006,8 @@ error_003 = "<red>This command requires a sudo password, but you are not allowed
 error_004 = "<red>Wrong command sender type. Allowed: </red><white>%allowed%</white><red>, got: </red><white>%got%</white>"
 # Error 005 — unexpected error.
 error_005 = "<red>An unknown error occurred while executing this command. Please report it to the administrator.</red>"
+# Error 011 — the command is disabled on this server.
+error_011 = "<red>This command is disabled on this server.</red>"
 
 # vote section.
 # Placeholders: %name%, %arg%, %num%, %time%, %duration%, %answer%, %total%, %display_total%, %title%, %question%, %desc%, %bar%, %count%, %pct%, %remaining%, %answers%, %votes%, %status%
