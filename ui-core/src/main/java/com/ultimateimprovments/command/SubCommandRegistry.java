@@ -91,8 +91,10 @@ public class SubCommandRegistry {
         try {
             return dispatchInner(sender, args);
         } catch (Throwable t) {
-            // A real exception in a subcommand: mark FAILED (the logger reports
-            // it), then rethrow so Paper fires its ServerExceptionEvent as usual.
+            // A real exception in a subcommand: report error 005 to the sender,
+            // mark FAILED (the logger reports it), then rethrow so Paper fires
+            // its ServerExceptionEvent as usual.
+            CommandErrors.unknownError(sender);
             CommandOutcomeTracker.markFailed(sender, rootThrowableMessage(t));
             throw t;
         } finally {
@@ -118,9 +120,7 @@ public class SubCommandRegistry {
 
         if (cmd == null) {
             CommandOutcomeTracker.markUnknown(sender, sub);
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString(
-                    "general.unknown_command",
-                    "<red>❌ Unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>")));
+            CommandErrors.syntaxError(sender);
             return true;
         }
 

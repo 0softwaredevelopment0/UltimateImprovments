@@ -255,6 +255,28 @@ structure_no_permission = "<red>❌ You don't have permission to manage structur
 # Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
 unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
 
+# Default command error codes of the /ui dispatcher (see CommandErrors).
+# Placeholders: %requires%, %permission%, %allowed%, %got%
+[messages.general.errors]
+# Error 001 — invalid syntax or unknown command.
+# Default: <red>Синтаксис команды неверен или команда не существует! </red><gray>Используйте </gray><white>/ui help</white><gray> для списка команд.</gray>
+error_001 = "<red>Синтаксис команды неверен или команда не существует! </red><gray>Используйте </gray><white>/ui help</white><gray> для списка команд.</gray>"
+# Clause injected into errors 002/003 via %requires% when the required permission is known.
+# Default: <gray> — требуется: "<white>%permission%</white>"</gray>
+requires = "<gray> — требуется: \"<white>%permission%</white>\"</gray>"
+# Error 002 — insufficient permissions.
+# Default: <red>Недостаточно прав для выполнения этой команды</red>
+error_002 = "<red>Недостаточно прав для выполнения этой команды</red>"
+# Error 003 — the command requires a sudo password, but sudo mode is not allowed for the sender.
+# Default: <red>Команда требует sudo-пароль, но у вас нет прав его использовать</red>
+error_003 = "<red>Команда требует sudo-пароль, но у вас нет прав его использовать</red>"
+# Error 004 — wrong command sender type.
+# Default: <red>Неверный исполнитель команды. Возможные: </red><white>%allowed%</white><red>, получен: </red><white>%got%</white>
+error_004 = "<red>Неверный исполнитель команды. Возможные: </red><white>%allowed%</white><red>, получен: </red><white>%got%</white>"
+# Error 005 — unexpected error.
+# Default: <red>Произошла неизвестная ошибка при выполнении команды. Сообщите администратору.</red>
+error_005 = "<red>Произошла неизвестная ошибка при выполнении команды. Сообщите администратору.</red>"
+
 # vote section.
 # Placeholders: %name%, %arg%, %num%, %time%, %duration%, %answer%, %total%, %display_total%, %title%, %question%, %desc%, %bar%, %count%, %pct%, %remaining%, %answers%, %votes%, %status%
 [messages.vote]
@@ -965,6 +987,22 @@ structure_no_permission = "<red>❌ You don't have permission to manage structur
 # Command.
 # Default: <red>❌ Unknown subcommand: </red><white>%subcommand%</white>
 unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</white>"
+
+# Default command error codes of the /ui dispatcher (see CommandErrors).
+# Placeholders: %requires%, %permission%, %allowed%, %got%
+[messages_en.general.errors]
+# Error 001 — invalid syntax or unknown command.
+error_001 = "<red>Invalid command syntax or unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>"
+# Clause injected into errors 002/003 via %requires% when the required permission is known.
+requires = "<gray> — required: \"<white>%permission%</white>\"</gray>"
+# Error 002 — insufficient permissions.
+error_002 = "<red>Insufficient permissions to execute this command</red>"
+# Error 003 — the command requires a sudo password, but sudo mode is not allowed for the sender.
+error_003 = "<red>This command requires a sudo password, but you are not allowed to use sudo mode</red>"
+# Error 004 — wrong command sender type.
+error_004 = "<red>Wrong command sender type. Allowed: </red><white>%allowed%</white><red>, got: </red><white>%got%</white>"
+# Error 005 — unexpected error.
+error_005 = "<red>An unknown error occurred while executing this command. Please report it to the administrator.</red>"
 
 # vote section.
 # Placeholders: %name%, %arg%, %num%, %time%, %duration%, %answer%, %total%, %display_total%, %title%, %question%, %desc%, %bar%, %count%, %pct%, %remaining%, %answers%, %votes%, %status%
