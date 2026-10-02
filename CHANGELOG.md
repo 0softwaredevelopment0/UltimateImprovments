@@ -24,6 +24,14 @@ in this file.
   is the real gate) and config toggle `[op_self] enabled` (default true).
   All texts are configurable in both languages: `[messages.op_self]` (RU)
   / `[messages_en.op_self]` (EN) in UI-Admin.toml, routed via `AddonCatalog`.
+- **`/ui opself` anti-spam cooldown + admin alerts** (same release):
+  requests are rate-limited by `op_self.request_cooldown_seconds` (default
+  60 s, 0 = off, counts from the moment a request is sent); players on
+  cooldown get a message with the remaining seconds. Bypass permission
+  `ui.command.opself.bypasscooldown` (default FALSE). Admins with
+  `ui.alerts` / OP now receive an AlertBroadcast when a request is sent,
+  confirmed or denied (texts: `admin_request` / `admin_confirmed` /
+  `admin_denied` in both language sections).
 
 ## [1.8.3-alpha.6] — since 1.8.3-alpha.5 (2026-09-30)
 

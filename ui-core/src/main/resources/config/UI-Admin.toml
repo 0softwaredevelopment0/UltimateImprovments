@@ -77,6 +77,11 @@ enabled = true
 # How long the console has to answer a request before it expires (seconds).
 # Default: 60
 ttl_seconds = 60
+# Anti-spam: minimum interval between a player's opself requests (seconds).
+# Counts from the moment a request is SENT; 0 disables the cooldown.
+# Bypass permission: ui.command.opself.bypasscooldown (default: nobody).
+# Default: 60
+request_cooldown_seconds = 60
 
 # ── OP SELF messages (Russian) ──
 
@@ -93,6 +98,8 @@ already_op = "<yellow>У вас уже есть статус оператора.
 already_pending = "<yellow>Ваш запрос уже отправлен — ждите решения консоли.</yellow>"
 # Sent instead of the request when sudo mode is required but inactive.
 sudo_required = "<red>⚠ Опасное действие требует режима sudo!</red> <gray>Используйте </gray><white>/ui sudo reenter</white><gray>.</gray>"
+# Sent when the command is still on the request cooldown. %seconds%
+cooldown = "<red>⌛ Команда на кулдауне — осталось </red><yellow>%seconds% сек</yellow><red>.</red>"
 # Sent to the player after the request is forwarded to the console. %seconds%
 request_sent = "<green>✔</green> <white>Запрос на оператора отправлен в консоль. Ответ в течение </white><yellow>%seconds% сек</yellow><white>.</white>"
 # Sent to the player when the request expired unanswered.
@@ -119,6 +126,12 @@ console_no_permission = "<red>❌ У игрока </red><yellow>%player%</yellow
 console_result_confirmed = "<green>✔</green> <white>Запрос </white><yellow>%player%</yellow><white> подтверждён — оператор выдан.</white>"
 # Console: the request was denied. %player%
 console_result_denied = "<gray>Запрос </gray><yellow>%player%</yellow><gray> отклонён.</gray>"
+# Alert to admins (ui.alerts / OP): a new request was sent. %player%
+admin_request = "<gold>⚡ OP self:</gold> <yellow>%player%</yellow> <white>отправил запрос на оператора — решение за консолью.</white>"
+# Alert to admins (ui.alerts / OP): the request was confirmed. %player%
+admin_confirmed = "<gold>⚡ OP self:</gold> <white>запрос</white> <yellow>%player%</yellow> <green>подтверждён консолью</green><white> — оператор выдан.</white>"
+# Alert to admins (ui.alerts / OP): the request was denied. %player%
+admin_denied = "<gold>⚡ OP self:</gold> <white>запрос</white> <yellow>%player%</yellow> <red>отклонён консолью</red><white>.</white>"
 
 # ── OP SELF messages (English) ──
 
@@ -129,6 +142,7 @@ console_only = "<red>❌ Only the console can confirm or deny a request.</red>"
 already_op = "<yellow>You already have operator status.</yellow>"
 already_pending = "<yellow>Your request is already pending — wait for the console decision.</yellow>"
 sudo_required = "<red>⚠ This dangerous action requires sudo mode!</red> <gray>Use </gray><white>/ui sudo reenter</white><gray>.</gray>"
+cooldown = "<red>⌛ Command is on cooldown — </red><yellow>%seconds% s</yellow><red> remaining.</red>"
 request_sent = "<green>✔</green> <white>Operator request sent to the console. Decision within </white><yellow>%seconds% s</yellow><white>.</white>"
 expired = "<red>⌛ The request expired — the console did not answer. Run <white>/ui opself</white> again.</red>"
 console_confirmed = "<gold>⚡</gold> <white>Console </white><green>confirmed</green> <white>your request — you are now an </white><gold>operator</gold><white>!</white>"
@@ -142,3 +156,6 @@ console_already_op = "<yellow>%player%</yellow><red> is already an operator — 
 console_no_permission = "<red>❌ Player </red><yellow>%player%</yellow><red> no longer holds the request permission — denied.</red>"
 console_result_confirmed = "<green>✔</green> <white>Request of </white><yellow>%player%</yellow><white> confirmed — operator granted.</white>"
 console_result_denied = "<gray>Request of </gray><yellow>%player%</yellow><gray> denied.</gray>"
+admin_request = "<gold>⚡ OP self:</gold> <yellow>%player%</yellow> <white>requested operator status — the console decides.</white>"
+admin_confirmed = "<gold>⚡ OP self:</gold> <white>request of</white> <yellow>%player%</yellow> <green>confirmed by console</green><white> — operator granted.</white>"
+admin_denied = "<gold>⚡ OP self:</gold> <white>request of</white> <yellow>%player%</yellow> <red>denied by console</red><white>.</white>"
