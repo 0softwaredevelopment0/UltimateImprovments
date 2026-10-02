@@ -33,6 +33,7 @@ public class UIAdmin extends JavaPlugin implements SoftReloadable {
         ConsoleLogger.info("[UI-Admin] Disabling...");
         HandlerList.unregisterAll(this);
         com.ultimateimprovments.op.OpManager.shutdown();
+        com.ultimateimprovments.op.OpSelfSubcommand.shutdown();
         ModuleManager mm = ModuleManager.getInstance();
         if (mm != null) {
             mm.shutdownAll();
@@ -53,6 +54,7 @@ public class UIAdmin extends JavaPlugin implements SoftReloadable {
         ConsoleLogger.info("[UI-Admin] Soft reload (in place)...");
         HandlerList.unregisterAll(this);
         com.ultimateimprovments.op.OpManager.shutdown();
+        com.ultimateimprovments.op.OpSelfSubcommand.shutdown();
         runStartup();
     }
 
@@ -100,6 +102,9 @@ public class UIAdmin extends JavaPlugin implements SoftReloadable {
             reg.register(LegacySubCommandAdapter.of("oplist",
                     com.ultimateimprovments.op.OpListSubcommand::execute,
                     (s, a) -> com.ultimateimprovments.op.OpListSubcommand.tabComplete(a)));
+            reg.register(LegacySubCommandAdapter.of("opself",
+                    com.ultimateimprovments.op.OpSelfSubcommand::execute,
+                    (s, a) -> com.ultimateimprovments.op.OpSelfSubcommand.tabComplete(s, a)));
         } catch (Exception e) {
             ConsoleLogger.warn("[UI-Admin] Failed to register commands: " + e.getMessage());
         }

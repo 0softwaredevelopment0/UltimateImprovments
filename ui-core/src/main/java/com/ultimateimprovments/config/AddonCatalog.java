@@ -53,7 +53,7 @@ public final class AddonCatalog {
         // ── UI-Display ──
         route("UI-Display", "tab", "scoreboard", "bossbar");
         // ── UI-Admin ──
-        route("UI-Admin", "economy");
+        route("UI-Admin", "economy", "op_self");
         // ── UI-Player ──
         route("UI-Player", "vanish", "armor_effects", "armor_trim_effects");
         // ── UI-Guard ──
@@ -92,7 +92,7 @@ public final class AddonCatalog {
         routeMsg("UI-Auth", "auth");
         routeMsg("UI-Protection", "protection");
         routeMsg("UI-Display", "tab", "scoreboard", "bossbar");
-        routeMsg("UI-Admin", "economy");
+        routeMsg("UI-Admin", "economy", "op_self");
         routeMsg("UI-Player", "vanish");
 routeMsg("UI-Items", "crafting");
         routeMsg("UI-Guard", "packet_guard", "bot_protection",

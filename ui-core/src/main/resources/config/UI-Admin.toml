@@ -63,3 +63,82 @@ balance_entry = "  <gray>•</gray> <white>%currency%</white><gray>: </gray><gol
 
 # suicide section.
 # Placeholders: %sender%, %target%
+
+# ─────────────────────────────────────────────────────────────────
+# OP SELF — /ui opself: a player requests operator status for
+# themselves. The request must be confirmed from the console
+# (/ui opself confirm | /ui opself cancel) or it expires.
+# ─────────────────────────────────────────────────────────────────
+
+[op_self]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+# How long the console has to answer a request before it expires (seconds).
+# Default: 60
+ttl_seconds = 60
+
+# ── OP SELF messages (Russian) ──
+
+[messages.op_self]
+# Sent to the player when the feature is disabled in the config.
+disabled = "<red>❌ Функция «ОП себя» отключена на сервере.</red>"
+# Sent when a non-player (console) runs /ui opself.
+player_only = "<red>❌ Эта команда доступна только игрокам.</red>"
+# Sent to a player who tries /ui opself confirm|cancel.
+console_only = "<red>❌ Подтвердить или отклонить запрос может только консоль.</red>"
+# Sent when the player already has OP.
+already_op = "<yellow>У вас уже есть статус оператора.</yellow>"
+# Sent when this player already has a pending request.
+already_pending = "<yellow>Ваш запрос уже отправлен — ждите решения консоли.</yellow>"
+# Sent instead of the request when sudo mode is required but inactive.
+sudo_required = "<red>⚠ Опасное действие требует режима sudo!</red> <gray>Используйте </gray><white>/ui sudo reenter</white><gray>.</gray>"
+# Sent to the player after the request is forwarded to the console. %seconds%
+request_sent = "<green>✔</green> <white>Запрос на оператора отправлен в консоль. Ответ в течение </white><yellow>%seconds% сек</yellow><white>.</white>"
+# Sent to the player when the request expired unanswered.
+expired = "<red>⌛ Время запроса истекло — консоль не ответила. Отправьте <white>/ui opself</white> ещё раз.</red>"
+# Sent to the player when the console confirmed.
+console_confirmed = "<gold>⚡</gold> <white>Консоль </white><green>подтвердила</green> <white>запрос — вы теперь </white><gold>оператор</gold><white>!</white>"
+# Sent to the player when the console denied.
+console_denied = "<red>✖</red> <white>Консоль </white><red>отклонила</red> <white>ваш запрос на оператора.</white>"
+# Console alert: new request arrived. %player%
+console_request = "<dark_red>⚠</dark_red> <red>ОПАСНЫЙ ЗАПРОС:</red> <yellow>%player%</yellow> <red>просит выдать себе оператора.</red>"
+# Console hint: how to confirm.
+console_confirm_hint = "<gray>Подтвердить: </gray><white>/ui opself confirm</white>"
+# Console hint: how to deny.
+console_cancel_hint = "<gray>Отклонить: </gray><white>/ui opself cancel</white>"
+# Console: confirm/cancel with no pending request.
+console_no_pending = "<red>❌ Нет активного запроса /ui opself.</red>"
+# Console: the requester left the server before the decision. %player%
+console_target_offline = "<red>❌ Игрок </red><yellow>%player%</yellow><red> вышел — запрос отменён.</red>"
+# Console: the requester already had OP at decision time. %player%
+console_already_op = "<yellow>%player%</yellow><red> уже оператор — запрос отменён.</red>"
+# Console: the requester lost the permission while waiting. %player%
+console_no_permission = "<red>❌ У игрока </red><yellow>%player%</yellow><red> больше нет права на запрос — отменено.</red>"
+# Console: the request was confirmed and OP granted. %player%
+console_result_confirmed = "<green>✔</green> <white>Запрос </white><yellow>%player%</yellow><white> подтверждён — оператор выдан.</white>"
+# Console: the request was denied. %player%
+console_result_denied = "<gray>Запрос </gray><yellow>%player%</yellow><gray> отклонён.</gray>"
+
+# ── OP SELF messages (English) ──
+
+[messages_en.op_self]
+disabled = "<red>❌ The \"OP self\" feature is disabled on this server.</red>"
+player_only = "<red>❌ This command can only be used by players.</red>"
+console_only = "<red>❌ Only the console can confirm or deny a request.</red>"
+already_op = "<yellow>You already have operator status.</yellow>"
+already_pending = "<yellow>Your request is already pending — wait for the console decision.</yellow>"
+sudo_required = "<red>⚠ This dangerous action requires sudo mode!</red> <gray>Use </gray><white>/ui sudo reenter</white><gray>.</gray>"
+request_sent = "<green>✔</green> <white>Operator request sent to the console. Decision within </white><yellow>%seconds% s</yellow><white>.</white>"
+expired = "<red>⌛ The request expired — the console did not answer. Run <white>/ui opself</white> again.</red>"
+console_confirmed = "<gold>⚡</gold> <white>Console </white><green>confirmed</green> <white>your request — you are now an </white><gold>operator</gold><white>!</white>"
+console_denied = "<red>✖</red> <white>Console </white><red>denied</white> <white>your operator request.</white>"
+console_request = "<dark_red>⚠</dark_red> <red>DANGEROUS REQUEST:</red> <yellow>%player%</yellow> <red>asks for operator status.</red>"
+console_confirm_hint = "<gray>Confirm: </gray><white>/ui opself confirm</white>"
+console_cancel_hint = "<gray>Deny: </gray><white>/ui opself cancel</white>"
+console_no_pending = "<red>❌ No pending /ui opself request.</red>"
+console_target_offline = "<red>❌ Player </red><yellow>%player%</yellow><red> logged out — request cancelled.</red>"
+console_already_op = "<yellow>%player%</yellow><red> is already an operator — request cancelled.</red>"
+console_no_permission = "<red>❌ Player </red><yellow>%player%</yellow><red> no longer holds the request permission — denied.</red>"
+console_result_confirmed = "<green>✔</green> <white>Request of </white><yellow>%player%</yellow><white> confirmed — operator granted.</white>"
+console_result_denied = "<gray>Request of </gray><yellow>%player%</yellow><gray> denied.</gray>"
