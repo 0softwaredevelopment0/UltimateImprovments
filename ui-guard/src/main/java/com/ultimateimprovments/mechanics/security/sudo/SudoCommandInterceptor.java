@@ -8,14 +8,24 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
+import java.util.List;
+
 /**
  * 🚨 SudoCommandInterceptor — GitHub-style sudo mode.
  * <p>
- * Intercepts dangerous commands from players with the {@code ui.sudo} permission:
- * {@code /ui punish crash ...}, any {@code /lp ...} and subcommands,
- * {@code /ui power off|reboot} etc. (list in config.yml).
- * If the sudo session is not active — the command is blocked and the player gets
- * the sudo password dialog.
+ * PERMISSION MODEL (clear separation):
+ * <ul>
+ *   <li>{@code ui.sudo} — the right to OPEN the sudo dialog (password setup or
+ *       entry). A dangerous command from a player without it is denied with
+ *       error 003 (requires "ui.sudo") — the dialog never opens.</li>
+ *   <li>{@code ui.command.*} — the command's own permission. It has PRIORITY:
+ *       a player failing the command's base-permission probe is let through so
+ *       the command itself reports error 002.</li>
+ * </ul>
+ * Players WITH ui.sudo get the password dialog for dangerous commands
+ * ({@code /ui punish crash ...}, {@code /lp ...}, {@code /ui power off} etc. —
+ * list in config); after a successful password entry the command re-runs and
+ * its own permission checks (002) still apply as usual.
  */
 public class SudoCommandInterceptor implements Listener {
 
@@ -25,20 +35,25 @@ public class SudoCommandInterceptor implements Listener {
 
         Player player = event.getPlayer();
 
-        // A dangerous command requires a sudo password; a player without the
-        // ui.sudo permission is not allowed to use sudo mode at all — deny
-        // with error 003 (requires "ui.sudo") instead of passing through.
-        if (!player.hasPermission("ui.sudo")) {
-            CommandErrors.sudoRequired(player, "ui.sudo");
-            event.setCancelled(true);
-            return;
-        }
-
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
         SudoManager manager = SudoManager.getInstance();
         if (manager == null) return;
 
         if (!manager.isDangerous(msg)) return;
+
+        // ── No sudo rights: 002 (command permission) beats 003 (sudo) ──
+        if (!player.hasPermission("ui.sudo")) {
+            List<String> base = manager.getUiBasePermissions(msg);
+            if (!base.isEmpty() && base.stream().noneMatch(player::hasPermission)) {
+                // Cannot run the command anyway — do not cancel; the command's
+                // own guard reports error 002 with the required node.
+                return;
+            }
+            // Could run the command, but may not open the sudo dialog → 003.
+            CommandErrors.sudoRequired(player, "ui.sudo");
+            event.setCancelled(true);
+            return;
+        }
 
         // Active sudo session — pass through without asking
         if (manager.isSudoActive(player.getUniqueId())) return;

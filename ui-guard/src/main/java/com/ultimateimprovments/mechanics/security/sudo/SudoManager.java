@@ -1,6 +1,7 @@
 package com.ultimateimprovments.mechanics.security.sudo;
 
 import com.ultimateimprovments.core.Main;
+import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.util.ConsoleLogger;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.Bukkit;
@@ -142,6 +143,33 @@ public class SudoManager {
         String t = s.trim();
         if (t.startsWith("/")) t = t.substring(1);
         return t.toLowerCase(java.util.Locale.ROOT).replaceAll("\\s+", " ").trim();
+    }
+
+    /**
+     * Base /ui permission(s) for a dangerous command, used by the interceptor
+     * for ERROR PRECEDENCE: 002 (no permission for the command itself) must
+     * beat 003 (no sudo rights). Returns the base permission node(s) the
+     * command's own guard checks; the player must hold at least ONE of them
+     * for the sudo gate (003) to apply.
+     * <p>
+     * An EMPTY list means "unknown" (non-/ui command or an unmapped subcommand)
+     * — the safe default lets the 003 gate take precedence.
+     */
+    public List<String> getUiBasePermissions(String message) {
+        String normalized = normalize(message);
+        if (!normalized.startsWith("ui ")) return List.of();
+        String rest = normalized.substring(3).trim();
+        if (rest.isEmpty()) return List.of();
+        String sub = rest.split(" ", 2)[0];
+        return switch (sub) {
+            case "punish" -> List.of(Permissions.CMD_PUNISH);
+            case "power" -> List.of(Permissions.CMD_POWER_OFF, Permissions.CMD_POWER_REBOOT);
+            case "whitelist" -> List.of(Permissions.CMD_WHITELIST);
+            case "opwhitelist" -> List.of(Permissions.CMD_OPWHITELIST);
+            case "blacklist" -> List.of(Permissions.CMD_BLACKLIST);
+            case "maint", "maintenance" -> List.of(Permissions.CMD_MAINTENANCE);
+            default -> List.of();
+        };
     }
 
     // =========================
