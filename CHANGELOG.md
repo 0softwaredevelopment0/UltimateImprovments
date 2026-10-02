@@ -44,7 +44,8 @@ in this file.
   the first time they are present after startup (join listener +
   sweep of already-online players at enable). Later joins in the same
   session stay silent; the in-memory flag resets on server restart.
-  New `LoadedAlertListener`, registered in `PluginStartup`.
+  Feature toggle `[loaded_alert] enabled` (default true, UI-Core.toml,
+  read live). New `LoadedAlertListener`, registered in `PluginStartup`.
 
 ## [1.8.3-alpha.6] — since 1.8.3-alpha.5 (2026-09-30)
 
