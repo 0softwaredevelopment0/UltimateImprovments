@@ -123,11 +123,14 @@ public final class BlockLoad implements StressLoad {
             return;
         }
         // Restore the snapshot while the chunks are still pinned (loaded).
+        // applyPhysics = false: the snapshot IS the exact original state, and
+        // physics updates here would only cause one final neighbor-update
+        // storm across the whole region right after the load stopped.
         for (Snapshot saved : snapshot) {
             Block block = world.getBlockAt(saved.x(), saved.y(), saved.z());
             try {
                 if (!block.getBlockData().matches(saved.data())) {
-                    block.setBlockData(saved.data(), true);
+                    block.setBlockData(saved.data(), false);
                 }
             } catch (Throwable t) {
                 ConsoleLogger.warn("[StressTest] Failed to restore block " + saved.x() + ","

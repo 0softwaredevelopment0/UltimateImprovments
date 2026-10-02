@@ -97,9 +97,16 @@ public final class EntityLoad implements StressLoad {
         return work;
     }
 
-    /** Drops references to entities that died or were removed by someone else. */
+    /**
+     * Drops references to entities that actually died or were removed by
+     * someone else. Deliberately uses {@link Entity#isDead()} and NOT
+     * {@code isValid()}: an entity in an unloaded chunk is not valid but is
+     * still alive — dropping it here would leak it (nothing would remove it
+     * in {@link #stop()}) and silently free cap space for new spawns, so the
+     * real entity count could exceed {@code stresstest.max_entities}.
+     */
     private void pruneDead() {
-        spawned.removeIf(entity -> !entity.isValid());
+        spawned.removeIf(Entity::isDead);
     }
 
     /** Reads {@code stresstest.entity_type} and falls back to a cow. */

@@ -123,7 +123,8 @@ public final class StressTestSubcommand {
             manager.reportNotRunning(sender);
             return true;
         }
-        manager.stop();
+        // The stopping admin gets the report too, not only the original initiator.
+        manager.stop(sender);
         return true;
     }
 

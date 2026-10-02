@@ -71,6 +71,36 @@ in this file.
   added to `sudo.dangerous_commands` (with `ui.command.stresstest` in the
   interceptor's 002-over-003 precedence map).
 
+### Fixed
+- **`/ui stresstest` run bugs** (ui-guard, same release):
+  - **entity**: pruned references by `isValid()`, which is also false for
+    entities in unloaded chunks — they leaked on stop (nothing removed them
+    until the next startup sweep) and silently freed `max_entities` cap
+    space, letting the real entity count exceed the cap. Now only
+    `isDead()` entities are dropped; chunk-unloaded ones stay tracked,
+    counted against the cap and removed by `stop()`.
+  - **chunk**: the initial loaded/unloaded state is now snapshotted at
+    start and restored on stop — previously chunks loaded by the run could
+    stay loaded forever (unload requests are best-effort) and chunks the
+    run unloaded were never re-loaded, so the world state was not
+    restored. `work` now counts actual state changes (loads verified via
+    `isChunkLoaded`, unload requests credited next cycle only when the
+    server really unloaded the chunk) instead of raw request counts, and
+    the first cycle loads (matching the documented behaviour) instead of
+    starting with unload requests at the anchor.
+  - **block**: the snapshot is restored with `applyPhysics = false` — the
+    restore no longer fires a neighbor-update storm across the region
+    right after the load stopped.
+  - **manager**: a run that died with a generator error now sends the
+    report to the initiator (previously console-only, the player never
+    learned the run had stopped); `/ui stresstest stop` issued by a second
+    admin reports to both the original initiator and the stopper;
+    the report duration no longer shows `0.0s` when a run is stopped
+    during the warmup; the report's `Entities` column is captured before
+    the generator cleans up (previously always showed the post-cleanup
+    count); and a scheduler rejection of the run task now rolls the whole
+    start back instead of leaking the prepared generator.
+
 ## [1.8.3-alpha.6] — since 1.8.3-alpha.5 (2026-09-30)
 
 > **Alpha channel**: verified on the test server (Purpur 26.3); broader testing pending.
