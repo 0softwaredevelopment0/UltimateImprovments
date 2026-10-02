@@ -315,7 +315,7 @@ public class ChgDimGUI implements Listener {
         }
 
         if (!player.hasPermission("ui.command.chgdim." + worldName)) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.chgdim." + worldName);
             player.closeInventory();
             return;
         }

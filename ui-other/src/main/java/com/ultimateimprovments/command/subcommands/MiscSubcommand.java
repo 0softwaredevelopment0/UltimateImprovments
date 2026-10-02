@@ -28,7 +28,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean vanish(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.vanish")) {
-            CommandErrors.noPermission(p); return true;
+            CommandErrors.noPermission(p, "ui.command.vanish"); return true;
         }
         if (args.length < 2) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.vanish_usage", "<red>❌ Usage: </red><white>/ui vanish <nick></white>"))); return true; }
         String targetName = args[1];
@@ -54,7 +54,7 @@ public final class MiscSubcommand {
     // =========================
     public static boolean notes(CommandSender sender) {
         if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.notes_player_only", "<red>❌ Only players can use notes!</red>"))); return true; }
-        if (!player.hasPermission("ui.command.notes")) { CommandErrors.noPermission(player); return true; }
+        if (!player.hasPermission("ui.command.notes")) { CommandErrors.noPermission(player, "ui.command.notes"); return true; }
         CoreHooks.openNotesGui(player);
         return true;
     }
@@ -65,8 +65,8 @@ public final class MiscSubcommand {
     private static final String PERM_SHOWSPEED = "ui.command.showspeed";
 
     public static boolean showSpeed(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission(PERM_SHOWSPEED)) { CommandErrors.noPermission(player); return true; }
+        if (!(sender instanceof Player player)) { CommandErrors.playerOnly(sender); return true; }
+        if (!player.hasPermission(PERM_SHOWSPEED)) { CommandErrors.noPermission(player, PERM_SHOWSPEED); return true; }
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui showspeed"))); return true; }
         UUID uuid = player.getUniqueId();
@@ -87,8 +87,8 @@ public final class MiscSubcommand {
     private static final String PERM_ELYTRABOOST = "ui.command.elytraboost";
 
     public static boolean elytraBoost(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission(PERM_ELYTRABOOST)) { CommandErrors.noPermission(player); return true; }
+        if (!(sender instanceof Player player)) { CommandErrors.playerOnly(sender); return true; }
+        if (!player.hasPermission(PERM_ELYTRABOOST)) { CommandErrors.noPermission(player, PERM_ELYTRABOOST); return true; }
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui elytraboost"))); return true; }
         UUID uuid = player.getUniqueId();
@@ -110,8 +110,8 @@ public final class MiscSubcommand {
     private static final String PERM_RADVIEW = "ui.command.radview";
 
     public static boolean radview(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>")); return true; }
-        if (!player.hasPermission(PERM_RADVIEW)) { CommandErrors.noPermission(player); return true; }
+        if (!(sender instanceof Player player)) { CommandErrors.playerOnly(sender); return true; }
+        if (!player.hasPermission(PERM_RADVIEW)) { CommandErrors.noPermission(player, PERM_RADVIEW); return true; }
         Boolean want = parseOnOff(args);
         if (want == null) {
             player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage",
@@ -137,8 +137,8 @@ public final class MiscSubcommand {
     private static final String PERM_BOSSBAR = "ui.command.bossbar";
 
     public static boolean bossbar(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission(PERM_BOSSBAR)) { CommandErrors.noPermission(player); return true; }
+        if (!(sender instanceof Player player)) { CommandErrors.playerOnly(sender); return true; }
+        if (!player.hasPermission(PERM_BOSSBAR)) { CommandErrors.noPermission(player, PERM_BOSSBAR); return true; }
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui bossbar"))); return true; }
         if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("bossbar.enabled", false)) {
@@ -162,8 +162,8 @@ public final class MiscSubcommand {
     private static final String PERM_PINGSOUND = "ui.command.pingsound";
 
     public static boolean pingsound(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission(PERM_PINGSOUND)) { CommandErrors.noPermission(player); return true; }
+        if (!(sender instanceof Player player)) { CommandErrors.playerOnly(sender); return true; }
+        if (!player.hasPermission(PERM_PINGSOUND)) { CommandErrors.noPermission(player, PERM_PINGSOUND); return true; }
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui pingsound"))); return true; }
         if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("chat_ping.enabled", true)) {
@@ -187,8 +187,8 @@ public final class MiscSubcommand {
     private static final String PERM_SCOREBOARD = "ui.command.scoreboard";
 
     public static boolean scoreboard(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) { sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only", "<red>❌ Only players can use this command!</red>"))); return true; }
-        if (!player.hasPermission(PERM_SCOREBOARD)) { CommandErrors.noPermission(player); return true; }
+        if (!(sender instanceof Player player)) { CommandErrors.playerOnly(sender); return true; }
+        if (!player.hasPermission(PERM_SCOREBOARD)) { CommandErrors.noPermission(player, PERM_SCOREBOARD); return true; }
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui scoreboard"))); return true; }
         if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("scoreboard.enabled", false)) {
@@ -213,11 +213,11 @@ public final class MiscSubcommand {
 
     public static boolean wirelessbind(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (!player.hasPermission(PERM_WIRELESSBIND)) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, PERM_WIRELESSBIND);
             return true;
         }
         Boolean want = parseOnOff(args);
@@ -272,7 +272,7 @@ public final class MiscSubcommand {
         if (args.length >= 3) {
             // Apply to another player
             if (!sender.hasPermission("ui.command.fly.other")) {
-                CommandErrors.noPermission(sender);
+                CommandErrors.noPermission(sender, "ui.command.fly.other");
                 return true;
             }
             target = Bukkit.getPlayerExact(args[2]);
@@ -287,7 +287,7 @@ public final class MiscSubcommand {
                 return true;
             }
             if (!player.hasPermission("ui.command.fly")) {
-                CommandErrors.noPermission(player);
+                CommandErrors.noPermission(player, "ui.command.fly");
                 return true;
             }
             target = player;
@@ -329,7 +329,7 @@ public final class MiscSubcommand {
         if (args.length >= 3) {
             // Apply to another player
             if (!sender.hasPermission("ui.command.god.other")) {
-                CommandErrors.noPermission(sender);
+                CommandErrors.noPermission(sender, "ui.command.god.other");
                 return true;
             }
             target = Bukkit.getPlayerExact(args[2]);
@@ -344,7 +344,7 @@ public final class MiscSubcommand {
                 return true;
             }
             if (!player.hasPermission("ui.command.god")) {
-                CommandErrors.noPermission(player);
+                CommandErrors.noPermission(player, "ui.command.god");
                 return true;
             }
             target = player;
@@ -387,11 +387,11 @@ public final class MiscSubcommand {
     // =========================
     public static boolean unlockBook(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (!player.hasPermission("ui.command.unlock")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.unlock");
             return true;
         }
 
@@ -428,11 +428,11 @@ public final class MiscSubcommand {
     // =========================
     public static boolean unlockSign(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (!player.hasPermission("ui.command.unlock")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.unlock");
             return true;
         }
 

@@ -102,7 +102,7 @@ public final class CmdBlockTracker implements Listener {
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission(PERMISSION)) {
-            CommandErrors.noPermission(p);
+            CommandErrors.noPermission(p, PERMISSION);
             return true;
         }
 

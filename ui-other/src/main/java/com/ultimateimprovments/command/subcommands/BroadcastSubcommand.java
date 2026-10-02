@@ -57,7 +57,7 @@ public final class BroadcastSubcommand {
         }
 
         if (!sender.hasPermission("ui.command.broadcast")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.broadcast");
             return true;
         }
 

@@ -18,7 +18,7 @@ public final class ItemSubcommand {
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) { sender.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Только игрок может использовать эту команду!")); return true; }
         Player player = (Player) sender;
-        if (!player.hasPermission("ui.command.item")) { CommandErrors.noPermission(player); return true; }
+        if (!player.hasPermission("ui.command.item")) { CommandErrors.noPermission(player, "ui.command.item"); return true; }
         if (args.length < 2) { player.sendMessage(MessageUtil.parse("<dark_red>❌ <red>Использование: <white>/ui item dura <info|set|add|unbreakable> [значение]")); return true; }
 
         if (args[1].equalsIgnoreCase("dura") || args[1].equalsIgnoreCase("int")) {

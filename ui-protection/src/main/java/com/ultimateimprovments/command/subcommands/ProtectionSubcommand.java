@@ -26,7 +26,7 @@ public final class ProtectionSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.protection")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.protection");
             return true;
         }
         if (args.length < 2) {
@@ -95,7 +95,7 @@ public final class ProtectionSubcommand {
 
     private static boolean handleInfo(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (args.length < 3) {
@@ -154,7 +154,7 @@ public final class ProtectionSubcommand {
 
     private static boolean handleDelete(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Only players can use this command!</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
         if (args.length < 3) {

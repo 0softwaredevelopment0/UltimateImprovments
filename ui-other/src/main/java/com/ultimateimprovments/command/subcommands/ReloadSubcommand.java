@@ -45,7 +45,7 @@ public final class ReloadSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (sender instanceof Player player && !player.hasPermission("ui.command.reload")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.reload");
             return true;
         }
 

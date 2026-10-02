@@ -159,7 +159,7 @@ public final class ItemNbtSubcommand implements SubCommand {
             return true;
         }
         if (!player.hasPermission(PERMISSION)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, PERMISSION);
             return true;
         }
         if (args.length < 2) {

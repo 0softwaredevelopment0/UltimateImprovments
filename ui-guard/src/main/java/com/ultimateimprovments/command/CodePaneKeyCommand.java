@@ -19,7 +19,7 @@ public class CodePaneKeyCommand {
     public static boolean execute(CommandSender sender, String[] args) {
         // Permission check
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.codepane.key");
             return true;
         }
 
@@ -81,7 +81,7 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleAdd(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.add")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.codepane.key.add");
             return;
         }
         if (args.length < 5) {
@@ -203,7 +203,7 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleList(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.list")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.codepane.key.list");
             return;
         }
 
@@ -266,7 +266,7 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleRemove(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.remove")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.codepane.key.remove");
             return;
         }
         if (args.length < 4) {
@@ -290,7 +290,7 @@ public class CodePaneKeyCommand {
     // =========================
     private static void handleModify(CommandSender sender, String[] args) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.codepane.key.modify")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.codepane.key.modify");
             return;
         }
         if (args.length < 5) {

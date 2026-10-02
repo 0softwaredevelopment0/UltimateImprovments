@@ -50,7 +50,7 @@ public class MsgCommand extends Command {
     @Override
     public boolean execute(CommandSender sender, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<red>Only players can use this command.</red>"));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 

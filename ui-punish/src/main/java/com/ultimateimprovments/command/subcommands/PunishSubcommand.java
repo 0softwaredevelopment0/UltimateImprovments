@@ -75,7 +75,7 @@ public final class PunishSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish");
             return true;
         }
 
@@ -127,7 +127,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleBan(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.ban")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.ban");
             return true;
         }
         if (args.length < 3) {
@@ -229,7 +229,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleMute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.mute")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.mute");
             return true;
         }
         if (args.length < 3) {
@@ -321,7 +321,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleKick(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.kick")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.kick");
             return true;
         }
         if (args.length < 3) {
@@ -390,7 +390,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleWarn(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.warn")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.warn");
             return true;
         }
         if (args.length < 3) {
@@ -486,7 +486,7 @@ public final class PunishSubcommand {
                 return true;
             }
             if (!sender.hasPermission("ui.command.punish.listwarns.self")) {
-                CommandErrors.noPermission(sender);
+                CommandErrors.noPermission(sender, "ui.command.punish.listwarns.self");
                 return true;
             }
             showWarns(sender, player.getUniqueId().toString(), player.getName());
@@ -498,7 +498,7 @@ public final class PunishSubcommand {
         // Check whether they're viewing themselves
         if (sender instanceof Player player && player.getName().equalsIgnoreCase(targetName)) {
             if (!sender.hasPermission("ui.command.punish.listwarns.self")) {
-                CommandErrors.noPermission(sender);
+                CommandErrors.noPermission(sender, "ui.command.punish.listwarns.self");
                 return true;
             }
             showWarns(sender, player.getUniqueId().toString(), player.getName());
@@ -507,7 +507,7 @@ public final class PunishSubcommand {
 
         // Viewing someone else
         if (!sender.hasPermission("ui.command.punish.listwarns.other")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.listwarns.other");
             return true;
         }
 
@@ -586,7 +586,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleUnban(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.ban")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.ban");
             return true;
         }
         if (args.length < 3) {
@@ -625,7 +625,7 @@ public final class PunishSubcommand {
 
     private static boolean handleUnmute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.mute")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.mute");
             return true;
         }
         if (args.length < 3) {
@@ -673,7 +673,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleUnwarn(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.warn")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.warn");
             return true;
         }
         if (args.length < 5) {
@@ -747,7 +747,7 @@ public final class PunishSubcommand {
      */
     private static boolean handleActionList(CommandSender sender, String[] args) {
         if (!sender.hasPermission(Permissions.CMD_PUNISH_ACTIONLIST)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, Permissions.CMD_PUNISH_ACTIONLIST);
             return true;
         }
 
@@ -1039,7 +1039,7 @@ public final class PunishSubcommand {
     // =========================
     private static boolean handleCrash(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.punish.crash")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.punish.crash");
             return true;
         }
 

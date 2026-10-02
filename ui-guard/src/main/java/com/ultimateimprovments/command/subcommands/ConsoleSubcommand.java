@@ -39,7 +39,7 @@ public final class ConsoleSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission(Permissions.CMD_CONSOLE)) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, Permissions.CMD_CONSOLE);
             return true;
         }
 

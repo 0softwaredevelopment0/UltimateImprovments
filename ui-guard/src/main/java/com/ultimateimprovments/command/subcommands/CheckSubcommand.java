@@ -18,13 +18,12 @@ public final class CheckSubcommand {
      */
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player inspector)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only",
-                    "<red>❌ Only players can use this command!</red>")));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 
         if (!inspector.hasPermission("ui.command.check")) {
-            CommandErrors.noPermission(inspector);
+            CommandErrors.noPermission(inspector, "ui.command.check");
             return true;
         }
 
@@ -56,13 +55,12 @@ public final class CheckSubcommand {
      */
     public static boolean uncheck(CommandSender sender, String[] args) {
         if (!(sender instanceof Player inspector)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only",
-                    "<red>❌ Only players can use this command!</red>")));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 
         if (!inspector.hasPermission("ui.command.check")) {
-            CommandErrors.noPermission(inspector);
+            CommandErrors.noPermission(inspector, "ui.command.check");
             return true;
         }
 

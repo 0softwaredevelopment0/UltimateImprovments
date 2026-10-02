@@ -60,7 +60,7 @@ public final class ExecChatSubcommand {
     @SuppressWarnings("deprecation") // Player#chat — the only correct way to fully simulate input in 1.21+
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.execchat")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.execchat");
             return true;
         }
         if (args.length < 3) {

@@ -152,7 +152,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("suicide", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.suicide")) {
-                CommandErrors.noPermission(p);
+                CommandErrors.noPermission(p, "ui.command.suicide");
                 return true;
             }
             SuicideCommand.execute(p);
@@ -160,7 +160,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         }));
         registry.register(LegacySubCommandAdapter.of("forcesuicide", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("ui.command.forcesuicide")) { CommandErrors.noPermission(p); return false; }
+            if (!p.hasPermission("ui.command.forcesuicide")) { CommandErrors.noPermission(p, "ui.command.forcesuicide"); return false; }
             if (a.length < 2) return false;
             Player target = Bukkit.getPlayerExact(a[1]);
             if (target == null) return false;
@@ -173,7 +173,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── /ui op, /ui deop, /ui oplist are registered by the UI-Admin addon ──
         registry.register(LegacySubCommandAdapter.of("dont_run_this_command", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("ui.command.dont_run_this_command")) { CommandErrors.noPermission(p); return false; }
+            if (!p.hasPermission("ui.command.dont_run_this_command")) { CommandErrors.noPermission(p, "ui.command.dont_run_this_command"); return false; }
             try {
                 var adv = Bukkit.getAdvancement(
                         new org.bukkit.NamespacedKey("ui", "datapack/impossible"));
@@ -204,7 +204,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         registry.register(LegacySubCommandAdapter.of("askpos", (s, a) -> {
             if (!(s instanceof Player p)) return false;
             if (!p.hasPermission("ui.command.askpos")) {
-                CommandErrors.noPermission(p);
+                CommandErrors.noPermission(p, "ui.command.askpos");
                 return true;
             }
             AskCordsManager.execute(p);
@@ -214,7 +214,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── /ui enchant is registered by the UI-Enchant addon (it owns the subcommand) ──
         registry.register(LegacySubCommandAdapter.of("vote", (s, a) -> {
             if (!(s instanceof Player p)) return false;
-            if (!p.hasPermission("ui.command.vote")) { CommandErrors.noPermission(p); return false; }
+            if (!p.hasPermission("ui.command.vote")) { CommandErrors.noPermission(p, "ui.command.vote"); return false; }
             if (a.length < 2) {
                 VoteManager.list(p);
                 return true;
@@ -222,7 +222,7 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
             String vs = a[1].toLowerCase();
             return switch (vs) {
                 case "create" -> {
-                    if (!p.hasPermission("ui.command.vote.create")) { CommandErrors.noPermission(p); yield false; }
+                    if (!p.hasPermission("ui.command.vote.create")) { CommandErrors.noPermission(p, "ui.command.vote.create"); yield false; }
                     if (a.length < 5) yield false;
                     VoteManager.parseCreate(p, a, 2);
                     yield true;
@@ -233,13 +233,13 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
                     yield true;
                 }
                 case "change" -> {
-                    if (!p.hasPermission("ui.command.vote.change")) { CommandErrors.noPermission(p); yield false; }
+                    if (!p.hasPermission("ui.command.vote.change")) { CommandErrors.noPermission(p, "ui.command.vote.change"); yield false; }
                     if (a.length < 4) yield false;
                     VoteManager.change(p, a[2], a, 3);
                     yield true;
                 }
                 case "stats" -> {
-                    if (!p.hasPermission("ui.command.vote.stats")) { CommandErrors.noPermission(p); yield false; }
+                    if (!p.hasPermission("ui.command.vote.stats")) { CommandErrors.noPermission(p, "ui.command.vote.stats"); yield false; }
                     if (a.length < 3) yield false;
                     VoteManager.view(p, a[2]);
                     yield true;

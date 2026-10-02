@@ -90,7 +90,7 @@ public class UIItems extends JavaPlugin implements SoftReloadable {
             registry.register(LegacySubCommandAdapter.of("menu", (s, a) -> {
                 if (!(s instanceof Player p)) return false;
                 if (!p.hasPermission("ui.command.menu")) {
-                    CommandErrors.noPermission(p);
+                    CommandErrors.noPermission(p, "ui.command.menu");
                     return true;
                 }
                 AdminMenuGUI.open(p);

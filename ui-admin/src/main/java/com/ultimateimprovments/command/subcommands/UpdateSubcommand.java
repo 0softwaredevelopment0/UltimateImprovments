@@ -14,7 +14,7 @@ public final class UpdateSubcommand {
 
     public static boolean checkOnly(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.checkver")) {
-            CommandErrors.noPermission(p); return true;
+            CommandErrors.noPermission(p, "ui.command.checkver"); return true;
         }
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.checking", "<yellow>⟳</yellow> <gray>Checking for updates on GitHub...</gray>")));
         UpdateChecker.checkOnly(sender);
@@ -23,7 +23,7 @@ public final class UpdateSubcommand {
 
     public static boolean downloadAndReplace(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.updatejar")) {
-            CommandErrors.noPermission(p); return true;
+            CommandErrors.noPermission(p, "ui.command.updatejar"); return true;
         }
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("update.downloading", "<yellow>⟳</yellow> <gray>Downloading update from GitHub...</gray>")));
         UpdateChecker.downloadAndReplace(sender);

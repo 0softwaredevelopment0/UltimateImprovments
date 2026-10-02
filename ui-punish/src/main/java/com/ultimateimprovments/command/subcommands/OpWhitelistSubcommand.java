@@ -28,7 +28,7 @@ public final class OpWhitelistSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!sender.hasPermission("ui.command.opwhitelist")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.opwhitelist");
             return true;
         }
 

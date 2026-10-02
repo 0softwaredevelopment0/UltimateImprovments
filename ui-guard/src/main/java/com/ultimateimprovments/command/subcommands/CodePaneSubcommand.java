@@ -20,7 +20,7 @@ public final class CodePaneSubcommand {
             return CodePaneKeyCommand.execute(sender, args);
         }
         if (!(sender instanceof Player player)) { sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>Только игрок может открыть кодовую панель.")); return true; }
-        if (!player.hasPermission("ui.command.codepane")) { CommandErrors.noPermission(player); return true; }
+        if (!player.hasPermission("ui.command.codepane")) { CommandErrors.noPermission(player, "ui.command.codepane"); return true; }
 
         // Open a dialog with clean input
         CodePanelSession.reset(player.getUniqueId());

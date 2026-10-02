@@ -18,7 +18,7 @@ public final class RadiationSubcommand {
 
         if (sub.equals("setrad")) {
             if (sender instanceof Player p && !p.hasPermission("ui.command.setrad")) {
-                CommandErrors.noPermission(p); return true;
+                CommandErrors.noPermission(p, "ui.command.setrad"); return true;
             }
             if (args.length < 3) { sender.sendMessage(com.ultimateimprovments.util.MessageUtil.parse("<dark_red>❌ <red>Usage: <white>/ui setrad <gray><player> <value>")); return true; }
             @SuppressWarnings("deprecation")

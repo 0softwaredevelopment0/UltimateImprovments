@@ -13,7 +13,7 @@ public final class CilistCommand {
 
     public static void execute(CommandSender sender) {
         if (sender instanceof Player p && !p.hasPermission("ui.command.cilist")) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, "ui.command.cilist");
             return;
         }
         sender.sendMessage(Component.empty());

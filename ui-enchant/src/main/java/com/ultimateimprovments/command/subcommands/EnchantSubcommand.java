@@ -300,7 +300,7 @@ public final class EnchantSubcommand {
         }
 
         if (!sender.hasPermission(getPermission())) {
-            CommandErrors.noPermission(sender);
+            CommandErrors.noPermission(sender, getPermission());
             return true;
         }
 

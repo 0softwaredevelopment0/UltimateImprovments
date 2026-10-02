@@ -2,7 +2,6 @@ package com.ultimateimprovments.command.subcommands;
 
 import com.ultimateimprovments.command.CommandErrors;
 
-import com.ultimateimprovments.config.MessagesManager;
 import com.ultimateimprovments.report.ReportManager;
 import com.ultimateimprovments.report.ReportManager.ReportData;
 import com.ultimateimprovments.util.MessageUtil;
@@ -23,13 +22,12 @@ public final class ModReportSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse(MessagesManager.getString("general.player_only",
-                    "<red>❌ Only players can use this command!</red>")));
+            CommandErrors.playerOnly(sender);
             return true;
         }
 
         if (!player.hasPermission("ui.command.reports")) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, "ui.command.reports");
             return true;
         }
 

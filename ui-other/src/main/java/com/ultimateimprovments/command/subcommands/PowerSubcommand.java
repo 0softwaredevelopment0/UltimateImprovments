@@ -37,7 +37,7 @@ public final class PowerSubcommand {
         if (!(sender instanceof Player)) { pm.executeDirect(false); return true; }
         Player player = (Player) sender;
         if (!player.hasPermission("ui.command.power.off")) {
-            CommandErrors.noPermission(player); return true;
+            CommandErrors.noPermission(player, "ui.command.power.off"); return true;
         }
         if (pm.hasPendingRequest()) { sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>There is already an active power management request.</red>")); return true; }
         pm.requestStop(player.getName(), player.getUniqueId());
@@ -52,7 +52,7 @@ public final class PowerSubcommand {
         if (!(sender instanceof Player)) { pm.executeDirect(true); return true; }
         Player player = (Player) sender;
         if (!player.hasPermission("ui.command.power.reboot")) {
-            CommandErrors.noPermission(player); return true;
+            CommandErrors.noPermission(player, "ui.command.power.reboot"); return true;
         }
         if (pm.hasPendingRequest()) { sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>There is already an active power management request.</red>")); return true; }
         pm.requestRestart(player.getName(), player.getUniqueId());
@@ -78,7 +78,7 @@ public final class PowerSubcommand {
     private static boolean handleUndo(CommandSender sender, PowerManager pm) {
         if (!pm.hasPendingRequest()) { sender.sendMessage(MessageUtil.parse("<dark_gray>[<dark_red>⚠</dark_red>]</dark_gray> <red>No active shutdown/restart requests.</red>")); return true; }
         if (sender instanceof Player player && !player.hasPermission("ui.command.power.undo")) {
-            CommandErrors.noPermission(player); return true;
+            CommandErrors.noPermission(player, "ui.command.power.undo"); return true;
         }
         String undoerName = sender instanceof Player ? ((Player) sender).getName() : "Console";
         String action = pm.undoRequest(undoerName);

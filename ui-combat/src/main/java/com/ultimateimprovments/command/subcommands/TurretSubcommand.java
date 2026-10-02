@@ -34,7 +34,7 @@ public final class TurretSubcommand implements SubCommand {
             return true;
         }
         if (!player.hasPermission(PERMISSION)) {
-            CommandErrors.noPermission(player);
+            CommandErrors.noPermission(player, PERMISSION);
             return true;
         }
 
