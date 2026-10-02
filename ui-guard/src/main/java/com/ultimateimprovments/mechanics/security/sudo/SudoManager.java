@@ -191,6 +191,7 @@ public class SudoManager {
             case "opwhitelist" -> List.of(Permissions.CMD_OPWHITELIST);
             case "blacklist" -> List.of(Permissions.CMD_BLACKLIST);
             case "maint", "maintenance" -> List.of(Permissions.CMD_MAINTENANCE);
+            case "stresstest" -> List.of(Permissions.CMD_STRESSTEST);
             default -> List.of();
         };
     }

@@ -9,6 +9,7 @@ import com.ultimateimprovments.command.subcommands.MaintSubcommand;
 import com.ultimateimprovments.command.subcommands.RedstoneSubcommand;
 import com.ultimateimprovments.command.subcommands.ServerSubcommand;
 import com.ultimateimprovments.command.subcommands.SudoSubcommand;
+import com.ultimateimprovments.command.subcommands.StressTestSubcommand;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.event.HandlerList;
@@ -24,7 +25,8 @@ public class UIGuard extends JavaPlugin implements SoftReloadable {
 
     private static final Set<String> OWNED_MODULES = Set.of(
             "RedstoneGuard", "PacketGuard", "ProxyServer", "BotProtection", "ServerOverload",
-            "Check", "CodePanel", "Sudo", "Maintenance", "ConsoleLockdown", "ServerLockdown");
+            "Check", "CodePanel", "Sudo", "Maintenance", "ConsoleLockdown", "ServerLockdown",
+            "StressTest");
 
     private static UIGuard instance;
 
@@ -110,6 +112,9 @@ public class UIGuard extends JavaPlugin implements SoftReloadable {
             registry.register(LegacySubCommandAdapter.of("sudo",
                     SudoSubcommand::execute,
                     (s, a) -> SudoSubcommand.tabComplete(a)));
+            registry.register(LegacySubCommandAdapter.of("stresstest",
+                    StressTestSubcommand::execute,
+                    (s, a) -> StressTestSubcommand.tabComplete(a)));
         } catch (Exception e) {
             ConsoleLogger.warn("[UI-Guard] Failed to register commands: " + e.getMessage());
         }

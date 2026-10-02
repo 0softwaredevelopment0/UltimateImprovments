@@ -1,6 +1,7 @@
 package com.ultimateimprovments.core;
 
 import com.ultimateimprovments.maintenance.MaintenanceManager;
+import com.ultimateimprovments.mechanics.benchmark.StressTestManager;
 import com.ultimateimprovments.mechanics.security.botprotect.BotProtectionListener;
 import com.ultimateimprovments.mechanics.security.check.CheckListener;
 import com.ultimateimprovments.mechanics.security.check.CheckManager;
@@ -230,6 +231,21 @@ public final class GuardModules {
                 if (manager != null) {
                     manager.cancelScheduledTask();
                 }
+            }
+        });
+
+        // StressTest (server benchmarks: /ui stresstest start|stop). Stopping
+        // the module ends an active run first, so every world change the load
+        // generator made is rolled back before the plugin goes away.
+        mm.register(new SimpleModule("StressTest", "mechanics/benchmark/stresstest", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                StressTestManager.init();
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                StressTestManager.shutdown();
             }
         });
     }

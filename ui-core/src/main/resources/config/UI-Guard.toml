@@ -179,8 +179,8 @@ session_minutes = 15
 # Default: 10
 attempt_cooldown_seconds = 10
 # Command.
-# Default: ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui opself", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maint", "lp", "luckperms"]
-dangerous_commands = ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui opself", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maint", "lp", "luckperms"]
+# Default: ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui opself", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maint", "ui stresstest", "lp", "luckperms"]
+dangerous_commands = ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui opself", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maint", "ui stresstest", "lp", "luckperms"]
 
 # Command policy: vanilla commands superseded by /ui equivalents.
 # Typing them reports error 011 ("command disabled on this server").
@@ -229,6 +229,41 @@ kill_switch = false
 # Time format: <number>s|m|h|d (e.g. 10s, 5m, 2h, 1d).
 # Default: 10s
 grace_time = "10s"
+
+# /ui stresstest — server benchmarks (/ui stresstest start <type> <power>).
+# The generators create REAL load (entities, block updates, chunk IO), so the
+# command additionally requires the ui.command.stresstest permission, which is
+# deliberately NOT granted by default.
+
+[stresstest]
+# Master switch (true = /ui stresstest is available).
+# Default: true
+enabled = true
+# Seconds of baseline sampling BEFORE the load starts; MSPT/TPS/RAM measured
+# here become the "before" column of the report. 0 = no warmup, no baseline.
+# Default: 3
+warmup_seconds = 3
+# Ticks between two load-generator work cycles. 1 = a cycle every tick (the
+# heaviest option), 20 = one cycle per second.
+# Default: 1
+interval_ticks = 1
+# Auto-stop the run after this many seconds — the safety net against a run
+# that nobody stopped. 0 = unlimited (only /ui stresstest stop ends it).
+# Default: 300
+max_duration_seconds = 300
+# Notify ui.alerts holders when a run starts.
+# Default: true
+alert_on_start = true
+# Also write the benchmark report to the console (the initiator always gets it).
+# Default: true
+log_report = true
+# EntityType used by the "entity" load generator (a Bukkit enum name).
+# Default: "COW"
+entity_type = "COW"
+# Hard cap on simultaneously living spawned entities; once reached, the
+# generator stops spawning and only the ticking load continues.
+# Default: 2000
+max_entities = 2000
 
 # ---- MESSAGES ----
 
@@ -744,6 +779,60 @@ scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in
 "100" = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <red>joins blocked — this looks like a bot attack!</red>"
 "1000" = "<dark_red>🔒 CRITICAL:</dark_red> <white>Server lockdown has blocked </white><yellow>%count%</yellow> <white>joins this session!</white>"
 
+# stresstest section (/ui stresstest — server benchmarks).
+
+[messages.stresstest]
+# Help block printed when the command is called without usable arguments.
+usage = "<red>❌ Использование:</red>\n<white>/ui stresstest start <тип> <мощность></white> <gray>— запустить замер нагрузки</gray>\n<white>/ui stresstest stop</white> <gray>— остановить замер и вывести отчёт</gray>\n<gray>Типы: </gray><white>entity</white><gray>, </gray><white>block</white><gray>, </gray><white>chunk</white><gray>, </gray><white>selector</white>\n<gray>Мощность: </gray><white>minimal</white><gray>, </gray><white>low</white><gray>, </gray><white>moderate</white><gray>, </gray><white>high</white><gray>, </gray><white>max</white>"
+# Feature switched off in [stresstest].
+disabled = "<red>❌</red> <white>Стресс-тесты отключены на этом сервере.</white> <gray>(stresstest.enabled = false)</gray>"
+# Unknown /ui stresstest start argument #2.
+invalid_type = "<red>❌ Неизвестный тип нагрузки: </red><white>%value%</white><gray> — используйте </gray><white>entity</white><gray>, </gray><white>block</white><gray>, </gray><white>chunk</white><gray> или </gray><white>selector</white>"
+# Unknown /ui stresstest start argument #3.
+invalid_power = "<red>❌ Неизвестный уровень мощности: </red><white>%value%</white><gray> — используйте </gray><white>minimal</white><gray>, </gray><white>low</white><gray>, </gray><white>moderate</white><gray>, </gray><white>high</white><gray> или </gray><white>max</white>"
+# A run is already active.
+already_running = "<yellow>⚠</yellow> <white>Стресс-тест уже выполняется (</white><yellow>%type% / %power%</yellow><white>). Остановите его: </white><white>/ui stresstest stop</white>"
+# The load generator refused to start.
+start_failed = "<red>❌</red> <white>Не удалось запустить стресс-тест: </white><gray>%error%</gray>"
+# Warmup started: %seconds% of baseline sampling.
+warmup = "<yellow>⏳</yellow> <white>Стресс-тест </white><yellow>%type% / %power%</yellow><gray>: снимаю базовую линию </gray><yellow>%seconds%s</yellow><gray>…</gray>"
+# Warmup over, load is being produced.
+started = "<green>🔥</green> <white>Стресс-тест </white><yellow>%type% / %power%</yellow> <green>генерирует нагрузку</green><gray> — остановить: </gray><white>/ui stresstest stop</white>"
+# /ui stresstest stop with no active run.
+not_running = "<yellow>⚠</yellow> <white>Сейчас не выполняется ни один стресс-тест.</white>"
+# Alert to ui.alerts holders when a run starts: %player%, %type%, %power%.
+alert_started = "<red>⚠</red> <white>Стресс-тест </white><yellow>%type% / %power%</yellow> <white>запустил </white><yellow>%player%</yellow>"
+# First report line: %type%, %power%, %duration%, %reason%.
+report_header = "<gray>══ Стресс-тест: </gray><yellow>%type% / %power%</yellow><gray> — </gray><yellow>%duration%s</yellow><gray> (</gray>%reason%<gray>) ══</gray>"
+# Second report line: %mspt_base%, %mspt_avg%, %mspt_max%, %tps_base%, %tps_avg%, %tps_min%.
+report_stats = "<gray>MSPT:</gray> <white>%mspt_base%</white> <dark_gray>→</dark_gray> <yellow>%mspt_avg%</yellow><gray> avg / </gray><red>%mspt_max%</red><gray> max</gray>   <gray>TPS:</gray> <white>%tps_base%</white> <dark_gray>→</dark_gray> <yellow>%tps_avg%</yellow><gray> avg / </gray><red>%tps_min%</red><gray> min</gray>"
+# Third report line: %ram_base%, %ram_avg%, %ram_max%, %entities%.
+report_memory = "<gray>RAM:</gray> <white>%ram_base%</white> <dark_gray>→</dark_gray> <yellow>%ram_avg%</yellow><gray> avg / </gray><red>%ram_max%</red><gray> max</gray>   <gray>Entities:</gray> <white>%entities%</white>"
+# Fourth report line: %work% (counter), %unit% (localised unit label).
+report_work = "<gray>Work:</gray> <yellow>%work%</yellow> <white>%unit%</white>"
+
+# Why a run ended (stresstest.reason.<id>).
+[messages.stresstest.reason]
+# /ui stresstest stop
+manual = "<gray>остановлен вручную</gray>"
+# stresstest.max_duration_seconds elapsed
+duration = "<gray>лимит времени</gray>"
+# Plugin/module disabled: shutdown or /ui reload
+disable = "<gray>перезагрузка / выключение</gray>"
+# The load generator threw
+error = "<gray>ошибка генератора</gray>"
+
+# Unit labels for the report's work counter (stresstest.units.<type>).
+[messages.stresstest.units]
+# "entity" generator: spawned entities.
+entity = "<white>сущностей создано</white>"
+# "block" generator: block updates applied.
+block = "<white>обновлений блоков</white>"
+# "chunk" generator: chunks whose state actually changed.
+chunk = "<white>чанков загружено/выгружено</white>"
+# "selector" generator: walks over the global entity list.
+selector = "<white>обходов списка сущностей</white>"
+
 [messages_en.server_lockdown]
 # Kick message shown to players whose join is refused by the lockdown.
 # Multi-line list (punish-style): each line = one row of the kick screen,
@@ -773,3 +862,57 @@ scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in
 "10" = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <gray>joins blocked this session.</gray>"
 "100" = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <red>joins blocked — this looks like a bot attack!</red>"
 "1000" = "<dark_red>🔒 CRITICAL:</dark_red> <white>Server lockdown has blocked </white><yellow>%count%</yellow> <white>joins this session!</white>"
+
+# stresstest section (/ui stresstest — server benchmarks).
+
+[messages_en.stresstest]
+# Help block printed when the command is called without usable arguments.
+usage = "<red>❌ Usage:</red>\n<white>/ui stresstest start <type> <power></white> <gray>— start a benchmark run</gray>\n<white>/ui stresstest stop</white> <gray>— stop the run and print the report</gray>\n<gray>Types: </gray><white>entity</white><gray>, </gray><white>block</white><gray>, </gray><white>chunk</white><gray>, </gray><white>selector</white>\n<gray>Powers: </gray><white>minimal</white><gray>, </gray><white>low</white><gray>, </gray><white>moderate</white><gray>, </gray><white>high</white><gray>, </gray><white>max</white>"
+# Feature switched off in [stresstest].
+disabled = "<red>❌</red> <white>Stress tests are disabled on this server.</white> <gray>(stresstest.enabled = false)</gray>"
+# Unknown /ui stresstest start argument #2.
+invalid_type = "<red>❌ Unknown load type: </red><white>%value%</white><gray> — use </gray><white>entity</white><gray>, </gray><white>block</white><gray>, </gray><white>chunk</white><gray> or </gray><white>selector</white>"
+# Unknown /ui stresstest start argument #3.
+invalid_power = "<red>❌ Unknown power level: </red><white>%value%</white><gray> — use </gray><white>minimal</white><gray>, </gray><white>low</white><gray>, </gray><white>moderate</white><gray>, </gray><white>high</white><gray> or </gray><white>max</white>"
+# A run is already active.
+already_running = "<yellow>⚠</yellow> <white>A stress test is already running (</white><yellow>%type% / %power%</yellow><white>). Stop it first: </white><white>/ui stresstest stop</white>"
+# The load generator refused to start.
+start_failed = "<red>❌</red> <white>Could not start the stress test: </white><gray>%error%</gray>"
+# Warmup started: %seconds% of baseline sampling.
+warmup = "<yellow>⏳</yellow> <white>Stress test </white><yellow>%type% / %power%</yellow><gray>: measuring the baseline for </gray><yellow>%seconds%s</yellow><gray>…</gray>"
+# Warmup over, load is being produced.
+started = "<green>🔥</green> <white>Stress test </white><yellow>%type% / %power%</yellow> <green>is producing load</green><gray> — stop it with </gray><white>/ui stresstest stop</white>"
+# /ui stresstest stop with no active run.
+not_running = "<yellow>⚠</yellow> <white>No stress test is running.</white>"
+# Alert to ui.alerts holders when a run starts: %player%, %type%, %power%.
+alert_started = "<red>⚠</red> <white>Stress test </white><yellow>%type% / %power%</yellow> <white>started by </white><yellow>%player%</yellow>"
+# First report line: %type%, %power%, %duration%, %reason%.
+report_header = "<gray>══ Stress test: </gray><yellow>%type% / %power%</yellow><gray> — </gray><yellow>%duration%s</yellow><gray> (</gray>%reason%<gray>) ══</gray>"
+# Second report line: %mspt_base%, %mspt_avg%, %mspt_max%, %tps_base%, %tps_avg%, %tps_min%.
+report_stats = "<gray>MSPT:</gray> <white>%mspt_base%</white> <dark_gray>→</dark_gray> <yellow>%mspt_avg%</yellow><gray> avg / </gray><red>%mspt_max%</red><gray> max</gray>   <gray>TPS:</gray> <white>%tps_base%</white> <dark_gray>→</dark_gray> <yellow>%tps_avg%</yellow><gray> avg / </gray><red>%tps_min%</red><gray> min</gray>"
+# Third report line: %ram_base%, %ram_avg%, %ram_max%, %entities%.
+report_memory = "<gray>RAM:</gray> <white>%ram_base%</white> <dark_gray>→</dark_gray> <yellow>%ram_avg%</yellow><gray> avg / </gray><red>%ram_max%</red><gray> max</gray>   <gray>Entities:</gray> <white>%entities%</white>"
+# Fourth report line: %work% (counter), %unit% (localised unit label).
+report_work = "<gray>Work:</gray> <yellow>%work%</yellow> <white>%unit%</white>"
+
+# Why a run ended (stresstest.reason.<id>).
+[messages_en.stresstest.reason]
+# /ui stresstest stop
+manual = "<gray>stopped manually</gray>"
+# stresstest.max_duration_seconds elapsed
+duration = "<gray>time limit reached</gray>"
+# Plugin/module disabled: shutdown or /ui reload
+disable = "<gray>reload / shutdown</gray>"
+# The load generator threw
+error = "<gray>generator error</gray>"
+
+# Unit labels for the report's work counter (stresstest.units.<type>).
+[messages_en.stresstest.units]
+# "entity" generator: spawned entities.
+entity = "<white>entities spawned</white>"
+# "block" generator: block updates applied.
+block = "<white>block updates</white>"
+# "chunk" generator: chunks whose state actually changed.
+chunk = "<white>chunks loaded/unloaded</white>"
+# "selector" generator: walks over the global entity list.
+selector = "<white>entity list walks</white>"
