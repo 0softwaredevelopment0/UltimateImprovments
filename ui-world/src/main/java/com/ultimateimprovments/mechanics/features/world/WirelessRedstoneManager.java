@@ -47,6 +47,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Supported blocks: REDSTONE_LAMP, OBSERVER, PISTON/STICKY_PISTON,
  * DISPENSER/DROPPER, REDSTONE_WIRE.
+ * <p>
+ * A wirelessly activated lamp is also a usable SIGNAL SOURCE: the lit
+ * property is applied with applyPhysics=false (otherwise the server would
+ * immediately turn it back off — the lamp has no real redstone input), and
+ * vanilla lamps never emit power anyway. So {@link #setLampLit} additionally
+ * powers adjacent redstone dust (a real current the rest of the vanilla
+ * redstone can read) and pulses adjacent observers that watch the lamp.
  */
 public class WirelessRedstoneManager implements Listener {
 
@@ -74,6 +81,15 @@ public class WirelessRedstoneManager implements Listener {
             Material.DISPENSER, Material.DROPPER,
             Material.REDSTONE_WIRE
     ));
+
+    /** The six neighbour faces, for signal emission and comparator updates. */
+    private static final List<BlockFace> SIX_FACES = List.of(
+            BlockFace.UP, BlockFace.DOWN,
+            BlockFace.NORTH, BlockFace.SOUTH,
+            BlockFace.EAST, BlockFace.WEST);
+
+    /** Observers currently pulsed by {@link #pulseObserver} (pulse guard). */
+    private final Set<BlockPos> pulsingObservers = ConcurrentHashMap.newKeySet();
 
     private WirelessRedstoneManager() {}
 
@@ -355,6 +371,11 @@ public class WirelessRedstoneManager implements Listener {
         // Update comparators and repeaters manually
         forceComparatorUpdate(block);
 
+        // Make the lamp usable as a signal source: adjacent dust gets a real
+        // current and adjacent observers get a real pulse — otherwise the
+        // lamp would only glow with nothing reacting to it.
+        emitWirelessPower(block, lit);
+
         Location loc = block.getLocation().clone();
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
             Block b = loc.getBlock();
@@ -373,13 +394,71 @@ public class WirelessRedstoneManager implements Listener {
     }
 
     /**
+     * Signal emission of a wirelessly changed lamp (see the class javadoc):
+     * <ul>
+     *   <li>adjacent REDSTONE_WIRE is driven to 15/0 — a real current the
+     *       rest of the vanilla redstone (repeaters, comparators, blocks)
+     *       can read and propagate;</li>
+     *   <li>adjacent OBSERVERS that watch the lamp get a real 2-tick pulse
+     *       so they register the state change.</li>
+     * </ul>
+     * Turning off drives adjacent dust to 0 even when another source powers
+     * it — the physics update makes the wire recompute and restore its real
+     * value, so foreign signals are only interrupted for a moment.
+     */
+    private void emitWirelessPower(Block block, boolean powered) {
+        for (BlockFace face : SIX_FACES) {
+            Block adj = block.getRelative(face);
+            switch (adj.getType()) {
+                case REDSTONE_WIRE -> setWirePowered(adj, powered);
+                case OBSERVER -> {
+                    if (powered && !isSkipping(BlockPos.fromLocation(adj.getLocation()))) {
+                        pulseObserver(adj, block);
+                    }
+                }
+                default -> { }
+            }
+        }
+    }
+
+    /**
+     * Pulses an observer as if it had detected a block change: its powered
+     * property is driven directly (physics=true, so the output side gets a
+     * real update) and cleared 2 ticks later — the vanilla pulse length.
+     * Only observers that actually watch the given block react: their eyes
+     * side (facing) or their output side points at it. The manager's watcher
+     * task sees the powered flip and propagates the activation to the
+     * observer's own wireless partners as usual.
+     */
+    private void pulseObserver(Block observerBlock, Block watched) {
+        if (!(observerBlock.getBlockData() instanceof Observer obs)) return;
+        BlockFace facing = obs.getFacing();
+        if (!observerBlock.getRelative(facing).equals(watched)
+                && !observerBlock.getRelative(facing.getOppositeFace()).equals(watched)) {
+            return;
+        }
+        BlockPos oPos = BlockPos.fromLocation(observerBlock.getLocation());
+        if (!pulsingObservers.add(oPos)) return; // a pulse is already running
+
+        obs.setPowered(true);
+        observerBlock.setBlockData(obs, true);
+        Location oloc = observerBlock.getLocation().clone();
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
+            pulsingObservers.remove(oPos);
+            Block b = oloc.getBlock();
+            if (b.getType() == Material.OBSERVER && b.getBlockData() instanceof Observer o && o.isPowered()) {
+                o.setPowered(false);
+                b.setBlockData(o, true);
+            }
+        }, 2L);
+    }
+
+    /**
      * Updates the state of all comparators and repeaters
      * within a 1-block radius of the given block.
      */
     private static void forceComparatorUpdate(Block block) {
-        for (BlockFace face : List.of(BlockFace.UP, BlockFace.DOWN,
-                BlockFace.NORTH, BlockFace.SOUTH,
-                BlockFace.EAST, BlockFace.WEST)) {
+        for (BlockFace face : SIX_FACES) {
             Block adj = block.getRelative(face);
             Material type = adj.getType();
             if (type == Material.COMPARATOR || type == Material.REPEATER) {
