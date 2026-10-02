@@ -209,6 +209,27 @@ enabled = true
 # Default: false
 kill_switch = false
 
+# /ui server lockdown — emergency server lockout against join floods (bot
+# attacks and similar). While active, NEW connections are refused, but players
+# already online are NOT kicked: they may leave and rejoin within the grace
+# window. The lockdown state itself lives in the database and survives
+# restarts.
+
+[server_lockdown]
+# KILL SWITCH: emergency escape hatch. Set to true if the lockdown locks you
+# out — on the next server restart or /ui reload the saved lockdown state
+# (including grace marks) is wiped from the database, the lockdown is lifted
+# and this option is automatically reset back to false.
+# Default: false
+kill_switch = false
+
+# Grace window: a player who was on the server when the lockdown was enabled
+# may leave and rejoin within this time after quitting without being blocked;
+# after the window expires they are treated like every other new connection.
+# Time format: <number>s|m|h|d (e.g. 10s, 5m, 2h, 1d).
+# Default: 10s
+grace_time = "10s"
+
 # ---- MESSAGES ----
 
 # codepanel section.
@@ -690,3 +711,31 @@ disabled = "<green>✔</green> <white>Console lockdown </white><red>DISABLED</re
 scheduled_on = "<yellow>⏰</yellow> <white>Console lockdown will be enabled in </white><yellow>%time%</yellow>"
 # Default: <yellow>⏰</yellow> <white>Console lockdown will be disabled in </white><yellow>%time%</yellow>
 scheduled_off = "<yellow>⏰</yellow> <white>Console lockdown will be disabled in </white><yellow>%time%</yellow>"
+
+# server lockdown section.
+
+[messages.server_lockdown]
+# Kick message shown to players whose join is refused by the lockdown (MiniMessage).
+# Default: <red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>\n<gray>Please try again later.</gray>
+kick_message = "<red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>\n<gray>Please try again later.</gray>"
+# Default: <red>🔒</red> <white>Server lockdown </white><green>ENABLED</green><gray> — new connections are blocked.</gray>
+enabled = "<red>🔒</red> <white>Server lockdown </white><green>ENABLED</green><gray> — new connections are blocked.</gray>"
+# Default: <green>✔</green> <white>Server lockdown </white><red>DISABLED</red><gray> — new connections are allowed again.</gray>
+disabled = "<green>✔</green> <white>Server lockdown </white><red>DISABLED</red><gray> — new connections are allowed again.</gray>"
+# Default: <yellow>⏰</yellow> <white>Server lockdown will be enabled in </white><yellow>%time%</yellow>
+scheduled_on = "<yellow>⏰</yellow> <white>Server lockdown will be enabled in </white><yellow>%time%</yellow>"
+# Default: <yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>
+scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>"
+
+[messages_en.server_lockdown]
+# Kick message shown to players whose join is refused by the lockdown (MiniMessage).
+# Default: <red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>\n<gray>Please try again later.</gray>
+kick_message = "<red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>\\n<gray>Please try again later.</gray>"
+# Default: <red>🔒</red> <white>Server lockdown </white><green>ENABLED</green><gray> — new connections are blocked.</gray>
+enabled = "<red>🔒</red> <white>Server lockdown </white><green>ENABLED</green><gray> — new connections are blocked.</gray>"
+# Default: <green>✔</green> <white>Server lockdown </white><red>DISABLED</red><gray> — new connections are allowed again.</gray>
+disabled = "<green>✔</green> <white>Server lockdown </white><red>DISABLED</red><gray> — new connections are allowed again.</gray>"
+# Default: <yellow>⏰</yellow> <white>Server lockdown will be enabled in </white><yellow>%time%</yellow>
+scheduled_on = "<yellow>⏰</yellow> <white>Server lockdown will be enabled in </white><yellow>%time%</yellow>"
+# Default: <yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>
+scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>"

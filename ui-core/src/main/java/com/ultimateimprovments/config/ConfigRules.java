@@ -509,6 +509,9 @@ final class ConfigRules {
 
             bool("console_lockdown.kill_switch"),
 
+            bool("server_lockdown.kill_switch"),
+            string("server_lockdown.grace_time", true, 16),
+
             stringList("command_policy.disabled_commands"),
 
             integer("access_control.check_interval_ticks", 1, 72000),

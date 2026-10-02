@@ -5,6 +5,7 @@ import com.ultimateimprovments.mechanics.security.botprotect.BotProtectionListen
 import com.ultimateimprovments.mechanics.security.check.CheckListener;
 import com.ultimateimprovments.mechanics.security.check.CheckManager;
 import com.ultimateimprovments.mechanics.security.consolelockdown.ConsoleLockdownManager;
+import com.ultimateimprovments.mechanics.security.serverlockdown.ServerLockdownManager;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCleanupTask;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelSession;
@@ -210,6 +211,22 @@ public final class GuardModules {
             @Override
             protected void onDisable(JavaPlugin plugin) {
                 ConsoleLockdownManager manager = ConsoleLockdownManager.getInstance();
+                if (manager != null) {
+                    manager.cancelScheduledTask();
+                }
+            }
+        });
+
+        // ServerLockdown (emergency join lockout: /ui server lockdown)
+        mm.register(new SimpleModule("ServerLockdown", "mechanics/security/serverlockdown", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                ServerLockdownManager.init();
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                ServerLockdownManager manager = ServerLockdownManager.getInstance();
                 if (manager != null) {
                     manager.cancelScheduledTask();
                 }
