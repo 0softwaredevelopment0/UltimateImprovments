@@ -260,6 +260,9 @@ public class HelpSubCommand implements SubCommand {
                 .sub("on", "[-t 10s|5m|2h|1d]", "enable now (or after the delay)")
                 .sub("off", "[-t 10s|5m|2h|1d]", "disable now (or after the delay)")
                 .sub("timed", "<10s|5m|2h|1d>", "enable with auto-disable");
+        cmd("stresstest", "Server benchmark (real load)")
+                .u("start <type> <power>", "type: entity|block|chunk|selector, power: minimal..max")
+                .u("stop", "stop the run and print the report");
         cmd("protection", "Protection block admin ops").u("", "admin utilities");
         cmd("plugin", "Plugin management (other plugins)")
                 .u("status <name>", "full plugin info (API, load, depends, libraries)")

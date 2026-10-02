@@ -517,6 +517,16 @@ final class ConfigRules {
 
             stringList("command_policy.disabled_commands"),
 
+            // Stress test / server benchmarks (/ui stresstest)
+            bool("stresstest.enabled"),
+            integer("stresstest.warmup_seconds", 0, 60, "Baseline sampling time before the load starts (s)"),
+            integer("stresstest.interval_ticks", 1, 20, "Ticks between two load-generator work cycles"),
+            integer("stresstest.max_duration_seconds", 0, 86400, "Auto-stop after this long (0 = unlimited)"),
+            bool("stresstest.alert_on_start"),
+            bool("stresstest.log_report"),
+            notBlank("stresstest.entity_type", 32),
+            integer("stresstest.max_entities", 0, 100000, "Hard cap on entities spawned by the entity load"),
+
             integer("access_control.check_interval_ticks", 1, 72000),
 
             bool("troll.enabled"),

@@ -46,6 +46,30 @@ in this file.
   session stay silent; the in-memory flag resets on server restart.
   Feature toggle `[loaded_alert] enabled` (default true, UI-Core.toml,
   read live). New `LoadedAlertListener`, registered in `PluginStartup`.
+- **`/ui stresstest` — server benchmark / stress test** (ui-guard): runs a
+  controlled load generator and reports how the server held up.
+  `/ui stresstest start <type> <power>` with types `entity` (spawns around
+  the anchor, every spawn PDC-marked and removed on stop), `block` (chain
+  redstone updates on a snapshotted platform, chunks pinned with plugin
+  chunk tickets), `chunk` (load/unload of already-generated chunks outside
+  the view distance — no new terrain is ever created) and `selector`
+  (repeated global entity-list walks plus `getNearbyEntities` queries);
+  powers `minimal|low|moderate|high|max` scale the work per cycle. A
+  warmup (`stresstest.warmup_seconds`, default 3 s) samples the baseline
+  before any load, then MSPT/TPS/RAM/entity count are sampled every second
+  and the report (duration, reason, MSPT avg/max, TPS avg/min, RAM %, work
+  units) is printed to the initiator and the console
+  (`stresstest.log_report`). Safety: `stresstest.max_duration_seconds`
+  (default 300, 0 = unlimited) auto-stops a forgotten run,
+  `stresstest.max_entities` caps the entity generator, disabling the module
+  (reload/shutdown) stops the run and restores every world change, and a
+  2 s startup sweep clears PDC-marked leftovers after a crash. New
+  permission `ui.command.stresstest` (default FALSE — the command creates
+  real load), config `[stresstest]` and message sections
+  `[messages.stresstest]` / `[messages_en.stresstest]` in UI-Guard.toml
+  (routed via `AddonCatalog`), a `/ui help` entry, and `"ui stresstest"`
+  added to `sudo.dangerous_commands` (with `ui.command.stresstest` in the
+  interceptor's 002-over-003 precedence map).
 
 ## [1.8.3-alpha.6] — since 1.8.3-alpha.5 (2026-09-30)
 

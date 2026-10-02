@@ -60,7 +60,7 @@ public final class AddonCatalog {
         route("UI-Guard", "packet_guard", "proxy_server", "redstone_guard",
                 "emergency_entity_kill", "server_overload_warning", "bot_protection",
                 "check", "codepanel", "sudo", "maintenance", "console_lockdown",
-                "server_lockdown", "command_policy");
+                "server_lockdown", "command_policy", "stresstest");
         // ── UI-World ──
         route("UI-World", "wireless_redstone", "meteor", "block_friction");
         // ── UI-Items ──
@@ -97,7 +97,7 @@ public final class AddonCatalog {
 routeMsg("UI-Items", "crafting");
         routeMsg("UI-Guard", "packet_guard", "bot_protection",
                 "check", "codepanel", "sudo", "maintenance", "console_lockdown",
-                "server_lockdown");
+                "server_lockdown", "stresstest");
         routeMsg("UI-World", "meteor");
         routeMsg("UI-Other", "changedimmension", "motd",
                 "suicide", "notes", "power", "death_logger",
