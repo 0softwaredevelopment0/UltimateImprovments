@@ -122,6 +122,32 @@ in this file.
   `/ui wirelessbind on`.
 
 ### Changed
+- **Wireless redstone: every linked device now performs its real vanilla
+  action** (ui-world):
+  - **dispenser/dropper** — performs a REAL dispense via the block-state
+    API (`Dispenser#dispense()`); previously only the `triggered`
+    animation property was toggled, so a wirelessly triggered device
+    "clicked" without ever shooting. The dropper (which has no
+    `dispense()` in the API) is simulated faithfully: first available
+    stack ejected toward the facing, `BlockDispenseEvent` fired first so
+    protection plugins can cancel it, then the item consumed and dropped
+    with velocity.
+  - **piston/sticky piston** — extension powers the piston from an
+    adjacent AIR block (never from the pushing face; falls back to
+    overwriting the block behind it like before, restored on retract);
+    retraction just removes the power block and lets vanilla retract —
+    a sticky piston now pulls its block back for real. Previously the
+    `extended` property was set manually on retract, leaving a ghost
+    piston head in the world and skipping the vanilla retraction.
+  - **observer** — a wirelessly activated observer pulses its output for
+    2 ticks by driving the `powered` property directly (physics on, so
+    the output side really powers and third observers detect the state
+    change). Replaces the old stone-flicker trick that mutated the world
+    in front of the observer and produced a double pulse (place + remove
+    of the probe block).
+  - **redstone lamp** — unchanged from the previous change: emits signal
+    to adjacent dust and pulses observers watching it.
+  - **redstone wire** — unchanged: driven to 15/0 directly.
 - **Wireless redstone: a wirelessly activated lamp is now a real signal
   source** (ui-world): the `lit` property is applied without physics (the
   server would immediately undo it otherwise) and vanilla lamps never emit
