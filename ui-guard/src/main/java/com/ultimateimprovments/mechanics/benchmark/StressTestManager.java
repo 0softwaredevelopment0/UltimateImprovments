@@ -595,9 +595,10 @@ public final class StressTestManager {
     }
 
     /**
-     * Sweeps leftover stress-test entities a couple of seconds after startup —
-     * they can only exist when a previous run was killed before {@code stop()}
-     * could run (crash, {@code kill -9}).
+     * Sweeps leftovers of a killed run a couple of seconds after startup:
+     * stress-test entities (PDC-marked) and the block-test region snapshot
+     * (DB record) can only exist when a previous run was killed before
+     * {@code stop()} could run (crash, {@code kill -9}).
      */
     private void scheduleLeftoverSweep() {
         JavaPlugin plugin = ownerPlugin();
@@ -614,6 +615,7 @@ public final class StressTestManager {
                 ConsoleLogger.info(LOG_PREFIX + "Removed " + removed
                         + " leftover stress-test entity(ies) from a previous run.");
             }
+            BlockLoad.restoreLeftoverRegion();
         }, 40L);
     }
 }
