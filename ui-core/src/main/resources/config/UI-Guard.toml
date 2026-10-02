@@ -733,6 +733,17 @@ scheduled_on = "<yellow>⏰</yellow> <white>Server lockdown will be enabled in <
 # Default: <yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>
 scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>"
 
+# Alert thresholds: when the number of blocked joins in the CURRENT lockdown
+# session reaches a threshold, admins (ui.alerts / OP) get the message ONCE
+# for that threshold. Keys = thresholds (any positive numbers), values =
+# MiniMessage texts. Placeholder: %count% (equals the threshold when fired).
+# Add your own lines (e.g. "5000" = "...") or remove the defaults freely;
+# deleting the whole section restores the built-in 10/100/1000 defaults.
+[messages.server_lockdown.alerts]
+"10" = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <gray>joins blocked this session.</gray>"
+"100" = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <red>joins blocked — this looks like a bot attack!</red>"
+"1000" = "<dark_red>🔒 CRITICAL:</dark_red> <white>Server lockdown has blocked </white><yellow>%count%</yellow> <white>joins this session!</white>"
+
 [messages_en.server_lockdown]
 # Kick message shown to players whose join is refused by the lockdown.
 # Multi-line list (punish-style): each line = one row of the kick screen,
@@ -751,3 +762,14 @@ disabled = "<green>✔</green> <white>Server lockdown </white><red>DISABLED</red
 scheduled_on = "<yellow>⏰</yellow> <white>Server lockdown will be enabled in </white><yellow>%time%</yellow>"
 # Default: <yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>
 scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>"
+
+# Alert thresholds: when the number of blocked joins in the CURRENT lockdown
+# session reaches a threshold, admins (ui.alerts / OP) get the message ONCE
+# for that threshold. Keys = thresholds (any positive numbers), values =
+# MiniMessage texts. Placeholder: %count% (equals the threshold when fired).
+# Add your own lines (e.g. "5000" = "...") or remove the defaults freely;
+# deleting the whole section restores the built-in 10/100/1000 defaults.
+[messages_en.server_lockdown.alerts]
+"10" = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <gray>joins blocked this session.</gray>"
+"100" = "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <red>joins blocked — this looks like a bot attack!</red>"
+"1000" = "<dark_red>🔒 CRITICAL:</dark_red> <white>Server lockdown has blocked </white><yellow>%count%</yellow> <white>joins this session!</white>"

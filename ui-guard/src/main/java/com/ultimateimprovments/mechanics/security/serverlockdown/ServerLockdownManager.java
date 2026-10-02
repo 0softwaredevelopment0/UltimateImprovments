@@ -6,6 +6,7 @@ import com.ultimateimprovments.database.StateStore;
 import com.ultimateimprovments.util.AlertBroadcast;
 import com.ultimateimprovments.util.ConsoleLogger;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -15,6 +16,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -61,6 +63,16 @@ public final class ServerLockdownManager implements Listener {
     /** Ring buffer size for stored blocked-join records (oldest are overwritten). */
     private static final int BLOCKED_MAX_ENTRIES = 200;
 
+    // Built-in default alert messages (English) — used when the config has no
+    // thresholds at all. Server owners may redefine/add/remove thresholds in
+    // messages[_en].server_lockdown.alerts ("<threshold>" = MiniMessage text).
+    private static final String DEFAULT_ALERT_10 =
+            "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <gray>joins blocked this session.</gray>";
+    private static final String DEFAULT_ALERT_100 =
+            "<red>🔒</red> <white>Server lockdown:</white> <yellow>%count%</yellow> <red>joins blocked — this looks like a bot attack!</red>";
+    private static final String DEFAULT_ALERT_1000 =
+            "<dark_red>🔒 CRITICAL:</dark_red> <white>Server lockdown has blocked </white><yellow>%count%</yellow> <white>joins this session!</white>";
+
     private static ServerLockdownManager instance;
 
     /** Current effective state (mirrors DB key {@code active}). */
@@ -75,14 +87,23 @@ public final class ServerLockdownManager implements Listener {
     /** Bukkit task for the pending scheduled change. */
     private BukkitTask scheduledTask = null;
 
+    /** Periodic task that drops expired grace marks (runs while the lockdown is active). */
+    private BukkitTask cleanupTask = null;
+
     /** Cached grace window in millis (from {@code server_lockdown.grace_time}). */
     private long graceMillis;
 
-    private ServerLockdownManager() {}
+    /** Cached alert thresholds (sorted ascending) from {@code messages.*.server_lockdown.alerts}. */
+    private List<AlertThreshold> alertThresholds = List.of();
+
+    /** One alert rule: when the session blocked count reaches {@code threshold}, send {@code message} once. */
+    public record AlertThreshold(int threshold, String message) {}
 
     // =========================
     // LIFECYCLE
     // =========================
+
+    private ServerLockdownManager() {}
 
     /**
      * Initializes (or re-initializes after /ui reload) the manager:
@@ -92,6 +113,7 @@ public final class ServerLockdownManager implements Listener {
     public static void init() {
         if (instance != null) {
             instance.cancelScheduledTask();
+            instance.stopCleanupTask();
         }
         instance = new ServerLockdownManager();
         UIGuard guard = UIGuard.getInstance();
@@ -105,11 +127,49 @@ public final class ServerLockdownManager implements Listener {
         return instance;
     }
 
-    /** Re-reads the grace window from the config (called on init and reload). */
+    /** Re-reads the grace window and the alert thresholds (called on init and reload). */
     public void reloadGraceConfig() {
         String raw = Main.getInstance().getConfig().getString("server_lockdown.grace_time", "10s");
         long parsed = parseTimeToMillis(raw);
         graceMillis = parsed > 0 ? parsed : 10_000L;
+        reloadAlertThresholds();
+    }
+
+    /**
+     * Reads the alert thresholds from {@code messages[_en].server_lockdown.alerts}
+     * (keys = session blocked-count thresholds, values = MiniMessage texts).
+     * Falls back to the built-in defaults (10/100/1000) when the section is
+     * missing or empty.
+     */
+    private void reloadAlertThresholds() {
+        String lang = Main.getInstance().getConfig().getString("messages.lang", "en");
+        String root = "en".equalsIgnoreCase(lang) ? "messages_en" : "messages";
+        ConfigurationSection sec = Main.getInstance().getConfig()
+                .getConfigurationSection(root + ".server_lockdown.alerts");
+        List<AlertThreshold> out = new ArrayList<>();
+        if (sec != null) {
+            for (String key : sec.getKeys(false)) {
+                int threshold;
+                try {
+                    threshold = Integer.parseInt(key);
+                } catch (NumberFormatException e) {
+                    ConsoleLogger.warn("[ServerLockdown] Ignoring alert threshold '" + key
+                            + "' — not a number.");
+                    continue;
+                }
+                String message = sec.getString(key);
+                if (threshold > 0 && message != null && !message.isBlank()) {
+                    out.add(new AlertThreshold(threshold, message));
+                }
+            }
+        }
+        if (out.isEmpty()) {
+            out = List.of(new AlertThreshold(10, DEFAULT_ALERT_10),
+                    new AlertThreshold(100, DEFAULT_ALERT_100),
+                    new AlertThreshold(1000, DEFAULT_ALERT_1000));
+        }
+        out.sort(Comparator.comparingInt(AlertThreshold::threshold));
+        alertThresholds = out;
     }
 
     /**
@@ -138,6 +198,9 @@ public final class ServerLockdownManager implements Listener {
         String action = StateStore.get(NS, "scheduled_action");
         String atStr = StateStore.get(NS, "scheduled_at");
         if (action == null || atStr == null) {
+            // No pending schedule — just restart the cleanup if a lockdown
+            // session survived the restart.
+            if (active) startCleanupTask();
             return;
         }
         long at;
@@ -166,9 +229,63 @@ public final class ServerLockdownManager implements Listener {
         scheduledAction = action;
         scheduledAt = at;
         armScheduledTask(at - System.currentTimeMillis());
+        if (active) startCleanupTask();
         ConsoleLogger.info("[ServerLockdown] Restored state from DB: active=" + active
                 + ", scheduled " + action + " in "
                 + formatDuration(at - System.currentTimeMillis()) + ".");
+    }
+
+    // =========================
+    // GRACE CLEANUP TASK
+    // =========================
+
+    /**
+     * Starts the periodic grace-mark cleanup (every second). Runs only while
+     * the lockdown is active — on disable the whole grace namespace is wiped
+     * anyway.
+     */
+    private void startCleanupTask() {
+        stopCleanupTask();
+        cleanupTask = Bukkit.getScheduler().runTaskTimer(UIGuard.getInstance(),
+                this::cleanupExpiredGrace, 20L, 20L);
+    }
+
+    private void stopCleanupTask() {
+        if (cleanupTask != null) {
+            cleanupTask.cancel();
+            cleanupTask = null;
+        }
+    }
+
+    /** Drops every grace mark whose window has already expired. */
+    private void cleanupExpiredGrace() {
+        if (!active) return;
+        long now = System.currentTimeMillis();
+        int removed = 0;
+        for (Map.Entry<String, String> e : StateStore.getAll(GRACE_NS).entrySet()) {
+            String key = e.getKey();
+            if (!key.startsWith("grace_") || "0".equals(e.getValue())) {
+                continue; // still "online" (has not quit since the lockdown started)
+            }
+            long quitAt;
+            try {
+                quitAt = Long.parseLong(e.getValue());
+            } catch (NumberFormatException ex) {
+                continue;
+            }
+            if (now - quitAt > graceMillis) {
+                try {
+                    dropGrace(UUID.fromString(key.substring("grace_".length())));
+                    removed++;
+                } catch (IllegalArgumentException ignored) {
+                    // malformed key — leave it, it cannot match any join
+                }
+            }
+        }
+        if (removed > 0) {
+            ConsoleLogger.info("[ServerLockdown] Grace cleanup: dropped " + removed
+                    + " expired mark(s).");
+        }
     }
 
     // =========================
@@ -202,6 +319,7 @@ public final class ServerLockdownManager implements Listener {
         // New lockdown session: statistics start from zero.
         StateStore.clearNamespace(BLOCKED_NS);
         markCurrentPlayers();
+        startCleanupTask();
         ConsoleLogger.warn("[ServerLockdown] ENABLED — new connections are now blocked ("
                 + Bukkit.getOnlinePlayers().size() + " players online are grandfathered).");
         notifyAdmins("server_lockdown.enabled",
@@ -212,6 +330,7 @@ public final class ServerLockdownManager implements Listener {
     /** Disables the lockdown immediately (cancels any pending change). */
     public void disable() {
         cancelScheduledTask();
+        stopCleanupTask();
         active = false;
         persistActive();
         StateStore.clearNamespace(GRACE_NS);
@@ -432,6 +551,22 @@ public final class ServerLockdownManager implements Listener {
         int slot = (int) (total % BLOCKED_MAX_ENTRIES); // ring buffer: oldest overwritten
         StateStore.put(BLOCKED_NS, "s" + slot, name + "|" + ip + "|" + System.currentTimeMillis());
         StateStore.put(BLOCKED_NS, "total", String.valueOf(total + 1));
+        checkAlertThresholds(total + 1);
+    }
+
+    /**
+     * Fires the admin alert ({@code ui.alerts} / OP via AlertBroadcast) for
+     * every threshold the session blocked counter has just reached exactly
+     * (once per threshold per session — the counter only grows).
+     */
+    private void checkAlertThresholds(long sessionCount) {
+        for (AlertThreshold t : alertThresholds) {
+            if (sessionCount != t.threshold()) continue;
+            String msg = t.message().replace("%count%", String.valueOf(t.threshold()));
+            AlertBroadcast.send(msg);
+            ConsoleLogger.warn("[ServerLockdown] Threshold alert ("
+                    + t.threshold() + " blocked): " + plain(msg));
+        }
     }
 
     /**
