@@ -1,5 +1,6 @@
 package com.ultimateimprovments.mechanics.security.sudo;
 
+import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.util.MessageUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,8 +25,14 @@ public class SudoCommandInterceptor implements Listener {
 
         Player player = event.getPlayer();
 
-        // Only players with the ui.sudo permission are subject to sudo mode
-        if (!player.hasPermission("ui.sudo")) return;
+        // A dangerous command requires a sudo password; a player without the
+        // ui.sudo permission is not allowed to use sudo mode at all — deny
+        // with error 003 (requires "ui.sudo") instead of passing through.
+        if (!player.hasPermission("ui.sudo")) {
+            CommandErrors.sudoRequired(player, "ui.sudo");
+            event.setCancelled(true);
+            return;
+        }
 
         String msg = event.getMessage().toLowerCase(java.util.Locale.ROOT).trim();
         SudoManager manager = SudoManager.getInstance();

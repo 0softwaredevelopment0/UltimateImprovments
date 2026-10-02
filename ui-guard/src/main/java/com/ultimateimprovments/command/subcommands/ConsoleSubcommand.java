@@ -28,6 +28,13 @@ import java.util.stream.Collectors;
  */
 public final class ConsoleSubcommand {
 
+    /** Special error 008 (this command's own): invalid time format. */
+    public static final int ERR_INVALID_TIME = 8;
+    /** Special error 009 (this command's own): the -t flag has no time value. */
+    public static final int ERR_MISSING_TIME_VALUE = 9;
+    /** Special error 010 (this command's own): unknown flag. */
+    public static final int ERR_UNKNOWN_FLAG = 10;
+
     private ConsoleSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
@@ -121,9 +128,9 @@ public final class ConsoleSubcommand {
         }
         long duration = ConsoleLockdownManager.parseTimeToMillis(args[3]);
         if (duration <= 0) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Invalid time format! Use: </red><white>10s</white><gray>, </gray><white>5m</white>"
-                            + "<gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"));
+            CommandErrors.custom(sender, ERR_INVALID_TIME,
+                    "<red>Invalid time format! Use: </red><white>10s</white><gray>, </gray><white>5m</white>"
+                            + "<gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>");
             return true;
         }
         manager.enableTimed(duration);
@@ -177,17 +184,17 @@ public final class ConsoleSubcommand {
             String lower = arg.toLowerCase(Locale.ROOT);
             if (lower.equals("-t")) {
                 if (i + 1 >= args.length) {
-                    sender.sendMessage(MessageUtil.parse(
-                            "<red>❌ The </red><white>-t</white><red> flag requires a time value"
-                                    + " (10s, 5m, 2h, 1d)!</red>"));
+                    CommandErrors.custom(sender, ERR_MISSING_TIME_VALUE,
+                            "<red>The </red><white>-t</white><red> flag requires a time value"
+                                    + " (10s, 5m, 2h, 1d)!</red>");
                     return null;
                 }
                 long millis = ConsoleLockdownManager.parseTimeToMillis(args[i + 1]);
                 if (millis <= 0) {
-                    sender.sendMessage(MessageUtil.parse(
-                            "<red>❌ Invalid time format! Use: </red><white>10s</white><gray>, </gray>"
+                    CommandErrors.custom(sender, ERR_INVALID_TIME,
+                            "<red>Invalid time format! Use: </red><white>10s</white><gray>, </gray>"
                                     + "<white>5m</white><gray>, </gray><white>2h</white><gray>, </gray>"
-                                    + "<white>1d</white>"));
+                                    + "<white>1d</white>");
                     return null;
                 }
                 return millis;
@@ -195,17 +202,17 @@ public final class ConsoleSubcommand {
             if (lower.startsWith("-t") && lower.length() > 2) {
                 long millis = ConsoleLockdownManager.parseTimeToMillis(lower.substring(2));
                 if (millis <= 0) {
-                    sender.sendMessage(MessageUtil.parse(
-                            "<red>❌ Invalid time format! Use: </red><white>10s</white><gray>, </gray>"
+                    CommandErrors.custom(sender, ERR_INVALID_TIME,
+                            "<red>Invalid time format! Use: </red><white>10s</white><gray>, </gray>"
                                     + "<white>5m</white><gray>, </gray><white>2h</white><gray>, </gray>"
-                                    + "<white>1d</white>"));
+                                    + "<white>1d</white>");
                     return null;
                 }
                 return millis;
             }
             if (lower.startsWith("-")) {
-                sender.sendMessage(MessageUtil.parse(
-                        "<yellow>⚠</yellow> <white>Unknown flag: </white><yellow>" + arg + "</yellow>"));
+                CommandErrors.custom(sender, ERR_UNKNOWN_FLAG,
+                        "<yellow>⚠</yellow> <white>Unknown flag: </white><yellow>" + arg + "</yellow>");
                 return null;
             }
         }

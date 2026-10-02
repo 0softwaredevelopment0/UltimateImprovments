@@ -26,6 +26,8 @@ public final class EconomySubcommand {
 
     private static final DecimalFormat FMT = new DecimalFormat("#,##0.##");
     private static final String PERMISSION = "ui.command.money";
+    /** Special error 006 (this command's own): amount cannot be negative. */
+    public static final int ERR_NEGATIVE_AMOUNT = 6;
 
     private EconomySubcommand() {}
 
@@ -281,8 +283,8 @@ public final class EconomySubcommand {
         }
 
         if (amount < 0) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Amount cannot be negative!</red>"));
+            CommandErrors.custom(sender, ERR_NEGATIVE_AMOUNT,
+                    "<red>Amount cannot be negative!</red>");
             return true;
         }
 

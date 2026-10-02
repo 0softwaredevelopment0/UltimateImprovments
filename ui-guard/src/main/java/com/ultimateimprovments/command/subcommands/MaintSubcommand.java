@@ -25,6 +25,9 @@ import java.util.stream.Collectors;
  */
 public final class MaintSubcommand {
 
+    /** Special error 007 (this command's own): invalid time format. */
+    public static final int ERR_INVALID_TIME = 7;
+
     private MaintSubcommand() {}
 
     public static boolean execute(CommandSender sender, String[] args) {
@@ -190,9 +193,8 @@ public final class MaintSubcommand {
         if (timeStr != null) {
             long ticks = MaintenanceManager.parseTimeToTicks(timeStr);
             if (ticks <= 0) {
-                sender.sendMessage(MessageUtil.parse(
-                        "<red>❌ Invalid time format! Use: </red><white>-time:30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"
-                ));
+                CommandErrors.custom(sender, ERR_INVALID_TIME,
+                        "<red>Invalid time format! Use: </red><white>-time:30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>");
                 return true;
             }
             mm.enableLater(ticks);
@@ -226,9 +228,8 @@ public final class MaintSubcommand {
         if (timeStr != null) {
             long ticks = MaintenanceManager.parseTimeToTicks(timeStr);
             if (ticks <= 0) {
-                sender.sendMessage(MessageUtil.parse(
-                        "<red>❌ Invalid time format! Use: </red><white>-time:30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"
-                ));
+                CommandErrors.custom(sender, ERR_INVALID_TIME,
+                        "<red>Invalid time format! Use: </red><white>-time:30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>");
                 return true;
             }
             mm.disableLater(ticks);
