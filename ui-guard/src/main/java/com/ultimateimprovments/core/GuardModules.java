@@ -4,6 +4,7 @@ import com.ultimateimprovments.maintenance.MaintenanceManager;
 import com.ultimateimprovments.mechanics.security.botprotect.BotProtectionListener;
 import com.ultimateimprovments.mechanics.security.check.CheckListener;
 import com.ultimateimprovments.mechanics.security.check.CheckManager;
+import com.ultimateimprovments.mechanics.security.consolelockdown.ConsoleLockdownManager;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCleanupTask;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelSession;
@@ -192,6 +193,22 @@ public final class GuardModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 MaintenanceManager.init();
+            }
+        });
+
+        // ConsoleLockdown (emergency console lockout: /ui console lockdown)
+        mm.register(new SimpleModule("ConsoleLockdown", "mechanics/security/consolelockdown", false) {
+            @Override
+            protected void onInit(JavaPlugin plugin) throws Exception {
+                ConsoleLockdownManager.init();
+            }
+
+            @Override
+            protected void onDisable(JavaPlugin plugin) {
+                ConsoleLockdownManager manager = ConsoleLockdownManager.getInstance();
+                if (manager != null) {
+                    manager.cancelScheduledTask();
+                }
             }
         });
     }
