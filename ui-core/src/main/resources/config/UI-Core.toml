@@ -47,6 +47,16 @@ interval_ticks = 2000
 # Default: true
 notify_console = true
 
+# One-shot "UltimateImprovments loaded successfully!" chat alert: after a
+# server start, every alerts holder (ui.alerts / OP) receives it ONCE per
+# server session — the first time they are present after startup (already
+# online at enable, or on their first join). Later joins stay silent;
+# resets on server restart.
+[loaded_alert]
+# Master switch (true = feature on).
+# Default: true
+enabled = true
+
 # Reputation auto-penalties (staff-issued numeric scale).
 [reputation]
 # Rep penalty for a CONFIRMED report verdict (0 disables).
