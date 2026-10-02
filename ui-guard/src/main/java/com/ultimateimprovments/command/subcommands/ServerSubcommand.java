@@ -4,6 +4,10 @@ import com.ultimateimprovments.core.Permissions;
 import com.ultimateimprovments.mechanics.security.serverlockdown.ServerLockdownManager;
 import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.util.MessageUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -60,6 +64,7 @@ public final class ServerSubcommand {
 
         return switch (action) {
             case "" -> showStatus(sender, manager);
+            case "status" -> handleStatus(sender, manager, args);
             case "on" -> lockdownOn(sender, manager, args);
             case "off" -> lockdownOff(sender, manager, args);
             case "timed" -> lockdownTimed(sender, manager, args);
@@ -154,6 +159,11 @@ public final class ServerSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<gray>Grace window:</gray> <yellow>"
                         + ServerLockdownManager.formatDuration(manager.getGraceMillis()) + "</yellow>"));
+        sender.sendMessage(MessageUtil.parse(
+                "<gray>Blocked joins this session:</gray> <red>"
+                        + manager.getBlockedCount() + "</red>"
+                        + "<gray>,  currently in grace:</gray> <yellow>"
+                        + manager.getActiveGraceEntries().size() + "</yellow>"));
 
         if (manager.getScheduledAction() != null) {
             long remaining = Math.max(0L, manager.getScheduledAt() - System.currentTimeMillis());
@@ -163,6 +173,23 @@ public final class ServerSubcommand {
                             + "</yellow> <white>in</white> <yellow>"
                             + ServerLockdownManager.formatDuration(remaining) + "</yellow>"));
         }
+
+        // ─── Clickable section tabs (like the /ui help navigation) ───
+        Component blockedTab = Component.text("[Blocked joins]")
+                .color(NamedTextColor.YELLOW)
+                .clickEvent(ClickEvent.runCommand("/ui server lockdown status blocked 1"))
+                .hoverEvent(HoverEvent.showText(MessageUtil.parse(
+                        "<gray>Who was refused during this lockdown session")));
+        Component graceTab = Component.text("[In grace]")
+                .color(NamedTextColor.YELLOW)
+                .clickEvent(ClickEvent.runCommand("/ui server lockdown status grace 1"))
+                .hoverEvent(HoverEvent.showText(MessageUtil.parse(
+                        "<gray>Who quit and may still rejoin within the grace window")));
+        sender.sendMessage(MessageUtil.parse("<gray>Sections: </gray>")
+                .append(blockedTab)
+                .append(MessageUtil.parse(" "))
+                .append(graceTab));
+
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>While locked, new connections are refused — players already</dark_gray>"));
         sender.sendMessage(MessageUtil.parse(
@@ -172,6 +199,136 @@ public final class ServerSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>or server_lockdown.kill_switch = true + restart//ui reload.</dark_gray>"));
         return true;
+    }
+
+    /**
+     * Dispatches {@code /ui server lockdown status [section] [page]}:
+     * without a section — the summary; with a section — the paginated list.
+     */
+    private static boolean handleStatus(CommandSender sender, ServerLockdownManager manager, String[] args) {
+        if (args.length < 4 || args[3].equalsIgnoreCase("summary")) {
+            return showStatus(sender, manager);
+        }
+        String section = args[3].toLowerCase(Locale.ROOT);
+        if (!section.equals("blocked") && !section.equals("grace")) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<red>❌ Unknown section: </red><white>" + args[3]
+                            + "</white><gray> — use </gray><white>blocked</white><gray> or </gray><white>grace</white>"));
+            return true;
+        }
+        int page = 1;
+        if (args.length >= 5) {
+            try {
+                page = Integer.parseInt(args[4]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage(MessageUtil.parse(
+                        "<red>❌ Invalid page number: </red><white>" + args[4] + "</white>"));
+                return true;
+            }
+        }
+        if (section.equals("blocked")) {
+            return showBlockedSection(sender, manager, page);
+        }
+        return showGraceSection(sender, manager, page);
+    }
+
+    /** Paginated "Blocked joins" list: who was refused during this session. */
+    private static boolean showBlockedSection(CommandSender sender, ServerLockdownManager manager, int requestedPage) {
+        List<ServerLockdownManager.BlockedAttempt> attempts = manager.getBlockedAttempts();
+        int totalPages = Math.max(1, (attempts.size() + STATUS_PER_PAGE - 1) / STATUS_PER_PAGE);
+        int page = Math.max(1, Math.min(requestedPage, totalPages));
+        int from = (page - 1) * STATUS_PER_PAGE;
+        int to = Math.min(from + STATUS_PER_PAGE, attempts.size());
+
+        sender.sendMessage(MessageUtil.parse("<gray>═══ <white>Server Lockdown</white> — "
+                + "<red>Blocked joins</red> <gray>(</gray><red>"
+                        + manager.getBlockedCount() + "</red><gray> total, page "
+                        + page + "/" + totalPages + ") ═══</gray>"));
+
+        if (attempts.isEmpty()) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<gray>Nobody has been refused during this lockdown session.</gray>"));
+        }
+        for (ServerLockdownManager.BlockedAttempt a : attempts.subList(from, to)) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>•</dark_gray> <white>" + a.name() + "</white> <gray>(" + a.ip()
+                            + ")</gray> <dark_gray>at " + ServerLockdownManager.formatTimestamp(a.at())
+                            + "</dark_gray>"));
+        }
+        sendSectionFooter(sender, "blocked", page, totalPages);
+        return true;
+    }
+
+    /** Paginated "In grace" list: who quit and may still rejoin. */
+    private static boolean showGraceSection(CommandSender sender, ServerLockdownManager manager, int requestedPage) {
+        List<ServerLockdownManager.GraceEntry> entries = manager.getActiveGraceEntries();
+        int totalPages = Math.max(1, (entries.size() + STATUS_PER_PAGE - 1) / STATUS_PER_PAGE);
+        int page = Math.max(1, Math.min(requestedPage, totalPages));
+        int from = (page - 1) * STATUS_PER_PAGE;
+        int to = Math.min(from + STATUS_PER_PAGE, entries.size());
+
+        sender.sendMessage(MessageUtil.parse("<gray>═══ <white>Server Lockdown</white> — "
+                + "<yellow>In grace</yellow> <gray>(</gray><yellow>"
+                        + entries.size() + "</yellow><gray> players, page "
+                        + page + "/" + totalPages + ") ═══</gray>"));
+
+        if (entries.isEmpty()) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<gray>No grandfathered player is currently inside the grace window.</gray>"));
+        }
+        for (ServerLockdownManager.GraceEntry e : entries.subList(from, to)) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>•</dark_gray> <white>" + e.name() + "</white> <gray>— quit "
+                            + ServerLockdownManager.formatDuration(System.currentTimeMillis() - e.quitAt())
+                            + " ago, may rejoin for </gray><yellow>"
+                            + ServerLockdownManager.formatDuration(e.remainingMillis()) + "</yellow>"));
+        }
+        sendSectionFooter(sender, "grace", page, totalPages);
+        return true;
+    }
+
+    /** Section footer: clickable [<] / [>] page arrows and the two section tabs. */
+    private static void sendSectionFooter(CommandSender sender, String section, int page, int totalPages) {
+        Component footer = MessageUtil.parse("<gray>Page <yellow>" + page + "<gray>/"
+                + totalPages + "   ");
+
+        if (page > 1) {
+            footer = footer.append(Component.text("[<]")
+                    .color(NamedTextColor.YELLOW)
+                    .clickEvent(ClickEvent.runCommand("/ui server lockdown status " + section + " " + (page - 1)))
+                    .hoverEvent(HoverEvent.showText(MessageUtil.parse("<gray>Previous page"))));
+        } else {
+            footer = footer.append(MessageUtil.parse("<dark_gray>[<]"));
+        }
+        footer = footer.append(MessageUtil.parse("  "));
+        if (page < totalPages) {
+            footer = footer.append(Component.text("[>]")
+                    .color(NamedTextColor.YELLOW)
+                    .clickEvent(ClickEvent.runCommand("/ui server lockdown status " + section + " " + (page + 1)))
+                    .hoverEvent(HoverEvent.showText(MessageUtil.parse("<gray>Next page"))));
+        } else {
+            footer = footer.append(MessageUtil.parse("<dark_gray>[>]"));
+        }
+        sender.sendMessage(footer);
+
+        // Cross-section switch tabs
+        String other = section.equals("blocked") ? "grace" : "blocked";
+        String otherLabel = other.equals("blocked") ? "[Blocked joins]" : "[In grace]";
+        String otherHover = other.equals("blocked")
+                ? "<gray>Who was refused during this lockdown session"
+                : "<gray>Who quit and may still rejoin within the grace window";
+        Component otherTab = Component.text(otherLabel)
+                .color(NamedTextColor.YELLOW)
+                .clickEvent(ClickEvent.runCommand("/ui server lockdown status " + other + " 1"))
+                .hoverEvent(HoverEvent.showText(MessageUtil.parse(otherHover)));
+        Component backTab = Component.text("[Summary]")
+                .color(NamedTextColor.YELLOW)
+                .clickEvent(ClickEvent.runCommand("/ui server lockdown status"))
+                .hoverEvent(HoverEvent.showText(MessageUtil.parse("<gray>Back to the summary")));
+        sender.sendMessage(MessageUtil.parse("<gray>Sections: </gray>")
+                .append(otherTab)
+                .append(MessageUtil.parse(" "))
+                .append(backTab));
     }
 
     // =========================
@@ -228,7 +385,8 @@ public final class ServerSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n"
-                        + "<white>/ui server lockdown</white> <gray>— show status</gray>\n"
+                        + "<white>/ui server lockdown</white> <gray>— show status (summary)</gray>\n"
+                        + "<white>/ui server lockdown status [blocked|grace] [page]</white> <gray>— summary / paginated section lists</gray>\n"
                         + "<white>/ui server lockdown on [-t 10s|5m|2h|1d]</white> <gray>— enable now (or after the delay)</gray>\n"
                         + "<white>/ui server lockdown off [-t 10s|5m|2h|1d]</white> <gray>— disable now (or after the delay)</gray>\n"
                         + "<white>/ui server lockdown timed &lt;10s|5m|2h|1d&gt;</white> <gray>— enable, auto-disable after the duration</gray>"
@@ -245,19 +403,28 @@ public final class ServerSubcommand {
         if (args.length == 2) {
             completions.add("lockdown");
         } else if (args.length == 3 && args[1].equalsIgnoreCase("lockdown")) {
-            for (String action : List.of("on", "off", "timed")) {
+            for (String action : List.of("status", "on", "off", "timed")) {
                 completions.add(action);
             }
         } else if (args.length == 4 && args[1].equalsIgnoreCase("lockdown")) {
             String action = args[2].toLowerCase(Locale.ROOT);
-            if (action.equals("on") || action.equals("off")) {
+            if (action.equals("status")) {
+                completions.add("summary");
+                completions.add("blocked");
+                completions.add("grace");
+            } else if (action.equals("on") || action.equals("off")) {
                 completions.add("-t");
             } else if (action.equals("timed")) {
                 completions.addAll(TIME_SUGGESTIONS);
             }
         } else if (args.length == 5 && args[1].equalsIgnoreCase("lockdown")) {
             String action = args[2].toLowerCase(Locale.ROOT);
-            if ((action.equals("on") || action.equals("off"))
+            if (action.equals("status")) {
+                String section = args[3].toLowerCase(Locale.ROOT);
+                if (section.equals("blocked") || section.equals("grace")) {
+                    completions.add("1");
+                }
+            } else if ((action.equals("on") || action.equals("off"))
                     && args[3].equalsIgnoreCase("-t")) {
                 completions.addAll(TIME_SUGGESTIONS);
             }
@@ -268,6 +435,9 @@ public final class ServerSubcommand {
                 .filter(s -> s.toLowerCase(Locale.ROOT).startsWith(last))
                 .collect(Collectors.toList());
     }
+
+    /** How many rows fit on one status-section page (same as /ui help). */
+    private static final int STATUS_PER_PAGE = 8;
 
     private static final List<String> TIME_SUGGESTIONS =
             List.of("10s", "30s", "5m", "15m", "30m", "1h", "6h", "1d");

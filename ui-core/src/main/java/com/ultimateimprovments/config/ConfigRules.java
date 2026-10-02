@@ -511,6 +511,7 @@ final class ConfigRules {
 
             bool("server_lockdown.kill_switch"),
             string("server_lockdown.grace_time", true, 16),
+            stringList("server_lockdown.kick_message"),
 
             stringList("command_policy.disabled_commands"),
 

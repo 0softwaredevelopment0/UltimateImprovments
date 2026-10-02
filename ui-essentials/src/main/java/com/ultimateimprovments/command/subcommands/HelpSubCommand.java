@@ -243,6 +243,23 @@ public class HelpSubCommand implements SubCommand {
                 .u("off", "open the server back")
                 .u("add <player>", "whitelist for maintenance")
                 .u("remove <player>", "");
+        cmd("server", "Server lockdown (anti-bot-attack)")
+                .u("status [blocked|grace] [page]", "summary / paginated section lists")
+                .u("on [-t 10s|5m|2h|1d]", "refuse new connections (online players stay)")
+                .u("off [-t 10s|5m|2h|1d]", "allow new connections again")
+                .u("timed <10s|5m|2h|1d>", "enable, auto-disable after the duration")
+                .sub("status", "[blocked|grace] [page]", "summary / blocked joins / players in grace")
+                .sub("on", "[-t 10s|5m|2h|1d]", "enable now (or after the delay)")
+                .sub("off", "[-t 10s|5m|2h|1d]", "disable now (or after the delay)")
+                .sub("timed", "<10s|5m|2h|1d>", "enable with auto-disable");
+        cmd("console", "Console lockdown (anti-tamper)")
+                .u("status", "show the console lockdown state")
+                .u("on [-t 10s|5m|2h|1d]", "cancel every console/RCON command")
+                .u("off [-t 10s|5m|2h|1d]", "console commands work again")
+                .u("timed <10s|5m|2h|1d>", "enable, auto-disable after the duration")
+                .sub("on", "[-t 10s|5m|2h|1d]", "enable now (or after the delay)")
+                .sub("off", "[-t 10s|5m|2h|1d]", "disable now (or after the delay)")
+                .sub("timed", "<10s|5m|2h|1d>", "enable with auto-disable");
         cmd("protection", "Protection block admin ops").u("", "admin utilities");
         cmd("plugin", "Plugin management (other plugins)")
                 .u("status <name>", "full plugin info (API, load, depends, libraries)")

@@ -715,9 +715,15 @@ scheduled_off = "<yellow>⏰</yellow> <white>Console lockdown will be disabled i
 # server lockdown section.
 
 [messages.server_lockdown]
-# Kick message shown to players whose join is refused by the lockdown (MiniMessage).
-# Default: <red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>\n<gray>Please try again later.</gray>
-kick_message = "<red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>\n<gray>Please try again later.</gray>"
+# Kick message shown to players whose join is refused by the lockdown.
+# Multi-line list (punish-style): each line = one row of the kick screen,
+# lines are joined with newlines. MiniMessage, placeholder: %player%.
+kick_message = [
+    "<red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>",
+    "",
+    "<gray>Hello </gray><white>%player%</white><gray>! The server is currently closed for new joins</gray>",
+    "<gray>(anti-bot-attack protection). Please try again later.</gray>",
+]
 # Default: <red>🔒</red> <white>Server lockdown </white><green>ENABLED</green><gray> — new connections are blocked.</gray>
 enabled = "<red>🔒</red> <white>Server lockdown </white><green>ENABLED</green><gray> — new connections are blocked.</gray>"
 # Default: <green>✔</green> <white>Server lockdown </white><red>DISABLED</red><gray> — new connections are allowed again.</gray>
@@ -728,9 +734,15 @@ scheduled_on = "<yellow>⏰</yellow> <white>Server lockdown will be enabled in <
 scheduled_off = "<yellow>⏰</yellow> <white>Server lockdown will be disabled in </white><yellow>%time%</yellow>"
 
 [messages_en.server_lockdown]
-# Kick message shown to players whose join is refused by the lockdown (MiniMessage).
-# Default: <red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>\n<gray>Please try again later.</gray>
-kick_message = "<red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>\\n<gray>Please try again later.</gray>"
+# Kick message shown to players whose join is refused by the lockdown.
+# Multi-line list (punish-style): each line = one row of the kick screen,
+# lines are joined with newlines. MiniMessage, placeholder: %player%.
+kick_message = [
+    "<red>🔒 Server is under lockdown — new connections are temporarily disabled.</red>",
+    "",
+    "<gray>Hello </gray><white>%player%</white><gray>! The server is currently closed for new joins</gray>",
+    "<gray>(anti-bot-attack protection). Please try again later.</gray>",
+]
 # Default: <red>🔒</red> <white>Server lockdown </white><green>ENABLED</green><gray> — new connections are blocked.</gray>
 enabled = "<red>🔒</red> <white>Server lockdown </white><green>ENABLED</green><gray> — new connections are blocked.</gray>"
 # Default: <green>✔</green> <white>Server lockdown </white><red>DISABLED</red><gray> — new connections are allowed again.</gray>

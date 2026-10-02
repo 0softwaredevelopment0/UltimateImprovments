@@ -195,6 +195,8 @@ public final class Permissions {
     public static final String UI_OVERLOAD_LOGS = "ui.overload.logs";
     public static final String UI_PUNISH_NOTIFY = "ui.punish.notify";
     public static final String UI_PROXY_SERVER = "ui.proxy.server";
+    /** /ui server lockdown — join bypass: may join while the server lockdown is active. */
+    public static final String UI_SERVERLOCKDOWN_BYPASS = "ui.serverlockdown.bypass";
 
     // ═══════════ REGISTRATION ═══════════
 
@@ -221,7 +223,7 @@ public final class Permissions {
                 new Permission(CMD_PLUGIN, "Manage other plugins", PermissionDefault.FALSE),
                 new Permission(CMD_PLUGINS, "List plugins", PermissionDefault.FALSE),
                 new Permission(CMD_ADDONS, "Manage UltimateImprovments addons (/ui addon)", PermissionDefault.FALSE),
-                new Permission(CMD_HELP, "Show command help", PermissionDefault.FALSE),
+                new Permission(CMD_HELP, "Show command help", PermissionDefault.TRUE),
                 new Permission(CMD_CONFIG_REGEN, "Regenerate per-addon configs (/ui config regen) — destructive, also gated by config.commands.enabled", PermissionDefault.FALSE),
                 new Permission(CMD_CONFIG_RESET, "Reset per-addon configs to bundled defaults (/ui config reset <addon|all>) — destructive, also gated by config.commands.enabled", PermissionDefault.FALSE),
                 new Permission(CMD_LANG, "View or switch the UI language (/ui lang)", PermissionDefault.OP),
@@ -359,7 +361,8 @@ public final class Permissions {
                 new Permission(UI_ENCHANT_AOE_BYPASS, "Bypass AOE enchantment restrictions", PermissionDefault.FALSE),
                 new Permission(UI_OVERLOAD_LOGS, "Receive overload logs", PermissionDefault.FALSE),
                 new Permission(UI_PUNISH_NOTIFY, "Receive punish notifications", PermissionDefault.FALSE),
-                new Permission(UI_PROXY_SERVER, "Access proxy server features", PermissionDefault.FALSE)
+                new Permission(UI_PROXY_SERVER, "Access proxy server features", PermissionDefault.FALSE),
+                new Permission(UI_SERVERLOCKDOWN_BYPASS, "Join while the server lockdown (/ui server lockdown) is active", PermissionDefault.FALSE)
         );
 
         int registered = 0;
