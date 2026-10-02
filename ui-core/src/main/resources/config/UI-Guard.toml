@@ -187,7 +187,8 @@ dangerous_commands = ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "u
 
 [command_policy]
 # Vanilla commands disabled on this server — use the /ui equivalents instead
-# (/ui op|deop, /ui power off|reboot). Players only; the console is not blocked.
+# (/ui op|deop, /ui power off|reboot). Blocked for players AND the
+# console/RCON alike (the /ui replacements work from the console too).
 # Default: ["op", "deop", "stop", "restart"]
 disabled_commands = ["op", "deop", "stop", "restart"]
 
