@@ -157,13 +157,24 @@ public class SudoManager {
      */
     public List<String> getUiBasePermissions(String message) {
         String normalized = normalize(message);
-        if (!normalized.startsWith("ui ")) return List.of();
+        if (!normalized.startsWith("ui ")) {
+            // Bare plugin-managed op commands (op/deop) share the /ui gates.
+            String bare = normalized.split(" ", 2)[0];
+            return switch (bare) {
+                case "op" -> List.of(Permissions.CMD_OP);
+                case "deop" -> List.of(Permissions.CMD_DEOP);
+                default -> List.of();
+            };
+        }
         String rest = normalized.substring(3).trim();
         if (rest.isEmpty()) return List.of();
         String sub = rest.split(" ", 2)[0];
         return switch (sub) {
             case "punish" -> List.of(Permissions.CMD_PUNISH);
             case "power" -> List.of(Permissions.CMD_POWER_OFF, Permissions.CMD_POWER_REBOOT);
+            case "sudo" -> List.of(Permissions.CMD_SUDO);
+            case "op" -> List.of(Permissions.CMD_OP);
+            case "deop" -> List.of(Permissions.CMD_DEOP);
             case "whitelist" -> List.of(Permissions.CMD_WHITELIST);
             case "opwhitelist" -> List.of(Permissions.CMD_OPWHITELIST);
             case "blacklist" -> List.of(Permissions.CMD_BLACKLIST);

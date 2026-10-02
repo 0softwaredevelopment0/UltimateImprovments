@@ -179,8 +179,8 @@ session_minutes = 15
 # Default: 10
 attempt_cooldown_seconds = 10
 # Command.
-# Default: ["ui punish", "ui power", "ui chgop", "ui op", "ui deop", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maintenance", "lp", "luckperms", "op", "deop", "stop", "restart"]
-dangerous_commands = ["ui punish", "ui power", "ui chgop", "ui op", "ui deop", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maintenance", "lp", "luckperms", "op", "deop", "stop", "restart"]
+# Default: ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maint", "lp", "luckperms", "op", "deop", "stop", "restart"]
+dangerous_commands = ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maint", "lp", "luckperms", "op", "deop", "stop", "restart"]
 
 [maintenance]
 # Maintenance mode switch: non-staff players are kicked/blocked.
