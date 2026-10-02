@@ -19,10 +19,10 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
-build/*
-!build/libs/
-build/libs/*
-!build/libs/*.jar
+**/build/*
+!/build/libs/
+/build/libs/*
+!/build/libs/*.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 .gradle/
@@ -34,7 +34,6 @@ nul
 node_modules/
 scan_cyrillic.js
 scan_cyrillic.py
-build/
 *.class
 node_modules/
 
