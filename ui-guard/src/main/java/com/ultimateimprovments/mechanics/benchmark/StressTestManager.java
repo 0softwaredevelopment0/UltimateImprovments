@@ -84,6 +84,7 @@ public final class StressTestManager {
     private int warmupLeft;
     private int intervalTicks;
     private long maxDurationMillis;
+    private long runStartedAt;
     private long loadStartedAt;
 
     private final List<Sample> baseline = new ArrayList<>();
@@ -110,7 +111,7 @@ public final class StressTestManager {
         StressTestManager current = instance;
         instance = null;
         if (current != null) {
-            current.finish(Reason.DISABLE, true);
+            current.finish(Reason.DISABLE, true, null);
         }
     }
 
@@ -175,6 +176,7 @@ public final class StressTestManager {
         this.initiator = sender;
         this.anchor = newAnchor;
         this.tickCounter = 0;
+        this.runStartedAt = System.currentTimeMillis();
         this.intervalTicks = clamp(cfg.getInt("stresstest.interval_ticks", 1), 1, 20);
         int warmupSeconds = clamp(cfg.getInt("stresstest.warmup_seconds", 3), 0, 60);
         this.warmupLeft = warmupSeconds * 20;
@@ -185,11 +187,33 @@ public final class StressTestManager {
         JavaPlugin plugin = ownerPlugin();
         if (plugin == null) {
             newLoad.stop();
-            this.load = null;
-            this.phase = Phase.IDLE;
+            resetAfterFailedStart();
             send(sender, "stresstest.start_failed",
                     "<red>❌</red> <white>Could not start the stress test: </white><gray>%error%</gray>",
                     "%error%", "UI-Guard is not loaded");
+            return false;
+        }
+
+        try {
+            task = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    onTick();
+                }
+            }.runTaskTimer(plugin, 1L, 1L);
+        } catch (Throwable t) {
+            // The scheduler refused the task (plugin disabling) — roll the
+            // whole run back, otherwise the generator would leak un-stopped.
+            ConsoleLogger.error(LOG_PREFIX + "Scheduler rejected the run task: " + t);
+            try {
+                newLoad.stop();
+            } catch (Throwable ignored) {
+                // Best-effort rollback.
+            }
+            resetAfterFailedStart();
+            send(sender, "stresstest.start_failed",
+                    "<red>❌</red> <white>Could not start the stress test: </white><gray>%error%</gray>",
+                    "%error%", "scheduler rejected the run task");
             return false;
         }
 
@@ -203,20 +227,21 @@ public final class StressTestManager {
                     "%type%", type.id(), "%power%", power.id(), "%seconds%", String.valueOf(warmupSeconds));
         }
 
-        task = new BukkitRunnable() {
-            @Override
-            public void run() {
-                onTick();
-            }
-        }.runTaskTimer(plugin, 1L, 1L);
-
         alertStarted(sender);
         return true;
     }
 
+    /**
+     * Stops the active run and reports the outcome to the original initiator
+     * and to {@code caller} (when it is a different sender).
+     */
+    public void stop(CommandSender caller) {
+        finish(Reason.MANUAL, false, caller);
+    }
+
     /** Stops the active run (no-op when nothing is running). */
     public void stop() {
-        finish(Reason.MANUAL, false);
+        finish(Reason.MANUAL, false, null);
     }
 
     /** Reports the outcome of a stop attempt to the given sender. */
@@ -250,14 +275,15 @@ public final class StressTestManager {
                 load.tick();
             } catch (Throwable t) {
                 ConsoleLogger.error(LOG_PREFIX + "Load generator failed: " + t);
-                finish(Reason.ERROR, true);
+                // consoleOnly=false: the initiator must learn the run died.
+                finish(Reason.ERROR, false, null);
                 return;
             }
         }
 
         if (maxDurationMillis > 0 && System.currentTimeMillis() - loadStartedAt >= maxDurationMillis) {
             ConsoleLogger.warn(LOG_PREFIX + "Auto-stopped after reaching stresstest.max_duration_seconds.");
-            finish(Reason.DURATION, false);
+            finish(Reason.DURATION, false, null);
         }
     }
 
@@ -296,8 +322,11 @@ public final class StressTestManager {
      *
      * @param consoleOnly when true the report is only written to the console
      *                    (used for shutdown/reload, when the initiator may be gone)
+     * @param extra       an additional sender that gets the report too (e.g. a
+     *                    second admin who ran {@code /ui stresstest stop});
+     *                    skipped when it is the initiator itself or null
      */
-    private void finish(Reason reason, boolean consoleOnly) {
+    private void finish(Reason reason, boolean consoleOnly, CommandSender extra) {
         if (phase == Phase.IDLE) {
             return;
         }
@@ -311,6 +340,9 @@ public final class StressTestManager {
         if (endedPhase == Phase.RUNNING) {
             sample();
         }
+        // Entity count must be captured BEFORE the generator removes its own
+        // entities, otherwise the report's "Entities" column is meaningless.
+        int endEntities = countEntities();
 
         StressLoad finished = load;
         load = null;
@@ -329,19 +361,16 @@ public final class StressTestManager {
         }
 
         boolean reportEnabled = cfg().getBoolean("stresstest.log_report", true);
-        List<String> lines = buildReport(reason, work);
+        List<String> lines = buildReport(reason, work, endEntities);
         if (reportEnabled) {
             for (String line : lines) {
                 ConsoleLogger.info(LOG_PREFIX + stripMini(line));
             }
         }
-        if (!consoleOnly && initiator != null) {
-            for (String line : lines) {
-                try {
-                    initiator.sendMessage(MessageUtil.parse(line));
-                } catch (Throwable ignored) {
-                    // The initiator may have disconnected between stop and report.
-                }
+        if (!consoleOnly) {
+            deliverReport(initiator, lines);
+            if (extra != null && extra != initiator) {
+                deliverReport(extra, lines);
             }
         }
 
@@ -353,17 +382,52 @@ public final class StressTestManager {
         warmupLeft = 0;
         intervalTicks = 1;
         maxDurationMillis = 0;
+        runStartedAt = 0L;
         loadStartedAt = 0L;
         baseline.clear();
         running.clear();
     }
 
+    /** Rolls every run field back after a start that never began ticking. */
+    private void resetAfterFailedStart() {
+        phase = Phase.IDLE;
+        task = null;
+        load = null;
+        type = null;
+        power = null;
+        initiator = null;
+        anchor = null;
+        tickCounter = 0;
+        warmupLeft = 0;
+        intervalTicks = 1;
+        maxDurationMillis = 0;
+        runStartedAt = 0L;
+        loadStartedAt = 0L;
+        baseline.clear();
+        running.clear();
+    }
+
+    /** Sends the report lines to one recipient, tolerating a gone recipient. */
+    private static void deliverReport(CommandSender to, List<String> lines) {
+        if (to == null) return;
+        for (String line : lines) {
+            try {
+                to.sendMessage(MessageUtil.parse(line));
+            } catch (Throwable ignored) {
+                // The recipient may have disconnected between stop and report.
+            }
+        }
+    }
+
     /** Assembles the benchmark report as a list of MiniMessage lines. */
-    private List<String> buildReport(Reason reason, long work) {
+    private List<String> buildReport(Reason reason, long work, int endEntities) {
         String typeLabel = typeId();
         String powerLabel = powerId();
-        double durationSeconds = loadStartedAt > 0
-                ? (System.currentTimeMillis() - loadStartedAt) / 1000.0D
+        // Load duration when the load phase was reached, total run duration
+        // otherwise (a stop during the warmup must not report 0.0s).
+        long startedAt = loadStartedAt > 0 ? loadStartedAt : runStartedAt;
+        double durationSeconds = startedAt > 0
+                ? (System.currentTimeMillis() - startedAt) / 1000.0D
                 : 0.0D;
         String reasonText = msg("stresstest.reason." + reason.id(), "<gray>" + reason.id() + "</gray>");
 
@@ -394,7 +458,7 @@ public final class StressTestManager {
                 "%ram_base%", stat(baseline, Field.RAM, Stat.AVG, Format.PERCENT),
                 "%ram_avg%", stat(running, Field.RAM, Stat.AVG, Format.PERCENT),
                 "%ram_max%", stat(running, Field.RAM, Stat.MAX, Format.PERCENT),
-                "%entities%", String.valueOf(countEntities())));
+                "%entities%", String.valueOf(endEntities)));
 
         String unit = msg("stresstest.units." + typeLabel, "<white>work units</white>");
         lines.add(msg("stresstest.report_work",

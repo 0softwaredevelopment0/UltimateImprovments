@@ -20,8 +20,15 @@ import java.util.Set;
  * <p>
  * Only pre-generated chunks are used, so the test never creates new terrain —
  * it measures the real cost of reading, hydrating and releasing existing
- * chunks. The number of chunks that actually changed state is what lands in the
- * report, not the size of the candidate list.
+ * chunks. {@code work()} counts only state changes that actually happened:
+ * a load counts when the chunk really got loaded, an unload is credited on
+ * the next cycle only if the server actually unloaded the chunk (the request
+ * is best-effort — chunks held by players or tickets stay loaded).
+ * <p>
+ * The initial loaded/unloaded state of every collected chunk is snapshotted
+ * before the run and restored by {@link #stop()}: chunks that were loaded
+ * before the test are re-loaded if the run unloaded them, and chunks the run
+ * loaded but that were unloaded initially are unload-requested again.
  */
 public final class ChunkLoad implements StressLoad {
 
@@ -30,7 +37,10 @@ public final class ChunkLoad implements StressLoad {
 
     private final StressPower power;
     private final List<int[]> coords = new ArrayList<>();
-    private final Set<Long> loadedByUs = new HashSet<>();
+    /** Chunks that were loaded when the run started — restored by stop(). */
+    private final Set<Long> initiallyLoaded = new HashSet<>();
+    /** Unload requests from the current cycle, verified (and counted) next cycle. */
+    private final Set<Long> pendingUnloads = new HashSet<>();
 
     private World world;
     private boolean wantLoad;
@@ -64,23 +74,45 @@ public final class ChunkLoad implements StressLoad {
                     + world.getName() + " " + anchor.getBlockX() + "," + anchor.getBlockZ()
                     + " — move somewhere with explored terrain");
         }
-        wantLoad = false; // every collected chunk starts unloaded -> first cycle loads
+        for (int[] chunk : coords) {
+            if (world.isChunkLoaded(chunk[0], chunk[1])) {
+                initiallyLoaded.add(key(chunk[0], chunk[1]));
+            }
+        }
+        wantLoad = true; // first cycle loads the unloaded chunks
     }
 
     @Override
     public void tick() {
         if (world == null) return;
-        for (int[] chunk : coords) {
-            boolean loaded = world.isChunkLoaded(chunk[0], chunk[1]);
-            if (loaded == wantLoad) continue;
-            if (wantLoad) {
-                world.getChunkAt(chunk[0], chunk[1], true);
-                loadedByUs.add(key(chunk[0], chunk[1]));
-            } else {
-                world.unloadChunkRequest(chunk[0], chunk[1]);
-                loadedByUs.remove(key(chunk[0], chunk[1]));
+
+        // 1. Credit unload requests of the previous cycle that actually
+        //    unloaded (unloadChunkRequest is best-effort).
+        pendingUnloads.removeIf(key -> {
+            int x = (int) (key >> 32);
+            int z = (int) (key & 0xFFFFFFFFL);
+            if (!world.isChunkLoaded(x, z)) {
+                work++;
             }
-            work++;
+            return true;
+        });
+
+        // 2. Apply this cycle.
+        for (int[] chunk : coords) {
+            int x = chunk[0];
+            int z = chunk[1];
+            boolean loaded = world.isChunkLoaded(x, z);
+            if (wantLoad) {
+                if (loaded) continue;
+                world.getChunkAt(x, z, true);
+                if (world.isChunkLoaded(x, z)) {
+                    work++;
+                }
+            } else {
+                if (!loaded) continue;
+                world.unloadChunkRequest(x, z);
+                pendingUnloads.add(key(x, z));
+            }
         }
         wantLoad = !wantLoad;
     }
@@ -88,20 +120,30 @@ public final class ChunkLoad implements StressLoad {
     @Override
     public void stop() {
         if (world != null) {
+            // Restore the initial loaded/unloaded state of every chunk we touched.
             for (int[] chunk : coords) {
-                if (!loadedByUs.contains(key(chunk[0], chunk[1]))) continue;
-                if (world.isChunkLoaded(chunk[0], chunk[1])) {
-                    try {
-                        world.unloadChunkRequest(chunk[0], chunk[1]);
-                    } catch (Throwable ignored) {
-                        // The world may already be closing during a full shutdown.
+                int x = chunk[0];
+                int z = chunk[1];
+                boolean wasLoaded = initiallyLoaded.contains(key(x, z));
+                boolean loaded = world.isChunkLoaded(x, z);
+                try {
+                    if (wasLoaded && !loaded) {
+                        // The run unloaded a chunk that was loaded before it.
+                        world.getChunkAt(x, z, true);
+                    } else if (!wasLoaded && loaded) {
+                        // The run loaded a chunk that was unloaded before it.
+                        world.unloadChunkRequest(x, z);
                     }
+                } catch (Throwable ignored) {
+                    // The world may already be closing during a full shutdown.
                 }
             }
         }
         coords.clear();
-        loadedByUs.clear();
+        initiallyLoaded.clear();
+        pendingUnloads.clear();
         world = null;
+        wantLoad = false;
     }
 
     @Override

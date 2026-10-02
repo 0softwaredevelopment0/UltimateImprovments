@@ -66,6 +66,7 @@ public final class SelectorLoad implements StressLoad {
     @Override
     public void stop() {
         anchor = null;
+        scratch = null;
     }
 
     @Override
