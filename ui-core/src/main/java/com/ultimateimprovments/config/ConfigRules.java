@@ -507,6 +507,8 @@ final class ConfigRules {
 
             bool("maintenance.enabled"),
 
+            bool("console_lockdown.kill_switch"),
+
             integer("access_control.check_interval_ticks", 1, 72000),
 
             bool("troll.enabled"),

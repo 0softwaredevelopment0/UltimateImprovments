@@ -187,6 +187,18 @@ dangerous_commands = ["ui punish", "ui power", "ui chgop", "ui op", "ui deop", "
 # Default: true
 enabled = true
 
+# /ui console lockdown — emergency console lockout (all console/RCON commands
+# are cancelled while active). The lockdown state itself lives in the database
+# and survives restarts.
+
+[console_lockdown]
+# KILL SWITCH: emergency escape hatch. Set to true if the lockdown locks you
+# out — on the next server restart or /ui reload the saved lockdown state is
+# wiped from the database, the lockdown is lifted and this option is
+# automatically reset back to false.
+# Default: false
+kill_switch = false
+
 # ---- MESSAGES ----
 
 # codepanel section.
@@ -646,3 +658,25 @@ disabled = "<green>✔</green> <white>Maintenance mode </white><red>DISABLED</re
 scheduled_enable = "<yellow>⏰</yellow> <white>Maintenance will be enabled in </white><yellow>%time%</yellow>"
 # Default: <yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>
 scheduled_disable = "<yellow>⏰</yellow> <white>Maintenance will be disabled in </white><yellow>%time%</yellow>"
+
+# console lockdown section.
+
+[messages.console_lockdown]
+# Default: <red>🔒</red> <white>Console lockdown </white><green>ENABLED</green><gray> — all console commands are cancelled.</gray>
+enabled = "<red>🔒</red> <white>Console lockdown </white><green>ENABLED</green><gray> — all console commands are cancelled.</gray>"
+# Default: <green>✔</green> <white>Console lockdown </white><red>DISABLED</red><gray> — console commands work again.</gray>
+disabled = "<green>✔</green> <white>Console lockdown </white><red>DISABLED</red><gray> — console commands work again.</gray>"
+# Default: <yellow>⏰</yellow> <white>Console lockdown will be enabled in </white><yellow>%time%</yellow>
+scheduled_on = "<yellow>⏰</yellow> <white>Console lockdown will be enabled in </white><yellow>%time%</yellow>"
+# Default: <yellow>⏰</yellow> <white>Console lockdown will be disabled in </white><yellow>%time%</yellow>
+scheduled_off = "<yellow>⏰</yellow> <white>Console lockdown will be disabled in </white><yellow>%time%</yellow>"
+
+[messages_en.console_lockdown]
+# Default: <red>🔒</red> <white>Console lockdown </white><green>ENABLED</green><gray> — all console commands are cancelled.</gray>
+enabled = "<red>🔒</red> <white>Console lockdown </white><green>ENABLED</green><gray> — all console commands are cancelled.</gray>"
+# Default: <green>✔</green> <white>Console lockdown </white><red>DISABLED</red><gray> — console commands work again.</gray>
+disabled = "<green>✔</green> <white>Console lockdown </white><red>DISABLED</red><gray> — console commands work again.</gray>"
+# Default: <yellow>⏰</yellow> <white>Console lockdown will be enabled in </white><yellow>%time%</yellow>
+scheduled_on = "<yellow>⏰</yellow> <white>Console lockdown will be enabled in </white><yellow>%time%</yellow>"
+# Default: <yellow>⏰</yellow> <white>Console lockdown will be disabled in </white><yellow>%time%</yellow>
+scheduled_off = "<yellow>⏰</yellow> <white>Console lockdown will be disabled in </white><yellow>%time%</yellow>"

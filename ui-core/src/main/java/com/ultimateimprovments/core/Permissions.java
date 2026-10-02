@@ -122,6 +122,8 @@ public final class Permissions {
     public static final String CMD_OPWHITELIST = "ui.command.opwhitelist";
     public static final String CMD_WHITELIST = "ui.command.whitelist";
     public static final String CMD_MAINTENANCE = "ui.command.maintenance";
+    /** /ui console lockdown — console lockout control. NEVER granted by default (not a child of ui.admin / ui.command.*). */
+    public static final String CMD_CONSOLE = "ui.command.console";
     public static final String CMD_CHECK = "ui.command.check";
     public static final String CMD_AC = "ui.command.ac";
     public static final String CMD_PROTECTION = "ui.command.protection";
@@ -294,6 +296,7 @@ public final class Permissions {
                 new Permission(CMD_OPWHITELIST, "Manage the operator whitelist", PermissionDefault.FALSE),
                 new Permission(CMD_WHITELIST, "Manage the whitelist", PermissionDefault.FALSE),
                 new Permission(CMD_MAINTENANCE, "Toggle maintenance mode", PermissionDefault.FALSE),
+                new Permission(CMD_CONSOLE, "Control the console lockdown (/ui console lockdown) — emergency console lockout; deliberately NOT granted by default (no OP, no ui.admin implication)", PermissionDefault.FALSE),
                 new Permission(CMD_CHECK, "Check players", PermissionDefault.FALSE),
                 new Permission(CMD_AC, "View anti-cheat statistics", PermissionDefault.FALSE),
                 new Permission(CMD_PROTECTION, "Manage protection blocks", PermissionDefault.FALSE),

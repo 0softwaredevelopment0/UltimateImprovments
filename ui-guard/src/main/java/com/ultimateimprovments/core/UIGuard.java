@@ -3,6 +3,7 @@ package com.ultimateimprovments.core;
 import com.ultimateimprovments.command.SubCommandRegistry;
 import com.ultimateimprovments.command.subcommands.CheckSubcommand;
 import com.ultimateimprovments.command.subcommands.CodePaneSubcommand;
+import com.ultimateimprovments.command.subcommands.ConsoleSubcommand;
 import com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter;
 import com.ultimateimprovments.command.subcommands.MaintSubcommand;
 import com.ultimateimprovments.command.subcommands.RedstoneSubcommand;
@@ -22,7 +23,7 @@ public class UIGuard extends JavaPlugin implements SoftReloadable {
 
     private static final Set<String> OWNED_MODULES = Set.of(
             "RedstoneGuard", "PacketGuard", "ProxyServer", "BotProtection", "ServerOverload",
-            "Check", "CodePanel", "Sudo", "Maintenance");
+            "Check", "CodePanel", "Sudo", "Maintenance", "ConsoleLockdown");
 
     private static UIGuard instance;
 
@@ -99,6 +100,9 @@ public class UIGuard extends JavaPlugin implements SoftReloadable {
             registry.register(LegacySubCommandAdapter.of("maint",
                     MaintSubcommand::execute,
                     (s, a) -> MaintSubcommand.tabComplete(a)));
+            registry.register(LegacySubCommandAdapter.of("console",
+                    ConsoleSubcommand::execute,
+                    (s, a) -> ConsoleSubcommand.tabComplete(a)));
             registry.register(LegacySubCommandAdapter.of("sudo",
                     SudoSubcommand::execute,
                     (s, a) -> SudoSubcommand.tabComplete(a)));
