@@ -185,10 +185,17 @@ public final class ServerSubcommand {
                 .clickEvent(ClickEvent.runCommand("/ui server lockdown status grace 1"))
                 .hoverEvent(HoverEvent.showText(MessageUtil.parse(
                         "<gray>Who quit and may still rejoin within the grace window")));
+        Component thresholdsTab = Component.text("[Thresholds]")
+                .color(NamedTextColor.YELLOW)
+                .clickEvent(ClickEvent.runCommand("/ui server lockdown status thresholds 1"))
+                .hoverEvent(HoverEvent.showText(MessageUtil.parse(
+                        "<gray>Alert thresholds and whether they already fired this session")));
         sender.sendMessage(MessageUtil.parse("<gray>Sections: </gray>")
                 .append(blockedTab)
                 .append(MessageUtil.parse(" "))
-                .append(graceTab));
+                .append(graceTab)
+                .append(MessageUtil.parse(" "))
+                .append(thresholdsTab));
 
         sender.sendMessage(MessageUtil.parse(
                 "<dark_gray>While locked, new connections are refused — players already</dark_gray>"));
@@ -210,10 +217,11 @@ public final class ServerSubcommand {
             return showStatus(sender, manager);
         }
         String section = args[3].toLowerCase(Locale.ROOT);
-        if (!section.equals("blocked") && !section.equals("grace")) {
+        if (!section.equals("blocked") && !section.equals("grace") && !section.equals("thresholds")) {
             sender.sendMessage(MessageUtil.parse(
                     "<red>❌ Unknown section: </red><white>" + args[3]
-                            + "</white><gray> — use </gray><white>blocked</white><gray> or </gray><white>grace</white>"));
+                            + "</white><gray> — use </gray><white>blocked</white><gray>, </gray><white>grace</white>"
+                            + "<gray> or </gray><white>thresholds</white>"));
             return true;
         }
         int page = 1;
@@ -226,10 +234,14 @@ public final class ServerSubcommand {
                 return true;
             }
         }
-        if (section.equals("blocked")) {
-            return showBlockedSection(sender, manager, page);
+        switch (section) {
+            case "blocked":
+                return showBlockedSection(sender, manager, page);
+            case "grace":
+                return showGraceSection(sender, manager, page);
+            default:
+                return showThresholdsSection(sender, manager, page);
         }
-        return showGraceSection(sender, manager, page);
     }
 
     /** Paginated "Blocked joins" list: who was refused during this session. */
@@ -287,7 +299,41 @@ public final class ServerSubcommand {
         return true;
     }
 
-    /** Section footer: clickable [<] / [>] page arrows and the two section tabs. */
+    /**
+     * Paginated "Thresholds" list: every configured alert threshold with its
+     * config-file order number, trigger value and OK/ALERT status. ALERT
+     * thresholds already fired during the current lockdown session (persisted
+     * in the DB; the whole session resets when the lockdown is toggled).
+     */
+    private static boolean showThresholdsSection(CommandSender sender, ServerLockdownManager manager, int requestedPage) {
+        List<ServerLockdownManager.AlertThreshold> thresholds = manager.getAlertThresholds();
+        int totalPages = Math.max(1, (thresholds.size() + STATUS_PER_PAGE - 1) / STATUS_PER_PAGE);
+        int page = Math.max(1, Math.min(requestedPage, totalPages));
+        int from = (page - 1) * STATUS_PER_PAGE;
+        int to = Math.min(from + STATUS_PER_PAGE, thresholds.size());
+
+        sender.sendMessage(MessageUtil.parse("<gray>═══ <white>Server Lockdown</white> — "
+                + "<yellow>Alert thresholds</yellow> <gray>(</gray><red>"
+                + manager.getBlockedCount() + "</red><gray> blocked this session, page "
+                + page + "/" + totalPages + ") ═══</gray>"));
+
+        if (thresholds.isEmpty()) {
+            sender.sendMessage(MessageUtil.parse(
+                    "<gray>No alert thresholds configured.</gray>"));
+        }
+        for (int i = from; i < to; i++) {
+            ServerLockdownManager.AlertThreshold t = thresholds.get(i);
+            boolean fired = manager.isThresholdFired(t.threshold());
+            sender.sendMessage(MessageUtil.parse(
+                    "<dark_gray>•</dark_gray> <white>#" + (i + 1) + "</white> <gray>— fires at</gray> <yellow>"
+                            + t.threshold() + "</yellow> <gray>blocked</gray> <dark_gray>—</dark_gray> "
+                            + (fired ? "<red>ALERT</red>" : "<green>OK</green>")));
+        }
+        sendSectionFooter(sender, "thresholds", page, totalPages);
+        return true;
+    }
+
+    /** Section footer: clickable [<] / [>] page arrows and the other section tabs. */
     private static void sendSectionFooter(CommandSender sender, String section, int page, int totalPages) {
         Component footer = MessageUtil.parse("<gray>Page <yellow>" + page + "<gray>/"
                 + totalPages + "   ");
@@ -311,24 +357,38 @@ public final class ServerSubcommand {
         }
         sender.sendMessage(footer);
 
-        // Cross-section switch tabs
-        String other = section.equals("blocked") ? "grace" : "blocked";
-        String otherLabel = other.equals("blocked") ? "[Blocked joins]" : "[In grace]";
-        String otherHover = other.equals("blocked")
-                ? "<gray>Who was refused during this lockdown session"
-                : "<gray>Who quit and may still rejoin within the grace window";
-        Component otherTab = Component.text(otherLabel)
-                .color(NamedTextColor.YELLOW)
-                .clickEvent(ClickEvent.runCommand("/ui server lockdown status " + other + " 1"))
-                .hoverEvent(HoverEvent.showText(MessageUtil.parse(otherHover)));
+        // Cross-section switch tabs (all sections except the current one) + summary
+        Component tabs = MessageUtil.parse("<gray>Sections: </gray>");
+        boolean first = true;
+        for (String other : List.of("blocked", "grace", "thresholds")) {
+            if (other.equals(section)) continue;
+            if (!first) tabs = tabs.append(MessageUtil.parse(" "));
+            first = false;
+            tabs = tabs.append(sectionTab(other));
+        }
         Component backTab = Component.text("[Summary]")
                 .color(NamedTextColor.YELLOW)
                 .clickEvent(ClickEvent.runCommand("/ui server lockdown status"))
                 .hoverEvent(HoverEvent.showText(MessageUtil.parse("<gray>Back to the summary")));
-        sender.sendMessage(MessageUtil.parse("<gray>Sections: </gray>")
-                .append(otherTab)
-                .append(MessageUtil.parse(" "))
-                .append(backTab));
+        sender.sendMessage(tabs.append(MessageUtil.parse(" ")).append(backTab));
+    }
+
+    /** Clickable tab component for a status section. */
+    private static Component sectionTab(String section) {
+        String label = switch (section) {
+            case "blocked" -> "[Blocked joins]";
+            case "grace" -> "[In grace]";
+            default -> "[Thresholds]";
+        };
+        String hover = switch (section) {
+            case "blocked" -> "<gray>Who was refused during this lockdown session";
+            case "grace" -> "<gray>Who quit and may still rejoin within the grace window";
+            default -> "<gray>Alert thresholds and whether they already fired this session";
+        };
+        return Component.text(label)
+                .color(NamedTextColor.YELLOW)
+                .clickEvent(ClickEvent.runCommand("/ui server lockdown status " + section + " 1"))
+                .hoverEvent(HoverEvent.showText(MessageUtil.parse(hover)));
     }
 
     // =========================
@@ -386,7 +446,7 @@ public final class ServerSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n"
                         + "<white>/ui server lockdown</white> <gray>— show status (summary)</gray>\n"
-                        + "<white>/ui server lockdown status [blocked|grace] [page]</white> <gray>— summary / paginated section lists</gray>\n"
+                        + "<white>/ui server lockdown status [blocked|grace|thresholds] [page]</white> <gray>— summary / paginated section lists</gray>\n"
                         + "<white>/ui server lockdown on [-t 10s|5m|2h|1d]</white> <gray>— enable now (or after the delay)</gray>\n"
                         + "<white>/ui server lockdown off [-t 10s|5m|2h|1d]</white> <gray>— disable now (or after the delay)</gray>\n"
                         + "<white>/ui server lockdown timed &lt;10s|5m|2h|1d&gt;</white> <gray>— enable, auto-disable after the duration</gray>"
@@ -412,6 +472,7 @@ public final class ServerSubcommand {
                 completions.add("summary");
                 completions.add("blocked");
                 completions.add("grace");
+                completions.add("thresholds");
             } else if (action.equals("on") || action.equals("off")) {
                 completions.add("-t");
             } else if (action.equals("timed")) {
