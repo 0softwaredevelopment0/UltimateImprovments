@@ -16,7 +16,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -138,6 +137,7 @@ public final class ServerLockdownManager implements Listener {
     /**
      * Reads the alert thresholds from {@code messages[_en].server_lockdown.alerts}
      * (keys = session blocked-count thresholds, values = MiniMessage texts).
+     * The list keeps the config file order (used as the status #number).
      * Falls back to the built-in defaults (10/100/1000) when the section is
      * missing or empty.
      */
@@ -168,8 +168,21 @@ public final class ServerLockdownManager implements Listener {
                     new AlertThreshold(100, DEFAULT_ALERT_100),
                     new AlertThreshold(1000, DEFAULT_ALERT_1000));
         }
-        out.sort(Comparator.comparingInt(AlertThreshold::threshold));
         alertThresholds = out;
+    }
+
+    /** Configured alert thresholds in config-file order (status numbering). */
+    public List<AlertThreshold> getAlertThresholds() {
+        return alertThresholds;
+    }
+
+    /**
+     * Whether the given threshold has already fired during the current
+     * lockdown session. Persisted in the DB (survives a restart), wiped
+     * together with the whole session when the lockdown is toggled off/on.
+     */
+    public boolean isThresholdFired(int threshold) {
+        return StateStore.get(BLOCKED_NS, "fired_" + threshold) != null;
     }
 
     /**
@@ -557,11 +570,13 @@ public final class ServerLockdownManager implements Listener {
     /**
      * Fires the admin alert ({@code ui.alerts} / OP via AlertBroadcast) for
      * every threshold the session blocked counter has just reached exactly
-     * (once per threshold per session — the counter only grows).
+     * (once per threshold per session — the counter only grows). Fired
+     * thresholds are persisted in the DB and reset when the session resets.
      */
     private void checkAlertThresholds(long sessionCount) {
         for (AlertThreshold t : alertThresholds) {
             if (sessionCount != t.threshold()) continue;
+            StateStore.put(BLOCKED_NS, "fired_" + t.threshold(), "1");
             String msg = t.message().replace("%count%", String.valueOf(t.threshold()));
             AlertBroadcast.send(msg);
             ConsoleLogger.warn("[ServerLockdown] Threshold alert ("
