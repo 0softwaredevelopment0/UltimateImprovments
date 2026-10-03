@@ -852,13 +852,26 @@ public class DatabaseInit {
 
         // =========================
         // 🛡 OP BLACKLIST — operators listed here lose OP automatically
-        // (enabled flag lives in the config: opblacklist.enabled)
+        // (feature switch lives in the config: op_lists.blacklist.enabled;
+        // the runtime on/off state is stored in op_blacklist_meta)
         // =========================
         st.execute("""
             CREATE TABLE IF NOT EXISTS op_blacklist (
                 player_name TEXT PRIMARY KEY,
                 added_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
             );
+        """);
+
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS op_blacklist_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            );
+        """);
+
+        st.execute("""
+            INSERT OR IGNORE INTO op_blacklist_meta (key, value)
+            VALUES ('enabled', 'false');
         """);
 
         // =========================

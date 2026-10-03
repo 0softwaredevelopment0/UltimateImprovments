@@ -58,41 +58,17 @@ public class OpWhitelistManager implements Listener {
             // Migrate from the old JSON file (if it exists and the DB is empty)
             migrateFromJson(con);
 
-            // The master switch lives in the config ([op_lists.whitelist] in
-            // UI-Punish.toml) since the shared op_lists section was introduced.
-            // One-time migration: seed the config from the legacy DB flag
-            // (marker 'enabled_migrated') so existing servers keep their state.
-            String marker = null;
-            boolean dbEnabled = false;
+            // Runtime on/off state lives in the DB (op_whitelist_meta) —
+            // /ui opwhitelist on|off toggles it. The feature switch is
+            // separate: op_lists.whitelist.enabled in the config.
             try (PreparedStatement st = con.prepareStatement(
                     "SELECT value FROM op_whitelist_meta WHERE key = ?")) {
-                st.setString(1, "enabled_migrated");
+                st.setString(1, "enabled");
                 try (ResultSet rs = st.executeQuery()) {
-                    if (rs.next()) marker = rs.getString("value");
-                }
-            }
-            if (marker == null) {
-                try (PreparedStatement st = con.prepareStatement(
-                        "SELECT value FROM op_whitelist_meta WHERE key = ?")) {
-                    st.setString(1, "enabled");
-                    try (ResultSet rs = st.executeQuery()) {
-                        if (rs.next()) {
-                            dbEnabled = Boolean.parseBoolean(rs.getString("value"));
-                        }
+                    if (rs.next()) {
+                        enabled = Boolean.parseBoolean(rs.getString("value"));
                     }
                 }
-                Main.getInstance().getConfig().set("op_lists.whitelist.enabled", dbEnabled);
-                Main.getInstance().saveConfig();
-                try (PreparedStatement st = con.prepareStatement(
-                        "INSERT OR REPLACE INTO op_whitelist_meta (key, value) VALUES (?, ?)")) {
-                    st.setString(1, "enabled_migrated");
-                    st.setString(2, "true");
-                    st.executeUpdate();
-                }
-                enabled = dbEnabled;
-                ConsoleLogger.info("[OpWhitelist] Migrated the enabled flag from DB to config (op_lists.whitelist.enabled=" + dbEnabled + ")");
-            } else {
-                enabled = Main.getInstance().getConfig().getBoolean("op_lists.whitelist.enabled", false);
             }
 
             // Count the records for the log
@@ -200,6 +176,15 @@ public class OpWhitelistManager implements Listener {
     }
 
     /**
+     * Feature switch from the config ({@code op_lists.whitelist.enabled}):
+     * when false, the OP whitelist system does not run at all, regardless of
+     * the runtime on/off state in the DB.
+     */
+    public static boolean isFeatureEnabled() {
+        return Main.getInstance().getConfig().getBoolean("op_lists.whitelist.enabled", true);
+    }
+
+    /**
      * Returns the sorted list of names from the whitelist (from the DB).
      */
     public static List<String> getWhitelistNames() {
@@ -261,16 +246,19 @@ public class OpWhitelistManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // TOGGLE (persisted in the config)
+    // TOGGLE (runtime state persisted in the DB)
     // ════════════════════════════════════════
     public static boolean setEnabled(boolean val) {
         if (enabled == val) return false;
         enabled = val;
 
-        try {
-            Main.getInstance().getConfig().set("op_lists.whitelist.enabled", val);
-            Main.getInstance().saveConfig();
-        } catch (Exception e) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "INSERT OR REPLACE INTO op_whitelist_meta (key, value) VALUES (?, ?)")) {
+            st.setString(1, "enabled");
+            st.setString(2, String.valueOf(val));
+            st.executeUpdate();
+        } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[OpWhitelist] Failed to save enabled state", e);
         }
 
@@ -306,6 +294,7 @@ public class OpWhitelistManager implements Listener {
     // ════════════════════════════════════════
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
+        if (!isFeatureEnabled()) return;
         if (!enabled) return;
         checkAndDeop(e.getPlayer());
     }
@@ -316,6 +305,7 @@ public class OpWhitelistManager implements Listener {
     /** Removes OP from the player when they are OP and not OP-whitelisted. */
     public static void checkAndDeop(Player player) {
         if (player == null || !player.isOnline()) return;
+        if (!isFeatureEnabled()) return;
         if (!enabled) return;
         if (!player.isOp()) return;
 

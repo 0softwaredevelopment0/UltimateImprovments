@@ -23,17 +23,19 @@ check_interval_ticks = 20
 # Default: 20
 check_interval_ticks = 20
 
-# OP whitelist: players WITHOUT an entry here lose OP (when enabled).
-# /ui opwhitelist on|off writes the switch here (migrated from the DB once).
+# OP whitelist: players WITHOUT an entry here lose OP.
 [op_lists.whitelist]
-# Master switch.
-# Default: false
-enabled = false
+# Feature switch — whether the OP whitelist system runs at all.
+# The runtime on/off state is separate and is controlled by the command
+# (/ui opwhitelist on|off), persisted in the database.
+# Default: true
+enabled = true
 
 # OP blacklist: players WITH an entry here lose OP.
-# /ui opblacklist on|off writes the switch here.
 [op_lists.blacklist]
-# Master switch.
+# Feature switch — whether the OP blacklist system runs at all.
+# The runtime on/off state is separate and is controlled by the command
+# (/ui opblacklist on|off), persisted in the database.
 # Default: true
 enabled = true
 
