@@ -15,18 +15,27 @@
 # Default: 20
 check_interval_ticks = 20
 
-# OP blacklist: players on the list lose their OP automatically
-# (checked on join, on add and periodically). /ui opblacklist on|off
-# writes the switch here.
-[opblacklist]
+# Operator lists — OP whitelist + OP blacklist share ONE periodic check task.
+# Both checks run in a single pass with the interval below.
+[op_lists]
+# Shared check interval in ticks (20 ticks = 1 second; 0 disables the
+# periodic check — join/add/enable checks still work).
+# Default: 20
+check_interval_ticks = 20
+
+# OP whitelist: players WITHOUT an entry here lose OP (when enabled).
+# /ui opwhitelist on|off writes the switch here (migrated from the DB once).
+[op_lists.whitelist]
+# Master switch.
+# Default: false
+enabled = false
+
+# OP blacklist: players WITH an entry here lose OP.
+# /ui opblacklist on|off writes the switch here.
+[op_lists.blacklist]
 # Master switch.
 # Default: true
 enabled = true
-# How often to check online players for OP removal, in ticks
-# (20 ticks = 1 second, same default as access_control; 0 disables the
-# periodic check — join/add checks still work).
-# Default: 20
-check_interval_ticks = 20
 
 # ==================================================================
 # MESSAGES — RUSSIAN (active when lang = "ru")

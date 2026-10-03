@@ -9,7 +9,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,42 +23,39 @@ import java.util.logging.Level;
  * <p>
  * Mirrors {@link OpWhitelistManager} but inverted: any online player who has
  * OP and is on the {@code op_blacklist} list gets OP removed. Checks run on
- * join, on add and periodically with the configured interval.
+ * join, on add and in the shared periodic task
+ * ({@link com.ultimateimprovments.server.OpListsCheckTask}, interval
+ * {@code op_lists.check_interval_ticks}).
  * <p>
- * The master switch and the check interval live in the config
- * ({@code [opblacklist]} in UI-Punish.toml); {@code /ui opblacklist on|off}
- * writes the switch back to the config. Names are stored in SQLite
- * (table {@code op_blacklist}).
+ * The master switch lives in the config ({@code [op_lists.blacklist]} in
+ * UI-Punish.toml); {@code /ui opblacklist on|off} writes the switch back to
+ * the config. Names are stored in SQLite (table {@code op_blacklist}).
  * <p>
  * Commands: /ui opblacklist on|off|add|remove|list (+ timed variants).
  */
 public class OpBlacklistManager implements Listener {
 
     private static boolean enabled = true;
-    private static int taskId = -1;
 
     // ════════════════════════════════════════
     // INIT
     // ════════════════════════════════════════
     public static void init(Main plugin) {
         load();
-        startTask(plugin);
         plugin.getServer().getPluginManager().registerEvents(new OpBlacklistManager(), plugin);
+        // ⚠ Periodic check is handled by OpListsCheckTask (shared with the OP whitelist)
     }
 
     public static void shutdown() {
-        if (taskId != -1) {
-            Bukkit.getScheduler().cancelTask(taskId);
-            taskId = -1;
-        }
+        // Data is persisted in the DB / config — nothing to do
     }
 
     // ════════════════════════════════════════
     // LOAD (config + stats)
     // ════════════════════════════════════════
     public static void load() {
-        // Master switch + interval live in the config ([opblacklist] in UI-Punish.toml)
-        enabled = Main.getInstance().getConfig().getBoolean("opblacklist.enabled", true);
+        // Master switch lives in the config ([op_lists.blacklist] in UI-Punish.toml)
+        enabled = Main.getInstance().getConfig().getBoolean("op_lists.blacklist.enabled", true);
 
         int count = 0;
         try (Connection con = DatabaseManager.getConnection();
@@ -76,27 +72,11 @@ public class OpBlacklistManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // PERIODIC CHECK TASK
+    // PERIODIC CHECK (shared task)
     // ════════════════════════════════════════
-    private static void startTask(Main plugin) {
-        if (taskId != -1) {
-            Bukkit.getScheduler().cancelTask(taskId);
-            taskId = -1;
-        }
-
-        int intervalTicks = Main.getInstance().getConfig().getInt("opblacklist.check_interval_ticks", 20);
-        if (intervalTicks <= 0) {
-            ConsoleLogger.info("[OpBlacklist] Periodic check disabled (check_interval_ticks <= 0).");
-            return;
-        }
-
-        taskId = Bukkit.getScheduler().runTaskTimer(plugin, OpBlacklistManager::sweepOnline,
-                intervalTicks, intervalTicks).getTaskId();
-        ConsoleLogger.info("[OpBlacklist] Periodic check started with interval " + intervalTicks + " ticks.");
-    }
 
     /** Checks every online player with OP against the blacklist. */
-    private static void sweepOnline() {
+    public static void sweepOnline() {
         if (!enabled) return;
         for (Player player : Bukkit.getOnlinePlayers()) {
             checkAndDeop(player);
@@ -180,7 +160,7 @@ public class OpBlacklistManager implements Listener {
         enabled = val;
 
         try {
-            Main.getInstance().getConfig().set("opblacklist.enabled", val);
+            Main.getInstance().getConfig().set("op_lists.blacklist.enabled", val);
             Main.getInstance().saveConfig();
         } catch (Exception e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[OpBlacklist] Failed to save enabled state", e);

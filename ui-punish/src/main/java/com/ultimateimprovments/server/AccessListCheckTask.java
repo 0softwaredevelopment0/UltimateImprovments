@@ -2,7 +2,6 @@ package com.ultimateimprovments.server;
 
 import com.ultimateimprovments.whitelist.BlacklistManager;
 import com.ultimateimprovments.core.Main;
-import com.ultimateimprovments.whitelist.OpWhitelistManager;
 import com.ultimateimprovments.util.MessageUtil;
 import com.ultimateimprovments.whitelist.WhitelistManager;
 import com.ultimateimprovments.util.ConsoleLogger;
@@ -12,14 +11,17 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 /**
  * 🔄 AccessListCheckTask — periodic check of all online players
- * against the whitelist, blacklist and opwhitelist.
+ * against the join whitelist and blacklist.
  * <p>
  * Runs with the interval from config.yml → access_control.check_interval_ticks.
- * On finding a violator — kicks them or removes OP.
+ * On finding a violator — kicks them.
  * <p>
- * Duplicates the logic of {@link WhitelistManager#onPlayerLogin},
- * {@link BlacklistManager#onPlayerLogin} and {@link OpWhitelistManager#checkAndDeop}
- * for already connected players (e.g. if the list changed directly via the DB).
+ * Duplicates the logic of {@link WhitelistManager#onPlayerLogin} and
+ * {@link BlacklistManager#onPlayerLogin} for already connected players
+ * (e.g. if the list changed directly via the DB).
+ * <p>
+ * The OP lists (opwhitelist/opblacklist) have their own shared periodic
+ * check — {@link OpListsCheckTask} (interval op_lists.check_interval_ticks).
  */
 public class AccessListCheckTask extends BukkitRunnable {
 
@@ -60,9 +62,8 @@ public class AccessListCheckTask extends BukkitRunnable {
     public void run() {
         boolean whitelistEnabled = WhitelistManager.isEnabled();
         boolean blacklistEnabled = BlacklistManager.isEnabled();
-        boolean opWhitelistEnabled = OpWhitelistManager.isEnabled();
 
-        if (!whitelistEnabled && !blacklistEnabled && !opWhitelistEnabled) {
+        if (!whitelistEnabled && !blacklistEnabled) {
             return; // nothing enabled — nothing to check
         }
 
@@ -88,19 +89,6 @@ public class AccessListCheckTask extends BukkitRunnable {
                         "<gray>Use the UltimateImprovments whitelist system.</gray>"
                 ));
                 continue;
-            }
-
-            // =========================
-            // OP WHITELIST CHECK (via OpWhitelistManager)
-            // =========================
-            if (opWhitelistEnabled && player.isOp()) {
-                if (!OpWhitelistManager.isWhitelisted(name)) {
-                    player.setOp(false);
-                    player.sendMessage(MessageUtil.parse(
-                            "<red>⛔</red> <white>Your operator status has been removed — you are not in the OP whitelist.</white>"
-                    ));
-                    ConsoleLogger.info("[OpWhitelist] Removed OP from " + name + " (not whitelisted)");
-                }
             }
         }
     }

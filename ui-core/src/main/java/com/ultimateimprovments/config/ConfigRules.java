@@ -529,9 +529,11 @@ final class ConfigRules {
 
             integer("access_control.check_interval_ticks", 1, 72000),
 
-            // OP blacklist (/ui opblacklist) — listed operators lose OP automatically
-            bool("opblacklist.enabled"),
-            integer("opblacklist.check_interval_ticks", 0, 1728000, "Periodic OP-strip check interval (ticks, 0 = off)"),
+            // Operator lists ([op_lists]) — OP whitelist + OP blacklist,
+            // one combined periodic check task
+            integer("op_lists.check_interval_ticks", 0, 1728000, "Shared OP-lists check interval (ticks, 0 = off)"),
+            bool("op_lists.whitelist.enabled"),
+            bool("op_lists.blacklist.enabled"),
 
             bool("troll.enabled"),
             bool("troll.forceop.enabled"),
