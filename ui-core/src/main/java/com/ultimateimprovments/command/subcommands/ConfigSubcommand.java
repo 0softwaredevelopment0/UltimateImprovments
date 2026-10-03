@@ -281,7 +281,7 @@ public class ConfigSubcommand implements SubCommand {
 
     private static Component cancelButton(String command) {
         return Component.text("[", NamedTextColor.DARK_RED)
-                .append(Component.text("✖ Cancel", NamedTextColor.RED))
+                .append(Component.text("❌ Cancel", NamedTextColor.RED))
                 .append(Component.text("]", NamedTextColor.DARK_RED))
                 .clickEvent(ClickEvent.runCommand(command));
     }

@@ -42,7 +42,7 @@ public class SudoDialogHandler implements Listener {
                 manager.discardPending(player.getUniqueId());
             }
             player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse(
-                    "<gray>✖ Sudo cancelled. The command was not executed.</gray>"));
+                    "<gray>❌ Sudo cancelled. The command was not executed.</gray>"));
             return;
         }
 

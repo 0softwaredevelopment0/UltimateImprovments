@@ -288,8 +288,8 @@ cooldown = "<red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds befor
 no_access = "<red>❌ You don't have access to this code!</red>"
 # Default: <red>❌ Incorrect code!</red>
 wrong_code = "<red>❌ Incorrect code!</red>"
-# Default: <gray>✖ Code entry cancelled.</gray>
-cancelled = "<gray>✖ Code entry cancelled.</gray>"
+# Default: <gray>❌ Code entry cancelled.</gray>
+cancelled = "<gray>❌ Code entry cancelled.</gray>"
 
 # key section.
 # Placeholders: %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%
@@ -539,8 +539,8 @@ cooldown = "<red>Please wait</red> <yellow>%seconds%</yellow> <red>seconds befor
 no_access = "<red>❌ You don't have access to this code!</red>"
 # Default: <red>❌ Incorrect code!</red>
 wrong_code = "<red>❌ Incorrect code!</red>"
-# Default: <gray>✖ Code entry cancelled.</gray>
-cancelled = "<gray>✖ Code entry cancelled.</gray>"
+# Default: <gray>❌ Code entry cancelled.</gray>
+cancelled = "<gray>❌ Code entry cancelled.</gray>"
 
 # key section.
 # Placeholders: %subcommand%, %flag%, %value%, %name%, %code%, %commands%, %players%, %color%, %remaining%, %max%, %duration%, %date%

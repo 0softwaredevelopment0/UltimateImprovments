@@ -550,8 +550,8 @@ header = "<dark_gray>Account Standing</dark_gray>"
 rep = "<gray>Репутация: </gray>%color%%rep%</reset>"
 # Default: <gray>Статус: </gray>%status%
 status = "<gray>Статус: </gray>%status%"
-# Default: <red>✖ Закрыть</red>
-close = "<red>✖ Закрыть</red>"
+# Default: <red>❌ Закрыть</red>
+close = "<red>❌ Закрыть</red>"
 
 # Account Standing status names (Discord-style scale).
 [messages.reputation.status]
@@ -768,8 +768,8 @@ header = "<dark_gray>Account Standing</dark_gray>"
 rep = "<gray>Reputation: </gray>%color%%rep%</reset>"
 # Default: <gray>Status: </gray>%status%
 status = "<gray>Status: </gray>%status%"
-# Default: <red>✖ Close</red>
-close = "<red>✖ Close</red>"
+# Default: <red>❌ Close</red>
+close = "<red>❌ Close</red>"
 
 # Account Standing status names (Discord-style scale).
 [messages_en.reputation.status]

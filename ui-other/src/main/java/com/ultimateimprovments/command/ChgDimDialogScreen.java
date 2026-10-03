@@ -22,7 +22,7 @@ import java.util.Optional;
  * ChgDimDialogScreen — creates and opens a Custom Screen (Dialog) for teleporting between worlds.
  * <p>
  * Uses the Minecraft 26.2 Dialog API to show a screen with a world-name input field
- * and «✔ Teleport» / «✖ Cancel» buttons.
+ * and «✔ Teleport» / «❌ Cancel» buttons.
  * <p>
  * On an error (world not found, no permission, cooldown) it is called again with the error text
  * displayed right in the dialog window.
@@ -98,7 +98,7 @@ public class ChgDimDialogScreen {
         net.minecraft.network.chat.Component cancelLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString(
                 "changedimmension.dialog.cancel_button",
-                "<red>✖ Cancel</red>"))
+                "<red>❌ Cancel</red>"))
         );
 
         // TP → CustomAll action (sends the world name)

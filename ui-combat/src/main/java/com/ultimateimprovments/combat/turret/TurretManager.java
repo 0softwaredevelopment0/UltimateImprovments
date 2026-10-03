@@ -176,7 +176,7 @@ public final class TurretManager {
         player.sendMessage(Component.empty());
 
         player.sendMessage(button(
-                enabled ? "✖ Disable" : "✔ Enable",
+                enabled ? "❌ Disable" : "✔ Enable",
                 enabled ? NamedTextColor.RED : NamedTextColor.GREEN,
                 "/ui turret toggle",
                 "Click to " + (enabled ? "disable" : "enable") + " this turret"));
@@ -206,7 +206,7 @@ public final class TurretManager {
                 "Show all whitelisted/blacklisted targets"));
 
         player.sendMessage(button(
-                "✖ Clear target list",
+                "❌ Clear target list",
                 NamedTextColor.RED,
                 "/ui turret clear",
                 "Remove every target from the list"));

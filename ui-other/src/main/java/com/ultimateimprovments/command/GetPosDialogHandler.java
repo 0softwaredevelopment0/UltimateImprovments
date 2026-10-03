@@ -22,7 +22,7 @@ import org.bukkit.event.Listener;
  * <ul>
  *   <li>{@code ultimateimprovments:getpos_submit} — the ✔ Get button; resolves the nickname
  *       and prints the target's world + coordinates to the sender's chat</li>
- *   <li>{@code ultimateimprovments:getpos_cancel} — the ✖ Cancel button</li>
+ *   <li>{@code ultimateimprovments:getpos_cancel} — the ❌ Cancel button</li>
  * </ul>
  */
 public class GetPosDialogHandler implements Listener {

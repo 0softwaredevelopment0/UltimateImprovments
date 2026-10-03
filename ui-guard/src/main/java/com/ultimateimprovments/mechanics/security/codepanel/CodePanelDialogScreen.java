@@ -22,7 +22,7 @@ import java.util.Optional;
  * <p>
  * Instead of a double chest / chat keyboard — a native dialog window
  * from the Minecraft 26.2 Dialog API with digit buttons 0-9, an entered-code screen,
- * «←», «✔ Confirm» and «✖ Cancel» buttons.
+ * «←», «✔ Confirm» and «❌ Cancel» buttons.
  * <p>
  * Clicks are handled in {@link CodePanelDialogHandler} via
  * {@link io.papermc.paper.event.player.PlayerCustomClickEvent}.
@@ -42,7 +42,7 @@ public class CodePanelDialogScreen {
     public static final Identifier BACKSPACE_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "codepanel_backspace");
     /** Identifier of the «✔ Confirm» button. */
     public static final Identifier CONFIRM_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "codepanel_confirm");
-    /** Identifier of the «✖ Cancel» button. */
+    /** Identifier of the «❌ Cancel» button. */
     public static final Identifier CANCEL_ID = Identifier.fromNamespaceAndPath("ultimateimprovments", "codepanel_cancel");
 
     private static final MiniMessage MM = MiniMessage.miniMessage();
@@ -108,9 +108,9 @@ public class CodePanelDialogScreen {
         actions.add(backspaceButton());
         actions.add(confirmButton());
 
-        // ─── ✖ Cancel (exitAction) ───
+        // ─── ❌ Cancel (exitAction) ───
         ActionButton cancelBtn = new ActionButton(
-                new CommonButtonData(toNative(MM.deserialize("<red>✖ Cancel</red>")), 150),
+                new CommonButtonData(toNative(MM.deserialize("<red>❌ Cancel</red>")), 150),
                 Optional.of(new CustomAll(CANCEL_ID, Optional.empty()))
         );
 

@@ -19,7 +19,7 @@ import java.util.Optional;
  * SharePosDialogScreen — confirmation dialog for /ui sharepos.
  * <p>
  * Asks the player «Are you sure you want to share your coordinates?» with
- * ✔ Share / ✖ Cancel buttons. On ✔ Share the player's world and coordinates
+ * ✔ Share / ❌ Cancel buttons. On ✔ Share the player's world and coordinates
  * are broadcast to the whole server (in the plugin's name, in English).
  * <p>
  * Uses {@link DialogAction#CLOSE} — the client closes the window immediately
@@ -66,7 +66,7 @@ public class SharePosDialogScreen {
                 MM.deserialize("<green>✔ Share</green>")
         );
         net.minecraft.network.chat.Component cancelLabel = toNative(
-                MM.deserialize("<red>✖ Cancel</red>")
+                MM.deserialize("<red>❌ Cancel</red>")
         );
 
         ActionButton shareBtn = new ActionButton(

@@ -55,7 +55,7 @@ public final class EnderPearlChallenge implements Listener {
         UUID uuid = player.getUniqueId();
         if (!TimedChallengeLock.tryAcquire(uuid)) {
             player.sendMessage(MessageUtil.parse(
-                    "<red>✖ <white>You already have an active challenge! Finish the current one first.</white>"));
+                    "<red>❌ <white>You already have an active challenge! Finish the current one first.</white>"));
             return;
         }
 
@@ -112,7 +112,7 @@ public final class EnderPearlChallenge implements Listener {
                 TimedChallengeLock.release(entry.getKey());
                 if (player != null) {
                     player.sendMessage(MessageUtil.parse(
-                            "<red>✖ <white>Time's up! You teleported: <yellow>" + state.count
+                            "<red>❌ <white>Time's up! You teleported: <yellow>" + state.count
                             + "</yellow>/60 times.</white>"));
                 }
                 return true;

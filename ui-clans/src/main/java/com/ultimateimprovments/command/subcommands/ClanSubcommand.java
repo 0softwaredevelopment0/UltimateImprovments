@@ -114,13 +114,13 @@ public final class ClanSubcommand implements SubCommand {
 
     private boolean cmdCreate(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan create <name></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan create <name></yellow>"));
             return true;
         }
         UUID uuid = player.getUniqueId();
         String existing = ClanDatabase.getClanKeyByPlayer(uuid.toString());
         if (existing != null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You are already in a clan — leave it first.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You are already in a clan — leave it first.</white>"));
             return true;
         }
         String rawName = String.join(" ", args);
@@ -129,17 +129,17 @@ public final class ClanSubcommand implements SubCommand {
         int min = cfgInt("clan.name_min_length", 2);
         int max = cfgInt("clan.name_max_length", 16);
         if (plainName.length() < min || plainName.length() > max) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan name must be </white><yellow>" + min + "-" + max + "</yellow><white> characters (plain text, MiniMessage tags not counted).</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Clan name must be </white><yellow>" + min + "-" + max + "</yellow><white> characters (plain text, MiniMessage tags not counted).</white>"));
             return true;
         }
         if (ClanDatabase.clanExists(key)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>A clan with this name already exists.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>A clan with this name already exists.</white>"));
             return true;
         }
         if (ClanDatabase.createClan(key, rawName, uuid.toString(), player.getName())) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan </white><yellow>" + rawName + "</yellow> <white>created!</white>"));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to create the clan.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to create the clan.</white>"));
         }
         return true;
     }
@@ -211,12 +211,12 @@ public final class ClanSubcommand implements SubCommand {
 
     private boolean cmdClanInfo(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan claninfo <clan></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan claninfo <clan></yellow>"));
             return true;
         }
         String key = normalizeKey(String.join(" ", args));
         if (!ClanDatabase.clanExists(key)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan not found.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Clan not found.</white>"));
             return true;
         }
         ClanDatabase.ClanData clan = ClanDatabase.getClan(key);
@@ -258,7 +258,7 @@ public final class ClanSubcommand implements SubCommand {
 
     private boolean cmdEdit(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan edit <add|remove|list|home|selfpvp|rename|descript|role></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan edit <add|remove|list|home|selfpvp|rename|descript|role></yellow>"));
             return true;
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
@@ -273,7 +273,7 @@ public final class ClanSubcommand implements SubCommand {
             case "descript" -> cmdEditDescript(player, rest);
             case "role" -> cmdEditRole(player, rest);
             default -> {
-                player.sendMessage(MessageUtil.parse("<red>✖ <white>Unknown edit command: </white><yellow>" + sub + "</yellow>"));
+                player.sendMessage(MessageUtil.parse("<red>❌ <white>Unknown edit command: </white><yellow>" + sub + "</yellow>"));
                 yield true;
             }
         };
@@ -282,47 +282,47 @@ public final class ClanSubcommand implements SubCommand {
     // --- edit add (sends invite) ---
     private boolean cmdEditAdd(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan edit add <nick> <member|moderator|organizer></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan edit add <nick> <member|moderator|organizer></yellow>"));
             return true;
         }
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         String myRole = ClanDatabase.getRole(key, uuid.toString());
         if (!ClanRoles.hasRole(myRole, ClanRoles.W_ORGANIZER)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the organizer role to invite players.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the organizer role to invite players.</white>"));
             return true;
         }
 
         String role = args[1].toLowerCase(Locale.ROOT);
         if (!List.of(ClanRoles.ROLE_MEMBER, ClanRoles.ROLE_MODERATOR, ClanRoles.ROLE_ORGANIZER).contains(role)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Invalid role. Choose: </white><yellow>member, moderator, organizer</yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Invalid role. Choose: </white><yellow>member, moderator, organizer</yellow>"));
             return true;
         }
         if (!ClanRoles.canGrantRole(myRole, role)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You cannot assign </white><yellow>" + role + "</yellow><white> — only roles below your own.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You cannot assign </white><yellow>" + role + "</yellow><white> — only roles below your own.</white>"));
             return true;
         }
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player </white><yellow>" + args[0] + "</yellow><white> not found.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player </white><yellow>" + args[0] + "</yellow><white> not found.</white>"));
             return true;
         }
         if (target.getUniqueId().equals(uuid)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You can't invite yourself.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You can't invite yourself.</white>"));
             return true;
         }
         String targetUuid = target.getUniqueId().toString();
         if (ClanDatabase.getClanKeyByPlayer(targetUuid) != null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player </white><yellow>" + args[0] + "</yellow><white> is already in a clan.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player </white><yellow>" + args[0] + "</yellow><white> is already in a clan.</white>"));
             return true;
         }
 
         // Check if already invited
         ClanDatabase.InviteData existing = ClanDatabase.getInvite(key, targetUuid);
         if (existing != null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>This player already has a pending invite from your clan.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>This player already has a pending invite from your clan.</white>"));
             return true;
         }
 
@@ -336,7 +336,7 @@ public final class ClanSubcommand implements SubCommand {
                 online.sendMessage(MessageUtil.parse("<gray>Accept: </gray><yellow>/ui clan invite accept " + MessageUtil.toPlainText(clan.displayName()) + "</yellow><gray>  Decline: </gray><yellow>/ui clan invite decline " + MessageUtil.toPlainText(clan.displayName()) + "</yellow>"));
             }
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to send invite.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to send invite.</white>"));
         }
         return true;
     }
@@ -344,36 +344,36 @@ public final class ClanSubcommand implements SubCommand {
     // --- edit remove ---
     private boolean cmdEditRemove(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan edit remove <nick></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan edit remove <nick></yellow>"));
             return true;
         }
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         String myRole = ClanDatabase.getRole(key, uuid.toString());
         if (!ClanRoles.hasRole(myRole, ClanRoles.W_MODERATOR)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the moderator role to remove players.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the moderator role to remove players.</white>"));
             return true;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
         String targetUuid = target.getUniqueId().toString();
         String targetRole = ClanDatabase.getRole(key, targetUuid);
         if (targetRole == null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player </white><yellow>" + args[0] + "</yellow><white> is not in your clan.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player </white><yellow>" + args[0] + "</yellow><white> is not in your clan.</white>"));
             return true;
         }
         if (!ClanRoles.canKick(myRole, targetRole)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You cannot remove a player with a role at or above your own.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You cannot remove a player with a role at or above your own.</white>"));
             return true;
         }
         if (ClanDatabase.removeMember(key, targetUuid)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + target.getName() + "</yellow> <white>removed from the clan.</white>"));
             Player online = Bukkit.getPlayer(target.getUniqueId());
             if (online != null) {
-                online.sendMessage(MessageUtil.parse("<red>✖ <white>You were removed from the clan.</white>"));
+                online.sendMessage(MessageUtil.parse("<red>❌ <white>You were removed from the clan.</white>"));
             }
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to remove the player.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to remove the player.</white>"));
         }
         return true;
     }
@@ -382,7 +382,7 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdEditList(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         int page = 1;
         if (args.length >= 1) { try { page = Integer.parseInt(args[0]); } catch (NumberFormatException ignored) {} }
         List<ClanDatabase.MemberData> members = ClanDatabase.getMembers(key);
@@ -415,44 +415,44 @@ public final class ClanSubcommand implements SubCommand {
     // --- edit selfpvp ---
     private boolean cmdEditSelfPvp(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan edit selfpvp <on|off></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan edit selfpvp <on|off></yellow>"));
             return true;
         }
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.hasRole(ClanDatabase.getRole(key, uuid.toString()), ClanRoles.W_ORGANIZER)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the organizer role.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the organizer role.</white>"));
             return true;
         }
         String v = args[0].toLowerCase(Locale.ROOT);
         if (!v.equals("on") && !v.equals("off")) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>selfpvp must be </white><yellow>on</yellow><white> or </white><yellow>off</yellow><white>.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>selfpvp must be </white><yellow>on</yellow><white> or </white><yellow>off</yellow><white>.</white>"));
             return true;
         }
         if (ClanDatabase.setClanSetting(key, "selfpvp", v)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Friendly fire is now </white><yellow>" + v + "</yellow><white>.</white>" + ("on".equals(v) ? " <gray>Clan members cannot attack each other.</gray>" : " <gray>Clan members can attack each other.</gray>")));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to change the setting.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to change the setting.</white>"));
         }
         return true;
     }
 
     // --- edit rename ---
     private boolean cmdEditRename(Player player, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan edit rename <name></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan edit rename <name></yellow>")); return true; }
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(key, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can rename the clan.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can rename the clan.</white>"));
             return true;
         }
         String newName = String.join(" ", args);
         if (ClanDatabase.renameClan(key, newName)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan renamed to </white>" + newName + "<white>.</white>"));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to rename.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to rename.</white>"));
         }
         return true;
     }
@@ -461,16 +461,16 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdEditDescript(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(key, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can change the description.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can change the description.</white>"));
             return true;
         }
         String text = args.length >= 1 ? String.join(" ", args) : "";
         if (ClanDatabase.setDescription(key, text)) {
             player.sendMessage(MessageUtil.parse(text.isEmpty() ? "<green>✔</green> <white>Clan description cleared.</white>" : "<green>✔</green> <white>Clan description set to </white>" + text));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to change the description.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to change the description.</white>"));
         }
         return true;
     }
@@ -478,41 +478,41 @@ public final class ClanSubcommand implements SubCommand {
     // --- edit role <role> <nick> ---
     private boolean cmdEditRole(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan edit role <member|moderator|organizer> <nick></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan edit role <member|moderator|organizer> <nick></yellow>"));
             return true;
         }
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.hasRole(ClanDatabase.getRole(key, uuid.toString()), ClanRoles.W_ORGANIZER)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the organizer role to manage roles.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the organizer role to manage roles.</white>"));
             return true;
         }
         String newRole = args[0].toLowerCase(Locale.ROOT);
         if (!List.of(ClanRoles.ROLE_MEMBER, ClanRoles.ROLE_MODERATOR, ClanRoles.ROLE_ORGANIZER).contains(newRole)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Invalid role. Choose: </white><yellow>member, moderator, organizer</yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Invalid role. Choose: </white><yellow>member, moderator, organizer</yellow>"));
             return true;
         }
         String myRole = ClanDatabase.getRole(key, uuid.toString());
         if (!ClanRoles.canGrantRole(myRole, newRole)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You cannot assign </white><yellow>" + newRole + "</yellow><white> — only roles below your own.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You cannot assign </white><yellow>" + newRole + "</yellow><white> — only roles below your own.</white>"));
             return true;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
         String targetUuid = target.getUniqueId().toString();
         String targetRole = ClanDatabase.getRole(key, targetUuid);
         if (targetRole == null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player </white><yellow>" + args[1] + "</yellow><white> is not in your clan.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player </white><yellow>" + args[1] + "</yellow><white> is not in your clan.</white>"));
             return true;
         }
         if (ClanRoles.isLeader(targetRole)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You cannot change the leader's role.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You cannot change the leader's role.</white>"));
             return true;
         }
         if (ClanDatabase.setRole(key, targetUuid, newRole)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + target.getName() + "</yellow> <white>is now </white><yellow>" + newRole + "</yellow><white>.</white>"));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to change the role.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to change the role.</white>"));
         }
         return true;
     }
@@ -520,7 +520,7 @@ public final class ClanSubcommand implements SubCommand {
     // --- edit home ---
     private boolean cmdEditHome(Player player, String[] args) {
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan edit home <add|set|remove></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan edit home <add|set|remove></yellow>"));
             return true;
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
@@ -528,26 +528,26 @@ public final class ClanSubcommand implements SubCommand {
             case "add" -> cmdHomeAdd(player);
             case "set" -> cmdHomeSet(player, args.length > 1 && args[1].equalsIgnoreCase("-confirm"));
             case "remove" -> cmdHomeDel(player, args.length > 1 && args[1].equalsIgnoreCase("-confirm"));
-            default -> { player.sendMessage(MessageUtil.parse("<red>✖ <white>Unknown home command: </white><yellow>" + sub + "</yellow>")); yield true; }
+            default -> { player.sendMessage(MessageUtil.parse("<red>❌ <white>Unknown home command: </white><yellow>" + sub + "</yellow>")); yield true; }
         };
     }
 
     private boolean cmdHomeAdd(Player player) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.hasRole(ClanDatabase.getRole(key, uuid.toString()), ClanRoles.W_ORGANIZER)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the organizer role.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the organizer role.</white>")); return true;
         }
         ClanDatabase.ClanData clan = ClanDatabase.getClan(key);
         if (clan != null && clan.hasHome()) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan already has a home. Use </white><yellow>/ui clan edit home set</yellow><gray> to override.</gray>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan already has a home. Use </white><yellow>/ui clan edit home set</yellow><gray> to override.</gray>"));
             return true;
         }
         if (ClanDatabase.setHome(key, player.getLocation())) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan home set at your location.</white>"));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to set the clan home.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to set the clan home.</white>"));
         }
         return true;
     }
@@ -555,17 +555,17 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdHomeSet(Player player, boolean confirmed) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.hasRole(ClanDatabase.getRole(key, uuid.toString()), ClanRoles.W_ORGANIZER)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the organizer role.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the organizer role.</white>")); return true;
         }
         if (confirmed) {
             if (!ClanManager.consumeConfirm(player, ClanManager.CONFIRM_HOME_SET)) {
-                player.sendMessage(MessageUtil.parse("<red>✖ <white>Confirmation expired.</white>")); return true;
+                player.sendMessage(MessageUtil.parse("<red>❌ <white>Confirmation expired.</white>")); return true;
             }
             if (ClanDatabase.setHome(key, player.getLocation())) {
                 player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan home overridden.</white>"));
-            } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+            } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
             return true;
         }
         ClanManager.armConfirm(player, ClanManager.CONFIRM_HOME_SET);
@@ -577,16 +577,16 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdHomeDel(Player player, boolean confirmed) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.hasRole(ClanDatabase.getRole(key, uuid.toString()), ClanRoles.W_ORGANIZER)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the organizer role.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the organizer role.</white>")); return true;
         }
         if (confirmed) {
             if (!ClanManager.consumeConfirm(player, ClanManager.CONFIRM_HOME_DEL)) {
-                player.sendMessage(MessageUtil.parse("<red>✖ <white>Confirmation expired.</white>")); return true;
+                player.sendMessage(MessageUtil.parse("<red>❌ <white>Confirmation expired.</white>")); return true;
             }
             if (ClanDatabase.deleteHome(key)) { player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan home deleted.</white>")); }
-            else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+            else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
             return true;
         }
         ClanManager.armConfirm(player, ClanManager.CONFIRM_HOME_DEL);
@@ -602,22 +602,22 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdHome(Player player, String[] rest) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         ClanDatabase.ClanData clan = ClanDatabase.getClan(key);
         if (clan == null || !clan.hasHome()) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan has no home.</white> <gray>Use </gray><yellow>/ui clan edit home add</yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan has no home.</white> <gray>Use </gray><yellow>/ui clan edit home add</yellow>"));
             return true;
         }
         String mode = cfgString("clan.home.mode", "legit");
         if (mode.equalsIgnoreCase("standard")) {
             World world = Bukkit.getWorld(clan.homeWorld());
-            if (world == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan home world not loaded.</white>")); return true; }
+            if (world == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Clan home world not loaded.</white>")); return true; }
             int cd = cfgInt("clan.home.tp_cooldown_seconds", 0);
             if (cd > 0 && !player.hasPermission("ui.command.clan.home.bypasscooldown")) {
                 Long last = clanTpCooldowns.get(uuid);
                 if (last != null && System.currentTimeMillis() - last < cd * 1000L) {
                     long rem = (cd * 1000L - (System.currentTimeMillis() - last)) / 1000L + 1;
-                    player.sendMessage(MessageUtil.parse("<red>✖ <white>Wait </white><yellow>" + rem + "</yellow><white> seconds.</white>"));
+                    player.sendMessage(MessageUtil.parse("<red>❌ <white>Wait </white><yellow>" + rem + "</yellow><white> seconds.</white>"));
                     return true;
                 }
             }
@@ -642,7 +642,7 @@ public final class ClanSubcommand implements SubCommand {
     // ============================================================
 
     private boolean cmdRequest(Player player, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan request <clan> | accept|decline <nick></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan request <clan> | accept|decline <nick></yellow>")); return true; }
         String sub = args[0].toLowerCase(Locale.ROOT);
         if (sub.equals("accept") || sub.equals("decline")) return handleRequestDecision(player, sub, slice(args, 1));
         return requestJoin(player, args);
@@ -651,13 +651,13 @@ public final class ClanSubcommand implements SubCommand {
     private boolean requestJoin(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String key = normalizeKey(String.join(" ", args));
-        if (!ClanDatabase.clanExists(key)) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan not found.</white>")); return true; }
+        if (!ClanDatabase.clanExists(key)) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Clan not found.</white>")); return true; }
         if (ClanDatabase.getClanKeyByPlayer(uuid.toString()) != null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You are already in a clan.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You are already in a clan.</white>"));
             return true;
         }
         if (!ClanManager.canRequest(uuid)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Wait before sending another request.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Wait before sending another request.</white>"));
             return true;
         }
         ClanDatabase.addRequest(key, uuid.toString(), player.getName());
@@ -675,26 +675,26 @@ public final class ClanSubcommand implements SubCommand {
     }
 
     private boolean handleRequestDecision(Player player, String decision, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan request " + decision + " <nick></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan request " + decision + " <nick></yellow>")); return true; }
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.hasRole(ClanDatabase.getRole(key, uuid.toString()), ClanRoles.W_MODERATOR)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the moderator role.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the moderator role.</white>")); return true;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
         String targetUuid = target.getUniqueId().toString();
         ClanDatabase.RequestData req = ClanDatabase.getRequest(key, targetUuid);
-        if (req == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>No pending request from </white><yellow>" + args[0] + "</yellow><white>.</white>")); return true; }
+        if (req == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>No pending request from </white><yellow>" + args[0] + "</yellow><white>.</white>")); return true; }
         int expireSec = cfgInt("clan.request_expire_seconds", 3600);
         if (System.currentTimeMillis() - req.requestedAt() > expireSec * 1000L) {
             ClanDatabase.removeRequest(key, targetUuid);
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>The request has expired.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>The request has expired.</white>")); return true;
         }
         ClanDatabase.removeRequest(key, targetUuid);
         if (decision.equals("accept")) {
             if (ClanDatabase.getClanKeyByPlayer(targetUuid) != null) {
-                player.sendMessage(MessageUtil.parse("<red>✖ <white>Player already joined another clan.</white>")); return true;
+                player.sendMessage(MessageUtil.parse("<red>❌ <white>Player already joined another clan.</white>")); return true;
             }
             ClanDatabase.addMember(key, targetUuid, target.getName(), ClanDatabase.ROLE_MEMBER);
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + target.getName() + "</yellow> <white>joined.</white>"));
@@ -703,7 +703,7 @@ public final class ClanSubcommand implements SubCommand {
         } else {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Request from </white><yellow>" + target.getName() + "</yellow> <white>declined.</white>"));
             Player online = Bukkit.getPlayer(target.getUniqueId());
-            if (online != null) online.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan request was declined.</white>"));
+            if (online != null) online.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan request was declined.</white>"));
         }
         return true;
     }
@@ -714,21 +714,21 @@ public final class ClanSubcommand implements SubCommand {
 
     private boolean cmdInvite(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan invite accept|decline <clan></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan invite accept|decline <clan></yellow>"));
             return true;
         }
         String action = args[0].toLowerCase(Locale.ROOT);
         UUID uuid = player.getUniqueId();
         String targetKey = normalizeKey(String.join(" ", slice(args, 1)));
         if (!ClanDatabase.clanExists(targetKey)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan not found.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Clan not found.</white>")); return true;
         }
         if (ClanDatabase.getClanKeyByPlayer(uuid.toString()) != null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You are already in a clan.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You are already in a clan.</white>")); return true;
         }
         ClanDatabase.InviteData invite = ClanDatabase.getInvite(targetKey, uuid.toString());
         if (invite == null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>No pending invite from that clan.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>No pending invite from that clan.</white>")); return true;
         }
         ClanDatabase.removeInvite(targetKey, uuid.toString());
 
@@ -738,12 +738,12 @@ public final class ClanSubcommand implements SubCommand {
                 Player leader = Bukkit.getPlayer(UUID.fromString(invite.invitedBy()));
                 if (leader != null) leader.sendMessage(MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + player.getName() + "</yellow><white> accepted the invite.</white>"));
             } else {
-                player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to join.</white>"));
+                player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to join.</white>"));
             }
         } else {
-            player.sendMessage(MessageUtil.parse("<yellow>✖ Invite declined.</yellow>"));
+            player.sendMessage(MessageUtil.parse("<yellow>❌ Invite declined.</yellow>"));
             Player leader = Bukkit.getPlayer(UUID.fromString(invite.invitedBy()));
-            if (leader != null) leader.sendMessage(MessageUtil.parse("<red>✖</red> <white>Player </white><yellow>" + player.getName() + "</yellow><white> declined the invite.</white>"));
+            if (leader != null) leader.sendMessage(MessageUtil.parse("<red>❌</red> <white>Player </white><yellow>" + player.getName() + "</yellow><white> declined the invite.</white>"));
         }
         return true;
     }
@@ -755,24 +755,24 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdLeave(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (ClanRoles.isLeader(ClanDatabase.getRole(key, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>As leader, use </white><yellow>/ui clan transfer</yellow><white> or </white><yellow>/ui clan disband</yellow><white>.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>As leader, use </white><yellow>/ui clan transfer</yellow><white> or </white><yellow>/ui clan disband</yellow><white>.</white>"));
             return true;
         }
         // Check if dependent clan — need main clan's confirmation
         String mainKey = ClanDatabase.getMainClan(key);
         if (mainKey != null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan is dependent on another clan. You cannot leave.</white> <gray>Use </gray><yellow>/ui clan depremove</yellow><gray> to break the dependency first.</gray>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan is dependent on another clan. You cannot leave.</white> <gray>Use </gray><yellow>/ui clan depremove</yellow><gray> to break the dependency first.</gray>"));
             return true;
         }
         if (args.length >= 1 && args[0].equalsIgnoreCase("-confirm")) {
             if (!ClanManager.consumeConfirm(player, ClanManager.CONFIRM_LEAVE)) {
-                player.sendMessage(MessageUtil.parse("<red>✖ <white>Confirmation expired.</white>")); return true;
+                player.sendMessage(MessageUtil.parse("<red>❌ <white>Confirmation expired.</white>")); return true;
             }
             if (ClanDatabase.removeMember(key, uuid.toString())) {
                 player.sendMessage(MessageUtil.parse("<green>✔</green> <white>You left the clan.</white>"));
-            } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+            } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
             return true;
         }
         ClanManager.armConfirm(player, ClanManager.CONFIRM_LEAVE);
@@ -788,7 +788,7 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdInfo(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         ClanDatabase.ClanData clan = ClanDatabase.getClan(key);
         if (clan == null) return true;
         String ownerName = ClanDatabase.getMemberName(key, clan.ownerUuid());
@@ -829,7 +829,7 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdOnline(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         List<ClanDatabase.MemberData> members = ClanDatabase.getMembers(key);
         List<String> online = new ArrayList<>();
         for (ClanDatabase.MemberData m : members) {
@@ -846,28 +846,28 @@ public final class ClanSubcommand implements SubCommand {
     // ============================================================
 
     private boolean cmdTransfer(Player player, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan transfer <nick></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan transfer <nick></yellow>")); return true; }
         UUID uuid = player.getUniqueId();
         String key = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (key == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (key == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(key, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can transfer.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can transfer.</white>")); return true;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
         String targetUuid = target.getUniqueId().toString();
-        if (targetUuid.equals(uuid.toString())) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are already the leader.</white>")); return true; }
+        if (targetUuid.equals(uuid.toString())) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are already the leader.</white>")); return true; }
         if (ClanDatabase.getRole(key, targetUuid) == null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player </white><yellow>" + args[0] + "</yellow><white> is not in your clan.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player </white><yellow>" + args[0] + "</yellow><white> is not in your clan.</white>")); return true;
         }
         if (args.length >= 2 && args[1].equalsIgnoreCase("-confirm")) {
             if (!ClanManager.consumeConfirm(player, ClanManager.CONFIRM_TRANSFER)) {
-                player.sendMessage(MessageUtil.parse("<red>✖ <white>Confirmation expired.</white>")); return true;
+                player.sendMessage(MessageUtil.parse("<red>❌ <white>Confirmation expired.</white>")); return true;
             }
             if (ClanDatabase.transferLeader(key, targetUuid, target.getName(), uuid.toString())) {
                 player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Leadership transferred to </white><yellow>" + target.getName() + "</yellow><white>.</white>"));
                 Player online = Bukkit.getPlayer(target.getUniqueId());
                 if (online != null) online.sendMessage(MessageUtil.parse("<green>✔</green> <white>You are now the leader!</white>"));
-            } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+            } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
             return true;
         }
         ClanManager.armConfirm(player, ClanManager.CONFIRM_TRANSFER);
@@ -883,11 +883,11 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdAdmedit(Player player, String[] args) {
         if (!player.hasPermission(PERMISSION_ADMIN)) { CommandErrors.noPermission(player, PERMISSION_ADMIN); return true; }
         if (args.length < 2) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> <subcmd></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> <subcmd></yellow>"));
             return true;
         }
         String targetKey = normalizeKey(args[0]);
-        if (!ClanDatabase.clanExists(targetKey)) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan not found.</white>")); return true; }
+        if (!ClanDatabase.clanExists(targetKey)) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Clan not found.</white>")); return true; }
         String sub = args[1].toLowerCase(Locale.ROOT);
         String[] rest = slice(args, 2);
 
@@ -897,14 +897,14 @@ public final class ClanSubcommand implements SubCommand {
             case "add" -> cmdAdmeditAdd(player, targetKey, rest);
             case "list" -> cmdAdmeditList(player, targetKey, rest);
             case "transfer" -> cmdAdmeditTransfer(player, targetKey, rest);
-            default -> { player.sendMessage(MessageUtil.parse("<red>✖ <white>Unknown admedit command.</white>")); yield true; }
+            default -> { player.sendMessage(MessageUtil.parse("<red>❌ <white>Unknown admedit command.</white>")); yield true; }
         };
     }
 
     private boolean cmdAdmeditRemoveClan(Player player, String targetKey, String[] args) {
         if (args.length >= 1 && args[0].equalsIgnoreCase("-confirm")) {
             if (!ClanManager.consumeConfirm(player, ClanManager.CONFIRM_ADMEDIT_REMOVE)) {
-                player.sendMessage(MessageUtil.parse("<red>✖ <white>Confirmation expired.</white>")); return true;
+                player.sendMessage(MessageUtil.parse("<red>❌ <white>Confirmation expired.</white>")); return true;
             }
             ClanDatabase.ClanData clan = ClanDatabase.getClan(targetKey);
             String name = clan != null ? MessageUtil.toPlainText(clan.displayName()) : targetKey;
@@ -915,7 +915,7 @@ public final class ClanSubcommand implements SubCommand {
             }
             if (ClanDatabase.deleteClan(targetKey)) {
                 player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan </white><yellow>" + name + "</yellow> <white>removed.</white>"));
-            } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+            } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
             return true;
         }
         ClanDatabase.ClanData clan = ClanDatabase.getClan(targetKey);
@@ -927,7 +927,7 @@ public final class ClanSubcommand implements SubCommand {
     }
 
     private boolean cmdAdmeditEdit(Player player, String targetKey, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> edit <rename|descript|selfpvp|home|role></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> edit <rename|descript|selfpvp|home|role></yellow>")); return true; }
         String sub = args[0].toLowerCase(Locale.ROOT);
         String[] rest = slice(args, 1);
         // Reuse the edit methods but act on targetKey instead of player's own clan
@@ -937,22 +937,22 @@ public final class ClanSubcommand implements SubCommand {
             case "selfpvp" -> cmdAdmeditSelfPvp(player, targetKey, rest);
             case "home" -> cmdAdmeditHome(player, targetKey, rest);
             case "role" -> cmdAdmeditRole(player, targetKey, rest);
-            default -> { player.sendMessage(MessageUtil.parse("<red>✖ <white>Unknown edit subcommand.</white>")); yield true; }
+            default -> { player.sendMessage(MessageUtil.parse("<red>❌ <white>Unknown edit subcommand.</white>")); yield true; }
         };
     }
 
     private boolean cmdAdmeditRename(Player player, String targetKey, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> edit rename <name></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> edit rename <name></yellow>")); return true; }
         String newName = String.join(" ", args);
         String plainName = MessageUtil.toPlainText(newName);
         int max = cfgInt("clan.name_max_length", 16);
         if (plainName.length() > max) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Name too long (max </white><yellow>" + max + "</yellow><white> chars).</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Name too long (max </white><yellow>" + max + "</yellow><white> chars).</white>"));
             return true;
         }
         if (ClanDatabase.renameClan(targetKey, newName)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan renamed to </white><yellow>" + newName + "</yellow><white>.</white>"));
-        } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+        } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         return true;
     }
 
@@ -960,72 +960,72 @@ public final class ClanSubcommand implements SubCommand {
         String full = String.join(" ", args);
         String text = extractQuoted(full);
         if (text == null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> edit descript \"&lt;description&gt;\"</yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> edit descript \"<description>\"</yellow>"));
             return true;
         }
         int max = cfgInt("clan.description_max_length", 160);
         String plainText = MessageUtil.toPlainText(text);
         if (!text.isEmpty() && plainText.length() > max) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Description too long (max </white><yellow>" + max + "</yellow><white> chars).</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Description too long (max </white><yellow>" + max + "</yellow><white> chars).</white>"));
             return true;
         }
         if (ClanDatabase.setDescription(targetKey, text)) {
             player.sendMessage(MessageUtil.parse(text.isEmpty() ? "<green>✔</green> <white>Description cleared.</white>" : "<green>✔</green> <white>Description set.</white>"));
-        } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+        } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         return true;
     }
 
     private boolean cmdAdmeditSelfPvp(Player player, String targetKey, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> edit selfpvp <on|off></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> edit selfpvp <on|off></yellow>")); return true; }
         String v = args[0].toLowerCase(Locale.ROOT);
-        if (!v.equals("on") && !v.equals("off")) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Must be on/off.</white>")); return true; }
+        if (!v.equals("on") && !v.equals("off")) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Must be on/off.</white>")); return true; }
         if (ClanDatabase.setClanSetting(targetKey, "selfpvp", v)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>selfpvp set to </white><yellow>" + v + "</yellow><white>.</white>"));
-        } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+        } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         return true;
     }
 
     private boolean cmdAdmeditHome(Player player, String targetKey, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> edit home <add|set|remove></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> edit home <add|set|remove></yellow>")); return true; }
         String sub = args[0].toLowerCase(Locale.ROOT);
         return switch (sub) {
-            case "add" -> { if (ClanDatabase.setHome(targetKey, player.getLocation())) player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Home set.</white>")); else player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); yield true; }
-            case "set" -> { if (ClanDatabase.setHome(targetKey, player.getLocation())) player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Home overridden.</white>")); else player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); yield true; }
-            case "remove" -> { if (ClanDatabase.deleteHome(targetKey)) player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Home deleted.</white>")); else player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); yield true; }
-            default -> { player.sendMessage(MessageUtil.parse("<red>✖ <white>Unknown.</white>")); yield true; }
+            case "add" -> { if (ClanDatabase.setHome(targetKey, player.getLocation())) player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Home set.</white>")); else player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); yield true; }
+            case "set" -> { if (ClanDatabase.setHome(targetKey, player.getLocation())) player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Home overridden.</white>")); else player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); yield true; }
+            case "remove" -> { if (ClanDatabase.deleteHome(targetKey)) player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Home deleted.</white>")); else player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); yield true; }
+            default -> { player.sendMessage(MessageUtil.parse("<red>❌ <white>Unknown.</white>")); yield true; }
         };
     }
 
     private boolean cmdAdmeditRole(Player player, String targetKey, String[] args) {
-        if (args.length < 2) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> edit role <role> <nick></yellow>")); return true; }
+        if (args.length < 2) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> edit role <role> <nick></yellow>")); return true; }
         String newRole = args[0].toLowerCase(Locale.ROOT);
         if (!List.of("member", "moderator", "organizer").contains(newRole)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Invalid role.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Invalid role.</white>")); return true;
         }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
         String targetUuid = target.getUniqueId().toString();
         String currentRole = ClanDatabase.getRole(targetKey, targetUuid);
-        if (currentRole == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Player not in that clan.</white>")); return true; }
-        if (ClanRoles.isLeader(currentRole)) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Cannot change leader's role.</white>")); return true; }
+        if (currentRole == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Player not in that clan.</white>")); return true; }
+        if (ClanRoles.isLeader(currentRole)) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Cannot change leader's role.</white>")); return true; }
         if (ClanDatabase.setRole(targetKey, targetUuid, newRole)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + target.getName() + "</yellow> <white>is now </white><yellow>" + newRole + "</yellow><white>.</white>"));
-        } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+        } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         return true;
     }
 
     private boolean cmdAdmeditAdd(Player player, String targetKey, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> add <player> [-force]</yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> add <player> [-force]</yellow>")); return true; }
         boolean force = false;
         String playerName = args[0];
         if (args.length >= 2 && args[1].equalsIgnoreCase("-force")) force = true;
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player not found.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player not found.</white>")); return true;
         }
         String targetUuid = target.getUniqueId().toString();
         if (ClanDatabase.getClanKeyByPlayer(targetUuid) != null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player is already in a clan.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player is already in a clan.</white>")); return true;
         }
 
         if (force) {
@@ -1033,7 +1033,7 @@ public final class ClanSubcommand implements SubCommand {
                 player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + target.getName() + "</yellow> <white>force-added.</white>"));
                 Player online = Bukkit.getPlayer(target.getUniqueId());
                 if (online != null) online.sendMessage(MessageUtil.parse("<green>✔</green> <white>You were added to a clan by an admin.</white>"));
-            } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+            } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         } else {
             if (ClanDatabase.addInvite(targetKey, targetUuid, target.getName(), "member", player.getName())) {
                 player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Invite sent to </white><yellow>" + target.getName() + "</yellow><white>.</white>"));
@@ -1043,23 +1043,23 @@ public final class ClanSubcommand implements SubCommand {
                     String cn = c != null ? MessageUtil.toPlainText(c.displayName()) : targetKey;
                     online.sendMessage(MessageUtil.parse("<gold>✉</gold> <white>You have been invited to clan </white><yellow>" + cn + "</yellow><white>. </white><gray>Accept: </gray><yellow>/ui clan invite accept " + cn + "</yellow>"));
                 }
-            } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+            } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         }
         return true;
     }
 
     private boolean cmdAdmeditRemoveMember(Player player, String targetKey, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> remove <player></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> remove <player></yellow>")); return true; }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
         String targetUuid = target.getUniqueId().toString();
         if (ClanDatabase.getRole(targetKey, targetUuid) == null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player not in that clan.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player not in that clan.</white>")); return true;
         }
         if (ClanDatabase.removeMember(targetKey, targetUuid)) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Player </white><yellow>" + target.getName() + "</yellow> <white>removed.</white>"));
             Player online = Bukkit.getPlayer(target.getUniqueId());
-            if (online != null) online.sendMessage(MessageUtil.parse("<red>✖ <white>You were removed from the clan by an admin.</white>"));
-        } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+            if (online != null) online.sendMessage(MessageUtil.parse("<red>❌ <white>You were removed from the clan by an admin.</white>"));
+        } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         return true;
     }
 
@@ -1079,17 +1079,17 @@ public final class ClanSubcommand implements SubCommand {
     }
 
     private boolean cmdAdmeditTransfer(Player player, String targetKey, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan admedit <clan> transfer <player></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan admedit <clan> transfer <player></yellow>")); return true; }
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
         String targetUuid = target.getUniqueId().toString();
         ClanDatabase.ClanData clan = ClanDatabase.getClan(targetKey);
-        if (clan == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan not found.</white>")); return true; }
+        if (clan == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Clan not found.</white>")); return true; }
         if (ClanDatabase.getRole(targetKey, targetUuid) == null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player not in that clan.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player not in that clan.</white>")); return true;
         }
         if (ClanDatabase.transferLeader(targetKey, targetUuid, target.getName(), clan.ownerUuid())) {
             player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Leadership transferred to </white><yellow>" + target.getName() + "</yellow><white>.</white>"));
-        } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+        } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         return true;
     }
 
@@ -1098,20 +1098,20 @@ public final class ClanSubcommand implements SubCommand {
     // ============================================================
 
     private boolean cmdDepInvite(Player player, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan depinvite <clan></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan depinvite <clan></yellow>")); return true; }
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(myKey, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can send dependency invites.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can send dependency invites.</white>")); return true;
         }
-        if (ClanDatabase.getDependentClan(myKey) != null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan already has a dependent.</white>")); return true; }
-        if (!ClanManager.canDepInvite(myKey)) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Cooldown.</white>")); return true; }
+        if (ClanDatabase.getDependentClan(myKey) != null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan already has a dependent.</white>")); return true; }
+        if (!ClanManager.canDepInvite(myKey)) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Cooldown.</white>")); return true; }
         String targetKey = normalizeKey(String.join(" ", args));
-        if (!ClanDatabase.clanExists(targetKey)) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Clan not found.</white>")); return true; }
-        if (targetKey.equals(myKey)) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Cannot invite your own clan.</white>")); return true; }
-        if (ClanDatabase.isDependent(targetKey)) { player.sendMessage(MessageUtil.parse("<red>✖ <white>This clan is already dependent.</white>")); return true; }
-        if (ClanDatabase.getMainClan(targetKey) != null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>This clan already has a main clan.</white>")); return true; }
+        if (!ClanDatabase.clanExists(targetKey)) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Clan not found.</white>")); return true; }
+        if (targetKey.equals(myKey)) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Cannot invite your own clan.</white>")); return true; }
+        if (ClanDatabase.isDependent(targetKey)) { player.sendMessage(MessageUtil.parse("<red>❌ <white>This clan is already dependent.</white>")); return true; }
+        if (ClanDatabase.getMainClan(targetKey) != null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>This clan already has a main clan.</white>")); return true; }
         ClanDatabase.addDepRequest(myKey, targetKey);
         ClanManager.markDepInvite(myKey);
         ClanDatabase.ClanData myClan = ClanDatabase.getClan(myKey);
@@ -1132,14 +1132,14 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdDepAccept(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(myKey, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can accept.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can accept.</white>")); return true;
         }
         var request = ClanDatabase.getDepRequest(myKey);
-        if (request == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>No pending invite.</white>")); return true; }
+        if (request == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>No pending invite.</white>")); return true; }
         if (ClanDatabase.getDependentClan(request.fromClan()) != null) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>The inviting clan already has a dependent.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>The inviting clan already has a dependent.</white>"));
             ClanDatabase.removeDepRequest(request.fromClan(), myKey); return true;
         }
         if (ClanDatabase.setDependency(request.fromClan(), myKey)) {
@@ -1151,25 +1151,25 @@ public final class ClanSubcommand implements SubCommand {
                 Player ml = Bukkit.getPlayer(UUID.fromString(fromClan.ownerUuid()));
                 if (ml != null) ml.sendMessage(MessageUtil.parse("<green>✔</green> <white>Clan </white><yellow>" + MessageUtil.toPlainText(ClanDatabase.getClan(myKey).displayName()) + "</yellow><white> accepted!</white>"));
             }
-        } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+        } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
         return true;
     }
 
     private boolean cmdDepDecline(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(myKey, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can decline.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can decline.</white>")); return true;
         }
         var request = ClanDatabase.getDepRequest(myKey);
-        if (request == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>No pending invite.</white>")); return true; }
+        if (request == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>No pending invite.</white>")); return true; }
         ClanDatabase.removeDepRequest(request.fromClan(), myKey);
-        player.sendMessage(MessageUtil.parse("<yellow>✖ Invite declined.</yellow>"));
+        player.sendMessage(MessageUtil.parse("<yellow>❌ Invite declined.</yellow>"));
         ClanDatabase.ClanData fromClan = ClanDatabase.getClan(request.fromClan());
         if (fromClan != null) {
             Player ml = Bukkit.getPlayer(UUID.fromString(fromClan.ownerUuid()));
-            if (ml != null) ml.sendMessage(MessageUtil.parse("<red>✖</red> <white>Clan </white><yellow>" + MessageUtil.toPlainText(ClanDatabase.getClan(myKey).displayName()) + "</yellow><white> declined.</white>"));
+            if (ml != null) ml.sendMessage(MessageUtil.parse("<red>❌</red> <white>Clan </white><yellow>" + MessageUtil.toPlainText(ClanDatabase.getClan(myKey).displayName()) + "</yellow><white> declined.</white>"));
         }
         return true;
     }
@@ -1178,12 +1178,12 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdDepDisband(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(myKey, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can use this.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can use this.</white>")); return true;
         }
         String depKey = ClanDatabase.getDependentClan(myKey);
-        if (depKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan does not have a dependent.</white>")); return true; }
+        if (depKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan does not have a dependent.</white>")); return true; }
 
         // Check if there's a pending confirm from the dependent
         ClanDatabase.DepConfirmData pending = ClanDatabase.getDepConfirm("dep_disband", myKey, depKey);
@@ -1196,7 +1196,7 @@ public final class ClanSubcommand implements SubCommand {
                 if (ClanDatabase.deleteClan(depKey)) {
                     player.sendMessage(MessageUtil.parse("<green>✔</green> <white>Dependent clan </white><yellow>" + depName + "</yellow><white> disbanded.</white>"));
                     ClanDatabase.removeDepConfirm("dep_disband", myKey, depKey);
-                } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+                } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
                 return true;
             }
             // Main leader already sent request — tell them to wait
@@ -1226,12 +1226,12 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdDepRemove(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(myKey, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can use this.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can use this.</white>")); return true;
         }
         String mainKey = ClanDatabase.getMainClan(myKey);
-        if (mainKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan is not dependent on any clan.</white>")); return true; }
+        if (mainKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan is not dependent on any clan.</white>")); return true; }
 
         // Check if there's a pending confirm from the main clan
         ClanDatabase.DepConfirmData pending = ClanDatabase.getDepConfirm("dep_remove", myKey, mainKey);
@@ -1242,7 +1242,7 @@ public final class ClanSubcommand implements SubCommand {
                     ClanDatabase.removeDepConfirm("dep_remove", myKey, mainKey);
                     Player ml = Bukkit.getPlayer(UUID.fromString(ClanDatabase.getClan(mainKey).ownerUuid()));
                     if (ml != null) ml.sendMessage(MessageUtil.parse("<yellow>⚠</yellow> <white>Clan </white><yellow>" + MessageUtil.toPlainText(ClanDatabase.getClan(myKey).displayName()) + "</yellow><white> broke the dependency.</white>"));
-                } else { player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed.</white>")); }
+                } else { player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed.</white>")); }
                 return true;
             }
             player.sendMessage(MessageUtil.parse("<yellow>⚠</yellow> <white>Request already sent. Waiting for main clan to confirm.</white>"));
@@ -1269,7 +1269,7 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdDepInfo(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         String mainKey = ClanDatabase.getMainClan(myKey);
         String depKey = ClanDatabase.getDependentClan(myKey);
         if (mainKey == null && depKey == null) { player.sendMessage(MessageUtil.parse("<gray>Your clan is not in a dependency.</gray>")); return true; }
@@ -1298,7 +1298,7 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdDepStatus(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         String mainKey = ClanDatabase.getMainClan(myKey);
         String depKey = ClanDatabase.getDependentClan(myKey);
         if (mainKey != null) {
@@ -1317,27 +1317,27 @@ public final class ClanSubcommand implements SubCommand {
 
     // --- depredir: redirect player from dependent clan to main clan ---
     private boolean cmdDepRedir(Player player, String[] args) {
-        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui clan depredir <player></yellow>")); return true; }
+        if (args.length < 1) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui clan depredir <player></yellow>")); return true; }
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         if (!ClanRoles.isLeader(ClanDatabase.getRole(myKey, uuid.toString()))) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Only the leader can use this.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Only the leader can use this.</white>")); return true;
         }
         String depKey = ClanDatabase.getDependentClan(myKey);
-        if (depKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan does not have a dependent.</white>")); return true; }
+        if (depKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan does not have a dependent.</white>")); return true; }
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
         String targetUuid = target.getUniqueId().toString();
         String targetClan = ClanDatabase.getClanKeyByPlayer(targetUuid);
         if (targetClan == null || !targetClan.equals(depKey)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Player </white><yellow>" + args[0] + "</yellow><white> is not in your dependent clan.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Player </white><yellow>" + args[0] + "</yellow><white> is not in your dependent clan.</white>"));
             return true;
         }
 
         String targetRole = ClanDatabase.getRole(depKey, targetUuid);
         if (ClanRoles.isLeader(targetRole)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Cannot redirect the dependent clan's leader.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Cannot redirect the dependent clan's leader.</white>"));
             return true;
         }
 
@@ -1350,7 +1350,7 @@ public final class ClanSubcommand implements SubCommand {
         } else {
             // Re-add to dependent on failure
             ClanDatabase.addMember(depKey, targetUuid, target.getName(), targetRole);
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Failed to redirect.</white>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Failed to redirect.</white>"));
         }
         return true;
     }
@@ -1362,15 +1362,15 @@ public final class ClanSubcommand implements SubCommand {
     private boolean cmdDepEdit(Player player, String[] args) {
         UUID uuid = player.getUniqueId();
         String myKey = ClanDatabase.getClanKeyByPlayer(uuid.toString());
-        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>You are not in a clan.</white>")); return true; }
+        if (myKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>You are not in a clan.</white>")); return true; }
         String myRole = ClanDatabase.getRole(myKey, uuid.toString());
         if (!ClanRoles.hasRole(myRole, ClanRoles.W_ORGANIZER)) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>You need at least the organizer role.</white>")); return true;
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>You need at least the organizer role.</white>")); return true;
         }
         String depKey = ClanDatabase.getDependentClan(myKey);
-        if (depKey == null) { player.sendMessage(MessageUtil.parse("<red>✖ <white>Your clan does not have a dependent.</white>")); return true; }
+        if (depKey == null) { player.sendMessage(MessageUtil.parse("<red>❌ <white>Your clan does not have a dependent.</white>")); return true; }
         if (args.length < 1) {
-            player.sendMessage(MessageUtil.parse("<red>✖ <white>Usage: </white><yellow>/ui depedit <rename|descript|selfpvp|home|role></yellow>"));
+            player.sendMessage(MessageUtil.parse("<red>❌ <white>Usage: </white><yellow>/ui depedit <rename|descript|selfpvp|home|role></yellow>"));
             return true;
         }
         String sub = args[0].toLowerCase(Locale.ROOT);
@@ -1381,7 +1381,7 @@ public final class ClanSubcommand implements SubCommand {
             case "selfpvp" -> cmdAdmeditSelfPvp(player, depKey, rest);
             case "home" -> cmdAdmeditHome(player, depKey, rest);
             case "role" -> cmdAdmeditRole(player, depKey, rest);
-            default -> { player.sendMessage(MessageUtil.parse("<red>✖ <white>Unknown command.</white>")); yield true; }
+            default -> { player.sendMessage(MessageUtil.parse("<red>❌ <white>Unknown command.</white>")); yield true; }
         };
     }
 

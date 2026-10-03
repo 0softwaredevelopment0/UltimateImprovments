@@ -21,7 +21,7 @@ import org.bukkit.event.Listener;
  * <ul>
  *   <li>{@code ultimateimprovments:sharepos_submit} — the ✔ Share button; broadcasts
  *       the player's world + coordinates to the whole server</li>
- *   <li>{@code ultimateimprovments:sharepos_cancel} — the ✖ Cancel button</li>
+ *   <li>{@code ultimateimprovments:sharepos_cancel} — the ❌ Cancel button</li>
  * </ul>
  */
 public class SharePosDialogHandler implements Listener {

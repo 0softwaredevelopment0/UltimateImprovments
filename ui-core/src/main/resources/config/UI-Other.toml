@@ -706,8 +706,8 @@ world_label = "<gray>World Name</gray>"
 tp_button = "<green>✔ Teleport</green>"
 # Default: "<aqua>↩ Return back</aqua>"
 return_button = "<aqua>↩ Return back</aqua>"
-# Default: "<red>✖ Cancel</red>"
-cancel_button = "<red>✖ Cancel</red>"
+# Default: "<red>❌ Cancel</red>"
+cancel_button = "<red>❌ Cancel</red>"
 
 # worlds section.
 [changedimmension.worlds]

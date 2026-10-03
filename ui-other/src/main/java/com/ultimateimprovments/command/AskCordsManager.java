@@ -21,7 +21,7 @@ import java.util.UUID;
  *   <li>Player A runs {@code /ui askpos} — a dialog opens with an input field for the
  *       nickname of the player to send the request to (the nickname must be online).</li>
  *   <li>After «✔ Confirm», recipient B gets a dialog «Player A requested your coordinates
- *       and world» with ✔ Confirm / ✖ Cancel buttons.</li>
+ *       and world» with ✔ Confirm / ❌ Cancel buttons.</li>
  *   <li>If B confirms — A receives the world and coordinates of player B; if cancelled —
  *       A gets a refusal message.</li>
  *   <li>Command cooldown: 30 seconds (against dialog spam).</li>

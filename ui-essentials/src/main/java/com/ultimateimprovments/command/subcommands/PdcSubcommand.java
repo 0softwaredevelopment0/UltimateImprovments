@@ -727,8 +727,8 @@ public final class PdcSubcommand implements SubCommand {
                 + "<white>/ui pdc <storage> <target...> clear <all|namespace|key> [data]</white>\n"
                 + "<white>/ui pdc <storage> <target...> container <containerKey> <innerKey> <add|modify|remove> <type> <data></white>\n"
                 + "<white>/ui pdc <storage> <target...> container <containerKey> clear <all|namespace|key> [data]</white>\n"
-                + "<gray>Storages: item &lt;player&gt; | entity &lt;uuid&gt; | player &lt;player&gt; | "
-                + "block &lt;x y z&gt; | chunk &lt;x z&gt; | world &lt;world&gt;</gray>\n"
+                + "<gray>Storages: item <player> | entity <uuid> | player <player> | "
+                + "block <x y z> | chunk <x z> | world <world></gray>\n"
                 + "<gray>Types: BYTE, SHORT, INTEGER, LONG, FLOAT, DOUBLE, STRING, BOOLEAN, "
                 + "BYTE_ARRAY, INTEGER_ARRAY, LONG_ARRAY, TAG_CONTAINER</gray>"));
     }

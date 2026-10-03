@@ -160,7 +160,7 @@ public final class ChatChannelSubcommand implements SubCommand {
         if (channel == ChatChannel.PRIVATE) {
             if (args.length < 3) {
                 player.sendMessage(MessageUtil.parse(
-                        "<red>\u274c Usage: </red><white>/ui chatchnl private &lt;player&gt;</white>"));
+                        "<red>\u274c Usage: </red><white>/ui chatchnl private <player></white>"));
                 return true;
             }
             String targetName = args[2];
@@ -191,7 +191,7 @@ public final class ChatChannelSubcommand implements SubCommand {
 
     private void sendUsage(Player player) {
         player.sendMessage(MessageUtil.parse(
-                "<yellow>Usage: </yellow><white>/ui chatchnl &lt;channel&gt; [player]</white>"));
+                "<yellow>Usage: </yellow><white>/ui chatchnl <channel> [player]</white>"));
         player.sendMessage(MessageUtil.parse(
                 "<gray>Channels: </gray><white>local, global, world, private, admin, check, console, linux</white>"));
     }

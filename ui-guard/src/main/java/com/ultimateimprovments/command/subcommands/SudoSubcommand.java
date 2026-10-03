@@ -61,7 +61,7 @@ public final class SudoSubcommand {
 
     private static boolean handleStatus(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(MessageUtil.parse("<gray>Sudo is console-confirmed. Use /ui sudo confirmreset &lt;nick&gt;.</gray>"));
+            sender.sendMessage(MessageUtil.parse("<gray>Sudo is console-confirmed. Use /ui sudo confirmreset <nick>.</gray>"));
             return true;
         }
         SudoManager manager = SudoManager.getInstance();
@@ -73,10 +73,10 @@ public final class SudoSubcommand {
         player.sendMessage(MessageUtil.parse("<gold>══════ Sudo Mode ══════</gold>"));
         player.sendMessage(MessageUtil.parse(active
                 ? "<green>✔ Active</green> <gray>(</gray><yellow>" + remaining + "</yellow><gray>s left)</gray>"
-                : "<red>✖ Inactive</red>"));
+                : "<red>❌ Inactive</red>"));
         player.sendMessage(MessageUtil.parse(hasPassword
                 ? "<gray>Password: </gray><green>✔ set</green>"
-                : "<gray>Password: </gray><red>✖ not set</red>"));
+                : "<gray>Password: </gray><red>❌ not set</red>"));
         player.sendMessage(MessageUtil.parse("<gray>Commands: </gray><white>/ui sudo reenter|clearsession|reset</white>"));
         player.sendMessage("");
         return true;
@@ -112,7 +112,7 @@ public final class SudoSubcommand {
         if (manager != null) {
             manager.endSudoSession(player.getUniqueId());
         }
-        player.sendMessage(MessageUtil.parse("<gray>✖ Sudo session cleared.</gray>"));
+        player.sendMessage(MessageUtil.parse("<gray>❌ Sudo session cleared.</gray>"));
         return true;
     }
 

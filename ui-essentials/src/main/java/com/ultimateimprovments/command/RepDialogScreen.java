@@ -86,7 +86,7 @@ public final class RepDialogScreen {
         // ─── Single Close button (no action → afterAction CLOSE closes instantly) ───
         ActionButton closeBtn = new ActionButton(
                 new CommonButtonData(toNative(MM.deserialize(
-                        msg("reputation.view.dialog.close", "<red>✖ Close</red>"))), 150),
+                        msg("reputation.view.dialog.close", "<red>❌ Close</red>"))), 150),
                 Optional.empty());
 
         // ─── Build the dialog ───
