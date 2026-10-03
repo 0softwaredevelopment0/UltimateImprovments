@@ -58,6 +58,8 @@ public class SudoDialogHandler implements Listener {
 
         String password = response.getText("password");
         if (password == null || password.isEmpty()) {
+            player.sendMessage(com.ultimateimprovments.util.MessageUtil.parse(
+                    "<red>❌ Enter a sudo password in the field first!</red>"));
             reopen(player);
             return;
         }
