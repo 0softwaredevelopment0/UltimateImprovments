@@ -46,6 +46,8 @@ public final class CommandErrors {
     public static final int ERR_UNKNOWN_FAILURE = 5;
     /** 011 — the command is disabled on this server. */
     public static final int ERR_COMMAND_DISABLED = 11;
+    /** 018 — the command belongs to a module that is disabled on this server. */
+    public static final int ERR_MODULE_DISABLED = 18;
 
     private CommandErrors() {}
 
@@ -143,6 +145,28 @@ public final class CommandErrors {
     public static void commandDisabled(CommandSender sender) {
         send(sender, ERR_COMMAND_DISABLED, "general.errors.011",
                 "<red>This command is disabled on this server.</red>");
+    }
+
+    // ═══════════ 018 — MODULE DISABLED ═══════════
+
+    /**
+     * 018: the command belongs to a module/feature that is disabled in the
+     * config on this server (e.g. /ui opwhitelist with
+     * {@code op_lists.whitelist.enabled = false}).
+     *
+     * @param module module/config key name shown in the appended clause
+     *               (null/blank omits the clause)
+     */
+    public static void moduleDisabled(CommandSender sender, String module) {
+        if (sender == null) return;
+        String body = MessagesManager.getString("general.errors.018",
+                "<red>This command belongs to a module that is disabled on this server</red>");
+        if (module != null && !module.isBlank()) {
+            String clause = MessagesManager.getString("general.errors.module",
+                    "<gray> — module: \"<white>%module%</white>\"</gray>");
+            body += clause.replace("%module%", module);
+        }
+        sender.sendMessage(MessageUtil.parse(header(ERR_MODULE_DISABLED) + body));
     }
 
     // ═══════════ COMMAND-SPECIFIC ERRORS (006+) ═══════════

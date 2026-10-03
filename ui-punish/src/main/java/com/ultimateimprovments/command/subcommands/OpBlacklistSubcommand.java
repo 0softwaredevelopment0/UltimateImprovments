@@ -25,6 +25,10 @@ public final class OpBlacklistSubcommand {
             CommandErrors.noPermission(sender, "ui.command.opblacklist");
             return true;
         }
+        if (!com.ultimateimprovments.whitelist.OpBlacklistManager.isFeatureEnabled()) {
+            CommandErrors.moduleDisabled(sender, "opblacklist");
+            return true;
+        }
         return AccessListCommands.execute(sender, TimedAccessLists.AccessList.OPBLACKLIST, args, true);
     }
 

@@ -78,7 +78,7 @@ public final class RtpSubcommand {
         // Check: is the command enabled
         FileConfiguration cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("rtp.enabled", false)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Random teleport is disabled on this server.</red>"));
+            CommandErrors.moduleDisabled(sender, "rtp");
             return true;
         }
 

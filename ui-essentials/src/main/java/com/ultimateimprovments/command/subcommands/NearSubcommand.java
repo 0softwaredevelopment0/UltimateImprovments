@@ -36,7 +36,7 @@ public final class NearSubcommand {
 
         // Check whether the command is enabled in the config
         if (!Main.getInstance().getConfig().getBoolean("near.enabled", false)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ This command is disabled on this server.</red>"));
+            CommandErrors.moduleDisabled(sender, "near");
             return true;
         }
 
