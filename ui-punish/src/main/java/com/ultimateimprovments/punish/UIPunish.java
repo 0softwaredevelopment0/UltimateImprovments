@@ -20,6 +20,7 @@ public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core
     public void onDisable() {
         // AccessListCheckTask is owned by UI-Other — do not stop it here.
         org.bukkit.event.HandlerList.unregisterAll(this);
+        com.ultimateimprovments.whitelist.OpBlacklistManager.shutdown();
         getLogger().info("UI-Punish disabled!");
         instance = null;
     }
@@ -82,6 +83,11 @@ public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core
                     com.ultimateimprovments.command.subcommands.OpWhitelistSubcommand::execute,
                     com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.tc(
                             (s, a) -> com.ultimateimprovments.command.subcommands.OpWhitelistSubcommand.tabComplete(a))));
+            registry.register(com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.of(
+                    "opblacklist",
+                    com.ultimateimprovments.command.subcommands.OpBlacklistSubcommand::execute,
+                    com.ultimateimprovments.command.subcommands.LegacySubCommandAdapter.tc(
+                            (s, a) -> com.ultimateimprovments.command.subcommands.OpBlacklistSubcommand.tabComplete(a))));
         } else {
             getLogger().severe("SubCommandRegistry not available — /ui punish is not registered!");
         }
@@ -90,6 +96,11 @@ public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core
         WhitelistManager.init(main);
         BlacklistManager.init(main);
         OpWhitelistManager.init(main);
+        com.ultimateimprovments.whitelist.OpBlacklistManager.init(main);
+
+        // Re-arm persisted scheduled operations (timed_list_tasks) — after the
+        // managers are up, so overdue effects can apply immediately.
+        com.ultimateimprovments.whitelist.TimedAccessLists.restore(main);
 
         // NOTE: the periodic AccessListCheckTask is started by UI-Other
         // (initPostModuleSystems) — starting it here too only recreated the

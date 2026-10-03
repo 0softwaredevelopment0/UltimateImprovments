@@ -121,6 +121,7 @@ public final class Permissions {
     public static final String CMD_EXECCHAT = "ui.command.execchat";
     public static final String CMD_BLACKLIST = "ui.command.blacklist";
     public static final String CMD_OPWHITELIST = "ui.command.opwhitelist";
+    public static final String CMD_OPBLACKLIST = "ui.command.opblacklist";
     public static final String CMD_WHITELIST = "ui.command.whitelist";
     public static final String CMD_MAINTENANCE = "ui.command.maintenance";
     /** /ui console lockdown — console lockout control. NEVER granted by default (not a child of ui.* / ui.command.*). */
@@ -301,6 +302,7 @@ public final class Permissions {
                 new Permission(CMD_EXECCHAT, "Send a chat message or run a command as another player", PermissionDefault.FALSE),
                 new Permission(CMD_BLACKLIST, "Manage the blacklist", PermissionDefault.FALSE),
                 new Permission(CMD_OPWHITELIST, "Manage the operator whitelist", PermissionDefault.FALSE),
+                new Permission(CMD_OPBLACKLIST, "Manage the operator blacklist", PermissionDefault.FALSE),
                 new Permission(CMD_WHITELIST, "Manage the whitelist", PermissionDefault.FALSE),
                 new Permission(CMD_MAINTENANCE, "Toggle maintenance mode", PermissionDefault.FALSE),
                 new Permission(CMD_CONSOLE, "Control the console lockdown (/ui console lockdown) — emergency console lockout; deliberately NOT granted by default (no OP, no wildcard implication)", PermissionDefault.FALSE),

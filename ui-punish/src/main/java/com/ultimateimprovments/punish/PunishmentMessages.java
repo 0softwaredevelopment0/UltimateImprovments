@@ -145,15 +145,19 @@ public final class PunishmentMessages {
     // =========================
 
     /**
-     * Localized display name of the access list for the {@code %list%}
-     * placeholder ("вайтлист"/"блэклист" for ru, "whitelist"/"blacklist" for en).
+     * Localized display name of an access list for the {@code %list%}
+     * placeholder. Keys: "whitelist", "blacklist", "opwhitelist", "opblacklist"
+     * (ru: вайтлист / блэклист / оп-вайтлист / оп-блэклист).
      */
-    public static String listDisplayName(boolean whitelist) {
+    public static String listDisplayName(String listKey) {
         boolean ru = "ru".equalsIgnoreCase(getConfig().getString("messages.lang", "en"));
-        if (ru) {
-            return whitelist ? "вайтлист" : "блэклист";
-        }
-        return whitelist ? "whitelist" : "blacklist";
+        return switch (listKey == null ? "" : listKey) {
+            case "whitelist" -> ru ? "вайтлист" : "whitelist";
+            case "blacklist" -> ru ? "блэклист" : "blacklist";
+            case "opwhitelist" -> ru ? "оп-вайтлист" : "OP whitelist";
+            case "opblacklist" -> ru ? "оп-блэклист" : "OP blacklist";
+            default -> listKey == null ? "" : listKey;
+        };
     }
 
     /**

@@ -717,6 +717,9 @@ already_disabled = ["<yellow>⚠</yellow> <yellow>%list%</yellow> <white>уже 
 # Invalid -t flag value.
 # Default: ["<red>❌ Неверный формат времени!</red>", "<gray>Используйте: </gray><white>30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"]
 invalid_time = ["<red>❌ Неверный формат времени!</red>", "<gray>Используйте: </gray><white>30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"]
+# *-temp command called without the required -t flag.
+# Default: ["<red>❌ Этой команде требуется флаг времени </red><white>-t</white><red>!</red>", "<gray>Укажите длительность: </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</gray>"]
+temp_requires_time = ["<red>❌ Этой команде требуется флаг времени </red><white>-t</white><red>!</red>", "<gray>Укажите длительность: </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</gray>"]
 
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
@@ -1341,3 +1344,6 @@ already_disabled = ["<yellow>⚠</yellow> <white>The</white> <yellow>%list%</yel
 # Invalid -t flag value.
 # Default: ["<red>❌ Invalid time format!</red>", "<gray>Use: </gray><white>30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"]
 invalid_time = ["<red>❌ Invalid time format!</red>", "<gray>Use: </gray><white>30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"]
+# *-temp command called without the required -t flag.
+# Default: ["<red>❌ This command requires the time flag </red><white>-t</white><red>!</red>", "<gray>Specify a duration: </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</gray>"]
+temp_requires_time = ["<red>❌ This command requires the time flag </red><white>-t</white><red>!</red>", "<gray>Specify a duration: </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</gray>"]
