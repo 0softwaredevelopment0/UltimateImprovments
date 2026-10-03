@@ -20,7 +20,7 @@ public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core
     public void onDisable() {
         // AccessListCheckTask is owned by UI-Other — do not stop it here.
         org.bukkit.event.HandlerList.unregisterAll(this);
-        com.ultimateimprovments.whitelist.OpBlacklistManager.shutdown();
+        com.ultimateimprovments.server.OpListsCheckTask.stop();
         getLogger().info("UI-Punish disabled!");
         instance = null;
     }
@@ -101,6 +101,10 @@ public class UIPunish extends JavaPlugin implements com.ultimateimprovments.core
         // Re-arm persisted scheduled operations (timed_list_tasks) — after the
         // managers are up, so overdue effects can apply immediately.
         com.ultimateimprovments.whitelist.TimedAccessLists.restore(main);
+
+        // ONE periodic check for both OP lists (opwhitelist + opblacklist),
+        // interval op_lists.check_interval_ticks.
+        com.ultimateimprovments.server.OpListsCheckTask.start(main);
 
         // NOTE: the periodic AccessListCheckTask is started by UI-Other
         // (initPostModuleSystems) — starting it here too only recreated the
