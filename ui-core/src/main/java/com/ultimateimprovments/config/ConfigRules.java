@@ -130,6 +130,7 @@ final class ConfigRules {
             dbl("energy_crafting.workbench_search_radius", 0, 100),
 
             bool("reactor.enabled"),
+            bool("reactor.log_save"),
             integer("reactor.core_temp_max", 1, 2000000000),
             integer("reactor.core_temp_min", -10000, 0),
             integer("reactor.core_work_temp", 1, 2000000000),
