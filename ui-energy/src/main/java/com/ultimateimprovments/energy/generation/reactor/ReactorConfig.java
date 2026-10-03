@@ -34,6 +34,8 @@ public class ReactorConfig {
     // CONFIG FIELDS
     // =========================
     private boolean enabled;
+    /** Logs every reactor DB save to the console (default off — saves are frequent). */
+    private boolean logSave;
     private int coreTempMax;        // hard limit (2,000,000,000)
     private int coreTempMin;        // hard limit (-273)
     private int coreWorkTemp;       // working temperature = 1x (10,000,000)
@@ -122,6 +124,7 @@ public class ReactorConfig {
         FileConfiguration cfg = Main.getInstance().getConfig();
 
         enabled = cfg.getBoolean("reactor.enabled", true);
+        logSave = cfg.getBoolean("reactor.log_save", false);
         coreTempMax = cfg.getInt("reactor.core_temp_max", 2000000000);
         coreTempMin = cfg.getInt("reactor.core_temp_min", -273);
         coreWorkTemp = cfg.getInt("reactor.core_work_temp", 10000000);
@@ -180,6 +183,7 @@ public class ReactorConfig {
     // GETTERS
     // =========================
     public boolean isEnabled() { return enabled; }
+    public boolean isLogSaveEnabled() { return logSave; }
     public int getCoreTempMax() { return coreTempMax; }
     public int getCoreTempMin() { return coreTempMin; }
     public int getCoreWorkTemp() { return coreWorkTemp; }

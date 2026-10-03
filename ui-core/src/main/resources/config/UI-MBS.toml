@@ -14,6 +14,10 @@
 # Master switch (true = feature on).
 # Default: true
 enabled = true
+# Log every reactor DB save to the console ("[Reactor] Saved reactor ...").
+# Saves happen on state changes and can be frequent — off by default.
+# Default: false
+log_save = false
 # Maximum value.
 # Default: 2000000000
 core_temp_max = 2000000000

@@ -86,7 +86,11 @@ public class ReactorPersistence {
 
             ps.executeUpdate();
 
-            ConsoleLogger.info("[Reactor] Saved reactor " + id);
+            // Save log is opt-in (reactor.log_save) — saves are frequent
+            ReactorConfig cfg = ReactorConfig.getInstance();
+            if (cfg == null || cfg.isLogSaveEnabled()) {
+                ConsoleLogger.info("[Reactor] Saved reactor " + id);
+            }
         } catch (Exception e) {
             ConsoleLogger.error("[Reactor] Save error: " + e.getMessage());
         }
