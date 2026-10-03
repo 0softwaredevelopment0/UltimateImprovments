@@ -84,16 +84,15 @@ public class OpBlacklistManager implements Listener {
             taskId = -1;
         }
 
-        long intervalSeconds = Main.getInstance().getConfig().getLong("opblacklist.check_interval_seconds", 30);
-        if (intervalSeconds <= 0) {
-            ConsoleLogger.info("[OpBlacklist] Periodic check disabled (check_interval_seconds <= 0).");
+        int intervalTicks = Main.getInstance().getConfig().getInt("opblacklist.check_interval_ticks", 20);
+        if (intervalTicks <= 0) {
+            ConsoleLogger.info("[OpBlacklist] Periodic check disabled (check_interval_ticks <= 0).");
             return;
         }
 
-        long intervalTicks = intervalSeconds * 20L;
         taskId = Bukkit.getScheduler().runTaskTimer(plugin, OpBlacklistManager::sweepOnline,
                 intervalTicks, intervalTicks).getTaskId();
-        ConsoleLogger.info("[OpBlacklist] Periodic check started with interval " + intervalSeconds + "s.");
+        ConsoleLogger.info("[OpBlacklist] Periodic check started with interval " + intervalTicks + " ticks.");
     }
 
     /** Checks every online player with OP against the blacklist. */
