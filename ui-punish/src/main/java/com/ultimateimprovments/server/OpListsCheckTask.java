@@ -55,24 +55,25 @@ public class OpListsCheckTask extends BukkitRunnable {
 
     @Override
     public void run() {
-        boolean whitelistEnabled = OpWhitelistManager.isEnabled();
-        boolean blacklistEnabled = OpBlacklistManager.isEnabled();
+        // Active = feature switch (config) AND runtime on/off state (DB)
+        boolean whitelistActive = OpWhitelistManager.isFeatureEnabled() && OpWhitelistManager.isEnabled();
+        boolean blacklistActive = OpBlacklistManager.isFeatureEnabled() && OpBlacklistManager.isEnabled();
 
-        if (!whitelistEnabled && !blacklistEnabled) {
-            return; // both OP lists disabled — nothing to check
+        if (!whitelistActive && !blacklistActive) {
+            return; // both OP lists inactive — nothing to check
         }
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!player.isOp()) continue;
 
-            // OP whitelist: deop when the player has no entry (no-op when disabled)
-            if (whitelistEnabled) {
+            // OP whitelist: deop when the player has no entry (skipped when inactive)
+            if (whitelistActive) {
                 OpWhitelistManager.checkAndDeop(player);
             }
 
-            // OP blacklist: deop when the player is listed (no-op when disabled,
+            // OP blacklist: deop when the player is listed (skipped when inactive,
             // also skipped when the whitelist check above just removed their OP)
-            if (blacklistEnabled) {
+            if (blacklistActive) {
                 OpBlacklistManager.checkAndDeop(player);
             }
         }

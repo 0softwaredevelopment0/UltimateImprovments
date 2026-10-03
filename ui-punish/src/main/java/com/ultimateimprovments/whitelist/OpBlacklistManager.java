@@ -35,7 +35,7 @@ import java.util.logging.Level;
  */
 public class OpBlacklistManager implements Listener {
 
-    private static boolean enabled = true;
+    private static boolean enabled = false;
 
     // ════════════════════════════════════════
     // INIT
@@ -54,8 +54,21 @@ public class OpBlacklistManager implements Listener {
     // LOAD (config + stats)
     // ════════════════════════════════════════
     public static void load() {
-        // Master switch lives in the config ([op_lists.blacklist] in UI-Punish.toml)
-        enabled = Main.getInstance().getConfig().getBoolean("op_lists.blacklist.enabled", true);
+        // Runtime on/off state lives in the DB (op_blacklist_meta) —
+        // /ui opblacklist on|off toggles it. The feature switch is separate:
+        // op_lists.blacklist.enabled in the config.
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "SELECT value FROM op_blacklist_meta WHERE key = ?")) {
+            st.setString(1, "enabled");
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) {
+                    enabled = Boolean.parseBoolean(rs.getString("value"));
+                }
+            }
+        } catch (Exception e) {
+            Main.getInstance().getLogger().log(Level.WARNING, "[OpBlacklist] Failed to load state", e);
+        }
 
         int count = 0;
         try (Connection con = DatabaseManager.getConnection();
@@ -88,6 +101,15 @@ public class OpBlacklistManager implements Listener {
     // ════════════════════════════════════════
     public static boolean isEnabled() {
         return enabled;
+    }
+
+    /**
+     * Feature switch from the config ({@code op_lists.blacklist.enabled}):
+     * when false, the OP blacklist system does not run at all, regardless of
+     * the runtime on/off state in the DB.
+     */
+    public static boolean isFeatureEnabled() {
+        return Main.getInstance().getConfig().getBoolean("op_lists.blacklist.enabled", true);
     }
 
     public static List<String> getBlacklistNames() {
@@ -153,16 +175,19 @@ public class OpBlacklistManager implements Listener {
     }
 
     // ════════════════════════════════════════
-    // TOGGLE (persisted in the config)
+    // TOGGLE (runtime state persisted in the DB)
     // ════════════════════════════════════════
     public static boolean setEnabled(boolean val) {
         if (enabled == val) return false;
         enabled = val;
 
-        try {
-            Main.getInstance().getConfig().set("op_lists.blacklist.enabled", val);
-            Main.getInstance().saveConfig();
-        } catch (Exception e) {
+        try (Connection con = DatabaseManager.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "INSERT OR REPLACE INTO op_blacklist_meta (key, value) VALUES (?, ?)")) {
+            st.setString(1, "enabled");
+            st.setString(2, String.valueOf(val));
+            st.executeUpdate();
+        } catch (SQLException e) {
             Main.getInstance().getLogger().log(Level.WARNING, "[OpBlacklist] Failed to save enabled state", e);
         }
 
@@ -196,6 +221,7 @@ public class OpBlacklistManager implements Listener {
     // ════════════════════════════════════════
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
+        if (!isFeatureEnabled()) return;
         if (!enabled) return;
         checkAndDeop(e.getPlayer());
     }
@@ -206,6 +232,7 @@ public class OpBlacklistManager implements Listener {
     /** Removes OP from the player when they are on the OP blacklist. */
     public static void checkAndDeop(Player player) {
         if (player == null || !player.isOnline()) return;
+        if (!isFeatureEnabled()) return;
         if (!enabled) return;
         if (!player.isOp()) return;
 
