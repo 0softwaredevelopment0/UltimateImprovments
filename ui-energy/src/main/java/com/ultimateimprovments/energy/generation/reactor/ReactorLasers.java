@@ -11,6 +11,10 @@ import org.bukkit.Location;
  * power by {@code laser_ramp_rate} percent/sec <b>while</b> redstone is applied to
  * its +5%/-5% lamp (powered state, not a pulse). The Core Startup lamp is the
  * exception: it is pulse-triggered - a rising redstone edge activates the reactor.
+ * <p>
+ * The control lamps respond (power ramps, signs show it) at any time — even
+ * before the startup pulse. The lasers themselves only <b>heat/cool</b> after
+ * the startup pulse, once the shield is fully formed (WORKING state).
  * <ul>
  *   <li><b>Power Laser #1/#2</b> - heat the core at {@code power_laser_heat_rate}
  *       C* per sec each at 100% power; range 0..100%</li>
@@ -18,8 +22,8 @@ import org.bukkit.Location;
  *       per 100% of power; range 0..200% (200% = 2x power)</li>
  *   <li><b>Content Absorber</b> - valve opening 0..100% (fuel system, later)</li>
  * </ul>
- * Nothing is active before startup. Heating/cooling is applied smoothly every
- * tick (rate/20 per tick with a fractional remainder).
+ * Heating/cooling is applied smoothly every tick (rate/20 per tick with a
+ * fractional remainder).
  */
 public class ReactorLasers {
 
@@ -87,27 +91,15 @@ public class ReactorLasers {
         }
         prevStartupPowered = startupPowered;
 
-        if (!started) return;
-
-        // =========================
-        // SELF-DESTRUCT OVERPOWER — control bulbs are locked, the Power Lasers
-        // ramp to 1000% and burn the shield into the report stage.
-        // =========================
         if (overpowerMode) {
             tickOverpower();
             return;
         }
 
-        // Lasers are operational only when the shield is fully formed (WORKING):
-        // before that they ramp their power (signs show it) but do not heat/cool.
-        if (reactor.getShield().getState() != ReactorShield.State.WORKING) {
-            rampOnly(base);
-            return;
-        }
-
         // =========================
-        // POWER RAMP — ±5%/sec while the +5/−5 lamp is powered.
-        // Self-destruct: the control bulbs are locked (dead) — no ramp.
+        // POWER RAMP — always responsive: the ±5/−5 lamps ramp their laser
+        // power (signs show it) even before the startup pulse. Self-destruct:
+        // the control bulbs are locked (dead) — no ramp.
         // =========================
         double rampPerTick = cfg.getLaserRampRate() / 20.0;
         double[] max = { 100, 100, 200, 100 };
@@ -122,11 +114,16 @@ public class ReactorLasers {
         }
 
         // =========================
-        // HEATING / COOLING — smooth, every tick
+        // HEATING / COOLING — only after the startup pulse with a fully formed
+        // shield (WORKING): before that the lasers hold their ramped power but
+        // do not heat/cool.
         // Power Lasers: power_laser_heat_rate C*/sec each at 100%
         // Stab Laser: stab_cool_rate C*/sec per 100% of power
         // Without fuel the Power Lasers do not heat at all (Fuel Stats: No)
         // =========================
+        if (!started) return;
+        if (reactor.getShield().getState() != ReactorShield.State.WORKING) return;
+
         double heatPerTick = reactor.hasBarrelFuelPublic()
                 ? (power[LASER_P1] + power[LASER_P2]) / 100.0
                         * cfg.getPowerLaserHeatRate() / 20.0
@@ -183,19 +180,6 @@ public class ReactorLasers {
     }
 
     public boolean isOverpowerMode() { return overpowerMode; }
-    private void rampOnly(Location base) {
-        ReactorConfig cfg = ReactorConfig.getInstance();
-        double rampPerTick = cfg.getLaserRampRate() / 20.0;
-        double[] max = { 100, 100, 200, 100 };
-        for (int i = 0; i < 4; i++) {
-            if (isLampPowered(base, LAMP_PLUS[i])) {
-                power[i] = Math.min(max[i], power[i] + rampPerTick);
-            }
-            if (isLampPowered(base, LAMP_MINUS[i])) {
-                power[i] = Math.max(0, power[i] - rampPerTick);
-            }
-        }
-    }
 
     // =========================
     // HELPERS
@@ -236,15 +220,24 @@ public class ReactorLasers {
         return isLampPowered(base, LAMP_STARTUP);
     }
 
-    /** True while any Power Laser has positive power and the reactor has fuel. */
+    /**
+     * Lasers actually heat/cool only when operational: after the startup pulse
+     * with a fully formed shield (WORKING). Power ramping works regardless.
+     */
+    private boolean isOperational() {
+        return started && reactor.getShield().getState() == ReactorShield.State.WORKING;
+    }
+
+    /** True while operational, any Power Laser has positive power and the reactor has fuel. */
     public boolean isHeating() {
-        return reactor.hasBarrelFuelPublic()
+        return isOperational()
+                && reactor.hasBarrelFuelPublic()
                 && (power[LASER_P1] > 0 || power[LASER_P2] > 0);
     }
 
-    /** True while the Stab Laser has positive power. */
+    /** True while operational and the Stab Laser has positive power. */
     public boolean isCooling() {
-        return power[LASER_STAB] > 0;
+        return isOperational() && power[LASER_STAB] > 0;
     }
 
     /** Localized startup broadcast support (delegates to the manager). */
