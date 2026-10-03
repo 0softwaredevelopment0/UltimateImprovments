@@ -673,6 +673,51 @@ whitelist = ["<red>This account is not whitelisted on this server!", "<gray>Nick
 # Default: ["<red>This account is blacklisted on this server!", "<gray>Nickname <dark_gray>»</dark_gray> <white>%player%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 blacklist = ["<red>This account is blacklisted on this server!", "<gray>Nickname <dark_gray>»</dark_gray> <white>%player%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 
+# Timed whitelist/blacklist operations: delayed add/remove/on/off (the -t flag)
+# and the instant *-temp variants with an automatic revert. %list% is the
+# localized list name. Time suffixes: s (seconds), m (minutes), h (hours), d (days).
+# Placeholders: %player%, %duration%, %list%
+[messages.punishment.timed]
+# Player will be added after the delay.
+# Default: ["<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>будет добавлен в</white> <yellow>%list%</yellow> <white>через</white> <yellow>%duration%</yellow>"]
+add_scheduled = ["<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>будет добавлен в</white> <yellow>%list%</yellow> <white>через</white> <yellow>%duration%</yellow>"]
+# Player will be removed after the delay.
+# Default: ["<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>будет удалён из</white> <yellow>%list%</yellow> <white>через</white> <yellow>%duration%</yellow>"]
+remove_scheduled = ["<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>будет удалён из</white> <yellow>%list%</yellow> <white>через</white> <yellow>%duration%</yellow>"]
+# Player added instantly, removed automatically after the delay.
+# Default: ["<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>добавлен в</white> <yellow>%list%</yellow> <white>на</white> <yellow>%duration%</yellow>"]
+add_temp = ["<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>добавлен в</white> <yellow>%list%</yellow> <white>на</white> <yellow>%duration%</yellow>"]
+# Player removed instantly, added back automatically after the delay.
+# Default: ["<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>удалён из</white> <yellow>%list%</yellow> <white>на</white> <yellow>%duration%</yellow>"]
+remove_temp = ["<green>✔</green> <white>Игрок</white> <yellow>%player%</yellow> <white>удалён из</white> <yellow>%list%</yellow> <white>на</white> <yellow>%duration%</yellow>"]
+# List will be enabled after the delay.
+# Default: ["<green>✔</green> <yellow>%list%</yellow> <white>будет включён через</white> <yellow>%duration%</yellow>"]
+on_scheduled = ["<green>✔</green> <yellow>%list%</yellow> <white>будет включён через</white> <yellow>%duration%</yellow>"]
+# List will be disabled after the delay.
+# Default: ["<green>✔</green> <yellow>%list%</yellow> <white>будет выключен через</white> <yellow>%duration%</yellow>"]
+off_scheduled = ["<green>✔</green> <yellow>%list%</yellow> <white>будет выключен через</white> <yellow>%duration%</yellow>"]
+# List enabled instantly, disabled automatically after the delay.
+# Default: ["<green>✔</green> <yellow>%list%</yellow> <white>включён на</white> <yellow>%duration%</yellow>"]
+on_temp = ["<green>✔</green> <yellow>%list%</yellow> <white>включён на</white> <yellow>%duration%</yellow>"]
+# List disabled instantly, enabled back automatically after the delay.
+# Default: ["<green>✔</green> <yellow>%list%</yellow> <white>выключен на</white> <yellow>%duration%</yellow>"]
+off_temp = ["<green>✔</green> <yellow>%list%</yellow> <white>выключен на</white> <yellow>%duration%</yellow>"]
+# Player is already in the list.
+# Default: ["<yellow>⚠</yellow> <white>Игрок</white> <yellow>%player%</yellow> <white>уже в</white> <yellow>%list%</yellow>"]
+already_in_list = ["<yellow>⚠</yellow> <white>Игрок</white> <yellow>%player%</yellow> <white>уже в</white> <yellow>%list%</yellow>"]
+# Player is not in the list.
+# Default: ["<red>❌</red> <white>Игрок</white> <yellow>%player%</yellow> <white>не найден в</white> <yellow>%list%</yellow>"]
+not_in_list = ["<red>❌</red> <white>Игрок</white> <yellow>%player%</yellow> <white>не найден в</white> <yellow>%list%</yellow>"]
+# List is already enabled.
+# Default: ["<yellow>⚠</yellow> <yellow>%list%</yellow> <white>уже включён.</white>"]
+already_enabled = ["<yellow>⚠</yellow> <yellow>%list%</yellow> <white>уже включён.</white>"]
+# List is already disabled.
+# Default: ["<yellow>⚠</yellow> <yellow>%list%</yellow> <white>уже выключен.</white>"]
+already_disabled = ["<yellow>⚠</yellow> <yellow>%list%</yellow> <white>уже выключен.</white>"]
+# Invalid -t flag value.
+# Default: ["<red>❌ Неверный формат времени!</red>", "<gray>Используйте: </gray><white>30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"]
+invalid_time = ["<red>❌ Неверный формат времени!</red>", "<gray>Используйте: </gray><white>30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"]
+
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
 # ==================================================================
@@ -1251,3 +1296,48 @@ whitelist = ["<red>This account is not whitelisted on this server!", "<gray>Nick
 # Blacklist.
 # Default: ["<red>This account is blacklisted on this server!", "<gray>Nickname <dark_gray>»</dark_gray> <white>%player%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
 blacklist = ["<red>This account is blacklisted on this server!", "<gray>Nickname <dark_gray>»</dark_gray> <white>%player%</white>", "<gray>If you think this is a mistake,", "<gray>please report an appeal on Discord:", "<white>%discord_url%"]
+
+# Timed whitelist/blacklist operations: delayed add/remove/on/off (the -t flag)
+# and the instant *-temp variants with an automatic revert. %list% is the
+# localized list name. Time suffixes: s (seconds), m (minutes), h (hours), d (days).
+# Placeholders: %player%, %duration%, %list%
+[messages_en.punishment.timed]
+# Player will be added after the delay.
+# Default: ["<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>will be added to the</white> <yellow>%list%</yellow> <white>in</white> <yellow>%duration%</yellow>"]
+add_scheduled = ["<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>will be added to the</white> <yellow>%list%</yellow> <white>in</white> <yellow>%duration%</yellow>"]
+# Player will be removed after the delay.
+# Default: ["<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>will be removed from the</white> <yellow>%list%</yellow> <white>in</white> <yellow>%duration%</yellow>"]
+remove_scheduled = ["<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>will be removed from the</white> <yellow>%list%</yellow> <white>in</white> <yellow>%duration%</yellow>"]
+# Player added instantly, removed automatically after the delay.
+# Default: ["<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>added to the</white> <yellow>%list%</yellow> <white>for</white> <yellow>%duration%</yellow>"]
+add_temp = ["<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>added to the</white> <yellow>%list%</yellow> <white>for</white> <yellow>%duration%</yellow>"]
+# Player removed instantly, added back automatically after the delay.
+# Default: ["<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>removed from the</white> <yellow>%list%</yellow> <white>for</white> <yellow>%duration%</yellow>"]
+remove_temp = ["<green>✔</green> <white>Player</white> <yellow>%player%</yellow> <white>removed from the</white> <yellow>%list%</yellow> <white>for</white> <yellow>%duration%</yellow>"]
+# List will be enabled after the delay.
+# Default: ["<green>✔</green> <white>The</white> <yellow>%list%</yellow> <white>will be enabled in</white> <yellow>%duration%</yellow>"]
+on_scheduled = ["<green>✔</green> <white>The</white> <yellow>%list%</yellow> <white>will be enabled in</white> <yellow>%duration%</yellow>"]
+# List will be disabled after the delay.
+# Default: ["<green>✔</green> <white>The</white> <yellow>%list%</yellow> <white>will be disabled in</white> <yellow>%duration%</yellow>"]
+off_scheduled = ["<green>✔</green> <white>The</white> <yellow>%list%</yellow> <white>will be disabled in</white> <yellow>%duration%</yellow>"]
+# List enabled instantly, disabled automatically after the delay.
+# Default: ["<green>✔</green> <white>The</white> <yellow>%list%</yellow> <white>enabled for</white> <yellow>%duration%</yellow>"]
+on_temp = ["<green>✔</green> <white>The</white> <yellow>%list%</yellow> <white>enabled for</white> <yellow>%duration%</yellow>"]
+# List disabled instantly, enabled back automatically after the delay.
+# Default: ["<green>✔</green> <white>The</white> <yellow>%list%</yellow> <white>disabled for</white> <yellow>%duration%</yellow>"]
+off_temp = ["<green>✔</green> <white>The</white> <yellow>%list%</yellow> <white>disabled for</white> <yellow>%duration%</yellow>"]
+# Player is already in the list.
+# Default: ["<yellow>⚠</yellow> <white>Player</white> <yellow>%player%</yellow> <white>is already in the</white> <yellow>%list%</yellow>"]
+already_in_list = ["<yellow>⚠</yellow> <white>Player</white> <yellow>%player%</yellow> <white>is already in the</white> <yellow>%list%</yellow>"]
+# Player is not in the list.
+# Default: ["<red>❌</red> <white>Player</white> <yellow>%player%</yellow> <white>not found in the</white> <yellow>%list%</yellow>"]
+not_in_list = ["<red>❌</red> <white>Player</white> <yellow>%player%</yellow> <white>not found in the</white> <yellow>%list%</yellow>"]
+# List is already enabled.
+# Default: ["<yellow>⚠</yellow> <white>The</white> <yellow>%list%</yellow> <white>is already enabled.</white>"]
+already_enabled = ["<yellow>⚠</yellow> <white>The</white> <yellow>%list%</yellow> <white>is already enabled.</white>"]
+# List is already disabled.
+# Default: ["<yellow>⚠</yellow> <white>The</white> <yellow>%list%</yellow> <white>is already disabled.</white>"]
+already_disabled = ["<yellow>⚠</yellow> <white>The</white> <yellow>%list%</yellow> <white>is already disabled.</white>"]
+# Invalid -t flag value.
+# Default: ["<red>❌ Invalid time format!</red>", "<gray>Use: </gray><white>30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"]
+invalid_time = ["<red>❌ Invalid time format!</red>", "<gray>Use: </gray><white>30s</white><gray>, </gray><white>5m</white><gray>, </gray><white>2h</white><gray>, </gray><white>1d</white>"]
