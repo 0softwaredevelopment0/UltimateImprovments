@@ -141,6 +141,36 @@ public final class PunishmentMessages {
     }
 
     // =========================
+    // TIMED WHITELIST/BLACKLIST (command feedback)
+    // =========================
+
+    /**
+     * Localized display name of the access list for the {@code %list%}
+     * placeholder ("вайтлист"/"блэклист" for ru, "whitelist"/"blacklist" for en).
+     */
+    public static String listDisplayName(boolean whitelist) {
+        boolean ru = "ru".equalsIgnoreCase(getConfig().getString("messages.lang", "en"));
+        if (ru) {
+            return whitelist ? "вайтлист" : "блэклист";
+        }
+        return whitelist ? "whitelist" : "blacklist";
+    }
+
+    /**
+     * Builds a timed whitelist/blacklist feedback message from
+     * {@code messages[_en].punishment.timed.<key>} (a multiline MiniMessage list).
+     * Placeholders: {@code %player%}, {@code %duration%}, {@code %list%}.
+     */
+    public static Component buildTimedListMessage(String key, String listName,
+                                                   String player, String duration) {
+        String msg = raw("timed." + key)
+                .replace(PLAYER,   player == null ? "" : player)
+                .replace(DURATION, duration == null ? "" : duration)
+                .replace("%list%", listName == null ? "" : listName);
+        return MessageUtil.parse(msg);
+    }
+
+    // =========================
     // UTILITY
     // =========================
 
