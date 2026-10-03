@@ -33,7 +33,7 @@ public final class HealFeedSubcommand {
     // =========================
     public static boolean heal(CommandSender sender, String[] args) {
         if (!isEnabled()) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Heal/Feed commands are disabled in config!</red>"));
+            CommandErrors.moduleDisabled(sender, "healfeed");
             return true;
         }
         if (!sender.hasPermission("ui.command.heal")) {
@@ -77,7 +77,7 @@ public final class HealFeedSubcommand {
     // =========================
     public static boolean feed(CommandSender sender, String[] args) {
         if (!isEnabled()) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Heal/Feed commands are disabled in config!</red>"));
+            CommandErrors.moduleDisabled(sender, "healfeed");
             return true;
         }
         if (!sender.hasPermission("ui.command.feed")) {

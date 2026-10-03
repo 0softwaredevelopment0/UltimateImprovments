@@ -43,7 +43,7 @@ public class TrollCommand implements CommandExecutor, TabCompleter {
 
         FileConfiguration cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("troll.enabled", true)) {
-            player.sendMessage(MessageUtil.parse("<red>❌ This command is disabled.</red>"));
+            CommandErrors.moduleDisabled(player, "troll.enabled");
             return true;
         }
 

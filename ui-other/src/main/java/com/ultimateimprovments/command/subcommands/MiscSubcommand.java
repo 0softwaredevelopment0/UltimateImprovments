@@ -143,9 +143,7 @@ public final class MiscSubcommand {
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui bossbar"))); return true; }
         if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("bossbar.enabled", false)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.feature_disabled_in_config",
-                    "<yellow>⚠ %feature% is disabled in the config (%key%: false) — enable it there first.</yellow>")
-                    .replace("%feature%", "BossBar").replace("%key%", "bossbar.enabled")));
+            CommandErrors.moduleDisabled(player, "bossbar.enabled");
             return true;
         }
         PlayerSettingsDB.setBossbarEnabled(player.getUniqueId(), want);
@@ -168,9 +166,7 @@ public final class MiscSubcommand {
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui pingsound"))); return true; }
         if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("chat_ping.enabled", true)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.feature_disabled_in_config",
-                    "<yellow>⚠ %feature% is disabled in the config (%key%: false) — enable it there first.</yellow>")
-                    .replace("%feature%", "Ping sound").replace("%key%", "chat_ping.enabled")));
+            CommandErrors.moduleDisabled(player, "chat_ping.enabled");
             return true;
         }
         PlayerSettingsDB.setPingEnabled(player.getUniqueId(), want);
@@ -193,9 +189,7 @@ public final class MiscSubcommand {
         Boolean want = parseOnOff(args);
         if (want == null) { player.sendMessage(MessageUtil.parse(MessagesManager.getString("general.on_off_usage", "<red>❌ Usage: </red><white>/%cmd% <on|off></white>").replace("%cmd%", "ui scoreboard"))); return true; }
         if (want && !com.ultimateimprovments.core.Main.getInstance().getConfig().getBoolean("scoreboard.enabled", false)) {
-            player.sendMessage(MessageUtil.parse(MessagesManager.getString("misc.feature_disabled_in_config",
-                    "<yellow>⚠ %feature% is disabled in the config (%key%: false) — enable it there first.</yellow>")
-                    .replace("%feature%", "Scoreboard").replace("%key%", "scoreboard.enabled")));
+            CommandErrors.moduleDisabled(player, "scoreboard.enabled");
             return true;
         }
         PlayerSettingsDB.setScoreboardEnabled(player.getUniqueId(), want);

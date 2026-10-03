@@ -69,8 +69,7 @@ public final class ChatChannelSubcommand implements SubCommand {
         // channel must be enabled in the config.
         if (channel == ChatChannel.CONSOLE) {
             if (!ChatManager.isConsoleEnabled()) {
-                player.sendMessage(MessageUtil.parse(
-                        "<red>\u274c The console channel is disabled in the config.</red>"));
+                CommandErrors.moduleDisabled(player, "chat.channels.console.enabled");
                 return true;
             }
             if (!player.hasPermission(channel.getPermission())) {
@@ -101,8 +100,7 @@ public final class ChatChannelSubcommand implements SubCommand {
         // must be enabled in the config.
         if (channel == ChatChannel.LINUX) {
             if (!ChatManager.isLinuxEnabled()) {
-                player.sendMessage(MessageUtil.parse(
-                        "<red>\u274c The linux channel is disabled in the config.</red>"));
+                CommandErrors.moduleDisabled(player, "chat.channels.linux.enabled");
                 return true;
             }
             if (!player.hasPermission(channel.getPermission())) {
