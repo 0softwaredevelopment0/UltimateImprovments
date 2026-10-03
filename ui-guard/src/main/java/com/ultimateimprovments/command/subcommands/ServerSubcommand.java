@@ -129,7 +129,7 @@ public final class ServerSubcommand {
     private static boolean lockdownTimed(CommandSender sender, ServerLockdownManager manager, String[] args) {
         if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui server lockdown timed &lt;10s|5m|2h|1d&gt;</white>"));
+                    "<red>❌ Usage: </red><white>/ui server lockdown timed <10s|5m|2h|1d></white>"));
             return true;
         }
         long duration = ServerLockdownManager.parseTimeToMillis(args[3]);
@@ -449,7 +449,7 @@ public final class ServerSubcommand {
                         + "<white>/ui server lockdown status [blocked|grace|thresholds] [page]</white> <gray>— summary / paginated section lists</gray>\n"
                         + "<white>/ui server lockdown on [-t 10s|5m|2h|1d]</white> <gray>— enable now (or after the delay)</gray>\n"
                         + "<white>/ui server lockdown off [-t 10s|5m|2h|1d]</white> <gray>— disable now (or after the delay)</gray>\n"
-                        + "<white>/ui server lockdown timed &lt;10s|5m|2h|1d&gt;</white> <gray>— enable, auto-disable after the duration</gray>"
+                        + "<white>/ui server lockdown timed <10s|5m|2h|1d></white> <gray>— enable, auto-disable after the duration</gray>"
         ));
     }
 

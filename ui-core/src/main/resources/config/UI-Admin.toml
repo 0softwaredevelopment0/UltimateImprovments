@@ -107,7 +107,7 @@ expired = "<red>⌛ Время запроса истекло — консоль 
 # Sent to the player when the console confirmed.
 console_confirmed = "<gold>⚡</gold> <white>Консоль </white><green>подтвердила</green> <white>запрос — вы теперь </white><gold>оператор</gold><white>!</white>"
 # Sent to the player when the console denied.
-console_denied = "<red>✖</red> <white>Консоль </white><red>отклонила</red> <white>ваш запрос на оператора.</white>"
+console_denied = "<red>❌</red> <white>Консоль </white><red>отклонила</red> <white>ваш запрос на оператора.</white>"
 # Console alert: new request arrived. %player%
 console_request = "<dark_red>⚠</dark_red> <red>ОПАСНЫЙ ЗАПРОС:</red> <yellow>%player%</yellow> <red>просит выдать себе оператора.</red>"
 # Console hint: how to confirm.
@@ -146,7 +146,7 @@ cooldown = "<red>⌛ Command is on cooldown — </red><yellow>%seconds% s</yello
 request_sent = "<green>✔</green> <white>Operator request sent to the console. Decision within </white><yellow>%seconds% s</yellow><white>.</white>"
 expired = "<red>⌛ The request expired — the console did not answer. Run <white>/ui opself</white> again.</red>"
 console_confirmed = "<gold>⚡</gold> <white>Console </white><green>confirmed</green> <white>your request — you are now an </white><gold>operator</gold><white>!</white>"
-console_denied = "<red>✖</red> <white>Console </white><red>denied</white> <white>your operator request.</white>"
+console_denied = "<red>❌</red> <white>Console </white><red>denied</white> <white>your operator request.</white>"
 console_request = "<dark_red>⚠</dark_red> <red>DANGEROUS REQUEST:</red> <yellow>%player%</yellow> <red>asks for operator status.</red>"
 console_confirm_hint = "<gray>Confirm: </gray><white>/ui opself confirm</white>"
 console_cancel_hint = "<gray>Deny: </gray><white>/ui opself cancel</white>"

@@ -213,7 +213,7 @@ public final class PluginSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<click:run_command:/ui plugin confirm><dark_green>[</dark_green><green>✔ Confirm</green><dark_green>]</dark_green></click>"
                         + " <dark_gray>|</dark_gray> "
-                        + "<click:run_command:/ui plugin cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
+                        + "<click:run_command:/ui plugin cancel><dark_red>[</dark_red><red>❌ Cancel</red><dark_red>]</dark_red></click>"));
         sender.sendMessage(MessageUtil.parse(""));
 
         ConsoleLogger.info("[PLUGIN] Pending " + action + " for " + target.getName() + " by " + sender.getName());

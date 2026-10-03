@@ -65,7 +65,7 @@ public final class WoodcutterChallenge implements Listener {
         UUID uuid = player.getUniqueId();
         if (!TimedChallengeLock.tryAcquire(uuid)) {
             player.sendMessage(MessageUtil.parse(
-                    "<red>✖ <white>You already have an active challenge! Finish the current one first.</white>"));
+                    "<red>❌ <white>You already have an active challenge! Finish the current one first.</white>"));
             return;
         }
 
@@ -132,7 +132,7 @@ public final class WoodcutterChallenge implements Listener {
                 TimedChallengeLock.release(entry.getKey());
                 if (player != null) {
                     player.sendMessage(MessageUtil.parse(
-                            "<red>✖ <white>Time's up! You broke: <yellow>" + state.count
+                            "<red>❌ <white>Time's up! You broke: <yellow>" + state.count
                             + "</yellow>/7200 wooden blocks.</white>"));
                 }
                 return true;

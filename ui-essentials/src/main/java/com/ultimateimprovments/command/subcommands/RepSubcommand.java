@@ -350,8 +350,8 @@ public final class RepSubcommand {
 
     private static void usage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(msg("reputation.usage",
-                "<red>❌ Usage: </red><white>/ui rep [player] | give &lt;player&gt; &lt;±N&gt; [reason] | "
-                        + "set &lt;player&gt; &lt;N&gt; | status &lt;player&gt; &lt;online|idle|dnd|invisible|none&gt; | "
+                "<red>❌ Usage: </red><white>/ui rep [player] | give <player> <±N> [reason] | "
+                        + "set <player> <N> | status <player> <online|idle|dnd|invisible|none> | "
                         + "top [limit] | history [player]</white>")));
     }
 

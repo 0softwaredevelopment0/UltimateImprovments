@@ -189,9 +189,9 @@ public final class CommandErrors {
         sender.sendMessage(MessageUtil.parse(header(code) + body));
     }
 
-    /** Uniform code prefix: "✖ [002] ". */
+    /** Uniform code prefix: "❌ [002] ". */
     private static String header(int code) {
-        return "<red>✖ [<yellow>" + String.format(Locale.ROOT, "%03d", code) + "</yellow>]</red> ";
+        return "<red>❌ [<yellow>" + String.format(Locale.ROOT, "%03d", code) + "</yellow>]</red> ";
     }
 
     /**

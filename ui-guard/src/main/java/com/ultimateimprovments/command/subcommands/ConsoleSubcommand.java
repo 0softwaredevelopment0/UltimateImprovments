@@ -123,7 +123,7 @@ public final class ConsoleSubcommand {
     private static boolean lockdownTimed(CommandSender sender, ConsoleLockdownManager manager, String[] args) {
         if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Usage: </red><white>/ui console lockdown timed &lt;10s|5m|2h|1d&gt;</white>"));
+                    "<red>❌ Usage: </red><white>/ui console lockdown timed <10s|5m|2h|1d></white>"));
             return true;
         }
         long duration = ConsoleLockdownManager.parseTimeToMillis(args[3]);
@@ -225,7 +225,7 @@ public final class ConsoleSubcommand {
                         + "<white>/ui console lockdown</white> <gray>— show status</gray>\n"
                         + "<white>/ui console lockdown on [-t 10s|5m|2h|1d]</white> <gray>— enable now (or after the delay)</gray>\n"
                         + "<white>/ui console lockdown off [-t 10s|5m|2h|1d]</white> <gray>— disable now (or after the delay)</gray>\n"
-                        + "<white>/ui console lockdown timed &lt;10s|5m|2h|1d&gt;</white> <gray>— enable, auto-disable after the duration</gray>"
+                        + "<white>/ui console lockdown timed <10s|5m|2h|1d></white> <gray>— enable, auto-disable after the duration</gray>"
         ));
     }
 

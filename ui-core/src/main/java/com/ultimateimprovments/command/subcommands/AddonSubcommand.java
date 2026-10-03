@@ -167,7 +167,7 @@ public class AddonSubcommand implements SubCommand {
 
         String icon;
         if (!entry.isInstalled()) {
-            icon = msgStr("addon.row_missing", "<dark_red>✖</dark_red>");
+            icon = msgStr("addon.row_missing", "<dark_red>❌</dark_red>");
         } else if (errors > 0) {
             icon = msgStr("addon.row_errors", "<yellow>⚠</yellow>");
         } else if (enabled) {
@@ -213,7 +213,7 @@ public class AddonSubcommand implements SubCommand {
         }
         if (plugin == null) {
             sender.sendMessage(msg("addon.status_not_installed",
-                    "<red>✖ %addon%</red> <gray>— the jar is registered but not loaded.</gray>",
+                    "<red>❌ %addon%</red> <gray>— the jar is registered but not loaded.</gray>",
                     "%addon%", entry.getPluginName()));
             return true;
         }
@@ -324,7 +324,7 @@ public class AddonSubcommand implements SubCommand {
         sender.sendMessage(MessageUtil.parse(
                 "<click:run_command:/ui addon confirm><dark_green>[</dark_green><green>✔ Confirm</green><dark_green>]</dark_green></click>"
                         + " <dark_gray>|</dark_gray> "
-                        + "<click:run_command:/ui addon cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
+                        + "<click:run_command:/ui addon cancel><dark_red>[</dark_red><red>❌ Cancel</red><dark_red>]</dark_red></click>"));
         sender.sendMessage(MessageUtil.parse(""));
         return true;
     }

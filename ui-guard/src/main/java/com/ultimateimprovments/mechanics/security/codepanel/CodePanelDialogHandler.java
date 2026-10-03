@@ -50,7 +50,7 @@ public class CodePanelDialogHandler implements Listener {
             CodePanelDialogScreen.close(player);
             CodePanelSession.reset(player.getUniqueId());
             player.sendMessage(MessageUtil.parse(
-                    msg("codepanel.messages.cancelled", "<gray>✖ Code entry cancelled.</gray>")
+                    msg("codepanel.messages.cancelled", "<gray>❌ Code entry cancelled.</gray>")
             ));
             ConsoleLogger.info("[CodePanelDialog] Player " + player.getName() + " cancelled code entry.");
             return;

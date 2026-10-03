@@ -114,7 +114,7 @@ public class UIWorld extends JavaPlugin implements SoftReloadable {
                 if (a[1].equalsIgnoreCase("stop")) {
                     boolean stopped = WoodcutterChallenge.stop(p) || EnderPearlChallenge.stop(p);
                     if (!stopped) {
-                        p.sendMessage(MessageUtil.parse("<red>✖ <white>You don't have an active challenge.</white>"));
+                        p.sendMessage(MessageUtil.parse("<red>❌ <white>You don't have an active challenge.</white>"));
                     }
                     return true;
                 }

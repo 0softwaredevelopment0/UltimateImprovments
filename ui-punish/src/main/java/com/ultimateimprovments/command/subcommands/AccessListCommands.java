@@ -261,22 +261,22 @@ public final class AccessListCommands {
         String cmd = "/ui " + list.key();
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage:</red>\n" +
-                "<white>" + cmd + " on [-t &lt;time&gt;]</white> <gray>— enable (after a delay)</gray>\n" +
-                "<white>" + cmd + " off [-t &lt;time&gt;]</white> <gray>— disable (after a delay)</gray>\n" +
-                "<white>" + cmd + " add &lt;player&gt; [-t &lt;time&gt;]</white> <gray>— add player (after a delay)</gray>\n" +
-                "<white>" + cmd + " remove &lt;player&gt; [-t &lt;time&gt;]</white> <gray>— remove player (after a delay)</gray>\n" +
-                "<white>" + cmd + " add-temp &lt;player&gt; -t &lt;time&gt;</white> <gray>— add player for a time</gray>\n" +
-                "<white>" + cmd + " remove-temp &lt;player&gt; -t &lt;time&gt;</white> <gray>— remove player for a time</gray>\n" +
-                "<white>" + cmd + " on-temp -t &lt;time&gt;</white> <gray>— enable for a time</gray>\n" +
-                "<white>" + cmd + " off-temp -t &lt;time&gt;</white> <gray>— disable for a time</gray>\n" +
+                "<white>" + cmd + " on [-t <time>]</white> <gray>— enable (after a delay)</gray>\n" +
+                "<white>" + cmd + " off [-t <time>]</white> <gray>— disable (after a delay)</gray>\n" +
+                "<white>" + cmd + " add <player> [-t <time>]</white> <gray>— add player (after a delay)</gray>\n" +
+                "<white>" + cmd + " remove <player> [-t <time>]</white> <gray>— remove player (after a delay)</gray>\n" +
+                "<white>" + cmd + " add-temp <player> -t <time></white> <gray>— add player for a time</gray>\n" +
+                "<white>" + cmd + " remove-temp <player> -t <time></white> <gray>— remove player for a time</gray>\n" +
+                "<white>" + cmd + " on-temp -t <time></white> <gray>— enable for a time</gray>\n" +
+                "<white>" + cmd + " off-temp -t <time></white> <gray>— disable for a time</gray>\n" +
                 "<white>" + cmd + " list</white> <gray>— list players</gray>"
         ));
     }
 
     private static void usageLine(CommandSender sender, TimedAccessLists.AccessList list,
                                   String action, boolean player, boolean temp) {
-        String timePart = temp ? "-t &lt;time&gt;" : "[-t &lt;time&gt;]";
-        String target = player ? " &lt;player&gt;" : "";
+        String timePart = temp ? "-t <time>" : "[-t <time>]";
+        String target = player ? " <player>" : "";
         sender.sendMessage(MessageUtil.parse(
                 "<red>❌ Usage: </red><white>/ui " + list.key() + " " + action + target + " " + timePart + "</white>"));
     }

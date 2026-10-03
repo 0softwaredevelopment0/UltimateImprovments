@@ -156,7 +156,7 @@ public final class SwapJarSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<click:run_command:/ui swapjar confirm><dark_green>[</dark_green><green>✔ Confirm Swap</green><dark_green>]</dark_green></click>"
                 + " <dark_gray>|</dark_gray> "
-                + "<click:run_command:/ui swapjar cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"));
+                + "<click:run_command:/ui swapjar cancel><dark_red>[</dark_red><red>❌ Cancel</red><dark_red>]</dark_red></click>"));
         sender.sendMessage(MessageUtil.parse(""));
 
         ConsoleLogger.info("[SwapJar] Pending swap: " + currentJar.getName() + " → " + newJar.getName() + " by " + sender.getName());

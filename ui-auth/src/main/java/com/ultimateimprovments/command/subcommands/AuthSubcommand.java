@@ -95,7 +95,7 @@ public final class AuthSubcommand {
                 return true;
             }
             mgr.disable2FA(uuid);
-            player.sendMessage(MessageUtil.parse("<red>✖ 2FA disabled."));
+            player.sendMessage(MessageUtil.parse("<red>❌ 2FA disabled."));
             return true;
         }
 
@@ -111,7 +111,7 @@ public final class AuthSubcommand {
                 }
                 player.sendMessage(MessageUtil.parse("<gray>Disable: <yellow>/ui auth 2fa disable"));
             } else {
-                player.sendMessage(MessageUtil.parse("<red>✖ 2FA disabled"));
+                player.sendMessage(MessageUtil.parse("<red>❌ 2FA disabled"));
                 player.sendMessage(MessageUtil.parse("<gray>Enable: <yellow>/ui auth 2fa setup <github_username>"));
             }
             return true;
@@ -128,7 +128,7 @@ public final class AuthSubcommand {
             }
             player.sendMessage(MessageUtil.parse("<gray>Disable: <yellow>/ui auth 2fa disable"));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ 2FA disabled"));
+            player.sendMessage(MessageUtil.parse("<red>❌ 2FA disabled"));
             player.sendMessage(MessageUtil.parse("<gray>Enable: <yellow>/ui auth 2fa setup <github_username>"));
         }
         return true;

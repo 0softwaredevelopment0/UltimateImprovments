@@ -20,7 +20,7 @@ import java.util.Optional;
  * GetPosDialogScreen — dialog window (Custom Screen) for the coordinate lookup (/ui getpos).
  * <p>
  * A single dialog: the player enters the nickname of the target, then presses
- * ✔ Get / ✖ Cancel. On ✔ Get the target's world and coordinates are printed to chat.
+ * ✔ Get / ❌ Cancel. On ✔ Get the target's world and coordinates are printed to chat.
  * <p>
  * Uses {@link DialogAction#CLOSE} (NOT {@link DialogAction#WAIT_FOR_RESPONSE}): with
  * {@code WAIT_FOR_RESPONSE} the client switches to the «Waiting for server…» screen and
@@ -40,7 +40,7 @@ public class GetPosDialogScreen {
     private GetPosDialogScreen() {}
 
     /**
-     * Opens the getpos dialog: nickname input field + ✔ Get / ✖ Cancel buttons.
+     * Opens the getpos dialog: nickname input field + ✔ Get / ❌ Cancel buttons.
      *
      * @param player       the sender
      * @param errorMessage error message (null if none) — shown inside the dialog
@@ -80,7 +80,7 @@ public class GetPosDialogScreen {
             MM.deserialize("<green>✔ Get</green>")
         );
         net.minecraft.network.chat.Component cancelLabel = toNative(
-            MM.deserialize("<red>✖ Cancel</red>")
+            MM.deserialize("<red>❌ Cancel</red>")
         );
 
         ActionButton getBtn = new ActionButton(

@@ -88,7 +88,7 @@ public class AuthDialogScreen {
         );
         net.minecraft.network.chat.Component exitLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString("messages.auth.dialog.exit_button",
-                "<red>✖ Exit Server</red>"))
+                "<red>❌ Exit Server</red>"))
         );
 
         // Continue → CustomAll action (submits the form with the password)

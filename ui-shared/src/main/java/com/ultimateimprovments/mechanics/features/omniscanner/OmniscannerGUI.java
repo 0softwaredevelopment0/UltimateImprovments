@@ -441,7 +441,7 @@ public class OmniscannerGUI implements Listener {
 
         // Cancel
         if (msg.equalsIgnoreCase("отмена") || msg.equalsIgnoreCase("cancel")) {
-            player.sendMessage(MessageUtil.parse("<gray>✖ Ввод отменён.</gray>"));
+            player.sendMessage(MessageUtil.parse("<gray>❌ Ввод отменён.</gray>"));
             // Return to the GUI
             Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
                 openMenus.put(uuid, new GUIState(player, pending.scanner));

@@ -103,7 +103,7 @@ public class AuthCommand {
                 return;
             }
             manager.disable2FA(uuid);
-            player.sendMessage(MessageUtil.parse("<red>✖ 2FA disabled."));
+            player.sendMessage(MessageUtil.parse("<red>❌ 2FA disabled."));
             return;
         }
 
@@ -117,7 +117,7 @@ public class AuthCommand {
             }
             player.sendMessage(MessageUtil.parse("<gray>Disable: <yellow>/ui auth 2fa disable"));
         } else {
-            player.sendMessage(MessageUtil.parse("<red>✖ 2FA disabled"));
+            player.sendMessage(MessageUtil.parse("<red>❌ 2FA disabled"));
             player.sendMessage(MessageUtil.parse("<gray>Enable: <yellow>/ui auth 2fa setup <github_username>"));
         }
     }

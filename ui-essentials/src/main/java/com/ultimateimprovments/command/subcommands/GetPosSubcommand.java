@@ -15,7 +15,7 @@ import org.bukkit.entity.Player;
  * /ui getpos — opens a dialog to fetch a player's coordinates and world.
  * <p>
  * Works like /ui askpos: no arguments needed — the command opens a dialog with a
- * nickname field and ✔ Get / ✖ Cancel buttons. On ✔ Get the target's world and
+ * nickname field and ✔ Get / ❌ Cancel buttons. On ✔ Get the target's world and
  * coordinates are printed to the sender's chat. The dialog uses
  * {@code DialogAction.CLOSE}, so there is no ~4 second "Waiting for server…" hang
  * after a button click.

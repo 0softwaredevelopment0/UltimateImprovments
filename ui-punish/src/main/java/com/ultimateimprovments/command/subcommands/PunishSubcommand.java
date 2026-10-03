@@ -1108,7 +1108,7 @@ public final class PunishSubcommand {
         sender.sendMessage(MessageUtil.parse(
                 "<click:run_command:/ui punish crash confirm><dark_green>[</dark_green><green>✔ Confirm</green><dark_green>]</dark_green></click>"
                 + " <dark_gray>|</dark_gray> "
-                + "<click:run_command:/ui punish crash cancel><dark_red>[</dark_red><red>✖ Cancel</red><dark_red>]</dark_red></click>"
+                + "<click:run_command:/ui punish crash cancel><dark_red>[</dark_red><red>❌ Cancel</red><dark_red>]</dark_red></click>"
         ));
         return true;
     }

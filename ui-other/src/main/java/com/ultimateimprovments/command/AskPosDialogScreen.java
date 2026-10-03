@@ -23,9 +23,9 @@ import java.util.Optional;
  * Two dialogs:
  * <ul>
  *   <li>{@link #openRequest(Player, String)} — the sender enters the nickname of the player
- *       they want to send the request to, then presses ✔ Confirm / ✖ Cancel.</li>
+ *       they want to send the request to, then presses ✔ Confirm / ❌ Cancel.</li>
  *   <li>{@link #openResponse(Player, String)} — the recipient sees «Player X requested
- *       your coordinates and world» with ✔ Confirm / ✖ Cancel buttons.</li>
+ *       your coordinates and world» with ✔ Confirm / ❌ Cancel buttons.</li>
  * </ul>
  * <p>
  * Both dialogs use {@link DialogAction#CLOSE} (NOT {@link DialogAction#WAIT_FOR_RESPONSE}):
@@ -99,7 +99,7 @@ public class AskPosDialogScreen {
         );
         net.minecraft.network.chat.Component cancelLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString(
-                "messages.askpos.dialog.cancel_button", "<red>✖ Cancel</red>"))
+                "messages.askpos.dialog.cancel_button", "<red>❌ Cancel</red>"))
         );
 
         ActionButton confirmBtn = new ActionButton(
@@ -176,7 +176,7 @@ public class AskPosDialogScreen {
         );
         net.minecraft.network.chat.Component declineLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString(
-                "messages.askpos.dialog.decline_button", "<red>✖ Cancel</red>"))
+                "messages.askpos.dialog.decline_button", "<red>❌ Cancel</red>"))
         );
 
         ActionButton acceptBtn = new ActionButton(

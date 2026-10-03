@@ -90,7 +90,7 @@ public class SudoDialogScreen {
         );
         net.minecraft.network.chat.Component cancelLabel = toNative(
             MM.deserialize(Main.getInstance().getConfig().getString("messages.sudo.dialog.cancel_button",
-                "<gray>✖ Cancel</gray>"))
+                "<gray>❌ Cancel</gray>"))
         );
 
         ActionButton continueBtn = new ActionButton(
