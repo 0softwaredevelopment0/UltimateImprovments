@@ -106,8 +106,18 @@ public final class PaperCommands {
                 ? new String[]{""}
                 : Arrays.copyOfRange(tokens, 1, tokens.length);
 
+        // Subcommand completers suggest the LAST word only, but this node is a
+        // greedy string: Brigadier replaces EVERYTHING from the node start when
+        // a suggestion is accepted. Re-anchor each suggestion with the already
+        // completed words so accepting it keeps the typed args intact
+        // (e.g. "ui stresstest start 5<TAB>" → "start <suggestion>", not just
+        // "<suggestion>" wiping "start").
+        String anchor = args.length > 2
+                ? String.join(" ", Arrays.copyOfRange(args, 1, args.length - 1)) + " "
+                : "";
+
         for (String suggestion : SubCommandRegistry.getInstance().tabComplete(sender, args)) {
-            if (suggestion != null && !suggestion.isEmpty()) builder.suggest(suggestion);
+            if (suggestion != null && !suggestion.isEmpty()) builder.suggest(anchor + suggestion);
         }
         return builder.buildFuture();
     }
