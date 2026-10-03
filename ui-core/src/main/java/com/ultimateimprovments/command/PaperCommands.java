@@ -10,6 +10,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.command.CommandSender;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -79,11 +80,41 @@ public final class PaperCommands {
     /** Rebuilds the legacy {@code String[] args} (args[0] = subcommand) from the greedy tail. */
     private static String[] merge(String sub, String rest) {
         if (rest == null || rest.isBlank()) return new String[]{sub};
-        String[] parts = rest.trim().split("\\s+");
-        String[] full = new String[parts.length + 1];
+        List<String> parts = splitArgs(rest.trim());
+        String[] full = new String[parts.size() + 1];
         full[0] = sub;
-        System.arraycopy(parts, 0, full, 1, parts.length);
+        for (int i = 0; i < parts.size(); i++) full[i + 1] = parts.get(i);
         return full;
+    }
+
+    /**
+     * Splits the tail into tokens on unquoted whitespace only. Quote characters
+     * are KEPT in the tokens: consumers (ItemNbtSubcommand.joinFrom,
+     * ClanSubcommand.extractQuoted) re-join args with spaces and strip/extract
+     * quotes themselves, so the round-trip String.join(" ", args) must stay
+     * byte-identical to the original input. A quoted segment with spaces stays
+     * ONE token ("two words" → one arg) instead of being split in half.
+     */
+    private static List<String> splitArgs(String s) {
+        List<String> out = new ArrayList<>();
+        StringBuilder cur = new StringBuilder();
+        boolean inQuotes = false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '"') {
+                inQuotes = !inQuotes;
+                cur.append(c);
+            } else if (c == ' ' && !inQuotes) {
+                if (cur.length() > 0) {
+                    out.add(cur.toString());
+                    cur.setLength(0);
+                }
+            } else {
+                cur.append(c);
+            }
+        }
+        if (cur.length() > 0) out.add(cur.toString());
+        return out;
     }
 
     /** First level: suggest subcommand names/aliases for the typed prefix. */
