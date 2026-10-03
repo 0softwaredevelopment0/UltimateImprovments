@@ -49,7 +49,7 @@ public final class ProtectionSubcommand {
 
     private static boolean handleGive(CommandSender sender, String[] args) {
         if (!ProtectionConfig.allowAdminGive()) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Admin give is disabled in config (protection.admin.give_allowed).</red>"));
+            CommandErrors.moduleDisabled(sender, "protection.admin.give_allowed");
             return true;
         }
         if (args.length < 3) {

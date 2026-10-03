@@ -28,7 +28,7 @@ public final class SpaceSubcommand {
         }
 
         if (!SpaceManager.isEnabled()) {
-            player.sendMessage(MessageUtil.parse("<red>❌ Space dimension is not available.</red>"));
+            CommandErrors.moduleDisabled(player, "space");
             return true;
         }
 
