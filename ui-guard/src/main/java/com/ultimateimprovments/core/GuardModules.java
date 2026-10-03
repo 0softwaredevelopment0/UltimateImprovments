@@ -11,6 +11,7 @@ import com.ultimateimprovments.mechanics.security.codepanel.CodePanelCleanupTask
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelDialogHandler;
 import com.ultimateimprovments.mechanics.security.codepanel.CodePanelSession;
 import com.ultimateimprovments.mechanics.security.sudo.SudoCommandInterceptor;
+import com.ultimateimprovments.mechanics.security.sudo.SudoDialogHandler;
 import com.ultimateimprovments.mechanics.security.sudo.SudoManager;
 import com.ultimateimprovments.module.ModuleManager;
 import com.ultimateimprovments.module.PluginModule;
@@ -183,6 +184,9 @@ public final class GuardModules {
             protected void onInit(JavaPlugin plugin) throws Exception {
                 JavaPlugin guard = UIGuard.getInstance();
                 guard.getServer().getPluginManager().registerEvents(new SudoCommandInterceptor(), guard);
+                // Dialog click listener (sudo_submit / sudo_cancel) — without it the
+                // Continue button does nothing and the password is never registered.
+                SudoDialogHandler.register(guard);
                 if (!SudoManager.isEnabled()) {
                     ConsoleLogger.info("[SudoModule] Sudo mode is disabled in config (sudo.enabled: false)"
                             + " — sudo gates inactive, command policy still active.");
