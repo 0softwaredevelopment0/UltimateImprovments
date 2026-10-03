@@ -531,7 +531,7 @@ final class ConfigRules {
 
             // OP blacklist (/ui opblacklist) — listed operators lose OP automatically
             bool("opblacklist.enabled"),
-            integer("opblacklist.check_interval_seconds", 0, 86400, "Periodic OP-strip check interval (s, 0 = off)"),
+            integer("opblacklist.check_interval_ticks", 0, 1728000, "Periodic OP-strip check interval (ticks, 0 = off)"),
 
             bool("troll.enabled"),
             bool("troll.forceop.enabled"),

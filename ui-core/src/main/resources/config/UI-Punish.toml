@@ -22,10 +22,11 @@ check_interval_ticks = 20
 # Master switch.
 # Default: true
 enabled = true
-# How often to check online players for OP removal (seconds, 0 disables
-# the periodic check — join/add checks still work).
-# Default: 30
-check_interval_seconds = 30
+# How often to check online players for OP removal, in ticks
+# (20 ticks = 1 second, same default as access_control; 0 disables the
+# periodic check — join/add checks still work).
+# Default: 20
+check_interval_ticks = 20
 
 # ==================================================================
 # MESSAGES — RUSSIAN (active when lang = "ru")
