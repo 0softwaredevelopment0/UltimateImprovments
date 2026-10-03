@@ -270,28 +270,28 @@ unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</wh
 [messages.general.errors]
 # Error 001 — invalid syntax or unknown command.
 # Default: <red>Синтаксис команды неверен или команда не существует! </red><gray>Используйте </gray><white>/ui help</white><gray> для списка команд.</gray>
-"001" = "<red>Синтаксис команды неверен или команда не существует! </red><gray>Используйте </gray><white>/ui help</white><gray> для списка команд.</gray>"
+001 = "<red>Синтаксис команды неверен или команда не существует! </red><gray>Используйте </gray><white>/ui help</white><gray> для списка команд.</gray>"
 # Clause injected into errors 002/003 via %requires% when the required permission is known.
 # Default: <gray> — требуется: "<white>%permission%</white>"</gray>
 requires = "<gray> — требуется: \"<white>%permission%</white>\"</gray>"
 # Error 002 — insufficient permissions.
 # Default: <red>Недостаточно прав для выполнения этой команды</red>
-"002" = "<red>Недостаточно прав для выполнения этой команды</red>"
+002 = "<red>Недостаточно прав для выполнения этой команды</red>"
 # Error 003 — the command requires a sudo password, but sudo mode is not allowed for the sender.
 # Default: <red>Команда требует sudo-пароль, но у вас нет прав его использовать</red>
-"003" = "<red>Команда требует sudo-пароль, но у вас нет прав его использовать</red>"
+003 = "<red>Команда требует sudo-пароль, но у вас нет прав его использовать</red>"
 # Error 004 — wrong command sender type.
 # Default: <red>Неверный исполнитель команды. Возможные: </red><white>%allowed%</white><red>, получен: </red><white>%got%</white>
-"004" = "<red>Неверный исполнитель команды. Возможные: </red><white>%allowed%</white><red>, получен: </red><white>%got%</white>"
+004 = "<red>Неверный исполнитель команды. Возможные: </red><white>%allowed%</white><red>, получен: </red><white>%got%</white>"
 # Error 005 — unexpected error.
 # Default: <red>Произошла неизвестная ошибка при выполнении команды. Сообщите администратору.</red>
-"005" = "<red>Произошла неизвестная ошибка при выполнении команды. Сообщите администратору.</red>"
+005 = "<red>Произошла неизвестная ошибка при выполнении команды. Сообщите администратору.</red>"
 # Error 011 — the command is disabled on this server.
 # Default: <red>Эта команда отключена на сервере.</red>
-"011" = "<red>Эта команда отключена на сервере.</red>"
+011 = "<red>Эта команда отключена на сервере.</red>"
 # Error 018 — the command belongs to a module that is disabled on this server.
 # Default: <red>Эта команда относится к модулю, отключённому на этом сервере</red>
-"018" = "<red>Эта команда относится к модулю, отключённому на этом сервере</red>"
+018 = "<red>Эта команда относится к модулю, отключённому на этом сервере</red>"
 # Clause injected into error 018 via %module% when the module/config key is known.
 # Default: <gray> — модуль: "<white>%module%</white>"</gray>
 module = "<gray> — модуль: \"<white>%module%</white>\"</gray>"
@@ -1059,21 +1059,21 @@ unknown_subcommand = "<red>❌ Unknown subcommand: </red><white>%subcommand%</wh
 # Placeholders: %requires%, %permission%, %allowed%, %got%, %module%
 [messages_en.general.errors]
 # Error 001 — invalid syntax or unknown command.
-"001" = "<red>Invalid command syntax or unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>"
+001 = "<red>Invalid command syntax or unknown command! </red><gray>Use </gray><white>/ui help</white><gray> for the command list.</gray>"
 # Clause injected into errors 002/003 via %requires% when the required permission is known.
 requires = "<gray> — required: \"<white>%permission%</white>\"</gray>"
 # Error 002 — insufficient permissions.
-"002" = "<red>Insufficient permissions to execute this command</red>"
+002 = "<red>Insufficient permissions to execute this command</red>"
 # Error 003 — the command requires a sudo password, but sudo mode is not allowed for the sender.
-"003" = "<red>This command requires a sudo password, but you are not allowed to use sudo mode</red>"
+003 = "<red>This command requires a sudo password, but you are not allowed to use sudo mode</red>"
 # Error 004 — wrong command sender type.
-"004" = "<red>Wrong command sender type. Allowed: </red><white>%allowed%</white><red>, got: </red><white>%got%</white>"
+004 = "<red>Wrong command sender type. Allowed: </red><white>%allowed%</white><red>, got: </red><white>%got%</white>"
 # Error 005 — unexpected error.
-"005" = "<red>An unknown error occurred while executing this command. Please report it to the administrator.</red>"
+005 = "<red>An unknown error occurred while executing this command. Please report it to the administrator.</red>"
 # Error 011 — the command is disabled on this server.
-"011" = "<red>This command is disabled on this server.</red>"
+011 = "<red>This command is disabled on this server.</red>"
 # Error 018 — the command belongs to a module that is disabled on this server.
-"018" = "<red>This command belongs to a module that is disabled on this server</red>"
+018 = "<red>This command belongs to a module that is disabled on this server</red>"
 # Clause injected into error 018 via %module% when the module/config key is known.
 module = "<gray> — module: \"<white>%module%</white>\"</gray>"
 
