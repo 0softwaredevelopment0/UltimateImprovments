@@ -1,5 +1,6 @@
 package com.ultimateimprovments.command.subcommands;
 
+import com.ultimateimprovments.command.CommandErrors;
 import com.ultimateimprovments.command.SubCommand;
 import com.ultimateimprovments.config.AddonCatalog;
 import com.ultimateimprovments.config.AddonConfigManager;
@@ -234,9 +235,7 @@ public class ConfigSubcommand implements SubCommand {
 
     private boolean requireEnabled(CommandSender sender) {
         if (commandsEnabled()) return true;
-        sender.sendMessage(MessageUtil.parse(
-                "<red>❌ Config commands are disabled in the config</red> <dark_gray>(</dark_gray>"
-                        + "<white>config.commands.enabled: false</white><dark_gray>)</dark_gray><red>.</red>"));
+        CommandErrors.moduleDisabled(sender, "config");
         return false;
     }
 

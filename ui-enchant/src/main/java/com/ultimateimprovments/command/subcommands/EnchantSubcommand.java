@@ -295,7 +295,7 @@ public final class EnchantSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!isEnabled()) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Enchant manager is disabled in config.</red>"));
+            CommandErrors.moduleDisabled(sender, "enchant");
             return true;
         }
 

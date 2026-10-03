@@ -19,7 +19,7 @@ public final class AuthSubcommand {
 
     public static boolean execute(CommandSender sender, String[] args) {
         if (!Main.getInstance().getConfig().getBoolean("auth.enabled", true)) {
-            sender.sendMessage(MessageUtil.parse("<dark_red>❌</dark_red> <red>Authentication system is disabled in config!</red>"));
+            CommandErrors.moduleDisabled(sender, "auth");
             return true;
         }
         if (args.length < 2) {

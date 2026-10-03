@@ -46,9 +46,7 @@ public final class StressTestSubcommand {
         }
 
         if (!StressTestManager.cfg().getBoolean("stresstest.enabled", true)) {
-            CommandErrors.custom(sender, CommandErrors.ERR_COMMAND_DISABLED,
-                    StressTestManager.msg("stresstest.disabled",
-                            "<red>This command is disabled on this server.</red> <gray>(stresstest.enabled = false)</gray>"));
+            CommandErrors.moduleDisabled(sender, "stresstest");
             return true;
         }
 

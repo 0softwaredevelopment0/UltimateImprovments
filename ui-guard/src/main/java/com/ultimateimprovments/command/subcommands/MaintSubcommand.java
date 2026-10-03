@@ -38,8 +38,7 @@ public final class MaintSubcommand {
 
         // Check: is the maintenance feature enabled in config.yml
         if (!MaintenanceManager.getInstance().isFeatureEnabled()) {
-            sender.sendMessage(MessageUtil.parse(
-                    "<red>❌ Maintenance system is disabled in config!</red>"));
+            CommandErrors.moduleDisabled(sender, "maintenance");
             return true;
         }
 

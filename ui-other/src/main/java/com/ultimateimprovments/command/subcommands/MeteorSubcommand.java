@@ -63,7 +63,7 @@ public final class MeteorSubcommand {
 
         var cfg = Main.getInstance().getConfig();
         if (!cfg.getBoolean("meteor.enabled", false)) {
-            sender.sendMessage(MessageUtil.parse("<red>❌ Meteor module is disabled in config.yml!</red>"));
+            CommandErrors.moduleDisabled(sender, "meteor");
             return true;
         }
 

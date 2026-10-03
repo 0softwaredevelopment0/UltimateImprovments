@@ -22,6 +22,10 @@ public final class OpWhitelistSubcommand {
             CommandErrors.noPermission(sender, "ui.command.opwhitelist");
             return true;
         }
+        if (!com.ultimateimprovments.whitelist.OpWhitelistManager.isFeatureEnabled()) {
+            CommandErrors.moduleDisabled(sender, "opwhitelist");
+            return true;
+        }
         return AccessListCommands.execute(sender, TimedAccessLists.AccessList.OPWHITELIST, args, true);
     }
 
