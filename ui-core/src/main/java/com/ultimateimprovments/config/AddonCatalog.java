@@ -34,7 +34,7 @@ public final class AddonCatalog {
         // ── UI-Combat ──
         route("UI-Combat", "turret");
         // ── UI-Punish ──
-        route("UI-Punish", "punish", "blacklist", "opwhitelist", "access_control");
+        route("UI-Punish", "punish", "blacklist", "opwhitelist", "opblacklist", "access_control");
         // ── UI-Essentials ──
         route("UI-Essentials", "home", "spawn", "heal_feed", "report", "rtp", "near",
                 "endersee", "troll");
@@ -87,7 +87,7 @@ public final class AddonCatalog {
         routeMsg("UI-Essentials", "home", "report", "spawn", "rtp", "near", "endersee",
                 "troll", "misc", "invsee");
         routeMsg("UI-Anticheat", "anticheat", "ac");
-        routeMsg("UI-Punish", "punish", "blacklist", "opwhitelist", "access_control");
+        routeMsg("UI-Punish", "punish", "blacklist", "opwhitelist", "opblacklist", "access_control");
         routeMsg("UI-Enchant", "enchant");
         routeMsg("UI-Auth", "auth");
         routeMsg("UI-Protection", "protection");

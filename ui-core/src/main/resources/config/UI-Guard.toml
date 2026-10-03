@@ -179,8 +179,8 @@ session_minutes = 15
 # Default: 10
 attempt_cooldown_seconds = 10
 # Command.
-# Default: ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui opself", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maint", "ui stresstest", "lp", "luckperms"]
-dangerous_commands = ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui opself", "ui whitelist", "ui opwhitelist", "ui blacklist", "ui maint", "ui stresstest", "lp", "luckperms"]
+# Default: ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui opself", "ui whitelist", "ui opwhitelist", "ui opblacklist", "ui blacklist", "ui maint", "ui stresstest", "lp", "luckperms"]
+dangerous_commands = ["ui punish", "ui power", "ui sudo", "ui op", "ui deop", "ui opself", "ui whitelist", "ui opwhitelist", "ui opblacklist", "ui blacklist", "ui maint", "ui stresstest", "lp", "luckperms"]
 
 # Command policy: vanilla commands superseded by /ui equivalents.
 # Typing them reports error 011 ("command disabled on this server").

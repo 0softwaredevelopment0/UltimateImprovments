@@ -851,6 +851,35 @@ public class DatabaseInit {
         """);
 
         // =========================
+        // 🛡 OP BLACKLIST — operators listed here lose OP automatically
+        // (enabled flag lives in the config: opblacklist.enabled)
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS op_blacklist (
+                player_name TEXT PRIMARY KEY,
+                added_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+            );
+        """);
+
+        // =========================
+        // ⏱ TIMED LIST TASKS — pending scheduled operations for the access
+        // lists (whitelist/blacklist/opwhitelist/opblacklist): delayed
+        // add/remove/on/off and *-temp auto-reverts. Mirrored by
+        // TimedAccessLists (UI-Punish); survives restarts. At most one row
+        // per (list, scope, target) — opposite effects cancel each other.
+        // =========================
+        st.execute("""
+            CREATE TABLE IF NOT EXISTS timed_list_tasks (
+                list_name TEXT NOT NULL,
+                scope TEXT NOT NULL,
+                target TEXT NOT NULL,
+                effect TEXT NOT NULL,
+                execute_at INTEGER NOT NULL,
+                PRIMARY KEY (list_name, scope, target)
+            );
+        """);
+
+        // =========================
         // 🤖 BOT PROTECTION COOLDOWNS (persist across restarts)
         // =========================
         st.execute("""
