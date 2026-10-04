@@ -3,6 +3,41 @@
 All notable changes to the UltimateImprovments plugin family are documented
 in this file.
 
+## [1.8.3-beta.4] — since 1.8.3-alpha.7 (2026-10-04)
+
+> **Beta channel**: feature-complete; the enchantment rework was verified by
+> build + unit tests, in-game verification on the test server is the next step.
+
+### Added
+- **Custom enchantments in random loot** — all 18 `ui:*` enchantments joined
+  the `minecraft:enchantment/on_random_loot` tag (it previously contained only
+  wind_burst/mending), so loot rolls (`enchant_randomly`, e.g. end village
+  towers) can now produce them, matching the other four spawn tags.
+- **`/ui enchant confirm` / `/ui enchant cancel`** — the 255 level ceiling is
+  gone; a give above `enchant.max_level` (default 10) is parked per-sender and
+  must be confirmed within 60 seconds (the warning message has clickable
+  confirm/cancel hints). `take` is not gated.
+- **Namespaced enchantment ids** — arguments, tab-complete, the success
+  message and `/ui enchant check` use `namespace:name` ("minecraft:mending",
+  "ui:aoe"); bare names still resolve.
+- **Error 019 — ambiguous enchantment name** (`/ui enchant`): a bare name
+  registered in several namespaces (e.g. `ui:aoe` + `test:aoe`) is rejected
+  with the list of ids; specify one explicitly.
+
+### Changed
+- **All custom enchantment levels capped at 10** — the datapack `max_level`
+  and the Java `MAX_LEVEL` constants are in sync now (six charms were 255,
+  magnet/lava_walker 16, AoE raised 8 → 10 with a 21×21×21 scan cube). This
+  fixes mobs/villagers/loot spawning absurd levels; existing higher items keep
+  working (mechanics clamp at read).
+- **`enchant.max_level` is the confirm threshold**, not a cap (rule bound
+  widened to 1..1_000_000 in ConfigRules; template updated).
+- **Curse of Disappearance ×10 stronger** — 0.01% vanish chance per second
+  per level (level 10 = 0.1%/s), so the curse is actually noticeable.
+- **`/ui enchant check` reworked** — full enchantment ids, fixed a broken
+  skip that duplicated custom rows, and five previously invisible charms
+  (repairing, lava_walker, blunting, vulnerability, disappearance) now show.
+
 ## [1.8.3-alpha.7] — since 1.8.3-alpha.6 (2026-10-02)
 
 > **Alpha channel**: manual testing pending; not verified on the test server yet.
@@ -277,3 +312,4 @@ in this file.
 
 [1.8.3-alpha.6]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-alpha.5...1.8.3-alpha.6
 [1.8.3-alpha.7]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-alpha.6...1.8.3-alpha.7
+[1.8.3-beta.4]: https://github.com/0softwaredevelopment0/UltimateImprovments/compare/1.8.3-alpha.7...1.8.3-beta.4
