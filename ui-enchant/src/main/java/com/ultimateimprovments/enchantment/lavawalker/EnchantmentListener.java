@@ -26,7 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>
  * While a player WEARS boots with the Lava Walker charm, lava under their feet
  * temporarily turns into OBSIDIAN. Radius = charm level (level 1 → 1×1,
- * level 2 → 3×3, ...), hard-capped at {@link Enchantment#MAX_RADIUS} (16 → 31×31)
+ * level 2 → 3×3, ...), hard-capped at {@link Enchantment#MAX_RADIUS} (10 → 19×19)
  * so extreme levels cannot stall the server.
  * <p>
  * Two candidate layers are converted per pass (both only where the block is LAVA):
@@ -156,7 +156,7 @@ public class EnchantmentListener implements Listener {
         int level = boots == null ? 0 : Enchantment.getLevel(boots);
         if (level <= 0) return;
 
-        int radius = Math.min(level, Enchantment.MAX_RADIUS) - 1; // level 1 → 1×1, 2 → 3×3, 16 → 31×31
+        int radius = Math.min(level, Enchantment.MAX_RADIUS) - 1; // level 1 → 1×1, 2 → 3×3, 10 → 19×19
 
         Block feet = center.getBlock();
         int feetX = feet.getX();

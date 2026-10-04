@@ -21,7 +21,7 @@ import org.bukkit.inventory.PlayerInventory;
  * enchantment.
  * <p>
  * This is the failsafe backbone: whenever an item with the charm is seen, its
- * level (1-255) is mirrored into PDC, so a datapack crash never loses the charm.
+ * level (1-10) is mirrored into PDC, so a datapack crash never loses the charm.
  * When the datapack comes back, PDC-only items get the real charm re-applied.
  * <p>
  * Sync triggers:

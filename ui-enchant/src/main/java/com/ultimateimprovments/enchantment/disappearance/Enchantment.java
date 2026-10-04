@@ -27,8 +27,8 @@ import org.jetbrains.annotations.Nullable;
  * with a PDC failsafe.
  * <p>
  * Every second, each cursed item in a player's inventory rolls a vanish
- * chance of {@code level × 0.001%} — level 255 → 0.255% per second
- * (≈14% per minute), level 1 → 0.001% per second (≈0.06% per minute).
+ * chance of {@code level × 0.01%} — level 10 → 0.1% per second
+ * (≈6% per minute), level 1 → 0.01% per second (≈0.6% per minute).
  * When the roll hits, the whole stack disappears silently (no drop).
  * <p>
  * <b>Failsafe design (same as Degradation):</b> the level is mirrored into the
@@ -39,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
  * table's max slot power — min cost 30); anvil combining cannot raise it
  * because level 2 exceeds any table slot (cost 50+).
  * <p>
- * Max level: 255 (admin/command only)<br>
+ * Max level: 10<br>
  * Works on: any item with durability — tools, weapons, armor, shields
  * (vanilla {@code #minecraft:enchantable/durability}), copper items included.
  */
@@ -52,10 +52,10 @@ public final class Enchantment {
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "disappearance_level");
 
     /** Highest level this enchantment can have. */
-    public static final int MAX_LEVEL = 255;
+    public static final int MAX_LEVEL = 10;
 
-    /** Vanish chance per second per level: 0.001% = 0.00001. */
-    public static final double VANISH_CHANCE_PER_LEVEL = 0.00001;
+    /** Vanish chance per second per level: 0.01% = 0.0001. */
+    public static final double VANISH_CHANCE_PER_LEVEL = 0.0001;
 
     private Enchantment() {}
 
@@ -85,7 +85,7 @@ public final class Enchantment {
      * is unavailable.
      *
      * @param item the item to check
-     * @return enchantment level (1-255), or 0 if not present
+     * @return enchantment level (1-10), or 0 if not present
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
@@ -100,7 +100,7 @@ public final class Enchantment {
      * Sets the Curse of Disappearance level on the given item (real + PDC mirror).
      *
      * @param item  the item to modify
-     * @param level enchantment level (1-255)
+     * @param level enchantment level (1-10)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
         if (level < 1 || level > MAX_LEVEL) return;
@@ -200,7 +200,7 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror level (1-255) or 0 if absent. */
+    /** Reads the PDC mirror level (1-10) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();

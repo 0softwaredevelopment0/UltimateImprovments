@@ -30,7 +30,7 @@ import java.util.function.Consumer;
  * Supports ALL vanilla enchantments (via {@link Registry#ENCHANTMENT})
  * plus custom ones from the config {@code enchant.custom_enchantments} (e.g. AoE).
  * <pre>
- *   /ui enchant give <enchantment> <level 1-255> <player> <slot>
+ *   /ui enchant give <enchantment> <level 1-10> <player> <slot>
  *   /ui enchant take <enchantment> <level> <player> <slot>
  *   /ui enchant check <player> [page]
  * </pre>
@@ -53,8 +53,8 @@ public final class EnchantSubcommand {
     }
 
     private static int getMaxLevel() {
-        return Math.max(1, Math.min(255,
-                Main.getInstance().getConfig().getInt("enchant.max_level", 255)));
+        return Math.max(1, Math.min(10,
+                Main.getInstance().getConfig().getInt("enchant.max_level", 10)));
     }
 
     private static String getPermission() {
@@ -854,7 +854,7 @@ public final class EnchantSubcommand {
     private static List<String> levelSuggestions(String partial) {
         List<String> result = new ArrayList<>();
         if (partial.isEmpty()) {
-            for (String l : List.of("1", "2", "3", "4", "5", "10", "50", "100", "255")) result.add(l);
+            for (String l : List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")) result.add(l);
         } else {
             result.add(partial);
         }

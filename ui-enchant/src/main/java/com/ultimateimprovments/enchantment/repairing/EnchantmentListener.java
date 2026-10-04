@@ -15,7 +15,7 @@ import org.bukkit.inventory.PlayerInventory;
  * Every {@value #SWEEP_INTERVAL_TICKS} ticks (1 second) every online player's
  * inventory is scanned. Each enchanted item that belongs to the plugin's Integrity
  * system restores exactly {@code level} durability POINTS every second
- * (level 1 → 1 point/s, level 255 → 255 points/s). The level scales the repair
+ * (level 1 → 1 point/s, level 10 → 10 points/s). The level scales the repair
  * SPEED, not the interval — the per-item cooldown (tracked in the
  * {@code ui:repairing_last_repair} PDC key) is fixed at 1 second. The repair is
  * applied through {@link ItemDurabilityUtil#increaseItemIntegrity} directly on the

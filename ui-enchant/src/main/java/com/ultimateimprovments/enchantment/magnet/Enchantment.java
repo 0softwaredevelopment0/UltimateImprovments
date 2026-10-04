@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Registers {@code ui:magnet} (file {@code data/ui/enchantment/magnet.json})
  * as a REAL data-driven enchantment: glint, description, anvil &amp; book compatibility,
- * {@code /enchant} support. Levels 1-16.
+ * {@code /enchant} support. Levels 1-10.
  * <p>
  * <b>Failsafe design (same as AoE/AutoSmelt/VeinMiner/TreeCapitator/Flight):</b> every item
  * carrying the charm ALSO stores the level in the {@code ui:magnet_level} PDC key —
@@ -38,11 +38,11 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  * <p>
  * Effect: while a player holds a Magnet tool, all freshly-dropped items within
- * {@code level × 2} blocks (capped at 32) are attracted toward him at a steady speed
+ * {@code level × 2} blocks (capped at 20) are attracted toward him at a steady speed
  * (1 block/second) — including drops produced by AoE / VeinMiner / TreeCapitator /
  * AutoSmelt (they are created inside the same {@code BlockBreakEvent}).
  * <p>
- * Max level: 16 (radius = level × 2 blocks, up to 32)<br>
+ * Max level: 10 (radius = level × 2 blocks, up to 20)<br>
  * Works on: pickaxe, shovel, axe, hoe
  */
 public final class Enchantment {
@@ -53,8 +53,8 @@ public final class Enchantment {
     /** PDC mirror key: {@code ui:magnet_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "magnet_level");
 
-    /** Highest level: attraction radius = level × 2 blocks (16 → 32). */
-    public static final int MAX_LEVEL = 16;
+    /** Highest level: attraction radius = level × 2 blocks (10 → 20). */
+    public static final int MAX_LEVEL = 10;
 
     /** Blocks of attraction radius added per level. */
     public static final int RADIUS_PER_LEVEL = 2;
@@ -90,7 +90,7 @@ public final class Enchantment {
      * is unavailable, so tools keep working even if the datapack dies.
      *
      * @param item the tool to check
-     * @return enchantment level (1-16, 0 if not present)
+     * @return enchantment level (1-10, 0 if not present)
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
@@ -115,7 +115,7 @@ public final class Enchantment {
      * the PDC mirror. No lore is touched.
      *
      * @param item  the tool to modify
-     * @param level enchantment level (1-16)
+     * @param level enchantment level (1-10)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
         if (level < 1 || level > MAX_LEVEL) return;
@@ -242,7 +242,7 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror level (1-16) or 0 if absent. */
+    /** Reads the PDC mirror level (1-10) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();

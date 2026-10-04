@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Every level REDUCES the melee attack damage dealt with the held weapon by
  * 0.5 (one vanilla attack-damage "unit", the same unit Sharpness adds per
- * level at the data-component level). Level 255 → −127.5 damage — the weapon
+ * level at the data-component level). Level 10 → −5 damage — the weapon
  * becomes unable to break anything tougher than a flower.
  * <p>
  * <b>Failsafe design (same as Degradation):</b> the level is mirrored into the
@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  * table's max slot power — min cost 30); anvil combining cannot raise it
  * because level 2 exceeds any table slot (cost 50+).
  * <p>
- * Max level: 255 (admin/command only)<br>
+ * Max level: 10<br>
  * Works on: any melee weapon or tool — swords, axes, pickaxes, shovels, hoes
  * (vanilla {@code #minecraft:enchantable/weapon} + {@code #minecraft:enchantable/mining}),
  * copper tools included.
@@ -52,7 +52,7 @@ public final class Enchantment {
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "blunting_level");
 
     /** Highest level this enchantment can have. */
-    public static final int MAX_LEVEL = 255;
+    public static final int MAX_LEVEL = 10;
 
     /** Damage reduction per level (vanilla attack-damage units). */
     public static final double DAMAGE_REDUCTION_PER_LEVEL = 0.5;
@@ -85,7 +85,7 @@ public final class Enchantment {
      * is unavailable.
      *
      * @param item the item to check
-     * @return enchantment level (1-255), or 0 if not present
+     * @return enchantment level (1-10), or 0 if not present
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
@@ -100,7 +100,7 @@ public final class Enchantment {
      * Sets the Blunting level on the given item (real enchantment + PDC mirror).
      *
      * @param item  the item to modify
-     * @param level enchantment level (1-255)
+     * @param level enchantment level (1-10)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
         if (level < 1 || level > MAX_LEVEL) return;
@@ -206,7 +206,7 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror level (1-255) or 0 if absent. */
+    /** Reads the PDC mirror level (1-10) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();

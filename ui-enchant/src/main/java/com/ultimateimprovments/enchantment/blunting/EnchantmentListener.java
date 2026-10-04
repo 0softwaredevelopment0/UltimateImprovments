@@ -19,8 +19,8 @@ import org.bukkit.inventory.ItemStack;
  * damage (after armor and effects), floors at 0, and the vanilla armor is not
  * re-evaluated — the same reverse of Sharpness, which adds on top at the end.
  * <p>
- * A level-255 blunted weapon reduces damage by 127.5 — effectively zeroing
- * out any hit.
+ * A level-10 blunted weapon reduces damage by 5 — a heavy penalty that
+ * cancels Sharpness and more.
  */
 public class EnchantmentListener implements Listener {
 
