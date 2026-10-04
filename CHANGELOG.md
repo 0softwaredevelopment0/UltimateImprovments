@@ -22,7 +22,9 @@ in this file.
   "ui:aoe"); bare names still resolve.
 - **Error 019 — ambiguous enchantment name** (`/ui enchant`): a bare name
   registered in several namespaces (e.g. `ui:aoe` + `test:aoe`) is rejected
-  with the list of ids; specify one explicitly.
+  with the list of ids; specify one explicitly. The text is configurable in
+  both languages: `[messages.enchant]` / `[messages_en.enchant]`, key
+  `ambiguous_enchant` (%enchant% = typed name, %list% = registered ids).
 
 ### Changed
 - **All custom enchantment levels capped at 10** — the datapack `max_level`
