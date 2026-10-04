@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Registers {@code ui:repairing} (file {@code data/ui/enchantment/repairing.json})
  * as a REAL data-driven enchantment: glint, description, anvil &amp; book compatibility,
- * {@code /enchant} support. Levels 1-255.
+ * {@code /enchant} support. Levels 1-10.
  * <p>
  * <b>Failsafe design (same as Degradation/AoE/ItemStealing):</b> every item carrying
  * the charm ALSO stores the level in the {@code ui:repairing_level} PDC key — a backup
@@ -42,13 +42,13 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Effect: while an enchanted item of the plugin's Integrity system sits in ANY player
  * inventory slot, it restores {@code level} durability points every second
- * (level 1 → 1 point/s, level 255 → 255 points/s). The level scales the repair
+ * (level 1 → 1 point/s, level 10 → 10 points/s). The level scales the repair
  * SPEED, so a higher level is strictly better. The repair goes through
  * {@code ItemDurabilityUtil.increaseItemIntegrityPercent}, so the vanilla durability
  * Integrity system updates the lore and the vanilla durability bar automatically.
  * Integrity never exceeds 100%.
  * <p>
- * Max level: 255<br>
+ * Max level: 10<br>
  * Works on: any item that has durability (i.e. belongs to the Integrity system)
  */
 public final class Enchantment {
@@ -63,7 +63,7 @@ public final class Enchantment {
     public static final NamespacedKey LAST_REPAIR_KEY = new NamespacedKey(Main.getInstance(), "repairing_last_repair");
 
     /** Highest level this enchantment can have. */
-    public static final int MAX_LEVEL = 255;
+    public static final int MAX_LEVEL = 10;
 
     /** Fixed repair interval: 1 second, for every level. */
     public static final long REPAIR_INTERVAL_MILLIS = 1000L;
@@ -97,13 +97,13 @@ public final class Enchantment {
      * is unavailable, so the repair keeps working even if the datapack dies.
      *
      * @param item the item to check
-     * @return enchantment level (1-255), or 0 if not present
+     * @return enchantment level (1-10), or 0 if not present
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
         if (real != null) {
             int lvl = item.getEnchantmentLevel(real);
-            if (lvl > 0) return Math.max(1, Math.min(255, lvl));
+            if (lvl > 0) return Math.max(1, Math.min(MAX_LEVEL, lvl));
         }
         // Datapack down or enchantment missing → PDC mirror
         return getPdcLevel(item);
@@ -116,10 +116,10 @@ public final class Enchantment {
      * the PDC mirror. No lore is touched.
      *
      * @param item  the item to modify
-     * @param level enchantment level (1-255)
+     * @param level enchantment level (1-10)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
-        if (level < 1 || level > 255) return;
+        if (level < 1 || level > MAX_LEVEL) return;
         if (!isValidTool(item)) return;
 
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
@@ -151,7 +151,7 @@ public final class Enchantment {
 
     /**
      * Durability POINTS restored per repair tick: exactly {@code level}.
-     * Level 1 → 1 point, level 255 → 255 points — restored every second.
+     * Level 1 → 1 point, level 10 → 10 points — restored every second.
      */
     public static int getRepairPoints(int level) {
         return Math.max(1, level);
@@ -293,19 +293,19 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror level (1-255) or 0 if absent. */
+    /** Reads the PDC mirror level (1-10) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return 0;
         Integer level = meta.getPersistentDataContainer().get(LEVEL_KEY, PersistentDataType.INTEGER);
-        return level != null ? Math.max(1, Math.min(255, level)) : 0;
+        return level != null ? Math.max(1, Math.min(MAX_LEVEL, level)) : 0;
     }
 
     /** Writes the PDC mirror level. */
     private static void setPdcLevel(@NotNull ItemStack item, int level) {
         item.editMeta(meta -> {
-        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(255, level)));
+        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(MAX_LEVEL, level)));
         });
     }
 

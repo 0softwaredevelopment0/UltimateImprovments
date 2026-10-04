@@ -24,7 +24,7 @@ import java.util.List;
  * When a player breaks a block with an AoE tool,
  * all blocks of the same type within the radius also break.
  * <p>
- * Radius = enchantment level (max 255).
+ * Radius = enchantment level (max 10).
  * Sneaking disables AoE for precise single-block mining.
  */
 public class EnchantmentListener implements Listener {
@@ -57,7 +57,7 @@ public class EnchantmentListener implements Listener {
         if (!targetType.isBlock() || targetType.isAir() || targetType.isInteractable()) return;
 
         World world = origin.getWorld();
-        int radius = Math.min(level, 255); // Clamp to max level
+        int radius = Math.min(level, Enchantment.MAX_LEVEL); // Clamp to max level
 
         // Scan and collect matching blocks
         List<Location> targets = scanBlocks(world, origin, targetType, radius);
@@ -104,8 +104,8 @@ public class EnchantmentListener implements Listener {
 
     /**
      * Scans a cubic area around {@code origin} for blocks matching {@code targetType}.
-     * 🛡 Limited to a 16×16×16 cube by radius around the origin (not by chunks):
-     * offset −7..+8 on each axis; at level < 8 the radius is smaller (±level).
+     * 🛡 Limited to a 21×21×21 cube by radius around the origin (not by chunks):
+     * at most ±10 blocks on each axis; at level < 10 the radius is smaller (±level).
      * Only loaded chunks are scanned.
      */
     private @NotNull List<Location> scanBlocks(World world, Location origin,
@@ -116,14 +116,14 @@ public class EnchantmentListener implements Listener {
         int oy = origin.getBlockY();
         int oz = origin.getBlockZ();
 
-        // 🛡 16×16×16 limit: radius no larger than the origin−7..origin+8 cube on each axis.
-        int r = Math.min(radius, 8);
-        int minX = Math.max(ox - r, ox - 7);
-        int maxX = Math.min(ox + r, ox + 8);
-        int minZ = Math.max(oz - r, oz - 7);
-        int maxZ = Math.min(oz + r, oz + 8);
-        int minY = Math.max(world.getMinHeight(), Math.max(oy - r, oy - 7));
-        int maxY = Math.min(world.getMaxHeight() - 1, Math.min(oy + r, oy + 8));
+        // 🛡 21×21×21 limit: radius no larger than 10 blocks from the origin on each axis.
+        int r = Math.min(radius, 10);
+        int minX = ox - r;
+        int maxX = ox + r;
+        int minZ = oz - r;
+        int maxZ = oz + r;
+        int minY = Math.max(world.getMinHeight(), oy - r);
+        int maxY = Math.min(world.getMaxHeight() - 1, oy + r);
 
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {

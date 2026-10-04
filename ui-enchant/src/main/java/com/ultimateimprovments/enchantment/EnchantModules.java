@@ -137,7 +137,7 @@ public final class EnchantModules {
 
     public static void registerCurseTrioEnchantments(ModuleManager mm) {
         // Curse of Blunting: REAL data-driven enchantment (ui:blunting, registered by
-        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Sharpness
+        // the UI-Datapack, levels 1-10) + PDC mirror failsafe. Sharpness
         // reversed — the held weapon deals level × 0.5 LESS melee damage.
         mm.register(new SimpleModule("BluntingEnchantment", "enchantment/blunting", false) {
             @Override
@@ -150,12 +150,12 @@ public final class EnchantModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.blunting.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[CurseOfBlunting] Levels: 1-255 | Weapons+tools (copper incl.) | −" + "0.5 dmg per level");
+                ConsoleLogger.info("[CurseOfBlunting] Levels: 1-10 | Weapons+tools (copper incl.) | −" + "0.5 dmg per level");
             }
         });
 
         // Vulnerability: REAL data-driven curse (ui:vulnerability, registered by
-        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Protection
+        // the UI-Datapack, levels 1-10) + PDC mirror failsafe. Protection
         // reversed — the wearer takes level × 0.75 MORE damage.
         mm.register(new SimpleModule("VulnerabilityEnchantment", "enchantment/vulnerability", false) {
             @Override
@@ -168,13 +168,13 @@ public final class EnchantModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.vulnerability.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Vulnerability] Levels: 1-255 | Armor (copper incl.) | +0.75 dmg taken per level");
+                ConsoleLogger.info("[Vulnerability] Levels: 1-10 | Armor (copper incl.) | +0.75 dmg taken per level");
             }
         });
 
         // Disappearance: REAL data-driven curse (ui:disappearance, registered by
-        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. The item rolls a
-        // level × 0.001% vanish chance every second (255 → 0.255%/s).
+        // the UI-Datapack, levels 1-10) + PDC mirror failsafe. The item rolls a
+        // level × 0.01% vanish chance every second (10 → 0.1%/s).
         mm.register(new SimpleModule("DisappearanceEnchantment", "enchantment/disappearance", false) {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
@@ -186,7 +186,7 @@ public final class EnchantModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.disappearance.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Disappearance] Levels: 1-255 | Any durability item | Vanish: level × 0.001% per second");
+                ConsoleLogger.info("[Disappearance] Levels: 1-10 | Any durability item | Vanish: level × 0.01% per second");
             }
         });
     }
@@ -234,7 +234,7 @@ public final class EnchantModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.magnet.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Magnet] Levels: 1-16 | Tools: pickaxe, shovel, axe, hoe | Radius: level×2 (max 32) | Pull: 1.0 blk/s");
+                ConsoleLogger.info("[Magnet] Levels: 1-10 | Tools: pickaxe, shovel, axe, hoe | Radius: level×2 (max 20) | Pull: 1.0 blk/s");
             }
         });
     }
@@ -245,7 +245,7 @@ public final class EnchantModules {
 
     public static void registerIgnitingEnchantment(ModuleManager mm) {
         // Igniting: REAL data-driven enchantment (ui:igniting, registered by
-        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Armor ignites the
+        // the UI-Datapack, levels 1-10) + PDC mirror failsafe. Armor ignites the
         // attacker for level seconds when the wearer is hit.
         mm.register(new SimpleModule("IgnitingEnchantment", "enchantment/igniting", false) {
             @Override
@@ -258,7 +258,7 @@ public final class EnchantModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.igniting.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Igniting] Levels: 1-255 | Armor: helmet, chestplate, leggings, boots");
+                ConsoleLogger.info("[Igniting] Levels: 1-10 | Armor: helmet, chestplate, leggings, boots");
                 ConsoleLogger.info("[Igniting] Attackers of the wearer are set on fire for level seconds");
             }
         });
@@ -323,7 +323,7 @@ public final class EnchantModules {
 
     public static void registerDegradationEnchantment(ModuleManager mm) {
         // Degradation: REAL data-driven curse (ui:degradation, registered by
-        // the UI-Datapack, levels 1-255, NOT in #minecraft:curse so the table can
+        // the UI-Datapack, levels 1-10, NOT in #minecraft:curse so the table can
         // offer it; the description JSON gives the red tooltip)
         // + PDC mirror failsafe. Every second a cursed item with durability loses
         // level durability points; when durability runs out the item breaks.
@@ -338,7 +338,7 @@ public final class EnchantModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.degradation.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Degradation] Levels: 1-255 | Item: any with durability | Spends "
+                ConsoleLogger.info("[Degradation] Levels: 1-10 | Item: any with durability | Spends "
                         + "integrity as after level uses per second while in a player's inventory");
             }
         });
@@ -350,7 +350,7 @@ public final class EnchantModules {
 
     public static void registerAttackAoeEnchantment(ModuleManager mm) {
         // Attack AoE: REAL data-driven enchantment (ui:attack_aoe, registered by
-        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Hitting one entity
+        // the UI-Datapack, levels 1-10) + PDC mirror failsafe. Hitting one entity
         // damages every living entity in a (2·level+1)³ cube around the victim
         // with the same force. Sneaking disables it for precise attacks.
         mm.register(new SimpleModule("AttackAoeEnchantment", "enchantment/attackaoe", false) {
@@ -408,7 +408,7 @@ public final class EnchantModules {
 
     public static void registerRepairingEnchantment(ModuleManager mm) {
         // Repairing: REAL data-driven enchantment (ui:repairing, registered by
-        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Every `level`
+        // the UI-Datapack, levels 1-10) + PDC mirror failsafe. Every `level`
         // seconds an enchanted item with durability restores exactly `level`
         // durability POINTS while in a player's inventory.
         mm.register(new SimpleModule("RepairingEnchantment", "enchantment/repairing", false) {
@@ -422,7 +422,7 @@ public final class EnchantModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.repairing.EnchantmentSyncListener.register(main);
 
-                ConsoleLogger.info("[Repairing] Levels: 1-255 | Item: any with durability | Restores "
+                ConsoleLogger.info("[Repairing] Levels: 1-10 | Item: any with durability | Restores "
                         + "`level` durability points per second, every second (higher level = faster)");
             }
         });
@@ -434,9 +434,9 @@ public final class EnchantModules {
 
     public static void registerLavaWalkerEnchantment(ModuleManager mm) {
         // Lava Walker: REAL data-driven enchantment (ui:lava_walker, registered by
-        // the UI-Datapack, levels 1-255) + PDC mirror failsafe. Frost Walker for
+        // the UI-Datapack, levels 1-10) + PDC mirror failsafe. Frost Walker for
         // LAVA: lava under the wearer's feet temporarily turns into obsidian,
-        // radius = level (1 → 1×1, 2 → 3×3, ..., hard-capped at 16 → 31×31);
+        // radius = level (1 → 1×1, 2 → 3×3, ..., hard-capped at 10 → 19×19);
         // created blocks melt back to lava after 20-45 s (frosted-ice style).
         mm.register(new SimpleModule("LavaWalkerEnchantment", "enchantment/lavawalker", false) {
             @Override
@@ -447,7 +447,7 @@ public final class EnchantModules {
                 // 2. PDC failsafe sync listener + periodic scan
                 com.ultimateimprovments.enchantment.lavawalker.EnchantmentSyncListener.register((Main) plugin);
 
-                ConsoleLogger.info("[LavaWalker] Levels: 1-16 | Item: boots | Radius: level (cap "
+                ConsoleLogger.info("[LavaWalker] Levels: 1-10 | Item: boots | Radius: level (cap "
                         + com.ultimateimprovments.enchantment.lavawalker.Enchantment.MAX_RADIUS
                         + ") | 1 durability per conversion pass | Melt delay: 20-45s (frosted-ice style, persists across restarts)");
             }

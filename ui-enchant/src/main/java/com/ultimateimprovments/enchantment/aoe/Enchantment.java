@@ -43,7 +43,7 @@ import org.jetbrains.annotations.Nullable;
  * No lore is written or managed anymore — the real enchantment renders its own
  * description, and PDC is purely internal.
  * <p>
- * Max level: 8 (the scan radius is capped at 8 blocks)<br>
+ * Max level: 10 (the scan radius is capped at 10 blocks)<br>
  * Works on: pickaxe, shovel, axe, hoe<br>
  * Radius = enchantment level (1 → 3×3, 2 → 5×5, ...)
  */
@@ -56,10 +56,10 @@ public final class Enchantment {
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "aoe_level");
 
     /**
-     * Highest useful level: the scan radius is capped at 8 blocks
-     * ({@code EnchantmentListener.scanBlocks}), so levels above 8 change nothing.
+     * Highest useful level: the scan radius is capped at 10 blocks
+     * ({@code EnchantmentListener.scanBlocks}), so levels above 10 change nothing.
      */
-    public static final int MAX_LEVEL = 8;
+    public static final int MAX_LEVEL = 10;
 
     private Enchantment() {}
 
@@ -90,7 +90,7 @@ public final class Enchantment {
      * is unavailable, so items keep working even if the datapack dies.
      *
      * @param item the item to check
-     * @return enchantment level (1-8), or 0 if not present
+     * @return enchantment level (1-10), or 0 if not present
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
@@ -109,7 +109,7 @@ public final class Enchantment {
      * the PDC mirror. No lore is touched.
      *
      * @param item  the item to modify
-     * @param level enchantment level (1-8)
+     * @param level enchantment level (1-10)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
         if (level < 1 || level > MAX_LEVEL) return;
@@ -243,7 +243,7 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror level (1-8) or 0 if absent. */
+    /** Reads the PDC mirror level (1-10) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();

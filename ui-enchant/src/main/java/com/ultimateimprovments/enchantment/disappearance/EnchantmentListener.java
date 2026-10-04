@@ -20,7 +20,7 @@ import java.util.List;
  * <p>
  * Every {@value #SWEEP_INTERVAL_TICKS} ticks (1 second) every online player's
  * inventory is scanned. Each cursed item rolls a vanish chance of
- * {@code level × 0.001%}: level 255 → 0.255%/s, level 1 → 0.001%/s.
+ * {@code level × 0.01%}: level 10 → 0.1%/s, level 1 → 0.01%/s.
  * When the roll hits, the whole stack vanishes SILENTLY (no drop) — a puff of
  * smoke particles, a soft extinguish, a "pop" and an action-bar notice mark the spot
  * for the victim.
@@ -123,7 +123,7 @@ public final class EnchantmentListener {
                 + doomedStacks.stream().map(s -> s.getType().name()).distinct().toList());
     }
 
-    /** True when the stack rolls its vanish chance (level × 0.001% per second). */
+    /** True when the stack rolls its vanish chance (level × 0.01% per second). */
     private static boolean roll(ItemStack item) {
         if (item == null || item.getType().isAir()) return false;
         int level = Enchantment.getLevel(item);

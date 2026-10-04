@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Registers {@code ui:igniting} (file {@code data/ui/enchantment/igniting.json})
  * as a REAL data-driven enchantment: glint, description with level, anvil &amp; book
- * compatibility, {@code /enchant} support. Levels 1-255.
+ * compatibility, {@code /enchant} support. Levels 1-10.
  * <p>
  * <b>Failsafe design (same as AoE):</b> every item that carries the enchantment ALSO stores
  * the level in the {@code ui:igniting_level} PDC key — a backup mirror:
@@ -44,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
  * equal to the charm level (level 5 → 5 seconds). Water still extinguishes it —
  * it's just plain ignition, not an unquenchable flame.
  * <p>
- * Max level: 255<br>
+ * Max level: 10 (level N = N seconds of fire)<br>
  * Works on: helmet, chestplate, leggings, boots
  */
 public final class Enchantment {
@@ -54,6 +54,9 @@ public final class Enchantment {
 
     /** PDC mirror key: {@code ui:igniting_level} (backup copy of the enchantment level). */
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "igniting_level");
+
+    /** Highest level this enchantment can have (level N = N seconds of fire). */
+    public static final int MAX_LEVEL = 10;
 
     private Enchantment() {}
 
@@ -84,13 +87,13 @@ public final class Enchantment {
      * is unavailable, so items keep working even if the datapack dies.
      *
      * @param item the item to check
-     * @return enchantment level (1-255), or 0 if not present
+     * @return enchantment level (1-10), or 0 if not present
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
         if (real != null) {
             int lvl = item.getEnchantmentLevel(real);
-            if (lvl > 0) return Math.max(1, Math.min(255, lvl));
+            if (lvl > 0) return Math.max(1, Math.min(MAX_LEVEL, lvl));
         }
         // Datapack down or enchantment missing → PDC mirror
         return getPdcLevel(item);
@@ -103,10 +106,10 @@ public final class Enchantment {
      * the PDC mirror. No lore is touched.
      *
      * @param item  the item to modify
-     * @param level enchantment level (1-255)
+     * @param level enchantment level (1-10)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
-        if (level < 1 || level > 255) return;
+        if (level < 1 || level > MAX_LEVEL) return;
         if (!isValidTool(item)) return;
 
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
@@ -238,19 +241,19 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror level (1-255) or 0 if absent. */
+    /** Reads the PDC mirror level (1-10) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return 0;
         Integer level = meta.getPersistentDataContainer().get(LEVEL_KEY, PersistentDataType.INTEGER);
-        return level != null ? Math.max(1, Math.min(255, level)) : 0;
+        return level != null ? Math.max(1, Math.min(MAX_LEVEL, level)) : 0;
     }
 
     /** Writes the PDC mirror level. */
     private static void setPdcLevel(@NotNull ItemStack item, int level) {
         item.editMeta(meta -> {
-        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(255, level)));
+        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(MAX_LEVEL, level)));
         });
     }
 

@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable;
  * as a REAL data-driven curse with red tooltip text (the description JSON sets the
  * colour; it is deliberately NOT in {@code #minecraft:curse} so the enchanting table
  * can still offer it), anvil &amp; book compatibility, {@code /enchant} support.
- * Levels 1-255.
+ * Levels 1-10.
  * <p>
  * <b>Failsafe design (same as AoE/Igniting/SelfDestruct):</b> every item carrying the
  * charm ALSO stores the level in the {@code ui:degradation_level} PDC key — a backup
@@ -48,7 +48,7 @@ import org.jetbrains.annotations.Nullable;
  * through {@code ItemDurabilityUtil.decreaseItemIntegrity}, so the vanilla durability
  * updates the lore, sends low-integrity warnings and breaks the item when it hits 0.
  * <p>
- * Max level: 255<br>
+ * Max level: 10<br>
  * Works on: any item that has durability (i.e. belongs to the Integrity system)
  */
 public final class Enchantment {
@@ -60,7 +60,7 @@ public final class Enchantment {
     public static final NamespacedKey LEVEL_KEY = new NamespacedKey(Main.getInstance(), "degradation_level");
 
     /** Highest level this enchantment can have. */
-    public static final int MAX_LEVEL = 255;
+    public static final int MAX_LEVEL = 10;
 
     private Enchantment() {}
 
@@ -91,13 +91,13 @@ public final class Enchantment {
      * is unavailable, so the curse keeps working even if the datapack dies.
      *
      * @param item the item to check
-     * @return enchantment level (1-255), or 0 if not present
+     * @return enchantment level (1-10), or 0 if not present
      */
     public static int getLevel(@NotNull ItemStack item) {
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
         if (real != null) {
             int lvl = item.getEnchantmentLevel(real);
-            if (lvl > 0) return Math.max(1, Math.min(255, lvl));
+            if (lvl > 0) return Math.max(1, Math.min(MAX_LEVEL, lvl));
         }
         // Datapack down or enchantment missing → PDC mirror
         return getPdcLevel(item);
@@ -110,10 +110,10 @@ public final class Enchantment {
      * the PDC mirror. No lore is touched.
      *
      * @param item  the item to modify
-     * @param level enchantment level (1-255)
+     * @param level enchantment level (1-10)
      */
     public static void setLevel(@NotNull ItemStack item, int level) {
-        if (level < 1 || level > 255) return;
+        if (level < 1 || level > MAX_LEVEL) return;
         if (!isValidTool(item)) return;
 
         org.bukkit.enchantments.Enchantment real = getRegisteredEnchantment();
@@ -253,19 +253,19 @@ public final class Enchantment {
     //  PDC MIRROR HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    /** Reads the PDC mirror level (1-255) or 0 if absent. */
+    /** Reads the PDC mirror level (1-10) or 0 if absent. */
     private static int getPdcLevel(@NotNull ItemStack item) {
         if (!item.hasItemMeta()) return 0;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return 0;
         Integer level = meta.getPersistentDataContainer().get(LEVEL_KEY, PersistentDataType.INTEGER);
-        return level != null ? Math.max(1, Math.min(255, level)) : 0;
+        return level != null ? Math.max(1, Math.min(MAX_LEVEL, level)) : 0;
     }
 
     /** Writes the PDC mirror level. */
     private static void setPdcLevel(@NotNull ItemStack item, int level) {
         item.editMeta(meta -> {
-        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(255, level)));
+        meta.getPersistentDataContainer().set(LEVEL_KEY, PersistentDataType.INTEGER, Math.max(1, Math.min(MAX_LEVEL, level)));
         });
     }
 

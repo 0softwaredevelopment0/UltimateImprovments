@@ -7,8 +7,8 @@
 # Default: true
 enabled = true
 # Maximum value.
-# Default: 255
-max_level = 255
+# Default: 10
+max_level = 10
 # Permission node.
 # Default: "ui.command.enchant"
 permission = "ui.command.enchant"

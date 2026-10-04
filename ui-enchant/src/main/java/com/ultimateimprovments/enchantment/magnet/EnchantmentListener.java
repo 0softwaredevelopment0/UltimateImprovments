@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * While a player holds a Magnet tool, every FRESHLY dropped item (pickup delay still
  * active, i.e. items that just came out of a broken block) within {@code level × 2}
- * blocks (capped at 32) is pulled toward him at {@value #PULL_SPEED} blocks/second.
+ * blocks (capped at 20) is pulled toward him at {@value #PULL_SPEED} blocks/second.
  * <p>
  * <b>Why pickup-delay-based (not drop events):</b> drops produced by AoE / VeinMiner /
  * TreeCapitator / AutoSmelt are created via {@code breakNaturally()} inside the same
@@ -105,7 +105,7 @@ public class EnchantmentListener implements Listener {
             return;
         }
 
-        // Attraction radius grows +2 blocks per level, hard-capped at 32 (level 16).
+        // Attraction radius grows +2 blocks per level, hard-capped at MAX_RADIUS (level 10).
         int pullRadius = Math.min(
                 level * com.ultimateimprovments.enchantment.magnet.Enchantment.RADIUS_PER_LEVEL,
                 com.ultimateimprovments.enchantment.magnet.Enchantment.MAX_RADIUS);
