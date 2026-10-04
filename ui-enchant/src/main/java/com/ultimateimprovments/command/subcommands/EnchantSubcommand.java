@@ -33,11 +33,14 @@ import java.util.function.Consumer;
  * <pre>
  *   /ui enchant give <enchantment> <level> <player> <slot>
  *   /ui enchant confirm
+ *   /ui enchant cancel
  *   /ui enchant take <enchantment> <level> <player> <slot>
  *   /ui enchant check <player> [page]
  * </pre>
  * There is no hard level cap, but a give above {@code enchant.max_level}
- * (default 10) requires {@code /ui enchant confirm} within 60 seconds.
+ * (default 10) requires {@code /ui enchant confirm} within 60 seconds
+ * (or {@code /ui enchant cancel} to drop it). A bare name registered in
+ * several namespaces fails with error 019 — use {@code namespace:name}.
  * Slots: mainhand, offhand, bothhand, cursor, hotbar, armor, inventory, all.
  * Settings are in config.yml → {@code enchant:}.
  */
@@ -45,6 +48,9 @@ public final class EnchantSubcommand {
 
     /** How many rows to show on one page of /ui enchant check. */
     private static final int PER_PAGE = 5;
+
+    /** Error 019: a bare enchantment name matches several namespaces (use namespace:name). */
+    private static final int ERR_AMBIGUOUS_ENCHANT = 19;
 
     private EnchantSubcommand() {}
 
@@ -86,60 +92,92 @@ public final class EnchantSubcommand {
         String displayName() { return isCustom() ? "ui:" + customName : vanilla.getKey().toString(); }
     }
 
+    /** Outcome of resolving an enchantment argument. */
+    private record ResolveResult(ResolvedEnchant ench, java.util.List<String> ambiguousIds) {
+        static ResolveResult of(ResolvedEnchant ench) { return new ResolveResult(ench, null); }
+        static ResolveResult ambiguous(java.util.List<String> ids) { return new ResolveResult(null, ids); }
+        boolean isAmbiguous() { return ambiguousIds != null; }
+    }
+
     /**
      * Looks up an enchantment by name (custom or vanilla).
+     * <p>
+     * An explicit {@code namespace:name} input resolves only through that exact
+     * namespace. A BARE name that matches entries in SEVERAL namespaces
+     * (e.g. "aoe" when both ui:aoe and test:aoe are registered) returns an
+     * AMBIGUOUS result — the caller reports error 019 and asks for an
+     * explicit {@code namespace:name}.
      *
-     * @return ResolvedEnchant or null if not found
+     * @return ResolveResult; {@code ench} is null when not found
      */
-    private static ResolvedEnchant resolveEnchant(String input) {
-        if (input == null) return null;
+    private static ResolveResult resolveEnchant(String input) {
+        if (input == null) return ResolveResult.of(null);
         String norm = input.trim().toLowerCase(java.util.Locale.ROOT).replace(' ', '_');
-
-        // Custom enchantments — bare "aoe" and "ui:aoe" lead to the modular path
-        // (setLevel with the PDC mirror, tool check and level cap)
-        String key = norm;
         int colon = norm.indexOf(':');
+        String key = colon >= 0 ? norm.substring(colon + 1) : norm;
+
+        // ─── Explicit namespaced input: "minecraft:mending", "ui:aoe", "test:ench" ───
         if (colon >= 0) {
-            key = norm.substring(colon + 1);
-        }
-        if (isCustomEnchant(norm) || isCustomEnchant(key)) {
-            return new ResolvedEnchant(key, null);
-        }
-
-        // Exact namespaced lookup: "minecraft:mending", "ui:autosmelt",
-        // "otherplugin:ench" — any namespace the registry actually has
-        try {
-            NamespacedKey exact = NamespacedKey.fromString(norm);
-            if (exact != null) {
-                Enchantment ench = Registries.enchantment().get(exact);
-                if (ench != null) return new ResolvedEnchant(null, ench);
+            // Our custom enchantments take the modular path (setLevel with the
+            // PDC mirror, tool check) — but only when ui: is typed explicitly
+            if (norm.startsWith("ui:") && isCustomEnchant(key)) {
+                return ResolveResult.of(new ResolvedEnchant(key, null));
             }
-        } catch (IllegalArgumentException ignored) {
-            // invalid NamespacedKey
+            try {
+                NamespacedKey exact = NamespacedKey.fromString(norm);
+                if (exact != null) {
+                    Enchantment ench = Registries.enchantment().get(exact);
+                    if (ench != null) return ResolveResult.of(new ResolvedEnchant(null, ench));
+                }
+            } catch (IllegalArgumentException ignored) {
+                // invalid NamespacedKey
+            }
+            return ResolveResult.of(null); // explicit namespace → no bare-name fallbacks
         }
 
-        // Vanilla: "sharpness", "minecraft:sharpness", "ui:aoe" (custom UI-Datapack),
-        // plus enchantments from other plugins
+        // ─── Bare name ───
+
+        // Every registry entry with this short key, across ALL namespaces
+        List<Enchantment> shortKeyMatches = new ArrayList<>();
+        for (Enchantment e : Registries.enchantment()) {
+            if (e.getKey().getKey().equalsIgnoreCase(key)) shortKeyMatches.add(e);
+        }
+        Set<String> namespaces = new java.util.LinkedHashSet<>();
+        for (Enchantment e : shortKeyMatches) namespaces.add(e.getKey().getNamespace());
+        // A config custom counts as ui: even when the datapack is down
+        // (nothing in the registry yet) — so the ambiguity check still applies
+        if (isCustomEnchant(key)) namespaces.add("ui");
+
+        if (namespaces.size() > 1) {
+            Set<String> ids = new java.util.LinkedHashSet<>();
+            for (Enchantment e : shortKeyMatches) ids.add(e.getKey().toString());
+            if (isCustomEnchant(key)) ids.add("ui:" + key);
+            List<String> sorted = new ArrayList<>(ids);
+            sorted.sort(String::compareTo);
+            return ResolveResult.ambiguous(sorted);
+        }
+
+        // Exactly one namespace → resolve it
+        if (shortKeyMatches.size() == 1) {
+            Enchantment ench = shortKeyMatches.get(0);
+            if (ench.getKey().getNamespace().equals("ui") && isCustomEnchant(key)) {
+                // modular path with the PDC mirror + per-enchant MAX_LEVEL
+                return ResolveResult.of(new ResolvedEnchant(key, null));
+            }
+            return ResolveResult.of(new ResolvedEnchant(null, ench));
+        }
+
+        // Nothing in the registry → legacy fallbacks
+        if (isCustomEnchant(key)) {
+            return ResolveResult.of(new ResolvedEnchant(key, null)); // datapack down
+        }
         try {
             Enchantment ench = Registries.enchantment().get(NamespacedKey.minecraft(key));
-            if (ench != null) return new ResolvedEnchant(null, ench);
+            if (ench != null) return ResolveResult.of(new ResolvedEnchant(null, ench));
         } catch (IllegalArgumentException ignored) {
             // invalid NamespacedKey
         }
-        // Custom UI-Datapack enchantments live in the ui: namespace (ui:aoe, ui:autosmelt, ...)
-        try {
-            Enchantment ench = Registries.enchantment().get(new NamespacedKey("ui", key));
-            if (ench != null) return new ResolvedEnchant(null, ench);
-        } catch (IllegalArgumentException ignored) {
-            // invalid NamespacedKey
-        }
-        // Fallback: search the REGISTRY by key name (includes custom enchants from other plugins)
-        for (Enchantment ench : Registries.enchantment()) {
-            if (ench.getKey().getKey().equalsIgnoreCase(key)) {
-                return new ResolvedEnchant(null, ench);
-            }
-        }
-        return null;
+        return ResolveResult.of(null);
     }
 
     /**
@@ -332,6 +370,7 @@ public final class EnchantSubcommand {
             case "give" -> give(sender, args);
             case "take" -> take(sender, args);
             case "confirm" -> confirm(sender);
+            case "cancel" -> cancel(sender);
             case "check" -> check(sender, args);
             default -> {
                 sendUsage(sender);
@@ -345,6 +384,7 @@ public final class EnchantSubcommand {
                 "<yellow>Usage:</yellow>\n"
                 + "<white>/ui enchant give <enchantment> <level> <player> <slot></white>\n"
                 + "<white>/ui enchant confirm</white> <gray>- apply a give above the safe level</gray>\n"
+                + "<white>/ui enchant cancel</white> <gray>- drop a pending give</gray>\n"
                 + "<white>/ui enchant take <enchantment> <level> <player> <slot></white>\n"
                 + "<white>/ui enchant check <player> [page]</white>\n"
                 + "<gray>Slots: mainhand, offhand, bothhand, cursor, hotbar, armor, inventory, all</gray>")));
@@ -387,19 +427,36 @@ public final class EnchantSubcommand {
         if (isGive && v.level() > getConfirmThreshold()) {
             PENDING.put(pendingKey(sender), new PendingApply(
                     args[2], v.level(), v.targetPlayer().getName(), v.target(), System.currentTimeMillis()));
-            sender.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("enchant.confirm_required",
-                            "<yellow>⚠</yellow> <white>%enchant% %level%</white> <gray>is above the safe level</gray>"
-                            + " <yellow>%max%</yellow><gray>. To apply it on</gray> <yellow>%player%</yellow><gray> type:</gray>\n"
-                            + "<white>/ui enchant confirm</white> <gray>(valid for 60 seconds)</gray>")
-                            .replace("%enchant%", v.ench().displayName())
-                            .replace("%level%", String.valueOf(v.level()))
-                            .replace("%max%", String.valueOf(getConfirmThreshold()))
-                            .replace("%player%", v.targetPlayer().getName())));
+            String body = MessagesManager.getString("enchant.confirm_required",
+                    "<yellow>⚠</yellow> <white>%enchant% %level%</white> <gray>is above the safe level</gray>"
+                    + " <yellow>%max%</yellow><gray>. To apply it on</gray> <yellow>%player%</yellow>"
+                    + "<gray>, click (valid for 60 seconds):</gray>")
+                    .replace("%enchant%", v.ench().displayName())
+                    .replace("%level%", String.valueOf(v.level()))
+                    .replace("%max%", String.valueOf(getConfirmThreshold()))
+                    .replace("%player%", v.targetPlayer().getName());
+            sender.sendMessage(MessageUtil.parse(body)
+                    .append(net.kyori.adventure.text.Component.newline())
+                    .append(clickable("/ui enchant confirm",
+                            net.kyori.adventure.text.format.NamedTextColor.WHITE, "Click to confirm"))
+                    .append(net.kyori.adventure.text.Component.text("   ")
+                            .color(net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY))
+                    .append(clickable("/ui enchant cancel",
+                            net.kyori.adventure.text.format.NamedTextColor.GRAY, "Click to cancel")));
             return true;
         }
         executeApply(sender, v, isGive);
         return true;
+    }
+
+    /** A clickable command hint (runs the command on click). */
+    private static net.kyori.adventure.text.Component clickable(String command,
+            net.kyori.adventure.text.format.NamedTextColor color, String hover) {
+        return net.kyori.adventure.text.Component.text(command)
+                .color(color)
+                .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(command))
+                .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                        MessageUtil.parse("<gray>" + hover + "</gray>")));
     }
 
     /** /ui enchant confirm — applies the pending high-level give. */
@@ -417,7 +474,16 @@ public final class EnchantSubcommand {
                             "<red>❌ The pending enchantment expired — run /ui enchant give again.</red>")));
             return true;
         }
-        ResolvedEnchant ench = resolveEnchant(p.enchantArg());
+        ResolveResult resolved = resolveEnchant(p.enchantArg());
+        if (resolved.isAmbiguous()) {
+            CommandErrors.custom(sender, ERR_AMBIGUOUS_ENCHANT,
+                    "<white>" + p.enchantArg() + "</white> <red>exists in several namespaces (</red><yellow>"
+                            + String.join(", ", resolved.ambiguousIds())
+                            + "</yellow><red>) — specify one explicitly, e.g. </red><white>"
+                            + resolved.ambiguousIds().get(0) + "</white>");
+            return true;
+        }
+        ResolvedEnchant ench = resolved.ench();
         if (ench == null) {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("enchant.invalid_enchant",
@@ -438,6 +504,25 @@ public final class EnchantSubcommand {
         return true;
     }
 
+    /** /ui enchant cancel — drops the pending high-level give. */
+    private static boolean cancel(CommandSender sender) {
+        PendingApply p = PENDING.remove(pendingKey(sender));
+        if (p == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    MessagesManager.getString("enchant.cancel_none",
+                            "<red>❌ Nothing to cancel — no pending enchantment.</red>")));
+            return true;
+        }
+        sender.sendMessage(MessageUtil.parse(
+                MessagesManager.getString("enchant.cancel_done",
+                        "<green>✔</green> <gray>Pending</gray> <white>%enchant% %level%</white>"
+                        + " <gray>for</gray> <yellow>%player%</yellow> <gray>cancelled.</gray>")
+                        .replace("%enchant%", p.enchantArg())
+                        .replace("%level%", String.valueOf(p.level()))
+                        .replace("%player%", p.playerName())));
+        return true;
+    }
+
     /**
      * Validates the /ui enchant give|take arguments.
      * Sends the error message and returns {@code null} on failure.
@@ -452,7 +537,16 @@ public final class EnchantSubcommand {
         }
 
         // ─── Enchantment ───
-        ResolvedEnchant ench = resolveEnchant(args[2]);
+        ResolveResult resolved = resolveEnchant(args[2]);
+        if (resolved.isAmbiguous()) {
+            CommandErrors.custom(sender, ERR_AMBIGUOUS_ENCHANT,
+                    "<white>" + args[2] + "</white> <red>exists in several namespaces (</red><yellow>"
+                            + String.join(", ", resolved.ambiguousIds())
+                            + "</yellow><red>) — specify one explicitly, e.g. </red><white>"
+                            + resolved.ambiguousIds().get(0) + "</white>");
+            return null;
+        }
+        ResolvedEnchant ench = resolved.ench();
         if (ench == null) {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("enchant.invalid_enchant",
@@ -973,7 +1067,7 @@ public final class EnchantSubcommand {
         }
 
         if (args.length == 2) {
-            for (String s : List.of("give", "take", "confirm", "check")) {
+            for (String s : List.of("give", "take", "confirm", "cancel", "check")) {
                 if (s.startsWith(args[1].toLowerCase())) result.add(s);
             }
             return result;
