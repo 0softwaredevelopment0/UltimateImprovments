@@ -477,10 +477,11 @@ public final class EnchantSubcommand {
         ResolveResult resolved = resolveEnchant(p.enchantArg());
         if (resolved.isAmbiguous()) {
             CommandErrors.custom(sender, ERR_AMBIGUOUS_ENCHANT,
-                    "<white>" + p.enchantArg() + "</white> <red>exists in several namespaces (</red><yellow>"
-                            + String.join(", ", resolved.ambiguousIds())
-                            + "</yellow><red>) — specify one explicitly, e.g. </red><white>"
-                            + resolved.ambiguousIds().get(0) + "</white>");
+                    MessagesManager.getString("enchant.ambiguous_enchant",
+                            "<white>%enchant%</white> <red>exists in several namespaces (</red><yellow>%list%</yellow>"
+                            + "<red>) — specify one explicitly</red>")
+                            .replace("%enchant%", p.enchantArg())
+                            .replace("%list%", String.join(", ", resolved.ambiguousIds())));
             return true;
         }
         ResolvedEnchant ench = resolved.ench();
@@ -540,10 +541,11 @@ public final class EnchantSubcommand {
         ResolveResult resolved = resolveEnchant(args[2]);
         if (resolved.isAmbiguous()) {
             CommandErrors.custom(sender, ERR_AMBIGUOUS_ENCHANT,
-                    "<white>" + args[2] + "</white> <red>exists in several namespaces (</red><yellow>"
-                            + String.join(", ", resolved.ambiguousIds())
-                            + "</yellow><red>) — specify one explicitly, e.g. </red><white>"
-                            + resolved.ambiguousIds().get(0) + "</white>");
+                    MessagesManager.getString("enchant.ambiguous_enchant",
+                            "<white>%enchant%</white> <red>exists in several namespaces (</red><yellow>%list%</yellow>"
+                            + "<red>) — specify one explicitly</red>")
+                            .replace("%enchant%", args[2])
+                            .replace("%list%", String.join(", ", resolved.ambiguousIds())));
             return null;
         }
         ResolvedEnchant ench = resolved.ench();

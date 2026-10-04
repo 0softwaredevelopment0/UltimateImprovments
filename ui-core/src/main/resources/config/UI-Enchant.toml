@@ -37,6 +37,9 @@ item_stealing_no_permission = "<red>❌ У вас нет прав на краж�
 # Curse of Disappearance triggered (action bar). %item% = vanished item name(s).
 # Default: <red>Vanished: <yellow>%item%
 disappearance_item_lost = "<red>Исчезло: <yellow>%item%"
+# Ambiguous bare enchantment name (error 019). %enchant% = typed name, %list% = registered ids.
+# Default: <white>%enchant%</white> <red>exists in several namespaces (</red><yellow>%list%</yellow><red>) — specify one explicitly</red>
+ambiguous_enchant = "<white>%enchant%</white><red> — зачарование с таким названием существует в нескольких неймспейсах (</red><yellow>%list%</yellow><red>) — укажите конкретный</red>"
 
 # ==================================================================
 # MESSAGES — ENGLISH (active when lang = "en")
@@ -60,4 +63,7 @@ item_stealing_no_permission = "<red>❌ You don't have permission to steal items
 # Curse of Disappearance triggered (action bar). %item% = vanished item name(s).
 # Default: <red>Vanished: <yellow>%item%
 disappearance_item_lost = "<red>Vanished: <yellow>%item%"
+# Ambiguous bare enchantment name (error 019). %enchant% = typed name, %list% = registered ids.
+# Default: <white>%enchant%</white> <red>exists in several namespaces (</red><yellow>%list%</yellow><red>) — specify one explicitly</red>
+ambiguous_enchant = "<white>%enchant%</white> <red>exists in several namespaces (</red><yellow>%list%</yellow><red>) — specify one explicitly</red>"
 
