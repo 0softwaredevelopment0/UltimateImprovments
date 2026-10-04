@@ -28,12 +28,16 @@ import java.util.function.Consumer;
  * /ui enchant — advanced enchantment manager.
  * <p>
  * Supports ALL vanilla enchantments (via {@link Registry#ENCHANTMENT})
- * plus custom ones from the config {@code enchant.custom_enchantments} (e.g. AoE).
+ * plus custom ones, addressed as {@code namespace:name} — "minecraft:mending",
+ * "ui:aoe" (bare names still resolve for convenience).
  * <pre>
- *   /ui enchant give <enchantment> <level 1-10> <player> <slot>
+ *   /ui enchant give <enchantment> <level> <player> <slot>
+ *   /ui enchant confirm
  *   /ui enchant take <enchantment> <level> <player> <slot>
  *   /ui enchant check <player> [page]
  * </pre>
+ * There is no hard level cap, but a give above {@code enchant.max_level}
+ * (default 10) requires {@code /ui enchant confirm} within 60 seconds.
  * Slots: mainhand, offhand, bothhand, cursor, hotbar, armor, inventory, all.
  * Settings are in config.yml → {@code enchant:}.
  */
@@ -52,9 +56,12 @@ public final class EnchantSubcommand {
         return Main.getInstance().getConfig().getBoolean("enchant.enabled", true);
     }
 
-    private static int getMaxLevel() {
-        return Math.max(1, Math.min(10,
-                Main.getInstance().getConfig().getInt("enchant.max_level", 10)));
+    /**
+     * The confirmation threshold from {@code enchant.max_level} (default 10).
+     * NOT a hard cap — a give above this level asks for {@code /ui enchant confirm}.
+     */
+    private static int getConfirmThreshold() {
+        return Math.max(1, Main.getInstance().getConfig().getInt("enchant.max_level", 10));
     }
 
     private static String getPermission() {
@@ -76,7 +83,7 @@ public final class EnchantSubcommand {
     /** A resolved enchantment: either vanilla or custom (customName). */
     private record ResolvedEnchant(String customName, Enchantment vanilla) {
         boolean isCustom() { return customName != null; }
-        String displayName() { return isCustom() ? customName : vanilla.getKey().getKey(); }
+        String displayName() { return isCustom() ? "ui:" + customName : vanilla.getKey().toString(); }
     }
 
     /**
@@ -97,6 +104,18 @@ public final class EnchantSubcommand {
         }
         if (isCustomEnchant(norm) || isCustomEnchant(key)) {
             return new ResolvedEnchant(key, null);
+        }
+
+        // Exact namespaced lookup: "minecraft:mending", "ui:autosmelt",
+        // "otherplugin:ench" — any namespace the registry actually has
+        try {
+            NamespacedKey exact = NamespacedKey.fromString(norm);
+            if (exact != null) {
+                Enchantment ench = Registries.enchantment().get(exact);
+                if (ench != null) return new ResolvedEnchant(null, ench);
+            }
+        } catch (IllegalArgumentException ignored) {
+            // invalid NamespacedKey
         }
 
         // Vanilla: "sharpness", "minecraft:sharpness", "ui:aoe" (custom UI-Datapack),
@@ -124,16 +143,17 @@ public final class EnchantSubcommand {
     }
 
     /**
-     * All enchantment names (vanilla + UI-Datapack + custom) for tab-complete.
+     * All enchantment ids ({@code namespace:name}) for tab-complete.
      * <p>
      * Built from THREE sources so nothing is ever missed:
      * <ol>
      *   <li>{@link Registry#ENCHANTMENT} — all vanilla enchantments + enchantments
-     *       registered by other plugins (short key for {@code minecraft:}, full key otherwise);</li>
+     *       registered by other plugins (full key, e.g. "minecraft:sharpness");</li>
      *   <li>The bundled UI-Datapack {@code data/ui/enchantment/*.json} files — the custom
      *       enchantments (ui:aoe, ui:autosmelt, ...) even if the registry does not
      *       expose them in iteration (data-driven registries often don't);</li>
-     *   <li>{@code enchant.custom_enchantments} from the config.</li>
+     *   <li>{@code enchant.custom_enchantments} from the config (bare names
+     *       get the {@code ui:} prefix).</li>
      * </ol>
      */
     private static List<String> allEnchantNames() {
@@ -141,21 +161,20 @@ public final class EnchantSubcommand {
 
         // 1. Registry — vanilla + other plugins
         for (Enchantment ench : Registries.enchantment()) {
-            NamespacedKey key = ench.getKey();
-            names.add(key.getNamespace().equals("minecraft") ? key.getKey() : key.toString());
+            names.add(ench.getKey().toString());
         }
 
         // 2. UI-Datapack enchantments — read from the bundled datapack files
         for (String uiEnchant : datapackEnchantNames()) {
             names.add("ui:" + uiEnchant);
-            names.add(uiEnchant); // bare name also resolves (ui: is the fallback in resolveEnchant)
         }
 
-        // 3. Config custom enchantments
+        // 3. Config custom enchantments (bare names → ui: namespace)
         List<String> customs = Main.getInstance().getConfig().getStringList("enchant.custom_enchantments");
         for (String c : customs) {
             if (c != null && !c.isEmpty()) {
-                names.add(c.toLowerCase());
+                String n = c.toLowerCase(java.util.Locale.ROOT);
+                names.add(n.indexOf(':') >= 0 ? n : "ui:" + n);
             }
         }
         return new ArrayList<>(names);
@@ -312,6 +331,7 @@ public final class EnchantSubcommand {
         return switch (args[1].toLowerCase()) {
             case "give" -> give(sender, args);
             case "take" -> take(sender, args);
+            case "confirm" -> confirm(sender);
             case "check" -> check(sender, args);
             default -> {
                 sendUsage(sender);
@@ -324,6 +344,7 @@ public final class EnchantSubcommand {
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("enchant.usage",
                 "<yellow>Usage:</yellow>\n"
                 + "<white>/ui enchant give <enchantment> <level> <player> <slot></white>\n"
+                + "<white>/ui enchant confirm</white> <gray>- apply a give above the safe level</gray>\n"
                 + "<white>/ui enchant take <enchantment> <level> <player> <slot></white>\n"
                 + "<white>/ui enchant check <player> [page]</white>\n"
                 + "<gray>Slots: mainhand, offhand, bothhand, cursor, hotbar, armor, inventory, all</gray>")));
@@ -341,13 +362,93 @@ public final class EnchantSubcommand {
         return apply(sender, args, false);
     }
 
+    /** A fully validated give/take request. */
+    private record ValidatedApply(ResolvedEnchant ench, int level, Player targetPlayer, String target) {}
+
+    /** A high-level give waiting for {@code /ui enchant confirm}. */
+    private record PendingApply(String enchantArg, int level, String playerName, String slot, long createdAt) {}
+
+    /** How long a pending give stays confirmable. */
+    private static final long CONFIRM_TTL_MS = 60_000L;
+
+    /** Per-sender pending gives (player UUID as string, or "console"). */
+    private static final java.util.concurrent.ConcurrentHashMap<String, PendingApply> PENDING =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static String pendingKey(CommandSender sender) {
+        return sender instanceof Player p ? p.getUniqueId().toString() : "console";
+    }
+
     private static boolean apply(CommandSender sender, String[] args, boolean isGive) {
+        ValidatedApply v = validateApply(sender, args, isGive);
+        if (v == null) return true;
+
+        // A give above the safe level requires an explicit /ui enchant confirm
+        if (isGive && v.level() > getConfirmThreshold()) {
+            PENDING.put(pendingKey(sender), new PendingApply(
+                    args[2], v.level(), v.targetPlayer().getName(), v.target(), System.currentTimeMillis()));
+            sender.sendMessage(MessageUtil.parse(
+                    MessagesManager.getString("enchant.confirm_required",
+                            "<yellow>⚠</yellow> <white>%enchant% %level%</white> <gray>is above the safe level</gray>"
+                            + " <yellow>%max%</yellow><gray>. To apply it on</gray> <yellow>%player%</yellow><gray> type:</gray>\n"
+                            + "<white>/ui enchant confirm</white> <gray>(valid for 60 seconds)</gray>")
+                            .replace("%enchant%", v.ench().displayName())
+                            .replace("%level%", String.valueOf(v.level()))
+                            .replace("%max%", String.valueOf(getConfirmThreshold()))
+                            .replace("%player%", v.targetPlayer().getName())));
+            return true;
+        }
+        executeApply(sender, v, isGive);
+        return true;
+    }
+
+    /** /ui enchant confirm — applies the pending high-level give. */
+    private static boolean confirm(CommandSender sender) {
+        PendingApply p = PENDING.remove(pendingKey(sender));
+        if (p == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    MessagesManager.getString("enchant.confirm_none",
+                            "<red>❌ Nothing to confirm — run /ui enchant give first.</red>")));
+            return true;
+        }
+        if (System.currentTimeMillis() - p.createdAt() > CONFIRM_TTL_MS) {
+            sender.sendMessage(MessageUtil.parse(
+                    MessagesManager.getString("enchant.confirm_expired",
+                            "<red>❌ The pending enchantment expired — run /ui enchant give again.</red>")));
+            return true;
+        }
+        ResolvedEnchant ench = resolveEnchant(p.enchantArg());
+        if (ench == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    MessagesManager.getString("enchant.invalid_enchant",
+                            "<red>❌ Unknown enchantment: </red><yellow>%enchant%</yellow>")
+                            .replace("%enchant%", p.enchantArg())));
+            return true;
+        }
+        @SuppressWarnings("deprecation")
+        Player targetPlayer = Bukkit.getPlayerExact(p.playerName());
+        if (targetPlayer == null) {
+            sender.sendMessage(MessageUtil.parse(
+                    MessagesManager.getString("enchant.player_not_found",
+                            "<red>❌ Player </red><yellow>%player%</yellow><red> is not online!</red>")
+                            .replace("%player%", p.playerName())));
+            return true;
+        }
+        executeApply(sender, new ValidatedApply(ench, p.level(), targetPlayer, p.slot()), true);
+        return true;
+    }
+
+    /**
+     * Validates the /ui enchant give|take arguments.
+     * Sends the error message and returns {@code null} on failure.
+     */
+    private static ValidatedApply validateApply(CommandSender sender, String[] args, boolean isGive) {
         // /ui enchant give|take <enchant> <level> <player> <slot>
         if (args.length < 6) {
             sender.sendMessage(MessageUtil.parse(isGive
                     ? "<red>❌ Usage: </red><white>/ui enchant give <enchantment> <level> <player> <slot></white>"
                     : "<red>❌ Usage: </red><white>/ui enchant take <enchantment> <level> <player> <slot></white>"));
-            return true;
+            return null;
         }
 
         // ─── Enchantment ───
@@ -357,28 +458,24 @@ public final class EnchantSubcommand {
                     MessagesManager.getString("enchant.invalid_enchant",
                             "<red>❌ Unknown enchantment: </red><yellow>%enchant%</yellow>")
                             .replace("%enchant%", args[2])));
-            return true;
+            return null;
         }
 
         // ─── Level ───
-        int maxLevel = getMaxLevel();
         int level;
         try {
             level = Integer.parseInt(args[3].trim());
         } catch (NumberFormatException e) {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("enchant.invalid_level",
-                            "<red>❌ Level must be a number between 1 and </red><yellow>%max%</yellow><red>!</red>")
-                            .replace("%max%", String.valueOf(maxLevel))));
-            return true;
+                            "<red>❌ Level must be a whole number of 1 or higher!</red>")));
+            return null;
         }
-        if (level < 1 || level > maxLevel) {
+        if (level < 1) {
             sender.sendMessage(MessageUtil.parse(
-                    MessagesManager.getString("enchant.level_out_of_range",
-                            "<red>❌ Level </red><yellow>%level%</yellow><red> is out of range (1-</red><yellow>%max%</yellow><red>)!</red>")
-                            .replace("%level%", String.valueOf(level))
-                            .replace("%max%", String.valueOf(maxLevel))));
-            return true;
+                    MessagesManager.getString("enchant.invalid_level",
+                            "<red>❌ Level must be a whole number of 1 or higher!</red>")));
+            return null;
         }
 
         // ─── Player ───
@@ -389,7 +486,7 @@ public final class EnchantSubcommand {
                     MessagesManager.getString("enchant.player_not_found",
                             "<red>❌ Player </red><yellow>%player%</yellow><red> is not online!</red>")
                             .replace("%player%", args[4])));
-            return true;
+            return null;
         }
 
         // ─── Slot ───
@@ -399,8 +496,32 @@ public final class EnchantSubcommand {
                     MessagesManager.getString("enchant.invalid_target",
                             "<red>❌ Unknown slot: </red><yellow>%target%</yellow><red>. Valid: mainhand, offhand, bothhand, cursor, hotbar, armor, inventory, all</red>")
                             .replace("%target%", args[5])));
-            return true;
+            return null;
         }
+        return new ValidatedApply(ench, level, targetPlayer, target);
+    }
+
+    /**
+     * Applies a custom enchantment level: the normal {@code setLevel} (real
+     * enchantment + PDC mirror) when the level is within the enchantment's own
+     * MAX_LEVEL, otherwise the real enchantment alone at the raw level — the
+     * mechanics clamp at read, the display keeps the requested number.
+     */
+    private static void giveLevel(ItemStack item, int level,
+                                  java.util.function.ObjIntConsumer<ItemStack> setLevel,
+                                  java.util.function.Supplier<Enchantment> realEnchant) {
+        setLevel.accept(item, level);
+        Enchantment real = realEnchant.get();
+        if (real != null && item.getEnchantmentLevel(real) < level) {
+            item.addUnsafeEnchantment(real, level);
+        }
+    }
+
+    private static void executeApply(CommandSender sender, ValidatedApply v, boolean isGive) {
+        ResolvedEnchant ench = v.ench();
+        int level = v.level();
+        Player targetPlayer = v.targetPlayer();
+        String target = v.target();
 
         // ─── Apply ───
         int count = 0;
@@ -413,7 +534,9 @@ public final class EnchantSubcommand {
                     case "aoe" -> {
                         if (com.ultimateimprovments.enchantment.aoe.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.aoe.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.aoe.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.aoe.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.aoe.Enchantment.hasAoe(item)) {
                                 com.ultimateimprovments.enchantment.aoe.Enchantment.removeLevel(item);
@@ -425,7 +548,9 @@ public final class EnchantSubcommand {
                     case "autosmelt" -> {
                         if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.autosmelt.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.autosmelt.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.autosmelt.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.hasAutoSmelt(item)) {
                                 com.ultimateimprovments.enchantment.autosmelt.Enchantment.removeLevel(item);
@@ -437,7 +562,9 @@ public final class EnchantSubcommand {
                     case "veinminer" -> {
                         if (com.ultimateimprovments.enchantment.veinminer.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.veinminer.Enchantment.setLevel(item, 1);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.veinminer.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.veinminer.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.veinminer.Enchantment.hasVeinMiner(item)) {
                                 com.ultimateimprovments.enchantment.veinminer.Enchantment.removeLevel(item);
@@ -449,7 +576,9 @@ public final class EnchantSubcommand {
                     case "treecapitator" -> {
                         if (com.ultimateimprovments.enchantment.treecapitator.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.treecapitator.Enchantment.setLevel(item, 1);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.treecapitator.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.treecapitator.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.treecapitator.Enchantment.hasTreeCapitator(item)) {
                                 com.ultimateimprovments.enchantment.treecapitator.Enchantment.removeLevel(item);
@@ -461,7 +590,9 @@ public final class EnchantSubcommand {
                     case "flight" -> {
                         if (com.ultimateimprovments.enchantment.flight.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.flight.Enchantment.setLevel(item, 1);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.flight.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.flight.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.flight.Enchantment.hasFlight(item)) {
                                 com.ultimateimprovments.enchantment.flight.Enchantment.removeLevel(item);
@@ -473,7 +604,9 @@ public final class EnchantSubcommand {
                     case "magnet" -> {
                         if (com.ultimateimprovments.enchantment.magnet.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.magnet.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.magnet.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.magnet.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.magnet.Enchantment.hasMagnet(item)) {
                                 com.ultimateimprovments.enchantment.magnet.Enchantment.removeLevel(item);
@@ -485,7 +618,9 @@ public final class EnchantSubcommand {
                     case "igniting" -> {
                         if (com.ultimateimprovments.enchantment.igniting.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.igniting.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.igniting.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.igniting.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.igniting.Enchantment.hasIgniting(item)) {
                                 com.ultimateimprovments.enchantment.igniting.Enchantment.removeLevel(item);
@@ -497,7 +632,9 @@ public final class EnchantSubcommand {
                     case "levitation" -> {
                         if (com.ultimateimprovments.enchantment.levitation.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.levitation.Enchantment.setLevel(item, 1);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.levitation.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.levitation.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.levitation.Enchantment.hasLevitation(item)) {
                                 com.ultimateimprovments.enchantment.levitation.Enchantment.removeLevel(item);
@@ -509,7 +646,9 @@ public final class EnchantSubcommand {
                     case "self_destruct" -> {
                         // The curse goes on ANY item.
                         if (isGive) {
-                            com.ultimateimprovments.enchantment.selfdestruct.Enchantment.setLevel(item, 1);
+                            giveLevel(item, level,
+                                    com.ultimateimprovments.enchantment.selfdestruct.Enchantment::setLevel,
+                                    com.ultimateimprovments.enchantment.selfdestruct.Enchantment::getRegisteredEnchantment);
                             count++;
                         } else if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.hasSelfDestruct(item)) {
                             com.ultimateimprovments.enchantment.selfdestruct.Enchantment.removeLevel(item);
@@ -520,7 +659,9 @@ public final class EnchantSubcommand {
                         // The curse goes on ANY item with durability.
                         if (com.ultimateimprovments.enchantment.degradation.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.degradation.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.degradation.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.degradation.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.degradation.Enchantment.hasDegradation(item)) {
                                 com.ultimateimprovments.enchantment.degradation.Enchantment.removeLevel(item);
@@ -532,7 +673,9 @@ public final class EnchantSubcommand {
                     case "attack_aoe" -> {
                         if (com.ultimateimprovments.enchantment.attackaoe.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.attackaoe.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.attackaoe.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.attackaoe.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.attackaoe.Enchantment.hasAttackAoe(item)) {
                                 com.ultimateimprovments.enchantment.attackaoe.Enchantment.removeLevel(item);
@@ -544,7 +687,9 @@ public final class EnchantSubcommand {
                     case "item_stealing" -> {
                         if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.itemstealing.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.itemstealing.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.itemstealing.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.hasItemStealing(item)) {
                                 com.ultimateimprovments.enchantment.itemstealing.Enchantment.removeLevel(item);
@@ -557,7 +702,9 @@ public final class EnchantSubcommand {
                         // Works on ANY item with durability.
                         if (com.ultimateimprovments.enchantment.repairing.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.repairing.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.repairing.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.repairing.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.repairing.Enchantment.hasRepairing(item)) {
                                 com.ultimateimprovments.enchantment.repairing.Enchantment.removeLevel(item);
@@ -569,7 +716,9 @@ public final class EnchantSubcommand {
                     case "lava_walker" -> {
                         if (com.ultimateimprovments.enchantment.lavawalker.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.lavawalker.Enchantment.setLevel(item, level);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.lavawalker.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.lavawalker.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.lavawalker.Enchantment.hasLavaWalker(item)) {
                                 com.ultimateimprovments.enchantment.lavawalker.Enchantment.removeLevel(item);
@@ -581,7 +730,9 @@ public final class EnchantSubcommand {
                     case "container_stealing" -> {
                         if (com.ultimateimprovments.enchantment.containerstealing.Enchantment.isValidTool(item)) {
                             if (isGive) {
-                                com.ultimateimprovments.enchantment.containerstealing.Enchantment.setLevel(item, 1);
+                                giveLevel(item, level,
+                                        com.ultimateimprovments.enchantment.containerstealing.Enchantment::setLevel,
+                                        com.ultimateimprovments.enchantment.containerstealing.Enchantment::getRegisteredEnchantment);
                                 count++;
                             } else if (com.ultimateimprovments.enchantment.containerstealing.Enchantment.hasContainerStealing(item)) {
                                 com.ultimateimprovments.enchantment.containerstealing.Enchantment.removeLevel(item);
@@ -622,7 +773,6 @@ public final class EnchantSubcommand {
                             .replace("%count%", String.valueOf(count))
                             .replace("%player%", targetPlayer.getName())));
         }
-        return true;
     }
 
     // =========================
@@ -724,72 +874,81 @@ public final class EnchantSubcommand {
 
             List<String> enchants = new ArrayList<>();
 
-            // Vanilla enchantments (skip the real ui:aoe / ui:autosmelt —
-            // they are listed as the custom enchants below)
+            // Real registry entries: every non-ui enchantment by its full id
+            // ("minecraft:sharpness 5"). The ui:* ones are listed below via their
+            // Enchantment classes — that also covers PDC-only items after a
+            // datapack crash (and avoids a duplicate row for the same charm).
             Map<Enchantment, Integer> vanilla = item.getEnchantments();
             for (Map.Entry<Enchantment, Integer> e : vanilla.entrySet()) {
-                if (e.getKey().equals(com.ultimateimprovments.enchantment.aoe.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.autosmelt.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.veinminer.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.treecapitator.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.flight.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.magnet.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.igniting.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.levitation.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.selfdestruct.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.degradation.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.attackaoe.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.itemstealing.Enchantment.ENCHANTMENT_KEY)
-                        || e.getKey().equals(com.ultimateimprovments.enchantment.containerstealing.Enchantment.ENCHANTMENT_KEY)) {
-                    continue;
-                }
-                enchants.add("<green>" + e.getKey().getKey() + " " + e.getValue());
+                String id = e.getKey().getKey().toString(); // "ui:aoe", "minecraft:sharpness", ...
+                if (id.startsWith("ui:")) continue;
+                enchants.add("<green>" + id + " " + e.getValue());
             }
 
             // Custom enchants — real enchantment or legacy PDC
             int aoe = com.ultimateimprovments.enchantment.aoe.Enchantment.getLevel(item);
             if (aoe > 0) {
-                enchants.add("<aqua>Aoe " + aoe);
+                enchants.add("<aqua>ui:aoe " + aoe);
             }
             if (com.ultimateimprovments.enchantment.autosmelt.Enchantment.getLevel(item) > 0) {
-                enchants.add("<aqua>AutoSmelt");
+                enchants.add("<aqua>ui:autosmelt");
             }
             if (com.ultimateimprovments.enchantment.veinminer.Enchantment.getLevel(item) > 0) {
-                enchants.add("<aqua>VeinMiner");
+                enchants.add("<aqua>ui:veinminer");
             }
             if (com.ultimateimprovments.enchantment.treecapitator.Enchantment.getLevel(item) > 0) {
-                enchants.add("<aqua>TreeCapitator");
+                enchants.add("<aqua>ui:treecapitator");
             }
             if (com.ultimateimprovments.enchantment.flight.Enchantment.getLevel(item) > 0) {
-                enchants.add("<aqua>Flight");
+                enchants.add("<aqua>ui:flight");
             }
             if (com.ultimateimprovments.enchantment.magnet.Enchantment.getLevel(item) > 0) {
-                enchants.add("<aqua>Magnet");
+                enchants.add("<aqua>ui:magnet");
             }
             int igniting = com.ultimateimprovments.enchantment.igniting.Enchantment.getLevel(item);
             if (igniting > 0) {
-                enchants.add("<aqua>Igniting " + igniting);
+                enchants.add("<aqua>ui:igniting " + igniting);
             }
             if (com.ultimateimprovments.enchantment.levitation.Enchantment.getLevel(item) > 0) {
-                enchants.add("<aqua>Levitation");
+                enchants.add("<aqua>ui:levitation");
             }
-            // Curse — shown in red
+            // Curses — shown in red
             if (com.ultimateimprovments.enchantment.selfdestruct.Enchantment.getLevel(item) > 0) {
-                enchants.add("<red>Curse of Self-Destruct");
+                enchants.add("<red>ui:self_destruct");
             }
             int degradation = com.ultimateimprovments.enchantment.degradation.Enchantment.getLevel(item);
             if (degradation > 0) {
-                enchants.add("<red>Curse of Degradation " + degradation);
+                enchants.add("<red>ui:degradation " + degradation);
             }
             int attackAoe = com.ultimateimprovments.enchantment.attackaoe.Enchantment.getLevel(item);
             if (attackAoe > 0) {
-                enchants.add("<aqua>Attack AoE " + attackAoe);
+                enchants.add("<aqua>ui:attack_aoe " + attackAoe);
             }
             if (com.ultimateimprovments.enchantment.itemstealing.Enchantment.getLevel(item) > 0) {
-                enchants.add("<aqua>Item Stealing");
+                enchants.add("<aqua>ui:item_stealing");
             }
             if (com.ultimateimprovments.enchantment.containerstealing.Enchantment.getLevel(item) > 0) {
-                enchants.add("<aqua>Container Stealing");
+                enchants.add("<aqua>ui:container_stealing");
+            }
+            int repairing = com.ultimateimprovments.enchantment.repairing.Enchantment.getLevel(item);
+            if (repairing > 0) {
+                enchants.add("<aqua>ui:repairing " + repairing);
+            }
+            int lavaWalker = com.ultimateimprovments.enchantment.lavawalker.Enchantment.getLevel(item);
+            if (lavaWalker > 0) {
+                enchants.add("<aqua>ui:lava_walker " + lavaWalker);
+            }
+            int blunting = com.ultimateimprovments.enchantment.blunting.Enchantment.getLevel(item);
+            if (blunting > 0) {
+                enchants.add("<red>ui:blunting " + blunting);
+            }
+            int vulnerability = com.ultimateimprovments.enchantment.vulnerability.Enchantment.getLevel(item);
+            if (vulnerability > 0) {
+                enchants.add("<red>ui:vulnerability " + vulnerability);
+            }
+            int disappearance = com.ultimateimprovments.enchantment.disappearance.Enchantment.getLevel(item);
+            if (disappearance > 0) {
+                enchants.add("<red>ui:disappearance " + disappearance);
             }
 
             if (enchants.isEmpty()) continue;
@@ -814,7 +973,7 @@ public final class EnchantSubcommand {
         }
 
         if (args.length == 2) {
-            for (String s : List.of("give", "take", "check")) {
+            for (String s : List.of("give", "take", "confirm", "check")) {
                 if (s.startsWith(args[1].toLowerCase())) result.add(s);
             }
             return result;

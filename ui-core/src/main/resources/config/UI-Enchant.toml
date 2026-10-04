@@ -6,7 +6,7 @@
 # Master switch (true = feature on).
 # Default: true
 enabled = true
-# Maximum value.
+# Gives above this level require /ui enchant confirm (default 10).
 # Default: 10
 max_level = 10
 # Permission node.

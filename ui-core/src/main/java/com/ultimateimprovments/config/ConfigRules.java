@@ -552,7 +552,7 @@ final class ConfigRules {
             bool("troll.crash.log_to_console"),
 
             bool("enchant.enabled"),
-            integer("enchant.max_level", 1, 255),
+            integer("enchant.max_level", 1, 1_000_000),
             string("enchant.permission", false, 128),
             stringList("enchant.custom_enchantments"),
 
