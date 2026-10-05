@@ -167,6 +167,10 @@ public class SubCommandRegistry {
             if (result != null && !result.isEmpty()) {
                 String last = args[args.length - 1].toLowerCase();
                 return result.stream()
+                        // Empty-string entries are the "suppress the player fallback"
+                        // convention — the vanilla client renders them as the WHOLE
+                        // typed line, so they must never reach the client.
+                        .filter(s -> s != null && !s.isEmpty())
                         .filter(s -> s.toLowerCase().startsWith(last))
                         .collect(Collectors.toList());
             }

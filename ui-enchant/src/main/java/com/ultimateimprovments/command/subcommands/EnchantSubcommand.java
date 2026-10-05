@@ -31,10 +31,10 @@ import java.util.function.Consumer;
  * plus custom ones, addressed as {@code namespace:name} — "minecraft:mending",
  * "ui:aoe" (bare names still resolve for convenience).
  * <pre>
- *   /ui enchant give <enchantment> <level> <player> <slot>
+ *   /ui enchant give <enchantment> <level> [player] [slot]
  *   /ui enchant confirm
  *   /ui enchant cancel
- *   /ui enchant take <enchantment> <level> <player> <slot>
+ *   /ui enchant take <enchantment> <level> [player] [slot]
  *   /ui enchant check <player> [page]
  * </pre>
  * There is no hard level cap, but a give above {@code enchant.max_level}
@@ -382,12 +382,12 @@ public final class EnchantSubcommand {
     private static void sendUsage(CommandSender sender) {
         sender.sendMessage(MessageUtil.parse(MessagesManager.getString("enchant.usage",
                 "<yellow>Usage:</yellow>\n"
-                + "<white>/ui enchant give <enchantment> <level> <player> <slot></white>\n"
+                + "<white>/ui enchant give <enchantment> <level> [player] [slot]</white>\n"
                 + "<white>/ui enchant confirm</white> <gray>- apply a give above the safe level</gray>\n"
                 + "<white>/ui enchant cancel</white> <gray>- drop a pending give</gray>\n"
-                + "<white>/ui enchant take <enchantment> <level> <player> <slot></white>\n"
+                + "<white>/ui enchant take <enchantment> <level> [player] [slot]</white>\n"
                 + "<white>/ui enchant check <player> [page]</white>\n"
-                + "<gray>Slots: mainhand, offhand, bothhand, cursor, hotbar, armor, inventory, all</gray>")));
+                + "<gray>player/slot optional: sender + mainhand. Slots: mainhand, offhand, bothhand, cursor, hotbar, armor, inventory, all</gray>")));
     }
 
     // =========================
@@ -526,14 +526,17 @@ public final class EnchantSubcommand {
 
     /**
      * Validates the /ui enchant give|take arguments.
+     * <p>
+     * {@code <player>} and {@code <slot>} are OPTIONAL: they default to the
+     * sender (players only) and {@code mainhand}.
      * Sends the error message and returns {@code null} on failure.
      */
     private static ValidatedApply validateApply(CommandSender sender, String[] args, boolean isGive) {
-        // /ui enchant give|take <enchant> <level> <player> <slot>
-        if (args.length < 6) {
+        // /ui enchant give|take <enchant> <level> [player] [slot]
+        if (args.length < 4) {
             sender.sendMessage(MessageUtil.parse(isGive
-                    ? "<red>❌ Usage: </red><white>/ui enchant give <enchantment> <level> <player> <slot></white>"
-                    : "<red>❌ Usage: </red><white>/ui enchant take <enchantment> <level> <player> <slot></white>"));
+                    ? "<red>❌ Usage: </red><white>/ui enchant give <enchantment> <level> [player] [slot]</white>"
+                    : "<red>❌ Usage: </red><white>/ui enchant take <enchantment> <level> [player] [slot]</white>"));
             return null;
         }
 
@@ -574,24 +577,33 @@ public final class EnchantSubcommand {
             return null;
         }
 
-        // ─── Player ───
+        // ─── Player (optional — defaults to the sender) ───
+        String playerName;
+        if (args.length >= 5) {
+            playerName = args[4];
+        } else if (sender instanceof Player self) {
+            playerName = self.getName();
+        } else {
+            CommandErrors.playerOnly(sender);
+            return null;
+        }
         @SuppressWarnings("deprecation")
-        Player targetPlayer = Bukkit.getPlayerExact(args[4]);
+        Player targetPlayer = Bukkit.getPlayerExact(playerName);
         if (targetPlayer == null) {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("enchant.player_not_found",
                             "<red>❌ Player </red><yellow>%player%</yellow><red> is not online!</red>")
-                            .replace("%player%", args[4])));
+                            .replace("%player%", playerName)));
             return null;
         }
 
-        // ─── Slot ───
-        String target = args[5].toLowerCase();
+        // ─── Slot (optional — defaults to the main hand) ───
+        String target = args.length >= 6 ? args[5].toLowerCase() : "mainhand";
         if (!isValidTarget(target)) {
             sender.sendMessage(MessageUtil.parse(
                     MessagesManager.getString("enchant.invalid_target",
                             "<red>❌ Unknown slot: </red><yellow>%target%</yellow><red>. Valid: mainhand, offhand, bothhand, cursor, hotbar, armor, inventory, all</red>")
-                            .replace("%target%", args[5])));
+                            .replace("%target%", target)));
             return null;
         }
         return new ValidatedApply(ench, level, targetPlayer, target);
