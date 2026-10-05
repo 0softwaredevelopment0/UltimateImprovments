@@ -17,7 +17,7 @@ public class ReactorTask extends BukkitRunnable {
     // =========================
     private static final int PRESSURE_INTERVAL = 100;       // 5s
     private static final int SOUND_INTERVAL = 10;           // 0.5s
-    private static final int STRUCTURE_CHECK_INTERVAL = 20; // 1s
+    private static final int STRUCTURE_CHECK_INTERVAL = 40; // 2s
     private static final int FUEL_INTERVAL = 20;            // 1s
 
     // =========================
@@ -47,6 +47,12 @@ public class ReactorTask extends BukkitRunnable {
         // CONTROLLED SHUTDOWN CHECK (every tick while the structure is damaged)
         // =========================
         reactor.checkControlledShutdown();
+
+        // =========================
+        // ROTATING STRUCTURE AUDIT (every tick, ~50 cells — full pass in ~1s;
+        // catches event-blind block changes: explosions, pistons, plugin setType)
+        // =========================
+        reactor.tickStructureAudit();
 
         // =========================
         // SOUND TICK (every 10 ticks)
