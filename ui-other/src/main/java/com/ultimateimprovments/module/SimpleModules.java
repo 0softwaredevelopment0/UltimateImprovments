@@ -39,7 +39,6 @@ import com.ultimateimprovments.mechanics.features.blocks.GlassBreakManager;
 import com.ultimateimprovments.mechanics.features.blocks.TerracotaSpeedManager;
 import com.ultimateimprovments.mechanics.features.creativeitem.CreativeItemValidator;
 import com.ultimateimprovments.mechanics.crafting.StructureIntegrityCraftListener;
-import com.ultimateimprovments.mechanics.features.integrity.IntegrityLoreCleanupListener;
 import com.ultimateimprovments.mechanics.features.integrity.ItemDurabilityUtil;
 import com.ultimateimprovments.mechanics.features.integrity.LowDurabilityWarningListener;
 import com.ultimateimprovments.mechanics.features.integrity.PiercingListener;
@@ -247,10 +246,9 @@ public final class SimpleModules {
             @Override
             protected void onInit(JavaPlugin plugin) throws Exception {
                 Main main = (Main) plugin;
-                ItemDurabilityUtil.init(main);
+                ItemDurabilityUtil.init();
                 PiercingListener.init(main);
                 LowDurabilityWarningListener.init(main);
-                IntegrityLoreCleanupListener.init(main);
             }
 
             @Override
