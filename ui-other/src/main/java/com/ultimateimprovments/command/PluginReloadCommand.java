@@ -89,6 +89,9 @@ public class PluginReloadCommand implements CommandExecutor, TabCompleter {
         // ── Legacy adapters (simple static calls) ──
         registry.register(LegacySubCommandAdapter.of("chgdim", ChgDimSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("item", ItemSubcommand::execute));
+        // ── /ui dura — held-item durability scaling (mechanics + raw variants) ──
+        registry.register(LegacySubCommandAdapter.of("dura", DuraSubcommand::execute,
+                tc((s, a) -> DuraSubcommand.tabComplete(s, a))));
         // ── /ui auth is registered by the UI-Auth addon ──
         registry.register(LegacySubCommandAdapter.of("power", PowerSubcommand::execute));
         registry.register(LegacySubCommandAdapter.of("modules", ModulesSubcommand::execute));

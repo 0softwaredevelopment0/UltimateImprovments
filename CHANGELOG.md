@@ -44,6 +44,14 @@ in this file.
 > build + unit tests, in-game verification on the test server is the next step.
 
 ### Added
+- **`/ui dura` — held-item durability scaling** with two variants per
+  operation: the default `multiply|divide` runs as a mechanics event (an
+  unbreakable item loses nothing and the lost points are rolled through the
+  vanilla Unbreaking chance tables), while `raw multiply|divide` ignores the
+  gates and applies the numbers exactly as typed. `/ui dura` (bare) shows the
+  held item's durability info (remaining, %, unbreakable, Unbreaking level).
+  Fractional values are accepted (dot or comma). Permission:
+  `ui.command.dura` (default FALSE).
 - **Durability scaling API** — `ItemDurabilityUtil.multiplyItemIntegrity(item, factor)`
   and `divideItemIntegrity(item, divisor)` scale the item's remaining
   durability by any fractional number (rounded to whole vanilla points,
