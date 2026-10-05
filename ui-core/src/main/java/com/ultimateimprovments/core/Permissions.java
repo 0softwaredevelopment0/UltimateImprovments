@@ -156,6 +156,7 @@ public final class Permissions {
     public static final String CMD_CHGDIM = "ui.command.chgdim";
     public static final String CMD_CHGDIM_ALL = "ui.command.chgdim.*";
     public static final String CMD_ITEM = "ui.command.item";
+    public static final String CMD_DURA = "ui.command.dura";
     public static final String CMD_ENCHANT = "ui.command.enchant";
     public static final String CMD_SETRAD = "ui.command.setrad";
     public static final String CMD_METEOR_SPAWN = "ui.command.meteor.spawn";
@@ -334,6 +335,7 @@ public final class Permissions {
                 new Permission(CMD_CHGDIM, "Teleport between dimensions", PermissionDefault.FALSE),
                 new Permission(CMD_CHGDIM_ALL, "Teleport to any dimension world", PermissionDefault.FALSE),
                 new Permission(CMD_ITEM, "Manage items", PermissionDefault.FALSE),
+                new Permission(CMD_DURA, "Scale the held item's durability (/ui dura multiply|divide [raw])", PermissionDefault.FALSE),
                 new Permission(CMD_ENCHANT, "Enchant items", PermissionDefault.FALSE),
                 new Permission(CMD_SETRAD, "Set radiation levels", PermissionDefault.FALSE),
                 new Permission(CMD_METEOR_SPAWN, "Spawn meteors", PermissionDefault.FALSE),

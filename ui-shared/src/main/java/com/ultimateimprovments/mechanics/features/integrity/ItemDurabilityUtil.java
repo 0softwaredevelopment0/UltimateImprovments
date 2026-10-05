@@ -43,7 +43,9 @@ import org.bukkit.inventory.meta.ItemMeta;
  *   <li>{@code decreaseItemIntegrityPercent / increaseItemIntegrityPercent} —
  *       changes by exactly X% (fractional percents allowed)</li>
  *   <li>{@code multiplyItemIntegrity / divideItemIntegrity} — scales the
- *       remaining durability by / to a fractional factor</li>
+ *       remaining durability by / to a fractional factor; the overload with
+ *       a {@code Player owner} runs as a mechanics event (unbreakable +
+ *       Unbreaking apply to reductions), the one without is a raw editor op</li>
  * </ul>
  * All write methods return the <b>actual</b> integrity % (0.0–100.0)
  * <i>after</i> the operation. No lore is written — the vanilla durability bar
@@ -325,47 +327,83 @@ public final class ItemDurabilityUtil {
      * fractional factors allowed (0.5 halves, 1.5 adds 50%, 0 breaks).
      * The result is rounded to whole vanilla points and clamped to
      * [0, max]. Negative/NaN/Infinite factors are rejected with -1
-     * (no change). This is an editor operation: it bypasses the
-     * unbreakable tag and the Unbreaking roll on purpose.
+     * (no change). Raw/editor variant: bypasses the unbreakable tag and
+     * the Unbreaking roll on purpose.
      * Returns the actual integrity % after the operation, or -1 if the item
      * has no durability or the factor is invalid.
      */
     public static double multiplyItemIntegrity(ItemStack item, double factor) {
         if (Double.isNaN(factor) || Double.isInfinite(factor) || factor < 0) return -1;
-        return scaleRemaining(item, factor);
+        return scaleRemaining(item, factor, null);
+    }
+
+    /**
+     * Mechanics variant of {@link #multiplyItemIntegrity(ItemStack, double)}:
+     * a reduction (factor &lt; 1) is blocked by the unbreakable tag and the
+     * lost points are rolled through the vanilla Unbreaking chance tables
+     * (per point, {@code owner} gets the break sound / wear warnings).
+     * Increases are plain repairs — vanilla gates do not apply to repairs.
+     */
+    public static double multiplyItemIntegrity(ItemStack item, double factor, Player owner) {
+        if (Double.isNaN(factor) || Double.isInfinite(factor) || factor < 0) return -1;
+        return scaleRemaining(item, factor, owner);
     }
 
     /**
      * Divides the item's remaining durability by {@code divisor} —
      * fractional divisors allowed (2 halves, 1.5 cuts a third). Equivalent
      * to multiplying by {@code 1 / divisor}. Non-positive/NaN/Infinite
-     * divisors are rejected with -1 (no change). Editor operation —
+     * divisors are rejected with -1 (no change). Raw/editor variant —
      * bypasses the unbreakable tag and the Unbreaking roll on purpose.
      * Returns the actual integrity % after the operation, or -1 if the item
      * has no durability or the divisor is invalid.
      */
     public static double divideItemIntegrity(ItemStack item, double divisor) {
         if (Double.isNaN(divisor) || Double.isInfinite(divisor) || divisor <= 0) return -1;
-        return scaleRemaining(item, 1.0 / divisor);
+        return scaleRemaining(item, 1.0 / divisor, null);
     }
 
-    /** Shared write path for multiply/divide: remaining durability × factor. */
-    private static double scaleRemaining(ItemStack item, double factor) {
+    /**
+     * Mechanics variant of {@link #divideItemIntegrity(ItemStack, double)}:
+     * an increase of the divisor (which reduces durability) is blocked by
+     * the unbreakable tag and rolled through the vanilla Unbreaking chance
+     * tables; a divisor below 1 is a plain repair.
+     */
+    public static double divideItemIntegrity(ItemStack item, double divisor, Player owner) {
+        if (Double.isNaN(divisor) || Double.isInfinite(divisor) || divisor <= 0) return -1;
+        return scaleRemaining(item, 1.0 / divisor, owner);
+    }
+
+    /**
+     * Shared scaling write path. {@code owner == null} — raw/editor mode
+     * (no gates); {@code owner != null} — mechanics mode: reductions are
+     * blocked by the unbreakable tag and rolled through Unbreaking.
+     */
+    private static double scaleRemaining(ItemStack item, double factor, Player owner) {
         int max = getMaxDurability(item);
         if (max <= 0) return -1;
+        int before = getVanillaDamage(item);
+        int remaining = max - before;
+        int target = Math.max(0, Math.min(max, (int) Math.round(remaining * factor)));
+        int lost = remaining - target;
+        if (lost > 0 && owner != null) {
+            if (isUnbreakable(item)) return getItemIntegrityPercent(item);
+            target = remaining - applyUnbreaking(item, lost);
+        }
+        return writeRemaining(item, max, Math.max(0, target), owner);
+    }
 
+    /** Writes an exact remaining-durability value; breaks the item at 0. */
+    private static double writeRemaining(ItemStack item, int max, int newRemaining, Player owner) {
         ItemMeta meta = item.getItemMeta();
         if (!(meta instanceof Damageable dmg)) return -1;
         int before = dmg.hasDamage() ? dmg.getDamage() : 0;
-        int newRemaining = Math.max(0, Math.min(max,
-                (int) Math.round((max - before) * factor)));
         int after = max - newRemaining;
         if (after == before) return getItemIntegrityPercent(item);
         dmg.setDamage(after);
         item.setItemMeta(meta);
-
         if (newRemaining <= 0) {
-            breakItem(item, null);
+            breakItem(item, owner);
             return 0.0;
         }
         return getItemIntegrityPercent(item);
